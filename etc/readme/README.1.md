@@ -38,7 +38,7 @@ compiler writes the binary image itself.
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
-  `not`
+  `not`, `true`, `false`
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 

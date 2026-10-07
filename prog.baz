@@ -72,8 +72,8 @@ func baz(arg) res {
 func inv(i i32) res i32 {
     res = ~i
 }
-# type of "return" and arguments can be defined, use `i` for default integer type
-# of target platform
+# type of "return" and arguments can be defined, use `int` for default integer
+# type of target platform
 
 func faz(arg mut i32[]) {
     arg[1] = 0xfe
@@ -214,6 +214,8 @@ func main() {
     assert(a + a << 1 == 21)
     assert((a + a) << 1 == 28)
     # unlike c, bitwise operations and shifts bind tighter than arithmetic
+    # precedence from lowest to highest: `+ -`, `* / %`, `|`, `&`, `^`,
+    # `<< >>`
 
     assert(a != 0 and (a >= 7 or a < 0))
     # `and`, `or` and `not` stop evaluating as soon as the result is known
