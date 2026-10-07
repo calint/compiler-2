@@ -203,7 +203,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     segfaults before the frame check; check 'rsp'/'sp' or depth at each call
 [ ] medium: --checks=alias: route inline builtin results through a scratch
     register instead of rejecting (077.baz, 135.baz, 394.baz, 397.baz,
-    485.baz), then re-enable 485.baz
+    485.baz); 485.baz is a '--checks=noub' error test, it would become a run
+    test again if the semantics change
 [ ] medium: low priority: generics: constants as parameters of functions
     ('func f<n>()') and constructors of generic types
 [ ] medium: low priority: generics: a generic that is never instantiated is not

@@ -35,6 +35,11 @@ compiler writes the binary image itself.
 * support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
+  * not checked: division by zero, `MIN / -1`
+  * not checked: shift count outside the type width
+  * not checked: signed overflow, it wraps
+  * not checked: overlapping `array_copy`
+  * not checked: stack overflow in deep `noinline` recursion
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,

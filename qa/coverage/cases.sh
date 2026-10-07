@@ -1445,7 +1445,9 @@ SRC=483 && COMPERR
 
 # a return inside 'foo' skips the result assignment
 SRC=484 && COMPERR
-# SRC=485 && EXP=0 && RUN # result aliases argument, see etc/todo.txt
+
+# a result that aliases an argument is rejected when it is checked for
+SRC=485 && OPTS="--checks=noub" COMPERR
 
 # the destination is read by a later element of its own expression
 SRC=486 && EXP=0 && RUN
