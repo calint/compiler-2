@@ -725,6 +725,7 @@ class machine_rv32i : public machine {
 
         if (register_mask(frame_address.base_register()) != 0 and
             frame_address.displacement() != 0) {
+
             assembler_.branch(
                 indent, frame_address.displacement() > 0 ? op::bltu : op::bgtu,
                 start.base_register(), frame_address.base_register(),
@@ -2704,6 +2705,7 @@ class machine_rv32i : public machine {
 
         if (operation == comparison_operator::equal or
             operation == comparison_operator::not_equal) {
+
             emit_equality_result(
                 indent, result, left, right, immediate,
                 inverted != (operation == comparison_operator::not_equal));
@@ -2854,6 +2856,7 @@ class machine_rv32i : public machine {
         // equality and inequality share one branch pair
         if (operation == comparison_operator::equal or
             operation == comparison_operator::not_equal) {
+
             const bool branch_on_unequal{
                 inverted != (operation == comparison_operator::not_equal),
             };
@@ -3134,6 +3137,7 @@ class machine_rv32i : public machine {
 
         if (src.is_register() and register_index(value.base_register()) ==
                                       register_index(src.base_register())) {
+
             return;
         }
 
@@ -3411,6 +3415,7 @@ class machine_rv32i : public machine {
     auto release_bulk(const token& src_loc_tk, const size_t indent) -> void {
         for (const operand& reg :
              bulk_registers_.back() | std::views::reverse) {
+
             free_scratch_register(src_loc_tk, indent, reg);
         }
 
@@ -3512,6 +3517,7 @@ class machine_rv32i : public machine {
 
         if (operation == arithmetic_operator::shift_left and
             bits < register_bits_ and dst.is_register()) {
+
             assembler_.slli(indent, loaded.value.base_register(),
                             loaded.value.base_register(),
                             register_bits_ - bits + shift_count);
@@ -4138,6 +4144,7 @@ class machine_rv32i : public machine {
 
         while (width > 1 and (width > size_bytes - offset or
                               not is_aligned_at(starts, offset, width))) {
+
             width /= 2;
         }
 

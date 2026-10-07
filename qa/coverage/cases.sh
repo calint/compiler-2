@@ -2660,3 +2660,18 @@ SRC=868 && COMPERR
 # a noinline function that nothing calls leaves no code, a method that passes
 # its own receiver on does not load it into the receiver register
 SRC=869 && DIFFPY
+
+# a constant argument has the type of its parameter in an inlined function
+SRC=870 && COMPERR
+
+# the same in a noinline function, the message is the same
+SRC=871 && COMPERR
+
+# a constant argument is narrowed like a variable of its parameter's type
+SRC=872 && COMPERR
+
+# a constant argument of a wider parameter, inlined and noinline
+SRC=873 && EXP=22 && RUN
+
+# two constant arguments are compared like variables of their parameters' types
+SRC=874 && COMPERR

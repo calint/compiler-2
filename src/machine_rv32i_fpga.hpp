@@ -51,6 +51,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
         if (stack_size_bytes() <= memory_size_bytes_ and
             memory_end_address <= memory_size_bytes_ - stack_size_bytes()) {
+
             return;
         }
 

@@ -203,6 +203,22 @@ class expr_bool_op final : public statement {
     }
 
   private:
+    // a comparison that folds is checked like one that is compiled
+    auto assert_typed_constant_fits_lhs(const toc& tc) const -> void {
+        if (is_shorthand_ or not is_typed_constant(tc, rhs_)) {
+            return;
+        }
+
+        const type& lhs_type{lhs_.get_type()};
+        const type& rhs_type{rhs_.get_type()};
+
+        if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
+            return;
+        }
+
+        throw_rhs_wider(lhs_, rhs_, op_, lhs_type, rhs_type);
+    }
+
     // the result 'compile_boolean' stored in 'action.destination' is branched
     // on using 'action.branch_on_true'
     auto branch_on_stored_result(toc& tc, const size_t indent,
@@ -297,12 +313,15 @@ class expr_bool_op final : public statement {
         const std::optional<bool> constant{constant_value(tc)};
 
         if (constant) {
+            assert_typed_constant_fits_lhs(tc);
             return compile_constant(tc, indent, *constant != inverted, action);
         }
 
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
-        if (not is_shorthand_ and side_constant(tc, lhs_)) {
+        if (not is_shorthand_ and side_constant(tc, lhs_) and
+            not is_typed_constant(tc, lhs_)) {
+
             machine::comparison_action mirrored_action{action};
             mirrored_action.operation = machine::mirrored(op_);
 
@@ -542,22 +561,16 @@ class expr_bool_op final : public statement {
 
         const type& lhs_type{lhs_op.type_ref()};
 
-        if (not rhs_op.is_immediate()) {
+        // a typed constant, e.g. an argument of an inlined call, is compared
+        // as a variable of its type
+        if (not rhs_op.is_immediate() or is_typed_constant(tc, rhs)) {
             const type& rhs_type{rhs_op.type_ref()};
 
             if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
                 return;
             }
 
-            throw compiler_exception{
-                rhs.tok(),
-                std::format(
-                    "'{}' of type '{}' is wider than '{}' of type '{}', "
-                    "swap the operands: '{} {} {}'",
-                    trimmed_source(rhs), rhs_type.name(), trimmed_source(lhs),
-                    lhs_type.name(), trimmed_source(rhs),
-                    machine::source_text(machine::mirrored(op)),
-                    trimmed_source(lhs))};
+            throw_rhs_wider(lhs, rhs, op, lhs_type, rhs_type);
         }
 
         const std::optional<int64_t> constant{side_constant(tc, rhs)};
@@ -722,6 +735,16 @@ class expr_bool_op final : public statement {
                (info.is_array or not info.type_ref().is_builtin());
     }
 
+    // the value of an argument of an inlined call, it has the rules of a
+    // variable of the type of its parameter
+    [[nodiscard]] static auto is_typed_constant(const toc& tc,
+                                                const expr_arith& side)
+        -> bool {
+
+        return not side.is_expression() and
+               tc.make_ident_info(side).is_typed_const();
+    }
+
     // memory is compared, so a constant has nothing to compare
     [[nodiscard]] static auto
     make_memory_operand_info(const toc& tc, const statement& identifier)
@@ -815,6 +838,23 @@ class expr_bool_op final : public statement {
                                     });
         }
 
+        // a typed constant left side is a value of its type in a register
+        if (is_lhs and expr_info.is_typed_const()) {
+            machine& x{tc.machine()};
+
+            const operand reg{
+                x.alloc_scratch_register(expr.tok(), indent,
+                                         expr_info.type_ref()),
+            };
+
+            allocated_registers.emplace_back(reg);
+
+            x.copy_value(expr.tok(), indent, reg,
+                         expr.make_constant_operand(expr_info));
+
+            return reg;
+        }
+
         // a constant left side was mirrored onto the right
         assert(not expr_info.is_const() or not is_lhs);
 
@@ -853,6 +893,22 @@ class expr_bool_op final : public statement {
         }
 
         return side.get_unary_ops().evaluate_constant(info.const_value);
+    }
+
+    [[noreturn]] static auto
+    throw_rhs_wider(const expr_arith& lhs, const expr_arith& rhs,
+                    const machine::comparison_operator op, const type& lhs_type,
+                    const type& rhs_type) -> void {
+
+        throw compiler_exception{
+            rhs.tok(),
+            std::format("'{}' of type '{}' is wider than '{}' of type '{}', "
+                        "swap the operands: '{} {} {}'",
+                        trimmed_source(rhs), rhs_type.name(),
+                        trimmed_source(lhs), lhs_type.name(),
+                        trimmed_source(rhs),
+                        machine::source_text(machine::mirrored(op)),
+                        trimmed_source(lhs))};
     }
 
     // the value compared with 0, matching types avoid narrowing before the

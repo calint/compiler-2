@@ -51,7 +51,7 @@ Working agreements for AI sessions in this repository.
   formatter removes.
 - Around multiline statements and declarations, keeping an attached comment or
   note with its statement.
-- After the `{` of a multiline signature.
+- After the `{` of a multiline signature and of a multiline condition.
 - Before a return only when the statements before it have blank lines between
   them.
 - Between switch branches (labels sharing a body stay grouped).

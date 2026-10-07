@@ -885,6 +885,7 @@ class stmt_def_func final : public statement {
         while (not is_closed) {
             if (not types.parameters.empty() and
                 tz.is_next_char_token(',').is_empty()) {
+
                 break;
             }
 

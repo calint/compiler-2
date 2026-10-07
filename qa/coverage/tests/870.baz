@@ -1,0 +1,9 @@
+# a constant argument has the type of its parameter in an inlined function:
+# 'y' is an i16, wider than the i8 'x'
+func same(x i8, y i16) res bool { res = x == y }
+
+func main() {
+    var b = i8[2]{}
+    var r = same(b[1], 4)
+    exit(r)
+}

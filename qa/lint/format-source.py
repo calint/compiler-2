@@ -866,6 +866,8 @@ CONTROL_KINDS = {
 }
 # blocks, labels and empty statements do not ask for blank lines themselves
 PASSIVE_KINDS = {K.COMPOUND_STMT, K.NULL_STMT, K.LABEL_STMT}
+# the statements with a condition before their body
+CONDITION_KINDS = {K.IF_STMT, K.WHILE_STMT, K.FOR_STMT, K.CXX_FOR_RANGE_STMT}
 CASE_KINDS = {K.CASE_STMT, K.DEFAULT_STMT}
 DEFINITION_KINDS = FUNCTION_KINDS | {K.FUNCTION_DECL}
 
@@ -910,6 +912,9 @@ class block:
     stmts: list
     # the definition this block is the body of, none for other blocks
     function: object = None
+    # the block is the body of a control statement whose condition spans
+    # several lines
+    has_multiline_condition: bool = False
 
     def has_multiline_signature(self):
         if self.function is None:
@@ -954,12 +959,19 @@ def source_path(cursor, resolved):
     return resolved[file.name]
 
 
+def brace_of(compound, path):
+    start = compound.extent.start
+
+    return (path, start.line - 1, start.column)
+
+
 def blocks_by_file(tu, paths, texts):
     # the blocks of each file in one walk, the headers of the library and the
     # syntax of other files are not entered
     wanted = {p.resolve() for p in paths}
     resolved = {}
     bodies = {}
+    conditions = set()
     seen = set()
     found = {p: [] for p in wanted}
     for top in tu.cursor.get_children():
@@ -976,17 +988,36 @@ def blocks_by_file(tu, paths, texts):
 
                 continue
 
+            if cursor.kind in CONDITION_KINDS:
+                body = next(
+                    (c for c in cursor.get_children() if c.kind == K.COMPOUND_STMT),
+                    None,
+                )
+                if body is not None and (
+                    body.extent.start.line != cursor.extent.start.line
+                ):
+                    conditions.add(brace_of(body, path))
+
             if cursor.kind != K.COMPOUND_STMT:
                 continue
 
             open_line = cursor.extent.start.line - 1
-            if source_path(cursor, resolved) != path or (path, open_line) in seen:
+            # the column tells a lambda body from the block that ends the
+            # same line
+            brace = brace_of(cursor, path)
+            if source_path(cursor, resolved) != path or brace in seen:
                 continue
 
-            seen.add((path, open_line))
+            seen.add(brace)
             stmts = [statement_of(c, lines) for c in cursor.get_children()]
             found[path].append(
-                block(lines, open_line, stmts, bodies.get((path, open_line)))
+                block(
+                    lines,
+                    open_line,
+                    stmts,
+                    bodies.get((path, open_line)),
+                    brace in conditions,
+                )
             )
 
     return found
@@ -996,6 +1027,13 @@ def rule_signature(b, want):
     # a function whose declaration spans several lines has a blank line after
     # its '{'
     if b.stmts and b.has_multiline_signature():
+        want(0, BLANK)
+
+
+def rule_condition(b, want):
+    # the body of a control statement whose condition spans several lines has a
+    # blank line after its '{'
+    if b.stmts and b.has_multiline_condition:
         want(0, BLANK)
 
 
@@ -1066,6 +1104,7 @@ def rule_return_by_block(b, wants, want):
 
 BLANK_LINE_RULES = [
     rule_signature,
+    rule_condition,
     rule_multiline,
     rule_assert_groups,
 ]

@@ -1,0 +1,9 @@
+# a constant argument is narrowed to a smaller variable like a variable of its
+# parameter's type
+func narrow(y i16) res {
+    var a = i8(0)
+    a = y
+    res = a
+}
+
+func main() { exit(narrow(4)) }

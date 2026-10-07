@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: a constant argument was a literal in an inlined function and a value
+    of the parameter's type in a noinline one: 'same(b[1], 4)' with 'func
+    same(x i8, y i16) { res = x == y }' compiled when inlined (the 4 has no
+    width) and gave "'y' of type 'i16' is wider than 'x' of type 'i8'" when
+    noinline, test 141 (found by making every function of each coverage test
+    noinline: 438 of 441 programs that compile behave the same, 141 was the
+    only difference)
+    => done (2026-10-07): the alias of an argument that is a constant resolves
+       to a 'typed_constant' of the parameter's type ('ident_resolver::
+       follow_alias', 'ident_info::is_typed_const'), it folds as before but
+       'assert_not_narrowed' of an identifier and the comparison
+       ('expr_bool::assert_rhs_fits_lhs', a typed constant on the left is
+       not mirrored, it is copied into a register of its type) treat it as a
+       variable of that type; generated code is the same (roome 2520, 4467,
+       4117 instructions); a comparison of two constants that folds is checked
+       the same ('assert_typed_constant_fits_lhs'); test 141 compares from the
+       wider side, tests 870-874
 [x] medium: the receiver of a method was passed in a register or in a frame slot,
     chosen per function by compiling the body both ways ('program::
     decide_slot_registers', 'toc::slot_in_frame_'); a function with array

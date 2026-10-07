@@ -75,7 +75,9 @@ struct var_info {
 
 struct ident_info {
   private:
-    enum class kind : uint8_t { empty, constant, var, reg };
+    // a typed constant is the value of an argument of an inlined call, it has
+    // the type of its parameter and the rules of a variable of that type
+    enum class kind : uint8_t { empty, constant, typed_constant, var, reg };
 
     // where a variable is and what it holds, besides its operand
     struct var_layout {
@@ -124,7 +126,7 @@ struct ident_info {
     }
 
     [[nodiscard]] auto is_const() const -> bool {
-        return kind == kind::constant;
+        return kind == kind::constant or kind == kind::typed_constant;
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return kind == kind::empty; }
@@ -134,6 +136,10 @@ struct ident_info {
     }
 
     [[nodiscard]] auto is_register() const -> bool { return kind == kind::reg; }
+
+    [[nodiscard]] auto is_typed_const() const -> bool {
+        return kind == kind::typed_constant;
+    }
 
     [[nodiscard]] auto is_var() const -> bool { return kind == kind::var; }
 
@@ -197,9 +203,9 @@ struct ident_info {
     // statics
     //
 
-    [[nodiscard]] static auto make_const(const std::string_view ident,
-                                         const std::string_view elem,
-                                         const type& tp, const int64_t value)
+    [[nodiscard]] static auto
+    make_const(const std::string_view ident, const std::string_view elem,
+               const type& tp, const int64_t value, const bool is_typed = false)
         -> ident_info {
 
         assert(not ident.empty());
@@ -213,7 +219,7 @@ struct ident_info {
             .lea_path{::operand{}},
             .operand{},
             .const_value{value},
-            .kind{kind::constant},
+            .kind{is_typed ? kind::typed_constant : kind::constant},
         };
     }
 

@@ -1,0 +1,7 @@
+
+872.baz:5:9: 'y' of type 'i16' is narrowed to 'i8', use 'i8(...)'
+    a = y
+        ^
+872.baz:9:20: called from 'narrow(4)'
+func main() { exit(narrow(4)) }
+                   ^~~~~~

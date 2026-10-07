@@ -1414,6 +1414,7 @@ class machine {
 
         if (op == arithmetic_operator::subtract or
             op == arithmetic_operator::negate) {
+
             return "-";
         }
 
@@ -1688,6 +1689,7 @@ class machine {
 
         for (const char operation :
              text.substr(0, digits) | std::views::reverse) {
+
             // unsigned negation wraps instead of overflowing
             if (operation == '-') {
                 bits = uint64_t{} - bits;

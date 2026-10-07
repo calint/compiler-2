@@ -1533,8 +1533,8 @@ class ident_resolver final {
         // this is an alias, continue resolving until it is a variable,
         // register or constant
         if (cur_frame.has_alias(step.id.base())) {
-            return follow_alias(cur_frame.get_alias(step.id.base()), ident,
-                                step);
+            return follow_alias(cur_frame.get_alias(step.id.base()), src_loc_tk,
+                                ident, step);
         }
 
         // neither: a global, a constant or empty
@@ -1649,15 +1649,29 @@ class ident_resolver final {
 
     // the register an alias stands for, else the walk goes on with the
     // identifier rewritten to the variable that the alias refers to
-    [[nodiscard]] static auto follow_alias(const alias_info& alias,
-                                           const std::string_view ident,
-                                           walk& step)
+    [[nodiscard]] static auto
+    follow_alias(const alias_info& alias, const token& src_loc_tk,
+                 const std::string_view ident, walk& step)
         -> std::optional<ident_info> {
 
         const bool is_single{step.id.path().size() == 1};
 
         if (alias.register_operand.is_register() and is_single) {
             return ident_info::make_register(ident, alias.register_operand);
+        }
+
+        // the value of an argument keeps the type of its parameter
+        if (is_single and alias.type_ptr != nullptr and
+            alias.type_ptr->is_builtin()) {
+
+            if (const std::optional<int64_t> value{
+                    constant_parser::parse_constant(src_loc_tk, alias.to),
+                };
+                value) {
+
+                return ident_info::make_const(ident, alias.to, *alias.type_ptr,
+                                              *value, true);
+            }
         }
 
         // a field path such as 'p.x' gets its array-ness from the field
@@ -2033,6 +2047,7 @@ class toc final {
 
         if (not src.is_indexed() and not src_info.has_lea() and
             not src_info.is_pointer) {
+
             return src_info.operand;
         }
 

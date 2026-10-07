@@ -1,0 +1,25 @@
+# a constant argument of a wider parameter in an inlined and in a noinline
+# function: compared from the wider side, converted to narrow, added
+func wide(x i8, y i16) res {
+    res = 0
+    if y == x res = res + 1
+    if y == x and x == 4 res = res + 1
+    var n = i8(y)
+    if n == x res = res + 1
+    res = res + y + x
+}
+
+func noinline nwide(x i8, y i16) res {
+    res = 0
+    if y == x res = res + 1
+    if y == x and x == 4 res = res + 1
+    var n = i8(y)
+    if n == x res = res + 1
+    res = res + y + x
+}
+
+func main() {
+    var b = i8[2]{}
+    b[1] = 4
+    exit(wide(b[1], 4) + nwide(b[1], 4))
+}

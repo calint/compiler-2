@@ -1706,6 +1706,7 @@ class machine_x86_64 final : public machine {
 
         if (not address_is_encodable(dst_op) or
             not address_is_encodable(src_op)) {
+
             with_lowered_addresses(
                 src_loc_tk, indent, dst_op, src_op,
                 [&](const operand& dst, const operand& src) -> void {
@@ -2142,6 +2143,7 @@ class machine_x86_64 final : public machine {
 
         if (not value.type_ref().is_builtin() or
             value.type_ref().size_bytes() != size_bytes) {
+
             return operand::mem(value, builtin_type_for_size_bytes(size_bytes));
         }
 
@@ -2519,6 +2521,7 @@ class machine_x86_64 final : public machine {
         for (const register_names& names : register_names_) {
             if (name != names.qword and name != names.dword and
                 name != names.word and name != names.byte) {
+
                 continue;
             }
 

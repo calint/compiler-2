@@ -113,6 +113,7 @@ class field_coverage final {
         for (const range& r : ranges_) {
             if (merged.empty() or
                 merged.back().offset + merged.back().size_bytes < r.offset) {
+
                 merged.push_back(r);
                 continue;
             }

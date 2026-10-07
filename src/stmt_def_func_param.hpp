@@ -64,6 +64,7 @@ class stmt_def_func_param final : public statement {
 
             if (not open_bracket_tk.is_empty() and
                 close_bracket_tk.is_empty()) {
+
                 throw compiler_exception{tz, "expected ']'"};
             }
 

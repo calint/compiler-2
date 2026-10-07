@@ -411,6 +411,7 @@ class expr_arith final : public expression {
 
         if (steps.size() < 2 or last.element != nullptr or
             last.op != arithmetic_operator::add) {
+
             return std::nullopt;
         }
 
@@ -555,6 +556,7 @@ class expr_arith final : public expression {
 
         if (dst_info.type_ref().size_bytes() >=
             tc.get_type_default().size_bytes()) {
+
             return false;
         }
 
@@ -1319,6 +1321,7 @@ class expr_arith final : public expression {
         // only a merged constant has no element
         if (last.element != nullptr or last.op != arithmetic_operator::add or
             last.value == 0) {
+
             return;
         }
 
@@ -1448,6 +1451,7 @@ class expr_arith final : public expression {
 
         if (s.op != arithmetic_operator::divide or not s.value or
             *s.value == 0 or *s.value == -1) {
+
             return std::nullopt;
         }
 

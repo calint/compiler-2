@@ -2397,6 +2397,7 @@ class assembler_rv32i final : public assembler {
         // zero fills such as the variables area can be large
         if (std::ranges::all_of(
                 data.values, [](const int64_t v) -> bool { return v == 0; })) {
+
             write_zeros(os, data_size_bytes(data));
             return;
         }

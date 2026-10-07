@@ -182,7 +182,7 @@ class stmt_identifier final : public statement {
 
         const ident_info info{tc.make_ident_info(*this)};
 
-        if (info.is_const()) {
+        if (info.is_const() and not info.is_typed_const()) {
             assert_constant_fits(info, dst_type);
             return;
         }

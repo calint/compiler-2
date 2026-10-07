@@ -126,9 +126,10 @@ let no = 0
 let maybe = -1
 # constants can be declared in any scope and shadow outer declarations
 
-# limited support for non-inlined functions
+# non-inlined functions are called with the same type and aliasing rules as
+# inlined functions
 # arguments and "return" are references to memory locations
-# array arguments not supported
+# an array argument gets a body for each array length
 
 func noinline print_num(num) {
     # 19 digits of an i64 plus the sign
