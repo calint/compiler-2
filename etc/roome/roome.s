@@ -3892,237 +3892,6 @@ main:
     j loop.983.5
     loop.983.5.end:
 #
-# [508:15] noinline entity.find_object(tz tokenizer) res
-func.entity.find_object:
-# allocate named register s1
-    addi sp, sp, -16
-    sw ra, 0(sp)
-    # [508:1] allocate named register s11
-    # [508:48] res: i32 (4 B @ [s1])
-    # [508:22] self: entity (s11)
-    # [508:34] tz: tokenizer (140 B @ [s1 + 4])
-    # [509:5] res = self.objects.len
-    # [509:5] allocate scratch register -> t0
-    lw t0, 0(s1)
-    # [509:11] self.objects.len
-    # [509:11] allocate scratch register -> t1
-    lw t1, 152(s11)
-    sw t1, 0(t0)
-    # [509:11] free scratch register t1
-    # [509:5] free scratch register t0
-    # [510:5] foo self.objects.array, self.objects.len
-    # [510:9] allocate scratch register -> t0
-    # [510:9] initiate iterator e
-    addi t0, s11, 24
-    # [510:29] allocate scratch register -> t1
-    # [510:29] count self.objects.len
-    # [510:29] self.objects.len
-    lw t1, 152(s11)
-    # [510:29] bounds check begin
-    # [510:29] lower bound
-    # [510:29] t1 lower bound covered by the unsigned upper bound
-    # [510:29] upper bound
-    # [510:29] allocate scratch register -> t2
-    li t2, 32
-    bgeu t2, t1, 2f
-    1:
-    # [510:29] source line
-    li a0, 510
-    j baz_bounds_panic
-    2:
-    # [510:29] free scratch register t2
-    # [510:29] bounds check end
-    # [510:5] allocate scratch register -> t2
-    # [510:9] e: i32 (t0)
-    # [510:9] i: i32 (t2)
-    # [510:9] const n = 32
-    # [510:5] initiate counter i
-    li t2, 0
-    bge zero, t1, foo.510.5.end
-    foo.510.5:
-        if.511.12:
-        # [511:12] ? tz.is(objects.array[e].name)
-        # [511:12] ? shorthand: tz.is(objects.array[e].name)
-        cmp.511.12:
-        # [511:12] allocate scratch register -> t3
-            # [511:15] t3 = tz.is(objects.array[e].name)
-            # [511:15] = expression
-            # [511:15] tz.is(objects.array[e].name)
-            # [511:12] allocate scratch register -> t4
-            lw t4, 4(s1)
-            # [511:32] allocate scratch register -> t5
-            # [511:32] set array index
-            # [511:32] e
-            lw t5, 0(t0)
-            # [511:32] bounds check begin
-            # [511:32] lower bound
-            # [511:32] t5 lower bound covered by the unsigned upper bound
-            # [511:32] upper bound
-            # [511:32] allocate scratch register -> t6
-            li t6, 1024
-            bltu t5, t6, 2f
-            1:
-            # [511:32] source line
-            li a0, 511
-            j baz_bounds_panic
-            2:
-            # [511:32] free scratch register t6
-            # [511:32] bounds check end
-            # [511:32] allocate scratch register -> t6
-            slli t6, t5, 2
-            add t5, t6, t5
-            slli t5, t5, 2
-            # [511:32] free scratch register t6
-            # [511:15] allocate scratch register -> t6
-            # [511:15] address of parameter 's'
-            add t6, s0, t5
-            # [511:15] allocate scratch register -> s2
-            lui s2, 1048551
-            add t6, t6, s2
-            # [511:15] free scratch register s2
-            addi t6, t6, 152
-            # [472:6] tokenizer.is(s T) res bool
-            func.tokenizer.is.name.511.15:
-                # [511:15] alias res -> t3
-                # [511:15] alias self -> tz
-                # [511:15] alias s -> objects.array.name
-                # [473:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
-                # [473:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
-                # [473:11] ? self.len() == s.len
-                cmp.473.11.511.15:
-                # [473:11] allocate scratch register -> s2
-                    # [473:16] s2 = self.len()
-                    # [473:16] = expression
-                    # [473:16] self.len()
-                    # [459:6] tokenizer.len() res
-                    func.tokenizer.len.473.16.511.15:
-                        # [473:16] alias res -> s2
-                        # [473:16] alias self -> self
-                        # [460:5] res = self.end - self.start
-                        # [460:11] self.end
-                        lw s2, 136(t4)
-                        # [460:22] res - self.start
-                        # [460:22] src: operand
-                        # [460:22] allocate scratch register -> s3
-                        lw s3, 132(t4)
-                        sub s2, s2, s3
-                        # [460:22] free scratch register s3
-                    func.tokenizer.len.473.16.511.15.end:
-                lw t3, 16(t6)
-                xor t3, s2, t3
-                sltiu t3, t3, 1
-                beq t3, zero, bool.473.11.511.15.end
-                # [473:11] free scratch register s2
-                # [474:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
-                cmp.474.11.511.15:
-                    # [474:11] arrays_equal(s.array, self.str.array[self.start], s.len)
-                    # [474:11] allocate scratch register -> s2
-                    # [474:11] allocate scratch register -> s3
-                    # [474:11] allocate scratch register -> s4
-                    # [474:11] s2: source, s3: destination, s4: count
-                    # [474:61] s.len
-                    # [474:61] s.len
-                    lw s4, 16(t6)
-                    # [474:24] s.array
-                    # [474:24] bounds check begin
-                    # [474:24] lower bound
-                    # [474:24] s4 lower bound covered by the unsigned upper bound
-                    # [474:24] upper bound
-                    # [474:24] allocate scratch register -> s5
-                    li s5, 16
-                    bgeu s5, s4, 2f
-                    1:
-                    # [474:24] source line
-                    li a0, 474
-                    j baz_bounds_panic
-                    2:
-                    # [474:24] free scratch register s5
-                    # [474:24] bounds check end
-                    addi s2, t6, 0
-                    # [474:33] self.str.array[self.start]
-                    # [474:48] allocate scratch register -> s5
-                    # [474:48] set array index
-                    # [474:48] self.start
-                    lw s5, 132(t4)
-                    # [474:48] bounds check begin
-                    # [474:48] lower bound
-                    # [474:48] count s4 lower bound already checked
-                    bltz s5, 1f
-                    # [474:48] upper bound
-                    # [474:48] allocate scratch register -> s6
-                    # [474:48] allocate scratch register -> s7
-                    add s7, s5, s4
-                    li s6, 127
-                    bgeu s6, s7, 2f
-                    1:
-                    # [474:48] source line
-                    li a0, 474
-                    j baz_bounds_panic
-                    2:
-                    # [474:48] free scratch register s7
-                    # [474:48] free scratch register s6
-                    # [474:48] bounds check end
-                    add s3, t4, s5
-                    # [474:11] free scratch register s5
-                    # [474:11] s4: elements to bytes (1 bytes/element)
-                    # [474:11] allocate scratch register -> s5
-                    # [474:11] t3: left value/result, s5: right value
-                    # [474:11] stop at first mismatch
-                    # [474:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
-                    # [474:11] compare bytes; skip if none
-                    beqz s4, 4f
-                    add s4, s4, s2
-                    1:
-                    lbu t3, 0(s2)
-                    lbu s5, 0(s3)
-                    bne t3, s5, 5f
-                    addi s2, s2, 1
-                    addi s3, s3, 1
-                    bne s2, s4, 1b
-                    4:
-                    # [474:11] all matched or empty: true
-                    li t3, 1
-                    j 6f
-                    5:
-                    # [474:11] mismatch: false
-                    li t3, 0
-                    6:
-                    # [474:11] free scratch register s5
-                    # [474:11] free scratch register s4
-                    # [474:11] free scratch register s3
-                    # [474:11] free scratch register s2
-                bool.473.11.511.15.end:
-                # [511:15] free scratch register t6
-            func.tokenizer.is.name.511.15.end:
-                # [511:15] free scratch register t5
-                # [511:15] free scratch register t4
-        beq t3, zero, if.511.9.end
-        # [511:12] free scratch register t3
-        if.511.12.code:
-            # [512:13] res = i
-            # [512:13] allocate scratch register -> t3
-            lw t3, 0(s1)
-            # [512:19] i
-            sw t2, 0(t3)
-            # [512:13] free scratch register t3
-            # [513:13] break
-            j foo.510.5.end
-        if.511.9.end:
-        foo.510.5.continue:
-            addi t0, t0, 4
-            addi t2, t2, 1
-            bne t2, t1, foo.510.5
-    foo.510.5.end:
-    # [510:5] free scratch register t2
-    # [510:5] free scratch register t1
-    # [510:5] free scratch register t0
-    lw ra, 0(sp)
-    addi sp, sp, 16
-    ret
-    # [508:1] free named register s11
-# free named register s1
-.equ size.func.entity.find_object, 8
-#
 # [898:15] noinline parse_input(eid, tz mut tokenizer)
 func.parse_input:
 # allocate named register s1
@@ -20188,6 +19957,237 @@ func.parse_input:
     ret
 # free named register s1
 .equ size.func.parse_input, 308
+#
+# [508:15] noinline entity.find_object(tz tokenizer) res
+func.entity.find_object:
+# allocate named register s1
+    addi sp, sp, -16
+    sw ra, 0(sp)
+    # [508:1] allocate named register s11
+    # [508:48] res: i32 (4 B @ [s1])
+    # [508:22] self: entity (s11)
+    # [508:34] tz: tokenizer (140 B @ [s1 + 4])
+    # [509:5] res = self.objects.len
+    # [509:5] allocate scratch register -> t0
+    lw t0, 0(s1)
+    # [509:11] self.objects.len
+    # [509:11] allocate scratch register -> t1
+    lw t1, 152(s11)
+    sw t1, 0(t0)
+    # [509:11] free scratch register t1
+    # [509:5] free scratch register t0
+    # [510:5] foo self.objects.array, self.objects.len
+    # [510:9] allocate scratch register -> t0
+    # [510:9] initiate iterator e
+    addi t0, s11, 24
+    # [510:29] allocate scratch register -> t1
+    # [510:29] count self.objects.len
+    # [510:29] self.objects.len
+    lw t1, 152(s11)
+    # [510:29] bounds check begin
+    # [510:29] lower bound
+    # [510:29] t1 lower bound covered by the unsigned upper bound
+    # [510:29] upper bound
+    # [510:29] allocate scratch register -> t2
+    li t2, 32
+    bgeu t2, t1, 2f
+    1:
+    # [510:29] source line
+    li a0, 510
+    j baz_bounds_panic
+    2:
+    # [510:29] free scratch register t2
+    # [510:29] bounds check end
+    # [510:5] allocate scratch register -> t2
+    # [510:9] e: i32 (t0)
+    # [510:9] i: i32 (t2)
+    # [510:9] const n = 32
+    # [510:5] initiate counter i
+    li t2, 0
+    bge zero, t1, foo.510.5.end
+    foo.510.5:
+        if.511.12:
+        # [511:12] ? tz.is(objects.array[e].name)
+        # [511:12] ? shorthand: tz.is(objects.array[e].name)
+        cmp.511.12:
+        # [511:12] allocate scratch register -> t3
+            # [511:15] t3 = tz.is(objects.array[e].name)
+            # [511:15] = expression
+            # [511:15] tz.is(objects.array[e].name)
+            # [511:12] allocate scratch register -> t4
+            lw t4, 4(s1)
+            # [511:32] allocate scratch register -> t5
+            # [511:32] set array index
+            # [511:32] e
+            lw t5, 0(t0)
+            # [511:32] bounds check begin
+            # [511:32] lower bound
+            # [511:32] t5 lower bound covered by the unsigned upper bound
+            # [511:32] upper bound
+            # [511:32] allocate scratch register -> t6
+            li t6, 1024
+            bltu t5, t6, 2f
+            1:
+            # [511:32] source line
+            li a0, 511
+            j baz_bounds_panic
+            2:
+            # [511:32] free scratch register t6
+            # [511:32] bounds check end
+            # [511:32] allocate scratch register -> t6
+            slli t6, t5, 2
+            add t5, t6, t5
+            slli t5, t5, 2
+            # [511:32] free scratch register t6
+            # [511:15] allocate scratch register -> t6
+            # [511:15] address of parameter 's'
+            add t6, s0, t5
+            # [511:15] allocate scratch register -> s2
+            lui s2, 1048551
+            add t6, t6, s2
+            # [511:15] free scratch register s2
+            addi t6, t6, 152
+            # [472:6] tokenizer.is(s T) res bool
+            func.tokenizer.is.name.511.15:
+                # [511:15] alias res -> t3
+                # [511:15] alias self -> tz
+                # [511:15] alias s -> objects.array.name
+                # [473:5] res = self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                # [473:11] ? self.len() == s.len and arrays_equal(s.array, self.str.array[self.start], s.len)
+                # [473:11] ? self.len() == s.len
+                cmp.473.11.511.15:
+                # [473:11] allocate scratch register -> s2
+                    # [473:16] s2 = self.len()
+                    # [473:16] = expression
+                    # [473:16] self.len()
+                    # [459:6] tokenizer.len() res
+                    func.tokenizer.len.473.16.511.15:
+                        # [473:16] alias res -> s2
+                        # [473:16] alias self -> self
+                        # [460:5] res = self.end - self.start
+                        # [460:11] self.end
+                        lw s2, 136(t4)
+                        # [460:22] res - self.start
+                        # [460:22] src: operand
+                        # [460:22] allocate scratch register -> s3
+                        lw s3, 132(t4)
+                        sub s2, s2, s3
+                        # [460:22] free scratch register s3
+                    func.tokenizer.len.473.16.511.15.end:
+                lw t3, 16(t6)
+                xor t3, s2, t3
+                sltiu t3, t3, 1
+                beq t3, zero, bool.473.11.511.15.end
+                # [473:11] free scratch register s2
+                # [474:11] ? shorthand: arrays_equal(s.array, self.str.array[self.start], s.len)
+                cmp.474.11.511.15:
+                    # [474:11] arrays_equal(s.array, self.str.array[self.start], s.len)
+                    # [474:11] allocate scratch register -> s2
+                    # [474:11] allocate scratch register -> s3
+                    # [474:11] allocate scratch register -> s4
+                    # [474:11] s2: source, s3: destination, s4: count
+                    # [474:61] s.len
+                    # [474:61] s.len
+                    lw s4, 16(t6)
+                    # [474:24] s.array
+                    # [474:24] bounds check begin
+                    # [474:24] lower bound
+                    # [474:24] s4 lower bound covered by the unsigned upper bound
+                    # [474:24] upper bound
+                    # [474:24] allocate scratch register -> s5
+                    li s5, 16
+                    bgeu s5, s4, 2f
+                    1:
+                    # [474:24] source line
+                    li a0, 474
+                    j baz_bounds_panic
+                    2:
+                    # [474:24] free scratch register s5
+                    # [474:24] bounds check end
+                    addi s2, t6, 0
+                    # [474:33] self.str.array[self.start]
+                    # [474:48] allocate scratch register -> s5
+                    # [474:48] set array index
+                    # [474:48] self.start
+                    lw s5, 132(t4)
+                    # [474:48] bounds check begin
+                    # [474:48] lower bound
+                    # [474:48] count s4 lower bound already checked
+                    bltz s5, 1f
+                    # [474:48] upper bound
+                    # [474:48] allocate scratch register -> s6
+                    # [474:48] allocate scratch register -> s7
+                    add s7, s5, s4
+                    li s6, 127
+                    bgeu s6, s7, 2f
+                    1:
+                    # [474:48] source line
+                    li a0, 474
+                    j baz_bounds_panic
+                    2:
+                    # [474:48] free scratch register s7
+                    # [474:48] free scratch register s6
+                    # [474:48] bounds check end
+                    add s3, t4, s5
+                    # [474:11] free scratch register s5
+                    # [474:11] s4: elements to bytes (1 bytes/element)
+                    # [474:11] allocate scratch register -> s5
+                    # [474:11] t3: left value/result, s5: right value
+                    # [474:11] stop at first mismatch
+                    # [474:11] 1-byte accesses: type 1-byte aligned, addresses not proven more aligned
+                    # [474:11] compare bytes; skip if none
+                    beqz s4, 4f
+                    add s4, s4, s2
+                    1:
+                    lbu t3, 0(s2)
+                    lbu s5, 0(s3)
+                    bne t3, s5, 5f
+                    addi s2, s2, 1
+                    addi s3, s3, 1
+                    bne s2, s4, 1b
+                    4:
+                    # [474:11] all matched or empty: true
+                    li t3, 1
+                    j 6f
+                    5:
+                    # [474:11] mismatch: false
+                    li t3, 0
+                    6:
+                    # [474:11] free scratch register s5
+                    # [474:11] free scratch register s4
+                    # [474:11] free scratch register s3
+                    # [474:11] free scratch register s2
+                bool.473.11.511.15.end:
+                # [511:15] free scratch register t6
+            func.tokenizer.is.name.511.15.end:
+                # [511:15] free scratch register t5
+                # [511:15] free scratch register t4
+        beq t3, zero, if.511.9.end
+        # [511:12] free scratch register t3
+        if.511.12.code:
+            # [512:13] res = i
+            # [512:13] allocate scratch register -> t3
+            lw t3, 0(s1)
+            # [512:19] i
+            sw t2, 0(t3)
+            # [512:13] free scratch register t3
+            # [513:13] break
+            j foo.510.5.end
+        if.511.9.end:
+        foo.510.5.continue:
+            addi t0, t0, 4
+            addi t2, t2, 1
+            bne t2, t1, foo.510.5
+    foo.510.5.end:
+    # [510:5] free scratch register t2
+    # [510:5] free scratch register t1
+    # [510:5] free scratch register t0
+    lw ra, 0(sp)
+    addi sp, sp, 16
+    ret
+    # [508:1] free named register s11
+# free named register s1
+.equ size.func.entity.find_object, 8
 # frame overflow handler (--checks=frame)
 baz_frame_overflow:
     li a0, 2
@@ -20545,8 +20545,8 @@ vars.end:
 # free named register s0
 
 #           noinline functions:
-#           entity.find_object: 1 body, 2 calls, 68 instructions
 #                  parse_input: 1 body, 2 calls, 4759 instructions
+#           entity.find_object: 1 body, 2 calls, 68 instructions
 #
 #      uninstantiated generics:
 #           tokenizer.token_to
