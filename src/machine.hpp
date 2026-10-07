@@ -283,21 +283,17 @@ class register_trace final {
     }
 
     auto record_peak(const register_pool& pool) -> void {
-        size_t held{};
+        const std::span<const register_pool::allocation> live{
+            pool.allocations(),
+        };
 
-        for (const register_pool::allocation& allocated : pool.allocations()) {
-            if (is_listed(allocated)) {
-                ++held;
-            }
-        }
+        const size_t held{
+            static_cast<size_t>(std::ranges::count_if(live, is_listed)),
+        };
 
         if (held <= peak_.held) {
             return;
         }
-
-        const std::span<const register_pool::allocation> live{
-            pool.allocations(),
-        };
 
         peak_.held = held;
         peak_.allocations.assign(live.begin(), live.end());
@@ -327,6 +323,12 @@ class register_use_report final {
         size_t inside{};
         size_t saved{};
     };
+
+    // the column of the registers held by a frame, its number is right aligned
+    // under the heading
+    static constexpr std::string_view held_heading{"held"};
+    static constexpr size_t held_width{held_heading.size() + 2};
+    // note: +2 because the heading is indented by two
 
     std::string heading_;
     size_t register_total_;
@@ -378,32 +380,49 @@ class register_use_report final {
             name_width = std::max(name_width, entry.name.size());
         }
 
+        // the numbers are right aligned under their headings
+        constexpr std::string_view inside_heading{"held inside"};
+        constexpr std::string_view saved_heading{"saved at the call"};
+        constexpr size_t column_gap{2};
+        constexpr size_t inside_width{inside_heading.size() + column_gap};
+        constexpr size_t saved_width{saved_heading.size() + column_gap};
+
         std::string text{
             std::format(
                 "\n\nthese frames are not noinline, making one noinline "
                 "starts its body with all {} registers free and "
                 "saves the registers held above it around the "
-                "call:\n\n  {}  held inside  saved at the call",
-                register_total_, padded("candidate frame", name_width)),
+                "call:\n\n  {}  {}  {}",
+                register_total_, padded("candidate frame", name_width),
+                inside_heading, saved_heading),
         };
 
         for (const candidate& entry : found) {
-            text += std::format("\n  {}{:>13}{:>19}",
-                                padded(entry.name, name_width), entry.inside,
-                                entry.saved);
+            text += std::format("\n  {}{}{}", padded(entry.name, name_width),
+                                right_aligned(entry.inside, inside_width),
+                                right_aligned(entry.saved, saved_width));
         }
 
         return text;
     }
 
     [[nodiscard]] auto frames_text() const -> std::string {
+        // the label of a frame follows the number and two spaces, its
+        // registers are indented two more
+        const std::string register_indent(held_width + 4, ' ');
+        // note: +4 for the two spaces before the label and the two of the
+        // indent
+
         std::string text;
 
         for (const frame_use& use : frames_) {
-            text += std::format("\n{:>6}  {}", use.registers.size(), use.label);
+            text += std::format("\n{}  {}",
+                                right_aligned(use.registers.size(), held_width),
+                                use.label);
 
             for (const std::string& held : use.registers) {
-                text += std::format("\n          {}", held);
+                // the registers are indented under the label of the frame
+                text += std::format("\n{}{}", register_indent, held);
             }
         }
 
@@ -417,9 +436,10 @@ class register_use_report final {
                 : std::format(", {} named by instructions", named_count_),
         };
 
-        return std::format("{}: {} of {} registers live{}\n\n  held  frame, "
+        return std::format("{}: {} of {} registers live{}\n\n{}  frame, "
                            "registers (allocated at)",
-                           heading_, live_count(), register_total_, named_note);
+                           heading_, live_count(), register_total_, named_note,
+                           right_aligned(held_heading, held_width));
     }
 
     [[nodiscard]] auto live_count() const -> size_t {
@@ -456,11 +476,25 @@ class register_use_report final {
 
         return name + std::string(width - name.size(), ' ');
     }
+
+    // 'std::format' takes a dynamic width of 'int' but not of 'size_t'
+    [[nodiscard]] static auto right_aligned(const std::string_view text,
+                                            const size_t width) -> std::string {
+
+        const size_t padding{width > text.size() ? width - text.size() : 0};
+        return std::string(padding, ' ') + std::string{text};
+    }
+
+    [[nodiscard]] static auto right_aligned(const size_t number,
+                                            const size_t width) -> std::string {
+
+        return right_aligned(std::format("{}", number), width);
+    }
 };
 
 class machine {
     std::reference_wrapper<std::ostream> os_;
-    std::string_view source_;
+    source_locations locations_;
     assembler::jump_mode jump_mode_;
     const type* type_i64_{};
     const type* type_i32_{};
@@ -477,7 +511,7 @@ class machine {
     // 'source' locates the tokens of comments, backend tests may leave it empty
     machine(std::ostream& os, const std::string_view source,
             const assembler::jump_mode jumps)
-        : os_{os}, source_{source}, jump_mode_{jumps} {}
+        : os_{os}, locations_{source}, jump_mode_{jumps} {}
 
     machine(const machine&) = delete;
     machine(machine&&) = delete;
@@ -796,8 +830,7 @@ class machine {
 
     virtual auto emit_repeated_data(const size_t element_size_bytes,
                                     const size_t count,
-                                    const data_initializer& value) const
-        -> void = 0;
+                                    const data_initializer& value) -> void = 0;
 
     // leaves the code section current
     virtual auto
@@ -806,7 +839,7 @@ class machine {
 
     virtual auto emit_string_data(const std::string_view value) -> void = 0;
 
-    virtual auto emit_zero_data(const size_t size_bytes) const -> void = 0;
+    virtual auto emit_zero_data(const size_t size_bytes) -> void = 0;
 
     virtual auto end_main() -> void = 0;
 
@@ -958,46 +991,16 @@ class machine {
         target_assembler().begin_body(std::move(function), std::move(label));
     }
 
-    // e.g. 'top called at 36:33'
-    [[nodiscard]] auto called_at(const register_trace::frame& frame) const
-        -> std::string {
-
-        return std::format("{} called at {}", frame.name,
-                           location_text(frame.call_site_tk));
-    }
-
-    // the most registers one call of each callee holds itself
-    [[nodiscard]] auto callee_lines() const -> std::vector<std::string> {
-        std::vector<std::string> lines{
-            "",
-            "per callee, the most registers one call holds itself",
-            "",
-            "  own  calls  callee",
-        };
-
-        for (const auto& [name, use] : descending(
-                 trace_.callees(), &register_trace::callee_use::own_peak)) {
-
-            lines.push_back(
-                std::format("{:>5}{:>7}  {}", use.own_peak, use.calls, name));
-        }
-
-        return lines;
-    }
-
     // synthetic tokens and standalone backend calls have no source location
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void {
 
-        if (src_loc_tk.at_line() == 0 or source_.empty()) {
+        if (src_loc_tk.at_line() == 0 or locations_.source().empty()) {
             target_assembler().comment(indent, text);
             return;
         }
 
-        const auto [line, column]{
-            line_and_col_num_for_char_index(src_loc_tk.at_line(),
-                                            src_loc_tk.start_index(), source_),
-        };
+        const auto [line, column]{locations_.line_and_column(src_loc_tk)};
 
         target_assembler().comment(indent, line, column, text);
     }
@@ -1057,35 +1060,6 @@ class machine {
 
     auto end_noinline_body() -> void { target_assembler().end_body(); }
 
-    // the frames without registers: the first is the function being compiled,
-    // the others are the calls inlined in it
-    [[nodiscard]] auto
-    frame_uses(const std::vector<register_trace::frame>& frames) const
-        -> std::vector<register_use_report::frame_use> {
-
-        if (frames.empty()) {
-            return {
-                {
-                    .callee{"code"},
-                    .label{"code"},
-                    .registers{},
-                },
-            };
-        }
-
-        std::vector<register_use_report::frame_use> uses;
-
-        for (const auto [index, frame] : std::views::enumerate(frames)) {
-            uses.push_back({
-                .callee{frame.name},
-                .label{index == 0 ? frame.name : called_at(frame)},
-                .registers{},
-            });
-        }
-
-        return uses;
-    }
-
     auto free_named_registers(const token& src_loc_tk, const size_t indent,
                               const std::span<const operand> registers)
         -> void {
@@ -1099,53 +1073,19 @@ class machine {
                                 const std::span<const operand> registers)
         -> void {
 
-        for (const operand& r : registers | std::views::reverse) {
-            free_scratch_register(src_loc_tk, indent, r);
+        for (const operand& reg : registers | std::views::reverse) {
+            free_scratch_register(src_loc_tk, indent, reg);
         }
     }
 
     [[nodiscard]] auto location_text(const token& src_loc_tk) const
         -> std::string {
 
-        if (src_loc_tk.at_line() == 0 or source_.empty()) {
+        if (src_loc_tk.at_line() == 0 or locations_.source().empty()) {
             return "-";
         }
 
-        const auto [line, column]{
-            line_and_col_num_for_char_index(src_loc_tk.at_line(),
-                                            src_loc_tk.start_index(), source_),
-        };
-
-        return std::format("{}:{}", line, column);
-    }
-
-    // what each frame of 'frames' holds of the 'allocations'
-    [[nodiscard]] auto make_register_report(
-        const std::string_view heading,
-        const std::span<const register_pool::allocation> allocations,
-        const std::vector<register_trace::frame>& frames) const
-        -> register_use_report {
-
-        std::vector<register_use_report::frame_use> uses{frame_uses(frames)};
-        size_t named{};
-
-        for (const register_pool::allocation& allocated : allocations) {
-            if (not register_trace::is_listed(allocated)) {
-                continue;
-            }
-
-            const size_t frame{std::min(allocated.frame, uses.size() - 1)};
-            // note: -1 is the index of the last frame
-
-            uses.at(frame).registers.push_back(register_text(allocated));
-
-            if (allocated.named) {
-                ++named;
-            }
-        }
-
-        return {std::string{heading}, scratch_register_total(), named,
-                std::move(uses)};
+        return locations_.human_readable(src_loc_tk);
     }
 
     // like 'discard_output', returns the size of the code 'emit' made, in the
@@ -1169,33 +1109,6 @@ class machine {
         return size;
     }
 
-    // the registers that the calls of each function with a body of its own save
-    [[nodiscard]] auto noinline_call_lines() const -> std::vector<std::string> {
-        if (trace_.noinline_uses().empty()) {
-            return {};
-        }
-
-        std::vector<std::string> lines{
-            "",
-            "calls of functions with a body of their own save the registers "
-            "held at the call",
-            "",
-            "  saved  calls  callee, most saved at",
-        };
-
-        for (const auto& [label, use] :
-             descending(trace_.noinline_uses(),
-                        &register_trace::noinline_use::saved_peak)) {
-
-            lines.push_back(std::format("{:>7}{:>7}  {} {}", use.saved_peak,
-                                        use.calls,
-                                        without_prefix(label, "func."),
-                                        location_text(use.peak_site_tk)));
-        }
-
-        return lines;
-    }
-
     // a call of the function with the body 'label' saves the registers 'saved'
     auto record_noinline_call(const token& call_site_tk,
                               const std::string_view label, const size_t saved)
@@ -1209,79 +1122,11 @@ class machine {
     [[nodiscard]] auto register_error(const token& src_loc_tk,
                                       std::string message,
                                       const register_pool& pool) const
-        -> compiler_exception {
-
-        compiler_exception error{src_loc_tk, std::move(message)};
-
-        // the lines of the message of an error are not longer than this
-        constexpr size_t max_detail_width{80};
-
-        const std::string text{
-            make_register_report("register use at the failure",
-                                 pool.allocations(), trace_.frames())
-                .text(),
-        };
-
-        for (const std::string& line : split_lines(text)) {
-            for (const std::string& part : wrapped(line, max_detail_width)) {
-                error.detail += error.detail.empty() ? "" : "\n";
-                error.detail += part;
-            }
-        }
-
-        return error;
-    }
-
-    [[nodiscard]] auto register_peak_lines() const -> std::vector<std::string> {
-        if (not trace_.is_enabled()) {
-            return {};
-        }
-
-        const register_trace::peak_use& peak{trace_.peak()};
-
-        const std::string text{
-            make_register_report("register use at the peak", peak.allocations,
-                                 peak.frames)
-                .text(),
-        };
-
-        std::vector<std::string> lines{split_lines(text)};
-
-        append_lines(lines, peak_note_lines(peak.frames));
-        append_lines(lines, callee_lines());
-        append_lines(lines, noinline_call_lines());
-
-        return lines;
-    }
+        -> compiler_exception;
 
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none
-    [[nodiscard]] auto register_peak_report() const
-        -> std::vector<std::string> {
-
-        // room for the comment marker and a space of the assembly output
-        constexpr size_t max_line_width{78};
-
-        std::vector<std::string> lines;
-
-        for (const std::string& line : register_peak_lines()) {
-            for (std::string& part : wrapped(line, max_line_width)) {
-                lines.push_back(std::move(part));
-            }
-        }
-
-        return lines;
-    }
-
-    // e.g. 'r15 153:13' or 'rax 153:31 (named)'
-    [[nodiscard]] auto
-    register_text(const register_pool::allocation& allocated) const
-        -> std::string {
-
-        return std::format("{} {}{}", register_display_name(allocated.index),
-                           location_text(allocated.src_loc_tk),
-                           allocated.named ? " (named)" : "");
-    }
+    [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
 
     // a blank line that separates the code from the report
     auto separate_report() -> void {
@@ -1318,32 +1163,6 @@ class machine {
     //
     // statics
     //
-
-    static auto append_lines(std::vector<std::string>& lines,
-                             const std::vector<std::string>& more) -> void {
-
-        lines.insert(lines.end(), more.begin(), more.end());
-    }
-
-    // the entries ordered by the member 'peak', the highest first
-    template <typename use_t>
-    [[nodiscard]] static auto
-    descending(const std::map<std::string, use_t>& entries,
-               size_t use_t::* const peak)
-        -> std::vector<std::pair<std::string, use_t>> {
-
-        std::vector<std::pair<std::string, use_t>> ordered{
-            entries.begin(),
-            entries.end(),
-        };
-
-        std::ranges::stable_sort(
-            ordered, [peak](const auto& lhs, const auto& rhs) -> bool {
-                return lhs.second.*peak > rhs.second.*peak;
-            });
-
-        return ordered;
-    }
 
     // the operator that gives the same result with the operands swapped
     [[nodiscard]] static auto mirrored(const comparison_operator op)
@@ -1395,22 +1214,6 @@ class machine {
         assert(op == comparison_operator::greater_equal);
 
         return comparison_operator::less;
-    }
-
-    // what to know when the peak is in a function with a body of its own
-    [[nodiscard]] static auto
-    peak_note_lines(const std::vector<register_trace::frame>& frames)
-        -> std::vector<std::string> {
-
-        if (frames.empty() or not frames.front().is_noinline_body) {
-            return {};
-        }
-
-        return {
-            "",
-            "the peak is in a function with a body of its own, compiled with "
-            "all registers free, its callers are not on this stack",
-        };
     }
 
     // the operator as written in the source, 'assign' as the '=' of a copy
@@ -1496,66 +1299,15 @@ class machine {
         return ">=";
     }
 
-    [[nodiscard]] static auto split_lines(const std::string_view text)
-        -> std::vector<std::string> {
-
-        std::vector<std::string> lines;
-
-        for (const auto line : std::views::split(text, '\n')) {
-            lines.emplace_back(std::string_view{line});
-        }
-
-        return lines;
-    }
-
-    [[nodiscard]] static auto without_prefix(const std::string_view text,
-                                             const std::string_view prefix)
-        -> std::string_view {
-
-        return text.starts_with(prefix) ? text.substr(prefix.size()) : text;
-    }
-
-    // breaks a line that is too long at spaces, the parts keep its indentation
-    [[nodiscard]] static auto wrapped(const std::string& line,
-                                      const size_t width)
-        -> std::vector<std::string> {
-
-        std::vector<std::string> parts;
-
-        const std::string indentation(
-            std::min(line.find_first_not_of(' '), line.size()), ' ');
-
-        std::string rest{line};
-
-        while (rest.size() > width) {
-            const size_t space{rest.rfind(' ', width)};
-
-            // note: a word longer than the width is left as it is
-            if (space == std::string::npos or space <= indentation.size()) {
-                break;
-            }
-
-            parts.push_back(rest.substr(0, space));
-
-            std::string next{indentation};
-            next += rest.substr(space + 1);
-            // note: +1 because the space that the line broke at is dropped
-
-            rest = std::move(next);
-        }
-
-        parts.push_back(std::move(rest));
-
-        return parts;
-    }
-
   protected:
     //
     // virtual methods
     //
 
     // the assembler the target writes its output with
-    [[nodiscard]] virtual auto target_assembler() const -> assembler& = 0;
+    [[nodiscard]] virtual auto target_assembler() -> assembler& = 0;
+
+    [[nodiscard]] virtual auto target_assembler() const -> const assembler& = 0;
 
     //
     // class methods
@@ -1629,7 +1381,9 @@ class machine {
             std::max(usage_max_scratch_regs_, pool.scratch_count());
     }
 
-    [[nodiscard]] auto source() const -> std::string_view { return source_; }
+    [[nodiscard]] auto source() const -> std::string_view {
+        return locations_.source();
+    }
 
     // resolved and optimized jumps need every line before writing
     auto start_output() -> void {
@@ -1756,3 +1510,320 @@ class machine {
         };
     }
 };
+
+// the texts of the report of the use of registers, from what the trace of a
+// machine recorded and how the machine names its registers
+class register_reporter final {
+    std::reference_wrapper<const machine> machine_;
+    std::reference_wrapper<const register_trace> trace_;
+
+  public:
+    register_reporter(const machine& backend, const register_trace& trace)
+        : machine_{backend}, trace_{trace} {}
+
+    // an error that the registers ran out or are held by a value, with how the
+    // registers are used by each frame and what a 'noinline' frame would give
+    [[nodiscard]] auto make_error(const token& src_loc_tk, std::string message,
+                                  const register_pool& pool) const
+        -> compiler_exception {
+
+        compiler_exception error{src_loc_tk, std::move(message)};
+
+        // the lines of the message of an error are not longer than this
+        constexpr size_t max_detail_width{80};
+
+        const std::string text{
+            make_register_report("register use at the failure",
+                                 pool.allocations(), trace_.get().frames())
+                .text(),
+        };
+
+        for (const std::string& line : split_lines(text)) {
+            for (const std::string& part : wrapped(line, max_detail_width)) {
+                error.detail += error.detail.empty() ? "" : "\n";
+                error.detail += part;
+            }
+        }
+
+        return error;
+    }
+
+    // the use of registers at the busiest point of the build, as lines after
+    // the code when asked for, else none
+    [[nodiscard]] auto peak_report() const -> std::vector<std::string> {
+
+        // room for the comment marker and a space of the assembly output
+        constexpr size_t max_line_width{78};
+
+        std::vector<std::string> lines;
+
+        for (const std::string& line : register_peak_lines()) {
+            for (std::string& part : wrapped(line, max_line_width)) {
+                lines.push_back(std::move(part));
+            }
+        }
+
+        return lines;
+    }
+
+  private:
+    // e.g. 'top called at 36:33'
+    [[nodiscard]] auto called_at(const register_trace::frame& frame) const
+        -> std::string {
+
+        return std::format("{} called at {}", frame.name,
+                           machine_.get().location_text(frame.call_site_tk));
+    }
+
+    // the most registers one call of each callee holds itself
+    [[nodiscard]] auto callee_lines() const -> std::vector<std::string> {
+        std::vector<std::string> lines{
+            "",
+            "per callee, the most registers one call holds itself",
+            "",
+            "  own  calls  callee",
+        };
+
+        for (const auto& [name, use] :
+             descending(trace_.get().callees(),
+                        &register_trace::callee_use::own_peak)) {
+
+            lines.push_back(
+                std::format("{:>5}{:>7}  {}", use.own_peak, use.calls, name));
+        }
+
+        return lines;
+    }
+
+    // the frames without registers: the first is the function being compiled,
+    // the others are the calls inlined in it
+    [[nodiscard]] auto
+    frame_uses(const std::vector<register_trace::frame>& frames) const
+        -> std::vector<register_use_report::frame_use> {
+
+        if (frames.empty()) {
+            return {
+                {
+                    .callee{"code"},
+                    .label{"code"},
+                    .registers{},
+                },
+            };
+        }
+
+        std::vector<register_use_report::frame_use> uses;
+
+        for (const auto [index, frame] : std::views::enumerate(frames)) {
+            uses.push_back({
+                .callee{frame.name},
+                .label{index == 0 ? frame.name : called_at(frame)},
+                .registers{},
+            });
+        }
+
+        return uses;
+    }
+
+    // what each frame of 'frames' holds of the 'allocations'
+    [[nodiscard]] auto make_register_report(
+        const std::string_view heading,
+        const std::span<const register_pool::allocation> allocations,
+        const std::vector<register_trace::frame>& frames) const
+        -> register_use_report {
+
+        std::vector<register_use_report::frame_use> uses{frame_uses(frames)};
+        size_t named{};
+
+        for (const register_pool::allocation& allocated : allocations) {
+            if (not register_trace::is_listed(allocated)) {
+                continue;
+            }
+
+            const size_t frame{std::min(allocated.frame, uses.size() - 1)};
+            // note: -1 is the index of the last frame
+
+            uses.at(frame).registers.push_back(register_text(allocated));
+
+            if (allocated.named) {
+                ++named;
+            }
+        }
+
+        return {std::string{heading}, machine_.get().scratch_register_total(),
+                named, std::move(uses)};
+    }
+
+    // the registers that the calls of each function with a body of its own save
+    [[nodiscard]] auto noinline_call_lines() const -> std::vector<std::string> {
+        if (trace_.get().noinline_uses().empty()) {
+            return {};
+        }
+
+        std::vector<std::string> lines{
+            "",
+            "calls of functions with a body of their own save the registers "
+            "held at the call",
+            "",
+            "  saved  calls  callee, most saved at",
+        };
+
+        for (const auto& [label, use] :
+             descending(trace_.get().noinline_uses(),
+                        &register_trace::noinline_use::saved_peak)) {
+
+            lines.push_back(
+                std::format("{:>7}{:>7}  {} {}", use.saved_peak, use.calls,
+                            without_prefix(label, "func."),
+                            machine_.get().location_text(use.peak_site_tk)));
+        }
+
+        return lines;
+    }
+
+    [[nodiscard]] auto register_peak_lines() const -> std::vector<std::string> {
+        if (not trace_.get().is_enabled()) {
+            return {};
+        }
+
+        const register_trace::peak_use& peak{trace_.get().peak()};
+
+        const std::string text{
+            make_register_report("register use at the peak", peak.allocations,
+                                 peak.frames)
+                .text(),
+        };
+
+        std::vector<std::string> lines{split_lines(text)};
+
+        append_lines(lines, peak_note_lines(peak.frames));
+        append_lines(lines, callee_lines());
+        append_lines(lines, noinline_call_lines());
+
+        return lines;
+    }
+
+    // e.g. 'r15 153:13' or 'rax 153:31 (named)'
+    [[nodiscard]] auto
+    register_text(const register_pool::allocation& allocated) const
+        -> std::string {
+
+        return std::format(
+            "{} {}{}", machine_.get().register_display_name(allocated.index),
+            machine_.get().location_text(allocated.src_loc_tk),
+            allocated.named ? " (named)" : "");
+    }
+
+    //
+    // statics
+    //
+
+    static auto append_lines(std::vector<std::string>& lines,
+                             const std::vector<std::string>& more) -> void {
+
+        lines.insert(lines.end(), more.begin(), more.end());
+    }
+
+    // the entries ordered by the member 'peak', the highest first
+    template <typename use_t>
+    [[nodiscard]] static auto
+    descending(const std::map<std::string, use_t>& entries,
+               size_t use_t::* const peak)
+        -> std::vector<std::pair<std::string, use_t>> {
+
+        std::vector<std::pair<std::string, use_t>> ordered{
+            entries.begin(),
+            entries.end(),
+        };
+
+        std::ranges::stable_sort(
+            ordered, [peak](const auto& lhs, const auto& rhs) -> bool {
+                return lhs.second.*peak > rhs.second.*peak;
+            });
+
+        return ordered;
+    }
+
+    // what to know when the peak is in a function with a body of its own
+    [[nodiscard]] static auto
+    peak_note_lines(const std::vector<register_trace::frame>& frames)
+        -> std::vector<std::string> {
+
+        if (frames.empty() or not frames.front().is_noinline_body) {
+            return {};
+        }
+
+        return {
+            "",
+            "the peak is in a function with a body of its own, compiled with "
+            "all registers free, its callers are not on this stack",
+        };
+    }
+
+    [[nodiscard]] static auto split_lines(const std::string_view text)
+        -> std::vector<std::string> {
+
+        std::vector<std::string> lines;
+
+        for (const auto line : std::views::split(text, '\n')) {
+            lines.emplace_back(std::string_view{line});
+        }
+
+        return lines;
+    }
+
+    [[nodiscard]] static auto without_prefix(const std::string_view text,
+                                             const std::string_view prefix)
+        -> std::string_view {
+
+        return text.starts_with(prefix) ? text.substr(prefix.size()) : text;
+    }
+
+    // breaks a line that is too long at spaces, the parts keep its indentation
+    [[nodiscard]] static auto wrapped(const std::string& line,
+                                      const size_t width)
+        -> std::vector<std::string> {
+
+        std::vector<std::string> parts;
+
+        const std::string indentation(
+            std::min(line.find_first_not_of(' '), line.size()), ' ');
+
+        std::string rest{line};
+
+        while (rest.size() > width) {
+            const size_t space{rest.rfind(' ', width)};
+
+            // note: a word longer than the width is left as it is
+            if (space == std::string::npos or space <= indentation.size()) {
+                break;
+            }
+
+            parts.push_back(rest.substr(0, space));
+
+            std::string next{indentation};
+            next += rest.substr(space + 1);
+            // note: +1 because the space that the line broke at is dropped
+
+            rest = std::move(next);
+        }
+
+        parts.push_back(std::move(rest));
+
+        return parts;
+    }
+};
+
+// declared in 'machine'
+inline auto machine::register_error(const token& src_loc_tk,
+                                    std::string message,
+                                    const register_pool& pool) const
+    -> compiler_exception {
+
+    return register_reporter{*this, trace_}.make_error(
+        src_loc_tk, std::move(message), pool);
+}
+
+// declared in 'machine'
+inline auto machine::register_peak_report() const -> std::vector<std::string> {
+    return register_reporter{*this, trace_}.peak_report();
+}

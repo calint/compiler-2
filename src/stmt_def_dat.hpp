@@ -583,7 +583,7 @@ class stmt_def_dat final : public statement {
                 std::format("expected a constant for '{}'", tp.name())};
         }
 
-        if (&tp == &tc.get_type_bool()) {
+        if (tp.is_same(tc.get_type_bool())) {
             el.value = parse_bool_value(el.src_loc_tk, tp);
             return el;
         }

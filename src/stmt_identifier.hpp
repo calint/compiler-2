@@ -195,8 +195,8 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw_narrowed(first_token(), trimmed_source(*this), src_type,
-                       dst_type);
+        throw_narrowed(first_token(), statement::trimmed_source(*this),
+                       src_type, dst_type);
     }
 
     auto
@@ -417,7 +417,7 @@ class stmt_identifier final : public statement {
         throw compiler_exception{
             first_token(),
             std::format("constant '{}' does not fit '{}', use '{}(...)'",
-                        trimmed_source(*this), dst_type.name(),
+                        statement::trimmed_source(*this), dst_type.name(),
                         dst_type.name())};
     }
 

@@ -1718,42 +1718,6 @@ class ident_resolver final {
     }
 };
 
-// where a token is in the source, as text
-class source_locations final {
-    std::string_view source_;
-
-  public:
-    explicit source_locations(const std::string_view source)
-        : source_{source} {}
-
-    [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
-
-        return text(src_loc_tk, '.');
-    }
-
-    // human-readable source location
-    [[nodiscard]] auto human_readable(const token& src_loc_tk) const
-        -> std::string {
-
-        return text(src_loc_tk, ':');
-    }
-
-    [[nodiscard]] auto source() const -> std::string_view { return source_; }
-
-  private:
-    // 'line' and 'column' of the token, 'separator' between them
-    [[nodiscard]] auto text(const token& src_loc_tk, const char separator) const
-        -> std::string {
-
-        const auto [line, col]{
-            line_and_col_num_for_char_index(src_loc_tk.at_line(),
-                                            src_loc_tk.start_index(), source_),
-        };
-
-        return std::format("{}{}{}", line, separator, col);
-    }
-};
-
 // the errors of a name that is defined twice or that hides another
 class definition_checks final {
     std::reference_wrapper<const scope_stack> scopes_;
@@ -1992,7 +1956,7 @@ class toc final {
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
-                   const std::string_view name, const int64_t value) {
+                   const std::string_view name, const int64_t value) -> void {
 
         definitions_.assert_const_not_defined(src_loc_tk, name);
 
@@ -2163,8 +2127,8 @@ class toc final {
         const std::string src_loc{source_location_for_use_in_label(src_loc_tk)};
 
         return std::format("{}.{}{}", prefix, src_loc,
-                           (call_path.empty() ? std::string{}
-                                              : std::format(".{}", call_path)));
+                           call_path.empty() ? std::string{}
+                                             : std::format(".{}", call_path));
     }
 
     auto enter_block() -> void { scopes_.enter_block(); }
@@ -2518,7 +2482,8 @@ class toc final {
     }
 
     // like 'check_only', returns the size of the code, in the unit of the
-    // target
+    // target; an error is not caught here, it ends the compilation, so the
+    // state saved below is not restored
     [[nodiscard]] auto measure_only(const std::function_ref<void()> compile)
         -> size_t {
 
@@ -2585,13 +2550,6 @@ class toc final {
         -> std::string {
 
         return locations_.for_label(src_loc_tk);
-    }
-
-    // human-readable source location
-    [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
-        -> std::string {
-
-        return locations_.human_readable(src_loc_tk);
     }
 
     [[nodiscard]] auto types() -> type_table& { return types_; }

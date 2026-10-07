@@ -586,7 +586,7 @@ class expr_bool_op final : public statement {
         throw compiler_exception{
             rhs.tok(),
             std::format("constant '{}' does not fit '{}' of type '{}'", value,
-                        trimmed_source(lhs), lhs_type.name())};
+                        statement::trimmed_source(lhs), lhs_type.name())};
     }
 
     // the bytes that both sides hold, they hold the same type and, as arrays,
@@ -904,11 +904,11 @@ class expr_bool_op final : public statement {
             rhs.tok(),
             std::format("'{}' of type '{}' is wider than '{}' of type '{}', "
                         "swap the operands: '{} {} {}'",
-                        trimmed_source(rhs), rhs_type.name(),
-                        trimmed_source(lhs), lhs_type.name(),
-                        trimmed_source(rhs),
+                        statement::trimmed_source(rhs), rhs_type.name(),
+                        statement::trimmed_source(lhs), lhs_type.name(),
+                        statement::trimmed_source(rhs),
                         machine::source_text(machine::mirrored(op)),
-                        trimmed_source(lhs))};
+                        statement::trimmed_source(lhs))};
     }
 
     // the value compared with 0, matching types avoid narrowing before the

@@ -324,7 +324,7 @@ class machine_rv32i : public machine {
     // empty when no binary image is written
     std::string binary_file_name_;
     // buffering output is no more logical state than writing to the stream
-    mutable assembler_rv32i assembler_;
+    assembler_rv32i assembler_;
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     bool multiply_helper_used_{};
@@ -337,7 +337,12 @@ class machine_rv32i : public machine {
     // overridden methods
     //
 
-    [[nodiscard]] auto target_assembler() const -> ::assembler& override {
+    [[nodiscard]] auto target_assembler() -> ::assembler& override {
+        return assembler_;
+    }
+
+    [[nodiscard]] auto target_assembler() const -> const ::assembler& override {
+
         return assembler_;
     }
 
@@ -368,7 +373,9 @@ class machine_rv32i : public machine {
     // class methods
     //
 
-    [[nodiscard]] auto assembler() const -> assembler_rv32i& {
+    [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
+
+    [[nodiscard]] auto assembler() const -> const assembler_rv32i& {
         return assembler_;
     }
 
@@ -1108,8 +1115,7 @@ class machine_rv32i : public machine {
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
-                            const data_initializer& value) const
-        -> void override {
+                            const data_initializer& value) -> void override {
 
         // 'validate_data_element_size' rejects other sizes
         assert(element_size_bytes == 1 or element_size_bytes == 2 or
@@ -1138,7 +1144,7 @@ class machine_rv32i : public machine {
         assembler_.ascii(token::decode_string(value));
     }
 
-    auto emit_zero_data(const size_t size_bytes) const -> void override {
+    auto emit_zero_data(const size_t size_bytes) -> void override {
         assembler_.zero(size_bytes);
     }
 
@@ -2590,7 +2596,7 @@ class machine_rv32i : public machine {
                          base.base_register());
     }
 
-    auto emit_arithmetic_helpers() const -> void {
+    auto emit_arithmetic_helpers() -> void {
         // unused helpers contribute no code
         if (multiply_helper_used_) {
             assembler_.label(0, ".Lbaz_multiply");
@@ -3447,7 +3453,7 @@ class machine_rv32i : public machine {
 
     auto restore_saved_registers(const size_t indent,
                                  const std::span<const std::string_view> saved,
-                                 const size_t stack_bytes) const -> void {
+                                 const size_t stack_bytes) -> void {
 
         for (const auto [index, name] : std::views::enumerate(saved)) {
             assembler_.lw(indent, name,
@@ -3463,7 +3469,7 @@ class machine_rv32i : public machine {
     // an aligned stack area is allocated only when a register is saved, the
     // returned size lets 'restore_saved_registers' free it
     auto save_registers(const size_t indent,
-                        const std::span<const std::string_view> saved) const
+                        const std::span<const std::string_view> saved)
         -> size_t {
 
         const size_t stack_bytes{
@@ -3677,7 +3683,7 @@ class machine_rv32i : public machine {
 
     auto store_operation_result(const size_t indent, const operand& destination,
                                 const operand& address, const operand& value,
-                                const bool normalize) const -> void {
+                                const bool normalize) -> void {
 
         const size_t width{destination.type_ref().size_bytes()};
 

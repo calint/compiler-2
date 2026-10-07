@@ -22176,3 +22176,122 @@ vars.end:
 #              dat var padding: 5 B
 #                max vars size: 308 B
 #                 instructions: 6344
+#
+# register use at the peak: 14 of 30 registers live, 3 named by instructions
+#
+#   held  frame, registers (allocated at)
+#      2  main
+#           t0 1089:24
+#           t1 1089:29
+#      3  entity.print_messages called at 1089:29
+#           t2 377:9
+#           t3 377:30
+#           t4 377:5
+#      1  message.print called at 378:11
+#           t5 365:20
+#      0  name.print called at 365:36
+#      2  printer.print called at 88:9
+#           t6 66:10
+#           s1 66:10
+#      6  printer.print_at called at 66:10
+#           a0 62:5 (named)
+#           a1 62:5 (named)
+#           a2 62:5 (named)
+#           s2 62:24
+#           s3 62:24
+#           s4 62:24
+#
+# these frames are not noinline, making one noinline starts its body with all 30
+# registers free and saves the registers held above it around the call:
+#
+#   candidate frame        held inside  saved at the call
+#   entity.print_messages           12                  2
+#   message.print                    9                  5
+#   name.print                       8                  6
+#   printer.print                    8                  6
+#   printer.print_at                 6                  8
+#
+# per callee, the most registers one call holds itself
+#
+#   own  calls  callee
+#     9      1  entity.find_object (noinline body)
+#     8      2  link_names.index_of
+#     7      1  action_give
+#     7      1  action_go
+#     7      6  notify_room
+#     6      1  action_inventory
+#     6     11  id_list.delete_index
+#     6     21  messages.add
+#     6    247  printer.print_at
+#     6      3  room.print
+#     6     10  str.append<name>
+#     6     10  tokenizer.is<name>
+#     6     14  tokenizer.is_array
+#     6      1  tokenizer.set_line
+#     6      7  tokenizer.token<name>
+#     6      8  tokenizer.token<str>
+#     5      1  entities.add
+#     5      5  id_list.index_of
+#     5      1  input_escape_action
+#     5      2  link_names.find_or_add
+#     5      3  links.index_of_link_to
+#     5      1  objects.add
+#     5      4  str.add
+#     5      1  str.input
+#     4      1  action_drop
+#     4      1  action_tell
+#     4      1  entities.index_of_name<tokenizer>
+#     4     15  id_list.push
+#     4      6  links.add
+#     4      1  main
+#     4      1  run_creation_script
+#     4      1  str.insert_at
+#     4      2  str.remove_at
+#     3      1  action_new_entity
+#     3      1  action_new_object
+#     3      1  action_new_room
+#     3      1  action_say
+#     3      1  action_set_room_description
+#     3      1  action_set_room_name
+#     3      1  action_set_room_note
+#     3      9  entity.print
+#     3      3  entity.print_messages
+#     3      3  id_list.delete_item
+#     3     25  id_list.reserve
+#     3     10  links.reserve
+#     3      3  message.print
+#     3     35  messages.reserve
+#     3     42  name.print
+#     3    202  printer.print
+#     3     13  str.print
+#     3     53  tokenizer.len
+#     3     11  tokenizer.next
+#     3     15  tokenizer.skip_whitespace
+#     2      1  entities.reserve
+#     2      2  link_names.reserve
+#     2      1  objects.reserve
+#     2      1  parse_input (noinline body)
+#     2      2  printer.set_silenced
+#     2      1  rooms.reserve
+#     2      3  str.redraw_from
+#     2      3  tokenizer.next_name_or_say
+#     1      1  assert
+#     1      7  joiner.next
+#     1     21  messages.is_full
+#     1     12  tokenizer.is_empty
+#     1      5  tokenizer.print
+#     1      4  tokenizer.to_end
+#     0      1  action_help
+#     0      2  find_link_name_or_make
+#     0    100  printer.print_all
+#     0     24  printer.println
+#     0      1  tokenizer.input
+#     0     10  tokenizer.next_or_say
+#     0      2  tokenizer.reset
+#
+# calls of functions with a body of their own save the registers held at the
+# call
+#
+#   saved  calls  callee, most saved at
+#       3      2  entity.find_object 833:40
+#       2      2  parse_input 1063:13

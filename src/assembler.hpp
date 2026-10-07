@@ -512,6 +512,7 @@ class assembler {
         }
 
         return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
+        // note: +1 because the end position is inclusive
     }
 
   private:

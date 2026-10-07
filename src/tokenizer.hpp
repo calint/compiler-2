@@ -163,25 +163,7 @@ class tokenizer final {
 
     // skips an argument of a call, up to the ',' or ')' that ends it
     // e.g. 'a + f(b, c), d)' stops at the ',' before 'd'
-    auto skip_argument() -> void {
-        size_t depth{};
-
-        while (not is_eos()) {
-            const char next{peek_char_after_whitespace()};
-
-            if (depth == 0 and (next == ',' or next == ')')) {
-                return;
-            }
-
-            if (next == '(' or next == '[' or next == '{') {
-                ++depth;
-            } else if (next == ')' or next == ']' or next == '}') {
-                --depth;
-            }
-
-            skip_token();
-        }
-    }
+    auto skip_argument() -> void { skip_to_unnested(",)"); }
 
     // skips up to and including the '}' that closes the next '{', strings and
     // character literals may contain braces
@@ -235,22 +217,9 @@ class tokenizer final {
     // skips up to and including the ')' that closes a '(' that is already read
     // e.g. 'b, f(c)) + d', the ')' before ' + d'
     auto skip_to_close_paren() -> void {
-        size_t depth{};
+        skip_to_unnested(")");
 
-        while (not is_eos()) {
-            const char next{peek_char_after_whitespace()};
-
-            if (next == ')' and depth == 0) {
-                skip_token();
-                return;
-            }
-
-            if (next == '(' or next == '[' or next == '{') {
-                ++depth;
-            } else if (next == ')' or next == ']' or next == '}') {
-                --depth;
-            }
-
+        if (not is_eos()) {
             skip_token();
         }
     }
@@ -435,6 +404,28 @@ class tokenizer final {
     auto skip_to_end_of_line() -> void {
         const size_t newline{src_.find('\n', char_ix_)};
         char_ix_ = newline == std::string_view::npos ? src_.size() : newline;
+    }
+
+    // skips tokens up to a character of 'stops' that is outside of brackets
+    // opened by the skipped tokens, the character is not read
+    auto skip_to_unnested(const std::string_view stops) -> void {
+        size_t depth{};
+
+        while (not is_eos()) {
+            const char next{peek_char_after_whitespace()};
+
+            if (depth == 0 and stops.contains(next)) {
+                return;
+            }
+
+            if (next == '(' or next == '[' or next == '{') {
+                ++depth;
+            } else if (next == ')' or next == ']' or next == '}') {
+                --depth;
+            }
+
+            skip_token();
+        }
     }
 
     // skips a token, or the character of a delimiter, which has an empty token

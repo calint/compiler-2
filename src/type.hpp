@@ -147,8 +147,8 @@ class type final {
 
         const type* tp{this};
         for (const std::string& field_name : path | std::views::drop(1)) {
-            // note: drop 1 because the first element is retrieved outside the
-            //       loop
+            // note: drop 1 because the first element names the variable of
+            //       this type, not a field
 
             const type_field& tf{tp->field(src_loc_tk, field_name)};
             offset = sum_storage_size(offset, tf.offset);

@@ -755,7 +755,7 @@ auto is_utf8_continuation(const char ch) -> bool {
     constexpr unsigned char first{0x80};
     constexpr unsigned char last{0xBF};
 
-    const auto byte{static_cast<unsigned char>(ch)};
+    const unsigned char byte{static_cast<unsigned char>(ch)};
 
     return byte >= first and byte <= last;
 }

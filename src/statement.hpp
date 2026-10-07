@@ -27,11 +27,8 @@
 class toc;
 class machine;
 
-class statement {
-    token token_;
-    unary_ops uops_;
-    const type* type_{};
-
+// the source text of a statement on one line, for the comments of the output
+class one_line_source final {
     // a part of the source text as it reads, a source comment, or a string or
     // character literal
     enum class piece_kind : uint8_t { code, comment, literal };
@@ -40,6 +37,193 @@ class statement {
         piece_kind kind;
         std::string_view text;
     };
+
+  public:
+    //
+    // statics
+    //
+
+    // one line for an assembler comment: whitespace and source comments
+    // become single spaces, string and character literals are kept as written
+    //   'a  =  b # note'  =>  'a = b'
+    [[nodiscard]] static auto of(const std::string_view text) -> std::string {
+
+        std::string collapsed;
+        collapsed.reserve(text.size());
+
+        bool pending_space{};
+
+        // leading and trailing whitespace is dropped
+        const auto add_pending_space = [&] -> void {
+            if (pending_space and not collapsed.empty()) {
+                collapsed.push_back(' ');
+            }
+
+            pending_space = false;
+        };
+
+        for (const source_piece& piece : split_into_pieces(text)) {
+            if (piece.kind == piece_kind::comment) {
+                pending_space = true;
+                continue;
+            }
+
+            if (piece.kind == piece_kind::literal) {
+                add_pending_space();
+                collapsed += one_line_literal(piece.text);
+                continue;
+            }
+
+            for (const char ch : piece.text) {
+                if (is_ascii_space(ch)) {
+                    pending_space = true;
+                    continue;
+                }
+
+                add_pending_space();
+                collapsed.push_back(ch);
+            }
+        }
+
+        return collapsed;
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // after the line end of the comment starting at 'begin'
+    [[nodiscard]] static auto comment_end(const std::string_view text,
+                                          const size_t begin) -> size_t {
+
+        const size_t newline{text.find('\n', begin)};
+
+        // note: the text ends at a token, a comment before it has its line end
+        assert(newline != std::string_view::npos);
+
+        return newline + 1;
+        // note: +1 because the line end belongs to the comment
+    }
+
+    [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
+        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or
+               ch == '\f' or ch == '\v';
+    }
+
+    // after the closing quote of the literal starting at 'begin', an escaped
+    // character cannot close it
+    [[nodiscard]] static auto literal_end(const std::string_view text,
+                                          const size_t begin) -> size_t {
+
+        const char quote{text.at(begin)};
+        bool escaped{};
+
+        for (size_t index{begin + 1}; index < text.size(); ++index) {
+            // note: +1 because the opening quote cannot close the literal
+            const char ch{text.at(index)};
+
+            // dropped, so it does not end an escape
+            if (ch == '\r') {
+                continue;
+            }
+
+            if (not escaped and ch == quote) {
+                return index + 1;
+                // note: +1 because the closing quote belongs to the literal
+            }
+
+            escaped = not escaped and ch == '\\';
+        }
+
+        // note: the tokenizer rejected an unterminated literal
+        std::unreachable();
+    }
+
+    // a backslash before a line end continues the literal on the next line,
+    // the comment stays on one, a carriage return is dropped so that a crlf
+    // continuation looks like a lf one
+    [[nodiscard]] static auto one_line_literal(const std::string_view literal)
+        -> std::string {
+
+        std::string kept;
+        bool escaped{};
+
+        for (const char ch : literal) {
+            if (ch == '\r') {
+                continue;
+            }
+
+            if (escaped and ch == '\n') {
+                kept.pop_back();
+                escaped = false;
+                continue;
+            }
+
+            kept.push_back(ch);
+            escaped = not escaped and ch == '\\';
+        }
+
+        return kept;
+    }
+
+    // a '#' inside a string or character literal does not start a comment and
+    // a quote inside a comment does not start a literal
+    //   'a = "#" # it's'  =>  code 'a = ', literal '"#"', code ' ',
+    //                         comment '# it's'
+    [[nodiscard]] static auto split_into_pieces(const std::string_view text)
+        -> std::vector<source_piece> {
+
+        std::vector<source_piece> pieces;
+        size_t code_begin{};
+        size_t index{};
+
+        while (index < text.size()) {
+            const char ch{text.at(index)};
+
+            if (ch != '#' and ch != '"' and ch != '\'') {
+                ++index;
+                continue;
+            }
+
+            if (index > code_begin) {
+                pieces.push_back({
+                    .kind{piece_kind::code},
+                    .text{text.substr(code_begin, index - code_begin)},
+                });
+            }
+
+            const bool is_comment{ch == '#'};
+
+            const size_t end{
+                is_comment ? comment_end(text, index)
+                           : literal_end(text, index),
+            };
+
+            pieces.push_back({
+                .kind{is_comment ? piece_kind::comment : piece_kind::literal},
+                .text{text.substr(index, end - index)},
+            });
+
+            index = end;
+            code_begin = end;
+        }
+
+        if (code_begin < text.size()) {
+            pieces.push_back({
+                .kind{piece_kind::code},
+                .text{text.substr(code_begin)},
+            });
+        }
+
+        return pieces;
+    }
+};
+
+class statement {
+    token token_;
+    unary_ops uops_;
+    const type* type_{};
 
   public:
     explicit statement(const token tk, unary_ops uops = {})
@@ -276,7 +460,7 @@ class statement {
     [[nodiscard]] static auto trimmed_source(const std::string_view text)
         -> std::string {
 
-        return collapse_whitespace(text);
+        return one_line_source::of(text);
     }
 
     // one-line, whitespace-collapsed rendering of 'st's source, suitable for
@@ -286,7 +470,7 @@ class statement {
 
         std::stringstream ss;
         st.source_to(ss);
-        return collapse_whitespace(ss.view());
+        return one_line_source::of(ss.view());
     }
 
     // same as above, with a "'dst' 'op' " prefix before the rendered source
@@ -298,7 +482,7 @@ class statement {
         std::stringstream ss;
         std::print(ss, "{} {} ", dst, op);
         st.source_to(ss);
-        return collapse_whitespace(ss.view());
+        return one_line_source::of(ss.view());
     }
 
   protected:
@@ -419,7 +603,7 @@ class statement {
                                        size_bytes, array_count)};
         }
 
-        if (&element_type != &string_element_type) {
+        if (not element_type.is_same(string_element_type)) {
             throw compiler_exception{string_tk,
                                      "only arrays of type 'i8' can be "
                                      "initialized with strings"};
@@ -450,182 +634,5 @@ class statement {
 
         throw compiler_exception{
             src_loc_tk, std::format("use of uninitialized variable '{}'", var)};
-    }
-
-  private:
-    //
-    // statics
-    //
-
-    // one line for an assembler comment: whitespace and source comments
-    // become single spaces, string and character literals are kept as written
-    //   'a  =  b # note'  =>  'a = b'
-    [[nodiscard]] static auto collapse_whitespace(const std::string_view text)
-        -> std::string {
-
-        std::string collapsed;
-        collapsed.reserve(text.size());
-
-        bool pending_space{};
-
-        // leading and trailing whitespace is dropped
-        const auto add_pending_space = [&] -> void {
-            if (pending_space and not collapsed.empty()) {
-                collapsed.push_back(' ');
-            }
-
-            pending_space = false;
-        };
-
-        for (const source_piece& piece : split_into_pieces(text)) {
-            if (piece.kind == piece_kind::comment) {
-                pending_space = true;
-                continue;
-            }
-
-            if (piece.kind == piece_kind::literal) {
-                add_pending_space();
-                collapsed += one_line_literal(piece.text);
-                continue;
-            }
-
-            for (const char ch : piece.text) {
-                if (is_ascii_space(ch)) {
-                    pending_space = true;
-                    continue;
-                }
-
-                add_pending_space();
-                collapsed.push_back(ch);
-            }
-        }
-
-        return collapsed;
-    }
-
-    // after the line end of the comment starting at 'begin'
-    [[nodiscard]] static auto comment_end(const std::string_view text,
-                                          const size_t begin) -> size_t {
-
-        const size_t newline{text.find('\n', begin)};
-
-        // note: the text ends at a token, a comment before it has its line end
-        assert(newline != std::string_view::npos);
-
-        return newline + 1;
-        // note: +1 because the line end belongs to the comment
-    }
-
-    [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
-        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or
-               ch == '\f' or ch == '\v';
-    }
-
-    // after the closing quote of the literal starting at 'begin', an escaped
-    // character cannot close it
-    [[nodiscard]] static auto literal_end(const std::string_view text,
-                                          const size_t begin) -> size_t {
-
-        const char quote{text.at(begin)};
-        bool escaped{};
-
-        for (size_t index{begin + 1}; index < text.size(); ++index) {
-            // note: +1 because the opening quote cannot close the literal
-            const char ch{text.at(index)};
-
-            // dropped, so it does not end an escape
-            if (ch == '\r') {
-                continue;
-            }
-
-            if (not escaped and ch == quote) {
-                return index + 1;
-                // note: +1 because the closing quote belongs to the literal
-            }
-
-            escaped = not escaped and ch == '\\';
-        }
-
-        // note: the tokenizer rejected an unterminated literal
-        std::unreachable();
-    }
-
-    // a backslash before a line end continues the literal on the next line,
-    // the comment stays on one, a carriage return is dropped so that a crlf
-    // continuation looks like a lf one
-    [[nodiscard]] static auto one_line_literal(const std::string_view literal)
-        -> std::string {
-
-        std::string kept;
-        bool escaped{};
-
-        for (const char ch : literal) {
-            if (ch == '\r') {
-                continue;
-            }
-
-            if (escaped and ch == '\n') {
-                kept.pop_back();
-                escaped = false;
-                continue;
-            }
-
-            kept.push_back(ch);
-            escaped = not escaped and ch == '\\';
-        }
-
-        return kept;
-    }
-
-    // a '#' inside a string or character literal does not start a comment and
-    // a quote inside a comment does not start a literal
-    //   'a = "#" # it's'  =>  code 'a = ', literal '"#"', code ' ',
-    //                         comment '# it's'
-    [[nodiscard]] static auto split_into_pieces(const std::string_view text)
-        -> std::vector<source_piece> {
-
-        std::vector<source_piece> pieces;
-        size_t code_begin{};
-        size_t index{};
-
-        while (index < text.size()) {
-            const char ch{text.at(index)};
-
-            if (ch != '#' and ch != '"' and ch != '\'') {
-                ++index;
-                continue;
-            }
-
-            if (index > code_begin) {
-                pieces.push_back({
-                    .kind{piece_kind::code},
-                    .text{text.substr(code_begin, index - code_begin)},
-                });
-            }
-
-            const bool is_comment{ch == '#'};
-
-            const size_t end{
-                is_comment ? comment_end(text, index)
-                           : literal_end(text, index),
-            };
-
-            pieces.push_back({
-                .kind{is_comment ? piece_kind::comment : piece_kind::literal},
-                .text{text.substr(index, end - index)},
-            });
-
-            index = end;
-            code_begin = end;
-        }
-
-        if (code_begin < text.size()) {
-            pieces.push_back({
-                .kind{piece_kind::code},
-                .text{text.substr(code_begin)},
-            });
-        }
-
-        return pieces;
     }
 };

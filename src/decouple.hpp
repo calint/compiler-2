@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <memory>
 #include <span>
 #include <string>
@@ -19,27 +20,68 @@
 #include "operand.hpp"
 #include "token.hpp"
 
+// the column is 1-based, 0 when the index is at a line end or past the source
 [[nodiscard]] inline auto line_and_col_num_for_char_index(
-    const size_t at_line, size_t char_index_in_source,
+    const size_t at_line, const size_t char_index_in_source,
     const std::string_view src) -> std::pair<size_t, size_t> {
 
-    if (char_index_in_source >= src.size()) {
+    if (char_index_in_source >= src.size() or
+        src.at(char_index_in_source) == '\n') {
+
         return {at_line, 0};
     }
 
-    size_t at_col{};
-    while (src.at(char_index_in_source) != '\n') {
-        ++at_col;
+    const size_t line_end_before{
+        char_index_in_source == 0 ? std::string_view::npos
+                                  : src.rfind('\n', char_index_in_source - 1),
+    };
 
-        if (char_index_in_source == 0) {
-            break;
-        }
-
-        --char_index_in_source;
+    if (line_end_before == std::string_view::npos) {
+        return {at_line, char_index_in_source + 1};
+        // note: +1 because the columns start at 1
     }
 
-    return {at_line, at_col};
+    return {at_line, char_index_in_source - line_end_before};
 }
+
+// where a token is in the source, as numbers or as text
+class source_locations final {
+    std::string_view source_;
+
+  public:
+    explicit source_locations(const std::string_view source)
+        : source_{source} {}
+
+    [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
+
+        return text(src_loc_tk, '.');
+    }
+
+    // human-readable source location
+    [[nodiscard]] auto human_readable(const token& src_loc_tk) const
+        -> std::string {
+
+        return text(src_loc_tk, ':');
+    }
+
+    [[nodiscard]] auto line_and_column(const token& src_loc_tk) const
+        -> std::pair<size_t, size_t> {
+
+        return line_and_col_num_for_char_index(
+            src_loc_tk.at_line(), src_loc_tk.start_index(), source_);
+    }
+
+    [[nodiscard]] auto source() const -> std::string_view { return source_; }
+
+  private:
+    // 'line' and 'column' of the token, 'separator' between them
+    [[nodiscard]] auto text(const token& src_loc_tk, const char separator) const
+        -> std::string {
+
+        const auto [line, col]{line_and_column(src_loc_tk)};
+        return std::format("{}{}{}", line, separator, col);
+    }
+};
 
 class toc;
 class tokenizer;

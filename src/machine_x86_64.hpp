@@ -191,7 +191,7 @@ class machine_x86_64 final : public machine {
     std::set<size_t> bounds_panic_lines_;
 
     // buffering output is no more logical state than writing to the stream
-    mutable assembler_x86_64 assembler_;
+    assembler_x86_64 assembler_;
 
   public:
     explicit machine_x86_64(std::ostream& os_ref, const std::string_view source,
@@ -844,8 +844,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
-                            const data_initializer& value) const
-        -> void override {
+                            const data_initializer& value) -> void override {
 
         assembler_.repeated_data(element_size_bytes, count, value.uops,
                                  value.value);
@@ -867,7 +866,7 @@ class machine_x86_64 final : public machine {
         assembler_.string_data(value);
     }
 
-    auto emit_zero_data(const size_t size_bytes) const -> void override {
+    auto emit_zero_data(const size_t size_bytes) -> void override {
         const size_t count{size_bytes / size_byte};
         emit_repeated_data(size_byte, count, {});
     }
@@ -1463,7 +1462,11 @@ class machine_x86_64 final : public machine {
     // overridden methods
     //
 
-    [[nodiscard]] auto target_assembler() const -> assembler& override {
+    [[nodiscard]] auto target_assembler() -> assembler& override {
+        return assembler_;
+    }
+
+    [[nodiscard]] auto target_assembler() const -> const assembler& override {
         return assembler_;
     }
 
@@ -2174,20 +2177,6 @@ class machine_x86_64 final : public machine {
         return result;
     }
 
-    // human-readable "line:col" for a token, using the cached source text
-    [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
-        -> std::string {
-
-        assert(src_loc_tk.at_line() != 0);
-
-        const auto [line, col]{
-            line_and_col_num_for_char_index(src_loc_tk.at_line(),
-                                            src_loc_tk.start_index(), source()),
-        };
-
-        return std::format("{}:{}", line, col);
-    }
-
     auto store_comparison(const token& src_loc_tk, const size_t indent,
                           const comparison_operator comparison,
                           const bool inverted, const operand& dst) -> void {
@@ -2257,7 +2246,7 @@ class machine_x86_64 final : public machine {
         const std::string holder_location{
             holder->src_loc_tk.at_line() == 0
                 ? std::string{}
-                : source_location_hr(holder->src_loc_tk),
+                : location_text(holder->src_loc_tk),
         };
 
         // the last resort scratch registers are also needed by instructions

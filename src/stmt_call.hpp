@@ -120,7 +120,8 @@ class stmt_call : public expression {
                                    func_name_, func_name_)};
         }
 
-        // an element of an array can be the receiver
+        // only an element of an array can be the receiver, 'a[1].f()' but not
+        // 'a.f()'
         if (receiver.is_array()) {
             throw compiler_exception{
                 receiver.first_token(),
@@ -132,8 +133,7 @@ class stmt_call : public expression {
         const token& first_tk{receiver.first_token()};
 
         const token receiver_pos_tk{
-            "", first_tk.start_index(), "",    first_tk.start_index(),
-            "", first_tk.at_line(),     false,
+            token::position(first_tk.start_index(), first_tk.at_line()),
         };
 
         args_.emplace_back(
@@ -345,7 +345,7 @@ class stmt_call : public expression {
     auto assert_result_type(const ident_info& dst_info,
                             const stmt_def_func& func) const -> void {
 
-        if (&dst_info.type_ref() == &func.get_type()) {
+        if (dst_info.type_ref().is_same(func.get_type())) {
             return;
         }
 
@@ -715,7 +715,7 @@ class stmt_call : public expression {
             return;
         }
 
-        if (&info.type_ref() == &param.get_type()) {
+        if (info.type_ref().is_same(param.get_type())) {
             return;
         }
 
@@ -1758,7 +1758,7 @@ class stmt_call : public expression {
         //       parameter and the reverse
         assert(info.is_array == param.is_array());
 
-        if (&info.type_ref() != &param.get_type()) {
+        if (not info.type_ref().is_same(param.get_type())) {
             throw_parameter_type_mismatch(arg, param, info);
         }
     }
@@ -2083,7 +2083,8 @@ class stmt_call : public expression {
             tc.get_func_return_type_or_throw(tk, tk.text()),
         };
 
-        return is_whole_argument() and &return_type != &tc.get_type_void()
+        return is_whole_argument() and
+                       not return_type.is_same(tc.get_type_void())
                    ? &return_type
                    : nullptr;
     }
