@@ -2675,3 +2675,9 @@ SRC=873 && EXP=22 && RUN
 
 # two constant arguments are compared like variables of their parameters' types
 SRC=874 && COMPERR
+
+# a method of an alias clashes with the generic method defined before it
+SRC=875 && COMPERR
+
+# a generic method clashes with the method of an alias defined before it
+SRC=876 && COMPERR

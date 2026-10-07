@@ -1,0 +1,15 @@
+# a method of an alias of a generic type clashes with the generic method of
+# the same name, the generic method is defined first
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+func text.size() res { res = capacity }
+
+type str = text<8>
+
+func str.size() res { res = 99 }
+
+func main() {}

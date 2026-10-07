@@ -297,7 +297,7 @@ class program final {
         const token src_loc_tk{};
 
         // add built-in calls
-        tc_.add_func(src_loc_tk, "exit", type_void, nullptr);
+        tc_.add_func(src_loc_tk, "exit", type_void, nullptr, {});
 
         // add built-in types
         tc_.add_type(src_loc_tk, type_i64);
@@ -319,8 +319,8 @@ class program final {
         // the default type has a name of its own so that it is portable
         tc_.add_type_alias(src_loc_tk, "int", tc_.get_type_default());
 
-        tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr);
-        tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr);
+        tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr, {});
+        tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr, {});
 
         tc_.enter_block();
 

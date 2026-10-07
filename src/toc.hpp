@@ -35,6 +35,9 @@ struct func_info {
     token src_loc_tk;           // token for position in the source
     const stmt_def_func* def{}; // null if built-in function
     const type* type_ptr{};     // return type or void
+    // e.g. 'text.size' for the instance 'str.size', empty if not an instance
+    // of a method of a generic type
+    std::string generic_method;
 };
 
 struct func_return_info {
@@ -704,13 +707,16 @@ class function_table final {
   public:
     // the name has been checked, a built-in function has no definition
     auto add(const token& src_loc_tk, std::string name, const type& return_type,
-             const stmt_def_func* const func_def) -> void {
+             const stmt_def_func* const func_def, std::string generic_method)
+        -> void {
 
-        funcs_.put(std::move(name), {
-                                        .src_loc_tk{src_loc_tk},
-                                        .def{func_def},
-                                        .type_ptr{&return_type},
-                                    });
+        funcs_.put(std::move(name),
+                   {
+                       .src_loc_tk{src_loc_tk},
+                       .def{func_def},
+                       .type_ptr{&return_type},
+                       .generic_method{std::move(generic_method)},
+                   });
 
         if (func_def) {
             defs_.emplace_back(func_def);
@@ -1754,9 +1760,11 @@ class definition_checks final {
                         name, where(c.src_loc_tk))};
     }
 
-    auto assert_function_not_defined(const token& src_loc_tk,
-                                     const std::string_view name) const
-        -> void {
+    // 'generic_method' is the generic method that the function is an instance
+    // of, empty if it is not
+    auto assert_function_not_defined(
+        const token& src_loc_tk, const std::string_view name,
+        const std::string_view generic_method) const -> void {
 
         if (funcs_.get().has(name)) {
             const func_info& fn{funcs_.get().get(name)};
@@ -1766,6 +1774,32 @@ class definition_checks final {
                 throw compiler_exception{
                     src_loc_tk,
                     std::format("function '{}' is a built-in function", name)};
+            }
+
+            const bool is_generic{not generic_method.empty()};
+            const bool is_existing_generic{not fn.generic_method.empty()};
+
+            if (is_generic and is_existing_generic) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("generic method '{}' already defined at {}",
+                                generic_method, where(fn.src_loc_tk))};
+            }
+
+            if (is_generic) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("generic method '{}' clashes with the method "
+                                "'{}' defined at {}",
+                                generic_method, name, where(fn.src_loc_tk))};
+            }
+
+            if (is_existing_generic) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("method '{}' clashes with the generic method "
+                                "'{}' defined at {}",
+                                name, fn.generic_method, where(fn.src_loc_tk))};
             }
 
             throw compiler_exception{
@@ -1963,8 +1997,8 @@ class toc final {
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
-                  const type& return_type, const stmt_def_func* const func_def)
-        -> void {
+                  const type& return_type, const stmt_def_func* const func_def,
+                  std::string generic_method) -> void {
 
         if (name == reserved_names::foo) {
             throw compiler_exception{src_loc_tk,
@@ -1972,9 +2006,11 @@ class toc final {
                                      "a builtin iterator function"};
         }
 
-        definitions_.assert_function_not_defined(src_loc_tk, name);
+        definitions_.assert_function_not_defined(src_loc_tk, name,
+                                                 generic_method);
 
-        funcs_.add(src_loc_tk, std::move(name), return_type, func_def);
+        funcs_.add(src_loc_tk, std::move(name), return_type, func_def,
+                   std::move(generic_method));
     }
 
     // keeps the instance alive, 'funcs_' refers to it
@@ -1985,7 +2021,7 @@ class toc final {
     }
 
     auto add_generic_func(std::string name, generic_func_info info) -> void {
-        definitions_.assert_function_not_defined(info.src_loc_tk, name);
+        definitions_.assert_function_not_defined(info.src_loc_tk, name, {});
 
         generics_.add_func(std::move(name), std::move(info));
     }

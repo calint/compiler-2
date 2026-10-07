@@ -1,0 +1,4 @@
+
+875.baz:13:6: method 'str.size' clashes with the generic method 'text.size' defined at 9:6
+func str.size() res { res = 99 }
+     ^~~

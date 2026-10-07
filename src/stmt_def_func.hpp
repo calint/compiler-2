@@ -41,6 +41,8 @@ class stmt_def_func final : public statement {
         };
 
         kind mode{kind::none};
+        // the generic type of the method that an instance is of
+        std::string type_name;
         // the text after 'func', only the instances of the definition parse it
         std::string_view text;
         std::vector<generic_binding> constants;
@@ -102,6 +104,7 @@ class stmt_def_func final : public statement {
         // e.g. 'text' in 'func text.print()' is the instance of the type
         if (generic_instance != nullptr) {
             generic_.mode = generic_part::kind::instance;
+            generic_.type_name = generic_instance->generic_name;
 
             bind_generic_instance(aliases, *generic_instance);
         }
@@ -566,6 +569,16 @@ class stmt_def_func final : public statement {
         }
     }
 
+    // e.g. 'text.size' for the instance 'str.size', empty if the function is
+    // not an instance of a method of a generic type
+    [[nodiscard]] auto generic_method_name() const -> std::string {
+        if (generic_.type_name.empty() or method_name_tk_.is_empty()) {
+            return {};
+        }
+
+        return std::format("{}.{}", generic_.type_name, method_name_tk_.text());
+    }
+
     // e.g. the '<' of 'func tokenizer.to<T type>()'
     [[nodiscard]] auto is_generic_head(tokenizer& tz) const -> bool {
         return open_paren_tk_.is_empty() and
@@ -743,7 +756,8 @@ class stmt_def_func final : public statement {
             add_self_param(tc);
         }
 
-        tc.add_func(name_tk_, name_, statement::get_type(), this);
+        tc.add_func(name_tk_, name_, statement::get_type(), this,
+                    generic_method_name());
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'
