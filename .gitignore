@@ -10,6 +10,7 @@
 /prog
 /prog-uart
 /etc/roome/diff
+/etc/roome/fpga-work/
 # rv32i images are named after their source and target
 *-rv32i*.bin
 /diff.baz

@@ -35,7 +35,8 @@ dat   str_prompt = " > "
 dat       str_nl = "\n"
 dat str_turn_end = "--\n"
 dat    str_comma = ", "
-dat    str_erase = "\b \b"
+dat     str_back = "\b"
+dat    str_space = " "
 
 dat str_not_understood = "not understood\n"
 
@@ -83,8 +84,6 @@ type text<capacity> {
     len,
 }
 
-type str = text<127>
-
 func text.print() {
     out.print(self.array, self.len)
 }
@@ -100,24 +99,126 @@ func mut text.append<T type>(s T) {
     self.len = self.len + s.len
 }
 
-func mut text.input() {
-    # the uart does not echo, so each byte is written back as it is read
-    var nbytes = 0
+let act_insert = 0
+let act_backspace = 1
+let act_delete = 2
+let act_left = 3
+let act_right = 4
+let act_ignore = 5
+
+# reads the rest of a terminal escape sequence and returns the action of the
+# key: delete 'ESC [ 3 ~', left 'ESC [ D', right 'ESC [ C', any other
+# sequence is ignored
+func input_escape_action() res {
+    res = act_ignore
+    var c = i8[1]
+    if read(0, c, 1) == 0 return
+    if c[0] != '[' return
+
+    # the sequence ends with the first byte from '@' on
+    var first = 0
     loop {
-        if nbytes == array_length(self.array) break
-        if read(0, self.array, 1, nbytes) == 0 break
-        if self.array[nbytes] == '\x7f' {
-            if nbytes > 0 {
-                nbytes = nbytes - 1
-                out.print_all(str_erase)
+        if read(0, c, 1) == 0 return
+        if first == 0 first = c[0]
+        if c[0] >= '@' break
+    }
+    if c[0] == 'D' res = act_left
+    if c[0] == 'C' res = act_right
+    if first == '3' and c[0] == '~' res = act_delete
+}
+
+# makes room for 'b' at 'pos', the text must have room for one more byte
+func mut text.insert_at(pos, b i8) {
+    var i = self.len
+    loop {
+        if i == pos break
+        self.array[i] = self.array[i - 1]
+        i = i - 1
+    }
+    self.array[pos] = b
+    self.len = self.len + 1
+}
+
+# removes the byte at 'pos'
+func mut text.remove_at(pos) {
+    var i = pos
+    loop {
+        if i == self.len - 1 break
+        self.array[i] = self.array[i + 1]
+        i = i + 1
+    }
+    self.len = self.len - 1
+}
+
+# writes the bytes from 'pos' on and moves the cursor back to 'pos', 'blanks'
+# is 1 to wipe the byte a removal left on the screen
+func text.redraw_from(pos, blanks) {
+    var back = self.len - pos
+    if back > 0 out.print_at(self.array, back, pos)
+    if blanks == 1 {
+        out.print_all(str_space)
+        back = back + 1
+    }
+    loop {
+        if back == 0 break
+        out.print_all(str_back)
+        back = back - 1
+    }
+}
+
+# line editing with the cursor keys, backspace and delete, the uart does not
+# echo so the screen is redrawn after each edit
+func mut text.input() {
+    # the byte is read apart from the buffer, control bytes are not stored
+    var c = i8[1]
+    var pos = 0
+    self.len = 0
+    loop {
+        if read(0, c, 1) == 0 break
+        var act = act_insert
+        if c[0] == '\x7f' or c[0] == '\b' act = act_backspace
+        if c[0] == '\x1b' act = input_escape_action()
+        if act == act_ignore continue
+        if act == act_backspace {
+            if pos > 0 {
+                pos = pos - 1
+                self.remove_at(pos)
+                out.print_all(str_back)
+                self.redraw_from(pos, 1)
             }
             continue
         }
-        out.print_at(self.array, 1, nbytes)
-        if self.array[nbytes] == '\n' break
-        nbytes = nbytes + 1
+        if act == act_delete {
+            if pos < self.len {
+                self.remove_at(pos)
+                self.redraw_from(pos, 1)
+            }
+            continue
+        }
+        if act == act_left {
+            if pos > 0 {
+                pos = pos - 1
+                out.print_all(str_back)
+            }
+            continue
+        }
+        if act == act_right {
+            if pos < self.len {
+                out.print_at(self.array, 1, pos)
+                pos = pos + 1
+            }
+            continue
+        }
+        if c[0] == '\n' {
+            out.print(c, 1)
+            break
+        }
+        if self.len == array_length(self.array) continue
+        out.print(c, 1)
+        self.insert_at(pos, c[0])
+        pos = pos + 1
+        self.redraw_from(pos, 0)
     }
-    self.len = nbytes
 }
 
 # compares with a text of any capacity
@@ -131,6 +232,7 @@ func text.equals<T type>(other T) res bool {
 }
 
 let max_name_len = 16
+let max_str_len = 128
 let max_id_list_len = 32
 let max_room_objects_len = 64
 let max_room_entities_len = 32
@@ -215,11 +317,11 @@ func mut list.delete_item(item T) {
 
 type id_list = list<int, max_id_list_len>
 
+type str = text<max_str_len>
 type name = text<max_name_len>
 
 dat str_told_u = " told u "
 dat str_said = " said "
-dat str_space = " "
 
 let message_told = 0
 let message_said = 1

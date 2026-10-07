@@ -14,11 +14,11 @@ if [[ ! -x $EMULATOR ]]; then
     fpga-emulator/make.sh
 fi
 
-IMAGE=$DIR/roome-rv32i-fpga.bin
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+IMAGE=$WORK/roome-rv32i-fpga.bin
 
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line "$DIR/roome.baz" >"$WORK/roome.s"
+./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$IMAGE" "$DIR/roome.baz" >"$WORK/roome.s"
 
 # the emulator requires an sd card image which the program does not use
 : >"$WORK/sdcard"
@@ -26,7 +26,7 @@ trap 'rm -rf "$WORK"' EXIT
 # the input must end with 'go home', at the end of input the emulator would
 # make the program wait for input forever, so the run is limited by a timeout
 status=0
-timeout 10 "$EMULATOR" "$IMAGE" "$WORK/sdcard" <"$DIR/roome.in" >"$DIR/diff" || status=$?
+timeout 10 "$EMULATOR" "$IMAGE" "$WORK/sdcard" <"$DIR/roome.in" >"$WORK/diff" || status=$?
 
 if [[ $status -eq 124 ]]; then
     echo "roome: rv32i-fpga timeout, does roome.in end with 'go home'?"
@@ -34,11 +34,11 @@ if [[ $status -eq 124 ]]; then
 fi
 
 if [[ ${1:-} == update ]]; then
-    cp "$DIR/diff" "$DIR/roome.out"
+    cp "$WORK/diff" "$DIR/roome.out"
     echo "roome: updated $DIR/roome.out"
 fi
 
-if ! diff -u "$DIR/roome.out" "$DIR/diff"; then
+if ! diff -u "$DIR/roome.out" "$WORK/diff"; then
     echo "roome: rv32i-fpga output differs from $DIR/roome.out"
     exit 1
 fi

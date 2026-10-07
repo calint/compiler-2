@@ -10,26 +10,32 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
 DEVICE=${1:-/dev/ttyUSB1}
-WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+# kept when the test fails so the output can be inspected
+WORK="$DIR/fpga-work"
+mkdir -p "$WORK"
 
-python3 - "$DEVICE" "$DIR/roome.in" "$WORK/fpga.out" <<'EOF'
+python3 - "$DEVICE" "$DIR/roome.in" "$WORK/fpga.out" "$DIR/roome.out" <<'EOF'
 import sys
 import serial
 
-device, input_path, output_path = sys.argv[1:4]
+device, input_path, output_path, expected_path = sys.argv[1:5]
 prompt = b" > "
-echo_timeout = 2
 prompt_timeout = 10
-idle_timeout = 1
+idle_timeout = 0.02
 
 with open(input_path, "rb") as f:
     lines = f.read().splitlines(keepends=True)
 
+# the expected output as one part per prompt: the start, the reply to each
+# line, the end of the program
+with open(expected_path, "rb") as f:
+    parts = f.read().split(prompt)
+expected = [part + prompt for part in parts[:-1]] + [parts[-1]]
+
 # the board sends bare line feeds so the bytes are compared unchanged
 try:
     port = serial.Serial(device, 115200, bytesize=8, parity="N", stopbits=1,
-                         xonxoff=False, rtscts=False, dsrdtr=False, timeout=echo_timeout)
+                         xonxoff=False, rtscts=False, dsrdtr=False, timeout=idle_timeout)
 except serial.SerialException as error:
     print(f"roome: {error}")
     print("roome: check that the board is connected, list devices with"
@@ -65,35 +71,55 @@ def read_until_idle():
         received.extend(data)
 
 
+# returns the end of the key which starts at 'start': a plain byte or an
+# escape sequence 'ESC [ ... final', the final byte is the first from '@' on
+def key_end(line, start):
+    if line[start] != 0x1b or line[start + 1:start + 2] != b"[":
+        return start + 1
+    # note: +2 to skip the escape and the '['
+    end = start + 2
+    while end < len(line) and line[end] < 0x40:
+        end += 1
+    return min(end + 1, len(line))
+
+
 # stdin carries this script, so the confirmation is read from the terminal
 print("roome: reset the board, then press enter ", end="", flush=True)
 with open("/dev/tty") as tty:
     tty.readline()
 read_until_prompt()
+reply_start = len(received)
 
 for number, line in enumerate(lines):
-    # the program echoes each byte it reads, a byte sent before the echo of
-    # the previous one could be lost by the uart, so each byte waits for its echo
-    for byte in line:
-        port.write(bytes([byte]))
-        port.timeout = echo_timeout
-        data = port.read(1)
-        if not data:
-            fail(f"timeout waiting for the echo of byte {byte} in line {number + 1}")
-        received.extend(data)
+    print(f"roome: line {number + 1} of {len(lines)}", end="", file=sys.stderr, flush=True)
+    # the program writes while it handles a byte (echo, redraw after an edit),
+    # a byte sent meanwhile could be lost by the uart, so after each key the
+    # output is read until it is idle; an escape sequence is sent whole since
+    # the program reads it silently and answers only after its last byte
+    index = 0
+    while index < len(line):
+        end = key_end(line, index)
+        port.write(line[index:end])
+        read_until_idle()
+        index = end
     if number == len(lines) - 1:
         # the last line ends the program, so there is no prompt to wait for
         read_until_idle()
     else:
         read_until_prompt()
+    reply = bytes(received[reply_start:])
+    reply_start = len(received)
+    matches = number + 1 < len(expected) and reply == expected[number + 1]
+    print(" ok" if matches else " differs", file=sys.stderr, flush=True)
 
 with open(output_path, "wb") as f:
     f.write(received)
 EOF
 
 if ! diff -u "$DIR/roome.out" "$WORK/fpga.out"; then
-    echo "roome: fpga output differs from $DIR/roome.out"
+    echo "roome: fpga output differs from $DIR/roome.out, the output is in $WORK/fpga.out"
     exit 1
 fi
 
+rm -rf "$WORK"
 echo "roome: fpga ok"
