@@ -130,6 +130,7 @@ class register_trace final {
     struct frame {
         std::string name;
         token call_site_tk;
+        bool is_noinline_body{};
     };
 
     // what the calls of a callee hold themselves
@@ -153,6 +154,9 @@ class register_trace final {
     };
 
   private:
+    // the name of the frame of a function with a body of its own ends with this
+    static constexpr std::string_view noinline_body_suffix{" (noinline body)"};
+
     bool enabled_{};
     std::vector<frame> frames_;
     peak_use peak_;
@@ -162,7 +166,13 @@ class register_trace final {
   public:
     // the registers allocated until 'end_frame' belong to the call of
     // 'name' made at 'call_site_tk'
-    auto begin_frame(const token& call_site_tk, std::string name) -> void {
+    auto begin_frame(const token& call_site_tk, std::string name,
+                     const bool is_noinline_body) -> void {
+
+        if (is_noinline_body) {
+            name += noinline_body_suffix;
+        }
+
         if (enabled_) {
             ++callees_[name].calls;
         }
@@ -170,6 +180,7 @@ class register_trace final {
         frames_.push_back({
             .name{std::move(name)},
             .call_site_tk{call_site_tk},
+            .is_noinline_body{is_noinline_body},
         });
     }
 
@@ -575,10 +586,11 @@ class machine {
 
       public:
         call_frame_scope(machine& backend, const token& call_site_tk,
-                         std::string name)
+                         std::string name, const bool is_noinline_body = false)
             : machine_{backend} {
 
-            backend.begin_call_frame(call_site_tk, std::move(name));
+            backend.begin_call_frame(call_site_tk, std::move(name),
+                                     is_noinline_body);
         }
 
         call_frame_scope(const call_frame_scope&) = delete;
@@ -623,9 +635,6 @@ class machine {
   public:
     // a failed check prints its message to this descriptor and exits with this
     // code
-    // the name of the frame of a function with a body of its own ends with this
-    static constexpr std::string_view noinline_body_suffix{" (noinline body)"};
-
     static constexpr int stderr_descriptor{2};
     static constexpr int panic_exit_code{255};
 
@@ -938,8 +947,10 @@ class machine {
     // the registers allocated until 'end_call_frame' belong to the inlined call
     // of 'name' made at 'call_site_tk', the first frame is the function being
     // compiled and has no call site
-    auto begin_call_frame(const token& call_site_tk, std::string name) -> void {
-        trace_.begin_frame(call_site_tk, std::move(name));
+    auto begin_call_frame(const token& call_site_tk, std::string name,
+                          const bool is_noinline_body) -> void {
+
+        trace_.begin_frame(call_site_tk, std::move(name), is_noinline_body);
     }
 
     // the code emitted up to 'end_noinline_body' is a body of 'function'
@@ -1391,9 +1402,7 @@ class machine {
     peak_note_lines(const std::vector<register_trace::frame>& frames)
         -> std::vector<std::string> {
 
-        if (frames.empty() or
-            not frames.front().name.ends_with(noinline_body_suffix)) {
-
+        if (frames.empty() or not frames.front().is_noinline_body) {
             return {};
         }
 

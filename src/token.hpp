@@ -13,6 +13,21 @@
 #include <string_view>
 #include <system_error>
 
+// the names that have a meaning for the compiler, a program cannot use them
+// for what it defines
+namespace reserved_names {
+
+// the receiver of a method and the value built by a constructor
+inline constexpr std::string_view self{"self"};
+
+// the iterator over elements
+inline constexpr std::string_view foo{"foo"};
+
+// the function the program starts in
+inline constexpr std::string_view main{"main"};
+
+} // namespace reserved_names
+
 class token final {
     std::string_view ws_left_;  // whitespace left of token text
     size_t start_ix_{};         // token text start index in source

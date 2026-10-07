@@ -260,8 +260,9 @@ class stmt_block final : public statement {
 
         // note: solves circular reference problem, 'loop' and 'if' use this
         //       class
-        if (tk.is_text("loop") or tk.is_text("if") or tk.is_text("foo") or
-            tk.is_text("exit") or tk.is_text("read") or tk.is_text("write")) {
+        if (tk.is_text("loop") or tk.is_text("if") or
+            tk.is_text(reserved_names::foo) or tk.is_text("exit") or
+            tk.is_text("read") or tk.is_text("write")) {
 
             return create_statement_in_stmt_block(tc, tz, tk);
         }

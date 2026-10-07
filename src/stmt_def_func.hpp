@@ -281,7 +281,8 @@ class stmt_def_func final : public statement {
 
     // e.g. 'func point.at(x, y) self'
     [[nodiscard]] auto is_constructor() const -> bool {
-        return returns_.has_value() and returns_->ident_tk.is_text("self");
+        return returns_.has_value() and
+               returns_->ident_tk.is_text(reserved_names::self);
     }
 
     [[nodiscard]] auto is_inlined() const -> bool {
@@ -393,9 +394,12 @@ class stmt_def_func final : public statement {
     // located at the method name for diagnostics
     auto add_self_param(const toc& tc) -> void {
         const token self_tk{
-            "",     method_name_tk_.start_index(),
-            "self", method_name_tk_.start_index(),
-            "",     method_name_tk_.at_line(),
+            "",
+            method_name_tk_.start_index(),
+            reserved_names::self,
+            method_name_tk_.start_index(),
+            "",
+            method_name_tk_.at_line(),
             false,
         };
 
@@ -708,7 +712,7 @@ class stmt_def_func final : public statement {
             type_tk = {};
         }
 
-        if (ident_tk.is_text("self")) {
+        if (ident_tk.is_text(reserved_names::self)) {
             set_constructor_result(tc, ident_tk, type_tk);
             return;
         }

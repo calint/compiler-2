@@ -1688,16 +1688,216 @@ class ident_resolver final {
     }
 };
 
+// where a token is in the source, as text
+class source_locations final {
+    std::string_view source_;
+
+  public:
+    explicit source_locations(const std::string_view source)
+        : source_{source} {}
+
+    [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
+
+        return text(src_loc_tk, '.');
+    }
+
+    // human-readable source location
+    [[nodiscard]] auto human_readable(const token& src_loc_tk) const
+        -> std::string {
+
+        return text(src_loc_tk, ':');
+    }
+
+    [[nodiscard]] auto source() const -> std::string_view { return source_; }
+
+  private:
+    // 'line' and 'column' of the token, 'separator' between them
+    [[nodiscard]] auto text(const token& src_loc_tk, const char separator) const
+        -> std::string {
+
+        const auto [line, col]{
+            line_and_col_num_for_char_index(src_loc_tk.at_line(),
+                                            src_loc_tk.start_index(), source_),
+        };
+
+        return std::format("{}{}{}", line, separator, col);
+    }
+};
+
+// the errors of a name that is defined twice or that hides another
+class definition_checks final {
+    std::reference_wrapper<const scope_stack> scopes_;
+    std::reference_wrapper<const function_table> funcs_;
+    std::reference_wrapper<const type_table> types_;
+    std::reference_wrapper<const generic_registry> generics_;
+    std::reference_wrapper<const source_locations> locations_;
+
+  public:
+    definition_checks(const scope_stack& scopes, const function_table& funcs,
+                      const type_table& types, const generic_registry& generics,
+                      const source_locations& locations)
+        : scopes_{scopes}, funcs_{funcs}, types_{types}, generics_{generics},
+          locations_{locations} {}
+
+    auto assert_const_not_defined(const token& src_loc_tk,
+                                  const std::string_view name) const -> void {
+
+        if (not scopes_.get().back().has_const(name)) {
+            return;
+        }
+
+        const const_info& c{scopes_.get().back().get_const(name)};
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("constant '{}' already defined in this block at {}",
+                        name, where(c.src_loc_tk))};
+    }
+
+    auto assert_function_not_defined(const token& src_loc_tk,
+                                     const std::string_view name) const
+        -> void {
+
+        if (funcs_.get().has(name)) {
+            const func_info& fn{funcs_.get().get(name)};
+
+            // a built-in function has no source location
+            if (fn.src_loc_tk.at_line() == 0) {
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("function '{}' is a built-in function", name)};
+            }
+
+            throw compiler_exception{
+                src_loc_tk, std::format("function '{}' already defined at {}",
+                                        name, where(fn.src_loc_tk))};
+        }
+
+        if (generics_.get().has_func(name)) {
+            const generic_func_info& fn{generics_.get().get_func(name)};
+
+            throw compiler_exception{
+                src_loc_tk, std::format("function '{}' already defined at {}",
+                                        name, where(fn.src_loc_tk))};
+        }
+    }
+
+    // a generic parameter names its argument, so it cannot be the name of a
+    // type
+    auto assert_generic_param_free(const token& src_loc_tk,
+                                   const std::string_view name) const -> void {
+
+        if (not types_.get().has(name)) {
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("generic parameter '{}' hides the type '{}' defined "
+                        "at {}, use another name",
+                        name, name, where(types_.get().src_loc_tk_of(name)))};
+    }
+
+    auto assert_not_declared_in_scope(const token& src_loc_tk,
+                                      const std::string_view name) const
+        -> void {
+
+        if (not scopes_.get().back().has_var(name)) {
+            return;
+        }
+
+        const var_info& decl_var{scopes_.get().back().get_var_const_ref(name)};
+
+        throw compiler_exception{
+            src_loc_tk, std::format("variable '{}' already declared at {}",
+                                    name, where(decl_var.src_loc_tk))};
+    }
+
+    // a generic type and a type share the namespace of types
+    auto assert_type_not_defined(const token& src_loc_tk,
+                                 const std::string_view name) const -> void {
+
+        if (types_.get().has(name)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("type '{}' already defined at {}", name,
+                            where(types_.get().src_loc_tk_of(name)))};
+        }
+
+        if (generics_.get().has_type(name)) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("type '{}' already defined as a generic type at {}",
+                            name,
+                            where(generics_.get().get_type(name).src_loc_tk))};
+        }
+    }
+
+  private:
+    [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
+        return locations_.get().human_readable(src_loc_tk);
+    }
+};
+
+// the comment in the output that tells where a variable is stored
+class variable_comments final {
+    std::reference_wrapper<::machine> machine_;
+    std::reference_wrapper<const ident_resolver> resolver_;
+
+  public:
+    variable_comments(::machine& backend, const ident_resolver& resolver)
+        : machine_{backend}, resolver_{resolver} {}
+
+    // the resolved name shows where the variable is stored
+    auto comment(const token& src_loc_tk, const size_t indent,
+                 const var_info& var) const -> void {
+
+        const ident_info name_info{
+            resolver_.get().resolve(src_loc_tk, var.name),
+        };
+
+        ::machine& x{machine_.get()};
+
+        std::string text{
+            std::format("{}: {}", var.name, name_info.type_ref().name()),
+        };
+
+        if (var.array_len) {
+            text += std::format("[{}]", var.array_len);
+        }
+
+        // the iterator 'e' is memory at its register, the counter 'i' is the
+        // register
+        const operand& reg{
+            var.value_register.is_empty() ? var.pointer_register
+                                          : var.value_register,
+        };
+
+        if (not reg.is_empty()) {
+            x.comment(src_loc_tk, indent, "{} ({})", text, reg.base_register());
+            return;
+        }
+
+        x.comment_variable(
+            src_loc_tk, indent, text,
+            multiply_storage_size(src_loc_tk, name_info.type_ref().size_bytes(),
+                                  name_info.is_array ? name_info.array_len : 1),
+            name_info.operand);
+    }
+};
+
 class toc final {
     std::reference_wrapper<::machine> machine_;
-    std::string_view source_;
+    source_locations locations_;
     scope_stack scopes_;
     data_table data_;
     function_table funcs_;
     generic_registry generics_;
     type_table types_;
+    definition_checks definitions_;
     builtin_types builtins_;
     ident_resolver resolver_;
+    variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_;
     // above zero while the code is compiled only to be measured or checked
@@ -1706,8 +1906,10 @@ class toc final {
   public:
     toc(::machine& backend, const std::string_view source,
         const size_t vars_capacity_bytes, const check_options& checks)
-        : machine_{backend}, source_{source}, builtins_{backend},
-          resolver_{scopes_, backend, generics_, builtins_},
+        : machine_{backend}, locations_{source},
+          definitions_{scopes_, funcs_, types_, generics_, locations_},
+          builtins_{backend}, resolver_{scopes_, backend, generics_, builtins_},
+          var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
           checks_{checks} {}
 
@@ -1734,14 +1936,7 @@ class toc final {
     auto add_const(const token& src_loc_tk, const size_t indent,
                    const std::string_view name, const int64_t value) {
 
-        if (has_const_in_current_block(name)) {
-            const const_info& c{scopes_.back().get_const(name)};
-
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("constant '{}' already defined in this block at {}",
-                            name, source_location_hr(c.src_loc_tk))};
-        }
+        definitions_.assert_const_not_defined(src_loc_tk, name);
 
         ::machine& x{machine()};
 
@@ -1771,13 +1966,13 @@ class toc final {
                   const type& return_type, const stmt_def_func* const func_def)
         -> void {
 
-        if (name == "foo") {
+        if (name == reserved_names::foo) {
             throw compiler_exception{src_loc_tk,
                                      "cannot name function 'foo' because it is "
                                      "a builtin iterator function"};
         }
 
-        assert_function_not_defined(src_loc_tk, name);
+        definitions_.assert_function_not_defined(src_loc_tk, name);
 
         funcs_.add(src_loc_tk, std::move(name), return_type, func_def);
     }
@@ -1790,7 +1985,7 @@ class toc final {
     }
 
     auto add_generic_func(std::string name, generic_func_info info) -> void {
-        assert_function_not_defined(info.src_loc_tk, name);
+        definitions_.assert_function_not_defined(info.src_loc_tk, name);
 
         generics_.add_func(std::move(name), std::move(info));
     }
@@ -1799,7 +1994,7 @@ class toc final {
                           const token& start_tk,
                           std::vector<generic_param> params) -> void {
 
-        assert_type_not_defined(src_loc_tk, name);
+        definitions_.assert_type_not_defined(src_loc_tk, name);
 
         generics_.add_type(src_loc_tk, name, start_tk, std::move(params));
     }
@@ -1825,7 +2020,7 @@ class toc final {
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
-        assert_type_not_defined(src_loc_tk, tpe.name());
+        definitions_.assert_type_not_defined(src_loc_tk, tpe.name());
 
         types_.add(src_loc_tk, tpe);
     }
@@ -1833,53 +2028,36 @@ class toc final {
     auto add_type_alias(const token& src_loc_tk, const std::string_view name,
                         const type& tpe) -> void {
 
-        assert_type_not_defined(src_loc_tk, name);
+        definitions_.assert_type_not_defined(src_loc_tk, name);
         types_.add_alias(src_loc_tk, name, tpe);
     }
 
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  const var_kind kind) -> void {
 
-        assert_not_declared_in_scope(src_loc_tk, var.name);
+        definitions_.assert_not_declared_in_scope(src_loc_tk, var.name);
 
         // the value lives in its register for the whole scope
-        if (not var.value_register.is_empty()) {
-            scopes_.back().add_var(var, 0, kind);
-            comment_var(src_loc_tk, indent, var);
-            return;
-        }
+        const bool is_value_register{not var.value_register.is_empty()};
 
         // the variable is where the register points, it has no storage
-        if (not var.pointer_register.is_empty()) {
-            scopes_.back().add_var(var, 0, kind);
-            comment_var(src_loc_tk, indent, var);
-            return;
-        }
+        const bool is_pointer_register{not var.pointer_register.is_empty()};
 
-        const size_t allocated_size_bytes{
-            storage_.allocate(src_loc_tk, var, kind),
-        };
+        size_t allocated_size_bytes{};
+
+        if (not is_value_register and not is_pointer_register) {
+            allocated_size_bytes = storage_.allocate(src_loc_tk, var, kind);
+        }
 
         scopes_.back().add_var(var, allocated_size_bytes, kind);
 
-        comment_var(src_loc_tk, indent, var);
+        var_comments_.comment(src_loc_tk, indent, var);
     }
 
-    // a generic parameter names its argument, so it cannot be the name of a
-    // type
     auto assert_generic_param_free(const token& src_loc_tk,
                                    const std::string_view name) const -> void {
 
-        if (not types_.has(name)) {
-            return;
-        }
-
-        throw compiler_exception{
-            src_loc_tk,
-            std::format("generic parameter '{}' hides the type '{}' defined "
-                        "at {}, use another name",
-                        name, name,
-                        source_location_hr(types_.src_loc_tk_of(name)))};
+        definitions_.assert_generic_param_free(src_loc_tk, name);
     }
 
     [[nodiscard]] auto bounds_check_options() const
@@ -2067,11 +2245,11 @@ class toc final {
 
     // no token names a missing 'main'
     [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
-        if (not funcs_.has("main")) {
+        if (not funcs_.has(reserved_names::main)) {
             throw compiler_exception::file_level("function 'main' not found");
         }
 
-        return *funcs_.get("main").def;
+        return *funcs_.get(reserved_names::main).def;
     }
 
     [[nodiscard]] auto get_string_constants() const
@@ -2332,20 +2510,22 @@ class toc final {
 
     auto set_type_void(const type& tpe) -> void { builtins_.set_void(tpe); }
 
-    [[nodiscard]] auto source() const -> std::string_view { return source_; }
+    [[nodiscard]] auto source() const -> std::string_view {
+        return locations_.source();
+    }
 
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
-        return source_location(src_loc_tk, '.');
+        return locations_.for_label(src_loc_tk);
     }
 
     // human-readable source location
     [[nodiscard]] auto source_location_hr(const token& src_loc_tk) const
         -> std::string {
 
-        return source_location(src_loc_tk, ':');
+        return locations_.human_readable(src_loc_tk);
     }
 
     [[nodiscard]] auto types() -> type_table& { return types_; }
@@ -2367,7 +2547,7 @@ class toc final {
     // 'self' is declared only by the compiler: the receiver of a method and the
     // value built by a constructor
     static auto assert_name_not_reserved(const token& name_tk) -> void {
-        if (not name_tk.is_text("self")) {
+        if (not name_tk.is_text(reserved_names::self)) {
             return;
         }
 
@@ -2406,6 +2586,17 @@ class toc final {
         return ident_info::make_register(reg.base_register(), reg);
     }
 
+    // the name of a variable the compiler adds, e.g. 'call-arg-12-0', it has a
+    // '-' so no identifier of the source can have it; the offset of the token
+    // tells the temporaries of calls in one block apart
+    [[nodiscard]] static auto temporary_name(const token& src_loc_tk,
+                                             const std::string_view role,
+                                             const size_t index)
+        -> std::string {
+
+        return std::format("{}-{}-{}", role, src_loc_tk.start_index(), index);
+    }
+
   private:
     [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
                                               const token& src_loc_tk,
@@ -2415,107 +2606,6 @@ class toc final {
             std::format("{}.{}", kind,
                         source_location_for_use_in_label(src_loc_tk)),
             std::move(text));
-    }
-
-    auto assert_function_not_defined(const token& src_loc_tk,
-                                     const std::string_view name) const
-        -> void {
-
-        if (funcs_.has(name)) {
-            const func_info& fn{funcs_.get(name)};
-
-            // a built-in function has no source location
-            if (fn.src_loc_tk.at_line() == 0) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("function '{}' is a built-in function", name)};
-            }
-
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("function '{}' already defined at {}", name,
-                            source_location_hr(fn.src_loc_tk))};
-        }
-
-        if (generics_.has_func(name)) {
-            const generic_func_info& fn{generics_.get_func(name)};
-
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("function '{}' already defined at {}", name,
-                            source_location_hr(fn.src_loc_tk))};
-        }
-    }
-
-    auto assert_not_declared_in_scope(const token& src_loc_tk,
-                                      const std::string_view name) const
-        -> void {
-
-        if (not scopes_.back().has_var(name)) {
-            return;
-        }
-
-        const var_info& decl_var{scopes_.back().get_var_const_ref(name)};
-
-        throw compiler_exception{
-            src_loc_tk,
-            std::format("variable '{}' already declared at {}", name,
-                        source_location_hr(decl_var.src_loc_tk))};
-    }
-
-    // a generic type and a type share the namespace of types
-    auto assert_type_not_defined(const token& src_loc_tk,
-                                 const std::string_view name) const -> void {
-
-        if (types_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("type '{}' already defined at {}", name,
-                            source_location_hr(types_.src_loc_tk_of(name)))};
-        }
-
-        if (generics_.has_type(name)) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format(
-                    "type '{}' already defined as a generic type at {}", name,
-                    source_location_hr(generics_.get_type(name).src_loc_tk))};
-        }
-    }
-
-    // the resolved name shows where the variable is stored
-    auto comment_var(const token& src_loc_tk, const size_t indent,
-                     const var_info& var) -> void {
-
-        const ident_info name_info{make_ident_info(src_loc_tk, var.name)};
-
-        ::machine& x{machine()};
-
-        std::string text{
-            std::format("{}: {}", var.name, name_info.type_ref().name()),
-        };
-
-        if (var.array_len) {
-            text += std::format("[{}]", var.array_len);
-        }
-
-        // the iterator 'e' is memory at its register, the counter 'i' is the
-        // register
-        const operand& reg{
-            var.value_register.is_empty() ? var.pointer_register
-                                          : var.value_register,
-        };
-
-        if (not reg.is_empty()) {
-            x.comment(src_loc_tk, indent, "{} ({})", text, reg.base_register());
-            return;
-        }
-
-        x.comment_variable(
-            src_loc_tk, indent, text,
-            multiply_storage_size(src_loc_tk, name_info.type_ref().size_bytes(),
-                                  name_info.is_array ? name_info.array_len : 1),
-            name_info.operand);
     }
 
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,
@@ -2528,19 +2618,6 @@ class toc final {
         }
 
         return funcs_.get(name);
-    }
-
-    // 'line' and 'column' of the token, 'separator' between them
-    [[nodiscard]] auto source_location(const token& src_loc_tk,
-                                       const char separator) const
-        -> std::string {
-
-        const auto [line, col]{
-            line_and_col_num_for_char_index(src_loc_tk.at_line(),
-                                            src_loc_tk.start_index(), source_),
-        };
-
-        return std::format("{}{}{}", line, separator, col);
     }
 };
 

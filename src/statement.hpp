@@ -380,7 +380,7 @@ class statement {
         }
 
         if (info.read_only_why == read_only_cause::param) {
-            if (root == "self") {
+            if (root == reserved_names::self) {
                 return ", the method is not declared 'mut'";
             }
 

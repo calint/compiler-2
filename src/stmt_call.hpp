@@ -480,21 +480,24 @@ class stmt_call : public expression {
                                  address_registers),
         };
 
-        // start the callee frame after the caller's storage, not on rsp
+        // start the callee frame after the caller's storage, not on the stack
+        // pointer
         // example: caller uses 24 bytes; callee returns a value and takes one
         // argument
         //
-        // rbx      +------------------------+
-        //          | caller's storage       | 24 bytes
-        // rbx + 24 +------------------------+ <- frame_address; callee's rbx
-        //          | result address         | 8 bytes
-        //          +------------------------+
-        //          | argument address       | 8 bytes
-        //          +------------------------+
-        //          | callee's locals        |
-        //          +------------------------+
+        // base      +------------------------+
+        //           | caller's storage       | 24 bytes
+        // base + 24 +------------------------+ <- frame_address; callee's base
+        //           | result address         | 8 bytes
+        //           +------------------------+
+        //           | argument address       | 8 bytes
+        //           +------------------------+
+        //           | callee's locals        |
+        //           +------------------------+
         //
-        // root calls use rbp instead of rbx as the base
+        // the base is the frame base register, x86_64 'rbx' and rv32i 's1';
+        // root calls use the variables base register instead, x86_64 'rbp' and
+        // rv32i 's0'
         const operand frame_address{tc.next_frame_address()};
 
         x.check_frame_capacity(
@@ -581,7 +584,9 @@ class stmt_call : public expression {
 
         if (has_result_temporary) {
             const ident_info result_info{
-                add_temporary(tc, indent, "call-result", func.get_type()),
+                add_temporary(tc, indent,
+                              toc::temporary_name(tok(), "call-result", 0),
+                              func.get_type()),
             };
 
             compile_noninline(tc, indent, result_info, func, arguments);
@@ -640,7 +645,7 @@ class stmt_call : public expression {
     [[nodiscard]] auto temporary_argument_name(const size_t index) const
         -> std::string {
 
-        return std::format("call-arg-{}-{}", tok().start_index(), index);
+        return toc::temporary_name(tok(), "call-arg", index);
     }
 
     [[nodiscard]] auto variable_arguments(const toc& tc) const

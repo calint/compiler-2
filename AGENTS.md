@@ -134,6 +134,8 @@ Working agreements for AI sessions in this repository.
   allocation or functionality.
 - Big change (several files or interfaces): plan in the todo file, wait for
   go-ahead.
+- Large headers are fine: the classes `toc` uses stay in `toc.hpp`; do not
+  split a header into new files for size.
 - One consistency topic at a time across all sources.
 - Todo items one by one, each with a focused check.
 - Resolved or discarded items of `etc/todo.txt` move to the top of

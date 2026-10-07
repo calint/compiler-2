@@ -196,6 +196,36 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] medium: 'break' exits the current block instead of just the loop?
 [ ] medium: consider not allowing single statement blocks
 [ ] medium: rv32i: check loop iteration regarding large span
+[ ] hard: --checks=noub: plan for the remaining ub from user code (probed
+    2026-10-07 on x86_64 with '--checks=noub'; blocked already: array bounds
+    upper and lower, frame overflow, aliasing arguments, unset results)
+    => ub here means a write to data that is read with an unexpected result:
+       only 5 (overlapping 'array_copy') is of that kind and goes first; 1-4
+       are arithmetic traps and wraps, not aliasing
+    => 1. division by zero: 'idiv' raises SIGFPE (exit by signal, no line), rv32i
+       returns -1; check the divisor like a bounds check and panic with the
+       line
+    => 2. 'MIN / -1' and 'MIN % -1': SIGFPE for i64 on x86_64, wraps for i8-i32
+       (computed in 64 bits), wraps on rv32i; define as wrapping (the quotient
+       is MIN, the remainder 0) on every width, or panic under noub
+    => 3. shift count outside 0 .. width - 1: hardware masks it ('1 << 70' is
+       64, '1 << -1' is 0 on x86_64); a constant count is rejected at compile
+       time, a run-time count is checked under noub
+    => 4. signed overflow wraps on both targets (defined by the hardware, not
+       by the language): state it in the README as the semantics; optional
+       '--checks=overflow' later
+    => 5. overlapping 'array_copy': the result depends on how the copy is
+       chunked ('a[0..3)' to 'a[1..4)' of {1, 2, 3} gives 1, 1, 2 when
+       copied as word + byte); reject at compile time when the ranges are
+       constant and overlap, check at run time under noub (the ranges are
+       already compared for bounds)
+    => 6. a partial 'read'/'write' inside a record, system stack overflow of
+       deep noinline recursion with a large '--vars': see the items below
+    => needs: one 'machine' operation for a checked divisor and one for a
+       checked shift count (both backends), a range overlap check in
+       'machine::copy_memory', README text for the wrapping rules, tests 1-5
+       on x86 and rv32i (panic with the line, constant rejection, valid use
+       unchanged); awaiting go-ahead
 [ ] medium: --checks=noub: division by zero traps and MIN / -1 wraps or traps
     by width; check and panic with the line
 [ ] medium: --checks=noub: shift count < 0 or >= width is masked by hardware

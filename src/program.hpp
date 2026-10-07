@@ -24,6 +24,7 @@
 #include "stmt_def_type.hpp"
 #include "stmt_def_var.hpp"
 #include "toc.hpp"
+#include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
 #include "ub_unset_var.hpp"
@@ -458,14 +459,18 @@ class program final {
 
         machine& x{tc.machine()};
 
-        const machine::call_frame_scope call_frame{x, token{}, "main"};
+        const machine::call_frame_scope call_frame{
+            x,
+            token{},
+            std::string{reserved_names::main},
+        };
 
         x.comment({}, 0, "");
 
-        x.label(0, "main");
-        tc.enter_func("main");
+        x.label(0, reserved_names::main);
+        tc.enter_func(reserved_names::main);
         func_main.code().compile(tc, indent, ident_info::make_empty());
-        tc.exit_func("main");
+        tc.exit_func(reserved_names::main);
 
         // code after an 'exit' or 'return' on every path would never run
         if (assignment_analysis::is_end_reachable(func_main)) {
@@ -482,7 +487,8 @@ class program final {
         const machine::call_frame_scope call_frame{
             x,
             token{},
-            std::format("{}{}", func.name(), machine::noinline_body_suffix),
+            std::string{func.name()},
+            true,
         };
 
         x.begin_noinline_body(std::string{func.name()},

@@ -71,7 +71,7 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_builtin_io>(tc, unary_ops{}, tk, tz);
     }
 
-    if (tk.is_text("foo")) {
+    if (tk.is_text(reserved_names::foo)) {
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
 
