@@ -661,17 +661,17 @@ class stmt_identifier final : public statement {
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {
-        const ident_info ii{tc.make_ident_info(src_loc_tk, path_as_string_)};
+        const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
 
-        set_type(ii.type_ref());
+        set_type(info.type_ref());
 
         // an indexed element is technically no longer an array but an element
         if (elems_.back().array_index_expr != nullptr) {
             return;
         }
 
-        is_array_ = ii.is_array;
-        array_count_ = ii.array_len;
+        is_array_ = info.is_array;
+        array_count_ = info.array_len;
     }
 
     // the variable keeps the offset and covers its whole storage

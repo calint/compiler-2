@@ -303,7 +303,6 @@ class assembler_rv32i final : public assembler {
                              column, text));
     }
 
-    // a jump to a numeric label such as '1b', which is never grown
     // machine instructions, so pseudo instructions count as the ones they
     // expand to, valid once jumps are resolved
     [[nodiscard]] auto instruction_count() const -> size_t override {
@@ -569,6 +568,7 @@ class assembler_rv32i final : public assembler {
                         });
     }
 
+    // a jump to a numeric label such as '1b', which is never grown
     auto j(const size_t indent, const std::string_view target) -> void {
         add_instruction(indent,
                         {
@@ -2227,10 +2227,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto is_local_label(const std::string_view name)
         -> bool {
 
-        return not name.empty() and
-               std::ranges::all_of(name, [](const char c) -> bool {
-                   return c >= '0' and c <= '9';
-               });
+        return not name.empty() and is_numeric(name);
     }
 
     // directives that emit bytes would make offsets wrong, so only these are

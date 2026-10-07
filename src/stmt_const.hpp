@@ -24,7 +24,7 @@ class stmt_const final : public statement {
   public:
     stmt_const(const toc& tc, tokenizer& tz, const int64_t default_value)
         : statement{tz.next_whitespace_token()}, uops_{tz},
-          literal_tk_{tz.next_token()}, value_(default_value) {
+          literal_tk_{tz.next_token()}, value_{default_value} {
 
         set_type(tc.get_type_default());
 

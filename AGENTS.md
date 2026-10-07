@@ -80,6 +80,8 @@ Working agreements for AI sessions in this repository.
 - One-letter names only in tight loops (at most three loop locals).
 - Same parameter names across declarations, definitions and overrides.
 - Keep an interface's paired vocabulary.
+- Public fields of structs and classes have no trailing underscore; private
+  and protected members do.
 
 ### Inserted code
 

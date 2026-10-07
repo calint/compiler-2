@@ -54,7 +54,6 @@ class source_locations final {
         : source_{source} {}
 
     [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
-
         return text(src_loc_tk, '.');
     }
 

@@ -1,21 +1,17 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <cstddef>
+#include <format>
+#include <optional>
+#include <ostream>
+#include <string>
+
 #include "decouple.hpp"
 #include "expr_bool.hpp"
 #include "machine.hpp"
 #include "stmt_block.hpp"
 #include "ub_unset_var.hpp"
-
-#include <ostream>
-
-#include <cstddef>
-
-#include <string>
-
-#include <format>
-
-#include <optional>
 
 class stmt_if_branch final : public statement {
     expr_bool condition_;

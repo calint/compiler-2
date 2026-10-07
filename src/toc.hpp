@@ -423,16 +423,16 @@ class ident_builder final {
 
     // a built-in identifier below a run-time indexed element is addressed from
     // the last address held, e.g. 'wld.rooms[ix].description.data'
-    static auto place_operand_from_lea(const token& src_loc_tk, ident_info& ii)
-        -> void {
+    static auto place_operand_from_lea(const token& src_loc_tk,
+                                       ident_info& info) -> void {
 
         // find the first element from the top that has a 'lea' and get
         // accessor relative to that
         operand lea;
-        size_t lea_index{ii.elem_path.size()};
+        size_t lea_index{info.elem_path.size()};
         while (lea_index--) {
-            if (not ii.lea_path.at(lea_index).is_empty()) {
-                lea = ii.lea_path.at(lea_index);
+            if (not info.lea_path.at(lea_index).is_empty()) {
+                lea = info.lea_path.at(lea_index);
                 break;
             }
         }
@@ -463,19 +463,19 @@ class ident_builder final {
 
         // start from the lea address and calculate offset to referred field
         const std::span<std::string> elem_path_from_lea{
-            std::span{ii.elem_path}.subspan(lea_index),
+            std::span{info.elem_path}.subspan(lea_index),
         };
 
         // navigate to referred element and get offset
         const size_t offset{
-            ii.type_path.at(lea_index)->field_offset(src_loc_tk,
-                                                     elem_path_from_lea),
+            info.type_path.at(lea_index)->field_offset(src_loc_tk,
+                                                       elem_path_from_lea),
         };
 
-        ii.operand = operand::mem(lea, ii.type_ref());
+        info.operand = operand::mem(lea, info.type_ref());
 
         if (offset != 0) {
-            ii.operand.increment_offset(address_offset(offset));
+            info.operand.increment_offset(address_offset(offset));
         }
     }
 
@@ -1633,13 +1633,13 @@ class ident_resolver final {
             return ident_info::make_register(ident, var.value_register);
         }
 
-        ident_info ii{
+        ident_info info{
             ident_builder::make_var_ident_info(
                 src_loc_tk, ident, id.path(), var,
                 machine_.get().variables_base_register()),
         };
 
-        ii.read_only_why = var.read_only_why;
+        info.read_only_why = var.read_only_why;
 
         lea_path.resize(id.path().size());
         // note: pad with empty for the remaining elements in the id path
@@ -1649,15 +1649,15 @@ class ident_resolver final {
         //       upwards in the frame stack but 'elem_path' and 'type_path'
         //       are ordered from the top down
 
-        ii.lea_path = std::move(lea_path);
+        info.lea_path = std::move(lea_path);
 
-        if (not ii.type_ref().is_builtin()) {
-            return ii;
+        if (not info.type_ref().is_builtin()) {
+            return info;
         }
 
-        ident_builder::place_operand_from_lea(src_loc_tk, ii);
+        ident_builder::place_operand_from_lea(src_loc_tk, info);
 
-        return ii;
+        return info;
     }
 
     [[nodiscard]] auto resolve_var_in(const frame& cur_frame,
@@ -2117,6 +2117,13 @@ class toc final {
         }
 
         return std::nullopt;
+    }
+
+    // the label of the start of a comparison or of a list of comparisons
+    [[nodiscard]] auto create_cmp_label(const token& src_loc_tk) const
+        -> std::string {
+
+        return create_unique_label(src_loc_tk, "cmp");
     }
 
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,

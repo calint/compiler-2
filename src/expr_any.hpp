@@ -587,8 +587,6 @@ class expr_any final : public statement {
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
     // the default type
-    // the type and size of an array literal, e.g. 'i8[4]' of 'i8[4]{1, 2}' or
-    // '[]' of '[]{1, 2}' which has the default type
     auto parse_element_type(toc& tc, tokenizer& tz, const type& tp) -> void {
         const token tk{tz.next_token()};
         const bool is_typed{is_array_literal(tc, tk, tz)};
@@ -657,14 +655,14 @@ class expr_any final : public statement {
 
     static auto compile_bool(toc& tc, const size_t indent,
                              const ident_info& dst_info,
-                             const token& src_loc_tk, const expr_bool& e)
-        -> void {
+                             const token& src_loc_tk,
+                             const expr_bool& condition) -> void {
 
         machine& x{tc.machine()};
 
         // e.g. 'true' or a named constant
-        if (not e.is_expression()) {
-            const ident_info src_info{tc.make_ident_info(e)};
+        if (not condition.is_expression()) {
+            const ident_info src_info{tc.make_ident_info(condition)};
 
             assert(src_info.is_const());
 
@@ -676,8 +674,12 @@ class expr_any final : public statement {
         }
 
         // stored comparisons would change what later elements read
-        if (dst_info.is_register() or not e.reads_var(dst_info.root_id())) {
-            compile_bool_list(tc, indent, src_loc_tk, e, dst_info.operand);
+        if (dst_info.is_register() or
+            not condition.reads_var(dst_info.root_id())) {
+
+            compile_bool_list(tc, indent, src_loc_tk, condition,
+                              dst_info.operand);
+
             return;
         }
 
@@ -685,13 +687,14 @@ class expr_any final : public statement {
             x.alloc_scratch_register(src_loc_tk, indent, dst_info.type_ref()),
         };
 
-        compile_bool_list(tc, indent, src_loc_tk, e, reg);
+        compile_bool_list(tc, indent, src_loc_tk, condition, reg);
         x.copy_value(src_loc_tk, indent, dst_info.operand, reg);
         x.free_scratch_register(src_loc_tk, indent, reg);
     }
 
     static auto compile_bool_list(toc& tc, const size_t indent,
-                                  const token& src_loc_tk, const expr_bool& e,
+                                  const token& src_loc_tk,
+                                  const expr_bool& condition,
                                   const operand& dst) -> void {
 
         // labels to jump to depending on the evaluation
@@ -701,7 +704,7 @@ class expr_any final : public statement {
 
         // compile and possibly evaluate constant expression
         const std::optional<bool> const_eval{
-            e.compile(tc, indent, jmp_to_end, jmp_to_end, dst),
+            condition.compile(tc, indent, jmp_to_end, jmp_to_end, dst),
         };
 
         machine& x{tc.machine()};

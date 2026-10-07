@@ -276,12 +276,12 @@ class report_renderer final {
 
 class program final {
     // built-in types
-    type type_void{"void", 0, type_kind::builtin};
-    type type_i64{"i64", sizeof(int64_t), type_kind::builtin};
-    type type_i32{"i32", sizeof(int32_t), type_kind::builtin};
-    type type_i16{"i16", sizeof(int16_t), type_kind::builtin};
-    type type_i8{"i8", sizeof(int8_t), type_kind::builtin};
-    type type_bool{"bool", type_i8.size_bytes(), type_kind::boolean};
+    type type_void_{"void", 0, type_kind::builtin};
+    type type_i64_{"i64", sizeof(int64_t), type_kind::builtin};
+    type type_i32_{"i32", sizeof(int32_t), type_kind::builtin};
+    type type_i16_{"i16", sizeof(int16_t), type_kind::builtin};
+    type type_i8_{"i8", sizeof(int8_t), type_kind::builtin};
+    type type_bool_{"bool", type_i8_.size_bytes(), type_kind::boolean};
 
     std::vector<std::unique_ptr<statement>> statements_;
     toc tc_; // table of contents
@@ -297,24 +297,24 @@ class program final {
         const token src_loc_tk{};
 
         // add built-in calls
-        tc_.add_func(src_loc_tk, "exit", type_void, nullptr, {});
+        tc_.add_func(src_loc_tk, "exit", type_void_, nullptr, {});
 
         // add built-in types
-        tc_.add_type(src_loc_tk, type_i64);
-        tc_.add_type(src_loc_tk, type_i32);
-        tc_.add_type(src_loc_tk, type_i16);
-        tc_.add_type(src_loc_tk, type_i8);
-        tc_.add_type(src_loc_tk, type_bool);
-        tc_.add_type(src_loc_tk, type_void);
+        tc_.add_type(src_loc_tk, type_i64_);
+        tc_.add_type(src_loc_tk, type_i32_);
+        tc_.add_type(src_loc_tk, type_i16_);
+        tc_.add_type(src_loc_tk, type_i8_);
+        tc_.add_type(src_loc_tk, type_bool_);
+        tc_.add_type(src_loc_tk, type_void_);
 
         // the types the front end needs by role
-        tc_.set_type_void(type_void);
-        tc_.set_type_bool(type_bool);
+        tc_.set_type_void(type_void_);
+        tc_.set_type_bool(type_bool_);
 
         machine& x{tc_.machine()};
 
-        tc_.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
-        x.set_builtin_types(type_i64, type_i32, type_i16, type_i8);
+        tc_.set_builtin_types(type_i64_, type_i32_, type_i16_, type_i8_);
+        x.set_builtin_types(type_i64_, type_i32_, type_i16_, type_i8_);
 
         // the default type has a name of its own so that it is portable
         tc_.add_type_alias(src_loc_tk, "int", tc_.get_type_default());

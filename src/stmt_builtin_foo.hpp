@@ -48,9 +48,11 @@ class stmt_builtin_foo final : public statement {
 
         // add vars to toc without emitting output so that the code block can be
         // parsed
-        const ident_info ii{tc.make_ident_info(ident_)};
+        const ident_info array_info{tc.make_ident_info(ident_)};
         tc.enter_foo("");
-        add_loop_names(tc, 0, token{}, token{}, ii, operand{}, operand{});
+
+        add_loop_names(tc, 0, token{}, token{}, array_info, operand{},
+                       operand{});
 
         code_ = {tc, tz};
 
@@ -88,7 +90,7 @@ class stmt_builtin_foo final : public statement {
 
         // the array and the count are resolved before 'e', 'i' and 'n' can
         // hide names they use
-        const ident_info ii{tc.make_ident_info(ident_)};
+        const ident_info array_info{tc.make_ident_info(ident_)};
 
         const operand reg_iter{
             x.alloc_scratch_register(ident_.tok(), indent,
@@ -97,18 +99,20 @@ class stmt_builtin_foo final : public statement {
 
         x.comment(ident_.tok(), indent, "initiate iterator e");
 
-        load_array_address(tc, indent, ii, reg_iter);
+        load_array_address(tc, indent, array_info, reg_iter);
 
         std::vector<operand> allocated_registers;
 
         const operand limit{
-            compile_limit(tc, indent, ii.array_len, allocated_registers),
+            compile_limit(tc, indent, array_info.array_len,
+                          allocated_registers),
         };
 
         tc.enter_foo(loop_label);
 
         const operand counter{
-            declare_counter(tc, indent, ii, reg_iter, allocated_registers),
+            declare_counter(tc, indent, array_info, reg_iter,
+                            allocated_registers),
         };
 
         x.comment(tok(), indent, "initiate counter i");
@@ -123,7 +127,8 @@ class stmt_builtin_foo final : public statement {
         x.label(indent + 1, toc::continue_label(loop_label));
 
         x.foo_advance_iteration(tok(), indent + 2, reg_iter, counter,
-                                ii.type_ref().size_bytes(), limit, loop_label);
+                                array_info.type_ref().size_bytes(), limit,
+                                loop_label);
 
         x.label(indent, end_label);
 
@@ -190,8 +195,8 @@ class stmt_builtin_foo final : public statement {
 
     // 'e', 'i' and 'n' are declared, the counter is a register or a variable in
     // memory, as the machine prefers
-    auto declare_counter(toc& tc, const size_t indent, const ident_info& ii,
-                         const operand& reg_iter,
+    auto declare_counter(toc& tc, const size_t indent,
+                         const ident_info& array_info, const operand& reg_iter,
                          std::vector<operand>& allocated_registers) const
         -> operand {
 
@@ -208,7 +213,7 @@ class stmt_builtin_foo final : public statement {
             allocated_registers.push_back(reg_counter);
         }
 
-        add_loop_names(tc, indent, ident_.tok(), tok(), ii, reg_iter,
+        add_loop_names(tc, indent, ident_.tok(), tok(), array_info, reg_iter,
                        reg_counter);
 
         return counter_in_memory ? tc.make_ident_info(tok(), "i").operand
@@ -220,15 +225,16 @@ class stmt_builtin_foo final : public statement {
     }
 
     // an indexed or forwarded array needs its address computed
-    auto load_array_address(toc& tc, const size_t indent, const ident_info& ii,
+    auto load_array_address(toc& tc, const size_t indent,
+                            const ident_info& array_info,
                             const operand& reg_iter) const -> void {
 
         machine& x{tc.machine()};
 
-        if (not ii.has_lea() and not ii.is_pointer and
+        if (not array_info.has_lea() and not array_info.is_pointer and
             not ident_.is_indexed()) {
 
-            x.address_of(tok(), indent, reg_iter, ii.operand);
+            x.address_of(tok(), indent, reg_iter, array_info.operand);
             return;
         }
 
@@ -238,7 +244,7 @@ class stmt_builtin_foo final : public statement {
             ident_.compile_lea(tc, indent, tok(), allocated_registers,
                                {
                                    .reg_count{},
-                                   .lea_path{ii.lea_path},
+                                   .lea_path{array_info.lea_path},
                                    .address_register{},
                                }),
         };

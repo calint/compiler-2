@@ -1,12 +1,12 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <utility>
+
 #include "compiler_exception.hpp"
 #include "statement.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
-
-#include <utility>
 
 class expression : public statement {
   public:

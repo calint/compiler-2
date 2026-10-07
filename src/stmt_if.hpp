@@ -81,8 +81,7 @@ class stmt_if final : public statement {
         const std::string label_after_if{toc::end_label(if_label)};
 
         const std::string label_else_branch{
-            stmt_if::create_label_else_branch(else_code_, if_label,
-                                              label_after_if),
+            create_label_else_branch(else_code_, if_label, label_after_if),
         };
 
         bool branch_evaluated_to_true{};
@@ -115,8 +114,8 @@ class stmt_if final : public statement {
         field_coverage merged{field_coverage::full(entry.size_bytes())};
         bool is_reachable{};
 
-        for (const stmt_if_branch& e : branches_) {
-            trace_path(e, entry, flow, merged, is_reachable);
+        for (const stmt_if_branch& branch : branches_) {
+            trace_path(branch, entry, flow, merged, is_reachable);
         }
 
         // an empty 'else' is the path that skips every branch

@@ -196,12 +196,6 @@ class expr_bool_op final : public statement {
         return eval_constant(*lhs_value, op_, *rhs_value) != is_not_;
     }
 
-    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
-        -> std::string {
-
-        return tc.create_unique_label(tok(), "cmp");
-    }
-
   private:
     // a comparison that folds is checked like one that is compiled
     auto assert_typed_constant_fits_lhs(const toc& tc) const -> void {
@@ -227,13 +221,11 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::comparison_action branch_action{action};
         // branch on the stored result using 'action.branch_on_true'
+        machine::comparison_action branch_action{action};
 
+        // 'compile_boolean' already stored the result and applied inversion
         branch_action.destination = {};
-        // 'compile_boolean' already stored the result and applied
-        // inversion
-
         branch_action.inverted = false;
 
         x.compare_and_branch(tok(), indent, action.destination,
@@ -285,7 +277,7 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         x.comment(lhs_.tok(), indent, "const eval to {}",
-                  (value ? "true" : "false"));
+                  value ? "true" : "false");
 
         if (value == action.branch_on_true) {
             x.branch(indent, action.target);
@@ -308,7 +300,7 @@ class expr_bool_op final : public statement {
                   statement::trimmed_source(*this, "?",
                                             comment_label(list_op, inverted)));
 
-        x.label(indent, create_cmp_bgn_label(tc));
+        x.label(indent, tc.create_cmp_label(tok()));
 
         const std::optional<bool> constant{constant_value(tc)};
 
@@ -440,19 +432,9 @@ class expr_bool_op final : public statement {
     }
 
     auto resolve_if_op_is_expression() -> void {
-        // a negated expression is an expression
-        if (is_not_) {
-            is_expression_ = true;
-            return;
-        }
-
-        if (not is_shorthand_) {
-            is_expression_ = true;
-            return;
-        }
-
-        // a shorthand condition on an expression
-        if (lhs_.is_expression()) {
+        // a negated expression, a comparison and a shorthand condition on an
+        // expression are expressions
+        if (is_not_ or not is_shorthand_ or lhs_.is_expression()) {
             is_expression_ = true;
             return;
         }
@@ -676,32 +658,32 @@ class expr_bool_op final : public statement {
     }
 
     [[nodiscard]] static auto
-    eval_constant(const int64_t lh, const machine::comparison_operator op,
-                  const int64_t rh) -> bool {
+    eval_constant(const int64_t lhs, const machine::comparison_operator op,
+                  const int64_t rhs) -> bool {
 
         if (op == machine::comparison_operator::equal) {
-            return lh == rh;
+            return lhs == rhs;
         }
 
         if (op == machine::comparison_operator::not_equal) {
-            return lh != rh;
+            return lhs != rhs;
         }
 
         if (op == machine::comparison_operator::less) {
-            return lh < rh;
+            return lhs < rhs;
         }
 
         if (op == machine::comparison_operator::less_equal) {
-            return lh <= rh;
+            return lhs <= rhs;
         }
 
         if (op == machine::comparison_operator::greater) {
-            return lh > rh;
+            return lhs > rhs;
         }
 
         assert(op == machine::comparison_operator::greater_equal);
 
-        return lh >= rh;
+        return lhs >= rhs;
     }
 
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
@@ -1124,7 +1106,10 @@ class expr_bool final : public statement {
             };
 
             const std::string next_label{
-                create_cmp_label_from(tc, bools_.at(expr_index + 1)),
+                bools_.at(expr_index + 1)
+                    .visit([&tc](const auto& next) -> std::string {
+                        return tc.create_cmp_label(next.tok());
+                    }),
             };
             // note: +1 because the next element is the continuation
 
@@ -1246,16 +1231,10 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        x.label(indent, create_cmp_bgn_label(tc));
+        x.label(indent, tc.create_cmp_label(tok()));
 
         return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true,
                            inverted, dst);
-    }
-
-    [[nodiscard]] auto create_cmp_bgn_label(const toc& tc) const
-        -> std::string {
-
-        return tc.create_unique_label(tok(), "cmp");
     }
 
     // inversion swaps 'and' and 'or' according to De Morgan's laws
@@ -1384,18 +1363,5 @@ class expr_bool final : public statement {
         x.branch(indent, jmp_to_if_true);
 
         return std::nullopt;
-    }
-
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto create_cmp_label_from(const toc& tc,
-                                                    const element& var)
-        -> std::string {
-
-        return var.visit([&tc](const auto& e) -> std::string {
-            return e.create_cmp_bgn_label(tc);
-        });
     }
 };

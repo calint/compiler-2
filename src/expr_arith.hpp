@@ -795,7 +795,7 @@ class expr_arith final : public expression {
         exprs_.pop_back();
 
         // the sub-expression continues with the precedence of the operator
-        exprs_.emplace_back(make_unique<expr_arith>(
+        exprs_.emplace_back(std::make_unique<expr_arith>(
             tc, tz, in_args, false, token{}, true, unary_ops{}, next_precedence,
             std::move(last_elem_in_list)));
     }
@@ -1094,32 +1094,35 @@ class expr_arith final : public expression {
         -> int64_t {
 
         // unsigned arithmetic wraps like the registers
-        const uint64_t l{static_cast<uint64_t>(lhs)};
-        const uint64_t r{static_cast<uint64_t>(rhs)};
+        const uint64_t lhs_bits{static_cast<uint64_t>(lhs)};
+        const uint64_t rhs_bits{static_cast<uint64_t>(rhs)};
 
         if (op == arithmetic_operator::add) {
-            return wrap_to_width(static_cast<int64_t>(l + r), width_type);
+            return wrap_to_width(static_cast<int64_t>(lhs_bits + rhs_bits),
+                                 width_type);
         }
 
         if (op == arithmetic_operator::subtract) {
-            return wrap_to_width(static_cast<int64_t>(l - r), width_type);
+            return wrap_to_width(static_cast<int64_t>(lhs_bits - rhs_bits),
+                                 width_type);
         }
 
         if (op == arithmetic_operator::multiply) {
-            return wrap_to_width(static_cast<int64_t>(l * r), width_type);
+            return wrap_to_width(static_cast<int64_t>(lhs_bits * rhs_bits),
+                                 width_type);
         }
 
         if (op == arithmetic_operator::bit_and) {
-            return static_cast<int64_t>(l & r);
+            return static_cast<int64_t>(lhs_bits & rhs_bits);
         }
 
         if (op == arithmetic_operator::bit_or) {
-            return static_cast<int64_t>(l | r);
+            return static_cast<int64_t>(lhs_bits | rhs_bits);
         }
 
         assert(op == arithmetic_operator::bit_xor);
 
-        return static_cast<int64_t>(l ^ r);
+        return static_cast<int64_t>(lhs_bits ^ rhs_bits);
     }
 
     // an identifier copies itself, anything else is assigned with '='
@@ -1464,25 +1467,30 @@ class expr_arith final : public expression {
                                              const type& width_type)
         -> std::optional<int64_t> {
 
-        const std::optional<int64_t> m{mergeable_divisor(divisor)};
-        const std::optional<int64_t> n{mergeable_divisor(next)};
+        const std::optional<int64_t> current_divisor{
+            mergeable_divisor(divisor),
+        };
 
-        if (not m or not n) {
+        const std::optional<int64_t> next_divisor{mergeable_divisor(next)};
+
+        if (not current_divisor or not next_divisor) {
             return std::nullopt;
         }
 
         const int64_t product{
-            combine(*m, arithmetic_operator::multiply, *n, width_type),
+            combine(*current_divisor, arithmetic_operator::multiply,
+                    *next_divisor, width_type),
         };
 
         // a wrapped product divided back differs from the divisor
-        if (product / *n != *m) {
+        if (product / *next_divisor != *current_divisor) {
             return std::nullopt;
         }
 
         return product;
     }
 
+    // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
     [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
                                             const bool in_args)
         -> std::unique_ptr<statement> {
@@ -1504,7 +1512,6 @@ class expr_arith final : public expression {
         return create_statement_in_expr_arith(tc, tz);
     }
 
-    // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
     // the operator at the next character, not consumed
     [[nodiscard]] static auto peek_operator(tokenizer& tz)
         -> std::optional<arithmetic_operator> {

@@ -1393,7 +1393,8 @@ class machine {
         trace_.record_allocation(pool);
     }
 
-    // 'pool' has just got a scratch register
+    // 'pool' has just got a scratch register, keeps the greatest count of
+    // scratch registers in use at once
     auto record_scratch_registers(const register_pool& pool) -> void {
         usage_max_scratch_regs_ =
             std::max(usage_max_scratch_regs_, pool.scratch_count());
@@ -1440,9 +1441,6 @@ class machine {
         }
     }
 
-    // keeps the greatest count of scratch registers in use at once
-    // the registers listed in the report: those a source location allocated,
-    // the register a backend holds itself is left out
     // immediates are decimal numbers prefixed by unary '-' and '~' operators
     // returns two's complement bits or empty for an operand that is not an
     // immediate
@@ -1569,7 +1567,6 @@ class register_reporter final {
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none
     [[nodiscard]] auto peak_report() const -> std::vector<std::string> {
-
         // room for the comment marker and a space of the assembly output
         constexpr size_t max_line_width{78};
 

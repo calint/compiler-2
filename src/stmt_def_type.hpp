@@ -311,6 +311,8 @@ class stmt_def_type final : public statement {
         -> void {
 
         tokenizer generic_tz{tc.source(), generic.start_tk};
+
+        // skips the name and the parameters of the generic definition
         std::ignore = generic_tz.next_token();
         std::ignore = generic_param::parse(generic_tz);
 

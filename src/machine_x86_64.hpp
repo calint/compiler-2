@@ -190,7 +190,6 @@ class machine_x86_64 final : public machine {
     // source lines of the bounds checks, each gets a stub that reports it
     std::set<size_t> bounds_panic_lines_;
 
-    // buffering output is no more logical state than writing to the stream
     assembler_x86_64 assembler_;
 
   public:
@@ -711,6 +710,8 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rdi",
                                assembler_x86_64::immediate::of_expression(
                                    "num_buffer + 19", true));
+        // note: 19 is the offset of the newline, the digits of the number are
+        //       written backwards before it, the text ends at offset 20
 
         assembler_.instruction(
             1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
@@ -739,6 +740,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rdx",
                                assembler_x86_64::immediate::of_expression(
                                    "num_buffer + 20", true));
+        // note: 20 is the end of the text, the length is end minus start
 
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
@@ -1192,7 +1194,6 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] auto slot_register() const -> std::string_view override {
-
         return slot_register_;
     }
 
@@ -2395,6 +2396,8 @@ class machine_x86_64 final : public machine {
         return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
     }
 
+    // bit in the mask of 'registers_' for any size alias of a register, 0 for
+    // other text such as labels
     [[nodiscard]] static auto register_bit(const std::string_view name)
         -> uint16_t {
 
@@ -2415,8 +2418,6 @@ class machine_x86_64 final : public machine {
         std::unreachable();
     }
 
-    // bit in the mask of 'registers_' for any size alias of a register, 0 for
-    // other text such as labels
     // the index in 'register_names_' of a register of any size
     [[nodiscard]] static auto register_index(const std::string_view name)
         -> size_t {

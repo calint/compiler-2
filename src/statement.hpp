@@ -47,7 +47,6 @@ class one_line_source final {
     // become single spaces, string and character literals are kept as written
     //   'a  =  b # note'  =>  'a = b'
     [[nodiscard]] static auto of(const std::string_view text) -> std::string {
-
         std::string collapsed;
         collapsed.reserve(text.size());
 
@@ -374,6 +373,11 @@ class statement {
 
     // emits the address of this statement for a bulk operation, 'info' is what
     // 'toc' resolved it to
+    // nothing is emitted here, the backend calls the returned emitter when it
+    // needs the address: the emitter builds it with 'compile_address', which
+    // passes it to the backend's 'use' while the scratch registers that built
+    // it are still allocated and frees them afterwards. it refers to its
+    // arguments, so it is only valid within the call that made it
     [[nodiscard]] auto address_emitter_of(toc& tc, const size_t indent,
                                           const token& src_loc_tk,
                                           const ident_info& info) const

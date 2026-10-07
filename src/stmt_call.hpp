@@ -456,7 +456,7 @@ class stmt_call : public expression {
             });
 
         // freed after both versions since both use the argument registers
-        free_in_reverse(x, tok(), indent + 1, allocated_registers);
+        x.free_scratch_registers(tok(), indent + 1, allocated_registers);
     }
 
     auto compile_noninline(toc& tc, const size_t indent,
@@ -808,6 +808,8 @@ class stmt_call : public expression {
     }
 
   private:
+    // the error was found inside the inlined body, unless it is in the call
+    // itself where the call is already the error location
     auto add_call_frame(compiler_exception& e) const -> void {
         if (is_inside_call(e)) {
             return;
@@ -995,8 +997,6 @@ class stmt_call : public expression {
                         conflict->fix)};
     }
 
-    // the error was found inside the inlined body, unless it is in the call
-    // itself where the call is already the error location
     // 'what' names what precedes the '(' in the error
     auto assert_open_paren_found(const tokenizer& tz,
                                  const std::string_view what) const -> void {
@@ -1145,7 +1145,7 @@ class stmt_call : public expression {
         // statements of the body have no destination
         func.code().compile(tc, indent, ident_info::make_empty());
 
-        free_in_reverse(x, tok(), indent + 1, registers_to_free);
+        x.free_scratch_registers(tok(), indent + 1, registers_to_free);
 
         // provide the exit label for 'return' to jump to
 
@@ -1790,16 +1790,6 @@ class stmt_call : public expression {
                            constructor_name_tk.text());
 
         return name;
-    }
-
-    static auto free_in_reverse(machine& x, const token& src_loc_tk,
-                                const size_t indent,
-                                const std::span<const operand> registers)
-        -> void {
-
-        for (const operand& r : registers | std::views::reverse) {
-            x.free_scratch_register(src_loc_tk, indent, r);
-        }
     }
 
     // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]

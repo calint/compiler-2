@@ -31,12 +31,12 @@ class stmt_def_dat final : public statement {
         unary_ops uops;
         token src_loc_tk;
         int64_t value{};
-        token open_brace_tk_;
-        token close_brace_tk_;
+        token open_brace_tk;
+        token close_brace_tk;
         bool is_array{};
         size_t array_count{};
         std::vector<elem> elems;
-        std::vector<token> elem_delims_tk_;
+        std::vector<token> elem_delims_tk;
 
         auto source_to(std::ostream& os) const -> void {
             uops.source_to(os);
@@ -297,13 +297,12 @@ class stmt_def_dat final : public statement {
     //
 
     // the '}' that ends the initializer, when it is the next character, e.g.
-    // the
-    // '}' of '{1, 2}'
+    // the '}' of '{1, 2}'
     [[nodiscard]] static auto at_closing_brace(tokenizer& tz, elem& el)
         -> bool {
 
-        el.close_brace_tk_ = tz.is_next_char_token('}');
-        return not el.close_brace_tk_.is_empty();
+        el.close_brace_tk = tz.is_next_char_token('}');
+        return not el.close_brace_tk.is_empty();
     }
 
     static auto compile_data_builtin(toc& tc, const type& tp,
@@ -495,23 +494,23 @@ class stmt_def_dat final : public statement {
 
         elem el{make_empty_array(src_loc_tk, array_count)};
 
-        el.open_brace_tk_ = tz.is_next_char_token('{');
+        el.open_brace_tk = tz.is_next_char_token('{');
 
-        if (el.open_brace_tk_.is_empty()) {
+        if (el.open_brace_tk.is_empty()) {
             throw compiler_exception{
                 tz,
                 std::format("expected '{{' to open array initializer for '{}'",
                             tp.name())};
         }
 
-        el.close_brace_tk_ = tz.is_next_char_token('}');
+        el.close_brace_tk = tz.is_next_char_token('}');
 
-        if (el.close_brace_tk_.is_empty()) {
+        if (el.close_brace_tk.is_empty()) {
             parse_array_elements(tc, tz, tp, el);
-            el.close_brace_tk_ = tz.is_next_char_token('}');
+            el.close_brace_tk = tz.is_next_char_token('}');
         }
 
-        if (el.close_brace_tk_.is_empty()) {
+        if (el.close_brace_tk.is_empty()) {
             throw compiler_exception{
                 tz,
                 std::format("expected '}}' to close array initializer for '{}'",
@@ -549,7 +548,7 @@ class stmt_def_dat final : public statement {
                                 count, count == 1 ? "" : "s", el.array_count)};
             }
 
-            el.elem_delims_tk_.emplace_back(delim_tk);
+            el.elem_delims_tk.emplace_back(delim_tk);
         }
     }
 
@@ -588,17 +587,17 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
-        const ident_info ii{
+        const ident_info info{
             tc.make_ident_info(el.src_loc_tk, el.src_loc_tk.text()),
         };
 
-        if (not ii.is_const()) {
+        if (not info.is_const()) {
             throw compiler_exception{
                 el.src_loc_tk,
                 std::format("'{}' must be a constant", el.src_loc_tk.text())};
         }
 
-        el.value = ii.const_value;
+        el.value = info.const_value;
 
         // the assembler would truncate the value or warn about it
         const int64_t value{el.uops.evaluate_constant(el.value)};
@@ -665,7 +664,7 @@ class stmt_def_dat final : public statement {
                                 next.is_array ? "[]" : "", tp.name())};
         }
 
-        el.elem_delims_tk_.emplace_back(tk);
+        el.elem_delims_tk.emplace_back(tk);
     }
 
     [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,
@@ -674,9 +673,9 @@ class stmt_def_dat final : public statement {
         elem el{};
         el.src_loc_tk = tz.cur_position_token();
         // e.g. the '{1, 2}' of 'dat p = point{1, 2}'
-        el.open_brace_tk_ = tz.is_next_char_token('{');
+        el.open_brace_tk = tz.is_next_char_token('{');
 
-        if (el.open_brace_tk_.is_empty()) {
+        if (el.open_brace_tk.is_empty()) {
             throw compiler_exception{
                 tz,
                 std::format("expected '{{' to open type initializer for '{}'",
@@ -717,17 +716,17 @@ class stmt_def_dat final : public statement {
         std::ostream& os, const elem& elroot,
         const std::function_ref<void(size_t, const elem&)> print_item) -> void {
 
-        elroot.open_brace_tk_.source_to(os);
+        elroot.open_brace_tk.source_to(os);
         for (size_t i{}; i < elroot.elems.size(); ++i) {
             if (i != 0) {
-                elroot.elem_delims_tk_.at(i - 1).source_to(os);
+                elroot.elem_delims_tk.at(i - 1).source_to(os);
                 // note: -1 because there is one delimiter fewer than elements
             }
 
             print_item(i, elroot.elems.at(i));
         }
 
-        elroot.close_brace_tk_.source_to(os);
+        elroot.close_brace_tk.source_to(os);
     }
 
     static auto print_source_elem(std::ostream& os, const type& tp,

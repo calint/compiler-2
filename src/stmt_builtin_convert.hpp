@@ -59,7 +59,7 @@ class stmt_builtin_convert final : public expression {
     // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is
     // 'false'
     stmt_builtin_convert(const toc& tc, const token tk)
-        : expression{tk, {}}, folded_(tk.is_text("bool") ? "false" : "0") {
+        : expression{tk, {}}, folded_{tk.is_text("bool") ? "false" : "0"} {
 
         set_type(conversion_type(tc, tk));
     }

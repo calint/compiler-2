@@ -229,12 +229,10 @@ class assembler {
             ++summary.body_count;
             summary.call_count += calls[b.label];
 
-            size_t size{};
-            for (const line& l : std::span<const line>{lines_}.subspan(
-                     b.first_line, b.end_line - b.first_line)) {
-
-                size += l.code_size;
-            }
+            const size_t size{
+                code_size_of(std::span<const line>{lines_}.subspan(
+                    b.first_line, b.end_line - b.first_line)),
+            };
 
             summary.instruction_count += instructions_in(size);
         }
@@ -416,12 +414,7 @@ class assembler {
 
     // in the target's unit, removed lines have no size
     [[nodiscard]] auto code_size() const -> size_t {
-        size_t size{};
-        for (const line& l : lines_) {
-            size += l.code_size;
-        }
-
-        return size;
+        return code_size_of(lines_);
     }
 
     [[nodiscard]] auto is_capturing() const -> bool {
@@ -475,6 +468,12 @@ class assembler {
         -> std::string_view {
 
         return trim(text.substr(0, text.find(comment_marker)));
+    }
+
+    [[nodiscard]] static auto is_numeric(const std::string_view text) -> bool {
+        return std::ranges::all_of(text, [](const char ch) -> bool {
+            return std::isdigit(static_cast<unsigned char>(ch)) != 0;
+        });
     }
 
     [[nodiscard]] static auto leading_whitespace(const std::string_view text)
@@ -790,12 +789,6 @@ class assembler {
         }
 
         return referenced.contains(l.label);
-    }
-
-    [[nodiscard]] static auto is_numeric(const std::string_view text) -> bool {
-        return std::ranges::all_of(text, [](const char ch) -> bool {
-            return std::isdigit(static_cast<unsigned char>(ch)) != 0;
-        });
     }
 
     [[nodiscard]] static auto is_symbol_char(const char ch) -> bool {

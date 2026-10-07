@@ -1,13 +1,13 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <ostream>
+
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-
-#include <ostream>
 
 class stmt_def_func_param final : public statement {
     token mut_tk_;
