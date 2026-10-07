@@ -51,7 +51,9 @@ Working agreements for AI sessions in this repository.
   formatter removes.
 - Around multiline statements and declarations, keeping an attached comment or
   note with its statement.
-- After the `{` of a multiline signature and of a multiline condition.
+- After the `{` of a multiline signature, of a multiline lambda head and of a
+  multiline condition (the formatter applies it after the last clang-format
+  run, which removes it from lambda bodies).
 - Before a return only when the statements before it have blank lines between
   them.
 - Between switch branches (labels sharing a body stay grouped).

@@ -915,6 +915,8 @@ class block:
     # the block is the body of a control statement whose condition spans
     # several lines
     has_multiline_condition: bool = False
+    # the block is the body of a lambda whose head spans several lines
+    has_multiline_lambda_head: bool = False
 
     def has_multiline_signature(self):
         if self.function is None:
@@ -972,6 +974,7 @@ def blocks_by_file(tu, paths, texts):
     resolved = {}
     bodies = {}
     conditions = set()
+    lambda_heads = set()
     seen = set()
     found = {p: [] for p in wanted}
     for top in tu.cursor.get_children():
@@ -998,6 +1001,16 @@ def blocks_by_file(tu, paths, texts):
                 ):
                     conditions.add(brace_of(body, path))
 
+            if cursor.kind == K.LAMBDA_EXPR:
+                body = next(
+                    (c for c in cursor.get_children() if c.kind == K.COMPOUND_STMT),
+                    None,
+                )
+                if body is not None and (
+                    body.extent.start.line != cursor.extent.start.line
+                ):
+                    lambda_heads.add(brace_of(body, path))
+
             if cursor.kind != K.COMPOUND_STMT:
                 continue
 
@@ -1017,6 +1030,7 @@ def blocks_by_file(tu, paths, texts):
                     stmts,
                     bodies.get((path, open_line)),
                     brace in conditions,
+                    brace in lambda_heads,
                 )
             )
 
@@ -1034,6 +1048,13 @@ def rule_condition(b, want):
     # the body of a control statement whose condition spans several lines has a
     # blank line after its '{'
     if b.stmts and b.has_multiline_condition:
+        want(0, BLANK)
+
+
+def rule_lambda_head(b, want):
+    # the body of a lambda whose head spans several lines has a blank line
+    # after its '{'
+    if b.stmts and b.has_multiline_lambda_head:
         want(0, BLANK)
 
 
@@ -1105,6 +1126,7 @@ def rule_return_by_block(b, wants, want):
 BLANK_LINE_RULES = [
     rule_signature,
     rule_condition,
+    rule_lambda_head,
     rule_multiline,
     rule_assert_groups,
 ]

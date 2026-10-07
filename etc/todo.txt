@@ -44,10 +44,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        'compile_boolean' is on 'expr_bool' only
 [ ] hard: 'stmt_call' has three modes (function, method, constructor) told
     apart by empty tokens and three constructors that repeat the same steps
-    => plan: one 'parse_call' step shared by the constructors (set the type,
-       require '(', parse the arguments) and a small 'call_kind' enum instead
-       of 'is_method()' and 'is_constructor()' on empty tokens; a class per
-       mode only if the compile paths differ enough
+    => done: the '(' check is one helper 'assert_open_paren_found'
+    => no 'call_kind' enum: the dot tokens are needed to reproduce the source,
+       an enum would be a second source of truth for what they already say
+    => left: a class per mode, only if the compile paths differ enough
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
 [ ] medium: low priority: long parameter lists: 'stmt_identifier::
     compile_indexed_element' (11), 'machine::compare_memory' and its rv32i

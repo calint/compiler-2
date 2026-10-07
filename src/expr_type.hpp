@@ -284,6 +284,7 @@ class expr_type final : public statement {
             [&dst, &written](
                 const token& src_loc_tk, const std::string_view read_text,
                 const std::optional<field_coverage::range>& accessed) -> void {
+
                 if (accessed and not accessed->overlaps(written)) {
                     return;
                 }

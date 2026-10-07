@@ -79,9 +79,7 @@ class stmt_call : public expression {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
-        if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected '(' after function name"};
-        }
+        assert_open_paren_found(tz, "function name");
 
         if (not tc.is_func_builtin(func_name_)) {
             parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
@@ -106,9 +104,7 @@ class stmt_call : public expression {
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
-        if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected '(' after method name"};
-        }
+        assert_open_paren_found(tz, "method name");
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
@@ -181,9 +177,7 @@ class stmt_call : public expression {
 
         open_paren_tk_ = tz.is_next_char_token('(');
 
-        if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected '(' after constructor name"};
-        }
+        assert_open_paren_found(tz, "constructor name");
 
         parse_arguments(tc, tz, func);
     }
@@ -814,8 +808,6 @@ class stmt_call : public expression {
     }
 
   private:
-    // the error was found inside the inlined body, unless it is in the call
-    // itself where the call is already the error location
     auto add_call_frame(compiler_exception& e) const -> void {
         if (is_inside_call(e)) {
             return;
@@ -1001,6 +993,20 @@ class stmt_call : public expression {
                         describe_argument(index), args_.at(index).identifier(),
                         dst_info.elem_path.front(), conflict->reason,
                         conflict->fix)};
+    }
+
+    // the error was found inside the inlined body, unless it is in the call
+    // itself where the call is already the error location
+    // 'what' names what precedes the '(' in the error
+    auto assert_open_paren_found(const tokenizer& tz,
+                                 const std::string_view what) const -> void {
+
+        if (not open_paren_tk_.is_empty()) {
+            return;
+        }
+
+        throw compiler_exception{tz,
+                                 std::format("expected '(' after {}", what)};
     }
 
     // a result must be stored and a call without one cannot provide it

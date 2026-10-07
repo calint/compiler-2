@@ -1885,6 +1885,7 @@ class machine_rv32i : public machine {
 
         const auto check_negative = [&](const std::string_view reg,
                                         const bool last) -> void {
+
             assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
                                    last ? bounds_pass.reference
                                         : bounds_fail.reference);
@@ -4737,6 +4738,7 @@ class machine_rv32i : public machine {
 
         const auto same_register = [](const std::string_view first,
                                       const std::string_view second) -> bool {
+
             return first == second or
                    (is_register(first) and
                     register_index(first) == register_index(second));

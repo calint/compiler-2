@@ -1630,6 +1630,7 @@ class machine_x86_64 final : public machine {
         with_lowered_addresses(src_loc_tk, indent, dst, src,
                                [&](const operand& lowered_dst,
                                    const operand& lowered_src) -> void {
+
                                    emit(indent, code, lowered_dst, lowered_src);
                                });
     }
@@ -1796,6 +1797,7 @@ class machine_x86_64 final : public machine {
             src_loc_tk, indent, value, operand{},
             [&](const operand& lowered,
                 [[maybe_unused]] const operand& empty) -> void {
+
                 assembler_.instruction(indent, code, to_argument(lowered));
             });
     }
@@ -1893,6 +1895,7 @@ class machine_x86_64 final : public machine {
             src_loc_tk, indent, dst, address,
             [&](const operand& lowered_dst,
                 const operand& lowered_address) -> void {
+
                 assembler_.instruction(
                     indent, op::lea, to_argument(lowered_dst),
                     to_address(lowered_address, explicit_displacement));
@@ -2129,6 +2132,7 @@ class machine_x86_64 final : public machine {
             src_loc_tk, indent, value, operand{},
             [&](const operand& lowered,
                 [[maybe_unused]] const operand& empty) -> void {
+
                 assembler_.setcc(indent, cc, to_argument(lowered));
             });
     }
@@ -2371,6 +2375,7 @@ class machine_x86_64 final : public machine {
         for_each_part(remaining_bytes, size_qword,
                       [&](const size_t part_size_bytes,
                           [[maybe_unused]] const size_t offset) -> void {
+
                           compares.push_back(string_compare(part_size_bytes));
                       });
 
