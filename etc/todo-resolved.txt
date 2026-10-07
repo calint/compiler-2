@@ -1,6 +1,80 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: release review, cleanups found by reading the sources
+    => done (2026-10-07): the noinline frame of the register report is a flag
+       ('register_trace::frame::is_noinline_body') instead of a name suffix;
+       temporaries are named by 'toc::temporary_name'; 'self', 'foo' and
+       'main' are 'reserved_names' (in 'token.hpp'); the frame comment of
+       'stmt_call.hpp' names both targets; 'toc' keeps its facade and
+       delegates the redefinition errors ('definition_checks'), the source
+       locations ('source_locations') and the comment of a variable
+       ('variable_comments') to helper classes in 'toc.hpp'; 'add_var' lost its
+       duplicate branch; generated code is unchanged
+[x] hard: noinline calls: pass the frame slots in registers instead of memory
+    (ideas, measured on 'etc/roome/roome.baz' with every function but 'main'
+    noinline, x86_64, no checks: 5813 instructions, 322 calls, 753 frame
+    slots of 2 instructions each ('lea' + 'mov [slot]') = about 1500, 1056
+    'push'/'pop' around calls, the temporaries of 'compile_noninline_call'
+    about 150)
+    => slots by kind: struct receiver or argument 348 (240 read-only, 108
+       'mut'), array 140, result 110, scalar read-only 155 (126 variables, 29
+       values: constants and expressions)
+    => 1. scalar read-only parameter by value in an argument register
+       ('value_register' in the callee, no address): saves about 340
+       instructions (6%) and the callee's pointer loads; a 'mut' parameter,
+       struct, array and result stay by address. 2. every address in a
+       register instead of a slot in the callee frame: saves the store and
+       the callee's load for all 753 slots, the callee must spill the
+       registers it needs for nested calls. needs a set of argument registers
+       per backend and the register saving of the call to keep them
+    => prototype (2026-10-06, x86_64 only, first slot in 'r11'; the callee holds
+       the register for the whole body, 'toc' gives a variable with a
+       'pointer_register' no storage): all noinline 5813 -> 5592 instructions
+       (-3.8%), text 21762 -> 19458 bytes (-10.6%); with noub,line 10175 ->
+       9954 (-2.2%); as written 2525 -> 2600 (+3%), the two big bodies lose a
+       scratch register; 'test-cases.sh' x86_64 and rv32i and
+       'etc/roome/test.sh' pass; not linted, 'test-all.sh' not run
+    => done (2026-10-06, x86_64; the choice removed 2026-10-07, see
+       todo-resolved): 'program::decide_first_slot_registers' compiles each
+       body (without array parameters) both ways in a dry run
+       and keeps the smaller; the result is read by 'stmt_call' and
+       'stmt_def_func::compile_body'. as written 2525 -> 2521 instructions,
+       all noinline 5813 -> 5445 (-6.3%), text 21762 -> 19537 (-10.2%); with
+       noub,line all noinline 10175 -> 9807 (-3.6%). left: the other slots in
+       registers, rv32i, functions with array parameters always use the
+       register (a body per call), test 865
+    => the register slot is the receiver of a method ('register_slot_index',
+       the one place of the policy): all noinline 5445 -> 5453 instructions;
+       the first slot of a function that is no method in a register too gave
+       -4 instructions on x86_64 and -19 (0.2%) on rv32i, dropped
+    => rv32i too ('s11', the last saved register, no built-in names it): all
+       noinline 9121 -> 8590 instructions (-5.8%), noub,line 14224 -> 13681
+       (-3.8%), as written 4304 -> 4284
+    => 'noinline' as written in 'roome.baz' (2 functions) is smaller than
+       every function noinline, see 'etc/roome-inline-vs-noinline.txt'
+    => measured 2026-10-07, x86_64 no checks, 'noinline' bodies that nothing
+       calls no longer emitted, the receiver of every method in the register
+       (the per function choice was removed): all noinline 4117 instructions
+       against 4467
+       all inline; call protocol is 68% of the reachable code (about 11
+       instructions per call: 'push'/'pop' 954, callee pointer loads 444, slot
+       stores 398, 'call'/'ret', 'lea rbx'), with 'frame' 9 more per call
+    => left: the 'frame' check is 9 instructions at every call (298 calls),
+       one check per body or per chain of calls; 'lea r11, [rX]' that is a
+       'mov'; the saved registers of a call that the callee does not use
+    => done (2026-10-07): the frame slots of a noinline call are passed in
+       registers where it pays (the receiver of a method, x86_64 and rv32i);
+       what is left is the item 'noinline calls: cost of the call protocol'
+       of 'etc/todo.txt'
+[x] medium: coverage cleanup, first stage: lines that nothing reached
+    (baseline 2026-10-06 'test-all.sh': 284 missed lines of 18228)
+    => done (2026-10-06): new cases 848-859, 'test-cli.sh' checks, the
+       'rv32i-driver' of 'test-rv32i.sh' counted in the report,
+       'test-far-jumps.sh short' in 'test-all.sh', dead throws turned into
+       asserts
+    => done (2026-10-06): 284 -> 96 missed lines of 21272 (99.55%); the rest
+       continues in the item 'coverage cleanup' of 'etc/todo.txt'
 [x] medium: a constant argument was a literal in an inlined function and a value
     of the parameter's type in a noinline one: 'same(b[1], 4)' with 'func
     same(x i8, y i16) { res = x == y }' compiled when inlined (the 4 has no
