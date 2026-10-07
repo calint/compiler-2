@@ -161,6 +161,15 @@ class operand final {
         return index_register_;
     }
 
+    // the memory operand '[reg]', its address is the value of the register
+    [[nodiscard]] auto is_address_in_register(const std::string_view name) const
+        -> bool {
+
+        return is_memory() and base_register_ == name and
+               index_register_.empty() and displacement_ == 0 and
+               immediate_.empty();
+    }
+
     [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }
 
     [[nodiscard]] auto is_immediate() const -> bool {

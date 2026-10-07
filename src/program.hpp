@@ -508,17 +508,10 @@ class program final {
         x.end_noinline_body();
     }
 
-    // each noninline function has one body per kind of call, after 'main'
+    // each noninline function that is called has one body per kind of call,
+    // after 'main'; a function nothing calls leaves no code
     static auto compile_noninline_functions(toc& tc, const size_t indent)
         -> void {
-
-        for (const stmt_def_func* f : tc.get_func_defs()) {
-            if (f->is_inlined() or f->has_array_param()) {
-                continue;
-            }
-
-            compile_noninline_body(tc, indent, *f, {});
-        }
 
         // note: the calls in a body can request more instances, so the count
         //       is read on every pass

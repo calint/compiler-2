@@ -468,10 +468,9 @@ class stmt_call : public expression {
             array_argument_lengths(func, arguments),
         };
 
-        // without array parameters the one body is emitted for all calls
-        if (func.has_array_param()) {
-            tc.add_noninline_instance(func, array_lengths);
-        }
+        // a body is emitted for a function that is called, once for all calls
+        // without array parameters
+        tc.add_noninline_instance(func, array_lengths);
 
         // the registers stay allocated until the callee frame is populated
         std::vector<operand> address_registers;

@@ -1,0 +1,20 @@
+# a noinline function that nothing calls leaves no code, and a method that
+# passes its own receiver on does not load it into the receiver register
+type counter { n }
+
+func noinline mut counter.add(d) { self.n = self.n + d }
+
+func noinline mut counter.twice(d) {
+    self.add(d)
+    self.add(d)
+}
+
+func noinline helper(x) res { res = x }
+
+func noinline unused(x) res { res = helper(x) }
+
+func main() {
+    var c = counter
+    c.twice(3)
+    exit(c.n)
+}

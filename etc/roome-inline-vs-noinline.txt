@@ -1,10 +1,12 @@
 roome.baz: inline against noinline, instruction counts per machine
 --------------------------------------------------------------------------------
-taken 2026-10-06 with the 'instructions:' line of the footer of the generated
-assembly, a noinline body is counted once. 'text' is the code section of the
-nasm object (x86_64), rv32i instructions are 4 bytes each.
+taken 2026-10-07 (the first study 2026-10-06) with the 'instructions:' line of
+the footer of the generated assembly, a noinline body is counted once. 'text'
+is the code section of the nasm object (x86_64), rv32i instructions are 4
+bytes each (a 'call' is 2 of them, the footer counts it so).
 the output of every variant was compared with etc/roome/roome.out on rv32i-fpga
-(emulator) and on x86_64 (native), all are the same.
+(emulator, the build with checks) and on x86_64 (native, the build without
+checks), all are the same.
 
 variants of etc/roome/roome.baz
   as written   'entity.find_object' and 'parse_input' are noinline, the other
@@ -17,30 +19,56 @@ no checks (--checks=)
 --------------------------------------------------------------------------------
                       x86_64                       rv32i-fpga
                       instructions  text bytes     instructions  bytes
-as written                    2525      12630              4304  17216
-all inline                    4467      24284              7825  31300
-all noinline                  5813      21762              9133  36532
+as written                    2520      12610            4299  17196
+all inline                    4467      24284            7825  31300
+all noinline                  4098      14508            6610  26440
 
 checks noub,line (as in etc/roome/test.sh)
 --------------------------------------------------------------------------------
                       x86_64                       rv32i-fpga
                       instructions  text bytes     instructions  bytes
-as written                    3937      19509              5941  23764
-all inline                    6742      35388             10677  42708
-all noinline                 10175      44465             14238  56952
+as written                    3932      19489            5936  23744
+all inline                    6742      35388           10677  42708
+all noinline                  7674      33063           10744  42976
+
+the first study had all noinline at 5813 / 9133 (no checks) and 10175 / 14238
+(noub,line). three changes since: the first slot of a call in a register (2026-
+10-06), the receiver register no longer loaded with itself ('lea r11, [r11]',
+x86_64 only, -117), and a noinline body is emitted only when something calls it
+(-847 on x86_64, -1500 on rv32i). without checks all noinline went from 30%
+above all inline to 8% below on x86_64 and from 17% above to 16% below on
+rv32i, see 'reading'.
 
 reading
 --------------------------------------------------------------------------------
-1. all noinline is not better than as written: 130% (x86_64) and 112%
-   (rv32i) more instructions with no checks. not analysed, the generated code
-   of a call writes frame slots and saves registers, and a result or an
-   argument without storage goes through a temporary of the caller.
-2. all noinline against all inline, no checks: 30% more instructions on x86_64
-   and 17% more on rv32i, but 10% fewer code bytes on x86_64 (inline code is
-   longer per instruction: more memory operands and immediates). on rv32i all
-   instructions are 4 bytes, so inline is smaller there (36532 against 31300).
-3. with noub,line all noinline grows the most (14238 against 10677 on rv32i),
-   the 'frame' check of 'noub' applies to calls of noinline functions only.
-4. the best size is the mix as written: the two functions that unfold into a
-   lot of code and have 2 callers are noinline, the small ones are inlined.
-5. speed was not measured, only code size.
+1. the first study's result, all noinline worse than all inline, came from
+   bodies that nothing calls. 'compile_noninline_functions' emitted every
+   noinline function without array parameters: 38 of 186 bodies (room.
+   remove_entity, name.input, and 'push', 'find_or_add', 'delete_item' and
+   'is_full' of every list instance that does not use them), 871 of 5061
+   x86_64 instructions and about 1540 of 8124 on rv32i. an inlined function
+   that nothing calls emits nothing. these are not emitted any more.
+2. with them gone, no checks: all noinline is 8% fewer instructions than all
+   inline on x86_64, 16% fewer on rv32i, and 40% fewer code bytes on x86_64.
+   as written is still the smallest of the three (2520 against 4098).
+3. the cost of a noinline call is about 11 instructions on x86_64 (measured
+   on the reachable code of the all noinline build before the change of 1):
+   68% of that code was call protocol and 32% work. 'push'/'pop' of the
+   registers held at the call 954 (22.8%), the callee loading the address of
+   its result and arguments from its frame 444, storing the slots 398, 'call'
+   263 and 'ret' 198, 'lea rbx' 249, receiver and slot addresses 286.
+   inlining has no such cost but repeats the body at every call: the 62
+   bodies with two or more callers would be 4022 instructions inlined, 1408
+   as bodies.
+4. a function with one call (98 bodies, 2919 instructions) is better inlined,
+   the call protocol is its whole overhead. a function with several calls is
+   better noinline when its body is larger than about 11 instructions.
+5. with noub,line all noinline is above all inline on x86_64 (7674 against
+   6742) and about equal on rv32i. the 'frame' check of 'noub' is 9
+   instructions at each noinline call (298 x 9 = 2682 on x86_64), inlined
+   code has no such check.
+6. a noinline instance is emitted for each generic instance (func.rooms.push,
+   func.links.push next to func.id_list.push) and for each array length of an
+   array parameter ('tokenizer.is_array' 5 bodies), nothing is shared.
+7. the best size is still the mix as written.
+8. speed was not measured, only code size.

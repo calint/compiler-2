@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: 'noinline' bodies were emitted for every function without array
+    parameters whether or not a call reached them: 38 of 186 bodies of 'etc/
+    roome/roome.baz' with every function but 'main' 'noinline' (17% of the x86_64
+    instructions, 19% of rv32i), e.g. 'room.remove_entity', and the methods of
+    list instances that nothing calls ('rooms.push', 'links.find_or_add')
+    => done (2026-10-07): a call registers the body it needs
+       ('toc::add_noninline_instance', for every 'noinline' function now, not
+       only for those with array parameters), 'compile_noninline_functions'
+       compiles only the registered ones; a dry run ('measure_only', 'check_only')
+       registers nothing, its call is compiled again for real. all noinline
+       (no checks): x86_64 4945 -> 4098 instructions, rv32i 8154 -> 6610; with
+       noub,line x86_64 9156 -> 7674, rv32i 12922 -> 10744; as written and all
+       inline unchanged. an error inside a function that nothing calls is no
+       longer reported (as for an inlined function); test 869
+[x] easy: the receiver register was loaded with itself ('lea r11, [r11]') when a
+    method passed its own receiver on to a 'noinline' call: 92 in all noinline
+    roome, none on rv32i ('address_of' skipped the 'addi')
+    => done (2026-10-07): 'call_function' of both backends does not load the
+       register when 'operand::is_address_in_register'; all noinline x86_64
+       5062 -> 4945; the dry runs of 'decide_slot_registers' measure smaller
+       bodies, 8 bodies lost 1-5 more instructions; test 869
 [x] hard: instance literals, constructor calls and instance call results as
     arguments ('ls.add(point{1, 2})', 'sum({ 1, 2 })', 'sum(point.at(1, 2))',
     'sum(mk(1, 2))'), inline and noinline, were rejected with "argument 1

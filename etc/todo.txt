@@ -46,8 +46,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        noinline 9121 -> 8590 instructions (-5.8%), noub,line 14224 -> 13681
        (-3.8%), as written 4304 -> 4284
     => 'noinline' as written in 'roome.baz' (2 functions) is smaller than
-       every function noinline (2525 against 5813 instructions), see
-       'etc/roome-inline-vs-noinline.txt'
+       every function noinline, see 'etc/roome-inline-vs-noinline.txt'
+    => measured 2026-10-07, x86_64 no checks, 'noinline' bodies that nothing
+       calls no longer emitted: all noinline 4098 instructions against 4467
+       all inline; call protocol is 68% of the reachable code (about 11
+       instructions per call: 'push'/'pop' 954, callee pointer loads 444, slot
+       stores 398, 'call'/'ret', 'lea rbx'), with 'frame' 9 more per call
+    => left: the 'frame' check is 9 instructions at every call (298 calls),
+       one check per body or per chain of calls; 'lea r11, [rX]' that is a
+       'mov'; the saved registers of a call that the callee does not use
 [ ] easy: rename 'compiler_exception'
 [o] hard: coverage cleanup: every line that is not 'std::unreachable()' is
     reached by a test, or becomes an 'assert' or 'std::unreachable()'

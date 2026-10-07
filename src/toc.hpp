@@ -1704,6 +1704,8 @@ class toc final {
     storage_layout storage_;
     check_options checks_;
     bool is_measuring_body_{};
+    // above zero while the code is compiled only to be measured or checked
+    size_t dry_run_depth_{};
 
   public:
     toc(::machine& backend, const std::string_view source,
@@ -1806,9 +1808,14 @@ class toc final {
         generics_.add_type(src_loc_tk, name, start_tk, std::move(params));
     }
 
-    // a body is emitted once per distinct instance
+    // a body is emitted once per distinct instance, for a call that is
+    // compiled for real: a dry run leaves no trace, the call is compiled again
     auto add_noninline_instance(const stmt_def_func& func,
                                 std::vector<size_t> array_lengths) -> void {
+
+        if (dry_run_depth_ != 0) {
+            return;
+        }
 
         funcs_.add_noninline_instance(func, std::move(array_lengths));
     }
@@ -2297,7 +2304,9 @@ class toc final {
 
         const storage_layout::dry_run_state saved{storage_.begin_dry_run()};
 
+        ++dry_run_depth_;
         const size_t size{machine_.get().measure_code_size(compile)};
+        --dry_run_depth_;
 
         storage_.end_dry_run(saved);
         scopes_.set_max_depth(max_frame_count);

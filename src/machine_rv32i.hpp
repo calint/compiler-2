@@ -626,8 +626,11 @@ class machine_rv32i : public machine {
 
         const size_t stack_bytes{save_registers(indent, saved)};
 
-        // before the frame base, the address may be relative to it
-        if (not slot_address.is_empty()) {
+        // before the frame base, the address may be relative to it; the
+        // receiver of the caller, already in the register, is passed as is
+        if (not slot_address.is_empty() and
+            not slot_address.is_address_in_register(slot_register_)) {
+
             comment(src_loc_tk, indent, "address of the slot in a register");
 
             address_of(src_loc_tk, indent,

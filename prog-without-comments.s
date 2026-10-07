@@ -1367,6 +1367,47 @@ main:
     mov rdi, 0
     mov rax, 60
     syscall
+func.factorial:
+    mov r15, qword [rbx]
+    mov qword [r15], 1
+    if.176.8:
+    cmp.176.8:
+    mov r15, qword [rbx + 8]
+    cmp qword [r15], 1
+    jg if.176.5.end
+    if.176.8.code:
+        ret
+    if.176.5.end:
+    mov r15, qword [rbx + 8]
+    mov r14, qword [r15]
+    mov qword [rbx + 16], r14
+    sub qword [rbx + 16], 1
+    lea r15, [rbx + 32]
+    lea r14, [vars]
+    cmp r15, r14
+    jb baz_frame_overflow
+    mov r14, strict qword vars.end
+    cmp r15, r14
+    ja baz_frame_overflow
+    sub r14, r15
+    mov r15, size.func.factorial
+    cmp r15, r14
+    ja baz_frame_overflow
+    lea r15, [rbx + 24]
+    mov qword [rbx + 32], r15
+    lea r15, [rbx + 16]
+    mov qword [rbx + 40], r15
+    push rbx
+    lea rbx, [rbx + 32]
+    call func.factorial
+    pop rbx
+    mov r15, qword [rbx]
+    mov r13, qword [rbx + 8]
+    mov r14, qword [r13]
+    imul r14, qword [rbx + 24]
+    mov qword [r15], r14
+    ret
+size.func.factorial equ 32
 func.print_num:
     mov qword [rbx + 8], 0
     mov qword [rbx + 16], 0
@@ -1455,47 +1496,6 @@ func.print_num:
     syscall
     ret
 size.func.print_num equ 64
-func.factorial:
-    mov r15, qword [rbx]
-    mov qword [r15], 1
-    if.176.8:
-    cmp.176.8:
-    mov r15, qword [rbx + 8]
-    cmp qword [r15], 1
-    jg if.176.5.end
-    if.176.8.code:
-        ret
-    if.176.5.end:
-    mov r15, qword [rbx + 8]
-    mov r14, qword [r15]
-    mov qword [rbx + 16], r14
-    sub qword [rbx + 16], 1
-    lea r15, [rbx + 32]
-    lea r14, [vars]
-    cmp r15, r14
-    jb baz_frame_overflow
-    mov r14, strict qword vars.end
-    cmp r15, r14
-    ja baz_frame_overflow
-    sub r14, r15
-    mov r15, size.func.factorial
-    cmp r15, r14
-    ja baz_frame_overflow
-    lea r15, [rbx + 24]
-    mov qword [rbx + 32], r15
-    lea r15, [rbx + 16]
-    mov qword [rbx + 40], r15
-    push rbx
-    lea rbx, [rbx + 32]
-    call func.factorial
-    pop rbx
-    mov r15, qword [rbx]
-    mov r13, qword [rbx + 8]
-    mov r14, qword [r13]
-    imul r14, qword [rbx + 24]
-    mov qword [r15], r14
-    ret
-size.func.factorial equ 32
 baz_frame_overflow:
     mov rax, 1
     mov rdi, 2

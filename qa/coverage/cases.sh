@@ -2656,3 +2656,7 @@ SRC=867 && EXP=81 && RUN
 
 # a bare instance literal does not tell the type parameter
 SRC=868 && COMPERR
+
+# a noinline function that nothing calls leaves no code, a method that passes
+# its own receiver on does not load it into the receiver register
+SRC=869 && DIFFPY

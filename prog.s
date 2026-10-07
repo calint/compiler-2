@@ -3110,6 +3110,103 @@ main:
     syscall
 
 ;
+;[174:15] noinline factorial(n) res
+func.factorial:
+;   [174:28] res: i64 (8 B @ [rbx])
+;   [174:25] n: i64 (8 B @ [rbx + 8])
+;   [175:5] res = 1
+;   [175:5] allocate scratch register -> r15
+    mov r15, qword [rbx]
+;   [175:11] 1
+    mov qword [r15], 1
+;   [175:5] free scratch register r15
+    if.176.8:
+;   [176:8] ? n <= 1
+;   [176:8] ? n <= 1
+    cmp.176.8:
+;   [176:8] allocate scratch register -> r15
+    mov r15, qword [rbx + 8]
+    cmp qword [r15], 1
+;   [176:8] free scratch register r15
+    jg if.176.5.end
+    if.176.8.code:
+;       [176:15] return
+        ret
+    if.176.5.end:
+;   [178:5] var m = n - 1
+;   [178:9] m: i64 (8 B @ [rbx + 16])
+;   [178:9] m = n - 1
+;   [178:13] instructions without scratch register 4, with 4
+;   [178:13] n
+;   [178:13] allocate scratch register -> r15
+    mov r15, qword [rbx + 8]
+;   [178:13] allocate scratch register -> r14
+    mov r14, qword [r15]
+    mov qword [rbx + 16], r14
+;   [178:13] free scratch register r14
+;   [178:13] free scratch register r15
+;   [178:13] m - 1
+;   [178:13] src: folded constant '- 1'
+    sub qword [rbx + 16], 1
+;   [179:5] var partial = factorial(m)
+;   [179:9] partial: i64 (8 B @ [rbx + 24])
+;   [179:9] partial = factorial(m)
+;   [179:19] partial = factorial(m)
+;   [179:19] = expression
+;   [179:19] factorial(m)
+;   [179:19] frame capacity check begin
+;   [179:19] allocate scratch register -> r15
+;   [179:19] allocate scratch register -> r14
+    lea r15, [rbx + 32]
+    lea r14, [vars]
+    cmp r15, r14
+    jb baz_frame_overflow
+    mov r14, strict qword vars.end
+    cmp r15, r14
+    ja baz_frame_overflow
+    sub r14, r15
+    mov r15, size.func.factorial
+    cmp r15, r14
+    ja baz_frame_overflow
+;   [179:19] free scratch register r14
+;   [179:19] free scratch register r15
+;   [179:19] frame capacity check end
+;   [179:19] result address in callee frame
+;   [179:19] allocate scratch register -> r15
+    lea r15, [rbx + 24]
+    mov qword [rbx + 32], r15
+;   [179:19] free scratch register r15
+;   [179:19] address of argument 'm' to parameter 'n'
+;   [179:19] allocate scratch register -> r15
+    lea r15, [rbx + 16]
+    mov qword [rbx + 40], r15
+;   [179:19] free scratch register r15
+;   [179:19] before call: save allocated registers
+    push rbx
+;   [179:19] set function frame base
+    lea rbx, [rbx + 32]
+    call func.factorial
+;   [179:19] after call: restore saved registers
+    pop rbx
+;   [180:5] res = n * partial
+;   [180:5] allocate scratch register -> r15
+    mov r15, qword [rbx]
+;   [180:11] instructions without scratch register 6, with 4
+;   [180:11] allocate scratch register -> r14
+;   [180:11] n
+;   [180:11] allocate scratch register -> r13
+    mov r13, qword [rbx + 8]
+    mov r14, qword [r13]
+;   [180:11] free scratch register r13
+;   [180:15] r14 * partial
+;   [180:15] src: operand
+    imul r14, qword [rbx + 24]
+    mov qword [r15], r14
+;   [180:11] free scratch register r14
+;   [180:5] free scratch register r15
+    ret
+size.func.factorial equ 32
+;
 ;[133:15] noinline print_num(num)
 func.print_num:
 ;   [133:25] num: i64 (8 B @ [rbx])
@@ -3352,103 +3449,6 @@ func.print_num:
 ;   [171:5] free named register rdi
     ret
 size.func.print_num equ 64
-;
-;[174:15] noinline factorial(n) res
-func.factorial:
-;   [174:28] res: i64 (8 B @ [rbx])
-;   [174:25] n: i64 (8 B @ [rbx + 8])
-;   [175:5] res = 1
-;   [175:5] allocate scratch register -> r15
-    mov r15, qword [rbx]
-;   [175:11] 1
-    mov qword [r15], 1
-;   [175:5] free scratch register r15
-    if.176.8:
-;   [176:8] ? n <= 1
-;   [176:8] ? n <= 1
-    cmp.176.8:
-;   [176:8] allocate scratch register -> r15
-    mov r15, qword [rbx + 8]
-    cmp qword [r15], 1
-;   [176:8] free scratch register r15
-    jg if.176.5.end
-    if.176.8.code:
-;       [176:15] return
-        ret
-    if.176.5.end:
-;   [178:5] var m = n - 1
-;   [178:9] m: i64 (8 B @ [rbx + 16])
-;   [178:9] m = n - 1
-;   [178:13] instructions without scratch register 4, with 4
-;   [178:13] n
-;   [178:13] allocate scratch register -> r15
-    mov r15, qword [rbx + 8]
-;   [178:13] allocate scratch register -> r14
-    mov r14, qword [r15]
-    mov qword [rbx + 16], r14
-;   [178:13] free scratch register r14
-;   [178:13] free scratch register r15
-;   [178:13] m - 1
-;   [178:13] src: folded constant '- 1'
-    sub qword [rbx + 16], 1
-;   [179:5] var partial = factorial(m)
-;   [179:9] partial: i64 (8 B @ [rbx + 24])
-;   [179:9] partial = factorial(m)
-;   [179:19] partial = factorial(m)
-;   [179:19] = expression
-;   [179:19] factorial(m)
-;   [179:19] frame capacity check begin
-;   [179:19] allocate scratch register -> r15
-;   [179:19] allocate scratch register -> r14
-    lea r15, [rbx + 32]
-    lea r14, [vars]
-    cmp r15, r14
-    jb baz_frame_overflow
-    mov r14, strict qword vars.end
-    cmp r15, r14
-    ja baz_frame_overflow
-    sub r14, r15
-    mov r15, size.func.factorial
-    cmp r15, r14
-    ja baz_frame_overflow
-;   [179:19] free scratch register r14
-;   [179:19] free scratch register r15
-;   [179:19] frame capacity check end
-;   [179:19] result address in callee frame
-;   [179:19] allocate scratch register -> r15
-    lea r15, [rbx + 24]
-    mov qword [rbx + 32], r15
-;   [179:19] free scratch register r15
-;   [179:19] address of argument 'm' to parameter 'n'
-;   [179:19] allocate scratch register -> r15
-    lea r15, [rbx + 16]
-    mov qword [rbx + 40], r15
-;   [179:19] free scratch register r15
-;   [179:19] before call: save allocated registers
-    push rbx
-;   [179:19] set function frame base
-    lea rbx, [rbx + 32]
-    call func.factorial
-;   [179:19] after call: restore saved registers
-    pop rbx
-;   [180:5] res = n * partial
-;   [180:5] allocate scratch register -> r15
-    mov r15, qword [rbx]
-;   [180:11] instructions without scratch register 6, with 4
-;   [180:11] allocate scratch register -> r14
-;   [180:11] n
-;   [180:11] allocate scratch register -> r13
-    mov r13, qword [rbx + 8]
-    mov r14, qword [r13]
-;   [180:11] free scratch register r13
-;   [180:15] r14 * partial
-;   [180:15] src: operand
-    imul r14, qword [rbx + 24]
-    mov qword [r15], r14
-;   [180:11] free scratch register r14
-;   [180:5] free scratch register r15
-    ret
-size.func.factorial equ 32
 ; frame overflow handler (--checks=frame)
 baz_frame_overflow:
 ;    print message to stderr
@@ -3631,8 +3631,8 @@ vars.end:
 ; free named register rbp
 
 ;           noinline functions:
-;                    print_num: 1 body, 2 calls, 62 instructions
 ;                    factorial: 1 body, 2 calls, 35 instructions
+;                    print_num: 1 body, 2 calls, 62 instructions
 ;
 ;   removed jumps to next code: 129
 ;    removed unreachable jumps: 2

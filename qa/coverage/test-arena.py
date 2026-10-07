@@ -300,7 +300,10 @@ func noinline probe(data mut large) {{
     data.values[index] = 42
     assert(24, data.values[index] == 42)
 }}
-func main() {{}}
+func main() {{
+    var data = large{{}}
+    probe(data)
+}}
 """
         harness = f"""
 section .text
