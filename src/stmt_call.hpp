@@ -231,6 +231,18 @@ class stmt_call : public expression {
             return;
         }
 
+        // an inlined recursion ends at compile time when a constant argument
+        // makes its condition fold, otherwise it would expand without end
+        constexpr size_t max_inlined_nesting{64};
+
+        if (tc.inlined_nesting(func.name()) >= max_inlined_nesting) {
+            throw compiler_exception{
+                tok(), std::format("recursion of inlined function '{}' does "
+                                   "not end at compile time, declare it "
+                                   "'noinline'",
+                                   func.name())};
+        }
+
         // an error found in the inlined body reports where it was called from
         try {
             compile_inline_call(tc, indent, dst_info, func);

@@ -198,12 +198,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     checked, so an error in its body is silent until the first use
     => placeholder types would reject valid bodies, so the footer of the
        assembler lists the generic functions without an instance
-[ ] hard: consider making widening explicit too, today only narrowing needs
-    'i8(...)' ('var y i32 = 1 + low(x)' with 'low' returning i8 is rejected)
-    => prototype: requiring equal widths in the 3 width checks rejects 40+
-       tests; exempt array indexes (most), fitting constants and 'void' calls
-    => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
-       compile on rv32i; 'int(...)' widens to the default type
 [ ] hard: string type ('var str = "hello world"', 'str.len')
 [ ] hard: strings as sources of 'arrays_equal' and 'array_copy'
     => parse a string token or identifier as the source, treated as 'i8'; the

@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] hard: consider making widening explicit too, today only narrowing needs
+    'i8(...)' ('var y i32 = 1 + low(x)' with 'low' returning i8 is rejected)
+    => prototype: requiring equal widths in the 3 width checks rejects 40+
+       tests; exempt array indexes (most), fitting constants and 'void' calls
+    => the default type is i64 on x86 and i32 on rv32i, so 'i64(x)' does not
+       compile on rv32i; 'int(...)' widens to the default type
+    => discarded (2026-10-07): widening is automatic and only narrowing needs
+       'i8(...)' so that a value is never truncated silently; widening cannot
+       lose a value, so an explicit form would add noise and break 40+ tests
+       for no safety gain
 [x] medium: release review, cleanups found by reading the sources
     => done (2026-10-07): the noinline frame of the register report is a flag
        ('register_trace::frame::is_noinline_body') instead of a name suffix;

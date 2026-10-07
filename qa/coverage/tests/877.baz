@@ -1,0 +1,11 @@
+# an inlined recursion that does not end at compile time is rejected, it
+# would be expanded without end
+func count(n) res {
+    res = 0
+    if n > 5 return
+    res = count(n + 1) + 1
+}
+
+func main() {
+    exit(count(0))
+}

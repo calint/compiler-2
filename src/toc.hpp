@@ -966,6 +966,30 @@ class scope_stack final {
 
     [[nodiscard]] auto front() const -> const frame& { return frames_.front(); }
 
+    // how many times the inlined function 'name' is being compiled in place
+    // by the current function body, inlined bodies are searched down to the
+    // nearest function with a body of its own
+    [[nodiscard]] auto inlined_nesting(const std::string_view name) const
+        -> size_t {
+
+        size_t count{};
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (not frm.is_func()) {
+                continue;
+            }
+
+            if (not frm.is_inlined_func()) {
+                break;
+            }
+
+            if (frm.is_name(name)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     [[nodiscard]] auto is_empty() const -> bool { return frames_.empty(); }
 
     [[nodiscard]] auto is_in_loop_block() const -> bool {
@@ -2389,6 +2413,12 @@ class toc final {
 
     [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
         return types_.has(name);
+    }
+
+    [[nodiscard]] auto inlined_nesting(const std::string_view name) const
+        -> size_t {
+
+        return scopes_.inlined_nesting(name);
     }
 
     [[nodiscard]] auto is_alias_check() const -> bool { return checks_.alias; }

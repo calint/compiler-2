@@ -2681,3 +2681,6 @@ SRC=875 && COMPERR
 
 # a generic method clashes with the method of an alias defined before it
 SRC=876 && COMPERR
+
+# an inlined recursion that does not end at compile time is rejected
+SRC=877 && COMPERR
