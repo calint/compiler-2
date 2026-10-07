@@ -700,9 +700,6 @@ class function_table final {
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
     std::vector<noninline_instance> noninline_instances_;
     std::set<std::string> checked_calls_;
-    // functions whose register slot is in the frame, the others have it in a
-    // register
-    std::set<const stmt_def_func*> slot_in_frame_;
 
   public:
     // the name has been checked, a built-in function has no definition
@@ -766,12 +763,6 @@ class function_table final {
         return funcs_.has(name);
     }
 
-    [[nodiscard]] auto is_slot_in_frame(const stmt_def_func& func) const
-        -> bool {
-
-        return slot_in_frame_.contains(&func);
-    }
-
     // a copy, the list grows while the instances compile
     [[nodiscard]] auto noninline_instance_at(const size_t index) const
         -> noninline_instance {
@@ -781,14 +772,6 @@ class function_table final {
 
     [[nodiscard]] auto noninline_instance_count() const -> size_t {
         return noninline_instances_.size();
-    }
-
-    auto set_slot_in_frame(const stmt_def_func& func) -> void {
-        slot_in_frame_.insert(&func);
-    }
-
-    auto set_slot_in_register(const stmt_def_func& func) -> void {
-        slot_in_frame_.erase(&func);
     }
 };
 
@@ -1703,7 +1686,6 @@ class toc final {
     ident_resolver resolver_;
     storage_layout storage_;
     check_options checks_;
-    bool is_measuring_body_{};
     // above zero while the code is compiled only to be measured or checked
     size_t dry_run_depth_{};
 
@@ -2170,6 +2152,12 @@ class toc final {
         std::unreachable();
     }
 
+    // whether the backend passes the address of the receiver of a method in a
+    // register
+    [[nodiscard]] auto has_slot_register() const -> bool {
+        return not machine_.get().slot_register().empty();
+    }
+
     [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
         return types_.has(name);
     }
@@ -2222,21 +2210,6 @@ class toc final {
         return builtins_.is_integer_name(name);
     }
 
-    // a body compiled to measure its size is not checked for aliasing, its
-    // calls are checked where they are compiled for real
-    [[nodiscard]] auto is_measuring_body() const -> bool {
-        return is_measuring_body_;
-    }
-
-    // whether the backend has a register for it and 'func' has not been given
-    // the frame
-    [[nodiscard]] auto is_slot_in_register(const stmt_def_func& func) const
-        -> bool {
-
-        return not machine_.get().slot_register().empty() and
-               not funcs_.is_slot_in_frame(func);
-    }
-
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
         -> bool {
 
@@ -2283,15 +2256,6 @@ class toc final {
                             const read_only_cause cause) -> void {
 
         scopes_.back().make_var_read_only(name, cause);
-    }
-
-    [[nodiscard]] auto
-    measure_body_only(const std::function_ref<void()> compile) -> size_t {
-
-        is_measuring_body_ = true;
-        const size_t size{measure_only(compile)};
-        is_measuring_body_ = false;
-        return size;
     }
 
     // like 'check_only', returns the size of the code, in the unit of the
@@ -2347,18 +2311,6 @@ class toc final {
                            const type& t_i16, const type& t_i8) -> void {
 
         builtins_.set_integers(t_i64, t_i32, t_i16, t_i8);
-    }
-
-    // a body is compiled with one of them, by default the register
-    auto set_slot_in_frame(const stmt_def_func& func, const bool in_frame)
-        -> void {
-
-        if (in_frame) {
-            funcs_.set_slot_in_frame(func);
-            return;
-        }
-
-        funcs_.set_slot_in_register(func);
     }
 
     auto set_type_bool(const type& tpe) -> void { builtins_.set_boolean(tpe); }

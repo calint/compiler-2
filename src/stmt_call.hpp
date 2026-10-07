@@ -1011,10 +1011,6 @@ class stmt_call : public expression {
         const stmt_def_func& func,
         const std::span<const noninline_arg> arguments) const -> void {
 
-        if (tc.is_measuring_body()) {
-            return;
-        }
-
         const std::optional<std::string> signature{
             aliasing_signature(tc, dst_info, func, arguments),
         };

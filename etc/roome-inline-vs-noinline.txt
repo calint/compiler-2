@@ -21,7 +21,7 @@ no checks (--checks=)
                       instructions  text bytes     instructions  bytes
 as written                    2520      12610            4299  17196
 all inline                    4467      24284            7825  31300
-all noinline                  4098      14508            6610  26440
+all noinline                  4117      14456            6626  26504
 
 checks noub,line (as in etc/roome/test.sh)
 --------------------------------------------------------------------------------
@@ -29,14 +29,18 @@ checks noub,line (as in etc/roome/test.sh)
                       instructions  text bytes     instructions  bytes
 as written                    3932      19489            5936  23744
 all inline                    6742      35388           10677  42708
-all noinline                  7674      33063           10744  42976
+all noinline                  7685      32966           10760  43040
 
 the first study had all noinline at 5813 / 9133 (no checks) and 10175 / 14238
 (noub,line). three changes since: the first slot of a call in a register (2026-
 10-06), the receiver register no longer loaded with itself ('lea r11, [r11]',
 x86_64 only, -117), and a noinline body is emitted only when something calls it
-(-847 on x86_64, -1500 on rv32i). without checks all noinline went from 30%
-above all inline to 8% below on x86_64 and from 17% above to 16% below on
+(-847 on x86_64, -1500 on rv32i). the receiver of every method is passed in
+the register, the first version measured each body both ways and kept the
+smaller (all noinline 4098 / 6610, 19 and 16 instructions fewer), removed
+2026-10-07 for consistency, a function with array parameters could not be
+measured. without checks all noinline went from 30%
+above all inline to 8% below on x86_64 and from 17% above to 15% below on
 rv32i, see 'reading'.
 
 reading
@@ -49,8 +53,8 @@ reading
    x86_64 instructions and about 1540 of 8124 on rv32i. an inlined function
    that nothing calls emits nothing. these are not emitted any more.
 2. with them gone, no checks: all noinline is 8% fewer instructions than all
-   inline on x86_64, 16% fewer on rv32i, and 40% fewer code bytes on x86_64.
-   as written is still the smallest of the three (2520 against 4098).
+   inline on x86_64, 15% fewer on rv32i, and 40% fewer code bytes on x86_64.
+   as written is still the smallest of the three (2520 against 4117).
 3. the cost of a noinline call is about 11 instructions on x86_64 (measured
    on the reachable code of the all noinline build before the change of 1):
    68% of that code was call protocol and 32% work. 'push'/'pop' of the
@@ -63,7 +67,7 @@ reading
 4. a function with one call (98 bodies, 2919 instructions) is better inlined,
    the call protocol is its whole overhead. a function with several calls is
    better noinline when its body is larger than about 11 instructions.
-5. with noub,line all noinline is above all inline on x86_64 (7674 against
+5. with noub,line all noinline is above all inline on x86_64 (7685 against
    6742) and about equal on rv32i. the 'frame' check of 'noub' is 9
    instructions at each noinline call (298 x 9 = 2682 on x86_64), inlined
    code has no such check.

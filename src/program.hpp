@@ -365,7 +365,6 @@ class program final {
             s->compile(tc, indent, ident_info::make_empty());
         }
 
-        decide_slot_registers(tc, indent);
         compile_main(tc, indent);
         compile_noninline_functions(tc, indent);
 
@@ -520,35 +519,6 @@ class program final {
 
             compile_noninline_body(tc, indent, *instance.func,
                                    instance.array_lengths);
-        }
-    }
-
-    // a call saves an instruction by passing the address of a slot, the
-    // receiver, in a register, the body pays for holding the register while it
-    // runs, so each body is compiled both ways and keeps the smaller one. a
-    // function with array parameters has a body per call, it uses the register
-    static auto decide_slot_registers(toc& tc, const size_t indent) -> void {
-
-        for (const stmt_def_func* f : tc.get_func_defs()) {
-            if (f->is_inlined() or f->has_array_param() or
-                not f->has_slot_register(tc)) {
-
-                continue;
-            }
-
-            const auto compile_body_only = [&] -> void {
-                std::ignore = f->compile_body(tc, indent, {});
-            };
-
-            const size_t in_register_size{
-                tc.measure_body_only(compile_body_only),
-            };
-
-            tc.set_slot_in_frame(*f, true);
-
-            const size_t in_frame_size{tc.measure_body_only(compile_body_only)};
-
-            tc.set_slot_in_frame(*f, in_frame_size < in_register_size);
         }
     }
 

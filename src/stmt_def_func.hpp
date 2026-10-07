@@ -276,7 +276,7 @@ class stmt_def_func final : public statement {
 
     // the address of that slot is passed in a register
     [[nodiscard]] auto has_slot_register(const toc& tc) const -> bool {
-        return register_slot_index() and tc.is_slot_in_register(*this);
+        return register_slot_index() and tc.has_slot_register();
     }
 
     // e.g. 'func point.at(x, y) self'

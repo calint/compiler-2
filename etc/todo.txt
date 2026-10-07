@@ -30,8 +30,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        9954 (-2.2%); as written 2525 -> 2600 (+3%), the two big bodies lose a
        scratch register; 'test-cases.sh' x86_64 and rv32i and
        'etc/roome/test.sh' pass; not linted, 'test-all.sh' not run
-    => done (2026-10-06, x86_64): 'program::decide_first_slot_registers'
-       compiles each body (without array parameters) both ways in a dry run
+    => done (2026-10-06, x86_64; the choice removed 2026-10-07, see
+       todo-resolved): 'program::decide_first_slot_registers' compiles each
+       body (without array parameters) both ways in a dry run
        and keeps the smaller; the result is read by 'stmt_call' and
        'stmt_def_func::compile_body'. as written 2525 -> 2521 instructions,
        all noinline 5813 -> 5445 (-6.3%), text 21762 -> 19537 (-10.2%); with
@@ -48,7 +49,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => 'noinline' as written in 'roome.baz' (2 functions) is smaller than
        every function noinline, see 'etc/roome-inline-vs-noinline.txt'
     => measured 2026-10-07, x86_64 no checks, 'noinline' bodies that nothing
-       calls no longer emitted: all noinline 4098 instructions against 4467
+       calls no longer emitted, the receiver of every method in the register
+       (the per function choice was removed): all noinline 4117 instructions
+       against 4467
        all inline; call protocol is 68% of the reachable code (about 11
        instructions per call: 'push'/'pop' 954, callee pointer loads 444, slot
        stores 398, 'call'/'ret', 'lea rbx'), with 'frame' 9 more per call

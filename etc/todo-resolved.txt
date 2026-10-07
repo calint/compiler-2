@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: the receiver of a method was passed in a register or in a frame slot,
+    chosen per function by compiling the body both ways ('program::
+    decide_slot_registers', 'toc::slot_in_frame_'); a function with array
+    parameters could not be measured (a body per call) and always used the
+    register
+    => done (2026-10-07): removed, the receiver of every method is passed in
+       the register ('stmt_def_func::has_slot_register'); the choice saved 19
+       instructions on x86_64 and 16 on rv32i of all noinline roome (0.5%,
+       0.2%), none as written, and cost 8 ms of a 60 ms compile; 'toc::
+       measure_body_only' and 'is_measuring_body' went with it. all noinline
+       4098 -> 4117 instructions on x86_64, 6610 -> 6626 on rv32i
 [x] medium: 'noinline' bodies were emitted for every function without array
     parameters whether or not a call reached them: 38 of 186 bodies of 'etc/
     roome/roome.baz' with every function but 'main' 'noinline' (17% of the x86_64
