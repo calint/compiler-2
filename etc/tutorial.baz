@@ -571,13 +571,35 @@ func noinline factorial(n) res {
     res = n * partial
 }
 # 'noinline' emits the function once and calls it, which allows recursion
-# arguments must be variables of the same type as the parameters, arrays are
-# not supported as arguments
+# a call follows the same typing and aliasing rules as an inlined call
+
+func noinline add_all(a []) res {
+    res = 0
+    foo a {
+        res = res + e
+    }
+}
+# an array argument is allowed, a body is emitted for each array size that is
+# called
+
+func noinline sum(p point) res {
+    res = p.x + p.y
+}
 
 func non_inlined() {
     var n = 5
     var f = factorial(n)
     assert(f == 120)
+
+    var arr = []{ 1, 2, 3 }
+    assert(add_all(arr) == 6)
+    assert(factorial(n - 2) == 6)
+    assert(sum(point{1, 2}) == 3)
+    assert(sum({ 3, 4 }) == 7)
+    # an argument can be an expression, a constant or a record literal, it is
+    # evaluated into a temporary of the parameter's type before the call
+    # a function that nothing calls is not emitted
+
     # '--checks=frame' checks at run time that the frames of non-inlined calls
     # fit in the variable storage
 }
