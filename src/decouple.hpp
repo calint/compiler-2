@@ -388,9 +388,8 @@ auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
 
 // compiles the element count of a bulk operation into the register the
 // machine asks for, the statement must outlive the emitter
-[[nodiscard]] auto
-make_count_emitter(toc& tc [[clang::lifetimebound]], size_t indent,
-                   const statement& count [[clang::lifetimebound]])
+[[nodiscard]] auto make_count_emitter(toc& tc, size_t indent,
+                                      const statement& count)
     -> std::function<void(const operand&)>;
 
 [[nodiscard]] auto is_array_literal(const toc& tc, const token& tk,

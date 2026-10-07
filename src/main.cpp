@@ -162,11 +162,8 @@ auto print_source_line(std::string_view src, size_t start_index,
 } // namespace
 
 auto main(const int argc, const char** const argv) -> int {
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
-    const std::span<const char*> args{argv, static_cast<size_t>(argc)};
-#pragma clang diagnostic pop
+    // a counted view of a pointer is a span that the compiler accepts as safe
+    const std::span<const char*> args{std::views::counted(argv, argc)};
 
     options opts;
 

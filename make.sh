@@ -12,6 +12,7 @@ CW="-Weverything \
     -Wno-weak-vtables -Wno-padded \
     -Wno-braced-scalar-init \
     -Wno-lifetime-safety-intra-tu-suggestions \
+    -Wno-lifetime-safety-cross-tu-suggestions \
     -Wno-lifetime-safety-invalidation \
 "
 

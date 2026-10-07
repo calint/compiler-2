@@ -15,6 +15,7 @@ add_compile_options(
     -Wno-padded
     -Wno-braced-scalar-init
     -Wno-lifetime-safety-intra-tu-suggestions
+    -Wno-lifetime-safety-cross-tu-suggestions
     -Wno-lifetime-safety-invalidation
 )
 add_executable(baz src/main.cpp)
