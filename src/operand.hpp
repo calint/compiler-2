@@ -99,6 +99,28 @@ inline constexpr size_t max_size_bytes{
     return static_cast<int64_t>(size_bytes);
 }
 
+// whether 'count' elements of 'size_bytes', which may be negative, added to the
+// offset 'base' stay in the range of an address offset
+[[nodiscard]] inline auto fits_address_offset(const int64_t base,
+                                              const int64_t count,
+                                              const size_t size_bytes) -> bool {
+
+    const int64_t size{address_offset(size_bytes)};
+
+    if (size != 0 and (count > std::numeric_limits<int64_t>::max() / size or
+                       count < std::numeric_limits<int64_t>::min() / size)) {
+
+        return false;
+    }
+
+    const int64_t offset{count * size};
+
+    return (offset <= 0 or
+            base <= std::numeric_limits<int64_t>::max() - offset) and
+           (offset >= 0 or
+            base >= std::numeric_limits<int64_t>::min() - offset);
+}
+
 // the byte offset of 'count' elements of 'size_bytes', count may be negative
 [[nodiscard]] inline auto scaled_address_offset(const int64_t count,
                                                 const size_t size_bytes)

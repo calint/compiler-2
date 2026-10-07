@@ -26,6 +26,10 @@ inline constexpr std::string_view foo{"foo"};
 // the function the program starts in
 inline constexpr std::string_view main{"main"};
 
+// the boolean values
+inline constexpr std::string_view true_value{"true"};
+inline constexpr std::string_view false_value{"false"};
+
 } // namespace reserved_names
 
 class token final {
@@ -61,8 +65,9 @@ class token final {
 
     [[nodiscard]] auto is_string() const -> bool { return is_str_; }
 
+    // a string literal is never a keyword or a name, whatever it says
     [[nodiscard]] auto is_text(const std::string_view s) const -> bool {
-        return text_ == s;
+        return not is_str_ and text_ == s;
     }
 
     // the indexes include the quotes that string token text excludes

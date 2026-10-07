@@ -2262,8 +2262,8 @@ if [[ $MACHINE != x86_64 ]]; then SRC=739 && COMPERR; fi
 # an unknown escape in a string constant
 SRC=740 && COMPERR
 
-# rv32i: a variable beyond the 32-bit address range
-if [[ $MACHINE == rv32i ]]; then SRC=741 && OPTS="--vars=0x300000000" COMPERR; fi
+# rv32i: data beyond the 32-bit address range
+if [[ $MACHINE == rv32i ]]; then SRC=741 && COMPERR; fi
 
 # copy between variables far from the variables base
 SRC=742 && EXP=7 && RUN
@@ -2606,7 +2606,7 @@ SRC=851 && COMPERR
 # an array field of a data instance is initialized with braces
 SRC=852 && COMPERR
 
-# a generic type without a body reports the '}' that closes nothing
+# a generic type without a body is rejected where the body should start
 SRC=853 && COMPERR
 
 # a generic function without a body reports the '}' that closes nothing
@@ -2684,3 +2684,99 @@ SRC=876 && COMPERR
 
 # an inlined recursion that does not end at compile time is rejected
 SRC=877 && COMPERR
+
+# a result that aliases an argument compiles on every target
+SRC=878 && EXP=0 && RUN
+
+# a delimiter where a definition should start is rejected
+SRC=879 && COMPERR
+
+# a delimiter where a statement should start is rejected
+SRC=880 && COMPERR
+
+# a delimiter where the single statement of a block should start is rejected
+SRC=881 && COMPERR
+
+# a function name is an identifier
+SRC=882 && COMPERR
+
+# a type without a name is rejected
+SRC=883 && COMPERR
+
+# a global variable is not initialized with a call
+SRC=884 && COMPERR
+
+# exit has no value to assign
+SRC=885 && COMPERR
+
+# a generic type has its body right after its parameters
+SRC=886 && COMPERR
+
+# a string cannot start a statement
+SRC=887 && COMPERR
+
+# a string after the branch of an if cannot start a statement
+SRC=888 && COMPERR
+
+# the destination of array_copy is an array
+SRC=889 && COMPERR
+
+# the compared of arrays_equal is an array
+SRC=890 && COMPERR
+
+# an array is not assigned the result of a call
+SRC=891 && COMPERR
+
+# an expression is not an array argument
+SRC=892 && COMPERR
+
+# a record literal initializes a global variable
+SRC=893 && EXP=3 && RUN
+
+# a variable shadows the function of the same name
+SRC=894 && EXP=5 && RUN
+
+# a data constant is not missing after a unary operator
+SRC=895 && COMPERR
+
+# a data constant is not a string
+SRC=896 && COMPERR
+
+# a boolean value is not a name
+SRC=897 && COMPERR
+
+# a global variable is initialized with a boolean expression
+SRC=898 && EXP=3 && RUN
+
+# a condition is not the call of a function without a result
+SRC=899 && COMPERR
+
+# a comparison is not made with the call of a function without a result
+SRC=900 && COMPERR
+
+# blocks nested more than 128 levels are rejected
+SRC=901 && COMPERR
+
+# expressions nested more than 128 levels are rejected
+SRC=902 && COMPERR
+
+# inlined calls nested more than 256 levels are rejected
+SRC=903 && COMPERR
+
+# an array field is not initialized with the name of its element type
+SRC=904 && COMPERR
+
+# a constant shadows the function of the same name
+SRC=905 && EXP=8 && RUN
+
+# a call checked for aliasing inside the body of a function that is not inlined
+SRC=906 && EXP=0 && OPTS="--checks=noub" RUN
+
+# an index constant that no element is that far from is rejected
+if [[ $MACHINE == x86_64 ]]; then SRC=907 && OPTS="--vars=0x40000" COMPERR; fi
+
+# a comment on the last line without a line end
+SRC=908 && EXP=3 && RUN
+
+# a conversion of a struct value is rejected
+SRC=909 && COMPERR

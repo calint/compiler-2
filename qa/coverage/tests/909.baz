@@ -1,0 +1,5 @@
+type point{x,y}
+func main(){
+    var s=point
+    var t=i32(s)
+}

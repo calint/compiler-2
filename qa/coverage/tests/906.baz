@@ -1,0 +1,32 @@
+# a call checked for aliasing inside the body of a function that is not inlined
+
+type counter {n}
+
+func noinline mut counter.add(d) {
+    self.n = self.n + d
+}
+
+func noinline counter.get(d) res {
+    res = self.n + d
+}
+
+func noinline fact(n) res {
+    res = 1
+    if n > 1 {
+        var m = 1
+        res = n * fact(m)
+    }
+}
+
+func noinline twice(x) res {
+    var c = counter
+    res = c.n
+}
+
+func main() {
+    var c = counter
+    var held = 3
+    var f = fact(1)
+    var t = twice(held)
+    var g = c.get(1)
+}

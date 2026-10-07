@@ -1,0 +1,47 @@
+# a result that aliases an argument compiles on every target
+
+# without '--checks=alias' the value is undefined, the program does not read it
+
+var total = 3
+
+type point {x, y}
+
+func add_one(a) res {
+    res = 1
+    res = res + a
+}
+
+func noinline add_one_noinline(a) res {
+    res = 1
+    res = res + a
+}
+
+func swap(p point) res point {
+    res.x = p.y
+    res.y = p.x
+}
+
+func bump(value mut) {
+    value = add_one(total)
+}
+
+func noinline bump_noinline(value) {
+    total = add_one(value)
+}
+
+func main() {
+    var x = 5
+    x = add_one(x)
+    x = add_one_noinline(x)
+
+    var p = point{1, 2}
+    p = swap(p)
+
+    var ps = point[2]{}
+    ps[1] = swap(ps[1])
+
+    bump(total)
+    bump_noinline(total)
+
+    exit(0)
+}

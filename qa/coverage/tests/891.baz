@@ -1,0 +1,10 @@
+# an array is not assigned the result of a call
+
+func one() res i32 {
+    res = 1
+}
+
+func main() {
+    var a = i32[4]
+    a = one()
+}

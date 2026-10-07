@@ -1,0 +1,6 @@
+# a generic type has its body right after its parameters
+
+type list<T type> item { x }
+
+func main() {
+}

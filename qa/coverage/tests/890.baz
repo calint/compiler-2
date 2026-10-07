@@ -1,0 +1,9 @@
+# the compared of arrays_equal is an array
+
+func main() {
+    var a = i32[4]
+    var b = i32[4]
+    if arrays_equal(a, 1, 2) {
+        exit(1)
+    }
+}

@@ -40,6 +40,8 @@ class stmt_block final : public statement {
           open_brace_tk_{tz.is_next_char_token('{')},
           is_one_statement_{open_brace_tk_.is_empty()} {
 
+        const tokenizer::nesting_scope nesting{tz};
+
         set_type(tc.get_type_void());
 
         if (is_one_statement_ and braces_required) {
@@ -142,7 +144,8 @@ class stmt_block final : public statement {
 
         const token tk{tz.next_token()};
 
-        if (tk.is_empty()) {
+        if (tk.text().empty() and not tk.is_string()) {
+            tz.assert_not_at_delimiter();
             return;
         }
 
@@ -172,7 +175,9 @@ class stmt_block final : public statement {
             const token tk{tz.next_token()};
 
             // the source ended before the '}'
-            if (tk.is_empty()) {
+            if (tk.text().empty() and not tk.is_string()) {
+                tz.assert_not_at_delimiter();
+
                 throw compiler_exception{tz, "expected '}' to close block"};
             }
 
@@ -236,6 +241,10 @@ class stmt_block final : public statement {
     [[nodiscard]] static auto parse_statement(toc& tc, tokenizer& tz,
                                               const token tk)
         -> std::unique_ptr<statement> {
+
+        if (tk.is_string()) {
+            throw compiler_exception{tk, "expected a statement"};
+        }
 
         if (tk.is_text("var")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);

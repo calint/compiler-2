@@ -38,7 +38,7 @@ class stmt_def_var final : public statement {
     stmt_def_var(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()}, is_let_{tk.is_text("let")} {
 
-        toc::assert_name_not_reserved(name_tk_);
+        toc::assert_valid_name(name_tk_);
 
         const token after_name_tk{tz.cur_position_token()};
 

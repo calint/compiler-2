@@ -1,0 +1,9 @@
+# an array field is not initialized with the name of its element type
+
+type point {x}
+
+type line {s point[2]}
+
+func main() {
+    var l = line{point}
+}

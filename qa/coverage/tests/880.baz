@@ -1,0 +1,6 @@
+# a delimiter where a statement should start is rejected
+
+func main() {
+    exit(0)
+    |
+}

@@ -1,0 +1,4 @@
+
+897.baz:3:6: 'true' is a boolean value
+func true() {
+     ^~~~

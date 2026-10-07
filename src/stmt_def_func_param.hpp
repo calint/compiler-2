@@ -151,7 +151,7 @@ class stmt_def_func_param final : public statement {
           is_array_{tokens.is_array()},
           is_read_only_{tokens.mut_tk.is_empty()} {
 
-        toc::assert_name_not_reserved(tok());
+        toc::assert_valid_name(tok());
 
         set_type(type_tk_.is_empty()
                      ? tc.get_type_default()

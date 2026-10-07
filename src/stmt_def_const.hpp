@@ -26,11 +26,11 @@ class stmt_def_const final : public statement {
     stmt_def_const(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, name_tk_{tz.next_token()} {
 
-        if (name_tk_.is_empty()) {
+        if (name_tk_.text().empty()) {
             throw compiler_exception{name_tk_, "expected name of constant"};
         }
 
-        toc::assert_name_not_reserved(name_tk_);
+        toc::assert_valid_name(name_tk_);
 
         equals_tk_ = tz.is_next_char_token('=');
 
@@ -96,7 +96,7 @@ class stmt_def_const final : public statement {
 
         const token name_tk{tz.next_token()};
 
-        if (name_tk.is_empty() or tz.is_next_char_token('=').is_empty()) {
+        if (name_tk.text().empty() or tz.is_next_char_token('=').is_empty()) {
             return true;
         }
 

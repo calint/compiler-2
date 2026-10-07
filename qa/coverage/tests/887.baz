@@ -1,0 +1,5 @@
+# a string cannot start a statement
+
+func main() {
+    var x = 1 "text"
+}

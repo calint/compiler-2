@@ -212,6 +212,15 @@ class stmt_call : public expression {
     auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
         -> void override {
 
+        if (not tc.is_in_func()) {
+            throw compiler_exception{
+                tok(), "a global variable cannot be initialized with a call"};
+        }
+
+        // note: 'read', 'write' and 'exit' are built-ins with a statement of
+        //       their own
+        assert(not tc.is_func_builtin(func_name_));
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
@@ -235,6 +244,17 @@ class stmt_call : public expression {
                                    "not end at compile time, declare it "
                                    "'noinline'",
                                    func.name())};
+        }
+
+        // each inlined call and block inside it recurses in the compiler
+        constexpr size_t max_frame_count{256};
+
+        if (tc.frame_count() >= max_frame_count) {
+            throw compiler_exception{
+                tok(), std::format("inlined calls are nested too deep, the "
+                                   "limit is {} levels, declare a function "
+                                   "'noinline'",
+                                   max_frame_count)};
         }
 
         // an error found in the inlined body reports where it was called from
@@ -852,11 +872,15 @@ class stmt_call : public expression {
         -> void {
 
         if (param.is_array()) {
-            const ident_info arg_info{tc.make_ident_info(arg)};
+            // an expression is not an array
+            const bool is_array_arg{
+                arg.is_identifier() and not arg.is_expression() and
+                    tc.make_ident_info(arg).is_array,
+            };
 
             // an element would give the parameter the whole array's
             // length, pass the array and a start index instead
-            if (not arg_info.is_array) {
+            if (not is_array_arg) {
                 throw compiler_exception{
                     arg.tok(), std::format("parameter {} requires an array",
                                            index + 1 - first_argument_index())};

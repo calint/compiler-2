@@ -1,0 +1,13 @@
+# a global variable is initialized with a boolean expression
+
+var yes = 1 == 1
+var no = 1 == 2
+var both = yes and not no
+
+func main() {
+    if both {
+        exit(3)
+    }
+
+    exit(4)
+}

@@ -1,0 +1,7 @@
+# an index constant that no element is that far from is rejected
+
+func main() {
+    var arr = i32[4]
+    var ix = 3
+    arr[ix - 9223372036854775807] = arr[ix]
+}

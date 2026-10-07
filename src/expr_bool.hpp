@@ -933,6 +933,8 @@ class expr_bool final : public statement {
         : statement{tk}, not_tk_{not_tk}, open_paren_tk_{open_paren_tk},
           enclosed_{enclosed} {
 
+        const tokenizer::nesting_scope nesting{tz};
+
         set_type(tc.get_type_bool());
 
         // a caller might have supplied the first operand it already parsed
@@ -1318,6 +1320,7 @@ class expr_bool final : public statement {
 
         // read 'and' or 'or'
         // e.g. the 'and' of 'a == 1 and b == 2'
+        const token pos_tk{tz.cur_position_token()};
         const token op_tk{tz.next_token()};
 
         if (op_tk.is_text("or") or op_tk.is_text("and")) {
@@ -1332,7 +1335,8 @@ class expr_bool final : public statement {
             throw compiler_exception{op_tk, "expected ')' to close expression"};
         }
 
-        tz.put_back_token(op_tk);
+        // note: rewound by position, a string token cannot be put back
+        tz.rewind_to_position(pos_tk);
 
         return std::nullopt;
     }

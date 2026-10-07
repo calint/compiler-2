@@ -36,6 +36,14 @@ class stmt_builtin_convert final : public expression {
 
         arg_ = {tc, tz, true};
 
+        if (not arg_.get_type().is_builtin()) {
+            throw compiler_exception{
+                arg_.tok(),
+                std::format("cannot convert a value of type '{}'",
+                            arg_.get_type().name()),
+            };
+        }
+
         close_paren_tk_ = tz.is_next_char_token(')');
 
         if (close_paren_tk_.is_empty()) {

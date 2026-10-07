@@ -1,0 +1,7 @@
+# the destination of array_copy is an array
+
+func main() {
+    var a = i32[4]
+    var n = 2
+    array_copy(a, 2, n)
+}

@@ -1,7 +1,6 @@
 #pragma once
 // reviewed: 2025-09-28
 
-#include <cassert>
 #include <cstddef>
 #include <exception>
 #include <string>
@@ -25,13 +24,12 @@ class compiler_exception final : public std::exception {
         std::string reason;
     };
 
+    // a token without a place in the source, line 0, reports like a problem of
+    // the whole file
     compiler_exception(const token& src_loc_tk, std::string message)
         : msg{std::move(message)}, line{src_loc_tk.at_line()},
           start_index{src_loc_tk.start_index()},
-          end_index{src_loc_tk.end_index()} {
-
-        assert(line != 0);
-    }
+          end_index{src_loc_tk.end_index()} {}
 
     // defined in 'tokenizer.hpp', the error is at the cursor: the start of the
     // token that was found instead of the expected one, after the whitespace

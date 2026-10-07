@@ -1,0 +1,4 @@
+
+900.baz:7:13: function does not return a value
+    if 1 == check(true) {
+            ^~~~~

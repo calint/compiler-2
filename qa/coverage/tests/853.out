@@ -1,4 +1,4 @@
 
-853.baz:2:21: expected '{' to begin block
+853.baz:2:19: expected '{' to begin declaration of type
 type list<T type> x }
-                    ^
+                  ^

@@ -1,0 +1,7 @@
+# a boolean value is not a name
+
+func true() {
+}
+
+func main() {
+}

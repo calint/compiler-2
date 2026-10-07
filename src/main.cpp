@@ -6,11 +6,11 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <filesystem>
 #include <format>
 #include <fstream>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -435,6 +435,10 @@ class null_stream final : public std::ostream {
     } catch (const std::runtime_error& e) {
         std::println(stderr, "\npanic: {}", e.what());
         return 1;
+    } catch (const std::exception& e) {
+        // a defect of the compiler, the input is not at fault
+        std::println(stderr, "\ninternal error: {}", e.what());
+        return 2;
     }
 
     return 0;
@@ -472,6 +476,11 @@ auto check_reproduced_source(const program& prg, const options& opts,
 [[nodiscard]] auto read_file_to_string(const char* const file_name)
     -> std::string {
 
+    // a source is far smaller, the limit stops a file that never ends, e.g. a
+    // device, from using all the memory
+    constexpr size_t max_source_size_bytes{size_t{256} * 1024 * 1024};
+    constexpr size_t read_chunk_size_bytes{0x10000};
+
     std::ifstream fs{file_name};
 
     if (not fs.is_open()) {
@@ -479,8 +488,22 @@ auto check_reproduced_source(const program& prg, const options& opts,
             std::format("cannot open file '{}'", file_name)};
     }
 
-    return std::string{std::istreambuf_iterator<char>{fs},
-                       std::istreambuf_iterator<char>{}};
+    std::string contents;
+    std::array<char, read_chunk_size_bytes> chunk{};
+
+    while (fs.read(chunk.data(), static_cast<std::streamsize>(chunk.size())) or
+           fs.gcount() > 0) {
+
+        contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
+
+        if (contents.size() > max_source_size_bytes) {
+            throw std::runtime_error{
+                std::format("file '{}' is larger than {} B", file_name,
+                            max_source_size_bytes)};
+        }
+    }
+
+    return contents;
 }
 
 // decimal or 0x hexadecimal, 'name' describes the size in error messages

@@ -43,6 +43,8 @@ class stmt_builtin_arrays_equal final : public expression {
 
         lhs_ = {tc, {}, tz.next_token(), tz};
 
+        lhs_.assert_array_or_element("source");
+
         lhs_delim_tk_ = tz.is_next_char_token(',');
 
         if (lhs_delim_tk_.is_empty()) {
@@ -51,6 +53,8 @@ class stmt_builtin_arrays_equal final : public expression {
         }
 
         rhs_ = {tc, {}, tz.next_token(), tz};
+
+        rhs_.assert_array_or_element("compare");
 
         rhs_delim_tk_ = tz.is_next_char_token(',');
 

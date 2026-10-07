@@ -1,4 +1,4 @@
-# a generic type without a body reports the '}' that closes nothing
+# a generic type without a body is rejected where the body should start
 type list<T type> x }
 
 func main() {

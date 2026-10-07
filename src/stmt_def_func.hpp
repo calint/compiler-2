@@ -90,7 +90,7 @@ class stmt_def_func final : public statement {
 
         parse_modifiers(tz);
 
-        toc::assert_name_not_reserved(name_tk_);
+        toc::assert_valid_name(name_tk_);
 
         // e.g. 'func text.print()' of the generic type 'text'
         if (generic_instance == nullptr and is_generic_method_head(tc, tz)) {
@@ -632,7 +632,7 @@ class stmt_def_func final : public statement {
             throw compiler_exception{tz, "expected method name after '.'"};
         }
 
-        toc::assert_name_not_reserved(method_name_tk_);
+        toc::assert_valid_name(method_name_tk_);
 
         name_ =
             std::format("{}.{}", receiver_type.name(), method_name_tk_.text());

@@ -1,0 +1,9 @@
+# a condition is not the call of a function without a result
+
+func check(ok bool) {
+}
+
+func main() {
+    if check(true) {
+    }
+}

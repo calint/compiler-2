@@ -46,6 +46,9 @@ class machine_x86_64 final : public machine {
 
     static constexpr size_t data_alignment_{16};
 
+    // the user address space of x86_64 Linux, 128 TiB
+    static constexpr size_t user_address_space_bytes_{0x800000000000};
+
     static constexpr std::string_view variables_base_register_{"rbp"};
 
     static constexpr std::array<size_t, 4> index_register_scalings{1, 2, 4, 8};
@@ -962,7 +965,7 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] auto max_storage_bytes() const -> size_t override {
-        return storage_limits::max_size_bytes;
+        return user_address_space_bytes_;
     }
 
     auto memory_equal(const token& src_loc_tk, const size_t indent,

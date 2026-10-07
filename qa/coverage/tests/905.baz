@@ -1,0 +1,11 @@
+# a constant shadows the function of the same name
+
+let f = 8
+
+func f() {
+}
+
+func main() {
+    var x = f
+    exit(x)
+}

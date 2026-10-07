@@ -54,7 +54,7 @@ class stmt_def_type final : public statement {
           name_tk_{tz.next_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
-        toc::assert_name_not_reserved(name_tk_);
+        toc::assert_valid_name(name_tk_);
 
         // e.g. 'type point { x, y }'
         if (not open_brace_tk_.is_empty()) {
@@ -160,7 +160,7 @@ class stmt_def_type final : public statement {
         type_.set_name(name_tk_.text());
 
         for (const stmt_def_type_field& fld : fields_) {
-            toc::assert_name_not_reserved(fld.tok());
+            toc::assert_valid_name(fld.tok());
 
             // get the type of field. no type name means default
             const type& tp{
@@ -203,6 +203,12 @@ class stmt_def_type final : public statement {
 
         for (const generic_param& param : params) {
             tc.assert_generic_param_free(param.name_tk, param.name_tk.text());
+        }
+
+        // the fields follow the parameters
+        if (tz.peek_char_after_whitespace() != '{') {
+            throw compiler_exception{
+                tz, "expected '{' to begin declaration of type"};
         }
 
         tc.add_generic_type(name_tk_, name_tk_.text(), start_tk_,

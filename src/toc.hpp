@@ -1078,7 +1078,8 @@ class storage_layout final {
     struct dry_run_state {
         bool capacity_unchecked;
         size_t max_vars_size_bytes;
-        frame* storage_frame;
+        // the index of the frame, frames added meanwhile may move the frames
+        std::optional<size_t> storage_frame_index;
         size_t peak_storage_size_bytes;
     };
 
@@ -1154,7 +1155,12 @@ class storage_layout final {
         const dry_run_state saved{
             .capacity_unchecked{capacity_unchecked_},
             .max_vars_size_bytes{max_vars_size_bytes_},
-            .storage_frame{storage_frame},
+            .storage_frame_index{
+                storage_frame == nullptr
+                    ? std::nullopt
+                    : std::optional<size_t>{static_cast<size_t>(
+                          storage_frame - scopes_.get().frames().data())},
+            },
             .peak_storage_size_bytes{
                 storage_frame ? storage_frame->peak_storage_size_bytes() : 0,
             },
@@ -1169,9 +1175,11 @@ class storage_layout final {
         capacity_unchecked_ = saved.capacity_unchecked;
         max_vars_size_bytes_ = saved.max_vars_size_bytes;
 
-        if (saved.storage_frame) {
-            saved.storage_frame->restore_peak_storage_size_bytes(
-                saved.peak_storage_size_bytes);
+        if (saved.storage_frame_index) {
+            scopes_.get()
+                .frames()
+                .at(*saved.storage_frame_index)
+                .restore_peak_storage_size_bytes(saved.peak_storage_size_bytes);
         }
     }
 
@@ -2199,6 +2207,13 @@ class toc final {
         scopes_.set_max_depth(0);
     }
 
+    // empty outside of a function, e.g. in the initializer of a global variable
+    // the scopes inside each other, the calls inlined in each other and their
+    // blocks
+    [[nodiscard]] auto frame_count() const -> size_t {
+        return scopes_.frames().size();
+    }
+
     [[nodiscard]] auto generics() -> generic_registry& { return generics_; }
 
     [[nodiscard]] auto generics() const -> const generic_registry& {
@@ -2206,6 +2221,10 @@ class toc final {
     }
 
     [[nodiscard]] auto get_call_path() const -> std::string_view {
+        if (not is_in_func()) {
+            return {};
+        }
+
         return scopes_.current_func_frame().call_path();
     }
 
@@ -2367,7 +2386,9 @@ class toc final {
             id_base = ident_path::root_of(alias.to);
         }
 
-        std::unreachable();
+        // a constant is declared by no frame, e.g. in the initializer of a
+        // global variable
+        return false;
     }
 
     // whether the backend passes the address of the receiver of a method in a
@@ -2417,6 +2438,13 @@ class toc final {
         -> bool {
 
         return scopes_.front().has_var(name);
+    }
+
+    // the initializer of a global variable is outside of any function
+    [[nodiscard]] auto is_in_func() const -> bool {
+        return std::ranges::any_of(
+            scopes_.frames(),
+            [](const frame& frm) -> bool { return frm.is_func(); });
     }
 
     [[nodiscard]] auto is_in_loop_block() const -> bool {
@@ -2569,16 +2597,6 @@ class toc final {
     // statics
     //
 
-    // 'self' is declared only by the compiler: the receiver of a method and the
-    // value built by a constructor
-    static auto assert_name_not_reserved(const token& name_tk) -> void {
-        if (not name_tk.is_text(reserved_names::self)) {
-            return;
-        }
-
-        throw compiler_exception{name_tk, "'self' is reserved"};
-    }
-
     static auto assert_not_whole_array(const statement& st,
                                        const ident_info& info) -> void {
 
@@ -2589,6 +2607,36 @@ class toc final {
         throw compiler_exception{
             st.tok(),
             std::format("array '{}' must be indexed", st.identifier())};
+    }
+
+    // a name is an identifier, 'self' is declared only by the compiler: the
+    // receiver of a method and the value built by a constructor
+    static auto assert_valid_name(const token& name_tk) -> void {
+        if (name_tk.text().empty()) {
+            throw compiler_exception{name_tk, "expected a name"};
+        }
+
+        if (not is_identifier(name_tk)) {
+            throw compiler_exception{
+                name_tk,
+                std::format("'{}' is not a valid name, a name starts with a "
+                            "letter or '_' and has only letters, digits and "
+                            "'_'",
+                            name_tk.text())};
+        }
+
+        if (name_tk.is_text(reserved_names::self)) {
+            throw compiler_exception{name_tk, "'self' is reserved"};
+        }
+
+        // the value of a name that is a boolean value would be the function
+        if (name_tk.is_text(reserved_names::true_value) or
+            name_tk.is_text(reserved_names::false_value)) {
+
+            throw compiler_exception{
+                name_tk,
+                std::format("'{}' is a boolean value", name_tk.text())};
+        }
     }
 
     // the label of the next iteration of the 'foo' loop 'label' names
@@ -2603,6 +2651,23 @@ class toc final {
         -> std::string {
 
         return std::format("{}.end", label);
+    }
+
+    // letters, digits and '_', not starting with a digit, written without
+    // quotes
+    [[nodiscard]] static auto is_identifier(const token& name_tk) -> bool {
+        const std::string_view text{name_tk.text()};
+
+        const auto is_letter = [](const char ch) -> bool {
+            return (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z') or
+                   ch == '_';
+        };
+
+        return not name_tk.is_string() and not text.empty() and
+               is_letter(text.front()) and
+               std::ranges::all_of(text, [&](const char ch) -> bool {
+                   return is_letter(ch) or (ch >= '0' and ch <= '9');
+               });
     }
 
     [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)

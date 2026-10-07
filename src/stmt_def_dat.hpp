@@ -59,11 +59,11 @@ class stmt_def_dat final : public statement {
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, name_tk_{tz.next_token()} {
 
-        if (name_tk_.is_empty()) {
+        if (name_tk_.text().empty()) {
             throw compiler_exception{name_tk_, "expected name of data"};
         }
 
-        toc::assert_name_not_reserved(name_tk_);
+        toc::assert_valid_name(name_tk_);
 
         equals_tk_ = parse_initializer_equals(tz, "dat");
 
@@ -576,7 +576,7 @@ class stmt_def_dat final : public statement {
         el.src_loc_tk = tz.next_token();
 
         // e.g. '{ 1 }' or a trailing ',' where a single value is expected
-        if (el.src_loc_tk.is_empty()) {
+        if (el.src_loc_tk.text().empty() or el.src_loc_tk.is_string()) {
             throw compiler_exception{
                 el.src_loc_tk,
                 std::format("expected a constant for '{}'", tp.name())};
@@ -669,6 +669,8 @@ class stmt_def_dat final : public statement {
 
     [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,
                                          const type& tp) -> elem {
+
+        const tokenizer::nesting_scope nesting{tz};
 
         elem el{};
         el.src_loc_tk = tz.cur_position_token();

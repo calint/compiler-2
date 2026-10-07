@@ -293,6 +293,13 @@ class program final {
         : tc_{backend, source, vars_size_bytes, checks},
           vars_size_bytes_{vars_size_bytes} {
 
+        if (vars_size_bytes > backend.max_storage_bytes()) {
+            throw compiler_exception::file_level(
+                std::format("variable storage of {} B exceeds the {} B that "
+                            "the target addresses",
+                            vars_size_bytes, backend.max_storage_bytes()));
+        }
+
         // create a placeholder token to use with 'toc' functions
         const token src_loc_tk{};
 
@@ -328,10 +335,10 @@ class program final {
         while (true) {
             const token tk{tz.next_token()};
 
-            if (tk.is_empty()) {
-                // note: every character makes a token, only the end of the
-                //       source gives an empty one
-                assert(tz.is_eos());
+            if (tk.text().empty() and not tk.is_string()) {
+                // a delimiter is not a token, only the end of the source ends
+                // the definitions
+                tz.assert_not_at_delimiter();
 
                 break;
             }

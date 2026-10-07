@@ -1,0 +1,9 @@
+# a record literal initializes a global variable
+
+type point {x, y}
+
+var origin = point{1, 2}
+
+func main() {
+    exit(origin.x + origin.y)
+}

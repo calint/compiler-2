@@ -51,7 +51,7 @@ class stmt_builtin_foo final : public statement {
         const ident_info array_info{tc.make_ident_info(ident_)};
         tc.enter_foo("");
 
-        add_loop_names(tc, 0, token{}, token{}, array_info, operand{},
+        add_loop_names(tc, 0, src_loc_tk, src_loc_tk, array_info, operand{},
                        operand{});
 
         code_ = {tc, tz};

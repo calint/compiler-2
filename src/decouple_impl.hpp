@@ -293,6 +293,18 @@ auto is_bare_builtin_type(const toc& tc, const token& tk, tokenizer& tz)
 }
 
 // declared in 'decouple.hpp'
+// a call in an expression is a value, a function without a result has none
+static auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
+    -> std::unique_ptr<statement> {
+
+    if (call->get_type().is_same(tc.get_type_void())) {
+        throw compiler_exception{call->tok(),
+                                 "function does not return a value"};
+    }
+
+    return call;
+}
+
 // called from 'expr_arith' to solve circular dependencies with function
 // calls
 auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
@@ -317,6 +329,11 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         return std::make_unique<stmt_builtin_io>(tc, std::move(uops), tk, tz);
     }
 
+    // 'exit' ends the program, it has no value to use
+    if (tk.is_text("exit") and tz.peek_char_after_whitespace() == '(') {
+        throw compiler_exception{tk, "function does not return a value"};
+    }
+
     if (tk.is_text("array_length")) {
         return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
                                                            tk, tz);
@@ -338,14 +355,14 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         not open_paren_tk.is_empty()) {
 
         // e.g.  foo(...)
-        return std::make_unique<stmt_call>(tc, std::move(uops), tk,
-                                           open_paren_tk, tz);
+        return value_call(tc, std::make_unique<stmt_call>(
+                                  tc, std::move(uops), tk, open_paren_tk, tz));
     }
 
     // e.g. 'show<name>(x)', the call reads the type arguments
     if (is_generic_call(tc, tk.text(), tz)) {
-        return std::make_unique<stmt_call>(tc, std::move(uops), tk, token{},
-                                           tz);
+        return value_call(tc, std::make_unique<stmt_call>(tc, std::move(uops),
+                                                          tk, token{}, tz));
     }
 
     assert_no_type_args_for_plain_func(tc, tk, tz);
@@ -359,8 +376,8 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 
     // e.g. '-lst.size()' negates the result, not the receiver
     if (si.is_method_receiver()) {
-        return std::make_unique<stmt_call>(tc, std::move(uops), std::move(si),
-                                           tz);
+        return value_call(tc, std::make_unique<stmt_call>(tc, std::move(uops),
+                                                          std::move(si), tz));
     }
 
     si.set_unary_ops(std::move(uops));
@@ -376,6 +393,8 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
                      const bool is_array_destination)
     : statement{tz.next_token()}, is_array_destination_{is_array_destination} {
 
+    const tokenizer::nesting_scope nesting{tz};
+
     set_type(tp);
 
     const bool is_bare{is_bare_record_type(tc, tok(), tz)};
@@ -383,6 +402,13 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
     const bool is_typed_literal{is_record_literal(tc, tok(), tz) or is_bare};
+
+    // an array is copied from an array, a value of its element type is not one
+    if (is_array_destination and is_typed_literal) {
+        throw compiler_exception{
+            tok(), std::format("expected an array, got an instance of '{}'",
+                               tok().text())};
+    }
 
     // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal and
@@ -517,6 +543,12 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::assert_call_type(const type& tp) const -> void {
+    // a function returns one value, not an array
+    if (is_array_destination_) {
+        throw compiler_exception{
+            tok(), "an array cannot be assigned the result of a call"};
+    }
+
     if (tp.is_same(stmt_call_->get_type())) {
         return;
     }

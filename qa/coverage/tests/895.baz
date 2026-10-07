@@ -1,0 +1,7 @@
+# a data constant is not missing after a unary operator
+
+dat x = i32(~
+)
+
+func main() {
+}

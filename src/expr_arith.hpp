@@ -83,6 +83,8 @@ class expr_arith final : public expression {
           open_paren_tk_{open_paren_tk}, enclosed_{enclosed},
           is_implied_subexpression_{is_implied_subexpression} {
 
+        const tokenizer::nesting_scope nesting{tz};
+
         // a recursive call might have supplied the first element it already
         // parsed
         // e.g. the 'b' of 'b * c' in 'a + b * c'

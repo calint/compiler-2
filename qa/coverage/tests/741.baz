@@ -1,5 +1,6 @@
-# rv32i: a variable beyond the 32-bit address range
+# rv32i: data beyond the 32-bit address range
+
+dat a = i8[5000000000]
 
 func main() {
-    var a = i8[5000000000]{}
 }

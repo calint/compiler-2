@@ -1,0 +1,7 @@
+# a string after the branch of an if cannot start a statement
+
+func main() {
+    var x = 1
+    if x == 1 {
+    } "else"
+}

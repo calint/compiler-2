@@ -105,7 +105,7 @@ class stmt_identifier final : public statement {
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
 
-        if (tk.is_empty()) {
+        if (tk.text().empty() or tk.is_string()) {
             throw compiler_exception{tz, "expected an identifier"};
         }
 
@@ -121,7 +121,7 @@ class stmt_identifier final : public statement {
             }
         }
 
-        if (not tc.is_func(path_as_string_)) {
+        if (not names_function(tc)) {
             resolve_type(tc, src_loc_tk);
         }
 
@@ -335,6 +335,17 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
+    // an array or an element of one, where a bulk operation starts, 'what'
+    // names the operand in the error
+    auto assert_array_or_element(const std::string_view what) const -> void {
+        if (is_array_ or is_array_element()) {
+            return;
+        }
+
+        throw compiler_exception{first_token(),
+                                 std::format("{} must be an array", what)};
+    }
+
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_.at(0).name_tk;
     }
@@ -425,7 +436,7 @@ class stmt_identifier final : public statement {
     auto assert_element_selected(const toc& tc, const token& src_loc_tk) const
         -> void {
 
-        if (elems_.back().array_index_expr or tc.is_func(path_as_string_)) {
+        if (elems_.back().array_index_expr or names_function(tc)) {
             return;
         }
 
@@ -442,7 +453,7 @@ class stmt_identifier final : public statement {
     auto assert_indexable(const toc& tc, tokenizer& tz,
                           const token& src_loc_tk) const -> void {
 
-        if (tc.is_func(path_as_string_)) {
+        if (names_function(tc)) {
             return;
         }
 
@@ -465,7 +476,7 @@ class stmt_identifier final : public statement {
                                 const token& src_loc_tk,
                                 const token& name_tk) const -> void {
 
-        if (tc.is_func(path_as_string_)) {
+        if (names_function(tc)) {
             return;
         }
 
@@ -538,7 +549,7 @@ class stmt_identifier final : public statement {
                                       const token& src_loc_tk,
                                       const token& name_tk) const -> bool {
 
-        if (tc.is_func(path_as_string_)) {
+        if (names_function(tc)) {
             return false;
         }
 
@@ -564,6 +575,15 @@ class stmt_identifier final : public statement {
 
         // without a field 'lst.clear = 1' reports the missing arguments
         return not path_type.has_field(name_tk.text());
+    }
+
+    // the path names a function, unless a variable, an alias or a constant of
+    // the same root is in scope, it shadows the function
+    [[nodiscard]] auto names_function(const toc& tc) const -> bool {
+        const std::string_view root{ident_path::root_of(path_as_string_)};
+
+        return tc.is_func(path_as_string_) and not tc.is_var_or_alias(root) and
+               not tc.has_const(root);
     }
 
     // an unknown element leaves the whole array as the accessed range
@@ -625,7 +645,7 @@ class stmt_identifier final : public statement {
     }
 
     auto resolve_access_range(toc& tc) -> void {
-        if (tc.is_func(path_as_string_)) {
+        if (names_function(tc)) {
             return;
         }
 
@@ -717,6 +737,15 @@ class stmt_identifier final : public statement {
         };
 
         const size_t type_size{cur_info.type_ref().size_bytes()};
+
+        // an index that is a constant far from the array has no address
+        if (not fits_address_offset(address.displacement(), addend_elements,
+                                    type_size)) {
+
+            throw compiler_exception{
+                cur_elem.array_index_expr->tok(),
+                "index offset is out of the range of addresses"};
+        }
 
         // a scale the addressing mode cannot encode is applied to the index
         // register instead, leaving scale 1 in the operand

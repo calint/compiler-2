@@ -1,0 +1,4 @@
+
+892.baz:9:19: parameter 1 requires an array
+    var x = first(a + 1)
+                  ^

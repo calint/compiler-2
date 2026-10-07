@@ -40,6 +40,8 @@ class stmt_builtin_array_copy final : public statement {
 
         src_ = {tc, {}, tz.next_token(), tz};
 
+        src_.assert_array_or_element("source");
+
         src_delim_tk_ = tz.is_next_char_token(',');
 
         if (src_delim_tk_.is_empty()) {
@@ -48,6 +50,8 @@ class stmt_builtin_array_copy final : public statement {
         }
 
         dst_ = {tc, {}, tz.next_token(), tz};
+
+        dst_.assert_array_or_element("destination");
 
         assert_not_read_only(dst_.tok(), "copy into", dst_.identifier(),
                              tc.make_ident_info(dst_));

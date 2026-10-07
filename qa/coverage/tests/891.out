@@ -1,0 +1,4 @@
+
+891.baz:9:9: an array cannot be assigned the result of a call
+    a = one()
+        ^~~

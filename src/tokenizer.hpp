@@ -17,11 +17,36 @@ class tokenizer final {
     std::string_view src_;
     size_t char_ix_{}; // current char index in 'src_'
     size_t at_line_{1};
+    size_t nesting_{};
 
     static constexpr std::string_view delimiters_{
         " \t\r\n(){}[]=,.:+-*/%&|^<>!#"};
 
   public:
+    // one level of nesting while it lives
+    class nesting_scope final {
+        tokenizer& tz_;
+
+      public:
+        explicit nesting_scope(tokenizer& tz) : tz_{tz} {
+            if (tz_.nesting_ >= max_nesting) {
+                throw compiler_exception{
+                    tz_, std::format("nesting is too deep, the limit is {} "
+                                     "levels",
+                                     max_nesting)};
+            }
+
+            ++tz_.nesting_;
+        }
+
+        nesting_scope(const nesting_scope&) = delete;
+        nesting_scope(nesting_scope&&) = delete;
+        auto operator=(const nesting_scope&) -> nesting_scope& = delete;
+        auto operator=(nesting_scope&&) -> nesting_scope& = delete;
+
+        ~nesting_scope() { --tz_.nesting_; }
+    };
+
     explicit tokenizer(const std::string_view src) : src_{src} {}
 
     // continues at a position of an earlier pass over the same source
@@ -30,6 +55,22 @@ class tokenizer final {
           at_line_{position_tk.at_line()} {
 
         assert(char_ix_ <= src_.size());
+    }
+
+    // the most levels of blocks and expressions inside each other, the parsers
+    // recurse for each of them so the limit keeps the source from exhausting
+    // the stack
+    static constexpr size_t max_nesting{128};
+
+    // 'next_token' made no text: the source ended or a delimiter is next, which
+    // no statement or definition starts with
+    auto assert_not_at_delimiter() const -> void {
+        if (is_eos()) {
+            return;
+        }
+
+        throw compiler_exception{*this,
+                                 std::format("unexpected '{}'", peek_char())};
     }
 
     [[nodiscard]] auto cur_char_index_in_source() const -> size_t {
@@ -146,7 +187,6 @@ class tokenizer final {
     // at an unrelated position
     auto put_back_token(const token& t) -> void {
         assert(t.source_end_index() == char_ix_);
-        assert(not t.is_string());
         assert(is_token_text_at_source(t));
 
         move_back(char_ix_ - t.source_begin_index());
@@ -314,8 +354,12 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
-        return src_.substr(t.start_index(), t.end_index() - t.start_index()) ==
-               t.text();
+        // the text of a string token excludes its quotes
+        const size_t quote_count{t.is_string() ? 1UZ : 0UZ};
+
+        return src_.substr(t.start_index() + quote_count,
+                           t.end_index() - t.start_index() -
+                               (2 * quote_count)) == t.text();
     }
 
     auto move_back(size_t nchars) -> void {

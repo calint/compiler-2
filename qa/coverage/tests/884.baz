@@ -1,0 +1,10 @@
+# a global variable is not initialized with a call
+
+func one() res {
+    res = 1
+}
+
+var g = one()
+
+func main() {
+}

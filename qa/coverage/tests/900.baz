@@ -1,0 +1,9 @@
+# a comparison is not made with the call of a function without a result
+
+func check(ok bool) {
+}
+
+func main() {
+    if 1 == check(true) {
+    }
+}

@@ -1,0 +1,6 @@
+# a delimiter where the single statement of a block should start is rejected
+
+func main() {
+    var x = 1
+    loop |
+}

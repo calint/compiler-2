@@ -1,0 +1,6 @@
+# a data constant is not a string
+
+dat x = i32("5")
+
+func main() {
+}

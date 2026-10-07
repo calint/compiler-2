@@ -1,0 +1,5 @@
+# a delimiter where a definition should start is rejected
+
+func main() {
+}
+}

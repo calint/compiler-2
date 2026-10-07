@@ -1,0 +1,6 @@
+# exit has no value to assign
+
+func main() {
+    var x = 1
+    x = exit(1)
+}

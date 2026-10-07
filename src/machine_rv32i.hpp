@@ -1774,7 +1774,7 @@ class machine_rv32i : public machine {
             narrowed_immediate(src, dst.type_ref()),
         };
 
-        assert_folded(instruction, dst, src, constant);
+        assert_folded(instruction, dst, constant);
 
         if (constant.has_value() and
             yields_constant(instruction, *constant,
@@ -1790,7 +1790,7 @@ class machine_rv32i : public machine {
             load_destination(src_loc_tk, indent, dst),
         };
 
-        emit_binary_instruction(src_loc_tk, indent, instruction, dst, src,
+        emit_binary_instruction(src_loc_tk, indent, instruction, src,
                                 loaded.value, constant);
 
         store_operation_result(
@@ -2641,8 +2641,8 @@ class machine_rv32i : public machine {
 
     // applies 'instruction' to 'left' with an immediate when it fits
     auto emit_binary_instruction(const token& src_loc_tk, const size_t indent,
-                                 const op instruction, const operand& dst,
-                                 const operand& src, const operand& left,
+                                 const op instruction, const operand& src,
+                                 const operand& left,
                                  const std::optional<int32_t> constant)
         -> void {
 
@@ -2679,7 +2679,7 @@ class machine_rv32i : public machine {
         }
 
         const operand right{
-            source_register(src_loc_tk, indent, dst, src, constant),
+            source_register(src_loc_tk, indent, src, constant),
         };
 
         assembler_.register_op(indent, instruction, left.base_register(),
@@ -3535,7 +3535,7 @@ class machine_rv32i : public machine {
                            const loaded_destination& loaded) -> void {
 
         const operand amount{
-            source_register(src_loc_tk, indent, dst, count, std::nullopt),
+            source_register(src_loc_tk, indent, count, std::nullopt),
         };
 
         const bool is_left{operation == arithmetic_operator::shift_left};
@@ -3549,11 +3549,8 @@ class machine_rv32i : public machine {
     }
 
     auto source_register(const token& src_loc_tk, const size_t indent,
-                         const operand& dst, const operand& src,
+                         const operand& src,
                          const std::optional<int32_t> constant) -> operand {
-
-        // folding removes the operations of a location with itself
-        assert(not same_memory(dst, src));
 
         if (src.is_register()) {
             return src;
@@ -4162,12 +4159,11 @@ class machine_rv32i : public machine {
         return immediates_size_bytes <= copy_size_bytes;
     }
 
-    // folding removes the operations that keep the destination and those of a
-    // location with itself
+    // folding removes the operations that keep the destination, an operation
+    // of a location with itself is a valid one that an aliased result reaches
     static auto
     assert_folded([[maybe_unused]] const op instruction,
                   [[maybe_unused]] const operand& dst,
-                  [[maybe_unused]] const operand& src,
                   [[maybe_unused]] const std::optional<int32_t> constant)
         -> void {
 
@@ -4175,12 +4171,6 @@ class machine_rv32i : public machine {
 
         assert(not constant.has_value() or
                not keeps_destination(instruction, *constant, width));
-
-        assert(not same_memory(dst, src));
-
-        assert(not dst.is_register() or not src.is_register() or
-               register_index(dst.base_register()) !=
-                   register_index(src.base_register()));
     }
 
     // aligned hardware requires every access to be within the known alignment:

@@ -1,0 +1,4 @@
+
+904.baz:8:18: expected an array, got an instance of 'point'
+    var l = line{point}
+                 ^~~~~

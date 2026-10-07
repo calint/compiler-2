@@ -1,0 +1,4 @@
+func main() {
+    exit(3)
+}
+# comment on the last line without a line end

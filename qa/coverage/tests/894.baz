@@ -1,0 +1,10 @@
+# a variable shadows the function of the same name
+
+func n() {
+}
+
+func main() {
+    var n = 5
+    var i = n
+    exit(i)
+}

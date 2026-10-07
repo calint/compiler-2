@@ -319,6 +319,10 @@ CLI --vars=-16 1 --help
 CLI --vars=17 1 --help
 CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
+# more than the target addresses
+CLI --vars=0x8000000000000000 1 430.baz
+CLI --vars=0x100000010 1 430.baz --target=rv32i
+CLI --vars=0x800000000000 0 430.baz
 CLI --stack=65536 0 --help
 CLI --stack=0x10000 0 --help
 CLI --stack= 1 --help
