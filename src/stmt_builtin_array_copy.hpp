@@ -115,15 +115,8 @@ class stmt_builtin_array_copy final : public statement {
             return;
         }
 
-        const auto emit_count{
-            [&](const operand& count_register) -> void {
-                x.comment(count_.tok(), indent,
-                          statement::trimmed_source(count_));
-
-                count_.compile(
-                    tc, indent,
-                    toc::make_ident_info_from_register(count_register));
-            },
+        const std::function<void(const operand&)> emit_count{
+            make_count_emitter(tc, indent, count_),
         };
 
         const machine::address_emitter emit_src{

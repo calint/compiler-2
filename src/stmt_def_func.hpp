@@ -272,11 +272,6 @@ class stmt_def_func final : public statement {
         return std::format("size.{}", body_label(array_lengths));
     }
 
-    // the body is compiled for the length of each array argument
-    [[nodiscard]] auto has_array_param() const -> bool {
-        return array_param_count() != 0;
-    }
-
     // the address of that slot is passed in a register
     [[nodiscard]] auto has_slot_register(const toc& tc) const -> bool {
         return register_slot_index() and tc.has_slot_register();

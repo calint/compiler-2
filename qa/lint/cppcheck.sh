@@ -8,4 +8,4 @@ date | tee cppcheck.log
 
 cppcheck --std=c++26 --enable=all --suppress=missingIncludeSystem --check-level=exhaustive $SRC 2>&1 | tee -a cppcheck.log
 
-date | tee -a clang-tidy.log
+date | tee -a cppcheck.log

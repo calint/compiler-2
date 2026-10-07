@@ -357,25 +357,6 @@ class program final {
         x.write_assembly(os);
     }
 
-    auto compile(toc& tc, const size_t indent) const -> void {
-        tc.reset_usage();
-
-        tc.enter_block();
-
-        for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc, indent, ident_info::make_empty());
-        }
-
-        compile_main(tc, indent);
-        compile_noninline_functions(tc, indent);
-
-        tc.exit_block();
-
-        emit_failure_handlers(tc);
-        emit_read_only_data(tc);
-        emit_data_section(tc);
-    }
-
     auto source_to(std::ostream& os) const -> void {
         for (const std::unique_ptr<statement>& s : statements_) {
             s->source_to(os);
@@ -416,6 +397,25 @@ class program final {
     }
 
   private:
+    auto compile(toc& tc, const size_t indent) const -> void {
+        tc.reset_usage();
+
+        tc.enter_block();
+
+        for (const std::unique_ptr<statement>& s : statements_) {
+            s->compile(tc, indent, ident_info::make_empty());
+        }
+
+        compile_main(tc, indent);
+        compile_noninline_functions(tc, indent);
+
+        tc.exit_block();
+
+        emit_failure_handlers(tc);
+        emit_read_only_data(tc);
+        emit_data_section(tc);
+    }
+
     auto emit_data_section(toc& tc) const -> void {
         machine& x{tc.machine()};
 

@@ -2326,12 +2326,6 @@ class toc final {
         return scopes_.find_const(name) != nullptr;
     }
 
-    [[nodiscard]] auto
-    has_const_in_current_block(const std::string_view name) const -> bool {
-
-        return scopes_.back().has_const(name);
-    }
-
     [[nodiscard]] auto has_lea(const statement& st) const -> bool {
         if (not st.is_identifier()) {
             return false;

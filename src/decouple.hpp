@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <memory>
 #include <span>
 #include <string>
@@ -384,6 +385,13 @@ instantiate_generic_func(toc& tc, const token& call_tk,
 // the '<' as an operator
 auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
                                         tokenizer& tz) -> void;
+
+// compiles the element count of a bulk operation into the register the
+// machine asks for, the statement must outlive the emitter
+[[nodiscard]] auto
+make_count_emitter(toc& tc [[clang::lifetimebound]], size_t indent,
+                   const statement& count [[clang::lifetimebound]])
+    -> std::function<void(const operand&)>;
 
 [[nodiscard]] auto is_array_literal(const toc& tc, const token& tk,
                                     tokenizer& tz) -> bool;

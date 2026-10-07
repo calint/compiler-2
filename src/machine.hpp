@@ -1369,6 +1369,24 @@ class machine {
         }
     }
 
+    // before the frame base, the address may be relative to it; the receiver of
+    // the caller, already in the register, is passed as is
+    auto load_slot_address(const token& src_loc_tk, const size_t indent,
+                           const operand& slot_address) -> void {
+
+        if (slot_address.is_empty() or
+            slot_address.is_address_in_register(slot_register())) {
+
+            return;
+        }
+
+        comment(src_loc_tk, indent, "address of the slot in a register");
+
+        address_of(src_loc_tk, indent,
+                   make_register_operand(slot_register(), default_type()),
+                   slot_address);
+    }
+
     // 'pool' has just got a register, for the report of the use of registers:
     // what the frame being compiled holds itself and the busiest point
     auto record_register_use(const register_pool& pool) -> void {

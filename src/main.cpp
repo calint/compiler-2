@@ -262,7 +262,7 @@ template <typename T>
         return true;
     }
 
-    print_usage_error(std::format("Error: Unknown option: {}", arg));
+    print_usage_error(std::format("Unknown option: '{}'", arg));
 
     return false;
 }
@@ -512,12 +512,15 @@ auto check_reproduced_source(const program& prg, const options& opts,
                         parsed_size_bytes, base),
     };
 
-    if (parsed.ec != std::errc{} or parsed.ptr != digits_end or
-        parsed_size_bytes == 0) {
-
+    if (parsed.ec != std::errc{} or parsed.ptr != digits_end) {
         print_usage_error(
-            std::format("Could not parse {}: \"{}\"", name, text));
+            std::format("Invalid {}: '{}' is not a number", name, text));
 
+        return std::nullopt;
+    }
+
+    if (parsed_size_bytes == 0) {
+        print_usage_error(std::format("Invalid {}: '{}' is zero", name, text));
         return std::nullopt;
     }
 
@@ -531,7 +534,7 @@ auto check_reproduced_source(const program& prg, const options& opts,
     return parsed_size_bytes;
 }
 
-// each '--checks' replaces the earlier ones, empty parts are ignored
+// each '--report' replaces the earlier ones, an empty name is an error
 [[nodiscard]] auto parse_reports(const std::string_view reports)
     -> std::optional<report_options> {
 
@@ -564,6 +567,7 @@ auto check_reproduced_source(const program& prg, const options& opts,
     return parsed;
 }
 
+// each '--checks' replaces the earlier ones, empty parts are ignored
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options> {
 

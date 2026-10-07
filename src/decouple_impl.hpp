@@ -49,12 +49,12 @@
 // NOLINTBEGIN(misc-definitions-in-headers)
 
 // declared in 'decouple.hpp'
-// called from 'stmt_block' to solve circular dependencies with 'loop',
-// 'if', 'mov', 'syscall'
+// called from 'stmt_block' to solve circular dependencies with 'loop', 'if',
+// 'exit', 'read', 'write' and 'foo'
 auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
 
-    // note: no 'std:move' on 'tk' because it is trivially copyable
+    // note: no 'std::move' on 'tk' because it is trivially copyable
     if (tk.is_text("loop")) {
         return std::make_unique<stmt_loop>(tc, tk, tz);
     }
@@ -962,6 +962,21 @@ auto unary_ops::compile(toc& tc, const size_t indent, const token& src_loc_tk,
                          : machine::arithmetic_operator::complement,
                 dst_info);
     }
+}
+
+// declared in 'decouple.hpp'
+// called from 'stmt_builtin_array_copy' and 'stmt_builtin_arrays_equal'
+auto make_count_emitter(toc& tc, const size_t indent, const statement& count)
+    -> std::function<void(const operand&)> {
+
+    return [&tc, indent, &count](const operand& count_register) -> void {
+        machine& x{tc.machine()};
+
+        x.comment(count.tok(), indent, statement::trimmed_source(count));
+
+        count.compile(tc, indent,
+                      toc::make_ident_info_from_register(count_register));
+    };
 }
 
 // NOLINTEND(misc-definitions-in-headers)

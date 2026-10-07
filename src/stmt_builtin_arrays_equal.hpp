@@ -114,15 +114,8 @@ class stmt_builtin_arrays_equal final : public expression {
 
         assert_destination_type(dst.type_ref(), tok());
 
-        const auto emit_count{
-            [&](const operand& count_register) -> void {
-                x.comment(count_.tok(), indent,
-                          statement::trimmed_source(count_));
-
-                count_.compile(
-                    tc, indent,
-                    toc::make_ident_info_from_register(count_register));
-            },
+        const std::function<void(const operand&)> emit_count{
+            make_count_emitter(tc, indent, count_),
         };
 
         x.arrays_equal(
