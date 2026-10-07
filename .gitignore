@@ -1,23 +1,14 @@
-/.vscode/settings.json
 /.cache/
 /build/
-/sanitizer.log
-/qa/coverage/report/*
-!/qa/coverage/report/summary.txt
 /baz
 *.o
 # binaries built by run.sh are named after their source
 /prog
-/prog-uart
-/etc/roome/diff
-/etc/roome/fpga-work/
 # rv32i images are named after their source and target
 *-rv32i*.bin
 /diff.baz
-/.idea/
 lcov.info
 *.profraw
-/qa/coverage/rv32i-driver
 *.profdata
 a.out
 perf.data
@@ -26,14 +17,7 @@ perf-report.txt
 # python caches of the lint scripts
 __pycache__/
 *.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 # editor swap and backup files
 *.swp
 *.swo
 *~
-# core dumps and binaries produced by the test scripts
-*.core
-/qa/coverage/tests/qemu_gen_*
-/qa/coverage/tests/[0-9][0-9][0-9]

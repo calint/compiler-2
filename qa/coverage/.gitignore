@@ -1,0 +1,6 @@
+# binaries built by the test scripts
+/report/*
+!/report/summary.txt
+/rv32i-driver
+/tests/qemu_gen_*
+/tests/[0-9][0-9][0-9]
