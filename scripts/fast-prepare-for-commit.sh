@@ -8,6 +8,10 @@ echo clang tidy
 qa/lint/clang-tidy.sh fix
 echo format source
 qa/lint/format-source.sh
+echo test roome
+roome/qa/test.sh
+echo test lsp
+etc/nvim/tree-sitter-baz/qa/test.sh
 echo build with -O3
 ./make.sh build -O3
 echo run tests
@@ -17,9 +21,5 @@ qa/coverage/test-coverage.sh --target=x86 run
 qa/coverage/test-coverage.sh --target=rv32i-fpga run
 echo compile prog
 ./run.sh
-echo test roome
-roome/qa/test.sh
-echo test lsp
-etc/nvim/tree-sitter-baz/qa/test.sh
 echo make readme
 etc/readme/make.sh
