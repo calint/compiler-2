@@ -77,6 +77,13 @@ class stmt_def_dat final : public statement {
     }
 
     stmt_def_dat() = default;
+    // 'toc' keeps the address of the definition
+    stmt_def_dat(const stmt_def_dat&) = delete;
+    stmt_def_dat(stmt_def_dat&&) = delete;
+    auto operator=(const stmt_def_dat&) -> stmt_def_dat& = delete;
+    auto operator=(stmt_def_dat&&) -> stmt_def_dat& = delete;
+
+    ~stmt_def_dat() override = default;
 
     //
     // overridden methods

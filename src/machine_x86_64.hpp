@@ -193,13 +193,13 @@ class machine_x86_64 final : public machine {
     assembler_x86_64 assembler_;
 
   public:
-    explicit machine_x86_64(std::ostream& os_ref,
+    explicit machine_x86_64(std::ostream* const direct_output,
                             const source_files* const files,
                             const jump_mode jumps = jump_mode::resolved)
-        : machine{os_ref, files, jumps} {
+        : machine{direct_output, files, jumps} {
 
-        // output before 'start' is written as emitted in every mode
-        assembler_.set_direct_output(&stream());
+        // output before 'start' is written as emitted
+        assembler_.set_direct_output(direct_stream());
     }
 
     using machine::emit_data_array;
@@ -1285,7 +1285,7 @@ class machine_x86_64 final : public machine {
 
     auto write_assembly(std::ostream& os) -> void override {
         assembler_.write(os);
-        assembler_.set_direct_output(&stream());
+        assembler_.set_direct_output(direct_stream());
     }
 
     auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,

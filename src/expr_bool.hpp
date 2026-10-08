@@ -68,15 +68,15 @@ class expr_bool_op final : public statement {
             parse_nots(tz);
         }
 
-        lhs_ = {tc,
-                tz,
-                true,
-                false,
-                {},
-                false,
-                {},
-                expr_arith::initial_precedence,
-                std::move(first_expression)};
+        lhs_ = {tc, tz,
+                expr_arith::options{
+                    .in_args{true},
+                    .uops{},
+                    .open_paren_tk{},
+                    .is_implied_subexpression{},
+                    .first_op_precedence{expr_arith::initial_precedence},
+                    .first_expression{std::move(first_expression)},
+                }};
 
         ws_pre_op_ = tz.next_whitespace_token();
 

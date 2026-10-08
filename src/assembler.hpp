@@ -56,8 +56,9 @@
 
 class assembler {
   public:
-    // 'as_emitted' writes directly, 'resolved' buffers without optimizing
-    enum class jump_mode : uint8_t { as_emitted, resolved, optimized };
+    // 'resolved' keeps the jumps as emitted, 'optimized' also removes and
+    // inverts jumps
+    enum class jump_mode : uint8_t { resolved, optimized };
 
   protected:
     struct jump_info {
@@ -180,6 +181,14 @@ class assembler {
         std::vector<line> captured{std::move(captures_.back())};
         captures_.pop_back();
         return captured;
+    }
+
+    // drops the lines added so far
+    auto discard_lines() -> void {
+        assert(captures_.empty());
+        assert(bodies_.empty());
+
+        lines_.clear();
     }
 
     // 'emit' is buffered even when lines are otherwise written as added, so

@@ -27,12 +27,12 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     static constexpr int finisher_pass_{0x5555};
 
   public:
-    machine_rv32i_qemu(std::ostream& os_ref, const source_files* const files,
-                       const jump_mode jumps,
+    machine_rv32i_qemu(std::ostream* const direct_output,
+                       const source_files* const files, const jump_mode jumps,
                        const std::string_view binary_file_name,
                        const size_t stack_size_bytes)
-        : machine_rv32i_bare_metal{os_ref, files, jumps, binary_file_name,
-                                   stack_size_bytes} {
+        : machine_rv32i_bare_metal{direct_output, files, jumps,
+                                   binary_file_name, stack_size_bytes} {
 
         if (stack_size_bytes > std::numeric_limits<uint32_t>::max()) {
             throw std::runtime_error{"stack size exceeds RV32I address range"};

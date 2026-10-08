@@ -74,22 +74,54 @@ class expr_arith final : public expression {
     static constexpr uint8_t precedence_shift{6};
 
   public:
-    expr_arith(toc& tc, tokenizer& tz, const bool in_args = {},
-               const bool enclosed = {}, const token open_paren_tk = {},
-               const bool is_implied_subexpression = {}, unary_ops uops = {},
-               const uint8_t first_op_precedence = initial_precedence,
-               std::unique_ptr<statement> first_expression = {})
-        : expression{tz.cur_position_token()}, uops_{std::move(uops)},
-          open_paren_tk_{open_paren_tk}, enclosed_{enclosed},
-          is_implied_subexpression_{is_implied_subexpression} {
+    // how a list is parsed when it is not a plain one
+    struct options {
+        // the list ends at a ',' or a ')' of the arguments of a call
+        bool in_args{};
+
+        // the unary ops of an enclosed list apply to all of it
+        unary_ops uops;
+
+        // the '(' of an enclosed list, which ends with its ')'
+        std::optional<token> open_paren_tk;
+
+        // a list that was created for an operation of a higher precedence
+        bool is_implied_subexpression{};
+
+        uint8_t first_op_precedence{initial_precedence};
+
+        // an element the caller has already parsed, e.g. the 'b' of 'b * c' in
+        // 'a + b * c'
+        std::unique_ptr<statement> first_expression;
+    };
+
+    expr_arith(toc& tc, tokenizer& tz, const bool in_args = {})
+        : expr_arith{tc, tz,
+                     options{
+                         .in_args{in_args},
+                         .uops{},
+                         .open_paren_tk{},
+                         .is_implied_subexpression{},
+                         .first_op_precedence{initial_precedence},
+                         .first_expression{},
+                     }} {}
+
+    expr_arith(toc& tc, tokenizer& tz, options opts)
+        : expression{tz.cur_position_token()}, uops_{std::move(opts.uops)},
+          open_paren_tk_{opts.open_paren_tk.value_or(token{})},
+          enclosed_{opts.open_paren_tk.has_value()},
+          is_implied_subexpression_{opts.is_implied_subexpression} {
+
+        const bool in_args{opts.in_args};
 
         const tokenizer::nesting_scope nesting{tz};
 
         // a recursive call might have supplied the first element it already
         // parsed
         // e.g. the 'b' of 'b * c' in 'a + b * c'
-        exprs_.emplace_back(first_expression ? std::move(first_expression)
-                                             : parse_element(tc, tz, in_args));
+        exprs_.emplace_back(opts.first_expression
+                                ? std::move(opts.first_expression)
+                                : parse_element(tc, tz, in_args));
 
         // set the type of this list same as first element
         // e.g. 'x + 1' has the type of the variable 'x'
@@ -98,7 +130,7 @@ class expr_arith final : public expression {
         // start the loop of arithmetic operator and element
 
         // start with provided precedence
-        uint8_t precedence{first_op_precedence};
+        uint8_t precedence{opts.first_op_precedence};
 
         while (true) {
 
@@ -797,8 +829,15 @@ class expr_arith final : public expression {
 
         // the sub-expression continues with the precedence of the operator
         exprs_.emplace_back(std::make_unique<expr_arith>(
-            tc, tz, in_args, false, token{}, true, unary_ops{}, next_precedence,
-            std::move(last_elem_in_list)));
+            tc, tz,
+            options{
+                .in_args{in_args},
+                .uops{},
+                .open_paren_tk{},
+                .is_implied_subexpression{true},
+                .first_op_precedence{next_precedence},
+                .first_expression{std::move(last_elem_in_list)},
+            }));
     }
 
     // the passes in order, the steps are ready to compile
@@ -1504,7 +1543,15 @@ class expr_arith final : public expression {
             not open_paren_tk.is_empty()) {
 
             return std::make_unique<expr_arith>(
-                tc, tz, in_args, true, open_paren_tk, false, std::move(uo));
+                tc, tz,
+                options{
+                    .in_args{in_args},
+                    .uops{std::move(uo)},
+                    .open_paren_tk{open_paren_tk},
+                    .is_implied_subexpression{},
+                    .first_op_precedence{initial_precedence},
+                    .first_expression{},
+                });
         }
 
         // the element reads its own unary ops: '[-a] + b'

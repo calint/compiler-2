@@ -804,13 +804,16 @@ class expr_any final : public statement {
             return expr_arith{
                 tc,
                 tz,
-                in_args,
-                false,
-                {},
-                false,
-                {},
-                expr_arith::initial_precedence,
-                std::make_unique<stmt_builtin_convert>(tc, tk),
+                expr_arith::options{
+                    .in_args{in_args},
+                    .uops{},
+                    .open_paren_tk{},
+                    .is_implied_subexpression{},
+                    .first_op_precedence{expr_arith::initial_precedence},
+                    .first_expression{
+                        std::make_unique<stmt_builtin_convert>(tc, tk),
+                    },
+                },
             };
         }
 

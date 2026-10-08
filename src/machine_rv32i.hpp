@@ -394,14 +394,15 @@ class machine_rv32i : public machine {
   public:
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
-    explicit machine_rv32i(std::ostream& os_ref,
+    explicit machine_rv32i(std::ostream* const direct_output,
                            const source_files* const files = nullptr,
                            const jump_mode jumps = jump_mode::resolved,
                            const std::string_view binary_file_name = {})
-        : machine{os_ref, files, jumps}, binary_file_name_{binary_file_name} {
+        : machine{direct_output, files, jumps},
+          binary_file_name_{binary_file_name} {
 
-        // output before 'start' is written as emitted in every mode
-        assembler_.set_direct_output(&stream());
+        // output before 'start' is written as emitted
+        assembler_.set_direct_output(direct_stream());
     }
 
     using machine::emit_data_array;
@@ -1610,7 +1611,7 @@ class machine_rv32i : public machine {
         // a build buffers its output
         assert(assembler_.is_buffering());
 
-        assembler_.set_direct_output(&stream());
+        assembler_.set_direct_output(direct_stream());
 
         if (binary_file_name_.empty()) {
             assembler_.write_resolved(os);

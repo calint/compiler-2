@@ -2812,3 +2812,6 @@ SRC=918 && EXP=7 && RUN
 
 # a unary operator before a hex or binary constant
 SRC=919 && EXP=0 && RUN
+
+# the mark under a token counts characters, not bytes
+SRC=920 && COMPERR

@@ -139,7 +139,7 @@ auto rejected_with(const action_t& action, const std::string_view text = {})
 struct captured_rv32i {
     assembly_output output;
     std::ostream stream{output.rdbuf()};
-    machine_rv32i backend{stream};
+    machine_rv32i backend{&stream};
 
     captured_rv32i() {
         backend.set_builtin_types(integer64, integer, half, byte);
@@ -612,13 +612,11 @@ auto check_line_sizes() -> void {
 
 // 'emit_most_efficient' on versions of equal size, in every jump mode
 auto check_equal_size_choice() -> void {
-    // equal sizes keep the version without scratch in direct and buffered
-    // output
+    // equal sizes keep the version without scratch
     for (const assembler::jump_mode jumps :
-         {assembler::jump_mode::as_emitted, assembler::jump_mode::resolved,
-          assembler::jump_mode::optimized}) {
+         {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
-        machine_rv32i backend{output, {}, jumps};
+        machine_rv32i backend{&output, {}, jumps};
         backend.set_builtin_types(integer64, integer, half, byte);
         backend.start();
 
@@ -638,11 +636,7 @@ auto check_equal_size_choice() -> void {
         backend.emit_most_efficient(token{}, 0, [&] { load("2048"); }, copy);
 
         backend.finish();
-        // direct output is already written
-        if (jumps != assembler::jump_mode::as_emitted) {
-            backend.write_assembly(output);
-        }
-        // buffered output is followed by the optimization counts
+        backend.write_assembly(output);
         assert(output.str().contains("li a0, 2047\naddi a0, a1, 0\n"));
     }
 }
@@ -651,7 +645,7 @@ auto check_equal_size_choice() -> void {
 auto check_backend_jump_optimization() -> void {
     // the backend's jumps and labels reach the optimizer
     std::ostringstream output;
-    machine_rv32i backend{output, {}, assembler::jump_mode::optimized};
+    machine_rv32i backend{&output, {}, assembler::jump_mode::optimized};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
 
@@ -695,7 +689,7 @@ auto check_backend_jump_optimization() -> void {
 // copies between equal addresses, and the comments that describe variables
 auto check_copies_and_variable_comments() -> void {
     assembly_output copies;
-    machine_rv32i backend{copies};
+    machine_rv32i backend{&copies};
     backend.set_builtin_types(integer64, integer, half, byte);
     // --- a copy to the same address emits nothing, others load and store
 
@@ -731,7 +725,7 @@ auto check_comments_with_source_positions() -> void {
     std::ostringstream comments;
     source_files files;
     files.add("test.baz", "first\n    value");
-    machine_rv32i located{comments, &files};
+    machine_rv32i located{&comments, &files};
     const token location{0, {}, 10, "value", 15, {}, 2, false};
     located.comment(location, 1, "assignment");
     located.comment(token{}, 0, "generated");
@@ -810,7 +804,7 @@ func main() {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i compiler{output};
+    machine_rv32i compiler{&output};
     program prg{compiler, files, 4096, check_options{}};
     prg.build(output);
     // reserved pointers must hold the address throughout index arithmetic
@@ -837,7 +831,7 @@ func main() {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i compiler{output};
+    machine_rv32i compiler{&output};
     program prg{compiler, files, 4096, check_options{}};
     prg.build(output);
     assert(output.str().contains("slli t1, t4, 2\n"));
@@ -878,7 +872,7 @@ func main() {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_x86_64 compiler{output, &files};
+    machine_x86_64 compiler{&output, &files};
     program prg{compiler, files, 4096, check_options{}};
     prg.build(output);
     assert(output.str().contains("sete r15b\n"));
@@ -905,7 +899,7 @@ func main() {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_x86_64 x86_compiler{x86_output, &files};
+    machine_x86_64 x86_compiler{&x86_output, &files};
     program x86_program{x86_compiler, files, 4096, check_options{}};
     x86_program.build(x86_output);
     assert(x86_output.str().contains("sete byte [rbp + 4]\n"));
@@ -916,7 +910,7 @@ func main() {
     assert(not x86_output.str().contains("xor r15b, 1\n"));
 
     std::ostringstream rv32i_output;
-    machine_rv32i rv32i_compiler{rv32i_output};
+    machine_rv32i rv32i_compiler{&rv32i_output};
     program rv32i_program{rv32i_compiler, files, 4096, check_options{}};
     rv32i_program.build(rv32i_output);
     assert(rv32i_output.str().contains("sb t3, -2028(s0)\n"));
@@ -934,7 +928,7 @@ func main() {
 // memory needs, last, also after a register was freed again
 auto check_x86_scratch_registers() -> void {
     std::ostringstream x86_output;
-    machine_x86_64 x86_backend{x86_output, {}};
+    machine_x86_64 x86_backend{&x86_output, {}};
     x86_backend.set_builtin_types(integer64, integer, half, byte);
     constexpr std::array<std::string_view, 14> x86_scratch_order{
         "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
@@ -985,7 +979,7 @@ auto check_x86_scratch_registers() -> void {
 // syscall and without touching 'rsp'
 auto check_x86_syscall_register_saving() -> void {
     std::ostringstream x86_output;
-    machine_x86_64 x86_backend{x86_output, {}};
+    machine_x86_64 x86_backend{&x86_output, {}};
     x86_backend.set_builtin_types(integer64, integer, half, byte);
 
     for (const unsigned live_mask : {0U, 1U, 2U, 3U}) {
@@ -1066,7 +1060,7 @@ auto check_x86_write_in_program() -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_x86_64 compiler{output, &files};
+    machine_x86_64 compiler{&output, &files};
     program prg{compiler, files, 4096, check_options{}};
     prg.build(output);
     const std::string assembly{output.str()};
@@ -1089,7 +1083,7 @@ auto check_x86_nested_syscalls_rejected() -> void {
         source_files files;
         files.add("test.baz", std::string{source});
 
-        machine_x86_64 compiler{output, &files};
+        machine_x86_64 compiler{&output, &files};
         program prg{compiler, files, 4096, check_options{}};
         assert(rejected_with([&] { prg.build(output); },
                              "cannot allocate register rdi"));
@@ -1538,7 +1532,7 @@ auto check_shift_of_variables() -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i compiler{output};
+    machine_rv32i compiler{&output};
     program prg{compiler, files, 4096, check_options{}};
     prg.build(output);
     assert(output.str().contains("sll t0, t0, t1"));
@@ -1995,7 +1989,7 @@ auto check_scratch_register_pool() -> void {
 auto check_multiply_divide_routines() -> void {
     for (const char operation : {'*', '/', '%', '+'}) {
         std::ostringstream output;
-        machine_rv32i helper_backend{output};
+        machine_rv32i helper_backend{&output};
         helper_backend.set_builtin_types(integer64, integer, half, byte);
         if (operation != '+') {
             const auto emit = [&]() {
@@ -2062,14 +2056,47 @@ auto check_multiply_divide_routines() -> void {
 // 9. generated programs with hand-written lines between the backend's output
 // ============================================================================
 
+constexpr std::string_view hand_written_marker{"@hand "};
+
+// the hand-written assembly between the backend's lines travels as comments of
+// the backend and is written as it is after the backend wrote its lines
+auto hand_written(machine_rv32i& backend, const std::string_view text) -> void {
+    for (const auto line : std::views::split(text, '\n')) {
+        backend.comment(token{}, 0, "{}{}", hand_written_marker,
+                        std::string_view{line});
+    }
+}
+
+auto write_with_hand_written(machine_rv32i& backend) -> void {
+    std::ostringstream assembly;
+    backend.write_assembly(assembly);
+
+    std::istringstream lines{assembly.str()};
+    for (std::string line; std::getline(lines, line);) {
+        const size_t marker_at{line.find(hand_written_marker)};
+
+        // the marker is the first thing on a comment line
+        const bool is_hand_written{
+            marker_at != std::string::npos and
+                line.find_first_not_of(' ') == marker_at - 2,
+        };
+
+        std::println("{}",
+                     is_hand_written
+                         ? line.substr(marker_at + hand_written_marker.size())
+                         : line);
+    }
+}
+
 // 'noninline': a function call preserves exactly the allocated registers
 // and callees never write the variables base
 auto generate_noninline() -> void {
     // hand-written lines are interleaved with the backend's output
-    machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
+    machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
-    std::println("    addi sp, sp, -128\n    sw sp, 124(sp)");
+    hand_written(backend,
+                 std::format("    addi sp, sp, -128\n    sw sp, 124(sp)"));
     // a call keeps only allocated registers, the variables base s0 is
     // already allocated
     std::vector<operand> live;
@@ -2078,32 +2105,38 @@ auto generate_noninline() -> void {
             live.push_back(backend.alloc_named_register(
                 token{}, 0, assembler_rv32i::register_names.at(index),
                 integer));
-            std::println("    li x{}, {}", index, 100 + index);
+            hand_written(backend,
+                         std::format("    li x{}, {}", index, 100 + index));
         }
     }
     backend.call_function(token{}, 1, "outer",
-                          operand::mem("s0", {}, 1, 4096, integer),
-                          operand{});
+                          operand::mem("s0", {}, 1, 4096, integer), operand{});
     for (size_t index{1}; index < 32; ++index) {
         if (index != 2) {
-            std::println("    sw x{}, {}(sp)", index, (index - 1) * 4);
+            hand_written(backend, std::format("    sw x{}, {}(sp)", index,
+                                              (index - 1) * 4));
         }
     }
-    std::println(
-        "    lw t0, 124(sp)\n    beq t0, sp, 1f\n    j call_failure\n1:");
+    hand_written(
+        backend,
+        std::format(
+            "    lw t0, 124(sp)\n    beq t0, sp, 1f\n    j call_failure\n1:"));
     for (size_t index{1}; index < 32; ++index) {
         if (index == 2) {
             continue;
         }
-        std::println("    lw t0, {}(sp)", (index - 1) * 4);
+        hand_written(backend,
+                     std::format("    lw t0, {}(sp)", (index - 1) * 4));
         if (index == 8) {
-            std::println("    la t1, dat\n    addi t1, t1, 2032");
+            hand_written(backend,
+                         std::format("    la t1, dat\n    addi t1, t1, 2032"));
         } else {
-            std::println("    li t1, {}", 100 + index);
+            hand_written(backend, std::format("    li t1, {}", 100 + index));
         }
-        std::println("    beq t0, t1, 1f\n    j call_failure\n1:");
+        hand_written(backend,
+                     std::format("    beq t0, t1, 1f\n    j call_failure\n1:"));
     }
-    std::println("    addi sp, sp, 128");
+    hand_written(backend, std::format("    addi sp, sp, 128"));
     for (const operand& reg : live | std::views::reverse) {
         backend.free_named_register(token{}, 0, reg);
     }
@@ -2112,29 +2145,35 @@ auto generate_noninline() -> void {
     backend.exit(token{}, 1, operand::imm("1", integer));
     backend.label(0, "outer");
     backend.reserve_frame_base();
-    std::println("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
-                 "    beq s1, t0, 1f\n    j call_failure\n1:");
+    hand_written(
+        backend,
+        std::format("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
+                    "    beq s1, t0, 1f\n    j call_failure\n1:"));
     backend.call_function(token{}, 1, "inner",
-                          operand::mem("s1", {}, 1, 8192, integer),
-                          operand{});
+                          operand::mem("s1", {}, 1, 8192, integer), operand{});
     // the frame base is live here, so the call restores it
-    std::println("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
-                 "    beq s1, t0, 1f\n    j call_failure\n1:");
+    hand_written(
+        backend,
+        std::format("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
+                    "    beq s1, t0, 1f\n    j call_failure\n1:"));
     backend.return_function(1);
     backend.release_frame_base();
     backend.label(0, "inner");
     backend.reserve_frame_base();
-    std::println("    la t0, dat\n    li t1, 14320\n    add t0, t0, t1\n"
-                 "    beq s1, t0, 1f\n    j call_failure\n1:");
+    hand_written(
+        backend,
+        std::format("    la t0, dat\n    li t1, 14320\n    add t0, t0, t1\n"
+                    "    beq s1, t0, 1f\n    j call_failure\n1:"));
     // callees never write the variables base s0
     for (size_t index{1}; index < 32; ++index) {
         if (index != 2 and index != 8) {
-            std::println("    li x{}, -1", index);
+            hand_written(backend, std::format("    li x{}, -1", index));
         }
     }
     backend.return_function(1);
     backend.release_frame_base();
     backend.finish();
+    write_with_hand_written(backend);
     std::println(".data\ndat:\nvars:\n    .zero 16384");
 }
 
@@ -2142,7 +2181,7 @@ auto generate_noninline() -> void {
 // when the check is enabled and the frame at 'vars + offset' does not fit in
 // the 256 bytes of 'vars', for every offset and size around the limit
 auto generate_frame_checks() -> void {
-    machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
+    machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
     const operand continuation{
@@ -2156,69 +2195,87 @@ auto generate_frame_checks() -> void {
                                    size > static_cast<uint32_t>(256 - offset))};
                 const std::string size_label{
                     std::format("frame_size_{}", case_index)};
-                std::println("    la a0, vars\n    addi a0, a0, {}\n"
-                             "    la s3, frame_result_{}",
-                             offset, case_index);
+                hand_written(
+                    backend,
+                    std::format("    la a0, vars\n    addi a0, a0, {}\n"
+                                "    la s3, frame_result_{}",
+                                offset, case_index));
                 backend.check_frame_capacity(
                     token{}, 1, operand::mem("a0", {}, 1, 0, integer),
                     operand::imm(size_label, integer), enabled);
-                std::println("    li a3, 0\nframe_result_{}:\n    li a4, {}\n"
-                             "    beq a3, a4, 1f\n    j frame_failure\n1:",
-                             case_index++, failed ? 1 : 0);
+                hand_written(
+                    backend,
+                    std::format(
+                        "    li a3, 0\nframe_result_{}:\n    li a4, {}\n"
+                        "    beq a3, a4, 1f\n    j frame_failure\n1:",
+                        case_index++, failed ? 1 : 0));
                 backend.define_constant(size_label, size);
             }
         }
     }
     for (const bool positive : {false, true}) {
-        std::println("    la a0, vars\n    addi a0, a0, {}\n    la s3, "
-                     "frame_result_{}",
-                     positive ? 1 : -1, case_index);
+        hand_written(
+            backend,
+            std::format("    la a0, vars\n    addi a0, a0, {}\n    la s3, "
+                        "frame_result_{}",
+                        positive ? 1 : -1, case_index));
         backend.check_frame_capacity(
             token{}, 1,
             operand::mem("a0", {}, 1,
                          positive ? int64_t{UINT32_MAX} : -int64_t{UINT32_MAX},
                          integer),
             operand::imm("0", integer), true);
-        std::println("    li a3, 0\nframe_result_{}:\n    li a4, 1\n"
-                     "    beq a3, a4, 1f\n    j frame_failure\n1:",
-                     case_index++);
+        hand_written(
+            backend,
+            std::format("    li a3, 0\nframe_result_{}:\n    li a4, 1\n"
+                        "    beq a3, a4, 1f\n    j frame_failure\n1:",
+                        case_index++));
     }
     backend.free_named_register(token{}, 0, continuation);
     backend.end_main();
-    std::println("{}:\n    li a3, 1\n    jr s3\nframe_failure:",
-                 machine::frame_overflow_handler_label);
+    // the backend jumps to the label, so it defines it
+    backend.label(0, machine::frame_overflow_handler_label);
+    hand_written(backend, "    li a3, 1\n    jr s3");
+    backend.label(0, "frame_failure");
     backend.exit(token{}, 1, operand::imm("1", integer));
     backend.finish();
+    write_with_hand_written(backend);
     std::println(".data\ndat:\nvars:\n    .zero 256\nvars.end:");
 }
 
 // 'long-loop': an array iteration whose body is larger than a branch reaches
 // (8 KiB) still repeats, for strides on both sides of the immediate limits
 auto generate_long_loop() -> void {
-    machine_rv32i backend{std::cout, {}, assembler::jump_mode::as_emitted};
+    machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
-    std::println("    addi sp, sp, -16");
+    hand_written(backend, std::format("    addi sp, sp, -16"));
     for (const size_t stride : {4U, 2047U, 2048U, 4094U, 4095U, 8192U}) {
         const std::string loop_label{std::format("long_loop_{}", stride)};
-        std::println("    sw zero, 0(sp)\n    li s2, 0");
+        hand_written(backend, std::format("    sw zero, 0(sp)\n    li s2, 0"));
         backend.label(0, loop_label);
-        std::println("    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1");
+        hand_written(
+            backend,
+            std::format(
+                "    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1"));
         backend.foo_advance_iteration(token{}, 1, operand::reg("s2", integer),
                                       operand::mem("sp", {}, 1, 0, integer),
                                       stride, operand::imm("3", integer),
                                       loop_label);
-        std::println("    li t0, {}\n    beq s2, t0, 1f\n"
-                     "    j long_loop_failure\n1:\n"
-                     "    lw t1, 0(sp)\n    li t0, 3\n"
-                     "    beq t1, t0, 1f\n    j long_loop_failure\n1:",
-                     3 * (stride + 1));
+        hand_written(
+            backend,
+            std::format("    li t0, {}\n    beq s2, t0, 1f\n"
+                        "    j long_loop_failure\n1:\n"
+                        "    lw t1, 0(sp)\n    li t0, 3\n"
+                        "    beq t1, t0, 1f\n    j long_loop_failure\n1:",
+                        3 * (stride + 1)));
     }
-    std::println("    addi sp, sp, 16");
+    hand_written(backend, std::format("    addi sp, sp, 16"));
     backend.end_main();
     backend.label(0, "long_loop_failure");
     backend.exit(token{}, 1, operand::imm("1", integer));
     backend.finish();
+    write_with_hand_written(backend);
     std::println(".data\ndat:\nvars:\n    .word 0");
 }
 
@@ -2226,7 +2283,7 @@ auto generate_long_loop() -> void {
 // jumps around padding of 8 KiB (needs 'j') and 1.08 MiB (needs 'jump'),
 // executed in every direction
 auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
-    machine_rv32i backend{std::cout, {}, jumps};
+    machine_rv32i backend{&std::cout, {}, jumps};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
 
@@ -2338,7 +2395,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i compiler{std::cout, {}, jumps};
+    machine_rv32i compiler{&std::cout, {}, jumps};
 
     program prg{compiler, files, 4096, check_options{}};
     prg.build(std::cout);
@@ -2392,7 +2449,7 @@ func main() {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i compiler{std::cout};
+    machine_rv32i compiler{&std::cout};
     program prg{compiler, files, 4096,
                 check_options{
                     .bounds_upper{true},
@@ -2418,7 +2475,7 @@ func main() {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i compiler{std::cout};
+    machine_rv32i compiler{&std::cout};
     program prg{compiler, files, 4096, check_options{}};
     prg.build(std::cout);
 }
@@ -2479,7 +2536,7 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
 // checks, size, index and count; 'bounds-silent': the failure handler without
 // a line exits with status 255 and prints nothing
 auto generate_bounds(const bool silent) -> void {
-    machine_rv32i bounds_backend{std::cout};
+    machine_rv32i bounds_backend{&std::cout};
     bounds_backend.set_builtin_types(integer64, integer, half, byte);
     std::println(
         ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
@@ -3276,7 +3333,7 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 // the end of 'main', and the entry points that 'test-rv32i.sh' starts
 // separately (division by zero, bounds failures) with the failure path
 auto generate_runtime_program() -> void {
-    machine_rv32i backend{std::cout};
+    machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
 
     std::println(
@@ -3332,7 +3389,7 @@ auto generate_runtime_program() -> void {
 struct front_end {
     std::ostringstream output;
     source_files files;
-    machine_x86_64 backend{output, &files};
+    machine_x86_64 backend{&output, &files};
     toc tc;
 
     // errors need a token with a line

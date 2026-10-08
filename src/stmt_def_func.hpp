@@ -141,6 +141,13 @@ class stmt_def_func final : public statement {
     }
 
     stmt_def_func() = default;
+    // 'toc' keeps the address of the definition
+    stmt_def_func(const stmt_def_func&) = delete;
+    stmt_def_func(stmt_def_func&&) = delete;
+    auto operator=(const stmt_def_func&) -> stmt_def_func& = delete;
+    auto operator=(stmt_def_func&&) -> stmt_def_func& = delete;
+
+    ~stmt_def_func() override = default;
 
     //
     // overridden methods

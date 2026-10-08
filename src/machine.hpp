@@ -493,7 +493,9 @@ class register_use_report final {
 };
 
 class machine {
-    std::reference_wrapper<std::ostream> os_;
+    // receives the lines emitted before 'start' as they are emitted, which
+    // backend tests use, null for a build
+    std::ostream* direct_output_;
     source_locations locations_;
     assembler::jump_mode jump_mode_;
     const type* type_i64_{};
@@ -509,9 +511,10 @@ class machine {
     enum class builtin_function : uint8_t { read, write, exit };
 
     // 'files' locate the tokens of comments, backend tests may leave it null
-    machine(std::ostream& os, const source_files* const files,
+    // and give a stream that receives the lines as they are emitted
+    machine(std::ostream* const direct_output, const source_files* const files,
             const assembler::jump_mode jumps)
-        : os_{os}, locations_{files}, jump_mode_{jumps} {}
+        : direct_output_{direct_output}, locations_{files}, jump_mode_{jumps} {}
 
     machine(const machine&) = delete;
     machine(machine&&) = delete;
@@ -521,7 +524,7 @@ class machine {
     virtual ~machine() = default;
 
   protected:
-    // buffered modes hold output from 'start' to 'finish' so jumps can be
+    // output is held from 'start' to 'finish' so jumps can be
     // optimized and grown to reach their targets
     using jump_mode = assembler::jump_mode;
 
@@ -966,7 +969,8 @@ class machine {
                        const operand& address, const operand& count)
         -> void = 0;
 
-    // 'as_emitted' output was already written, so nothing is buffered
+    // writes the lines buffered from 'start', output emitted before it was
+    // already written
     virtual auto write_assembly(std::ostream& os) -> void = 0;
 
     virtual auto zero(const token& src_loc_tk, const size_t indent,
@@ -1373,6 +1377,10 @@ class machine {
         }
     }
 
+    [[nodiscard]] auto direct_stream() const -> std::ostream* {
+        return direct_output_;
+    }
+
     // the optional jump optimization of buffered output
     auto finish_output() -> void {
         assembler& output{target_assembler()};
@@ -1417,8 +1425,11 @@ class machine {
     auto start_output() -> void {
         assembler& output{target_assembler()};
 
-        output.set_direct_output(
-            jump_mode_ == jump_mode::as_emitted ? &os_.get() : nullptr);
+        // what the parse stage emitted, e.g. the comments of constants, is
+        // not part of the program
+        output.discard_lines();
+
+        output.set_direct_output(nullptr);
 
         usage_max_scratch_regs_ = 0;
 
@@ -1427,8 +1438,6 @@ class machine {
         output.comment(0, "");
         output.add_separator_newline();
     }
-
-    [[nodiscard]] auto stream() const -> std::ostream& { return os_.get(); }
 
     //
     // statics

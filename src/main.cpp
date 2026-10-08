@@ -13,12 +13,10 @@
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <ostream>
 #include <print>
 #include <ranges>
 #include <span>
 #include <stdexcept>
-#include <streambuf>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -26,7 +24,6 @@
 
 #include "assembler.hpp"
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "decouple_impl.hpp" // IWYU pragma: keep
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
@@ -34,6 +31,7 @@
 #include "machine_rv32i_qemu.hpp"
 #include "machine_x86_64.hpp"
 #include "program.hpp"
+#include "source_files.hpp"
 #include "toc.hpp"
 
 namespace {
@@ -133,11 +131,10 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 default_binary_file_name(const std::string_view src_file_name,
                          const target machine_target) -> std::string;
 
-[[nodiscard]] auto make_backend(const target machine_target, std::ostream& os,
-                                const source_files* const files,
-                                const assembler::jump_mode jumps,
-                                const size_t stack_size_bytes,
-                                const std::string_view binary_file_name)
+[[nodiscard]] auto
+make_backend(const target machine_target, const source_files* const files,
+             const assembler::jump_mode jumps, const size_t stack_size_bytes,
+             const std::string_view binary_file_name)
     -> std::unique_ptr<machine>;
 
 auto print_usage_error(const std::string_view message) -> void;
@@ -382,21 +379,6 @@ examples:
                stack_alignment, default_stack_size_bytes);
 }
 
-// discards what is written to it, the output of the parser is not used
-class null_stream final : public std::ostream {
-    class null_buffer final : public std::streambuf {
-      protected:
-        //
-        // overridden methods
-        //
-
-        auto overflow(const int c) -> int override { return c; }
-    } nb_{};
-
-  public:
-    null_stream() : std::ostream{&nb_} {}
-};
-
 [[nodiscard]] auto compile_file(const options& opts) -> int {
     source_files files;
     try {
@@ -408,10 +390,6 @@ class null_stream final : public std::ostream {
                                 : assembler::jump_mode::resolved,
         };
 
-        // the output from the parse stage is discarded, compile receives the
-        // output stream 'build' writes the complete assembly
-        null_stream parser_output;
-
         const std::string binary{
             opts.binary_file_name.empty()
                 ? default_binary_file_name(opts.src_file_name,
@@ -420,7 +398,7 @@ class null_stream final : public std::ostream {
         };
 
         const std::unique_ptr<machine> backend{
-            make_backend(opts.machine_target, parser_output, &files, jumps,
+            make_backend(opts.machine_target, &files, jumps,
                          opts.stack_size_bytes, binary),
         };
 
@@ -650,34 +628,32 @@ default_binary_file_name(const std::string_view src_file_name,
     return std::format("{}-{}.bin", path.string(), target_text(machine_target));
 }
 
-// 'os' receives the output of the parse stage
-[[nodiscard]] auto make_backend(const target machine_target, std::ostream& os,
-                                const source_files* const files,
-                                const assembler::jump_mode jumps,
-                                const size_t stack_size_bytes,
-                                const std::string_view binary_file_name)
+[[nodiscard]] auto
+make_backend(const target machine_target, const source_files* const files,
+             const assembler::jump_mode jumps, const size_t stack_size_bytes,
+             const std::string_view binary_file_name)
     -> std::unique_ptr<machine> {
 
     // todo: x86_64 writes no binary, see etc/todo.txt
     if (machine_target == target::x86_64) {
-        return std::make_unique<machine_x86_64>(os, files, jumps);
+        return std::make_unique<machine_x86_64>(nullptr, files, jumps);
     }
 
     if (machine_target == target::rv32i) {
-        return std::make_unique<machine_rv32i>(os, files, jumps,
+        return std::make_unique<machine_rv32i>(nullptr, files, jumps,
                                                binary_file_name);
     }
 
     if (machine_target == target::rv32i_qemu) {
         return std::make_unique<machine_rv32i_qemu>(
-            os, files, jumps, binary_file_name, stack_size_bytes);
+            nullptr, files, jumps, binary_file_name, stack_size_bytes);
     }
 
     // the command line accepts only these four targets
     assert(machine_target == target::rv32i_fpga);
 
     return std::make_unique<machine_rv32i_fpga>(
-        os, files, jumps, binary_file_name, stack_size_bytes);
+        nullptr, files, jumps, binary_file_name, stack_size_bytes);
 }
 
 // every command line error ends with the same hint
@@ -808,7 +784,17 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     }
 
     const size_t mark_end{std::min(end_index, line_bgn + line.size())};
-    const size_t mark_size{mark_end > start_index ? mark_end - start_index : 1};
+
+    // a character counts once, like in the padding
+    const size_t mark_size{
+        mark_end > start_index
+            ? static_cast<size_t>(std::ranges::count_if(
+                  src.substr(start_index, mark_end - start_index),
+                  [](const char ch) -> bool {
+                      return not is_utf8_continuation(ch);
+                  }))
+            : 1,
+    };
 
     std::println(stderr, "{}\n{}^{}", line, padding,
                  std::string(mark_size - 1, '~'));

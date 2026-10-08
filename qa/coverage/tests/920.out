@@ -1,0 +1,4 @@
+
+920.baz:2:17: a string can only be assigned to an array of type 'i8'
+    var x = 1 + "héllo wörld"
+                ^~~~~~~~~~~~~
