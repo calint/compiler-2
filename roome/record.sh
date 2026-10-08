@@ -5,7 +5,7 @@
 # usage: record.sh
 set -eu
 DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR/../.."
+cd "$DIR/.."
 
 EMULATOR=fpga-emulator/osqa
 if [[ ! -x $EMULATOR ]]; then
@@ -15,7 +15,7 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line "$DIR/roome.baz" >"$WORK/roome.s"
+./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line "$DIR/src/main.baz" >"$WORK/roome.s"
 
 # the emulator requires an sd card image which the program does not use
 : >"$WORK/sdcard"

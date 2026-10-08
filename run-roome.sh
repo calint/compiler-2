@@ -8,15 +8,15 @@ SEP="---------------------------------------------------------------------------
 
 # a '--checks' in the arguments replaces the default one
 ./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --report=registers \
-    "$@" etc/roome/roome.baz >etc/roome/roome.s
+    "$@" roome/src/main.baz >roome/roome.s
 echo "$SEP"
 
 # the report follows the last blank line
 awk 'NF == 0 { report = ""; next } { report = report $0 "\n" } END { printf "%s", report }' \
-    etc/roome/roome.s
+    roome/roome.s
 echo "$SEP"
 
-IMAGE=etc/roome/roome-rv32i-fpga.bin
+IMAGE=roome/roome-rv32i-fpga.bin
 
 ls -l "$IMAGE"
 echo "$SEP"

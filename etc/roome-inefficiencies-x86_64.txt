@@ -1,7 +1,7 @@
 roome.baz on x86_64: local inefficiencies within one machine operation
 --------------------------------------------------------------------------------
 compiled with: ./baz --target=x86_64 --vars=0x20000 --checks=noub,line \
-                     etc/roome/roome.baz
+                     roome/src/main.baz
 3941 instructions (2026-10-06, the counts of the points below were taken
 before 'roome.baz' shrank, they are kept as history). global optimizations and
 instruction tricks excluded. site counts are occurrences in the generated

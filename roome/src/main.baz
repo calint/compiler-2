@@ -1,4 +1,4 @@
-include "roome-lib.baz"
+include "lib.baz"
 
 dat str_ascii_art = "\
                                    oOo.o.\n\

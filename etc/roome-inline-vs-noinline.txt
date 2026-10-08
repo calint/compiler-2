@@ -4,11 +4,11 @@ taken 2026-10-07 (the first study 2026-10-06) with the 'instructions:' line of
 the footer of the generated assembly, a noinline body is counted once. 'text'
 is the code section of the nasm object (x86_64), rv32i instructions are 4
 bytes each (a 'call' is 2 of them, the footer counts it so).
-the output of every variant was compared with etc/roome/roome.out on rv32i-fpga
+the output of every variant was compared with roome/roome.out on rv32i-fpga
 (emulator, the build with checks) and on x86_64 (native, the build without
 checks), all are the same.
 
-variants of etc/roome/roome.baz
+variants of roome/src/main.baz
   as written   'entity.find_object' and 'parse_input' are noinline, the other
                functions are inlined
   all inline   'noinline' removed from those two
@@ -23,7 +23,7 @@ as written                    2520      12610            4299  17196
 all inline                    4467      24284            7825  31300
 all noinline                  4117      14456            6626  26504
 
-checks noub,line (as in etc/roome/test.sh)
+checks noub,line (as in roome/test.sh)
 --------------------------------------------------------------------------------
                       x86_64                       rv32i-fpga
                       instructions  text bytes     instructions  bytes

@@ -5,7 +5,7 @@ print_usage() {
     echo "usage: fpga-flash.sh <20k|9k> [source file] [usb device]"
     echo
     echo "  20k | 9k      required, the board to flash (tangnano20k or tangnano9k)"
-    echo "  source file   optional, defaults to etc/roome/roome.baz"
+    echo "  source file   optional, defaults to roome/src/main.baz"
     echo "  usb device    optional, <bus>:<device> as shown by lsusb, defaults to the first ft2232 found"
 }
 
@@ -37,7 +37,7 @@ cd "$(dirname "$0")"
 cd ..
 
 if [ -z "$SOURCE_FILE" ]; then
-    SOURCE_FILE="etc/roome/roome.baz"
+    SOURCE_FILE="roome/src/main.baz"
 fi
 
 echo

@@ -1,5 +1,5 @@
 #!/bin/bash
-# runs roome.baz with the lines of roome.in as input, on the fpga emulator
+# runs main.baz with the lines of roome.in as input, on the fpga emulator
 # (rv32i-fpga) and as a native program (x86_64), and compares the output of
 # each with roome.out
 # usage: test.sh [update]
@@ -7,7 +7,7 @@
 # compared
 set -eu
 DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR/../.."
+cd "$DIR/.."
 
 EMULATOR=fpga-emulator/osqa
 if [[ ! -x $EMULATOR ]]; then
@@ -18,7 +18,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 IMAGE=$WORK/roome-rv32i-fpga.bin
 
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$IMAGE" "$DIR/roome.baz" >"$WORK/roome.s"
+./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$IMAGE" "$DIR/src/main.baz" >"$WORK/roome.s"
 
 # the emulator requires an sd card image which the program does not use
 : >"$WORK/sdcard"
@@ -47,7 +47,7 @@ echo "roome: rv32i-fpga ok"
 
 # the native build catches what rv32i-fpga does not, such as running out of
 # registers
-./baz --target=x86_64 --vars=0x20000 --checks=noub,line "$DIR/roome.baz" >"$WORK/roome-x86_64.s"
+./baz --target=x86_64 --vars=0x20000 --checks=noub,line "$DIR/src/main.baz" >"$WORK/roome-x86_64.s"
 nasm -f elf64 "$WORK/roome-x86_64.s" -o "$WORK/roome-x86_64.o"
 ld -s -T baz.ld -o "$WORK/roome-x86_64" "$WORK/roome-x86_64.o"
 

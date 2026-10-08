@@ -20,6 +20,6 @@ echo compile prog
 echo compile roome
 ./run-roome.sh
 echo test roome
-etc/roome/test.sh
+roome/test.sh
 echo make readme
 etc/readme/make.sh

@@ -121,9 +121,9 @@ Working agreements for AI sessions in this repository.
 ## Tests
 
 - Test runs: `--target=x86` and `--target=rv32i-fpga` are enough.
-- After every change to `etc/roome/roome.baz`, run `etc/roome/test.sh` and
+- After every change to `roome/src/main.baz`, run `roome/test.sh` and
   validate that nothing broke.
-- Work on `etc/roome/roome.baz` needs no formatter or linter run; they act on
+- Work on `roome/src/main.baz` needs no formatter or linter run; they act on
   the compiler source, not on the application.
 - New error test: check that each `line:column` in its `.out` points at the
   token where the error is detected (print the source line with a caret), not
