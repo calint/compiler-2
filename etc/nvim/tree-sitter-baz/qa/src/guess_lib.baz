@@ -1,0 +1,13 @@
+type c {
+    v,
+}
+
+type d {
+    v,
+}
+
+func c.show() {
+}
+
+func d.show() {
+}

@@ -1,0 +1,35 @@
+let lib_size = 8
+
+var lib_counter = 0
+
+type text<capacity> {
+    array i8[capacity],
+    len,
+}
+
+func text.print() {
+    lib_counter = lib_counter + self.len
+}
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func mut list.reserve() res {
+    res = self.len
+    self.len = self.len + 1
+}
+
+func lib_helper(value) res {
+    res = value + lib_size
+}
+
+func list.first() res {
+    res = self.array[0]
+}
+
+func mirror<T type>(dst mut T, other T) {
+    dst.len = other.len
+    dst.array = other.array
+}

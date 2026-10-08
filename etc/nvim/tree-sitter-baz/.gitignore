@@ -53,5 +53,5 @@ bindings/
 Cargo.toml
 binding.gyp
 .editorconfig
-src/
+/src/
 

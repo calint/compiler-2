@@ -1,0 +1,8 @@
+include "guess_lib.baz"
+
+func untyped(p) {
+    p.show()
+}
+
+func main() {
+}

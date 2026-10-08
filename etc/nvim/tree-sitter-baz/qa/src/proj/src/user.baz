@@ -1,0 +1,5 @@
+include "core.baz"
+
+func main() {
+    var x = shared_helper()
+}

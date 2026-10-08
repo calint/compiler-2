@@ -1,0 +1,3 @@
+include "main.baz"
+
+type app_label = text<4>

@@ -1,0 +1,3 @@
+func shared_helper() res i32 {
+    res = 1
+}
