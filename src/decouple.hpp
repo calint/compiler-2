@@ -8,7 +8,6 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <functional>
 #include <memory>
 #include <span>
@@ -17,9 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
 #include "operand.hpp"
-#include "source_files.hpp"
 #include "token.hpp"
 
 class toc;

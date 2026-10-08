@@ -252,7 +252,8 @@ main:
             syscall
         if.38.24.225.5.end:
     func.assert.225.5.end:
-    movsx r15, byte [rbp + 400]
+    movsx r15w, byte [rbp + 400]
+    movsx r15, r15w
     mov qword [rbp + 408], r15
     cmp.229.12:
     cmp qword [rbp + 408], -56

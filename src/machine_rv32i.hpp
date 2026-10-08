@@ -1363,20 +1363,6 @@ class machine_rv32i : public machine {
         frame_base_reserved_ = false;
     }
 
-    auto release_variables_base() -> void override {
-        assert(variables_base_reserved_);
-
-        operand base{
-            make_register_operand(variables_base_register(), default_type()),
-        };
-
-        base.set_allocation_register(variables_base_register());
-
-        free_named_register(token{}, 0, base);
-
-        variables_base_reserved_ = false;
-    }
-
     auto reserve_frame_base() -> void override {
         assert(not frame_base_reserved_);
 
@@ -1399,15 +1385,6 @@ class machine_rv32i : public machine {
         label(0, variables_label);
         assembler_.zero(size_bytes);
         label(0, variables_end_label);
-    }
-
-    auto reserve_variables_base() -> void override {
-        assert(not variables_base_reserved_);
-
-        std::ignore = alloc_named_register(
-            token{}, 0, variables_base_register(), default_type());
-
-        variables_base_reserved_ = true;
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -1659,6 +1636,29 @@ class machine_rv32i : public machine {
         assembler_.immediate_op(indent, extend_shift_op(dst_type),
                                 value.base_register(), value.base_register(),
                                 shift);
+    }
+
+    auto release_variables_base() -> void {
+        assert(variables_base_reserved_);
+
+        operand base{
+            make_register_operand(variables_base_register(), default_type()),
+        };
+
+        base.set_allocation_register(variables_base_register());
+
+        free_named_register(token{}, 0, base);
+
+        variables_base_reserved_ = false;
+    }
+
+    auto reserve_variables_base() -> void {
+        assert(not variables_base_reserved_);
+
+        std::ignore = alloc_named_register(
+            token{}, 0, variables_base_register(), default_type());
+
+        variables_base_reserved_ = true;
     }
 
     auto store_low_bits(const token& src_loc_tk, const size_t indent,

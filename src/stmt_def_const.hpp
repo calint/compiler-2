@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <memory>
 #include <ostream>
-#include <string>
 #include <string_view>
 
 #include "compiler_exception.hpp"

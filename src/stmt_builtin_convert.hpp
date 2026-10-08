@@ -101,12 +101,30 @@ class stmt_builtin_convert final : public expression {
             return;
         }
 
-        // the store at the narrow width does the truncation, and an argument
-        // of the same width computes the same either way
-        if (arg_.keeps_low_bits_when_narrowed() or
-            arg_.get_type().size_bytes() == get_type().size_bytes()) {
+        // a wider destination would compute the argument at its own width and
+        // keep the bits that the conversion drops
+        if (dst_info.type_ref().size_bytes() > get_type().size_bytes()) {
+            compile_narrowed(tc, indent, dst_info);
+            return;
+        }
 
-            if (dst_info.is_register()) {
+        // the store at the narrow width does the truncation, and an argument
+        // of the same width computes the same either way unless the
+        // destination is narrower than the type
+        const bool is_stored_whole{
+            dst_info.type_ref().size_bytes() >= get_type().size_bytes(),
+        };
+
+        if (arg_.keeps_low_bits_when_narrowed() or
+            (is_stored_whole and
+             arg_.get_type().size_bytes() == get_type().size_bytes())) {
+
+            // a narrower argument wraps at the width of the destination, a
+            // register of the argument's width would wrap earlier
+            if (dst_info.is_register() or
+                arg_.get_type().size_bytes() <
+                    dst_info.type_ref().size_bytes()) {
+
                 compile_in_destination(tc, indent, dst_info);
                 return;
             }
@@ -192,6 +210,23 @@ class stmt_builtin_convert final : public expression {
 
         arg_.compile(tc, indent, dst_info);
         get_unary_ops().compile(tc, indent, tok(), dst_info.operand);
+    }
+
+    // the value is made at the width of the type, then widens into the
+    // destination
+    auto compile_narrowed(toc& tc, const size_t indent,
+                          const ident_info& dst_info) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand narrow{
+            x.alloc_scratch_register(tok(), indent, get_type()),
+        };
+
+        compile(tc, indent, toc::make_ident_info_from_register(narrow));
+
+        x.copy_value(tok(), indent, dst_info.operand, narrow);
+        x.free_scratch_register(tok(), indent, narrow);
     }
 
     // the argument is computed at its own width and stored narrowed

@@ -5,7 +5,6 @@
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>

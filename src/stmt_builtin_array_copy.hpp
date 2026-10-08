@@ -3,9 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <optional>
 #include <ostream>
-#include <string>
+#include <string_view>
 #include <vector>
 
 #include "compiler_exception.hpp"

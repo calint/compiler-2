@@ -338,7 +338,7 @@ class expr_any final : public statement {
     [[nodiscard]] auto as_expr_type(const size_t index = 0) const
         -> const expr_type& {
 
-        return get<expr_type>(vars_.at(index));
+        return std::get<expr_type>(vars_.at(index));
     }
 
     auto assert_record_value_not_reading(
@@ -524,7 +524,7 @@ class expr_any final : public statement {
             }
 
             // e.g. '{300}' for 'i8' is rejected as when stored alone
-            get<expr_arith>(e).assert_not_narrowed(tc, element_type);
+            std::get<expr_arith>(e).assert_not_narrowed(tc, element_type);
 
             const uint64_t bits{static_cast<uint64_t>(*value)};
             for (size_t i{}; i < element_type.size_bytes(); ++i) {

@@ -2,6 +2,7 @@
 // reviewed: 2025-09-28
 
 #include <ostream>
+#include <string_view>
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"

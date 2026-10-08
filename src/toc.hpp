@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1543,10 +1544,11 @@ class ident_resolver final {
         }
 
         // is 'id' a constant?
-        if (scopes_.get().find_const(id.str()) != nullptr) {
+        const const_info* const named{scopes_.get().find_const(id.str())};
+
+        if (named != nullptr) {
             return ident_info::make_const(
-                ident, id.str(), builtins_.get().default_type(),
-                scopes_.get().find_const(id.str())->value);
+                ident, id.str(), builtins_.get().default_type(), named->value);
         }
 
         // not resolved, return empty info
@@ -1600,7 +1602,8 @@ class ident_resolver final {
         if (scopes_.get().front().has_var(id.base())) {
             return resolve_var(
                 src_loc_tk, ident, id,
-                scopes_.get().front().get_var_const_ref(id.base()), lea_path);
+                scopes_.get().front().get_var_const_ref(id.base()),
+                std::move(lea_path));
         }
 
         // try constant

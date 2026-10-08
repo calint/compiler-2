@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -292,7 +293,6 @@ auto is_bare_builtin_type(const toc& tc, const token& tk, tokenizer& tz)
            not std::string_view{"+-*/%&|^<>"}.contains(next);
 }
 
-// declared in 'decouple.hpp'
 // a call in an expression is a value, a function without a result has none
 static auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
     -> std::unique_ptr<statement> {

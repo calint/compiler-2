@@ -876,11 +876,18 @@ class expr_arith final : public expression {
 
         const statement& first_expr{*exprs_.front()};
 
-        if (first_expr.is_identifier()) {
-            return tc.make_ident_info(first_expr).type_ref();
+        if (not first_expr.is_identifier()) {
+            return first_expr.get_type();
         }
 
-        return first_expr.get_type();
+        const ident_info info{tc.make_ident_info(first_expr)};
+
+        // a folded conversion such as 'i32(8)' keeps its type
+        if (info.is_const() and not info.is_typed_const()) {
+            return first_expr.get_type();
+        }
+
+        return info.type_ref();
     }
 
     auto validate_arithmetic_operands(const toc& tc) const -> void {

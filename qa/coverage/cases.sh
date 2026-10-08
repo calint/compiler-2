@@ -2815,3 +2815,14 @@ SRC=919 && EXP=0 && RUN
 
 # the mark under a token counts characters, not bytes
 SRC=920 && COMPERR
+
+# a constant shift count that is not a byte is written as one, rv32i rejects
+# a count outside the width
+if [[ $MACHINE == x86_64 ]]; then SRC=921 && EXP=0 && RUN; fi
+
+# a conversion truncates to its type also when the value is stored in a wider
+# variable, and is computed at its own width in a narrow expression
+SRC=922 && EXP=0 && RUN
+
+# a folded conversion keeps its type as the first element of an expression
+SRC=923 && EXP=0 && RUN

@@ -1,0 +1,25 @@
+# a constant shift count that is not a byte is written as one
+
+let n = 3
+
+func main() {
+    var a = 1
+    a = a << ~n
+    if a != 0x1000000000000000 exit(1)
+    # the count ~3 is -4, the hardware keeps its low 6 bits: 60
+
+    var b = -1
+    b = b >> ~3
+    if b != -1 exit(2)
+
+    var c = 1
+    c = c << -~n
+    if c != 16 exit(3)
+
+    var d = 1
+    d = d << 300
+    if d != 0x100000000000 exit(4)
+    # the count 300 keeps its low 6 bits: 44
+
+    exit(0)
+}

@@ -9,7 +9,6 @@
 #include <cstdint>
 #include <format>
 #include <functional>
-#include <limits>
 #include <optional>
 #include <ostream>
 #include <ranges>
@@ -1110,14 +1109,6 @@ class machine_x86_64 final : public machine {
         frame_base_reserved_ = false;
     }
 
-    auto release_variables_base() -> void override {
-        assert(variables_base_reserved_);
-
-        release_named_register(token{}, 0, variables_base_register_);
-
-        variables_base_reserved_ = false;
-    }
-
     auto reserve_frame_base() -> void override {
         assert(not frame_base_reserved_);
         assert(registers_.scratch_count() == 0);
@@ -1137,15 +1128,6 @@ class machine_x86_64 final : public machine {
         assembler_.label(0, variables_label);
         assembler_.reserve(size_bytes);
         assembler_.label(0, variables_end_label);
-    }
-
-    auto reserve_variables_base() -> void override {
-        assert(not variables_base_reserved_);
-
-        reserve_named_register(token{}, 0, variables_base_register_,
-                               default_type());
-
-        variables_base_reserved_ = true;
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -1386,6 +1368,23 @@ class machine_x86_64 final : public machine {
         for (const operand& reg : saved | std::views::reverse) {
             pop(indent, reg);
         }
+    }
+
+    auto release_variables_base() -> void {
+        assert(variables_base_reserved_);
+
+        release_named_register(token{}, 0, variables_base_register_);
+
+        variables_base_reserved_ = false;
+    }
+
+    auto reserve_variables_base() -> void {
+        assert(not variables_base_reserved_);
+
+        reserve_named_register(token{}, 0, variables_base_register_,
+                               default_type());
+
+        variables_base_reserved_ = true;
     }
 
     // a negative value is out of bounds, an empty operand has none to test
@@ -2461,27 +2460,16 @@ class machine_x86_64 final : public machine {
     }
 
     // the hardware keeps only the low bits of a shift count and nasm warns
-    // about a negative one as a signed byte, so it is written as an unsigned
-    // byte
+    // about a count that is not an unsigned byte, such as '-4', '~3' or 300, so
+    // the low byte is written
     [[nodiscard]] static auto shift_count_immediate(const operand& count)
         -> operand {
 
-        const std::string& text{count.immediate()};
+        const std::optional<uint64_t> bits{immediate_bits(count)};
 
-        // note: at most 20 characters, '-' and the 19 digits of an int64_t
-        const bool is_negative_number{
-            text.size() > 1 and text.size() <= 20 and text.front() == '-' and
-                std::ranges::all_of(
-                    text | std::views::drop(1),
-                    [](const char c) -> bool { return c >= '0' and c <= '9'; }),
-        };
+        assert(bits);
 
-        if (not is_negative_number) {
-            return count;
-        }
-
-        const int64_t value{std::stoll(text)};
-        const uint8_t low_byte{static_cast<uint8_t>(value)};
+        const uint8_t low_byte{static_cast<uint8_t>(*bits)};
 
         return operand::imm(std::format("{}", low_byte), count.type_ref());
     }

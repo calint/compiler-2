@@ -1,0 +1,54 @@
+# a conversion truncates to its type also when the value is stored in a wider
+# variable, and is computed at its own width in a narrow expression
+
+func main() {
+    var v = i32(0x1ff)
+    var big = i32(0)
+
+    big = i8(v)
+    if big != -1 exit(1)
+
+    var w = i32(i8(v + 0x80))
+    if w != 127 exit(2)
+
+    big = i16(v * 0x80)
+    if big != -128 exit(3)
+
+    # computed at the width of the argument, 0xff is -1 as an 'i8'
+    big = i8(v / 2)
+    if big != -1 exit(4)
+
+    big = -i8(v)
+    if big != 1 exit(5)
+
+    var arr = i32[2]
+    arr[1] = i8(v + 1)
+    if arr[1] != 0 exit(6)
+
+    # a conversion in an operand
+    big = 1000 + i8(v)
+    if big != 999 exit(7)
+
+    # an argument narrower than the destination is computed at the width of
+    # the destination
+    var wide = i32(2147483646)
+    var s = i16(32766)
+    var t = i16(12)
+    big = i32((i16(wide) ^ s) + (t + (s << 14)))
+    if big != 0x1fff000c exit(8)
+
+    # a conversion in a narrow expression is computed at its own width
+    var narrow = i16(-15)
+    var small = i16(32766)
+    var halves = i16[1]
+    halves[0] = narrow & i16(((small << 2) >> 5))
+    if halves[0] != -15 exit(9)
+
+    # nested conversions into a narrower destination
+    var q = i16(-9625)
+    var bytes = i8[1]
+    bytes[0] = i8(i16(q >> 7)) - 20
+    if bytes[0] != -96 exit(10)
+
+    exit(0)
+}

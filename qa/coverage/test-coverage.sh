@@ -151,7 +151,7 @@ verify-rv32i-image() {
 assemble_and_link() {
     case "$MACHINE" in
     x86_64)
-        nasm -f elf64 gen.s
+        nasm -w+error -f elf64 gen.s
         ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
         ;;
     rv32i)

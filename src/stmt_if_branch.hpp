@@ -3,9 +3,9 @@
 
 #include <cstddef>
 #include <format>
-#include <optional>
 #include <ostream>
 #include <string>
+#include <string_view>
 
 #include "decouple.hpp"
 #include "expr_bool.hpp"

@@ -490,6 +490,11 @@ class tokenizer final {
             if (next == '(' or next == '[' or next == '{') {
                 ++depth;
             } else if (next == ')' or next == ']' or next == '}') {
+                // a closer without an opener ends the skip
+                if (depth == 0) {
+                    return;
+                }
+
                 --depth;
             }
 

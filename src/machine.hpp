@@ -18,7 +18,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -26,6 +25,7 @@
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
 #include "operand.hpp"
+#include "source_files.hpp"
 #include "token.hpp"
 
 class type;
@@ -908,14 +908,10 @@ class machine {
 
     virtual auto release_frame_base() -> void = 0;
 
-    virtual auto release_variables_base() -> void = 0;
-
     virtual auto reserve_frame_base() -> void = 0;
 
     virtual auto reserve_variables(const size_t alignment,
                                    const size_t size_bytes) -> void = 0;
-
-    virtual auto reserve_variables_base() -> void = 0;
 
     virtual auto return_function(const size_t indent) -> void = 0;
 

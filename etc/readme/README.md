@@ -146,10 +146,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           7779           3309          23117
+C/C++ Header                    55           7788           3316          23127
 C++                              1            174             49            580
 -------------------------------------------------------------------------------
-SUM:                            56           7953           3358          23697
+SUM:                            56           7962           3365          23707
 -------------------------------------------------------------------------------
 ```
 
@@ -847,7 +847,8 @@ main:
             syscall
         if.38.24.225.5.end:
     func.assert.225.5.end:
-    movsx r15, byte [rbp + 400]
+    movsx r15w, byte [rbp + 400]
+    movsx r15, r15w
     mov qword [rbp + 408], r15
     cmp.229.12:
     cmp qword [rbp + 408], -56
@@ -2798,15 +2799,14 @@ main:
 ;   [228:9] wide = int(i16(small))
 ;   [228:16] wide = int(i16(small))
 ;   [228:16] = expression
-;   [228:16] instructions without scratch register 2, with 3
 ;   [228:20] wide = i16(small)
 ;   [228:20] = expression
-;   [228:20] instructions without scratch register 2, with 3
+;   [228:20] allocate scratch register -> r15
 ;   [228:24] small
-;   [228:24] allocate scratch register -> r15
-    movsx r15, byte [rbp + 400]
+    movsx r15w, byte [rbp + 400]
+    movsx r15, r15w
     mov qword [rbp + 408], r15
-;   [228:24] free scratch register r15
+;   [228:20] free scratch register r15
 ;   [229:5] assert(wide == -56)
 ;   [229:12] allocate scratch register -> r15
 ;   [229:12] ? wide == -56
@@ -5878,7 +5878,7 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 978
+;                 instructions: 979
 ;
 ; register use at the peak: 6 of 14 registers live, 2 named by instructions
 ;

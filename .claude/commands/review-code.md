@@ -39,7 +39,8 @@ fix the bug and show that the test passes.
 
 Built, focused tests run, linter clean, formatter applied. Run both
 `qa/coverage/test-coverage.sh --target=x86` and `--target=rv32i-fpga` after a
-refactor; do not pipe live test output.
+refactor; do not pipe live test output. After a change to
+`roome/src/main.baz`, run `roome/qa/test.sh`.
 
 ## Report
 
