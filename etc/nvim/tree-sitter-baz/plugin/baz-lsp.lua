@@ -752,7 +752,9 @@ local function failure(message)
   return { code = -32803, message = message }
 end
 
-local function references(root, bufnr, target, include_declaration)
+-- 'self' is not a spelling of its type and the receiver of a method definition
+-- is listed only for a rename, the references of a type are where it is used
+local function references(root, bufnr, target, include_declaration, include_receivers)
   local wanted = {}
   for _, decl in ipairs(target.decls) do
     wanted[node_key(decl)] = true
@@ -768,6 +770,12 @@ local function references(root, bufnr, target, include_declaration)
       if r.builtin == target.builtin then
         found[#found + 1] = id
       end
+      return
+    end
+    if r.kind == "self" then
+      return
+    end
+    if not include_receivers and id:parent():type() == "function_definition" and field_of(id) == "receiver_type" then
       return
     end
     local is_declaration = #r.decls == 1 and node_key(r.decls[1]) == node_key(id)
@@ -793,7 +801,7 @@ local function rename_targets(root, bufnr, target)
   if not target.exact then
     return nil, failure("cannot tell which type this name belongs to")
   end
-  local found, guessed = references(root, bufnr, target, true)
+  local found, guessed = references(root, bufnr, target, true, true)
   if #guessed > 0 then
     local row = guessed[1]:start()
     return nil, failure(string.format("line %d: cannot tell which type this use belongs to", row + 1))

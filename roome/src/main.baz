@@ -93,7 +93,7 @@ dat entities = entities{
     { # array begin
         { { "u", 1 }, 0 }  # entity[0]
     }, # array end
-    1 # len
+    1 # array len
 }
 
 func message.print() {
@@ -228,7 +228,7 @@ dat rooms = rooms{
             { { 0 }, 1 } # entities id_list
         }
     },
-    1 # len
+    1 # array len
 }
 
 # the index in the inventory of the object named by the token or the length
