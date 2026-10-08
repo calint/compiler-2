@@ -2826,3 +2826,6 @@ SRC=922 && EXP=0 && RUN
 
 # a folded conversion keeps its type as the first element of an expression
 SRC=923 && EXP=0 && RUN
+
+# a constant expression argument is folded at the width of its parameter
+SRC=924 && EXP=0 && RUN

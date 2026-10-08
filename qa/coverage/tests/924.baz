@@ -1,0 +1,11 @@
+# a constant expression argument is folded at the width of its parameter
+
+func second(x i32, y i32) res i32 { res = y }
+
+func main() {
+    var a = i32(3)
+    var p = i32(0)
+    p = second(a, 1000000007 * 1000000)
+    if p != -1523494976 exit(1)
+    exit(0)
+}

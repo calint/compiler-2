@@ -1860,7 +1860,9 @@ class stmt_call : public expression {
                           std::vector<operand>& allocated_registers)
         -> alias_info {
 
-        const std::optional<int64_t> value{arg.constant_value(tc)};
+        const std::optional<int64_t> value{
+            arg.constant_value(tc, param.get_type()),
+        };
 
         if (value) {
             return make_value_alias(param, std::format("{}", *value));

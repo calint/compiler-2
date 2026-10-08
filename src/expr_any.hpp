@@ -374,6 +374,14 @@ class expr_any final : public statement {
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
 
+        return constant_value(tc, tc.get_type_default());
+    }
+
+    // folded at the width of 'width_type'
+    [[nodiscard]] auto constant_value(const toc& tc,
+                                      const type& width_type) const
+        -> std::optional<int64_t> {
+
         assert(not is_array_);
 
         const expr_variant& e{vars_.front()};
@@ -391,7 +399,7 @@ class expr_any final : public statement {
             return *value ? 1 : 0;
         }
 
-        return constant_element_value(tc, e);
+        return constant_element_value(tc, e, width_type);
     }
 
     [[nodiscard]] auto element_count() const -> size_t { return vars_.size(); }
@@ -517,7 +525,9 @@ class expr_any final : public statement {
 
         std::string bytes;
         for (const expr_variant& e : vars_) {
-            const std::optional<int64_t> value{constant_element_value(tc, e)};
+            const std::optional<int64_t> value{
+                constant_element_value(tc, e, tc.get_type_default()),
+            };
 
             if (not value) {
                 return std::nullopt;
@@ -736,7 +746,8 @@ class expr_any final : public statement {
 
     // 'bool' and instance elements are not packed
     [[nodiscard]] static auto constant_element_value(const toc& tc,
-                                                     const expr_variant& e)
+                                                     const expr_variant& e,
+                                                     const type& width_type)
         -> std::optional<int64_t> {
 
         const expr_arith* const arith{std::get_if<expr_arith>(&e)};
@@ -745,9 +756,9 @@ class expr_any final : public statement {
             return std::nullopt;
         }
 
-        // e.g. 'array_length(a)', folded at the default width like a count
+        // e.g. 'array_length(a)'
         if (arith->is_expression()) {
-            return arith->folded_constant(tc, tc.get_type_default());
+            return arith->folded_constant(tc, width_type);
         }
 
         const ident_info info{tc.make_ident_info(*arith)};
