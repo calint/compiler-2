@@ -116,17 +116,90 @@ local function is_global(program, name, source)
   return false
 end
 
-local function is_type(program, name, source)
-  if builtin_types[name] then
-    return true
-  end
-
+local function declares_type(program, name, source)
   for c in program:iter_children() do
     if c:type() == "type_definition" and name_is(c:field("name")[1], name, source) then
       return true
     end
   end
   return false
+end
+
+-- parsed included files by path, reparsed when the modification time changes
+local parsed_files = {}
+
+local function parse_file(path)
+  local stat = vim.uv.fs_stat(path)
+  if not stat then
+    return nil
+  end
+  local mtime = stat.mtime.sec * 1e9 + stat.mtime.nsec
+  local cached = parsed_files[path]
+  if cached and cached.mtime == mtime then
+    return cached
+  end
+  local lines = vim.fn.readfile(path)
+  local file_source = table.concat(lines, "\n")
+  local tree = vim.treesitter.get_string_parser(file_source, "baz"):parse()[1]
+  cached = { mtime = mtime, source = file_source, tree = tree, root = tree:root() }
+  parsed_files[path] = cached
+  return cached
+end
+
+-- the parsed files that the program includes, directly or not, each once
+local function included_programs(program, source, path)
+  local files = {}
+  local seen = { [path] = true }
+  local function visit(file_program, file_path)
+    local file_source = file_path == path and source or parsed_files[file_path].source
+    for c in file_program:iter_children() do
+      if c:type() == "include_definition" then
+        local quoted = vim.treesitter.get_node_text(c:named_child(1), file_source)
+        -- note: 2 and -2 because the path is between the quotes
+        local name = quoted:sub(2, -2)
+        local included_path = vim.fs.normalize(vim.fs.joinpath(vim.fs.dirname(file_path), name))
+        if not seen[included_path] then
+          seen[included_path] = true
+          local file = parse_file(included_path)
+          if file then
+            files[#files + 1] = file
+            visit(file.root, included_path)
+          end
+        end
+      end
+    end
+  end
+  visit(program, path)
+  return files
+end
+
+-- whether the program or a file it includes satisfies the check
+local function in_program_or_includes(program, source, check)
+  if check(program, source) then
+    return true
+  end
+  if type(source) ~= "number" then
+    return false
+  end
+  local path = vim.api.nvim_buf_get_name(source)
+  if path == "" then
+    return false
+  end
+  for _, file in ipairs(included_programs(program, source, path)) do
+    if check(file.root, file.source) then
+      return true
+    end
+  end
+  return false
+end
+
+local function is_type(program, name, source)
+  if builtin_types[name] then
+    return true
+  end
+  return in_program_or_includes(program, source, function(p, s)
+    return declares_type(p, name, s)
+  end)
 end
 
 -- "type" for 'T type', "constant" for 'capacity' or nil
@@ -202,7 +275,9 @@ local function declaration_kind(node, source)
   while scope do
     local t = scope:type()
     if t == "program" then
-      if is_global(scope, name, source) then
+      if in_program_or_includes(scope, source, function(p, s)
+        return is_global(p, name, s)
+      end) then
         return "global"
       end
       if is_type(scope, name, source) then
