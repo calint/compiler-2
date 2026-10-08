@@ -123,7 +123,7 @@ Working agreements for AI sessions in this repository.
 - Test runs: `qa/coverage/test-coverage.sh --target=x86` (script alias of
   `x86_64`, the compiler itself takes `x86_64`) and `--target=rv32i-fpga` are
   enough.
-- After every change to `roome/src/main.baz`, run `roome/test.sh` and
+- After every change to `roome/src/main.baz`, run `roome/qa/test.sh` and
   validate that nothing broke.
 - Work on `roome/src/main.baz` needs no formatter or linter run; they act on
   the compiler source, not on the application.

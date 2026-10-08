@@ -18,6 +18,6 @@ qa/coverage/test-coverage.sh --target=rv32i-fpga run
 echo compile prog
 ./run.sh
 echo test roome
-roome/test.sh
+roome/qa/test.sh
 echo make readme
 etc/readme/make.sh

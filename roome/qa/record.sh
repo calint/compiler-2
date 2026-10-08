@@ -5,7 +5,7 @@
 # usage: record.sh
 set -eu
 DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR/.."
+cd "$DIR/../.."
 
 EMULATOR=fpga-emulator/osqa
 if [[ ! -x $EMULATOR ]]; then
@@ -15,7 +15,7 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line "$DIR/src/main.baz" >"$WORK/roome.s"
+./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line "$DIR/../src/main.baz" >"$WORK/roome.s"
 
 # the emulator requires an sd card image which the program does not use
 : >"$WORK/sdcard"
@@ -26,7 +26,7 @@ echo "roome: recording, end the session with 'go home'"
 # on the emulator's exit code so an aborted session is not saved
 # ctrl-c skips the emulator's terminal restore
 trap 'rm -rf "$WORK"; stty sane 2>/dev/null || true' EXIT
-script -q -e -I "$WORK/typed" -c "$EMULATOR $DIR/roome-rv32i-fpga.bin $WORK/sdcard" || {
+script -q -e -I "$WORK/typed" -c "$EMULATOR $DIR/../roome-rv32i-fpga.bin $WORK/sdcard" || {
     echo "roome: session did not end normally, nothing saved"
     exit 1
 }

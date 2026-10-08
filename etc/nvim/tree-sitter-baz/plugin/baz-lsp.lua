@@ -52,8 +52,15 @@ local renameable_kinds = {
   generic = true,
 }
 
+-- the buffer of each parsed tree by the id of its root, a node may belong to
+-- an included file
+local tree_buffers = {}
+
+-- the files of 'with_includes' by buffer, cleared at every request
+local wide_roots = {}
+
 local function text(node, bufnr)
-  return vim.treesitter.get_node_text(node, bufnr)
+  return vim.treesitter.get_node_text(node, tree_buffers[node:root():id()] or bufnr)
 end
 
 local function node_key(node)
@@ -400,6 +407,42 @@ end
 
 local included_files
 
+-- stands in for the root of a file and of the files it includes so that the
+-- types of an included file are found when inferring; the nodes it yields
+-- belong to their own files
+local function with_includes(root, bufnr)
+  if wide_roots[bufnr] then
+    return wide_roots[bufnr]
+  end
+  local roots = { root }
+  for _, file in ipairs(included_files(vim.uri_from_bufnr(bufnr), bufnr, root)) do
+    roots[#roots + 1] = file.root
+  end
+  local wide = {}
+  function wide:type()
+    return "source_file"
+  end
+  function wide:iter_children()
+    local index = 1
+    local iterator = roots[1]:iter_children()
+    return function()
+      while true do
+        local child, field = iterator()
+        if child then
+          return child, field
+        end
+        index = index + 1
+        if not roots[index] then
+          return nil
+        end
+        iterator = roots[index]:iter_children()
+      end
+    end
+  end
+  wide_roots[bufnr] = wide
+  return wide
+end
+
 -- whether an included file declares the type
 local function included_type(root, bufnr, name)
   for _, file in ipairs(included_files(vim.uri_from_bufnr(bufnr), bufnr, root)) do
@@ -646,7 +689,7 @@ local function resolve_call(root, bufnr, node)
   end
 
   -- without a known receiver type the methods of every type match
-  local type_name = receiver_type_name(root, bufnr, call, 0)
+  local type_name = receiver_type_name(with_includes(root, bufnr), bufnr, call, 0)
   local methods = methods_named(root, bufnr, name, type_name)
   if #methods == 0 then
     return nil
@@ -699,7 +742,7 @@ local function resolve(root, bufnr, node)
 
   if parent_type == "member_access" then
     local name = text(node, bufnr)
-    local base = type_of_node(root, bufnr, previous_element(parent), 0)
+    local base = type_of_node(with_includes(root, bufnr), bufnr, previous_element(parent), 0)
     -- the type of a type parameter is known at the call, the members of every
     -- type match like those of an unknown type
     local is_parameter = base and generic_declaration(root, bufnr, node, base.name)
@@ -821,7 +864,9 @@ local function parse(uri)
   local bufnr = vim.uri_to_bufnr(uri)
   vim.fn.bufload(bufnr)
   local parser = vim.treesitter.get_parser(bufnr, "baz")
-  return bufnr, parser:parse()[1]:root()
+  local root = parser:parse()[1]:root()
+  tree_buffers[root:id()] = bufnr
+  return bufnr, root
 end
 
 local function identifier_at(root, position)
@@ -932,9 +977,9 @@ function included_files(uri, bufnr, root)
   return files
 end
 
--- the declarations of the name in the file by what the use looks like; types
--- are not inferred across files, so members and methods match by name unless
--- base_type_name is the known type of the receiver of a member
+-- the declarations of the name in the file by what the use looks like;
+-- members and methods match by name unless base_type_name is the known type
+-- of the receiver
 local function declarations_named(root, bufnr, node, name, base_type_name)
   local parent = node:parent()
   if parent:type() == "member_access" then
@@ -946,7 +991,7 @@ local function declarations_named(root, bufnr, node, name, base_type_name)
   end
   if parent:type() == "function_call" and parent:field("function")[1] and node:equal(parent:field("function")[1]) then
     if parent:field("receiver")[1] then
-      return methods_named(root, bufnr, name, nil)
+      return methods_named(root, bufnr, name, base_type_name)
     end
     local id = top_level(root, bufnr, "function", name)
     return id and { id } or {}
@@ -965,11 +1010,17 @@ local function included_declarations(uri, bufnr, root, node)
   if parent:type() == "member_access" then
     -- the type of the receiver is inferred in this file, its members may be
     -- declared in an included one
-    local base = type_of_node(root, bufnr, previous_element(parent), 0)
+    local base = type_of_node(with_includes(root, bufnr), bufnr, previous_element(parent), 0)
     local is_parameter = base and generic_declaration(root, bufnr, node, base.name)
     if base and not base.array and not is_parameter then
       base_type_name = member_type_name(root, bufnr, base.name)
     end
+  elseif parent:type() == "function_call" and parent:field("receiver")[1] then
+    local wide = with_includes(root, bufnr)
+    local type_name = receiver_type_name(wide, bufnr, parent, 0)
+    -- the methods of an alias are declared by its generic type, which an
+    -- included file does not know the alias of
+    base_type_name = type_name and member_type_name(wide, bufnr, type_name)
   end
   for _, file in ipairs(included_files(uri, bufnr, root)) do
     for _, decl in ipairs(declarations_named(file.root, file.bufnr, node, name, base_type_name)) do
@@ -1106,6 +1157,7 @@ local function server(dispatchers)
     request_id = request_id + 1
     local handler = handlers[method]
     vim.schedule(function()
+      wide_roots = {}
       if not handler then
         callback({ code = -32601, message = "method not supported: " .. method })
         return
