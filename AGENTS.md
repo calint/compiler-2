@@ -158,5 +158,5 @@ Working agreements for AI sessions in this repository.
 
 - Run symbol renames before `git mv`/file renames (open buffers at the old
   path recreate old files on save).
-- `make.sh` (without `build`) and `run-roome.sh` read input: after `make.sh`
-  type return, after `run-roome.sh` type "go home".
+- `make.sh` (without `build`) and `roome/run.sh` read input: after `make.sh`
+  type return, after `roome/run.sh` type "go home".
