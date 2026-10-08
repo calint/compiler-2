@@ -38,25 +38,27 @@ invalid_usage() {
     exit 2
 }
 
-if [[ "${1:-}" == --compile-workload ]]; then
+if [ "${1:-}" = --compile-workload ]; then
     shift
-    cd ../coverage
-    for ((repeat = 1; repeat <= PERF_REPEATS; ++repeat)); do
+    cd ../coverage/tests
+    repeat=1
+    while [ "$repeat" -le "$PERF_REPEATS" ]; do
         for src in [0-9]*.baz; do
             status=0
-            ../../baz "$src" --vars=0x40000 --checks=upper,lower,line "$@" \
-                >/dev/null 2>../perf/compile-last-error.txt || status=$?
+            ../../../baz "$src" --vars=0x40000 --checks=upper,lower,line "$@" \
+                >/dev/null 2>../../perf/compile-last-error.txt || status=$?
             printf '[perf] sweep %s: %s exit=%s\n' "$repeat" "$src" "$status"
-            if ((status >= 128)); then
-                cat ../perf/compile-last-error.txt >&2
+            if [ "$status" -ge 128 ]; then
+                cat ../../perf/compile-last-error.txt >&2
                 exit "$status"
             fi
         done
+        repeat=$((repeat + 1))
     done
     exit 0
 fi
 
-if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
+if [ "${1:-}" = --help ] || [ "${1:-}" = -h ]; then
     usage
     exit 0
 fi
@@ -67,58 +69,59 @@ REPRODUCE_OPTION="${3:-}"
 PERF_FREQ="${PERF_FREQ:-400}"
 export PERF_REPEATS="${PERF_REPEATS:-1}"
 
-if [[ $# -gt 3 ]]; then
+if [ $# -gt 3 ]; then
     invalid_usage 'Too many arguments.'
 fi
-if [[ "$MODE" != nobuild && "$MODE" != build && "$MODE" != report ]]; then
+if [ "$MODE" != nobuild ] && [ "$MODE" != build ] && [ "$MODE" != report ]; then
     invalid_usage 'Mode must be nobuild, build, or report.'
 fi
-if [[ "$SCOPE" != full && "$SCOPE" != compile-only ]]; then
+if [ "$SCOPE" != full ] && [ "$SCOPE" != compile-only ]; then
     invalid_usage 'Scope must be full or compile-only.'
 fi
-if [[ $# == 3 && "$REPRODUCE_OPTION" != --reproduce-source ]]; then
+if [ $# -eq 3 ] && [ "$REPRODUCE_OPTION" != --reproduce-source ]; then
     invalid_usage 'The only third argument is --reproduce-source.'
 fi
-if [[ "$REPRODUCE_OPTION" == --reproduce-source && "$SCOPE" != compile-only ]]; then
+if [ "$REPRODUCE_OPTION" = --reproduce-source ] && [ "$SCOPE" != compile-only ]; then
     invalid_usage '--reproduce-source requires compile-only.'
 fi
-if [[ ! "$PERF_FREQ" =~ ^[1-9][0-9]*$ ]]; then
+if ! printf '%s' "$PERF_FREQ" | grep -Eq '^[1-9][0-9]*$'; then
     invalid_usage 'PERF_FREQ must be a positive integer.'
 fi
-if [[ ! "$PERF_REPEATS" =~ ^[1-9][0-9]*$ ]]; then
+if ! printf '%s' "$PERF_REPEATS" | grep -Eq '^[1-9][0-9]*$'; then
     invalid_usage 'PERF_REPEATS must be a positive integer.'
 fi
 
 command -v perf >/dev/null
 command -v python3 >/dev/null
 SUFFIX=""
-if [[ "$SCOPE" == compile-only ]]; then
+if [ "$SCOPE" = compile-only ]; then
     SUFFIX="-compile-only"
 fi
-if [[ "$REPRODUCE_OPTION" == --reproduce-source ]]; then
-    SUFFIX+="-reproduce-source"
+if [ "$REPRODUCE_OPTION" = --reproduce-source ]; then
+    SUFFIX="${SUFFIX}-reproduce-source"
 fi
 DATA_FILE="all${SUFFIX}.data"
 
-if [[ "$MODE" != report ]]; then
-    if [[ "$MODE" == build ]]; then
+if [ "$MODE" != report ]; then
+    if [ "$MODE" = build ]; then
         ../../make.sh -O3 build
     fi
-    if [[ ! -x ../../baz ]]; then
+    if [ ! -x ../../baz ]; then
         printf '%s\n' '[perf] compiler missing; use build mode.' >&2
         exit 1
     fi
     printf '[perf] recording %s (mode=%s, frequency=%s)\n' "$SCOPE" "$MODE" "$PERF_FREQ"
-    if [[ "$SCOPE" == compile-only ]]; then
+    if [ "$SCOPE" = compile-only ]; then
         printf '%s\n' '[perf] Nonzero compiler exits can be intentional error fixtures; this is not a correctness test.'
-        workload=(./perf.sh --compile-workload)
-        if [[ "$REPRODUCE_OPTION" == --reproduce-source ]]; then
-            workload+=(--reproduce-source)
+        if [ "$REPRODUCE_OPTION" = --reproduce-source ]; then
+            set -- ./perf.sh --compile-workload --reproduce-source
+        else
+            set -- ./perf.sh --compile-workload
         fi
     else
-        workload=(../coverage/test-coverage.sh nobuild)
+        set -- ../coverage/test-coverage.sh nobuild
     fi
-    perf record -F "$PERF_FREQ" --call-graph dwarf -o "$DATA_FILE" -- "${workload[@]}"
+    perf record -F "$PERF_FREQ" --call-graph dwarf -o "$DATA_FILE" -- "$@"
 fi
 
 python3 - "$DATA_FILE" "$SUFFIX" <<'PY'

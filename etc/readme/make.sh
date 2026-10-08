@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-cd $(dirname "$0")
+cd "$(dirname "$0")"
 
 cat README.1.md >README.md
 # run from the root so the usage shows the path used in the examples
