@@ -1126,7 +1126,9 @@ def rule_return_by_block(b, wants, want):
 BLANK_LINE_RULES = [
     rule_signature,
     rule_condition,
-    rule_lambda_head,
+    # off: 'format-source.sh' ends with clang-format, which removes the blank
+    # line after the '{' of a lambda head whatever its 'KeepEmptyLines' is
+    # rule_lambda_head,
     rule_multiline,
     rule_assert_groups,
 ]
