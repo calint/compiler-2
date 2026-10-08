@@ -30,21 +30,6 @@ dat str_ascii_art = "\
        | |\n\
 \n"
 
-dat    str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
-dat   str_prompt = " > "
-dat str_turn_end = "--\n"
-
-dat flag = "\n\nFLAG\n\n"
-
-dat str_creation_script = "\
-rnm roome\n\
-rnt todo: find an exit\n\
-rn none roome\n\
-go none\n\
-rnm office\n\
-go roome\n\
-en me\n"
-
 dat str_action_help = "help"
 dat str_action_go = "go"
 dat str_action_inventory = "i"
@@ -108,6 +93,15 @@ func noinline parse_input(eid, tz mut tokenizer) {
     }
 }
 
+dat str_creation_script = "\
+rnm roome\n\
+rnt todo: find an exit\n\
+rn none roome\n\
+go none\n\
+rnm office\n\
+go roome\n\
+en me\n"
+
 # runs the lines of the script as the bare entity, a line ends with '\n'
 func run_creation_script(tz mut tokenizer) {
     var line_start = 0
@@ -120,6 +114,12 @@ func run_creation_script(tz mut tokenizer) {
         }
     }
 }
+
+dat    str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
+dat   str_prompt = " > "
+dat str_turn_end = "--\n"
+
+dat flag = "\n\nFLAG\n\n"
 
 func main() {
     var tz = tokenizer
