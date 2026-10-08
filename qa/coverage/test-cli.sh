@@ -348,6 +348,9 @@ CLI --report=registers,unknown 1 --help
 CLI --report= 1 --help
 CLI --report=registers, 1 --help
 CLI --report=registers,registers 0 015.baz
+CLI -x 1 --help
+CLI 015.baz 1 430.baz
+CLI 015.baz 0 --nopt
 CLI_TARGETS
 CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE

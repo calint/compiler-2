@@ -66,6 +66,7 @@ struct report_options {
 
 struct options {
     const char* src_file_name{"prog.baz"};
+    bool src_file_given{};
     target machine_target{target::x86_64};
     size_t vars_size_bytes{default_vars_size_bytes};
     size_t stack_size_bytes{default_stack_size_bytes};
@@ -250,15 +251,23 @@ template <typename T>
         return true;
     }
 
-    // assume it's the filename
-    if (not arg.starts_with("--")) {
-        opts.src_file_name = argument;
-        return true;
+    if (arg.starts_with('-')) {
+        print_usage_error(std::format("Unknown option: '{}'", arg));
+        return false;
     }
 
-    print_usage_error(std::format("Unknown option: '{}'", arg));
+    if (opts.src_file_given) {
+        print_usage_error(
+            std::format("More than one source file: '{}' and '{}'",
+                        opts.src_file_name, arg));
 
-    return false;
+        return false;
+    }
+
+    opts.src_file_name = argument;
+    opts.src_file_given = true;
+
+    return true;
 }
 
 [[nodiscard]] auto apply_vars(const std::string_view value, options& opts)
@@ -431,7 +440,7 @@ class null_stream final : public std::ostream {
         print_compiler_error(files, e);
         return 1;
     } catch (const std::runtime_error& e) {
-        std::println(stderr, "\npanic: {}", e.what());
+        std::println(stderr, "error: {}", e.what());
         return 1;
     } catch (const std::exception& e) {
         // a defect of the compiler, the input is not at fault
