@@ -59,6 +59,8 @@ class machine_rv32i : public machine {
     // sp stays 16-byte aligned, the return address slot of a frame is one unit
     static constexpr size_t stack_alignment_{16};
     static constexpr int64_t frame_save_bytes_{stack_alignment_};
+    static constexpr size_t byte_size_bytes_{1};
+    static constexpr size_t half_size_bytes_{2};
     static constexpr size_t word_size_bytes_{4};
     static constexpr size_t register_bits_{
         std::numeric_limits<uint32_t>::digits,
@@ -1108,8 +1110,9 @@ class machine_rv32i : public machine {
                             const data_initializer& value) -> void override {
 
         // 'validate_data_element_size' rejects other sizes
-        assert(element_size_bytes == 1 or element_size_bytes == 2 or
-               element_size_bytes == 4);
+        assert(element_size_bytes == byte_size_bytes_ or
+               element_size_bytes == half_size_bytes_ or
+               element_size_bytes == word_size_bytes_);
 
         assembler_.repeated_data(element_size_bytes, count, value.uops,
                                  value.value);
@@ -1560,8 +1563,9 @@ class machine_rv32i : public machine {
                                     const size_t element_size_bytes) const
         -> void override {
 
-        if (element_size_bytes != 1 and element_size_bytes != 2 and
-            element_size_bytes != 4) {
+        if (element_size_bytes != byte_size_bytes_ and
+            element_size_bytes != half_size_bytes_ and
+            element_size_bytes != word_size_bytes_) {
 
             throw compiler_exception{
                 src_loc_tk, "RV32I data elements must be 1, 2, or 4 bytes"};
@@ -3829,7 +3833,7 @@ class machine_rv32i : public machine {
                              alignment);
 
         // without a known alignment every access is a byte
-        if (start.width == 1) {
+        if (start.width == byte_size_bytes_) {
             walk_runtime_bytes(walk);
             return;
         }
@@ -4247,7 +4251,7 @@ class machine_rv32i : public machine {
     [[nodiscard]] static auto describe_loop(const std::string_view verb,
                                             const size_t width) -> std::string {
 
-        if (width == 1) {
+        if (width == byte_size_bytes_) {
             return std::format("{} bytes", verb);
         }
 
@@ -4410,8 +4414,9 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] static auto is_scalar(const type& value_type) -> bool {
         return value_type.is_builtin() and
-               (value_type.size_bytes() == 1 or value_type.size_bytes() == 2 or
-                value_type.size_bytes() == 4);
+               (value_type.size_bytes() == byte_size_bytes_ or
+                value_type.size_bytes() == half_size_bytes_ or
+                value_type.size_bytes() == word_size_bytes_);
     }
 
     // 'x op constant' is 'x': all bits for 'and', zero for the others
@@ -4452,11 +4457,11 @@ class machine_rv32i : public machine {
 
     // lb and lh sign-extend, a bool is zero-extended
     [[nodiscard]] static auto load_op(const type& value_type) -> op {
-        if (value_type.size_bytes() == 4) {
+        if (value_type.size_bytes() == word_size_bytes_) {
             return op::lw;
         }
 
-        if (value_type.size_bytes() == 2) {
+        if (value_type.size_bytes() == half_size_bytes_) {
             return op::lh;
         }
 
@@ -4787,11 +4792,11 @@ class machine_rv32i : public machine {
 
     // stores the low 8, 16 or 32 bits
     [[nodiscard]] static auto store_op(const size_t width) -> op {
-        if (width == 4) {
+        if (width == word_size_bytes_) {
             return op::sw;
         }
 
-        if (width == 2) {
+        if (width == half_size_bytes_) {
             return op::sh;
         }
 
@@ -4823,11 +4828,11 @@ class machine_rv32i : public machine {
 
     // loads without sign extension, for copying bytes unchanged
     [[nodiscard]] static auto unsigned_load_op(const size_t width) -> op {
-        if (width == 4) {
+        if (width == word_size_bytes_) {
             return op::lw;
         }
 
-        if (width == 2) {
+        if (width == half_size_bytes_) {
             return op::lhu;
         }
 

@@ -50,7 +50,7 @@
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop', 'if',
-// 'exit', 'read', 'write' and 'foo'
+// 'exit', 'read', 'write' and 'foo', null for any other keyword
 auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
 
@@ -75,7 +75,7 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
 
-    std::unreachable();
+    return nullptr;
 }
 
 // declared in 'decouple.hpp'
