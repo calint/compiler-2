@@ -445,7 +445,7 @@ class null_stream final : public std::ostream {
     } catch (const std::exception& e) {
         // a defect of the compiler, the input is not at fault
         std::println(stderr, "\ninternal error: {}", e.what());
-        return 2;
+        return 1;
     }
 
     return 0;

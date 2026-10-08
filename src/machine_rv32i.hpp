@@ -1276,7 +1276,7 @@ class machine_rv32i : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  [[maybe_unused]] const bool reuse_source = false)
+                  [[maybe_unused]] const bool reuse_source = {})
         -> void override {
 
         validate_scalar(src_loc_tk, product.type_ref());

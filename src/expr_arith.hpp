@@ -74,9 +74,9 @@ class expr_arith final : public expression {
     static constexpr uint8_t precedence_shift{6};
 
   public:
-    expr_arith(toc& tc, tokenizer& tz, const bool in_args = false,
-               const bool enclosed = false, const token open_paren_tk = {},
-               const bool is_implied_subexpression = false, unary_ops uops = {},
+    expr_arith(toc& tc, tokenizer& tz, const bool in_args = {},
+               const bool enclosed = {}, const token open_paren_tk = {},
+               const bool is_implied_subexpression = {}, unary_ops uops = {},
                const uint8_t first_op_precedence = initial_precedence,
                std::unique_ptr<statement> first_expression = {})
         : expression{tz.cur_position_token()}, uops_{std::move(uops)},
@@ -424,7 +424,6 @@ class expr_arith final : public expression {
         const std::span<const step> middle_steps{
             std::span{steps}.subspan(1, steps.size() - 2),
         };
-
         // note: the 1 skips the first step compiled above and the 2 also
         //       leaves out the trailing constant
 

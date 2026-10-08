@@ -130,7 +130,7 @@ class frame final {
 
   public:
     frame(const std::string_view name, const frame_type frm_type,
-          std::string call_path = "", std::string func_ret_label = "",
+          std::string call_path = {}, std::string func_ret_label = {},
           const bool is_inlined = true,
           const std::string_view storage_base_register = {}) noexcept
         : name_{name}, call_path_{std::move(call_path)},
@@ -628,6 +628,7 @@ class constant_parser final {
         }
 
         const std::optional<char> decoded{token::decode_escape(body.substr(1))};
+        // note: +1 because the escape starts after the backslash
 
         if (not decoded) {
             const size_t backslash_index{src_loc_tk.start_index() + 1};

@@ -355,7 +355,7 @@ struct ident_info {
 
     [[nodiscard]] static auto
     make_const(const std::string_view ident, const std::string_view elem,
-               const type& tp, const int64_t value, const bool is_typed = false)
+               const type& tp, const int64_t value, const bool is_typed = {})
         -> ident_info {
 
         assert(not ident.empty());

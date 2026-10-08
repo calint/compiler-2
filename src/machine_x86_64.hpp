@@ -1017,7 +1017,7 @@ class machine_x86_64 final : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  const bool reuse_source = false) -> void override {
+                  const bool reuse_source = {}) -> void override {
 
         if (multiply_by_constant(src_loc_tk, indent, product, factor)) {
             return;
@@ -1881,7 +1881,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
-             const operand& address, const bool explicit_displacement = false)
+             const operand& address, const bool explicit_displacement = {})
         -> void {
 
         with_lowered_addresses(
@@ -2551,8 +2551,8 @@ class machine_x86_64 final : public machine {
     }
 
     // the address without a width, as 'lea' and comments take it
-    [[nodiscard]] static auto
-    to_address(const operand& value, const bool explicit_displacement = false)
+    [[nodiscard]] static auto to_address(const operand& value,
+                                         const bool explicit_displacement = {})
         -> assembler_x86_64::memory {
 
         assert(not value.is_immediate());

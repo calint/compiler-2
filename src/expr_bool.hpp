@@ -926,9 +926,8 @@ class expr_bool final : public statement {
     bool enclosed_{}; // e.g. (a==b and c==d) vs a==b and c==d
 
   public:
-    expr_bool(toc& tc, const token tk, tokenizer& tz,
-              const bool enclosed = false, const token not_tk = {},
-              const token open_paren_tk = {},
+    expr_bool(toc& tc, const token tk, tokenizer& tz, const bool enclosed = {},
+              const token not_tk = {}, const token open_paren_tk = {},
               std::unique_ptr<statement> first_expression = {})
         : statement{tk}, not_tk_{not_tk}, open_paren_tk_{open_paren_tk},
           enclosed_{enclosed} {

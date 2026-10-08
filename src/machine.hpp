@@ -620,7 +620,7 @@ class machine {
 
       public:
         call_frame_scope(machine& backend, const token& call_site_tk,
-                         std::string name, const bool is_noinline_body = false)
+                         std::string name, const bool is_noinline_body = {})
             : machine_{backend} {
 
             backend.begin_call_frame(call_site_tk, std::move(name),
@@ -889,7 +889,7 @@ class machine {
 
     virtual auto multiply(const token& src_loc_tk, const size_t indent,
                           const operand& product, const operand& factor,
-                          const bool reuse_source = false) -> void = 0;
+                          const bool reuse_source = {}) -> void = 0;
 
     virtual auto read(const token& src_loc_tk, const size_t indent,
                       const operand& dst, const operand& descriptor,

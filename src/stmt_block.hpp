@@ -35,7 +35,7 @@ class stmt_block final : public statement {
     // note: without '{', a single statement is allowed unless braces are
     // required
     // e.g. '{ a = 1 b = 2 }', or the 'exit(1)' of 'if a == 1 exit(1)'
-    stmt_block(toc& tc, tokenizer& tz, const bool braces_required = false)
+    stmt_block(toc& tc, tokenizer& tz, const bool braces_required = {})
         : statement{tz.cur_position_token()},
           open_brace_tk_{tz.is_next_char_token('{')},
           is_one_statement_{open_brace_tk_.is_empty()} {
