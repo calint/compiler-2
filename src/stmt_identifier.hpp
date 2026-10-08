@@ -580,7 +580,7 @@ class stmt_identifier final : public statement {
     // the path names a function, unless a variable, an alias or a constant of
     // the same root is in scope, it shadows the function
     [[nodiscard]] auto names_function(const toc& tc) const -> bool {
-        const std::string_view root{ident_path::root_of(path_as_string_)};
+        const std::string_view root{ident_info::root_of(path_as_string_)};
 
         return tc.is_func(path_as_string_) and not tc.is_var_or_alias(root) and
                not tc.has_const(root);
@@ -633,12 +633,10 @@ class stmt_identifier final : public statement {
                                 tc, tz, tc.get_type_default(), false, false, 0),
                             token{});
 
-        const token close_bracket_tk{tz.is_next_char_token(']')};
-
-        if (close_bracket_tk.is_empty()) {
-            throw compiler_exception{
-                tz, "expected ']' to close array index expression"};
-        }
+        const token close_bracket_tk{
+            tz.expect_char_token(
+                ']', "expected ']' to close array index expression"),
+        };
 
         elems_.back().open_bracket_tk = open_bracket_tk;
         elems_.back().close_bracket_tk = close_bracket_tk;

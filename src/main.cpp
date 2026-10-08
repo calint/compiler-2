@@ -252,13 +252,13 @@ template <typename T>
     }
 
     if (arg.starts_with('-')) {
-        print_usage_error(std::format("Unknown option: '{}'", arg));
+        print_usage_error(std::format("unknown option: '{}'", arg));
         return false;
     }
 
     if (opts.src_file_given) {
         print_usage_error(
-            std::format("More than one source file: '{}' and '{}'",
+            std::format("more than one source file: '{}' and '{}'",
                         opts.src_file_name, arg));
 
         return false;
@@ -292,7 +292,7 @@ template <typename T>
 
     if (not found) {
         print_usage_error(
-            std::format("Invalid target: '{}'. Supported targets are: {}.",
+            std::format("invalid target: '{}', supported targets are: {}",
                         value, supported_target_texts()));
 
         return false;
@@ -321,7 +321,7 @@ template <typename T>
     opts.binary_file_name = value;
 
     if (opts.binary_file_name.empty()) {
-        print_usage_error("Invalid --bin: empty file name");
+        print_usage_error("invalid --bin: empty file name");
         return false;
     }
 
@@ -498,8 +498,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 
     if (digits.starts_with("0x") or digits.starts_with("0X")) {
         base = hex_base;
-        digits.remove_prefix(2);
-        // note: 2 for the '0x' prefix
+        digits.remove_prefix(std::string_view{"0x"}.size());
     }
 
     size_t parsed_size_bytes{};
@@ -512,19 +511,19 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 
     if (parsed.ec != std::errc{} or parsed.ptr != digits_end) {
         print_usage_error(
-            std::format("Invalid {}: '{}' is not a number", name, text));
+            std::format("invalid {}: '{}' is not a number", name, text));
 
         return std::nullopt;
     }
 
     if (parsed_size_bytes == 0) {
-        print_usage_error(std::format("Invalid {}: '{}' is zero", name, text));
+        print_usage_error(std::format("invalid {}: '{}' is zero", name, text));
         return std::nullopt;
     }
 
     if (parsed_size_bytes % alignment != 0) {
         print_usage_error(std::format(
-            "Invalid {}: '{}' is not a multiple of {}", name, text, alignment));
+            "invalid {}: '{}' is not a multiple of {}", name, text, alignment));
 
         return std::nullopt;
     }
@@ -538,7 +537,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 
     // note: splitting an empty text gives no parts
     if (reports.empty()) {
-        print_usage_error("Invalid --report: empty report name");
+        print_usage_error("invalid --report: empty report name");
         return std::nullopt;
     }
 
@@ -550,12 +549,12 @@ auto check_reproduced_source(const program& prg, const source_files& files)
         if (report == "registers") {
             parsed.registers = true;
         } else if (report.empty()) {
-            print_usage_error("Invalid --report: empty report name");
+            print_usage_error("invalid --report: empty report name");
             return std::nullopt;
         } else {
             print_usage_error(
-                std::format("Invalid --report option: '{}'. Supported "
-                            "reports are: registers.",
+                std::format("invalid --report option: '{}', supported "
+                            "reports are: registers",
                             report));
 
             return std::nullopt;
@@ -593,8 +592,8 @@ auto check_reproduced_source(const program& prg, const source_files& files)
             parsed.alias = true;
         } else if (not option.empty()) {
             print_usage_error(
-                std::format("Invalid --checks option: '{}'. Supported options "
-                            "are: upper, lower, line, frame, alias, noub.",
+                std::format("invalid --checks option: '{}', supported options "
+                            "are: upper, lower, line, frame, alias, noub",
                             option));
 
             return std::nullopt;
@@ -684,7 +683,7 @@ default_binary_file_name(const std::string_view src_file_name,
 // every command line error ends with the same hint
 auto print_usage_error(const std::string_view message) -> void {
     std::println(stderr, "{}", message);
-    std::println(stderr, "Use --help for usage information");
+    std::println(stderr, "use --help for usage information");
 }
 
 // the inlined calls the error was found in, innermost first
@@ -696,16 +695,14 @@ auto print_call_frames(
         const std::string_view src_file_name{files.name(frame.file_ix)};
         const std::string_view src{files.text(frame.file_ix)};
 
-        const auto [line_num, col]{
-            line_and_col_num_for_char_index(frame.line, frame.start_index, src),
-        };
+        const size_t col{column_for_char_index(frame.start_index, src)};
 
         // the source line shows a call that is the whole line
         if (frame.text == trimmed_line_at(src, frame.start_index)) {
-            std::println(stderr, "{}:{}:{}: {}", src_file_name, line_num, col,
+            std::println(stderr, "{}:{}:{}: {}", src_file_name, frame.line, col,
                          frame.reason);
         } else {
-            std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, line_num,
+            std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, frame.line,
                          col, frame.reason, frame.text);
         }
 
@@ -749,11 +746,9 @@ auto print_source_error(const source_files& files, const size_t file_ix,
         return;
     }
 
-    const auto [line_num,
-                col]{line_and_col_num_for_char_index(line, start_index, src)};
+    const size_t col{column_for_char_index(start_index, src)};
 
-    std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line_num, col,
-                 message);
+    std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, message);
 
     print_source_line(src, start_index, end_index);
 }

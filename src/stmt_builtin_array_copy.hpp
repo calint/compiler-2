@@ -42,12 +42,8 @@ class stmt_builtin_array_copy final : public statement {
 
         src_.assert_array_or_element("source");
 
-        src_delim_tk_ = tz.is_next_char_token(',');
-
-        if (src_delim_tk_.is_empty()) {
-            throw compiler_exception{
-                tz, "expected ',' followed by 'to' and 'count'"};
-        }
+        src_delim_tk_ = tz.expect_char_token(
+            ',', "expected ',' followed by 'to' and 'count'");
 
         dst_ = {tc, {}, tz.next_token(), tz};
 
@@ -56,19 +52,13 @@ class stmt_builtin_array_copy final : public statement {
         assert_not_read_only(dst_.tok(), "copy into", dst_.identifier(),
                              tc.make_ident_info(dst_));
 
-        dst_delim_tk_ = tz.is_next_char_token(',');
-
-        if (dst_delim_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ',' followed by 'count'"};
-        }
+        dst_delim_tk_ =
+            tz.expect_char_token(',', "expected ',' followed by 'count'");
 
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after the arguments"};
-        }
+        close_paren_tk_ =
+            tz.expect_char_token(')', "expected ')' after the arguments");
     }
 
     stmt_builtin_array_copy() = default;

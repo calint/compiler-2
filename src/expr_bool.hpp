@@ -22,6 +22,25 @@
 #include "token.hpp"
 #include "ub_unset_var.hpp"
 
+// what compiling a condition found out about its value without running it
+enum class condition_result : uint8_t { unknown, always_false, always_true };
+
+[[nodiscard]] inline auto known_result(const bool value) -> condition_result {
+    return value ? condition_result::always_true
+                 : condition_result::always_false;
+}
+
+[[nodiscard]] inline auto is_known(const condition_result result) -> bool {
+    return result != condition_result::unknown;
+}
+
+// only for a known result
+[[nodiscard]] inline auto result_value(const condition_result result) -> bool {
+    assert(is_known(result));
+
+    return result == condition_result::always_true;
+}
+
 class expr_bool_op final : public statement {
     std::vector<token> nots_;
     expr_arith lhs_;
@@ -141,7 +160,7 @@ class expr_bool_op final : public statement {
                                    const std::string_view jmp_to_if_false,
                                    const bool inverted, const operand& dst,
                                    const bool branch_required = true) const
-        -> std::optional<bool> {
+        -> condition_result {
 
         return compile_element(tc, indent, "and", inverted,
                                {
@@ -154,12 +173,11 @@ class expr_bool_op final : public statement {
                                branch_required);
     }
 
-    // returns an optional bool, and if defined the expression evaluated to
-    // the value of the optional
+    // the result is known when the expression evaluated at compile time
     [[nodiscard]] auto compile_or(toc& tc, const size_t indent,
                                   const std::string_view jmp_to_if_true,
                                   const bool inverted, const operand& dst) const
-        -> std::optional<bool> {
+        -> condition_result {
 
         return compile_element(tc, indent, "or", inverted,
                                {
@@ -272,7 +290,7 @@ class expr_bool_op final : public statement {
     // a constant emits no comparison, only the short-circuit branch
     auto compile_constant(toc& tc, const size_t indent, const bool value,
                           const machine::comparison_action& action) const
-        -> bool {
+        -> condition_result {
 
         machine& x{tc.machine()};
 
@@ -283,7 +301,7 @@ class expr_bool_op final : public statement {
             x.branch(indent, action.target);
         }
 
-        return value;
+        return known_result(value);
     }
 
     // an 'or' element branches when true and an 'and' element when false
@@ -292,7 +310,7 @@ class expr_bool_op final : public statement {
                                        const bool inverted,
                                        const machine::comparison_action& action,
                                        const bool branch_required) const
-        -> std::optional<bool> {
+        -> condition_result {
 
         machine& x{tc.machine()};
 
@@ -319,17 +337,17 @@ class expr_bool_op final : public statement {
 
             resolve_cmp(tc, indent, rhs_, lhs_, mirrored_action);
 
-            return std::nullopt;
+            return condition_result::unknown;
         }
 
         if (is_memory_comparison_) {
             resolve_memory_cmp(tc, indent, action);
-            return std::nullopt;
+            return condition_result::unknown;
         }
 
         if (not is_shorthand_) {
             resolve_cmp(tc, indent, lhs_, rhs_, action);
-            return std::nullopt;
+            return condition_result::unknown;
         }
 
         assert_not_instance_condition(lhs_);
@@ -344,7 +362,7 @@ class expr_bool_op final : public statement {
 
         resolve_cmp_shorthand(tc, indent, lhs_, shorthand_action);
 
-        return std::nullopt;
+        return condition_result::unknown;
     }
 
     // e.g. if not a == 3 ...
@@ -444,7 +462,9 @@ class expr_bool_op final : public statement {
         const std::string_view id{lhs_.identifier()};
 
         // a boolean value is not an expression
-        if (id == "true" or id == "false") {
+        if (id == reserved_names::true_value or
+            id == reserved_names::false_value) {
+
             is_expression_ = false;
             return;
         }
@@ -993,8 +1013,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto compile(toc& tc, const size_t indent,
                                const std::string_view jmp_to_if_false,
                                const std::string_view jmp_to_if_true,
-                               const operand& dst) const
-        -> std::optional<bool> {
+                               const operand& dst) const -> condition_result {
 
         return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true, false,
                            dst);
@@ -1097,7 +1116,7 @@ class expr_bool final : public statement {
                           const std::string_view jmp_to_if_false,
                           const std::string_view jmp_to_if_true,
                           const bool invert, const operand& dst) const
-        -> std::optional<bool> {
+        -> condition_result {
 
         const bool is_or{is_effective_or(expr_index, invert)};
 
@@ -1140,35 +1159,35 @@ class expr_bool final : public statement {
         toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
         const std::string_view jmp_to_if_true, const bool invert,
         const operand& dst, const bool has_runtime_element) const
-        -> std::optional<bool> {
+        -> condition_result {
 
         if (std::holds_alternative<expr_bool>(bools_.back())) {
             const expr_bool& nested_expr{std::get<expr_bool>(bools_.back())};
 
-            const std::optional<bool> const_eval{
+            const condition_result const_eval{
                 nested_expr.compile_with_label(tc, indent, jmp_to_if_false,
                                                jmp_to_if_true, invert, dst),
             };
 
             // the nested list already emitted its final branch
-            if (not const_eval) {
-                return std::nullopt;
+            if (not is_known(const_eval)) {
+                return condition_result::unknown;
             }
 
-            return resolve_last_constant(tc, indent, *const_eval,
+            return resolve_last_constant(tc, indent, result_value(const_eval),
                                          jmp_to_if_true, invert,
                                          has_runtime_element);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
 
-        const std::optional<bool> const_eval{
+        const condition_result const_eval{
             expr.compile_and(tc, indent, jmp_to_if_false, invert, dst,
                              jmp_to_if_false != jmp_to_if_true),
         };
 
-        if (const_eval) {
-            return resolve_last_constant(tc, indent, *const_eval,
+        if (is_known(const_eval)) {
+            return resolve_last_constant(tc, indent, result_value(const_eval),
                                          jmp_to_if_true, invert,
                                          has_runtime_element);
         }
@@ -1178,7 +1197,7 @@ class expr_bool final : public statement {
         // if not yet jumped to false, then jump to true
         x.branch(indent, jmp_to_if_true);
 
-        return std::nullopt;
+        return condition_result::unknown;
     }
 
     [[nodiscard]] auto compile_rec(toc& tc, const size_t indent,
@@ -1186,7 +1205,7 @@ class expr_bool final : public statement {
                                    const std::string_view jmp_to_if_true,
                                    const bool inverted,
                                    const operand& dst) const
-        -> std::optional<bool> {
+        -> condition_result {
 
         machine& x{tc.machine()};
 
@@ -1205,18 +1224,20 @@ class expr_bool final : public statement {
         // note: -1 is the index of the last element
 
         for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
-            const std::optional<bool> const_eval{
+            const condition_result const_eval{
                 compile_inner_element(tc, indent, expr_index, jmp_to_if_false,
                                       jmp_to_if_true, invert, dst),
             };
 
-            if (not const_eval) {
+            if (not is_known(const_eval)) {
                 has_runtime_element = true;
                 continue;
             }
 
-            if (is_short_circuit(*const_eval, expr_index, invert)) {
-                return *const_eval;
+            if (is_short_circuit(result_value(const_eval), expr_index,
+                                 invert)) {
+
+                return const_eval;
             }
         }
 
@@ -1228,7 +1249,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto compile_with_label(
         toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
         const std::string_view jmp_to_if_true, const bool inverted,
-        const operand& dst) const -> std::optional<bool> {
+        const operand& dst) const -> condition_result {
 
         machine& x{tc.machine()};
 
@@ -1345,19 +1366,19 @@ class expr_bool final : public statement {
     [[nodiscard]] auto resolve_last_constant(
         toc& tc, const size_t indent, const bool const_eval,
         const std::string_view jmp_to_if_true, const bool invert,
-        const bool has_runtime_element) const -> std::optional<bool> {
+        const bool has_runtime_element) const -> condition_result {
 
         if (not has_runtime_element) {
-            return const_eval;
+            return known_result(const_eval);
         }
 
         if (is_short_circuit(const_eval, ops_.size() - 1, invert)) {
-            return const_eval;
+            return known_result(const_eval);
         }
 
         // a constant false has already branched to false
         if (not const_eval) {
-            return std::nullopt;
+            return condition_result::unknown;
         }
 
         machine& x{tc.machine()};
@@ -1365,6 +1386,6 @@ class expr_bool final : public statement {
         // a constant true emits no branch of its own
         x.branch(indent, jmp_to_if_true);
 
-        return std::nullopt;
+        return condition_result::unknown;
     }
 };

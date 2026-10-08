@@ -221,20 +221,20 @@ class report_renderer final {
             .title{},
             .entries{
                 {
-                    .name = "removed jumps to next code",
-                    .value = std::format("{}", o.jumps_to_next),
+                    .name{"removed jumps to next code"},
+                    .value{std::format("{}", o.jumps_to_next)},
                 },
                 {
-                    .name = "removed unreachable jumps",
-                    .value = std::format("{}", o.unreachable_jumps),
+                    .name{"removed unreachable jumps"},
+                    .value{std::format("{}", o.unreachable_jumps)},
                 },
                 {
-                    .name = "removed same target branches",
-                    .value = std::format("{}", o.same_outcome_branches),
+                    .name{"removed same target branches"},
+                    .value{std::format("{}", o.same_outcome_branches)},
                 },
                 {
-                    .name = "inverted branches over jumps",
-                    .value = std::format("{}", o.inverted_branches),
+                    .name{"inverted branches over jumps"},
+                    .value{std::format("{}", o.inverted_branches)},
                 },
             },
         };
@@ -248,32 +248,32 @@ class report_renderer final {
             .title{},
             .entries{
                 {
-                    .name = "max scratch registers in use",
-                    .value = std::format("{}", stats.max_scratch_registers),
+                    .name{"max scratch registers in use"},
+                    .value{std::format("{}", stats.max_scratch_registers)},
                 },
                 {
-                    .name = "max frames in use",
-                    .value = std::format("{}", usage.max_frame_count),
+                    .name{"max frames in use"},
+                    .value{std::format("{}", usage.max_frame_count)},
                 },
                 {
-                    .name = "dat size",
-                    .value = std::format("{} B", usage.dat_size_bytes),
+                    .name{"dat size"},
+                    .value{std::format("{} B", usage.dat_size_bytes)},
                 },
                 {
-                    .name = "dat var padding",
-                    .value = std::format("{} B", usage.dat_var_padding_bytes),
+                    .name{"dat var padding"},
+                    .value{std::format("{} B", usage.dat_var_padding_bytes)},
                 },
                 {
-                    .name = "max vars size",
-                    .value = std::format("{} B", usage.max_vars_size_bytes),
+                    .name{"max vars size"},
+                    .value{std::format("{} B", usage.max_vars_size_bytes)},
                 },
             },
         };
 
         if (stats.is_counted) {
             section.entries.push_back({
-                .name = "instructions",
-                .value = std::format("{}", stats.instruction_count),
+                .name{"instructions"},
+                .value{std::format("{}", stats.instruction_count)},
             });
         }
 
@@ -302,14 +302,12 @@ class program final {
     std::vector<file_statements> file_statements_;
     std::set<std::filesystem::path> loaded_paths_;
     toc tc_; // table of contents
-    size_t vars_size_bytes_{};
 
   public:
     // the main file is the first of 'files', the included ones are added
     program(machine& backend, source_files& files, const size_t vars_size_bytes,
             const check_options& checks)
-        : files_{files}, tc_{backend, files, vars_size_bytes, checks},
-          vars_size_bytes_{vars_size_bytes} {
+        : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
 
         if (vars_size_bytes > backend.max_storage_bytes()) {
             throw compiler_exception::file_level(
@@ -363,7 +361,7 @@ class program final {
         machine& x{tc_.machine()};
 
         x.start();
-        compile(tc_, 0);
+        compile(0);
         x.finish();
         report_renderer::write(x, tc_.usage());
         tc_.finish();
@@ -423,34 +421,34 @@ class program final {
     }
 
   private:
-    auto compile(toc& tc, const size_t indent) const -> void {
-        tc.reset_usage();
+    auto compile(const size_t indent) -> void {
+        tc_.reset_usage();
 
-        tc.enter_block();
+        tc_.enter_block();
 
         for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc, indent, ident_info::make_empty());
+            s->compile(tc_, indent, ident_info::make_empty());
         }
 
-        compile_main(tc, indent);
-        compile_noninline_functions(tc, indent);
+        compile_main(tc_, indent);
+        compile_noninline_functions(tc_, indent);
 
-        tc.exit_block();
+        tc_.exit_block();
 
-        emit_failure_handlers(tc);
-        emit_read_only_data(tc);
-        emit_data_section(tc);
+        emit_failure_handlers(tc_);
+        emit_read_only_data(tc_);
+        emit_data_section();
     }
 
-    auto emit_data_section(toc& tc) const -> void {
-        machine& x{tc.machine()};
+    auto emit_data_section() -> void {
+        machine& x{tc_.machine()};
 
         const size_t alignment{x.data_alignment()};
         x.begin_data(alignment);
 
         // zero padding places each dat at the offset 'toc::add_var' gave it
         size_t dat_offset{};
-        for (const statement* s : tc.get_data()) {
+        for (const statement* s : tc_.get_data()) {
             const size_t padding_bytes{
                 align_storage_size(dat_offset, s->get_type().alignment()) -
                     dat_offset,
@@ -461,13 +459,13 @@ class program final {
                 x.emit_zero_data(padding_bytes);
             }
 
-            s->compile_data(tc);
+            s->compile_data(tc_);
 
             dat_offset = add_storage_size(s->tok(), dat_offset + padding_bytes,
                                           s->dat_size_bytes());
         }
 
-        x.reserve_variables(alignment, vars_size_bytes_);
+        x.reserve_variables(alignment, tc_.vars_capacity_bytes());
     }
 
     auto load_file(const std::filesystem::path& path, const token& path_tk)

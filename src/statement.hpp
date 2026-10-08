@@ -25,7 +25,6 @@
 #include "unary_ops.hpp"
 
 class toc;
-class machine;
 
 // the source text of a statement on one line, for the comments of the output
 class one_line_source final {
@@ -547,14 +546,12 @@ class statement {
     parse_initializer_equals(tokenizer& tz, const std::string_view keyword)
         -> token {
 
-        const token equals_tk{tz.is_next_char_token('=')};
-
-        if (equals_tk.is_empty()) {
-            throw compiler_exception{
-                tz, std::format("expected '=' followed by an initializer, "
-                                "e.g. '{} x = i32(0)'",
-                                keyword)};
-        }
+        const token equals_tk{
+            tz.expect_char_token(
+                '=', std::format("expected '=' followed by an initializer, "
+                                 "e.g. '{} x = i32(0)'",
+                                 keyword)),
+        };
 
         return equals_tk;
     }

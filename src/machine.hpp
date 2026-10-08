@@ -1295,6 +1295,24 @@ class machine {
     }
 
   protected:
+    // how a constant factor multiplies, decided at its width
+    enum class factor_kind : uint8_t {
+        zero,
+        one,
+        // all low bits set
+        minus_one,
+        power_of_two,
+        other,
+    };
+
+    struct constant_factor {
+        factor_kind kind{};
+        // the factor with the bits above the width cleared
+        uint64_t multiplier{};
+        // the shift count of a power of two
+        int shift{};
+    };
+
     //
     // virtual methods
     //
@@ -1415,6 +1433,43 @@ class machine {
     //
     // statics
     //
+
+    // zero clears, one needs no code, minus one negates and a power of two is a
+    // shift, only the other factors need a multiplication
+    [[nodiscard]] static auto classify_factor(const uint64_t bits,
+                                              const size_t width_bits)
+        -> constant_factor {
+
+        const uint64_t mask{
+            width_bits >= std::numeric_limits<uint64_t>::digits
+                ? std::numeric_limits<uint64_t>::max()
+                : (uint64_t{1} << width_bits) - 1,
+        };
+        // note: -1 makes a mask of 'width_bits' ones
+
+        const uint64_t multiplier{bits & mask};
+
+        factor_kind kind{factor_kind::other};
+
+        if (multiplier == 0) {
+            kind = factor_kind::zero;
+        } else if (multiplier == 1) {
+            kind = factor_kind::one;
+        } else if (multiplier == mask) {
+            kind = factor_kind::minus_one;
+        } else if (std::has_single_bit(multiplier)) {
+            kind = factor_kind::power_of_two;
+        }
+
+        return {
+            .kind{kind},
+            .multiplier{multiplier},
+            .shift{
+                kind == factor_kind::power_of_two ? std::countr_zero(multiplier)
+                                                  : 0,
+            },
+        };
+    }
 
     // unrolled accesses take the widest parts first so each narrower width
     // covers at most one remaining part

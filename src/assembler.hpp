@@ -470,6 +470,15 @@ class assembler {
         return trim(text.substr(0, text.find(comment_marker)));
     }
 
+    // the spaces before an instruction or a label, four for each level
+    [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
+        constexpr size_t spaces_per_level{4};
+
+        std::string text(indent * spaces_per_level, ' ');
+
+        return text;
+    }
+
     [[nodiscard]] static auto is_numeric(const std::string_view text) -> bool {
         return std::ranges::all_of(text, [](const char ch) -> bool {
             return std::isdigit(static_cast<unsigned char>(ch)) != 0;

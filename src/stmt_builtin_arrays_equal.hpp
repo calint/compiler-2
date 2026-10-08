@@ -45,30 +45,20 @@ class stmt_builtin_arrays_equal final : public expression {
 
         lhs_.assert_array_or_element("source");
 
-        lhs_delim_tk_ = tz.is_next_char_token(',');
-
-        if (lhs_delim_tk_.is_empty()) {
-            throw compiler_exception{tz,
-                                     "expected ',' then 'compare' and 'count'"};
-        }
+        lhs_delim_tk_ = tz.expect_char_token(
+            ',', "expected ',' then 'compare' and 'count'");
 
         rhs_ = {tc, {}, tz.next_token(), tz};
 
         rhs_.assert_array_or_element("compare");
 
-        rhs_delim_tk_ = tz.is_next_char_token(',');
-
-        if (rhs_delim_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ',' followed by 'count'"};
-        }
+        rhs_delim_tk_ =
+            tz.expect_char_token(',', "expected ',' followed by 'count'");
 
         count_ = {tc, tz, tc.get_type_default(), true, false, 0};
 
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after the arguments"};
-        }
+        close_paren_tk_ =
+            tz.expect_char_token(')', "expected ')' after the arguments");
     }
 
     stmt_builtin_arrays_equal() = default;

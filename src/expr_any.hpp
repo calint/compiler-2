@@ -572,14 +572,12 @@ class expr_any final : public statement {
     }
 
     auto parse_element_delimiter(tokenizer& tz, const type& tp) -> void {
-        const token delimiter_tk{tz.is_next_char_token(',')};
-
-        if (delimiter_tk.is_empty()) {
-            throw compiler_exception{
-                tz, std::format("expected ',' followed by initializer "
-                                "for type '{}'",
-                                tp.name())};
-        }
+        const token delimiter_tk{
+            tz.expect_char_token(
+                ',', std::format("expected ',' followed by initializer "
+                                 "for type '{}'",
+                                 tp.name())),
+        };
 
         var_delims_tk_.emplace_back(delimiter_tk);
     }
@@ -620,11 +618,8 @@ class expr_any final : public statement {
         // e.g. the '4' of 'i8[4]', none for 'i8[]'
         literal_count_const_ = {tc, tz, 0};
 
-        close_bracket_tk_ = tz.is_next_char_token(']');
-
-        if (close_bracket_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ']' after array size"};
-        }
+        close_bracket_tk_ =
+            tz.expect_char_token(']', "expected ']' after array size");
 
         if (not literal_count_const_.has_value()) {
             return;
@@ -703,7 +698,7 @@ class expr_any final : public statement {
         };
 
         // compile and possibly evaluate constant expression
-        const std::optional<bool> const_eval{
+        const condition_result const_eval{
             condition.compile(tc, indent, jmp_to_end, jmp_to_end, dst),
         };
 
@@ -713,8 +708,8 @@ class expr_any final : public statement {
         x.label(indent, jmp_to_end);
 
         // a constant evaluation stores its value
-        if (const_eval) {
-            x.store_boolean(src_loc_tk, indent, dst, *const_eval);
+        if (is_known(const_eval)) {
+            x.store_boolean(src_loc_tk, indent, dst, result_value(const_eval));
         }
     }
 

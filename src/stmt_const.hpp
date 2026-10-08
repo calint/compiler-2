@@ -52,20 +52,30 @@ class stmt_const final : public statement {
             return;
         }
 
-        std::string num_str{uops_.to_string()};
-        num_str += literal_tk_.text();
+        // a lone '-' prefixes a decimal number as text so that the most
+        // negative value parses, other operators are applied to the value
+        const bool is_text_prefixed{
+            not constant_parser::has_base_prefix(literal_tk_.text()) and
+                (uops_.is_empty() or uops_.is_only_negated()),
+        };
+
+        const std::string num_str{
+            std::format("{}{}", is_text_prefixed ? uops_.to_string() : "",
+                        literal_tk_.text()),
+        };
 
         const std::optional<int64_t> num{
             constant_parser::parse_constant(literal_tk_, num_str),
         };
 
         if (not num.has_value()) {
-            throw compiler_exception{
-                literal_tk_,
-                std::format("cannot parse constant '{}'", num_str)};
+            throw compiler_exception{literal_tk_,
+                                     std::format("cannot parse constant '{}{}'",
+                                                 uops_.to_string(),
+                                                 literal_tk_.text())};
         }
 
-        value_ = *num;
+        value_ = is_text_prefixed ? *num : uops_.evaluate_constant(*num);
     }
 
     stmt_const() = default;

@@ -26,14 +26,14 @@
 #include "token.hpp"
 
 // the column is 1-based, 0 when the index is at a line end or past the source
-[[nodiscard]] inline auto line_and_col_num_for_char_index(
-    const size_t at_line, const size_t char_index_in_source,
-    const std::string_view src) -> std::pair<size_t, size_t> {
+[[nodiscard]] inline auto
+column_for_char_index(const size_t char_index_in_source,
+                      const std::string_view src) -> size_t {
 
     if (char_index_in_source >= src.size() or
         src.at(char_index_in_source) == '\n') {
 
-        return {at_line, 0};
+        return 0;
     }
 
     const size_t line_end_before{
@@ -42,11 +42,11 @@
     };
 
     if (line_end_before == std::string_view::npos) {
-        return {at_line, char_index_in_source + 1};
+        return char_index_in_source + 1;
         // note: +1 because the columns start at 1
     }
 
-    return {at_line, char_index_in_source - line_end_before};
+    return char_index_in_source - line_end_before;
 }
 
 // the source files of a program, the first is the main file; the text stays
@@ -170,9 +170,12 @@ class source_locations final {
     [[nodiscard]] auto line_and_column(const token& src_loc_tk) const
         -> std::pair<size_t, size_t> {
 
-        return line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(),
-            files_->text(src_loc_tk.file_index()));
+        const size_t column{
+            column_for_char_index(src_loc_tk.start_index(),
+                                  files_->text(src_loc_tk.file_index())),
+        };
+
+        return {src_loc_tk.at_line(), column};
     }
 
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
@@ -265,7 +268,7 @@ struct ident_info {
         });
     }
 
-    void increment_offset(const int64_t n) {
+    auto increment_offset(const int64_t n) -> void {
         assert(validate_invariants());
 
         offset = add_address_offset(offset, n);
@@ -293,7 +296,7 @@ struct ident_info {
 
     [[nodiscard]] auto is_var() const -> bool { return kind == kind::var; }
 
-    void pop() {
+    auto pop() -> void {
         assert(validate_invariants());
 
         id.resize(id.rfind('.'));
@@ -304,7 +307,9 @@ struct ident_info {
         assert(validate_invariants());
     }
 
-    void push(std::string path_elem, const type* const tp, ::operand lea) {
+    auto push(std::string path_elem, const type* const tp, ::operand lea)
+        -> void {
+
         assert(validate_invariants());
 
         id += "." + path_elem;
@@ -317,7 +322,7 @@ struct ident_info {
 
     // variable name without the field path
     [[nodiscard]] auto root_id() const -> std::string_view {
-        return std::string_view{id}.substr(0, id.find('.'));
+        return root_of(id);
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
@@ -427,6 +432,13 @@ struct ident_info {
             .is_pointer{layout.is_pointer},
             .kind{kind::var},
         };
+    }
+
+    // 'p' of 'p.x.y', the variable name without the field path
+    [[nodiscard]] static auto root_of(const std::string_view path)
+        -> std::string_view {
+
+        return path.substr(0, path.find('.'));
     }
 };
 

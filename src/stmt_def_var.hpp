@@ -56,8 +56,7 @@ class stmt_def_var final : public statement {
         stmt_identifier si{tc, {}, name_tk_, tz};
         equals_tk_ = parse_initializer_equals(tz, tk.text());
 
-        assign_var_ = {tc,         tz,        std::move(si),
-                       equals_tk_, is_array_, array_count_};
+        assign_var_ = {tc, tz, std::move(si), equals_tk_};
 
         // the newly defined variable is not yet assigned in its initialization
         assert_var_not_used(name_tk_.text(),

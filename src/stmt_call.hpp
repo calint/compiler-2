@@ -135,7 +135,7 @@ class stmt_call : public expression {
 
         args_.emplace_back(
             receiver_pos_tk,
-            expr_type{std::make_shared<stmt_identifier>(std::move(receiver))});
+            expr_type{std::make_unique<stmt_identifier>(std::move(receiver))});
 
         parse_arguments(tc, tz, func);
     }
@@ -745,14 +745,6 @@ class stmt_call : public expression {
         return not param.get_type().is_builtin() and not arg.is_identifier();
     }
 
-    // 'p' of 'p.x.y'
-    [[nodiscard]] static auto named_variable(const expr_any& arg)
-        -> std::string_view {
-
-        const std::string_view path{arg.identifier()};
-        return path.substr(0, path.find('.'));
-    }
-
     // a value without storage, e.g. a literal or an expression, an array is
     // only passed by name
     [[nodiscard]] static auto needs_temporary(const toc& tc,
@@ -791,7 +783,9 @@ class stmt_call : public expression {
 
         assert(lhs_range and rhs_range);
 
-        if (named_variable(lhs) != named_variable(rhs)) {
+        if (ident_info::root_of(lhs.identifier()) !=
+            ident_info::root_of(rhs.identifier())) {
+
             return false;
         }
 
@@ -1535,11 +1529,8 @@ class stmt_call : public expression {
         }
 
         // e.g. 'f(a, b' lacks it
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after arguments"};
-        }
+        close_paren_tk_ =
+            tz.expect_char_token(')', "expected ')' after arguments");
 
         for (size_t i{}; i < args_.size(); ++i) {
             assert_argument_usable(tc, i, args_.at(i), params.at(i));

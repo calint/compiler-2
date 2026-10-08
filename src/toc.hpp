@@ -300,17 +300,6 @@ class ident_path final {
 
     [[nodiscard]] auto str() const -> const std::string& { return id_; }
 
-    //
-    // statics
-    //
-
-    // the variable name without the field path
-    [[nodiscard]] static auto root_of(const std::string_view id)
-        -> std::string_view {
-
-        return id.substr(0, id.find('.'));
-    }
-
   private:
     auto refresh_path() -> void {
         path_.clear();
@@ -597,6 +586,14 @@ class constant_parser final {
     //
     // statics
     //
+
+    // e.g. '0x1f' and '0b101', after the optional sign of a number
+    [[nodiscard]] static auto has_base_prefix(const std::string_view str)
+        -> bool {
+
+        return str.starts_with("0x") or str.starts_with("0X") or
+               str.starts_with("0b") or str.starts_with("0B");
+    }
 
     // the tokenizer keeps the quotes in the text of a character literal
     [[nodiscard]] static auto is_character_literal(const std::string_view str)
@@ -1258,6 +1255,10 @@ class storage_layout final {
         max_vars_size_bytes_ = 0;
     }
 
+    [[nodiscard]] auto vars_capacity_bytes() const -> size_t {
+        return vars_capacity_bytes_;
+    }
+
   private:
     // the first variable after the dats starts past the entry gap
     auto apply_entry_gap(const token& src_loc_tk) -> void {
@@ -1531,12 +1532,12 @@ class ident_resolver final {
         }
 
         // a boolean constant
-        if (id.base() == "true") {
+        if (id.base() == reserved_names::true_value) {
             return ident_info::make_const(ident, id.str(),
                                           builtins_.get().boolean(), 1);
         }
 
-        if (id.base() == "false") {
+        if (id.base() == reserved_names::false_value) {
             return ident_info::make_const(ident, id.str(),
                                           builtins_.get().boolean(), 0);
         }
@@ -2209,7 +2210,6 @@ class toc final {
         scopes_.set_max_depth(0);
     }
 
-    // empty outside of a function, e.g. in the initializer of a global variable
     // the scopes inside each other, the calls inlined in each other and their
     // blocks
     [[nodiscard]] auto frame_count() const -> size_t {
@@ -2222,6 +2222,7 @@ class toc final {
         return generics_;
     }
 
+    // empty outside of a function, e.g. in the initializer of a global variable
     [[nodiscard]] auto get_call_path() const -> std::string_view {
         if (not is_in_func()) {
             return {};
@@ -2359,7 +2360,7 @@ class toc final {
             return false;
         }
 
-        std::string_view id_base{ident_path::root_of(st.identifier())};
+        std::string_view id_base{ident_info::root_of(st.identifier())};
 
         for (const frame& frm : scopes_.frames() | std::views::reverse) {
             if (frm.has_var(id_base)) {
@@ -2385,7 +2386,7 @@ class toc final {
                 return false;
             }
 
-            id_base = ident_path::root_of(alias.to);
+            id_base = ident_info::root_of(alias.to);
         }
 
         // a constant is declared by no frame, e.g. in the initializer of a
@@ -2596,6 +2597,10 @@ class toc final {
             .dat_var_padding_bytes{data_.entry_gap()},
             .uninstantiated_generics{generics_.uninstantiated_func_names()},
         };
+    }
+
+    [[nodiscard]] auto vars_capacity_bytes() const -> size_t {
+        return storage_.vars_capacity_bytes();
     }
 
     //

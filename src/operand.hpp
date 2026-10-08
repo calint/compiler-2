@@ -173,7 +173,7 @@ class operand final {
         return immediate_;
     }
 
-    void increment_offset(const int64_t offset) {
+    auto increment_offset(const int64_t offset) -> void {
         assert(is_memory());
 
         displacement_ = add_address_offset(displacement_, offset);
@@ -208,7 +208,7 @@ class operand final {
 
     [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
 
-    void set_allocation_register(const std::string_view name) {
+    auto set_allocation_register(const std::string_view name) -> void {
         assert(is_register());
 
         allocation_register_ = name;

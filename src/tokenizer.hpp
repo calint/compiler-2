@@ -88,6 +88,21 @@ class tokenizer final {
         return token::position(file_ix_, char_ix_, at_line_);
     }
 
+    // the token of the character 'ch' when it is next, otherwise an error at
+    // the cursor
+    [[nodiscard]] auto expect_char_token(const char ch,
+                                         const std::string_view message)
+        -> token {
+
+        const token tk{is_next_char_token(ch)};
+
+        if (tk.is_empty()) {
+            throw compiler_exception{*this, std::string{message}};
+        }
+
+        return tk;
+    }
+
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
     [[nodiscard]] auto is_eos() const -> bool {

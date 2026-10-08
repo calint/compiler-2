@@ -220,8 +220,7 @@ class stmt_block final : public statement {
             not equals_tk.is_empty()) {
 
             return std::make_unique<stmt_assign_var>(tc, tz, std::move(si),
-                                                     equals_tk, si.is_array(),
-                                                     si.array_count());
+                                                     equals_tk);
         }
 
         // e.g. 'show(x)'

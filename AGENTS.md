@@ -10,8 +10,8 @@ Working agreements for AI sessions in this repository.
 
 ## This file
 
-- Read and follow it every session.
-- Record new preferences here, not in memory.
+- Read and follow it every session; record new preferences here, not in
+  memory.
 - Keep it human-readable: headings, short bullets, blank lines between
   sections.
 
@@ -58,21 +58,20 @@ Working agreements for AI sessions in this repository.
   it is wrong.
 - Lowercase, no trailing punctuation, code names in single quotes.
 - One short line, only what code cannot show; never restate code or address the
-  reviewer.
-- Non-obvious new code: brief rationale (why, not what).
+  reviewer. Non-obvious new code: brief rationale (why, not what).
 - Marker: `todo:`.
 - Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: a `note:`
   line below naming offset and reason, e.g. `// note: +1 because the text
-  starts after the opening quote`.
-- Multiline `note:` blocks get a blank line above and below.
+  starts after the opening quote`. Multiline `note:` blocks get a blank line
+  above and below.
 
 ### Names
 
 - Bytes: role-prefixed (`cur_`, `size_bytes`); elements: `count`.
-- Keep `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs`, `tc`.
+- Keep `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs`, `tc` and an
+  interface's paired vocabulary.
 - One-letter names only in tight loops (at most three loop locals).
 - Same parameter names across declarations, definitions and overrides.
-- Keep an interface's paired vocabulary.
 - Public fields have no trailing underscore; private and protected members do.
 
 ### Inserted code
@@ -85,8 +84,8 @@ Working agreements for AI sessions in this repository.
 - No enum switches (`-Wswitch-default` conflicts with
   `-Wcovered-switch-default`).
 - `std::in_range` needs `int`, not `char`.
-- Parameters shadowing members get an `_in` suffix (`-Wshadow-field`).
-- No locals named like enclosing class fields (`-Wshadow`).
+- Parameters shadowing members get an `_in` suffix (`-Wshadow-field`); no
+  locals named like enclosing class fields (`-Wshadow`).
 - No `{}` on default-constructed class members (`std::vector`, `std::bitset`);
   scalars keep `{}`.
 - Overrides keep the base's visibility.
@@ -114,15 +113,17 @@ Working agreements for AI sessions in this repository.
 
 - Enough: `qa/coverage/test-coverage.sh --target=x86` (script alias of
   `x86_64`; the compiler takes `x86_64`) and `--target=rv32i-fpga`.
-- After every change to `roome/src/main.baz`, run `roome/qa/test.sh` and check
-  nothing broke. No formatter or linter run needed there (they act on compiler
-  source only).
+- New functionality and bug fixes get a test that fails without the change,
+  when possible.
 - New error test: check each `line:column` in its `.out` points at the token
   where the error is detected (print the source line with a caret), not only
   that the message reads well.
 - `UPDATE=1 qa/coverage/test-coverage.sh --target=x86 run` writes expected
   `.out` files instead of comparing; run for x86 and rv32i, then review the
   diff.
+- After every change to `roome/src/main.baz`, run `roome/qa/test.sh` and check
+  nothing broke. No formatter or linter run needed there (they act on compiler
+  source only).
 
 ## Process
 
@@ -133,10 +134,10 @@ Working agreements for AI sessions in this repository.
 - Large headers are fine: classes `toc` uses stay in `toc.hpp`; do not split
   for size.
 - One consistency topic at a time across all sources.
-- Todo items one by one, each with a focused check.
-- Resolved or discarded `etc/todo.txt` items move to the top of
-  `etc/todo-resolved.txt`, below its legend, newest first (`[x]` with a
-  `=> done (date): ...` note); never delete them.
+- Todo items one by one, each with a focused check. Resolved or discarded
+  `etc/todo.txt` items move to the top of `etc/todo-resolved.txt`, below its
+  legend, newest first (`[x]` with a `=> done (date): ...` note); never delete
+  them.
 - Done means: built, focused tests run, linter clean, formatter applied (keep
   its output).
 - Never commit; the user does. Only when told to: message is always `.` (no

@@ -23,10 +23,8 @@
 //       implemented in 'decouple_impl.hpp', those headers include this one
 //       through 'expr_any.hpp', so their definitions are incomplete here
 class expr_type final : public statement {
-    std::shared_ptr<stmt_identifier> stmt_ident_;
-    std::shared_ptr<stmt_call> stmt_call_;
-    // note: 'shared_ptr' because 'unique_ptr' poses compilation issues
-    //       regarding circular references
+    std::unique_ptr<stmt_identifier> stmt_ident_;
+    std::unique_ptr<stmt_call> stmt_call_;
 
     token open_brace_tk_;
     std::vector<std::unique_ptr<expr_any>> exprs_;
@@ -53,15 +51,22 @@ class expr_type final : public statement {
               const bool is_array_destination);
 
     // out-of-line: a method receiver that has already been parsed
-    explicit expr_type(std::shared_ptr<stmt_identifier> receiver);
+    explicit expr_type(std::unique_ptr<stmt_identifier> receiver);
 
-    expr_type() = default;
+    // out-of-line: a 'unique_ptr' of a class that is incomplete here needs
+    // the special members where 'stmt_identifier' and 'stmt_call' are complete
+    expr_type();
+
+    expr_type(expr_type&&) noexcept;
+
+    expr_type(const expr_type&) = delete;
+    auto operator=(const expr_type&) -> expr_type& = delete;
+
+    ~expr_type() override;
 
     //
     // overridden methods
     //
-
-    // note: copy and assignment constructor will not compile if used
 
     // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
     auto source_to(std::ostream& os) const -> void override;
@@ -117,6 +122,8 @@ class expr_type final : public statement {
 
         assert_items_not_reading(dst, 0);
     }
+
+    auto operator=(expr_type&&) noexcept -> expr_type&;
 
     //
     // statics
@@ -198,14 +205,12 @@ class expr_type final : public statement {
     auto parse_field_delimiter(tokenizer& tz, const type& tp,
                                const type_field& next) -> void {
 
-        const token delimiter_tk{tz.is_next_char_token(',')};
-
-        if (delimiter_tk.is_empty()) {
-            throw compiler_exception{
-                tz, std::format("expected ',' followed by a value for field "
-                                "'{}' in type '{}'",
-                                next.name, tp.name())};
-        }
+        const token delimiter_tk{
+            tz.expect_char_token(
+                ',', std::format("expected ',' followed by a value for field "
+                                 "'{}' in type '{}'",
+                                 next.name, tp.name())),
+        };
 
         expr_delims_tk_.emplace_back(delimiter_tk);
     }

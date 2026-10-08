@@ -1,0 +1,24 @@
+# unary operators before hex and binary constants
+
+func assert(expr bool) { if not expr exit(1) }
+
+let neg_hex = -0x5
+let not_hex = ~0x5
+let neg_bin = -0b11
+let not_bin = ~0B11
+let min = -9223372036854775808
+let dec = -~3
+let size = -neg_bin
+
+type two { a[size], b }
+
+func main() {
+    assert(neg_hex == -5)
+    assert(not_hex == -6)
+    assert(neg_bin == -3)
+    assert(not_bin == -4)
+    assert(min < 0)
+    assert(dec == 4)
+    var t = two
+    assert(array_length(t.a) == 3)
+}

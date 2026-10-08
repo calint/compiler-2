@@ -2809,3 +2809,6 @@ SRC=917 && COMPERR
 
 # an included file without content adds nothing
 SRC=918 && EXP=7 && RUN
+
+# a unary operator before a hex or binary constant
+SRC=919 && EXP=0 && RUN

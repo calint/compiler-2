@@ -29,9 +29,6 @@
 #include "token.hpp"
 #include "type.hpp"
 
-class token;
-class type;
-
 class machine_x86_64 final : public machine {
     using op = assembler_x86_64::op;
 
@@ -1974,44 +1971,36 @@ class machine_x86_64 final : public machine {
             return false;
         }
 
-        const size_t width_bits{product.type_ref().size_bits()};
-
-        const uint64_t mask{
-            width_bits >= std::numeric_limits<uint64_t>::digits
-                ? std::numeric_limits<uint64_t>::max()
-                : (uint64_t{1} << width_bits) - 1,
+        const constant_factor factor_info{
+            classify_factor(*bits, product.type_ref().size_bits()),
         };
-        // note: -1 makes a mask of 'width_bits' ones
 
-        const uint64_t multiplier{*bits & mask};
+        if (factor_info.kind == factor_kind::zero) {
+            // 'xor' is the shorter idiom but cannot target memory
+            if (product.is_register()) {
+                xor_op(src_loc_tk, indent, product, product);
+            } else {
+                mov(src_loc_tk, indent, product, immediate(0));
+            }
 
-        // 'xor' is the shorter idiom but cannot target memory
-        if (multiplier == 0 and product.is_register()) {
-            xor_op(src_loc_tk, indent, product, product);
             return true;
         }
 
-        if (multiplier == 0) {
-            mov(src_loc_tk, indent, product, immediate(0));
+        if (factor_info.kind == factor_kind::one) {
             return true;
         }
 
-        if (multiplier == 1) {
-            return true;
-        }
-
-        // all low bits set is multiplication by minus one at this width
-        if (multiplier == mask) {
+        if (factor_info.kind == factor_kind::minus_one) {
             neg(src_loc_tk, indent, product);
             return true;
         }
 
-        if (not std::has_single_bit(multiplier)) {
+        if (factor_info.kind == factor_kind::other) {
             return false;
         }
 
         emit_op(src_loc_tk, indent, op::sal, product,
-                immediate(std::countr_zero(multiplier)));
+                immediate(factor_info.shift));
 
         return true;
     }

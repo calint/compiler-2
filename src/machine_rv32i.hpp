@@ -648,7 +648,8 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
 
-        return std::has_single_bit(size_bytes) and size_bytes <= UINT32_MAX;
+        return std::has_single_bit(size_bytes) and
+               size_bytes <= std::numeric_limits<uint32_t>::max();
     }
 
     auto check_bounds(const token& src_loc_tk, const size_t indent,
@@ -3293,39 +3294,35 @@ class machine_rv32i : public machine {
 
         const size_t bits{product.type_ref().size_bits()};
 
-        const uint32_t mask{
-            std::numeric_limits<uint32_t>::max() >> (register_bits_ - bits),
+        const constant_factor factor_info{
+            classify_factor(static_cast<uint32_t>(constant), bits),
         };
 
-        const uint32_t multiplier{static_cast<uint32_t>(constant) & mask};
-
-        // constant zero and one need no multiplication machinery
-        if (multiplier == 0) {
+        if (factor_info.kind == factor_kind::zero) {
             store_constant_result(src_loc_tk, indent, product, 0);
             return;
         }
 
-        if (multiplier == 1) {
+        if (factor_info.kind == factor_kind::one) {
             return;
         }
 
-        // all low bits set is multiplication by minus one at this width
-        if (multiplier == mask) {
+        if (factor_info.kind == factor_kind::minus_one) {
             unary(src_loc_tk, indent, arithmetic_operator::negate, product);
             return;
         }
 
-        // a power of two requires only a shift
-        if (std::has_single_bit(multiplier)) {
+        if (factor_info.kind == factor_kind::power_of_two) {
             shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
-                  operand::imm(std::format("{}", std::countr_zero(multiplier)),
+                  operand::imm(std::format("{}", factor_info.shift),
                                default_type()));
 
             return;
         }
 
-        multiply_by_shifts_and_adds(src_loc_tk, indent, product, factor,
-                                    multiplier, bits);
+        multiply_by_shifts_and_adds(
+            src_loc_tk, indent, product, factor,
+            static_cast<uint32_t>(factor_info.multiplier), bits);
     }
 
     // the remaining constant needs shifts and adds; keep the original value
@@ -4858,7 +4855,7 @@ class machine_rv32i : public machine {
 
         // an element size beyond the address range cannot be allocated
         assert(address.index_register().empty() or
-               address.scale() <= UINT32_MAX);
+               address.scale() <= std::numeric_limits<uint32_t>::max());
 
         constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
 

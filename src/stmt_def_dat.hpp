@@ -174,11 +174,8 @@ class stmt_def_dat final : public statement {
                 "expected array size to be greater than 0"};
         }
 
-        close_bracket_tk_ = tz.is_next_char_token(']');
-
-        if (close_bracket_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ']' after array size"};
-        }
+        close_bracket_tk_ =
+            tz.expect_char_token(']', "expected ']' after array size");
 
         return static_cast<size_t>(array_count_const_.value());
     }
@@ -189,11 +186,8 @@ class stmt_def_dat final : public statement {
 
         elem el{parse_builtin(tc, tz, get_type())};
 
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after the argument"};
-        }
+        close_paren_tk_ =
+            tz.expect_char_token(')', "expected ')' after the argument");
 
         return el;
     }
@@ -277,7 +271,11 @@ class stmt_def_dat final : public statement {
         }
 
         // e.g. 'dat limit = 10' or 'dat enabled = true'
-        const bool is_bool{tk.is_text("true") or tk.is_text("false")};
+        const bool is_bool{
+            tk.is_text(reserved_names::true_value) or
+                tk.is_text(reserved_names::false_value),
+        };
+
         set_type(is_bool ? tc.get_type_bool() : tc.get_type_default());
 
         // the constant may start with unary operations, e.g. '-1'
@@ -494,14 +492,9 @@ class stmt_def_dat final : public statement {
 
         elem el{make_empty_array(src_loc_tk, array_count)};
 
-        el.open_brace_tk = tz.is_next_char_token('{');
-
-        if (el.open_brace_tk.is_empty()) {
-            throw compiler_exception{
-                tz,
-                std::format("expected '{{' to open array initializer for '{}'",
-                            tp.name())};
-        }
+        el.open_brace_tk = tz.expect_char_token(
+            '{', std::format("expected '{{' to open array initializer for '{}'",
+                             tp.name()));
 
         el.close_brace_tk = tz.is_next_char_token('}');
 
@@ -555,11 +548,11 @@ class stmt_def_dat final : public statement {
     [[nodiscard]] static auto parse_bool_value(const token& tk, const type& tp)
         -> int64_t {
 
-        if (tk.is_text("true")) {
+        if (tk.is_text(reserved_names::true_value)) {
             return 1;
         }
 
-        if (tk.is_text("false")) {
+        if (tk.is_text(reserved_names::false_value)) {
             return 0;
         }
 
@@ -654,15 +647,13 @@ class stmt_def_dat final : public statement {
                                       const type_field& next, elem& el)
         -> void {
 
-        const token tk{tz.is_next_char_token(',')};
-
-        if (tk.is_empty()) {
-            throw compiler_exception{
-                tz, std::format("expected ',' followed by an initializer "
-                                "for field '{}' of type '{}{}' in type '{}'",
-                                next.name, next.type().name(),
-                                next.is_array ? "[]" : "", tp.name())};
-        }
+        const token tk{
+            tz.expect_char_token(
+                ',', std::format("expected ',' followed by an initializer "
+                                 "for field '{}' of type '{}{}' in type '{}'",
+                                 next.name, next.type().name(),
+                                 next.is_array ? "[]" : "", tp.name())),
+        };
 
         el.elem_delims_tk.emplace_back(tk);
     }
@@ -674,15 +665,11 @@ class stmt_def_dat final : public statement {
 
         elem el{};
         el.src_loc_tk = tz.cur_position_token();
-        // e.g. the '{1, 2}' of 'dat p = point{1, 2}'
-        el.open_brace_tk = tz.is_next_char_token('{');
 
-        if (el.open_brace_tk.is_empty()) {
-            throw compiler_exception{
-                tz,
-                std::format("expected '{{' to open type initializer for '{}'",
-                            tp.name())};
-        }
+        // e.g. the '{1, 2}' of 'dat p = point{1, 2}'
+        el.open_brace_tk = tz.expect_char_token(
+            '{', std::format("expected '{{' to open type initializer for '{}'",
+                             tp.name()));
 
         const std::span<const type_field> flds{tp.fields()};
 

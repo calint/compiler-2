@@ -95,21 +95,7 @@ class token final {
     [[nodiscard]] auto start_index() const -> size_t { return start_ix_; }
 
     [[nodiscard]] auto string_size_bytes() const -> size_t {
-        size_t len{};
-        const std::string joined{string_text()};
-        const std::string_view chars{joined};
-        for (size_t i{}; i < chars.size(); ++i, ++len) {
-            if (chars.at(i) != '\\' or i + 1 >= chars.size()) {
-                // note: +1 because a backslash needs a character after it
-
-                continue;
-            }
-
-            // skip \xHH or a 2-character escape sequence
-            i += (chars.at(i + 1) == 'x' and i + 3 < chars.size()) ? 3 : 1;
-        }
-
-        return len;
+        return decode_string(string_text()).size();
     }
 
     // string text with each backslash before a line end removed together

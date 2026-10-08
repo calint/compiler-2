@@ -59,7 +59,7 @@ class stmt_if_branch final : public statement {
     compile_branch(toc& tc, const size_t indent,
                    const std::string_view jmp_to_if_false_label,
                    const std::string_view jmp_to_after_code_label) const
-        -> std::optional<bool> {
+        -> condition_result {
 
         const std::string if_label{begin_label(tc)};
 
@@ -73,13 +73,13 @@ class stmt_if_branch final : public statement {
 
         x.label(indent, if_label);
 
-        const std::optional<bool> const_eval{
+        const condition_result const_eval{
             condition_.compile(tc, indent, jmp_to_if_false_label,
                                jmp_to_if_true_label, {}),
         };
 
-        if (const_eval == false) {
-            return false;
+        if (const_eval == condition_result::always_false) {
+            return const_eval;
         }
 
         // the label where to jump if evaluation of the condition is true
@@ -87,8 +87,8 @@ class stmt_if_branch final : public statement {
         // the code of the branch
         code_.compile(tc, indent, ident_info::make_empty());
 
-        if (const_eval == true) {
-            return true;
+        if (const_eval == condition_result::always_true) {
+            return const_eval;
         }
 
         // after the branch code executes, jump to the end of the
@@ -99,6 +99,6 @@ class stmt_if_branch final : public statement {
             x.branch(indent, jmp_to_after_code_label);
         }
 
-        return std::nullopt;
+        return condition_result::unknown;
     }
 };

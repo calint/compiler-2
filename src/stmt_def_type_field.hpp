@@ -55,11 +55,8 @@ class stmt_def_type_field final : public statement {
 
         array_count_ = static_cast<size_t>(array_count_const_.value());
 
-        close_bracket_tk_ = tz.is_next_char_token(']');
-
-        if (close_bracket_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ']' after array size"};
-        }
+        close_bracket_tk_ =
+            tz.expect_char_token(']', "expected ']' after array size");
     }
 
     stmt_def_type_field() = default;

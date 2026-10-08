@@ -27,10 +27,11 @@ class stmt_assign_var final : public statement {
 
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si,
-                    const token equals_tk, const bool is_array,
-                    const size_t array_count)
+                    const token equals_tk)
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
+
+        const size_t array_count{stmt_ident_.array_count()};
 
         const ident_info dst_info{tc.make_ident_info(stmt_ident_)};
 
@@ -41,7 +42,9 @@ class stmt_assign_var final : public statement {
 
         // the value is parsed as the type of the destination, e.g. 'p1 = p2' or
         // 'a = {1, 2}' or 'x = y + 1'
-        expr_ = {tc, tz, dst_info.type_ref(), false, is_array, array_count};
+        expr_ = {
+            tc,         tz, dst_info.type_ref(), false, stmt_ident_.is_array(),
+            array_count};
 
         if (array_count == 0) {
             array_count_ = expr_.array_count();

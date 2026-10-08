@@ -534,8 +534,7 @@ class assembler_rv32i final : public assembler {
         std::vector<line> second{capture(emit_second)};
 
         std::vector<line>& kept{
-            total_size_bytes(first) <= total_size_bytes(second) ? first
-                                                                : second,
+            code_size_of(first) <= code_size_of(second) ? first : second,
         };
 
         append(std::move(kept));
@@ -967,12 +966,6 @@ class assembler_rv32i final : public assembler {
     //
     // statics
     //
-
-    [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
-        std::string text;
-        text.resize(indent * 4, ' ');
-        return text;
-    }
 
     [[nodiscard]] static auto inverse(const std::string_view mnemonic)
         -> std::string_view {
@@ -2377,17 +2370,6 @@ class assembler_rv32i final : public assembler {
 
         // the backend refers to labels it defines
         std::unreachable();
-    }
-
-    [[nodiscard]] static auto total_size_bytes(const std::vector<line>& lines)
-        -> size_t {
-
-        size_t size_bytes{};
-        for (const line& l : lines) {
-            size_bytes += l.code_size;
-        }
-
-        return size_bytes;
     }
 
     static auto write_data(std::ostream& os, const data_values& data) -> void {

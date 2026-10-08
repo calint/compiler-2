@@ -291,14 +291,12 @@ class stmt_def_type final : public statement {
                 break;
             }
 
-            const token delimiter_tk{tz.is_next_char_token(',')};
-
-            if (delimiter_tk.is_empty()) {
-                throw compiler_exception{
-                    tz, std::format("expected ',' followed by another field "
-                                    "in type '{}'",
-                                    name_tk_.text())};
-            }
+            const token delimiter_tk{
+                tz.expect_char_token(
+                    ',', std::format("expected ',' followed by another field "
+                                     "in type '{}'",
+                                     name_tk_.text())),
+            };
 
             field_delims_tk_.emplace_back(delimiter_tk);
 

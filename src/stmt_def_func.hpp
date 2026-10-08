@@ -147,13 +147,13 @@ class stmt_def_func final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+
         if (generic_.mode == generic_part::kind::definition) {
-            statement::source_to(os);
             std::print(os, "{}", generic_.text);
             return;
         }
 
-        statement::source_to(os);
         source_signature_to(os);
         code_.source_to(os);
     }
@@ -657,13 +657,11 @@ class stmt_def_func final : public statement {
     }
 
     auto parse_param_delimiter(tokenizer& tz) -> void {
-        const token delimiter_tk{tz.is_next_char_token(',')};
-
-        if (delimiter_tk.is_empty()) {
-            throw compiler_exception{
-                tz, std::format("expected ',' or ')' after parameter '{}'",
-                                params_.back().tok().text())};
-        }
+        const token delimiter_tk{
+            tz.expect_char_token(
+                ',', std::format("expected ',' or ')' after parameter '{}'",
+                                 params_.back().tok().text())),
+        };
 
         param_delims_tk_.emplace_back(delimiter_tk);
     }

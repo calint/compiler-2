@@ -37,11 +37,8 @@ class stmt_builtin_array_length final : public expression {
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
 
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after the argument"};
-        }
+        close_paren_tk_ =
+            tz.expect_char_token(')', "expected ')' after the argument");
     }
 
     stmt_builtin_array_length() = default;

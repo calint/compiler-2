@@ -44,11 +44,8 @@ class stmt_builtin_convert final : public expression {
             };
         }
 
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        if (close_paren_tk_.is_empty()) {
-            throw compiler_exception{tz, "expected ')' after the argument"};
-        }
+        close_paren_tk_ =
+            tz.expect_char_token(')', "expected ')' after the argument");
 
         // a folded literal takes every constant path, e.g. inline arguments
         if (arg_.is_expression()) {

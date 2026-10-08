@@ -305,6 +305,75 @@ static auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
     return call;
 }
 
+// a call, or an identifier that is not the receiver of a method
+struct call_or_identifier {
+    std::unique_ptr<stmt_call> call;
+    std::unique_ptr<stmt_identifier> identifier;
+};
+
+// parses what follows the token 'tk' as a call of a function, a generic
+// function, a constructor or a method, otherwise as an identifier, 'uops' go to
+// the call and 'expected_type' is the type the call is assigned to or null
+static auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
+                                     unary_ops uops,
+                                     const type* const expected_type)
+    -> call_or_identifier {
+
+    // e.g.  foo(...)
+    if (const token open_paren_tk{tz.is_next_char_token('(')};
+        not open_paren_tk.is_empty()) {
+
+        return {
+            .call{
+                std::make_unique<stmt_call>(tc, std::move(uops), tk,
+                                            open_paren_tk, tz, expected_type),
+            },
+            .identifier{},
+        };
+    }
+
+    // e.g. 'show<name>(x)', the call reads the type arguments
+    if (is_generic_call(tc, tk.text(), tz)) {
+        return {
+            .call{
+                std::make_unique<stmt_call>(tc, std::move(uops), tk, token{},
+                                            tz, expected_type),
+            },
+            .identifier{},
+        };
+    }
+
+    assert_no_type_args_for_plain_func(tc, tk, tz);
+
+    if (is_constructor_call(tc, tk, tz)) {
+        return {
+            .call{
+                std::make_unique<stmt_call>(tc, std::move(uops), tk, tz),
+            },
+            .identifier{},
+        };
+    }
+
+    // e.g. 0x80, rax, identifiers, constants
+    stmt_identifier si{tc, {}, tk, tz};
+
+    // e.g. '-lst.size()' negates the result, not the receiver
+    if (si.is_method_receiver()) {
+        return {
+            .call{
+                std::make_unique<stmt_call>(tc, std::move(uops), std::move(si),
+                                            tz, expected_type),
+            },
+            .identifier{},
+        };
+    }
+
+    return {
+        .call{},
+        .identifier{std::make_unique<stmt_identifier>(std::move(si))},
+    };
+}
+
 // called from 'expr_arith' to solve circular dependencies with function
 // calls
 auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
@@ -351,38 +420,17 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
                                                       tz);
     }
 
-    if (const token open_paren_tk{tz.is_next_char_token('(')};
-        not open_paren_tk.is_empty()) {
+    call_or_identifier parsed{
+        parse_call_or_identifier(tc, tz, tk, uops, nullptr),
+    };
 
-        // e.g.  foo(...)
-        return value_call(tc, std::make_unique<stmt_call>(
-                                  tc, std::move(uops), tk, open_paren_tk, tz));
+    if (parsed.call) {
+        return value_call(tc, std::move(parsed.call));
     }
 
-    // e.g. 'show<name>(x)', the call reads the type arguments
-    if (is_generic_call(tc, tk.text(), tz)) {
-        return value_call(tc, std::make_unique<stmt_call>(tc, std::move(uops),
-                                                          tk, token{}, tz));
-    }
+    parsed.identifier->set_unary_ops(std::move(uops));
 
-    assert_no_type_args_for_plain_func(tc, tk, tz);
-
-    if (is_constructor_call(tc, tk, tz)) {
-        return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz);
-    }
-
-    // e.g. 0x80, rax, identifiers, constants
-    stmt_identifier si{tc, {}, tk, tz};
-
-    // e.g. '-lst.size()' negates the result, not the receiver
-    if (si.is_method_receiver()) {
-        return value_call(tc, std::make_unique<stmt_call>(tc, std::move(uops),
-                                                          std::move(si), tz));
-    }
-
-    si.set_unary_ops(std::move(uops));
-
-    return std::make_unique<stmt_identifier>(std::move(si));
+    return std::move(parsed.identifier);
 }
 
 // declared in 'expr_type.hpp'
@@ -437,13 +485,9 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
 auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void {
     // e.g. obj.pos = {x, y}
-    open_brace_tk_ = tz.is_next_char_token('{');
-
-    if (open_brace_tk_.is_empty()) {
-        throw compiler_exception{
-            tz, std::format("expected '{{' to begin a value of type '{}'",
-                            tp.name())};
-    }
+    open_brace_tk_ = tz.expect_char_token(
+        '{',
+        std::format("expected '{{' to begin a value of type '{}'", tp.name()));
 
     const std::span<const type_field> flds{tp.fields()};
 
@@ -475,8 +519,15 @@ auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void {
 }
 
 // declared in 'expr_type.hpp'
+// the special members need the complete 'stmt_identifier' and 'stmt_call'
+expr_type::expr_type() = default;
+expr_type::expr_type(expr_type&&) noexcept = default;
+auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
+expr_type::~expr_type() = default;
+
+// declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
-expr_type::expr_type(std::shared_ptr<stmt_identifier> receiver)
+expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
     : statement{receiver->first_token()}, stmt_ident_{std::move(receiver)} {
 
     set_type(stmt_ident_->get_type());
@@ -488,46 +539,19 @@ expr_type::expr_type(std::shared_ptr<stmt_identifier> receiver)
 auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
-    if (const token open_paren_tk{tz.is_next_char_token('(')};
-        not open_paren_tk.is_empty()) {
+    call_or_identifier parsed{
+        parse_call_or_identifier(tc, tz, tok(), unary_ops{}, &tp),
+    };
 
-        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(),
-                                                 open_paren_tk, tz, &tp);
-
-        assert_call_type(tp);
-
-        return;
-    }
-
-    if (is_generic_call(tc, tok().text(), tz)) {
-        stmt_call_ =
-            std::make_shared<stmt_call>(tc, unary_ops{}, tok(), token{}, tz);
+    if (parsed.call) {
+        stmt_call_ = std::move(parsed.call);
 
         assert_call_type(tp);
 
         return;
     }
 
-    if (is_constructor_call(tc, tok(), tz)) {
-        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, tok(), tz);
-
-        assert_call_type(tp);
-
-        return;
-    }
-
-    stmt_identifier si{tc, unary_ops{}, tok(), tz};
-
-    if (si.is_method_receiver()) {
-        stmt_call_ = std::make_shared<stmt_call>(tc, unary_ops{}, std::move(si),
-                                                 tz, &tp);
-
-        assert_call_type(tp);
-
-        return;
-    }
-
-    stmt_ident_ = std::make_shared<stmt_identifier>(std::move(si));
+    stmt_ident_ = std::move(parsed.identifier);
 
     const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
 

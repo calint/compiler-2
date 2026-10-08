@@ -161,12 +161,10 @@ struct generic_arguments {
                 return args;
             }
 
-            const token delim_tk{tz.is_next_char_token(',')};
-
-            if (delim_tk.is_empty()) {
-                throw compiler_exception{
-                    tz, "expected ',' or '>' after generic argument"};
-            }
+            const token delim_tk{
+                tz.expect_char_token(
+                    ',', "expected ',' or '>' after generic argument"),
+            };
 
             args.list_tks.emplace_back(delim_tk);
         }
