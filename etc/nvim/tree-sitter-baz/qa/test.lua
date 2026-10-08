@@ -1,5 +1,5 @@
 -- tests of the baz language server (plugin/baz-lsp.lua): references,
--- definition, rename and document symbols on the files in fixtures/
+-- definition, rename and document symbols on the files in src/
 --
 -- a position is written as a snippet of a fixture line with '@' before the
 -- character, e.g. "func mut point.@move(dx" is the 'm' of 'move'; the snippet
@@ -8,7 +8,7 @@
 -- run through test.sh
 
 local test_dir = vim.fs.dirname(debug.getinfo(1, "S").source:sub(2))
-local fixtures = test_dir .. "/fixtures"
+local src = vim.fs.normalize(vim.fn.fnamemodify(test_dir .. "/src", ":p"))
 
 dofile(test_dir .. "/../plugin/baz-lsp.lua")
 
@@ -22,7 +22,7 @@ local function buffer(file)
   if buffers[file] then
     return buffers[file]
   end
-  vim.cmd("edit " .. vim.fn.fnameescape(fixtures .. "/" .. file))
+  vim.cmd("edit " .. vim.fn.fnameescape(src .. "/" .. file))
   local bufnr = vim.api.nvim_get_current_buf()
   vim.bo[bufnr].filetype = "baz"
   vim.wait(5000, function()
@@ -56,7 +56,7 @@ end
 
 -- "file: snippet" or "snippet" in main.baz
 local function split_spec(spec)
-  local file, snippet = spec:match("^([%w_]+%.baz): (.*)$")
+  local file, snippet = spec:match("^([%w_/]+%.baz): (.*)$")
   if file then
     return file, snippet
   end
@@ -80,7 +80,7 @@ end
 local function location_keys(locations)
   local keys = {}
   for _, location in ipairs(locations or {}) do
-    local file = vim.fs.basename(vim.uri_to_fname(location.uri))
+    local file = vim.fs.normalize(vim.uri_to_fname(location.uri)):sub(#src + 2)
     keys[#keys + 1] = position_key(file, location.range.start)
   end
   table.sort(keys)
@@ -157,11 +157,12 @@ local function rename(at, new_name, expect)
     check(name, false, "  failed: " .. err.message)
     return
   end
-  local edits = result.changes[vim.uri_from_bufnr(buffer(file))]
   local actual = {}
-  for _, edit in ipairs(edits) do
-    actual[#actual + 1] = position_key(file, edit.range.start)
-    check(name .. " new text", edit.newText == new_name, "  newText " .. edit.newText)
+  for uri, edits in pairs(result.changes) do
+    for _, edit in ipairs(edits) do
+      actual[#actual + 1] = position_key(vim.fs.normalize(vim.uri_to_fname(uri)):sub(#src + 2), edit.range.start)
+      check(name .. " new text", edit.newText == new_name, "  newText " .. edit.newText)
+    end
   end
   table.sort(actual)
   compare(name, expected_keys(expect), actual)
@@ -401,6 +402,21 @@ definition("self.x = self.@x + dx", "    @x,")
 definition("s.@title.print()", "    @title label,")
 definition("all.@array[at]", "lib.baz: @array T[capacity]")
 definition("        @e.print()", "@foo all.array")
+-- the array of a list is not the array of a text, nor the member of a type
+-- parameter whose argument is unknown
+references("all.@array[at]", {
+  "all.@array[at]",
+  "foo all.@array, all.len",
+  "let first = shapes.@array[0]",
+  "lib.baz: res = self.@array[0]",
+})
+-- same from a value that has the name of its type, like 'dat entities' in roome
+references("let first = shapes.@array[0]", {
+  "all.@array[at]",
+  "foo all.@array, all.len",
+  "let first = shapes.@array[0]",
+  "lib.baz: res = self.@array[0]",
+})
 rename("    @x,", "left", {
   "    @x,",
   "self.@x = self.x + dx",
@@ -412,7 +428,10 @@ rename_fails("        @e.print()", "item", "cannot rename")
 rename_fails("@self.origin.print()", "me", "cannot rename")
 rename_fails("var p = @point", "if", "not a valid name")
 rename_fails("var p = @point", "9lives", "not a valid name")
-rename_fails("total = @lib_helper(total)", "help", "cannot rename")
+rename("total = @lib_helper(total)", "help", {
+  "lib.baz: func @lib_helper(value)",
+  "total = @lib_helper(total)",
+})
 
 -- generics, in the file that declares them
 
@@ -425,11 +444,37 @@ rename("lib.baz: array @T[capacity]", "Item", {
   "lib.baz: type list<@T type, capacity>",
   "lib.baz: array @T[capacity]",
 })
+-- the uses in the files that include the one asked from are found
 references("lib.baz: type @text<capacity>", {
   "lib.baz: type @text<capacity>",
+  "main.baz: type label = @text<16>",
+  "app.baz: type app_label = @text<4>",
 })
 references("lib.baz: func mut list.@reserve()", {
   "lib.baz: func mut list.@reserve()",
+  "main.baz: var at = all.@reserve()",
+})
+
+references("lib.baz: type @list<T type, capacity>", {
+  "lib.baz: type @list<T type, capacity>",
+  "main.baz: type shapes = @list<shape, limit>",
+})
+
+-- an unknown receiver in an including file makes a rename unsafe
+rename_fails("guess_lib.baz: func c.@show()", "display", "guess_user.baz line 4")
+
+-- renaming reaches the files that include the declaring one, from either side
+rename("lib.baz: type @text<capacity>", "words", {
+  "lib.baz: type @text<capacity>",
+  "lib.baz: func @text.print()",
+  "main.baz: type label = @text<16>",
+  "app.baz: type app_label = @text<4>",
+})
+rename("type label = @text<16>", "words", {
+  "lib.baz: type @text<capacity>",
+  "lib.baz: func @text.print()",
+  "main.baz: type label = @text<16>",
+  "app.baz: type app_label = @text<4>",
 })
 
 -- a receiver of unknown type could be any type: found by references, but a
@@ -445,6 +490,32 @@ references("guess.baz: func b.@show()", {
 })
 rename_fails("guess.baz: func a.@show()", "display", "cannot tell which type")
 definitions("guess.baz: p.@show()", { "guess.baz: func a.@show()", "guess.baz: func b.@show()" })
+
+-- the search for uses in the files that include the declaring one stays in
+-- the 'src' folder of the file and does not load files without the name
+-- (it loaded and parsed every .baz file of the repository, which took long)
+
+references("proj/src/core.baz: func @shared_helper()", {
+  "proj/src/core.baz: func @shared_helper()",
+  "proj/src/user.baz: var x = @shared_helper()",
+}) -- 'proj/outside.baz' includes it too but is not in a 'src' folder
+check(
+  "references do not load a file without the name",
+  not vim.api.nvim_buf_is_loaded(vim.fn.bufadd(src .. "/proj/src/unrelated.baz")),
+  "  proj/src/unrelated.baz was loaded"
+)
+check(
+  "references stay in the src folder",
+  not vim.api.nvim_buf_is_loaded(vim.fn.bufadd(src .. "/proj/outside.baz")),
+  "  proj/outside.baz was loaded"
+)
+
+definition("proj/src/user.baz: var x = @shared_helper()", "proj/src/core.baz: func @shared_helper()")
+definition("proj/outside.baz: var y = @shared_helper()", "proj/src/core.baz: func @shared_helper()")
+rename("proj/src/core.baz: func @shared_helper()", "common_helper", {
+  "proj/src/core.baz: func @shared_helper()",
+  "proj/src/user.baz: var x = @shared_helper()",
+})
 
 -- document symbols
 

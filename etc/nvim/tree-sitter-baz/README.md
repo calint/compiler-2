@@ -53,5 +53,5 @@ vim.filetype.add({
 ## testing the language server
 
 `qa/test.sh` runs references, definition, rename and document symbols
-against `qa/fixtures/` with the plugin in this directory (needs the parser
+against `qa/src/` with the plugin in this directory (needs the parser
 from the steps above).

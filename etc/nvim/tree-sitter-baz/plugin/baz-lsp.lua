@@ -754,7 +754,9 @@ local function resolve(root, bufnr, node)
     if #fields == 0 then
       return nil
     end
-    return resolved("member", fields, false)
+    local guess = resolved("member", fields, false)
+    guess.on_parameter = is_parameter and true or false
+    return guess
   end
   if parent_type == "member_field" and field == "name" then
     return resolved("member", { node })
@@ -796,7 +798,9 @@ local function failure(message)
 end
 
 -- 'self' is not a spelling of its type and the receiver of a method definition
--- is listed only for a rename, the references of a type are where it is used
+-- is listed only for a rename, the references of a type are where it is used;
+-- the members of a type parameter, e.g. 's.array' in 'func f<T type>(s T)',
+-- are listed only for a rename since they belong to the type of the argument
 local function references(root, bufnr, target, include_declaration, include_receivers)
   local wanted = {}
   for _, decl in ipairs(target.decls) do
@@ -815,7 +819,7 @@ local function references(root, bufnr, target, include_declaration, include_rece
       end
       return
     end
-    if r.kind == "self" then
+    if r.kind == "self" or (r.on_parameter and not include_receivers) then
       return
     end
     if not include_receivers and id:parent():type() == "function_definition" and field_of(id) == "receiver_type" then
@@ -1001,7 +1005,8 @@ local function declarations_named(root, bufnr, node, name, base_type_name)
 end
 
 -- declarations, each with its file, for a name that does not resolve in its
--- own file
+-- own file; the second result tells whether the use is known to belong to
+-- them, a member of a receiver of unknown type could belong to any type
 local function included_declarations(uri, bufnr, root, node)
   local list = {}
   local name = text(node, bufnr)
@@ -1027,7 +1032,8 @@ local function included_declarations(uri, bufnr, root, node)
       list[#list + 1] = { file = file, decl = decl }
     end
   end
-  return list
+  local is_member = parent:type() == "member_access" or (parent:type() == "function_call" and parent:field("receiver")[1])
+  return list, base_type_name ~= nil or not is_member
 end
 
 -- definitions for a name that does not resolve in its own file
@@ -1039,14 +1045,38 @@ local function included_definitions(uri, bufnr, root, node)
   return list
 end
 
+-- the unresolved uses in the file of the name that belong to the wanted
+-- declarations (keys of uri and position); the second result lists the uses
+-- that could belong to another declaration
+local function unresolved_uses(uri, bufnr, root, name, wanted)
+  local list = {}
+  local guessed = {}
+  each_identifier(root, function(id)
+    if text(id, bufnr) ~= name or resolve(root, bufnr, id) then
+      return
+    end
+    local entries, exact = included_declarations(uri, bufnr, root, id)
+    for _, entry in ipairs(entries) do
+      if wanted[entry.file.uri .. node_key(entry.decl)] then
+        local location = { uri = uri, range = range_of(id) }
+        list[#list + 1] = location
+        if not exact then
+          guessed[#guessed + 1] = location
+        end
+        return
+      end
+    end
+  end)
+  return list, guessed
+end
+
 -- references for a name that does not resolve in its own file: the uses in
 -- the included files that declare it and the unresolved uses here that look
 -- like it
 local function included_references(uri, bufnr, root, node)
   local list = {}
   local wanted = {}
-  local name = text(node, bufnr)
-  for _, entry in ipairs(included_declarations(uri, bufnr, root, node)) do
+  for _, entry in ipairs((included_declarations(uri, bufnr, root, node))) do
     local file = entry.file
     wanted[file.uri .. node_key(entry.decl)] = true
     local target = resolve(file.root, file.bufnr, entry.decl)
@@ -1056,18 +1086,119 @@ local function included_references(uri, bufnr, root, node)
       end
     end
   end
-  each_identifier(root, function(id)
-    if text(id, bufnr) ~= name or resolve(root, bufnr, id) then
-      return
+  for _, location in ipairs((unresolved_uses(uri, bufnr, root, text(node, bufnr), wanted))) do
+    list[#list + 1] = location
+  end
+  return list
+end
+
+-- whether the file includes the other one, directly or not
+local function includes_file(uri, bufnr, root, other_uri)
+  for _, file in ipairs(included_files(uri, bufnr, root)) do
+    if file.uri == other_uri then
+      return true
     end
-    for _, entry in ipairs(included_declarations(uri, bufnr, root, id)) do
-      if wanted[entry.file.uri .. node_key(entry.decl)] then
-        list[#list + 1] = { uri = uri, range = range_of(id) }
-        return
+  end
+  return false
+end
+
+-- whether the file contains the text, read from its buffer when loaded
+local function mentions(path, name)
+  local bufnr = vim.fn.bufnr(path)
+  local content
+  if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
+    content = table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), "\n")
+  else
+    local file = io.open(path, "rb")
+    content = file and file:read("*a") or ""
+    if file then
+      file:close()
+    end
+  end
+  return content:find(name, 1, true) ~= nil
+end
+
+-- the uses, in the .baz files of the source tree that include this file, of
+-- the declarations of the target; those files are not reachable through the
+-- includes of this one; the second result lists the uses that could belong to
+-- another declaration
+local function including_references(uri, bufnr, root, target)
+  local list = {}
+  local guessed = {}
+  local wanted = {}
+  for _, decl in ipairs(target.decls) do
+    wanted[uri .. node_key(decl)] = true
+  end
+  local name = text(target.decls[1], bufnr)
+  local path = vim.uri_to_fname(uri)
+  -- the sources of a project are in its 'src' folder, a file outside of one
+  -- searches the repository
+  local tree_root = vim.fs.root(path, ".git") or vim.fs.dirname(path)
+  for dir in vim.fs.parents(path) do
+    if vim.fs.basename(dir) == "src" then
+      tree_root = dir
+      break
+    end
+  end
+  for _, other_path in ipairs(vim.fs.find(function(file_name)
+    return file_name:match("%.baz$") ~= nil
+  end, { path = tree_root, type = "file", limit = math.huge })) do
+    local other_uri = vim.uri_from_fname(other_path)
+    -- loading and parsing every file of the tree is slow, a file without the
+    -- name has no use of it
+    if other_uri ~= uri and mentions(other_path, name) then
+      local other_bufnr, other_root = parse(other_uri)
+      if includes_file(other_uri, other_bufnr, other_root, uri) then
+        local uses, guesses = unresolved_uses(other_uri, other_bufnr, other_root, name, wanted)
+        vim.list_extend(list, uses)
+        vim.list_extend(guessed, guesses)
       end
     end
-  end)
-  return list
+  end
+  return list, guessed
+end
+
+-- the target of the name at the node, with the file it is declared in; a name
+-- declared in an included file resolves there, or nil with the reason
+local function rename_target(uri, bufnr, root, node)
+  local target = resolve(root, bufnr, node)
+  if target then
+    return { uri = uri, bufnr = bufnr, root = root, target = target }
+  end
+  local entries, exact = included_declarations(uri, bufnr, root, node)
+  if #entries ~= 1 or not exact then
+    return nil, failure("cannot tell which declaration this name belongs to")
+  end
+  local file = entries[1].file
+  target = resolve(file.root, file.bufnr, entries[1].decl)
+  if not target then
+    return nil, failure("cannot rename this name")
+  end
+  return { uri = file.uri, bufnr = file.bufnr, root = file.root, target = target }
+end
+
+-- the edits by uri that rename the target in its file and in the files that
+-- include it, or nil with the reason
+local function rename_edits(found, new_name)
+  local nodes, err = rename_targets(found.root, found.bufnr, found.target)
+  if err then
+    return nil, err
+  end
+  local edits = { [found.uri] = {} }
+  for _, id in ipairs(nodes) do
+    table.insert(edits[found.uri], { range = range_of(id), newText = new_name })
+  end
+  local list, guessed = including_references(found.uri, found.bufnr, found.root, found.target)
+  if #guessed > 0 then
+    local row = guessed[1].range.start.line
+    local name = vim.fs.basename(vim.uri_to_fname(guessed[1].uri))
+    return nil, failure(string.format("%s line %d: cannot tell which type this use belongs to", name, row + 1))
+  end
+  for _, location in ipairs(list) do
+    edits[location.uri] = edits[location.uri] or {}
+    table.insert(edits[location.uri], { range = location.range, newText = new_name })
+  end
+  return edits
 end
 
 handlers["textDocument/definition"] = function(params)
@@ -1105,22 +1236,29 @@ handlers["textDocument/references"] = function(params)
   -- listed only when it is the place asked from
   local at_declaration = #target.decls == 1 and node_key(target.decls[1]) == node_key(node)
   local include_declaration = params.context.includeDeclaration and at_declaration
-  return locations(uri, references(root, bufnr, target, include_declaration))
+  local list = locations(uri, references(root, bufnr, target, include_declaration))
+  for _, location in ipairs((including_references(uri, bufnr, root, target))) do
+    list[#list + 1] = location
+  end
+  return list
 end
 
 handlers["textDocument/prepareRename"] = function(params)
   local bufnr, root = parse(params.textDocument.uri)
   local node = identifier_at(root, params.position)
-  local target = node and resolve(root, bufnr, node)
-  if not target then
+  if not node then
     return nil, failure("nothing to rename here")
   end
-  if not renameable_kinds[target.kind] then
-    return nil, failure(target.kind .. " names cannot be renamed")
-  end
-  local _, err = rename_targets(root, bufnr, target)
-  if err then
+  local found, err = rename_target(params.textDocument.uri, bufnr, root, node)
+  if not found then
     return nil, err
+  end
+  if not renameable_kinds[found.target.kind] then
+    return nil, failure(found.target.kind .. " names cannot be renamed")
+  end
+  local _, edits_err = rename_edits(found, "")
+  if edits_err then
+    return nil, edits_err
   end
   return { range = range_of(node), placeholder = text(node, bufnr) }
 end
@@ -1133,19 +1271,15 @@ handlers["textDocument/rename"] = function(params)
   end
   local bufnr, root = parse(uri)
   local node = identifier_at(root, params.position)
-  local target = node and resolve(root, bufnr, node)
-  if not target or not renameable_kinds[target.kind] then
-    return nil, failure("cannot rename this name")
+  local found, err = node and rename_target(uri, bufnr, root, node)
+  if not found or not renameable_kinds[found.target.kind] then
+    return nil, err or failure("cannot rename this name")
   end
-  local nodes, err = rename_targets(root, bufnr, target)
-  if err then
-    return nil, err
+  local edits, edits_err = rename_edits(found, new_name)
+  if edits_err then
+    return nil, edits_err
   end
-  local edits = {}
-  for _, id in ipairs(nodes) do
-    edits[#edits + 1] = { range = range_of(id), newText = new_name }
-  end
-  return { changes = { [uri] = edits } }
+  return { changes = edits }
 end
 
 local function server(dispatchers)
