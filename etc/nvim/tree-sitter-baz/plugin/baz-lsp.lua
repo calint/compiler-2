@@ -398,6 +398,18 @@ local function declared_type(root, bufnr, id, kind, name, depth)
   return nil
 end
 
+local included_files
+
+-- whether an included file declares the type
+local function included_type(root, bufnr, name)
+  for _, file in ipairs(included_files(vim.uri_from_bufnr(bufnr), bufnr, root)) do
+    if top_level(file.root, file.bufnr, "type", name) then
+      return true
+    end
+  end
+  return false
+end
+
 local function value_type(root, bufnr, id, depth)
   local name = text(id, bufnr)
   local decl, kind = local_declaration(id, bufnr, name)
@@ -407,7 +419,7 @@ local function value_type(root, bufnr, id, depth)
   end
   if not decl then
     -- a bare type name is the zero value of the type, e.g. 'var tz = tokenizer'
-    if top_level(root, bufnr, "type", name) then
+    if top_level(root, bufnr, "type", name) or included_type(root, bufnr, name) then
       return { name = name, array = false }
     end
     return nil
@@ -862,11 +874,156 @@ handlers["textDocument/documentSymbol"] = function(params)
   return symbols
 end
 
+-- the path of an 'include_definition' node, relative to the directory of the
+-- file with the 'include', or nil when the file does not exist
+local function include_path(include, bufnr, uri)
+  local quoted = text(include:named_child(1), bufnr)
+  -- note: 2 and -2 because the path is between the quotes
+  local name = quoted:sub(2, -2)
+  local dir = vim.fs.dirname(vim.uri_to_fname(uri))
+  local path = vim.fs.normalize(vim.fs.joinpath(dir, name))
+  if vim.fn.filereadable(path) == 0 then
+    return nil
+  end
+  return path
+end
+
+-- the file named by the 'include' path at the position, or nil
+local function included_file(root, bufnr, uri, position)
+  local node = root:descendant_for_range(position.line, position.character, position.line, position.character)
+  while node and node:type() ~= "string_literal" do
+    node = node:parent()
+  end
+  local include = node and node:parent()
+  if not include or include:type() ~= "include_definition" then
+    return nil
+  end
+  return include_path(include, bufnr, uri)
+end
+
+-- the files included by the file, directly or not, each once, in the order
+-- of the 'include's
+function included_files(uri, bufnr, root)
+  local files = {}
+  local seen = { [uri] = true }
+  local function visit(file_uri, file_bufnr, file_root)
+    for child in file_root:iter_children() do
+      if child:type() == "include_definition" then
+        local path = include_path(child, file_bufnr, file_uri)
+        local included_uri = path and vim.uri_from_fname(path)
+        if included_uri and not seen[included_uri] then
+          seen[included_uri] = true
+          local included_bufnr, included_root = parse(included_uri)
+          files[#files + 1] = { uri = included_uri, bufnr = included_bufnr, root = included_root }
+          visit(included_uri, included_bufnr, included_root)
+        end
+      end
+    end
+  end
+  visit(uri, bufnr, root)
+  return files
+end
+
+-- the declarations of the name in the file by what the use looks like; types
+-- are not inferred across files, so members and methods match by name unless
+-- base_type_name is the known type of the receiver of a member
+local function declarations_named(root, bufnr, node, name, base_type_name)
+  local parent = node:parent()
+  if parent:type() == "member_access" then
+    if base_type_name then
+      local field = field_named(root, bufnr, base_type_name, name)
+      return field and { field } or {}
+    end
+    return fields_named(root, bufnr, name)
+  end
+  if parent:type() == "function_call" and parent:field("function")[1] and node:equal(parent:field("function")[1]) then
+    if parent:field("receiver")[1] then
+      return methods_named(root, bufnr, name, nil)
+    end
+    local id = top_level(root, bufnr, "function", name)
+    return id and { id } or {}
+  end
+  local id = top_level(root, bufnr, "type", name) or top_level(root, bufnr, "value", name)
+  return id and { id } or {}
+end
+
+-- declarations, each with its file, for a name that does not resolve in its
+-- own file
+local function included_declarations(uri, bufnr, root, node)
+  local list = {}
+  local name = text(node, bufnr)
+  local base_type_name = nil
+  local parent = node:parent()
+  if parent:type() == "member_access" then
+    -- the type of the receiver is inferred in this file, its members may be
+    -- declared in an included one
+    local base = type_of_node(root, bufnr, previous_element(parent), 0)
+    local is_parameter = base and generic_declaration(root, bufnr, node, base.name)
+    if base and not base.array and not is_parameter then
+      base_type_name = member_type_name(root, bufnr, base.name)
+    end
+  end
+  for _, file in ipairs(included_files(uri, bufnr, root)) do
+    for _, decl in ipairs(declarations_named(file.root, file.bufnr, node, name, base_type_name)) do
+      list[#list + 1] = { file = file, decl = decl }
+    end
+  end
+  return list
+end
+
+-- definitions for a name that does not resolve in its own file
+local function included_definitions(uri, bufnr, root, node)
+  local list = {}
+  for _, entry in ipairs(included_declarations(uri, bufnr, root, node)) do
+    list[#list + 1] = { uri = entry.file.uri, range = range_of(entry.decl) }
+  end
+  return list
+end
+
+-- references for a name that does not resolve in its own file: the uses in
+-- the included files that declare it and the unresolved uses here that look
+-- like it
+local function included_references(uri, bufnr, root, node)
+  local list = {}
+  local wanted = {}
+  local name = text(node, bufnr)
+  for _, entry in ipairs(included_declarations(uri, bufnr, root, node)) do
+    local file = entry.file
+    wanted[file.uri .. node_key(entry.decl)] = true
+    local target = resolve(file.root, file.bufnr, entry.decl)
+    if target then
+      for _, location in ipairs(locations(file.uri, references(file.root, file.bufnr, target, false))) do
+        list[#list + 1] = location
+      end
+    end
+  end
+  each_identifier(root, function(id)
+    if text(id, bufnr) ~= name or resolve(root, bufnr, id) then
+      return
+    end
+    for _, entry in ipairs(included_declarations(uri, bufnr, root, id)) do
+      if wanted[entry.file.uri .. node_key(entry.decl)] then
+        list[#list + 1] = { uri = uri, range = range_of(id) }
+        return
+      end
+    end
+  end)
+  return list
+end
+
 handlers["textDocument/definition"] = function(params)
   local uri = params.textDocument.uri
   local bufnr, root = parse(uri)
+  local file = included_file(root, bufnr, uri, params.position)
+  if file then
+    local start = { line = 0, character = 0 }
+    return { { uri = vim.uri_from_fname(file), range = { start = start, ["end"] = start } } }
+  end
   local node = identifier_at(root, params.position)
   local target = node and resolve(root, bufnr, node)
+  if not target and node then
+    return included_definitions(uri, bufnr, root, node)
+  end
   if not target then
     -- vim.NIL is truthy and breaks the client's 'res.result or {}'
     return {}
@@ -879,6 +1036,9 @@ handlers["textDocument/references"] = function(params)
   local bufnr, root = parse(uri)
   local node = identifier_at(root, params.position)
   local target = node and resolve(root, bufnr, node)
+  if not target and node then
+    return included_references(uri, bufnr, root, node)
+  end
   if not target then
     return {}
   end
