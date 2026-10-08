@@ -45,6 +45,69 @@ rnm office\n\
 go roome\n\
 en me\n"
 
+dat str_action_help = "help"
+dat str_action_go = "go"
+dat str_action_inventory = "i"
+dat str_action_new_object = "on"
+dat str_action_drop = "d"
+dat str_action_give = "g"
+dat str_action_tell = "t"
+dat str_action_say = "s"
+dat str_action_new_room = "rn"
+dat str_action_set_room_name = "rnm"
+dat str_action_set_room_description = "rd"
+dat str_action_set_room_note = "rnt"
+dat str_action_new_entity = "en"
+
+# note: `noinline` because it unfolds into a lot of code and called from 2
+#       locations
+func noinline parse_input(eid, tz mut tokenizer) {
+    tz.next()
+
+    if tz.is_array(str_action_go) {
+        action_go(eid, tz)
+
+    } else if tz.is_array(str_action_new_room) {
+        action_new_room(eid, tz)
+
+    } else if tz.is_array(str_action_set_room_description) {
+        action_set_room_description(eid, tz)
+
+    } else if tz.is_array(str_action_set_room_note) {
+        action_set_room_note(eid, tz)
+
+    } else if tz.is_array(str_action_set_room_name) {
+        action_set_room_name(eid, tz)
+
+    } else if tz.is_array(str_action_new_entity) {
+        action_new_entity(eid, tz)
+
+    } else if tz.is_array(str_action_new_object) {
+        action_new_object(eid, tz)
+
+    } else if tz.is_array(str_action_inventory) {
+        action_inventory(eid, tz)
+
+    } else if tz.is_array(str_action_drop) {
+        action_drop(eid, tz)
+
+    } else if tz.is_array(str_action_give) {
+        action_give(eid, tz)
+
+    } else if tz.is_array(str_action_tell) {
+        action_tell(eid, tz)
+
+    } else if tz.is_array(str_action_say) {
+        action_say(eid, tz)
+
+    } else if tz.is_array(str_action_help) {
+        action_help(eid, tz)
+
+    } else {
+        out.print_all(str_not_understood)
+    }
+}
+
 # runs the lines of the script as the bare entity, a line ends with '\n'
 func run_creation_script(tz mut tokenizer) {
     var line_start = 0
