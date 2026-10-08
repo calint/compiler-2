@@ -1,0 +1,217 @@
+include "lib.baz"
+
+dat       str_uc = "u c "
+dat    str_exits = "exits: "
+
+let max_name_len = 16
+let max_id_list_len = 32
+let max_room_objects_len = 64
+let max_room_entities_len = 32
+let max_room_links_len = 8
+let max_link_names_len = 1024
+let max_rooms_len = 128
+let max_entities_len = 32
+let max_objects_len = 1024
+let max_entity_messages_len = 16
+
+type id_list = list<int, max_id_list_len>
+
+type name = text<max_name_len>
+
+dat str_told_u = " told u "
+dat str_said = " said "
+
+let message_told = 0
+let message_said = 1
+let message_event = 2
+
+type message {
+    from,
+    kind,
+    text str,
+}
+
+type messages = list<message, max_entity_messages_len>
+
+func mut messages.add(from, kind, text str) {
+    let ix = self.reserve()
+    self.array[ix] = { from, kind, text }
+}
+
+type entity {
+    name name,
+    room_id,
+    objects id_list,
+    messages messages,
+}
+
+func entity.print() {
+    out.print(self.name.array, self.name.len)
+}
+
+type entities = list<entity, max_entities_len>
+
+# the bare entity, the creation script makes the rest
+dat entities = entities{
+    { # array begin
+        { { "u", 1 }, 0 }  # entity[0]
+    }, # array end
+    1 # array len
+}
+
+func message.print() {
+    entities.array[self.from].name.print()
+    if self.kind == message_said {
+        out.print_all(str_said)
+    } else if self.kind == message_told {
+        out.print_all(str_told_u)
+    } else if self.kind == message_event {
+        out.print_all(str_space)
+    }
+    self.text.print()
+}
+
+func mut entity.print_messages() {
+    foo self.messages.array, self.messages.len {
+        e.print()
+        out.println()
+    }
+
+    self.messages.len = 0
+}
+
+func mut entities.add(nm name, room_id) entity_id {
+    entity_id = self.reserve()
+    self.array[entity_id] = { nm, room_id }
+}
+
+type link_names = list<name, max_link_names_len>
+
+dat link_names = link_names
+
+type link {
+    link_name_id,
+    to,
+}
+
+type links = list<link, max_room_links_len>
+
+func mut links.add(link_name_id, to) {
+    let ix = self.reserve()
+    self.array[ix] = { link_name_id, to }
+}
+
+type object {
+    name name,
+}
+
+type objects = list<object, max_objects_len>
+
+func mut objects.add(name name) object_id {
+    object_id = self.reserve()
+    self.array[object_id] = { name }
+}
+
+dat objects = objects
+
+type room {
+    name name,
+    description str,
+    note str,
+    entities id_list,
+    links links,
+    objects id_list,
+}
+
+dat str_u_r_in = "u r in "
+
+func room.print(cur_entity) {
+    if self.name.len != 0 {
+        out.print_all(str_u_r_in)
+        self.name.print()
+        out.println()
+    }
+    if self.description.len != 0 {
+        self.description.print()
+        out.println()
+    }
+    var present = joiner
+    foo self.entities.array, self.entities.len {
+        if e == cur_entity continue
+        present.next(str_uc)
+        entities.array[e].print()
+    }
+    foo self.objects.array, self.objects.len {
+        present.next(str_uc)
+        objects.array[e].name.print()
+    }
+    if present.printed {
+        out.println()
+    }
+    if self.links.len != 0 {
+        out.print_all(str_exits)
+        foo self.links.array, self.links.len {
+            if i != 0 out.print_all(str_comma)
+            link_names.array[e.link_name_id].print()
+        }
+        out.println()
+    }
+    if self.note.len != 0 {
+        self.note.print()
+        out.println()
+    }
+}
+
+func mut room.remove_entity(id) {
+    # find entity
+    var found_ix = self.entities.len
+    let name = entities.array[id].name
+    foo self.entities.array, self.entities.len {
+        if entities.array[e].name.equals(name) {
+            found_ix = i
+            break
+        }
+    }
+
+    # check program error
+    assert(1, found_ix != self.entities.len)
+
+    self.entities.delete_index(found_ix)
+}
+
+type rooms = list<room, max_rooms_len>
+
+# the bare room, the creation script makes the rest
+dat rooms = rooms{
+    { # array
+        { # room[0]
+            { }, # name
+            { }, # description
+            { }, # note
+            { { 0 }, 1 } # entities id_list
+        }
+    },
+    1 # array len
+}
+
+# the index in the inventory of the object named by the token or the length
+func noinline entity.find_object(tz tokenizer) res {
+    res = self.objects.len
+    foo self.objects.array, self.objects.len {
+        if tz.is(objects.array[e].name) {
+            res = i
+            break
+        }
+    }
+}
+
+# the index of the link to the room or the length
+func links.index_of_link_to(room_id) res {
+    res = self.len
+    foo self.array, self.len {
+        if e.to == room_id {
+            res = i
+            break
+        }
+    }
+}
