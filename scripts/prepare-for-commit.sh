@@ -14,8 +14,6 @@ echo make
 ./make.sh build
 echo compile prog
 ./run.sh
-echo compile roome
-roome/run.sh
 echo test roome
 roome/test.sh
 echo make readme
