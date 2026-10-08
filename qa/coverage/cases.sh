@@ -2803,3 +2803,9 @@ SRC=915 && COMPERR
 
 # an include without a file name in quotes is rejected
 SRC=916 && COMPERR
+
+# an include of a directory is rejected
+SRC=917 && COMPERR
+
+# an included file without content adds nothing
+SRC=918 && EXP=7 && RUN

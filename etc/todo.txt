@@ -231,7 +231,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     for the current elements
 [ ] hard: 'func object(self : object inout, pos, vel, color)' called when 'var o
     : object = {...}'
-[ ] hard: a way to split code in multiple files while keeping the unity build
 [ ] hard: --checks=noub: a partial 'read'/'write' can end inside a record and
     the start argument cannot resume there; for elements larger than 1 byte,
     repeat the syscall until the current record is complete so line input

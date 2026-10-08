@@ -120,6 +120,12 @@ class source_files final {
             }
         }
 
+        // a directory opens but cannot be read
+        if (fs.bad()) {
+            throw std::runtime_error{
+                std::format("cannot read file '{}'", file_name)};
+        }
+
         return contents;
     }
 };
