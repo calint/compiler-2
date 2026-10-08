@@ -10,6 +10,7 @@
 (generic_parameters ["<" ">"] @comment)
 (generic_arguments ["<" ">"] @comment)
 
+(include_keyword) @keyword.function
 (func_keyword) @keyword.function
 (noinline_keyword) @keyword.function
 (type_keyword) @keyword.function

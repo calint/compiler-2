@@ -1,3 +1,5 @@
+include "roome-lib.baz"
+
 dat str_ascii_art = "\
                                    oOo.o.\n\
           frameless osca          oOo.oOo\n\
@@ -32,207 +34,13 @@ dat    str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
 dat       str_uc = "u c "
 dat    str_exits = "exits: "
 dat   str_prompt = " > "
-dat       str_nl = "\n"
 dat str_turn_end = "--\n"
-dat    str_comma = ", "
-dat     str_back = "\b"
-dat    str_space = " "
 
 dat str_not_understood = "not understood\n"
 
 dat flag = "\n\nFLAG\n\n"
 
-func assert(code, ok bool) { if not ok exit(code) }
-
-# all output goes through the printer
-# silenced while the creation script runs
-type printer {
-    silenced bool,
-}
-
-dat out = printer
-
-func mut printer.set_silenced(silenced bool) {
-    self.silenced = silenced
-}
-
-func printer.print_at(s i8[], count, start) {
-    if self.silenced return
-
-    write(1, s, count, start)
-}
-
-func printer.print(s i8[], count) {
-    self.print_at(s, count, 0)
-}
-
-func printer.print_all(s i8[]) {
-    self.print(s, array_length(s))
-}
-
-func printer.println() {
-    self.print_all(str_nl)
-}
-
-func printer.println_all(s i8[]) {
-    self.print_all(s)
-    self.println()
-}
-
-type text<capacity> {
-    array i8[capacity],
-    len,
-}
-
-func text.print() {
-    out.print(self.array, self.len)
-}
-
-func mut text.add(s i8[]) {
-    array_copy(s, self.array[self.len], array_length(s))
-    self.len = self.len + array_length(s)
-}
-
-# appends a text of any capacity
-func mut text.append<T type>(s T) {
-    array_copy(s.array, self.array[self.len], s.len)
-    self.len = self.len + s.len
-}
-
-let act_insert = 0
-let act_backspace = 1
-let act_delete = 2
-let act_left = 3
-let act_right = 4
-let act_ignore = 5
-
-# reads the rest of a terminal escape sequence and returns the action of the
-# key: delete 'ESC [ 3 ~', left 'ESC [ D', right 'ESC [ C', any other
-# sequence is ignored
-func input_escape_action() res {
-    res = act_ignore
-    var c = i8[1]
-    if read(0, c, 1) == 0 return
-    if c[0] != '[' return
-
-    # the sequence ends with the first byte from '@' on
-    var first = 0
-    loop {
-        if read(0, c, 1) == 0 return
-        if first == 0 first = c[0]
-        if c[0] >= '@' break
-    }
-    if c[0] == 'D' res = act_left
-    if c[0] == 'C' res = act_right
-    if first == '3' and c[0] == '~' res = act_delete
-}
-
-# makes room for 'b' at 'pos', the text must have room for one more byte
-func mut text.insert_at(pos, b i8) {
-    var i = self.len
-    loop {
-        if i == pos break
-        self.array[i] = self.array[i - 1]
-        i = i - 1
-    }
-    self.array[pos] = b
-    self.len = self.len + 1
-}
-
-# removes the byte at 'pos'
-func mut text.remove_at(pos) {
-    var i = pos
-    loop {
-        if i == self.len - 1 break
-        self.array[i] = self.array[i + 1]
-        i = i + 1
-    }
-    self.len = self.len - 1
-}
-
-# writes the bytes from 'pos' on and moves the cursor back to 'pos', 'blanks'
-# is 1 to wipe the byte a removal left on the screen
-func text.redraw_from(pos, blanks) {
-    var back = self.len - pos
-    if back > 0 out.print_at(self.array, back, pos)
-    if blanks == 1 {
-        out.print_all(str_space)
-        back = back + 1
-    }
-    loop {
-        if back == 0 break
-        out.print_all(str_back)
-        back = back - 1
-    }
-}
-
-# line editing with the cursor keys, backspace and delete, the uart does not
-# echo so the screen is redrawn after each edit
-func mut text.input() {
-    # the byte is read apart from the buffer, control bytes are not stored
-    var c = i8[1]
-    var pos = 0
-    self.len = 0
-    loop {
-        if read(0, c, 1) == 0 break
-        var act = act_insert
-        if c[0] == '\x7f' or c[0] == '\b' act = act_backspace
-        if c[0] == '\x1b' act = input_escape_action()
-        if act == act_ignore continue
-        if act == act_backspace {
-            if pos > 0 {
-                pos = pos - 1
-                self.remove_at(pos)
-                out.print_all(str_back)
-                self.redraw_from(pos, 1)
-            }
-            continue
-        }
-        if act == act_delete {
-            if pos < self.len {
-                self.remove_at(pos)
-                self.redraw_from(pos, 1)
-            }
-            continue
-        }
-        if act == act_left {
-            if pos > 0 {
-                pos = pos - 1
-                out.print_all(str_back)
-            }
-            continue
-        }
-        if act == act_right {
-            if pos < self.len {
-                out.print_at(self.array, 1, pos)
-                pos = pos + 1
-            }
-            continue
-        }
-        if c[0] == '\n' {
-            out.print(c, 1)
-            break
-        }
-        if self.len == array_length(self.array) continue
-        out.print(c, 1)
-        self.insert_at(pos, c[0])
-        pos = pos + 1
-        self.redraw_from(pos, 0)
-    }
-}
-
-# compares with a text of any capacity
-func text.equals<T type>(other T) res bool {
-    if self.len != other.len {
-        res = false
-        return
-    }
-
-    res = arrays_equal(self.array, other.array, self.len)
-}
-
 let max_name_len = 16
-let max_str_len = 128
 let max_id_list_len = 32
 let max_room_objects_len = 64
 let max_room_entities_len = 32
@@ -243,81 +51,8 @@ let max_entities_len = 32
 let max_objects_len = 1024
 let max_entity_messages_len = 16
 
-# a list of up to 'capacity' items
-type list<T type, capacity> {
-    array T[capacity],
-    len,
-}
-
-func list.is_full() res bool {
-    res = self.len == array_length(self.array)
-}
-
-# makes room for an item and returns its index, the caller writes the item in
-# place
-func mut list.reserve() res {
-    res = self.len
-    self.len = self.len + 1
-}
-
-func mut list.push(item T) {
-    let ix = self.reserve()
-    self.array[ix] = item
-}
-
-func mut list.delete_index(ix) {
-    # array copy it away
-    array_copy(
-        self.array[ix + 1],
-        self.array[ix],
-        self.len - ix - 1
-    )
-
-    # set new len
-    self.len = self.len - 1
-}
-
-# the index of the first item equal to 'item' or the length
-func list.index_of(item T) res {
-    res = self.len
-    foo self.array, self.len {
-        if e == item {
-            res = i
-            break
-        }
-    }
-}
-
-# the index of the first item named by the token or the length
-func list.index_of_name<K type>(tz K) res {
-    res = self.len
-    foo self.array, self.len {
-        if tz.is(e.name) {
-            res = i
-            break
-        }
-    }
-}
-
-# the index of 'item', it is added when not found
-func mut list.find_or_add(item T) res {
-    res = self.index_of(item)
-    if res != self.len return
-
-    res = self.reserve()
-    self.array[res] = item
-}
-
-func mut list.delete_item(item T) {
-    let found_ix = self.index_of(item)
-    if found_ix == self.len return
-
-    self.delete_index(found_ix)
-}
-
 type id_list = list<int, max_id_list_len>
 
-type str = text<max_str_len>
 type name = text<max_name_len>
 
 dat str_told_u = " told u "
@@ -427,22 +162,6 @@ type room {
 
 dat str_u_r_in = "u r in "
 
-# prints the lead-in before the first item of a list and a comma before the
-# others
-type joiner {
-    printed bool,
-}
-
-func mut joiner.next(lead i8[]) {
-    if self.printed {
-        out.print_all(str_comma)
-        return
-    }
-
-    out.print_all(lead)
-    self.printed = true
-}
-
 func room.print(cur_entity) {
     if self.name.len != 0 {
         out.print_all(str_u_r_in)
@@ -510,100 +229,6 @@ dat rooms = rooms{
         }
     },
     1 # len
-}
-
-type tokenizer {
-    str str,
-    start,
-    end,
-}
-
-func mut tokenizer.reset() {
-    self.start = 0
-    self.end = 0
-}
-
-func mut tokenizer.input() {
-    self.reset()
-    self.str.input()
-}
-
-func mut tokenizer.set_line(script i8[], line_start, count) {
-    self.reset()
-    array_copy(script[line_start], self.str.array, count)
-    self.str.len = count
-}
-
-func mut tokenizer.skip_whitespace() {
-    self.start = self.end
-    loop {
-        if self.start >= self.str.len {
-            self.end = self.start
-            return
-        }
-        if self.str.array[self.start] != ' ' break
-        self.start = self.start + 1
-    }
-    self.end = self.start
-}
-
-# moves to the next token, the first one when called on a fresh line
-func mut tokenizer.next() {
-    self.skip_whitespace()
-    self.end = self.start
-    loop {
-        if self.end >= self.str.len break
-        if self.str.array[self.end] == ' ' break
-        self.end = self.end + 1
-    }
-}
-
-func tokenizer.len() res {
-    res = self.end - self.start
-}
-
-func tokenizer.print() {
-    out.print_at(self.str.array, self.len(), self.start)
-}
-
-func tokenizer.is_array(str i8[]) res bool {
-    res = self.len() == array_length(str) and
-          arrays_equal(str, self.str.array[self.start], array_length(str))
-}
-
-func tokenizer.is<T type>(s T) res bool {
-    res = self.len() == s.len and
-          arrays_equal(s.array, self.str.array[self.start], s.len)
-}
-
-func tokenizer.is_empty() res bool {
-    res = self.start == self.end
-}
-
-func tokenizer.token<T type>() res T {
-    res.len = self.len()
-    res.array = {}
-    array_copy(self.str.array[self.start], res.array, res.len)
-}
-
-func tokenizer.token_to<T type>(dst mut T) {
-    dst.len = self.len()
-    dst.array = {}
-    array_copy(self.str.array[self.start], dst.array, dst.len)
-}
-
-# the token becomes the rest of the line without leading spaces
-func mut tokenizer.to_end() {
-    self.skip_whitespace()
-    self.start = self.end
-    self.end = self.str.len
-}
-
-# moves to the next token, when there is none the user is told 'msg'
-func mut tokenizer.next_or_say(msg i8[]) res bool {
-    self.next()
-    res = not self.is_empty()
-    if not res out.print_all(msg)
 }
 
 # the index in the inventory of the object named by the token or the length
@@ -1098,4 +723,3 @@ func main() {
         eid = eid + 1
     }
 }
-

@@ -21,7 +21,17 @@ module.exports = grammar({
     // 1. PROGRAM ROOT & CORE STRUCTURES
     // -------------------------------------------------------------------------
 
-    program: $ => repeat($._definition),
+    // includes only at the top of a file
+    program: $ => seq(
+      repeat($.include_definition),
+      repeat($._definition),
+    ),
+
+    // include "file.baz"
+    include_definition: $ => seq(
+      $.include_keyword,
+      $.string_literal,
+    ),
 
     // The primary entry point for control flow logic (used in if/loop bodies)
     _body: $ => choice(
@@ -505,6 +515,7 @@ module.exports = grammar({
     comment: $ => /#.*/,
 
     // Definition Keywords
+    include_keyword: $ => 'include',
     let_keyword: $ => 'let',
     mut_keyword: $ => 'mut',
     dat_keyword: $ => 'dat',
