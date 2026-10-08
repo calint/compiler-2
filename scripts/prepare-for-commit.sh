@@ -16,5 +16,7 @@ echo compile prog
 ./run.sh
 echo test roome
 roome/qa/test.sh
+echo test lsp
+etc/nvim/tree-sitter-baz/qa/test.sh
 echo make readme
 etc/readme/make.sh
