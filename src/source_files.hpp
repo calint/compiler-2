@@ -128,6 +128,11 @@ class source_locations final {
     explicit source_locations(const source_files* const files)
         : files_{files} {}
 
+    [[nodiscard]] auto column(const token& src_loc_tk) const -> size_t {
+        return column_for_char_index(src_loc_tk.start_index(),
+                                     files_->text(src_loc_tk.file_index()));
+    }
+
     // the location in the main file has no file name, a label stays the same
     // for a program of one file
     [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
@@ -156,17 +161,6 @@ class source_locations final {
                            text(src_loc_tk, ':'));
     }
 
-    [[nodiscard]] auto line_and_column(const token& src_loc_tk) const
-        -> std::pair<size_t, size_t> {
-
-        const size_t column{
-            column_for_char_index(src_loc_tk.start_index(),
-                                  files_->text(src_loc_tk.file_index())),
-        };
-
-        return {src_loc_tk.at_line(), column};
-    }
-
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
         -> std::string_view {
 
@@ -178,7 +172,7 @@ class source_locations final {
     [[nodiscard]] auto text(const token& src_loc_tk, const char separator) const
         -> std::string {
 
-        const auto [line, col]{line_and_column(src_loc_tk)};
-        return std::format("{}{}{}", line, separator, col);
+        return std::format("{}{}{}", src_loc_tk.at_line(), separator,
+                           column(src_loc_tk));
     }
 };

@@ -1000,9 +1000,9 @@ class machine {
             return;
         }
 
-        const auto [line, column]{locations_.line_and_column(src_loc_tk)};
+        const size_t column{locations_.column(src_loc_tk)};
 
-        target_assembler().comment(indent, line, column, text);
+        target_assembler().comment(indent, src_loc_tk.at_line(), column, text);
     }
 
     template <typename... args_t>

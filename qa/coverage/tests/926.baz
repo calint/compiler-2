@@ -1,0 +1,10 @@
+# --checks=alias: the value assigned to the element 'e' of a 'foo' reads the
+# array, which can be the element itself
+
+func main() {
+    var arr = []{ i32(1), 2, 3, 4 }
+    var k = i32(10)
+    foo arr {
+        e = k + (100 - arr[3])
+    }
+}

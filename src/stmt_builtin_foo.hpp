@@ -52,7 +52,7 @@ class stmt_builtin_foo final : public statement {
         tc.enter_foo("");
 
         add_loop_names(tc, 0, src_loc_tk, src_loc_tk, array_info, operand{},
-                       operand{});
+                       operand{}, foo_array());
 
         code_ = {tc, tz};
 
@@ -214,10 +214,16 @@ class stmt_builtin_foo final : public statement {
         }
 
         add_loop_names(tc, indent, ident_.tok(), tok(), array_info, reg_iter,
-                       reg_counter);
+                       reg_counter, foo_array());
 
         return counter_in_memory ? tc.make_ident_info(tok(), "i").operand
                                  : reg_counter;
+    }
+
+    // the root of the iterated array and the bytes of it that 'e' ranges over
+    [[nodiscard]] auto foo_array() const -> foo_array_info {
+        const field_coverage::range range{ident_.access_range()};
+        return {ident_.first_token().text(), range.offset, range.size_bytes};
     }
 
     [[nodiscard]] auto has_count() const -> bool {
@@ -285,8 +291,8 @@ class stmt_builtin_foo final : public statement {
     static auto add_loop_names(toc& tc, const size_t indent,
                                const token& src_loc_tk, const token& decl_tk,
                                const ident_info& array_info,
-                               const operand& iterator, const operand& counter)
-        -> void {
+                               const operand& iterator, const operand& counter,
+                               const foo_array_info& array) -> void {
 
         tc.add_var(
             src_loc_tk, indent,
@@ -301,6 +307,7 @@ class stmt_builtin_foo final : public statement {
                 .pointer_register{iterator},
                 .base_register{},
                 .value_register{},
+                .foo_array{array},
             },
             var_kind::var);
 
@@ -314,6 +321,7 @@ class stmt_builtin_foo final : public statement {
                        .pointer_register{},
                        .base_register{},
                        .value_register{counter},
+                       .foo_array{},
                    },
                    var_kind::var);
 

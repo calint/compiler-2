@@ -140,6 +140,7 @@ class stmt_def_dat final : public statement {
             .pointer_register{},
             .base_register{},
             .value_register{},
+            .foo_array{},
         };
     }
 

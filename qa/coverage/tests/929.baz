@@ -1,0 +1,18 @@
+# --checks=alias: a call result and an argument that are different fields of
+# one variable do not share storage
+
+type pair {
+    x,
+    y,
+}
+
+func twice(v) res {
+    res = v * 2
+}
+
+func main() {
+    var p = pair
+    p.y = 4
+    p.x = twice(p.y)
+    if p.x != 8 exit(1)
+}

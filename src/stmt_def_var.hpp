@@ -223,6 +223,7 @@ class stmt_def_var final : public statement {
             .pointer_register{},
             .base_register{},
             .value_register{},
+            .foo_array{},
         };
     }
 

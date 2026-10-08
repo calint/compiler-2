@@ -1,0 +1,20 @@
+# --checks=alias: a 'foo' element assigned from its own value, other arrays and
+# a separate variable is accepted
+
+func main() {
+    var arr = []{ i32(1), 2, 3, 4 }
+    var other = []{ i32(5), 6, 7, 8 }
+    var k = i32(10)
+    foo arr {
+        e = e + k
+    }
+    foo arr {
+        e = other[i] + 1
+    }
+    foo arr {
+        let next = arr[3]
+        e = k + (100 - next)
+    }
+    if arr[0] != 101 exit(1)
+    if arr[3] != 101 exit(2)
+}

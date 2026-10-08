@@ -1621,6 +1621,14 @@ class machine_x86_64 final : public machine {
         with_lowered_addresses(src_loc_tk, indent, dst, src,
                                [&](const operand& lowered_dst,
                                    const operand& lowered_src) -> void {
+                                   if (lowered_src.is_immediate()) {
+                                       emit_immediate_op(src_loc_tk, indent,
+                                                         code, lowered_dst,
+                                                         lowered_src);
+
+                                       return;
+                                   }
+
                                    emit(indent, code, lowered_dst, lowered_src);
                                });
     }

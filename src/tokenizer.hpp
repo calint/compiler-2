@@ -342,7 +342,14 @@ class tokenizer final {
                                              "unterminated string"};
                 }
 
+                const bool is_carriage_return{is_peek_char('\r')};
                 skip_char();
+
+                // a crlf line end after the backslash continues the string
+                if (is_carriage_return) {
+                    std::ignore = is_next_char('\n');
+                }
+
                 continue;
             }
 
@@ -350,7 +357,8 @@ class tokenizer final {
                 break;
             }
 
-            if (is_eos()) {
+            // a string cannot span lines, the source is echoed in comments
+            if (is_eos() or is_peek_char('\n')) {
                 throw compiler_exception{open_quote_tk, "unterminated string"};
             }
 

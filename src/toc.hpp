@@ -956,6 +956,24 @@ class scope_stack final {
         return nullptr;
     }
 
+    // the array that variable 'name' is an element of, empty when it is not the
+    // element of a 'foo'
+    [[nodiscard]] auto foo_array(const std::string_view name) const
+        -> foo_array_info {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(name)) {
+                return frm.get_var_const_ref(name).foo_array;
+            }
+
+            if (frm.is_func()) {
+                break;
+            }
+        }
+
+        return {};
+    }
+
     [[nodiscard]] auto frames() -> std::vector<frame>& { return frames_; }
 
     [[nodiscard]] auto frames() const -> const std::vector<frame>& {
@@ -2211,6 +2229,12 @@ class toc final {
         storage_.assert_released();
 
         scopes_.set_max_depth(0);
+    }
+
+    [[nodiscard]] auto foo_array(const std::string_view name) const
+        -> foo_array_info {
+
+        return scopes_.foo_array(name);
     }
 
     // the scopes inside each other, the calls inlined in each other and their

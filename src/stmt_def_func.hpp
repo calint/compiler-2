@@ -435,6 +435,7 @@ class stmt_def_func final : public statement {
                            .pointer_register{},
                            .base_register{},
                            .value_register{},
+                           .foo_array{},
                        },
                        var_kind::var);
         }
@@ -471,6 +472,7 @@ class stmt_def_func final : public statement {
                            },
                            .base_register{},
                            .value_register{},
+                           .foo_array{},
                        },
                        var_kind::var);
         }

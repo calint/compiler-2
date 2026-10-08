@@ -297,7 +297,19 @@ class assembler_x86_64 final : public assembler {
                        const std::string_view unary_operations,
                        const int64_t value) -> void {
 
-        add_text(std::format("times {} {} {}{}", count,
+        // nasm rejects a count above the signed 32-bit range
+        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
+
+        size_t remaining{count};
+        while (remaining > max_chunk) {
+            add_text(std::format("times {} {} {}{}", max_chunk,
+                                 data_directive(element_size_bytes),
+                                 unary_operations, value));
+
+            remaining -= max_chunk;
+        }
+
+        add_text(std::format("times {} {} {}{}", remaining,
                              data_directive(element_size_bytes),
                              unary_operations, value));
     }

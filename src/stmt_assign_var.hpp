@@ -3,7 +3,9 @@
 
 #include <cstddef>
 #include <format>
+#include <optional>
 #include <ostream>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -78,8 +80,12 @@ class stmt_assign_var final : public statement {
             .is_exact{stmt_ident_.is_exact_access()},
         });
 
+        assert_not_reading_foo_array(tc);
+
         // get information about the destination of the compilation
         ident_info var_dst_info{tc.make_ident_info(stmt_ident_)};
+
+        var_dst_info.access_range = stmt_ident_.access_range();
 
         if (var_dst_info.is_const()) {
             throw compiler_exception{
@@ -132,4 +138,56 @@ class stmt_assign_var final : public statement {
     //
 
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
+
+  private:
+    // the element 'e' of a 'foo' is a place in the array, a read of the bytes
+    // of the array in the value may be of that place after it was written,
+    // only for '--checks=alias'
+    auto assert_not_reading_foo_array(const toc& tc) const -> void {
+        if (not tc.is_alias_check()) {
+            return;
+        }
+
+        const foo_array_info array{
+            tc.foo_array(stmt_ident_.first_token().text()),
+        };
+
+        if (array.root.empty()) {
+            return;
+        }
+
+        const field_coverage::range array_range{
+            .offset{array.offset_bytes},
+            .size_bytes{array.size_bytes},
+        };
+
+        token read_tk;
+        std::string read_text;
+
+        expr_.visit_reads(
+            array.root,
+            [&](const token& tk, const std::string_view text,
+                const std::optional<field_coverage::range>& accessed) -> void {
+                // another field of the same variable cannot be the element
+                if (accessed and not accessed->overlaps(array_range)) {
+                    return;
+                }
+
+                if (read_tk.is_empty()) {
+                    read_tk = tk;
+                    read_text = text;
+                }
+            });
+
+        if (read_tk.is_empty()) {
+            return;
+        }
+
+        throw compiler_exception{
+            read_tk,
+            std::format("'{}' may share storage with the destination '{}' "
+                        "(both name '{}'), assign the value to a separate "
+                        "variable first",
+                        read_text, stmt_ident_.identifier(), array.root)};
+    }
 };

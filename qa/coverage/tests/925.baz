@@ -1,0 +1,6 @@
+# a string cannot span lines
+
+dat s = "a
+b"
+
+func main() {}

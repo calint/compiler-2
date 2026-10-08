@@ -1,0 +1,19 @@
+# --checks=alias: the value assigned to the element 'e' of a 'foo' over a field
+# reads other bytes of the same variable, which is accepted, and the same
+# field, which is rejected
+
+type world {
+    array[4],
+    other[4],
+    count,
+}
+
+func main() {
+    var w = world
+    foo w.array {
+        e = e + w.other[2] + w.count
+    }
+    foo w.array {
+        e = e + w.array[2]
+    }
+}

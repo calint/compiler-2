@@ -299,6 +299,7 @@ class stmt_call : public expression {
                        .pointer_register{},
                        .base_register{},
                        .value_register{},
+                       .foo_array{},
                    },
                    var_kind::var);
 
@@ -1005,6 +1006,17 @@ class stmt_call : public expression {
         };
 
         if (not conflict) {
+            return;
+        }
+
+        // the destination names other bytes of the variable than the argument
+        const std::optional<field_coverage::range> arg_range{
+            args_.at(index).accessed_range(),
+        };
+
+        if (dst_info.access_range and arg_range and
+            not dst_info.access_range->overlaps(*arg_range)) {
+
             return;
         }
 

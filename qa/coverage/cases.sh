@@ -2829,3 +2829,23 @@ SRC=923 && EXP=0 && RUN
 
 # a constant expression argument is folded at the width of its parameter
 SRC=924 && EXP=0 && RUN
+
+# a string cannot span lines, the source is echoed in assembly comments
+SRC=925 && COMPERR
+
+# --checks=alias: a 'foo' element is not assigned a value that reads the array
+SRC=926 && OPTS="$UB_ALIAS" COMPERR
+
+# --checks=alias: a 'foo' element assigned from itself, another array and a
+# separate variable is accepted
+SRC=927 && EXP=0 && OPTS="$UB_ALIAS" RUN
+
+# --checks=alias: a 'foo' element reading other fields of its variable is
+# accepted, reading its own field is not
+SRC=928 && OPTS="$UB_ALIAS" COMPERR
+
+# --checks=alias: a result and an argument that are different fields are accepted
+SRC=929 && EXP=0 && OPTS="$UB_ALIAS" RUN
+
+# --checks=alias: a result and an argument that are the same field conflict
+SRC=930 && OPTS="$UB_ALIAS" COMPERR

@@ -1,0 +1,16 @@
+# --checks=alias: a call result and an argument that are the same field of one
+# variable share storage
+
+type pair {
+    x,
+    y,
+}
+
+func twice(v) res {
+    res = v * 2
+}
+
+func main() {
+    var p = pair
+    p.x = twice(p.x)
+}
