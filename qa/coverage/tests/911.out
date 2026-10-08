@@ -1,0 +1,4 @@
+
+include/bad.baz:2:5: cannot resolve identifier 'x'
+    x = 1
+    ^

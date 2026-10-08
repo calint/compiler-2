@@ -1,0 +1,6 @@
+include "include/util.baz"
+include "include/base.baz"
+
+func main() {
+    exit(twice(21))
+}

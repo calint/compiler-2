@@ -1,0 +1,3 @@
+include "base.baz"
+
+func add() {}

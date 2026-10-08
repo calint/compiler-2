@@ -1,0 +1,5 @@
+include "include/cycle.baz"
+
+func main() {
+    exit(three())
+}

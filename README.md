@@ -43,7 +43,9 @@ compiler writes the binary image itself.
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
-  `not`, `true`, `false`
+  `not`, `true`, `false`, `include`
+* `include "lib.baz"` at the top of a file adds the definitions of another file
+  where it is, relative to the including file, each file once
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 
@@ -144,10 +146,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    53           7724           3252          22955
-C++                              1            183             58            597
+C/C++ Header                    54           7769           3280          23134
+C++                              1            175             57            581
 -------------------------------------------------------------------------------
-SUM:                            54           7907           3310          23552
+SUM:                            55           7944           3337          23715
 -------------------------------------------------------------------------------
 ```
 

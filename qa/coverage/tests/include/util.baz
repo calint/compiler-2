@@ -1,0 +1,7 @@
+include "base.baz"
+
+# comment between the include and the first definition
+
+func twice(x) res {
+    res = add(x, x)
+}

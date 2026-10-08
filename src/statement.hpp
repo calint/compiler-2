@@ -388,7 +388,6 @@ class statement {
         return [this, &tc, indent, &src_loc_tk, &info](
                    const operand& reg_count, const operand& address_register,
                    const machine::address_use use) -> void {
-
             compile_address(tc, indent, src_loc_tk,
                             {
                                 .reg_count{reg_count},
@@ -410,7 +409,6 @@ class statement {
                 const token& src_loc_tk,
                 [[maybe_unused]] const std::string_view read_text,
                 const std::optional<field_coverage::range>& accessed) -> void {
-
                 const bool is_assigned{
                     accessed ? assigned.covers(*accessed) : assigned.is_full(),
                 };
@@ -449,7 +447,6 @@ class statement {
                 [[maybe_unused]] const std::string_view read_text,
                 [[maybe_unused]] const std::optional<field_coverage::range>&
                     accessed) -> void { is_read = true; });
-
 
         return is_read;
     }

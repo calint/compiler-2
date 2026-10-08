@@ -33,6 +33,7 @@ inline constexpr std::string_view false_value{"false"};
 } // namespace reserved_names
 
 class token final {
+    size_t file_ix_{};          // index of the source file of the token
     std::string_view ws_left_;  // whitespace left of token text
     size_t start_ix_{};         // token text start index in source
     std::string_view text_;     // token text
@@ -42,18 +43,21 @@ class token final {
     bool is_str_{};             // true if the text is a string literal
 
   public:
-    token(const std::string_view ws_left, const size_t start_ix,
-          const std::string_view name, const size_t end_ix,
-          const std::string_view ws_right, const size_t at_line,
-          const bool is_str)
-        : ws_left_{ws_left}, start_ix_{start_ix}, text_{name}, end_ix_{end_ix},
-          ws_right_{ws_right}, at_line_{at_line}, is_str_{is_str} {}
+    token(const size_t file_ix, const std::string_view ws_left,
+          const size_t start_ix, const std::string_view name,
+          const size_t end_ix, const std::string_view ws_right,
+          const size_t at_line, const bool is_str)
+        : file_ix_{file_ix}, ws_left_{ws_left}, start_ix_{start_ix},
+          text_{name}, end_ix_{end_ix}, ws_right_{ws_right}, at_line_{at_line},
+          is_str_{is_str} {}
 
     token() = default;
 
     [[nodiscard]] auto at_line() const -> size_t { return at_line_; }
 
     [[nodiscard]] auto end_index() const -> size_t { return end_ix_; }
+
+    [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
     [[nodiscard]] auto has_whitespace_before() const -> bool {
         return not ws_left_.empty();
@@ -179,7 +183,7 @@ class token final {
                 const size_t backslash_index{start_ix_ + 1 + i};
                 // note: +1 because the text starts after the opening quote
 
-                return position(backslash_index, line);
+                return position(file_ix_, backslash_index, line);
             }
 
             i += escape_size;
@@ -306,19 +310,20 @@ class token final {
     }
 
     // a marker at 'index' with empty text and whitespace
-    [[nodiscard]] static auto position(const size_t index, const size_t line)
-        -> token {
+    [[nodiscard]] static auto position(const size_t file_ix, const size_t index,
+                                       const size_t line) -> token {
 
-        return synthetic("", index, line);
+        return synthetic(file_ix, "", index, line);
     }
 
     // a token the compiler makes, located at 'index' in the source, without
     // whitespace
-    [[nodiscard]] static auto synthetic(const std::string_view text,
+    [[nodiscard]] static auto synthetic(const size_t file_ix,
+                                        const std::string_view text,
                                         const size_t index, const size_t line)
         -> token {
 
-        return {"", index, text, index, "", line, false};
+        return {file_ix, "", index, text, index, "", line, false};
     }
 
   private:

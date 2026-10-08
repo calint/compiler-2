@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: multiple source files: 'include "lib.baz"' only at the top of a file
+    => done (2026-10-08): 'source_files' owns the files (a deque, so the text
+       does not move); 'token' and 'compiler_exception' carry the file index;
+       'tokenizer' stamps it; 'program::parse_file' parses the includes of a
+       file first, each file once (canonical path, so cycles end), relative to
+       the including file; errors, labels and 'where' texts name the file of
+       the token (the main file keeps the old texts); '--reproduce-source'
+       compares file by file; tests 910-916 with files in 'tests/include'
 [-] hard: consider making widening explicit too, today only narrowing needs
     'i8(...)' ('var y i32 = 1 + low(x)' with 'low' returning i8 is rejected)
     => prototype: requiring equal widths in the 3 width checks rejects 40+

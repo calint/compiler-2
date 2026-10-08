@@ -129,7 +129,8 @@ class stmt_call : public expression {
         const token& first_tk{receiver.first_token()};
 
         const token receiver_pos_tk{
-            token::position(first_tk.start_index(), first_tk.at_line()),
+            token::position(first_tk.file_index(), first_tk.start_index(),
+                            first_tk.at_line()),
         };
 
         args_.emplace_back(

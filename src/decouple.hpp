@@ -5,13 +5,17 @@
 // the statement factories at the end are implemented in 'decouple_impl.hpp'
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -45,33 +49,131 @@
     return {at_line, char_index_in_source - line_end_before};
 }
 
-// where a token is in the source, as numbers or as text
-class source_locations final {
-    std::string_view source_;
+// the source files of a program, the first is the main file; the text stays
+// where it is when files are added, tokens refer to it
+class source_files final {
+    struct file {
+        std::string name;
+        std::string text;
+    };
+
+    std::deque<file> files_;
 
   public:
-    explicit source_locations(const std::string_view source)
-        : source_{source} {}
+    // returns the index of the file
+    auto add(std::string name, std::string text) -> size_t {
+        files_.push_back({
+            .name{std::move(name)},
+            .text{std::move(text)},
+        });
 
-    [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
-        return text(src_loc_tk, '.');
+        return files_.size() - 1;
+        // note: -1 because the file is the last one
     }
 
-    // human-readable source location
+    [[nodiscard]] auto count() const -> size_t { return files_.size(); }
+
+    [[nodiscard]] auto is_empty() const -> bool {
+        return files_.empty() or files_.front().text.empty();
+    }
+
+    [[nodiscard]] auto name(const size_t file_ix) const -> std::string_view {
+        return files_.at(file_ix).name;
+    }
+
+    [[nodiscard]] auto text(const size_t file_ix) const -> std::string_view {
+        return files_.at(file_ix).text;
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto read_file(const std::string_view file_name)
+        -> std::string {
+
+        // a source is far smaller, the limit stops a file that never ends, e.g.
+        // a device, from using all the memory
+        constexpr size_t max_source_size_bytes{size_t{256} * 1024 * 1024};
+        constexpr size_t read_chunk_size_bytes{0x10000};
+
+        std::ifstream fs{std::string{file_name}};
+
+        if (not fs.is_open()) {
+            throw std::runtime_error{
+                std::format("cannot open file '{}'", file_name)};
+        }
+
+        std::string contents;
+        std::array<char, read_chunk_size_bytes> chunk{};
+
+        while (
+            fs.read(chunk.data(), static_cast<std::streamsize>(chunk.size())) or
+            fs.gcount() > 0) {
+
+            contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
+
+            if (contents.size() > max_source_size_bytes) {
+                throw std::runtime_error{
+                    std::format("file '{}' is larger than {} B", file_name,
+                                max_source_size_bytes)};
+            }
+        }
+
+        return contents;
+    }
+};
+
+// where a token is in the source, as numbers or as text
+class source_locations final {
+    const source_files* files_{};
+
+  public:
+    // without files the tokens have no location
+    explicit source_locations(const source_files* const files)
+        : files_{files} {}
+
+    // the location in the main file has no file name, a label stays the same
+    // for a program of one file
+    [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
+        if (src_loc_tk.file_index() == 0) {
+            return text(src_loc_tk, '.');
+        }
+
+        return std::format("f{}.{}", src_loc_tk.file_index(),
+                           text(src_loc_tk, '.'));
+    }
+
+    [[nodiscard]] auto has_source() const -> bool {
+        return files_ != nullptr and not files_->is_empty();
+    }
+
+    // human-readable source location, with the file name unless the file is
+    // the main one
     [[nodiscard]] auto human_readable(const token& src_loc_tk) const
         -> std::string {
 
-        return text(src_loc_tk, ':');
+        if (src_loc_tk.file_index() == 0) {
+            return text(src_loc_tk, ':');
+        }
+
+        return std::format("{}:{}", files_->name(src_loc_tk.file_index()),
+                           text(src_loc_tk, ':'));
     }
 
     [[nodiscard]] auto line_and_column(const token& src_loc_tk) const
         -> std::pair<size_t, size_t> {
 
         return line_and_col_num_for_char_index(
-            src_loc_tk.at_line(), src_loc_tk.start_index(), source_);
+            src_loc_tk.at_line(), src_loc_tk.start_index(),
+            files_->text(src_loc_tk.file_index()));
     }
 
-    [[nodiscard]] auto source() const -> std::string_view { return source_; }
+    [[nodiscard]] auto source_of(const token& src_loc_tk) const
+        -> std::string_view {
+
+        return files_->text(src_loc_tk.file_index());
+    }
 
   private:
     // 'line' and 'column' of the token, 'separator' between them

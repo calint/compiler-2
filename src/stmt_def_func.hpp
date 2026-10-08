@@ -382,7 +382,7 @@ class stmt_def_func final : public statement {
                   const generic_type_instance* const generic_instance)
         -> std::shared_ptr<stmt_def_func> {
 
-        tokenizer tz{tc.source(), start_tk};
+        tokenizer tz{tc.source_of(start_tk), start_tk};
 
         return std::make_shared<stmt_def_func>(tc, func_tk, tz, type_args,
                                                generic_instance);
@@ -392,7 +392,7 @@ class stmt_def_func final : public statement {
     // located at the method name for diagnostics
     auto add_self_param(const toc& tc) -> void {
         const token self_tk{
-            token::synthetic(reserved_names::self,
+            token::synthetic(method_name_tk_.file_index(), reserved_names::self,
                              method_name_tk_.start_index(),
                              method_name_tk_.at_line()),
         };

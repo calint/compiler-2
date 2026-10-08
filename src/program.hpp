@@ -1,14 +1,20 @@
 #pragma once
 // reviewed: 2025-09-28
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <format>
+#include <functional>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <set>
 #include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -23,6 +29,7 @@
 #include "stmt_def_func.hpp"
 #include "stmt_def_type.hpp"
 #include "stmt_def_var.hpp"
+#include "stmt_include.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -283,14 +290,25 @@ class program final {
     type type_i8_{"i8", sizeof(int8_t), type_kind::builtin};
     type type_bool_{"bool", type_i8_.size_bytes(), type_kind::boolean};
 
+    // the statements of one file, in 'statements_'
+    struct file_statements {
+        size_t file_ix{};
+        size_t begin{};
+        size_t end{};
+    };
+
+    std::reference_wrapper<source_files> files_;
     std::vector<std::unique_ptr<statement>> statements_;
+    std::vector<file_statements> file_statements_;
+    std::set<std::filesystem::path> loaded_paths_;
     toc tc_; // table of contents
     size_t vars_size_bytes_{};
 
   public:
-    program(machine& backend, const std::string_view source,
-            const size_t vars_size_bytes, const check_options& checks)
-        : tc_{backend, source, vars_size_bytes, checks},
+    // the main file is the first of 'files', the included ones are added
+    program(machine& backend, source_files& files, const size_t vars_size_bytes,
+            const check_options& checks)
+        : files_{files}, tc_{backend, files, vars_size_bytes, checks},
           vars_size_bytes_{vars_size_bytes} {
 
         if (vars_size_bytes > backend.max_storage_bytes()) {
@@ -331,20 +349,9 @@ class program final {
 
         tc_.enter_block();
 
-        tokenizer tz{source};
-        while (true) {
-            const token tk{tz.next_token()};
+        loaded_paths_.insert(std::filesystem::weakly_canonical(files.name(0)));
 
-            if (tk.text().empty() and not tk.is_string()) {
-                // a delimiter is not a token, only the end of the source ends
-                // the definitions
-                tz.assert_not_at_delimiter();
-
-                break;
-            }
-
-            statements_.emplace_back(parse_definition(tc_, tz, tk));
-        }
+        parse_file(0);
 
         tc_.exit_block();
 
@@ -364,9 +371,16 @@ class program final {
         x.write_assembly(os);
     }
 
-    auto source_to(std::ostream& os) const -> void {
-        for (const std::unique_ptr<statement>& s : statements_) {
-            s->source_to(os);
+    // writes the source of the statements parsed from a file
+    auto source_to(const size_t file_ix, std::ostream& os) const -> void {
+        for (const file_statements& parsed : file_statements_) {
+            if (parsed.file_ix != file_ix) {
+                continue;
+            }
+
+            for (size_t i{parsed.begin}; i < parsed.end; ++i) {
+                statements_.at(i)->source_to(os);
+            }
         }
     }
 
@@ -397,6 +411,11 @@ class program final {
 
         if (tk.is_text("var")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
+        }
+
+        if (tk.is_text("include")) {
+            throw compiler_exception{
+                tk, "'include' must be before the definitions of the file"};
         }
 
         throw compiler_exception{
@@ -449,6 +468,91 @@ class program final {
         }
 
         x.reserve_variables(alignment, vars_size_bytes_);
+    }
+
+    auto load_file(const std::filesystem::path& path, const token& path_tk)
+        -> void {
+
+        std::string text;
+
+        try {
+            text = source_files::read_file(path.string());
+        } catch (const std::runtime_error& e) {
+            throw compiler_exception{path_tk, e.what()};
+        }
+
+        const size_t file_ix{files_.get().add(path.string(), std::move(text))};
+
+        parse_file(file_ix);
+    }
+
+    // the included files are parsed where their 'include' is, before the
+    // definitions of the including file
+    auto parse_file(const size_t file_ix) -> void {
+        tokenizer tz{file_ix, files_.get().text(file_ix)};
+        std::vector<std::unique_ptr<statement>> parsed;
+
+        token tk{tz.next_token()};
+
+        while (tk.is_text("include")) {
+            parsed.emplace_back(parse_include(tz, tk, file_ix));
+            tk = tz.next_token();
+        }
+
+        while (true) {
+            if (tk.text().empty() and not tk.is_string()) {
+                // a delimiter is not a token, only the end of the source ends
+                // the definitions
+                tz.assert_not_at_delimiter();
+
+                break;
+            }
+
+            parsed.emplace_back(parse_definition(tc_, tz, tk));
+            tk = tz.next_token();
+        }
+
+        const size_t begin{statements_.size()};
+
+        std::ranges::move(parsed, std::back_inserter(statements_));
+
+        file_statements_.push_back({
+            .file_ix{file_ix},
+            .begin{begin},
+            .end{statements_.size()},
+        });
+    }
+
+    // a file is parsed once, a later 'include' of it, also from a file it
+    // includes, changes nothing
+    [[nodiscard]] auto parse_include(tokenizer& tz, const token include_tk,
+                                     const size_t file_ix)
+        -> std::unique_ptr<statement> {
+
+        const token path_tk{tz.next_token()};
+
+        if (not path_tk.is_string()) {
+            throw compiler_exception{
+                path_tk, "expected the file name in quotes after 'include'"};
+        }
+
+        // relative to the directory of the file with the 'include'
+        const std::filesystem::path path{
+            (std::filesystem::path{files_.get().name(file_ix)}.parent_path() /
+             std::string{path_tk.text()})
+                .lexically_normal(),
+        };
+
+        const bool is_new{
+            loaded_paths_.insert(std::filesystem::weakly_canonical(path))
+                .second,
+        };
+
+        if (is_new) {
+            load_file(path, path_tk);
+        }
+
+        return std::make_unique<stmt_include>(include_tk, path_tk);
     }
 
     //

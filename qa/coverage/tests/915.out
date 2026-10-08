@@ -1,0 +1,4 @@
+
+include/dup.baz:3:6: function 'add' already defined at include/base.baz:1:6
+func add() {}
+     ^~~

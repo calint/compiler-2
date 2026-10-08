@@ -316,7 +316,7 @@ class stmt_def_type final : public statement {
     auto parse_generic_fields(toc& tc, const generic_type_info& generic)
         -> void {
 
-        tokenizer generic_tz{tc.source(), generic.start_tk};
+        tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
 
         // skips the name and the parameters of the generic definition
         std::ignore = generic_tz.next_token();

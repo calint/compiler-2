@@ -2782,3 +2782,24 @@ SRC=908 && EXP=3 && RUN
 
 # a conversion of a struct value is rejected
 SRC=909 && COMPERR
+
+# an included file with an include of its own and the same file included twice
+SRC=910 && EXP=42 && RUN
+
+# an error in an included file is reported with the name of the file
+SRC=911 && COMPERR
+
+# an include after a definition is rejected
+SRC=912 && COMPERR
+
+# a file that includes the file that includes it is parsed once
+SRC=913 && EXP=3 && RUN
+
+# an included file that does not exist is rejected
+SRC=914 && COMPERR
+
+# a definition in an included file is reported with its file at the clash
+SRC=915 && COMPERR
+
+# an include without a file name in quotes is rejected
+SRC=916 && COMPERR

@@ -17,6 +17,7 @@ class compiler_exception final : public std::exception {
     // a place the error was found through: an inlined call or the instance of
     // a generic definition
     struct call_frame {
+        size_t file_ix{};
         size_t line{};
         size_t start_index{};
         size_t end_index{};
@@ -27,8 +28,8 @@ class compiler_exception final : public std::exception {
     // a token without a place in the source, line 0, reports like a problem of
     // the whole file
     compiler_exception(const token& src_loc_tk, std::string message)
-        : msg{std::move(message)}, line{src_loc_tk.at_line()},
-          start_index{src_loc_tk.start_index()},
+        : msg{std::move(message)}, file_ix{src_loc_tk.file_index()},
+          line{src_loc_tk.at_line()}, start_index{src_loc_tk.start_index()},
           end_index{src_loc_tk.end_index()} {}
 
     // defined in 'tokenizer.hpp', the error is at the cursor: the start of the
@@ -37,6 +38,7 @@ class compiler_exception final : public std::exception {
     compiler_exception(const tokenizer& tz, std::string message);
 
     std::string msg;
+    size_t file_ix{};
     size_t line{};
     size_t start_index{};
     size_t end_index{};
@@ -51,6 +53,7 @@ class compiler_exception final : public std::exception {
                         std::string reason = "called from") -> void {
 
         call_frames.push_back({
+            .file_ix{call_tk.file_index()},
             .line{call_tk.at_line()},
             .start_index{call_tk.start_index()},
             .end_index{call_tk.end_index()},

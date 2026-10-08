@@ -1,0 +1,3 @@
+include "include/missing.baz"
+
+func main() {}

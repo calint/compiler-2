@@ -635,7 +635,8 @@ class constant_parser final {
             // note: +1 because the backslash follows the opening quote
             const token escape_tk{
                 src_loc_tk.is_text(str)
-                    ? token::position(backslash_index, src_loc_tk.at_line())
+                    ? token::position(src_loc_tk.file_index(), backslash_index,
+                                      src_loc_tk.at_line())
                     : src_loc_tk,
             };
 
@@ -1934,9 +1935,9 @@ class toc final {
     size_t dry_run_depth_{};
 
   public:
-    toc(::machine& backend, const std::string_view source,
+    toc(::machine& backend, const source_files& files,
         const size_t vars_capacity_bytes, const check_options& checks)
-        : machine_{backend}, locations_{source},
+        : machine_{backend}, locations_{&files},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
           builtins_{backend}, resolver_{scopes_, backend, generics_, builtins_},
           var_comments_{backend, resolver_},
@@ -2570,15 +2571,18 @@ class toc final {
 
     auto set_type_void(const type& tpe) -> void { builtins_.set_void(tpe); }
 
-    [[nodiscard]] auto source() const -> std::string_view {
-        return locations_.source();
-    }
-
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const
         -> std::string {
 
         return locations_.for_label(src_loc_tk);
+    }
+
+    // the text of the file of the token
+    [[nodiscard]] auto source_of(const token& src_loc_tk) const
+        -> std::string_view {
+
+        return locations_.source_of(src_loc_tk);
     }
 
     [[nodiscard]] auto types() -> type_table& { return types_; }

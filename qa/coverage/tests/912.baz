@@ -1,0 +1,3 @@
+func main() {}
+
+include "include/base.baz"

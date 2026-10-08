@@ -508,10 +508,10 @@ class machine {
   public:
     enum class builtin_function : uint8_t { read, write, exit };
 
-    // 'source' locates the tokens of comments, backend tests may leave it empty
-    machine(std::ostream& os, const std::string_view source,
+    // 'files' locate the tokens of comments, backend tests may leave it null
+    machine(std::ostream& os, const source_files* const files,
             const assembler::jump_mode jumps)
-        : os_{os}, locations_{source}, jump_mode_{jumps} {}
+        : os_{os}, locations_{files}, jump_mode_{jumps} {}
 
     machine(const machine&) = delete;
     machine(machine&&) = delete;
@@ -995,7 +995,7 @@ class machine {
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void {
 
-        if (src_loc_tk.at_line() == 0 or locations_.source().empty()) {
+        if (src_loc_tk.at_line() == 0 or not locations_.has_source()) {
             target_assembler().comment(indent, text);
             return;
         }
@@ -1075,7 +1075,7 @@ class machine {
     [[nodiscard]] auto location_text(const token& src_loc_tk) const
         -> std::string {
 
-        if (src_loc_tk.at_line() == 0 or locations_.source().empty()) {
+        if (src_loc_tk.at_line() == 0 or not locations_.has_source()) {
             return "-";
         }
 

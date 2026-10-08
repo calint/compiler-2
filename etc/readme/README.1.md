@@ -43,7 +43,9 @@ compiler writes the binary image itself.
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
-  `not`, `true`, `false`
+  `not`, `true`, `false`, `include`
+* `include "lib.baz"` at the top of a file adds the definitions of another file
+  where it is, relative to the including file, each file once
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 

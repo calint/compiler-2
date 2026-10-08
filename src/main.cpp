@@ -104,14 +104,11 @@ auto print_help(const char* const program_name) -> void;
 
 [[nodiscard]] auto compile_file(const options& opts) -> int;
 
-auto print_compiler_error(const options& opts, std::string_view src,
+auto print_compiler_error(const source_files& files,
                           const compiler_exception& e) -> void;
 
-auto check_reproduced_source(const program& prg, const options& opts,
-                             std::string_view src) -> void;
-
-[[nodiscard]] auto read_file_to_string(const char* const file_name)
-    -> std::string;
+auto check_reproduced_source(const program& prg, const source_files& files)
+    -> void;
 
 [[nodiscard]] auto parse_size_bytes(const std::string_view text,
                                     const std::string_view name,
@@ -136,7 +133,7 @@ default_binary_file_name(const std::string_view src_file_name,
                          const target machine_target) -> std::string;
 
 [[nodiscard]] auto make_backend(const target machine_target, std::ostream& os,
-                                const std::string_view src,
+                                const source_files* const files,
                                 const assembler::jump_mode jumps,
                                 const size_t stack_size_bytes,
                                 const std::string_view binary_file_name)
@@ -144,16 +141,16 @@ default_binary_file_name(const std::string_view src_file_name,
 
 auto print_usage_error(const std::string_view message) -> void;
 
-auto print_call_frames(std::string_view src_file_name, std::string_view src,
+auto print_call_frames(const source_files& files,
                        std::span<const compiler_exception::call_frame> frames)
     -> void;
 
 auto trimmed_line_at(std::string_view src, size_t index) -> std::string_view;
 
-auto print_source_error(const std::string_view src_file_name,
-                        const std::string_view src, const size_t line,
-                        const size_t start_index, const size_t end_index,
-                        const std::string_view message) -> void;
+auto print_source_error(const source_files& files, const size_t file_ix,
+                        const size_t line, const size_t start_index,
+                        const size_t end_index, const std::string_view message)
+    -> void;
 
 auto print_source_line(std::string_view src, size_t start_index,
                        size_t end_index) -> void;
@@ -392,9 +389,10 @@ class null_stream final : public std::ostream {
 };
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
-    std::string src;
+    source_files files;
     try {
-        src = read_file_to_string(opts.src_file_name);
+        files.add(opts.src_file_name,
+                  source_files::read_file(opts.src_file_name));
 
         const assembler::jump_mode jumps{
             opts.optimize_jumps ? assembler::jump_mode::optimized
@@ -413,7 +411,7 @@ class null_stream final : public std::ostream {
         };
 
         const std::unique_ptr<machine> backend{
-            make_backend(opts.machine_target, parser_output, src, jumps,
+            make_backend(opts.machine_target, parser_output, &files, jumps,
                          opts.stack_size_bytes, binary),
         };
 
@@ -421,16 +419,16 @@ class null_stream final : public std::ostream {
             backend->enable_register_report();
         }
 
-        program prg{*backend, src, opts.vars_size_bytes, opts.checks};
+        program prg{*backend, files, opts.vars_size_bytes, opts.checks};
 
         if (opts.reproduce_source) {
-            check_reproduced_source(prg, opts, src);
+            check_reproduced_source(prg, files);
         }
 
         prg.build(std::cout);
 
     } catch (const compiler_exception& e) {
-        print_compiler_error(opts, src, e);
+        print_compiler_error(files, e);
         return 1;
     } catch (const std::runtime_error& e) {
         std::println(stderr, "\npanic: {}", e.what());
@@ -446,64 +444,35 @@ class null_stream final : public std::ostream {
 
 // the message of the error at its source line, the inlined calls it was found
 // in and what else is known about it
-auto print_compiler_error(const options& opts, const std::string_view src,
+auto print_compiler_error(const source_files& files,
                           const compiler_exception& e) -> void {
 
-    print_source_error(opts.src_file_name, src, e.line, e.start_index,
-                       e.end_index, e.msg);
+    print_source_error(files, e.file_ix, e.line, e.start_index, e.end_index,
+                       e.msg);
 
-    print_call_frames(opts.src_file_name, src, e.call_frames);
+    print_call_frames(files, e.call_frames);
 
     if (not e.detail.empty()) {
         std::println(stderr, "\n{}", e.detail);
     }
 }
 
-// the source written back from the parsed program equals the input
-auto check_reproduced_source(const program& prg, const options& opts,
-                             const std::string_view src) -> void {
+// the source written back from the parsed program equals the input, file by
+// file
+auto check_reproduced_source(const program& prg, const source_files& files)
+    -> void {
 
-    std::ofstream reproduced_source{"diff.baz"};
-    prg.source_to(reproduced_source);
-    reproduced_source.close();
+    for (size_t file_ix{}; file_ix < files.count(); ++file_ix) {
+        std::ofstream reproduced_source{"diff.baz"};
+        prg.source_to(file_ix, reproduced_source);
+        reproduced_source.close();
 
-    if (src != read_file_to_string("diff.baz")) {
-        throw std::runtime_error{std::format(
-            "generated source differs. diff {} diff.baz", opts.src_file_name)};
-    }
-}
-
-[[nodiscard]] auto read_file_to_string(const char* const file_name)
-    -> std::string {
-
-    // a source is far smaller, the limit stops a file that never ends, e.g. a
-    // device, from using all the memory
-    constexpr size_t max_source_size_bytes{size_t{256} * 1024 * 1024};
-    constexpr size_t read_chunk_size_bytes{0x10000};
-
-    std::ifstream fs{file_name};
-
-    if (not fs.is_open()) {
-        throw std::runtime_error{
-            std::format("cannot open file '{}'", file_name)};
-    }
-
-    std::string contents;
-    std::array<char, read_chunk_size_bytes> chunk{};
-
-    while (fs.read(chunk.data(), static_cast<std::streamsize>(chunk.size())) or
-           fs.gcount() > 0) {
-
-        contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
-
-        if (contents.size() > max_source_size_bytes) {
+        if (files.text(file_ix) != source_files::read_file("diff.baz")) {
             throw std::runtime_error{
-                std::format("file '{}' is larger than {} B", file_name,
-                            max_source_size_bytes)};
+                std::format("generated source differs. diff {} diff.baz",
+                            files.name(file_ix))};
         }
     }
-
-    return contents;
 }
 
 // decimal or 0x hexadecimal, 'name' describes the size in error messages
@@ -675,7 +644,7 @@ default_binary_file_name(const std::string_view src_file_name,
 
 // 'os' receives the output of the parse stage
 [[nodiscard]] auto make_backend(const target machine_target, std::ostream& os,
-                                const std::string_view src,
+                                const source_files* const files,
                                 const assembler::jump_mode jumps,
                                 const size_t stack_size_bytes,
                                 const std::string_view binary_file_name)
@@ -683,24 +652,24 @@ default_binary_file_name(const std::string_view src_file_name,
 
     // todo: x86_64 writes no binary, see etc/todo.txt
     if (machine_target == target::x86_64) {
-        return std::make_unique<machine_x86_64>(os, src, jumps);
+        return std::make_unique<machine_x86_64>(os, files, jumps);
     }
 
     if (machine_target == target::rv32i) {
-        return std::make_unique<machine_rv32i>(os, src, jumps,
+        return std::make_unique<machine_rv32i>(os, files, jumps,
                                                binary_file_name);
     }
 
     if (machine_target == target::rv32i_qemu) {
         return std::make_unique<machine_rv32i_qemu>(
-            os, src, jumps, binary_file_name, stack_size_bytes);
+            os, files, jumps, binary_file_name, stack_size_bytes);
     }
 
     // the command line accepts only these four targets
     assert(machine_target == target::rv32i_fpga);
 
     return std::make_unique<machine_rv32i_fpga>(
-        os, src, jumps, binary_file_name, stack_size_bytes);
+        os, files, jumps, binary_file_name, stack_size_bytes);
 }
 
 // every command line error ends with the same hint
@@ -711,10 +680,13 @@ auto print_usage_error(const std::string_view message) -> void {
 
 // the inlined calls the error was found in, innermost first
 auto print_call_frames(
-    const std::string_view src_file_name, const std::string_view src,
+    const source_files& files,
     const std::span<const compiler_exception::call_frame> frames) -> void {
 
     for (const compiler_exception::call_frame& frame : frames) {
+        const std::string_view src_file_name{files.name(frame.file_ix)};
+        const std::string_view src{files.text(frame.file_ix)};
+
         const auto [line_num, col]{
             line_and_col_num_for_char_index(frame.line, frame.start_index, src),
         };
@@ -755,10 +727,13 @@ auto trimmed_line_at(const std::string_view src, const size_t index)
 
 // 'line' and 'start_index' locate the error, the column is derived from them,
 // line 0 is a problem of the whole file
-auto print_source_error(const std::string_view src_file_name,
-                        const std::string_view src, const size_t line,
-                        const size_t start_index, const size_t end_index,
-                        const std::string_view message) -> void {
+auto print_source_error(const source_files& files, const size_t file_ix,
+                        const size_t line, const size_t start_index,
+                        const size_t end_index, const std::string_view message)
+    -> void {
+
+    const std::string_view src_file_name{files.name(file_ix)};
+    const std::string_view src{files.text(file_ix)};
 
     if (line == 0) {
         std::println(stderr, "\n{}: {}", src_file_name, message);

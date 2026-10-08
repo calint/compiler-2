@@ -395,10 +395,10 @@ class machine_rv32i : public machine {
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
     explicit machine_rv32i(std::ostream& os_ref,
-                           const std::string_view source = {},
+                           const source_files* const files = nullptr,
                            const jump_mode jumps = jump_mode::resolved,
                            const std::string_view binary_file_name = {})
-        : machine{os_ref, source, jumps}, binary_file_name_{binary_file_name} {
+        : machine{os_ref, files, jumps}, binary_file_name_{binary_file_name} {
 
         // output before 'start' is written as emitted in every mode
         assembler_.set_direct_output(&stream());
@@ -1871,7 +1871,6 @@ class machine_rv32i : public machine {
 
         const auto check_negative = [&](const std::string_view reg,
                                         const bool last) -> void {
-
             assembler_.branch_zero(indent, last ? op::bgez : op::bltz, reg,
                                    last ? bounds_pass.reference
                                         : bounds_fail.reference);
@@ -4703,7 +4702,6 @@ class machine_rv32i : public machine {
 
         const auto same_register = [](const std::string_view first,
                                       const std::string_view second) -> bool {
-
             return first == second or
                    (is_register(first) and
                     register_index(first) == register_index(second));

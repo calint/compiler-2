@@ -44,11 +44,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
   public:
     machine_rv32i_bare_metal(std::ostream& os_ref,
-                             const std::string_view source,
+                             const source_files* const files,
                              const jump_mode jumps,
                              const std::string_view binary_file_name,
                              const size_t stack_size_bytes)
-        : machine_rv32i{os_ref, source, jumps, binary_file_name},
+        : machine_rv32i{os_ref, files, jumps, binary_file_name},
           stack_size_bytes_{stack_size_bytes} {}
 
     //
