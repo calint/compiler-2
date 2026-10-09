@@ -34,6 +34,10 @@ compiler writes the binary image itself.
     is rejected at compile time
   * opt-in: `array_copy` whose destination starts inside the source at
     runtime, a copy down the array is allowed
+  * opt-in: stack capacity at `noinline` calls on `rv32i-qemu` and
+    `rv32i-fpga`, the other targets run in an operating system that stops a
+    program that overflows the stack
+    (`--memory` sets the memory of `rv32i-fpga`)
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
   * on by default: compile time rejection of calls and assignments where the
@@ -44,7 +48,6 @@ compiler writes the binary image itself.
 * methods and constructors on user defined types
 * partial ub-free support
   * not checked: signed overflow, it wraps
-  * not checked: stack overflow in deep `noinline` recursion
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,

@@ -36,12 +36,18 @@
 #include "toc.hpp"
 
 namespace {
-// the sizes of '--vars' and '--stack' are multiples of their alignment, the
-// stack one keeps sp 16-byte aligned
+// the sizes of '--vars', '--stack' and '--memory' are multiples of their
+// alignment, the stack one keeps sp 16-byte aligned and the memory one is what
+// a 'lui' loads
 constexpr size_t default_vars_size_bytes{0x10000};
 constexpr size_t vars_alignment{16};
 constexpr size_t default_stack_size_bytes{0x10000};
 constexpr size_t stack_alignment{16};
+constexpr size_t default_memory_size_bytes{0x800000};
+constexpr size_t memory_alignment{4096};
+// the uart and the other devices follow the memory at the end of the address
+// space
+constexpr size_t max_memory_size_bytes{0xfffff000};
 
 enum class target : uint8_t { x86_64, rv32i, rv32i_qemu, rv32i_fpga };
 
@@ -69,6 +75,7 @@ struct options {
     target machine_target{target::x86_64};
     size_t vars_size_bytes{default_vars_size_bytes};
     size_t stack_size_bytes{default_stack_size_bytes};
+    size_t memory_size_bytes{default_memory_size_bytes};
     check_options checks{};
     bool optimize_jumps{true};
     bool reproduce_source{};
@@ -95,6 +102,7 @@ struct value_option {
 // after printing the error
 [[nodiscard]] auto apply_vars(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_stack(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_memory(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_target(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_checks(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_report(std::string_view value, options& opts) -> bool;
@@ -135,6 +143,7 @@ default_binary_file_name(const std::string_view src_file_name,
 [[nodiscard]] auto
 make_backend(const target machine_target, const source_files* const files,
              const assembler::jump_mode jumps, const size_t stack_size_bytes,
+             const size_t memory_size_bytes,
              const std::string_view binary_file_name)
     -> std::unique_ptr<machine>;
 
@@ -222,6 +231,7 @@ template <typename T>
     constexpr std::array value_options{
         value_option{.name{"--vars="}, .apply{apply_vars}},
         value_option{.name{"--stack="}, .apply{apply_stack}},
+        value_option{.name{"--memory="}, .apply{apply_memory}},
         value_option{.name{"--target="}, .apply{apply_target}},
         value_option{.name{"--checks="}, .apply{apply_checks}},
         value_option{.name{"--report="}, .apply{apply_report}},
@@ -283,6 +293,30 @@ template <typename T>
                         opts.stack_size_bytes);
 }
 
+[[nodiscard]] auto apply_memory(const std::string_view value, options& opts)
+    -> bool {
+
+    const std::optional<size_t> parsed{
+        parse_size_bytes(value, "memory size", memory_alignment),
+    };
+
+    if (not parsed) {
+        return false;
+    }
+
+    if (*parsed > max_memory_size_bytes) {
+        print_usage_error(std::format(
+            "invalid memory size: '{}', must be from {} to {} bytes", value,
+            memory_alignment, max_memory_size_bytes));
+
+        return false;
+    }
+
+    opts.memory_size_bytes = *parsed;
+
+    return true;
+}
+
 [[nodiscard]] auto apply_target(const std::string_view value, options& opts)
     -> bool {
 
@@ -337,12 +371,16 @@ options:
                       rv32i: linux, llvm assembler, qemu user mode
                       rv32i-qemu: bare-metal image for the qemu virt machine
                       rv32i-fpga: bare-metal image for the fpga soft core,
-                        stack grows down from the end of the 8 mib memory,
-                        fails when code, data, variables and stack do not fit
+                        stack grows down from the end of the memory (see
+                        --memory), fails when code, data, variables and stack
+                        do not fit
   --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
                       multiple of {1} (default: {2})
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of {3} (default: {4})
+  --memory=SIZE       rv32i-fpga memory in bytes, decimal or 0x hex, must be a
+                      multiple of {5} (default: {6}), the emulator is
+                      built for the default
   --checks=LIST       comma separated checks, replaces earlier --checks
   --report=LIST       comma separated reports after the code, replaces earlier
                       --report
@@ -369,8 +407,11 @@ checks:
   division runtime division by zero and 'MIN / -1'
   shift    runtime shift count below zero or not below the width of the type
   overlap  runtime 'array_copy' whose destination starts inside the source
+  stack    runtime stack capacity at non-inlined calls on rv32i-qemu and
+           rv32i-fpga, the other targets have an operating system that stops
+           a program that overflows the stack
   noub     all checks against undefined behavior: upper, lower, frame, alias,
-           division, shift and overlap
+           division, shift, overlap and stack
   -NAME    turns a check off after the others are applied, e.g.
            noub,-division or -alias (also when noub is given), +NAME is NAME
 
@@ -380,10 +421,12 @@ examples:
   {0} --checks=upper,lower,line,frame prog.baz > prog.s
   {0} --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
   {0} --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+  {0} --target=rv32i-fpga --memory=0x100000 prog.baz > prog.s
   {0} --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
 )",
                program_name, vars_alignment, default_vars_size_bytes,
-               stack_alignment, default_stack_size_bytes);
+               stack_alignment, default_stack_size_bytes, memory_alignment,
+               default_memory_size_bytes);
 }
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
@@ -406,7 +449,7 @@ examples:
 
         const std::unique_ptr<machine> backend{
             make_backend(opts.machine_target, &files, jumps,
-                         opts.stack_size_bytes, binary),
+                         opts.stack_size_bytes, opts.memory_size_bytes, binary),
         };
 
         if (opts.reports.registers) {
@@ -556,7 +599,7 @@ struct check_name {
     bool is_ub;
 };
 
-constexpr std::array<check_name, 8> check_names{
+constexpr std::array<check_name, 9> check_names{
     {
         {.text{"upper"}, .member{&check_options::bounds_upper}, .is_ub{true}},
         {.text{"lower"}, .member{&check_options::bounds_lower}, .is_ub{true}},
@@ -570,6 +613,7 @@ constexpr std::array<check_name, 8> check_names{
         {.text{"division"}, .member{&check_options::division}, .is_ub{true}},
         {.text{"shift"}, .member{&check_options::shift}, .is_ub{true}},
         {.text{"overlap"}, .member{&check_options::overlap}, .is_ub{true}},
+        {.text{"stack"}, .member{&check_options::stack}, .is_ub{true}},
     },
 };
 
@@ -700,6 +744,7 @@ default_binary_file_name(const std::string_view src_file_name,
 [[nodiscard]] auto
 make_backend(const target machine_target, const source_files* const files,
              const assembler::jump_mode jumps, const size_t stack_size_bytes,
+             const size_t memory_size_bytes,
              const std::string_view binary_file_name)
     -> std::unique_ptr<machine> {
 
@@ -722,7 +767,8 @@ make_backend(const target machine_target, const source_files* const files,
     assert(machine_target == target::rv32i_fpga);
 
     return std::make_unique<machine_rv32i_fpga>(
-        nullptr, files, jumps, binary_file_name, stack_size_bytes);
+        nullptr, files, jumps, binary_file_name, stack_size_bytes,
+        memory_size_bytes);
 }
 
 // every command line error ends with the same hint

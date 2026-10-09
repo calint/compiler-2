@@ -124,15 +124,15 @@ CLI_JUMP_OPTIMIZATIONS() {
 CLI_CHECKS_NOUB() {
     echo -n "cli --checks=noub expansion: "
     "$BIN" --checks=noub 015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,frame,alias,division,shift,overlap 015.baz >out 2>err
+    "$BIN" --checks=upper,lower,frame,alias,division,shift,overlap,stack 015.baz >out 2>err
     cmp -s gen.s out
     "$BIN" --checks=line,noub 015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,line,frame,alias,division,shift,overlap 015.baz >out 2>err
+    "$BIN" --checks=upper,lower,line,frame,alias,division,shift,overlap,stack 015.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=noub,-division,-shift,-overlap 015.baz >gen.s 2>err
+    "$BIN" --checks=noub,-division,-shift,-overlap,-stack 015.baz >gen.s 2>err
     "$BIN" --checks=upper,lower,frame,alias 015.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=-division,-shift,-overlap,noub 015.baz >gen.s 2>err
+    "$BIN" --checks=-division,-shift,-overlap,-stack,noub 015.baz >gen.s 2>err
     cmp -s gen.s out
     "$BIN" --checks=+division 015.baz >gen.s 2>err
     "$BIN" --checks=division 015.baz >out 2>err
@@ -284,6 +284,26 @@ CLI_FPGA_MEMORY() {
     set -e
     [[ $exit_code -eq 1 ]]
     grep -Fq "the stack $((memory_size + 16)) B" err
+    # a smaller memory moves the end of the stack and the limit of the vars
+    local small_size=$((0x40000))
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size 430.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Fq "load stack pointer to 0x4:0000" gen.s
+    set +e
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size --vars=$((small_size)) 430.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "exceeds the $small_size B of device memory" err
+    local bad
+    for bad in 0 100 0x100000000 0xfffff800 abc; do
+        set +e
+        "$BIN" --target=rv32i-fpga --memory=$bad 430.baz >gen.s 2>err
+        exit_code=$?
+        set -e
+        [[ $exit_code -eq 1 ]]
+        [[ ! -s gen.s ]]
+    done
     echo "ok (image $image_size B, vars up to $vars_fit B)"
 }
 

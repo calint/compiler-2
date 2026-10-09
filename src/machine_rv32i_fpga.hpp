@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -21,30 +22,34 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr int division_exit_code_{253};
     static constexpr int shift_exit_code_{252};
     static constexpr int overlap_exit_code_{251};
+    static constexpr int stack_exit_code_{250};
     // the uart addresses 0xffff'fff4 and 0xffff'fff8 are reached as sign
     // extended offsets from the zero register
     static constexpr int uart_in_offset_{-12};
     static constexpr int uart_out_offset_{-8};
     // uart_in reads -1 while no byte is received, uart_out while ready
     static constexpr int uart_idle_{-1};
-    // 'lui' of the end of memory 0x800000
-    static constexpr int memory_end_upper_{0x800};
     // 'lui' places the immediate in the upper 20 bits
     static constexpr uint32_t lui_shift_{12};
-    static constexpr uint32_t memory_size_bytes_{
-        uint32_t{memory_end_upper_} << lui_shift_,
-    };
     // the comment prints the address as two 16 bit halves
     static constexpr uint32_t half_bits_{16};
     static constexpr uint32_t half_mask_{0xffff};
+
+    uint32_t memory_size_bytes_{};
 
   public:
     machine_rv32i_fpga(std::ostream* const direct_output,
                        const source_files* const files, const jump_mode jumps,
                        const std::string_view binary_file_name,
-                       const size_t stack_size_bytes)
+                       const size_t stack_size_bytes,
+                       const size_t memory_size_bytes_in)
         : machine_rv32i_bare_metal{direct_output, files, jumps,
-                                   binary_file_name, stack_size_bytes} {}
+                                   binary_file_name, stack_size_bytes},
+          memory_size_bytes_{static_cast<uint32_t>(memory_size_bytes_in)} {
+
+        // 'lui' loads the end of memory
+        assert(memory_size_bytes_ % (uint32_t{1} << lui_shift_) == 0);
+    }
 
     //
     // overridden methods
@@ -81,13 +86,18 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         emit_panic_exit(shift_failure_handler_label, shift_exit_code_);
     }
 
+    auto emit_stack_overflow_handler() -> void override {
+        emit_panic_exit(stack_overflow_handler_label, stack_exit_code_);
+    }
+
   protected:
     //
     // overridden methods
     //
 
     // the stack below the end of memory may not reach into the variables,
-    // how much of it is used at runtime is not checked
+    // how much of it is used at runtime is checked only by
+    // '--checks=stack'
     auto check_memory_end(const size_t memory_end_address) const
         -> void override {
 
@@ -101,6 +111,13 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
             "code, data and variables use {} B and the stack {} B, "
             "which exceeds the {} B of device memory",
             memory_end_address, stack_size_bytes(), memory_size_bytes_)};
+    }
+
+    // the stack is the 'stack_size_bytes' below the end of memory
+    auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
+        -> void override {
+
+        assembler().li(indent, reg, memory_size_bytes_ - stack_size_bytes());
     }
 
   private:
@@ -131,7 +148,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                                  memory_size_bytes_ >> half_bits_,
                                  memory_size_bytes_ & half_mask_));
 
-        a.lui(0, "sp", memory_end_upper_);
+        a.lui(0, "sp", memory_size_bytes_ >> lui_shift_);
         a.add_separator_newline();
     }
 

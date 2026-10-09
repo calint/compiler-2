@@ -891,6 +891,7 @@ struct check_options {
     bool division{};
     bool shift{};
     bool overlap{};
+    bool stack{};
 };
 
 // what the compile used, for the report
@@ -2620,6 +2621,8 @@ class toc final {
     }
 
     [[nodiscard]] auto is_shift_check() const -> bool { return checks_.shift; }
+
+    [[nodiscard]] auto is_stack_check() const -> bool { return checks_.stack; }
 
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
         -> bool {

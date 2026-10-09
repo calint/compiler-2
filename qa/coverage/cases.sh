@@ -3044,3 +3044,22 @@ SRC=990 && EXP=255 && RUN_ERR_OPTS "--checks=overlap"
 
 # --checks=overlap,line: overlapping copy with the line
 SRC=991 && EXP=255 && RUN_ERR_OPTS "--checks=overlap,line"
+
+# --checks=stack: recursion that fits in the stack
+SRC=992 && EXP=0 && OPTS="--checks=stack" RUN
+
+# --checks=stack: the operating system stops an overflow, no check is emitted
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=993 && EXP=0 && OPTS="--checks=stack" RUN; fi
+
+# --checks=stack: recursion deeper than the stack panics
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=993 && EXP=255 && RUN_ERR_OPTS "--stack=0x100 --checks=stack"; fi
+
+# --memory: the stack starts at the end of a smaller memory and fits, the
+# emulator has more memory
+if [[ $MACHINE == rv32i-fpga ]]; then SRC=992 && EXP=0 && OPTS="--memory=0x20000 --stack=0x1000 --checks=stack" RUN; fi
+
+# --memory: recursion deeper than the stack of a smaller memory panics
+if [[ $MACHINE == rv32i-fpga ]]; then SRC=993 && EXP=255 && RUN_ERR_OPTS "--memory=0x20000 --stack=0x100 --checks=stack"; fi
+
+# --checks=lower,stack: the check keeps the registers the call still uses
+SRC=994 && EXP=0 && OPTS="--checks=lower,stack" RUN

@@ -3598,6 +3598,7 @@ msg_overlap:
 db `panic: overlap at line `
 msg_overlap_len equ $ - msg_overlap
 section .text
+; stack overflow handler (--checks=stack)
 ; shift failure handler (--checks=shift)
 baz_shift_panic:
 ;    print message to stderr

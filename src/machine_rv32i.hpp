@@ -366,10 +366,24 @@ class machine_rv32i : public machine {
         assembler_.ecall(indent);
     }
 
+    // loads the lowest address the stack may reach into the register 'reg',
+    // the stack follows the variables unless a target says otherwise
+    virtual auto emit_stack_limit_load(const size_t indent,
+                                       const std::string_view reg) -> void {
+
+        assembler_.la(indent, reg, variables_end_label);
+    }
+
     // same registers as 'emit_read_call'
     virtual auto emit_write_call(const size_t indent) -> void {
         assembler_.li(indent, "a7", syscall_write_);
         assembler_.ecall(indent);
+    }
+
+    // true where no operating system stops a program that overflows the
+    // stack, calls then check that the stack has room
+    [[nodiscard]] virtual auto is_stack_bounded() const -> bool {
+        return false;
     }
 
     //
@@ -764,6 +778,66 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
+    // a call saves the registers allocated now, the registers of the arguments
+    // included, so the bound is not below what the call pushes; the callee and
+    // the helpers it calls push more, a helper call saves up to 8 registers
+    // and the line report of a failure takes 16 bytes of digits
+    auto check_stack_capacity(const token& src_loc_tk, const size_t indent,
+                              const bool enabled) -> void override {
+
+        if (not enabled or not is_stack_bounded()) {
+            return;
+        }
+
+        constexpr size_t leaf_stack_bytes{64};
+
+        size_t saved_count{};
+        for (const register_pool::allocation& allocated :
+             registers_.allocations()) {
+
+            if (allocated.index != register_index(variables_base_register_)) {
+                ++saved_count;
+            }
+        }
+
+        const size_t call_bytes{
+            align_storage_size(saved_count * word_size_bytes_,
+                               stack_alignment_) +
+                frame_save_bytes_ + leaf_stack_bytes,
+        };
+
+        constexpr local_label fits{
+            .name{"2"},
+            .reference{"2f"},
+        };
+
+        comment(src_loc_tk, indent, "stack capacity check begin");
+
+        const operand limit{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        const operand lowest{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        emit_stack_limit_load(indent, limit.base_register());
+
+        comment(src_loc_tk, indent, "lowest stack pointer the call reaches");
+
+        assembler_.addi(indent, lowest.base_register(), "sp",
+                        -static_cast<int64_t>(call_bytes));
+
+        assembler_.bgeu(indent, lowest.base_register(), limit.base_register(),
+                        fits.reference);
+
+        branch(indent, stack_overflow_handler_label);
+        assembler_.label(indent, fits.name);
+        free_scratch_register(src_loc_tk, indent, lowest);
+        free_scratch_register(src_loc_tk, indent, limit);
+        comment(src_loc_tk, indent, "stack capacity check end");
+    }
+
     auto comment_alias(const token& src_loc_tk, const size_t indent,
                        const std::string_view from, const std::string_view to,
                        [[maybe_unused]] const operand& address)
@@ -1081,6 +1155,16 @@ class machine_rv32i : public machine {
     auto emit_shift_failure_handler(const bool with_line) -> void override {
         emit_named_failure_handler(shift_failure_handler_label, "shift",
                                    with_line);
+    }
+
+    auto emit_stack_overflow_handler() -> void override {
+        // an operating system stops a program that overflows the stack
+        if (not is_stack_bounded()) {
+            return;
+        }
+
+        emit_named_failure_handler(stack_overflow_handler_label,
+                                   "stack overflow", false);
     }
 
     auto emit_string_constants(const std::span<const string_constant> strings)
@@ -3153,7 +3237,13 @@ class machine_rv32i : public machine {
 
         constexpr std::array<int64_t, 1> newline{'\n'};
 
-        const std::string message_label{std::format(".Lbaz_{}_message", name)};
+        std::string label_name{name};
+        std::ranges::replace(label_name, ' ', '_');
+
+        const std::string message_label{
+            std::format(".Lbaz_{}_message", label_name),
+        };
+
         const std::string message{std::format("panic: {}", name)};
 
         label(0, handler_label);

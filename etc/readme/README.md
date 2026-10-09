@@ -34,6 +34,10 @@ compiler writes the binary image itself.
     is rejected at compile time
   * opt-in: `array_copy` whose destination starts inside the source at
     runtime, a copy down the array is allowed
+  * opt-in: stack capacity at `noinline` calls on `rv32i-qemu` and
+    `rv32i-fpga`, the other targets run in an operating system that stops a
+    program that overflows the stack
+    (`--memory` sets the memory of `rv32i-fpga`)
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
   * on by default: compile time rejection of calls and assignments where the
@@ -44,7 +48,6 @@ compiler writes the binary image itself.
 * methods and constructors on user defined types
 * partial ub-free support
   * not checked: signed overflow, it wraps
-  * not checked: stack overflow in deep `noinline` recursion
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
@@ -99,12 +102,16 @@ options:
                       rv32i: linux, llvm assembler, qemu user mode
                       rv32i-qemu: bare-metal image for the qemu virt machine
                       rv32i-fpga: bare-metal image for the fpga soft core,
-                        stack grows down from the end of the 8 mib memory,
-                        fails when code, data, variables and stack do not fit
+                        stack grows down from the end of the memory (see
+                        --memory), fails when code, data, variables and stack
+                        do not fit
   --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
                       multiple of 16 (default: 65536)
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of 16 (default: 65536)
+  --memory=SIZE       rv32i-fpga memory in bytes, decimal or 0x hex, must be a
+                      multiple of 4096 (default: 8388608), the emulator is
+                      built for the default
   --checks=LIST       comma separated checks, replaces earlier --checks
   --report=LIST       comma separated reports after the code, replaces earlier
                       --report
@@ -131,8 +138,11 @@ checks:
   division runtime division by zero and 'MIN / -1'
   shift    runtime shift count below zero or not below the width of the type
   overlap  runtime 'array_copy' whose destination starts inside the source
+  stack    runtime stack capacity at non-inlined calls on rv32i-qemu and
+           rv32i-fpga, the other targets have an operating system that stops
+           a program that overflows the stack
   noub     all checks against undefined behavior: upper, lower, frame, alias,
-           division, shift and overlap
+           division, shift, overlap and stack
   -NAME    turns a check off after the others are applied, e.g.
            noub,-division or -alias (also when noub is given), +NAME is NAME
 
@@ -142,6 +152,7 @@ examples:
   ./baz --checks=upper,lower,line,frame prog.baz > prog.s
   ./baz --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
   ./baz --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+  ./baz --target=rv32i-fpga --memory=0x100000 prog.baz > prog.s
   ./baz --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
 ```
 
@@ -157,10 +168,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    57           8054           3473          23882
-C++                              1            188             53            631
+C/C++ Header                    57           8089           3495          23973
+C++                              1            195             56            667
 -------------------------------------------------------------------------------
-SUM:                            58           8242           3526          24513
+SUM:                            58           8284           3551          24640
 -------------------------------------------------------------------------------
 ```
 
@@ -5932,6 +5943,7 @@ msg_overlap:
 db `panic: overlap at line `
 msg_overlap_len equ $ - msg_overlap
 section .text
+; stack overflow handler (--checks=stack)
 ; shift failure handler (--checks=shift)
 baz_shift_panic:
 ;    print message to stderr

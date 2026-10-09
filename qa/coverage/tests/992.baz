@@ -1,0 +1,12 @@
+# --checks=stack: recursion that fits in the stack passes
+func noinline depth(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = depth(n - 1) + 1
+}
+func main() {
+    var d = depth(100)
+    exit(d - 100)
+}

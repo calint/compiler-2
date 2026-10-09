@@ -655,6 +655,11 @@ class program final {
             x.emit_overlap_failure_handler(tc.is_bounds_check_with_line());
         }
 
+        if (tc.is_stack_check()) {
+            x.comment({}, 0, "stack overflow handler (--checks=stack)");
+            x.emit_stack_overflow_handler();
+        }
+
         if (tc.is_shift_check()) {
             x.comment({}, 0, "shift failure handler (--checks=shift)");
             x.emit_shift_failure_handler(tc.is_bounds_check_with_line());

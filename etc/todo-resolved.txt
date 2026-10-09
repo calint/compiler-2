@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: --checks=noub: system stack overflow in deep non-inline recursion
+    segfaults before the frame check; check 'rsp'/'sp' or depth at each call
+    => done (2026-10-09): '--checks=stack' (part of 'noub'): on rv32i-qemu and
+       rv32i-fpga (no operating system) each 'noinline' call compares 'sp'
+       minus the call's stack use (saved registers, the callee's 'ra' slot and
+       64 bytes for helper saves and the line report) with the lowest stack
+       address ('vars' end on qemu, memory end minus '--stack' on fpga) and
+       jumps to 'baz_stack_overflow' ('panic: stack overflow', fpga exit code
+       250); the check runs with the frame check, where the registers of the
+       arguments are still allocated; x86_64 and rv32i (user mode) emit
+       nothing because the operating system stops the overflow; the fpga
+       memory size is '--memory=SIZE' (default 8 MiB, multiple of 4096), the
+       emulator is built for the default; tests 992 to 994
+[x] medium: --checks=noub: division by zero traps and MIN / -1 wraps or traps
+    by width; check and panic with the line
+    => done (2026-10-09): '--checks=division', done earlier, the item was left
+       open by mistake
 [x] medium: --checks=noub: overlapping 'array_copy': check ranges at run-time or
     define as memmove, warn when it can be detected at compile time
     => done (2026-10-09): '--checks=overlap' (part of 'noub'): a runtime

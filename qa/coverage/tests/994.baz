@@ -1,0 +1,19 @@
+# --checks=lower,stack: a method called on an array element at a runtime index
+# keeps the index register of the element address through the stack check
+type point {
+    x,
+    y,
+}
+
+func noinline point.sum(k) res {
+    res = self.x + self.y + k
+}
+
+func main() {
+    var points = point[4]
+    points[2].x = 3
+    points[2].y = 4
+    var ix = 2
+    var s = points[ix].sum(5)
+    exit(s - 12)
+}

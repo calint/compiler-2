@@ -715,6 +715,9 @@ class machine {
     static constexpr std::string_view overlap_failure_handler_label{
         "baz_overlap_panic",
     };
+    static constexpr std::string_view stack_overflow_handler_label{
+        "baz_stack_overflow",
+    };
     static constexpr std::string_view shift_failure_handler_label{
         "baz_shift_panic",
     };
@@ -785,6 +788,13 @@ class machine {
                                       const size_t indent,
                                       const operand& frame_address,
                                       const operand& frame_size_bytes,
+                                      const bool enabled = {}) -> void = 0;
+
+    // a target without an operating system jumps to the stack overflow handler
+    // when a non-inlined call, made with the registers allocated now, does not
+    // fit in the stack
+    virtual auto check_stack_capacity(const token& src_loc_tk,
+                                      const size_t indent,
                                       const bool enabled = {}) -> void = 0;
 
     virtual auto comment_alias(const token& src_loc_tk, const size_t indent,
@@ -877,6 +887,10 @@ class machine {
     // prints 'panic: shift' to stderr, with the line when 'with_line', and
     // exits with 255
     virtual auto emit_shift_failure_handler(const bool with_line) -> void = 0;
+
+    // prints 'panic: stack overflow' to stderr and exits with 255, emits
+    // nothing on a target where an operating system stops the overflow
+    virtual auto emit_stack_overflow_handler() -> void = 0;
 
     // leaves the code section current
     virtual auto

@@ -1,0 +1,12 @@
+# --checks=stack: recursion deeper than the stack panics
+func noinline depth(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = depth(n - 1) + 1
+}
+func main() {
+    var d = depth(1000)
+    exit(d - 1000)
+}

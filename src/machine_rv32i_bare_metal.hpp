@@ -110,6 +110,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         write_used_ = true;
     }
 
+    // no operating system stops a program that overflows the stack
+    [[nodiscard]] auto is_stack_bounded() const -> bool override {
+        return true;
+    }
+
     //
     // class methods
     //

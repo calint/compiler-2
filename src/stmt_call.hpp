@@ -541,6 +541,11 @@ class stmt_call : public expression {
                          tc.get_type_address()),
             tc.is_frame_check());
 
+        // the registers holding the addresses of the arguments are still
+        // allocated, the check must not change a register that is free but
+        // used by the call
+        x.check_stack_capacity(tok(), indent, tc.is_stack_check());
+
         // the address of that slot is loaded after the registers are saved, a
         // register that holds a value of the caller is not lost
         const std::optional<size_t> register_slot{

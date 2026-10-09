@@ -492,6 +492,12 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
+    // the operating system stops a program that overflows the stack
+    auto check_stack_capacity([[maybe_unused]] const token& src_loc_tk,
+                              [[maybe_unused]] const size_t indent,
+                              [[maybe_unused]] const bool enabled)
+        -> void override {}
+
     auto comment_alias(const token& src_loc_tk, const size_t indent,
                        const std::string_view from, const std::string_view to,
                        const operand& address) -> void override {
@@ -823,6 +829,9 @@ class machine_x86_64 final : public machine {
         emit_line_panic_handler(with_line, "shift", shift_panic_lines_,
                                 shift_failure_handler_label);
     }
+
+    // the operating system stops a program that overflows the stack
+    auto emit_stack_overflow_handler() -> void override {}
 
     auto emit_string_constants(const std::span<const string_constant> strings)
         -> void override {
