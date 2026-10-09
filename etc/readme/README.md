@@ -12,7 +12,7 @@ compiler writes the binary image itself.
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
 * support for reentrant non-inlined functions
-* checks that make the language ub-free, aliasing is checked by default
+* checks that make the language ub-free
 * basic support for generics
 
 ## Supports
