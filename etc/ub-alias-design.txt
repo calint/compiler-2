@@ -86,7 +86,7 @@ resolve_accessed_bytes'):
 An alias (a parameter, a result, the element 'e' of a 'foo') is bound to the
 path of what it names; an access through it joins the paths:
 
-    narrow_to(inner)         the path of the bound target followed by the path
+    extended_by(suffix)      the path of the bound target followed by the path
                              of the access inside it
     add_run_time_index()     'e' of a 'foo' is any element of the array
 

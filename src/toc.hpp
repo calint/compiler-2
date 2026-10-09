@@ -1157,7 +1157,7 @@ class scope_stack final {
                 return std::nullopt;
             }
 
-            return bound->narrow_to(*path);
+            return bound->extended_by(*path);
         }
 
         // statements are compiled inside a function
@@ -2769,7 +2769,7 @@ class toc final {
             element_path->add_run_time_index();
 
             if (path) {
-                element_path = element_path->narrow_to(*path);
+                element_path = element_path->extended_by(*path);
             }
         }
 

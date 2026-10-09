@@ -52,14 +52,14 @@ struct access_path {
         });
     }
 
-    // the span of something inside the object this span names, 'inner' is
-    // relative to the start of the object
-    [[nodiscard]] auto narrow_to(const access_path& inner) const
+    // the path of something inside the object this path names, 'suffix' is
+    // relative to that object
+    [[nodiscard]] auto extended_by(const access_path& suffix) const
         -> access_path {
 
         access_path result{*this};
 
-        result.steps.append_range(inner.steps);
+        result.steps.append_range(suffix.steps);
 
         return result;
     }
