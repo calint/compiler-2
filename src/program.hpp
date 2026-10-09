@@ -645,6 +645,11 @@ class program final {
             x.emit_frame_overflow_handler();
         }
 
+        if (tc.is_division_check()) {
+            x.comment({}, 0, "division failure handler (--checks=division)");
+            x.emit_division_failure_handler(tc.is_bounds_check_with_line());
+        }
+
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
             x.comment({}, 0,
                       "bounds failure handler (--checks=upper or "

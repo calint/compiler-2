@@ -29,6 +29,7 @@ compiler writes the binary image itself.
 * checks against undefined behavior
   * opt-in: array bounds at runtime, optionally reporting the line number
   * opt-in: non-inlined function frame capacity at runtime
+  * opt-in: division by zero and `MIN / -1` at runtime
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
   * on by default: compile time rejection of calls and assignments where the
@@ -38,7 +39,6 @@ compiler writes the binary image itself.
 * support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
-  * not checked: division by zero, `MIN / -1`
   * not checked: shift count outside the type width
   * not checked: signed overflow, it wraps
   * not checked: overlapping `array_copy`

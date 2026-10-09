@@ -1,0 +1,13 @@
+# --checks=division,line: a zero divisor reports the line of the division
+func noinline div(a, b) res {
+    res = a
+
+    # padding so that the line has two digits
+
+    res = a / b
+}
+func main() {
+    var z = 0
+    var x = div(7, z)
+    exit(x)
+}

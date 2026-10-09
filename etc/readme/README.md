@@ -29,6 +29,7 @@ compiler writes the binary image itself.
 * checks against undefined behavior
   * opt-in: array bounds at runtime, optionally reporting the line number
   * opt-in: non-inlined function frame capacity at runtime
+  * opt-in: division by zero and `MIN / -1` at runtime
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
   * on by default: compile time rejection of calls and assignments where the
@@ -38,7 +39,6 @@ compiler writes the binary image itself.
 * support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
-  * not checked: division by zero, `MIN / -1`
   * not checked: shift count outside the type width
   * not checked: signed overflow, it wraps
   * not checked: overlapping `array_copy`
@@ -121,13 +121,15 @@ reports:
 checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
-  line     report line number on failed bounds check
+  line     report line number on failed bounds or division check
   frame    runtime non-inlined function frame capacity
   alias    compile time rejection of calls where a result may share storage
            with an argument, on by default
-  -alias   turns alias off, also when noub is given
-  noub     all checks against undefined behavior: upper, lower, frame and
-           alias
+  division runtime division by zero and 'MIN / -1'
+  noub     all checks against undefined behavior: upper, lower, frame, alias
+           and division
+  -NAME    turns a check off after the others are applied, e.g.
+           noub,-division or -alias (also when noub is given), +NAME is NAME
 
 examples:
   ./baz prog.baz > prog.s

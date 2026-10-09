@@ -15,7 +15,7 @@
 <     j if.19.8.code
 147d140
 <     j if.19.8.code
-226,229c219,222
+232,235c225,228
 < #   removed jumps to next code: 0
 < #    removed unreachable jumps: 0
 < # removed same target branches: 0
@@ -25,7 +25,7 @@
 > #    removed unreachable jumps: 1
 > # removed same target branches: 1
 > # inverted branches over jumps: 1
-235c228
-< #                 instructions: 91
+241c234
+< #                 instructions: 94
 ---
-> #                 instructions: 84
+> #                 instructions: 87

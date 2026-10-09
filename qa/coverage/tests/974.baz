@@ -1,0 +1,9 @@
+# --checks=division: the remainder by zero panics
+func noinline rem(a, b) res {
+    res = a % b
+}
+func main() {
+    var z = 0
+    var x = rem(7, z)
+    exit(x)
+}

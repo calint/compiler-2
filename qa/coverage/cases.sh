@@ -2982,3 +2982,35 @@ SRC=970 && EXP=0 && RUN
 # --checks=alias: the element of a 'foo' over a constant element field and the
 # read of the same field of an element at a run-time index
 SRC=971 && COMPERR
+
+# --checks=division: defined divisions pass
+SRC=972 && EXP=0 && RUN_ERR_OPTS "--checks=division"
+
+# --checks=division: zero divisor
+SRC=973 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+
+# --checks=division: zero divisor of a remainder
+SRC=974 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+
+# --checks=division: minimum divided by -1
+SRC=975 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+
+# --checks=division: minimum of 'i8' divided by -1
+SRC=976 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+
+if [[ $MACHINE == x86_64 ]]; then
+    # --checks=division: minimum of 'i64' divided by -1, a trap of the hardware
+    SRC=977 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+fi
+
+# --checks=division,line: zero divisor with the line, the fpga prints nothing
+SRC=978 && EXP=255 && RUN_ERR_OPTS "--checks=division,line"
+
+# --checks=division,line: minimum divided by -1 with the line
+SRC=979 && EXP=255 && RUN_ERR_OPTS "--checks=division,line"
+
+# --checks=upper,division,line: a bounds failure next to the division handler
+SRC=980 && EXP=255 && RUN_ERR_OPTS "--checks=upper,division,line"
+
+# --checks=upper,division,line: the failing one of two divisions
+SRC=981 && EXP=255 && RUN_ERR_OPTS "--checks=upper,division,line"

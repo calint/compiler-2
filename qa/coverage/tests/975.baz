@@ -1,0 +1,8 @@
+# --checks=division: the minimum of 'i32' divided by -1 panics
+func noinline div(a i32, b i32) res i32 {
+    res = a / b
+}
+func main() {
+    var x = div(-2147483647 - 1, -1)
+    exit(x)
+}

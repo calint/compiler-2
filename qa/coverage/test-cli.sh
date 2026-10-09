@@ -124,10 +124,18 @@ CLI_JUMP_OPTIMIZATIONS() {
 CLI_CHECKS_NOUB() {
     echo -n "cli --checks=noub expansion: "
     "$BIN" --checks=noub 015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,frame,alias 015.baz >out 2>err
+    "$BIN" --checks=upper,lower,frame,alias,division 015.baz >out 2>err
     cmp -s gen.s out
     "$BIN" --checks=line,noub 015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,line,frame,alias 015.baz >out 2>err
+    "$BIN" --checks=upper,lower,line,frame,alias,division 015.baz >out 2>err
+    cmp -s gen.s out
+    "$BIN" --checks=noub,-division 015.baz >gen.s 2>err
+    "$BIN" --checks=upper,lower,frame,alias 015.baz >out 2>err
+    cmp -s gen.s out
+    "$BIN" --checks=-division,noub 015.baz >gen.s 2>err
+    cmp -s gen.s out
+    "$BIN" --checks=+division 015.baz >gen.s 2>err
+    "$BIN" --checks=division 015.baz >out 2>err
     cmp -s gen.s out
     echo ok
 }
@@ -337,6 +345,10 @@ CLI --checks=noub 0 015.baz
 CLI --checks=-alias 0 948.baz
 CLI --checks=upper,-alias 0 948.baz
 CLI --checks=-alias,noub 0 948.baz
+CLI --checks=+division 0 015.baz
+CLI --checks=noub,-division 0 015.baz
+CLI --checks=-noub 1 015.baz
+CLI --checks=+ 1 015.baz
 CLI --checks=upper 1 948.baz
 CLI --checks=noub 1 948.baz
 CLI --checks=unknown 1 --help

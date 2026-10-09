@@ -1,0 +1,8 @@
+# --checks=division: the minimum of 'i8' divided by -1 panics
+func noinline div(a i8, b i8) res i8 {
+    res = a / b
+}
+func main() {
+    var x = div(-128, -1)
+    exit(x)
+}

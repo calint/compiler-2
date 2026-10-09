@@ -888,6 +888,7 @@ struct check_options {
     bool frame{};
     // on unless '--checks=-alias'
     bool alias{true};
+    bool division{};
 };
 
 // what the compile used, for the report
@@ -2272,6 +2273,15 @@ class toc final {
                                              : std::format(".{}", call_path));
     }
 
+    [[nodiscard]] auto division_check_options() const
+        -> machine::division_check_options {
+
+        return {
+            .enabled{checks_.division},
+            .with_line{checks_.bounds_with_line},
+        };
+    }
+
     auto enter_block() -> void { scopes_.enter_block(); }
 
     auto enter_foo(const std::string_view name) -> void {
@@ -2556,6 +2566,10 @@ class toc final {
 
     [[nodiscard]] auto is_bounds_check_with_line() const -> bool {
         return checks_.bounds_with_line;
+    }
+
+    [[nodiscard]] auto is_division_check() const -> bool {
+        return checks_.division;
     }
 
     [[nodiscard]] auto is_frame_check() const -> bool { return checks_.frame; }

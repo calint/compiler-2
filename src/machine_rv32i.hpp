@@ -331,6 +331,8 @@ class machine_rv32i : public machine {
     bool frame_base_reserved_{};
     bool multiply_helper_used_{};
     bool divide_helper_used_{};
+    // the shared tail of the handlers that report a line was emitted
+    bool line_report_emitted_{};
     std::vector<std::array<operand, 3>> bulk_registers_;
     std::vector<bulk_addresses> bulk_addresses_;
 
@@ -967,7 +969,8 @@ class machine_rv32i : public machine {
 
     auto divide(const token& src_loc_tk, const size_t indent,
                 const arithmetic_operator operation, const operand& dst,
-                const operand& divisor) -> void override {
+                const operand& divisor, const division_check_options& check)
+        -> void override {
 
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
@@ -980,78 +983,19 @@ class machine_rv32i : public machine {
         divide_helper_used_ = true;
 
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor, true,
-                               operation == arithmetic_operator::remainder);
+                               operation == arithmetic_operator::remainder,
+                               check);
     }
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
-        constexpr std::string_view message{"panic: bounds at line "};
-        // room for the ten digits of a 32-bit line number and a newline
-        constexpr int64_t digits_bytes{16};
-        constexpr int digit_zero{'0'};
-        constexpr int newline{'\n'};
-
         label(0, bounds_failure_handler_label);
 
-        // writes the line number of a0 in decimal: each power of ten of
-        // '.Lbaz_decimal_places' gives a digit by repeated subtraction, leading
-        // zeros are skipped and the last place always writes its digit
         if (with_line) {
-            assembler_.mv(1, "s2", "a0");
-            assembler_.li(1, "a0", stderr_descriptor);
-            assembler_.la(1, "a1", ".Lbaz_bounds_message");
-            assembler_.li(1, "a2", message.size());
-            emit_write_call(1);
-            assembler_.addi(1, "sp", "sp", -digits_bytes);
-            assembler_.mv(1, "a1", "sp");
-            assembler_.li(1, "a2", 0);
-            assembler_.la(1, "t0", ".Lbaz_decimal_places");
-            assembler_.label(0, "1");
-            assembler_.lw(1, "t1", 0, "t0");
-            assembler_.li(1, "t2", 0);
-            assembler_.label(0, "2");
-            assembler_.bltu(1, "s2", "t1", "3f");
-            assembler_.sub(1, "s2", "s2", "t1");
-            assembler_.addi(1, "t2", "t2", 1);
-            assembler_.j(1, "2b");
-            assembler_.label(0, "3");
-            assembler_.or_op(1, "t3", "a2", "t2");
-            assembler_.bnez(1, "t3", "4f");
-            assembler_.li(1, "t3", 1);
-            assembler_.bne(1, "t1", "t3", "5f");
-            assembler_.label(0, "4");
-            assembler_.addi(1, "t2", "t2", digit_zero);
-            assembler_.sb(1, "t2", 0, "a1");
-            assembler_.addi(1, "a1", "a1", 1);
-            assembler_.addi(1, "a2", "a2", 1);
-            assembler_.label(0, "5");
-            assembler_.addi(1, "t0", "t0", word_size_bytes_);
-            assembler_.li(1, "t3", 1);
-            assembler_.bne(1, "t1", "t3", "1b");
-            assembler_.li(1, "t2", newline);
-            assembler_.sb(1, "t2", 0, "a1");
-            assembler_.addi(1, "a2", "a2", 1);
-            assembler_.mv(1, "a1", "sp");
-            assembler_.li(1, "a0", stderr_descriptor);
-            emit_write_call(1);
+            emit_line_failure(".Lbaz_bounds_message", "panic: bounds at line ");
         }
 
         exit(token{}, 1,
              operand::imm(std::format("{}", panic_exit_code), default_type()));
-
-        if (with_line) {
-            constexpr std::array<int64_t, 10> decimal_places{
-                1000000000, 100000000, 10000000, 1000000, 100000,
-                10000,      1000,      100,      10,      1,
-            };
-
-            assembler_.switch_section(section::rodata);
-            assembler_.label(0, ".Lbaz_bounds_message");
-            assembler_.ascii(message);
-            assembler_.align(4);
-            assembler_.label(0, ".Lbaz_decimal_places");
-            assembler_.data(4, decimal_places);
-            assembler_.switch_section(section::text);
-        }
     }
 
     auto emit_data(const size_t element_size_bytes,
@@ -1068,6 +1012,37 @@ class machine_rv32i : public machine {
         while (next(value)) {
             emit_data(element_size_bytes, value);
         }
+    }
+
+    auto emit_division_failure_handler(const bool with_line) -> void override {
+
+        constexpr std::string_view message{"panic: division"};
+        constexpr std::array<int64_t, 1> newline{'\n'};
+
+        label(0, division_failure_handler_label);
+
+        if (with_line) {
+            emit_line_failure(".Lbaz_division_message",
+                              "panic: division at line ");
+
+            return;
+        }
+
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", ".Lbaz_division_message");
+        // the newline follows the message text
+        assembler_.li(1, "a2", message.size() + 1);
+        emit_write_call(1);
+
+        exit(token{}, 1,
+             operand::imm(std::format("{}", panic_exit_code), default_type()));
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, ".Lbaz_division_message");
+        assembler_.ascii(message);
+        assembler_.data(1, newline);
+        // the next handler may follow and must stay in the code section
+        assembler_.switch_section(section::text);
     }
 
     auto emit_frame_overflow_handler() -> void override {
@@ -1300,7 +1275,10 @@ class machine_rv32i : public machine {
         // variable factors use the shared runtime helper
         if (not constant.has_value()) {
             multiply_helper_used_ = true;
-            call_arithmetic_helper(src_loc_tk, indent, product, factor, false);
+
+            call_arithmetic_helper(src_loc_tk, indent, product, factor, false,
+                                   false, {});
+
             return;
         }
 
@@ -1475,6 +1453,7 @@ class machine_rv32i : public machine {
     auto start() -> void override {
         multiply_helper_used_ = false;
         divide_helper_used_ = false;
+        line_report_emitted_ = false;
 
         start_output();
 
@@ -1819,8 +1798,8 @@ class machine_rv32i : public machine {
 
     auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
                                 const operand& dst, const operand& source,
-                                const bool division, const bool remainder = {})
-        -> void {
+                                const bool division, const bool remainder,
+                                const division_check_options& check) -> void {
 
         const address_scope scope{*this, dst, source};
 
@@ -1849,6 +1828,11 @@ class machine_rv32i : public machine {
 
         load_helper_arguments(src_loc_tk, indent, dst, source);
 
+        if (check.enabled) {
+            check_divisor(src_loc_tk, indent, dst.type_ref().size_bytes(),
+                          check.with_line);
+        }
+
         assembler_.call(indent, division ? ".Lbaz_divide" : ".Lbaz_multiply");
 
         const operand result{
@@ -1870,6 +1854,58 @@ class machine_rv32i : public machine {
 
         // memory destinations need their original address registers back
         copy_value(src_loc_tk, indent, dst, kept);
+    }
+
+    // jumps to the failure handler when the divisor in 'a1' is zero or the
+    // dividend in 'a0' is the minimum of its width and the divisor is -1, the
+    // line is passed in 'a0'
+    auto check_divisor(const token& src_loc_tk, const size_t indent,
+                       const size_t dividend_size_bytes, const bool with_line)
+        -> void {
+
+        constexpr size_t bits_per_byte{8};
+
+        // note: setting all bits above the sign bit of the width gives its
+        //       minimum, -1 because the sign bit is the highest bit
+        const int64_t minimum{
+            static_cast<int32_t>(
+                ~uint32_t{} << ((dividend_size_bytes * bits_per_byte) - 1)),
+        };
+
+        constexpr local_label fail{
+            .name{"1"},
+            .reference{"1f"},
+        };
+
+        constexpr local_label pass{
+            .name{"2"},
+            .reference{"2f"},
+        };
+
+        comment(src_loc_tk, indent, "division check begin");
+
+        comment(src_loc_tk, indent, "zero divisor");
+
+        assembler_.beqz(indent, "a1", fail.reference);
+
+        comment(src_loc_tk, indent, "minimum divided by -1 overflows");
+
+        assembler_.li(indent, "a2", -1);
+        assembler_.bne(indent, "a1", "a2", pass.reference);
+        assembler_.li(indent, "a2", minimum);
+        assembler_.bne(indent, "a0", "a2", pass.reference);
+        assembler_.label(indent, fail.name);
+
+        comment(src_loc_tk, indent, "failed: report and exit");
+
+        if (with_line) {
+            assembler_.li(indent, "a0", src_loc_tk.at_line());
+        }
+
+        branch(indent, division_failure_handler_label);
+        assembler_.label(indent, pass.name);
+
+        comment(src_loc_tk, indent, "division check end");
     }
 
     // passing checks branch to 'bounds_pass' and failing ones to 'bounds_fail',
@@ -2643,6 +2679,7 @@ class machine_rv32i : public machine {
             assembler_.sub(1, "a1", "a1", "a4");
             assembler_.ret(1);
             assembler_.label(0, "5");
+
             assembler_.ebreak(1);
             assembler_.j(1, "5b");
         }
@@ -2933,6 +2970,88 @@ class machine_rv32i : public machine {
         assembler_.slt(indent, result,
                        swapped ? right.base_register() : left.base_register(),
                        swapped ? left.base_register() : right.base_register());
+    }
+
+    // prints 'message' and the line number in a0, then exits, the digits are
+    // emitted once and shared by the handlers
+    auto emit_line_failure(const std::string_view message_label,
+                           const std::string_view message) -> void {
+
+        // room for the ten digits of a 32-bit line number and a newline
+        constexpr int64_t digits_bytes{16};
+        constexpr int digit_zero{'0'};
+        constexpr int newline{'\n'};
+
+        assembler_.mv(1, "s2", "a0");
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", message_label);
+        assembler_.li(1, "a2", message.size());
+        emit_write_call(1);
+
+        const bool is_first{not line_report_emitted_};
+        line_report_emitted_ = true;
+
+        if (not is_first) {
+            assembler_.j(1, ".Lbaz_report_line");
+        } else {
+            // writes the line number of s2 in decimal: each power of ten of
+            // '.Lbaz_decimal_places' gives a digit by repeated subtraction,
+            // leading zeros are skipped and the last place always writes its
+            // digit
+            assembler_.label(0, ".Lbaz_report_line");
+            assembler_.addi(1, "sp", "sp", -digits_bytes);
+            assembler_.mv(1, "a1", "sp");
+            assembler_.li(1, "a2", 0);
+            assembler_.la(1, "t0", ".Lbaz_decimal_places");
+            assembler_.label(0, "1");
+            assembler_.lw(1, "t1", 0, "t0");
+            assembler_.li(1, "t2", 0);
+            assembler_.label(0, "2");
+            assembler_.bltu(1, "s2", "t1", "3f");
+            assembler_.sub(1, "s2", "s2", "t1");
+            assembler_.addi(1, "t2", "t2", 1);
+            assembler_.j(1, "2b");
+            assembler_.label(0, "3");
+            assembler_.or_op(1, "t3", "a2", "t2");
+            assembler_.bnez(1, "t3", "4f");
+            assembler_.li(1, "t3", 1);
+            assembler_.bne(1, "t1", "t3", "5f");
+            assembler_.label(0, "4");
+            assembler_.addi(1, "t2", "t2", digit_zero);
+            assembler_.sb(1, "t2", 0, "a1");
+            assembler_.addi(1, "a1", "a1", 1);
+            assembler_.addi(1, "a2", "a2", 1);
+            assembler_.label(0, "5");
+            assembler_.addi(1, "t0", "t0", word_size_bytes_);
+            assembler_.li(1, "t3", 1);
+            assembler_.bne(1, "t1", "t3", "1b");
+            assembler_.li(1, "t2", newline);
+            assembler_.sb(1, "t2", 0, "a1");
+            assembler_.addi(1, "a2", "a2", 1);
+            assembler_.mv(1, "a1", "sp");
+            assembler_.li(1, "a0", stderr_descriptor);
+            emit_write_call(1);
+
+            exit(token{}, 1,
+                 operand::imm(std::format("{}", panic_exit_code),
+                              default_type()));
+
+            constexpr std::array<int64_t, 10> decimal_places{
+                1000000000, 100000000, 10000000, 1000000, 100000,
+                10000,      1000,      100,      10,      1,
+            };
+
+            assembler_.switch_section(section::rodata);
+            assembler_.align(4);
+            assembler_.label(0, ".Lbaz_decimal_places");
+            assembler_.data(4, decimal_places);
+            assembler_.switch_section(section::text);
+        }
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+        assembler_.ascii(message);
+        assembler_.switch_section(section::text);
     }
 
     // the lower bound, the last check of the bounds check branches past the

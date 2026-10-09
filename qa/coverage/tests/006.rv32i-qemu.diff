@@ -15,9 +15,9 @@
 <     j if.19.8.code
 149d142
 <     j if.19.8.code
-204d196
+216d208
 <     j .Lbaz_exit
-248,251c240,243
+253,256c245,248
 < #   removed jumps to next code: 0
 < #    removed unreachable jumps: 0
 < # removed same target branches: 0
@@ -27,7 +27,7 @@
 > #    removed unreachable jumps: 1
 > # removed same target branches: 1
 > # inverted branches over jumps: 1
-257c249
-< #                 instructions: 111
+262c254
+< #                 instructions: 113
 ---
-> #                 instructions: 103
+> #                 instructions: 105

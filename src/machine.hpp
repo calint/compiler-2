@@ -598,6 +598,11 @@ class machine {
         bool with_line{};
     };
 
+    struct division_check_options {
+        bool enabled{};
+        bool with_line{};
+    };
+
     struct data_initializer {
         int64_t value{};
         std::string_view uops; // unary operations
@@ -690,6 +695,9 @@ class machine {
     // emits it
     static constexpr std::string_view bounds_failure_handler_label{
         "baz_bounds_panic",
+    };
+    static constexpr std::string_view division_failure_handler_label{
+        "baz_division_panic",
     };
     static constexpr std::string_view frame_overflow_handler_label{
         "baz_frame_overflow",
@@ -807,9 +815,12 @@ class machine {
     virtual auto define_constant(const std::string_view name,
                                  const size_t value) -> void = 0;
 
+    // an enabled check makes a zero divisor, and the minimum of the type of
+    // 'dst' divided by -1, jump to the division failure handler
     virtual auto divide(const token& src_loc_tk, const size_t indent,
                         const arithmetic_operator operation, const operand& dst,
-                        const operand& divisor) -> void = 0;
+                        const operand& divisor,
+                        const division_check_options& check) -> void = 0;
 
     virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
 
@@ -819,6 +830,11 @@ class machine {
     virtual auto
     emit_data_array(const size_t element_size_bytes,
                     const std::function_ref<bool(data_initializer&)> next)
+        -> void = 0;
+
+    // prints 'panic: division' to stderr, with the line when 'with_line', and
+    // exits with 255
+    virtual auto emit_division_failure_handler(const bool with_line)
         -> void = 0;
 
     // prints 'panic: frame overflow' to stderr and exits with 255

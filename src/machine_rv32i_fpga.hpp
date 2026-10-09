@@ -14,6 +14,11 @@
 // input and output go through the memory mapped uart
 
 class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
+    // the exit code of each failure, the program prints no message so the code
+    // tells the failure apart
+    static constexpr int bounds_exit_code_{255};
+    static constexpr int frame_exit_code_{254};
+    static constexpr int division_exit_code_{253};
     // the uart addresses 0xffff'fff4 and 0xffff'fff8 are reached as sign
     // extended offsets from the zero register
     static constexpr int uart_in_offset_{-12};
@@ -38,6 +43,29 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                        const size_t stack_size_bytes)
         : machine_rv32i_bare_metal{direct_output, files, jumps,
                                    binary_file_name, stack_size_bytes} {}
+
+    //
+    // overridden methods
+    //
+
+    // the fpga has no console, a panic exits with the code of its failure,
+    // which lights a diode, and the exit routine loops, 'a0' holds the line of
+    // a bounds or division failure and is dropped
+    auto emit_bounds_failure_handler([[maybe_unused]] const bool with_line)
+        -> void override {
+
+        emit_panic_exit(bounds_failure_handler_label, bounds_exit_code_);
+    }
+
+    auto emit_division_failure_handler([[maybe_unused]] const bool with_line)
+        -> void override {
+
+        emit_panic_exit(division_failure_handler_label, division_exit_code_);
+    }
+
+    auto emit_frame_overflow_handler() -> void override {
+        emit_panic_exit(frame_overflow_handler_label, frame_exit_code_);
+    }
 
   protected:
     //
@@ -103,5 +131,18 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     auto emit_uart_setup(assembler_rv32i& a) const -> void override {
         a.li(1, "a3", uart_idle_);
+    }
+
+    //
+    // class methods
+    //
+
+    auto emit_panic_exit(const std::string_view handler_label,
+                         const int exit_code) -> void {
+
+        label(0, handler_label);
+
+        exit(token{}, 1,
+             operand::imm(std::format("{}", exit_code), default_type()));
     }
 };

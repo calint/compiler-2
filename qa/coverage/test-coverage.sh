@@ -246,6 +246,26 @@ check_output() {
     fi
 }
 
+# the expected output of a case, 'NNN.TARGET.out' when the target differs, e.g.
+# the fpga prints no panic message
+expected_output_file() {
+    if [[ -e "${SRC%.*}.$MACHINE.out" ]]; then
+        echo "${SRC%.*}.$MACHINE.out"
+    else
+        echo "${SRC%.*}.out"
+    fi
+}
+
+# the expected exit code of a case, the fpga has a code per failure in
+# 'NNN.rv32i-fpga.exit' because it prints no message
+expected_exit_code() {
+    if [[ -e "${SRC%.*}.$MACHINE.exit" ]]; then
+        cat "${SRC%.*}.$MACHINE.exit"
+    else
+        echo "$EXP"
+    fi
+}
+
 # Test with exit code
 RUN() {
     echo -n "$SRC: "
@@ -273,12 +293,12 @@ RUN_ERR() {
     local exit_code=$?
     set -e
 
-    if [ $exit_code -ne $EXP ]; then
-        echo "FAILED. expected $EXP got $exit_code"
+    if [ $exit_code -ne $(expected_exit_code) ]; then
+        echo "FAILED. expected $(expected_exit_code) got $exit_code"
         exit 1
     fi
 
-    check_output "${SRC%.*}.out"
+    check_output "$(expected_output_file)"
 }
 
 RUN_ERR_OPTS() {
@@ -290,12 +310,12 @@ RUN_ERR_OPTS() {
     local exit_code=$?
     set -e
 
-    if [ $exit_code -ne $EXP ]; then
-        echo "FAILED. expected $EXP got $exit_code"
+    if [ $exit_code -ne $(expected_exit_code) ]; then
+        echo "FAILED. expected $(expected_exit_code) got $exit_code"
         exit 1
     fi
 
-    check_output "${SRC%.*}.out"
+    check_output "$(expected_output_file)"
 }
 
 RUN_NO_CHECKS() {
@@ -320,7 +340,7 @@ DIFF() {
     echo -n "$SRC: "
     compile_and_build
     execute_program >out
-    check_output "${SRC%.*}.out"
+    check_output "$(expected_output_file)"
 }
 
 # Test with input file
@@ -328,7 +348,7 @@ DIFFINP() {
     echo -n "$SRC: "
     compile_and_build
     execute_program <"${SRC%.*}.in" >out
-    check_output "${SRC%.*}.out"
+    check_output "$(expected_output_file)"
 }
 
 # Test with line-by-line input
@@ -349,7 +369,7 @@ DIFFINP2() {
 
     "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${command[@]}" >out 2>err
 
-    check_output "${SRC%.*}.out"
+    check_output "$(expected_output_file)"
 }
 
 # Test with Python script
@@ -357,7 +377,7 @@ DIFFPY() {
     echo -n "$SRC: "
     compile_and_build
     MACHINE="$MACHINE" "./${SRC%.*}.py" >out
-    check_output "${SRC%.*}.out"
+    check_output "$(expected_output_file)"
 }
 
 # Test with exit code and the jump optimizations as a diff from --nopt
@@ -375,8 +395,8 @@ DIFFNOPT() {
     diff gen-nopt.s gen.s >out
     set -e
 
-    if [ $exit_code -ne $EXP ]; then
-        echo "FAILED. expected $EXP got $exit_code"
+    if [ $exit_code -ne $(expected_exit_code) ]; then
+        echo "FAILED. expected $(expected_exit_code) got $exit_code"
         exit 1
     fi
 

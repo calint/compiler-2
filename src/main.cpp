@@ -21,6 +21,7 @@
 #include <string_view>
 #include <system_error>
 #include <utility>
+#include <vector>
 
 #include "assembler.hpp"
 #include "compiler_exception.hpp"
@@ -360,13 +361,15 @@ reports:
 checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
-  line     report line number on failed bounds check
+  line     report line number on failed bounds or division check
   frame    runtime non-inlined function frame capacity
   alias    compile time rejection of calls where a result may share storage
            with an argument, on by default
-  -alias   turns alias off, also when noub is given
-  noub     all checks against undefined behavior: upper, lower, frame and
-           alias
+  division runtime division by zero and 'MIN / -1'
+  noub     all checks against undefined behavior: upper, lower, frame, alias
+           and division
+  -NAME    turns a check off after the others are applied, e.g.
+           noub,-division or -alias (also when noub is given), +NAME is NAME
 
 examples:
   {0} prog.baz > prog.s
@@ -543,49 +546,100 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     return parsed;
 }
 
+// one named check, 'is_ub' tells that 'noub' includes it
+struct check_name {
+    std::string_view text;
+    bool check_options::* member;
+    bool is_ub;
+};
+
+constexpr std::array<check_name, 6> check_names{
+    {
+        {.text{"upper"}, .member{&check_options::bounds_upper}, .is_ub{true}},
+        {.text{"lower"}, .member{&check_options::bounds_lower}, .is_ub{true}},
+        {
+            .text{"line"},
+            .member{&check_options::bounds_with_line},
+            .is_ub{false},
+        },
+        {.text{"frame"}, .member{&check_options::frame}, .is_ub{true}},
+        {.text{"alias"}, .member{&check_options::alias}, .is_ub{true}},
+        {.text{"division"}, .member{&check_options::division}, .is_ub{true}},
+    },
+};
+
+// e.g. 'upper, lower, line'
+[[nodiscard]] auto check_texts() -> std::string {
+    std::string texts;
+
+    for (const check_name& name : check_names) {
+        if (not texts.empty()) {
+            texts += ", ";
+        }
+
+        texts += name.text;
+    }
+
+    return texts;
+}
+
 // each '--checks' replaces the earlier ones, empty parts are ignored, 'alias'
-// stays on unless '-alias' is given
+// stays on unless '-alias' is given, 'name' and '+name' enable a check,
+// '-name' disables it after all enables, so the order in the list does not
+// matter
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options> {
 
     check_options parsed{};
-    bool is_alias_disabled{};
+    std::vector<bool check_options::*> disabled;
 
     for (const auto part : checks | std::views::split(',')) {
-        const std::string_view option{part};
+        std::string_view option{part};
 
-        if (option == "upper") {
-            parsed.bounds_upper = true;
-        } else if (option == "lower") {
-            parsed.bounds_lower = true;
-        } else if (option == "line") {
-            parsed.bounds_with_line = true;
-        } else if (option == "frame") {
-            parsed.frame = true;
-        } else if (option == "alias") {
-            parsed.alias = true;
-        } else if (option == "-alias") {
-            is_alias_disabled = true;
-        } else if (option == "noub") {
-            // 'line' only changes the report, it prevents no undefined
-            // behavior
-            parsed.bounds_upper = true;
-            parsed.bounds_lower = true;
-            parsed.frame = true;
-            parsed.alias = true;
-        } else if (not option.empty()) {
+        if (option.empty()) {
+            continue;
+        }
+
+        const std::string_view written{option};
+        const bool is_disable{option.starts_with('-')};
+
+        if (is_disable or option.starts_with('+')) {
+            // note: 1 because the sign is not part of the name
+            option.remove_prefix(1);
+        }
+
+        if (option == "noub" and not is_disable) {
+            for (const check_name& name : check_names) {
+                if (name.is_ub) {
+                    parsed.*name.member = true;
+                }
+            }
+
+            continue;
+        }
+
+        const auto* const found{
+            std::ranges::find(check_names, option, &check_name::text),
+        };
+
+        if (found == check_names.end()) {
             print_usage_error(std::format(
-                "invalid --checks option: '{}', supported options "
-                "are: upper, lower, line, frame, alias, -alias, noub",
-                option));
+                "invalid --checks option: '{}', supported options are: {}, "
+                "noub, each with a '+' or '-' prefix",
+                written, check_texts()));
 
             return std::nullopt;
         }
+
+        if (is_disable) {
+            disabled.push_back(found->member);
+        } else {
+            parsed.*found->member = true;
+        }
     }
 
-    // note: applied last so that the order in the list does not matter
-    if (is_alias_disabled) {
-        parsed.alias = false;
+    for (bool check_options::* const member : disabled) {
+        parsed.*member = false;
     }
 
     return parsed;

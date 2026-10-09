@@ -572,7 +572,9 @@ class expr_arith final : public expression {
         }
 
         if (op == arithmetic_operator::divide) {
-            x.divide(tok(), indent, op, dst_info.operand, constant);
+            x.divide(tok(), indent, op, dst_info.operand, constant,
+                     tc.division_check_options());
+
             return;
         }
 
@@ -1079,11 +1081,12 @@ class expr_arith final : public expression {
                                         tc.make_ident_info(src).operand);
         }
 
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
-            [&](const operand& divisor, const bool) -> void {
-                x.divide(src.tok(), indent, op, dst_info.operand, divisor);
-            });
+        emit_with_source(tc, indent, src, dst_info.type_ref(),
+                         dst_info.type_ref(),
+                         [&](const operand& divisor, const bool) -> void {
+                             x.divide(src.tok(), indent, op, dst_info.operand,
+                                      divisor, tc.division_check_options());
+                         });
     }
 
     // 'compile_first_element' copies identifiers itself

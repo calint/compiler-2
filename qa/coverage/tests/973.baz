@@ -1,0 +1,9 @@
+# --checks=division: a zero divisor panics
+func noinline div(a, b) res {
+    res = a / b
+}
+func main() {
+    var z = 0
+    var x = div(7, z)
+    exit(x)
+}

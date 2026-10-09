@@ -1,0 +1,10 @@
+# --checks=upper,division,line: two divisions on different lines, the second
+# one fails
+func main() {
+    var a = 8
+    var b = 2
+    var one = a / b
+    var z = 0
+    var two = one % z
+    exit(two)
+}

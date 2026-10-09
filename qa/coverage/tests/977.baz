@@ -1,0 +1,8 @@
+# --checks=division: the minimum of 'i64' divided by -1 panics
+func noinline rem(a i64, b i64) res i64 {
+    res = a % b
+}
+func main() {
+    var x = rem(-9223372036854775807 - 1, -1)
+    exit(x)
+}

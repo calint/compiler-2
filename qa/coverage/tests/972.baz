@@ -1,0 +1,21 @@
+# --checks=division: divisions that are defined pass the check
+func assert(ok bool) { if not ok exit(1) }
+func noinline div(a, b) res {
+    res = a / b
+}
+func noinline rem(a, b) res {
+    res = a % b
+}
+func noinline div8(a i8, b i8) res i8 {
+    res = a / b
+}
+func main() {
+    assert(div(7, 2) == 3)
+    assert(div(-7, 2) == -3)
+    assert(div(7, -1) == -7)
+    assert(rem(7, 2) == 1)
+    assert(rem(-7, -1) == 0)
+    assert(div8(-127, -1) == 127)
+    assert(div8(-128, 1) == -128)
+    assert(div8(-128, 2) == -64)
+}

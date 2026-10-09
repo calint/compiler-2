@@ -1,0 +1,11 @@
+# --checks=upper,division,line: a bounds failure reports its line when the
+# handler of the division is emitted too
+func noinline div(a, b) res {
+    res = a / b
+}
+func main() {
+    var arr = i8[4]
+    var i = 4
+    var x = div(8, 2)
+    arr[i] = i8(x)
+}

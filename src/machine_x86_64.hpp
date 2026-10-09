@@ -186,6 +186,11 @@ class machine_x86_64 final : public machine {
     bool frame_base_reserved_{};
     // numbers the labels after the parts of a memory compare
     size_t equal_label_count_{};
+    // numbers the labels of the checks of divisions
+    size_t division_label_count_{};
+    // the shared tail of the handlers that report a line was emitted
+    bool line_report_emitted_{};
+    std::set<size_t> division_panic_lines_;
     // source lines of the bounds checks, each gets a stub that reports it
     std::set<size_t> bounds_panic_lines_;
 
@@ -660,7 +665,8 @@ class machine_x86_64 final : public machine {
 
     auto divide(const token& src_loc_tk, const size_t indent,
                 const arithmetic_operator operation, const operand& dst,
-                const operand& divisor) -> void override {
+                const operand& divisor, const division_check_options& check)
+        -> void override {
 
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
@@ -669,9 +675,9 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, qword_register("rax"), dst);
 
         reserve_named_register(src_loc_tk, indent, "rdx", default_type());
-        assembler_.instruction(indent, op::cqo);
 
-        emit_signed_divide(src_loc_tk, indent, divisor);
+        emit_signed_divide(src_loc_tk, indent, divisor, check,
+                           dst.type_ref().size_bytes());
 
         mov(src_loc_tk, indent, dst,
             qword_register(operation == arithmetic_operator::divide ? "rax"
@@ -697,62 +703,14 @@ class machine_x86_64 final : public machine {
 
         assembler_.label(0, bounds_failure_handler_label);
         emit_panic_message("msg_panic");
-
-        constexpr int newline{10};
-        constexpr int decimal_base{10};
-        // the digits of a 64-bit number and a newline
-        constexpr size_t number_buffer_size_bytes{21};
-
-        assembler_.comment(1, "line number is in `rbp`");
-        assembler_.instruction(1, op::mov, "rax", "rbp");
-        assembler_.comment(1, "convert to string");
-
-        assembler_.instruction(1, op::mov, "rdi",
-                               assembler_x86_64::immediate::of_expression(
-                                   "num_buffer + 19", true));
-        // note: 19 is the offset of the newline, the digits of the number are
-        //       written backwards before it, the text ends at offset 20
-
-        assembler_.instruction(
-            1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
-
-        assembler_.instruction(1, op::dec, "rdi");
-        assembler_.instruction(1, op::mov, "rcx", decimal_base);
-        assembler_.label(0, ".convert_loop");
-        assembler_.instruction(1, op::xor_op, "rdx", "rdx");
-        assembler_.instruction(1, op::div, "rcx");
-
-        assembler_.instruction(
-            1, op::add, "dl",
-            assembler_x86_64::immediate::of_expression("'0'"));
-
-        assembler_.instruction(1, op::mov,
-                               assembler_x86_64::memory::of_base("rdi"), "dl");
-
-        assembler_.instruction(1, op::dec, "rdi");
-        assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::nz, ".convert_loop");
-        assembler_.instruction(1, op::inc, "rdi");
-        assembler_.comment(1, "print line number to stderr");
-        assembler_.instruction(1, op::mov, "rax", syscall_write);
-        assembler_.instruction(1, op::mov, "rsi", "rdi");
-
-        assembler_.instruction(1, op::mov, "rdx",
-                               assembler_x86_64::immediate::of_expression(
-                                   "num_buffer + 20", true));
-        // note: 20 is the end of the text, the length is end minus start
-
-        assembler_.instruction(1, op::sub, "rdx", "rdi");
-        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
-        assembler_.instruction(1, op::syscall);
-        emit_panic_exit();
+        emit_report_line();
         assembler_.switch_section(section::rodata);
         assembler_.label(0, "msg_panic");
         assembler_.string_data("panic: bounds at line ");
         assembler_.define_length("msg_panic_len", "msg_panic");
-        assembler_.switch_section(section::bss);
-        assembler_.label(0, "num_buffer");
-        assembler_.reserve(number_buffer_size_bytes);
+
+        // the next handler may follow and must stay in the code section
+        assembler_.switch_section(section::text);
     }
 
     auto emit_data(const size_t element_size_bytes,
@@ -784,6 +742,38 @@ class machine_x86_64 final : public machine {
         }
 
         assembler_.data(element_size_bytes, values);
+    }
+
+    auto emit_division_failure_handler(const bool with_line) -> void override {
+
+        if (with_line) {
+            // one stub per line sets rbp and enters the handler
+            for (const size_t line : division_panic_lines_) {
+                assembler_.label(0, division_panic_label(line));
+                assembler_.instruction(1, op::mov, "rbp", line);
+                assembler_.jmp(1, division_failure_handler_label);
+            }
+        }
+
+        assembler_.label(0, division_failure_handler_label);
+        emit_panic_message("msg_division");
+
+        if (with_line) {
+            emit_report_line();
+        } else {
+            emit_panic_exit();
+        }
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, "msg_division");
+
+        assembler_.string_data(with_line ? "panic: division at line "
+                                         : "panic: division\\n");
+
+        assembler_.define_length("msg_division_len", "msg_division");
+
+        // the next handler may follow and must stay in the code section
+        assembler_.switch_section(section::text);
     }
 
     auto emit_frame_overflow_handler() -> void override {
@@ -1548,6 +1538,53 @@ class machine_x86_64 final : public machine {
         }
     }
 
+    // a zero divisor and the minimum of the dividend width divided by -1 jump
+    // to the failure handler, the dividend is sign extended in 'rax'
+    auto check_divisor(const token& src_loc_tk, const size_t indent,
+                       const operand& divisor, const size_t dividend_size_bytes,
+                       const bool with_line) -> void {
+
+        constexpr size_t bits_per_byte{8};
+
+        // note: setting all bits above the sign bit of the width gives its
+        //       minimum, -1 because the sign bit is the highest bit
+        const int64_t minimum{
+            static_cast<int64_t>(
+                ~uint64_t{} << ((dividend_size_bytes * bits_per_byte) - 1)),
+        };
+
+        const std::string not_minimum{
+            std::format(".Lbaz_division.{}", division_label_count_++),
+        };
+
+        comment(src_loc_tk, indent, "division check begin");
+
+        const std::string failure_label{
+            with_line ? division_panic_label(src_loc_tk.at_line())
+                      : std::string{division_failure_handler_label},
+        };
+
+        if (with_line) {
+            division_panic_lines_.insert(src_loc_tk.at_line());
+        }
+
+        comment(src_loc_tk, indent, "zero divisor");
+
+        cmp(src_loc_tk, indent, divisor, immediate(0));
+        assembler_.jcc(indent, condition::e, failure_label);
+
+        comment(src_loc_tk, indent, "minimum divided by -1 overflows");
+
+        cmp(src_loc_tk, indent, divisor, immediate(-1));
+        assembler_.jcc(indent, condition::ne, not_minimum);
+        mov(src_loc_tk, indent, qword_register("rdx"), immediate(minimum));
+        cmp(src_loc_tk, indent, qword_register("rax"), qword_register("rdx"));
+        assembler_.jcc(indent, condition::e, failure_label);
+        assembler_.label(indent, not_minimum);
+
+        comment(src_loc_tk, indent, "division check end");
+    }
+
     auto cmp(const token& src_loc_tk, const size_t indent,
              const operand& dst_op, const operand& src_op) -> void {
 
@@ -1772,14 +1809,91 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
     }
 
-    // idiv takes the divisor as a qword register or memory operand
+    // prints the line number in 'rbp' and exits, the code is emitted once and
+    // shared by the handlers that report a line
+    auto emit_report_line() -> void {
+        constexpr std::string_view report_label{"baz_report_line"};
+
+        if (line_report_emitted_) {
+            assembler_.jmp(1, report_label);
+            return;
+        }
+
+        line_report_emitted_ = true;
+
+        assembler_.label(0, report_label);
+
+        constexpr int newline{10};
+        constexpr int decimal_base{10};
+        // the digits of a 64-bit number and a newline
+        constexpr size_t number_buffer_size_bytes{21};
+
+        assembler_.comment(1, "line number is in `rbp`");
+        assembler_.instruction(1, op::mov, "rax", "rbp");
+        assembler_.comment(1, "convert to string");
+
+        assembler_.instruction(1, op::mov, "rdi",
+                               assembler_x86_64::immediate::of_expression(
+                                   "num_buffer + 19", true));
+        // note: 19 is the offset of the newline, the digits of the number are
+        //       written backwards before it, the text ends at offset 20
+
+        assembler_.instruction(
+            1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
+
+        assembler_.instruction(1, op::dec, "rdi");
+        assembler_.instruction(1, op::mov, "rcx", decimal_base);
+        assembler_.label(0, ".convert_loop");
+        assembler_.instruction(1, op::xor_op, "rdx", "rdx");
+        assembler_.instruction(1, op::div, "rcx");
+
+        assembler_.instruction(
+            1, op::add, "dl",
+            assembler_x86_64::immediate::of_expression("'0'"));
+
+        assembler_.instruction(1, op::mov,
+                               assembler_x86_64::memory::of_base("rdi"), "dl");
+
+        assembler_.instruction(1, op::dec, "rdi");
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::nz, ".convert_loop");
+        assembler_.instruction(1, op::inc, "rdi");
+        assembler_.comment(1, "print line number to stderr");
+        assembler_.instruction(1, op::mov, "rax", syscall_write);
+        assembler_.instruction(1, op::mov, "rsi", "rdi");
+
+        assembler_.instruction(1, op::mov, "rdx",
+                               assembler_x86_64::immediate::of_expression(
+                                   "num_buffer + 20", true));
+        // note: 20 is the end of the text, the length is end minus start
+
+        assembler_.instruction(1, op::sub, "rdx", "rdi");
+        assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
+        assembler_.instruction(1, op::syscall);
+        emit_panic_exit();
+        assembler_.switch_section(section::bss);
+        assembler_.label(0, "num_buffer");
+        assembler_.reserve(number_buffer_size_bytes);
+    }
+
+    // idiv takes the divisor as a qword register or memory operand, 'rax'
+    // holds the dividend, 'rdx' is free until it is extended
     auto emit_signed_divide(const token& src_loc_tk, const size_t indent,
-                            const operand& divisor) -> void {
+                            const operand& divisor,
+                            const division_check_options& check,
+                            const size_t dividend_size_bytes) -> void {
 
         if (not divisor.is_immediate() and
             divisor.type_ref().size_bytes() == size_qword) {
 
+            if (check.enabled) {
+                check_divisor(src_loc_tk, indent, divisor, dividend_size_bytes,
+                              check.with_line);
+            }
+
+            assembler_.instruction(indent, op::cqo);
             idiv(src_loc_tk, indent, divisor);
+
             return;
         }
 
@@ -1788,6 +1902,13 @@ class machine_x86_64 final : public machine {
         };
 
         mov(src_loc_tk, indent, scratch_reg, divisor);
+
+        if (check.enabled) {
+            check_divisor(src_loc_tk, indent, scratch_reg, dividend_size_bytes,
+                          check.with_line);
+        }
+
+        assembler_.instruction(indent, op::cqo);
         idiv(src_loc_tk, indent, scratch_reg);
         free_scratch_register(src_loc_tk, indent, scratch_reg);
     }
@@ -2349,6 +2470,12 @@ class machine_x86_64 final : public machine {
         assert(holds == comparison_operator::greater_equal);
 
         return condition::ge;
+    }
+
+    [[nodiscard]] static auto division_panic_label(const size_t line)
+        -> std::string {
+
+        return std::format("baz_division_line_{}", line);
     }
 
     // the qwords, then the remaining dword, word and byte
