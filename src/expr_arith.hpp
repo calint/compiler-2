@@ -25,7 +25,7 @@
 #include "operand.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
 //
@@ -262,12 +262,12 @@ class expr_arith final : public expression {
             [&] -> void { compile_through_scratch(tc, indent, dst_info); });
     }
 
-    [[nodiscard]] auto accessed_span() const
-        -> std::optional<access_span> override {
+    [[nodiscard]] auto accessed_path() const
+        -> std::optional<access_path> override {
 
         assert(exprs_.size() == 1);
 
-        return exprs_.at(0)->accessed_span();
+        return exprs_.at(0)->accessed_path();
     }
 
     // each element is computed at the width of the destination

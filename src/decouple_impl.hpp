@@ -43,7 +43,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
-#include "ub_check.hpp"
+#include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
 // definitions are intentionally not 'inline': single translation unit build
@@ -637,7 +637,7 @@ auto expr_type::compile(toc& tc, const size_t indent,
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::assert_items_not_reading(const record_destination& dst,
+auto expr_type::assert_items_not_reading(const constructor_target& dst,
                                          const size_t record_offset) const
     -> void {
 
@@ -665,7 +665,7 @@ auto expr_type::assert_items_not_reading(const record_destination& dst,
 // instance field is the single element
 auto expr_type::assert_record_field_not_reading(const expr_any& src,
                                                 const type_field& field,
-                                                const record_destination& dst,
+                                                const constructor_target& dst,
                                                 const size_t field_offset)
     -> void {
 
@@ -997,11 +997,11 @@ auto expr_type::identifier() const -> std::string_view {
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::accessed_span() const -> std::optional<access_span> {
+auto expr_type::accessed_path() const -> std::optional<access_path> {
     // note: only a copy has an accessed range
     assert(stmt_ident_);
 
-    return stmt_ident_->accessed_span();
+    return stmt_ident_->accessed_path();
 }
 
 // declared in 'expr_type.hpp'

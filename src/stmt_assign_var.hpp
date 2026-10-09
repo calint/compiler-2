@@ -18,7 +18,8 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
+#include "ub_reads.hpp"
 
 class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
@@ -30,7 +31,7 @@ class stmt_assign_var final : public statement {
     struct value_read {
         token tk;
         std::string text;
-        access_span span;
+        access_path path;
     };
 
   public:
@@ -83,14 +84,14 @@ class stmt_assign_var final : public statement {
 
         expr_.assert_record_value_not_reading({
             .root{stmt_ident_.first_token().text()},
-            .range{stmt_ident_.access_range()},
+            .range{stmt_ident_.accessed_bytes()},
             .is_exact{stmt_ident_.is_exact_access()},
         });
 
         // get information about the destination of the compilation
         ident_info var_dst_info{tc.make_ident_info(stmt_ident_)};
 
-        var_dst_info.accessed_span = stmt_ident_.span();
+        var_dst_info.accessed_path = stmt_ident_.accessed_path();
         var_dst_info.is_reference = is_reference_destination(tc, var_dst_info);
 
         assert_reference_not_read(tc, var_dst_info);
@@ -161,7 +162,7 @@ class stmt_assign_var final : public statement {
         const storage_target dst{
             tc.storage_target_of(stmt_ident_.first_token(),
                                  stmt_ident_.first_token().text(),
-                                 stmt_ident_.span()),
+                                 stmt_ident_.accessed_path()),
         };
 
         for (const value_read& read : reads_of_value()) {
@@ -209,7 +210,7 @@ class stmt_assign_var final : public statement {
 
         const storage_target source{
             tc.storage_target_of(stmt_ident_.first_token(), read_name,
-                                 read.span),
+                                 read.path),
         };
 
         return source.may_overlap(dst);
@@ -221,14 +222,13 @@ class stmt_assign_var final : public statement {
 
         expr_.visit_reads(
             std::nullopt,
-            [&reads](
-                const token& tk, const std::string_view text,
-                [[maybe_unused]] const field_coverage::range& accessed_range,
-                const access_span& accessed_span) -> void {
+            [&reads](const token& tk, const std::string_view text,
+                     [[maybe_unused]] const byte_range& accessed_bytes,
+                     const access_path& accessed_path) -> void {
                 reads.push_back({
                     .tk{tk},
                     .text{text},
-                    .span{accessed_span},
+                    .path{accessed_path},
                 });
             });
 

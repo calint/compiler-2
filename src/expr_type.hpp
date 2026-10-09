@@ -17,7 +17,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_check.hpp"
+#include "ub_reads.hpp"
 
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
 //       implemented in 'decouple_impl.hpp', those headers include this one
@@ -36,9 +36,9 @@ class expr_type final : public statement {
 
   public:
     // bytes of the variable an instance value is written into
-    struct record_destination {
+    struct constructor_target {
         std::string_view root;
-        field_coverage::range range;
+        byte_range range;
 
         // false when a runtime index leaves the element unknown
         bool is_exact{};
@@ -76,8 +76,8 @@ class expr_type final : public statement {
         -> void override;
 
     // out-of-line: calls 'stmt_identifier'
-    [[nodiscard]] auto accessed_span() const
-        -> std::optional<access_span> override;
+    [[nodiscard]] auto accessed_path() const
+        -> std::optional<access_path> override;
 
     // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
@@ -109,7 +109,7 @@ class expr_type final : public statement {
 
     // the fields are written in order so later items must not read earlier
     // fields of the destination
-    auto assert_not_reading(const record_destination& dst) const -> void {
+    auto assert_not_reading(const constructor_target& dst) const -> void {
         // same-type copies are either the same bytes or separate bytes
         if (stmt_ident_) {
             return;
@@ -162,7 +162,7 @@ class expr_type final : public statement {
     auto assert_call_type(const type& tp) const -> void;
 
     // out-of-line: calls 'expr_any'
-    auto assert_items_not_reading(const record_destination& dst,
+    auto assert_items_not_reading(const constructor_target& dst,
                                   const size_t record_offset) const -> void;
 
     // the '}' that ends the fields, when it is the next character, e.g. the '}'
@@ -268,7 +268,7 @@ class expr_type final : public statement {
     //
 
     static auto assert_item_not_reading(const statement& item,
-                                        const record_destination& dst,
+                                        const constructor_target& dst,
                                         const size_t written_size_bytes)
         -> void {
 
@@ -276,21 +276,21 @@ class expr_type final : public statement {
             return;
         }
 
-        const field_coverage::range exact{
+        const byte_range exact{
             .offset{dst.range.offset},
             .size_bytes{written_size_bytes},
         };
 
         // with a runtime index any element of the array may already be written
-        const field_coverage::range& written{dst.is_exact ? exact : dst.range};
+        const byte_range& written{dst.is_exact ? exact : dst.range};
 
         item.visit_reads(
             dst.root,
             [&dst, &written](
                 const token& src_loc_tk, const std::string_view read_text,
-                const field_coverage::range& accessed_range,
-                [[maybe_unused]] const access_span& accessed_span) -> void {
-                if (not accessed_range.overlaps(written)) {
+                const byte_range& accessed_bytes,
+                [[maybe_unused]] const access_path& accessed_path) -> void {
+                if (not accessed_bytes.overlaps(written)) {
                     return;
                 }
 
@@ -315,7 +315,7 @@ class expr_type final : public statement {
     // out-of-line: calls 'expr_any'
     static auto assert_record_field_not_reading(const expr_any& src,
                                                 const type_field& field,
-                                                const record_destination& dst,
+                                                const constructor_target& dst,
                                                 const size_t field_offset)
         -> void;
 

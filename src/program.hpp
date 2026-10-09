@@ -33,7 +33,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 #include "unary_ops.hpp"
 
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a
@@ -95,7 +95,7 @@ class assignment_analysis final {
             assignment_flow flow{
                 .var{ret_info->ident_tk.text()},
                 .src_loc_tk{ret_info->ident_tk},
-                .assigned{field_coverage{ret_info->type_ptr->size_bytes()}},
+                .assigned{assigned_bytes{ret_info->type_ptr->size_bytes()}},
                 .at_breaks{},
                 .is_reachable{true},
             };
@@ -114,7 +114,7 @@ class assignment_analysis final {
         assignment_flow flow{
             .var{},
             .src_loc_tk{func.tok()},
-            .assigned{field_coverage{0}},
+            .assigned{assigned_bytes{0}},
             .at_breaks{},
             .is_reachable{true},
         };

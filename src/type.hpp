@@ -36,6 +36,11 @@ struct type_field {
 struct byte_range {
     size_t offset{};
     size_t size_bytes{};
+
+    [[nodiscard]] auto overlaps(const byte_range& other) const -> bool {
+        return offset < other.offset + other.size_bytes and
+               other.offset < offset + size_bytes;
+    }
 };
 
 // 'boolean' is a builtin that machines treat differently from the integer

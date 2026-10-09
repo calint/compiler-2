@@ -31,7 +31,7 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
 class stmt_call : public expression {
@@ -1676,7 +1676,7 @@ class stmt_call : public expression {
 
         return tc.storage_target_of(arg.tok(),
                                     ident_info::root_of(arg.identifier()),
-                                    arg.accessed_span());
+                                    arg.accessed_path());
     }
 
     // the type of the argument at 'index' when it is a variable, a field or an
@@ -1975,7 +1975,7 @@ class stmt_call : public expression {
 
         return tc.storage_target_of(src_loc_tk,
                                     ident_info::root_of(dst_info.id),
-                                    dst_info.accessed_span);
+                                    dst_info.accessed_path);
     }
 
     // what an argument adds to the signature, e.g. ' local 0' or ' global g',

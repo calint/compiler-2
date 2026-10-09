@@ -21,7 +21,8 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
+#include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
 class toc;
@@ -243,8 +244,8 @@ class statement {
 
     // the bytes of its root variable that an identifier path reaches, a path
     // with a run-time index reaches its whole array
-    [[nodiscard]] virtual auto accessed_span() const
-        -> std::optional<access_span> {
+    [[nodiscard]] virtual auto accessed_path() const
+        -> std::optional<access_path> {
 
         std::unreachable();
     }
@@ -400,16 +401,16 @@ class statement {
     // used in UB check
     // throws if 'var' is read outside of the 'assigned' bytes
     auto assert_var_not_used(const std::string_view var,
-                             const field_coverage& assigned) const -> void {
+                             const assigned_bytes& assigned) const -> void {
 
         visit_reads(
             var,
             [&var, &assigned](
                 const token& src_loc_tk,
                 [[maybe_unused]] const std::string_view read_text,
-                const field_coverage::range& accessed_range,
-                [[maybe_unused]] const access_span& accessed_span) -> void {
-                if (assigned.covers(accessed_range)) {
+                const byte_range& accessed_bytes,
+                [[maybe_unused]] const access_path& accessed_path) -> void {
+                if (assigned.covers(accessed_bytes)) {
                     return;
                 }
 
@@ -438,13 +439,11 @@ class statement {
 
         visit_reads(
             var,
-            [&is_read](
-                [[maybe_unused]] const token& src_loc_tk,
-                [[maybe_unused]] const std::string_view read_text,
-                [[maybe_unused]] const field_coverage::range& accessed_range,
-                [[maybe_unused]] const access_span& accessed_span) -> void {
-                is_read = true;
-            });
+            [&is_read]([[maybe_unused]] const token& src_loc_tk,
+                       [[maybe_unused]] const std::string_view read_text,
+                       [[maybe_unused]] const byte_range& accessed_bytes,
+                       [[maybe_unused]] const access_path& accessed_path)
+                -> void { is_read = true; });
 
         return is_read;
     }

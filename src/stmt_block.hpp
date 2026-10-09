@@ -21,7 +21,7 @@
 #include "stmt_return.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 #include "unary_ops.hpp"
 
 class stmt_block final : public statement {
@@ -110,17 +110,17 @@ class stmt_block final : public statement {
     // every iteration starts with at least the coverage at loop entry
     // returns the coverage common to every 'break' of this loop body
     [[nodiscard]] auto trace_loop_body(assignment_flow& flow) const
-        -> std::optional<field_coverage> {
+        -> std::optional<assigned_bytes> {
 
-        const field_coverage entry{flow.assigned};
+        const assigned_bytes entry{flow.assigned};
 
-        std::optional<field_coverage> outer_breaks{
+        std::optional<assigned_bytes> outer_breaks{
             std::exchange(flow.at_breaks, std::nullopt),
         };
 
         trace_assignment(flow);
 
-        std::optional<field_coverage> breaks{
+        std::optional<assigned_bytes> breaks{
             std::exchange(flow.at_breaks, std::move(outer_breaks)),
         };
 

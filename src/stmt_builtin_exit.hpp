@@ -8,7 +8,7 @@
 #include "operand.hpp"
 #include "stmt_call.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 
 class stmt_builtin_exit final : public stmt_call {
   public:

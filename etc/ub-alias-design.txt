@@ -1,7 +1,7 @@
-access_span: aliasing check of what is reached through run-time indexes
+access_path: aliasing check of what is reached through run-time indexes
 =======================================================================
 
-source: src/ub_check.hpp ('access_span', 'path_step')
+source: src/ub_alias.hpp ('access_path', 'path_step')
 used by: stmt_assign_var.hpp, stmt_call.hpp (storage_target in toc.hpp)
 built by: stmt_identifier.hpp, toc.hpp
           ('storage_target_of', 'scope_stack::root_span')
@@ -45,7 +45,7 @@ so different offsets are different fields.
 3. overlaps(lhs, rhs)
 ---------------------
 
-'overlaps' is 'not paths_diverge(lhs.path, rhs.path)'. The steps line up, walk
+'overlaps' is 'not are_disjoint(lhs.path, rhs.path)'. The steps line up, walk
 them together:
 
     run-time index on either side             => go on, may be the same
@@ -73,36 +73,45 @@ examples
 No bytes are compared, so there are no periods, slots or alignment to line up
 and a constant index in the middle of a path does not lose information.
 
-4. Building spans
+4. Building paths
 -----------------
 
 An identifier adds a step per path element ('stmt_identifier::
-resolve_access_range'):
+resolve_accessed_bytes'):
 
     add_field(offset)        '.name'
     add_fixed_index(index)   '[3]', an index known at compile time
     add_run_time_index()     '[i]'
 
 An alias (a parameter, a result, the element 'e' of a 'foo') is bound to the
-span of what it names; an access through it joins the paths:
+path of what it names; an access through it joins the paths:
 
     narrow_to(inner)         the path of the bound target followed by the path
                              of the access inside it
     add_run_time_index()     'e' of a 'foo' is any element of the array
 
-A target whose span is not known has no span, which is the whole variable and
+A target whose path is not known has no path, which is the whole variable and
 always may alias.
 
-5. Bytes: not part of this check
---------------------------------
+5. The other checks on a read (not part of this one)
+----------------------------------------------------
 
-The compiler also rejects reading a variable before it is set, and a
-constructor that does not assign every field. For that it records which bytes
-of a variable are assigned, and a read must be inside them, so it needs bytes,
-not a path. 'stmt_identifier' keeps the bytes of its path in 'access_range_'
-and the path in 'access_span_', and the read visitor receives both
-('read_visitor': the range for the uninitialized read check, the span for the
-aliasing check).
+Three checks look at the reads of a variable; each has its own header:
+
+    ub_alias.hpp      this file: 'access_path', 'path_step'; paths, no bytes
+    ub_assigned.hpp   'assigned_bytes', 'assignment_flow': a variable is set
+                      before it is read and before a function returns
+    ub_reads.hpp      'read_filter', 'read_visitor': the walk over the reads
+                      that the checks share
+
+The constructor order check ('expr_type::constructor_target': a field of an
+instance value must not read bytes of the destination that an earlier field
+has overwritten in the same statement) also works on bytes and uses the
+walk of 'ub_reads.hpp'.
+
+These checks need bytes, not a path: a read must be inside the assigned
+bytes. 'stmt_identifier' keeps the bytes of its path in 'accessed_bytes_' and
+the path in 'access_path_', and 'read_visitor' hands out both.
 
     type item { id i32, name i64 }
     var it = item
@@ -110,7 +119,7 @@ aliasing check).
     x = it.name          reads bytes 4..12, not assigned => error
 
 The root variable is the whole variable, each field and each constant index
-narrows it ('stmt_identifier::narrow_access_range'). After a run-time index
-the element is unknown, so the range stays the whole array: a write through
+narrows it ('stmt_identifier::narrow_accessed_bytes'). After a run-time index
+the element is unknown, so the bytes stay the whole array: a write through
 'arr[i]' assigns nothing and a read through it needs the whole array.
-'access_span' holds only the path.
+'access_path' holds only the path.

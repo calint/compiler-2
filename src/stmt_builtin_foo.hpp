@@ -18,7 +18,7 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 #include "unary_ops.hpp"
 
 class stmt_builtin_foo final : public statement {
@@ -226,10 +226,11 @@ class stmt_builtin_foo final : public statement {
     [[nodiscard]] auto foo_array(const toc& tc) const -> foo_array_info {
         const storage_target array{
             tc.storage_target_of(ident_.first_token(),
-                                 ident_.first_token().text(), ident_.span()),
+                                 ident_.first_token().text(),
+                                 ident_.accessed_path()),
         };
 
-        return {array.root, array.span};
+        return {array.root, array.path};
     }
 
     [[nodiscard]] auto has_count() const -> bool {

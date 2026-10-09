@@ -9,7 +9,7 @@
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 
 class stmt_break final : public statement {
   public:

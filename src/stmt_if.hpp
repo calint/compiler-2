@@ -15,7 +15,7 @@
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 
 class stmt_if final : public statement {
     // e.g. 'else if' of 'else if c == d {y = 2}'
@@ -110,8 +110,8 @@ class stmt_if final : public statement {
     // every path starts at the 'if' and afterwards only what all paths
     // assigned remains
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        const field_coverage entry{flow.assigned};
-        field_coverage merged{field_coverage::full(entry.size_bytes())};
+        const assigned_bytes entry{flow.assigned};
+        assigned_bytes merged{assigned_bytes::full(entry.size_bytes())};
         bool is_reachable{};
 
         for (const stmt_if_branch& branch : branches_) {
@@ -203,8 +203,8 @@ class stmt_if final : public statement {
         return std::format("{}.else", if_label);
     }
 
-    static auto trace_path(const statement& path, const field_coverage& entry,
-                           assignment_flow& flow, field_coverage& merged,
+    static auto trace_path(const statement& path, const assigned_bytes& entry,
+                           assignment_flow& flow, assigned_bytes& merged,
                            bool& is_reachable) -> void {
 
         flow.assigned = entry;

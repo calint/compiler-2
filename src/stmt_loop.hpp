@@ -10,7 +10,7 @@
 #include "statement.hpp"
 #include "stmt_block.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 
 class stmt_loop final : public statement {
     stmt_block code_;
@@ -56,7 +56,7 @@ class stmt_loop final : public statement {
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        const std::optional<field_coverage> breaks{code_.trace_loop_body(flow)};
+        const std::optional<assigned_bytes> breaks{code_.trace_loop_body(flow)};
 
         // without a 'break' only 'return' or 'exit' leave the loop
         if (not breaks) {

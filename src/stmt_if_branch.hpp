@@ -11,7 +11,7 @@
 #include "expr_bool.hpp"
 #include "machine.hpp"
 #include "stmt_block.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
 
 class stmt_if_branch final : public statement {
     expr_bool condition_;

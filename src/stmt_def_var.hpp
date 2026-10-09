@@ -21,7 +21,8 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_check.hpp"
+#include "ub_assigned.hpp"
+#include "ub_reads.hpp"
 
 // e.g. 'var x = i32(0)', the initializer gives the type; 'let' with a
 // non-constant initializer is a 'var' that is read-only once initialized
@@ -59,7 +60,7 @@ class stmt_def_var final : public statement {
 
         // the newly defined variable is not yet assigned in its initialization
         assert_var_not_used(name_tk_.text(),
-                            field_coverage{multiply_storage_size(
+                            assigned_bytes{multiply_storage_size(
                                 name_tk_, get_type().size_bytes(),
                                 is_array_ ? array_count_ : 1)});
 

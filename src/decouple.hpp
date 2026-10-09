@@ -19,7 +19,7 @@
 
 #include "operand.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_alias.hpp"
 
 class toc;
 class tokenizer;
@@ -43,13 +43,13 @@ enum class read_only_cause : uint8_t {
 class foo_array_info final {
   public:
     foo_array_info(std::string root_in,
-                   const std::optional<access_span>& span_in)
-        : root{std::move(root_in)}, span{span_in} {}
+                   const std::optional<access_path>& path_in)
+        : root{std::move(root_in)}, path{path_in} {}
 
     foo_array_info() = default;
 
     std::string root;
-    std::optional<access_span> span;
+    std::optional<access_path> path;
 };
 
 struct var_info {
@@ -106,7 +106,7 @@ struct ident_info {
 
     // the path of the root variable that a destination names, empty when
     // unknown or the whole variable
-    std::optional<access_span> accessed_span;
+    std::optional<access_path> accessed_path;
 
     // the name for an error about it, 'fallback' without a place in the source
     [[nodiscard]] auto error_token(const token& fallback) const -> token {
@@ -227,7 +227,7 @@ struct ident_info {
             .const_value{value},
             .kind{is_typed ? kind::typed_constant : kind::constant},
             .is_reference{},
-            .accessed_span{},
+            .accessed_path{},
         };
     }
 
@@ -240,7 +240,7 @@ struct ident_info {
             .lea_path{},
             .operand{},
             .is_reference{},
-            .accessed_span{},
+            .accessed_path{},
         };
     }
 
@@ -260,7 +260,7 @@ struct ident_info {
             .operand{reg},
             .kind{kind::reg},
             .is_reference{},
-            .accessed_span{},
+            .accessed_path{},
         };
     }
 
@@ -289,7 +289,7 @@ struct ident_info {
             .is_pointer{layout.is_pointer},
             .kind{kind::var},
             .is_reference{},
-            .accessed_span{},
+            .accessed_path{},
         };
     }
 

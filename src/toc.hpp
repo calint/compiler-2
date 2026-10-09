@@ -58,7 +58,7 @@ struct noninline_instance {
 // to what is accessed, empty when it is not known
 struct storage_target {
     std::string root;
-    std::optional<access_span> span;
+    std::optional<access_path> path;
 
     // true when both may name the same bytes, a read of other bytes or of
     // another variable is not
@@ -67,12 +67,12 @@ struct storage_target {
             return false;
         }
 
-        // note: an unknown span is the whole variable
-        if (not span or not other.span) {
+        // note: an unknown path is the whole variable
+        if (not path or not other.path) {
             return true;
         }
 
-        return span->overlaps(*other.span);
+        return path->overlaps(*other.path);
     }
 };
 
@@ -1130,15 +1130,15 @@ class scope_stack final {
 
     auto pop() -> void { frames_.pop_back(); }
 
-    // 'span' of the variable or parameter 'name' as bytes of the root
+    // 'path' of the variable or parameter 'name' as bytes of the root
     // variable it names, empty when that is not known
-    [[nodiscard]] auto root_span(const std::string_view name,
-                                 const std::optional<access_span>& span) const
-        -> std::optional<access_span> {
+    [[nodiscard]] auto root_path(const std::string_view name,
+                                 const std::optional<access_path>& path) const
+        -> std::optional<access_path> {
 
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.has_var(name)) {
-                return span;
+                return path;
             }
 
             if (not frm.is_func()) {
@@ -1146,18 +1146,18 @@ class scope_stack final {
             }
 
             if (not frm.has_alias(name)) {
-                return span;
+                return path;
             }
 
-            const std::optional<access_span>& bound{
-                frm.get_alias(name).bound.span,
+            const std::optional<access_path>& bound{
+                frm.get_alias(name).bound.path,
             };
 
-            if (not bound or not span) {
+            if (not bound or not path) {
                 return std::nullopt;
             }
 
-            return bound->narrow_to(*span);
+            return bound->narrow_to(*path);
         }
 
         // statements are compiled inside a function
@@ -2697,11 +2697,11 @@ class toc final {
         funcs_.clear_noninline_instances();
     }
 
-    [[nodiscard]] auto root_span(const std::string_view name,
-                                 const std::optional<access_span>& span) const
-        -> std::optional<access_span> {
+    [[nodiscard]] auto root_path(const std::string_view name,
+                                 const std::optional<access_path>& path) const
+        -> std::optional<access_path> {
 
-        return scopes_.root_span(name, span);
+        return scopes_.root_path(name, path);
     }
 
     // the variable that 'name' names, a parameter is followed to its argument
@@ -2744,12 +2744,12 @@ class toc final {
         return locations_.source_of(src_loc_tk);
     }
 
-    // what 'name' names with 'span' inside it, as a root variable and bytes
+    // what 'name' names with 'path' inside it, as a root variable and bytes
     // of it. a parameter is followed to its argument and the element 'e' of a
     // 'foo' is any element of the array it iterates
     [[nodiscard]] auto
     storage_target_of(const token& src_loc_tk, const std::string_view name,
-                      const std::optional<access_span>& span) const
+                      const std::optional<access_path>& path) const
         -> storage_target {
 
         const foo_array_info array{foo_array(name)};
@@ -2757,25 +2757,25 @@ class toc final {
         if (array.root.empty()) {
             return {
                 .root{root_variable_of(src_loc_tk, name)},
-                .span{root_span(name, span)},
+                .path{root_path(name, path)},
             };
         }
 
         // note: the array was resolved to its root variable when the 'foo'
         //       was made, the callee of a call in the 'foo' does not see 'e'
-        std::optional<access_span> element_span{array.span};
+        std::optional<access_path> element_path{array.path};
 
-        if (element_span) {
-            element_span->add_run_time_index();
+        if (element_path) {
+            element_path->add_run_time_index();
 
-            if (span) {
-                element_span = element_span->narrow_to(*span);
+            if (path) {
+                element_path = element_path->narrow_to(*path);
             }
         }
 
         return {
             .root{array.root},
-            .span{std::move(element_span)},
+            .path{std::move(element_path)},
         };
     }
 

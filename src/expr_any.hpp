@@ -25,7 +25,7 @@
 #include "stmt_builtin_convert.hpp"
 #include "stmt_const.hpp"
 #include "token.hpp"
-#include "ub_check.hpp"
+#include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
 class expr_any final : public statement {
@@ -210,16 +210,16 @@ class expr_any final : public statement {
             array_count - vars_.size());
     }
 
-    [[nodiscard]] auto accessed_span() const
-        -> std::optional<access_span> override {
+    [[nodiscard]] auto accessed_path() const
+        -> std::optional<access_path> override {
 
         // note: only identifier arguments ask, and those are never arrays
         assert(not is_array_);
         assert(vars_.size() == 1);
 
         return vars_.at(0).visit(
-            [](const auto& expression) -> std::optional<access_span> {
-                return expression.accessed_span();
+            [](const auto& expression) -> std::optional<access_path> {
+                return expression.accessed_path();
             });
     }
 
@@ -342,7 +342,7 @@ class expr_any final : public statement {
     }
 
     auto assert_record_value_not_reading(
-        const expr_type::record_destination& dst) const -> void {
+        const expr_type::constructor_target& dst) const -> void {
 
         if (is_array_ or not std::holds_alternative<expr_type>(vars_.at(0))) {
             return;
