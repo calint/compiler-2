@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: --checks=overflow: an implicit narrowing assignment computes at the
+    narrow width and reads a wider operand as its low bytes; compute wide and
+    check that the result fits the destination, or reject mixed widths
+    => done (2026-10-10): mixed widths are rejected at compile time ("'a' of
+       type 'i32' is narrowed to 'i8', use 'i8(...)'"), in any operand
+       position (571.baz); 'qa/fuzz/fuzz-ub.sh' (scenario 'widen') expects the
+       rejection
+[x] hard: --checks=noub: plan for the remaining ub from user code
+    => done (2026-10-09): the plan (division, 'MIN / -1', shift count,
+       signed overflow, overlapping 'array_copy', stack overflow) is
+       implemented as '--checks=division', 'shift', 'overlap', 'stack' and
+       'overflow', all part of 'noub'; the partial 'read'/'write' item and the
+       alias items remain open below
 [x] hard: --checks=overflow (part of 'noub'): signed overflow of '+', '-',
     '*' and unary '-' panics
     => done (2026-10-09): checked at the width of the destination, narrow
