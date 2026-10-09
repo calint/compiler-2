@@ -1,0 +1,4 @@
+
+0564.baz:16:16: argument 1 'lst' may share storage with receiver 'lst' (both name 'lst'), use a temporary variable for one of them
+    lst.append(lst)
+               ^~~

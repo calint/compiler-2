@@ -1,0 +1,4 @@
+
+0241.baz:4:31: expected '}' after 1 element in array of size 1
+func main() { dat x = p[1]{{1},{2}} }
+                              ^

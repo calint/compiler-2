@@ -1,4 +1,0 @@
-
-483.baz:5:13: use of uninitialized variable 'res'
-    res.y = res.y + res.x
-            ^~~

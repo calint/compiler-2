@@ -1,4 +1,0 @@
-
-784.baz:8:12: generic type 'text' needs arguments, e.g. 'text<...>'
-type str = text
-           ^~~~

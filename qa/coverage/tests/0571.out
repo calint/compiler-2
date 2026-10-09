@@ -1,0 +1,4 @@
+
+0571.baz:3:17: constant '2147483648' does not fit 'i32'
+dat count = i32(2147483648)
+                ^~~~~~~~~~

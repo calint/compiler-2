@@ -1,0 +1,4 @@
+
+0995.baz:4:22: constant expression overflows the type
+    x = 2147483647 + 1
+                     ^

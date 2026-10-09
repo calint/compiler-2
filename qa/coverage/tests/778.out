@@ -1,7 +1,0 @@
-
-778.baz:9:9: field 'size' not found in type 'name'
-    res.size = n
-        ^~~~
-778.baz:13:13: called from 'make<name>'
-    var m = make<name>(2)
-            ^~~~

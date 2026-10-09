@@ -1,0 +1,4 @@
+
+0485.baz:6:17: 'ps[1].x' may have been overwritten in the same statement
+    ps[i] = {1, ps[1].x}
+                ^~

@@ -1,4 +1,0 @@
-
-886.baz:3:19: expected '{' to begin declaration of type
-type list<T type> item { x }
-                  ^

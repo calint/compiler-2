@@ -1,4 +1,0 @@
-
-791.baz:8:17: expected a generic argument
-type str = text<>
-                ^

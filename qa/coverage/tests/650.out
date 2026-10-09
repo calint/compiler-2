@@ -1,4 +1,0 @@
-
-650.baz:3:12: type 'x' not found
-func f(mut x) {
-           ^

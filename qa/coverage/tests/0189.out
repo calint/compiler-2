@@ -1,0 +1,4 @@
+
+0189.baz:3:23: function 'nope' not found
+func main() { var x = nope(1) }
+                      ^~~~

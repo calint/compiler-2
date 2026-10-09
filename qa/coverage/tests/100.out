@@ -1,4 +1,0 @@
-
-100.baz:3:15: function may return without setting its return value
-func foozi(i) res {
-              ^~~

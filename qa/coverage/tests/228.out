@@ -1,4 +1,0 @@
-
-228.baz:4:28: too many fields specified for type 'p'
-func main() { var p1 = p{1,2} }
-                           ^

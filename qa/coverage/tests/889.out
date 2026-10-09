@@ -1,4 +1,0 @@
-
-889.baz:6:19: destination must be an array
-    array_copy(a, 2, n)
-                  ^

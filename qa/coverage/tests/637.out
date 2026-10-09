@@ -1,4 +1,0 @@
-
-637.baz:5:16: expected a constant for 'i16'
-dat p = point{ { 1 }, 2 }
-               ^

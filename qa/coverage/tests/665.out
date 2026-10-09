@@ -1,4 +1,0 @@
-
-665.baz:11:10: read-only 'd' cannot be passed to a 'mut' parameter, parameter 'd' is not declared 'mut'
-    fill(d)
-         ^

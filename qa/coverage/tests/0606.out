@@ -1,0 +1,4 @@
+
+0606.baz:15:9: expected type 'point', got 'size'
+    p = size{1, 2}
+        ^~~~

@@ -1,0 +1,4 @@
+
+0162.baz:3:23: cannot resolve identifier '0b102'
+func main() { var x = 0b102 }
+                      ^~~~~

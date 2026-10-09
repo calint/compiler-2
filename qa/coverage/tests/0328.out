@@ -1,0 +1,4 @@
+
+0328.baz:5:12: index -1 is out of bounds for array 'values' of size 8
+    values[~0] = 1
+           ^

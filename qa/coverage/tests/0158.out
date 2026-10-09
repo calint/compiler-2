@@ -1,0 +1,4 @@
+
+0158.baz:4:33: too many initializers for type 'point'
+func main() { dat p = point{ 1, 2 } }
+                                ^

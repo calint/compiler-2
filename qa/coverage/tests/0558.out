@@ -1,0 +1,4 @@
+
+0558.baz:3:6: type 'nosuch' not found
+func nosuch.add(value) {
+     ^~~~~~

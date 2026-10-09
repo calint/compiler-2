@@ -1,0 +1,4 @@
+
+0471.baz:4:12: use of uninitialized variable 'res'
+    res = {res.y, 0}
+           ^~~

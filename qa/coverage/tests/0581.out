@@ -1,0 +1,4 @@
+
+0581.baz:9:15: array 'arr' must be indexed
+    var x = f(arr)
+              ^

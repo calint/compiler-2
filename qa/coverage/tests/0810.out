@@ -1,0 +1,4 @@
+
+0810.baz:6:13: cannot resolve identifier 'T'
+    var y = T
+            ^

@@ -1,0 +1,7 @@
+
+0870.baz:6:11: recursion of inlined function 'count' does not end at compile time, declare it 'noinline'
+    res = count(n + 1) + 1
+          ^~~~~
+0870.baz:10:10: called from 'count(0)'
+    exit(count(0))
+         ^~~~~

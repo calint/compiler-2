@@ -1,0 +1,4 @@
+
+0449.baz:2:11: expected '=' followed by an initializer, e.g. 'dat x = i32(0)'
+dat value : i32 = 1
+          ^

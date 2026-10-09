@@ -1,4 +1,0 @@
-
-252.baz:5:26: expected '(', 'source', 'compare', 'count', and ')'
-    var z = arrays_equal a,a,1
-                         ^

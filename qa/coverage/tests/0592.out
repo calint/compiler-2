@@ -1,0 +1,4 @@
+
+0592.baz:7:20: index 5 is out of bounds for array 'arr' of size 4
+    array_copy(arr[5], dst, n)
+                   ^

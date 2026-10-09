@@ -1,0 +1,4 @@
+
+0718.baz:3:6: main cannot be declared noinline
+func noinline main() {
+     ^~~~~~~~

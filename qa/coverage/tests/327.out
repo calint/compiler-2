@@ -1,7 +1,0 @@
-
-327.baz:4:12: index 8 is out of bounds for array 'values' of size 8
-    values[8] = 1
-           ^
-327.baz:9:5: called from
-    legacy_write(values)
-    ^~~~~~~~~~~~

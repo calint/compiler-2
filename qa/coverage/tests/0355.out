@@ -1,0 +1,4 @@
+
+0355.baz:6:27: field 'y' not found in type 'point'
+    var value = points[0].y
+                          ^

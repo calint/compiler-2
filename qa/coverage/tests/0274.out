@@ -1,0 +1,4 @@
+
+0274.baz:2:13: expected a constant array size greater than 0
+    name i8[-1]
+            ^

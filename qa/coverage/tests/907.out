@@ -1,4 +1,0 @@
-
-907.baz:6:9: index offset is out of the range of addresses
-    arr[ix - 9223372036854775807] = arr[ix]
-        ^

@@ -1,4 +1,0 @@
-
-645.baz:5:9: cannot assign to read-only 'e', 'e' is an element of a read-only array
-        e = 1
-        ^

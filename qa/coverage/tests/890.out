@@ -1,4 +1,0 @@
-
-890.baz:6:24: compare must be an array
-    if arrays_equal(a, 1, 2) {
-                       ^

@@ -1,4 +1,0 @@
-
-166.baz:3:30: expected '=='
-func main() { var x = 1 if x = 1 {} }
-                             ^

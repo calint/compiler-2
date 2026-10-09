@@ -1,4 +1,0 @@
-
-884.baz:7:9: a global variable cannot be initialized with a call
-var g = one()
-        ^~~

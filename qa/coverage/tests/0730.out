@@ -1,0 +1,38 @@
+
+0730.baz:21:61: out of RV32I scratch registers
+                                                            foo a {
+                                                            ^~~
+
+register use at the failure: 29 of 30 registers live
+
+  held  frame, registers (allocated at)
+    29  main
+          t0 7:9
+          t1 7:5
+          t2 8:13
+          t3 8:9
+          t4 9:17
+          t5 9:13
+          t6 10:21
+          s1 10:17
+          s2 11:25
+          s3 11:21
+          s4 12:29
+          s5 12:25
+          s6 13:33
+          s7 13:29
+          s8 14:37
+          s9 14:33
+          s10 15:41
+          s11 15:37
+          tp 16:45
+          gp 16:41
+          ra 17:49
+          a1 17:45
+          a2 18:53
+          a3 18:49
+          a4 19:57
+          a5 19:53
+          a6 20:61
+          a7 20:57
+          a0 21:65

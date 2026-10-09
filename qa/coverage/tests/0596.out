@@ -1,0 +1,4 @@
+
+0596.baz:7:18: function may return without setting its return value
+func point.at(x) self {
+                 ^~~~

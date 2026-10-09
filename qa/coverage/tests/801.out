@@ -1,4 +1,0 @@
-
-801.baz:8:15: generic parameter 'first' of 'pair' needs a type, got the constant '1'
-type p = pair<1, 2>
-              ^

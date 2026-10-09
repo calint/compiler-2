@@ -1,4 +1,0 @@
-
-663.baz:11:5: read-only 't' cannot be the receiver of 'mut' method 'tk.reset', parameter 't' is not declared 'mut'
-    t.reset()
-    ^

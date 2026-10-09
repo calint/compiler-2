@@ -1,7 +1,0 @@
-
-870.baz:3:46: 'y' of type 'i16' is wider than 'x' of type 'i8', swap the operands: 'y == x'
-func same(x i8, y i16) res bool { res = x == y }
-                                             ^
-870.baz:7:13: called from 'same(b[1], 4)'
-    var r = same(b[1], 4)
-            ^~~~

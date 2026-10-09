@@ -1,0 +1,4 @@
+
+0223.baz:1:8: expected '(' after function name
+func f {}
+       ^

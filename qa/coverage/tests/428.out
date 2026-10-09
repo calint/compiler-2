@@ -1,4 +1,0 @@
-
-428.baz:4:41: parameter 'parameter': required 'i16', got 'i32'
-func main() { var value = i32(1) target(value) }
-                                        ^

@@ -1,0 +1,4 @@
+
+0183.baz:1:15: expected '{' to begin block
+func f() r i64.x { r = 1 }
+              ^

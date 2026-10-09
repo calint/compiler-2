@@ -1,4 +1,0 @@
-
-227.baz:4:33: expected type 'p', got 'i64'
-func main() { var p1 = p{} p1 = 1 }
-                                ^

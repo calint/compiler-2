@@ -1,0 +1,4 @@
+
+0191.baz:4:23: function does not return a value
+func main() { var x = f() }
+                      ^

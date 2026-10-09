@@ -1,0 +1,4 @@
+
+0721.baz:4:14: unsupported escape in character literal '\ab'
+    var c = '\ab'
+             ^

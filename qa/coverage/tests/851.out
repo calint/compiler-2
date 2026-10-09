@@ -1,4 +1,0 @@
-
-851.baz:9:15: generic function 'point.get' needs type arguments, e.g. 'get<...>'
-    var x = p.get
-              ^~~

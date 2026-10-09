@@ -1,0 +1,4 @@
+
+0441.baz:5:1: expected '{' to begin block
+func main() { helper() }
+^

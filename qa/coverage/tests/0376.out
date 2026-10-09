@@ -1,0 +1,4 @@
+
+0376.baz:6:9: expected an array
+    foo value {}
+        ^~~~~

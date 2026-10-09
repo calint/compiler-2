@@ -1,4 +1,0 @@
-
-885.baz:5:9: function does not return a value
-    x = exit(1)
-        ^~~~

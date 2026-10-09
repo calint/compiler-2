@@ -1,0 +1,4 @@
+
+0876.baz:3:6: expected a name
+type { x, y }
+     ^

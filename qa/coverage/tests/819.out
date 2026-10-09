@@ -1,4 +1,0 @@
-
-819.baz:9:6: type 'str' already defined at 8:6
-type str = text<9>
-     ^~~

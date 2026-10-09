@@ -1,4 +1,0 @@
-
-230.baz:7:19: expected type 'i8', got 'i16'
-    var p1 = p{q1.data}
-                  ^~~~

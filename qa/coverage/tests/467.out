@@ -1,4 +1,0 @@
-
-467.baz:3:25: use of uninitialized variable 'res'
-    if i == 3 { var y = res }
-                        ^~~

@@ -1,0 +1,4 @@
+
+0846.baz:2:19: expected '{' to begin declaration of type
+type list<T type> x }
+                  ^

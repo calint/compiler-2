@@ -1,4 +1,0 @@
-
-353.baz:5:21: expected ',' followed by a value for field 'y' in type 'p'
-    var value = p{1 2}
-                    ^

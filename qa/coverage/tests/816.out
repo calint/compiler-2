@@ -1,4 +1,0 @@
-
-816.baz:3:12: 'text' is not a generic type, a generic type is defined before the alias that names it
-type str = text<8>
-           ^~~~

@@ -1,0 +1,4 @@
+
+0562.baz:14:15: expected '(' after method name
+    lst.clear = 1
+              ^

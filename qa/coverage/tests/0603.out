@@ -1,0 +1,4 @@
+
+0603.baz:8:19: type 'point' has no constructor 'at'
+    var p = point.at(1, 2)
+                  ^~

@@ -1,0 +1,7 @@
+
+0927.baz:11:20: 'w.items[2]' may share storage with the destination 'x' (both name 'w'), compute the value in a temporary variable first
+    x = 7 + (100 - w.items[2])
+                   ^
+0927.baz:16:5: called from
+    put(w.items[2])
+    ^~~

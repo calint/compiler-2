@@ -1,0 +1,4 @@
+
+0875.baz:3:6: '2' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+func 2() {
+     ^

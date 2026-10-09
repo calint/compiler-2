@@ -1,0 +1,7 @@
+
+0808.baz:4:14: expected a constant array size greater than 0
+    array i8[capacity],
+             ^
+0808.baz:8:6: instantiated by
+type str = text<0>
+     ^~~

@@ -1,0 +1,10 @@
+
+0755.baz:12:20: argument 2 'g' may share storage with argument 1 'a' (both name 'g'), use a temporary variable for one of them
+    swap_values(a, g)
+                   ^
+0755.baz:16:5: called from
+    outer(b)
+    ^~~~~
+0755.baz:20:5: called from
+    middle(g)
+    ^~~~~~

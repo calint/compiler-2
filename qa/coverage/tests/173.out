@@ -1,4 +1,0 @@
-
-173.baz:4:5: constant 'x' already defined in this block at 3:5
-let x = 2
-    ^

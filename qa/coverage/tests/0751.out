@@ -1,0 +1,4 @@
+
+0751.baz:5:14: RV32I shift count must be 0 to 7 for 8-bit values
+    c = c << 8
+             ^

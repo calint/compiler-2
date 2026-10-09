@@ -1,0 +1,4 @@
+
+0187.baz:3:9: variable 'x' already declared at 2:9
+    var x = 0
+        ^

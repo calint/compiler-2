@@ -1,0 +1,4 @@
+
+0892.baz:7:8: function does not return a value
+    if check(true) {
+       ^~~~~

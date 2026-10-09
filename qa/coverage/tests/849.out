@@ -1,4 +1,0 @@
-
-849.baz:7:8: array 'a' must be indexed
-    if a == p exit(1)
-       ^

@@ -1,4 +1,0 @@
-
-551.baz:8:18: only arrays of type 'i8' can be initialized with strings
-    var w = wide{"ab"}
-                 ^~~~

@@ -1,0 +1,4 @@
+
+0215.baz:3:26: expected ']' after array size
+func main() { var x = [2 = {1,2} }
+                         ^

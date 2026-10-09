@@ -1,0 +1,4 @@
+
+0818.baz:8:13: cannot deduce 'T' of generic function 'same', write 'same<...>'
+    var r = same(1, 2)
+            ^~~~

@@ -1,4 +1,0 @@
-
-258.baz:4:17: expected constant, identifier, or function call
-func main() { f({}) }
-                ^

@@ -1,4 +1,0 @@
-
-896.baz:3:13: expected a constant for 'i32'
-dat x = i32("5")
-            ^~~

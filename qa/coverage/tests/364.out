@@ -1,4 +1,0 @@
-
-364.baz:4:35: expected '}' after 2 elements in array of size 2
-func main() { dat x = p[2]{{1},{2},{3}} }
-                                  ^

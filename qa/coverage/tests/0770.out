@@ -1,0 +1,4 @@
+
+0770.baz:14:18: type 'nope' not found
+    var m = make<nope>(2)
+                 ^~~~

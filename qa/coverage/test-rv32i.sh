@@ -18,7 +18,7 @@ for tool in clang++ llvm-mc ld.lld qemu-riscv32; do
 done
 
 # the main runtime program: instruction selection checked by execution, with
-# the read and write results compared with 'tests/434.out'
+# the read and write results compared with 'tests/0430.out'
 printf 'rv32i address lowering: compiling backend tests\n'
 # the driver stays after the run so that 'test-coverage.sh report' counts the
 # lines only it reaches, e.g. jumps written as emitted
@@ -31,8 +31,8 @@ llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
     "$TEST_DIR/test.s" -o "$TEST_DIR/test.o"
 ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/test" "$TEST_DIR/test.o"
 printf 'rv32i address lowering: executing with QEMU\n'
-qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/434.in" > "$TEST_DIR/output"
-cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/434.out"
+qemu-riscv32 "$TEST_DIR/test" < "$SCRIPT_DIR/tests/0430.in" > "$TEST_DIR/output"
+cmp "$TEST_DIR/output" "$SCRIPT_DIR/tests/0430.out"
 # division by zero traps with SIGTRAP (qemu reports 133)
 printf 'rv32i arithmetic: checking division by zero trap\n'
 ld.lld -m elf32lriscv -e divide_by_zero -o "$TEST_DIR/divide-by-zero" "$TEST_DIR/test.o"

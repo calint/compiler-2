@@ -1,4 +1,0 @@
-
-484.baz:2:26: function may return without setting its return value
-func first(values i32[]) res {
-                         ^~~

@@ -1,4 +1,0 @@
-
-842.baz:2:6: type 'int' already defined at 0:1
-type int { value i32 }
-     ^~~

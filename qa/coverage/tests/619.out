@@ -1,4 +1,0 @@
-
-619.baz:11:7: method 'jump' not found in type 'point'
-    p.jump(1)
-      ^~~~

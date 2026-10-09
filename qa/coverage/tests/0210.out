@@ -1,0 +1,4 @@
+
+0210.baz:6:5: destination must be an 'i64'
+    n = array_length(a)
+    ^

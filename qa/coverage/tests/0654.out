@@ -1,0 +1,4 @@
+
+0654.baz:6:5: cannot assign to read-only 'limit', 'limit' is declared with 'let'
+    limit = 11
+    ^~~~~

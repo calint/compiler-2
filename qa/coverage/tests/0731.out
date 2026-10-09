@@ -1,0 +1,4 @@
+
+0731.baz:6:5: copy size exceeds RV32I address range
+    array_copy(a, b, 5000000000)
+    ^~~~~~~~~~

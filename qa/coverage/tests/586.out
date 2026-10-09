@@ -1,4 +1,0 @@
-
-586.baz:5:24: array 'arr' must be indexed
-    var ok = arr[1] == arr
-                       ^

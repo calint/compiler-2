@@ -1,0 +1,4 @@
+
+0856.baz:5:12: 'wide' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    target(wide + 1)
+           ^~~~

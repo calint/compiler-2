@@ -1,0 +1,4 @@
+
+0226.baz:4:33: expected type 'p', got 'i32'
+func main() { var p1 = p{} p1 = 1 }
+                                ^

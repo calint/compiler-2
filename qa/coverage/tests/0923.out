@@ -1,0 +1,4 @@
+
+0923.baz:15:17: argument 1 'p.x' may share storage with the result destination 'p' (both name 'p'), use a temporary variable for one of them
+    p.x = twice(p.x)
+                ^

@@ -1,4 +1,0 @@
-
-176.baz:3:15: not in a loop
-func main() { break }
-              ^~~~~

@@ -1,0 +1,4 @@
+
+0964.baz:19:15: 'es[k].items[0].f' may share storage with the destination 'e.f' (both name 'es'), compute the value in a temporary variable first
+        e.f = es[k].items[0].f
+              ^~

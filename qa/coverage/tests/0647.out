@@ -1,0 +1,4 @@
+
+0647.baz:10:5: cannot assign to read-only 'p.x', 'p' is declared with 'let'
+    p.x = 3
+    ^

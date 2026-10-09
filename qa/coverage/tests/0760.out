@@ -1,0 +1,4 @@
+
+0760.baz:4:13: cannot resolve identifier 'i8'
+    var x = i8 + 1
+            ^~

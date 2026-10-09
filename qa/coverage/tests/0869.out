@@ -1,0 +1,7 @@
+
+0869.baz:13:6: generic method 'text.size' clashes with the method 'str.size' defined at 11:6
+func text.size() res { res = capacity }
+     ^~~~
+0869.baz:9:6: instantiated by
+type str = text<8>
+     ^~~

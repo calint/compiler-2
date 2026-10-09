@@ -1,0 +1,4 @@
+
+0214.baz:5:30: expected ',' followed by 'count'
+    var z = arrays_equal(a,a 1)
+                             ^

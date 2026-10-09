@@ -1,4 +1,0 @@
-
-120.baz:8:9: index -1 is out of bounds for array 'arr' of size 8
-    arr[-1] = 0x61
-        ^

@@ -1,4 +1,0 @@
-
-666.baz:9:10: read-only 'buf' cannot be passed to a 'mut' parameter, parameter 'buf' is not declared 'mut'
-    fill(buf)
-         ^

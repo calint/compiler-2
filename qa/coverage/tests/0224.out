@@ -1,0 +1,4 @@
+
+0224.baz:3:10: function may return without setting its return value
+func f() result { }
+         ^~~~~~

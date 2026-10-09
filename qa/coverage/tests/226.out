@@ -1,4 +1,0 @@
-
-226.baz:8:10: expected type 'p', got 'q'
-    p1 = q1
-         ^~

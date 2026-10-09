@@ -1,4 +1,0 @@
-
-179.baz:3:10: expected field name
-type x { , }
-         ^

@@ -1,0 +1,4 @@
+
+0235.baz:3:22: expected argument after ','
+func main() { exit(1,) }
+                     ^

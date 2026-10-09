@@ -1,0 +1,4 @@
+
+0824.baz:5:12: an array needs a constant size, e.g. 'i8[4]'
+    a = i8[]
+           ^

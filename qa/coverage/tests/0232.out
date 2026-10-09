@@ -1,0 +1,4 @@
+
+0232.baz:6:7: unary operators on reference arguments are unsupported
+    f(-a[0])
+      ^

@@ -1,0 +1,4 @@
+
+0831.baz:7:8: an instance of 'point' is not a condition
+    if a exit(1)
+       ^

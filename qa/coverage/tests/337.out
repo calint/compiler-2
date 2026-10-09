@@ -1,4 +1,0 @@
-
-337.baz:4:20: expected array size greater than 0
-    var values = i8[]{}
-                   ^

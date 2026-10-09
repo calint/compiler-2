@@ -1,0 +1,4 @@
+
+0826.baz:3:11: expected a parameter name
+func f(a, , b) {}
+          ^

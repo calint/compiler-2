@@ -1,0 +1,4 @@
+
+0554.baz:4:15: unsupported escape in string "a\qb"
+    var s = "a\qb"
+              ^

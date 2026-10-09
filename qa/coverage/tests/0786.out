@@ -1,0 +1,7 @@
+
+0786.baz:11:16: cannot resolve identifier 'nothing'
+    self.len = nothing
+               ^~~~~~~
+0786.baz:8:6: instantiated by
+type str = text<8>
+     ^~~

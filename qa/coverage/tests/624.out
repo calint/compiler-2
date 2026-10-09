@@ -1,4 +1,0 @@
-
-624.baz:5:13: boolean values cannot be arithmetic operands
-    n = n + true
-            ^~~~

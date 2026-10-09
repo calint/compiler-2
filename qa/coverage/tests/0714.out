@@ -1,0 +1,4 @@
+
+0714.baz:4:5: 'dat' can only be added in global scope
+    dat x = 1
+    ^~~

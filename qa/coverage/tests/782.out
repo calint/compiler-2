@@ -1,4 +1,0 @@
-
-782.baz:8:12: generic type 'text' takes 1 argument(s), got 2
-type str = text<4, 5>
-           ^~~~

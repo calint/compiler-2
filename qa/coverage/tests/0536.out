@@ -1,0 +1,23 @@
+
+0536.baz:18:88: cannot allocate register rcx because it holds a scratch value allocated at 18:83. try to reduce expression complexity
+    var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n << a)))))))))))))
+                                                                                       ^
+
+register use at the failure: 14 of 14 registers live
+
+  held  frame, registers (allocated at)
+    14  main
+          r15 18:18
+          r14 18:23
+          r13 18:28
+          r12 18:33
+          r10 18:38
+          r9 18:43
+          r8 18:48
+          r11 18:53
+          rbx 18:58
+          rdx 18:63
+          rax 18:68
+          rsi 18:73
+          rdi 18:78
+          rcx 18:83

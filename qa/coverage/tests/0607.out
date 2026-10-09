@@ -1,0 +1,4 @@
+
+0607.baz:5:13: expected constant, identifier, or function call
+    var p = {1, 2}
+            ^

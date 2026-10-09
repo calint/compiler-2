@@ -1,4 +1,0 @@
-
-468.baz:4:17: use of uninitialized variable 'res'
-        var y = res
-                ^~~

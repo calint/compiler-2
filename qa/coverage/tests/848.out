@@ -1,4 +1,0 @@
-
-848.baz:7:8: an instance of 'point' is not a number
-    if a < b exit(1)
-       ^

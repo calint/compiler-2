@@ -1,4 +1,0 @@
-
-656.baz:5:13: cannot read into read-only 'd', 'd' is declared with 'let'
-    read(0, d)
-            ^

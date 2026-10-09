@@ -1,0 +1,4 @@
+
+0717.baz:3:1: unexpected keyword 'exit'
+exit(0)
+^~~~

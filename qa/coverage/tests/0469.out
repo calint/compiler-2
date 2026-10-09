@@ -1,0 +1,4 @@
+
+0469.baz:8:29: use of uninitialized variable 'ps'
+    var ps = point[1]{twice(ps[0])}
+                            ^~

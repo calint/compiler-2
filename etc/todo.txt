@@ -95,7 +95,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] medium: x86: a 'read'/'write' address with a run-time offset uses a scratch
     register ('mov r14, [..]; lea rsi, [..]; add rsi, r14' instead of 'add
     rsi, qword [..]'); same for the 'arrays_equal' destination
-[ ] medium: x86 register utilization: 109.baz, 082.baz, 104.baz
+[ ] medium: x86 register utilization: 0109.baz, 0082.baz, 0104.baz
 [ ] medium: rv32i: a constant above 16 bytes stored at an address inside a word
     loops bytes ('copy_bytes') because the constant is word aligned and the
     destination is not
@@ -183,15 +183,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     steps; benchmark a faster routine (e.g. RVINT reciprocal, see
     https://needlesscomplexity.substack.com/p/rvint-integer-mathematical-algorithms)
     before changing it
-[ ] medium: --checks=overflow: 753.baz needs every rv32i scratch register and
+[ ] medium: --checks=overflow: 0746.baz needs every rv32i scratch register and
     fails to compile under the check ('out of RV32I scratch registers');
     the memory source add or sub needs two registers, one would do with a
     reload of the second operand
 [ ] medium: qa/lint/format-source.py crashes on a digit separator
     ('0xffff'f000' reads as a character literal)
 [ ] medium: --checks=alias: route inline builtin results through a scratch
-    register instead of rejecting (077.baz, 135.baz, 397.baz now use a
-    temporary variable, 485.baz is a '--checks=noub' error test); it would
+    register instead of rejecting (0077.baz, 0135.baz, 0393.baz now use a
+    temporary variable, 0481.baz is a '--checks=noub' error test); it would
     become a run test again if the semantics change
 [ ] medium: low priority: generics: constants as parameters of functions
     ('func f<n>()') and constructors of generic types

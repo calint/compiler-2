@@ -1,4 +1,0 @@
-
-740.baz:3:11: unsupported escape in string "a\qb"
-dat s = "a\qb"
-          ^

@@ -1,0 +1,4 @@
+
+0218.baz:3:9: cannot resolve identifier 'nope'
+let x = nope
+        ^~~~

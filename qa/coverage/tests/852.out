@@ -1,4 +1,0 @@
-
-852.baz:3:12: expected '{' to open array initializer for 'i32'
-dat x = t{ 5, 1 }
-           ^

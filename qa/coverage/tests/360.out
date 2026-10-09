@@ -1,4 +1,0 @@
-
-360.baz:3:15: empty arrays require a specified size
-dat value = i8[]{}
-              ^

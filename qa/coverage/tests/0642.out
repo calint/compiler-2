@@ -1,0 +1,4 @@
+
+0642.baz:9:10: argument 2 'x' may share storage with argument 1 'x' (both name 'x'), use a temporary variable for one of them
+    f(x, x)
+         ^

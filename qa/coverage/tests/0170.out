@@ -1,0 +1,4 @@
+
+0170.baz:6:18: source type 'i8' does not match destination type 'i16'
+    array_copy(a,b,1)
+                 ^

@@ -1,4 +1,0 @@
-
-789.baz:14:18: expected a generic argument
-    var m = make<>(2)
-                 ^

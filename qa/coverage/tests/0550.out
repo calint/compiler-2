@@ -1,0 +1,4 @@
+
+0550.baz:4:17: an empty string is not valid for an array with unspecified size
+    var empty = ""
+                ^~

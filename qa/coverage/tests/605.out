@@ -1,4 +1,0 @@
-
-605.baz:7:26: result 'self' has the type of the constructor
-func point.at(x, y) self point {
-                         ^~~~~

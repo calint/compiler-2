@@ -1,0 +1,4 @@
+
+0640.baz:8:9: read-only 'a' cannot be passed to a 'mut' parameter, parameter 'a' is not declared 'mut'
+    set(a)
+        ^

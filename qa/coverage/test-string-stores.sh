@@ -12,7 +12,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/../../baz"
 TESTS="$SCRIPT_DIR/tests"
-SOURCES=(557)
+SOURCES=(0553)
 TARGETS=(x86_64 rv32i)
 
 MODE="${1:-check}"

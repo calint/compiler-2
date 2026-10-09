@@ -1,0 +1,4 @@
+
+0894.baz:132:1: nesting is too deep, the limit is 128 levels
+{
+^

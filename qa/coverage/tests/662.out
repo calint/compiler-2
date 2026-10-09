@@ -1,4 +1,0 @@
-
-662.baz:4:5: cannot assign to read-only 'a', parameter 'a' is not declared 'mut'
-    a = 2
-    ^

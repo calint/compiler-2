@@ -1,4 +1,0 @@
-
-270.baz:3:23: unexpected '}' in single statement block
-func main() { if true } }
-                      ^

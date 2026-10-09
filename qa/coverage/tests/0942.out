@@ -1,0 +1,7 @@
+
+0942.baz:11:20: 'entities[1].vals[j]' may share storage with the destination 'self.vals' (both name 'entities'), compute the value in a temporary variable first
+    self.vals[0] = entities[1].vals[j]
+                   ^~~~~~~~
+0942.baz:18:5: called from
+    entities[i].set(j)
+    ^~~~~~~~

@@ -1,0 +1,4 @@
+
+0344.baz:3:13: an empty string is not valid for an array with unspecified size
+dat value = ""
+            ^~

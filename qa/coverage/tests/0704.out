@@ -1,0 +1,7 @@
+
+0704.baz:6:5: cannot assign to constant '1'
+    x = x + 1
+    ^
+0704.baz:10:5: called from
+    bump(c)
+    ^~~~

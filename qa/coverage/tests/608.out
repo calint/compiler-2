@@ -1,4 +1,0 @@
-
-608.baz:12:5: return value is discarded
-    point.at(1, 2)
-    ^~~~~

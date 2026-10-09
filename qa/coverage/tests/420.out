@@ -1,4 +1,0 @@
-
-420.baz:4:28: function does not return a value
-func main() { var result = target() }
-                           ^~~~~~

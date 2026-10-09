@@ -1,0 +1,4 @@
+
+0638.baz:4:13: cannot read into read-only 'd', parameter 'd' is not declared 'mut'
+    read(0, d)
+            ^

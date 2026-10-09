@@ -1,0 +1,4 @@
+
+0157.baz:3:23: unterminated string
+func main() { dat x = "unterminated
+                      ^

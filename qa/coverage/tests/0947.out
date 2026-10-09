@@ -1,0 +1,7 @@
+
+0947.baz:7:22: 'g[3]' may share storage with the destination 'res' (both name 'g'), compute the value in a temporary variable first
+    res = k + (100 - g[3])
+                     ^
+0947.baz:12:13: called from 'f(10)'
+        e = f(10)
+            ^

@@ -1,4 +1,0 @@
-
-367.baz:3:25: expected constant, identifier, or function call
-func main() { var x = (()) }
-                        ^

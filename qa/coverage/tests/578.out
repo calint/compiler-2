@@ -1,4 +1,0 @@
-
-578.baz:7:19: destination array size 2 does not match source size 3
-    var l = line{ ps }
-                  ^~

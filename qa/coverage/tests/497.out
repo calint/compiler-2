@@ -1,7 +1,0 @@
-
-497.baz:6:5: result type mismatch: function returns 'i8', destination is 'i32', use 'i32(...)'
-    x = narrow(big)
-    ^
-497.baz:6:9: called from 'narrow(big)'
-    x = narrow(big)
-        ^~~~~~

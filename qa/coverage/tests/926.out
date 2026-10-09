@@ -1,4 +1,0 @@
-
-926.baz:8:24: 'arr[3]' may share storage with the destination 'e' (both name 'arr'), compute the value in a temporary variable first
-        e = k + (100 - arr[3])
-                       ^~~

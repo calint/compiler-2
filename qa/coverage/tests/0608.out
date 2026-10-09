@@ -1,0 +1,4 @@
+
+0608.baz:5:9: expected type 'i8', got 'i16'
+    a = i16[]{1, 2}
+        ^~~

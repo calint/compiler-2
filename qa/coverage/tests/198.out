@@ -1,4 +1,0 @@
-
-198.baz:3:30: expected '}' after 1 element in array of size 1
-func main() { dat x = i8[1]{1,2} }
-                             ^

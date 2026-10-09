@@ -1,0 +1,4 @@
+
+0186.baz:1:21: expected '=' followed by an initializer, e.g. 'var x = i32(0)'
+func main() { var x nope }
+                    ^

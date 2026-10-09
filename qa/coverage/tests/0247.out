@@ -1,0 +1,4 @@
+
+0247.baz:5:13: array 'a' must be indexed
+    var z = a == 1
+            ^

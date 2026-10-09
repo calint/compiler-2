@@ -1,0 +1,4 @@
+
+0663.baz:5:13: cannot read into read-only 'buf', parameter 'buf' is not declared 'mut'
+    read(0, buf)
+            ^

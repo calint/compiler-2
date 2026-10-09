@@ -1,4 +1,0 @@
-
-241.baz:5:14: unexpected keyword '1'
-dat x = p[2] 1
-             ^

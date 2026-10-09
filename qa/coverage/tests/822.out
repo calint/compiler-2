@@ -1,4 +1,0 @@
-
-822.baz:7:13: function 'twice' is not generic, it takes no type arguments
-    var b = twice<i32>(a)
-            ^~~~~

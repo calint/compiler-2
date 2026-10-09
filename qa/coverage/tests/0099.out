@@ -1,0 +1,4 @@
+
+0099.baz:8:19: use of uninitialized variable 'x'
+    var x = foozi(x)
+                  ^

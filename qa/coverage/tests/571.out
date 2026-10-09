@@ -1,4 +1,0 @@
-
-571.baz:11:19: 'x' of type 'i32' is narrowed to 'i8', use 'i8(...)'
-    var p = pixel{x, 2}
-                  ^

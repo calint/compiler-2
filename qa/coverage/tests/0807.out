@@ -1,0 +1,4 @@
+
+0807.baz:7:6: type 'pair' already defined as a generic type at 3:6
+type pair<second type> {
+     ^~~~

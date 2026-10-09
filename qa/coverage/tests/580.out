@@ -1,4 +1,0 @@
-
-580.baz:7:19: source must be an array
-    var l = line{ p }
-                  ^

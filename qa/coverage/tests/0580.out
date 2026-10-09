@@ -1,0 +1,4 @@
+
+0580.baz:6:5: array 'ps' must be indexed
+    ps.x = 1
+    ^~

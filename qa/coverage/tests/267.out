@@ -1,4 +1,0 @@
-
-267.baz:4:15: unexpected keyword '1'
-dat x = i8[2] 1
-              ^

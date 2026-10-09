@@ -1,0 +1,4 @@
+
+0362.baz:3:24: expected constant, identifier, or function call
+func main() { var x = () }
+                       ^

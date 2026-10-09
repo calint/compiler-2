@@ -1,0 +1,7 @@
+
+0813.baz:9:6: generic method 'text.size' already defined at 8:6
+func text.size() res { res = capacity }
+     ^~~~
+0813.baz:11:6: instantiated by
+type str = text<8>
+     ^~~

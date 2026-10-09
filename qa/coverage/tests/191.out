@@ -1,4 +1,0 @@
-
-191.baz:4:15: return value is discarded
-func main() { f() }
-              ^

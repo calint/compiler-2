@@ -1,4 +1,0 @@
-
-495.baz:5:13: 'wide' of type 'i32' is narrowed to 'i8', use 'i8(...)'
-    small = wide
-            ^~~~

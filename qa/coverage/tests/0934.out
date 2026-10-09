@@ -1,0 +1,7 @@
+
+0934.baz:12:20: 'entities[1].len' may share storage with the destination 'self.len' (both name 'entities'), compute the value in a temporary variable first
+    self.len = k + entities[1].len
+                   ^~~~~~~~
+0934.baz:17:5: called from
+    entities[i].bump(1)
+    ^~~~~~~~

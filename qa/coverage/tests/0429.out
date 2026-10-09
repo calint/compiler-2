@@ -1,0 +1,4 @@
+
+0429.baz:3:6: function 'exit' is a built-in function
+func exit() {}
+     ^~~~

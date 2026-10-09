@@ -1,0 +1,4 @@
+
+0492.baz:4:13: constant '0xfe' does not fit 'i8', use 'i8(...)'
+    small = 0xfe
+            ^~~~

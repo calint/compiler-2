@@ -1,0 +1,4 @@
+
+0661.baz:9:18: read-only 'dst' cannot be passed to a 'mut' parameter, parameter 'dst' is not declared 'mut'
+    copy_to(src, dst)
+                 ^

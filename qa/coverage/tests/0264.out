@@ -1,0 +1,4 @@
+
+0264.baz:3:33: source must be an array
+func main() { var x = [2]{} x = 1 }
+                                ^

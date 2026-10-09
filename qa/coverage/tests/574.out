@@ -1,4 +1,0 @@
-
-574.baz:8:29: constant '~32768' does not fit 'i16'
-dat words = limits{-32768, ~32768}
-                            ^~~~~

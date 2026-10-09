@@ -1,4 +1,0 @@
-
-164.baz:6:22: destination array size 2 does not match source size 4
-    var dst = small{ src }
-                     ^~~

@@ -1,0 +1,4 @@
+
+0880.baz:4:15: expected a statement
+    var x = 1 "text"
+              ^~~~~~

@@ -1,0 +1,4 @@
+
+0462.baz:2:14: function may return without setting its return value
+func pick(i) res {
+             ^~~

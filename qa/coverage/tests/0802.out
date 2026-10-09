@@ -1,0 +1,4 @@
+
+0802.baz:3:15: expected ',' or '>' after generic parameter 'T'
+func f<T type U type>() {}
+              ^

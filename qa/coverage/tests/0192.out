@@ -1,0 +1,4 @@
+
+0192.baz:6:7: parameter 1 requires an array
+    f(x)
+      ^

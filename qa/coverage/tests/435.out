@@ -1,4 +1,0 @@
-
-435.baz:3:15: expected 2 to 4 arguments
-func main() { read(0) }
-              ^~~~

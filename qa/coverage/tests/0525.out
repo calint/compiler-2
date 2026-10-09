@@ -1,0 +1,4 @@
+
+0525.baz:10:17: argument 2 'q' may share storage with argument 1 'q' (both name 'q'), use a temporary variable for one of them
+    add_into(q, q)
+                ^

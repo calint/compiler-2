@@ -1,0 +1,4 @@
+
+0820.baz:9:13: cannot deduce 'T' of generic function 'first', write 'first<...>'
+    var r = first(a)
+            ^~~~~

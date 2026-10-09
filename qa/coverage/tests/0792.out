@@ -1,0 +1,4 @@
+
+0792.baz:7:13: generic function 'make' needs type arguments, e.g. 'make<...>'
+    var x = make
+            ^~~~

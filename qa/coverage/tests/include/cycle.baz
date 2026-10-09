@@ -1,4 +1,4 @@
-include "../913.baz"
+include "../0906.baz"
 
 func three() res {
     res = 3

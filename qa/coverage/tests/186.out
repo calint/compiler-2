@@ -1,4 +1,0 @@
-
-186.baz:1:10: function may return without setting its return value
-func f() r {}
-         ^

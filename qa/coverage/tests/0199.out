@@ -1,0 +1,4 @@
+
+0199.baz:4:1: expected '{' to begin declaration of type
+func main() {}
+^

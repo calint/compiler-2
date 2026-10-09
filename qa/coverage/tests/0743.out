@@ -1,0 +1,4 @@
+
+0743.baz:4:13: RV32I requires an 8-, 16-, or 32-bit scalar
+    var a = i64(6)
+            ^~~

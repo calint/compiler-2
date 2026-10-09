@@ -1,4 +1,0 @@
-
-349.baz:7:5: destination type must be 'bool', not 'i16'
-    result = arrays_equal(a, b, 1)
-    ^~~~~~

@@ -1,0 +1,4 @@
+
+0205.baz:6:16: field 'y' not found in type 'p'
+    var x = p1.y
+               ^

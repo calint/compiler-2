@@ -1,0 +1,4 @@
+
+0262.baz:4:26: argument must be a variable
+    var n = array_length(1)
+                         ^

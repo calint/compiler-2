@@ -1,0 +1,4 @@
+
+0208.baz:5:16: expected ')' to close expression
+    if (x == 1 {}
+               ^

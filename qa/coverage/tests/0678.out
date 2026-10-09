@@ -1,0 +1,4 @@
+
+0678.baz:4:5: expected 1 argument
+    exit()
+    ^~~~

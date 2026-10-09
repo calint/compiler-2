@@ -1,4 +1,0 @@
-
-925.baz:3:9: unterminated string
-dat s = "a
-        ^

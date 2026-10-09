@@ -1,4 +1,0 @@
-
-203.baz:3:17: expected ']' after array size
-type x { a i8[2 }
-                ^

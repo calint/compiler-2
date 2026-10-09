@@ -1,4 +1,0 @@
-
-429.baz:4:40: parameter 1 requires an array
-func main() { var items = [2]{} target(items[0]) }
-                                       ^

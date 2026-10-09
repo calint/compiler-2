@@ -1,0 +1,4 @@
+
+0722.baz:4:14: unsupported escape in character literal '\x4'
+    var c = '\x4'
+             ^

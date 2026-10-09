@@ -1,4 +1,0 @@
-
-547.baz:4:14: unsupported escape in character literal '\q'
-    var c = '\q'
-             ^

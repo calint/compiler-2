@@ -1,0 +1,4 @@
+
+0715.baz:3:6: cannot name function 'foo' because it is a builtin iterator function
+func foo() {
+     ^~~

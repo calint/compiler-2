@@ -1,0 +1,4 @@
+
+0169.baz:5:26: argument must refer to an array
+    var n = array_length(x)
+                         ^

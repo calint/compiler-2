@@ -1,0 +1,4 @@
+
+0950.baz:14:21: 'items[0].data[1]' may share storage with the destination 'e' (both name 'items'), compute the value in a temporary variable first
+            e = e + items[0].data[1]
+                    ^~~~~

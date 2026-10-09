@@ -1,4 +1,0 @@
-
-635.baz:10:14: read-only 'i' cannot be passed to a 'mut' parameter, 'i' is the counter of 'foo'
-        skip(i)
-             ^

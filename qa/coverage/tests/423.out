@@ -1,4 +1,0 @@
-
-423.baz:4:35: result type mismatch: function returns 'i16', destination is 'i32'
-func main() { var result = i32(0) result = target() }
-                                  ^~~~~~

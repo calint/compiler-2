@@ -12,7 +12,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/../../baz"
 TESTS="$SCRIPT_DIR/tests"
-SOURCES=(609)
+SOURCES=(0605)
 
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/deduced-types-%p.profraw"
 

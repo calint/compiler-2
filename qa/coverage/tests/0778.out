@@ -1,0 +1,4 @@
+
+0778.baz:7:15: type 'nothing' not found
+type p = pair<nothing>
+              ^~~~~~~

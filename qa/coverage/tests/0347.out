@@ -1,0 +1,4 @@
+
+0347.baz:6:13: boolean values cannot be arithmetic operands
+    var c = a + b
+            ^

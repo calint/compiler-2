@@ -1,4 +1,0 @@
-
-583.baz:5:21: array 'arr' must be indexed
-    var x = i32(1 + arr)
-                    ^~~

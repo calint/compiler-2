@@ -1,0 +1,4 @@
+
+0275.baz:3:9: expected a constant value or a constant identifier
+let n = - 1
+        ^

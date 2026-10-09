@@ -1,4 +1,0 @@
-
-517.baz:5:22: pass the array and the start as 4th argument, e.g. 'write(fd, buf, count, start)'
-    var r = write(1, buf[1], 2)
-                     ^

@@ -1,0 +1,4 @@
+
+0861.baz:7:13: cannot deduce 'T' of generic function 'take', write 'take<...>'
+    var a = take({ 1, 2 })
+            ^~~~

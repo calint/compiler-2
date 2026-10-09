@@ -1,0 +1,4 @@
+
+0827.baz:3:21: expected a parameter name
+func f<T type>(a T, , b) {}
+                    ^

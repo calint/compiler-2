@@ -1,0 +1,4 @@
+
+0561.baz:14:5: receiver of method 'list.clear' cannot be an array
+    lists.clear()
+    ^~~~~

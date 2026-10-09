@@ -1,4 +1,0 @@
-
-909.baz:4:15: cannot convert a value of type 'point'
-    var t=i32(s)
-              ^

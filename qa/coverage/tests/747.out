@@ -1,4 +1,0 @@
-
-747.baz:3:5: data and variables of 4611686018427387904 B exceed the 140737488355328 B that the target addresses
-dat a = i8[4611686018427387904]{}
-    ^

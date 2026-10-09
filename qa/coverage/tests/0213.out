@@ -1,0 +1,4 @@
+
+0213.baz:5:19: expected ',' followed by 'count'
+    array_copy(a,a)
+                  ^

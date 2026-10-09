@@ -1,0 +1,4 @@
+
+0163.baz:6:11: source and destination array sizes do not match
+    dst = src
+          ^~~

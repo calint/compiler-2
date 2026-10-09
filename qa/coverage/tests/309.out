@@ -1,4 +1,0 @@
-
-309.baz:7:12: index 2 is out of bounds for array 'groups' of size 2
-    groups[2].values[0] = 1
-           ^

@@ -1,0 +1,4 @@
+
+0204.baz:3:12: expected '{' to begin block
+func f() r nope { r = 1 }
+           ^

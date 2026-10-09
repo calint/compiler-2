@@ -1,0 +1,4 @@
+
+0211.baz:5:16: expected '(', 'from', 'to', 'count', and ')'
+    array_copy a,a,1
+               ^

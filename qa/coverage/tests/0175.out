@@ -1,0 +1,4 @@
+
+0175.baz:3:13: expected ']'
+func f(x i8[2) {}
+            ^

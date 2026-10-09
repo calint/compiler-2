@@ -1,4 +1,0 @@
-
-856.baz:8:13: cannot deduce 'T' of generic function 'second', write 'second<...>'
-    var b = second(1, a + 1)
-            ^~~~~~

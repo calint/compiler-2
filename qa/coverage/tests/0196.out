@@ -1,0 +1,4 @@
+
+0196.baz:3:31: expected '}' to close array initializer for 'i8'
+func main() { dat x = i8[2]{1 2} }
+                              ^

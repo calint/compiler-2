@@ -1,4 +1,0 @@
-
-237.baz:4:18: expected ')' after arguments
-func main() { f(1,) }
-                 ^

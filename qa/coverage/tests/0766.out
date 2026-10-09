@@ -1,0 +1,4 @@
+
+0766.baz:9:19: parameter 'v': required 'i32', got 'i16'
+    var r = first(a)
+                  ^

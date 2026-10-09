@@ -1,4 +1,0 @@
-
-800.baz:8:6: type 'text' already defined as a generic type at 3:6
-type text = text<8>
-     ^~~~

@@ -1,0 +1,10 @@
+
+0928.baz:6:20: 'g[3]' may share storage with the destination 'x' (both name 'g'), compute the value in a temporary variable first
+    x = k + (100 - g[3])
+                   ^
+0928.baz:10:5: called from
+    put(y, 10)
+    ^~~
+0928.baz:14:5: called from
+    outer(g[3])
+    ^~~~~

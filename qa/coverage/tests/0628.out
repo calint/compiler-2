@@ -1,0 +1,4 @@
+
+0628.baz:6:9: cannot assign to read-only 'i', 'i' is the counter of 'foo'
+        i = 2
+        ^

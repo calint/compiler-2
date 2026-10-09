@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/baz",
             "args": [
-                //"qa/coverage/tests/402.baz",
+                //"qa/coverage/tests/0398.baz",
                 "prog.baz",
                 "--vars=131072",
                 //"--checks=upper,lower,line",

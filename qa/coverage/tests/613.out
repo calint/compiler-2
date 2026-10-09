@@ -1,4 +1,0 @@
-
-613.baz:5:12: array size 3 does not match destination size 2
-    a = i8[3]{1, 2}
-           ^
