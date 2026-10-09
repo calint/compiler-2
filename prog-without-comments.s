@@ -157,6 +157,7 @@ main:
     cmp.211.12:
         mov r14, qword [rbp + 392]
         neg r14
+        jo baz_overflow_line_211
         sar r14, 1
     cmp r14, -4
     sete r15b
@@ -177,6 +178,7 @@ main:
         mov r13, qword [rbp + 392]
         sal r13, 1
         add r14, r13
+        jo baz_overflow_line_214
     cmp r14, 21
     sete r15b
     bool.214.12.end:
@@ -194,6 +196,7 @@ main:
     cmp.215.12:
         mov r14, qword [rbp + 392]
         add r14, qword [rbp + 392]
+        jo baz_overflow_line_215
         sal r14, 1
     cmp r14, 28
     sete r15b
@@ -295,6 +298,7 @@ main:
     mov dword [rbp + r15 * 4 + 424], 2
     mov r15, qword [rbp + 440]
     add r15, 1
+    jo baz_overflow_line_244
     cmp r15, 4
     jae baz_bounds_line_244
     mov r14, qword [rbp + 440]
@@ -477,6 +481,7 @@ main:
     mov qword [rbp + 440], 3
     mov r15, qword [rbp + 440]
     sub r15, 1
+    jo baz_overflow_line_271
     cmp r15, 4
     jae baz_bounds_line_271
     func.inv.271.16:
@@ -532,7 +537,9 @@ main:
     mov r14, 0
     foo.279.5:
         add qword [r15], r14
+        jo baz_overflow_line_280
         add qword [r15], 2
+        jo baz_overflow_line_280
         foo.279.5.continue:
             add r15, 8
             inc r14
@@ -705,8 +712,9 @@ main:
     mov qword [rbp + 560], 1
     func.baz.316.13:
         mov r15, qword [rbp + 560]
+        imul r15, 2
+        jo baz_overflow_line_67
         mov qword [rbp + 568], r15
-        sal qword [rbp + 568], 1
     func.baz.316.13.end:
     cmp.317.12:
     cmp qword [rbp + 568], 2
@@ -849,6 +857,7 @@ main:
         func.point.sum.338.15:
             mov r14, qword [rbp + 608]
             add r14, qword [rbp + 616]
+            jo baz_overflow_line_55
         func.point.sum.338.15.end:
     cmp r14, 0
     sete r15b
@@ -868,6 +877,7 @@ main:
     mov qword [rbp + 632], 2
     mov r15, qword [rbp + 624]
     imul r15, 10
+    jo baz_overflow_line_343
     mov qword [rbp + 640], r15
     mov r15, qword [rbp + 632]
     mov qword [rbp + 648], r15
@@ -921,9 +931,11 @@ main:
     mov r15, qword [rbp + 624]
     mov qword [rbp + 664], r15
     neg qword [rbp + 664]
+    jo baz_overflow_line_348
     mov r15, qword [rbp + 632]
     mov qword [rbp + 672], r15
     neg qword [rbp + 672]
+    jo baz_overflow_line_348
     mov rax, qword [rbp + 664]
     mov qword [rbp + 640], rax
     mov rax, qword [rbp + 672]
@@ -1096,6 +1108,7 @@ main:
         func.point.sum.376.22:
             mov r14, qword [rbp + 728]
             add r14, qword [rbp + 736]
+            jo baz_overflow_line_55
         func.point.sum.376.22.end:
     cmp r14, 13
     sete r15b
@@ -1236,6 +1249,7 @@ main:
     func.print.404.5.end:
     loop.405.5:
         add qword [rbp + 1280], 1
+        jo baz_overflow_line_406
         lea r15, [rbp + 1416]
         lea r14, [vars]
         cmp r15, r14
@@ -1327,6 +1341,7 @@ main:
                     syscall
                 func.print.103.5.418.13.end:
                 add qword [rbp + 368], 1
+                jo baz_overflow_line_104
             func.greet.418.13.end:
         if.412.9.end:
     jmp loop.405.5
@@ -1403,6 +1418,7 @@ func.factorial:
     mov r14, qword [r15]
     mov qword [rbx + 16], r14
     sub qword [rbx + 16], 1
+    jo baz_overflow_line_179
     lea r15, [rbx + 32]
     lea r14, [vars]
     cmp r15, r14
@@ -1426,6 +1442,7 @@ func.factorial:
     mov r13, qword [rbx + 8]
     mov r14, qword [r13]
     imul r14, qword [rbx + 24]
+    jo baz_overflow_line_181
     mov qword [r15], r14
     ret
 size.func.factorial equ 32
@@ -1450,10 +1467,12 @@ func.print_num:
     jle if.147.5.end
     if.147.8.code:
         neg qword [rbx + 32]
+        jo baz_overflow_line_148
     if.147.5.end:
     mov qword [rbx + 48], 20
     loop.152.5:
         sub qword [rbx + 48], 1
+        jo baz_overflow_line_153
         mov r15, qword [rbx + 48]
         cmp r15, 20
         jae baz_bounds_line_154
@@ -1500,6 +1519,7 @@ func.print_num:
     je if.159.5.end
     if.159.8.code:
         sub qword [rbx + 48], 1
+        jo baz_overflow_line_160
         mov r15, qword [rbx + 48]
         cmp r15, 20
         jae baz_bounds_line_161
@@ -1516,7 +1536,9 @@ func.print_num:
         mov r13b, byte [rbx + r14 + 8]
         mov byte [rbx + r15 + 8], r13b
         add qword [rbx + 56], 1
+        jo baz_overflow_line_167
         add qword [rbx + 48], 1
+        jo baz_overflow_line_168
         if.169.12:
         cmp.169.12:
         cmp qword [rbx + 48], 20
@@ -1609,6 +1631,74 @@ section .rodata
 msg_overlap:
 db `panic: overlap at line `
 msg_overlap_len equ $ - msg_overlap
+section .text
+baz_overflow_line_55:
+    mov rbp, 55
+    jmp baz_overflow_panic
+baz_overflow_line_67:
+    mov rbp, 67
+    jmp baz_overflow_panic
+baz_overflow_line_104:
+    mov rbp, 104
+    jmp baz_overflow_panic
+baz_overflow_line_148:
+    mov rbp, 148
+    jmp baz_overflow_panic
+baz_overflow_line_153:
+    mov rbp, 153
+    jmp baz_overflow_panic
+baz_overflow_line_160:
+    mov rbp, 160
+    jmp baz_overflow_panic
+baz_overflow_line_167:
+    mov rbp, 167
+    jmp baz_overflow_panic
+baz_overflow_line_168:
+    mov rbp, 168
+    jmp baz_overflow_panic
+baz_overflow_line_179:
+    mov rbp, 179
+    jmp baz_overflow_panic
+baz_overflow_line_181:
+    mov rbp, 181
+    jmp baz_overflow_panic
+baz_overflow_line_211:
+    mov rbp, 211
+    jmp baz_overflow_panic
+baz_overflow_line_214:
+    mov rbp, 214
+    jmp baz_overflow_panic
+baz_overflow_line_215:
+    mov rbp, 215
+    jmp baz_overflow_panic
+baz_overflow_line_244:
+    mov rbp, 244
+    jmp baz_overflow_panic
+baz_overflow_line_271:
+    mov rbp, 271
+    jmp baz_overflow_panic
+baz_overflow_line_280:
+    mov rbp, 280
+    jmp baz_overflow_panic
+baz_overflow_line_343:
+    mov rbp, 343
+    jmp baz_overflow_panic
+baz_overflow_line_348:
+    mov rbp, 348
+    jmp baz_overflow_panic
+baz_overflow_line_406:
+    mov rbp, 406
+baz_overflow_panic:
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_overflow]
+    mov rdx, msg_overflow_len
+    syscall
+    jmp baz_report_line
+section .rodata
+msg_overflow:
+db `panic: overflow at line `
+msg_overflow_len equ $ - msg_overflow
 section .text
 baz_shift_panic:
     mov rax, 1

@@ -399,8 +399,8 @@ reports:
 checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
-  line     report line number on failed bounds, division, shift or overlap
-           check
+  line     report line number on failed bounds, division, shift, overlap or
+           overflow check
   frame    runtime non-inlined function frame capacity
   alias    compile time rejection of calls where a result may share storage
            with an argument, on by default
@@ -410,8 +410,10 @@ checks:
   stack    runtime stack capacity at non-inlined calls on rv32i-qemu and
            rv32i-fpga, the other targets have an operating system that stops
            a program that overflows the stack
+  overflow runtime signed overflow of '+', '-', '*' and unary '-', a constant
+           expression that overflows is rejected at compile time
   noub     all checks against undefined behavior: upper, lower, frame, alias,
-           division, shift, overlap and stack
+           division, shift, overlap, stack and overflow
   -NAME    turns a check off after the others are applied, e.g.
            noub,-division or -alias (also when noub is given), +NAME is NAME
 
@@ -599,7 +601,7 @@ struct check_name {
     bool is_ub;
 };
 
-constexpr std::array<check_name, 9> check_names{
+constexpr std::array<check_name, 10> check_names{
     {
         {.text{"upper"}, .member{&check_options::bounds_upper}, .is_ub{true}},
         {.text{"lower"}, .member{&check_options::bounds_lower}, .is_ub{true}},
@@ -614,6 +616,7 @@ constexpr std::array<check_name, 9> check_names{
         {.text{"shift"}, .member{&check_options::shift}, .is_ub{true}},
         {.text{"overlap"}, .member{&check_options::overlap}, .is_ub{true}},
         {.text{"stack"}, .member{&check_options::stack}, .is_ub{true}},
+        {.text{"overflow"}, .member{&check_options::overflow}, .is_ub{true}},
     },
 };
 

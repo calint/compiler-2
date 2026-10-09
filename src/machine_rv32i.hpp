@@ -330,6 +330,7 @@ class machine_rv32i : public machine {
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     bool multiply_helper_used_{};
+    bool multiply_checked_helper_used_{};
     bool divide_helper_used_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
@@ -431,7 +432,9 @@ class machine_rv32i : public machine {
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
                       const arithmetic_operator operation, const operand& dst,
-                      const operand& src) -> void override {
+                      const operand& src,
+                      const overflow_check_options& check = {})
+        -> void override {
 
         assert(operation == arithmetic_operator::add or
                operation == arithmetic_operator::subtract);
@@ -439,7 +442,7 @@ class machine_rv32i : public machine {
         binary_operation(src_loc_tk, indent,
                          operation == arithmetic_operator::add ? op::add
                                                                : op::sub,
-                         dst, src);
+                         dst, src, check);
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
@@ -1135,6 +1138,11 @@ class machine_rv32i : public machine {
         });
     }
 
+    auto emit_overflow_failure_handler(const bool with_line) -> void override {
+        emit_named_failure_handler(overflow_failure_handler_label, "overflow",
+                                   with_line);
+    }
+
     auto emit_overlap_failure_handler(const bool with_line) -> void override {
         emit_named_failure_handler(overlap_failure_handler_label, "overlap",
                                    with_line);
@@ -1330,8 +1338,8 @@ class machine_rv32i : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  [[maybe_unused]] const bool reuse_source = {})
-        -> void override {
+                  [[maybe_unused]] const bool reuse_source = {},
+                  const overflow_check_options& check = {}) -> void override {
 
         validate_scalar(src_loc_tk, product.type_ref());
         validate_scalar(src_loc_tk, factor.type_ref());
@@ -1346,12 +1354,25 @@ class machine_rv32i : public machine {
 
         const std::optional<int32_t> constant{immediate_value(factor)};
 
+        // zero and one cannot overflow, shifts and adds do not report the
+        // bits they lose
+        const bool is_checked_constant{
+            check.enabled and constant.has_value() and *constant != 0 and
+                *constant != 1,
+        };
+
         // variable factors use the shared runtime helper
-        if (not constant.has_value()) {
-            multiply_helper_used_ = true;
+        if (not constant.has_value() or is_checked_constant) {
+            if (check.enabled) {
+                multiply_checked_helper_used_ = true;
+            } else {
+                multiply_helper_used_ = true;
+            }
+
+            const division_check_options no_division_check;
 
             call_arithmetic_helper(src_loc_tk, indent, product, factor, false,
-                                   false, {});
+                                   false, no_division_check, check);
 
             return;
         }
@@ -1528,6 +1549,7 @@ class machine_rv32i : public machine {
 
     auto start() -> void override {
         multiply_helper_used_ = false;
+        multiply_checked_helper_used_ = false;
         divide_helper_used_ = false;
         line_report_emitted_ = false;
 
@@ -1557,8 +1579,8 @@ class machine_rv32i : public machine {
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
-               const arithmetic_operator operation, const operand& dst)
-        -> void override {
+               const arithmetic_operator operation, const operand& dst,
+               const overflow_check_options& check = {}) -> void override {
 
         assert(operation == arithmetic_operator::negate or
                operation == arithmetic_operator::complement);
@@ -1574,6 +1596,11 @@ class machine_rv32i : public machine {
         };
 
         if (operation == arithmetic_operator::negate) {
+            if (check.enabled) {
+                check_negate(src_loc_tk, indent, loaded.value,
+                             dst.type_ref().size_bytes(), check);
+            }
+
             assembler_.sub(indent, loaded.value.base_register(), "zero",
                            loaded.value.base_register());
 
@@ -1831,7 +1858,8 @@ class machine_rv32i : public machine {
 
     auto binary_operation(const token& src_loc_tk, const size_t indent,
                           const op instruction, const operand& dst,
-                          const operand& src) -> void {
+                          const operand& src,
+                          const overflow_check_options& check = {}) -> void {
 
         validate_operands(src_loc_tk, dst, src);
 
@@ -1855,8 +1883,14 @@ class machine_rv32i : public machine {
             load_destination(src_loc_tk, indent, dst),
         };
 
-        emit_binary_instruction(src_loc_tk, indent, instruction, src,
-                                loaded.value, constant);
+        if (check.enabled) {
+            emit_checked_add_subtract(src_loc_tk, indent, instruction, src,
+                                      loaded.value, dst.type_ref().size_bytes(),
+                                      constant, check);
+        } else {
+            emit_binary_instruction(src_loc_tk, indent, instruction, src,
+                                    loaded.value, constant);
+        }
 
         store_operation_result(
             indent, dst, loaded.address, loaded.value,
@@ -1875,7 +1909,9 @@ class machine_rv32i : public machine {
     auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
                                 const operand& dst, const operand& source,
                                 const bool division, const bool remainder,
-                                const division_check_options& check) -> void {
+                                const division_check_options& check,
+                                const overflow_check_options& overflow = {})
+        -> void {
 
         const address_scope scope{*this, dst, source};
 
@@ -1909,7 +1945,14 @@ class machine_rv32i : public machine {
                           check.with_line);
         }
 
-        assembler_.call(indent, division ? ".Lbaz_divide" : ".Lbaz_multiply");
+        if (division) {
+            assembler_.call(indent, ".Lbaz_divide");
+        } else if (overflow.enabled) {
+            assembler_.call(indent, ".Lbaz_multiply_checked");
+            check_multiply_result(src_loc_tk, indent, dst, overflow);
+        } else {
+            assembler_.call(indent, ".Lbaz_multiply");
+        }
 
         const operand result{
             operand::reg(remainder ? "a1" : "a0", default_type()),
@@ -2029,6 +2072,39 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "division check end");
     }
 
+    // the register holds a sign extended result of a narrow operation, which
+    // fits when sign extending its low bits gives it back
+    auto check_fits_width(const token& src_loc_tk, const size_t indent,
+                          const operand& value, const size_t width_bytes,
+                          const overflow_check_options& check) -> void {
+
+        constexpr local_label fits{
+            .name{"2"},
+            .reference{"2f"},
+        };
+
+        const size_t shift{
+            register_bits_ - (width_bytes * bits_per_byte),
+        };
+
+        const operand extended{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        assembler_.slli(indent, extended.base_register(), value.base_register(),
+                        shift);
+
+        assembler_.srai(indent, extended.base_register(),
+                        extended.base_register(), shift);
+
+        assembler_.beq(indent, extended.base_register(), value.base_register(),
+                       fits.reference);
+
+        free_scratch_register(src_loc_tk, indent, extended);
+        fail_on_overflow(src_loc_tk, indent, check);
+        assembler_.label(indent, fits.name);
+    }
+
     // passing checks branch to 'bounds_pass' and failing ones to 'bounds_fail',
     // the last check branches past the handler on success so failures fall
     // through to it
@@ -2052,6 +2128,72 @@ class machine_rv32i : public machine {
 
         // a negative count passes 'start + count' but spans the address space
         check_negative(reg_count.base_register(), is_last);
+    }
+
+    // after the checked multiply helper: the flag is in 'a1', the product in
+    // 'a0' must fit the width of the destination
+    auto check_multiply_result(const token& src_loc_tk, const size_t indent,
+                               const operand& dst,
+                               const overflow_check_options& check) -> void {
+
+        constexpr local_label fits{
+            .name{"2"},
+            .reference{"2f"},
+        };
+
+        comment(src_loc_tk, indent, "overflow check begin");
+
+        assembler_.beqz(indent, "a1", fits.reference);
+        fail_on_overflow(src_loc_tk, indent, check);
+        assembler_.label(indent, fits.name);
+
+        const size_t width{dst.type_ref().size_bytes()};
+
+        if (width < word_size_bytes_) {
+            const size_t shift{register_bits_ - (width * bits_per_byte)};
+
+            assembler_.slli(indent, "a1", "a0", shift);
+            assembler_.srai(indent, "a1", "a1", shift);
+            assembler_.beq(indent, "a1", "a0", "1f");
+            fail_on_overflow(src_loc_tk, indent, check);
+            assembler_.label(indent, "1");
+        }
+
+        comment(src_loc_tk, indent, "overflow check end");
+    }
+
+    // the minimum of the width has no positive counterpart
+    auto check_negate(const token& src_loc_tk, const size_t indent,
+                      const operand& value, const size_t width_bytes,
+                      const overflow_check_options& check) -> void {
+
+        constexpr local_label fits{
+            .name{"2"},
+            .reference{"2f"},
+        };
+
+        comment(src_loc_tk, indent, "overflow check begin");
+
+        const operand minimum{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        // note: setting all bits above the sign bit of the width gives its
+        //       minimum, -1 because the sign bit is the highest bit
+        const int64_t minimum_value{
+            static_cast<int32_t>(~uint32_t{}
+                                 << ((width_bytes * bits_per_byte) - 1)),
+        };
+
+        assembler_.li(indent, minimum.base_register(), minimum_value);
+
+        assembler_.bne(indent, value.base_register(), minimum.base_register(),
+                       fits.reference);
+
+        free_scratch_register(src_loc_tk, indent, minimum);
+        fail_on_overflow(src_loc_tk, indent, check);
+        assembler_.label(indent, fits.name);
+        comment(src_loc_tk, indent, "overflow check end");
     }
 
     // a count below zero or not below the width jumps to the failure handler,
@@ -2803,6 +2945,54 @@ class machine_rv32i : public machine {
             assembler_.ret(1);
         }
 
+        // multiplies the magnitudes by shift and add, a carry out of the
+        // sum, the multiplicand losing its top bit while multiplier bits
+        // remain or a magnitude above the range of the sign leaves the flag
+        // in a1 set, the sign is applied last
+        if (multiply_checked_helper_used_) {
+            // 'lui' of 2^31
+            constexpr int sign_bit_upper{0x80000};
+
+            assembler_.label(0, ".Lbaz_multiply_checked");
+            assembler_.xor_op(1, "a4", "a0", "a1");
+            assembler_.srai(1, "a4", "a4", sign_shift_);
+            assembler_.srai(1, "a3", "a0", sign_shift_);
+            assembler_.xor_op(1, "a0", "a0", "a3");
+            assembler_.sub(1, "a0", "a0", "a3");
+            assembler_.srai(1, "a3", "a1", sign_shift_);
+            assembler_.xor_op(1, "a1", "a1", "a3");
+            assembler_.sub(1, "a1", "a1", "a3");
+            assembler_.mv(1, "a2", "a0");
+            assembler_.li(1, "a0", 0);
+            assembler_.beqz(1, "a1", "3f");
+            assembler_.label(0, "1");
+            assembler_.andi(1, "a3", "a1", 1);
+            assembler_.beqz(1, "a3", "2f");
+            assembler_.add(1, "a0", "a0", "a2");
+            assembler_.bltu(1, "a0", "a2", "5f");
+            assembler_.label(0, "2");
+            assembler_.srli(1, "a1", "a1", 1);
+            assembler_.beqz(1, "a1", "3f");
+            assembler_.bltz(1, "a2", "5f");
+            assembler_.slli(1, "a2", "a2", 1);
+            assembler_.j(1, "1b");
+            assembler_.label(0, "3");
+            assembler_.lui(1, "a3", sign_bit_upper);
+            assembler_.bltz(1, "a4", "4f");
+            assembler_.bgeu(1, "a0", "a3", "5f");
+            assembler_.j(1, "6f");
+            assembler_.label(0, "4");
+            assembler_.bltu(1, "a3", "a0", "5f");
+            assembler_.label(0, "6");
+            assembler_.xor_op(1, "a0", "a0", "a4");
+            assembler_.sub(1, "a0", "a0", "a4");
+            assembler_.li(1, "a1", 0);
+            assembler_.ret(1);
+            assembler_.label(0, "5");
+            assembler_.li(1, "a1", 1);
+            assembler_.ret(1);
+        }
+
         // divide and remainder share magnitude division and sign restoration
         if (divide_helper_used_) {
             // one quotient bit per step
@@ -2963,6 +3153,181 @@ class machine_rv32i : public machine {
 
         branch(indent, bounds_failure_handler_label);
         assembler_.label(indent, bounds_pass.name);
+    }
+
+    // a sum or difference computed by 'emit_binary_instruction' must fit the
+    // width of the destination, the register holds the sign extended result
+    //   32 bit add: the sum is below the first operand exactly when the
+    //               second operand is negative, the second is 'sum - first'
+    //   32 bit sub: the difference is below the first operand exactly when
+    //               the second operand is positive
+    //   narrow:     the result is exact, it fits when sign extending its low
+    //               bits gives it back
+    auto emit_checked_add_subtract(const token& src_loc_tk, const size_t indent,
+                                   const op instruction, const operand& src,
+                                   const operand& value,
+                                   const size_t width_bytes,
+                                   const std::optional<int32_t> constant,
+                                   const overflow_check_options& check)
+        -> void {
+
+        constexpr local_label fits{
+            .name{"2"},
+            .reference{"2f"},
+        };
+
+        comment(src_loc_tk, indent, "overflow check begin");
+
+        if (width_bytes < word_size_bytes_) {
+            emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
+                                    constant);
+
+            check_fits_width(src_loc_tk, indent, value, width_bytes, check);
+
+            comment(src_loc_tk, indent, "overflow check end");
+
+            return;
+        }
+
+        // the first operand is 'result -/+ second', one register is enough
+        // when the second operand is in a register of its own or small
+        const bool is_register_source{
+            src.is_register() and register_index(src.base_register()) !=
+                                      register_index(value.base_register()),
+        };
+
+        const bool is_small_constant{
+            constant.has_value() and *constant > immediate_min and
+                *constant <= immediate_max,
+        };
+
+        if (is_register_source or is_small_constant) {
+            emit_checked_with_one_register(src_loc_tk, indent, instruction, src,
+                                           value, constant, check);
+
+            comment(src_loc_tk, indent, "overflow check end");
+
+            return;
+        }
+
+        const operand first{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        assembler_.mv(indent, first.base_register(), value.base_register());
+
+        emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
+                                constant);
+
+        const operand below{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        assembler_.slt(indent, below.base_register(), value.base_register(),
+                       first.base_register());
+
+        if (instruction == op::add) {
+            assembler_.sub(indent, first.base_register(), value.base_register(),
+                           first.base_register());
+
+            assembler_.slti(indent, first.base_register(),
+                            first.base_register(), 0);
+        } else {
+            assembler_.sub(indent, first.base_register(), first.base_register(),
+                           value.base_register());
+
+            assembler_.slt(indent, first.base_register(), "zero",
+                           first.base_register());
+        }
+
+        assembler_.beq(indent, below.base_register(), first.base_register(),
+                       fits.reference);
+
+        // the scope of the operation frees the registers, the instruction
+        // above may have left a temporary of its own above them
+        fail_on_overflow(src_loc_tk, indent, check);
+        assembler_.label(indent, fits.name);
+        comment(src_loc_tk, indent, "overflow check end");
+    }
+
+    // a 32 bit sum or difference with the second operand in a register or an
+    // immediate: the first operand is 'result - second' for an add and
+    // 'result + second' for a subtract, the result is below it exactly when
+    // the second operand is negative for an add or positive for a subtract
+    auto emit_checked_with_one_register(
+        const token& src_loc_tk, const size_t indent, const op instruction,
+        const operand& src, const operand& value,
+        const std::optional<int32_t> constant,
+        const overflow_check_options& check) -> void {
+
+        constexpr local_label fits{
+            .name{"2"},
+            .reference{"2f"},
+        };
+
+        constexpr local_label below{
+            .name{"3"},
+            .reference{"3f"},
+        };
+
+        constexpr local_label failed{
+            .name{"4"},
+            .reference{"4f"},
+        };
+
+        const bool is_add{instruction == op::add};
+
+        emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
+                                constant);
+
+        const operand first{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        if (constant.has_value()) {
+            assembler_.addi(indent, first.base_register(),
+                            value.base_register(),
+                            is_add ? -*constant : *constant);
+        } else if (is_add) {
+            assembler_.sub(indent, first.base_register(), value.base_register(),
+                           src.base_register());
+        } else {
+            assembler_.add(indent, first.base_register(), value.base_register(),
+                           src.base_register());
+        }
+
+        if (constant.has_value()) {
+            // the sign of the second operand is known
+            const bool below_first{is_add ? *constant < 0 : *constant > 0};
+
+            assembler_.branch(indent, below_first ? op::blt : op::bge,
+                              value.base_register(), first.base_register(),
+                              fits.reference);
+
+            fail_on_overflow(src_loc_tk, indent, check);
+            assembler_.label(indent, fits.name);
+
+            return;
+        }
+
+        if (is_add) {
+            assembler_.bltz(indent, src.base_register(), below.reference);
+        } else {
+            assembler_.bgtz(indent, src.base_register(), below.reference);
+        }
+
+        assembler_.branch(indent, op::bge, value.base_register(),
+                          first.base_register(), fits.reference);
+
+        assembler_.j(indent, failed.reference);
+        assembler_.label(indent, below.name);
+
+        assembler_.branch(indent, op::blt, value.base_register(),
+                          first.base_register(), fits.reference);
+
+        assembler_.label(indent, failed.name);
+        fail_on_overflow(src_loc_tk, indent, check);
+        assembler_.label(indent, fits.name);
     }
 
     // the address scopes end on return, before the caller frees its registers
@@ -3353,6 +3718,17 @@ class machine_rv32i : public machine {
                           right.base_register());
 
         return result;
+    }
+
+    // jumps to the overflow failure handler, the line is passed in 'a0'
+    auto fail_on_overflow(const token& src_loc_tk, const size_t indent,
+                          const overflow_check_options& check) -> void {
+
+        if (check.with_line) {
+            assembler_.li(indent, "a0", src_loc_tk.at_line());
+        }
+
+        branch(indent, overflow_failure_handler_label);
     }
 
     // a jump grown beyond 1 MiB needs a register without a live value

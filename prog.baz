@@ -221,7 +221,7 @@ func main() {
     # `and`, `or` and `not` stop evaluating as soon as the result is known
 
     var small = i8(100)
-    small = small + small
+    small = i8(small + small)
     assert(small == -56)
     # `i8(100)` gives the variable type `i8`, arithmetic wraps at its width
 

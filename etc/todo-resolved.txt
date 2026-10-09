@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: --checks=overflow (part of 'noub'): signed overflow of '+', '-',
+    '*' and unary '-' panics
+    => done (2026-10-09): checked at the width of the destination, narrow
+       memory destinations are computed at their width; x86_64 'jo' after the
+       instruction ('imul' and 'neg' included, the i8 product is compared with
+       its sign extended low byte, a constant factor goes through 'imul'
+       because shifts lose bits silently); rv32i: i8/i16 results must sign
+       extend to themselves, i32 add and sub compare the result with the first
+       operand ('result -/+ second' recovers it, one scratch register for a
+       register or small constant operand, two otherwise), i32 multiply in the
+       helper '.Lbaz_multiply_checked' (magnitudes by shift and add, flags a
+       carry, a multiplicand that loses its top bit while multiplier bits
+       remain and a magnitude above the range of the sign, no division);
+       a constant expression that overflows is a compile error; the merging
+       passes of constants are off under the check since they change which
+       partial results overflow; the arithmetic inside an explicit conversion
+       still wraps ('toc::overflow_check_pause'); fpga exit code 249; tests
+       995 to 1005; a nest of registers that needs every scratch register
+       (753.baz) runs out of one under the check
 [x] medium: --checks=noub: system stack overflow in deep non-inline recursion
     segfaults before the frame check; check 'rsp'/'sp' or depth at each call
     => done (2026-10-09): '--checks=stack' (part of 'noub'): on rv32i-qemu and

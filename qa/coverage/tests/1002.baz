@@ -1,0 +1,6 @@
+# --checks=overflow: a constant expression that overflows is rejected
+func main() {
+    var x = i32(0)
+    x = 2147483647 + 1
+    exit(x)
+}

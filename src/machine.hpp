@@ -492,6 +492,13 @@ class register_use_report final {
     }
 };
 
+// an enabled check makes a signed result that does not fit the width of the
+// destination jump to the overflow failure handler
+struct overflow_check_options {
+    bool enabled{};
+    bool with_line{};
+};
+
 class machine {
     // receives the lines emitted before 'start' as they are emitted, which
     // backend tests use, null for a build
@@ -566,6 +573,8 @@ class machine {
         greater,
         greater_equal,
     };
+
+    using overflow_check_options = ::overflow_check_options;
 
     struct output_statistics {
         // false when written output was not kept to count
@@ -712,6 +721,9 @@ class machine {
     static constexpr std::string_view division_failure_handler_label{
         "baz_division_panic",
     };
+    static constexpr std::string_view overflow_failure_handler_label{
+        "baz_overflow_panic",
+    };
     static constexpr std::string_view overlap_failure_handler_label{
         "baz_overlap_panic",
     };
@@ -731,7 +743,8 @@ class machine {
 
     virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
                               const arithmetic_operator operation,
-                              const operand& dst, const operand& src)
+                              const operand& dst, const operand& src,
+                              const overflow_check_options& check = {})
         -> void = 0;
 
     virtual auto address_of(const token& src_loc_tk, const size_t indent,
@@ -876,6 +889,11 @@ class machine {
                         const std::function_ref<void()> emit_with_scratch)
         -> void = 0;
 
+    // prints 'panic: overflow' to stderr, with the line when 'with_line', and
+    // exits with 255
+    virtual auto emit_overflow_failure_handler(const bool with_line)
+        -> void = 0;
+
     // prints 'panic: overlap' to stderr, with the line when 'with_line', and
     // exits with 255
     virtual auto emit_overlap_failure_handler(const bool with_line) -> void = 0;
@@ -949,7 +967,8 @@ class machine {
 
     virtual auto multiply(const token& src_loc_tk, const size_t indent,
                           const operand& product, const operand& factor,
-                          const bool reuse_source = {}) -> void = 0;
+                          const bool reuse_source = {},
+                          const overflow_check_options& check = {}) -> void = 0;
 
     virtual auto read(const token& src_loc_tk, const size_t indent,
                       const operand& dst, const operand& descriptor,
@@ -1000,8 +1019,8 @@ class machine {
         -> void = 0;
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,
-                       const arithmetic_operator operation, const operand& dst)
-        -> void = 0;
+                       const arithmetic_operator operation, const operand& dst,
+                       const overflow_check_options& check = {}) -> void = 0;
 
     virtual auto
     validate_data_element_size(const token& src_loc_tk,

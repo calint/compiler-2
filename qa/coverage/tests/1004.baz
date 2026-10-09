@@ -1,0 +1,8 @@
+# --checks=overflow: an element of a narrow array that grows past its width
+func main() {
+    var arr = i8[4]
+    arr[1] = 127
+    var i = 1
+    arr[i] = arr[i] + 1
+    exit(arr[1])
+}

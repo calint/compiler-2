@@ -892,6 +892,7 @@ struct check_options {
     bool shift{};
     bool overlap{};
     bool stack{};
+    bool overflow{};
 };
 
 // what the compile used, for the report
@@ -2064,6 +2065,29 @@ class toc final {
     size_t dry_run_depth_{};
 
   public:
+    // an explicit conversion wraps the arithmetic of its argument, the
+    // overflow check is off while it is compiled
+    class overflow_check_pause final {
+        toc& tc_;
+        bool was_enabled_;
+
+      public:
+        explicit overflow_check_pause(toc& tc)
+            : tc_{tc}, was_enabled_{tc.checks_.overflow} {
+
+            tc_.checks_.overflow = false;
+        }
+
+        overflow_check_pause(const overflow_check_pause&) = delete;
+        overflow_check_pause(overflow_check_pause&&) = delete;
+        auto operator=(const overflow_check_pause&)
+            -> overflow_check_pause& = delete;
+        auto operator=(overflow_check_pause&&)
+            -> overflow_check_pause& = delete;
+
+        ~overflow_check_pause() { tc_.checks_.overflow = was_enabled_; }
+    };
+
     toc(::machine& backend, const source_files& files,
         const size_t vars_capacity_bytes, const check_options& checks)
         : machine_{backend}, locations_{&files},
@@ -2616,6 +2640,10 @@ class toc final {
         return builtins_.is_integer_name(name);
     }
 
+    [[nodiscard]] auto is_overflow_check() const -> bool {
+        return checks_.overflow;
+    }
+
     [[nodiscard]] auto is_overlap_check() const -> bool {
         return checks_.overlap;
     }
@@ -2708,6 +2736,15 @@ class toc final {
 
     [[nodiscard]] auto noninline_instance_count() const -> size_t {
         return funcs_.noninline_instance_count();
+    }
+
+    [[nodiscard]] auto overflow_check_options() const
+        -> machine::overflow_check_options {
+
+        return {
+            .enabled{checks_.overflow},
+            .with_line{checks_.bounds_with_line},
+        };
     }
 
     [[nodiscard]] auto overlap_check_options() const

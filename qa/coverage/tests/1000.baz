@@ -1,0 +1,7 @@
+# --checks=overflow: the negation of the minimum of the width panics
+func noinline neg(a i16) res i16 { res = -a }
+func main() {
+    var a = i16(-32768)
+    var x = neg(a)
+    exit(x)
+}

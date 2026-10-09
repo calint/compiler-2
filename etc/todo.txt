@@ -190,8 +190,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        'machine::copy_memory', README text for the wrapping rules, tests 1-5
        on x86 and rv32i (panic with the line, constant rejection, valid use
        unchanged); awaiting go-ahead
-[ ] medium: --checks=noub: signed overflow wraps; define wrapping as the
-    semantics or add --checks=overflow (x86 'jo', rv32i several instructions)
 [ ] medium: --checks=alias: route inline builtin results through a scratch
     register instead of rejecting (077.baz, 135.baz, 397.baz now use a
     temporary variable, 485.baz is a '--checks=noub' error test); it would

@@ -333,6 +333,13 @@ class expr_arith final : public expression {
                 return std::nullopt;
             }
 
+            if (tc.is_overflow_check() and
+                overflows_width(*value, o, *rhs, width_type)) {
+
+                throw compiler_exception{
+                    e->tok(), "constant expression overflows the type"};
+            }
+
             value = apply_operation(*value, o, *rhs, width_type);
         }
 
@@ -340,7 +347,16 @@ class expr_arith final : public expression {
             return std::nullopt;
         }
 
-        return wrap_to_width(uops_.evaluate_constant(*value), width_type);
+        const int64_t result{uops_.evaluate_constant(*value)};
+
+        if (tc.is_overflow_check() and
+            result != wrap_to_width(result, width_type)) {
+
+            throw compiler_exception{tok(),
+                                     "constant expression overflows the type"};
+        }
+
+        return wrap_to_width(result, width_type);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
@@ -521,7 +537,12 @@ class expr_arith final : public expression {
                                const std::string_view folded_source) const
         -> void {
 
-        if (value == identity_of(op)) {
+        // subtracting zero changes nothing like adding it
+        const arithmetic_operator identity_op{
+            op == arithmetic_operator::subtract ? arithmetic_operator::add : op,
+        };
+
+        if (value == identity_of(identity_op)) {
             machine& x{tc.machine()};
 
             x.comment(tok(), indent,
@@ -562,12 +583,16 @@ class expr_arith final : public expression {
         if (op == arithmetic_operator::add or
             op == arithmetic_operator::subtract) {
 
-            x.add_subtract(tok(), indent, op, dst_info.operand, constant);
+            x.add_subtract(tok(), indent, op, dst_info.operand, constant,
+                           tc.overflow_check_options());
+
             return;
         }
 
         if (op == arithmetic_operator::multiply) {
-            x.multiply(tok(), indent, dst_info.operand, constant);
+            x.multiply(tok(), indent, dst_info.operand, constant, false,
+                       tc.overflow_check_options());
+
             return;
         }
 
@@ -593,6 +618,11 @@ class expr_arith final : public expression {
         if (dst_info.type_ref().size_bytes() >=
             tc.get_type_default().size_bytes()) {
 
+            return false;
+        }
+
+        // the wide result must be checked against the narrow type
+        if (tc.is_overflow_check()) {
             return false;
         }
 
@@ -635,7 +665,14 @@ class expr_arith final : public expression {
         -> void {
 
         // e.g. '2 * 3 / b' or '3 - b'
-        if (first.element == nullptr) {
+        // under the overflow check the constants stay elements, a first
+        // constant is copied
+        const bool is_checked_constant{
+            tc.is_overflow_check() and first.value.has_value() and
+                first.op == arithmetic_operator::add,
+        };
+
+        if (first.element == nullptr or is_checked_constant) {
             assert(first.value);
 
             compile_constant(tc, indent, dst_info, *first.value,
@@ -651,14 +688,23 @@ class expr_arith final : public expression {
             machine& x{tc.machine()};
 
             x.unary(tok(), indent, machine::arithmetic_operator::negate,
-                    dst_info.operand);
+                    dst_info.operand, tc.overflow_check_options());
         }
     }
 
     auto compile_step(toc& tc, const size_t indent, const ident_info& dst_info,
                       const step& s) const -> void {
 
-        if (s.element == nullptr and s.value) {
+        // the merging passes are off under the overflow check, a constant
+        // that changes nothing must still not reach the backend
+        const bool is_checked_constant{
+            tc.is_overflow_check() and s.value.has_value() and
+                (s.op == arithmetic_operator::add or
+                 s.op == arithmetic_operator::subtract or
+                 s.op == arithmetic_operator::multiply),
+        };
+
+        if (s.value and (s.element == nullptr or is_checked_constant)) {
             apply_merged_constant(tc, indent, s.op, dst_info, *s.value,
                                   s.folded_source);
 
@@ -848,9 +894,17 @@ class expr_arith final : public expression {
         -> std::vector<step> {
 
         std::vector<step> steps{make_steps(tc, width_type)};
+
+        // moving or combining constants changes which partial results
+        // overflow
+        if (tc.is_overflow_check()) {
+            return steps;
+        }
+
         steps = merge_commutative_constants(steps, width_type);
         steps = merge_divisors(steps, width_type);
         lead_with_constant(tc, steps);
+
         return steps;
     }
 
@@ -1036,11 +1090,11 @@ class expr_arith final : public expression {
                 tc.get_lea_operand(indent, src, src_info, lea_registers),
             };
 
-            x.add_subtract(src.tok(), indent,
-                           op == arithmetic_operator::add
-                               ? arithmetic_operator::subtract
-                               : arithmetic_operator::add,
-                           dst_info.operand, src_operand);
+            x.add_subtract(
+                src.tok(), indent,
+                op == arithmetic_operator::add ? arithmetic_operator::subtract
+                                               : arithmetic_operator::add,
+                dst_info.operand, src_operand, tc.overflow_check_options());
 
             x.free_scratch_registers(src.tok(), indent, lea_registers);
 
@@ -1050,7 +1104,8 @@ class expr_arith final : public expression {
         emit_with_source(
             tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
             [&](const operand& term, const bool) -> void {
-                x.add_subtract(src.tok(), indent, op, dst_info.operand, term);
+                x.add_subtract(src.tok(), indent, op, dst_info.operand, term,
+                               tc.overflow_check_options());
             });
     }
 
@@ -1114,7 +1169,7 @@ class expr_arith final : public expression {
             tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
             [&](const operand& factor, const bool is_scratch) -> void {
                 x.multiply(src.tok(), indent, dst_info.operand, factor,
-                           is_scratch);
+                           is_scratch, tc.overflow_check_options());
             });
     }
 
@@ -1540,6 +1595,29 @@ class expr_arith final : public expression {
         }
 
         return product;
+    }
+
+    // true when the sum, difference or product is outside the width, e.g.
+    // '100 + 100' of an 'i8'
+    [[nodiscard]] static auto overflows_width(const int64_t lhs,
+                                              const arithmetic_operator op,
+                                              const int64_t rhs,
+                                              const type& width_type) -> bool {
+
+        int64_t result{};
+        bool wide_overflow{};
+
+        if (op == arithmetic_operator::add) {
+            wide_overflow = __builtin_add_overflow(lhs, rhs, &result);
+        } else if (op == arithmetic_operator::subtract) {
+            wide_overflow = __builtin_sub_overflow(lhs, rhs, &result);
+        } else if (op == arithmetic_operator::multiply) {
+            wide_overflow = __builtin_mul_overflow(lhs, rhs, &result);
+        } else {
+            return false;
+        }
+
+        return wide_overflow or result != wrap_to_width(result, width_type);
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'

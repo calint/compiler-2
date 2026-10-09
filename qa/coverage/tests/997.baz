@@ -1,0 +1,8 @@
+# --checks=overflow: a difference below the minimum of the width panics
+func noinline sub(a i32, b i32) res i32 { res = a - b }
+func main() {
+    var a = i32(-2147483648)
+    var b = i32(1)
+    var x = sub(a, b)
+    exit(x)
+}

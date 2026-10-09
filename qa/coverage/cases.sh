@@ -3063,3 +3063,26 @@ if [[ $MACHINE == rv32i-fpga ]]; then SRC=993 && EXP=255 && RUN_ERR_OPTS "--memo
 
 # --checks=lower,stack: the check keeps the registers the call still uses
 SRC=994 && EXP=0 && OPTS="--checks=lower,stack" RUN
+
+# --checks=overflow: results at the limits of the widths and conversions
+SRC=995 && EXP=0 && OPTS="--checks=overflow" RUN
+
+# --checks=overflow: signed overflow of each operation
+SRC=996 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=997 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=998 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=999 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1000 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# --checks=overflow,line: overflow with the line
+SRC=1001 && EXP=255 && RUN_ERR_OPTS "--checks=overflow,line"
+
+# --checks=overflow: constant expression that overflows
+SRC=1002 && OPTS="--checks=overflow" COMPERR
+
+# --checks=overflow: product by a constant and a narrow array element
+SRC=1003 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1004 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# --checks=overflow: 64 bit only on x86_64
+if [[ $MACHINE == x86_64 ]]; then SRC=1005 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"; fi

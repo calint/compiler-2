@@ -192,6 +192,8 @@ class machine_x86_64 final : public machine {
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
     std::set<size_t> division_panic_lines_;
+    // the lines that have a stub of the overflow failure handler
+    std::set<size_t> overflow_panic_lines_;
     // the lines that have a stub of the overlap failure handler
     std::set<size_t> overlap_panic_lines_;
     // the lines that have a stub of the shift failure handler
@@ -219,14 +221,27 @@ class machine_x86_64 final : public machine {
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
                       const arithmetic_operator operation, const operand& dst,
-                      const operand& src) -> void override {
+                      const operand& src,
+                      const overflow_check_options& check = {})
+        -> void override {
 
         assert(operation == arithmetic_operator::add or
                operation == arithmetic_operator::subtract);
 
+        // no instruction is emitted that sets the overflow flag
+        if (check.enabled and src.is_immediate() and
+            immediate_bits(src) == std::optional<uint64_t>{0}) {
+
+            return;
+        }
+
         emit_op(src_loc_tk, indent,
                 operation == arithmetic_operator::add ? op::add : op::sub, dst,
                 src);
+
+        if (check.enabled) {
+            branch_on_overflow(indent, src_loc_tk, check);
+        }
     }
 
     auto address_of(const token& src_loc_tk, const size_t indent,
@@ -813,6 +828,11 @@ class machine_x86_64 final : public machine {
         });
     }
 
+    auto emit_overflow_failure_handler(const bool with_line) -> void override {
+        emit_line_panic_handler(with_line, "overflow", overflow_panic_lines_,
+                                overflow_failure_handler_label);
+    }
+
     auto emit_overlap_failure_handler(const bool with_line) -> void override {
         emit_line_panic_handler(with_line, "overlap", overlap_panic_lines_,
                                 overlap_failure_handler_label);
@@ -1004,9 +1024,10 @@ class machine_x86_64 final : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  const bool reuse_source = {}) -> void override {
+                  const bool reuse_source = {},
+                  const overflow_check_options& check = {}) -> void override {
 
-        if (multiply_by_constant(src_loc_tk, indent, product, factor)) {
+        if (multiply_by_constant(src_loc_tk, indent, product, factor, check)) {
             return;
         }
 
@@ -1022,6 +1043,11 @@ class machine_x86_64 final : public machine {
             mov(src_loc_tk, indent, left, product);
             mov(src_loc_tk, indent, right, factor);
             imul(src_loc_tk, indent, left, right);
+
+            if (check.enabled) {
+                check_byte_product(src_loc_tk, indent, left, right, check);
+            }
+
             mov(src_loc_tk, indent, product, left);
             free_scratch_register(src_loc_tk, indent, right);
             free_scratch_register(src_loc_tk, indent, left);
@@ -1031,12 +1057,24 @@ class machine_x86_64 final : public machine {
 
         if (product.is_register()) {
             imul(src_loc_tk, indent, product, factor);
+
+            if (check.enabled) {
+                branch_on_overflow(indent, src_loc_tk, check);
+            }
+
             return;
         }
 
         if (reuse_source) {
             imul(src_loc_tk, indent, factor, product);
+
+            // the move keeps the flags
             mov(src_loc_tk, indent, product, factor);
+
+            if (check.enabled) {
+                branch_on_overflow(indent, src_loc_tk, check);
+            }
+
             return;
         }
 
@@ -1048,6 +1086,11 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent, reg, product);
         imul(src_loc_tk, indent, reg, factor);
+
+        if (check.enabled) {
+            branch_on_overflow(indent, src_loc_tk, check);
+        }
+
         mov(src_loc_tk, indent, product, reg);
         free_scratch_register(src_loc_tk, indent, reg);
     }
@@ -1210,8 +1253,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
-               const arithmetic_operator operation, const operand& dst)
-        -> void override {
+               const arithmetic_operator operation, const operand& dst,
+               const overflow_check_options& check = {}) -> void override {
 
         if (operation == arithmetic_operator::complement) {
             not_op(src_loc_tk, indent, dst);
@@ -1221,6 +1264,10 @@ class machine_x86_64 final : public machine {
         assert(operation == arithmetic_operator::negate);
 
         neg(src_loc_tk, indent, dst);
+
+        if (check.enabled) {
+            branch_on_overflow(indent, src_loc_tk, check);
+        }
     }
 
     auto validate_data_element_size(
@@ -1534,6 +1581,15 @@ class machine_x86_64 final : public machine {
                        label);
     }
 
+    // jumps to the overflow failure handler when the instruction before set
+    // the overflow flag
+    auto branch_on_overflow(const size_t indent, const token& src_loc_tk,
+                            const overflow_check_options& check) -> void {
+
+        assembler_.jcc(indent, condition::o,
+                       overflow_failure_label(src_loc_tk, check));
+    }
+
     // a reported line goes through the stub of its line, which sets rbp for
     // the handler, so a passing check keeps rbp and loads nothing
     auto branch_to_bounds_panic(const size_t indent, const condition failed,
@@ -1568,6 +1624,23 @@ class machine_x86_64 final : public machine {
         default:
             std::unreachable();
         }
+    }
+
+    // 'left' holds the product of two bytes in a register of the default
+    // width, which fits when the low byte sign extended is the same value
+    auto check_byte_product(const token& src_loc_tk, const size_t indent,
+                            const operand& left, const operand& right,
+                            const overflow_check_options& check) -> void {
+
+        const operand low_byte{
+            make_register_operand(left.base_register(), builtin_type_i8()),
+        };
+
+        mov(src_loc_tk, indent, right, low_byte);
+        cmp(src_loc_tk, indent, right, left);
+
+        assembler_.jcc(indent, condition::ne,
+                       overflow_failure_label(src_loc_tk, check));
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
@@ -2232,10 +2305,10 @@ class machine_x86_64 final : public machine {
     // a constant factor is resolved at compile time: zero clears, one needs no
     // code, minus one negates and a power of two is a shift, false when a
     // multiplication is still needed
-    [[nodiscard]] auto multiply_by_constant(const token& src_loc_tk,
-                                            const size_t indent,
-                                            const operand& product,
-                                            const operand& factor) -> bool {
+    [[nodiscard]] auto
+    multiply_by_constant(const token& src_loc_tk, const size_t indent,
+                         const operand& product, const operand& factor,
+                         const overflow_check_options& check) -> bool {
 
         const std::optional<uint64_t> bits{immediate_bits(factor)};
 
@@ -2264,10 +2337,16 @@ class machine_x86_64 final : public machine {
 
         if (factor_info.kind == factor_kind::minus_one) {
             neg(src_loc_tk, indent, product);
+
+            if (check.enabled) {
+                branch_on_overflow(indent, src_loc_tk, check);
+            }
+
             return true;
         }
 
-        if (factor_info.kind == factor_kind::other) {
+        // a shift does not report the bits it loses, 'imul' does
+        if (factor_info.kind == factor_kind::other or check.enabled) {
             return false;
         }
 
@@ -2287,6 +2366,20 @@ class machine_x86_64 final : public machine {
                 const operand& value) -> void {
 
         emit_unary(src_loc_tk, indent, op::not_op, value);
+    }
+
+    // the handler to jump to, one stub per line reports the line
+    [[nodiscard]] auto
+    overflow_failure_label(const token& src_loc_tk,
+                           const overflow_check_options& check) -> std::string {
+
+        if (not check.with_line) {
+            return std::string{overflow_failure_handler_label};
+        }
+
+        overflow_panic_lines_.insert(src_loc_tk.at_line());
+
+        return line_panic_label("overflow", src_loc_tk.at_line());
     }
 
     auto pop(const size_t indent, const operand& dst) -> void {

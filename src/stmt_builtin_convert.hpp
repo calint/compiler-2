@@ -93,6 +93,8 @@ class stmt_builtin_convert final : public expression {
 
         machine& x{tc.machine()};
 
+        const toc::overflow_check_pause pause{tc};
+
         // an out-of-range immediate makes nasm warn, so fold it here
         if (const std::optional<int64_t> value{constant_value(tc)}; value) {
             x.copy_value(tok(), indent, dst_info.operand,

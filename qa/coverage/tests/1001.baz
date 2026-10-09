@@ -1,0 +1,11 @@
+# --checks=overflow,line: the panic reports the line
+func noinline mul(a i32, b i32) res i32 {
+    res = 0
+    res = a * b
+}
+func main() {
+    var a = i32(-2147483648)
+    var b = i32(-1)
+    var x = mul(a, b)
+    exit(x)
+}

@@ -1021,7 +1021,7 @@ auto unary_ops::compile(toc& tc, const size_t indent, const token& src_loc_tk,
         x.unary(src_loc_tk, indent,
                 o == '-' ? machine::arithmetic_operator::negate
                          : machine::arithmetic_operator::complement,
-                dst_info);
+                dst_info, tc.overflow_check_options());
     }
 }
 

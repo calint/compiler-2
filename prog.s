@@ -226,8 +226,8 @@ main:
 ;   [207:12] allocate scratch register -> r14
 ;       [207:12] a
         mov r14, qword [rbp + 392]
-;       [207:12] r14 & 3
-;       [207:12] src: folded constant '& 3'
+;       [207:16] r14 & 3
+;       [207:16] src: constant
         and r14, 3
     cmp r14, 3
 ;   [207:12] free scratch register r14
@@ -261,8 +261,8 @@ main:
 ;   [208:12] allocate scratch register -> r14
 ;       [208:12] a
         mov r14, qword [rbp + 392]
-;       [208:12] r14 | 8
-;       [208:12] src: folded constant '| 8'
+;       [208:16] r14 | 8
+;       [208:16] src: constant
         or r14, 8
     cmp r14, 15
 ;   [208:12] free scratch register r14
@@ -296,8 +296,8 @@ main:
 ;   [209:12] allocate scratch register -> r14
 ;       [209:12] a
         mov r14, qword [rbp + 392]
-;       [209:12] r14 ^ 1
-;       [209:12] src: folded constant '^ 1'
+;       [209:16] r14 ^ 1
+;       [209:16] src: constant
         xor r14, 1
     cmp r14, 6
 ;   [209:12] free scratch register r14
@@ -367,6 +367,7 @@ main:
 ;       [211:13] -a
         mov r14, qword [rbp + 392]
         neg r14
+        jo baz_overflow_line_211
 ;       [211:18] r14 >> 1
 ;       [211:18] src: constant
         sar r14, 1
@@ -411,6 +412,7 @@ main:
 ;       [214:21] src: constant
         sal r13, 1
         add r14, r13
+        jo baz_overflow_line_214
 ;       [214:18] free scratch register r13
     cmp r14, 21
 ;   [214:12] free scratch register r14
@@ -449,6 +451,7 @@ main:
 ;       [215:17] r14 + a
 ;       [215:17] src: operand
         add r14, qword [rbp + 392]
+        jo baz_overflow_line_215
 ;       [215:23] r14 << 1
 ;       [215:23] src: constant
         sal r14, 1
@@ -520,16 +523,19 @@ main:
 ;   [223:9] small: i8 (1 B @ [rbp + 400])
 ;   [223:9] small = i8(100)
     mov byte [rbp + 400], 100
-;   [224:5] small = small + small
-;   [224:13] instructions without scratch register 3, with 4
-;   [224:13] allocate scratch register -> r15
-;   [224:13] small
+;   [224:5] small = i8(small + small)
+;   [224:13] small = i8(small + small)
+;   [224:13] = expression
+;   [224:13] instructions without scratch register 3, with 3
+;   [224:16] instructions without scratch register 3, with 4
+;   [224:16] allocate scratch register -> r15
+;   [224:16] small
     mov r15b, byte [rbp + 400]
-;   [224:21] r15b + small
-;   [224:21] src: operand
+;   [224:24] r15b + small
+;   [224:24] src: operand
     add r15b, byte [rbp + 400]
     mov byte [rbp + 400], r15b
-;   [224:13] free scratch register r15
+;   [224:16] free scratch register r15
 ;   [225:5] assert(small == -56)
 ;   [225:12] allocate scratch register -> r15
 ;   [225:12] ? small == -56
@@ -667,6 +673,7 @@ main:
 ;   [244:9] r15 + 1
 ;   [244:9] src: folded constant '+ 1'
     add r15, 1
+    jo baz_overflow_line_244
 ;   [244:9] bounds check begin
 ;   [244:9] lower bound
 ;   [244:9] r15 lower bound covered by the unsigned upper bound
@@ -1090,7 +1097,7 @@ main:
 ;   [271:16] tmp = ~inv(arr[ix - 1])
 ;   [271:16] = expression
 ;   [271:16] ~inv(arr[ix - 1])
-;   [271:16] instructions without scratch register 10, with 10
+;   [271:16] instructions without scratch register 11, with 11
 ;   [271:24] allocate scratch register -> r15
 ;   [271:24] set array index
 ;   [271:24] ix
@@ -1098,6 +1105,7 @@ main:
 ;   [271:24] r15 - 1
 ;   [271:24] src: folded constant '- 1'
     sub r15, 1
+    jo baz_overflow_line_271
 ;   [271:24] bounds check begin
 ;   [271:24] lower bound
 ;   [271:24] r15 lower bound covered by the unsigned upper bound
@@ -1233,14 +1241,16 @@ main:
     mov r14, 0
     foo.279.5:
 ;       [280:9] e = e + i + n
-;       [280:13] instructions without scratch register 2, with 4
+;       [280:13] instructions without scratch register 4, with 6
 ;       [280:13] e
 ;       [280:17] e + i
 ;       [280:17] src: operand
         add qword [r15], r14
+        jo baz_overflow_line_280
 ;       [280:13] e + 2
 ;       [280:13] src: folded constant '+ n'
         add qword [r15], 2
+        jo baz_overflow_line_280
         foo.279.5.continue:
             add r15, 8
             inc r14
@@ -1592,15 +1602,16 @@ main:
 ;       [316:13] alias res -> k
 ;       [316:13] alias arg -> j
 ;       [67:5] res = arg * 2
-;       [67:11] instructions without scratch register 3, with 3
-;       [67:11] arg
+;       [67:11] instructions without scratch register 6, with 4
 ;       [67:11] allocate scratch register -> r15
+;       [67:11] arg
         mov r15, qword [rbp + 560]
+;       [67:11] r15 * 2
+;       [67:11] src: folded constant '* 2'
+        imul r15, 2
+        jo baz_overflow_line_67
         mov qword [rbp + 568], r15
 ;       [67:11] free scratch register r15
-;       [67:11] res * 2
-;       [67:11] src: folded constant '* 2'
-        sal qword [rbp + 568], 1
     func.baz.316.13.end:
 ;   [317:5] assert(k == 2)
 ;   [317:12] allocate scratch register -> r15
@@ -1914,6 +1925,7 @@ main:
 ;           [55:20] res + self.y
 ;           [55:20] src: operand
             add r14, qword [rbp + 616]
+            jo baz_overflow_line_55
         func.point.sum.338.15.end:
     cmp r14, 0
 ;   [338:12] free scratch register r14
@@ -1954,13 +1966,14 @@ main:
 ;   [343:9] o1 = object{{x * 10, y}, 0xff0000}
 ;   [343:21] copy field 'pos'
 ;   [343:22] copy field 'x'
-;   [343:22] instructions without scratch register 5, with 3
+;   [343:22] instructions without scratch register 6, with 4
 ;   [343:22] allocate scratch register -> r15
 ;   [343:22] x
     mov r15, qword [rbp + 624]
 ;   [343:22] r15 * 10
 ;   [343:22] src: folded constant '* 10'
     imul r15, 10
+    jo baz_overflow_line_343
     mov qword [rbp + 640], r15
 ;   [343:22] free scratch register r15
 ;   [343:30] copy field 'y'
@@ -2061,19 +2074,21 @@ main:
 ;   [348:9] p1: point (16 B @ [rbp + 664])
 ;   [348:9] p1 = point{-x, -y}
 ;   [348:20] copy field 'x'
-;   [348:20] instructions without scratch register 3, with 3
+;   [348:20] instructions without scratch register 4, with 4
 ;   [348:20] allocate scratch register -> r15
     mov r15, qword [rbp + 624]
     mov qword [rbp + 664], r15
 ;   [348:20] free scratch register r15
     neg qword [rbp + 664]
+    jo baz_overflow_line_348
 ;   [348:24] copy field 'y'
-;   [348:24] instructions without scratch register 3, with 3
+;   [348:24] instructions without scratch register 4, with 4
 ;   [348:24] allocate scratch register -> r15
     mov r15, qword [rbp + 632]
     mov qword [rbp + 672], r15
 ;   [348:24] free scratch register r15
     neg qword [rbp + 672]
+    jo baz_overflow_line_348
 ;   [349:5] o1.pos = p1
 ;   [349:14] size <= 16 B, use mov
 ;   [349:14] allocate named register rax
@@ -2445,6 +2460,7 @@ main:
 ;           [55:20] res + self.y
 ;           [55:20] src: operand
             add r14, qword [rbp + 736]
+            jo baz_overflow_line_55
         func.point.sum.376.22.end:
     cmp r14, 13
 ;   [376:12] free scratch register r14
@@ -2760,11 +2776,12 @@ main:
 ;   [405:5] label
     loop.405.5:
 ;       [406:9] counter = counter + 1
-;       [406:19] instructions without scratch register 1, with 3
+;       [406:19] instructions without scratch register 2, with 4
 ;       [406:19] counter
 ;       [406:19] counter + 1
 ;       [406:19] src: folded constant '+ 1'
         add qword [rbp + 1280], 1
+        jo baz_overflow_line_406
 ;       [407:9] print_num(counter)
 ;       [407:9] frame capacity check begin
 ;       [407:9] allocate scratch register -> r15
@@ -3001,11 +3018,12 @@ main:
 ;                   [42:5] free named register rdi
                 func.print.103.5.418.13.end:
 ;               [104:5] names = names + 1
-;               [104:13] instructions without scratch register 1, with 3
+;               [104:13] instructions without scratch register 2, with 4
 ;               [104:13] names
 ;               [104:13] names + 1
 ;               [104:13] src: folded constant '+ 1'
                 add qword [rbp + 368], 1
+                jo baz_overflow_line_104
             func.greet.418.13.end:
         if.412.9.end:
     jmp loop.405.5
@@ -3173,7 +3191,7 @@ func.factorial:
 ;   [179:5] var m = n - 1
 ;   [179:9] m: i64 (8 B @ [rbx + 16])
 ;   [179:9] m = n - 1
-;   [179:13] instructions without scratch register 4, with 4
+;   [179:13] instructions without scratch register 5, with 5
 ;   [179:13] n
 ;   [179:13] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
@@ -3185,6 +3203,7 @@ func.factorial:
 ;   [179:13] m - 1
 ;   [179:13] src: folded constant '- 1'
     sub qword [rbx + 16], 1
+    jo baz_overflow_line_179
 ;   [180:5] var partial = factorial(m)
 ;   [180:9] partial: i64 (8 B @ [rbx + 24])
 ;   [180:9] partial = factorial(m)
@@ -3228,7 +3247,7 @@ func.factorial:
 ;   [181:5] res = n * partial
 ;   [181:5] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [181:11] instructions without scratch register 6, with 4
+;   [181:11] instructions without scratch register 7, with 5
 ;   [181:11] allocate scratch register -> r14
 ;   [181:11] n
 ;   [181:11] allocate scratch register -> r13
@@ -3238,6 +3257,7 @@ func.factorial:
 ;   [181:15] r14 * partial
 ;   [181:15] src: operand
     imul r14, qword [rbx + 24]
+    jo baz_overflow_line_181
     mov qword [r15], r14
 ;   [181:11] free scratch register r14
 ;   [181:5] free scratch register r15
@@ -3289,9 +3309,10 @@ func.print_num:
     jle if.147.5.end
     if.147.8.code:
 ;       [148:9] n = -n
-;       [148:13] instructions without scratch register 1, with 3
+;       [148:13] instructions without scratch register 2, with 4
 ;       [148:14] -n
         neg qword [rbx + 32]
+        jo baz_overflow_line_148
     if.147.5.end:
 ;   [151:5] var i = buf_count
 ;   [151:9] i: i64 (8 B @ [rbx + 48])
@@ -3301,11 +3322,12 @@ func.print_num:
 ;   [152:5] label
     loop.152.5:
 ;       [153:9] i = i - 1
-;       [153:13] instructions without scratch register 1, with 3
+;       [153:13] instructions without scratch register 2, with 4
 ;       [153:13] i
 ;       [153:13] i - 1
 ;       [153:13] src: folded constant '- 1'
         sub qword [rbx + 48], 1
+        jo baz_overflow_line_153
 ;       [154:9] buf[i] = i8('0' - n % 10)
 ;       [154:13] allocate scratch register -> r15
 ;       [154:13] set array index
@@ -3405,11 +3427,12 @@ func.print_num:
     je if.159.5.end
     if.159.8.code:
 ;       [160:9] i = i - 1
-;       [160:13] instructions without scratch register 1, with 3
+;       [160:13] instructions without scratch register 2, with 4
 ;       [160:13] i
 ;       [160:13] i - 1
 ;       [160:13] src: folded constant '- 1'
         sub qword [rbx + 48], 1
+        jo baz_overflow_line_160
 ;       [161:9] buf[i] = '-'
 ;       [161:13] allocate scratch register -> r15
 ;       [161:13] set array index
@@ -3464,17 +3487,19 @@ func.print_num:
 ;       [166:26] free scratch register r14
 ;       [166:9] free scratch register r15
 ;       [167:9] write_pos = write_pos + 1
-;       [167:21] instructions without scratch register 1, with 3
+;       [167:21] instructions without scratch register 2, with 4
 ;       [167:21] write_pos
 ;       [167:21] write_pos + 1
 ;       [167:21] src: folded constant '+ 1'
         add qword [rbx + 56], 1
+        jo baz_overflow_line_167
 ;       [168:9] i = i + 1
-;       [168:13] instructions without scratch register 1, with 3
+;       [168:13] instructions without scratch register 2, with 4
 ;       [168:13] i
 ;       [168:13] i + 1
 ;       [168:13] src: folded constant '+ 1'
         add qword [rbx + 48], 1
+        jo baz_overflow_line_168
         if.169.12:
 ;       [169:12] ? i == buf_count
 ;       [169:12] ? i == buf_count
@@ -3597,6 +3622,76 @@ section .rodata
 msg_overlap:
 db `panic: overlap at line `
 msg_overlap_len equ $ - msg_overlap
+section .text
+; overflow failure handler (--checks=overflow)
+baz_overflow_line_55:
+    mov rbp, 55
+    jmp baz_overflow_panic
+baz_overflow_line_67:
+    mov rbp, 67
+    jmp baz_overflow_panic
+baz_overflow_line_104:
+    mov rbp, 104
+    jmp baz_overflow_panic
+baz_overflow_line_148:
+    mov rbp, 148
+    jmp baz_overflow_panic
+baz_overflow_line_153:
+    mov rbp, 153
+    jmp baz_overflow_panic
+baz_overflow_line_160:
+    mov rbp, 160
+    jmp baz_overflow_panic
+baz_overflow_line_167:
+    mov rbp, 167
+    jmp baz_overflow_panic
+baz_overflow_line_168:
+    mov rbp, 168
+    jmp baz_overflow_panic
+baz_overflow_line_179:
+    mov rbp, 179
+    jmp baz_overflow_panic
+baz_overflow_line_181:
+    mov rbp, 181
+    jmp baz_overflow_panic
+baz_overflow_line_211:
+    mov rbp, 211
+    jmp baz_overflow_panic
+baz_overflow_line_214:
+    mov rbp, 214
+    jmp baz_overflow_panic
+baz_overflow_line_215:
+    mov rbp, 215
+    jmp baz_overflow_panic
+baz_overflow_line_244:
+    mov rbp, 244
+    jmp baz_overflow_panic
+baz_overflow_line_271:
+    mov rbp, 271
+    jmp baz_overflow_panic
+baz_overflow_line_280:
+    mov rbp, 280
+    jmp baz_overflow_panic
+baz_overflow_line_343:
+    mov rbp, 343
+    jmp baz_overflow_panic
+baz_overflow_line_348:
+    mov rbp, 348
+    jmp baz_overflow_panic
+baz_overflow_line_406:
+    mov rbp, 406
+baz_overflow_panic:
+;    print message to stderr
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_overflow]
+    mov rdx, msg_overflow_len
+    syscall
+    jmp baz_report_line
+section .rodata
+msg_overflow:
+db `panic: overflow at line `
+msg_overflow_len equ $ - msg_overflow
 section .text
 ; stack overflow handler (--checks=stack)
 ; shift failure handler (--checks=shift)
@@ -3750,10 +3845,10 @@ vars.end:
 ; free named register rbp
 
 ;           noinline functions:
-;                    factorial: 1 body, 2 calls, 35 instructions
-;                    print_num: 1 body, 2 calls, 76 instructions
+;                    factorial: 1 body, 2 calls, 37 instructions
+;                    print_num: 1 body, 2 calls, 81 instructions
 ;
-;   removed jumps to next code: 131
+;   removed jumps to next code: 132
 ;    removed unreachable jumps: 2
 ; removed same target branches: 54
 ; inverted branches over jumps: 7
@@ -3762,7 +3857,7 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 1036
+;                 instructions: 1101
 ;
 ; register use at the peak: 6 of 14 registers live, 2 named by instructions
 ;

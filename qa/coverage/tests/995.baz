@@ -1,0 +1,53 @@
+# --checks=overflow: results at the limits of the widths are not overflows
+func assert(err, ok bool) { if not ok exit(err) }
+
+func noinline add32(a i32, b i32) res i32 { res = a + b }
+func noinline sub32(a i32, b i32) res i32 { res = a - b }
+func noinline mul32(a i32, b i32) res i32 { res = a * b }
+func noinline neg32(a i32) res i32 { res = -a }
+func noinline add8(a i8, b i8) res i8 { res = a + b }
+func noinline sub8(a i8, b i8) res i8 { res = a - b }
+func noinline mul8(a i8, b i8) res i8 { res = a * b }
+func noinline neg8(a i8) res i8 { res = -a }
+func noinline add16(a i16, b i16) res i16 { res = a + b }
+func noinline mul16(a i16, b i16) res i16 { res = a * b }
+
+func main() {
+    var max32 = i32(2147483647)
+    var min32 = i32(-2147483648)
+    var one = i32(1)
+    var minus_one = i32(-1)
+    assert(1, add32(max32, minus_one) == 2147483646)
+    assert(2, add32(min32, one) == -2147483647)
+    assert(3, add32(max32, min32) == -1)
+    assert(4, sub32(min32, minus_one) == -2147483647)
+    assert(5, sub32(max32, one) == 2147483646)
+    assert(6, sub32(minus_one, max32) == min32)
+    assert(7, mul32(i32(65536), i32(32767)) == 2147418112)
+    assert(8, mul32(i32(65536), i32(-32768)) == min32)
+    assert(9, mul32(i32(46340), i32(46340)) == 2147395600)
+    assert(10, mul32(min32, one) == min32)
+    assert(11, mul32(min32, i32(0)) == 0)
+    assert(12, mul32(i32(-46341), i32(46340)) == -2147441940)
+    assert(13, neg32(max32) == -2147483647)
+
+    var max8 = i8(127)
+    var min8 = i8(-128)
+    var one8 = i8(1)
+    assert(20, add8(max8, min8) == i8(-1))
+    assert(21, sub8(min8, i8(-1)) == i8(-127))
+    assert(22, mul8(i8(16), i8(-8)) == min8)
+    assert(23, mul8(i8(11), i8(11)) == i8(121))
+    assert(24, neg8(max8) == i8(-127))
+    assert(25, sub8(max8, one8) == i8(126))
+
+    assert(30, add16(i16(32767), i16(-32768)) == i16(-1))
+    assert(31, mul16(i16(-181), i16(181)) == i16(-32761))
+
+    # an explicit conversion wraps the arithmetic of its argument
+    var big = i32(0x1234)
+    var w = i16(big * 16)
+    assert(40, w == 0x2340)
+    var b = i8(big + 1)
+    assert(41, b == 0x35)
+}

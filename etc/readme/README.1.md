@@ -26,28 +26,33 @@ compiler writes the binary image itself.
 * arrays
 * array iteration
 * string, character, user type and array initializers
-* checks against undefined behavior
-  * opt-in: array bounds at runtime, optionally reporting the line number
-  * opt-in: non-inlined function frame capacity at runtime
-  * opt-in: division by zero and `MIN / -1` at runtime
-  * opt-in: shift count outside the type width at runtime, a constant count
+* checks against undefined behavior, selected with `--checks=LIST`
+  * `noub` turns on all of them, `line` adds the line number to the report of
+    a failed bounds, division, shift, overlap or overflow check, `-NAME` turns
+    a check off after the others are applied, e.g. `--checks=noub,-division`
+  * `upper`, `lower`: array bounds at runtime
+  * `frame`: non-inlined function frame capacity at runtime
+  * `division`: division by zero and `MIN / -1` at runtime
+  * `shift`: shift count outside the type width at runtime, a constant count
     is rejected at compile time
-  * opt-in: `array_copy` whose destination starts inside the source at
+  * `overlap`: `array_copy` whose destination starts inside the source at
     runtime, a copy down the array is allowed
-  * opt-in: stack capacity at `noinline` calls on `rv32i-qemu` and
-    `rv32i-fpga`, the other targets run in an operating system that stops a
-    program that overflows the stack
-    (`--memory` sets the memory of `rv32i-fpga`)
+  * `stack`: stack capacity at `noinline` calls on `rv32i-qemu` and
+    `rv32i-fpga` (`--memory` sets the memory of `rv32i-fpga`), the other
+    targets run in an operating system that stops a program that overflows the
+    stack
+  * `overflow`: signed overflow of `+`, `-`, `*` and unary `-` at the width of
+    the destination at runtime, a constant expression that overflows is
+    rejected at compile time, the arithmetic of an explicit conversion such as
+    `i8(a + b)` still wraps
+  * `alias`: on by default, compile time rejection of calls and assignments
+    where the value may read the destination under another name
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
-  * on by default: compile time rejection of calls and assignments where the
-    value may read the destination under another name, `--checks=-alias` turns
-    it off
 * inlined functions
 * support for non-inlined functions
 * methods and constructors on user defined types
-* partial ub-free support
-  * not checked: signed overflow, it wraps
+* ub-free with `--checks=noub`
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,

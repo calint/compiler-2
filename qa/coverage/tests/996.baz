@@ -1,0 +1,8 @@
+# --checks=overflow: a sum above the maximum of the width panics
+func noinline add(a i32, b i32) res i32 { res = a + b }
+func main() {
+    var a = i32(2147483647)
+    var b = i32(1)
+    var x = add(a, b)
+    exit(x)
+}

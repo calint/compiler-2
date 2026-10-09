@@ -1,0 +1,8 @@
+# --checks=overflow: a product above the maximum of the width panics
+func noinline mul(a i32, b i32) res i32 { res = a * b }
+func main() {
+    var a = i32(65536)
+    var b = i32(32768)
+    var x = mul(a, b)
+    exit(x)
+}

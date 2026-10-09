@@ -65,7 +65,7 @@ class assembler_x86_64 final : public assembler {
 
     // suffixes of 'jcc' and 'setcc', 'nz' is spelled apart from
     // 'ne' to keep the handler text
-    enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, nz, ae };
+    enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, nz, ae, o };
 
     // 'variables' is the uninitialized section after the data
     enum class section : uint8_t { text, rodata, data, bss, variables };
@@ -454,11 +454,12 @@ class assembler_x86_64 final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::string_view override {
 
-        constexpr std::array<mnemonic_pair, 3> pairs{
+        constexpr std::array<mnemonic_pair, 4> pairs{
             {
                 {"je", "jne"},
                 {"jg", "jle"},
                 {"jge", "jl"},
+                {"jo", "jno"},
             },
         };
 
@@ -550,10 +551,11 @@ class assembler_x86_64 final : public assembler {
                 "s",
                 "nz",
                 "ae",
+                "o",
             }),
         };
 
-        static_assert(suffixes.size() == std::to_underlying(condition::ae) + 1);
+        static_assert(suffixes.size() == std::to_underlying(condition::o) + 1);
         // note: +1 because the last enumerator is counted too
 
         return suffixes.at(std::to_underlying(cc));
