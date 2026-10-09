@@ -890,6 +890,7 @@ struct check_options {
     bool alias{true};
     bool division{};
     bool shift{};
+    bool overlap{};
 };
 
 // what the compile used, for the report
@@ -2614,6 +2615,10 @@ class toc final {
         return builtins_.is_integer_name(name);
     }
 
+    [[nodiscard]] auto is_overlap_check() const -> bool {
+        return checks_.overlap;
+    }
+
     [[nodiscard]] auto is_shift_check() const -> bool { return checks_.shift; }
 
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
@@ -2700,6 +2705,15 @@ class toc final {
 
     [[nodiscard]] auto noninline_instance_count() const -> size_t {
         return funcs_.noninline_instance_count();
+    }
+
+    [[nodiscard]] auto overlap_check_options() const
+        -> machine::overlap_check_options {
+
+        return {
+            .enabled{checks_.overlap},
+            .with_line{checks_.bounds_with_line},
+        };
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {

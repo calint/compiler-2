@@ -608,6 +608,11 @@ class machine {
         bool with_line{};
     };
 
+    struct overlap_check_options {
+        bool enabled{};
+        bool with_line{};
+    };
+
     struct data_initializer {
         int64_t value{};
         std::string_view uops; // unary operations
@@ -665,6 +670,9 @@ class machine {
         size_t alignment{};
         address_emitter src;
         address_emitter dst;
+        // an enabled check makes a copy where the destination starts inside
+        // the source jump to the overlap failure handler
+        overlap_check_options overlap;
     };
 
     // what a bounds check does about the lower bound, decided from its
@@ -703,6 +711,9 @@ class machine {
     };
     static constexpr std::string_view division_failure_handler_label{
         "baz_division_panic",
+    };
+    static constexpr std::string_view overlap_failure_handler_label{
+        "baz_overlap_panic",
     };
     static constexpr std::string_view shift_failure_handler_label{
         "baz_shift_panic",
@@ -854,6 +865,10 @@ class machine {
                         const std::function_ref<void()> emit_without_scratch,
                         const std::function_ref<void()> emit_with_scratch)
         -> void = 0;
+
+    // prints 'panic: overlap' to stderr, with the line when 'with_line', and
+    // exits with 255
+    virtual auto emit_overlap_failure_handler(const bool with_line) -> void = 0;
 
     virtual auto emit_repeated_data(const size_t element_size_bytes,
                                     const size_t count,

@@ -188,9 +188,12 @@ class machine_x86_64 final : public machine {
     size_t equal_label_count_{};
     // numbers the labels of the checks of divisions
     size_t division_label_count_{};
+    size_t overlap_label_count_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
     std::set<size_t> division_panic_lines_;
+    // the lines that have a stub of the overlap failure handler
+    std::set<size_t> overlap_panic_lines_;
     // the lines that have a stub of the shift failure handler
     std::set<size_t> shift_panic_lines_;
     // source lines of the bounds checks, each gets a stub that reports it
@@ -639,6 +642,10 @@ class machine_x86_64 final : public machine {
         scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
                                     element_size_bytes);
 
+        if (request.overlap.enabled) {
+            check_copy_overlap(src_loc_tk, indent, request.overlap);
+        }
+
         assembler_.instruction(indent, op::rep_movsb);
         release_bulk_registers(src_loc_tk, indent);
     }
@@ -798,6 +805,11 @@ class machine_x86_64 final : public machine {
             assembler_.append(std::move(
                 without_count <= with_count ? without_scratch : with_scratch));
         });
+    }
+
+    auto emit_overlap_failure_handler(const bool with_line) -> void override {
+        emit_line_panic_handler(with_line, "overlap", overlap_panic_lines_,
+                                overlap_failure_handler_label);
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
@@ -1547,6 +1559,49 @@ class machine_x86_64 final : public machine {
         default:
             std::unreachable();
         }
+    }
+
+    // the source in 'rsi', the destination in 'rdi' and the byte count in
+    // 'rcx' of a copy: a distance from the source to the destination that is
+    // not zero and below the count jumps to the failure handler, the copy
+    // would overwrite source bytes it has not read yet
+    auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
+                            const overlap_check_options& check) -> void {
+
+        comment(src_loc_tk, indent, "overlap check begin");
+
+        const std::string failure_label{
+            check.with_line ? line_panic_label("overlap", src_loc_tk.at_line())
+                            : std::string{overlap_failure_handler_label},
+        };
+
+        if (check.with_line) {
+            overlap_panic_lines_.insert(src_loc_tk.at_line());
+        }
+
+        const std::string passed{
+            std::format(".Lbaz_overlap.{}", overlap_label_count_++),
+        };
+
+        const operand distance{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        mov(src_loc_tk, indent, distance, qword_register("rdi"));
+        emit_op(src_loc_tk, indent, op::sub, distance, qword_register("rsi"));
+
+        comment(src_loc_tk, indent, "the same range is not an overlap");
+
+        assembler_.jcc(indent, condition::e, passed);
+
+        comment(src_loc_tk, indent, "destination starts inside the source");
+
+        cmp(src_loc_tk, indent, distance, qword_register("rcx"));
+        assembler_.jcc(indent, condition::b, failure_label);
+        assembler_.label(indent, passed);
+        free_scratch_register(src_loc_tk, indent, distance);
+
+        comment(src_loc_tk, indent, "overlap check end");
     }
 
     // a zero divisor and the minimum of the dividend width divided by -1 jump

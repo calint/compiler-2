@@ -1,0 +1,5 @@
+# --checks=overlap,line: an overlapping copy reports the line
+func main() {
+    var a = i32[8]
+    array_copy(a[2], a[3], 2)
+}

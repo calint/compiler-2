@@ -1,0 +1,6 @@
+# --checks=overlap: the destination starts inside the source, runtime count
+func main() {
+    var a = i32[8]
+    var n = 3
+    array_copy(a, a[1], n)
+}

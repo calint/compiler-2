@@ -3032,3 +3032,15 @@ SRC=986 && EXP=255 && RUN_ERR_OPTS "--checks=shift,line"
 
 # --checks=shift: constant count outside the width
 SRC=987 && OPTS="--checks=shift" COMPERR
+
+# --checks=overlap: disjoint, adjacent, identical and shifted down ranges pass
+SRC=988 && EXP=0 && RUN_ERR_OPTS "--checks=overlap"
+
+# --checks=overlap: destination starts inside the source
+SRC=989 && EXP=255 && RUN_ERR_OPTS "--checks=overlap"
+
+# --checks=overlap: destination starts inside the source, runtime count
+SRC=990 && EXP=255 && RUN_ERR_OPTS "--checks=overlap"
+
+# --checks=overlap,line: overlapping copy with the line
+SRC=991 && EXP=255 && RUN_ERR_OPTS "--checks=overlap,line"

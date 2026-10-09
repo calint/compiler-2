@@ -1,0 +1,22 @@
+# --checks=overlap: disjoint, adjacent, identical and shifted down ranges pass
+func assert(ok bool) { if not ok exit(1) }
+func main() {
+    var a = i32[8]
+    var b = i32[8]
+    a[0] = 1
+    a[1] = 2
+    array_copy(a, b, 8)
+    assert(b[1] == 2)
+    array_copy(a, a[4], 4)
+    assert(a[5] == 2)
+    array_copy(a, a, 8)
+    assert(a[1] == 2)
+    var n = 4
+    array_copy(a[4], a, n)
+    assert(a[1] == 2)
+    a[2] = 7
+    array_copy(a[1], a, 7)
+    assert(a[1] == 7)
+    array_copy(a, a, 0)
+    array_copy(a, a[1], 0)
+}

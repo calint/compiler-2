@@ -749,43 +749,58 @@ main:
 ;       [246:5] free scratch register r15
     func.assert.246.5.end:
 ;   [248:5] array_copy(arr[2], arr, 2)
-;   [248:5] allocate scratch register -> r15
+;   [248:5] allocate named register rsi
+;   [248:5] allocate named register rdi
+;   [248:5] allocate named register rcx
 ;   [248:29] 2
 ;   [248:29] 2
-    mov r15, 2
+    mov rcx, 2
 ;   [248:16] arr[2]
-;   [248:20] allocate scratch register -> r14
+;   [248:20] allocate scratch register -> r15
 ;   [248:20] set array index
 ;   [248:20] 2
-    mov r14, 2
+    mov r15, 2
 ;   [248:20] bounds check begin
 ;   [248:20] lower bound
-    test r14, r14
-    js baz_bounds_line_248
     test r15, r15
     js baz_bounds_line_248
+    test rcx, rcx
+    js baz_bounds_line_248
 ;   [248:20] upper bound
-;   [248:20] allocate scratch register -> r13
-    lea r13, [r15 + r14]
-    cmp r13, 4
-;   [248:20] free scratch register r13
+;   [248:20] allocate scratch register -> r14
+    lea r14, [rcx + r15]
+    cmp r14, 4
+;   [248:20] free scratch register r14
     jg baz_bounds_line_248
 ;   [248:20] bounds check end
+    lea rsi, [rbp + r15 * 4 + 424]
+;   [248:5] free scratch register r15
 ;   [248:24] arr
 ;   [248:24] bounds check begin
 ;   [248:24] lower bound
-;   [248:24] r15 lower bound covered by the unsigned upper bound
+;   [248:24] rcx lower bound covered by the unsigned upper bound
 ;   [248:24] upper bound
-    cmp r15, 4
+    cmp rcx, 4
     ja baz_bounds_line_248
 ;   [248:24] bounds check end
-;   [248:5] size <= 16 B, use mov
-;   [248:5] allocate named register rax
-    mov rax, qword [rbp + r14 * 4 + 424]
-    mov qword [rbp + 424], rax
-;   [248:5] free named register rax
-;   [248:5] free scratch register r14
+    lea rdi, [rbp + 424]
+    shl rcx, 2
+;   [248:5] overlap check begin
+;   [248:5] allocate scratch register -> r15
+    mov r15, rdi
+    sub r15, rsi
+;   [248:5] the same range is not an overlap
+    je .Lbaz_overlap.0
+;   [248:5] destination starts inside the source
+    cmp r15, rcx
+    jb baz_overlap_line_248
+    .Lbaz_overlap.0:
 ;   [248:5] free scratch register r15
+;   [248:5] overlap check end
+    rep movsb
+;   [248:5] free named register rcx
+;   [248:5] free named register rdi
+;   [248:5] free named register rsi
 ;   [249:5] assert(arr[0] == 2)
 ;   [249:12] allocate scratch register -> r15
 ;   [249:12] ? arr[0] == 2
@@ -824,34 +839,47 @@ main:
     mov qword [rbp + 464], 0
     mov qword [rbp + 472], 0
 ;   [253:5] array_copy(arr, arr1, 4)
-;   [253:5] allocate scratch register -> r15
+;   [253:5] allocate named register rsi
+;   [253:5] allocate named register rdi
+;   [253:5] allocate named register rcx
 ;   [253:27] 4
 ;   [253:27] 4
-    mov r15, 4
+    mov rcx, 4
 ;   [253:16] arr
 ;   [253:16] bounds check begin
 ;   [253:16] lower bound
-;   [253:16] r15 lower bound covered by the unsigned upper bound
+;   [253:16] rcx lower bound covered by the unsigned upper bound
 ;   [253:16] upper bound
-    cmp r15, 4
+    cmp rcx, 4
     ja baz_bounds_line_253
 ;   [253:16] bounds check end
+    lea rsi, [rbp + 424]
 ;   [253:21] arr1
 ;   [253:21] bounds check begin
 ;   [253:21] lower bound
-;   [253:21] r15 lower bound covered by the unsigned upper bound
+;   [253:21] rcx lower bound covered by the unsigned upper bound
 ;   [253:21] upper bound
-    cmp r15, 8
+    cmp rcx, 8
     ja baz_bounds_line_253
 ;   [253:21] bounds check end
-;   [253:5] size <= 16 B, use mov
-;   [253:5] allocate named register rax
-    mov rax, qword [rbp + 424]
-    mov qword [rbp + 448], rax
-    mov rax, qword [rbp + 432]
-    mov qword [rbp + 456], rax
-;   [253:5] free named register rax
+    lea rdi, [rbp + 448]
+    shl rcx, 2
+;   [253:5] overlap check begin
+;   [253:5] allocate scratch register -> r15
+    mov r15, rdi
+    sub r15, rsi
+;   [253:5] the same range is not an overlap
+    je .Lbaz_overlap.1
+;   [253:5] destination starts inside the source
+    cmp r15, rcx
+    jb baz_overlap_line_253
+    .Lbaz_overlap.1:
 ;   [253:5] free scratch register r15
+;   [253:5] overlap check end
+    rep movsb
+;   [253:5] free named register rcx
+;   [253:5] free named register rdi
+;   [253:5] free named register rsi
 ;   [254:5] var eq = arrays_equal(arr[1], arr1[1], 3)
 ;   [254:9] eq: bool (1 B @ [rbp + 480])
 ;   [254:9] eq = arrays_equal(arr[1], arr1[1], 3)
@@ -2488,38 +2516,48 @@ main:
 ;       [381:5] free scratch register r15
     func.assert.381.5.end:
 ;   [383:5] array_copy( worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations) )
-;   [383:5] allocate scratch register -> r15
-;   [386:9] array_length(worlds[0].locations)
-;   [386:9] r15 = 8
-;   [386:9] src: folded constant 'array_length(worlds[0].locations)'
-    mov r15, 8
-;   [384:9] worlds[1].locations
-;   [384:9] bounds check begin
-;   [384:9] lower bound
-;   [384:9] r15 lower bound covered by the unsigned upper bound
-;   [384:9] upper bound
-    cmp r15, 8
-    ja baz_bounds_line_384
-;   [384:9] bounds check end
-;   [385:9] worlds[0].locations
-;   [385:9] bounds check begin
-;   [385:9] lower bound
-;   [385:9] r15 lower bound covered by the unsigned upper bound
-;   [385:9] upper bound
-    cmp r15, 8
-    ja baz_bounds_line_385
-;   [385:9] bounds check end
 ;   [383:5] allocate named register rsi
 ;   [383:5] allocate named register rdi
 ;   [383:5] allocate named register rcx
+;   [386:9] array_length(worlds[0].locations)
+;   [386:9] rcx = 8
+;   [386:9] src: folded constant 'array_length(worlds[0].locations)'
+    mov rcx, 8
+;   [384:9] worlds[1].locations
+;   [384:9] bounds check begin
+;   [384:9] lower bound
+;   [384:9] rcx lower bound covered by the unsigned upper bound
+;   [384:9] upper bound
+    cmp rcx, 8
+    ja baz_bounds_line_384
+;   [384:9] bounds check end
     lea rsi, [rbp + 816]
+;   [385:9] worlds[0].locations
+;   [385:9] bounds check begin
+;   [385:9] lower bound
+;   [385:9] rcx lower bound covered by the unsigned upper bound
+;   [385:9] upper bound
+    cmp rcx, 8
+    ja baz_bounds_line_385
+;   [385:9] bounds check end
     lea rdi, [rbp + 752]
-    mov rcx, 64
+    shl rcx, 3
+;   [383:5] overlap check begin
+;   [383:5] allocate scratch register -> r15
+    mov r15, rdi
+    sub r15, rsi
+;   [383:5] the same range is not an overlap
+    je .Lbaz_overlap.2
+;   [383:5] destination starts inside the source
+    cmp r15, rcx
+    jb baz_overlap_line_383
+    .Lbaz_overlap.2:
+;   [383:5] free scratch register r15
+;   [383:5] overlap check end
     rep movsb
 ;   [383:5] free named register rcx
 ;   [383:5] free named register rdi
 ;   [383:5] free named register rsi
-;   [383:5] free scratch register r15
 ;   [390:5] assert(worlds[0].locations[1] == 0xffee)
 ;   [390:12] allocate scratch register -> r15
 ;   [390:12] ? worlds[0].locations[1] == 0xffee
@@ -3296,9 +3334,21 @@ func.print_num:
 ;           [154:31] allocate named register rax
             mov rax, r13
 ;           [154:31] allocate named register rdx
-            cqo
 ;           [154:31] allocate scratch register -> r12
             mov r12, 10
+;           [154:31] division check begin
+;           [154:31] zero divisor
+            cmp r12, 0
+            je baz_division_line_154
+;           [154:31] minimum divided by -1 overflows
+            cmp r12, -1
+            jne .Lbaz_division.6
+            mov rdx, -9223372036854775808
+            cmp rax, rdx
+            je baz_division_line_154
+            .Lbaz_division.6:
+;           [154:31] division check end
+            cqo
             idiv r12
 ;           [154:31] free scratch register r12
             mov r13, rdx
@@ -3310,16 +3360,28 @@ func.print_num:
 ;       [154:18] free scratch register r14
 ;       [154:9] free scratch register r15
 ;       [155:9] n = n / 10
-;       [155:13] instructions without scratch register 5, with 7
+;       [155:13] instructions without scratch register 13, with 15
 ;       [155:13] n
 ;       [155:17] n / 10
 ;       [155:17] src: constant
 ;       [155:17] allocate named register rax
         mov rax, qword [rbx + 32]
 ;       [155:17] allocate named register rdx
-        cqo
 ;       [155:17] allocate scratch register -> r15
         mov r15, 10
+;       [155:17] division check begin
+;       [155:17] zero divisor
+        cmp r15, 0
+        je baz_division_line_155
+;       [155:17] minimum divided by -1 overflows
+        cmp r15, -1
+        jne .Lbaz_division.7
+        mov rdx, -9223372036854775808
+        cmp rax, rdx
+        je baz_division_line_155
+        .Lbaz_division.7:
+;       [155:17] division check end
+        cqo
         idiv r15
 ;       [155:17] free scratch register r15
         mov qword [rbx + 32], rax
@@ -3465,6 +3527,91 @@ msg_frame_overflow:
 db `panic: frame overflow\n`
 msg_frame_overflow_len equ $ - msg_frame_overflow
 section .text
+; division failure handler (--checks=division)
+baz_division_line_154:
+    mov rbp, 154
+    jmp baz_division_panic
+baz_division_line_155:
+    mov rbp, 155
+baz_division_panic:
+;    print message to stderr
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_division]
+    mov rdx, msg_division_len
+    syscall
+baz_report_line:
+;    line number is in `rbp`
+    mov rax, rbp
+;    convert to string
+    mov rdi, strict qword num_buffer + 19
+    mov byte [rdi], 10
+    dec rdi
+    mov rcx, 10
+.convert_loop:
+    xor rdx, rdx
+    div rcx
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .convert_loop
+    inc rdi
+;    print line number to stderr
+    mov rax, 1
+    mov rsi, rdi
+    mov rdx, strict qword num_buffer + 20
+    sub rdx, rdi
+    mov rdi, 2
+    syscall
+;    exit with error code 255
+    mov rax, 60
+    mov rdi, 255
+    syscall
+section .bss
+num_buffer:
+resb 21
+section .rodata
+msg_division:
+db `panic: division at line `
+msg_division_len equ $ - msg_division
+section .text
+; overlap failure handler (--checks=overlap)
+baz_overlap_line_248:
+    mov rbp, 248
+    jmp baz_overlap_panic
+baz_overlap_line_253:
+    mov rbp, 253
+    jmp baz_overlap_panic
+baz_overlap_line_383:
+    mov rbp, 383
+baz_overlap_panic:
+;    print message to stderr
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_overlap]
+    mov rdx, msg_overlap_len
+    syscall
+    jmp baz_report_line
+section .rodata
+msg_overlap:
+db `panic: overlap at line `
+msg_overlap_len equ $ - msg_overlap
+section .text
+; shift failure handler (--checks=shift)
+baz_shift_panic:
+;    print message to stderr
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_shift]
+    mov rdx, msg_shift_len
+    syscall
+    jmp baz_report_line
+section .rodata
+msg_shift:
+db `panic: shift at line `
+msg_shift_len equ $ - msg_shift
+section .text
 ; bounds failure handler (--checks=upper or --checks=lower)
 baz_bounds_line_96:
     mov rbp, 96
@@ -3532,40 +3679,12 @@ baz_bounds_panic:
     lea rsi, [msg_panic]
     mov rdx, msg_panic_len
     syscall
-;    line number is in `rbp`
-    mov rax, rbp
-;    convert to string
-    mov rdi, strict qword num_buffer + 19
-    mov byte [rdi], 10
-    dec rdi
-    mov rcx, 10
-.convert_loop:
-    xor rdx, rdx
-    div rcx
-    add dl, '0'
-    mov [rdi], dl
-    dec rdi
-    test rax, rax
-    jnz .convert_loop
-    inc rdi
-;    print line number to stderr
-    mov rax, 1
-    mov rsi, rdi
-    mov rdx, strict qword num_buffer + 20
-    sub rdx, rdi
-    mov rdi, 2
-    syscall
-;    exit with error code 255
-    mov rax, 60
-    mov rdi, 255
-    syscall
+    jmp baz_report_line
 section .rodata
 msg_panic:
 db `panic: bounds at line `
 msg_panic_len equ $ - msg_panic
-section .bss
-num_buffer:
-resb 21
+section .text
 
 section .data
 align 16
@@ -3631,9 +3750,9 @@ vars.end:
 
 ;           noinline functions:
 ;                    factorial: 1 body, 2 calls, 35 instructions
-;                    print_num: 1 body, 2 calls, 62 instructions
+;                    print_num: 1 body, 2 calls, 76 instructions
 ;
-;   removed jumps to next code: 129
+;   removed jumps to next code: 131
 ;    removed unreachable jumps: 2
 ; removed same target branches: 54
 ; inverted branches over jumps: 7
@@ -3642,7 +3761,7 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 979
+;                 instructions: 1036
 ;
 ; register use at the peak: 6 of 14 registers live, 2 named by instructions
 ;

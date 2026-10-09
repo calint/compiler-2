@@ -192,8 +192,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        unchanged); awaiting go-ahead
 [ ] medium: --checks=noub: division by zero traps and MIN / -1 wraps or traps
     by width; check and panic with the line
-[ ] medium: --checks=noub: overlapping 'array_copy': check ranges at run-time or
-    define as memmove, warn when it can be detected at compile time
 [ ] medium: --checks=noub: signed overflow wraps; define wrapping as the
     semantics or add --checks=overflow (x86 'jo', rv32i several instructions)
 [ ] medium: --checks=noub: system stack overflow in deep non-inline recursion

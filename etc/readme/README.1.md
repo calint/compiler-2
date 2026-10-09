@@ -32,6 +32,8 @@ compiler writes the binary image itself.
   * opt-in: division by zero and `MIN / -1` at runtime
   * opt-in: shift count outside the type width at runtime, a constant count
     is rejected at compile time
+  * opt-in: `array_copy` whose destination starts inside the source at
+    runtime, a copy down the array is allowed
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
   * on by default: compile time rejection of calls and assignments where the
@@ -42,7 +44,6 @@ compiler writes the binary image itself.
 * methods and constructors on user defined types
 * partial ub-free support
   * not checked: signed overflow, it wraps
-  * not checked: overlapping `array_copy`
   * not checked: stack overflow in deep `noinline` recursion
 * basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,

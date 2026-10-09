@@ -332,19 +332,27 @@ main:
             syscall
         if.38.24.246.5.end:
     func.assert.246.5.end:
+    mov rcx, 2
     mov r15, 2
-    mov r14, 2
-    test r14, r14
-    js baz_bounds_line_248
     test r15, r15
     js baz_bounds_line_248
-    lea r13, [r15 + r14]
-    cmp r13, 4
+    test rcx, rcx
+    js baz_bounds_line_248
+    lea r14, [rcx + r15]
+    cmp r14, 4
     jg baz_bounds_line_248
-    cmp r15, 4
+    lea rsi, [rbp + r15 * 4 + 424]
+    cmp rcx, 4
     ja baz_bounds_line_248
-    mov rax, qword [rbp + r14 * 4 + 424]
-    mov qword [rbp + 424], rax
+    lea rdi, [rbp + 424]
+    shl rcx, 2
+    mov r15, rdi
+    sub r15, rsi
+    je .Lbaz_overlap.0
+    cmp r15, rcx
+    jb baz_overlap_line_248
+    .Lbaz_overlap.0:
+    rep movsb
     cmp.249.12:
     cmp dword [rbp + 424], 2
     sete r15b
@@ -364,15 +372,21 @@ main:
     mov qword [rbp + 456], 0
     mov qword [rbp + 464], 0
     mov qword [rbp + 472], 0
-    mov r15, 4
-    cmp r15, 4
+    mov rcx, 4
+    cmp rcx, 4
     ja baz_bounds_line_253
-    cmp r15, 8
+    lea rsi, [rbp + 424]
+    cmp rcx, 8
     ja baz_bounds_line_253
-    mov rax, qword [rbp + 424]
-    mov qword [rbp + 448], rax
-    mov rax, qword [rbp + 432]
-    mov qword [rbp + 456], rax
+    lea rdi, [rbp + 448]
+    shl rcx, 2
+    mov r15, rdi
+    sub r15, rsi
+    je .Lbaz_overlap.1
+    cmp r15, rcx
+    jb baz_overlap_line_253
+    .Lbaz_overlap.1:
+    rep movsb
     cmp.254.14:
         mov rcx, 3
         mov r15, 1
@@ -1117,14 +1131,20 @@ main:
             syscall
         if.38.24.381.5.end:
     func.assert.381.5.end:
-    mov r15, 8
-    cmp r15, 8
+    mov rcx, 8
+    cmp rcx, 8
     ja baz_bounds_line_384
-    cmp r15, 8
-    ja baz_bounds_line_385
     lea rsi, [rbp + 816]
+    cmp rcx, 8
+    ja baz_bounds_line_385
     lea rdi, [rbp + 752]
-    mov rcx, 64
+    shl rcx, 3
+    mov r15, rdi
+    sub r15, rsi
+    je .Lbaz_overlap.2
+    cmp r15, rcx
+    jb baz_overlap_line_383
+    .Lbaz_overlap.2:
     rep movsb
     cmp.390.12:
     cmp qword [rbp + 760], 65518
@@ -1440,15 +1460,31 @@ func.print_num:
             mov r14, 48
             mov r13, qword [rbx + 32]
             mov rax, r13
-            cqo
             mov r12, 10
+            cmp r12, 0
+            je baz_division_line_154
+            cmp r12, -1
+            jne .Lbaz_division.6
+            mov rdx, -9223372036854775808
+            cmp rax, rdx
+            je baz_division_line_154
+            .Lbaz_division.6:
+            cqo
             idiv r12
             mov r13, rdx
             sub r14, r13
         mov byte [rbx + r15 + 8], r14b
         mov rax, qword [rbx + 32]
-        cqo
         mov r15, 10
+        cmp r15, 0
+        je baz_division_line_155
+        cmp r15, -1
+        jne .Lbaz_division.7
+        mov rdx, -9223372036854775808
+        cmp rax, rdx
+        je baz_division_line_155
+        .Lbaz_division.7:
+        cqo
         idiv r15
         mov qword [rbx + 32], rax
         if.156.12:
@@ -1510,6 +1546,81 @@ section .rodata
 msg_frame_overflow:
 db `panic: frame overflow\n`
 msg_frame_overflow_len equ $ - msg_frame_overflow
+section .text
+baz_division_line_154:
+    mov rbp, 154
+    jmp baz_division_panic
+baz_division_line_155:
+    mov rbp, 155
+baz_division_panic:
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_division]
+    mov rdx, msg_division_len
+    syscall
+baz_report_line:
+    mov rax, rbp
+    mov rdi, strict qword num_buffer + 19
+    mov byte [rdi], 10
+    dec rdi
+    mov rcx, 10
+.convert_loop:
+    xor rdx, rdx
+    div rcx
+    add dl, '0'
+    mov [rdi], dl
+    dec rdi
+    test rax, rax
+    jnz .convert_loop
+    inc rdi
+    mov rax, 1
+    mov rsi, rdi
+    mov rdx, strict qword num_buffer + 20
+    sub rdx, rdi
+    mov rdi, 2
+    syscall
+    mov rax, 60
+    mov rdi, 255
+    syscall
+section .bss
+num_buffer:
+resb 21
+section .rodata
+msg_division:
+db `panic: division at line `
+msg_division_len equ $ - msg_division
+section .text
+baz_overlap_line_248:
+    mov rbp, 248
+    jmp baz_overlap_panic
+baz_overlap_line_253:
+    mov rbp, 253
+    jmp baz_overlap_panic
+baz_overlap_line_383:
+    mov rbp, 383
+baz_overlap_panic:
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_overlap]
+    mov rdx, msg_overlap_len
+    syscall
+    jmp baz_report_line
+section .rodata
+msg_overlap:
+db `panic: overlap at line `
+msg_overlap_len equ $ - msg_overlap
+section .text
+baz_shift_panic:
+    mov rax, 1
+    mov rdi, 2
+    lea rsi, [msg_shift]
+    mov rdx, msg_shift_len
+    syscall
+    jmp baz_report_line
+section .rodata
+msg_shift:
+db `panic: shift at line `
+msg_shift_len equ $ - msg_shift
 section .text
 baz_bounds_line_96:
     mov rbp, 96
@@ -1576,36 +1687,12 @@ baz_bounds_panic:
     lea rsi, [msg_panic]
     mov rdx, msg_panic_len
     syscall
-    mov rax, rbp
-    mov rdi, strict qword num_buffer + 19
-    mov byte [rdi], 10
-    dec rdi
-    mov rcx, 10
-.convert_loop:
-    xor rdx, rdx
-    div rcx
-    add dl, '0'
-    mov [rdi], dl
-    dec rdi
-    test rax, rax
-    jnz .convert_loop
-    inc rdi
-    mov rax, 1
-    mov rsi, rdi
-    mov rdx, strict qword num_buffer + 20
-    sub rdx, rdi
-    mov rdi, 2
-    syscall
-    mov rax, 60
-    mov rdi, 255
-    syscall
+    jmp baz_report_line
 section .rodata
 msg_panic:
 db `panic: bounds at line `
 msg_panic_len equ $ - msg_panic
-section .bss
-num_buffer:
-resb 21
+section .text
 section .data
 align 16
 dat:

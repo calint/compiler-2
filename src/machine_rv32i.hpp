@@ -895,6 +895,12 @@ class machine_rv32i : public machine {
 
         scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
 
+        if (request.overlap.enabled) {
+            check_copy_overlap(src_loc_tk, indent, registers.at(0),
+                               registers.at(1), registers.at(2),
+                               request.overlap);
+        }
+
         copy_runtime_count(src_loc_tk, indent, registers.at(0), registers.at(1),
                            registers.at(2), bulk_starts(), request.alignment);
 
@@ -1015,34 +1021,8 @@ class machine_rv32i : public machine {
     }
 
     auto emit_division_failure_handler(const bool with_line) -> void override {
-
-        constexpr std::string_view message{"panic: division"};
-        constexpr std::array<int64_t, 1> newline{'\n'};
-
-        label(0, division_failure_handler_label);
-
-        if (with_line) {
-            emit_line_failure(".Lbaz_division_message",
-                              "panic: division at line ");
-
-            return;
-        }
-
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", ".Lbaz_division_message");
-        // the newline follows the message text
-        assembler_.li(1, "a2", message.size() + 1);
-        emit_write_call(1);
-
-        exit(token{}, 1,
-             operand::imm(std::format("{}", panic_exit_code), default_type()));
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, ".Lbaz_division_message");
-        assembler_.ascii(message);
-        assembler_.data(1, newline);
-        // the next handler may follow and must stay in the code section
-        assembler_.switch_section(section::text);
+        emit_named_failure_handler(division_failure_handler_label, "division",
+                                   with_line);
     }
 
     auto emit_frame_overflow_handler() -> void override {
@@ -1081,6 +1061,11 @@ class machine_rv32i : public machine {
         });
     }
 
+    auto emit_overlap_failure_handler(const bool with_line) -> void override {
+        emit_named_failure_handler(overlap_failure_handler_label, "overlap",
+                                   with_line);
+    }
+
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
                             const data_initializer& value) -> void override {
 
@@ -1094,32 +1079,8 @@ class machine_rv32i : public machine {
     }
 
     auto emit_shift_failure_handler(const bool with_line) -> void override {
-
-        constexpr std::string_view message{"panic: shift"};
-        constexpr std::array<int64_t, 1> newline{'\n'};
-
-        label(0, shift_failure_handler_label);
-
-        if (with_line) {
-            emit_line_failure(".Lbaz_shift_message", "panic: shift at line ");
-            return;
-        }
-
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", ".Lbaz_shift_message");
-        // the newline follows the message text
-        assembler_.li(1, "a2", message.size() + 1);
-        emit_write_call(1);
-
-        exit(token{}, 1,
-             operand::imm(std::format("{}", panic_exit_code), default_type()));
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, ".Lbaz_shift_message");
-        assembler_.ascii(message);
-        assembler_.data(1, newline);
-        // the next handler may follow and must stay in the code section
-        assembler_.switch_section(section::text);
+        emit_named_failure_handler(shift_failure_handler_label, "shift",
+                                   with_line);
     }
 
     auto emit_string_constants(const std::span<const string_constant> strings)
@@ -1885,6 +1846,51 @@ class machine_rv32i : public machine {
 
         // memory destinations need their original address registers back
         copy_value(src_loc_tk, indent, dst, kept);
+    }
+
+    // a distance from the source to the destination that is not zero and below
+    // the byte count jumps to the failure handler, the copy would overwrite
+    // source bytes it has not read yet, the line is passed in 'a0'
+    auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
+                            const operand& src, const operand& dst,
+                            const operand& count_bytes,
+                            const overlap_check_options& check) -> void {
+
+        constexpr local_label passed{
+            .name{"1"},
+            .reference{"1f"},
+        };
+
+        comment(src_loc_tk, indent, "overlap check begin");
+
+        const operand distance{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        assembler_.sub(indent, distance.base_register(), dst.base_register(),
+                       src.base_register());
+
+        comment(src_loc_tk, indent, "the same range is not an overlap");
+
+        assembler_.beqz(indent, distance.base_register(), passed.reference);
+
+        comment(src_loc_tk, indent, "destination starts inside the source");
+
+        assembler_.bgeu(indent, distance.base_register(),
+                        count_bytes.base_register(), passed.reference);
+
+        free_scratch_register(src_loc_tk, indent, distance);
+
+        comment(src_loc_tk, indent, "failed: report and exit");
+
+        if (check.with_line) {
+            assembler_.li(indent, "a0", src_loc_tk.at_line());
+        }
+
+        branch(indent, overlap_failure_handler_label);
+        assembler_.label(indent, passed.name);
+
+        comment(src_loc_tk, indent, "overlap check end");
     }
 
     // jumps to the failure handler when the divisor in 'a1' is zero or the
@@ -3137,6 +3143,43 @@ class machine_rv32i : public machine {
 
         registers_.mark_lower_checked(
             register_mask(lower_checked_register(reg_to_check, reg_count)));
+    }
+
+    // the handler of a check that prints 'panic: NAME', with the line number
+    // in a0 when 'with_line', then exits
+    auto emit_named_failure_handler(const std::string_view handler_label,
+                                    const std::string_view name,
+                                    const bool with_line) -> void {
+
+        constexpr std::array<int64_t, 1> newline{'\n'};
+
+        const std::string message_label{std::format(".Lbaz_{}_message", name)};
+        const std::string message{std::format("panic: {}", name)};
+
+        label(0, handler_label);
+
+        if (with_line) {
+            emit_line_failure(message_label,
+                              std::format("panic: {} at line ", name));
+
+            return;
+        }
+
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", message_label);
+        // the newline follows the message text
+        assembler_.li(1, "a2", message.size() + 1);
+        emit_write_call(1);
+
+        exit(token{}, 1,
+             operand::imm(std::format("{}", panic_exit_code), default_type()));
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+        assembler_.ascii(message);
+        assembler_.data(1, newline);
+        // the next handler may follow and must stay in the code section
+        assembler_.switch_section(section::text);
     }
 
     // the result replaces the value in 'loaded', a partial sum goes through a

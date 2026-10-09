@@ -103,7 +103,8 @@ class stmt_builtin_array_copy final : public statement {
 
         // a negative count keeps the loop so '--checks=lower' rejects it at
         // run time
-        if (count and *count >= 0) {
+        // the overlap check compares the addresses of the runtime copy
+        if (count and *count >= 0 and not tc.is_overlap_check()) {
             compile_constant_count(tc, indent, array_src_info, array_dst_info,
                                    static_cast<size_t>(*count));
 
@@ -128,6 +129,7 @@ class stmt_builtin_array_copy final : public statement {
                             .alignment{array_src_info.type_ref().alignment()},
                             .src{emit_src},
                             .dst{emit_dst},
+                            .overlap{tc.overlap_check_options()},
                         });
     }
 

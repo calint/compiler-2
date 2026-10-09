@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: --checks=noub: overlapping 'array_copy': check ranges at run-time or
+    define as memmove, warn when it can be detected at compile time
+    => done (2026-10-09): '--checks=overlap' (part of 'noub'): a runtime
+       'array_copy' whose destination starts inside the source (the same range
+       and a copy down the array are allowed, the ascending copy never
+       overwrites unread source bytes) jumps to 'baz_overlap_panic' ('panic:
+       overlap', with the line under 'line', fpga exit code 251); under the check a constant count takes the runtime path
+       so the addresses are compared; no compile time rejection of constant
+       ranges; tests 988 to 991
 [x] medium: --checks=noub: shift count < 0 or >= width is masked by hardware
     differently per width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2); check or
     define
