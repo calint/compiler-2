@@ -124,15 +124,15 @@ CLI_JUMP_OPTIMIZATIONS() {
 CLI_CHECKS_NOUB() {
     echo -n "cli --checks=noub expansion: "
     "$BIN" --checks=noub 015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,frame,alias,division 015.baz >out 2>err
+    "$BIN" --checks=upper,lower,frame,alias,division,shift 015.baz >out 2>err
     cmp -s gen.s out
     "$BIN" --checks=line,noub 015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower,line,frame,alias,division 015.baz >out 2>err
+    "$BIN" --checks=upper,lower,line,frame,alias,division,shift 015.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=noub,-division 015.baz >gen.s 2>err
+    "$BIN" --checks=noub,-division,-shift 015.baz >gen.s 2>err
     "$BIN" --checks=upper,lower,frame,alias 015.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=-division,noub 015.baz >gen.s 2>err
+    "$BIN" --checks=-division,-shift,noub 015.baz >gen.s 2>err
     cmp -s gen.s out
     "$BIN" --checks=+division 015.baz >gen.s 2>err
     "$BIN" --checks=division 015.baz >out 2>err

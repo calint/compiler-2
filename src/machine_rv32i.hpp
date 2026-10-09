@@ -1093,6 +1093,35 @@ class machine_rv32i : public machine {
                                  value.value);
     }
 
+    auto emit_shift_failure_handler(const bool with_line) -> void override {
+
+        constexpr std::string_view message{"panic: shift"};
+        constexpr std::array<int64_t, 1> newline{'\n'};
+
+        label(0, shift_failure_handler_label);
+
+        if (with_line) {
+            emit_line_failure(".Lbaz_shift_message", "panic: shift at line ");
+            return;
+        }
+
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", ".Lbaz_shift_message");
+        // the newline follows the message text
+        assembler_.li(1, "a2", message.size() + 1);
+        emit_write_call(1);
+
+        exit(token{}, 1,
+             operand::imm(std::format("{}", panic_exit_code), default_type()));
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, ".Lbaz_shift_message");
+        assembler_.ascii(message);
+        assembler_.data(1, newline);
+        // the next handler may follow and must stay in the code section
+        assembler_.switch_section(section::text);
+    }
+
     auto emit_string_constants(const std::span<const string_constant> strings)
         -> void override {
 
@@ -1395,7 +1424,8 @@ class machine_rv32i : public machine {
 
     auto shift(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const operand& count) -> void override {
+               const operand& count, const shift_check_options& check)
+        -> void override {
 
         assert(operation == arithmetic_operator::shift_left or
                operation == arithmetic_operator::shift_right);
@@ -1443,7 +1473,8 @@ class machine_rv32i : public machine {
             return;
         }
 
-        shift_by_register(src_loc_tk, indent, operation, dst, count, loaded);
+        shift_by_register(src_loc_tk, indent, operation, dst, count, loaded,
+                          check);
     }
 
     [[nodiscard]] auto slot_register() const -> std::string_view override {
@@ -1931,6 +1962,42 @@ class machine_rv32i : public machine {
 
         // a negative count passes 'start + count' but spans the address space
         check_negative(reg_count.base_register(), is_last);
+    }
+
+    // a count below zero or not below the width jumps to the failure handler,
+    // a negative count is a large unsigned one, the line is passed in 'a0'
+    auto check_shift_count(const token& src_loc_tk, const size_t indent,
+                           const operand& amount, const type& dst_type,
+                           const shift_check_options& check) -> void {
+
+        constexpr local_label pass{
+            .name{"1"},
+            .reference{"1f"},
+        };
+
+        comment(src_loc_tk, indent, "shift check begin");
+
+        const operand limit{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        assembler_.li(indent, limit.base_register(), dst_type.size_bits());
+
+        assembler_.bltu(indent, amount.base_register(), limit.base_register(),
+                        pass.reference);
+
+        free_scratch_register(src_loc_tk, indent, limit);
+
+        comment(src_loc_tk, indent, "failed: report and exit");
+
+        if (check.with_line) {
+            assembler_.li(indent, "a0", src_loc_tk.at_line());
+        }
+
+        branch(indent, shift_failure_handler_label);
+        assembler_.label(indent, pass.name);
+
+        comment(src_loc_tk, indent, "shift check end");
     }
 
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
@@ -3443,7 +3510,8 @@ class machine_rv32i : public machine {
         if (factor_info.kind == factor_kind::power_of_two) {
             shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
                   operand::imm(std::format("{}", factor_info.shift),
-                               default_type()));
+                               default_type()),
+                  shift_check_options{});
 
             return;
         }
@@ -3656,11 +3724,17 @@ class machine_rv32i : public machine {
     auto shift_by_register(const token& src_loc_tk, const size_t indent,
                            const arithmetic_operator operation,
                            const operand& dst, const operand& count,
-                           const loaded_destination& loaded) -> void {
+                           const loaded_destination& loaded,
+                           const shift_check_options& check) -> void {
 
         const operand amount{
             source_register(src_loc_tk, indent, count, std::nullopt),
         };
+
+        if (check.enabled) {
+            check_shift_count(src_loc_tk, indent, amount, dst.type_ref(),
+                              check);
+        }
 
         const bool is_left{operation == arithmetic_operator::shift_left};
 

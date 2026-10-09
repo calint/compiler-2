@@ -889,6 +889,7 @@ struct check_options {
     // on unless '--checks=-alias'
     bool alias{true};
     bool division{};
+    bool shift{};
 };
 
 // what the compile used, for the report
@@ -2613,6 +2614,8 @@ class toc final {
         return builtins_.is_integer_name(name);
     }
 
+    [[nodiscard]] auto is_shift_check() const -> bool { return checks_.shift; }
+
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
         -> bool {
 
@@ -2743,6 +2746,15 @@ class toc final {
     auto set_type_bool(const type& tpe) -> void { builtins_.set_boolean(tpe); }
 
     auto set_type_void(const type& tpe) -> void { builtins_.set_void(tpe); }
+
+    [[nodiscard]] auto shift_check_options() const
+        -> machine::shift_check_options {
+
+        return {
+            .enabled{checks_.shift},
+            .with_line{checks_.bounds_with_line},
+        };
+    }
 
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const

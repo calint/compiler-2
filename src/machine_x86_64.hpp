@@ -191,6 +191,8 @@ class machine_x86_64 final : public machine {
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
     std::set<size_t> division_panic_lines_;
+    // the lines that have a stub of the shift failure handler
+    std::set<size_t> shift_panic_lines_;
     // source lines of the bounds checks, each gets a stub that reports it
     std::set<size_t> bounds_panic_lines_;
 
@@ -745,35 +747,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_division_failure_handler(const bool with_line) -> void override {
-
-        if (with_line) {
-            // one stub per line sets rbp and enters the handler
-            for (const size_t line : division_panic_lines_) {
-                assembler_.label(0, division_panic_label(line));
-                assembler_.instruction(1, op::mov, "rbp", line);
-                assembler_.jmp(1, division_failure_handler_label);
-            }
-        }
-
-        assembler_.label(0, division_failure_handler_label);
-        emit_panic_message("msg_division");
-
-        if (with_line) {
-            emit_report_line();
-        } else {
-            emit_panic_exit();
-        }
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, "msg_division");
-
-        assembler_.string_data(with_line ? "panic: division at line "
-                                         : "panic: division\\n");
-
-        assembler_.define_length("msg_division_len", "msg_division");
-
-        // the next handler may follow and must stay in the code section
-        assembler_.switch_section(section::text);
+        emit_line_panic_handler(with_line, "division", division_panic_lines_,
+                                division_failure_handler_label);
     }
 
     auto emit_frame_overflow_handler() -> void override {
@@ -830,6 +805,11 @@ class machine_x86_64 final : public machine {
 
         assembler_.repeated_data(element_size_bytes, count, value.uops,
                                  value.value);
+    }
+
+    auto emit_shift_failure_handler(const bool with_line) -> void override {
+        emit_line_panic_handler(with_line, "shift", shift_panic_lines_,
+                                shift_failure_handler_label);
     }
 
     auto emit_string_constants(const std::span<const string_constant> strings)
@@ -1142,7 +1122,8 @@ class machine_x86_64 final : public machine {
 
     auto shift(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const operand& count) -> void override {
+               const operand& count, const shift_check_options& check)
+        -> void override {
 
         assert(operation == arithmetic_operator::shift_left or
                operation == arithmetic_operator::shift_right);
@@ -1152,6 +1133,10 @@ class machine_x86_64 final : public machine {
         };
 
         if (count.is_immediate()) {
+            if (check.enabled) {
+                validate_shift_constant(src_loc_tk, dst, count);
+            }
+
             emit_op(src_loc_tk, indent, code, dst,
                     shift_count_immediate(count));
 
@@ -1163,6 +1148,10 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent,
             sized_register("rcx", dst.type_ref().size_bytes()), count);
+
+        if (check.enabled) {
+            check_shift_count(src_loc_tk, indent, dst.type_ref(), check);
+        }
 
         emit_op(src_loc_tk, indent, code, dst,
                 sized_register("rcx", size_byte));
@@ -1442,6 +1431,28 @@ class machine_x86_64 final : public machine {
         // note: -1 gives the signed maximum 2^(bits - 1) - 1
     }
 
+    // a constant count outside the width is a compile error under the check
+    static auto validate_shift_constant(const token& src_loc_tk,
+                                        const operand& dst,
+                                        const operand& count) -> void {
+
+        const std::optional<uint64_t> bits{immediate_bits(count)};
+
+        assert(bits);
+
+        const size_t width_bits{dst.type_ref().size_bits()};
+
+        if (static_cast<int64_t>(*bits) >= 0 and *bits < width_bits) {
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("shift count must be 0 to {} for {}-bit values",
+                        width_bits - 1, width_bits)};
+        // note: width_bits - 1 because the count is below the width
+    }
+
   protected:
     //
     // overridden methods
@@ -1560,7 +1571,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "division check begin");
 
         const std::string failure_label{
-            with_line ? division_panic_label(src_loc_tk.at_line())
+            with_line ? line_panic_label("division", src_loc_tk.at_line())
                       : std::string{division_failure_handler_label},
         };
 
@@ -1583,6 +1594,31 @@ class machine_x86_64 final : public machine {
         assembler_.label(indent, not_minimum);
 
         comment(src_loc_tk, indent, "division check end");
+    }
+
+    // a count in 'rcx' below zero or not below the width jumps to the failure
+    // handler, a negative count is a large unsigned one
+    auto check_shift_count(const token& src_loc_tk, const size_t indent,
+                           const type& dst_type,
+                           const shift_check_options& check) -> void {
+
+        comment(src_loc_tk, indent, "shift check begin");
+
+        const std::string failure_label{
+            check.with_line ? line_panic_label("shift", src_loc_tk.at_line())
+                            : std::string{shift_failure_handler_label},
+        };
+
+        if (check.with_line) {
+            shift_panic_lines_.insert(src_loc_tk.at_line());
+        }
+
+        cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
+            immediate(static_cast<int64_t>(dst_type.size_bits())));
+
+        assembler_.jcc(indent, condition::ae, failure_label);
+
+        comment(src_loc_tk, indent, "shift check end");
     }
 
     auto cmp(const token& src_loc_tk, const size_t indent,
@@ -1691,6 +1727,46 @@ class machine_x86_64 final : public machine {
         emit(indent, op::mov, reg, src_op);
         emit(indent, code, dst_op, reg);
         free_scratch_register(src_loc_tk, indent, reg);
+    }
+
+    // the handler of a check that may report the line: one stub per line sets
+    // rbp and enters the handler, then the message 'panic: NAME' is printed
+    auto emit_line_panic_handler(const bool with_line,
+                                 const std::string_view name,
+                                 const std::set<size_t>& panic_lines,
+                                 const std::string_view handler_label) -> void {
+
+        const std::string message_label{std::format("msg_{}", name)};
+
+        if (with_line) {
+            for (const size_t line : panic_lines) {
+                assembler_.label(0, line_panic_label(name, line));
+                assembler_.instruction(1, op::mov, "rbp", line);
+                assembler_.jmp(1, handler_label);
+            }
+        }
+
+        assembler_.label(0, handler_label);
+        emit_panic_message(message_label);
+
+        if (with_line) {
+            emit_report_line();
+        } else {
+            emit_panic_exit();
+        }
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+
+        assembler_.string_data(with_line
+                                   ? std::format("panic: {} at line ", name)
+                                   : std::format("panic: {}\\n", name));
+
+        assembler_.define_length(std::format("{}_len", message_label),
+                                 message_label);
+
+        // the next handler may follow and must stay in the code section
+        assembler_.switch_section(section::text);
     }
 
     // x86 has no memory to memory form, the source goes through a register of
@@ -2472,10 +2548,11 @@ class machine_x86_64 final : public machine {
         return condition::ge;
     }
 
-    [[nodiscard]] static auto division_panic_label(const size_t line)
+    [[nodiscard]] static auto line_panic_label(const std::string_view name,
+                                               const size_t line)
         -> std::string {
 
-        return std::format("baz_division_line_{}", line);
+        return std::format("baz_{}_line_{}", name, line);
     }
 
     // the qwords, then the remaining dword, word and byte

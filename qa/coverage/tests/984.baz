@@ -1,0 +1,9 @@
+# --checks=shift: a negative count panics
+func noinline shr(a, n) res {
+    res = a >> n
+}
+func main() {
+    var n = -1
+    var x = shr(1, n)
+    exit(x)
+}

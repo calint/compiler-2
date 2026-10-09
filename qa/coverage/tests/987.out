@@ -1,0 +1,4 @@
+
+987.baz:4:14: shift count must be 0 to 63 for 64-bit values
+    x = x << 70
+             ^~

@@ -650,6 +650,11 @@ class program final {
             x.emit_division_failure_handler(tc.is_bounds_check_with_line());
         }
 
+        if (tc.is_shift_check()) {
+            x.comment({}, 0, "shift failure handler (--checks=shift)");
+            x.emit_shift_failure_handler(tc.is_bounds_check_with_line());
+        }
+
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
             x.comment({}, 0,
                       "bounds failure handler (--checks=upper or "

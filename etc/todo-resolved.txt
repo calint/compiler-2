@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: --checks=noub: shift count < 0 or >= width is masked by hardware
+    differently per width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2); check or
+    define
+    => done (2026-10-09): '--checks=shift' (part of 'noub'): a run-time count
+       below zero or not below the width of the shifted type jumps to
+       'baz_shift_panic' ('panic: shift', with the line under 'line', fpga
+       exit code 252); a constant count outside the width is a compile error;
+       on rv32i the width is that of the register the shift runs in; tests
+       982 to 987
 [x] easy: low priority: --checks=alias: a 'foo' over a fixed-index slice is
     rejected against a run-time indexed read of another field of the same
     variable (false positive, never a missed overlap): 'foo es[1].items {

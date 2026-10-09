@@ -30,6 +30,8 @@ compiler writes the binary image itself.
   * opt-in: array bounds at runtime, optionally reporting the line number
   * opt-in: non-inlined function frame capacity at runtime
   * opt-in: division by zero and `MIN / -1` at runtime
+  * opt-in: shift count outside the type width at runtime, a constant count
+    is rejected at compile time
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
   * on by default: compile time rejection of calls and assignments where the
@@ -39,7 +41,6 @@ compiler writes the binary image itself.
 * support for non-inlined functions
 * methods and constructors on user defined types
 * partial ub-free support
-  * not checked: shift count outside the type width
   * not checked: signed overflow, it wraps
   * not checked: overlapping `array_copy`
   * not checked: stack overflow in deep `noinline` recursion
@@ -121,13 +122,14 @@ reports:
 checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
-  line     report line number on failed bounds or division check
+  line     report line number on failed bounds, division or shift check
   frame    runtime non-inlined function frame capacity
   alias    compile time rejection of calls where a result may share storage
            with an argument, on by default
   division runtime division by zero and 'MIN / -1'
-  noub     all checks against undefined behavior: upper, lower, frame, alias
-           and division
+  shift    runtime shift count below zero or not below the width of the type
+  noub     all checks against undefined behavior: upper, lower, frame, alias,
+           division and shift
   -NAME    turns a check off after the others are applied, e.g.
            noub,-division or -alias (also when noub is given), +NAME is NAME
 
@@ -152,10 +154,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    57           7895           3408          23449
-C++                              1            175             51            587
+C/C++ Header                    57           8020           3460          23788
+C++                              1            188             53            628
 -------------------------------------------------------------------------------
-SUM:                            58           8070           3459          24036
+SUM:                            58           8208           3513          24416
 -------------------------------------------------------------------------------
 ```
 

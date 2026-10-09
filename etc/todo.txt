@@ -192,9 +192,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        unchanged); awaiting go-ahead
 [ ] medium: --checks=noub: division by zero traps and MIN / -1 wraps or traps
     by width; check and panic with the line
-[ ] medium: --checks=noub: shift count < 0 or >= width is masked by hardware
-    differently per width ('i8 1 << 9' is 0, 'i32 1 << 33' is 2); check or
-    define
 [ ] medium: --checks=noub: overlapping 'array_copy': check ranges at run-time or
     define as memmove, warn when it can be detected at compile time
 [ ] medium: --checks=noub: signed overflow wraps; define wrapping as the

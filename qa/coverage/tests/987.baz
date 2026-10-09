@@ -1,0 +1,6 @@
+# --checks=shift: a constant count outside the width is rejected
+func main() {
+    var x = 1
+    x = x << 70
+    exit(x)
+}

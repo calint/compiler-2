@@ -1,0 +1,9 @@
+# --checks=shift: a count not below the width panics
+func noinline shl(a, n) res {
+    res = a << n
+}
+func main() {
+    var n = 64
+    var x = shl(1, n)
+    exit(x)
+}

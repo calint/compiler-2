@@ -1131,11 +1131,12 @@ class expr_arith final : public expression {
                                      tc.make_ident_info(src).operand);
         }
 
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
-            [&](const operand& count, const bool) -> void {
-                x.shift(src.tok(), indent, op, dst_info.operand, count);
-            });
+        emit_with_source(tc, indent, src, dst_info.type_ref(),
+                         dst_info.type_ref(),
+                         [&](const operand& count, const bool) -> void {
+                             x.shift(src.tok(), indent, op, dst_info.operand,
+                                     count, tc.shift_check_options());
+                         });
     }
 
     // operations whose low bits do not depend on higher bits

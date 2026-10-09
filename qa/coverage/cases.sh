@@ -3014,3 +3014,21 @@ SRC=980 && EXP=255 && RUN_ERR_OPTS "--checks=upper,division,line"
 
 # --checks=upper,division,line: the failing one of two divisions
 SRC=981 && EXP=255 && RUN_ERR_OPTS "--checks=upper,division,line"
+
+# --checks=shift: counts within the width pass
+SRC=982 && EXP=0 && RUN_ERR_OPTS "--checks=shift"
+
+# --checks=shift: count not below the width
+SRC=983 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+
+# --checks=shift: negative count
+SRC=984 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+
+# --checks=shift: count not below the width of 'i32'
+SRC=985 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+
+# --checks=shift,line: count not below the width with the line
+SRC=986 && EXP=255 && RUN_ERR_OPTS "--checks=shift,line"
+
+# --checks=shift: constant count outside the width
+SRC=987 && OPTS="--checks=shift" COMPERR

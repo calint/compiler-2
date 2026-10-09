@@ -603,6 +603,11 @@ class machine {
         bool with_line{};
     };
 
+    struct shift_check_options {
+        bool enabled{};
+        bool with_line{};
+    };
+
     struct data_initializer {
         int64_t value{};
         std::string_view uops; // unary operations
@@ -698,6 +703,9 @@ class machine {
     };
     static constexpr std::string_view division_failure_handler_label{
         "baz_division_panic",
+    };
+    static constexpr std::string_view shift_failure_handler_label{
+        "baz_shift_panic",
     };
     static constexpr std::string_view frame_overflow_handler_label{
         "baz_frame_overflow",
@@ -851,6 +859,10 @@ class machine {
                                     const size_t count,
                                     const data_initializer& value) -> void = 0;
 
+    // prints 'panic: shift' to stderr, with the line when 'with_line', and
+    // exits with 255
+    virtual auto emit_shift_failure_handler(const bool with_line) -> void = 0;
+
     // leaves the code section current
     virtual auto
     emit_string_constants(const std::span<const string_constant> strings)
@@ -941,9 +953,12 @@ class machine {
     // how many scratch registers the backend can hand out
     [[nodiscard]] virtual auto scratch_register_total() const -> size_t = 0;
 
+    // an enabled check makes a count below zero or not below the width of the
+    // type of 'dst' jump to the shift failure handler
     virtual auto shift(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
-                       const operand& count) -> void = 0;
+                       const operand& count, const shift_check_options& check)
+        -> void = 0;
 
     // the register that carries the address of one slot of a call, empty when
     // the backend passes every slot in the frame of the callee

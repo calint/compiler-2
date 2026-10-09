@@ -1,0 +1,9 @@
+# --checks=shift: the count is compared with the width of the shifted type
+func noinline shl32(a i32, n i32) res i32 {
+    res = a << n
+}
+func main() {
+    var n = i32(32)
+    var x = shl32(1, n)
+    exit(x)
+}

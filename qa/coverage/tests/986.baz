@@ -1,0 +1,10 @@
+# --checks=shift,line: a count not below the width reports the line
+func noinline shl(a, n) res {
+    res = 0
+    res = a << n
+}
+func main() {
+    var n = 70
+    var x = shl(1, n)
+    exit(x)
+}

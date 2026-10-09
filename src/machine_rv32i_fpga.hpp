@@ -19,6 +19,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr int bounds_exit_code_{255};
     static constexpr int frame_exit_code_{254};
     static constexpr int division_exit_code_{253};
+    static constexpr int shift_exit_code_{252};
     // the uart addresses 0xffff'fff4 and 0xffff'fff8 are reached as sign
     // extended offsets from the zero register
     static constexpr int uart_in_offset_{-12};
@@ -65,6 +66,12 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     auto emit_frame_overflow_handler() -> void override {
         emit_panic_exit(frame_overflow_handler_label, frame_exit_code_);
+    }
+
+    auto emit_shift_failure_handler([[maybe_unused]] const bool with_line)
+        -> void override {
+
+        emit_panic_exit(shift_failure_handler_label, shift_exit_code_);
     }
 
   protected:
