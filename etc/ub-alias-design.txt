@@ -113,13 +113,45 @@ These checks need bytes, not a path: a read must be inside the assigned
 bytes. 'stmt_identifier' keeps the bytes of its path in 'accessed_bytes_' and
 the path in 'access_path_', and 'read_visitor' hands out both.
 
-    type item { id i32, name i64 }
-    var it = item
-    it.id = 1            assigns bytes 0..4
-    x = it.name          reads bytes 4..12, not assigned => error
+    type point {x, y}
+
+    var x = x + 1                  the variable is not set while its value is
+                                   computed: bytes 0..4 are read, none are
+                                   assigned => "use of uninitialized variable"
+
+    func point.at(x) self {        a constructor must assign every field: it
+        self.x = x                 assigns bytes 0..4, bytes 4..8 are not
+    }                              assigned => "function may return without
+                                   setting its return value"
+
+    func make() res point {        the same for the result of a function
+        res.x = 1
+    }
+
+    p = point{p.y, p.x}            the field 'x' is written first, bytes 0..4,
+                                   then the item 'p.x' reads them => "'p.x' is
+                                   read but has been overwritten in the same
+                                   statement"
 
 The root variable is the whole variable, each field and each constant index
 narrows it ('stmt_identifier::narrow_accessed_bytes'). After a run-time index
 the element is unknown, so the bytes stay the whole array: a write through
 'arr[i]' assigns nothing and a read through it needs the whole array.
 'access_path' holds only the path.
+
+6. Fuzz
+-------
+
+qa/fuzz/fuzz-alias.sh checks the aliasing check against a brute force of the
+bytes (every value of every run-time index is tried). qa/fuzz/fuzz-alias-long.sh
+runs it with one seed per core and large counts, about six minutes on 16
+cores, for a change to the check:
+
+    alias-path-fuzz.cpp   'access_path::overlaps' on random types and pairs of
+                          paths; the answer must be exact, neither unsound
+                          nor imprecise
+    alias-foo-fuzz.py     random programs through the compiler: the element
+                          'e' of a 'foo' and 'mut' parameters (inline and
+                          noinline) against a read of the variable, with
+                          mixed scalar sizes; "may share storage" must be
+                          reported exactly when the bytes can be the same
