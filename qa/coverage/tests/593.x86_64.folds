@@ -61,8 +61,8 @@
     mov qword [rbp + 16], r15
     sal qword [rbp + 16], 2
     mov rax, qword [rbp + 16]
-    cqo
     mov r15, 2
+    cqo
     idiv r15
     mov qword [rbp + 16], rax
 === 58:     d = b & 1 | 2 | 4 # folds
@@ -93,8 +93,8 @@
     mov r15, qword [rbp + 8]
     imul r15, 60
     mov rax, r15
-    cqo
     mov r14, 6
+    cqo
     idiv r14
     mov r15, rax
     mov qword [rbp + 16], r15
@@ -108,13 +108,13 @@
     mov r15, qword [rbp + 8]
     imul r15, -13
     mov rax, r15
-    cqo
     mov r14, 6
+    cqo
     idiv r14
     mov r15, rax
     mov rax, r15
-    cqo
     mov r14, 4
+    cqo
     idiv r14
     mov r15, rdx
     mov qword [rbp + 16], r15
@@ -132,13 +132,13 @@
     mov r15, qword [rbp + 8]
     imul r15, 9
     mov rax, r15
-    cqo
     mov r14, -1
+    cqo
     idiv r14
     mov r15, rax
     mov rax, r15
-    cqo
     mov r14, 3
+    cqo
     idiv r14
     mov r15, rax
     mov qword [rbp + 16], r15
@@ -146,8 +146,8 @@
     mov r15, qword [rbp + 8]
     imul r15, 40
     mov rax, r15
-    cqo
     mov r14, 2
+    cqo
     idiv r14
     mov r15, rax
     mov rax, r15
@@ -155,8 +155,8 @@
     idiv qword [rbp]
     mov r15, rax
     mov rax, r15
-    cqo
     mov r14, 4
+    cqo
     idiv r14
     mov r15, rax
     mov qword [rbp + 16], r15
@@ -164,8 +164,8 @@
     mov r15, qword [rbp + 8]
     mov qword [rbp + 16], r15
     mov rax, qword [rbp + 16]
-    cqo
     mov r15, 2
+    cqo
     idiv r15
     mov qword [rbp + 16], rax
 === 88:     d = b << (1 + 1) # folds
@@ -180,8 +180,8 @@
     mov r15, qword [rbp + 8]
     mov qword [rbp + 16], r15
     mov rax, qword [rbp + 16]
-    cqo
     mov r15, 4
+    cqo
     idiv r15
     mov qword [rbp + 16], rdx
 === 96:     d = -(2 + 3) # folds
@@ -206,29 +206,29 @@
     mov r15b, byte [rbp + 36]
     mov byte [rbp + 37], r15b
     movsx rax, byte [rbp + 37]
-    cqo
     mov r15, 16
+    cqo
     idiv r15
     mov byte [rbp + 37], al
     movsx rax, byte [rbp + 37]
-    cqo
     mov r15, 16
+    cqo
     idiv r15
     mov byte [rbp + 37], al
 === 135:     q8_merged = q8 / 4 / 8 # folds
     mov r15b, byte [rbp + 36]
     mov byte [rbp + 38], r15b
     movsx rax, byte [rbp + 38]
-    cqo
     mov r15, 32
+    cqo
     idiv r15
     mov byte [rbp + 38], al
 === 139:     q8_min_merged = q8_min / -2 / 64 # folds
     mov r15b, byte [rbp + 39]
     mov byte [rbp + 40], r15b
     movsx rax, byte [rbp + 40]
-    cqo
     mov r15, -128
+    cqo
     idiv r15
     mov byte [rbp + 40], al
 === 147:     if 1 + 1 > b { # folds

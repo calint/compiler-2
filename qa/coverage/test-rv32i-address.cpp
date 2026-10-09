@@ -1280,7 +1280,7 @@ auto check_shifts() -> void {
         output.str({});
 
         backend.shift(token{}, 0, op_of(operation), operand::reg("a0", integer),
-                      operand::reg("a1", integer));
+                      operand::reg("a1", integer), machine::shift_check_options{});
 
         assert(output.str() ==
                (operation == '<' ? "sll a0, a0, a1\n" : "sra a0, a0, a1\n"));
@@ -1290,7 +1290,7 @@ auto check_shifts() -> void {
             output.str({});
             backend.shift(token{}, 0, op_of(operation),
                           operand::reg("a0", integer),
-                          operand::imm(std::format("{}", count), integer));
+                          operand::imm(std::format("{}", count), integer), machine::shift_check_options{});
             assert(output.str() ==
                    (count == 0 ? std::string{}
                                : std::format("{} a0, a0, {}\n",
@@ -1303,7 +1303,7 @@ auto check_shifts() -> void {
                 [&] {
                     backend.shift(source_tk, 0, op_of(operation),
                                   operand::reg("a0", integer),
-                                  operand::imm(std::string{count}, integer));
+                                  operand::imm(std::string{count}, integer), machine::shift_check_options{});
                 },
                 "RV32I shift count must be 0 to 31 for 32-bit values"));
             assert(output.str().empty());
@@ -1393,9 +1393,9 @@ auto check_zero_operations_and_zero_shifts() -> void {
 
             output.str({});
             backend.shift(token{}, 0, op_of('<'), destination,
-                          operand::imm("0", integer));
+                          operand::imm("0", integer), machine::shift_check_options{});
             backend.shift(token{}, 0, op_of('>'), destination,
-                          operand::imm("0", integer));
+                          operand::imm("0", integer), machine::shift_check_options{});
             assert(output.str().empty());
             output.str({});
             backend.bitwise(token{}, 0, op_of('&'), destination,
@@ -1436,7 +1436,7 @@ auto check_narrow_values_and_large_constants() -> void {
     assert(output.str() == "li a0, -1\n");
     output.str({});
     backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
-                  operand::imm("7", integer));
+                  operand::imm("7", integer), machine::shift_check_options{});
     assert(output.str() == "slli a0, a0, 31\nsrai a0, a0, 24\n");
     output.str({});
     for (const type* narrow : {&byte, &half, &boolean}) {
@@ -1445,14 +1445,14 @@ auto check_narrow_values_and_large_constants() -> void {
             [&] {
                 backend.shift(source_tk, 0, op_of('<'),
                               operand::reg("a0", *narrow),
-                              operand::imm(std::format("{}", bits), integer));
+                              operand::imm(std::format("{}", bits), integer), machine::shift_check_options{});
             },
             std::format("RV32I shift count must be 0 to {} for {}-bit values",
                         bits - 1, bits)));
         assert(output.str().empty());
     }
     backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
-                  operand::imm("1", integer));
+                  operand::imm("1", integer), machine::shift_check_options{});
     assert(output.str() == "slli a0, a0, 25\nsrai a0, a0, 24\n");
     output.str({});
     backend.add_subtract(token{}, 0, op_of('+'), operand::reg("a0", integer),
@@ -2000,7 +2000,7 @@ auto check_multiply_divide_routines() -> void {
                 } else {
                     helper_backend.divide(token{}, 0, op_of(operation),
                                           operand::reg("s2", integer),
-                                          operand::reg("s3", integer));
+                                          operand::reg("s3", integer), machine::division_check_options{});
                 }
             };
             emit();
@@ -2028,7 +2028,7 @@ auto check_multiply_divide_routines() -> void {
             } else {
                 helper_backend.divide(token{}, 0, op_of(operation),
                                       operand::reg("a0", integer),
-                                      operand::reg("a1", integer));
+                                      operand::reg("a1", integer), machine::division_check_options{});
             }
         }
         assert(not output.str().contains(".Lbaz_multiply:"));
@@ -2716,7 +2716,7 @@ auto emit_division_tests(machine_rv32i& backend) -> void {
                                 operand::imm(std::format("{}", initial),
                                              integer));
                             backend.divide(token{}, 1, op_of(operation),
-                                           destination, source);
+                                           destination, source, machine::division_check_options{});
                             backend.copy_value(token{}, 1,
                                                operand::reg("a0", integer),
                                                destination);
@@ -2755,7 +2755,7 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
         if (operation == '*') {
             backend.multiply(token{}, 1, destination, source);
         } else {
-            backend.divide(token{}, 1, op_of(operation), destination, source);
+            backend.divide(token{}, 1, op_of(operation), destination, source, machine::division_check_options{});
         }
         for (const auto [index, reg] : std::views::enumerate(live)) {
             emit_expect(reg.base_register(), 101 + index, "a2");
@@ -2775,7 +2775,7 @@ auto emit_division_same_address(machine_rv32i& backend) -> void {
     for (const char operation : {'/', '%'}) {
         std::println("    la t0, buffer\n    li a0, -17\n    sw a0, 0(t0)");
         const operand address{operand::mem("t0", {}, 1, 0, integer)};
-        backend.divide(token{}, 1, op_of(operation), address, address);
+        backend.divide(token{}, 1, op_of(operation), address, address, machine::division_check_options{});
         std::println("    lw a0, 0(t0)");
         emit_expect("a0", operation == '/' ? 1 : 0);
         backend.finish();
@@ -3158,7 +3158,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
                     backend.copy_value(token{}, 1, destination,
                                        operand::imm("-16", integer));
                     backend.shift(token{}, 1, op_of(operation), destination,
-                                  count);
+                                  count, machine::shift_check_options{});
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
                                        destination);
 
@@ -3175,7 +3175,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
     // the count is the shifted register itself
     std::println("    li a0, 3");
     backend.shift(token{}, 1, op_of('<'), operand::reg("a0", integer),
-                  operand::reg("a0", integer));
+                  operand::reg("a0", integer), machine::shift_check_options{});
     emit_expect("a0", 24);
     backend.finish();
 }
@@ -3362,7 +3362,7 @@ auto generate_runtime_program() -> void {
     backend.end_main();
     std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, op_of('/'), operand::reg("a0", integer),
-                   operand::imm("0", integer));
+                   operand::imm("0", integer), machine::division_check_options{});
     backend.exit(token{}, 1, operand::imm("0", integer));
     for (const uint32_t line : {0U, 9U, 123U, UINT32_MAX}) {
         std::println(".globl bounds_line_{}\nbounds_line_{}:\n    li a0, -1",
