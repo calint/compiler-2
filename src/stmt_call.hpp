@@ -48,11 +48,6 @@ class stmt_call : public expression {
     std::vector<token> arg_delims_tk_;
     token close_paren_tk_;
 
-    struct storage_conflict {
-        std::string reason;
-        std::string fix;
-    };
-
     // what a non-inline call passes for an argument: the variable it names or
     // a temporary that holds its value
     struct noninline_arg {
@@ -60,10 +55,14 @@ class stmt_call : public expression {
         bool is_temporary;
     };
 
+    static constexpr std::string_view use_temporary_fix{
+        "use a temporary variable for one of them",
+    };
+
     // an argument that names a variable, kept to compare with the next ones
     struct reference {
         size_t index;
-        ident_info info;
+        storage_target target;
         bool is_read_only;
     };
 
@@ -336,24 +335,25 @@ class stmt_call : public expression {
                 continue;
             }
 
-            ident_info info{tc.make_ident_info(arg)};
-
             // constants pass their value
-            if (not info.is_var()) {
+            if (not tc.make_ident_info(arg).is_var()) {
                 continue;
             }
 
+            storage_target target{argument_target(tc, arg)};
+
             if (is_result_checked) {
-                assert_not_shared_with_result(i, info, dst_info);
+                assert_not_shared_with_result(
+                    i, target, result_target(tc, tok(), dst_info));
             }
 
             const bool is_read_only{func.param(i).is_read_only()};
 
-            assert_not_shared_with_earlier(references, i, info, is_read_only);
+            assert_not_shared_with_earlier(references, i, target, is_read_only);
 
             references.push_back({
                 .index{i},
-                .info{std::move(info)},
+                .target{std::move(target)},
                 .is_read_only{is_read_only},
             });
         }
@@ -769,50 +769,6 @@ class stmt_call : public expression {
         return not tc.make_ident_info(arg).is_var();
     }
 
-    // the ranges are offsets into the variable the argument names, so they
-    // are only comparable when both name the same one
-    [[nodiscard]] static auto reach_disjoint_bytes(const expr_any& lhs,
-                                                   const expr_any& rhs)
-        -> bool {
-
-        const std::optional<access_span> lhs_span{
-            lhs.accessed_span(),
-        };
-
-        const std::optional<access_span> rhs_span{
-            rhs.accessed_span(),
-        };
-
-        assert(lhs_span and rhs_span);
-
-        if (ident_info::root_of(lhs.identifier()) !=
-            ident_info::root_of(rhs.identifier())) {
-
-            return false;
-        }
-
-        return not lhs_span->overlaps(*rhs_span);
-    }
-
-    // compares resolved variable roots, so any overlap of fields or elements
-    // counts as shared
-    [[nodiscard]] static auto shared_storage_conflict(const ident_info& lhs,
-                                                      const ident_info& rhs)
-        -> std::optional<storage_conflict> {
-
-        const std::string_view lhs_root{lhs.elem_path.front()};
-        const std::string_view rhs_root{rhs.elem_path.front()};
-
-        if (lhs_root == rhs_root) {
-            return storage_conflict{
-                .reason{std::format("both name '{}'", lhs_root)},
-                .fix{"use a temporary variable for one of them"},
-            };
-        }
-
-        return std::nullopt;
-    }
-
     [[noreturn]] static auto
     throw_parameter_type_mismatch(const expr_any& arg,
                                   const stmt_def_func_param& param,
@@ -962,10 +918,9 @@ class stmt_call : public expression {
 
     // an argument that names the storage of an earlier one, unless both
     // parameters are read-only or the bytes they reach are disjoint
-    auto
-    assert_not_shared_with_earlier(const std::span<const reference> earlier,
-                                   const size_t index, const ident_info& info,
-                                   const bool is_read_only) const -> void {
+    auto assert_not_shared_with_earlier(
+        const std::span<const reference> earlier, const size_t index,
+        const storage_target& target, const bool is_read_only) const -> void {
 
         const expr_any& arg{args_.at(index)};
 
@@ -974,59 +929,37 @@ class stmt_call : public expression {
                 continue;
             }
 
-            const std::optional<storage_conflict> conflict{
-                shared_storage_conflict(other.info, info),
-            };
-
-            if (not conflict or
-                reach_disjoint_bytes(args_.at(other.index), arg)) {
-
+            if (not target.may_overlap(other.target)) {
                 continue;
             }
 
             throw compiler_exception{
                 arg.tok(),
                 std::format("{} '{}' may share storage with {} '{}' "
-                            "({}), {}",
+                            "(both name '{}'), {}",
                             describe_argument(index), arg.identifier(),
                             describe_argument(other.index),
-                            args_.at(other.index).identifier(),
-                            conflict->reason, conflict->fix)};
+                            args_.at(other.index).identifier(), target.root,
+                            use_temporary_fix)};
         }
     }
 
     // an argument that names the result destination, only for '--checks=alias'
     auto assert_not_shared_with_result(const size_t index,
-                                       const ident_info& info,
-                                       const ident_info& dst_info) const
+                                       const storage_target& target,
+                                       const storage_target& result) const
         -> void {
 
-        const std::optional<storage_conflict> conflict{
-            shared_storage_conflict(dst_info, info),
-        };
-
-        if (not conflict) {
-            return;
-        }
-
-        // the destination names other bytes of the variable than the argument
-        const std::optional<access_span> arg_span{
-            args_.at(index).accessed_span(),
-        };
-
-        if (dst_info.accessed_span and arg_span and
-            not dst_info.accessed_span->overlaps(*arg_span)) {
-
+        if (not target.may_overlap(result)) {
             return;
         }
 
         throw compiler_exception{
             args_.at(index).tok(),
             std::format("{} '{}' may share storage with the "
-                        "result destination '{}' ({}), {}",
+                        "result destination '{}' (both name '{}'), {}",
                         describe_argument(index), args_.at(index).identifier(),
-                        dst_info.elem_path.front(), conflict->reason,
-                        conflict->fix)};
+                        result.root, target.root, use_temporary_fix)};
     }
 
     // 'what' names what precedes the '(' in the error
@@ -1992,16 +1925,6 @@ class stmt_call : public expression {
                                                        : operand{},
         };
 
-        // note: a register destination, its id is a register name, has no
-        //       variable
-        storage_target bound;
-
-        if (not dst_info.is_register()) {
-            bound = tc.storage_target_of(ret.ident_tk,
-                                         ident_info::root_of(dst_info.id),
-                                         dst_info.accessed_span);
-        }
-
         // a destination such as 'arr[1]' is not an array
         return {
             .from{std::string{ret.ident_tk.text()}},
@@ -2012,7 +1935,7 @@ class stmt_call : public expression {
                 dst_info.is_register() ? dst_info.operand : operand{},
             },
             .is_element{not dst_info.is_array},
-            .bound{std::move(bound)},
+            .bound{result_target(tc, ret.ident_tk, dst_info)},
         };
     }
 
@@ -2030,6 +1953,23 @@ class stmt_call : public expression {
             .is_element{},
             .bound{bound},
         };
+    }
+
+    // the root variable and the bytes of it that the destination names
+    [[nodiscard]] static auto result_target(const toc& tc,
+                                            const token& src_loc_tk,
+                                            const ident_info& dst_info)
+        -> storage_target {
+
+        // note: a register destination, its id is a register name, has no
+        //       variable
+        if (dst_info.is_register()) {
+            return {};
+        }
+
+        return tc.storage_target_of(src_loc_tk,
+                                    ident_info::root_of(dst_info.id),
+                                    dst_info.accessed_span);
     }
 
     // what an argument adds to the signature, e.g. ' local 0' or ' global g',

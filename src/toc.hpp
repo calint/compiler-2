@@ -59,6 +59,21 @@ struct noninline_instance {
 struct storage_target {
     std::string root;
     std::optional<access_span> span;
+
+    // true when both may name the same bytes, a read of other bytes or of
+    // another variable is not
+    [[nodiscard]] auto may_overlap(const storage_target& other) const -> bool {
+        if (root != other.root) {
+            return false;
+        }
+
+        // note: an unknown span is the whole variable
+        if (not span or not other.span) {
+            return true;
+        }
+
+        return span->overlaps(*other.span);
+    }
 };
 
 struct alias_info {

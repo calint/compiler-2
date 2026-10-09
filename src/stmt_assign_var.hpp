@@ -191,7 +191,7 @@ class stmt_assign_var final : public statement {
     }
 
     // true when the read may be of bytes of the destination under another
-    // name, a read of other bytes or of another variable is not
+    // name
     [[nodiscard]] auto may_share_storage(const toc& tc,
                                          const storage_target& dst,
                                          const value_read& read) const -> bool {
@@ -213,14 +213,7 @@ class stmt_assign_var final : public statement {
                                  read.span),
         };
 
-        if (source.root != dst.root) {
-            return false;
-        }
-
-        // note: an unknown span or an unknown access is the whole variable
-        const bool is_known{read.span and source.span and dst.span};
-
-        return not is_known or source.span->overlaps(*dst.span);
+        return source.may_overlap(dst);
     }
 
     // every read of a variable in the value, in source order

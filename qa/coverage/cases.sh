@@ -2967,3 +2967,10 @@ SRC=966 && EXP=0 && RUN
 # --checks=alias: the read has two run-time indexes and the destination one, the
 # fields in the elements are different, which is accepted
 SRC=967 && EXP=0 && RUN
+
+# disjoint elements forwarded through parameters do not share storage, which is
+# accepted
+SRC=968 && EXP=0 && RUN
+
+# the same element forwarded through parameters shares storage
+SRC=969 && COMPERR
