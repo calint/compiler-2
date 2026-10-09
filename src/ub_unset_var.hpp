@@ -193,7 +193,8 @@ struct access_span {
 
     // the span of something inside the object this span names, 'inner' is
     // relative to the start of the object
-    [[nodiscard]] auto shifted(const access_span& inner) const -> access_span {
+    [[nodiscard]] auto narrow_to(const access_span& inner) const
+        -> access_span {
         access_span result{*this};
 
         result.narrow(inner.range.offset, inner.range.size_bytes);

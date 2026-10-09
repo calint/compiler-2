@@ -1157,7 +1157,7 @@ class scope_stack final {
                 return std::nullopt;
             }
 
-            return bound->shifted(*span);
+            return bound->narrow_to(*span);
         }
 
         // statements are compiled inside a function
@@ -2771,7 +2771,7 @@ class toc final {
             element_span->add_level(element_info.type_ref().size_bytes());
 
             if (span) {
-                element_span = element_span->shifted(*span);
+                element_span = element_span->narrow_to(*span);
             }
         }
 
