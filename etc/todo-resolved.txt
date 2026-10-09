@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority: --checks=alias: a 'foo' over a fixed-index slice is
+    rejected against a run-time indexed read of another field of the same
+    variable (false positive, never a missed overlap): 'foo es[1].items {
+    mm(e.f, es[i].other) }' with 'item {f, g}', 'ent {items item[2], other
+    i32}', 'es = ent[3]'
+    => done (2026-10-09): 'access_span' keeps the path of fields and
+       indexes ('path_step'); 'access_span::paths_diverge' answers "disjoint"
+       when the paths select different fields or different constant elements
+       of the same object, whatever the run-time indexes are; the levels,
+       periods and byte comparison ('index_level', 'levels_overlap',
+       'place_overlaps', 'reaches') were removed, the path alone decides;
+       tests 970 and 971
 [x] hard: UB detection: two by-reference parameters bound to the same variable
     inside an inline body ('res' and 'p' alias names of one caller variable
     are not detected; arguments of one call are done)

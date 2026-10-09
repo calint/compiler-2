@@ -39,7 +39,7 @@ enum class read_only_cause : uint8_t {
 };
 
 // the array that the element 'e' of a 'foo' belongs to: its root variable and
-// the bytes of the root that it reaches, empty when not known
+// the path to it, empty when not known
 class foo_array_info final {
   public:
     foo_array_info(std::string root_in,
@@ -104,7 +104,7 @@ struct ident_info {
     // another name, e.g. a 'mut' parameter or the element of a 'foo'
     bool is_reference{};
 
-    // the bytes of the root variable that a destination names, empty when
+    // the path of the root variable that a destination names, empty when
     // unknown or the whole variable
     std::optional<access_span> accessed_span;
 

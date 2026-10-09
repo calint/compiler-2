@@ -30,8 +30,7 @@ class stmt_assign_var final : public statement {
     struct value_read {
         token tk;
         std::string text;
-        // empty when the read is of the whole variable
-        std::optional<access_span> span;
+        access_span span;
     };
 
   public:
@@ -222,12 +221,14 @@ class stmt_assign_var final : public statement {
 
         expr_.visit_reads(
             std::nullopt,
-            [&reads](const token& tk, const std::string_view text,
-                     const std::optional<access_span>& accessed) -> void {
+            [&reads](
+                const token& tk, const std::string_view text,
+                [[maybe_unused]] const field_coverage::range& accessed_range,
+                const access_span& accessed_span) -> void {
                 reads.push_back({
                     .tk{tk},
                     .text{text},
-                    .span{accessed},
+                    .span{accessed_span},
                 });
             });
 

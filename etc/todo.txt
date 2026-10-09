@@ -205,18 +205,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     register instead of rejecting (077.baz, 135.baz, 397.baz now use a
     temporary variable, 485.baz is a '--checks=noub' error test); it would
     become a run test again if the semantics change
-[ ] easy: low priority: --checks=alias: a 'foo' over a fixed-index slice is
-    rejected against a run-time indexed read of another field of the same
-    variable (false positive, never a missed overlap): 'foo es[1].items {
-    mm(e.f, es[i].other) }' with 'item {f, g}', 'ent {items item[2], other
-    i32}', 'es = ent[3]'; the bytes are disjoint but the slots of 8 and 20
-    bytes do not line up, so 'access_span::levels_overlap' answers "may
-    overlap"
-    => fixable by comparing the byte runs of the spans, but too rare (no
-       program in the repository hits it) for a cost that is O(N) in the
-       sizes of the arrays in the code; expanding only the span with fewer
-       runs and testing each run with 'place_overlaps' would be O(runs of the
-       smaller span)
 [ ] medium: low priority: generics: constants as parameters of functions
     ('func f<n>()') and constructors of generic types
 [ ] medium: low priority: generics: a generic that is never instantiated is not

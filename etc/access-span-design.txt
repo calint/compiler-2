@@ -1,238 +1,116 @@
-access_span: aliasing check of bytes reached through run-time indexes
-=====================================================================
+access_span: aliasing check of what is reached through run-time indexes
+=======================================================================
 
-source: src/ub_check.hpp ('access_span', 'index_level')
+source: src/ub_check.hpp ('access_span', 'path_step')
 used by: stmt_assign_var.hpp, stmt_call.hpp (storage_target in toc.hpp)
+built by: stmt_identifier.hpp, toc.hpp
+          ('storage_target_of', 'scope_stack::root_span')
+tests: 931-971 in qa/coverage/tests (970 and 971: a constant element and a
+       field against a run-time indexed read)
 
 1. Problem
 ----------
 
 Two accesses to the same root variable alias when they can reach a common
-byte. With constant indexes that is a range test. With a run-time index the
-byte is not known, so the check must answer "can these ever be the same byte
-for some value of the indexes".
+byte. With a run-time index the byte is not known, so the check must answer
+"can these ever be the same byte for some value of the indexes".
 
 Answer false only when provably disjoint. Anything unknown is "may alias".
 
-2. Constant path: one range
----------------------------
+2. The path
+-----------
 
-    struct s { a: i32, b: i32, c: i32 }
-    var v = s
+An access is the path from its root variable: one 'path_step' per field,
+constant index or run-time index. The root variable itself is not a step.
 
-    v.b                      range{offset 4, size 4}
+    path_step { kind, number }
 
-    byte:   0   4   8   12
-            |a  |b  |c  |
-                 ^^^
-                 range
+    kind                number
+    field               offset of the field in its parent
+    fixed_index         the index
+    run_time_index      unused
 
-overlap is plain interval intersection.
+    rooms[i].items[1].name
 
-3. One run-time index: range becomes the array, plus a level
-------------------------------------------------------------
+    steps:  index (run-time)  field 'items'  index (constant 1)  field 'name'
 
-    struct item { id: i32, name: i64 }        size 12, 'name' at 4..12
-    var items = item[3]
+An index always follows a field or the root variable. Both paths of a
+comparison start at the same root variable and follow the same types, so at
+one position they are both fields or both indexes.
 
-    items[i].name
+A field is identified by its offset in the parent. Fields never overlap (every
+field has a size, a type has a field and an array has at least one element),
+so different offsets are different fields.
 
-    range  = whole array               offset 0, size 36
-    level1 = { period 12, offset 4, size 8 }
-
-    byte:  0             12            24            36
-           |id  |name    |id  |name    |id  |name    |
-                 ^^^^^^^^      ^^^^^^^^      ^^^^^^^^
-           |<- slot 0 -> |<- slot 1 -> |<- slot 2 -> |
-                                period_bytes = 12
-
-    'range' says where the slots are. 'level1' says which part of each
-    slot is touched. 'i' decides which slot, unknown, so all are possible.
-
-    items[i].id vs items[j].name:
-        parts {0,4} and {4,8} do not intersect  =>  never alias, even if
-        i == j
-
-    items[i].name vs items[j].name:
-        parts {4,8} and {4,8} intersect         =>  may alias
-
-4. Several indexes: one level per index
----------------------------------------
-
-    struct item { id: i32, name: i64 }        size 12, 'name' at 4..12
-    struct room { tag: i32, items: item[3] }  size 40, 'items' at 4..40
-    var rooms = room[2]                       size 80
-
-    rooms[i].items[j].name
-
-    range  = whole 'rooms'             offset 0, size 80
-    level1 = { period 40, offset 4, size 36 }     ('rooms[i].items')
-    level2 = { period 12, offset 4, size 8 }      ('items[j].name')
-
-    step 1: 'range' and level1 cut the bytes down to the 'items' of every
-            room. 'i' is unknown, so both rooms are possible.
-
-    byte:    0    4                   40   44                  80
-             |tag |items              |tag |items              |
-             |<----- room 0 --------->|<----- room 1 --------->|
-                   ^^^^^^^^^^^^^^^^^^^      ^^^^^^^^^^^^^^^^^^^
-                   level1 part (36)         level1 part (36)
-             period_bytes = 40
-
-    step 2: level2 cuts each of those parts down to the 'name' of every
-            item. 'j' is unknown, so all three items are possible.
-            level2 is measured from the start of the level1 part, not
-            from the start of the root variable.
-
-    inside one level1 part (36 bytes, byte 0 = start of the part):
-
-             0             12            24            36
-             |id  |name    |id  |name    |id  |name    |
-                   ^^^^^^^^      ^^^^^^^^      ^^^^^^^^
-                   level2 parts (8 each)
-             period_bytes = 12
-
-    bytes reached: 6 pieces of 8 bytes, one per room i (0..1) and item j (0..2)
-
-        begin = 40 * i + 4 + 12 * j + 4
-                |        |   |        '- 'name' inside the item (after 'id')
-                |        |   '- the j items before it
-                |        '- 'items' inside the room (after 'tag')
-                '- the i rooms before it
-
-        end = begin + 8
-
-        room 0 (i = 0): 8..16,  20..28, 32..40
-        room 1 (i = 1): 48..56, 60..68, 72..80
-
-each level is relative to the bytes of the level before it; level1 is
-relative to 'range.offset'.
-
-'narrow(offset, size)' (a field or constant element after an index) edits the
-last level, not 'range'. 'add_level(element_size)' adds a level.
-
-5. overlaps(lhs, rhs)
+3. overlaps(lhs, rhs)
 ---------------------
 
-    overlaps
-      1. ranges disjoint?                     => false
-      2. one side without levels (fixed)?     => place_overlaps(fixed, other)
-      3. both with levels                     => levels_overlap
+'overlaps' is 'not paths_diverge(lhs.path, rhs.path)'. The steps line up, walk
+them together:
 
-5.1. levels_overlap: walk both level lists together
+    run-time index on either side             => go on, may be the same
+    field, different offset in the parent     => disjoint
+    constant indexes, different               => disjoint
+    same field (same offset) or same index    => go on
+    paths ran out                             => may alias (one is inside the
+                                                 other, or they are the same)
 
-    for each common level i:
-        slots aligned?  (same period, same origin modulo period)
-            no  => true            slots may be shifted against each other
-        parts intersect?
-            no  => false           never the same byte for any index values
-        origin of next level = part offset
+examples
 
-    example, two accesses to 'items[?]':
+    'items[i].id' and 'items[j].name'
+        different fields                                  => disjoint
+    'items[i].name' and 'items[j].name'
+        same field, run-time index                        => may alias
+    'es[1].items[i].f' and 'es[k].other'
+        [1] and [k] go on, 'items' and 'other' differ     => disjoint
+    'arr[1]' and 'arr[2]'
+        different constant indexes                        => disjoint
+    'arr[1]' and 'arr[i]'
+        run-time index                                    => may alias
+    'es' and 'es[i].other'
+        the first path ran out                            => may alias
 
-        lhs  |   id   |   name        |
-        rhs  |   id   |   name        |
-        same period 12, aligned, compare parts per level
+No bytes are compared, so there are no periods, slots or alignment to line up
+and a constant index in the middle of a path does not lose information.
 
-    after the common levels:
-        side with levels left over is checked against the part of the side
-        that ran out (that side reaches all of its part)
-        => place_overlaps(part_of_other, part_of_this, remaining_levels)
+4. Building spans
+-----------------
 
-    example, one side has a level left over (layout of section 4)
+An identifier adds a step per path element ('stmt_identifier::
+resolve_access_range'):
 
-        lhs   = rooms[i].items[j].name     2 levels: { 40, 4, 36 } { 12, 4, 8 }
-        rhs A = rooms[k].items[1].id       1 level:  { 40, 16, 4 }
+    add_field(offset)        '.name'
+    add_fixed_index(index)   '[3]', an index known at compile time
+    add_run_time_index()     '[i]'
 
-        levels are written { period_bytes, offset, size_bytes }
+An alias (a parameter, a result, the element 'e' of a 'foo') is bound to the
+span of what it names; an access through it joins the paths:
 
-        rhs A has no run-time index after 'rooms[k]', so its level 1 is
-        already the exact bytes: 'id' of item 1, at 4 + 12 = 16 .. 20 of the
-        room.
+    narrow_to(inner)         the path of the bound target followed by the path
+                             of the access inside it
+    add_run_time_index()     'e' of a 'foo' is any element of the array
 
-        offsets inside one room (the level 1 frame, 0 = start of the room):
+A target whose span is not known has no span, which is the whole variable and
+always may alias.
 
-        byte:  0   4   8       16  20      28  32      40
-        room   |tag|id |name   |id |name   |id |name   |
-        lhs             ^^^^^^^     ^^^^^^^     ^^^^^^^
-        rhs A                   ^^^
-        rhs B                       ^^^^^^^
+5. Bytes: not part of this check
+--------------------------------
 
-        1. level 1: same period 40, same origin 0, aligned
-           parts are lhs [4,40) and rhs A [16,20): they intersect, go on
-        2. rhs A has no level left: it reaches all of its part [16,20)
-           lhs has level 2 left: it reaches only the 'name' of each item
-        3. place_overlaps(place = rhs A part [16,20),
-                          window = lhs part [4,40),
-                          levels = lhs level 2)
-           => reaches(16, 20, window_begin 4, { 12, 4, 8 })
-              the bytes 16..20 are in slot 1 of level 2, (16 - 4) / 12,
-              whose part is 4 + 12 + 4 = 20 .. 28, so nothing is reached
-        => false: 'id' of item 1 is never a 'name'
+The compiler also rejects reading a variable before it is set, and a
+constructor that does not assign every field. For that it records which bytes
+of a variable are assigned, and a read must be inside them, so it needs bytes,
+not a path. 'stmt_identifier' keeps the bytes of its path in 'access_range_'
+and the path in 'access_span_', and the read visitor receives both
+('read_visitor': the range for the uninitialized read check, the span for the
+aliasing check).
 
-        with rhs B = rooms[k].items[1].name instead (one level, part
-        [20,28)):
-              the bytes 20..28 are in slot 1 and its part is 20..28
-        => true: 'name' of item j is 'name' of item 1 when j == 1
+    type item { id i32, name i64 }
+    var it = item
+    it.id = 1            assigns bytes 0..4
+    x = it.name          reads bytes 4..12, not assigned => error
 
-    example, disjoint parts: 'items[i].id' against 'items[j].name'
-
-        lhs = items[i].id          range 0..36, level1 { 12, 0, 4 }
-        rhs = items[j].name        range 0..36, level1 { 12, 4, 8 }
-
-        byte:  0   4       12  16      24  28      36
-        slots  |id |name   |id |name   |id |name   |
-        lhs     ^^^         ^^^         ^^^
-        rhs         ^^^^^^^     ^^^^^^^     ^^^^^^^
-
-        1. ranges 0..36 and 0..36 intersect
-        2. level 1: same period 12, same origin 0, aligned
-        3. parts are [0,4) and [4,12): they touch at byte 4 but share no
-           byte (the end of a part is not part of it)
-        => false, whatever 'i' and 'j' are, also when i == j
-
-5.2. place_overlaps(place, window, levels)
-
-    A fixed place against the bytes the remaining levels reach in 'window'.
-
-        window  |<-------------------- array -------------------->|
-        place                     |<-- bytes -->|
-        begin..end = place clipped to window; empty => false
-        else reaches(begin, end, window.offset, levels)
-
-5.3. reaches(begin, end, window_begin, levels)
-
-    true if the fixed bytes [begin, end) hit a part of some slot.
-
-        no levels left                      => true
-        bytes cover a whole period or more  => true (every slot is hit)
-        else the bytes lie in at most two slots, first_slot..last_slot:
-
-        window_begin
-        |  slot 0       |  slot 1       |  slot 2       |
-        |....[part]     |....[part]     |....[part]     |
-                   [ bytes ]
-                   ^ in slot 0 and slot 1: test both
-
-        for each such slot:
-            part = slot_start + level.offset, size level.size_bytes
-            clip bytes to part; non-empty => recurse with levels[1..]
-        any slot reached => true, none => false
-
-6. Conservative cases (return true)
------------------------------------
-
-6.1. slots of different period or different origin modulo period
-6.2. one side has levels the other lacks and the fixed bytes cover a whole
-     period
-6.3. all levels consumed and parts still intersect
-
-7. Operations on spans
-----------------------
-
-    add_level(size)     'x[i]': element slot of unknown position
-    narrow(off, size)   '.field' or constant element, last level or range
-    shifted(inner)      rebase an inner span (alias bound at the call site)
-                        onto this one: narrow to inner.range, append inner
-                        levels
-    size_bytes()        size of the object the span names
+The root variable is the whole variable, each field and each constant index
+narrows it ('stmt_identifier::narrow_access_range'). After a run-time index
+the element is unknown, so the range stays the whole array: a write through
+'arr[i]' assigns nothing and a read through it needs the whole array.
+'access_span' holds only the path.

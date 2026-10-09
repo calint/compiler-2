@@ -402,22 +402,19 @@ class statement {
     auto assert_var_not_used(const std::string_view var,
                              const field_coverage& assigned) const -> void {
 
-        visit_reads(var,
-                    [&var, &assigned](
-                        const token& src_loc_tk,
-                        [[maybe_unused]] const std::string_view read_text,
-                        const std::optional<access_span>& accessed) -> void {
-                        const bool is_assigned{
-                            accessed ? assigned.covers(accessed->range)
-                                     : assigned.is_full(),
-                        };
+        visit_reads(
+            var,
+            [&var, &assigned](
+                const token& src_loc_tk,
+                [[maybe_unused]] const std::string_view read_text,
+                const field_coverage::range& accessed_range,
+                [[maybe_unused]] const access_span& accessed_span) -> void {
+                if (assigned.covers(accessed_range)) {
+                    return;
+                }
 
-                        if (is_assigned) {
-                            return;
-                        }
-
-                        throw_uninitialized(src_loc_tk, var);
-                    });
+                throw_uninitialized(src_loc_tk, var);
+            });
     }
 
     [[nodiscard]] auto get_type() const -> const type& {
@@ -444,8 +441,10 @@ class statement {
             [&is_read](
                 [[maybe_unused]] const token& src_loc_tk,
                 [[maybe_unused]] const std::string_view read_text,
-                [[maybe_unused]] const std::optional<access_span>& accessed)
-                -> void { is_read = true; });
+                [[maybe_unused]] const field_coverage::range& accessed_range,
+                [[maybe_unused]] const access_span& accessed_span) -> void {
+                is_read = true;
+            });
 
         return is_read;
     }

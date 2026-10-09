@@ -1,7 +1,9 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <span>
@@ -131,47 +133,46 @@ class field_coverage final {
     }
 };
 
-// one run-time index of a path: the bytes reached are a run of slots of
-// 'period_bytes', e.g. the elements of an array, and within each slot the bytes
-// from 'offset' for 'size_bytes'. the slots start where the bytes of the level
-// before it start, for the first level where 'access_span::range' starts
-struct index_level {
-    size_t period_bytes{};
-    size_t offset{};
-    size_t size_bytes{};
+// one step of the path from a root variable to what is accessed: a field, a
+// constant index or a run-time index, e.g. 'es[1].items[i]' is a constant
+// index, a field and a run-time index. an index always follows a field or the
+// root variable
+struct path_step {
+    enum class kind_type : uint8_t { field, fixed_index, run_time_index };
+
+    kind_type kind{};
+
+    // the offset of a field in its parent, which identifies the field, or the
+    // index of an element
+    size_t number{};
 };
 
-// where a variable is accessed: bytes of its root variable. a path without a
-// run-time index reaches exactly 'range'. a run-time index makes 'range' the
-// whole array and adds a level, an index inside the bytes of that level adds
-// another, e.g. 'rooms[i].items[j].name' has two
+// where a variable is accessed: the path of fields and indexes from its root
+// variable. two accesses cannot be the same bytes when their paths select
+// different fields or different constant elements of the same object
 struct access_span {
-    field_coverage::range range;
-    std::vector<index_level> levels;
+    std::vector<path_step> path;
 
-    // an element of the array this span names at a run-time index
-    auto add_level(const size_t element_size_bytes) -> void {
-        levels.push_back({
-            .period_bytes{element_size_bytes},
-            .offset{},
-            .size_bytes{element_size_bytes},
+    auto add_field(const size_t offset) -> void {
+        path.push_back({
+            .kind{path_step::kind_type::field},
+            .number{offset},
         });
     }
 
-    // the bytes of a field or an element of the object this span names,
-    // 'offset' is relative to the start of the object
-    auto narrow(const size_t offset, const size_t size_bytes_in) -> void {
-        if (levels.empty()) {
-            range = {
-                .offset{range.offset + offset},
-                .size_bytes{size_bytes_in},
-            };
+    // an element of the array at a constant index
+    auto add_fixed_index(const size_t index) -> void {
+        path.push_back({
+            .kind{path_step::kind_type::fixed_index},
+            .number{index},
+        });
+    }
 
-            return;
-        }
-
-        levels.back().offset += offset;
-        levels.back().size_bytes = size_bytes_in;
+    // an element of the array at a run-time index
+    auto add_run_time_index() -> void {
+        path.push_back({
+            .kind{path_step::kind_type::run_time_index},
+        });
     }
 
     // the span of something inside the object this span names, 'inner' is
@@ -181,153 +182,49 @@ struct access_span {
 
         access_span result{*this};
 
-        result.narrow(inner.range.offset, inner.range.size_bytes);
-        result.levels.append_range(inner.levels);
+        result.path.append_range(inner.path);
 
         return result;
     }
 
     // false only when the bytes cannot be the same
     [[nodiscard]] auto overlaps(const access_span& other) const -> bool {
-        if (not range.overlaps(other.range)) {
-            return false;
-        }
-
-        if (levels.empty()) {
-            return place_overlaps(range, other.range, other.levels);
-        }
-
-        if (other.levels.empty()) {
-            return place_overlaps(other.range, range, levels);
-        }
-
-        return levels_overlap(*this, other);
-    }
-
-    // the size of the object this span names
-    [[nodiscard]] auto size_bytes() const -> size_t {
-        return levels.empty() ? range.size_bytes : levels.back().size_bytes;
+        return not paths_diverge(path, other.path);
     }
 
     //
     // statics
     //
 
-    // both reach bytes by levels: the levels are followed while their slots
-    // line up and their bytes in a slot overlap
-    [[nodiscard]] static auto levels_overlap(const access_span& lhs,
-                                             const access_span& rhs) -> bool {
+    // the paths select different fields or different constant elements of the
+    // same object, whatever their run-time indexes are, e.g. 'es[i].items' and
+    // 'es[1].other'. the steps of both start at the same root variable so they
+    // line up until a field or a constant index differs
+    [[nodiscard]] static auto
+    paths_diverge(const std::span<const path_step> lhs,
+                  const std::span<const path_step> rhs) -> bool {
 
-        const size_t common_count{
-            std::min(lhs.levels.size(), rhs.levels.size()),
-        };
-
-        // the start of the slots of a level, in a frame both share
-        size_t lhs_origin{lhs.range.offset};
-        size_t rhs_origin{rhs.range.offset};
-
-        field_coverage::range lhs_part;
-        field_coverage::range rhs_part;
+        const size_t common_count{std::min(lhs.size(), rhs.size())};
 
         for (size_t i{}; i < common_count; ++i) {
-            const index_level& lhs_level{lhs.levels.at(i)};
-            const index_level& rhs_level{rhs.levels.at(i)};
+            const path_step& lhs_step{lhs.at(i)};
+            const path_step& rhs_step{rhs.at(i)};
 
-            const bool is_aligned{
-                lhs_level.period_bytes == rhs_level.period_bytes and
-                    lhs_origin % lhs_level.period_bytes ==
-                        rhs_origin % rhs_level.period_bytes,
-            };
+            // note: an index follows a field, so steps at the same position
+            //       are both fields or both indexes
+            assert((lhs_step.kind == path_step::kind_type::field) ==
+                   (rhs_step.kind == path_step::kind_type::field));
 
-            // note: slots that do not line up could overlap anywhere
-            if (not is_aligned) {
-                return true;
+            if (lhs_step.kind == path_step::kind_type::run_time_index or
+                rhs_step.kind == path_step::kind_type::run_time_index) {
+
+                // note: a run-time index may select any element
+                continue;
             }
 
-            lhs_part = {
-                .offset{lhs_level.offset},
-                .size_bytes{lhs_level.size_bytes},
-            };
-
-            rhs_part = {
-                .offset{rhs_level.offset},
-                .size_bytes{rhs_level.size_bytes},
-            };
-
-            if (not lhs_part.overlaps(rhs_part)) {
-                return false;
-            }
-
-            lhs_origin = lhs_level.offset;
-            rhs_origin = rhs_level.offset;
-        }
-
-        // note: the side without a level left reaches all of its part
-        if (lhs.levels.size() > common_count) {
-            return place_overlaps(rhs_part, lhs_part,
-                                  std::span{lhs.levels}.subspan(common_count));
-        }
-
-        if (rhs.levels.size() > common_count) {
-            return place_overlaps(lhs_part, rhs_part,
-                                  std::span{rhs.levels}.subspan(common_count));
-        }
-
-        return true;
-    }
-
-    // a place of bytes against the bytes that 'levels' reach in 'window'
-    [[nodiscard]] static auto
-    place_overlaps(const field_coverage::range& place,
-                   const field_coverage::range& window,
-                   const std::span<const index_level> levels) -> bool {
-
-        const size_t begin{std::max(place.offset, window.offset)};
-
-        const size_t end{
-            std::min(place.offset + place.size_bytes,
-                     window.offset + window.size_bytes),
-        };
-
-        return begin < end and reaches(begin, end, window.offset, levels);
-    }
-
-    // the bytes from 'begin' to 'end', in the window that starts at
-    // 'window_begin', against the bytes that 'levels' reach
-    [[nodiscard]] static auto reaches(const size_t begin, const size_t end,
-                                      const size_t window_begin,
-                                      const std::span<const index_level> levels)
-        -> bool {
-
-        if (levels.empty()) {
-            return true;
-        }
-
-        const index_level& level{levels.front()};
-
-        // note: a place of a whole slot or more reaches every part
-        if (end - begin >= level.period_bytes) {
-            return true;
-        }
-
-        const size_t first_slot{(begin - window_begin) / level.period_bytes};
-        const size_t last_slot{(end - 1 - window_begin) / level.period_bytes};
-
-        // note: a place reaches the slots it is in, one or two
-        for (size_t slot{first_slot}; slot <= last_slot; ++slot) {
-            const size_t part_begin{
-                window_begin + (slot * level.period_bytes) + level.offset,
-            };
-
-            const size_t part_end{part_begin + level.size_bytes};
-
-            const size_t reached_begin{std::max(begin, part_begin)};
-            const size_t reached_end{std::min(end, part_end)};
-
-            if (reached_begin < reached_end and
-                reaches(reached_begin, reached_end, part_begin,
-                        levels.subspan(1))) {
-
+            // note: fields never overlap, so a different offset is a
+            //       different field, constant indexes work the same
+            if (lhs_step.number != rhs_step.number) {
                 return true;
             }
         }
@@ -339,10 +236,12 @@ struct access_span {
 // the variable whose reads 'visit_reads' reports, none for every variable
 using read_filter = std::optional<std::string_view>;
 
-// receives each read of a variable, an empty span reads the whole variable
+// receives each read of a variable: the bytes of the variable that it reaches,
+// the whole array after a run-time index, and its path
 using read_visitor =
     std::function_ref<void(const token& src_loc_tk, std::string_view read_text,
-                           const std::optional<access_span>& accessed)>;
+                           const field_coverage::range& accessed_range,
+                           const access_span& accessed_span)>;
 
 // definite-assignment walk of one variable through a function body
 struct assignment_flow {

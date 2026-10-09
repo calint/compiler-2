@@ -54,8 +54,8 @@ struct noninline_instance {
     std::vector<size_t> array_lengths;
 };
 
-// storage under the name of a root variable: the root variable and the bytes
-// of it, empty when they are not known
+// storage under the name of a root variable: the root variable and the path
+// to what is accessed, empty when it is not known
 struct storage_target {
     std::string root;
     std::optional<access_span> span;
@@ -84,7 +84,7 @@ struct alias_info {
     operand register_operand;
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
-    // the root variable and the bytes of it that the alias names, found where
+    // the root variable and the path that the alias names, found where
     // the call is made because the callee does not see the caller's names,
     // e.g. the element 'e' of a 'foo'; empty for a temporary
     storage_target bound;
@@ -2766,9 +2766,7 @@ class toc final {
         std::optional<access_span> element_span{array.span};
 
         if (element_span) {
-            const ident_info element_info{make_ident_info(src_loc_tk, name)};
-
-            element_span->add_level(element_info.type_ref().size_bytes());
+            element_span->add_run_time_index();
 
             if (span) {
                 element_span = element_span->narrow_to(*span);

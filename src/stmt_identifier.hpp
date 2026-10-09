@@ -91,9 +91,11 @@ class stmt_identifier final : public statement {
     bool is_array_{};
     bool is_indexed_{};
 
-    // bytes of the root variable accessed by this path, after a runtime index
-    // 'range' is the whole array and 'element' the bytes reached in each
-    // element
+    // bytes of the root variable accessed by this path, after a run-time index
+    // the whole array
+    field_coverage::range access_range_;
+
+    // the fields and indexes of this path
     access_span access_span_;
 
     // false when a runtime index leaves the element unknown
@@ -321,7 +323,7 @@ class stmt_identifier final : public statement {
 
         // a path such as 'p.y' reads its root variable
         if (not var or first_token().is_text(*var)) {
-            reader(first_token(), path_text(), span());
+            reader(first_token(), path_text(), access_range_, access_span_);
         }
 
         visit_index_reads(var, reader);
@@ -332,7 +334,7 @@ class stmt_identifier final : public statement {
     //
 
     [[nodiscard]] auto access_range() const -> field_coverage::range {
-        return access_span_.range;
+        return access_range_;
     }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
@@ -400,7 +402,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        flow.assigned.add(access_span_.range);
+        flow.assigned.add(access_range_);
     }
 
     [[nodiscard]] auto span() const -> const access_span& {
@@ -574,8 +576,22 @@ class stmt_identifier final : public statement {
                not tc.has_const(root);
     }
 
+    // note: after a run-time index the range stays the whole array
+    auto narrow_access_range(const size_t offset, const size_t size_bytes_in)
+        -> void {
+
+        if (not is_exact_access_) {
+            return;
+        }
+
+        access_range_ = {
+            .offset{access_range_.offset + offset},
+            .size_bytes{size_bytes_in},
+        };
+    }
+
     // an unknown element leaves the whole array as the accessed range and
-    // adds the bytes of the element as a level
+    // adds a run-time index to the path
     auto narrow_to_element(toc& tc, const expr_any& index_expr,
                            const ident_info& array_info) -> void {
 
@@ -587,7 +603,7 @@ class stmt_identifier final : public statement {
 
         if (not index) {
             is_exact_access_ = false;
-            access_span_.add_level(element_size_bytes);
+            access_span_.add_run_time_index();
             return;
         }
 
@@ -597,9 +613,11 @@ class stmt_identifier final : public statement {
         const bool is_last_element{*index == array_info.array_len - 1};
         // note: -1 is the index of the last element
 
-        access_span_.narrow(element_offset,
+        access_span_.add_fixed_index(*index);
+
+        narrow_access_range(element_offset,
                             is_last_element
-                                ? access_span_.size_bytes() - element_offset
+                                ? access_range_.size_bytes - element_offset
                                 : element_size_bytes);
     }
 
@@ -651,12 +669,18 @@ class stmt_identifier final : public statement {
             const ident_info info{tc.make_ident_info(elem.name_tk, path)};
 
             if (is_root) {
-                access_span_.range = root_range(info);
+                access_range_ = root_range(info);
             } else {
                 // a field covers its trailing padding so that assigning every
                 // field assigns the whole instance
-                access_span_.narrow(parent_type->field_offset(
-                                        elem.name_tk, elem.name_tk.text()),
+                const size_t field_offset{
+                    parent_type->field_offset(elem.name_tk,
+                                              elem.name_tk.text()),
+                };
+
+                access_span_.add_field(field_offset);
+
+                narrow_access_range(field_offset,
                                     parent_type->field_extent_bytes(
                                         elem.name_tk, elem.name_tk.text()));
             }
@@ -689,7 +713,7 @@ class stmt_identifier final : public statement {
         -> field_coverage::range {
 
         return {
-            .offset{access_span_.range.offset},
+            .offset{},
             .size_bytes{storage_size_bytes(tok(), info)},
         };
     }

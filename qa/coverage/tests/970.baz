@@ -1,0 +1,24 @@
+# --checks=alias: the element 'e' of a 'foo' over a constant element field is
+# assigned from another field of an element at a run-time index
+
+type item {
+    f i32,
+    g i32,
+}
+
+type ent {
+    items item[2],
+    other i32,
+}
+
+func main() {
+    var es = ent[3]
+    es[2].other = 5
+    var k = 2
+
+    foo es[1].items {
+        e.f = es[k].other + 1
+    }
+
+    if es[1].items[1].f != 6 exit(1)
+}

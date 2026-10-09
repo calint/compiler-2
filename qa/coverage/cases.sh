@@ -2953,7 +2953,7 @@ SRC=962 && COMPERR
 SRC=963 && EXP=0 && RUN
 
 # --checks=alias: the destination has two run-time indexes and the read one, the
-# bytes in the elements are different, which is accepted
+# fields in the elements are different, which is accepted
 SRC=964 && EXP=0 && RUN
 
 # --checks=alias: the destination has two run-time indexes and the read one, the
@@ -2961,7 +2961,7 @@ SRC=964 && EXP=0 && RUN
 SRC=965 && COMPERR
 
 # --checks=alias: the destination has one run-time index and the read two, the
-# bytes in the elements are different, which is accepted
+# fields in the elements are different, which is accepted
 SRC=966 && EXP=0 && RUN
 
 # --checks=alias: the read has two run-time indexes and the destination one, the
@@ -2974,3 +2974,11 @@ SRC=968 && EXP=0 && RUN
 
 # the same element forwarded through parameters shares storage
 SRC=969 && COMPERR
+
+# --checks=alias: the element of a 'foo' over a constant element field and the
+# read of another field of an element at a run-time index, which is accepted
+SRC=970 && EXP=0 && RUN
+
+# --checks=alias: the element of a 'foo' over a constant element field and the
+# read of the same field of an element at a run-time index
+SRC=971 && COMPERR

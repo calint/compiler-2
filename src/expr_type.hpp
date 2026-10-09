@@ -288,8 +288,9 @@ class expr_type final : public statement {
             dst.root,
             [&dst, &written](
                 const token& src_loc_tk, const std::string_view read_text,
-                const std::optional<access_span>& accessed) -> void {
-                if (accessed and not accessed->range.overlaps(written)) {
+                const field_coverage::range& accessed_range,
+                [[maybe_unused]] const access_span& accessed_span) -> void {
+                if (not accessed_range.overlaps(written)) {
                     return;
                 }
 
