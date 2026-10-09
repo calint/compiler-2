@@ -33,7 +33,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 #include "unary_ops.hpp"
 
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a

@@ -21,7 +21,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 
 // e.g. 'var x = i32(0)', the initializer gives the type; 'let' with a
 // non-constant initializer is a 'var' that is read-only once initialized

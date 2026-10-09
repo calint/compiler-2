@@ -15,7 +15,7 @@
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
 #include "token.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 
 class stmt_if final : public statement {
     // e.g. 'else if' of 'else if c == d {y = 2}'

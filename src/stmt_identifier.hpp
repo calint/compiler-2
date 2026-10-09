@@ -23,7 +23,7 @@
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 #include "unary_ops.hpp"
 
 class stmt_identifier final : public statement {

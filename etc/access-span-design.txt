@@ -1,7 +1,7 @@
 access_span: aliasing check of bytes reached through run-time indexes
 =====================================================================
 
-source: src/ub_unset_var.hpp ('access_span', 'index_level')
+source: src/ub_check.hpp ('access_span', 'index_level')
 used by: stmt_assign_var.hpp, stmt_call.hpp (storage_target in toc.hpp)
 
 1. Problem

@@ -10,7 +10,7 @@
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 
 class stmt_return final : public statement {
   public:

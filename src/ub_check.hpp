@@ -174,6 +174,19 @@ struct access_span {
         levels.back().size_bytes = size_bytes_in;
     }
 
+    // the span of something inside the object this span names, 'inner' is
+    // relative to the start of the object
+    [[nodiscard]] auto narrow_to(const access_span& inner) const
+        -> access_span {
+
+        access_span result{*this};
+
+        result.narrow(inner.range.offset, inner.range.size_bytes);
+        result.levels.append_range(inner.levels);
+
+        return result;
+    }
+
     // false only when the bytes cannot be the same
     [[nodiscard]] auto overlaps(const access_span& other) const -> bool {
         if (not range.overlaps(other.range)) {
@@ -189,18 +202,6 @@ struct access_span {
         }
 
         return levels_overlap(*this, other);
-    }
-
-    // the span of something inside the object this span names, 'inner' is
-    // relative to the start of the object
-    [[nodiscard]] auto narrow_to(const access_span& inner) const
-        -> access_span {
-        access_span result{*this};
-
-        result.narrow(inner.range.offset, inner.range.size_bytes);
-        result.levels.append_range(inner.levels);
-
-        return result;
     }
 
     // the size of the object this span names

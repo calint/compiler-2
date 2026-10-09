@@ -17,7 +17,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
 //       implemented in 'decouple_impl.hpp', those headers include this one

@@ -16,7 +16,7 @@
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 #include "unary_ops.hpp"
 
 class stmt_builtin_array_copy final : public statement {

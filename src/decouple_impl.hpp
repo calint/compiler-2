@@ -43,7 +43,7 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
-#include "ub_unset_var.hpp"
+#include "ub_check.hpp"
 #include "unary_ops.hpp"
 
 // definitions are intentionally not 'inline': single translation unit build
