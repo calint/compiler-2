@@ -322,6 +322,13 @@ class stmt_call : public expression {
 
         const bool is_result_checked{tc.is_alias_check() and dst_info.is_var()};
 
+        // note: an empty target, the result is not compared, names no variable
+        storage_target result;
+
+        if (is_result_checked) {
+            result = result_target(tc, tok(), dst_info);
+        }
+
         std::vector<reference> references;
 
         for (size_t i{}; i < args_.size(); ++i) {
@@ -343,8 +350,7 @@ class stmt_call : public expression {
             storage_target target{argument_target(tc, arg)};
 
             if (is_result_checked) {
-                assert_not_shared_with_result(
-                    i, target, result_target(tc, tok(), dst_info));
+                assert_not_shared_with_result(i, target, result);
             }
 
             const bool is_read_only{func.param(i).is_read_only()};
