@@ -22,7 +22,9 @@ func main() {
     assert(arr[1] == 2)
     assert(arr[2] == 4)
 
-    arr[off] = op_on_arr(arr[1])
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = op_on_arr(arr[1])
+    arr[off] = tmp1
     assert(arr[off] == 3)
 
     op_on_arr2(arr[off])

@@ -1,5 +1,5 @@
 
-762.baz:12:20: argument 2 'g' may share storage with argument 1 'a' (both name 'g'), use a separate variable
+762.baz:12:20: argument 2 'g' may share storage with argument 1 'a' (both name 'g'), use a temporary variable for one of them
     swap_values(a, g)
                    ^
 762.baz:16:5: called from

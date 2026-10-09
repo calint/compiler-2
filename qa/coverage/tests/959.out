@@ -1,0 +1,4 @@
+
+959.baz:19:25: 'm[0].leaves[1].v[0]' may share storage with the destination 'e' (both name 'm'), compute the value in a temporary variable first
+                e = e + m[0].leaves[1].v[0]
+                        ^

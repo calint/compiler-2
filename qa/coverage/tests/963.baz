@@ -1,0 +1,26 @@
+# --checks=alias: two run-time indexes in a path, the read is of another field
+# of the elements, which is accepted
+
+type item {
+    f i32,
+    g i32,
+}
+
+type ent {
+    items item[2],
+}
+
+dat es = ent[3]
+
+func put(x mut i32) {
+    x = 100 - es[0].items[1].g
+}
+
+func main() {
+    var i = 0
+    var j = 1
+
+    es[0].items[1].g = 7
+    put(es[i].items[j].f)
+    if es[0].items[1].f != 93 exit(1)
+}

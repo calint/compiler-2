@@ -39,19 +39,17 @@ enum class read_only_cause : uint8_t {
 };
 
 // the array that the element 'e' of a 'foo' belongs to: its root variable and
-// the bytes of the root that it covers
+// the bytes of the root that it reaches, empty when not known
 class foo_array_info final {
   public:
-    foo_array_info(const std::string_view root_in, const size_t offset_bytes_in,
-                   const size_t size_bytes_in)
-        : root{root_in}, offset_bytes{offset_bytes_in},
-          size_bytes{size_bytes_in} {}
+    foo_array_info(std::string root_in,
+                   const std::optional<access_span>& span_in)
+        : root{std::move(root_in)}, span{span_in} {}
 
     foo_array_info() = default;
 
-    std::string_view root;
-    size_t offset_bytes{};
-    size_t size_bytes{};
+    std::string root;
+    std::optional<access_span> span;
 };
 
 struct var_info {
@@ -102,9 +100,13 @@ struct ident_info {
     bool use_operand{}; // operand overrides any location calculation
     kind kind{};
 
+    // the destination is a reference to storage that the value may read under
+    // another name, e.g. a 'mut' parameter or the element of a 'foo'
+    bool is_reference{};
+
     // the bytes of the root variable that a destination names, empty when
     // unknown or the whole variable
-    std::optional<field_coverage::range> access_range;
+    std::optional<access_span> accessed_span;
 
     // the name for an error about it, 'fallback' without a place in the source
     [[nodiscard]] auto error_token(const token& fallback) const -> token {
@@ -224,7 +226,8 @@ struct ident_info {
             .operand{},
             .const_value{value},
             .kind{is_typed ? kind::typed_constant : kind::constant},
-            .access_range{},
+            .is_reference{},
+            .accessed_span{},
         };
     }
 
@@ -236,7 +239,8 @@ struct ident_info {
             .type_path{},
             .lea_path{},
             .operand{},
-            .access_range{},
+            .is_reference{},
+            .accessed_span{},
         };
     }
 
@@ -255,7 +259,8 @@ struct ident_info {
             .lea_path{::operand{}},
             .operand{reg},
             .kind{kind::reg},
-            .access_range{},
+            .is_reference{},
+            .accessed_span{},
         };
     }
 
@@ -283,7 +288,8 @@ struct ident_info {
             .is_array{layout.is_array},
             .is_pointer{layout.is_pointer},
             .kind{kind::var},
-            .access_range{},
+            .is_reference{},
+            .accessed_span{},
         };
     }
 

@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: UB detection: two by-reference parameters bound to the same variable
+    inside an inline body ('res' and 'p' alias names of one caller variable
+    are not detected; arguments of one call are done)
+    => done (2026-10-09): found already detected by the check of the arguments
+       of one call, which sees the names the body passes on, inline and
+       noinline; tests 950 and 951 (a parameter and a global that name the
+       same data); the assignment check of the aliasing default adds the
+       reads of the value
+[x] hard: UB detection: result aliases a by-reference argument ('x = f(x)', 'p
+    = swap(p)', 485.baz, inline and noinline)
+    => done (2026-10-09): '--checks=alias' is on by default, '--checks=-alias'
+       turns it off; no per-function summary: a destination that names
+       storage under another name (a parameter, a result, an element of a
+       'foo') is compared with every variable the value reads, as root
+       variable and bytes ('access_span', 'alias_info::bound',
+       'scope_stack::root_span'); each run-time index adds a level
+       ('index_level': slots of an element size and the bytes in each), so
+       'arr[i].len' and 'arr[j].other' do not overlap, at any depth, also for
+       the element 'e' of nested 'foo' ('foo_array_info'); checked against a
+       brute force of the bytes (4 million random shapes, none unsound);
+       the body of a noinline call is checked by an inline dry
+       run at the call site that starts with no register held
+       ('machine::measure_code_size'); tests 931-967 (944-947 for the
+       registers of the dry run); 077, 078, 135, 137-140, 397, 440, 587 and
+       599 use a temporary variable, 878 and
+       'etc/codegen-inefficiencies.baz' use '--checks=-alias'; no change in
+       the generated code
 [x] hard: multiple source files: 'include "lib.baz"' only at the top of a file
     => done (2026-10-08): 'source_files' owns the files (a deque, so the text
        does not move); 'token' and 'compiler_exception' carry the file index;

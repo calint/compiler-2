@@ -12,7 +12,7 @@ compiler writes the binary image itself.
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
 * support for reentrant non-inlined functions
-* opt-in checks that makes the language ub-free
+* checks that make the language ub-free, aliasing is checked by default
 * basic support for generics
 
 ## Supports
@@ -26,11 +26,14 @@ compiler writes the binary image itself.
 * arrays
 * array iteration
 * string, character, user type and array initializers
-* opt-in checks against undefined behavior
-  * array bounds at runtime, optionally reporting the line number
-  * non-inlined function frame capacity at runtime
-  * compile time rejection of calls where a result or argument may share
-    storage
+* checks against undefined behavior
+  * opt-in: array bounds at runtime, optionally reporting the line number
+  * opt-in: non-inlined function frame capacity at runtime
+  * always on: compile time rejection of arguments that may share storage when
+    a parameter is `mut`
+  * on by default: compile time rejection of calls and assignments where the
+    value may read the destination under another name, `--checks=-alias` turns
+    it off
 * inlined functions
 * support for non-inlined functions
 * methods and constructors on user defined types
@@ -116,14 +119,15 @@ reports:
              each callee holds
 
 checks:
-  upper  runtime upper array bounds only, a negative index passes
-  lower  runtime lower array bounds, catches negative indexes
-  line   report line number on failed bounds check
-  frame  runtime non-inlined function frame capacity
-  alias  compile time rejection of calls where a result may share storage
-         with an argument
-  noub   all checks against undefined behavior: upper, lower, frame and
-         alias
+  upper    runtime upper array bounds only, a negative index passes
+  lower    runtime lower array bounds, catches negative indexes
+  line     report line number on failed bounds check
+  frame    runtime non-inlined function frame capacity
+  alias    compile time rejection of calls where a result may share storage
+           with an argument, on by default
+  -alias   turns alias off, also when noub is given
+  noub     all checks against undefined behavior: upper, lower, frame and
+           alias
 
 examples:
   ./baz prog.baz > prog.s
@@ -146,10 +150,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    55           7790           3317          23137
-C++                              1            174             49            580
+C/C++ Header                    55           7922           3403          23536
+C++                              1            175             51            587
 -------------------------------------------------------------------------------
-SUM:                            56           7964           3366          23717
+SUM:                            56           8097           3454          24123
 -------------------------------------------------------------------------------
 ```
 
@@ -422,8 +426,8 @@ func main() {
     # initializing from an array copies it, `==` compares same size arrays
 
 #   arr[ix] = ~inv(arr[ix - 1])
-#   `--checks=alias` rejects this because "return" and the argument may share
-#   storage
+#   rejected because "return" and the argument may share storage,
+#   `--checks=-alias` allows it
 
     ix = 3
     var tmp = ~inv(arr[ix - 1])

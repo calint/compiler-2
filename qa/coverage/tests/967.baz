@@ -1,0 +1,28 @@
+# --checks=alias: the read has two run-time indexes and the destination one, the
+# fields in the elements are different, which is accepted
+
+type item {
+    f i32,
+    g i32,
+}
+
+type ent {
+    items item[2],
+    other i32,
+}
+
+dat es = ent[3]
+
+func put(x mut i32, i i32, j i32) {
+    x = 100 - es[i].items[j].g
+}
+
+func main() {
+    var k = 0
+    var i = i32(0)
+    var j = i32(1)
+
+    es[0].items[1].g = 7
+    put(es[k].items[0].f, i, j)
+    if es[0].items[0].f != 93 exit(1)
+}

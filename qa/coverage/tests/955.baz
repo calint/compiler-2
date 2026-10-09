@@ -1,0 +1,16 @@
+# --checks=alias: the element 'e' of a 'foo' is passed to a function that reads
+# another array, which is accepted
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+dat h = i32[4]{ 1, 2, 3, 4 }
+
+func put(x mut i32, k i32) {
+    x = k + (100 - h[3])
+}
+
+func main() {
+    foo g {
+        put(e, 10)
+    }
+    if g[0] != 106 exit(1)
+}

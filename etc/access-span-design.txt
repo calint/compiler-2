@@ -1,0 +1,229 @@
+access_span: aliasing check of bytes reached through run-time indexes
+=====================================================================
+
+source: src/ub_unset_var.hpp ('access_span', 'index_level')
+used by: stmt_assign_var.hpp, stmt_call.hpp (storage_target in toc.hpp)
+
+1. Problem
+----------
+
+Two accesses to the same root variable alias when they can reach a common
+byte. With constant indexes that is a range test. With a run-time index the
+byte is not known, so the check must answer "can these ever be the same byte
+for some value of the indexes".
+
+Answer false only when provably disjoint. Anything unknown is "may alias".
+
+2. Constant path: one range
+---------------------------
+
+    struct s { a: i32, b: i32, c: i32 }
+    var v = s
+
+    v.b                      range{offset 4, size 4}
+
+    byte:   0   4   8   12
+            |a  |b  |c  |
+                 ^^^
+                 range
+
+overlap is plain interval intersection.
+
+3. One run-time index: range becomes the array, plus a level
+------------------------------------------------------------
+
+    struct item { id: i32, name: i64 }        size 16, 'name' at 4..12
+    var items = item[3]
+
+    items[i].name
+
+    range  = whole array               offset 0, size 48
+    level1 = { period 16, offset 4, size 8 }
+
+    byte:  0               16              32              48
+           |id  |name      |id  |name      |id  |name      |
+                 ^^^^^^^^^^      ^^^^^^^^^^      ^^^^^^^^^^
+           |<- slot 0 ->   |<- slot 1 ->   |<- slot 2 ->   |
+                                period_bytes = 16
+
+    'range' says where the slots are. 'level1' says which part of each
+    slot is touched. 'i' decides which slot, unknown, so all are possible.
+
+    items[i].id vs items[j].name:
+        parts {0,4} and {4,8} do not intersect  =>  never alias, even if
+        i == j
+
+    items[i].name vs items[j].name:
+        parts {4,8} and {4,8} intersect         =>  may alias
+
+4. Several indexes: one level per index
+---------------------------------------
+
+    struct item { id: i32, name: i64 }        size 16, 'name' at 4..12
+    struct room { tag: i32, items: item[3] }  size 52, 'items' at 4..52
+    var rooms = room[2]                       size 104
+
+    rooms[i].items[j].name
+
+    range  = whole 'rooms'             offset 0, size 104
+    level1 = { period 52, offset 4, size 48 }     ('rooms[i].items')
+    level2 = { period 16, offset 4, size 8 }      ('items[j].name')
+
+    step 1: 'range' and level1 cut the bytes down to the 'items' of every
+            room. 'i' is unknown, so both rooms are possible.
+
+    byte:    0    4                   52   56                  104
+             |tag |items              |tag |items              |
+             |<----- room 0 --------->|<----- room 1 --------->|
+                   ^^^^^^^^^^^^^^^^^^^      ^^^^^^^^^^^^^^^^^^^
+                   level1 part (48)         level1 part (48)
+             period_bytes = 52
+
+    step 2: level2 cuts each of those parts down to the 'name' of every
+            item. 'j' is unknown, so all three items are possible.
+            level2 is measured from the start of the level1 part, not
+            from the start of the root variable.
+
+    inside one level1 part (48 bytes, byte 0 = start of the part):
+
+             0               16              32              48
+             |id  |name      |id  |name      |id  |name      |
+                   ^^^^^^^^^^      ^^^^^^^^^^      ^^^^^^^^^^
+                   level2 parts (8 each)
+             period_bytes = 16
+
+    bytes reached: 6 pieces of 8 bytes
+        room 0: 8..16,  24..32,  40..48 (name at 4+4, 4+20, 4+36)
+        room 1: 60..68, 76..84,  92..100
+
+each level is relative to the bytes of the level before it; level1 is
+relative to 'range.offset'.
+
+'narrow(offset, size)' (a field or constant element after an index) edits the
+last level, not 'range'. 'add_level(element_size)' adds a level.
+
+5. overlaps(lhs, rhs)
+---------------------
+
+    overlaps
+      1. ranges disjoint?                     => false
+      2. one side without levels (fixed)?     => place_overlaps(fixed, other)
+      3. both with levels                     => levels_overlap
+
+5.1. levels_overlap: walk both level lists together
+
+    for each common level i:
+        slots aligned?  (same period, same origin modulo period)
+            no  => true            slots may be shifted against each other
+        parts intersect?
+            no  => false           never the same byte for any index values
+        origin of next level = part offset
+
+    example, two accesses to 'items[?]':
+
+        lhs  |   id   |   name        |
+        rhs  |   id   |   name        |
+        same period 16, aligned, compare parts per level
+
+    after the common levels:
+        side with levels left over is checked against the part of the side
+        that ran out (that side reaches all of its part)
+        => place_overlaps(part_of_other, part_of_this, remaining_levels)
+
+    example, one side has a level left over (layout of section 4)
+
+        lhs   = rooms[i].items[j].name     2 levels: { 52, 4, 48 } { 16, 4, 8 }
+        rhs A = rooms[k].items[1].id       1 level:  { 52, 20, 4 }
+
+        levels are written { period_bytes, offset, size_bytes }
+
+        rhs A has no run-time index after 'rooms[k]', so its level 1 is
+        already the exact bytes: 'id' of item 1, at 4 + 16 = 20 .. 24 of the
+        room.
+
+        offsets inside one room (the level 1 frame, 0 = start of the room):
+
+        byte:  0   4   8       16  20  24      32  36  40      48  52
+        room   |tag|id |name   |pad|id |name   |pad|id |name   |pad|
+        lhs             ^^^^^^^         ^^^^^^^         ^^^^^^^
+        rhs A                       ^^^
+        rhs B                           ^^^^^^^
+
+        1. level 1: same period 52, same origin 0, aligned
+           parts are lhs [4,52) and rhs A [20,24): they intersect, go on
+        2. rhs A has no level left: it reaches all of its part [20,24)
+           lhs has level 2 left: it reaches only the 'name' of each item
+        3. place_overlaps(place = rhs A part [20,24),
+                          window = lhs part [4,52),
+                          levels = lhs level 2)
+           => reaches(20, 24, window_begin 4, { 16, 4, 8 })
+              the bytes 20..24 are in slot 1 of level 2, (20 - 4) / 16,
+              whose part is 4 + 16 + 4 = 24 .. 32, so nothing is reached
+        => false: 'id' of item 1 is never a 'name'
+
+        with rhs B = rooms[k].items[1].name instead (one level, part
+        [24,32)):
+              the bytes 24..32 are in slot 1 and its part is 24..32
+        => true: 'name' of item j is 'name' of item 1 when j == 1
+
+    example, disjoint parts: 'items[i].id' against 'items[j].name'
+
+        lhs = items[i].id          range 0..48, level1 { 16, 0, 4 }
+        rhs = items[j].name        range 0..48, level1 { 16, 4, 8 }
+
+        byte:  0   4       12  16  20      28  32  36      44  48
+        slots  |id |name   |pad|id |name   |pad|id |name   |pad|
+        lhs     ^^^             ^^^             ^^^
+        rhs         ^^^^^^^         ^^^^^^^         ^^^^^^^
+
+        1. ranges 0..48 and 0..48 intersect
+        2. level 1: same period 16, same origin 0, aligned
+        3. parts are [0,4) and [4,12): they touch at byte 4 but share no
+           byte (the end of a part is not part of it)
+        => false, whatever 'i' and 'j' are, also when i == j
+
+5.2. place_overlaps(place, window, levels)
+
+    A fixed place against the bytes the remaining levels reach in 'window'.
+
+        window  |<-------------------- array -------------------->|
+        place                     |<-- bytes -->|
+        begin..end = place clipped to window; empty => false
+        else reaches(begin, end, window.offset, levels)
+
+5.3. reaches(begin, end, window_begin, levels)
+
+    true if the fixed bytes [begin, end) hit a part of some slot.
+
+        no levels left                      => true
+        bytes cover a whole period or more  => true (every slot is hit)
+        else the bytes lie in at most two slots, first_slot..last_slot:
+
+        window_begin
+        |  slot 0       |  slot 1       |  slot 2       |
+        |....[part]     |....[part]     |....[part]     |
+                   [ bytes ]
+                   ^ in slot 0 and slot 1: test both
+
+        for each such slot:
+            part = slot_start + level.offset, size level.size_bytes
+            clip bytes to part; non-empty => recurse with levels[1..]
+        any slot reached => true, none => false
+
+6. Conservative cases (return true)
+-----------------------------------
+
+6.1. slots of different period or different origin modulo period
+6.2. one side has levels the other lacks and the fixed bytes cover a whole
+     period
+6.3. all levels consumed and parts still intersect
+
+7. Operations on spans
+----------------------
+
+    add_level(size)     'x[i]': element slot of unknown position
+    narrow(off, size)   '.field' or constant element, last level or range
+    shifted(inner)      rebase an inner span (alias bound at the call site)
+                        onto this one: narrow to inner.range, append inner
+                        levels
+    size_bytes()        size of the object the span names

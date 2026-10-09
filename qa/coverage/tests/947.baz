@@ -1,0 +1,16 @@
+# a noinline body calls another noinline function inside an expression that holds
+# registers, rv32i: the dry run of the callee has fewer registers than the callee
+
+func noinline f(a i32, b i32) res i32 {
+    res = ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + (a * b)))))))))))))))))))))))))
+}
+
+func noinline g(x i32, y i32) res i32 {
+    res = ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + f(x, y)))))))
+}
+
+func main() {
+    var x = i32(1)
+    var y = i32(1)
+    exit(g(x, y))
+}

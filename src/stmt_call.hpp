@@ -275,8 +275,8 @@ class stmt_call : public expression {
         assert_own_type_not_narrowed(dst_type);
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         for (const expr_any& e : args_) {
             e.visit_reads(var, reader);
@@ -648,7 +648,7 @@ class stmt_call : public expression {
         if (const std::optional<func_return_info> ret{func.returns()}; ret) {
             assert_result_type(dst_info, func);
 
-            aliases.push_back(make_result_alias(dst_info, *ret));
+            aliases.push_back(make_result_alias(tc, dst_info, *ret));
         }
 
         for (const auto [i, arg, param] : std::views::zip(
@@ -775,15 +775,15 @@ class stmt_call : public expression {
                                                    const expr_any& rhs)
         -> bool {
 
-        const std::optional<field_coverage::range> lhs_range{
-            lhs.accessed_range(),
+        const std::optional<access_span> lhs_span{
+            lhs.accessed_span(),
         };
 
-        const std::optional<field_coverage::range> rhs_range{
-            rhs.accessed_range(),
+        const std::optional<access_span> rhs_span{
+            rhs.accessed_span(),
         };
 
-        assert(lhs_range and rhs_range);
+        assert(lhs_span and rhs_span);
 
         if (ident_info::root_of(lhs.identifier()) !=
             ident_info::root_of(rhs.identifier())) {
@@ -791,7 +791,7 @@ class stmt_call : public expression {
             return false;
         }
 
-        return not lhs_range->overlaps(*rhs_range);
+        return not lhs_span->overlaps(*rhs_span);
     }
 
     // compares resolved variable roots, so any overlap of fields or elements
@@ -806,7 +806,7 @@ class stmt_call : public expression {
         if (lhs_root == rhs_root) {
             return storage_conflict{
                 .reason{std::format("both name '{}'", lhs_root)},
-                .fix{"use a separate variable"},
+                .fix{"use a temporary variable for one of them"},
             };
         }
 
@@ -1010,12 +1010,12 @@ class stmt_call : public expression {
         }
 
         // the destination names other bytes of the variable than the argument
-        const std::optional<field_coverage::range> arg_range{
-            args_.at(index).accessed_range(),
+        const std::optional<access_span> arg_span{
+            args_.at(index).accessed_span(),
         };
 
-        if (dst_info.access_range and arg_range and
-            not dst_info.access_range->overlaps(*arg_range)) {
+        if (dst_info.accessed_span and arg_span and
+            not dst_info.accessed_span->overlaps(*arg_span)) {
 
             return;
         }
@@ -1729,6 +1729,17 @@ class stmt_call : public expression {
         return signature;
     }
 
+    // the root variable and the bytes of it that the argument names, any
+    // element of the array when it is the element of a 'foo'
+    [[nodiscard]] static auto argument_target(const toc& tc,
+                                              const expr_any& arg)
+        -> storage_target {
+
+        return tc.storage_target_of(arg.tok(),
+                                    ident_info::root_of(arg.identifier()),
+                                    arg.accessed_span());
+    }
+
     // the type of the argument at 'index' when it is a variable, a field or an
     // element, or the value it makes names its type: 'point{1, 2}',
     // 'point.at(1, 2)' or 'mk(1, 2)', otherwise null. 'tz' is after the '(' and
@@ -1916,7 +1927,8 @@ class stmt_call : public expression {
         }
 
         if (arg.get_unary_ops().is_empty()) {
-            return make_value_alias(param, arg.identifier());
+            return make_value_alias(param, arg.identifier(),
+                                    argument_target(tc, arg));
         }
 
         machine& x{tc.machine()};
@@ -1965,11 +1977,13 @@ class stmt_call : public expression {
             .type_ptr{&param.get_type()},
             .register_operand{},
             .is_element{arg.is_array_element()},
+            .bound{argument_target(tc, arg)},
         };
     }
 
     // the result name of the function refers to the destination
-    [[nodiscard]] static auto make_result_alias(const ident_info& dst_info,
+    [[nodiscard]] static auto make_result_alias(const toc& tc,
+                                                const ident_info& dst_info,
                                                 const func_return_info& ret)
         -> alias_info {
 
@@ -1977,6 +1991,16 @@ class stmt_call : public expression {
             dst_info.use_operand or dst_info.has_lea() ? dst_info.operand
                                                        : operand{},
         };
+
+        // note: a register destination, its id is a register name, has no
+        //       variable
+        storage_target bound;
+
+        if (not dst_info.is_register()) {
+            bound = tc.storage_target_of(ret.ident_tk,
+                                         ident_info::root_of(dst_info.id),
+                                         dst_info.accessed_span);
+        }
 
         // a destination such as 'arr[1]' is not an array
         return {
@@ -1988,11 +2012,13 @@ class stmt_call : public expression {
                 dst_info.is_register() ? dst_info.operand : operand{},
             },
             .is_element{not dst_info.is_array},
+            .bound{std::move(bound)},
         };
     }
 
     [[nodiscard]] static auto make_value_alias(const stmt_def_func_param& param,
-                                               const std::string_view to)
+                                               const std::string_view to,
+                                               const storage_target& bound = {})
         -> alias_info {
 
         return {
@@ -2002,6 +2028,7 @@ class stmt_call : public expression {
             .type_ptr{&param.get_type()},
             .register_operand{},
             .is_element{},
+            .bound{bound},
         };
     }
 

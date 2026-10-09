@@ -1,0 +1,12 @@
+# --checks=alias: the same for a non-inlined function
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func noinline put(x mut i32, k i32) {
+    x = k + (100 - g[3])
+}
+
+func main() {
+    put(g[3], 10)
+    exit(g[3])
+}

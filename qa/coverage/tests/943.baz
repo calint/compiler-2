@@ -1,0 +1,18 @@
+# --checks=alias: a destination that is set from its own whole value is fine,
+# also when the destination is a parameter that names global data
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func inc(x mut i32) {
+    x = x + 1
+}
+
+func add_first(x mut i32) {
+    x = x + g[0]
+}
+
+func main() {
+    inc(g[3])
+    add_first(g[3])
+    if g[3] != 6 exit(1)
+}

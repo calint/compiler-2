@@ -1,0 +1,13 @@
+# --checks=alias: the argument and the data the function reads are different
+# elements of one array
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func put(x mut i32, k i32) {
+    x = k + (100 - g[3])
+}
+
+func main() {
+    put(g[0], 10)
+    if g[0] != 106 exit(1)
+}

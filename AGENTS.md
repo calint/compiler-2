@@ -23,7 +23,8 @@ Working agreements for AI sessions in this repository.
   names and files correctly.
 - Report what was and was not verified, and why.
 - Failed precondition: stop and explain, no weaker version.
-- Workspace-relative paths; numbered lists, not bulleted.
+- Workspace-relative paths; numbered lists, not bulleted, nested as 1.1,
+  1.2, 2.3 so items can be referenced.
 
 ## C++ style
 
@@ -142,7 +143,6 @@ Working agreements for AI sessions in this repository.
   its output).
 - Never commit; the user does. Only when told to: message is always `.` (no
   body, no trailer).
-- Live test output: no redirection or piping through `grep`/`tail`/`head`.
 - Shell scripts `cd` to their own directory and use relative paths.
 
 ## Tools

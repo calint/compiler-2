@@ -1,0 +1,20 @@
+# --checks=alias: the element 'e' of a 'foo' inside the element of another 'foo'
+# reads another field of the outer array, which is accepted
+
+type item {
+    data i32[2],
+    other i32,
+}
+
+func main() {
+    var items = item[2]
+    items[0].other = 3
+
+    foo items {
+        foo e.data {
+            e = e + items[0].other
+        }
+    }
+
+    if items[1].data[1] != 3 exit(1)
+}

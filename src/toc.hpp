@@ -54,6 +54,13 @@ struct noninline_instance {
     std::vector<size_t> array_lengths;
 };
 
+// storage under the name of a root variable: the root variable and the bytes
+// of it, empty when they are not known
+struct storage_target {
+    std::string root;
+    std::optional<access_span> span;
+};
+
 struct alias_info {
     std::string from;
     std::string to;
@@ -62,6 +69,10 @@ struct alias_info {
     operand register_operand;
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
+    // the root variable and the bytes of it that the alias names, found where
+    // the call is made because the callee does not see the caller's names,
+    // e.g. the element 'e' of a 'foo'; empty for a temporary
+    storage_target bound;
 
     //
     // statics
@@ -80,6 +91,7 @@ struct alias_info {
             .type_ptr{&alias_type},
             .register_operand{reg},
             .is_element{},
+            .bound{storage_target{}},
         };
     }
 };
@@ -859,7 +871,8 @@ struct check_options {
     bool bounds_lower{};
     bool bounds_with_line{};
     bool frame{};
-    bool alias{};
+    // on unless '--checks=-alias'
+    bool alias{true};
 };
 
 // what the compile used, for the report
@@ -881,6 +894,30 @@ class scope_stack final {
     [[nodiscard]] auto back() -> frame& { return frames_.back(); }
 
     [[nodiscard]] auto back() const -> const frame& { return frames_.back(); }
+
+    // the root variable that the parameter 'name' names, empty when it is not
+    // a parameter or the variable is not known
+    [[nodiscard]] auto bound_root(const std::string_view name) const
+        -> std::string_view {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(name)) {
+                return {};
+            }
+
+            if (not frm.is_func()) {
+                continue;
+            }
+
+            if (not frm.has_alias(name)) {
+                return {};
+            }
+
+            return frm.get_alias(name).bound.root;
+        }
+
+        std::unreachable();
+    }
 
     // blocks and loops belong to the function frame below them
     [[nodiscard]] auto current_func_frame() const -> const frame& {
@@ -1008,6 +1045,22 @@ class scope_stack final {
         return count;
     }
 
+    // true when 'name' is a parameter that names its argument
+    [[nodiscard]] auto is_alias(const std::string_view name) const -> bool {
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(name)) {
+                return false;
+            }
+
+            if (frm.is_func()) {
+                return frm.has_alias(name);
+            }
+        }
+
+        // statements are compiled inside a function
+        std::unreachable();
+    }
+
     [[nodiscard]] auto is_empty() const -> bool { return frames_.empty(); }
 
     [[nodiscard]] auto is_in_loop_block() const -> bool {
@@ -1061,6 +1114,40 @@ class scope_stack final {
     [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
 
     auto pop() -> void { frames_.pop_back(); }
+
+    // 'span' of the variable or parameter 'name' as bytes of the root
+    // variable it names, empty when that is not known
+    [[nodiscard]] auto root_span(const std::string_view name,
+                                 const std::optional<access_span>& span) const
+        -> std::optional<access_span> {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(name)) {
+                return span;
+            }
+
+            if (not frm.is_func()) {
+                continue;
+            }
+
+            if (not frm.has_alias(name)) {
+                return span;
+            }
+
+            const std::optional<access_span>& bound{
+                frm.get_alias(name).bound.span,
+            };
+
+            if (not bound or not span) {
+                return std::nullopt;
+            }
+
+            return bound->shifted(*span);
+        }
+
+        // statements are compiled inside a function
+        std::unreachable();
+    }
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
@@ -2437,6 +2524,11 @@ class toc final {
         return scopes_.inlined_nesting(name);
     }
 
+    // a parameter of the function being compiled, it names the argument
+    [[nodiscard]] auto is_alias(const std::string_view name) const -> bool {
+        return scopes_.is_alias(name);
+    }
+
     [[nodiscard]] auto is_alias_check() const -> bool { return checks_.alias; }
 
     [[nodiscard]] auto is_bounds_check_lower() const -> bool {
@@ -2590,6 +2682,29 @@ class toc final {
         funcs_.clear_noninline_instances();
     }
 
+    [[nodiscard]] auto root_span(const std::string_view name,
+                                 const std::optional<access_span>& span) const
+        -> std::optional<access_span> {
+
+        return scopes_.root_span(name, span);
+    }
+
+    // the variable that 'name' names, a parameter is followed to its argument
+    [[nodiscard]] auto root_variable_of(const token& src_loc_tk,
+                                        const std::string_view name) const
+        -> std::string {
+
+        const std::string_view bound_root{scopes_.bound_root(name)};
+
+        if (not bound_root.empty()) {
+            return std::string{bound_root};
+        }
+
+        const ident_info info{make_ident_info(src_loc_tk, name)};
+
+        return std::string{info.elem_path.front()};
+    }
+
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8) -> void {
 
@@ -2612,6 +2727,43 @@ class toc final {
         -> std::string_view {
 
         return locations_.source_of(src_loc_tk);
+    }
+
+    // what 'name' names with 'span' inside it, as a root variable and bytes
+    // of it. a parameter is followed to its argument and the element 'e' of a
+    // 'foo' is any element of the array it iterates
+    [[nodiscard]] auto
+    storage_target_of(const token& src_loc_tk, const std::string_view name,
+                      const std::optional<access_span>& span) const
+        -> storage_target {
+
+        const foo_array_info array{foo_array(name)};
+
+        if (array.root.empty()) {
+            return {
+                .root{root_variable_of(src_loc_tk, name)},
+                .span{root_span(name, span)},
+            };
+        }
+
+        // note: the array was resolved to its root variable when the 'foo'
+        //       was made, the callee of a call in the 'foo' does not see 'e'
+        std::optional<access_span> element_span{array.span};
+
+        if (element_span) {
+            const ident_info element_info{make_ident_info(src_loc_tk, name)};
+
+            element_span->add_level(element_info.type_ref().size_bytes());
+
+            if (span) {
+                element_span = element_span->shifted(*span);
+            }
+        }
+
+        return {
+            .root{array.root},
+            .span{std::move(element_span)},
+        };
     }
 
     [[nodiscard]] auto types() -> type_table& { return types_; }

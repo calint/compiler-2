@@ -250,6 +250,7 @@ class expr_arith final : public expression {
 
         // writing the destination early would change what later elements read
         if (reads_destination_early(dst_info)) {
+
             compile_through_scratch(tc, indent, dst_info);
             return;
         }
@@ -261,12 +262,12 @@ class expr_arith final : public expression {
             [&] -> void { compile_through_scratch(tc, indent, dst_info); });
     }
 
-    [[nodiscard]] auto accessed_range() const
-        -> std::optional<field_coverage::range> override {
+    [[nodiscard]] auto accessed_span() const
+        -> std::optional<access_span> override {
 
         assert(exprs_.size() == 1);
 
-        return exprs_.at(0)->accessed_range();
+        return exprs_.at(0)->accessed_span();
     }
 
     // each element is computed at the width of the destination
@@ -413,8 +414,8 @@ class expr_arith final : public expression {
                exprs_.front()->produces_boolean();
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         for (const std::unique_ptr<statement>& e : exprs_) {
             e->visit_reads(var, reader);

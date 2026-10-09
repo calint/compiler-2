@@ -202,9 +202,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] medium: --checks=noub: system stack overflow in deep non-inline recursion
     segfaults before the frame check; check 'rsp'/'sp' or depth at each call
 [ ] medium: --checks=alias: route inline builtin results through a scratch
-    register instead of rejecting (077.baz, 135.baz, 394.baz, 397.baz,
-    485.baz); 485.baz is a '--checks=noub' error test, it would become a run
-    test again if the semantics change
+    register instead of rejecting (077.baz, 135.baz, 397.baz now use a
+    temporary variable, 485.baz is a '--checks=noub' error test); it would
+    become a run test again if the semantics change
 [ ] medium: low priority: generics: constants as parameters of functions
     ('func f<n>()') and constructors of generic types
 [ ] medium: low priority: generics: a generic that is never instantiated is not
@@ -245,14 +245,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning
-[ ] hard: UB detection: result aliases a by-reference argument ('x = f(x)', 'p
-    = swap(p)', 485.baz, inline and noinline); reject when the callee reads
-    that parameter after writing its result: per-function summary plus a
-    call-site overlap check using identifier byte ranges; valid today:
-    135.baz, 137.baz-140.baz, 394.baz read before writing
-[ ] hard: UB detection: two by-reference parameters bound to the same variable
-    inside an inline body ('res' and 'p' alias names of one caller variable
-    are not detected; arguments of one call are done)
 [ ] hard: UB detection: accept partial results when the caller's destination is
     already initialized (call-site coverage summary); prog.baz 'object_init'
     sets only 'res.pos.y' and is rejected

@@ -719,8 +719,8 @@ func checks() {
 #   x = add_to_zero(x)
 #   gives 0 because the result 'res' and the argument 'v' refer to the same
 #   variable 'x', so 'res = 0' also clears 'v'
-#   '--checks=alias' rejects calls where the result and the arguments may
-#   share storage with each other
+#   calls where the result and the arguments may share storage with each
+#   other are rejected, '--checks=-alias' turns that check off
 
     var p = point{1, 2}
     p = point{2, 1}
@@ -729,7 +729,8 @@ func checks() {
 #   p = point{p.y, p.x}
 #   compile error because 'p.x' is read after the first field overwrote it
 }
-# '--checks=noub' enables all checks against undefined behavior
+# '--checks=noub' enables all checks against undefined behavior, aliasing is
+# checked also without it
 
 func main() {
     constants_and_variables()

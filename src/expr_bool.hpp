@@ -136,8 +136,8 @@ class expr_bool_op final : public statement {
         return is_expression_;
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         lhs_.visit_reads(var, reader);
         rhs_.visit_reads(var, reader);
@@ -1046,8 +1046,8 @@ class expr_bool final : public statement {
             [](const auto& e) -> bool { return e.is_expression(); });
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         for (const element& e : bools_) {
             e.visit([&var, &reader](const auto& item) -> void {

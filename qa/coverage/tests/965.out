@@ -1,0 +1,7 @@
+
+965.baz:17:15: 'es[k].items[0].f' may share storage with the destination 'x' (both name 'es'), compute the value in a temporary variable first
+    x = 100 - es[k].items[0].f
+              ^~
+965.baz:25:5: called from
+    put(es[i].items[j].f, k)
+    ^~~

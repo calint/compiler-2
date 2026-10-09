@@ -21,7 +21,9 @@ func main() {
     assert(twice(7) == 14)
     assert(commented(4) == 7)
     var small = i32(9)
-    small = narrow(small)
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = narrow(small)
+    small = tmp1
     assert(small == 10)
     var record = make_pair(12)
     assert(record.first == 12)

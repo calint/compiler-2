@@ -1,0 +1,12 @@
+# --checks=alias: a read at a run-time index of the data that the argument names
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func put(x mut i32, j i32) {
+    x = 100 - g[j]
+}
+
+func main() {
+    put(g[3], 3)
+    exit(g[3])
+}

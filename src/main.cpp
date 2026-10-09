@@ -358,14 +358,15 @@ reports:
              each callee holds
 
 checks:
-  upper  runtime upper array bounds only, a negative index passes
-  lower  runtime lower array bounds, catches negative indexes
-  line   report line number on failed bounds check
-  frame  runtime non-inlined function frame capacity
-  alias  compile time rejection of calls where a result may share storage
-         with an argument
-  noub   all checks against undefined behavior: upper, lower, frame and
-         alias
+  upper    runtime upper array bounds only, a negative index passes
+  lower    runtime lower array bounds, catches negative indexes
+  line     report line number on failed bounds check
+  frame    runtime non-inlined function frame capacity
+  alias    compile time rejection of calls where a result may share storage
+           with an argument, on by default
+  -alias   turns alias off, also when noub is given
+  noub     all checks against undefined behavior: upper, lower, frame and
+           alias
 
 examples:
   {0} prog.baz > prog.s
@@ -542,11 +543,13 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     return parsed;
 }
 
-// each '--checks' replaces the earlier ones, empty parts are ignored
+// each '--checks' replaces the earlier ones, empty parts are ignored, 'alias'
+// stays on unless '-alias' is given
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options> {
 
     check_options parsed{};
+    bool is_alias_disabled{};
 
     for (const auto part : checks | std::views::split(',')) {
         const std::string_view option{part};
@@ -561,6 +564,8 @@ auto check_reproduced_source(const program& prg, const source_files& files)
             parsed.frame = true;
         } else if (option == "alias") {
             parsed.alias = true;
+        } else if (option == "-alias") {
+            is_alias_disabled = true;
         } else if (option == "noub") {
             // 'line' only changes the report, it prevents no undefined
             // behavior
@@ -569,13 +574,18 @@ auto check_reproduced_source(const program& prg, const source_files& files)
             parsed.frame = true;
             parsed.alias = true;
         } else if (not option.empty()) {
-            print_usage_error(
-                std::format("invalid --checks option: '{}', supported options "
-                            "are: upper, lower, line, frame, alias, noub",
-                            option));
+            print_usage_error(std::format(
+                "invalid --checks option: '{}', supported options "
+                "are: upper, lower, line, frame, alias, -alias, noub",
+                option));
 
             return std::nullopt;
         }
+    }
+
+    // note: applied last so that the order in the list does not matter
+    if (is_alias_disabled) {
+        parsed.alias = false;
     }
 
     return parsed;

@@ -12,12 +12,16 @@ func main() {
     var arr = i32[4]{}
     var ix = i32(1)
     arr[ix] = 2
-    arr[3] = fiz(arr[ix], ix)
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = fiz(arr[ix], ix)
+    arr[3] = tmp1
     assert(arr[3] == 6)
     var c = fuz(arr[ix], ix)
     assert(c == -4)
     var d = fiz(arr[ix], ix)
     assert(d == 6)
-    arr[3] = fuz(arr[ix], ix)
+    # note: temporary because the result may share storage with the argument
+    var tmp2 = fuz(arr[ix], ix)
+    arr[3] = tmp2
     assert(arr[3] == -4)
 }

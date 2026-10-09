@@ -182,8 +182,8 @@ class stmt_builtin_convert final : public expression {
         return true;
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         arg_.visit_reads(var, reader);
     }

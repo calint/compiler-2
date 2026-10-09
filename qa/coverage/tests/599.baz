@@ -40,7 +40,9 @@ func object.at(x, y, color) self {
 func point.diagonal(d) self {
     self.x = d
     self.y = d
-    self.x = self.sum()
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = self.sum()
+    self.x = tmp1
 }
 
 func noinline point.scaled(x, y, k) self {

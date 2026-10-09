@@ -1,0 +1,24 @@
+# --checks=alias: the element 'e' of a 'foo' inside another 'foo' is assigned
+# from another field of the same inner array element, which is accepted
+
+type leaf {
+    v i32[2],
+    tag i32,
+}
+
+type mid {
+    leaves leaf[2],
+}
+
+func main() {
+    var m = mid[2]
+    m[0].leaves[1].v[0] = 4
+
+    foo m {
+        foo e.leaves {
+            e.tag = e.tag + m[0].leaves[1].v[0]
+        }
+    }
+
+    if m[1].leaves[1].tag != 4 exit(1)
+}

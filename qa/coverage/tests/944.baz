@@ -1,0 +1,13 @@
+# a noinline body that fits alone is called inside an expression that holds registers,
+# x86_64: the dry run of the body at the call site has fewer registers than the body
+
+func noinline f(a i32, b i32) res i32 {
+    res = ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + ((a * b) + (a * b)))))))))
+}
+
+func main() {
+    var x = i32(1)
+    var y = i32(1)
+    var r = ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + ((x * y) + f(x, y)))))))
+    exit(r)
+}

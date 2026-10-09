@@ -958,7 +958,7 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::visit_reads(const std::string_view var,
+auto expr_type::visit_reads(const read_filter var,
                             const read_visitor reader) const -> void {
 
     // a copy or a call reads its source instead of the '{...}' items
@@ -997,11 +997,11 @@ auto expr_type::identifier() const -> std::string_view {
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::accessed_range() const -> std::optional<field_coverage::range> {
+auto expr_type::accessed_span() const -> std::optional<access_span> {
     // note: only a copy has an accessed range
     assert(stmt_ident_);
 
-    return stmt_ident_->accessed_range();
+    return stmt_ident_->accessed_span();
 }
 
 // declared in 'expr_type.hpp'

@@ -52,7 +52,7 @@ class stmt_builtin_foo final : public statement {
         tc.enter_foo("");
 
         add_loop_names(tc, 0, src_loc_tk, src_loc_tk, array_info, operand{},
-                       operand{}, foo_array());
+                       operand{}, foo_array(tc));
 
         code_ = {tc, tz};
 
@@ -214,16 +214,22 @@ class stmt_builtin_foo final : public statement {
         }
 
         add_loop_names(tc, indent, ident_.tok(), tok(), array_info, reg_iter,
-                       reg_counter, foo_array());
+                       reg_counter, foo_array(tc));
 
         return counter_in_memory ? tc.make_ident_info(tok(), "i").operand
                                  : reg_counter;
     }
 
-    // the root of the iterated array and the bytes of it that 'e' ranges over
-    [[nodiscard]] auto foo_array() const -> foo_array_info {
-        const field_coverage::range range{ident_.access_range()};
-        return {ident_.first_token().text(), range.offset, range.size_bytes};
+    // the root of the iterated array and the bytes of it that 'e' ranges over,
+    // found before this 'foo' adds its own 'e' so that a name that is the 'e'
+    // of an outer 'foo' is that one
+    [[nodiscard]] auto foo_array(const toc& tc) const -> foo_array_info {
+        const storage_target array{
+            tc.storage_target_of(ident_.first_token(),
+                                 ident_.first_token().text(), ident_.span()),
+        };
+
+        return {array.root, array.span};
     }
 
     [[nodiscard]] auto has_count() const -> bool {

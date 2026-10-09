@@ -1,0 +1,26 @@
+# --checks=alias: three nested 'foo' read a field outside the arrays they
+# iterate, which is accepted
+
+type leaf {
+    v i32[2],
+}
+
+type mid {
+    leaves leaf[2],
+    other i32,
+}
+
+func main() {
+    var m = mid[2]
+    m[0].other = 2
+
+    foo m {
+        foo e.leaves {
+            foo e.v {
+                e = e + m[0].other
+            }
+        }
+    }
+
+    if m[1].leaves[1].v[1] != 2 exit(1)
+}

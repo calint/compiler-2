@@ -1,0 +1,7 @@
+
+950.baz:12:14: argument 2 'g' may share storage with argument 1 'a' (both name 'g'), use a temporary variable for one of them
+    inner(a, g[0])
+             ^
+950.baz:16:5: called from
+    outer(g[0])
+    ^~~~~

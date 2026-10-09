@@ -91,8 +91,10 @@ class stmt_identifier final : public statement {
     bool is_array_{};
     bool is_indexed_{};
 
-    // bytes of the root variable accessed by this path
-    field_coverage::range access_range_;
+    // bytes of the root variable accessed by this path, after a runtime index
+    // 'range' is the whole array and 'element' the bytes reached in each
+    // element
+    access_span access_span_;
 
     // false when a runtime index leaves the element unknown
     bool is_exact_access_{};
@@ -168,10 +170,10 @@ class stmt_identifier final : public statement {
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
-    [[nodiscard]] auto accessed_range() const
-        -> std::optional<field_coverage::range> override {
+    [[nodiscard]] auto accessed_span() const
+        -> std::optional<access_span> override {
 
-        return access_range_;
+        return span();
     }
 
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
@@ -314,12 +316,12 @@ class stmt_identifier final : public statement {
         return last_token();
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         // a path such as 'p.y' reads its root variable
-        if (first_token().is_text(var)) {
-            reader(first_token(), path_text(), access_range_);
+        if (not var or first_token().is_text(*var)) {
+            reader(first_token(), path_text(), span());
         }
 
         visit_index_reads(var, reader);
@@ -330,7 +332,7 @@ class stmt_identifier final : public statement {
     //
 
     [[nodiscard]] auto access_range() const -> field_coverage::range {
-        return access_range_;
+        return access_span_.range;
     }
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
@@ -398,11 +400,15 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        flow.assigned.add(access_range_);
+        flow.assigned.add(access_span_.range);
+    }
+
+    [[nodiscard]] auto span() const -> const access_span& {
+        return access_span_;
     }
 
     // index expressions are read even when the path is written
-    auto visit_index_reads(const std::string_view var,
+    auto visit_index_reads(const read_filter var,
                            const read_visitor reader) const -> void {
 
         for (const ident_elem& e : elems_) {
@@ -526,24 +532,6 @@ class stmt_identifier final : public statement {
         return true;
     }
 
-    // a field covers its trailing padding so that assigning every field
-    // assigns the whole instance
-    [[nodiscard]] auto field_range(const type& parent_type,
-                                   const ident_elem& elem) const
-        -> field_coverage::range {
-
-        return {
-            .offset{
-                access_range_.offset +
-                    parent_type.field_offset(elem.name_tk, elem.name_tk.text()),
-            },
-            .size_bytes{
-                parent_type.field_extent_bytes(elem.name_tk,
-                                               elem.name_tk.text()),
-            },
-        };
-    }
-
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] auto is_method_name(const toc& tc, tokenizer& tz,
                                       const token& src_loc_tk,
@@ -586,7 +574,8 @@ class stmt_identifier final : public statement {
                not tc.has_const(root);
     }
 
-    // an unknown element leaves the whole array as the accessed range
+    // an unknown element leaves the whole array as the accessed range and
+    // adds the bytes of the element as a level
     auto narrow_to_element(toc& tc, const expr_any& index_expr,
                            const ident_info& array_info) -> void {
 
@@ -594,12 +583,13 @@ class stmt_identifier final : public statement {
             in_range_constant_index(tc, index_expr, array_info),
         };
 
+        const size_t element_size_bytes{array_info.type_ref().size_bytes()};
+
         if (not index) {
             is_exact_access_ = false;
+            access_span_.add_level(element_size_bytes);
             return;
         }
-
-        const size_t element_size_bytes{array_info.type_ref().size_bytes()};
 
         const size_t element_offset{*index * element_size_bytes};
 
@@ -607,13 +597,10 @@ class stmt_identifier final : public statement {
         const bool is_last_element{*index == array_info.array_len - 1};
         // note: -1 is the index of the last element
 
-        access_range_ = {
-            .offset{access_range_.offset + element_offset},
-            .size_bytes{
-                is_last_element ? access_range_.size_bytes - element_offset
-                                : element_size_bytes,
-            },
-        };
+        access_span_.narrow(element_offset,
+                            is_last_element
+                                ? access_span_.size_bytes() - element_offset
+                                : element_size_bytes);
     }
 
     // a path element with an optional '[index]'
@@ -663,15 +650,20 @@ class stmt_identifier final : public statement {
 
             const ident_info info{tc.make_ident_info(elem.name_tk, path)};
 
-            // inside an unknown element only the types are followed
-            if (is_exact_access_) {
-                access_range_ = is_root ? root_range(info)
-                                        : field_range(*parent_type, elem);
+            if (is_root) {
+                access_span_.range = root_range(info);
+            } else {
+                // a field covers its trailing padding so that assigning every
+                // field assigns the whole instance
+                access_span_.narrow(parent_type->field_offset(
+                                        elem.name_tk, elem.name_tk.text()),
+                                    parent_type->field_extent_bytes(
+                                        elem.name_tk, elem.name_tk.text()));
             }
 
             parent_type = &info.type_ref();
 
-            if (elem.array_index_expr and is_exact_access_) {
+            if (elem.array_index_expr) {
                 narrow_to_element(tc, *elem.array_index_expr, info);
             }
         }
@@ -697,7 +689,7 @@ class stmt_identifier final : public statement {
         -> field_coverage::range {
 
         return {
-            .offset{access_range_.offset},
+            .offset{access_span_.range.offset},
             .size_bytes{storage_size_bytes(tok(), info)},
         };
     }

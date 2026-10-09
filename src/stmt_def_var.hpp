@@ -101,8 +101,8 @@ class stmt_def_var final : public statement {
         assign_var_.compile(tc, indent, var_dst_info);
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         assign_var_.visit_reads(var, reader);
     }

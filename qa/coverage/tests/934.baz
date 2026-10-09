@@ -1,0 +1,18 @@
+# --checks=alias: the data is a record, the argument and the read are the same element
+
+type world {
+    items[4],
+    count,
+}
+
+dat w = world
+
+func put(x mut) {
+    x = 7 + (100 - w.items[2])
+}
+
+func main() {
+    w.items[2] = 3
+    put(w.items[2])
+    exit(w.items[2])
+}

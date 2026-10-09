@@ -1,4 +1,4 @@
 
-928.baz:17:17: 'w.array[2]' may share storage with the destination 'e' (both name 'w'), assign the value to a separate variable first
+928.baz:17:17: 'w.array[2]' may share storage with the destination 'e' (both name 'w'), compute the value in a temporary variable first
         e = e + w.array[2]
                 ^

@@ -1,0 +1,16 @@
+# --checks=alias: the read is in a function called by the one that writes the parameter
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func put(x mut i32, k i32) {
+    x = k + (100 - g[3])
+}
+
+func outer(y mut i32) {
+    put(y, 10)
+}
+
+func main() {
+    outer(g[3])
+    exit(g[3])
+}

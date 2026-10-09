@@ -76,8 +76,8 @@ class expr_type final : public statement {
         -> void override;
 
     // out-of-line: calls 'stmt_identifier'
-    [[nodiscard]] auto accessed_range() const
-        -> std::optional<field_coverage::range> override;
+    [[nodiscard]] auto accessed_span() const
+        -> std::optional<access_span> override;
 
     // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
@@ -100,8 +100,8 @@ class expr_type final : public statement {
     [[nodiscard]] auto is_indexed() const -> bool override;
 
     // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override;
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override;
 
     //
     // class methods
@@ -288,8 +288,8 @@ class expr_type final : public statement {
             dst.root,
             [&dst, &written](
                 const token& src_loc_tk, const std::string_view read_text,
-                const std::optional<field_coverage::range>& accessed) -> void {
-                if (accessed and not accessed->overlaps(written)) {
+                const std::optional<access_span>& accessed) -> void {
+                if (accessed and not accessed->range.overlaps(written)) {
                     return;
                 }
 

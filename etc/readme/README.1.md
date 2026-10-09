@@ -12,7 +12,7 @@ compiler writes the binary image itself.
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
 * support for reentrant non-inlined functions
-* opt-in checks that makes the language ub-free
+* checks that make the language ub-free, aliasing is checked by default
 * basic support for generics
 
 ## Supports
@@ -26,11 +26,14 @@ compiler writes the binary image itself.
 * arrays
 * array iteration
 * string, character, user type and array initializers
-* opt-in checks against undefined behavior
-  * array bounds at runtime, optionally reporting the line number
-  * non-inlined function frame capacity at runtime
-  * compile time rejection of calls where a result or argument may share
-    storage
+* checks against undefined behavior
+  * opt-in: array bounds at runtime, optionally reporting the line number
+  * opt-in: non-inlined function frame capacity at runtime
+  * always on: compile time rejection of arguments that may share storage when
+    a parameter is `mut`
+  * on by default: compile time rejection of calls and assignments where the
+    value may read the destination under another name, `--checks=-alias` turns
+    it off
 * inlined functions
 * support for non-inlined functions
 * methods and constructors on user defined types

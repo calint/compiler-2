@@ -1075,6 +1075,10 @@ class machine_x86_64 final : public machine {
         return std::string{register_names_.at(index).qword};
     }
 
+    [[nodiscard]] auto register_pool_ref() -> register_pool& override {
+        return registers_;
+    }
+
     [[nodiscard]] auto
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers override {

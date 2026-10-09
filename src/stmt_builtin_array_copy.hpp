@@ -132,8 +132,8 @@ class stmt_builtin_array_copy final : public statement {
     }
 
     // the copied elements are not tracked, so the destination stays unassigned
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         src_.visit_reads(var, reader);
         dst_.visit_index_reads(var, reader);

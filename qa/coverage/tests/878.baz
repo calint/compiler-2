@@ -1,6 +1,6 @@
 # a result that aliases an argument compiles on every target
 
-# without '--checks=alias' the value is undefined, the program does not read it
+# with '--checks=-alias' the value is undefined, the program does not read it
 
 var total = 3
 

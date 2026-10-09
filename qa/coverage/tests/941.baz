@@ -1,0 +1,18 @@
+# --checks=alias: the method writes a field of an element chosen at run time and
+# reads the same field of another element, which can be the same one
+
+type entity {
+    len i32,
+    name i32,
+}
+
+dat entities = entity[4]
+
+func mut entity.bump(k i32) {
+    self.len = k + entities[1].len
+}
+
+func main() {
+    var i = 2
+    entities[i].bump(1)
+}

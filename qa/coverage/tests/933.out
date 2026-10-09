@@ -1,0 +1,7 @@
+
+933.baz:6:15: 'g[j]' may share storage with the destination 'x' (both name 'g'), compute the value in a temporary variable first
+    x = 100 - g[j]
+              ^
+933.baz:10:5: called from
+    put(g[3], 3)
+    ^~~

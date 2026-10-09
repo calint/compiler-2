@@ -902,6 +902,9 @@ class machine {
     [[nodiscard]] virtual auto register_display_name(size_t index) const
         -> std::string = 0;
 
+    // the pool of the scratch registers, a dry run swaps it for an empty one
+    [[nodiscard]] virtual auto register_pool_ref() -> register_pool& = 0;
+
     [[nodiscard]] virtual auto
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers = 0;
@@ -1084,12 +1087,19 @@ class machine {
 
     // runs 'emit' for its checks and returns the size of the code it made, in
     // the unit of the target, nothing it emits is kept and the registers it
-    // used are not counted
+    // used are not counted. it starts with no register held, like the body of
+    // a 'noinline' function it stands for, so the registers that the caller
+    // holds do not make it run out
     [[nodiscard]] auto measure_code_size(const std::function_ref<void()> emit)
         -> size_t {
 
         const size_t max_scratch_regs{usage_max_scratch_regs_};
         const register_trace kept_trace{trace_};
+
+        register_pool& pool{register_pool_ref()};
+        const register_pool kept_pool{pool};
+
+        pool = register_pool{};
 
         size_t size{};
 
@@ -1098,6 +1108,7 @@ class machine {
             size = assembler::code_size_of(target_assembler().capture(emit));
         });
 
+        pool = kept_pool;
         usage_max_scratch_regs_ = max_scratch_regs;
         trace_ = kept_trace;
 

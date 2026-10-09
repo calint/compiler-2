@@ -1,0 +1,17 @@
+# --checks=alias: the element 'e' of a 'foo' inside the element of another 'foo'
+# reads the same field of the outer array, which can be the element itself
+
+type item {
+    data i32[2],
+    other i32,
+}
+
+func main() {
+    var items = item[2]
+
+    foo items {
+        foo e.data {
+            e = e + items[0].data[1]
+        }
+    }
+}

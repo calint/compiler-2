@@ -26,6 +26,14 @@ class stmt_assign_var final : public statement {
     token equals_tk_;
     size_t array_count_{};
 
+    // a read of a variable in the value
+    struct value_read {
+        token tk;
+        std::string text;
+        // empty when the read is of the whole variable
+        std::optional<access_span> span;
+    };
+
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si,
                     const token equals_tk)
@@ -80,12 +88,13 @@ class stmt_assign_var final : public statement {
             .is_exact{stmt_ident_.is_exact_access()},
         });
 
-        assert_not_reading_foo_array(tc);
-
         // get information about the destination of the compilation
         ident_info var_dst_info{tc.make_ident_info(stmt_ident_)};
 
-        var_dst_info.access_range = stmt_ident_.access_range();
+        var_dst_info.accessed_span = stmt_ident_.span();
+        var_dst_info.is_reference = is_reference_destination(tc, var_dst_info);
+
+        assert_reference_not_read(tc, var_dst_info);
 
         if (var_dst_info.is_const()) {
             throw compiler_exception{
@@ -126,8 +135,8 @@ class stmt_assign_var final : public statement {
         stmt_ident_.record_assignment(flow);
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         expr_.visit_reads(var, reader);
         stmt_ident_.visit_index_reads(var, reader);
@@ -140,54 +149,95 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
   private:
-    // the element 'e' of a 'foo' is a place in the array, a read of the bytes
-    // of the array in the value may be of that place after it was written,
-    // only for '--checks=alias'
-    auto assert_not_reading_foo_array(const toc& tc) const -> void {
-        if (not tc.is_alias_check()) {
+    // a destination that names storage under another name, e.g. a parameter or
+    // the element of a 'foo', may be read by the value under that name, only
+    // for '--checks=alias'
+    auto assert_reference_not_read(const toc& tc,
+                                   const ident_info& dst_info) const -> void {
+
+        if (not tc.is_alias_check() or not dst_info.is_reference) {
             return;
         }
 
-        const foo_array_info array{
-            tc.foo_array(stmt_ident_.first_token().text()),
+        const storage_target dst{
+            tc.storage_target_of(stmt_ident_.first_token(),
+                                 stmt_ident_.first_token().text(),
+                                 stmt_ident_.span()),
         };
 
-        if (array.root.empty()) {
-            return;
+        for (const value_read& read : reads_of_value()) {
+            if (not may_share_storage(tc, dst, read)) {
+                continue;
+            }
+
+            throw compiler_exception{
+                read.tk,
+                std::format("'{}' may share storage with the destination '{}' "
+                            "(both name '{}'), compute the value in a "
+                            "temporary variable first",
+                            read.text, stmt_ident_.identifier(), dst.root)};
+        }
+    }
+
+    // a pointer, a parameter that names its argument or an element of a 'foo'
+    [[nodiscard]] auto
+    is_reference_destination(const toc& tc, const ident_info& dst_info) const
+        -> bool {
+
+        const std::string_view root{stmt_ident_.first_token().text()};
+
+        return dst_info.is_pointer or tc.is_alias(root) or
+               not tc.foo_array(root).root.empty();
+    }
+
+    // true when the read may be of bytes of the destination under another
+    // name, a read of other bytes or of another variable is not
+    [[nodiscard]] auto may_share_storage(const toc& tc,
+                                         const storage_target& dst,
+                                         const value_read& read) const -> bool {
+
+        const std::string_view read_name{read.tk.text()};
+
+        // note: a read under the name of the destination is handled where the
+        //       value is compiled, e.g. 'x = x + 1'
+        if (read_name == stmt_ident_.first_token().text()) {
+            return false;
         }
 
-        const field_coverage::range array_range{
-            .offset{array.offset_bytes},
-            .size_bytes{array.size_bytes},
+        if (not tc.is_var_or_alias(read_name)) {
+            return false;
+        }
+
+        const storage_target source{
+            tc.storage_target_of(stmt_ident_.first_token(), read_name,
+                                 read.span),
         };
 
-        token read_tk;
-        std::string read_text;
+        if (source.root != dst.root) {
+            return false;
+        }
+
+        // note: an unknown span or an unknown access is the whole variable
+        const bool is_known{read.span and source.span and dst.span};
+
+        return not is_known or source.span->overlaps(*dst.span);
+    }
+
+    // every read of a variable in the value, in source order
+    [[nodiscard]] auto reads_of_value() const -> std::vector<value_read> {
+        std::vector<value_read> reads;
 
         expr_.visit_reads(
-            array.root,
-            [&](const token& tk, const std::string_view text,
-                const std::optional<field_coverage::range>& accessed) -> void {
-                // another field of the same variable cannot be the element
-                if (accessed and not accessed->overlaps(array_range)) {
-                    return;
-                }
-
-                if (read_tk.is_empty()) {
-                    read_tk = tk;
-                    read_text = text;
-                }
+            std::nullopt,
+            [&reads](const token& tk, const std::string_view text,
+                     const std::optional<access_span>& accessed) -> void {
+                reads.push_back({
+                    .tk{tk},
+                    .text{text},
+                    .span{accessed},
+                });
             });
 
-        if (read_tk.is_empty()) {
-            return;
-        }
-
-        throw compiler_exception{
-            read_tk,
-            std::format("'{}' may share storage with the destination '{}' "
-                        "(both name '{}'), assign the value to a separate "
-                        "variable first",
-                        read_text, stmt_ident_.identifier(), array.root)};
+        return reads;
     }
 };

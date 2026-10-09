@@ -210,16 +210,16 @@ class expr_any final : public statement {
             array_count - vars_.size());
     }
 
-    [[nodiscard]] auto accessed_range() const
-        -> std::optional<field_coverage::range> override {
+    [[nodiscard]] auto accessed_span() const
+        -> std::optional<access_span> override {
 
         // note: only identifier arguments ask, and those are never arrays
         assert(not is_array_);
         assert(vars_.size() == 1);
 
         return vars_.at(0).visit(
-            [](const auto& expression) -> std::optional<field_coverage::range> {
-                return expression.accessed_range();
+            [](const auto& expression) -> std::optional<access_span> {
+                return expression.accessed_span();
             });
     }
 
@@ -318,8 +318,8 @@ class expr_any final : public statement {
         });
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         // a non-array expression is the single element
         for (const expr_variant& e : vars_) {

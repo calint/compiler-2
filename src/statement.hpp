@@ -243,8 +243,8 @@ class statement {
 
     // the bytes of its root variable that an identifier path reaches, a path
     // with a run-time index reaches its whole array
-    [[nodiscard]] virtual auto accessed_range() const
-        -> std::optional<field_coverage::range> {
+    [[nodiscard]] virtual auto accessed_span() const
+        -> std::optional<access_span> {
 
         std::unreachable();
     }
@@ -359,9 +359,9 @@ class statement {
         assert_var_not_used(flow.var, flow.assigned);
     }
 
-    // reports every read of 'var' in this statement, a leaf is never named
-    // like a variable
-    virtual auto visit_reads(const std::string_view var,
+    // reports every read of 'var' in this statement, of every variable when
+    // none, a leaf is never named like a variable
+    virtual auto visit_reads(const read_filter var,
                              [[maybe_unused]] const read_visitor reader) const
         -> void {
 
@@ -402,22 +402,22 @@ class statement {
     auto assert_var_not_used(const std::string_view var,
                              const field_coverage& assigned) const -> void {
 
-        visit_reads(
-            var,
-            [&var, &assigned](
-                const token& src_loc_tk,
-                [[maybe_unused]] const std::string_view read_text,
-                const std::optional<field_coverage::range>& accessed) -> void {
-                const bool is_assigned{
-                    accessed ? assigned.covers(*accessed) : assigned.is_full(),
-                };
+        visit_reads(var,
+                    [&var, &assigned](
+                        const token& src_loc_tk,
+                        [[maybe_unused]] const std::string_view read_text,
+                        const std::optional<access_span>& accessed) -> void {
+                        const bool is_assigned{
+                            accessed ? assigned.covers(accessed->range)
+                                     : assigned.is_full(),
+                        };
 
-                if (is_assigned) {
-                    return;
-                }
+                        if (is_assigned) {
+                            return;
+                        }
 
-                throw_uninitialized(src_loc_tk, var);
-            });
+                        throw_uninitialized(src_loc_tk, var);
+                    });
     }
 
     [[nodiscard]] auto get_type() const -> const type& {
@@ -444,8 +444,8 @@ class statement {
             [&is_read](
                 [[maybe_unused]] const token& src_loc_tk,
                 [[maybe_unused]] const std::string_view read_text,
-                [[maybe_unused]] const std::optional<field_coverage::range>&
-                    accessed) -> void { is_read = true; });
+                [[maybe_unused]] const std::optional<access_span>& accessed)
+                -> void { is_read = true; });
 
         return is_read;
     }

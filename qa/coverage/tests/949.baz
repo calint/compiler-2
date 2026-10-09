@@ -1,0 +1,19 @@
+# --checks=alias: arrays of different element sizes that overlap are assumed to
+# reach the same bytes
+
+type entity {
+    vals i32[3],
+}
+
+dat entities = entity[4]
+
+func mut entity.set(j i32) {
+    self.vals[0] = entities[1].vals[j]
+}
+
+func main() {
+    var i = 2
+    var j = i32(1)
+
+    entities[i].set(j)
+}

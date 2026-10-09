@@ -1,0 +1,19 @@
+# --checks=alias: the argument and the data the function reads are different
+# fields of one record
+
+type world {
+    items[4],
+    count,
+}
+
+dat w = world
+
+func put(x mut) {
+    x = 7 + w.items[2]
+}
+
+func main() {
+    w.items[2] = 3
+    put(w.count)
+    if w.count != 10 exit(1)
+}

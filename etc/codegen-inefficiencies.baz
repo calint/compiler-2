@@ -13,9 +13,9 @@
 # across statements (register allocation, out of scope for now):
 #   value reloaded right after it was stored
 #
-# review with: ./baz --target=rv32i etc/codegen-inefficiencies.baz
-#         and: ./baz etc/codegen-inefficiencies.baz
-# etc/codegen-inefficiencies.s: ./baz --target=rv32i-fpga
+# review with: ./baz --checks=-alias --target=rv32i etc/codegen-inefficiencies.baz
+#         and: ./baz --checks=-alias etc/codegen-inefficiencies.baz
+# etc/codegen-inefficiencies.s: ./baz --checks=-alias --target=rv32i-fpga
 
 type point {x, y}
 

@@ -1,0 +1,15 @@
+# --checks=alias: a call result is written into the element 'e' of a 'foo' and
+# the function reads the array, which can be the element itself
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func f(k i32) res i32 {
+    res = k + (100 - g[3])
+}
+
+func main() {
+    foo g {
+        e = f(10)
+    }
+    exit(g[0])
+}

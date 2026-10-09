@@ -1,0 +1,11 @@
+# --checks=alias: the same for a non-inlined function
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func noinline f(k i32) res i32 {
+    res = k + (100 - g[3])
+}
+
+func main() {
+    g[3] = f(10)
+}

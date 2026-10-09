@@ -15,7 +15,9 @@ func main() {
     values[1] = 4
     values[2] = 8
 
-    values[0] = fez(values)
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = fez(values)
+    values[0] = tmp1
     assert(values[0] == 1)
 
     values[3] = foz(values[2], values[1])

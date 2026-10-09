@@ -127,8 +127,8 @@ class stmt_builtin_arrays_equal final : public expression {
         return true;
     }
 
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         lhs_.visit_reads(var, reader);
         rhs_.visit_reads(var, reader);

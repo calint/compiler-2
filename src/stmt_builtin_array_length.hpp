@@ -109,8 +109,8 @@ class stmt_builtin_array_length final : public expression {
     }
 
     // the length is known at compile time so the value is not read
-    auto visit_reads(const std::string_view var,
-                     const read_visitor reader) const -> void override {
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
 
         stmt_ident_.visit_index_reads(var, reader);
     }

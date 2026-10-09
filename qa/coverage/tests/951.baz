@@ -1,0 +1,18 @@
+# --checks=alias: the same for non-inlined functions, the aliasing is made
+# inside the body of the function that passes a parameter and a global
+
+dat g = i32[2]{ 1, 2 }
+
+func noinline inner(x mut i32, y i32) {
+    x = 10
+    x = x + y
+}
+
+func noinline outer(a mut i32) {
+    inner(a, g[0])
+}
+
+func main() {
+    outer(g[0])
+    exit(g[0])
+}

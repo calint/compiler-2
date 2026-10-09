@@ -264,8 +264,8 @@ func main() {
     # initializing from an array copies it, `==` compares same size arrays
 
 #   arr[ix] = ~inv(arr[ix - 1])
-#   `--checks=alias` rejects this because "return" and the argument may share
-#   storage
+#   rejected because "return" and the argument may share storage,
+#   `--checks=-alias` allows it
 
     ix = 3
     var tmp = ~inv(arr[ix - 1])

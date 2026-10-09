@@ -19,10 +19,14 @@ func main() {
     var arr = i32[3]{1, 2, 3}
     var ix = 2
 
-    arr[0] = twice(arr[ix])
+    # note: temporary because the result may share storage with the argument
+    var tmp1 = twice(arr[ix])
+    arr[0] = tmp1
     assert(arr[0] == 6)
 
-    arr[ix] = twice(arr[1])
+    # note: temporary because the result may share storage with the argument
+    var tmp2 = twice(arr[1])
+    arr[ix] = tmp2
     assert(arr[2] == 4)
 
     var ps = point[2]{{1, 2}, {3, 4}}
