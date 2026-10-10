@@ -1,0 +1,10 @@
+# the destination of a copy at the maximum of i32 with a count of one is out of bounds
+
+func main() {
+    var x = i8[4]
+    var y = i8[4]
+    var start = i32(0x7fffffff)
+    var count = i32(1)
+    array_copy(x[0], y[start], count)
+    exit(0)
+}

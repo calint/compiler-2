@@ -117,11 +117,18 @@ def fuzz_one(args):
     lines = base[start:start + rnd.choice([5, 20, 60, len(base)])]
     if rnd.random() < 0.5:
         lines = base
+    # note: ctrl-d is the end of input of the uart, carriage return is read as
+    # newline and backspace as delete, so none is mutated into the session and
+    # the fpga run gets a ctrl-d at the end instead
     data = mutate_session(rnd, lines, words)
+    data = data.replace(b"\x04", b"\x05").replace(b"\r", b"\x05")
+    data = data.replace(b"\x08", b"\x05")
+    # the emulator needs about 0.2 seconds per megabyte
+    data = data[:1 << 20] + b"\ngo home\n"
     found = []
     r86 = fl.run([X86], 10, stdin_bytes=data)
     o86 = fl.outcome_x86(r86)
-    rf = fl.run([fl.EMULATOR, IMAGE, SDCARD], 10, stdin_bytes=data)
+    rf = fl.run([fl.EMULATOR, IMAGE, SDCARD], 10, stdin_bytes=data + b"\x04")
     ofpga = fl.outcome_fpga(rf)
     text = data.decode("latin-1")
     for target, o in (("x86", o86), ("fpga", ofpga)):

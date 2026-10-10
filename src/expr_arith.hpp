@@ -279,13 +279,6 @@ class expr_arith final : public expression {
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
-            // a shift count is not stored in the destination
-            if (o == arithmetic_operator::shift_left or
-                o == arithmetic_operator::shift_right) {
-
-                continue;
-            }
-
             e->assert_not_narrowed(tc, dst_type);
         }
     }

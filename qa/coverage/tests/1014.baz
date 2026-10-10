@@ -1,0 +1,9 @@
+# a read of a count that added to the start passes the maximum of i64 is out of bounds
+
+func main() {
+    var x = i8[4]
+    var start = i64(2)
+    var count = i64(0x7fffffffffffffff)
+    read(0, x, count, start)
+    exit(0)
+}

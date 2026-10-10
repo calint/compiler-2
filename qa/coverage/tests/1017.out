@@ -1,0 +1,4 @@
+
+1017.baz:6:14: 'count' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    x = x >> count
+             ^~~~~

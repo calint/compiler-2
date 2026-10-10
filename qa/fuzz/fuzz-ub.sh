@@ -29,9 +29,13 @@ done <<EOF
 -overflow arith 40
 -division arith 60
 -shift arith 60
+-shift shifts 100
 -upper arrays 60
 -lower arrays 60
 -overlap arrays 100
+-upper indexes 100
+-lower indexes 100
+-overlap indexes 300
 -frame,-stack deep 10
 EOF
 exit $missed

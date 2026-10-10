@@ -452,9 +452,19 @@ class machine_x86_64 final : public machine {
             compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
                                 reg_count);
 
-            branch_to_bounds_panic(indent,
-                                   out_of_bounds_condition(allow_end, plan),
-                                   reported_line);
+            // the end of a range is 'start + count', neither is negative
+            // here but the sum can pass the signed maximum and then looks
+            // negative to a signed compare, the unsigned compare sees it large
+            // e.g. 'array_copy(x[0x7fffffffffffffff], y[0], 1)' on 'i8[4]'
+            // ends at 0x8000000000000000, signed it is below 4 and passes
+            const bool is_unsigned_compare{
+                plan.upper_covers_lower or
+                    (options.lower and not reg_count.is_empty()),
+            };
+
+            branch_to_bounds_panic(
+                indent, out_of_bounds_condition(allow_end, is_unsigned_compare),
+                reported_line);
         }
 
         comment(src_loc_tk, indent, "bounds check end");
@@ -1210,6 +1220,9 @@ class machine_x86_64 final : public machine {
         validate_shift_operand(src_loc_tk, count);
         reserve_named_register(src_loc_tk, indent, "rcx", default_type());
 
+        // a count wider than the value is rejected as narrowed
+        assert(count.type_ref().size_bytes() <= dst.type_ref().size_bytes());
+
         mov(src_loc_tk, indent,
             sized_register("rcx", dst.type_ref().size_bytes()), count);
 
@@ -1458,10 +1471,10 @@ class machine_x86_64 final : public machine {
     // the unsigned upper comparison also fails a negative value when the lower
     // bound is covered by it
     [[nodiscard]] static auto out_of_bounds_condition(const bool allow_end,
-                                                      const bounds_plan& plan)
+                                                      const bool is_unsigned)
         -> condition {
 
-        if (plan.upper_covers_lower) {
+        if (is_unsigned) {
             return allow_end ? condition::a : condition::ae;
         }
 

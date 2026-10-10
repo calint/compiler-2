@@ -276,7 +276,7 @@ def first_diagnostic(text):
 
 # a target limit or a difference of the default integer type is not a finding
 EXPECTED_DIFFERENCE = re.compile(
-    r"scratch registers|cannot allocate register|reduce expression|does not end at compile time|RV32I|'i64'|i64|out of range|too large|too many|does not fit|"
+    r"overflows the type|scratch registers|cannot allocate register|reduce expression|does not end at compile time|RV32I|'i64'|i64|out of range|too large|too many|does not fit|"
     r"exceeds|capacity|memory|beyond")
 # the diagnostics that have no place in the source
 NO_LOCATION = re.compile(r"function 'main' not found")

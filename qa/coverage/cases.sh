@@ -3121,3 +3121,21 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1010 && OPTS="--checks=overflow" COMPERR; 
 
 # an empty 'else' block is written back by --reproduce-source
 SRC=1011 && EXP=0 && RUN
+
+# the end of a range of two 64 bit values that sum beyond the maximum is out of bounds
+if [[ $MACHINE == x86_64 ]]; then SRC=1012 && EXP=255 && RUN_ERR; fi
+
+# a write of a count that added to the start passes the maximum of i64 is out of bounds
+if [[ $MACHINE == x86_64 ]]; then SRC=1013 && EXP=255 && RUN_ERR; fi
+
+# a read of a count that added to the start passes the maximum of i64 is out of bounds
+if [[ $MACHINE == x86_64 ]]; then SRC=1014 && EXP=255 && RUN_ERR; fi
+
+# the destination of a copy at the maximum of i32 with a count of one is out of bounds
+SRC=1015 && EXP=255 && RUN_ERR
+
+# a shift count wider than the value is narrowed, as any operand
+if [[ $MACHINE == x86_64 ]]; then SRC=1016 && COMPERR; fi
+
+# a shift count wider than the value is narrowed, as any operand
+SRC=1017 && COMPERR

@@ -606,10 +606,9 @@ class Arrays:
                     raise Panic("bounds")
         from_array = src.get(m, ix)
         to_array = dst.get(m, ix)
-        for index, array in ((si, from_array), (di, to_array)):
-            if not 0 <= index < len(array):
-                raise Panic("bounds")
-        in_range = (n >= 0 and si + n <= len(from_array)
+        # a start at the end with a count of zero touches nothing
+        in_range = (n >= 0 and 0 <= si and 0 <= di
+                    and si + n <= len(from_array)
                     and di + n <= len(to_array))
         same = from_array is to_array
         overlap = same and si < di < si + n
@@ -731,7 +730,263 @@ class Deep:
         raise Panic("frame", "stack", "signal")
 
 
-SCENARIOS = [Arith, Widen, Arrays, Calls, Deep]
+# indexes: index and count variables of every width with the values around the
+# limits of the type and of the array, also computed ('i + k', 'i * k'),
+# against arrays of scalars and of a record whose size is not a power of two;
+# programs that the compiler rejects are not reported
+
+INDEX_TYPES_SOURCE = "type tri { a i8, b i16, c i32 }\n"
+INDEX_SCALARS = ["i8", "i16", "i32", "i64"]
+
+
+class Indexes:
+    name = "indexes"
+    lenient = True
+
+    def __init__(self, rnd):
+        self.rnd = rnd
+        self.benign = rnd.random() < 0.2
+        self.kind = rnd.choice(INDEX_SCALARS + ["tri"])
+        self.length = rnd.randint(1, 9)
+        self.length2 = rnd.randint(1, 9)
+        self.index_vars = {}
+        for n in ["i0", "i1", "i2"]:
+            t = rnd.choice(INDEX_SCALARS)
+            self.index_vars[n] = (t, self.index_value(t))
+        self.count_vars = {}
+        for n in ["n0", "n1"]:
+            t = rnd.choice(INDEX_SCALARS)
+            self.count_vars[n] = (t, self.index_value(t))
+        used = [t for t, _ in self.index_vars.values()]
+        used += [t for t, _ in self.count_vars.values()] + [self.kind]
+        self.targets = targets_of(used)
+        # the sum is as wide as the widest element
+        self.sum_type = "i64" if "i64" in used else "i32"
+        self.statements = [self.make_statement()
+                           for _ in range(rnd.randint(2, 9))]
+
+    def index_value(self, t):
+        rnd = self.rnd
+        low, high = limits(t)
+        if self.benign or rnd.random() < 0.7:
+            return rnd.randint(0, 2)
+        choices = [rnd.randint(0, 9), rnd.randint(0, 9), -1, 10, 9, low, high]
+        for k in range(BITS[t] - 1):
+            for d in (-1, 0, 1):
+                if fits(t, (1 << k) + d):
+                    choices.append((1 << k) + d)
+                if fits(t, -(1 << k) + d):
+                    choices.append(-(1 << k) + d)
+        value = rnd.choice(choices)
+        return max(value, low + 1) if t == "i64" else value
+
+    def expression(self, names):
+        # ('v', name) or (operator, name, literal or name of the same type)
+        rnd = self.rnd
+        name = rnd.choice(names)
+        form = rnd.choice(["v", "v", "+k", "-k", "*k", "+w"])
+        k = rnd.choice([1, 2, 3, 8])
+        if form == "+w":
+            same = [n for n in names if n != name
+                    and self.var_type(n) == self.var_type(name)]
+            if same:
+                return ("+", name, rnd.choice(same))
+            form = "v"
+        if form == "v":
+            return ("v", name)
+        return (form[0], name, k)
+
+    def make_statement(self):
+        rnd = self.rnd
+        iv, cv = list(self.index_vars), list(self.count_vars)
+        kind = rnd.random()
+        if kind < 0.25:
+            return ("set", self.expression(iv), rnd.randint(-20, 20),
+                    rnd.choice("abc"))
+        if kind < 0.45:
+            return ("get", self.expression(iv), rnd.choice("abc"))
+        if kind < 0.7:
+            return ("copy", rnd.choice([0, 1]), self.expression(iv),
+                    self.expression(iv), self.expression(cv))
+        if kind < 0.8 and self.kind != "tri":
+            return ("equal", self.expression(cv))
+        if kind < 0.9 and self.kind != "tri":
+            return ("write", self.expression(cv), self.expression(iv),
+                    rnd.random() < 0.5)
+        return ("get", self.expression(iv), rnd.choice("abc"))
+
+    # ---- source
+
+    def var_type(self, name):
+        return (self.index_vars.get(name) or self.count_vars[name])[0]
+
+    @staticmethod
+    def text(e):
+        if e[0] == "v":
+            return e[1]
+        return f"{e[1]} {e[0]} {e[2]}"
+
+    def source(self):
+        out = [INDEX_TYPES_SOURCE + "func main() {"]
+        out.append(f"    var x = {self.kind}[{self.length}]")
+        out.append(f"    var y = {self.kind}[{self.length2}]")
+        for n, (vt, v) in {**self.index_vars, **self.count_vars}.items():
+            out.append(f"    var {n} = {literal(vt, v)}")
+        out.append(f"    var sum = {self.sum_type}(0)")
+        for s in self.statements:
+            out.append("    " + self.statement_text(s))
+        out.append("    exit(sum & 127)")
+        out.append("}")
+        return "\n".join(out) + "\n"
+
+    def statement_text(self, s):
+        k = s[0]
+        tri = self.kind == "tri"
+        if k == "set":
+            f = f".{s[3]}" if tri else ""
+            return f"x[{self.text(s[1])}]{f} = {s[2]}"
+        if k == "get":
+            f = f".{s[2]}" if tri else ""
+            return f"sum = sum + x[{self.text(s[1])}]{f}"
+        if k == "copy":
+            dst = "y" if s[1] == 0 else "x"
+            return (f"array_copy(x[{self.text(s[2])}], "
+                    f"{dst}[{self.text(s[3])}], {self.text(s[4])})")
+        if k == "equal":
+            return (f"if arrays_equal(x, y, {self.text(s[1])}) "
+                    f"{{ sum = sum + 1 }}")
+        start = f", {self.text(s[2])}" if s[3] else ""
+        return f"write(1, x, {self.text(s[1])}{start})"
+
+    # ---- model
+
+    def value_of(self, e, env):
+        # an expression is evaluated in the type of its variable
+        t = self.var_type(e[1])
+        a = env[e[1]]
+        if e[0] == "v":
+            return a
+        b = env[e[2]] if isinstance(e[2], str) else e[2]
+        if not fits(t, b):
+            raise Rejected("literal")
+        return apply(t, e[0], a, b)
+
+    def evaluate(self):
+        env = {n: v for n, (_, v) in {**self.index_vars,
+                                       **self.count_vars}.items()}
+        tri = self.kind == "tri"
+        make = (lambda: {"a": 0, "b": 0, "c": 0}) if tri else (lambda: 0)
+        x = [make() for _ in range(self.length)]
+        y = [make() for _ in range(self.length2)]
+        total = 0
+        for s in self.statements:
+            k = s[0]
+            try:
+                if k in ("set", "get"):
+                    i = self.value_of(s[1], env)
+                    if not 0 <= i < len(x):
+                        raise Panic("bounds")
+                    if k == "set":
+                        if tri:
+                            x[i][s[3]] = s[2]
+                        else:
+                            x[i] = s[2]
+                    else:
+                        total += x[i][s[2]] if tri else x[i]
+                elif k == "copy":
+                    si = self.value_of(s[2], env)
+                    di = self.value_of(s[3], env)
+                    n = self.value_of(s[4], env)
+                    to = x if s[1] == 1 else y
+                    # a start at the end with a count of zero touches nothing
+                    in_range = (n >= 0 and 0 <= si and 0 <= di
+                                and si + n <= len(x) and di + n <= len(to))
+                    overlap = to is x and si < di < si + n
+                    if not in_range and overlap:
+                        raise Panic("bounds", "overlap")
+                    if not in_range:
+                        raise Panic("bounds")
+                    if overlap:
+                        raise Panic("overlap")
+                    chunk = [dict(e) if tri else e for e in x[si:si + n]]
+                    to[di:di + n] = chunk
+                elif k == "equal":
+                    n = self.value_of(s[1], env)
+                    if n < 0 or n > len(x) or n > len(y):
+                        raise Panic("bounds")
+                    if x[:n] == y[:n]:
+                        total += 1
+                else:
+                    n = self.value_of(s[1], env)
+                    if s[3]:
+                        start = self.value_of(s[2], env)
+                        if start < 0 or n < 0 or start + n > len(x):
+                            raise Panic("bounds")
+                    elif n < 0 or n > len(x):
+                        raise Panic("bounds")
+            except Panic as p:
+                # the order of the checks of the arguments is not defined
+                if p.kinds[0] == "overflow":
+                    raise Panic("overflow", "bounds", "overlap")
+                raise
+        return total & 127
+
+
+# shifts: value, count and destination of different widths, counts around the
+# width of the destination and the limits of the type of the count, a count or
+# value wider than the destination is rejected
+
+class Shifts:
+    name = "shifts"
+    lenient = True
+
+    def __init__(self, rnd):
+        self.rnd = rnd
+        self.types = {n: rnd.choice(list(BITS)) for n in "abcd"}
+        self.values = {}
+        for n, t in self.types.items():
+            self.values[n] = self.value(t)
+        self.targets = targets_of(self.types.values())
+        names = list(self.types)
+        self.statements = []
+        for _ in range(rnd.randint(1, 5)):
+            self.statements.append((rnd.choice(names), rnd.choice(names),
+                                    rnd.choice(["<<", ">>"]),
+                                    rnd.choice(names)))
+
+    def value(self, t):
+        rnd = self.rnd
+        low, high = limits(t)
+        if rnd.random() < 0.6:
+            return rnd.randint(0, 40) if rnd.random() < 0.7 else rnd.randint(-40, 40)
+        choices = [low + 1, high, -1, 0, 1, 7, 8, 15, 16, 31, 32, 63, 64, 65,
+                   127, 255, 256, 1 << 31, 1 << 32, (1 << 32) + 3, -(1 << 32) + 3]
+        value = rnd.choice(choices)
+        return value if fits(t, value) else rnd.randint(-5, 70)
+
+    def source(self):
+        out = ["func main() {"]
+        for n, v in self.values.items():
+            out.append(f"    var {n} = {literal(self.types[n], v)}")
+        for dst, left, op, count in self.statements:
+            out.append(f"    {dst} = {left} {op} {count}")
+        out.append("    exit(a & 127)")
+        out.append("}")
+        return "\n".join(out) + "\n"
+
+    def evaluate(self):
+        env = dict(self.values)
+        for dst, left, op, count in self.statements:
+            # the count is narrowed like any operand
+            if (BITS[self.types[left]] > BITS[self.types[dst]]
+                    or BITS[self.types[count]] > BITS[self.types[dst]]):
+                raise Rejected("narrowed")
+        for dst, left, op, count in self.statements:
+            env[dst] = apply(self.types[dst], op, env[left], env[count])
+        return env["a"] & 127
+
+
+SCENARIOS = [Arith, Widen, Arrays, Calls, Deep, Indexes, Shifts]
 
 
 def run(command, **kw):
@@ -819,6 +1074,9 @@ def main():
                    1 if expected[0] == "panic" else 2] += 1
             for target in program.targets:
                 got = compile_run(work, source, target)
+                if getattr(program, "lenient", False) and got[0] == "compile":
+                    counts[2] += 1
+                    continue
                 if not matches(expected, got):
                     failures += 1
                     keep = os.path.join(tempfile.gettempdir(),

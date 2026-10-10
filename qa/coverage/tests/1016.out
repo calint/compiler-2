@@ -1,0 +1,4 @@
+
+1016.baz:6:14: 'count' of type 'i64' is narrowed to 'i16', use 'i16(...)'
+    x = x << count
+             ^~~~~

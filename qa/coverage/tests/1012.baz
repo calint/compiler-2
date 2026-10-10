@@ -1,0 +1,10 @@
+# the end of a range of two 64 bit values that sum beyond the maximum is out of bounds
+
+func main() {
+    var x = i8[4]
+    var y = i8[4]
+    var start = i64(0x7fffffffffffffff)
+    var count = i64(1)
+    array_copy(x[start], y[0], count)
+    exit(0)
+}

@@ -1,0 +1,8 @@
+# a shift count wider than the value is narrowed, as any operand
+
+func main() {
+    var x = i8(1)
+    var count = i32(256)
+    x = x >> count
+    exit(0)
+}

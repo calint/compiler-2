@@ -344,7 +344,7 @@ main:
     js baz_bounds_line_248
     lea r14, [rcx + r15]
     cmp r14, 4
-    jg baz_bounds_line_248
+    ja baz_bounds_line_248
     lea rsi, [rbp + r15 * 4 + 424]
     cmp rcx, 4
     ja baz_bounds_line_248
@@ -400,14 +400,14 @@ main:
         js baz_bounds_line_254
         lea r14, [rcx + r15]
         cmp r14, 4
-        jg baz_bounds_line_254
+        ja baz_bounds_line_254
         lea rsi, [rbp + r15 * 4 + 424]
         mov r15, 1
         test r15, r15
         js baz_bounds_line_254
         lea r14, [rcx + r15]
         cmp r14, 8
-        jg baz_bounds_line_254
+        ja baz_bounds_line_254
         lea rdi, [rbp + r15 * 4 + 448]
         shl rcx, 2
         test rcx, rcx
@@ -1395,7 +1395,7 @@ main:
     js baz_bounds_line_428
     lea r14, [rdx + r15]
     cmp r14, 13
-    jg baz_bounds_line_428
+    ja baz_bounds_line_428
     lea rsi, [rbp + 1416]
     add rsi, r15
     mov rax, 1

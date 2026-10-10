@@ -160,10 +160,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    57           8245           3577          24474
+C/C++ Header                    57           8245           3582          24475
 C++                              1            195             56            670
 -------------------------------------------------------------------------------
-SUM:                            58           8440           3633          25144
+SUM:                            58           8440           3638          25145
 -------------------------------------------------------------------------------
 ```
 
@@ -953,7 +953,7 @@ main:
     js baz_bounds_line_248
     lea r14, [rcx + r15]
     cmp r14, 4
-    jg baz_bounds_line_248
+    ja baz_bounds_line_248
     lea rsi, [rbp + r15 * 4 + 424]
     cmp rcx, 4
     ja baz_bounds_line_248
@@ -1009,14 +1009,14 @@ main:
         js baz_bounds_line_254
         lea r14, [rcx + r15]
         cmp r14, 4
-        jg baz_bounds_line_254
+        ja baz_bounds_line_254
         lea rsi, [rbp + r15 * 4 + 424]
         mov r15, 1
         test r15, r15
         js baz_bounds_line_254
         lea r14, [rcx + r15]
         cmp r14, 8
-        jg baz_bounds_line_254
+        ja baz_bounds_line_254
         lea rdi, [rbp + r15 * 4 + 448]
         shl rcx, 2
         test rcx, rcx
@@ -2004,7 +2004,7 @@ main:
     js baz_bounds_line_428
     lea r14, [rdx + r15]
     cmp r14, 13
-    jg baz_bounds_line_428
+    ja baz_bounds_line_428
     lea rsi, [rbp + 1416]
     add rsi, r15
     mov rax, 1
@@ -3205,7 +3205,7 @@ main:
     lea r14, [rcx + r15]
     cmp r14, 4
 ;   [248:20] free scratch register r14
-    jg baz_bounds_line_248
+    ja baz_bounds_line_248
 ;   [248:20] bounds check end
     lea rsi, [rbp + r15 * 4 + 424]
 ;   [248:5] free scratch register r15
@@ -3343,7 +3343,7 @@ main:
         lea r14, [rcx + r15]
         cmp r14, 4
 ;       [254:31] free scratch register r14
-        jg baz_bounds_line_254
+        ja baz_bounds_line_254
 ;       [254:31] bounds check end
         lea rsi, [rbp + r15 * 4 + 424]
 ;       [254:14] free scratch register r15
@@ -3362,7 +3362,7 @@ main:
         lea r14, [rcx + r15]
         cmp r14, 8
 ;       [254:40] free scratch register r14
-        jg baz_bounds_line_254
+        ja baz_bounds_line_254
 ;       [254:40] bounds check end
         lea rdi, [rbp + r15 * 4 + 448]
 ;       [254:14] free scratch register r15
@@ -5575,7 +5575,7 @@ main:
     lea r14, [rdx + r15]
     cmp r14, 13
 ;   [428:22] free scratch register r14
-    jg baz_bounds_line_428
+    ja baz_bounds_line_428
 ;   [428:22] bounds check end
     lea rsi, [rbp + 1416]
     add rsi, r15
