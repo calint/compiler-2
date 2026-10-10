@@ -17,9 +17,7 @@ func assert(ok bool) { if not ok exit(1) }
 #
 
 let size = 4
-# a constant at the top level is visible to every function and can be used
-# where a size is needed
-# top level constants come before any 'dat', used by 'arrays' below
+# a constant at the top level is visible to every function
 
 func constants_and_variables() {
     let answer = 42
@@ -27,7 +25,7 @@ func constants_and_variables() {
 
     var count = 1
     # a variable always has an initial value and gets its type from it
-    # here the default type: 'i64' on x86_64 and 'i32' on rv32i
+    # here the default type is 'int': 'i64' on x86_64 and 'i32' on rv32i
 
     count = count + answer
     assert(count == 43)
@@ -677,10 +675,11 @@ func generics() {
 
     fill(s)
     assert(s.is_full())
-    # the type arguments can be left out when a variable, a field or an
-    # element is passed for a parameter declared with the type parameter,
-    # 'fill(s)' is 'fill<small>(s)'. a literal, an expression or an array
-    # does not tell the type
+    # the type arguments can be left out when they can be deduced, 'fill(s)'
+    # is 'fill<small>(s)'. 'T' is the type of the argument for a parameter
+    # declared exactly 'T', when the argument is a variable, a field, an
+    # element or a value that names its type like 'small{...}'. a literal, an
+    # expression or an array does not tell its type
 
     var m = make<small>(2)
     assert(m.count == 2)
@@ -688,8 +687,8 @@ func generics() {
 
     m = make(3)
     assert(m.count == 3)
-    # a call assigned to a variable of the result type needs no type arguments,
-    # 'make(3)' is 'make<small>(3)' here
+    # if no argument tells 'T', the type of the destination does when the
+    # result is declared 'res T', 'make(3)' is 'make<small>(3)' here
 
     var p = small_large
     p.a.add(1)
