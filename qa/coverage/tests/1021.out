@@ -1,0 +1,4 @@
+
+1021.baz:6:16: 'wide' of type 'i16' is narrowed to 'i8', use 'i8(...)'
+    if small + wide > 100 {
+               ^~~~

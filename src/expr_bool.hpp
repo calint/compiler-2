@@ -667,6 +667,9 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
+        // the operand is computed at the width of its first element
+        expr.assert_not_narrowed(tc, expr.get_type());
+
         const operand reg{
             x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
         };
@@ -922,6 +925,8 @@ class expr_bool_op final : public statement {
 
         if (lhs.is_expression() and action.destination.is_register() and
             lhs.get_type().is_same(action.destination.type_ref())) {
+
+            lhs.assert_not_narrowed(tc, lhs.get_type());
 
             lhs.compile(tc, indent + 1,
                         toc::make_ident_info_from_register(action.destination));

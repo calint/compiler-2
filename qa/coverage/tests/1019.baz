@@ -1,4 +1,4 @@
-# a shift count wider than the value in a condition is checked as a whole
+# a shift count wider than the value in a condition is narrowed
 
 func main() {
     var a = i8(1)

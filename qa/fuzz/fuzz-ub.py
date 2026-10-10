@@ -1251,7 +1251,101 @@ class Contexts:
         raise Rejected("literal")
 
 
-SCENARIOS = [Arith, Widen, Arrays, Calls, Deep, Indexes, Shifts, Params, Contexts]
+# narrowing: an expression whose first element is narrower than a later one,
+# the later element has bits above the width of the first. the compiler must
+# reject the program or give the exact value, a result of truncated bits is a
+# silent narrowing
+
+class Narrowing:
+    name = "narrowing"
+    lenient = True
+
+    def __init__(self, rnd):
+        self.rnd = rnd
+        first = rnd.choice(["i8", "i16"])
+        wider = [t for t in BITS if BITS[t] > BITS[first]]
+        self.types = {"a": first, "b": rnd.choice(wider), "c": rnd.choice(wider)}
+        self.targets = targets_of(self.types.values())
+        self.values = {"a": rnd.randint(1, 20),
+                       "b": rnd.randint(256, 3000),
+                       "c": rnd.randint(256, 3000)}
+        self.ops = [rnd.choice("+*")]
+        self.terms = ["a", rnd.choice("bc")]
+        if rnd.random() < 0.4:
+            self.ops.append("+")
+            self.terms.append(rnd.choice("abc"))
+        self.context = rnd.choice(
+            ["cmp", "cmp_rhs", "truth", "assign_wide", "arg_wide", "index",
+             "exit", "div", "count", "cond_var"])
+
+    def expression(self):
+        text = self.terms[0]
+        for o, term in zip(self.ops, self.terms[1:]):
+            text += f" {o} {term}"
+        return text
+
+    def value(self):
+        vals = [self.values[x] for x in self.terms]
+        return evaluate_chain("i64", vals, self.ops)
+
+    def source(self):
+        e, c, v = self.expression(), self.context, self.value()
+        out = []
+        if c == "arg_wide":
+            out.append("func f(x int) res int {\n    res = x\n}")
+        out.append("func main() {")
+        for n, t in self.types.items():
+            out.append(f"    var {n} = {literal(t, self.values[n])}")
+        out.append("    var arr = i8[8200]")
+        out.append(f"    arr[{v}] = 5")
+        if c == "cmp":
+            out.append(f"    if {e} > {v - 1} {{ exit(11) }}")
+            out.append("    exit(12)")
+        elif c == "cmp_rhs":
+            out.append(f"    if {v - 1} < {e} {{ exit(11) }}")
+            out.append("    exit(12)")
+        elif c == "truth":
+            out.append(f"    if {e} {{ exit(11) }}")
+            out.append("    exit(12)")
+        elif c == "cond_var":
+            out.append(f"    var t = {e} > {v - 1}")
+            out.append("    if t { exit(11) }")
+            out.append("    exit(12)")
+        elif c == "assign_wide":
+            out.append("    var q = int(0)")
+            out.append(f"    q = {e}")
+            out.append("    exit(q & 127)")
+        elif c == "arg_wide":
+            out.append(f"    var q = f({e})")
+            out.append("    exit(q & 127)")
+        elif c == "index":
+            out.append(f"    exit(arr[{e}])")
+        elif c == "exit":
+            out.append(f"    exit(({e}) & 127)")
+        elif c == "div":
+            out.append("    var q = int(100000)")
+            out.append(f"    q = q / ({e})")
+            out.append("    exit(q & 127)")
+        else:
+            out.append(f"    var n = write(1, arr, {e})")
+            out.append("    exit(n & 127)")
+        out.append("}")
+        return "\n".join(out) + "\n"
+
+    def evaluate(self):
+        v, c = self.value(), self.context
+        if c in ("cmp", "cmp_rhs", "truth", "cond_var"):
+            return 11
+        if c in ("assign_wide", "arg_wide", "exit"):
+            return v & 127
+        if c == "index":
+            return 5
+        if c == "div":
+            return (100000 // v) & 127
+        return v & 127
+
+
+SCENARIOS = [Arith, Widen, Arrays, Calls, Deep, Indexes, Shifts, Params, Contexts, Narrowing]
 
 
 def run(command, **kw):

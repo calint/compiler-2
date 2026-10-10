@@ -1,0 +1,4 @@
+
+1022.baz:6:23: 'wide' of type 'i16' is narrowed to 'i8', use 'i8(...)'
+    var yes = small + wide > 100
+                      ^~~~

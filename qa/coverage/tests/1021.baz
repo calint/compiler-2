@@ -1,0 +1,10 @@
+# a comparison operand whose later element is wider than the first is narrowed
+
+func main() {
+    var small = i8(5)
+    var wide = i16(256)
+    if small + wide > 100 {
+        exit(1)
+    }
+    exit(0)
+}

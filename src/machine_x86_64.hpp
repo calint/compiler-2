@@ -1219,19 +1219,14 @@ class machine_x86_64 final : public machine {
 
         reserve_named_register(src_loc_tk, indent, "rcx", default_type());
 
-        // a count wider than the value keeps its bits for the check, a
-        // condition or an argument is not narrowed to the type of the value
-        const size_t count_width_bytes{
-            std::max(dst.type_ref().size_bytes(),
-                     count.type_ref().size_bytes()),
-        };
+        // a count wider than the value is rejected as narrowed
+        assert(count.type_ref().size_bytes() <= dst.type_ref().size_bytes());
 
-        mov(src_loc_tk, indent, sized_register("rcx", count_width_bytes),
-            count);
+        mov(src_loc_tk, indent,
+            sized_register("rcx", dst.type_ref().size_bytes()), count);
 
         if (check.enabled) {
-            check_shift_count(src_loc_tk, indent, dst.type_ref(),
-                              count_width_bytes, check);
+            check_shift_count(src_loc_tk, indent, dst.type_ref(), check);
         }
 
         emit_op(src_loc_tk, indent, code, dst,
@@ -1727,7 +1722,7 @@ class machine_x86_64 final : public machine {
     // a count in 'rcx' below zero or not below the width jumps to the failure
     // handler, a negative count is a large unsigned one
     auto check_shift_count(const token& src_loc_tk, const size_t indent,
-                           const type& dst_type, const size_t count_width_bytes,
+                           const type& dst_type,
                            const shift_check_options& check) -> void {
 
         comment(src_loc_tk, indent, "shift check begin");
@@ -1741,7 +1736,7 @@ class machine_x86_64 final : public machine {
             shift_panic_lines_.insert(src_loc_tk.at_line());
         }
 
-        cmp(src_loc_tk, indent, sized_register("rcx", count_width_bytes),
+        cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
             immediate(static_cast<int64_t>(dst_type.size_bits())));
 
         assembler_.jcc(indent, condition::ae, failure_label);

@@ -3143,8 +3143,14 @@ SRC=1017 && COMPERR
 # x86: a shift count computed in 'rcx' while the other scratch registers hold values is a register error
 if [[ $MACHINE == x86_64 ]]; then SRC=1018 && COMPERR; fi
 
-# a shift count wider than the value in a condition is checked as a whole
-SRC=1019 && EXP=255 && RUN_ERR_OPTS "--checks=shift,line"
+# a shift count wider than the value in a condition is narrowed
+SRC=1019 && COMPERR
 
 # a variable declared from an expression has the type of its first element, the sum overflows as an i8
 SRC=1020 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# a comparison operand whose later element is wider than the first is narrowed
+SRC=1021 && COMPERR
+
+# a comparison stored in a variable whose operand has a later element wider than the first is narrowed
+SRC=1022 && COMPERR
