@@ -63,8 +63,8 @@ mkdir -p ~/.local/share/nvim/site/plugin
 cp plugin/baz-lsp.lua ~/.local/share/nvim/site/plugin/
 ```
 
-3. Set the `baz` filetype (see `options.lua` above).
-4. Open a `.baz` file; the plugin registers and enables the `baz` client with
+1. Set the `baz` filetype (see `options.lua` above).
+2. Open a `.baz` file; the plugin registers and enables the `baz` client with
    `vim.lsp.config` / `vim.lsp.enable` (neovim 0.11 or newer). Check with
    `:checkhealth vim.lsp` or `:LspInfo`.
 
