@@ -1,0 +1,8 @@
+# --checks=overflow: the negation of the minimum as an operand of '&' panics
+func main() {
+    var a = i32(-2147483648)
+    var b = i32(3)
+    var c = i32(0)
+    c = b & (-a)
+    exit(c)
+}

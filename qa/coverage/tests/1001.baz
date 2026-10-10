@@ -1,0 +1,8 @@
+# --checks=overflow: the negation of the minimum of i8 as an operand of '|' panics
+func main() {
+    var a = i8(-128)
+    var b = i8(3)
+    var c = i8(0)
+    c = b | (-a)
+    exit(c)
+}

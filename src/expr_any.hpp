@@ -461,7 +461,17 @@ class expr_any final : public statement {
 
         for (const auto [i, e] : std::views::enumerate(vars_)) {
             x.comment(tok(), indent, "[{}]", i);
-            compile_variant(tc, indent, dst_info, tok(), e);
+
+            // note: labels of the element are named after its own token, two
+            //       elements that are conditions would share the label of
+            //       the array
+            const token element_tk{
+                std::visit(
+                    [](const auto& element) -> token { return element.tok(); },
+                    e),
+            };
+
+            compile_variant(tc, indent, dst_info, element_tk, e);
 
             dst_info.operand.increment_offset(
                 address_offset(dst_info.type_ref().size_bytes()));

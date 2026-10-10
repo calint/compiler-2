@@ -175,7 +175,8 @@ class stmt_assign_var final : public statement {
                 std::format("'{}' may share storage with the destination '{}' "
                             "(both name '{}'), compute the value in a "
                             "temporary variable first",
-                            read.text, stmt_ident_.identifier(), dst.root)};
+                            read.text, stmt_ident_.identifier(),
+                            dst.display_root())};
         }
     }
 

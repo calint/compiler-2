@@ -175,10 +175,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    57           8220           3552          24404
+C/C++ Header                    57           8245           3577          24474
 C++                              1            195             56            670
 -------------------------------------------------------------------------------
-SUM:                            58           8415           3608          25074
+SUM:                            58           8440           3633          25144
 -------------------------------------------------------------------------------
 ```
 
@@ -2668,8 +2668,8 @@ main:
 ;   [207:12] allocate scratch register -> r14
 ;       [207:12] a
         mov r14, qword [rbp + 392]
-;       [207:16] r14 & 3
-;       [207:16] src: constant
+;       [207:12] r14 & 3
+;       [207:12] src: folded constant '& 3'
         and r14, 3
     cmp r14, 3
 ;   [207:12] free scratch register r14
@@ -2703,8 +2703,8 @@ main:
 ;   [208:12] allocate scratch register -> r14
 ;       [208:12] a
         mov r14, qword [rbp + 392]
-;       [208:16] r14 | 8
-;       [208:16] src: constant
+;       [208:12] r14 | 8
+;       [208:12] src: folded constant '| 8'
         or r14, 8
     cmp r14, 15
 ;   [208:12] free scratch register r14
@@ -2738,8 +2738,8 @@ main:
 ;   [209:12] allocate scratch register -> r14
 ;       [209:12] a
         mov r14, qword [rbp + 392]
-;       [209:16] r14 ^ 1
-;       [209:16] src: constant
+;       [209:12] r14 ^ 1
+;       [209:12] src: folded constant '^ 1'
         xor r14, 1
     cmp r14, 6
 ;   [209:12] free scratch register r14

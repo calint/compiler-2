@@ -445,5 +445,1142 @@ w > s qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 u r in study
 a pleasant location
 exits: roome
-u > go home
+u > rn 99999999999999999999 back
+
+name too long
+--
+w said qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+new object created
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+new object created
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > on gem
+
+no room for another object
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > go home
 

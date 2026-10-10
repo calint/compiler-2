@@ -146,7 +146,11 @@ func main() {
         rooms.array[entities.array[eid].room_id].print(eid)
         entities.array[eid].name.print()
         out.print_all(str_prompt)
-        tz.input()
+        # the end of the input ends the program
+        if not tz.input() {
+            out.println()
+            exit(0)
+        }
         out.println()
         parse_input(eid, tz)
         out.print_all(str_turn_end)

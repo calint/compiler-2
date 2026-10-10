@@ -1,0 +1,24 @@
+# --checks=overflow: a bitwise operation with a constant that changes nothing
+func main() {
+    var p = i32(5)
+    var a = i32(0)
+    a = p | 0
+    if a != 5 exit(1)
+    a = p & -1
+    if a != 5 exit(2)
+    a = p ^ 0
+    if a != 5 exit(3)
+    a = p & 0xff
+    if a != 5 exit(4)
+    var s = i8(-3)
+    var b = i8(0)
+    b = s | 0
+    if b != -3 exit(5)
+    b = s & -1
+    if b != -3 exit(6)
+    var h = i16(300)
+    var c = i16(0)
+    c = h ^ 0
+    if c != 300 exit(7)
+    exit(0)
+}

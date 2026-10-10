@@ -128,14 +128,19 @@ func text.redraw_from(pos, blanks) {
 }
 
 # line editing with the cursor keys, backspace and delete, the uart does not
-# echo so the screen is redrawn after each edit
-func mut text.input() {
+# echo so the screen is redrawn after each edit, the result is false at the end
+# of the input
+func mut text.input() res bool {
+    res = true
     # the byte is read apart from the buffer, control bytes are not stored
     var c = i8[1]
     var pos = 0
     self.len = 0
     loop {
-        if read(0, c, 1) == 0 break
+        if read(0, c, 1) == 0 {
+            res = false
+            break
+        }
         var act = act_insert
         if c[0] == '\x7f' or c[0] == '\b' act = act_backspace
         if c[0] == '\x1b' act = input_escape_action()
@@ -295,9 +300,9 @@ func mut tokenizer.reset() {
     self.end = 0
 }
 
-func mut tokenizer.input() {
+func mut tokenizer.input() res bool {
     self.reset()
-    self.str.input()
+    res = self.str.input()
 }
 
 func mut tokenizer.set_line(script i8[], line_start, count) {

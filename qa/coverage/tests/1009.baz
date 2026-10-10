@@ -1,0 +1,9 @@
+# a built-in call needs a ',' between the arguments
+dat text = "ab\n"
+
+func main() {
+    var n = 2
+    var s = 127
+    write(1, text n, s)
+    exit(0)
+}

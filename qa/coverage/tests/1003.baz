@@ -1,0 +1,10 @@
+# --checks=overflow: negation and complement of typed constants that fit run
+func main() {
+    var v = i8(0)
+    v = -i8(-127)
+    var w = i32(0)
+    w = -i32(-5)
+    var k = i8(0)
+    k = ~i8(-128)
+    exit((v + w + k) & 127)
+}

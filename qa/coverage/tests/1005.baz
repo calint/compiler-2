@@ -1,0 +1,10 @@
+# an array of bool initialized with conditions gives each label of its own
+func main() {
+    var a = i32(3)
+    var arr = bool[3]{a == 3, a > 7, a != 1}
+    var ints = bool[2]{1, 1}
+    if arr[0] and not arr[1] and arr[2] and ints[0] and ints[1] {
+        exit(5)
+    }
+    exit(0)
+}

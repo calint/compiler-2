@@ -1,6 +1,63 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: --checks=noub: audit the language for operations without a check
+    (probed 2026-10-09: bounds, frame, division, shift, overlap, stack and
+    overflow are checked) and compare x86_64 with rv32i under 'noub' on
+    generated programs
+    => done (2026-10-10): 'qa/fuzz' (README.md there) compares python models
+       and the targets on generated programs: 'fuzz-ub.sh' (arithmetic, widths,
+       arrays, calls, recursion; '--mutants' turns off each check and requires
+       a mismatch), 'fuzz-exprs.py' (nested expressions, 20000 programs, no
+       mismatch), 'fuzz-programs.py' (records, methods, arrays, 'foo', loops)
+       and 'fuzz-compiler.py'; the holes it found are in the item "fuzzing:
+       bugs found by 'qa/fuzz'" below; narrowing, unset results and unset
+       variables are rejected by the compiler; without '--checks' nothing is
+       checked but 'alias'; what stays open: the partial 'read'/'write' item,
+       aliasing with runtime indexes and the extensions in the item "fuzzing:
+       extend 'qa/fuzz'"
+[x] hard: fuzzing: bugs found by 'qa/fuzz' (fuzz-compiler, fuzz-exprs, fuzz-programs,
+    fuzz-options, fuzz-roome)
+    => done (2026-10-10): 1. rv32i '--checks=overflow': an identity operation
+       ('p | 0', 'p & -1', 'p ^ 0') stopped the compiler with 'assert_folded';
+       'compile_step' now drops the constant that changes nothing for the
+       bitwise operators too, test 0999
+    => 2. 'x & (-y)', 'x | (-y)', 'x ^ (-y)', 'x + (-y)' and 'x - (-y)' with 'y'
+       the minimum did not panic (x86_64 i32 bitwise, i8 and i16 on both
+       targets): a negated operand was computed in a register of the default
+       integer type, now at the width of the destination; 'x - (-y)' is no
+       longer rewritten to 'x + y' under the check; tests 1000, 1001, 1007,
+       1008
+    => 3. '-i8(-128)' and '-i32(-2147483648)' wrapped silently: the conversion
+       applied its unary ops before narrowing, now after, and under the
+       overflow check the negation of the minimum of the width (also i64,
+       'unary_ops::negation_overflows') is "constant expression overflows the
+       type"; tests 1002, 1003, 1010
+    => 4. rv32i-fpga '--checks=stack' with a '--stack' larger than '--memory'
+       and a 'noinline' call: assertion 'std::in_range<int64_t>' (the stack
+       limit underflowed), the limit is clamped and 'check_memory_end' reports
+       the error; 'test-cli.sh'
+    => 5. a callee local named like the caller's variable that is passed to a
+       'mut' parameter was rejected as aliasing: the root of a variable is now
+       'name@frame' ('storage_target::frame_mark'), messages show the name;
+       test 1004
+    => 6. 'bool[2]{1, 1}' and conditions in a 'bool' array gave the same label
+       twice (invalid assembly on x86_64): each element is compiled with its
+       own token; test 1005
+    => 7. 'void' as the type of an array, a parameter, a field or a result
+       reached a shift by a negative count in 'wrap_to_width': 'void' is not a
+       type of a value now; test 1006
+    => 8. roome: lists past their capacity (entities, objects, room links,
+       rooms, link names) and a name of an exit above 16 bytes ended in a
+       bounds panic, each is checked and the user is told; the end of input
+       ended roome on x86_64 never (it printed prompts forever), now it exits
+    => 9. 'write(1, text n, s)' (a missing ',' in a built-in call) was accepted
+       and an argument dropped; 'parse_builtin_arguments' wants ',' or ')'
+       after an argument; test 1009
+    => 10. '--reproduce-source' dropped an empty 'else { }': 'stmt_if::source_to'
+       writes the 'else' whenever its token is there; test 1011
+    => withdrawn: "'--checks=line' gives a false frame overflow on x86_64" was
+       a fuzzer that linked without 'baz.ld'
 [x] medium: --checks=overflow: an implicit narrowing assignment computes at the
     narrow width and reads a wider operand as its low bytes; compute wide and
     check that the result fits the destination, or reject mixed widths

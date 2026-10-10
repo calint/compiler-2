@@ -1,0 +1,5 @@
+# 'void' is not the type of a value
+func main() {
+    var values = void[2]{}
+    values[1] = 1
+}

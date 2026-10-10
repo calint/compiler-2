@@ -1,0 +1,4 @@
+
+1006.baz:3:18: 'void' is not a type of a value
+    var values = void[2]{}
+                 ^~~~

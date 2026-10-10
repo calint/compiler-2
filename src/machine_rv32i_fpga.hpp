@@ -124,7 +124,15 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
         -> void override {
 
-        assembler().li(indent, reg, memory_size_bytes_ - stack_size_bytes());
+        // a stack larger than the memory is reported by 'check_memory_end'
+        // after the code is generated, the limit is not used then
+        const uint32_t limit{
+            stack_size_bytes() <= memory_size_bytes_
+                ? static_cast<uint32_t>(memory_size_bytes_ - stack_size_bytes())
+                : uint32_t{},
+        };
+
+        assembler().li(indent, reg, limit);
     }
 
   private:

@@ -1,0 +1,11 @@
+# a local of a callee with the name of a variable the caller passes as 'mut' is another variable
+func f(p mut i32) res i32 {
+    var acc = i32(5)
+    p = acc
+    res = acc
+}
+func main() {
+    var acc = i32(1)
+    var r = f(acc)
+    exit(acc + r)
+}

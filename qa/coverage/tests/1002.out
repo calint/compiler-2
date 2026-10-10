@@ -1,0 +1,4 @@
+
+1002.baz:4:10: constant expression overflows the type
+    v = -i8(-128)
+         ^~

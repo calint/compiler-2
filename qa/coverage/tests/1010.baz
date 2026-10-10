@@ -1,0 +1,6 @@
+# --checks=overflow: the negation of a folded constant that is the minimum of i64 is rejected
+func main() {
+    var v = i64(0)
+    v = -(i64(64) << 57)
+    exit(v & 127)
+}

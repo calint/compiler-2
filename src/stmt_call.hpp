@@ -950,8 +950,8 @@ class stmt_call : public expression {
                             "(both name '{}'), {}",
                             describe_argument(index), arg.identifier(),
                             describe_argument(other.index),
-                            args_.at(other.index).identifier(), target.root,
-                            use_temporary_fix)};
+                            args_.at(other.index).identifier(),
+                            target.display_root(), use_temporary_fix)};
         }
     }
 
@@ -970,7 +970,8 @@ class stmt_call : public expression {
             std::format("{} '{}' may share storage with the "
                         "result destination '{}' (both name '{}'), {}",
                         describe_argument(index), args_.at(index).identifier(),
-                        result.root, target.root, use_temporary_fix)};
+                        result.display_root(), target.display_root(),
+                        use_temporary_fix)};
     }
 
     // 'what' names what precedes the '(' in the error
@@ -1518,7 +1519,14 @@ class stmt_call : public expression {
 
             if (expect_arg) {
                 arg_delims_tk_.emplace_back(delim_tk);
+                continue;
             }
+
+            // e.g. 'write(1, text n)' lacks the ','
+            close_paren_tk_ = tz.expect_char_token(
+                ')', "expected ',' or ')' after the argument");
+
+            return;
         }
     }
 

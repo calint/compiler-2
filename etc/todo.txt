@@ -160,21 +160,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] medium: 'break' exits the current block instead of just the loop?
 [ ] medium: consider not allowing single statement blocks
 [ ] medium: rv32i: check loop iteration regarding large span
-[ ] hard: --checks=noub: audit the language for operations without a check
-    (probed 2026-10-09: bounds, frame, division, shift, overlap, stack and
-    overflow are checked) and compare x86_64 with rv32i under 'noub' on
-    generated programs
-    => 'qa/fuzz/fuzz-ub.sh [count] [seed] [scenario]' compares a python model
-       with x86_64 and rv32i-fpga on random programs: arith (i8 .. i64, i64 on
-       x86_64 only), widen (mixed widths), arrays (nested arrays and records,
-       'array_copy', 'arrays_equal', 'read', 'write'), calls (recursion, array
-       parameters) and deep (unbounded recursion); 600 programs, no mismatch;
-       'fuzz-ub.sh --mutants' turns off one check at a time and requires the
-       fuzzer to find it (all caught); next: rv32i-qemu, 'foo', generics
-    => known gaps: the partial 'read'/'write' item below, aliasing with
-       runtime indexes (items below); narrowing, unset results and unset
-       variables are rejected by the compiler (the fuzzer expects that)
-    => without '--checks' nothing is checked but 'alias'
+[o] hard: fuzzing: extend 'qa/fuzz' ('qa/fuzz/README.md' lists the fuzzers)
+    => next: rv32i and rv32i-qemu runs in the differential fuzzers, generics
+       and methods of generic types in 'fuzz-programs.py', input for programs
+       that 'read', a coverage guided harness of the parser (libFuzzer), the
+       fuzzers in 'test-all.sh' with a short run
+    => 'fuzz-programs.py' has no model: wrong code that both targets share
+       is seen only through 'fuzz-exprs.py'
+    => medium: a very long expression compiles in more than linear time (8000
+       terms of '+' take 3 s in the debug build, 100000 terms of '<<' with a
+       count above the width take minutes, 16000 negations on rv32i with
+       '--checks=noub' take 11 s); the superlinear part is not found
 [ ] medium: --checks=overflow: rv32i multiply: loop on the operand with fewer
     significant bits (swap) in '.Lbaz_multiply_checked' and
     '.Lbaz_multiply'; a constant factor under the check always calls the

@@ -754,7 +754,7 @@ def compile_run(work, source, target):
             f.write(c.stdout)
         a = run(["nasm", "-f", "elf64", os.path.join(work, "f.s"), "-o",
                  os.path.join(work, "f.o")])
-        a2 = run(["ld", os.path.join(work, "f.o"), "-o",
+        a2 = run(["ld", "-s", "-T", os.path.join(ROOT, "baz.ld"), os.path.join(work, "f.o"), "-o",
                   os.path.join(work, "f.x")])
         if a.returncode or a2.returncode:
             return ("assemble", a.stderr + a2.stderr)

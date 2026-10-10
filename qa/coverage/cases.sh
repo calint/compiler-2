@@ -3086,3 +3086,38 @@ SRC=0997 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
 
 # --checks=overflow: 64 bit only on x86_64
 if [[ $MACHINE == x86_64 ]]; then SRC=0998 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"; fi
+
+# --checks=overflow: a bitwise operation with a constant that changes nothing
+SRC=0999 && EXP=0 && OPTS="--checks=overflow" RUN
+
+# --checks=overflow: the negation of the minimum as an operand of a bitwise operation
+SRC=1000 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1001 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# --checks=overflow: the negation of the minimum of a typed constant is rejected
+SRC=1002 && OPTS="--checks=overflow" COMPERR
+
+# --checks=overflow: negation and complement of typed constants that fit run
+SRC=1003 && EXP=3 && OPTS="--checks=overflow" RUN
+
+# a local of a callee with the name of a variable the caller passes as 'mut' is another variable
+SRC=1004 && EXP=10 && RUN
+
+# an array of bool initialized with conditions gives each label of its own
+SRC=1005 && EXP=5 && RUN
+
+# 'void' is not the type of a value
+SRC=1006 && COMPERR
+
+# --checks=overflow: the negation of the minimum of a narrow type in a sum or difference
+SRC=1007 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1008 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# a built-in call needs a ',' between the arguments
+SRC=1009 && COMPERR
+
+# --checks=overflow: the negation of a folded constant that is the minimum of i64 is rejected
+if [[ $MACHINE == x86_64 ]]; then SRC=1010 && OPTS="--checks=overflow" COMPERR; fi
+
+# an empty 'else' block is written back by --reproduce-source
+SRC=1011 && EXP=0 && RUN

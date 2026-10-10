@@ -350,7 +350,7 @@ class expr_arith final : public expression {
         const int64_t result{uops_.evaluate_constant(*value)};
 
         if (tc.is_overflow_check() and
-            result != wrap_to_width(result, width_type)) {
+            uops_.negation_overflows(*value, width_min(width_type))) {
 
             throw compiler_exception{tok(),
                                      "constant expression overflows the type"};
@@ -701,7 +701,10 @@ class expr_arith final : public expression {
             tc.is_overflow_check() and s.value.has_value() and
                 (s.op == arithmetic_operator::add or
                  s.op == arithmetic_operator::subtract or
-                 s.op == arithmetic_operator::multiply),
+                 s.op == arithmetic_operator::multiply or
+                 s.op == arithmetic_operator::bit_and or
+                 s.op == arithmetic_operator::bit_or or
+                 s.op == arithmetic_operator::bit_xor),
         };
 
         if (s.value and (s.element == nullptr or is_checked_constant)) {
@@ -1080,7 +1083,9 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        if (is_negated_operand(tc, src)) {
+        // note: the rewrite hides an overflow of the negation, the check
+        //       computes it
+        if (not tc.is_overflow_check() and is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
             const ident_info src_info{tc.make_scalar_ident_info(src)};
@@ -1101,8 +1106,10 @@ class expr_arith final : public expression {
             return;
         }
 
+        // a negated operand is computed at the width of the destination so
+        // the overflow check sees it
         emit_with_source(
-            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
             [&](const operand& term, const bool) -> void {
                 x.add_subtract(src.tok(), indent, op, dst_info.operand, term,
                                tc.overflow_check_options());
@@ -1116,8 +1123,10 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
+        // a negated operand is computed at the width of the destination so
+        // the overflow check sees it
         emit_with_source(
-            tc, indent, src, dst_info.type_ref(), tc.get_type_default(),
+            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
             [&](const operand& value, const bool) -> void {
                 x.bitwise(src.tok(), indent, op, dst_info.operand, value);
             });

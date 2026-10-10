@@ -1,0 +1,6 @@
+# --checks=overflow: the negation of the minimum of a typed constant is rejected
+func main() {
+    var v = i8(0)
+    v = -i8(-128)
+    exit(v)
+}

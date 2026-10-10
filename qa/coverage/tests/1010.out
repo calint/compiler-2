@@ -1,0 +1,4 @@
+
+1010.baz:4:11: constant expression overflows the type
+    v = -(i64(64) << 57)
+          ^

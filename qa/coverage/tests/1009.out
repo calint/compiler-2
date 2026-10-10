@@ -1,0 +1,4 @@
+
+1009.baz:7:19: expected ',' or ')' after the argument
+    write(1, text n, s)
+                  ^

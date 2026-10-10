@@ -18,6 +18,7 @@ dat str_go_where = "go where\n"
 dat str_no_such_exit = "cannot go there\n"
 dat str_home = "home"
 dat str_arrived_from = "arrived from "
+dat str_room_full = "that place is full\n"
 
 func action_go(eid, tz mut tokenizer) {
     if not tz.next_or_say(str_go_where) return
@@ -44,6 +45,12 @@ func action_go(eid, tz mut tokenizer) {
     # move entity
     let link = rooms.array[cur_room_id].links.array[found_ix]
     let to_room_id = link.to
+
+    if rooms.array[to_room_id].entities.is_full() {
+        out.print_all(str_room_full)
+        return
+    }
+
     entities.array[eid].room_id = to_room_id 
 
     rooms.array[to_room_id].entities.push(eid)
@@ -82,18 +89,45 @@ func find_link_name_or_make(tz tokenizer) res {
     res = link_names.find_or_add(link_name)
 }
 
+dat str_what_name = "what name\n"
+dat str_name_too_long = "name too long\n"
+dat str_new_room_name = "new room name\n"
+
+# moves to the next token, it must exist and fit a name, else the user is told
+# 'question' when it is missing
+func mut tokenizer.next_name_or_say(question i8[]) res bool {
+    res = false
+    if not self.next_or_say(question) return
+
+    if self.len() > max_name_len {
+        out.print_all(str_name_too_long)
+        return
+    }
+
+    res = true
+}
+
 dat str_what_exit_name_to = "what is exit name to new room\n"
 dat str_what_exit_name_back = "what is exit name back to this room\n"
 dat str_new_room_created = "new room created\n"
+dat str_no_room_for_room = "no room for another room or exit\n"
 
 func action_new_room(eid, tz mut tokenizer) {
-    if not tz.next_or_say(str_what_exit_name_to) return
+    if not tz.next_name_or_say(str_what_exit_name_to) return
 
     let cur_room_id = entities.array[eid].room_id 
 
+    # the new room, its exit and the names of the exits must fit
+    if rooms.is_full() or rooms.array[cur_room_id].links.is_full() or
+        link_names.len + 2 > array_length(link_names.array) {
+
+        out.print_all(str_no_room_for_room)
+        return
+    }
+
     let link_name_id = find_link_name_or_make(tz)
 
-    if not tz.next_or_say(str_what_exit_name_back) return
+    if not tz.next_name_or_say(str_what_exit_name_back) return
 
     let link_name_back_id = find_link_name_or_make(tz)
 
@@ -122,25 +156,8 @@ func action_set_room_note(eid, tz mut tokenizer) {
     rooms.array[entities.array[eid].room_id].note = tz.token()
 }
 
-dat str_what_name = "what name\n"
-dat str_name_too_long = "name too long\n"
-dat str_new_room_name = "new room name\n"
-
-# moves to the next token, it must exist and fit a name, else the user is told
-func mut tokenizer.next_name_or_say() res bool {
-    res = false
-    if not self.next_or_say(str_what_name) return
-
-    if self.len() > max_name_len {
-        out.print_all(str_name_too_long)
-        return
-    }
-
-    res = true
-}
-
 func action_set_room_name(eid, tz mut tokenizer) {
-    if not tz.next_name_or_say() return
+    if not tz.next_name_or_say(str_what_name) return
 
     rooms.array[entities.array[eid].room_id].name = tz.token()
 
@@ -148,13 +165,19 @@ func action_set_room_name(eid, tz mut tokenizer) {
 }
 
 dat str_new_entity_created = "new entity created\n"
+dat str_no_room_for_entity = "no room for another entity\n"
 
 func action_new_entity(eid, tz mut tokenizer) {
-    if not tz.next_name_or_say() return
+    if not tz.next_name_or_say(str_what_name) return
 
     let name = tz.token<name>()
 
     let room_id = entities.array[eid].room_id
+
+    if entities.is_full() or rooms.array[room_id].entities.is_full() {
+        out.print_all(str_no_room_for_entity)
+        return
+    }
 
     let entity_id = entities.add(name, room_id)
 
@@ -164,11 +187,17 @@ func action_new_entity(eid, tz mut tokenizer) {
 }
 
 dat str_new_object_created = "new object created\n"
+dat str_no_room_for_object = "no room for another object\n"
 
 func action_new_object(eid, tz mut tokenizer) {
-    if not tz.next_name_or_say() return
+    if not tz.next_name_or_say(str_what_name) return
 
     let name = tz.token<name>()
+
+    if objects.is_full() or entities.array[eid].objects.is_full() {
+        out.print_all(str_no_room_for_object)
+        return
+    }
 
     let object_id = objects.add(name)
 
@@ -200,6 +229,7 @@ func action_inventory(eid, tz tokenizer) {
 dat str_drop_what = "drop what\n"
 dat str_not_carrying = "u do not have that\n"
 dat str_dropped = "dropped "
+dat str_room_has_too_many_objects = "this place has too many objects\n"
 
 func action_drop(eid, tz mut tokenizer) {
     if not tz.next_or_say(str_drop_what) return
@@ -214,6 +244,12 @@ func action_drop(eid, tz mut tokenizer) {
     # move object from inventory to room
     let object_id = entities.array[eid].objects.array[found_ix]
     let room_id = entities.array[eid].room_id
+
+    if rooms.array[room_id].objects.is_full() {
+        out.print_all(str_room_has_too_many_objects)
+        return
+    }
+
     rooms.array[room_id].objects.push(object_id)
     entities.array[eid].objects.delete_index(found_ix)
 
@@ -227,6 +263,7 @@ dat str_give_to_whom = "give to whom\n"
 dat str_is_not_here = " is not here\n"
 dat str_gave = "gave "
 dat str_to = " to "
+dat str_has_too_many_objects = " has too many objects\n"
 
 func action_give(eid, tz mut tokenizer) {
     if not tz.next_or_say(str_give_what) return
@@ -264,6 +301,12 @@ func action_give(eid, tz mut tokenizer) {
     }
 
     # move object between inventories
+    if entities.array[to_entity].objects.is_full() {
+        entities.array[to_entity].name.print()
+        out.print_all(str_has_too_many_objects)
+        return
+    }
+
     entities.array[to_entity].objects.push(object_id)
     entities.array[eid].objects.delete_index(found_ix)
 

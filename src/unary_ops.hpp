@@ -68,6 +68,27 @@ class unary_ops final {
         return ops_.size() == 1 and ops_.back() == '-';
     }
 
+    // true when a negation of the list is applied to 'minimum', the most
+    // negative value of the width, which has no positive counterpart
+    [[nodiscard]] auto negation_overflows(int64_t v,
+                                          const int64_t minimum) const -> bool {
+
+        for (const char op : ops_ | std::views::reverse) {
+            if (op == '~') {
+                v = static_cast<int64_t>(~static_cast<uint64_t>(v));
+                continue;
+            }
+
+            if (v == minimum) {
+                return true;
+            }
+
+            v = -v;
+        }
+
+        return false;
+    }
+
     auto put_back(tokenizer& tz) const -> void {
         // put back in reverse order
         for (const char o : ops_ | std::views::reverse) {

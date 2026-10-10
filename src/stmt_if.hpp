@@ -66,8 +66,8 @@ class stmt_if final : public statement {
             b.source_to(os);
         }
 
-        // the 'else' code
-        if (not else_code_.is_empty()) {
+        // the 'else' code, also when it is empty
+        if (not else_tk_.is_empty()) {
             else_tk_.source_to(os);
             else_code_.source_to(os);
         }

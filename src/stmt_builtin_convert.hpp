@@ -57,7 +57,7 @@ class stmt_builtin_convert final : public expression {
         };
 
         if (value) {
-            folded_ = std::format("{}", narrow(*value));
+            folded_ = std::format("{}", narrow(tc, *value));
         }
     }
 
@@ -93,10 +93,13 @@ class stmt_builtin_convert final : public expression {
 
         machine& x{tc.machine()};
 
+        // the overflow check applies to the constant, not to the argument
+        const std::optional<int64_t> value{constant_value(tc)};
+
         const toc::overflow_check_pause pause{tc};
 
         // an out-of-range immediate makes nasm warn, so fold it here
-        if (const std::optional<int64_t> value{constant_value(tc)}; value) {
+        if (value) {
             x.copy_value(tok(), indent, dst_info.operand,
                          operand::imm(std::format("{}", *value), get_type()));
 
@@ -269,28 +272,54 @@ class stmt_builtin_convert final : public expression {
             return std::nullopt;
         }
 
-        return narrow(info.const_value);
+        return narrow(tc, info.const_value);
     }
 
-    // applies the unary ops at the argument's width before narrowing
-    [[nodiscard]] auto narrow(const int64_t value) const -> int64_t {
-        const int64_t result{
-            expression::get_unary_ops().evaluate_constant(
-                arg_.get_unary_ops().evaluate_constant(value)),
+    // the unary ops of the argument apply at its width, the value is narrowed
+    // and the unary ops of the conversion apply to the narrowed value, under
+    // the overflow check a result that does not fit the type is an error
+    [[nodiscard]] auto narrow(const toc& tc, const int64_t value) const
+        -> int64_t {
+
+        const int64_t converted{
+            to_width(arg_.get_unary_ops().evaluate_constant(value)),
         };
 
+        const int64_t result{
+            expression::get_unary_ops().evaluate_constant(converted),
+        };
+
+        const int64_t narrowed{to_width(result)};
+
+        // note: -1 because the sign bit is the highest bit
+        const int64_t minimum{
+            static_cast<int64_t>(~uint64_t{} << (get_type().size_bits() - 1)),
+        };
+
+        if (tc.is_overflow_check() and
+            expression::get_unary_ops().negation_overflows(converted,
+                                                           minimum)) {
+
+            throw compiler_exception{tok(),
+                                     "constant expression overflows the type"};
+        }
+
+        return narrowed;
+    }
+
+    [[nodiscard]] auto to_width(const int64_t value) const -> int64_t {
         switch (get_type().size_bytes()) {
         case sizeof(int8_t):
-            return static_cast<int8_t>(result);
+            return static_cast<int8_t>(value);
 
         case sizeof(int16_t):
-            return static_cast<int16_t>(result);
+            return static_cast<int16_t>(value);
 
         case sizeof(int32_t):
-            return static_cast<int32_t>(result);
+            return static_cast<int32_t>(value);
 
         default:
-            return result;
+            return value;
         }
     }
 };

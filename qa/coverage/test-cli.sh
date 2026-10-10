@@ -284,6 +284,14 @@ CLI_FPGA_MEMORY() {
     set -e
     [[ $exit_code -eq 1 ]]
     grep -Fq "the stack $((memory_size + 16)) B" err
+    # the stack check of a 'noinline' call is generated with a stack that does
+    # not fit
+    set +e
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack --stack=$((memory_size + 16)) 0992.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "the stack $((memory_size + 16)) B" err
     # a smaller memory moves the end of the stack and the limit of the vars
     local small_size=$((0x40000))
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size 0426.baz >gen.s 2>err

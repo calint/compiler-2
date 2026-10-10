@@ -57,8 +57,18 @@ struct noninline_instance {
 // storage under the name of a root variable: the root variable and the path
 // to what is accessed, empty when it is not known
 struct storage_target {
+    // 'acc@2' is the variable 'acc' declared in the frame 2, a callee's local
+    // of the name of a variable of the caller is another variable
+    static constexpr char frame_mark{'@'};
+
     std::string root;
     std::optional<access_path> path;
+
+    // the root variable as written, without the frame that tells apart
+    // variables of the same name
+    [[nodiscard]] auto display_root() const -> std::string_view {
+        return std::string_view{root}.substr(0, root.find(frame_mark));
+    }
 
     // true when both may name the same bytes, a read of other bytes or of
     // another variable is not
@@ -1170,6 +1180,22 @@ class scope_stack final {
     }
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
+
+    // the index of the frame that declares the variable 'name', zero when it
+    // is not declared
+    [[nodiscard]] auto var_frame_index(const std::string_view name) const
+        -> size_t {
+
+        for (const size_t index :
+             std::views::iota(size_t{}, frames_.size()) | std::views::reverse) {
+
+            if (frames_.at(index).has_var(name)) {
+                return index;
+            }
+        }
+
+        return 0;
+    }
 
   private:
     auto track_depth() -> void {
@@ -2510,6 +2536,12 @@ class toc final {
                                      std::format("type '{}' not found", name)};
         }
 
+        // note: 'void' is the type of what has no value, it has no size
+        if (types_.get(name).is_same(builtins_.void_type())) {
+            throw compiler_exception{
+                src_loc_tk, std::format("'{}' is not a type of a value", name)};
+        }
+
         return types_.get(name);
     }
 
@@ -2788,7 +2820,9 @@ class toc final {
 
         const ident_info info{make_ident_info(src_loc_tk, name)};
 
-        return std::string{info.elem_path.front()};
+        return std::format("{}{}{}", info.elem_path.front(),
+                           storage_target::frame_mark,
+                           scopes_.var_frame_index(info.elem_path.front()));
     }
 
     auto set_builtin_types(const type& t_i64, const type& t_i32,

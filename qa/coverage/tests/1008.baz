@@ -1,0 +1,8 @@
+# --checks=overflow: the negation of the minimum of i16 as an addend panics
+func main() {
+    var a = i16(-32768)
+    var b = i16(3)
+    var c = i16(0)
+    c = b + (-a)
+    exit(c)
+}
