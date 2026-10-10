@@ -1,0 +1,8 @@
+# a variable declared from an expression has the type of its first element, the sum overflows as an i8
+
+func main() {
+    var a = i8(100)
+    var b = i8(100)
+    var sum = a + b
+    exit(sum & 127)
+}

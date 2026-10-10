@@ -32,6 +32,6 @@ func main() {
     var x = v[1]
     var y = v[2]
     var z = v[3]
-    var q = w + (x + (y + (z + (top(v)))))
+    var q = int(w) + (x + (y + (z + (top(v)))))
     exit(0)
 }

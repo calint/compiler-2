@@ -1,0 +1,10 @@
+# a shift count wider than the value in a condition is checked as a whole
+
+func main() {
+    var a = i8(1)
+    var count = i32(256)
+    if a << count {
+        exit(1)
+    }
+    exit(0)
+}

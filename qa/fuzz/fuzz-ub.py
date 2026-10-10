@@ -986,7 +986,258 @@ class Shifts:
         return env["a"] & 127
 
 
-SCENARIOS = [Arith, Widen, Arrays, Calls, Deep, Indexes, Shifts]
+# params: the accesses of 'indexes' made inside functions that take the arrays
+# as parameters (a body for each array length), inlined or not, with index and
+# count parameters of the type of the argument
+
+class Params(Indexes):
+    name = "params"
+
+    def __init__(self, rnd):
+        super().__init__(rnd)
+        self.noinline = rnd.choice(["", "noinline "])
+        self.defs = {}
+        self.temps = 0
+
+    def declare(self, key, text):
+        self.defs.setdefault(key, text)
+
+    def tname(self, e):
+        return self.var_type(e[1])
+
+    def statement_text(self, s):
+        k = s[0]
+        tri = self.kind == "tri"
+        kind = self.kind
+        n = self.noinline
+        if k == "set":
+            t = self.tname(s[1])
+            f = f".{s[3]}" if tri else ""
+            value = str(s[2]).replace("-", "m")
+            name = f"put_{t}_{s[3] if tri else 'v'}_{value}"
+            self.declare(name, f"func {n}{name}(a mut {kind}[], i {t}) "
+                         f"{{\n    a[i]{f} = {s[2]}\n}}\n")
+            return f"{name}(x, {self.text(s[1])})"
+        if k == "get":
+            t = self.tname(s[1])
+            f = f".{s[2]}" if tri else ""
+            elem = {"a": "i8", "b": "i16", "c": "i32"}[s[2]] if tri else kind
+            name = f"get_{t}_{s[2] if tri else 'v'}"
+            self.declare(name, f"func {n}{name}(a {kind}[], i {t}) res {elem} "
+                         f"{{\n    res = a[i]{f}\n}}\n")
+            self.temps += 1
+            return (f"var r{self.temps} = {name}(x, {self.text(s[1])})\n"
+                    f"    sum = sum + r{self.temps}")
+        if k == "copy":
+            ts, td, tn = (self.tname(s[2]), self.tname(s[3]),
+                          self.tname(s[4]))
+            name = f"cp_{ts}_{td}_{tn}"
+            if s[1] == 0:
+                self.declare(name + "_xy", f"func {n}{name}_xy(a {kind}[], "
+                             f"b mut {kind}[], s {ts}, d {td}, n {tn}) {{\n"
+                             f"    array_copy(a[s], b[d], n)\n}}\n")
+                return (f"{name}_xy(x, y, {self.text(s[2])}, "
+                        f"{self.text(s[3])}, {self.text(s[4])})")
+            self.declare(name + "_xx", f"func {n}{name}_xx(a mut {kind}[], "
+                         f"s {ts}, d {td}, n {tn}) {{\n"
+                         f"    array_copy(a[s], a[d], n)\n}}\n")
+            return (f"{name}_xx(x, {self.text(s[2])}, {self.text(s[3])}, "
+                    f"{self.text(s[4])})")
+        if k == "equal":
+            t = self.tname(s[1])
+            name = f"eq_{t}"
+            self.declare(name, f"func {n}{name}(a {kind}[], b {kind}[], "
+                         f"n {t}) res bool {{\n"
+                         f"    res = arrays_equal(a, b, n)\n}}\n")
+            return f"if {name}(x, y, {self.text(s[1])}) {{ sum = sum + 1 }}"
+        t, ti = self.tname(s[1]), self.tname(s[2]) if s[3] else None
+        if s[3]:
+            name = f"wr_{t}_{ti}"
+            self.declare(name, f"func {n}{name}(a {kind}[], n {t}, s {ti}) "
+                         f"{{\n    write(1, a, n, s)\n}}\n")
+            return f"{name}(x, {self.text(s[1])}, {self.text(s[2])})"
+        name = f"wr_{t}"
+        self.declare(name, f"func {n}{name}(a {kind}[], n {t}) {{\n"
+                     f"    write(1, a, n)\n}}\n")
+        return f"{name}(x, {self.text(s[1])})"
+
+    def source(self):
+        self.defs = {}
+        self.temps = 0
+        body = super().source()
+        head, rest = body.split("func main() {", 1)
+        return head + "".join(self.defs.values()) + "func main() {" + rest
+
+
+# contexts: one expression of one type, with + - * that can overflow, used as a
+# declaration, an argument, an index, a count, a divisor, a shift count, a
+# comparison, a truth test or the result of a function
+
+class Contexts:
+    name = "contexts"
+
+    def __init__(self, rnd):
+        self.rnd = rnd
+        self.t = rnd.choice(list(BITS))
+        self.targets = targets_of([self.t])
+        benign = rnd.random() < 0.4
+        self.values = {f"v{i}": interesting(rnd, self.t, benign)
+                       for i in range(3)}
+        terms = []
+        ops = []
+        for n in range(rnd.randint(2, 4)):
+            # the first element decides the width, a constant is of the
+            # default type
+            if n == 0 or rnd.random() < 0.75:
+                terms.append(rnd.choice(list(self.values)))
+            else:
+                terms.append(rnd.randint(0, 9))
+            ops.append(rnd.choice("+-*"))
+        self.terms = terms
+        self.ops = ops[:-1]
+        self.context = rnd.choice(
+            ["decl", "arg", "arg_noinline", "index", "copy", "write", "div",
+             "mod", "shift", "cmp", "cmp_rhs", "truth", "result", "result_noinline",
+             "array_arg"])
+        self.length = 8
+
+    def expression(self):
+        text = str(self.terms[0])
+        for o, term in zip(self.ops, self.terms[1:]):
+            text += f" {o} {term}"
+        return text
+
+    def value(self):
+        vals = [self.values[x] if isinstance(x, str) else x
+                for x in self.terms]
+        for v in vals:
+            if not fits(self.t, v):
+                raise Rejected("literal")
+        return evaluate_chain(self.t, vals, self.ops)
+
+    def exact_value(self):
+        vals = [self.values[x] if isinstance(x, str) else x
+                for x in self.terms]
+        items = [vals[0]]
+        pending = []
+        for o, v in zip(self.ops, vals[1:]):
+            if o == "*":
+                items[-1] *= v
+            else:
+                pending.append(o)
+                items.append(v)
+        result = items[0]
+        for o, v in zip(pending, items[1:]):
+            result = result + v if o == "+" else result - v
+        return result
+
+    def source(self):
+        t, e, c = self.t, self.expression(), self.context
+        out = []
+        if c == "arg" or c == "arg_noinline":
+            n = "noinline " if c == "arg_noinline" else ""
+            out.append(f"func {n}f(a {t}) res {t} {{\n    res = a\n}}")
+        if c == "result" or c == "result_noinline":
+            n = "noinline " if c == "result_noinline" else ""
+            sig = ", ".join(f"{k} {t}" for k in self.values)
+            out.append(f"func {n}f({sig}) res {t} {{\n    res = {e}\n}}")
+        if c == "array_arg":
+            out.append(f"func noinline f(a {t}[], i {t}) res {t} {{\n"
+                       f"    res = a[i]\n}}")
+        out.append("func main() {")
+        for k, v in self.values.items():
+            out.append(f"    var {k} = {literal(t, v)}")
+        out.append(f"    var arr = {t}[{self.length}]")
+        out.append(f"    var dst = {t}[{self.length}]")
+        out.append("    arr[1] = 3")
+        wrapped = f"({e})"
+        if c == "decl":
+            out.append(f"    var q = {t}(0)")
+            out.append(f"    q = {e}")
+            out.append("    exit(q & 127)")
+        elif c in ("arg", "arg_noinline"):
+            out.append(f"    var q = f({e})")
+            out.append("    exit(q & 127)")
+        elif c in ("result", "result_noinline"):
+            out.append(f"    var q = f({', '.join(self.values)})")
+            out.append("    exit(q & 127)")
+        elif c == "array_arg":
+            out.append(f"    var q = f(arr, {e})")
+            out.append("    exit(q & 127)")
+        elif c == "index":
+            out.append(f"    arr[{e}] = 5")
+            out.append("    exit(arr[1] + 1)")
+        elif c == "copy":
+            out.append(f"    array_copy(arr, dst, {e})")
+            out.append("    exit(dst[1] + 1)")
+        elif c == "write":
+            out.append(f"    write(1, arr, {e})")
+            out.append("    exit(7)")
+        elif c in ("div", "mod"):
+            o = "/" if c == "div" else "%"
+            out.append(f"    var n = {t}(100)")
+            out.append(f"    var q = {t}(0)")
+            out.append(f"    q = n {o} {wrapped}")
+            out.append("    exit(q & 127)")
+        elif c == "shift":
+            out.append(f"    var s = {t}(1)")
+            out.append(f"    s = s << {wrapped}")
+            out.append("    exit(s & 127)")
+        elif c == "cmp":
+            out.append(f"    if {e} > 3 {{ exit(11) }}")
+            out.append("    exit(12)")
+        elif c == "cmp_rhs":
+            out.append(f"    if 3 > {e} {{ exit(11) }}")
+            out.append("    exit(12)")
+        else:
+            out.append(f"    if {e} {{ exit(11) }}")
+            out.append("    exit(12)")
+        out.append("}")
+        return "\n".join(out) + "\n"
+
+    def evaluate(self):
+        t, c = self.t, self.context
+        if c in ("index", "copy", "write", "array_arg"):
+            # an index or a count is computed wide and checked as the exact
+            # value
+            v = self.exact_value()
+        else:
+            v = self.value()
+        if c in ("decl", "arg", "arg_noinline", "result", "result_noinline"):
+            return v & 127
+        if c == "array_arg":
+            if not 0 <= v < self.length:
+                raise Panic("bounds")
+            return (3 if v == 1 else 0) & 127
+        if c == "index":
+            if not 0 <= v < self.length:
+                raise Panic("bounds")
+            return (5 if v == 1 else 3) + 1
+        if c == "copy":
+            if not 0 <= v <= self.length:
+                raise Panic("bounds")
+            return (3 if v >= 2 else 0) + 1
+        if c == "write":
+            if not 0 <= v <= self.length:
+                raise Panic("bounds")
+            return 7
+        if c in ("div", "mod"):
+            return apply(t, "/" if c == "div" else "%", 100, v) & 127 \
+                if fits(t, 100) else self.reject()
+        if c == "shift":
+            return apply(t, "<<", 1, v) & 127
+        if c == "cmp":
+            return 11 if v > 3 else 12
+        if c == "cmp_rhs":
+            return 11 if 3 > v else 12
+        return 11 if v != 0 else 12
+
+    @staticmethod
+    def reject():
+        raise Rejected("literal")
+
+
+SCENARIOS = [Arith, Widen, Arrays, Calls, Deep, Indexes, Shifts, Params, Contexts]
 
 
 def run(command, **kw):
@@ -1043,6 +1294,14 @@ def compile_run(work, source, target):
 
 
 def matches(expected, got):
+    # the compiler may fold the call chain and reject the overflow at compile
+    # time, that is an error exit too
+    if (expected[0] == "panic" and "overflow" in expected[1]
+            and got[0] == "compile" and "overflows the type" in got[1]):
+        return True
+    if (expected[0] == "panic" and "shift" in expected[1]
+            and got[0] == "compile" and "shift count must be" in got[1]):
+        return True
     if expected[0] == "panic":
         return got[0] == "panic" and got[1] in expected[1]
     if expected[0] == "compile":

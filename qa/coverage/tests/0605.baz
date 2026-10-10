@@ -1,6 +1,6 @@
 # an untyped variable has the type of its initializer: a comparison or a 'bool'
-# operand is a 'bool', a single operand has its own type, several operands have
-# the default type like constants
+# operand is a 'bool', a single operand has its own type, the first operand
+# decides the type of several operands, a constant has the default type
 #
 # test-deduced-types.sh checks the type on lines marked '# is TYPE', 'default'
 # is the default type of the target
@@ -81,15 +81,23 @@ func main() {
     d = d * 100
     assert(22, d == -300)
 
-    # several operands, a parenthesized list, constants and calls of the
-    # default type
-    var sum = small + 0 # is default
+    # several operands and a parenthesized list have the type of the first
+    # operand, the products wrap at its width
+    var sum = small + 0 # is i8
     sum = sum * 100
-    assert(8, sum == -300)
+    assert(8, sum == -44)
 
-    var list = -(small) # is default
+    var list = -(small) # is i8
     list = list * 100
-    assert(9, list == 300)
+    assert(9, list == 44)
+
+    var wide_sum = wide + small # is i16
+    wide_sum = wide_sum * 100
+    assert(26, wide_sum == -31372)
+
+    var constant_first = 0 + small # is default
+    constant_first = constant_first * 100
+    assert(27, constant_first == -300)
 
     var k = 3 # is default
     k = k * 1000

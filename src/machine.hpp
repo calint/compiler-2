@@ -852,6 +852,14 @@ class machine {
 
     [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
 
+    // why a backend cannot emit data elements of this size, none by default
+    [[nodiscard]] virtual auto
+    data_element_size_error(const size_t /*element_size_bytes*/) const
+        -> std::optional<std::string> {
+
+        return std::nullopt;
+    }
+
     [[nodiscard]] virtual auto default_type() const -> const type& = 0;
 
     virtual auto define_constant(const std::string_view name,
@@ -1021,18 +1029,6 @@ class machine {
     virtual auto unary(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
                        const overflow_check_options& check = {}) -> void = 0;
-
-    virtual auto
-    validate_data_element_size(const token& src_loc_tk,
-                               const size_t element_size_bytes) const
-        -> void = 0;
-
-    virtual auto validate_division_operand(const token& src_loc_tk,
-                                           const operand& divisor) const
-        -> void = 0;
-
-    virtual auto validate_shift_operand(const token& src_loc_tk,
-                                        const operand& count) const -> void = 0;
 
     // 'dat' is where the variables base register points, unless it points past
     // the 'vars' label, then this is the distance

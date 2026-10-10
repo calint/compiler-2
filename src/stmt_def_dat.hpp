@@ -315,7 +315,13 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        x.validate_data_element_size(elroot.src_loc_tk, tp.size_bytes());
+        const std::optional<std::string> size_error{
+            x.data_element_size_error(tp.size_bytes()),
+        };
+
+        if (size_error) {
+            throw compiler_exception{elroot.src_loc_tk, *size_error};
+        }
 
         if (not elroot.is_array) {
             x.comment(elroot.src_loc_tk, 0, "{}", tp.name());

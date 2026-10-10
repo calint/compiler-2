@@ -1217,17 +1217,21 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        validate_shift_operand(src_loc_tk, count);
         reserve_named_register(src_loc_tk, indent, "rcx", default_type());
 
-        // a count wider than the value is rejected as narrowed
-        assert(count.type_ref().size_bytes() <= dst.type_ref().size_bytes());
+        // a count wider than the value keeps its bits for the check, a
+        // condition or an argument is not narrowed to the type of the value
+        const size_t count_width_bytes{
+            std::max(dst.type_ref().size_bytes(),
+                     count.type_ref().size_bytes()),
+        };
 
-        mov(src_loc_tk, indent,
-            sized_register("rcx", dst.type_ref().size_bytes()), count);
+        mov(src_loc_tk, indent, sized_register("rcx", count_width_bytes),
+            count);
 
         if (check.enabled) {
-            check_shift_count(src_loc_tk, indent, dst.type_ref(), check);
+            check_shift_count(src_loc_tk, indent, dst.type_ref(),
+                              count_width_bytes, check);
         }
 
         emit_op(src_loc_tk, indent, code, dst,
@@ -1281,32 +1285,6 @@ class machine_x86_64 final : public machine {
         if (check.enabled) {
             branch_on_overflow(indent, src_loc_tk, check);
         }
-    }
-
-    auto validate_data_element_size(
-        [[maybe_unused]] const token& src_loc_tk,
-        [[maybe_unused]] const size_t element_size_bytes) const
-        -> void override {}
-
-    auto
-    validate_division_operand([[maybe_unused]] const token& src_loc_tk,
-                              [[maybe_unused]] const operand& divisor) const
-        -> void override {
-
-        // only a loop counter held in a register could be 'rdx' or 'rax', the
-        // last scratch registers, and a loop counts in memory before that
-        assert(
-            not(divisor.is_register() and (divisor.base_register() == "rdx" or
-                                           divisor.base_register() == "rax")));
-    }
-
-    auto validate_shift_operand([[maybe_unused]] const token& src_loc_tk,
-                                [[maybe_unused]] const operand& count) const
-        -> void override {
-
-        // only a loop counter held in a register could be 'rcx', the last
-        // scratch register, and a loop counts in memory before that
-        assert(not(count.is_register() and count.base_register() == "rcx"));
     }
 
     [[nodiscard]] auto variables_base_past_vars_bytes() const
@@ -1749,7 +1727,7 @@ class machine_x86_64 final : public machine {
     // a count in 'rcx' below zero or not below the width jumps to the failure
     // handler, a negative count is a large unsigned one
     auto check_shift_count(const token& src_loc_tk, const size_t indent,
-                           const type& dst_type,
+                           const type& dst_type, const size_t count_width_bytes,
                            const shift_check_options& check) -> void {
 
         comment(src_loc_tk, indent, "shift check begin");
@@ -1763,7 +1741,7 @@ class machine_x86_64 final : public machine {
             shift_panic_lines_.insert(src_loc_tk.at_line());
         }
 
-        cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
+        cmp(src_loc_tk, indent, sized_register("rcx", count_width_bytes),
             immediate(static_cast<int64_t>(dst_type.size_bits())));
 
         assembler_.jcc(indent, condition::ae, failure_label);

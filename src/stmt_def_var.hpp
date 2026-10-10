@@ -197,9 +197,9 @@ class stmt_def_var final : public statement {
             return;
         }
 
-        // several operands have the default type like the constants
+        // the first operand decides the width of an expression
         if (not arith->is_single_operand()) {
-            set_type(tc.get_type_default());
+            set_type(arith->get_type());
             return;
         }
 

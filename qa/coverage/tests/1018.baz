@@ -1,0 +1,5 @@
+# x86: a shift count computed in 'rcx' while the other scratch registers hold values is a register error
+
+type pt{x,y}type box{a pt,items[4]}func rec(acc)res{res=acc}func f0(p0)res{var acc0=(0){if(p0)<2154{}}res=acc0}func f1(p0,p1,p2[])res{var acc1=(0)if((acc1)>(((p1))))and((((p0)+(acc1))<<(((7))&7))<((acc1)+((p2[p0<<p0&3])))){}res=32768}func f2(p0)res{var acc2=(0)if((((1)))*((p0)-((2))))!=7>>1{{}}res=32768}func main(){var v0=(211)var v1=(1766)var v2=(2746)var v3=(2906)var arr=[4]var bytes=i8[8]var p=pt
+    var bx=box
+    if(v2)<v3*bytes[v2-7]+bx.a.x{bytes[v2&7]=i8(((3381))-((v0)-(i32(bytes[i32(bytes[i32(bytes[v2<<i32(bytes[v1>>(v2&7])&7])<<7]|v2)&7]))))}{var t10=((((v3)+(bx.items[bx.a.x+3])))-32768){{if(v2)>p.x*7{}}}{if((((0))%(((((bx.items[bx.items[arr[100>>3]&3]&3])&0xffff)-32768))|1))>((((bx.a.y))-32768)*(((v3)&0xffff)-32768)))and((((v0)%((t10)|1))|((bx)))<((((bytes[1]))/((bx.a.y)|1))>>3)){}}}}

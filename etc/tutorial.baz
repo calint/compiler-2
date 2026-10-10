@@ -26,6 +26,7 @@ func constants_and_variables() {
     var count = 1
     # a variable always has an initial value and gets its type from it
     # here the default type is 'int': 'i64' on x86_64 and 'i32' on rv32i
+    # an expression gives its first element's type, see 'sized types'
 
     count = count + answer
     assert(count == 43)
@@ -124,6 +125,23 @@ func sized_types() {
 
     small = i8(wide + 1)
     assert(small == -55)
+
+    var sum = small + 1
+    assert(sum == -54)
+    # the first element of an expression decides its width, 'small + 1' is
+    # computed as an 'i8' and a variable declared from it is an 'i8'
+    # a narrower element is widened to that width, a wider one is a compile
+    # error until it is converted, e.g. 'small + i8(wide)', or until the first
+    # element is widened, e.g. 'int(small) + wide'
+
+#   sum = wide
+#   compile error because 'wide' is an 'int' and 'sum' an 'i8'
+
+    var total = 1 + small
+    total = wide
+    assert(total == -56)
+    # a constant has the default type, so '1 + small' is an 'int', write
+    # 'small + 1' to compute as an 'i8'
 }
 
 #

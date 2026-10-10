@@ -1037,6 +1037,20 @@ class machine_rv32i : public machine {
         return data_alignment_;
     }
 
+    [[nodiscard]] auto
+    data_element_size_error(const size_t element_size_bytes) const
+        -> std::optional<std::string> override {
+
+        if (element_size_bytes != byte_size_bytes_ and
+            element_size_bytes != half_size_bytes_ and
+            element_size_bytes != word_size_bytes_) {
+
+            return "RV32I data elements must be 1, 2, or 4 bytes";
+        }
+
+        return std::nullopt;
+    }
+
     [[nodiscard]] auto default_type() const -> const type& override {
         return builtin_type_i32();
     }
@@ -1059,7 +1073,7 @@ class machine_rv32i : public machine {
                operation == arithmetic_operator::remainder);
 
         validate_scalar(src_loc_tk, dst.type_ref());
-        validate_division_operand(src_loc_tk, divisor);
+        validate_scalar(src_loc_tk, divisor.type_ref());
 
         assert(dst.is_register() or dst.is_memory());
 
@@ -1151,7 +1165,7 @@ class machine_rv32i : public machine {
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
                             const data_initializer& value) -> void override {
 
-        // 'validate_data_element_size' rejects other sizes
+        // 'data_element_size_error' rejects other sizes
         assert(element_size_bytes == byte_size_bytes_ or
                element_size_bytes == half_size_bytes_ or
                element_size_bytes == word_size_bytes_);
@@ -1497,7 +1511,7 @@ class machine_rv32i : public machine {
                operation == arithmetic_operator::shift_right);
 
         validate_scalar(src_loc_tk, dst.type_ref());
-        validate_shift_operand(src_loc_tk, count);
+        validate_scalar(src_loc_tk, count.type_ref());
         validate_destination_storage(src_loc_tk, dst);
 
         const std::optional<int32_t> constant{immediate_value(count)};
@@ -1620,32 +1634,6 @@ class machine_rv32i : public machine {
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
                                false);
-    }
-
-    auto validate_data_element_size(const token& src_loc_tk,
-                                    const size_t element_size_bytes) const
-        -> void override {
-
-        if (element_size_bytes != byte_size_bytes_ and
-            element_size_bytes != half_size_bytes_ and
-            element_size_bytes != word_size_bytes_) {
-
-            throw compiler_exception{
-                src_loc_tk, "RV32I data elements must be 1, 2, or 4 bytes"};
-        }
-    }
-
-    auto validate_division_operand(const token& src_loc_tk,
-                                   const operand& divisor) const
-        -> void override {
-
-        validate_scalar(src_loc_tk, divisor.type_ref());
-    }
-
-    auto validate_shift_operand(const token& src_loc_tk,
-                                const operand& count) const -> void override {
-
-        validate_scalar(src_loc_tk, count.type_ref());
     }
 
     [[nodiscard]] auto variables_base_past_vars_bytes() const

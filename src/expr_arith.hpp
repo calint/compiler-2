@@ -1132,12 +1132,6 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        // the backend reserves registers for division
-        if (is_stored_value(tc, src)) {
-            x.validate_division_operand(src.tok(),
-                                        tc.make_ident_info(src).operand);
-        }
-
         emit_with_source(tc, indent, src, dst_info.type_ref(),
                          dst_info.type_ref(),
                          [&](const operand& divisor, const bool) -> void {
@@ -1181,12 +1175,6 @@ class expr_arith final : public expression {
         -> void {
 
         machine& x{tc.machine()};
-
-        // the backend reserves a register for the count
-        if (is_stored_value(tc, src)) {
-            x.validate_shift_operand(src.tok(),
-                                     tc.make_ident_info(src).operand);
-        }
 
         emit_with_source(tc, indent, src, dst_info.type_ref(),
                          dst_info.type_ref(),
