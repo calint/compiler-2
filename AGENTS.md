@@ -35,10 +35,11 @@ Working agreements for AI sessions in this repository.
   returned structs (one member per line); tables of one-line rows keep rows.
 - Empty optional: `return std::nullopt;`.
 - Explicit types; `auto` only for cumbersome ones (iterators).
-- Backend access: always `machine& x{tc.machine()};`, even for one use, never
-  `tc.machine().call(...)`; placed just before its use, blank line around.
+- Everything that can be `const` to be `const`
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
+- Backend access: always `machine& x{tc.machine()};`, even for one use, never
+  `tc.machine().call(...)`; placed just before its use, blank line around.
 
 ### Blank lines
 
@@ -46,8 +47,7 @@ Working agreements for AI sessions in this repository.
   clang-format); `qa/lint/format-source.py` holds them. Accept what it removes.
 - Around multiline statements and declarations; an attached comment or note
   stays with its statement.
-- After the `{` of a multiline signature, lambda head or condition (applied
-  after the last clang-format run, which removes it from lambda bodies).
+- After the `{` of a multiline signature, lambda head or condition
 - Before a return only if the statements before it have blank lines between
   them.
 - Between switch branches (labels sharing a body stay grouped).
@@ -69,7 +69,7 @@ Working agreements for AI sessions in this repository.
 ### Names
 
 - Bytes: role-prefixed (`cur_`, `size_bytes`); elements: `count`.
-- Keep `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs`, `tc` and an
+- Keep `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs`, `tc`, `tz` and an
   interface's paired vocabulary.
 - One-letter names only in tight loops (at most three loop locals).
 - Same parameter names across declarations, definitions and overrides.
@@ -84,11 +84,9 @@ Working agreements for AI sessions in this repository.
 
 - No enum switches (`-Wswitch-default` conflicts with
   `-Wcovered-switch-default`).
-- `std::in_range` needs `int`, not `char`.
 - Parameters shadowing members get an `_in` suffix (`-Wshadow-field`); no
   locals named like enclosing class fields (`-Wshadow`).
-- No `{}` on default-constructed class members (`std::vector`, `std::bitset`);
-  scalars keep `{}`.
+- No `{}` on default-constructed class members and scalars
 - Overrides keep the base's visibility.
 
 ## Code
