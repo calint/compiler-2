@@ -65,6 +65,11 @@ class Rejected(Exception):
     pass
 
 
+class Skip(Exception):
+    # a program whose outcome the model does not decide
+    pass
+
+
 def limits(t):
     bits = BITS[t]
     return -(1 << (bits - 1)), (1 << (bits - 1)) - 1
@@ -1118,17 +1123,22 @@ class Contexts:
     def exact_value(self):
         vals = [self.values[x] if isinstance(x, str) else x
                 for x in self.terms]
+        seen = list(vals)
         items = [vals[0]]
         pending = []
         for o, v in zip(self.ops, vals[1:]):
             if o == "*":
                 items[-1] *= v
+                seen.append(items[-1])
             else:
                 pending.append(o)
                 items.append(v)
         result = items[0]
         for o, v in zip(pending, items[1:]):
             result = result + v if o == "+" else result - v
+            seen.append(result)
+        self.intermediate_outside_int32 = any(
+            not fits("i32", x) for x in seen)
         return result
 
     def source(self):
@@ -1197,10 +1207,14 @@ class Contexts:
 
     def evaluate(self):
         t, c = self.t, self.context
-        if c in ("index", "copy", "write", "array_arg"):
-            # an index or a count is computed wide and checked as the exact
-            # value
+        if c in ("index", "copy", "write"):
+            # an index or a count is computed in the default integer type of
+            # the target, the final value is checked against the range
             v = self.exact_value()
+            if not 0 <= v <= self.length:
+                raise Panic("overflow", "bounds")
+            if self.intermediate_outside_int32:
+                raise Skip("differs between the targets")
         else:
             v = self.value()
         if c in ("decl", "arg", "arg_noinline", "result", "result_noinline"):
@@ -1327,6 +1341,8 @@ def main():
                 expected = ("panic", p.kinds)
             except Rejected as r:
                 expected = ("compile", str(r))
+            except Skip:
+                continue
             source = program.source()
             counts = tally.setdefault(program.name, [0, 0, 0])
             counts[0 if expected[0] == "exit" else

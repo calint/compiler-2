@@ -30,6 +30,11 @@ done <<EOF
 -division arith 60
 -shift arith 60
 -shift shifts 100
+-overflow contexts 200
+-division contexts 300
+-shift contexts 300
+-upper contexts 300
+-lower contexts 300
 -upper arrays 60
 -lower arrays 60
 -overlap arrays 100
