@@ -64,10 +64,10 @@ compiler writes the binary image itself.
 
 ## Howto
 
-* `./make.sh` compiles the compiler then compiles and runs `prog.baz`,
-  `./make.sh build` only compiles the compiler
-* `./run.sh [options] [NAME.baz]` compiles, assembles and runs `NAME.baz`
-  (default: `prog.baz`), the options are passed to `baz`
+* [`./make.sh`](make.sh) compiles the compiler then compiles and runs
+  [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
+* [`./run.sh`](run.sh)` [options] [NAME.baz]` compiles, assembles and runs
+  `NAME.baz` (default: `prog.baz`), the options are passed to `baz`
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
   * builds the program depending on `--target`
     * `x86_64` (default): assembles `NAME.o` and links the binary `NAME`
@@ -81,19 +81,19 @@ compiler writes the binary image itself.
     * `rv32i-fpga`: on the fpga soft core emulator
   * `./run.sh myprogram.baz --checks=upper,line`
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
-* `tutorial.baz` is a tour of the language from the easiest to the most
+* [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the easiest to the most
   difficult concepts
-* `qa/coverage/test-all.sh` runs the tests, coverage report in
+* [`qa/coverage/test-all.sh`](qa/coverage/test-all.sh) runs the tests, coverage report in
   `qa/coverage/report/`
-* neovim (specifically lazyvim see `etc/nvim/tree-sitter-baz/`)
+* neovim (specifically lazyvim see [`etc/nvim/tree-sitter-baz/`](etc/nvim/tree-sitter-baz/))
   * syntax highlighting
   * lsp
     * symbols view
     * go to definition
     * rename
     * references
-* example application `roome/src/main.baz`
-* todo list of planned fixes and features in `etc/todo.txt`
+* example application [`roome/src/main.baz`](roome/src/main.baz)
+* todo list of planned fixes and features in [`etc/todo.txt`](etc/todo.txt)
 
 ## Usage
 

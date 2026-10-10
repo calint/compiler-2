@@ -3,6 +3,10 @@
 
 # comments start with '#' and last until the end of the line
 
+# a file starts with 'include "other.baz"' lines to add the definitions of
+# another file, relative to the including file, each file once
+# the tutorial is one file so it has none
+
 func assert(ok bool) { if not ok exit(1) }
 # a helper used throughout the tutorial, functions and booleans are explained
 # further down
@@ -11,6 +15,11 @@ func assert(ok bool) { if not ok exit(1) }
 #
 # constants and variables
 #
+
+let size = 4
+# a constant at the top level is visible to every function and can be used
+# where a size is needed
+# top level constants come before any 'dat', used by 'arrays' below
 
 func constants_and_variables() {
     let answer = 42
@@ -101,9 +110,10 @@ func sized_types() {
     # such as 'i8(100)' gives the variable that type
     # 'i64' is not available on rv32i
 
-    small = small + small
+    small = i8(small + small)
     assert(small == -56)
-    # arithmetic wraps at the width of the destination
+    # the arithmetic of a conversion wraps at the width of the type, without
+    # the conversion the sum is an overflow, see the checks below
 
     var wide = int(small)
     assert(wide == -56)
@@ -199,7 +209,7 @@ func scopes() {
 #
 
 func arrays() {
-    var zeros = i32[4]
+    var zeros = i32[size]
     assert(zeros[3] == 0)
     # an array names the element type and size, elements start zeroed
     # 'i32[4]{}' is the same
@@ -707,10 +717,32 @@ func checks() {
     var ix = 3
     arr[ix] = 1
     assert(arr[3] == 1)
-    # run-time indexes are not checked by default, '--checks=upper,lower' adds
-    # bounds checks that exit with code 255
+    # the language has operations without a defined result: an index outside an
+    # array, an overflow, a division by zero and more
+    # none is checked by default, a check is turned on with '--checks=LIST'
+    # and a failed check ends the program with a message and an exit code
+    # '--checks=noub' turns on all of them, the list below names each one
+
+    # 'upper' and 'lower': run-time indexes inside the array, 'lower' also
+    # catches negative indexes
     # '--checks=upper,lower,line' also reports the source line of the failure
     # a constant index out of bounds is always a compile error
+
+    # 'overflow': signed overflow of '+', '-', '*' and unary '-' at the width
+    # of the destination, a constant expression that overflows is a compile
+    # error and 'i8(a + b)' still wraps
+
+    # 'division': division or remainder by zero and 'MIN / -1'
+    # 'shift': a shift count below zero or not below the width of the type, a
+    # constant count is a compile error
+
+    # 'overlap': 'array_copy' whose destination starts inside the source, a
+    # copy down the array is allowed
+
+    # 'frame' and 'stack': the frames of 'noinline' calls fit in the variable
+    # storage ('--vars') and in the stack of 'rv32i-qemu' and 'rv32i-fpga'
+    # ('--stack'), the other targets have an operating system that stops a
+    # program that overflows the stack
 
     var x = 5
     var y = add_to_zero(x)
