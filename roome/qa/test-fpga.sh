@@ -2,7 +2,7 @@
 # runs the lines of roome.in on the real fpga over the serial port and
 # compares the uart output with roome.out, the same test as test.sh
 # the board must run roome-rv32i-fpga.bin freshly started, reset it when asked
-# usage: fpga-test.sh [serial device]
+# usage: test-fpga.sh [serial device]
 # the device defaults to /dev/ttyUSB1, as in scripts/fpga-connect-serial.sh
 # requires python3 with pyserial
 set -eu
@@ -10,6 +10,12 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR"
 
 DEVICE=${1:-/dev/ttyUSB1}
+if [ ! -e "$DEVICE" ]; then
+    echo "roome: $DEVICE not found, is the board connected?"
+    AVAILABLE=$(shopt -s nullglob; echo /dev/ttyUSB*)
+    echo "roome: serial devices: ${AVAILABLE:-none}, pass one as: test-fpga.sh <serial device>"
+    exit 1
+fi
 # kept when the test fails so the output can be inspected
 WORK="$DIR/fpga-work"
 mkdir -p "$WORK"
@@ -37,9 +43,7 @@ try:
     port = serial.Serial(device, 115200, bytesize=8, parity="N", stopbits=1,
                          xonxoff=False, rtscts=False, dsrdtr=False, timeout=idle_timeout)
 except serial.SerialException as error:
-    print(f"roome: {error}")
-    print("roome: check that the board is connected, list devices with"
-          " 'ls /dev/ttyUSB*', and pass the right one: fpga-test.sh <serial device>")
+    print(f"roome: cannot open {device}: {error.strerror or error}")
     sys.exit(1)
 
 port.reset_input_buffer()
