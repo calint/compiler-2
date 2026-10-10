@@ -1,9 +1,9 @@
 # compiler-2: baz
 
 Experimental compiler for a minimalistic, specialized language targeting x86_64
-(Linux) via NASM assembler and RV32I via the LLVM assembler running in QEMU
-(Linux). For bare-metal RV32I (QEMU `virt` machine and an FPGA soft core) the
-compiler writes the binary image itself.
+(Linux) via NASM and RV32I via the LLVM assembler running in QEMU (Linux). For
+bare-metal RV32I (QEMU `virt` machine and an FPGA soft core) the compiler writes
+the binary image itself.
 
 ## Intention
 
@@ -12,20 +12,17 @@ compiler writes the binary image itself.
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
 * support for reentrant non-inlined functions
-* checks that make the language ub-free
+* ub-free with `--checks=noub`
 * basic support for generics
 
 ## Supports
 
-* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64)
-* built-in boolean type
-* user defined types
-* data
+* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean
+* user defined types with methods and constructors
+* data, constants, arrays and array iteration
 * variables with the type deduced from the initializer
-* constants
-* arrays
-* array iteration
 * string, character, user type and array initializers
+* inlined and non-inlined functions
 * checks against undefined behavior, selected with `--checks=LIST`
   * `noub` turns on all of them, `line` adds the line number to the report of
     a failed bounds, division, shift, overlap or overflow check, `-NAME` turns
@@ -49,11 +46,6 @@ compiler writes the binary image itself.
     where the value may read the destination under another name
   * always on: compile time rejection of arguments that may share storage when
     a parameter is `mut`
-* inlined functions
-* support for non-inlined functions
-* methods and constructors on user defined types
-* ub-free with `--checks=noub`
-* basic support for generics
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
@@ -69,29 +61,22 @@ compiler writes the binary image itself.
 * [`./run.sh`](run.sh)` [options] [NAME.baz]` compiles, assembles and runs
   `NAME.baz` (default: `prog.baz`), the options are passed to `baz`
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
-  * builds the program depending on `--target`
-    * `x86_64` (default): assembles `NAME.o` and links the binary `NAME`
-    * `rv32i`: assembles `NAME.o` and links the binary `NAME`
-    * `rv32i-qemu` and `rv32i-fpga`: `NAME.s` is not assembled or linked, `baz`
-      write the image `NAME-TARGET.bin`
-  * runs the program
-    * `x86_64`: natively
-    * `rv32i`: in qemu user mode
-    * `rv32i-qemu`: on the qemu `virt` machine
-    * `rv32i-fpga`: on the fpga soft core emulator
+  * builds and runs depending on `--target`
+    * `x86_64` (default): assembles `NAME.o`, links `NAME`, runs natively
+    * `rv32i`: assembles `NAME.o`, links `NAME`, runs in qemu user mode
+    * `rv32i-qemu`: `baz` writes the image `NAME-TARGET.bin` (`NAME.s` is not
+      assembled or linked), runs on the qemu `virt` machine
+    * `rv32i-fpga`: `baz` writes the image `NAME-TARGET.bin` (`NAME.s` is not
+      assembled or linked), runs on the fpga soft core emulator
   * `./run.sh myprogram.baz --checks=upper,line`
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
-* [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the easiest to the most
-  difficult concepts
-* [`qa/coverage/test-all.sh`](qa/coverage/test-all.sh) runs the tests, coverage report in
-  `qa/coverage/report/`
-* neovim (specifically lazyvim see [`etc/nvim/tree-sitter-baz/`](etc/nvim/tree-sitter-baz/))
-  * syntax highlighting
-  * lsp
-    * symbols view
-    * go to definition
-    * rename
-    * references
+* [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the
+  easiest to the most difficult concepts
+* [`qa/coverage/test-all.sh`](qa/coverage/test-all.sh) runs the tests, coverage
+  report in `qa/coverage/report/`
+* neovim (lazyvim, see [`etc/nvim/tree-sitter-baz/`](etc/nvim/tree-sitter-baz/))
+  with syntax highlighting and lsp (symbols, go to definition, rename,
+  references)
 * example application [`roome/src/main.baz`](roome/src/main.baz)
 * todo list of planned fixes and features in [`etc/todo.txt`](etc/todo.txt)
 
