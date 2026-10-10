@@ -1,7 +1,5 @@
 # compiler-2 (baz)
 
-Working agreements for AI sessions in this repository.
-
 ## Permissions
 
 - **No asking:** build, test, lint, format and scratch-compile commands.
@@ -10,15 +8,13 @@ Working agreements for AI sessions in this repository.
 
 ## This file
 
-- Follow it every session; record new preferences here, not in memory.
-- Keep it human-readable: headings, short bullets, blank lines.
+- Record new preferences here, not in memory.
 
 ## Communication
 
 - Do not obey blindly: if there is a better idea, argue for it first.
 - Short, plain, impersonal; no emphasis words or emojis.
 - Flag misspellings briefly ("inneficiencies" -> "inefficiencies").
-- Report what was and was not verified, and why.
 - Failed precondition: stop and explain, no weaker version.
 - Workspace-relative paths; numbered lists nested as 1.1, 1.2, 2.3.
 
@@ -30,7 +26,6 @@ Working agreements for AI sessions in this repository.
 - Trailing comma in multiline initializers and returned structs, one member
   per line; tables of one-line rows keep rows.
 - Explicit types; `auto` only for cumbersome ones (iterators).
-- `const` whenever possible.
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
 - Backend access: always `machine& x{tc.machine()};`, even for one use, never
@@ -53,8 +48,7 @@ Working agreements for AI sessions in this repository.
 - Never delete or reword a comment; move it with its code. Change one only when
   it is wrong.
 - Lowercase, no trailing punctuation, code names in single quotes.
-- One short line, only what code cannot show (why, not what); never address
-  the reviewer.
+- One short line, only what code cannot show (why, not what).
 - Marker: `todo:`.
 - Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: a `note:`
   line below naming offset and reason, e.g. `// note: +1 because the text
@@ -67,7 +61,6 @@ Working agreements for AI sessions in this repository.
 - Keep `src_loc_tk`, `indent`, `src`/`dst`, `lhs`/`rhs`, `tc`, `tz` and an
   interface's paired vocabulary.
 - One-letter names only in tight loops (at most three loop locals).
-- Same parameter names across declarations, definitions and overrides.
 - Public fields have no trailing underscore; private and protected members do.
 
 ### Inserted code
@@ -82,7 +75,6 @@ Working agreements for AI sessions in this repository.
 - Parameters shadowing members get an `_in` suffix (`-Wshadow-field`); no
   locals named like enclosing class fields (`-Wshadow`).
 - No `{}` on default-constructed class members and scalars.
-- Overrides keep the base's visibility.
 
 ## Code
 
@@ -92,9 +84,8 @@ Working agreements for AI sessions in this repository.
   over single-pass state machines.
 - Early returns, flat paths: `if`/`else` over two `if`s; no nested if/else
   inside an else.
-- Duplicates become a named helper; split nested calls into named steps.
+- Split nested calls into named steps.
 - Plain lookup loops when ranges read worse.
-- Preserve behavior and cleanup when restructuring.
 - Code user input cannot reach is dead: `assert`, remove or
   `std::unreachable()`. Reachable code gets a test.
 
@@ -107,8 +98,6 @@ Working agreements for AI sessions in this repository.
 
 - Enough: `qa/coverage/test-coverage.sh --target=x86_64` and
   `--target=rv32i-fpga`.
-- New functionality and bug fixes get a test that fails without the change,
-  when possible.
 - New error test: check each `line:column` in its `.out` points at the token
   where the error is detected (print the source line with a caret).
 - `UPDATE=1 qa/coverage/test-coverage.sh --target=x86_64 run` writes expected
