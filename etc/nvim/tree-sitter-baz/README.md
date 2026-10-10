@@ -50,6 +50,30 @@ vim.filetype.add({
 ...
 ```
 
+## installing the language server
+
+The server is `plugin/baz-lsp.lua`, running inside neovim on top of the
+tree-sitter parser. There is no separate binary or `lspconfig` entry.
+
+1. Install the parser and queries (steps above); the server needs the parser.
+2. Copy the plugin (also done by the steps above and by `make.sh`):
+
+```
+mkdir -p ~/.local/share/nvim/site/plugin
+cp plugin/baz-lsp.lua ~/.local/share/nvim/site/plugin/
+```
+
+3. Set the `baz` filetype (see `options.lua` above).
+4. Open a `.baz` file; the plugin registers and enables the `baz` client with
+   `vim.lsp.config` / `vim.lsp.enable` (neovim 0.11 or newer). Check with
+   `:checkhealth vim.lsp` or `:LspInfo`.
+
+Supported requests (LazyVim keys): document symbols (`<leader>cs`), go to
+definition (`gd`), references (`gr`) and rename (`<leader>cr`).
+
+`make.sh` runs steps 1 and 2 and copies the files to the `tree-sitter-baz`
+project.
+
 ## testing the language server
 
 `qa/test.sh` runs references, definition, rename and document symbols
