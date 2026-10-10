@@ -10,44 +10,39 @@ Working agreements for AI sessions in this repository.
 
 ## This file
 
-- Read and follow it every session; record new preferences here, not in
-  memory.
-- Keep it human-readable: headings, short bullets, blank lines between
-  sections.
+- Follow it every session; record new preferences here, not in memory.
+- Keep it human-readable: headings, short bullets, blank lines.
 
 ## Communication
 
 - Do not obey blindly: if there is a better idea, argue for it first.
 - Short, plain, impersonal; no emphasis words or emojis.
-- Flag misspellings briefly ("inneficiencies" -> "inefficiencies"); spell
-  names and files correctly.
+- Flag misspellings briefly ("inneficiencies" -> "inefficiencies").
 - Report what was and was not verified, and why.
 - Failed precondition: stop and explain, no weaker version.
-- Workspace-relative paths; numbered lists, not bulleted, nested as 1.1,
-  1.2, 2.3 so items can be referenced.
+- Workspace-relative paths; numbered lists nested as 1.1, 1.2, 2.3.
 
 ## C++ style
 
 ### Initialization and types
 
 - Brace init everywhere: `.member{value}`, `bool enabled{};`.
-- Trailing comma in multiline initializers, designated initializers and
-  returned structs (one member per line); tables of one-line rows keep rows.
-- Empty optional: `return std::nullopt;`.
+- Trailing comma in multiline initializers and returned structs, one member
+  per line; tables of one-line rows keep rows.
 - Explicit types; `auto` only for cumbersome ones (iterators).
-- Everything that can be `const` to be `const`
+- `const` whenever possible.
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
 - Backend access: always `machine& x{tc.machine()};`, even for one use, never
-  `tc.machine().call(...)`; placed just before its use, blank line around.
+  `tc.machine().call(...)`; just before its use, blank line around.
 
 ### Blank lines
 
-- `qa/lint/format-source.sh` applies the rules (class member order, then
-  clang-format); `qa/lint/format-source.py` holds them. Accept what it removes.
-- Around multiline statements and declarations; an attached comment or note
-  stays with its statement.
-- After the `{` of a multiline signature, lambda head or condition
+- `qa/lint/format-source.sh` applies the rules (`qa/lint/format-source.py`);
+  accept what it removes.
+- Around multiline statements and declarations; an attached comment stays
+  with its statement.
+- After the `{` of a multiline signature, lambda head or condition.
 - Before a return only if the statements before it have blank lines between
   them.
 - Between switch branches (labels sharing a body stay grouped).
@@ -58,8 +53,8 @@ Working agreements for AI sessions in this repository.
 - Never delete or reword a comment; move it with its code. Change one only when
   it is wrong.
 - Lowercase, no trailing punctuation, code names in single quotes.
-- One short line, only what code cannot show; never restate code or address the
-  reviewer. Non-obvious new code: brief rationale (why, not what).
+- One short line, only what code cannot show (why, not what); never address
+  the reviewer.
 - Marker: `todo:`.
 - Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: a `note:`
   line below naming offset and reason, e.g. `// note: +1 because the text
@@ -86,7 +81,7 @@ Working agreements for AI sessions in this repository.
   `-Wcovered-switch-default`).
 - Parameters shadowing members get an `_in` suffix (`-Wshadow-field`); no
   locals named like enclosing class fields (`-Wshadow`).
-- No `{}` on default-constructed class members and scalars
+- No `{}` on default-constructed class members and scalars.
 - Overrides keep the base's visibility.
 
 ## Code
@@ -95,8 +90,8 @@ Working agreements for AI sessions in this repository.
   fine.
 - Multi-pass designs (one rule per pass, with a before/after example comment)
   over single-pass state machines.
-- Early returns, flat paths: `if`/`else` over two `if`s; flat `else if` chains
-  are fine; no nested if/else inside an else.
+- Early returns, flat paths: `if`/`else` over two `if`s; no nested if/else
+  inside an else.
 - Duplicates become a named helper; split nested calls into named steps.
 - Plain lookup loops when ranges read worse.
 - Preserve behavior and cleanup when restructuring.
@@ -105,24 +100,21 @@ Working agreements for AI sessions in this repository.
 
 ## Baz code
 
-- Tests and examples omit the `{}` of a default-initialized type or array (the
-  compiler assumes it): `var s = str`, `var a = i8[4]`, `res = T`.
+- Tests and examples omit the `{}` of a default-initialized type or array:
+  `var s = str`, `var a = i8[4]`, `res = T`.
 
 ## Tests
 
-- Enough: `qa/coverage/test-coverage.sh --target=x86` (script alias of
-  `x86_64`; the compiler takes `x86_64`) and `--target=rv32i-fpga`.
+- Enough: `qa/coverage/test-coverage.sh --target=x86_64` and
+  `--target=rv32i-fpga`.
 - New functionality and bug fixes get a test that fails without the change,
   when possible.
 - New error test: check each `line:column` in its `.out` points at the token
-  where the error is detected (print the source line with a caret), not only
-  that the message reads well.
-- `UPDATE=1 qa/coverage/test-coverage.sh --target=x86 run` writes expected
-  `.out` files instead of comparing; run for x86 and rv32i, then review the
-  diff.
-- After every change to `roome/src/main.baz`, run `roome/qa/test.sh` and check
-  nothing broke. No formatter or linter run needed there (they act on compiler
-  source only).
+  where the error is detected (print the source line with a caret).
+- `UPDATE=1 qa/coverage/test-coverage.sh --target=x86_64 run` writes expected
+  `.out` files; run for x86_64 and rv32i-fpga, then review the diff.
+- After every change to `roome/src/main.baz`, run `roome/qa/test.sh`. No
+  formatter or linter run needed there.
 
 ## Process
 
@@ -130,17 +122,14 @@ Working agreements for AI sessions in this repository.
   allocation or functionality.
 - Big change (several files or interfaces): plan in the todo file, wait for
   go-ahead.
-- Large headers are fine: classes `toc` uses stay in `toc.hpp`; do not split
-  for size.
+- Do not split large headers for size.
+- Put helper classes near the class that uses them in the same file.
 - One consistency topic at a time across all sources.
 - Todo items one by one, each with a focused check. Resolved or discarded
   `etc/todo.txt` items move to the top of `etc/todo-resolved.txt`, below its
-  legend, newest first (`[x]` with a `=> done (date): ...` note); never delete
-  them.
-- Done means: built, focused tests run, linter clean, formatter applied (keep
-  its output).
-- Never commit; the user does. Only when told to: message is always `.` (no
-  body, no trailer).
+  legend, newest first (`[x]` with a `=> done (date): ...` note).
+- Done means: built, focused tests run, linter clean, formatter applied.
+- Never commit unless told; the message is always `.` (no body, no trailer).
 - Shell scripts `cd` to their own directory and use relative paths.
 
 ## Tools
