@@ -1298,6 +1298,27 @@ local function with_alias_arguments(root, bufnr, access, decl, type_text)
   return (type_text:gsub("[%a_][%w_]*", arguments))
 end
 
+-- the declaration as written, without a body: the signature of a function,
+-- the head of a type, the first line of a variable, parameter or field; or nil
+local function declaration_text(decl, file)
+  local node = decl:parent()
+  local t = node:type()
+  if t ~= "function_definition" and t ~= "type_definition" and not declaration_types[t]
+    and t ~= "parameter" and t ~= "member_field" and t ~= "return_annotation" then
+    return nil
+  end
+  local start_row, start_col = node:start()
+  local end_row, end_col = node:end_()
+  for child in node:iter_children() do
+    if child:type() == "block" or child:type() == "{" then
+      end_row, end_col = child:start()
+      break
+    end
+  end
+  local lines = vim.api.nvim_buf_get_text(file.bufnr, start_row, start_col, end_row, end_col, {})
+  return vim.trim(lines[1])
+end
+
 handlers["textDocument/hover"] = function(params)
   local uri = params.textDocument.uri
   local bufnr, root = parse(uri)
@@ -1324,16 +1345,29 @@ handlers["textDocument/hover"] = function(params)
       local wide_root = with_includes(root, bufnr)
       type_text = with_alias_arguments(wide_root, bufnr, node:parent(), entry.decl, type_text)
     end
-    if type_text and not seen[type_text] then
-      seen[type_text] = true
-      sections[#sections + 1] = type_text
+    local declaration = declaration_text(entry.decl, entry.file)
+    -- the head of a type already says the type
+    if entry.decl:parent():type() == "type_definition" then
+      type_text = nil
+    end
+    local section = {}
+    if type_text then
+      section[#section + 1] = "`" .. type_text .. "`"
+    end
+    if declaration then
+      section[#section + 1] = "```baz\n" .. declaration .. "\n```"
+    end
+    local joined = table.concat(section, "\n\n")
+    if #section > 0 and not seen[joined] then
+      seen[joined] = true
+      sections[#sections + 1] = joined
     end
   end
   if #sections == 0 then
     return nil
   end
   return {
-    contents = { kind = "markdown", value = "`" .. table.concat(sections, "`\n\n`") .. "`" },
+    contents = { kind = "markdown", value = table.concat(sections, "\n\n") },
     range = range_of(node),
   }
 end

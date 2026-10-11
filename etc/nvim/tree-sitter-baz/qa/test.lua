@@ -530,13 +530,13 @@ local function hover(at, expected)
   check("hover " .. at, value == expected, "  expected: " .. expected .. "\n  actual: " .. value)
 end
 
-hover("@q = make_point(5, 6)", "`point`")
-hover("origin @point,", "`point`")
-hover("@limit)", "`int`")
-hover("local = @add(local, limit)", nil)
-hover("func locals(@count)", "`int`")
-hover("var @local = count", nil)
-hover("let first = shapes.@array[0]", "`shape[limit]`")
+hover("@q = make_point(5, 6)", "`point`\n\n```baz\nvar q = make_point(5, 6)\n```")
+hover("origin @point,", "```baz\ntype point\n```")
+hover("@limit)", "`int`\n\n```baz\nlet limit = 4\n```")
+hover("local = @add(local, limit)", "```baz\nfunc add(a, b) res\n```")
+hover("func locals(@count)", "`int`\n\n```baz\ncount\n```")
+hover("var @local = count", "```baz\nvar local = count\n```")
+hover("let first = shapes.@array[0]", "`shape[limit]`\n\n```baz\narray T[capacity]\n```")
 
 -- document symbols
 
