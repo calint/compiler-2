@@ -536,7 +536,7 @@ hover("@limit)", "`int`")
 hover("local = @add(local, limit)", nil)
 hover("func locals(@count)", "`int`")
 hover("var @local = count", nil)
-hover("let first = shapes.@array[0]", "`T[capacity]`")
+hover("let first = shapes.@array[0]", "`shape[limit]`")
 
 -- document symbols
 

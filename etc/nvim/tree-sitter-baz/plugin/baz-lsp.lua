@@ -1277,6 +1277,27 @@ local function declaration_type(decl, file)
   return nil
 end
 
+-- for a member of an alias 'type shapes = list<shape, limit>' the type text
+-- with the parameters of the generic type replaced by the arguments of the
+-- alias: 'T[capacity]' gives 'shape[limit]'
+local function with_alias_arguments(root, bufnr, access, decl, type_text)
+  local base = type_of_node(root, bufnr, previous_element(access), 0)
+  local alias = base and not base.array and alias_of(root, bufnr, base.name)
+  local generic_id = alias and top_level(root, bufnr, "type", alias.generic)
+  -- member_field -> member_field_list -> type_definition
+  local owner = decl:parent():parent():parent()
+  if not generic_id or owner ~= generic_id:parent() then
+    return type_text
+  end
+  local arguments = {}
+  for i, id in ipairs(generic_parameter_names(generic_id:parent())) do
+    if alias.arguments[i] then
+      arguments[text(id, bufnr)] = text(alias.arguments[i], bufnr)
+    end
+  end
+  return (type_text:gsub("[%a_][%w_]*", arguments))
+end
+
 handlers["textDocument/hover"] = function(params)
   local uri = params.textDocument.uri
   local bufnr, root = parse(uri)
@@ -1299,6 +1320,10 @@ handlers["textDocument/hover"] = function(params)
   local seen = {}
   for _, entry in ipairs(entries) do
     local type_text = declaration_type(entry.decl, entry.file)
+    if type_text and entry.decl:parent():type() == "member_field" and node:parent():type() == "member_access" then
+      local wide_root = with_includes(root, bufnr)
+      type_text = with_alias_arguments(wide_root, bufnr, node:parent(), entry.decl, type_text)
+    end
     if type_text and not seen[type_text] then
       seen[type_text] = true
       sections[#sections + 1] = type_text
