@@ -242,7 +242,9 @@ class expr_arith final : public expression {
         // a register that the expression reads is the result of an inlined
         // function, writing it early would change what later elements read
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
-        if (dst_info.is_register() and reads_destination_early(dst_info)) {
+        if (dst_info.is_register() and
+            destination_is_clobbered_before_read(dst_info)) {
+
             compile_through_scratch_register(tc, indent, dst_info);
             return;
         }
@@ -257,7 +259,7 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         // writing the destination early would change what later elements read
-        if (reads_destination_early(dst_info)) {
+        if (destination_is_clobbered_before_read(dst_info)) {
 
             compile_through_scratch(tc, indent, dst_info);
             return;
@@ -779,6 +781,26 @@ class expr_arith final : public expression {
         x.free_scratch_register(tok(), indent, reg);
     }
 
+    // a plain first element is copied before anything writes the destination
+    [[nodiscard]] auto
+    destination_is_clobbered_before_read(const ident_info& dst_info) const
+        -> bool {
+
+        const std::string_view root{dst_info.root_id()};
+
+        if (not exprs_.front()->is_identifier() and
+            exprs_.front()->reads_var(root)) {
+
+            return true;
+        }
+
+        return std::ranges::any_of(
+            exprs_ | std::views::drop(1),
+            [root](const std::unique_ptr<statement>& e) -> bool {
+                return e->reads_var(root);
+            });
+    }
+
     auto do_compile(toc& tc, const size_t indent,
                     const ident_info& dst_info) const -> void {
 
@@ -936,25 +958,6 @@ class expr_arith final : public expression {
         lead_with_constant(tc, steps);
 
         return steps;
-    }
-
-    // a plain first element is copied before anything writes the destination
-    [[nodiscard]] auto reads_destination_early(const ident_info& dst_info) const
-        -> bool {
-
-        const std::string_view root{dst_info.root_id()};
-
-        if (not exprs_.front()->is_identifier() and
-            exprs_.front()->reads_var(root)) {
-
-            return true;
-        }
-
-        return std::ranges::any_of(
-            exprs_ | std::views::drop(1),
-            [root](const std::unique_ptr<statement>& e) -> bool {
-                return e->reads_var(root);
-            });
     }
 
     // the type of the list is that of its first element
