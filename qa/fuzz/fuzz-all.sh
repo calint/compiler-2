@@ -21,11 +21,18 @@ run() {
 
 run ./fuzz-ub.py $((200 * scale)) "$seed"
 run ./fuzz-exprs.py $((3000 * scale)) "$seed"
+run ./fuzz-data.py $((300 * scale)) "$seed"
+run ./fuzz-flow.py $((300 * scale)) "$seed"
+run ./fuzz-methods.py $((300 * scale)) "$seed"
+run ./fuzz-generics.py $((300 * scale)) "$seed"
+run ./fuzz-reject.py $((600 * scale)) "$seed"
+run ./fuzz-io.py $((300 * scale)) "$seed"
 run ./fuzz-programs.py $((500 * scale)) "$seed"
 run ./fuzz-compiler.py $((3000 * scale)) "$seed"
 run ./fuzz-options.py $((3000 * scale)) "$seed"
 run ./fuzz-roome.py $((3000 * scale)) "$seed"
 run ./fuzz-alias.sh
+run ./fuzz-ub.sh --mutants
 
 echo "=== findings are in findings/"
 exit $status

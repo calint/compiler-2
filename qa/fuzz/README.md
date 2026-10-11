@@ -28,11 +28,18 @@ operation.
 | --- | --- |
 | `fuzz-ub.sh` | python model of arithmetic, widths, shifts, arrays, indexes and counts of every width, arrays as parameters, one expression in many contexts (argument, index, count, divisor, shift count, comparison, result), a wider later element that must be rejected or exact, calls and recursion against x86_64 and rv32i-fpga, `--mutants` turns off one check at a time and requires a mismatch |
 | `fuzz-exprs.py` | python model of nested expressions (unary, conversions, comparisons, `and`/`or`/`not` with short circuit, constants, loops) |
+| `fuzz-data.py` | python model of user types (records, nested arrays, `bool`), `dat` and `var` initializers (partial, strings, characters), `let` constants and read-only variables with shadowing, constant expressions, copies, `==` and `!=` of records and arrays, `foo`, `array_copy`, `arrays_equal`, `write` of a part of an array |
+| `fuzz-flow.py` | python model of `if` / `else if` / `else`, `loop` with `break` and `continue`, blocks that shadow, `exit`, functions with a result, early `return`, `noinline` |
+| `fuzz-methods.py` | python model of records with nested records and arrays, `mut` methods, methods that only read `self` (also on a `let` receiver), a method named like a field, constructors, `noinline` functions that take a record, functions that return one, calls on variables, fields and array elements |
+| `fuzz-generics.py` | python model of generic types with constants and types, aliases, methods that see the constants, generic functions with type arguments given and deduced |
+| `fuzz-reject.py` | programs that break a rule of the tutorial (write a `let` or a constant, narrowing, unassigned result, aliasing, constant index, repeated name, `break` outside a loop, ...) must be rejected on the line of the mistake, the twin without the mistake must be accepted |
+| `fuzz-io.py` | python model of `read` and `write` with count and start index on strings, `dat`, variables and array fields |
 | `fuzz-programs.py` | valid random programs of functions, methods, records, arrays, `foo`, loops, recursion: no model, every build must end the same and without a panic |
 | `fuzz-compiler.py` | mutations of the sources in `qa/coverage/tests` into the sanitizer build of the compiler: crashes, hangs, rejections without a position, invalid assembly, signals from programs compiled with `noub`, differences between targets, `--nopt`, checks and `--reproduce-source` |
 | `fuzz-options.py` | the command line: sizes, check lists, targets, odd files |
 | `fuzz-roome.py` | mutated sessions of `roome/src/main.baz` on both targets |
 | `fuzz-alias.sh` | the alias check against a brute force of the bytes |
+| `fuzz-ub.sh --mutants`, `fuzz-alias-long.sh` | the check of the checks, a longer alias run |
 | `fuzz-reduce.py`, `fuzz-reduce-roome.py` | shrink a finding |
 
 `build-asan.sh` builds `build/baz-asan` (AddressSanitizer and
@@ -61,4 +68,8 @@ changed.
   plain `ld` gives false failures of the frame check
 - a literal that does not fit inside `i32(...)` wraps, the arithmetic of an
   explicit conversion wraps
+- an integer is accepted where a `bool` is expected and a `bool` where an
+  integer is, the value is not changed
+- `read` on the uart of rv32i-fpga returns one line, on a file as many bytes as
+  fit; each read at the end of the input takes one end of transmission byte
 - a very long expression compiles in more than linear time

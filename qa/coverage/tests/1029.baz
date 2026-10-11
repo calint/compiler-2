@@ -1,0 +1,19 @@
+# the result of a function called in an expression is a temporary, a call inside it that passes that result and writes its own is not an alias
+
+func inner(p) res {
+    res = p
+}
+
+func outer(a) res {
+    res = a
+    if inner(res) < 1 return
+    res = res + 1
+}
+
+func main() {
+    var w = 3
+    var z = w + outer(4)
+    if z != 8 exit(1)
+    if w == outer(4) exit(2)
+    exit(0)
+}

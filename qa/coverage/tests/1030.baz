@@ -1,0 +1,17 @@
+# --checks=overflow: the result of an inlined function that is a register is read by the expression that writes it
+
+func scale(p) res {
+    res = 5
+    res = (p + res) * 3
+}
+
+func mask(p) res {
+    res = 94
+    res = (((p ^ res) & 1023) & 31) * (p & 31)
+}
+
+func main() {
+    if scale(1) != 18 exit(1)
+    if mask(1) != 31 exit(2)
+    exit(scale(2) - 3)
+}

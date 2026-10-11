@@ -193,19 +193,22 @@ def outcome_fpga(result):
     return Outcome("exit", result.returncode, result.stdout)
 
 
-def run_fpga(compiler, path, options, work, name="f.bin"):
+def run_fpga(compiler, path, options, work, name="f.bin", stdin=b""):
     # compile for rv32i-fpga and run in the emulator: (compile result, outcome)
+    # the uart takes the input followed by end of transmission bytes, each read at
+    # the end of the input takes one
     image = os.path.join(work, name)
     c = compile_source(compiler, path,
                        ["--target=rv32i-fpga", "--bin=" + image] + options,
                        os.devnull)
     if c.returncode or c.timed_out:
         return c, None
-    r = run([EMULATOR, image, os.devnull], RUN_TIMEOUT)
+    r = run([EMULATOR, image, os.devnull], RUN_TIMEOUT,
+            stdin_bytes=stdin + b"\x04" * 64)
     return c, outcome_fpga(r)
 
 
-def run_x86(compiler, path, options, work, name="f"):
+def run_x86(compiler, path, options, work, name="f", stdin=b""):
     assembly = os.path.join(work, name + ".s")
     c = compile_source(compiler, path, ["--target=x86_64"] + options,
                        assembly)
@@ -214,7 +217,7 @@ def run_x86(compiler, path, options, work, name="f"):
     exe, problem = assemble_x86(assembly, work)
     if problem:
         return c, None, problem
-    r = run([exe], RUN_TIMEOUT)
+    r = run([exe], RUN_TIMEOUT, stdin_bytes=stdin)
     return c, outcome_x86(r), None
 
 
@@ -261,3 +264,100 @@ class Findings:
         with open(os.path.join(FINDINGS, name + ".txt"), "w") as f:
             f.write(f"{category}\n{key}\n\n{detail}\n")
         return True
+
+
+# the targets and the option lists that the model fuzzers build every program
+# with
+TARGETS = ("x86_64", "rv32i-fpga")
+OPTION_LISTS = (("--checks=noub",), ("--checks=noub", "--nopt"),
+                ("--checks=noub,line",))
+
+
+def build_and_run(work, source, target, options, stdin=b"",
+                  compiler=COMPILER_ASAN):
+    # what a program did: ('compile', stderr), ('exit', code, stdout) or
+    # (kind, detail) when it did not end by itself or the assembler failed
+    path = os.path.join(work, "f.baz")
+    with open(path, "w") as f:
+        f.write(source)
+    options = list(options)
+    if target == "x86_64":
+        c, o, problem = run_x86(compiler, path, options, work, stdin=stdin)
+    else:
+        c, o = run_fpga(compiler, path, options, work, stdin=stdin)
+        problem = None
+    if c.timed_out:
+        return ("compile-hang", "")
+    if c.returncode:
+        return ("compile", c.stderr[:600])
+    if problem:
+        return (problem[0], problem[1][:300])
+    if o.kind != "exit":
+        return (o.kind, f"{o.code} {o.detail}")
+    return ("exit", o.code, o.stdout)
+
+
+def judge(work, source, expected, stdin=b"", targets=TARGETS,
+          option_lists=OPTION_LISTS, prefix="model"):
+    # builds the program for every target and option list, returns the
+    # findings (category, key, detail) of the builds that did not end with
+    # the 'expected' ('exit', code, stdout)
+    found = []
+    for target in targets:
+        for options in option_lists:
+            got = build_and_run(work, source, target, options, stdin)
+            if known_crash(str(got)) or got == expected:
+                continue
+            key = f"{target} {' '.join(options)} {got[0]}"
+            if got[0] == "compile":
+                category = f"{prefix}-reject"
+                message = got[1].strip().splitlines()[0] if got[1] else ""
+                key = f"{target} {message.split(': ', 1)[-1]}"
+            elif got[0] == "compile-hang":
+                category = "compiler-hang"
+            elif got[0] in ("invalid-asm", "link-failure"):
+                category = got[0]
+            else:
+                category = f"{prefix}-mismatch"
+            found.append((category, key, f"expected {expected}, got {got}"))
+    return found
+
+
+def run_fuzzer(fuzz_one, count, seed, jobs):
+    # runs 'fuzz_one((seed, index))' in processes, each returns (source,
+    # findings), prints the first example of each finding, returns 1 when
+    # there is a new one
+    import concurrent.futures
+    import time
+    findings = Findings()
+    print(f"seed {seed}, {count} programs, {jobs} jobs")
+    new = 0
+    total = 0
+    begin = time.time()
+    with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
+        for n, (source, found) in enumerate(
+                pool.map(fuzz_one, [(seed, i) for i in range(count)],
+                         chunksize=2), 1):
+            for category, key, detail in found:
+                total += 1
+                if findings.add(category, key, source, detail):
+                    new += 1
+                    print(f"NEW {category}: {key[:150]}\n    {detail[:300]}",
+                          flush=True)
+            if n % 200 == 0:
+                print(f"  {n}/{count} {time.time() - begin:.0f}s", flush=True)
+    print(f"{count} programs, {total} mismatches, "
+          f"{time.time() - begin:.0f}s")
+    print(f"{new} new findings in {FINDINGS}")
+    return 1 if new else 0
+
+
+def arguments(default_count):
+    # count, seed and jobs of the command line
+    import random
+    import sys
+    count = int(sys.argv[1]) if len(sys.argv) > 1 else default_count
+    seed = int(sys.argv[2]) if len(sys.argv) > 2 else random.randrange(1 << 30)
+    jobs = int(sys.argv[3]) if len(sys.argv) > 3 else \
+        max(1, (os.cpu_count() or 2) - 2)
+    return count, seed, jobs

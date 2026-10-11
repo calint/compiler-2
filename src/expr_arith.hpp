@@ -239,6 +239,13 @@ class expr_arith final : public expression {
             }
         }
 
+        // a register that the expression reads is the result of an inlined
+        // function, writing it early would change what later elements read
+        if (dst_info.is_register() and reads_destination_early(dst_info)) {
+            compile_through_scratch_register(tc, indent, dst_info);
+            return;
+        }
+
         // a register or a single plain element is compiled directly, without
         // trying with and without a scratch register
         if (dst_info.is_register() or is_single_plain_element()) {
@@ -750,6 +757,24 @@ class expr_arith final : public expression {
 
         x.copy_value(tok(), indent, dst_info.operand, reg);
 
+        x.free_scratch_register(tok(), indent, reg);
+    }
+
+    // the register destination keeps its value until the whole expression is
+    // computed in another register
+    auto compile_through_scratch_register(toc& tc, const size_t indent,
+                                          const ident_info& dst_info) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(tok(), indent, dst_info.type_ref()),
+        };
+
+        do_compile(tc, indent, toc::make_ident_info_from_register(reg));
+
+        x.copy_value(tok(), indent, dst_info.operand, reg);
         x.free_scratch_register(tok(), indent, reg);
     }
 

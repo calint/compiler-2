@@ -3172,3 +3172,9 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1027 && OPTS="--checks=overflow" COMPERR; 
 
 # --checks=overflow: a product that overflows in a constant expression is rejected
 if [[ $MACHINE == x86_64 ]]; then SRC=1028 && OPTS="--checks=overflow" COMPERR; fi
+
+# the result of a function called in an expression is a temporary, a call inside it that passes that result and writes its own is not an alias
+SRC=1029 && EXP=0 && RUN
+
+# --checks=overflow: the result of an inlined function that is a register is read by the expression that writes it
+SRC=1030 && EXP=18 && OPTS="--checks=overflow" RUN

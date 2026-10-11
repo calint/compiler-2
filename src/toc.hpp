@@ -2823,7 +2823,7 @@ class toc final {
         // a value in a register is no variable, not even one that is named
         // like the register, e.g. 't1' of rv32i or 'r14' of x86_64
         if (info.is_register()) {
-            return std::format("{}{}register", info.id,
+            return std::format("{}{}register", info.operand.base_register(),
                                storage_target::frame_mark);
         }
 
