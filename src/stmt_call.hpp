@@ -657,6 +657,9 @@ class stmt_call : public expression {
                  std::vector<operand>& allocated_registers) const
         -> std::vector<alias_info> {
 
+        assert(call_arguments.empty() or call_arguments.size() == args_.size());
+        // note: 'call_arguments.at(i)' below needs one entry per argument
+
         assert_result_use(dst_info, func);
 
         // buffer the aliases of arguments and function return
