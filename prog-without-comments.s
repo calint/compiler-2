@@ -1466,8 +1466,10 @@ func.print_num:
     cmp qword [rbx + 32], 0
     jle if.147.5.end
     if.147.8.code:
-        neg qword [rbx + 32]
+        mov r15, qword [rbx + 32]
+        neg r15
         jo baz_overflow_line_148
+        mov qword [rbx + 32], r15
     if.147.5.end:
     mov qword [rbx + 48], 20
     loop.152.5:

@@ -160,10 +160,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    56           8235           3577          24438
+C/C++ Header                    56           8238           3583          24450
 C++                              1            195             56            670
 -------------------------------------------------------------------------------
-SUM:                            57           8430           3633          25108
+SUM:                            57           8433           3639          25120
 -------------------------------------------------------------------------------
 ```
 
@@ -2075,8 +2075,10 @@ func.print_num:
     cmp qword [rbx + 32], 0
     jle if.147.5.end
     if.147.8.code:
-        neg qword [rbx + 32]
+        mov r15, qword [rbx + 32]
+        neg r15
         jo baz_overflow_line_148
+        mov qword [rbx + 32], r15
     if.147.5.end:
     mov qword [rbx + 48], 20
     loop.152.5:
@@ -5741,10 +5743,13 @@ func.print_num:
     jle if.147.5.end
     if.147.8.code:
 ;       [148:9] n = -n
-;       [148:13] instructions without scratch register 2, with 4
+;       [148:13] allocate scratch register -> r15
 ;       [148:14] -n
-        neg qword [rbx + 32]
+        mov r15, qword [rbx + 32]
+        neg r15
         jo baz_overflow_line_148
+        mov qword [rbx + 32], r15
+;       [148:13] free scratch register r15
     if.147.5.end:
 ;   [151:5] var i = buf_count
 ;   [151:9] i: i64 (8 B @ [rbx + 48])
@@ -6278,7 +6283,7 @@ vars.end:
 
 ;           noinline functions:
 ;                    factorial: 1 body, 2 calls, 37 instructions
-;                    print_num: 1 body, 2 calls, 81 instructions
+;                    print_num: 1 body, 2 calls, 83 instructions
 ;
 ;   removed jumps to next code: 132
 ;    removed unreachable jumps: 2
@@ -6289,7 +6294,7 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 1101
+;                 instructions: 1103
 ;
 ; register use at the peak: 6 of 14 registers live, 2 named by instructions
 ;
