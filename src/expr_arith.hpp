@@ -241,6 +241,7 @@ class expr_arith final : public expression {
 
         // a register that the expression reads is the result of an inlined
         // function, writing it early would change what later elements read
+        // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (dst_info.is_register() and reads_destination_early(dst_info)) {
             compile_through_scratch_register(tc, indent, dst_info);
             return;
