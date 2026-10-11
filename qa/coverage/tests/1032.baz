@@ -1,0 +1,25 @@
+# a 'noinline' call whose argument is a register of the caller: the body sees the temporary of the call, not that register, so a scratch register of the body with the same name is no alias
+
+func f0(p0, p1) res {
+    res = 0
+    var w1 = res
+    if (w1 & 31 > res) or (res & 31 and 31 * 1023 > p0) {
+        res = p1 & 1023
+    }
+}
+
+func noinline f1(p0, p1) res {
+    res = 0
+    if f0(p1, p0) != (res & 1023) {}
+}
+
+func f2(p0) res {
+    res = 0
+    if (res & 31) * (res ^ res) < 1023 and (res & 1023) {
+        var t = f1(res, p0 + p0)
+    }
+}
+
+func main() {
+    if f2(0) exit(1)
+}

@@ -3178,3 +3178,9 @@ SRC=1029 && EXP=0 && RUN
 
 # --checks=overflow: the result of an inlined function that is a register is read by the expression that writes it
 SRC=1030 && EXP=18 && OPTS="--checks=overflow" RUN
+
+# a negated operand that is also the destination is read before a leading constant is stored
+SRC=1031 && EXP=0 && RUN
+
+# a noinline call with a register argument is checked against the temporary of the call
+SRC=1032 && EXP=0 && RUN

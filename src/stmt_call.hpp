@@ -414,15 +414,21 @@ class stmt_call : public expression {
         return args;
     }
 
-    auto compile_inline(toc& tc, const size_t indent,
-                        const ident_info& dst_info,
-                        const stmt_def_func& func) const -> void {
+    // 'call_arguments' are those of a 'noinline' call that is only checked,
+    // the body sees an argument that went through a temporary as that
+    // temporary
+    auto compile_inline(
+        toc& tc, const size_t indent, const ident_info& dst_info,
+        const stmt_def_func& func,
+        const std::span<const noninline_arg> call_arguments = {}) const
+        -> void {
 
         // scratch registers stay allocated until the inlined body is compiled
         std::vector<operand> allocated_registers;
 
         const std::vector<alias_info> aliases{
-            make_aliases(tc, indent, dst_info, func, allocated_registers),
+            make_aliases(tc, indent, dst_info, func, call_arguments,
+                         allocated_registers),
         };
 
         // the result alias has its own address choice in 'compile'
@@ -647,6 +653,7 @@ class stmt_call : public expression {
     [[nodiscard]] auto
     make_aliases(toc& tc, const size_t indent, const ident_info& dst_info,
                  const stmt_def_func& func,
+                 const std::span<const noninline_arg> call_arguments,
                  std::vector<operand>& allocated_registers) const
         -> std::vector<alias_info> {
 
@@ -666,7 +673,14 @@ class stmt_call : public expression {
                  std::views::iota(size_t{}), args_, func.params())) {
 
             // note: 'compile_inline_call' made its temporary
-            if (is_instance_temporary(arg, param)) {
+            // a 'noinline' call made its own, the dry run must not name the
+            // register of the caller that the body does not see
+            const bool is_call_temporary{
+                not call_arguments.empty() and
+                    call_arguments.at(i).is_temporary,
+            };
+
+            if (is_call_temporary or is_instance_temporary(arg, param)) {
                 aliases.push_back(
                     make_value_alias(param, temporary_argument_name(i)));
 
@@ -1030,8 +1044,9 @@ class stmt_call : public expression {
         }
 
         try {
-            tc.check_only(
-                [&] -> void { compile_inline(tc, indent, dst_info, func); });
+            tc.check_only([&] -> void {
+                compile_inline(tc, indent, dst_info, func, arguments);
+            });
         } catch (compiler_exception& e) {
             add_call_frame(e);
             throw;

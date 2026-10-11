@@ -68,7 +68,7 @@ an included file (`split_include` in `fuzzlib.py`).
 
 - the default integer is 64 bits on x86_64 and 32 bits on rv32i, a program of
   default integers can overflow on one target only
-- the uart of rv32i-fpga takes every file descriptor in `write`
+- the uart of rv32i-fpga takes every file descriptor in `write` and `read`
 - with `--checks=noub` a constant index offset is checked at run time instead of
   rejected at compile time
 - register use differs between targets and between `--checks`, an expression

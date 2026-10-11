@@ -782,14 +782,20 @@ class expr_arith final : public expression {
     }
 
     // a plain first element is copied before anything writes the destination
+    // a negated one may move behind a leading constant: 'n = -n + 1'
     [[nodiscard]] auto
     destination_is_clobbered_before_read(const ident_info& dst_info) const
         -> bool {
 
         const std::string_view root{dst_info.root_id()};
 
-        if (not exprs_.front()->is_identifier() and
-            exprs_.front()->reads_var(root)) {
+        const statement& first{*exprs_.front()};
+
+        const bool is_plain{
+            first.is_identifier() and first.get_unary_ops().is_empty(),
+        };
+
+        if (not is_plain and first.reads_var(root)) {
 
             return true;
         }

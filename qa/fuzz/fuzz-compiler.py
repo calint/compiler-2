@@ -355,7 +355,9 @@ def fuzz_one(args):
                     x86.stdout == rv.stdout or FOREIGN_WRITE.search(text))
                 # the default integer is 32 bits on rv32i, 64 on x86_64
                 width = rv.kind == "panic" and rv.code == 249 and x86.kind == "exit"
-                if not same and not stack_difference(x86, rv) and not width:
+                foreign_read = FOREIGN_READ.search(text)
+                if not same and not stack_difference(x86, rv) and not width \
+                        and not foreign_read:
                     findings.append(("diff-target",
                                      f"{bucket(x86)} vs {bucket(rv)} "
                                      f"output {x86.stdout == rv.stdout}",
@@ -411,6 +413,8 @@ def bucket(outcome):
 # the uart of rv32i-fpga takes every file descriptor, a write to another one
 # than 1 shows only there
 FOREIGN_WRITE = re.compile(r"write\(\s*(?!1\s*,)")
+# and a read from another one than 0 fails on x86_64 and reads the uart there
+FOREIGN_READ = re.compile(r"read\(\s*(?!0\s*,)")
 
 
 def stack_difference(x86, rv):
