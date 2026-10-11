@@ -6,7 +6,7 @@ let neg_hex = -0x5
 let not_hex = ~0x5
 let neg_bin = -0b11
 let not_bin = ~0B11
-let min = -9223372036854775808
+let min = -2147483647 - 1
 let dec = -~3
 let size = -neg_bin
 

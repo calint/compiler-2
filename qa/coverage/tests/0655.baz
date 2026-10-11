@@ -1,7 +1,9 @@
 # a 'let' variable cannot be assigned in a function that is never called
 
+dat base = 1
+
 func unused() {
-    let a = 1 + 0
+    let a = base + 0
     a = 2
 }
 

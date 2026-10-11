@@ -3,8 +3,10 @@
 //           2026-09-09
 
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <functional>
+#include <optional>
 #include <ostream>
 #include <string_view>
 #include <utility>
@@ -33,6 +35,9 @@ class stmt_def_var final : public statement {
     stmt_assign_var assign_var_;
     bool is_array_{};
     bool is_let_{};
+    // a 'let' of an expression that folds is a constant, e.g. 'let x = 2 * 3'
+    expr_any constant_expr_;
+    std::optional<int64_t> constant_value_;
 
   public:
     stmt_def_var(toc& tc, const token tk, tokenizer& tz)
@@ -45,6 +50,16 @@ class stmt_def_var final : public statement {
         equals_tk_ = parse_initializer_equals(tz, tk.text());
 
         deduce_declaration(tc, tz);
+
+        if (is_let_) {
+            constant_value_ = fold_initializer(tc, tz);
+        }
+
+        // nothing is stored for a constant
+        if (constant_value_.has_value()) {
+            tc.add_const(name_tk_, 0, name_tk_.text(), *constant_value_);
+            return;
+        }
 
         // add var to toc without emitting output so the further parsing has the
         // variable declared
@@ -81,6 +96,12 @@ class stmt_def_var final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         equals_tk_.source_to(os);
+
+        if (constant_value_.has_value()) {
+            constant_expr_.source_to(os);
+            return;
+        }
+
         assign_var_.expression().source_to(os);
     }
 
@@ -91,6 +112,11 @@ class stmt_def_var final : public statement {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
+
+        if (constant_value_.has_value()) {
+            tc.add_const(name_tk_, indent, name_tk_.text(), *constant_value_);
+            return;
+        }
 
         // an unsized array has its size from the initializer by now
         tc.add_var(name_tk_, indent, make_var_info(), var_kind::var);
@@ -104,6 +130,10 @@ class stmt_def_var final : public statement {
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
+
+        if (constant_value_.has_value()) {
+            return;
+        }
 
         assign_var_.visit_reads(var, reader);
     }
@@ -212,6 +242,30 @@ class stmt_def_var final : public statement {
         }
 
         deduce_array_copy(tc, tk, *arith);
+    }
+
+    // the value of the initializer of a 'let' of the default type when it folds
+    // to a constant, e.g. '2 * 3 + k', otherwise none and the position is the
+    // start of the initializer; the initializer is kept to reproduce the source
+    [[nodiscard]] auto fold_initializer(toc& tc, tokenizer& tz)
+        -> std::optional<int64_t> {
+
+        if (is_array_ or &get_type() != &tc.get_type_default()) {
+            return std::nullopt;
+        }
+
+        std::optional<int64_t> value;
+
+        trial_parse(tc, tz, [this, &tc, &tz, &value] -> void {
+            const expr_any initializer{tc, tz, get_type(), false, false, 0};
+            value = initializer.constant_value(tc);
+        });
+
+        if (value.has_value()) {
+            constant_expr_ = {tc, tz, get_type(), false, false, 0};
+        }
+
+        return value;
     }
 
     [[nodiscard]] auto make_var_info() const -> var_info {

@@ -14,7 +14,6 @@
 #include "stmt_break.hpp"
 #include "stmt_builtin_array_copy.hpp"
 #include "stmt_continue.hpp"
-#include "stmt_def_const.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_var.hpp"
 #include "stmt_identifier.hpp"
@@ -249,7 +248,7 @@ class stmt_block final : public statement {
         }
 
         if (tk.is_text("let")) {
-            return stmt_def_const::parse_let(tc, tz, tk);
+            return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
 
         if (tk.is_text("dat")) {

@@ -22,6 +22,7 @@ let size = 4
 func constants_and_variables() {
     let answer = 42
     # a constant is known at compile time and takes no storage
+    # an expression of constants is a constant too: 'let twice = answer * 2'
 
     var count = 1
     # a variable always has an initial value and gets its type from it

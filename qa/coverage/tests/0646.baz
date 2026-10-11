@@ -1,6 +1,8 @@
 # a 'let' variable cannot be assigned
 
+dat base = 1
+
 func main() {
-    let a = 1 + 0
+    let a = base + 0
     a = 2
 }

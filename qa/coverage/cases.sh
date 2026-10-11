@@ -797,7 +797,7 @@ SRC=0273 && EXP=0 && RUN
 SRC=0274 && COMPERR
 
 # spaced unary negative constant
-SRC=0275 && COMPERR
+SRC=0275 && EXP=0 && RUN
 
 SRC=0276 && EXP=0 && RUN
 
@@ -3163,3 +3163,12 @@ SRC=1024 && COMPERR
 
 # a variable named like a scratch register is not the storage of an argument that is computed into that register
 SRC=1025 && EXP=0 && RUN
+
+# a 'let' of an expression of constants is a constant: it can precede 'dat' and size an array
+SRC=1026 && EXP=0 && RUN
+
+# --checks=overflow: a sum that overflows in a constant expression is rejected
+if [[ $MACHINE == x86_64 ]]; then SRC=1027 && OPTS="--checks=overflow" COMPERR; fi
+
+# --checks=overflow: a product that overflows in a constant expression is rejected
+if [[ $MACHINE == x86_64 ]]; then SRC=1028 && OPTS="--checks=overflow" COMPERR; fi

@@ -4,7 +4,9 @@ func noinline set(a mut) {
     a = 1
 }
 
+dat base = 5
+
 func main() {
-    let x = 5 + 0
+    let x = base + 0
     set(x)
 }

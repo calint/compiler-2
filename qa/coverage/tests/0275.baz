@@ -2,4 +2,7 @@
 
 let n = - 1
 
-func main() {}
+func main() {
+    if n != -1 exit(1)
+    exit(0)
+}

@@ -1,0 +1,6 @@
+# --checks=overflow: a sum that overflows in a constant expression is rejected
+
+func main() {
+    let x = 9223372036854775807 + 1
+    exit(x)
+}

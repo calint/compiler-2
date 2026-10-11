@@ -23,7 +23,6 @@
 #include "decouple.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
-#include "stmt_def_const.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_func.hpp"
 #include "stmt_def_type.hpp"
@@ -399,7 +398,7 @@ class program final {
         }
 
         if (tk.is_text("let")) {
-            return stmt_def_const::parse_let(tc, tz, tk);
+            return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
 
         if (tk.is_text("dat")) {

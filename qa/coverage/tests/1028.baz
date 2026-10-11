@@ -1,0 +1,6 @@
+# --checks=overflow: a product that overflows in a constant expression is rejected
+
+func main() {
+    let x = 4611686018427387904 * 2
+    exit(x)
+}

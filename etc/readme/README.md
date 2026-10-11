@@ -160,10 +160,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    57           8235           3578          24445
+C/C++ Header                    56           8228           3572          24421
 C++                              1            195             56            670
 -------------------------------------------------------------------------------
-SUM:                            58           8430           3634          25115
+SUM:                            57           8423           3628          25091
 -------------------------------------------------------------------------------
 ```
 
@@ -2482,8 +2482,11 @@ lea rbp, [dat]
 ;[33:5] greeted: i8[15] (15 B @ [rbp + 352])
 ;[34:1] dat names = 0
 ;[34:7] names: i64 (8 B @ [rbp + 368])
+;[124:1] let yes = 1
 ;[124:5] const yes = 1
+;[125:1] let no = 0
 ;[125:5] const no = 0
+;[126:1] let maybe = -1
 ;[126:5] const maybe = -1
 ;
 main:
@@ -2551,6 +2554,7 @@ main:
         if.38.24.192.5.end:
 ;       [192:5] free scratch register r15
     func.assert.192.5.end:
+;       [197:9] let maybe = 33
 ;       [197:13] const maybe = 33
 ;       [198:9] assert(maybe == 33)
 ;       [38:6] assert(ok bool)
@@ -5694,6 +5698,7 @@ size.func.factorial equ 32
 ;[134:15] noinline print_num(num)
 func.print_num:
 ;   [134:25] num: i64 (8 B @ [rbx])
+;   [136:5] let buf_count = 20
 ;   [136:9] const buf_count = 20
 ;   [138:5] var buf = i8[buf_count]
 ;   [138:9] buf: i8[20] (20 B @ [rbx + 8])

@@ -1,4 +1,4 @@
 
-0217.baz:3:7: expected '=' followed by a constant value
+0217.baz:3:7: expected '=' followed by an initializer, e.g. 'let x = i32(0)'
 let x 1
       ^

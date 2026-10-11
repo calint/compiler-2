@@ -6,7 +6,9 @@ type point {
     y,
 }
 
-let limit = 5 * 2
+dat base = 5
+
+let limit = base * 2
 
 func assert(x bool) { if not x exit(1) }
 
@@ -32,7 +34,7 @@ func successor(v) res {
 }
 
 func main() {
-    let a = 1 + 2
+    let a = base - 2
     assert(a == 3)
 
     let b = a + limit

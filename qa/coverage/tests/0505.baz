@@ -2,7 +2,7 @@
 
 func assert(err, expr bool) { if not expr exit(err) }
 
-let c = -9223372036854775808
+let c = -9223372036854775807 - 1
 let d = -c
 
 func main() {
