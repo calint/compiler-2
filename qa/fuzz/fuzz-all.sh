@@ -19,6 +19,8 @@ run() {
     "$@" || status=1
 }
 
+run ./fuzz-coverage.py 100 "$seed"
+run ./fuzz-constructs.py "$scale" "$seed"
 run ./fuzz-ub.py $((200 * scale)) "$seed"
 run ./fuzz-exprs.py $((3000 * scale)) "$seed"
 run ./fuzz-data.py $((300 * scale)) "$seed"

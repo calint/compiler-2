@@ -383,8 +383,8 @@ def fuzz_one(args):
                         findings.append(("diff-line", f"{bucket(x86)} vs {bucket(other)}",
                                          f"noub {x86}\nline {other}"))
 
-        r = fl.run([asan, "--reproduce-source"] + options + [path],
-                   fl.COMPILE_TIMEOUT, cwd=work, file_size=1 << 30)
+        r = fl.run_compiler(asan, ["--reproduce-source"] + options, path,
+                            cwd=work)
         if r.timed_out or r.signal in (signal.SIGKILL, signal.SIGXCPU):
             pass
         elif r.returncode:

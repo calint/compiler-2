@@ -26,6 +26,9 @@ operation.
 
 | script | what it does |
 | --- | --- |
+| `fuzz-constructs.py`, `constructs.py` | one small program with a known result per construct of the tutorial (and a program with an error per rejection rule, reported on the line of the mistake), the tutorial itself, on both targets and with and without checks |
+| `fuzz-coverage.py` | runs the generators without the compiler and fails when a construct of `constructs.py` is never emitted by any of them |
+| `fuzz-night.sh [hours] [seed]` | `fuzz-all.sh` in rounds with new seeds and growing scale until the stop time, lists the new findings, log in `findings/night.log` |
 | `fuzz-ub.sh` | python model of arithmetic, widths, shifts, arrays, indexes and counts of every width, arrays as parameters, one expression in many contexts (argument, index, count, divisor, shift count, comparison, result), a wider later element that must be rejected or exact, calls and recursion against x86_64 and rv32i-fpga, `--mutants` turns off one check at a time and requires a mismatch |
 | `fuzz-exprs.py` | python model of nested expressions (unary, conversions, comparisons, `and`/`or`/`not` with short circuit, constants, loops) |
 | `fuzz-data.py` | python model of user types (records, nested arrays, `bool`), `dat` and `var` initializers (partial, strings, characters), `let` constants and read-only variables with shadowing, constant expressions, copies, `==` and `!=` of records and arrays, `foo`, `array_copy`, `arrays_equal`, `write` of a part of an array |
@@ -46,6 +49,11 @@ operation.
 `build-asan.sh` builds `build/baz-asan` (AddressSanitizer and
 UndefinedBehaviorSanitizer) that most fuzzers use, run it after the compiler
 changed.
+
+A compile that takes more than 60 seconds (`SLOW_COMPILE` in `fuzzlib.py`) is
+the finding `compiler-slow`, the program is kept with the time and options.
+About every third program of the model fuzzers is built with its definitions in
+an included file (`split_include` in `fuzzlib.py`).
 
 ## Reading a finding
 

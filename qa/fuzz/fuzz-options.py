@@ -147,7 +147,10 @@ def fuzz_one(args):
         c = fl.compile_source(fl.COMPILER_ASAN, None, options + file_arguments,
                               assembly, cwd=work) if False else None
         command = [fl.COMPILER_ASAN] + options + file_arguments
+        begin = time.time()
         result = fl.run(command, fl.COMPILE_TIMEOUT, cwd=work, file_size=1 << 30)
+        if file_arguments and not result.timed_out:
+            fl.note_if_slow(begin, fl.COMPILER_ASAN, options, file_arguments[0])
         sanitizer = any(t in result.stderr for t in fl.SANITIZER_TEXT)
         if result.timed_out:
             found.append(("option-hang", description[:100], result.stderr[-500:]))

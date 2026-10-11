@@ -26,7 +26,9 @@ import tempfile
 
 import fuzzlib as fl
 
-SCALARS = {"i8": 8, "i16": 16, "i32": 32}
+# "int" is the default type, 64 bits on x86_64 and 32 on rv32i: the model
+# keeps its values inside 32 bits
+SCALARS = {"i8": 8, "i16": 16, "i32": 32, "int": 32}
 CHARS = "abcxyz AZ09_~!#%&()*+,-./:;<=>?@[]^`{|}"
 ESCAPES = {"\\n": 10, "\\t": 9, "\\0": 0, "\\\\": 92, "\\'": 39, "\\x41": 65,
            "\\x7f": 127, "\\x00": 0}
@@ -196,7 +198,8 @@ class Generator:
     def scalar_type(self):
         if self.rnd.random() < 0.15:
             return Bool()
-        return Scalar(self.rnd.choice(list(SCALARS)))
+        t = self.rnd.choice(list(SCALARS) + ["i8", "i16", "i32"])
+        return Scalar(t)
 
     def field_type(self):
         r = self.rnd.random()
@@ -386,10 +389,20 @@ class Generator:
         kind = rnd.choice(["foo", "copy", "write"])
         if kind == "foo":
             step = rnd.randint(0, 3)
-            self.emit(f"foo {name} {{")
+            # a count visits only the first elements, 'n' stays the size
+            visited = t.count
+            head = f"foo {name}"
+            if rnd.random() < 0.4:
+                visited = rnd.randint(0, t.count)
+                if rnd.random() < 0.5:
+                    self.emit(f"var {name.replace('.', '_').replace('[', '_').replace(']', '')}_c = {visited}")
+                    head += f", {name.replace('.', '_').replace('[', '_').replace(']', '')}_c"
+                else:
+                    head += f", {visited}"
+            self.emit(f"{head} {{")
             self.emit(f"    mix(acc, i32(i32(e) + {step} + i - n))")
             self.emit("}")
-            for i, v in enumerate(value):
+            for i, v in enumerate(value[:visited]):
                 self.acc = mix(self.acc, v + step + i - t.count)
         elif kind == "copy":
             n = rnd.randint(1, t.count)
@@ -452,6 +465,13 @@ class Generator:
             for n, ft in t.fields:
                 self.walk(ft, value[n], f"{path}.{n}")
 
+    def field_declaration(self, name, t):
+        # an array of the default type may leave out the type name
+        if isinstance(t, Array) and isinstance(t.elem, Scalar) \
+                and t.elem.t == "int" and self.rnd.random() < 0.5:
+            return f"{name}[{t.count}]"
+        return f"{name} {t.decl()}"
+
     # program
 
     def program(self):
@@ -464,7 +484,8 @@ class Generator:
             head.append(f"let {n} = {text}")
             self.constants[n] = v
         for t in self.types:
-            fields = ", ".join(f"{n} {ft.decl()}" for n, ft in t.fields)
+            fields = ", ".join(self.field_declaration(n, ft)
+                               for n, ft in t.fields)
             head.append(f"type {t.name} {{ {fields} }}")
         objects = []
         for _ in range(rnd.randint(1, 3)):

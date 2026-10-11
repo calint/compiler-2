@@ -7,6 +7,7 @@ import resource
 import signal
 import subprocess
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -18,6 +19,8 @@ FINDINGS = os.environ.get("FUZZ_FINDINGS", os.path.join(HERE, "findings"))
 TESTS = os.path.join(ROOT, "qa", "coverage", "tests")
 
 COMPILE_TIMEOUT = 120
+# a compile that takes longer is a finding, 'compiler-slow'
+SLOW_COMPILE = 60
 RUN_TIMEOUT = 5
 OUTPUT_LIMIT = 1 << 20
 MEMORY_LIMIT = 4 << 30
@@ -98,6 +101,47 @@ def run(command, timeout, cwd=None, memory=0, env=None,
 
 def compile_source(compiler, path, options, assembly_path=None, cwd=None):
     # the assembler listing is written to 'assembly_path' when given
+    begin = time.time()
+    result = _compile_source(compiler, path, options, assembly_path, cwd)
+    seconds = time.time() - begin
+    if seconds > SLOW_COMPILE and not result.timed_out:
+        note_slow(compiler, path, options, seconds)
+    return result
+
+
+def note_if_slow(begin, compiler, options, path):
+    seconds = time.time() - begin
+    if seconds > SLOW_COMPILE:
+        note_slow(compiler, path, options, seconds)
+
+
+def run_compiler(compiler, options, path, cwd=None):
+    # runs the compiler on 'path' with all the limits for a compile and notes
+    # a slow one
+    begin = time.time()
+    result = run([compiler] + options + [path], COMPILE_TIMEOUT, cwd=cwd,
+                 file_size=1 << 30)
+    if not result.timed_out:
+        note_if_slow(begin, compiler, options, path)
+    return result
+
+
+def note_slow(compiler, path, options, seconds):
+    # keeps the program of a compile that took more than 'SLOW_COMPILE'
+    # seconds, one finding for each program and option list
+    try:
+        with open(path, "rb") as f:
+            source = f.read().decode("latin-1")
+    except OSError:
+        return
+    key = f"{' '.join(options)} {hashlib.sha1(source.encode()).hexdigest()}"
+    detail = f"{os.path.basename(compiler)} {' '.join(options)} took " \
+        f"{seconds:.0f}s"
+    if Findings().add("compiler-slow", key, source, detail):
+        print(f"NEW compiler-slow: {detail}", flush=True)
+
+
+def _compile_source(compiler, path, options, assembly_path, cwd):
     command = [compiler] + options + [path]
     if assembly_path is None:
         return run(command, COMPILE_TIMEOUT, cwd=cwd)
@@ -273,13 +317,28 @@ OPTION_LISTS = (("--checks=noub",), ("--checks=noub", "--nopt"),
                 ("--checks=noub,line",))
 
 
+def split_include(work, source):
+    # about every third program has its definitions in an included file in a
+    # directory, 'main' stays in the file that is built, the program is the
+    # same: returns the text of the file to build
+    marker = "\nfunc main()"
+    at = source.find(marker)
+    if at < 0 or int(hashlib.sha1(source.encode("latin-1", "replace"))
+                     .hexdigest(), 16) % 3:
+        return source
+    os.makedirs(os.path.join(work, "lib"), exist_ok=True)
+    with open(os.path.join(work, "lib", "part.baz"), "wb") as f:
+        f.write(source[:at + 1].encode("latin-1", "replace"))
+    return 'include "lib/part.baz"\n' + source[at + 1:]
+
+
 def build_and_run(work, source, target, options, stdin=b"",
                   compiler=COMPILER_ASAN):
     # what a program did: ('compile', stderr), ('exit', code, stdout) or
     # (kind, detail) when it did not end by itself or the assembler failed
     path = os.path.join(work, "f.baz")
     with open(path, "w") as f:
-        f.write(source)
+        f.write(split_include(work, source))
     options = list(options)
     if target == "x86_64":
         c, o, problem = run_x86(compiler, path, options, work, stdin=stdin)

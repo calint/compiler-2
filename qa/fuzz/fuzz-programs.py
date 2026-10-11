@@ -211,9 +211,15 @@ class Generator:
             self.loop_statement(in_loop)
         elif r < 0.80 and nested and self.arrays:
             name, size = rnd.choice(self.arrays)
-            self.emit(f"foo {name} {{")
+            # a count visits only the first elements
+            count = f", {rnd.randint(0, size)}" if rnd.random() < 0.3 else ""
+            self.emit(f"foo {name}{count} {{")
             self.indent += 1
             self.emit("e = (e + i32(i) * 3 + i32(n)) & 0xfff")
+            if rnd.random() < 0.2:
+                # the inner 'foo' injects its own 'e', 'i' and 'n'
+                inner, _ = rnd.choice(self.arrays)
+                self.emit(f"foo {inner} {{ e = (e + i32(i)) & 0xfff }}")
             if rnd.random() < 0.5:
                 self.emit(f"{self.target()} = "
                           f"(e + {rnd.choice(self.scalars)}) & 0xffff")

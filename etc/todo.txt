@@ -6,6 +6,25 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
+    night-long run
+    => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,
+       built-ins, forms such as 'foo A, N', 'int(x)', 'int[N]', '0b', char
+       escapes, 'T' deduction, 'let' arrays) and, per construct, a tiny
+       program with a known result; fails if a construct is not accepted or
+       gives another value on x86_64 and rv32i-fpga
+    => 2. coverage gate: the generators of the fuzzers are run with a fixed
+       seed and the emitted text is scanned for each construct; a construct
+       never emitted is reported
+    => 3. fill the gaps found: valid multi-file programs with 'include'
+       (new generator in 'fuzz-programs.py'), '0b' literals and char escapes
+       in 'fuzz-exprs.py', 'foo A, N' in 'fuzz-data.py' and
+       'fuzz-programs.py', 'int(x)'/'int[N]', read-only array arguments,
+       negative 'T' deduction cases in 'fuzz-reject.py'
+    => 4. 'fuzz-night.sh': 'fuzz-all.sh' in a loop with new seeds and growing
+       scale until a stop time, findings deduplicated by key, a summary at
+       the end; sanitizer build refreshed first; log in 'findings/night.log'
+    => 5. run it, triage findings one by one (reduce with 'fuzz-reduce.py')
 [ ] hard: noinline calls: cost of the call protocol (x86_64, no checks, every
     function but 'main' noinline: 4117 instructions against 4467 all inline;
     the call protocol is 68% of the reachable code, about 11 instructions per
