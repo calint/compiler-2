@@ -1,5 +1,5 @@
 -- minimal in-process language server for baz built on the tree-sitter tree:
--- document symbols, go to definition, references and rename
+-- document symbols, go to definition, hover, references and rename
 --
 -- the user type of an expression is inferred along access chains, calls and
 -- initializers; when the type of a receiver is unknown, 'p.x' matches the
@@ -896,6 +896,7 @@ handlers["initialize"] = function()
       textDocumentSync = { openClose = true, change = 0 },
       documentSymbolProvider = true,
       definitionProvider = true,
+      hoverProvider = true,
       referencesProvider = true,
       renameProvider = { prepareProvider = true },
     },
@@ -1015,10 +1016,12 @@ local function included_declarations(uri, bufnr, root, node)
   if parent:type() == "member_access" then
     -- the type of the receiver is inferred in this file, its members may be
     -- declared in an included one
-    local base = type_of_node(with_includes(root, bufnr), bufnr, previous_element(parent), 0)
+    local wide = with_includes(root, bufnr)
+    local base = type_of_node(wide, bufnr, previous_element(parent), 0)
     local is_parameter = base and generic_declaration(root, bufnr, node, base.name)
     if base and not base.array and not is_parameter then
-      base_type_name = member_type_name(root, bufnr, base.name)
+      -- the alias of the type may be declared in an included file
+      base_type_name = member_type_name(wide, bufnr, base.name)
     end
   elseif parent:type() == "function_call" and parent:field("receiver")[1] then
     local wide = with_includes(root, bufnr)
@@ -1219,6 +1222,95 @@ handlers["textDocument/definition"] = function(params)
     return {}
   end
   return locations(uri, target.decls)
+end
+
+local builtin_types = { i8 = true, i16 = true, i32 = true, i64 = true, bool = true, int = true }
+
+-- the type of a variable declared by 'var', 'dat', 'let' or 'mut' as text, or
+-- nil; a user type is inferred, a number literal or a conversion such as
+-- 'i8(x)' gives a built-in type
+local function inferred_type(root, bufnr, decl)
+  local inferred = declared_type(with_includes(root, bufnr), bufnr, decl, "variable", text(decl, bufnr), 0)
+  if inferred then
+    return inferred.name .. (inferred.array and "[]" or "")
+  end
+  local initializer = decl:parent():field("initializer")
+  local last = initializer[#initializer]
+  if #initializer ~= 1 or not last then
+    return nil
+  end
+  if last:type() == "number_literal" then
+    return "int"
+  end
+  local callee = last:type() == "function_call" and not last:field("receiver")[1] and last:field("function")[1]
+  if callee and builtin_types[text(callee, bufnr)] then
+    return text(callee, bufnr)
+  end
+  return nil
+end
+
+-- the type of the declaration as text: the inferred type of a variable, the
+-- written type of a parameter or field, the return type of a function, or nil
+local function declaration_type(decl, file)
+  local node = decl:parent()
+  local t = node:type()
+  if declaration_types[t] then
+    return inferred_type(file.root, file.bufnr, decl)
+  end
+  if t == "parameter" or t == "member_field" then
+    local written = node:field("type")[1]
+    -- the default type is used if omitted
+    return written and text(written, file.bufnr) or "int"
+  end
+  if t == "function_definition" then
+    for child in node:iter_children() do
+      if child:type() == "return_annotation" then
+        local written = child:field("type")[1]
+        return written and text(written, file.bufnr)
+      end
+    end
+    return nil
+  end
+  if t == "type_definition" then
+    return text(decl, file.bufnr)
+  end
+  return nil
+end
+
+handlers["textDocument/hover"] = function(params)
+  local uri = params.textDocument.uri
+  local bufnr, root = parse(uri)
+  local node = identifier_at(root, params.position)
+  if not node then
+    return nil
+  end
+  local target = resolve(root, bufnr, node)
+  local entries = {}
+  if target and target.kind == "builtin" then
+    return nil
+  elseif target then
+    for _, decl in ipairs(target.decls) do
+      entries[#entries + 1] = { decl = decl, file = { root = root, bufnr = bufnr } }
+    end
+  else
+    entries = (included_declarations(uri, bufnr, root, node))
+  end
+  local sections = {}
+  local seen = {}
+  for _, entry in ipairs(entries) do
+    local type_text = declaration_type(entry.decl, entry.file)
+    if type_text and not seen[type_text] then
+      seen[type_text] = true
+      sections[#sections + 1] = type_text
+    end
+  end
+  if #sections == 0 then
+    return nil
+  end
+  return {
+    contents = { kind = "markdown", value = "`" .. table.concat(sections, "`\n\n`") .. "`" },
+    range = range_of(node),
+  }
 end
 
 handlers["textDocument/references"] = function(params)

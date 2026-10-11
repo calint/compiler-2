@@ -517,6 +517,27 @@ rename("proj/src/core.baz: func @shared_helper()", "common_helper", {
   "proj/src/user.baz: var x = @shared_helper()",
 })
 
+-- hover
+
+local function hover(at, expected)
+  local file, snippet = split_spec(at)
+  local result = request(file, "textDocument/hover", locate(file, snippet))
+  local value = result and result.contents.value or ""
+  if not expected then
+    check("hover " .. at, result == nil, "  expected no hover\n  actual: " .. value)
+    return
+  end
+  check("hover " .. at, value == expected, "  expected: " .. expected .. "\n  actual: " .. value)
+end
+
+hover("@q = make_point(5, 6)", "`point`")
+hover("origin @point,", "`point`")
+hover("@limit)", "`int`")
+hover("local = @add(local, limit)", nil)
+hover("func locals(@count)", "`int`")
+hover("var @local = count", nil)
+hover("let first = shapes.@array[0]", "`T[capacity]`")
+
 -- document symbols
 
 local symbols = request("main.baz", "textDocument/documentSymbol", { line = 0, character = 0 })
