@@ -1,0 +1,4 @@
+
+1024.baz:6:5: expected ')' to close expression
+    exit(x)
+    ^~~~

@@ -3154,3 +3154,12 @@ SRC=1021 && COMPERR
 
 # a comparison stored in a variable whose operand has a later element wider than the first is narrowed
 SRC=1022 && COMPERR
+
+# several 'not' before a parenthesized condition negate it once for each 'not'
+SRC=1023 && EXP=0 && RUN
+
+# a parenthesis that is not closed in an assignment is rejected
+SRC=1024 && COMPERR
+
+# a variable named like a scratch register is not the storage of an argument that is computed into that register
+SRC=1025 && EXP=0 && RUN

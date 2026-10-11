@@ -767,6 +767,14 @@ class expr_arith final : public expression {
                   const token& ws_before_op_tk) const -> void {
 
         tz.put_back_token(ws_before_op_tk);
+
+        // an enclosed list ends with its ')'
+        // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
+        if (enclosed_) {
+            throw compiler_exception{tz.next_token(),
+                                     "expected ')' to close expression"};
+        }
+
         validate_arithmetic_operands(tc);
     }
 

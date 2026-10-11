@@ -1,0 +1,14 @@
+# several 'not' before a parenthesized condition negate it once for each 'not'
+
+func main() {
+    var a = 1
+    var count = 0
+    if not not (a == 1) count = count + 1
+    if not not not (a == 1) count = count + 10
+    if not not (a == 1) and not not (a > 0) count = count + 100
+    if not not not (a < 1 or a > 5) count = count + 1000
+    var b = not not (a == 2)
+    if b count = count + 10000
+    if count != 1101 exit(1)
+    exit(0)
+}

@@ -1,6 +1,6 @@
 
 1018.baz:5:114: cannot allocate register rcx because it holds a scratch value allocated at 5:114. try to reduce expression complexity
-    if(v2)<v3*bytes[v2-7]+bx.a.x{bytes[v2&7]=i8(((3381))-((v0)-(i32(bytes[i32(bytes[i32(bytes[v2<<i32(bytes[v1>>(v2&7])&7])<<7]|v2)&7]))))}{var t10=((((v3)+(bx.items[bx.a.x+3])))-32768){{if(v2)>p.x*7{}}}{if((((0))%(((((bx.items[bx.items[arr[100>>3]&3]&3])&0xffff)-32768))|1))>((((bx.a.y))-32768)*(((v3)&0xffff)-32768)))and((((v0)%((t10)|1))|((bx)))<((((bytes[1]))/((bx.a.y)|1))>>3)){}}}}
+    if(v2)<v3*bytes[v2-7]+bx.a.x{bytes[v2&7]=i8(((3381))-((v0)-(i32(bytes[i32(bytes[i32(bytes[v2<<i32(bytes[v1>>(v2&7)])&7])<<7]|v2)&7]))))}{var t10=((((v3)+(bx.items[bx.a.x+3])))-32768){{if(v2)>p.x*7{}}}{if((((0))%(((((bx.items[bx.items[arr[100>>3]&3]&3])&0xffff)-32768))|1))>((((bx.a.y))-32768)*(((v3)&0xffff)-32768)))and((((v0)%((t10)|1))|((bx)))<((((bytes[1]))/((bx.a.y)|1))>>3)){}}}}
                                                                                                                  ^
 
 register use at the failure: 14 of 14 registers live

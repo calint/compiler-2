@@ -17,6 +17,7 @@
 - Flag misspellings briefly ("inneficiencies" -> "inefficiencies").
 - Failed precondition: stop and explain, no weaker version.
 - Workspace-relative paths; numbered lists nested as 1.1, 1.2, 2.3.
+- Always number bullet points in answers, so they can be referred to.
 
 ## C++ style
 

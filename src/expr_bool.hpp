@@ -946,6 +946,8 @@ class expr_bool final : public statement {
     std::vector<element> bools_;
     std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
     token not_tk_;           // e.g. not (a==b and c==d)
+    // the 'not's before 'not_tk_', e.g. the first of 'not not (a==b)'
+    std::vector<token> extra_not_tks_;
     token open_paren_tk_;
     token close_paren_tk_;
     bool enclosed_{}; // e.g. (a==b and c==d) vs a==b and c==d
@@ -984,6 +986,11 @@ class expr_bool final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
+
+        for (const token& extra_tk : extra_not_tks_) {
+            extra_tk.source_to(os);
+        }
+
         not_tk_.source_to(os);
 
         if (enclosed_) {
@@ -1039,7 +1046,7 @@ class expr_bool final : public statement {
         }
 
         // 'identifier' cannot carry the negation
-        if (not_tk_.is_text("not")) {
+        if (has_not()) {
             return true;
         }
 
@@ -1068,7 +1075,7 @@ class expr_bool final : public statement {
     // e.g. 'a + 1' or '(a + 1)', null when the list negates, compares, or
     // combines with 'and' or 'or'
     [[nodiscard]] auto arithmetic() const -> const expr_arith* {
-        if (bools_.size() != 1 or not_tk_.is_text("not")) {
+        if (bools_.size() != 1 or has_not()) {
             return nullptr;
         }
 
@@ -1082,7 +1089,7 @@ class expr_bool final : public statement {
         -> std::optional<bool> {
 
         const bool is_or{not ops_.empty() and ops_.front().is_text("or")};
-        const bool invert{not_tk_.is_text("not")};
+        const bool invert{is_negated()};
 
         for (const element& e : bools_) {
             const std::optional<bool> value{
@@ -1220,7 +1227,7 @@ class expr_bool final : public statement {
 
         // invert, according to De Morgan's laws
         const bool invert{
-            inverted ? not not_tk_.is_text("not") : not_tk_.is_text("not"),
+            inverted ? not is_negated() : is_negated(),
         };
 
         bool has_runtime_element{};
@@ -1264,11 +1271,25 @@ class expr_bool final : public statement {
                            inverted, dst);
     }
 
+    // true when a 'not' leads the list
+    [[nodiscard]] auto has_not() const -> bool {
+        return not_tk_.is_text("not") or not extra_not_tks_.empty();
+    }
+
     // inversion swaps 'and' and 'or' according to De Morgan's laws
     [[nodiscard]] auto is_effective_or(const size_t op_index,
                                        const bool invert) const -> bool {
 
         return ops_.at(op_index).is_text("or") != invert;
+    }
+
+    // true when the 'not's of the list make an odd count
+    [[nodiscard]] auto is_negated() const -> bool {
+        const size_t count{
+            extra_not_tks_.size() + (not_tk_.is_text("not") ? 1U : 0U),
+        };
+
+        return count % 2 == 1;
     }
 
     // a constant false ends an 'and' list and a constant true ends an 'or' list
@@ -1284,12 +1305,26 @@ class expr_bool final : public statement {
         // a speculative parse may need to start over from here
         const token rewind_pos_tk{tz.cur_position_token()};
 
-        // a token that is not 'not' is put back and becomes the whitespace
-        token maybe_not_tk{tz.next_token()};
+        // the 'not's before a parenthesis, e.g. 'not not (a == b)'; a token
+        // that is not 'not' is put back and becomes the whitespace
+        std::vector<token> not_tks;
 
-        if (not maybe_not_tk.is_text("not")) {
-            tz.put_back_token(maybe_not_tk);
-            maybe_not_tk = tz.next_whitespace_token();
+        while (true) {
+            const token tk{tz.next_token()};
+
+            if (not tk.is_text("not")) {
+                tz.put_back_token(tk);
+                break;
+            }
+
+            not_tks.emplace_back(tk);
+        }
+
+        token maybe_not_tk{tz.next_whitespace_token()};
+
+        if (not not_tks.empty()) {
+            maybe_not_tk = not_tks.back();
+            not_tks.pop_back();
         }
 
         const token pos_tk{tz.cur_position_token()};
@@ -1297,13 +1332,14 @@ class expr_bool final : public statement {
 
         // 'expr_bool_op' parses the 'not' itself
         if (open_paren_tk.is_empty()) {
-            tz.put_back_token(maybe_not_tk);
+            tz.rewind_to_position(rewind_pos_tk);
             bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
             return;
         }
 
         // '(t1 + t2) > 3' parses as a list but is a comparison
         expr_bool nested{tc, pos_tk, tz, true, maybe_not_tk, open_paren_tk};
+        nested.extra_not_tks_ = std::move(not_tks);
 
         // an operator after ')' means the parentheses belonged to an operand
         if (std::string_view{"<>=!+-*/%&|^"}.contains(

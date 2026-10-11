@@ -1,0 +1,7 @@
+# a parenthesis that is not closed in an assignment is rejected
+
+func main() {
+    var x = 0
+    x = (1 + 2
+    exit(x)
+}

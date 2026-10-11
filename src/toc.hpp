@@ -2820,6 +2820,13 @@ class toc final {
 
         const ident_info info{make_ident_info(src_loc_tk, name)};
 
+        // a value in a register is no variable, not even one that is named
+        // like the register, e.g. 't1' of rv32i or 'r14' of x86_64
+        if (info.is_register()) {
+            return std::format("{}{}register", info.id,
+                               storage_target::frame_mark);
+        }
+
         return std::format("{}{}{}", info.elem_path.front(),
                            storage_target::frame_mark,
                            scopes_.var_frame_index(info.elem_path.front()));
