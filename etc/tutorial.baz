@@ -60,6 +60,10 @@ func literals() {
     assert(neg == -255)
     assert(inv == -256)
     # unary '-' negates and '~' inverts the bits
+    # the minus is applied after the literal is read, so the most negative
+    # value of a type has no literal: '9223372036854775808' is out of range
+    # for an 'i64' even in '-9223372036854775808', write it as
+    # '-9223372036854775807 - 1'
 }
 
 #
