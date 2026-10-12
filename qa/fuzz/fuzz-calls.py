@@ -68,8 +68,14 @@ class Generator:
         if calls and self.functions and r < 0.45:
             f = rnd.choice(self.functions)
             return ("call", f, [self.expr(names, depth - 1) for _ in range(2)])
-        return ("bin", rnd.choice(OPS), self.expr(names, depth - 1, calls),
-                self.expr(names, depth - 1, calls))
+        op = rnd.choice(OPS)
+        lhs = self.expr(names, depth - 1, calls)
+        rhs = self.expr(names, depth - 1, calls)
+        if op == "*":
+            # note: masked so that a product of products fits in 32 bits
+            lhs = ("bin", "&", lhs, ("lit", 255))
+            rhs = ("bin", "&", rhs, ("lit", 255))
+        return ("bin", op, lhs, rhs)
 
     def show(self, e):
         if e[0] == "lit":
