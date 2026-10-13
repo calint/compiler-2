@@ -470,18 +470,21 @@ local function value_type(root, bufnr, id, depth)
   return declared_type(root, bufnr, decl, kind, name, depth)
 end
 
+-- whether the identifier names a type of the file and no variable hides it
+local function names_type(root, bufnr, id)
+  local name = text(id, bufnr)
+  local is_value = local_declaration(id, bufnr, name) or top_level(root, bufnr, "value", name)
+  return not is_value and top_level(root, bufnr, "type", name) ~= nil
+end
+
 -- name of the type that a method is called on, or nil when unknown
 local function receiver_type_name(root, bufnr, call, depth)
   local receiver = call:field("receiver")[1]
   local count = receiver:named_child_count()
   local last = receiver:named_child(count - 1)
-  if count == 1 then
-    -- 'point.at(1, 2)' names the type itself
-    local name = text(last, bufnr)
-    local is_value = local_declaration(last, bufnr, name) or top_level(root, bufnr, "value", name)
-    if not is_value and top_level(root, bufnr, "type", name) then
-      return name
-    end
+  -- 'point.at(1, 2)' names the type itself
+  if count == 1 and names_type(root, bufnr, last) then
+    return text(last, bufnr)
   end
   local receiver_type = type_of_node(root, bufnr, last, depth + 1)
   if receiver_type and not receiver_type.array then
@@ -635,12 +638,8 @@ type_of_node = function(root, bufnr, node, depth)
   if t == "array_indexing" then
     local base_node = previous_element(node)
     -- 'point[4]' without braces is an array of 'point'
-    if base_node and base_node:type() == "identifier" then
-      local name = text(base_node, bufnr)
-      local is_value = local_declaration(base_node, bufnr, name) or top_level(root, bufnr, "value", name)
-      if not is_value and top_level(root, bufnr, "type", name) then
-        return { name = name, array = true }
-      end
+    if base_node and base_node:type() == "identifier" and names_type(root, bufnr, base_node) then
+      return { name = text(base_node, bufnr), array = true }
     end
     local base = type_of_node(root, bufnr, base_node, depth + 1)
     if base and base.array then
@@ -918,12 +917,10 @@ handlers["textDocument/documentSymbol"] = function(params)
       local receiver = child:field("receiver_type")[1]
       local name = receiver and (text(receiver, bufnr) .. "." .. text(id, bufnr)) or text(id, bufnr)
       symbols[#symbols + 1] = symbol(name, SymbolKind.Function, child, id)
-    end
-    if t == "type_definition" then
+    elseif t == "type_definition" then
       local id = child:field("name")[1]
       symbols[#symbols + 1] = symbol(text(id, bufnr), SymbolKind.Struct, child, id)
-    end
-    if declaration_types[t] then
+    elseif declaration_types[t] then
       local id = child:field("destination")[1]
       local kind = t == "let_definition" and SymbolKind.Constant or SymbolKind.Variable
       symbols[#symbols + 1] = symbol(text(id, bufnr), kind, child, id)
