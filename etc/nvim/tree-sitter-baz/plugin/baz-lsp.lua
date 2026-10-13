@@ -37,7 +37,7 @@ end
 
 local keywords = {}
 for word in
-  ([[let mut dat func noinline type var return if loop foo else break continue
+  ([[include let mut dat func noinline type var return if loop foo else break continue
   not and or true false bool int i8 i16 i32 i64]]):gmatch("%S+")
 do
   keywords[word] = true
@@ -420,7 +420,7 @@ local function with_includes(root, bufnr)
   end
   local wide = {}
   function wide:type()
-    return "source_file"
+    return "program"
   end
   function wide:iter_children()
     local index = 1
@@ -503,7 +503,9 @@ local function return_type(bufnr, func)
   if not annotation then
     return nil
   end
-  return declared_type(nil, bufnr, annotation:field("name")[1], "variable", text(annotation:field("name")[1], bufnr), 0)
+  -- the parent is a return annotation, which is resolved without a root
+  local id = annotation:field("name")[1]
+  return declared_type(nil, bufnr, id, "variable", text(id, bufnr), 0)
 end
 
 -- the texts of the '<...>' of a call, in order
@@ -958,7 +960,7 @@ end
 
 -- the files included by the file, directly or not, each once, in the order
 -- of the 'include's
-function included_files(uri, bufnr, root)
+included_files = function(uri, bufnr, root)
   local files = {}
   local seen = { [uri] = true }
   local function visit(file_uri, file_bufnr, file_root)
@@ -1295,13 +1297,23 @@ local function with_alias_arguments(root, bufnr, access, decl, type_text)
   return (type_text:gsub("[%a_][%w_]*", arguments))
 end
 
+local declaration_text_parents = {
+  function_definition = true,
+  type_definition = true,
+  let_definition = true,
+  data_declaration = true,
+  variable_declaration = true,
+  parameter = true,
+  member_field = true,
+  return_annotation = true,
+}
+
 -- the declaration as written, without a body: the signature of a function,
 -- the head of a type, the first line of a variable, parameter or field; or nil
 local function declaration_text(decl, file)
   local node = decl:parent()
   local t = node:type()
-  if t ~= "function_definition" and t ~= "type_definition" and not declaration_types[t]
-    and t ~= "parameter" and t ~= "member_field" and t ~= "return_annotation" then
+  if not declaration_text_parents[t] then
     return nil
   end
   local start_row, start_col = node:start()
@@ -1327,7 +1339,8 @@ handlers["textDocument/hover"] = function(params)
   local entries = {}
   if target and target.kind == "builtin" then
     return nil
-  elseif target then
+  end
+  if target then
     for _, decl in ipairs(target.decls) do
       entries[#entries + 1] = { decl = decl, file = { root = root, bufnr = bufnr } }
     end

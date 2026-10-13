@@ -108,8 +108,7 @@ end
 
 local function is_global(program, name, source)
   for c in program:iter_children() do
-    local t = c:type()
-    if declaration_types[t] and declares(c, name, source) then
+    if declares(c, name, source) then
       return true
     end
   end
