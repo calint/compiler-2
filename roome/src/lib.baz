@@ -246,17 +246,6 @@ func list.index_of(item T) res {
     }
 }
 
-# the index of the first item named by the token or the length
-func list.index_of_name<K type>(tz K) res {
-    res = self.len
-    foo self.array, self.len {
-        if tz.is(e.name) {
-            res = i
-            break
-        }
-    }
-}
-
 # the index of 'item', it is added when not found
 func mut list.find_or_add(item T) res {
     res = self.index_of(item)

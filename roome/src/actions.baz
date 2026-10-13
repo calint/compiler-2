@@ -334,7 +334,13 @@ func action_tell(eid, tz mut tokenizer) {
     if not tz.next_or_say(str_tell_whom) return
 
     # find entity anywhere
-    let to_entity = entities.index_of_name(tz)
+    var to_entity = entities.len
+    foo entities.array, entities.len {
+        if tz.is(e.name) {
+            to_entity = i
+            break
+        }
+    }
 
     if to_entity == entities.len {
         tz.print()
