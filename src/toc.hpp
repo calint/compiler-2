@@ -2,6 +2,7 @@
 // reviewed: 2025-09-29
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <charconv>
 #include <cstddef>
@@ -2959,6 +2960,24 @@ class toc final {
             throw compiler_exception{
                 name_tk,
                 std::format("'{}' is a boolean value", name_tk.text())};
+        }
+    }
+
+    // a name of a variable, constant, data or parameter, the
+    // keywords are reserved because their use would be read as the keyword
+    static auto assert_valid_value_name(const token& name_tk) -> void {
+        assert_valid_name(name_tk);
+
+        static constexpr std::array<std::string_view, 11> reserved_words{
+            "and",  "break", "continue", "dat",    "if",  "let",
+            "loop", "not",   "or",       "return", "var",
+        };
+
+        for (const std::string_view word : reserved_words) {
+            if (name_tk.is_text(word)) {
+                throw compiler_exception{name_tk,
+                                         std::format("'{}' is reserved", word)};
+            }
         }
     }
 

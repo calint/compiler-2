@@ -45,12 +45,16 @@ end
 
 -- the language allows a name that is a keyword where the keyword cannot start
 -- the construct, e.g. a function named 'include' or a member named 'if'; these
--- are the words that cannot name a declaration in each context
+-- are the words that cannot name a declaration in each context, some declare
+-- but cannot be used, e.g. 'let not = 3' declares but 'not + 1' does not parse
 local builtin_type_names = "bool int i8 i16 i32 i64"
+-- same words as 'reserved_words' in 'toc::assert_valid_value_name'
+local keyword_names = "and break continue dat if let loop not or return var"
 local reserved_names = {
   all = word_set("true false self"),
-  let = word_set("not"),
-  var = word_set("not let dat var return if loop foo break continue and or"),
+  let = word_set(keyword_names),
+  -- 'foo' is not rejected by the compiler at the declaration but fails on use
+  var = word_set(keyword_names .. " foo"),
   ["function"] = word_set("foo"),
   type = word_set(builtin_type_names),
   generic = word_set("mut " .. builtin_type_names),
@@ -61,6 +65,7 @@ local reserved_by_declaration = {
   let_definition = "let",
   data_declaration = "let",
   variable_declaration = "var",
+  parameter = "var",
 }
 
 local function is_reserved(target, new_name)

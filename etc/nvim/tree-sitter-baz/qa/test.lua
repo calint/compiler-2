@@ -426,7 +426,7 @@ rename("    @x,", "left", {
 })
 rename_fails("        @e.print()", "item", "cannot rename")
 rename_fails("@self.origin.print()", "me", "cannot rename")
-rename_fails("var p = @point", "if", "not a valid name")
+rename_fails("var p = @point", "true", "cannot name this declaration")
 rename_fails("var p = @point", "9lives", "not a valid name")
 rename("total = @lib_helper(total)", "help", {
   "lib.baz: func @lib_helper(value)",
@@ -509,6 +509,9 @@ check(
   not vim.api.nvim_buf_is_loaded(vim.fn.bufadd(src .. "/proj/outside.baz")),
   "  proj/outside.baz was loaded"
 )
+
+-- a keyword does not name a variable
+rename_fails("var @p = point", "if", "cannot name this declaration")
 
 definition("proj/src/user.baz: var x = @shared_helper()", "proj/src/core.baz: func @shared_helper()")
 definition("proj/outside.baz: var y = @shared_helper()", "proj/src/core.baz: func @shared_helper()")

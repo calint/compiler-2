@@ -62,7 +62,7 @@ class stmt_def_dat final : public statement {
             throw compiler_exception{name_tk_, "expected name of data"};
         }
 
-        toc::assert_valid_name(name_tk_);
+        toc::assert_valid_value_name(name_tk_);
 
         equals_tk_ = parse_initializer_equals(tz, "dat");
 

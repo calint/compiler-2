@@ -1,0 +1,4 @@
+
+1035.baz:3:8: 'loop' is reserved
+func f(loop) {
+       ^~~~

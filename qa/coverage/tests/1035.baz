@@ -1,0 +1,7 @@
+# a keyword is not a parameter name
+
+func f(loop) {
+}
+
+func main() {
+}

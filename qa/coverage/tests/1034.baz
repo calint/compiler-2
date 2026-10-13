@@ -1,0 +1,6 @@
+# a keyword is not a constant name
+
+let if = 1
+
+func main() {
+}

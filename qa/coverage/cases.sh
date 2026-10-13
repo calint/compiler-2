@@ -3184,3 +3184,12 @@ SRC=1031 && EXP=0 && RUN
 
 # a noinline call with a register argument is checked against the temporary of the call
 SRC=1032 && EXP=0 && RUN
+
+# a keyword is not a variable name
+SRC=1033 && COMPERR
+
+# a keyword is not a constant name
+SRC=1034 && COMPERR
+
+# a keyword is not a parameter name
+SRC=1035 && COMPERR
