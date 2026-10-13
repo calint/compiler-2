@@ -1,0 +1,4 @@
+
+1036.baz:3:6: 'not' is reserved
+func not() {
+     ^~~

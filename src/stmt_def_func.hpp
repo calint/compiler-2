@@ -90,7 +90,7 @@ class stmt_def_func final : public statement {
 
         parse_modifiers(tz);
 
-        toc::assert_valid_name(name_tk_);
+        toc::assert_valid_function_name(name_tk_);
 
         // e.g. 'func text.print()' of the generic type 'text'
         if (generic_instance == nullptr and is_generic_method_head(tc, tz)) {

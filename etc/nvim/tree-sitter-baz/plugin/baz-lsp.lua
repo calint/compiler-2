@@ -48,14 +48,13 @@ end
 -- are the words that cannot name a declaration in each context, some declare
 -- but cannot be used, e.g. 'let not = 3' declares but 'not + 1' does not parse
 local builtin_type_names = "bool int i8 i16 i32 i64"
--- same words as 'reserved_words' in 'toc::assert_valid_value_name'
+-- same words as 'reserved_words' in 'toc::assert_valid_variable_name'
 local keyword_names = "and break continue dat if let loop not or return var"
 local reserved_names = {
   all = word_set("true false self"),
   let = word_set(keyword_names),
-  -- 'foo' is not rejected by the compiler at the declaration but fails on use
-  var = word_set(keyword_names .. " foo"),
-  ["function"] = word_set("foo"),
+  var = word_set(keyword_names),
+  ["function"] = word_set("foo not"),
   type = word_set(builtin_type_names),
   generic = word_set("mut " .. builtin_type_names),
 }

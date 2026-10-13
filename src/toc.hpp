@@ -2933,6 +2933,16 @@ class toc final {
             std::format("array '{}' must be indexed", st.identifier())};
     }
 
+    // a function named 'not' is read as the operator in every expression,
+    // the other keywords are read as the function where a call is assigned
+    static auto assert_valid_function_name(const token& name_tk) -> void {
+        assert_valid_name(name_tk);
+
+        if (name_tk.is_text("not")) {
+            throw compiler_exception{name_tk, "'not' is reserved"};
+        }
+    }
+
     // a name is an identifier, 'self' is declared only by the compiler: the
     // receiver of a method and the value built by a constructor
     static auto assert_valid_name(const token& name_tk) -> void {
@@ -2965,7 +2975,7 @@ class toc final {
 
     // a name of a variable, constant, data or parameter, the
     // keywords are reserved because their use would be read as the keyword
-    static auto assert_valid_value_name(const token& name_tk) -> void {
+    static auto assert_valid_variable_name(const token& name_tk) -> void {
         assert_valid_name(name_tk);
 
         static constexpr std::array<std::string_view, 11> reserved_words{

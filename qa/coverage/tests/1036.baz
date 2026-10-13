@@ -1,0 +1,7 @@
+# a function is not named as the operator
+
+func not() {
+}
+
+func main() {
+}

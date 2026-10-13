@@ -3193,3 +3193,6 @@ SRC=1034 && COMPERR
 
 # a keyword is not a parameter name
 SRC=1035 && COMPERR
+
+# a function is not named as the operator
+SRC=1036 && COMPERR
