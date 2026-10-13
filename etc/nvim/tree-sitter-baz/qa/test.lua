@@ -536,6 +536,7 @@ end
 hover("@q = make_point(5, 6)", "`point`\n\n```baz\nvar q = make_point(5, 6)\n```")
 hover("origin @point,", "```baz\ntype point\n```")
 hover("@limit)", "`int`\n\n```baz\nlet limit = 4\n```")
+hover("p.@move(1, 2)", "`void`\n\n```baz\nfunc mut point.move(dx, dy)\n```")
 hover("local = @add(local, limit)", "```baz\nfunc add(a, b) res\n```")
 hover("func locals(@count)", "`int`\n\n```baz\ncount\n```")
 hover("var @local = count", "```baz\nvar local = count\n```")

@@ -1306,7 +1306,7 @@ local function declaration_type(decl, file)
         return written and text(written, file.bufnr)
       end
     end
-    return nil
+    return "void"
   end
   if t == "type_definition" then
     return text(decl, file.bufnr)
