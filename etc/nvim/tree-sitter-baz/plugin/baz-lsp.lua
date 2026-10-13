@@ -35,12 +35,46 @@ do
   builtin_functions[word] = true
 end
 
-local keywords = {}
-for word in
-  ([[include let mut dat func noinline type var return if loop foo else break continue
-  not and or true false bool int i8 i16 i32 i64]]):gmatch("%S+")
-do
-  keywords[word] = true
+local function word_set(words)
+  local set = {}
+  for word in words:gmatch("%S+") do
+    set[word] = true
+  end
+  return set
+end
+
+-- the language allows a name that is a keyword where the keyword cannot start
+-- the construct, e.g. a function named 'include' or a member named 'if'; these
+-- are the words that cannot name a declaration in each context
+local builtin_type_names = "bool int i8 i16 i32 i64"
+local reserved_names = {
+  all = word_set("true false self"),
+  let = word_set("not"),
+  var = word_set("not let dat var return if loop foo break continue and or"),
+  ["function"] = word_set("foo"),
+  type = word_set(builtin_type_names),
+  generic = word_set("mut " .. builtin_type_names),
+}
+
+-- the declaration kinds of 'reserved_names' by the node type of the declaration
+local reserved_by_declaration = {
+  let_definition = "let",
+  data_declaration = "let",
+  variable_declaration = "var",
+}
+
+local function is_reserved(target, new_name)
+  if reserved_names.all[new_name] then
+    return true
+  end
+  local context = target.kind
+  if target.kind == "variable" then
+    local decl = target.decls[1]
+    local parent = decl and decl:parent()
+    context = parent and reserved_by_declaration[parent:type()]
+  end
+  local set = context and reserved_names[context]
+  return set ~= nil and set[new_name] == true
 end
 
 local renameable_kinds = {
@@ -1427,7 +1461,7 @@ end
 handlers["textDocument/rename"] = function(params)
   local uri = params.textDocument.uri
   local new_name = params.newName
-  if not new_name:match("^[%a_][%w_]*$") or keywords[new_name] then
+  if not new_name:match("^[%a_][%w_]*$") then
     return nil, failure("'" .. new_name .. "' is not a valid name")
   end
   local bufnr, root = parse(uri)
@@ -1435,6 +1469,9 @@ handlers["textDocument/rename"] = function(params)
   local found, err = node and rename_target(uri, bufnr, root, node)
   if not found or not renameable_kinds[found.target.kind] then
     return nil, err or failure("cannot rename this name")
+  end
+  if is_reserved(found.target, new_name) then
+    return nil, failure("'" .. new_name .. "' cannot name this declaration")
   end
   local edits, edits_err = rename_edits(found, new_name)
   if edits_err then
