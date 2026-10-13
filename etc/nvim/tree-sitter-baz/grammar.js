@@ -12,10 +12,6 @@ module.exports = grammar({
     [$.function_call, $._access_chain],
   ],
 
-  // Helper function for separated lists that must have at least one element
-  // Placed outside rules for clean top-level declaration
-  // ---
-
   rules: {
     // -------------------------------------------------------------------------
     // 1. PROGRAM ROOT & CORE STRUCTURES
@@ -38,9 +34,6 @@ module.exports = grammar({
       prec.right(1, $.block), // Prioritize block over single statement
       $._statement,
     ),
-
-    // Function bodies always require braces
-    _function_body: $ => $.block,
 
     // A grouping of statements { ... }
     block: $ => seq(
@@ -99,7 +92,7 @@ module.exports = grammar({
       optional($.parameter_list),
       ')',
       optional($.return_annotation),
-      $._function_body,
+      $.block,
     ),
 
     // type Identifier { member_field_list }
@@ -142,7 +135,7 @@ module.exports = grammar({
     // Function/Type Metadata
     return_annotation: $ => seq(
       field('name', $.identifier),
-      optional(field('type', $._base_type))
+      optional(field('type', $._base_type)),
     ),
 
     parameter_list: $ => sep1($.parameter, ','),
@@ -181,7 +174,7 @@ module.exports = grammar({
 
     _base_type: $ => choice(
       $.bool_type, $.i8_type, $.i16_type, $.i32_type, $.i64_type,
-      $.identifier
+      $.identifier,
     ),
 
     // e.g. 'i8[4]', '[4]' with the default type or 'i8[max_len]', the size is
@@ -211,7 +204,7 @@ module.exports = grammar({
       $.let_keyword,
       field('destination', $.identifier),
       '=',
-      field('initializer', $._expression)
+      field('initializer', $._expression),
     ),
 
     // dat identifier = expression, the initializer gives the type
@@ -219,7 +212,7 @@ module.exports = grammar({
       $.dat_keyword,
       field('destination', $.identifier),
       '=',
-      field('initializer', $._expression)
+      field('initializer', $._expression),
     ),
 
     // var identifier = expression, the initializer gives the type
@@ -227,7 +220,7 @@ module.exports = grammar({
       $.var_keyword,
       field('destination', $.identifier),
       '=',
-      field('initializer', $._expression)
+      field('initializer', $._expression),
     ),
 
     // access_chain = expression
@@ -269,17 +262,16 @@ module.exports = grammar({
 
     // else if clause
     else_if_clause: $ => seq(
-        $.else_if_keyword,
-        $._expression,
-        field('consequence', $._body),
+      $.else_if_keyword,
+      $._expression,
+      field('consequence', $._body),
     ),
 
-    // else clause (inlining _body to resolve the token boundary error)
+    // else clause
     else_clause: $ => seq(
-        $.else_keyword,
-        field('alternative', $._body),
+      $.else_keyword,
+      field('alternative', $._body),
     ),
-
 
     loop_statement: $ => seq(
       $.loop_keyword,
@@ -297,22 +289,19 @@ module.exports = grammar({
     // -------------------------------------------------------------------------
     // 5. EXPRESSIONS & OPERATOR PRECEDENCE (Highest to Lowest)
     // -------------------------------------------------------------------------
+    // the binding strength is set by the 'prec' of each rule, not by the order
     _expression: $ => choice(
-      // Lowest precedence (evaluated last)
-      $.comparison_expression,
       $.or_expression,
       $.and_expression,
       $.not_expression,
-      
-      $.bitwise_xor_expression,
+      $.comparison_expression,
       $.bitwise_or_expression,
       $.bitwise_and_expression,
+      $.bitwise_xor_expression,
       $.additive_expression,
       $.multiplicative_expression,
       $.shift_expression,
       $.unary_expression,
-      
-      // Highest precedence (evaluated first)
       $.function_call,
       $.parenthesized_expression,
       $.initializer_block,
@@ -330,77 +319,76 @@ module.exports = grammar({
     ),
 
     unary_expression: $ => prec(16, seq(
-        field('operator', choice('-', '~')),
-        field('operand', $._expression),
+      field('operator', choice('-', '~')),
+      field('operand', $._expression),
     )),
 
-
     shift_expression: $ => prec.left(15, seq(
-        field('left', $._expression),
-        field('operator', choice('<<', '>>')),
-        field('right', $._expression),
+      field('left', $._expression),
+      field('operator', choice('<<', '>>')),
+      field('right', $._expression),
     )),
 
     bitwise_xor_expression: $ => prec.left(14, seq(
-        field('left', $._expression),
-        field('operator', '^'),
-        field('right', $._expression),
+      field('left', $._expression),
+      field('operator', '^'),
+      field('right', $._expression),
     )),
 
     bitwise_and_expression: $ => prec.left(13, seq(
-        field('left', $._expression),
-        field('operator', '&'),
-        field('right', $._expression),
+      field('left', $._expression),
+      field('operator', '&'),
+      field('right', $._expression),
     )),
 
     bitwise_or_expression: $ => prec.left(12, seq(
-        field('left', $._expression),
-        field('operator', '|'),
-        field('right', $._expression),
+      field('left', $._expression),
+      field('operator', '|'),
+      field('right', $._expression),
     )),
 
     multiplicative_expression: $ => prec.left(11, seq(
-        field('left', $._expression),
-        field('operator', choice('*', '/', '%')),
-        field('right', $._expression),
+      field('left', $._expression),
+      field('operator', choice('*', '/', '%')),
+      field('right', $._expression),
     )),
 
     additive_expression: $ => prec.left(10, seq(
-        field('left', $._expression),
-        field('operator', choice('+', '-')),
-        field('right', $._expression),
+      field('left', $._expression),
+      field('operator', choice('+', '-')),
+      field('right', $._expression),
     )),
 
-    and_expression: $ => prec.left(9, seq(
-        field('left', $._expression),
-        field('operator', $.and_keyword),
-        field('right', $._expression),
+    and_expression: $ => prec.left(7, seq(
+      field('left', $._expression),
+      field('operator', $.and_keyword),
+      field('right', $._expression),
     )),
 
     not_expression: $ => prec(8, seq(
-        $.not_keyword,
-        field('operand', $._expression),
+      $.not_keyword,
+      field('operand', $._expression),
     )),
 
-    or_expression: $ => prec.left(7, seq(
-        field('left', $._expression),
-        field('operator', $.or_keyword),
-        field('right', $._expression),
+    or_expression: $ => prec.left(6, seq(
+      field('left', $._expression),
+      field('operator', $.or_keyword),
+      field('right', $._expression),
     )),
 
-    comparison_expression: $ => prec.left(6, seq(
-        field('left', $._expression),
-        field('operator', $.comparison_operator),
-        field('right', $._expression),
+    comparison_expression: $ => prec.left(9, seq(
+      field('left', $._expression),
+      field('operator', $.comparison_operator),
+      field('right', $._expression),
     )),
 
     comparison_operator: $ => choice(
-        '==',
-        '!=',
-        '<=',
-        '<',
-        '>',
-        '>=',
+      '==',
+      '!=',
+      '<=',
+      '<',
+      '>',
+      '>=',
     ),
 
     // -------------------------------------------------------------------------
@@ -531,7 +519,7 @@ module.exports = grammar({
     foo_keyword: $ => 'foo',
 
     // Flow Control Keywords
-    // Use prec(1) on this rule to define the 'else if' token
+    // one token so that 'else if' is not an 'else' followed by an 'if'
     else_if_keyword: $ => token(seq('else', /\s+/, 'if')),
     else_keyword: $ => 'else',
     break_keyword: $ => 'break',

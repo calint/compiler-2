@@ -30,12 +30,19 @@ lui sp, 2048
 #
 # [14:1] dat out = printer
 # [14:5] out: printer (1 B @ [s0 - 200619])
+# [63:1] let act_insert = 0
 # [63:5] const act_insert = 0
+# [64:1] let act_backspace = 1
 # [64:5] const act_backspace = 1
+# [65:1] let act_delete = 2
 # [65:5] const act_delete = 2
+# [66:1] let act_left = 3
 # [66:5] const act_left = 3
+# [67:1] let act_right = 4
 # [67:5] const act_right = 4
+# [68:1] let act_ignore = 5
 # [68:5] const act_ignore = 5
+# [200:1] let max_str_len = 128
 # [200:5] const max_str_len = 128
 # [202:1] str : 132 B    fields:
 # [202:1]       name :  offset :    size :  array? : array size
@@ -56,15 +63,25 @@ lui sp, 2048
 # [3:11] str_uc: i8[4] (4 B @ [s0 - 200618])
 # [4:1] dat str_exits = "exits: "
 # [4:8] str_exits: i8[7] (7 B @ [s0 - 200614])
+# [6:1] let max_name_len = 16
 # [6:5] const max_name_len = 16
+# [7:1] let max_id_list_len = 32
 # [7:5] const max_id_list_len = 32
+# [8:1] let max_room_objects_len = 64
 # [8:5] const max_room_objects_len = 64
+# [9:1] let max_room_entities_len = 32
 # [9:5] const max_room_entities_len = 32
+# [10:1] let max_room_links_len = 8
 # [10:5] const max_room_links_len = 8
+# [11:1] let max_link_names_len = 1024
 # [11:5] const max_link_names_len = 1024
+# [12:1] let max_rooms_len = 128
 # [12:5] const max_rooms_len = 128
+# [13:1] let max_entities_len = 32
 # [13:5] const max_entities_len = 32
+# [14:1] let max_objects_len = 1024
 # [14:5] const max_objects_len = 1024
+# [15:1] let max_entity_messages_len = 16
 # [15:5] const max_entity_messages_len = 16
 # [17:1] id_list : 132 B    fields:
 # [17:1]       name :  offset :    size :  array? : array size
@@ -80,8 +97,11 @@ lui sp, 2048
 # [21:5] str_told_u: i8[8] (8 B @ [s0 - 200607])
 # [22:1] dat str_said = " said "
 # [22:5] str_said: i8[6] (6 B @ [s0 - 200599])
+# [24:1] let message_told = 0
 # [24:5] const message_told = 0
+# [25:1] let message_said = 1
 # [25:5] const message_said = 1
+# [26:1] let message_event = 2
 # [26:5] const message_event = 2
 # [28:1] message : 140 B    fields:
 # [28:1]       name :  offset :    size :  array? : array size

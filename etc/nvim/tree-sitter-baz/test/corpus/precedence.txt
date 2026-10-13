@@ -1,0 +1,31 @@
+================
+not and or
+================
+
+func f() {
+  if not a and b or c == d {
+  }
+}
+
+---
+
+(program
+  (function_definition
+    (func_keyword)
+    name: (identifier)
+    (block
+      (if_statement
+        (if_keyword)
+        (or_expression
+          left: (and_expression
+            left: (not_expression
+              (not_keyword)
+              operand: (identifier))
+            operator: (and_keyword)
+            right: (identifier))
+          operator: (or_keyword)
+          right: (comparison_expression
+            left: (identifier)
+            operator: (comparison_operator)
+            right: (identifier)))
+        consequence: (block)))))
