@@ -965,6 +965,10 @@ class machine {
                                        const size_t indent, const operand& reg)
         -> void = 0;
 
+    // whether an access can add an index register to a base register, else an
+    // indexed address is computed into a register by separate instructions
+    [[nodiscard]] virtual auto has_indexed_addressing() const -> bool = 0;
+
     virtual auto label(const size_t indent, const std::string_view label)
         -> void = 0;
 

@@ -1345,6 +1345,11 @@ class machine_rv32i : public machine {
         std::ignore = registers_.pop(index);
     }
 
+    // a load or store adds only an immediate to its base register
+    [[nodiscard]] auto has_indexed_addressing() const -> bool override {
+        return false;
+    }
+
     auto label(const size_t indent, const std::string_view label)
         -> void override {
 

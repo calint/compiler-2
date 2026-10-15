@@ -441,7 +441,11 @@ class stmt_call : public expression {
                                 is_indexed_reference),
         };
 
-        if (not has_indexed_argument) {
+        machine const& x{tc.machine()};
+
+        // an access can use the indexed address as it is, so computing it
+        // into a register is not tried
+        if (not has_indexed_argument or x.has_indexed_addressing()) {
             compile_inline_body(tc, indent, func, aliases, allocated_registers);
             return;
         }
@@ -1276,7 +1280,9 @@ class stmt_call : public expression {
 
         // without base + index addressing each result access adds base and
         // index again, computing the address once can be shorter
-        if (not has_unary_ops and has_indexed_result) {
+        if (not has_unary_ops and has_indexed_result and
+            not x.has_indexed_addressing()) {
+
             x.emit_most_efficient(
                 tok(), indent,
                 [&] -> void { compile_inline(tc, indent, dst_info, func); },

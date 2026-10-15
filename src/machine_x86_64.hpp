@@ -978,6 +978,11 @@ class machine_x86_64 final : public machine {
         pop_allocation(reg.allocation_register());
     }
 
+    // e.g. '[rbx + rcx * 8 + 16]'
+    [[nodiscard]] auto has_indexed_addressing() const -> bool override {
+        return true;
+    }
+
     auto label(const size_t indent, const std::string_view label)
         -> void override {
 

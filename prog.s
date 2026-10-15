@@ -1117,7 +1117,6 @@ main:
     cmp r15, 4
     jae baz_bounds_line_271
 ;   [prog.baz:271:24] bounds check end
-;   [prog.baz:271:16] instructions without scratch register 6, with 7
 ;   [prog.baz:72:6] inv(i i32) res i32
     func.inv.271.16:
 ;       [prog.baz:271:16] alias res -> tmp
@@ -1130,9 +1129,9 @@ main:
         mov dword [rbp + 500], r14d
 ;       [prog.baz:73:12] free scratch register r14
         not dword [rbp + 500]
+;       [prog.baz:271:16] free scratch register r15
     func.inv.271.16.end:
     not dword [rbp + 500]
-;       [prog.baz:271:16] free scratch register r15
 ;   [prog.baz:272:5] arr[ix] = tmp
 ;   [prog.baz:272:9] allocate scratch register -> r15
 ;   [prog.baz:272:9] set array index
@@ -3893,7 +3892,7 @@ vars.end:
 ;     1     60  assert
 ;     1      3  baz
 ;     1      1  greet
-;     1      6  inv
+;     1      2  inv
 ;     0      2  bar
 ;     0      1  faz
 ;     0      1  object.at
