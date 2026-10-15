@@ -326,6 +326,21 @@ func reading() {
     # 'main' does not call this function because it waits for input
 }
 
+func sectors() {
+    var block = i8[1024]
+    sector_read(0, block)
+    sector_write(1, block, 512)
+    # 'sector_read' and 'sector_write' transfer one 512 byte sector of the sd
+    # card, the optional start index says where in the array the sector is
+    # the array holds at least a sector and its element size divides 512
+    # the fpga reads its card, x86_64 and rv32i the file 'sdcard.img', see
+    # '--sdcard'; rv32i-qemu has no card
+    # the sector is an unsigned 32 bit number, on rv32i 'int' is 32 bits, so
+    # the sectors from 2^31 (1 TB) are written as negative numbers, e.g. -1
+    # is the sector 2^32 - 1
+    # 'main' does not call this function because it needs the card
+}
+
 #
 # functions
 #

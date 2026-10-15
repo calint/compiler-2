@@ -1,9 +1,11 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <format>
 #include <span>
+#include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
@@ -15,19 +17,61 @@
 #include "token.hpp"
 #include "unary_ops.hpp"
 
+// 'read(fd, buf, count, start)' and 'write(fd, buf, count, start)', and the
+// sd card functions 'sector_read(sector, buf, start)' and
+// 'sector_write(sector, buf, start)' that transfer one sector
 class stmt_builtin_io final : public stmt_call {
+    // what tells the functions apart, a sector function takes a sector in
+    // place of the descriptor and has no count and no result
+    struct io_function {
+        std::string_view name;
+        machine::builtin_function function{};
+        bool fills_buffer{};
+        bool is_sector{};
+    };
+
+    static constexpr std::array<io_function, 4> functions_{
+        io_function{
+            .name{"read"},
+            .function{machine::builtin_function::read},
+            .fills_buffer{true},
+            .is_sector{false},
+        },
+        io_function{
+            .name{"write"},
+            .function{machine::builtin_function::write},
+            .fills_buffer{false},
+            .is_sector{false},
+        },
+        io_function{
+            .name{"sector_read"},
+            .function{machine::builtin_function::sector_read},
+            .fills_buffer{true},
+            .is_sector{true},
+        },
+        io_function{
+            .name{"sector_write"},
+            .function{machine::builtin_function::sector_write},
+            .fills_buffer{false},
+            .is_sector{true},
+        },
+    };
+
   public:
     stmt_builtin_io(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
         : stmt_call{tc, std::move(uops), tk, tz.is_next_char_token('('), tz} {
 
-        if (argument_count() < 2 or argument_count() > 4) {
+        if (is_sector_function()) {
+            assert_sector_function_call(tc);
+            set_type(tc.get_type_void());
+        } else if (argument_count() < 2 or argument_count() > 4) {
             throw compiler_exception{tok(), "expected 2 to 4 arguments"};
         }
 
-        // 'read' fills the buffer, the second argument
+        // 'read' and 'sector_read' fill the buffer, the second argument
         const statement& buffer{argument(1)};
 
-        if (tok().is_text("read") and buffer.is_identifier()) {
+        if (fills_buffer() and buffer.is_identifier()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
             if (info.is_var()) {
@@ -48,18 +92,19 @@ class stmt_builtin_io final : public stmt_call {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const machine::builtin_function function{
-            tok().is_text("read") ? machine::builtin_function::read
-                                  : machine::builtin_function::write,
-        };
-
         const machine::builtin_function_registers registers{
-            x.registers_for_builtin_function(function),
+            x.registers_for_builtin_function(builtin_function()),
         };
 
         const std::vector<operand> args{
             compile_array_arguments(tc, indent, registers.arguments),
         };
+
+        if (is_sector_function()) {
+            emit_sector_call(x, indent, args);
+            x.free_named_registers(tok(), indent, args);
+            return;
+        }
 
         const bool result_is_argument{
             std::ranges::contains(registers.arguments, registers.result),
@@ -93,13 +138,14 @@ class stmt_builtin_io final : public stmt_call {
     auto assert_array_buffer(const toc& tc) const -> void {
         const statement& buffer{argument(1)};
 
-        // the start has one spelling, the 4th argument
+        // the start has one spelling, the last argument
         if (buffer.is_array_element()) {
             throw compiler_exception{
                 buffer.tok(),
-                std::format("pass the array and the start as 4th argument, "
-                            "e.g. '{}(fd, buf, count, start)'",
-                            tok().text())};
+                std::format("pass the array and the start as {} argument, "
+                            "e.g. '{}'",
+                            is_sector_function() ? "3rd" : "4th",
+                            usage_text())};
         }
 
         if (buffer.is_identifier()) {
@@ -111,6 +157,52 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         throw compiler_exception{buffer.tok(), "argument 2 must be an array"};
+    }
+
+    // a sector is a whole number of elements and fits in the array
+    auto assert_sector_buffer(toc& tc, const ident_info& buffer_info) const
+        -> void {
+
+        const size_t sector_size_bytes{tc.machine().sector_size_bytes()};
+
+        const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
+
+        const statement& buffer{argument(1)};
+
+        if (sector_size_bytes % element_size_bytes != 0) {
+            throw compiler_exception{
+                buffer.tok(),
+                std::format("the element size {} B does not divide the "
+                            "sector size {} B",
+                            element_size_bytes, sector_size_bytes)};
+        }
+
+        const size_t buffer_size_bytes{
+            buffer_info.array_len * element_size_bytes,
+        };
+
+        if (buffer_size_bytes < sector_size_bytes) {
+            throw compiler_exception{
+                buffer.tok(),
+                std::format("the array of {} B is smaller than a sector of "
+                            "{} B",
+                            buffer_size_bytes, sector_size_bytes)};
+        }
+    }
+
+    // the target must have a card, the buffer is checked when it is compiled
+    auto assert_sector_function_call(toc& tc) const -> void {
+        if (tc.machine().sector_size_bytes() == 0) {
+            throw compiler_exception{tok(), "the target has no sd card"};
+        }
+
+        if (argument_count() < 2 or argument_count() > 3) {
+            throw compiler_exception{tok(), "expected 2 or 3 arguments"};
+        }
+    }
+
+    [[nodiscard]] auto builtin_function() const -> machine::builtin_function {
+        return function_info().function;
     }
 
     // the count and start are in elements, the byte count is computed last
@@ -132,6 +224,7 @@ class stmt_builtin_io final : public stmt_call {
                 x.alloc_named_register(tok(), indent, name, type_default));
         }
 
+        // the descriptor, or the sector of a sector function
         const operand& descriptor{args.at(0)};
         const operand& buffer_reg{args.at(1)};
         const operand& count{args.at(2)};
@@ -192,7 +285,8 @@ class stmt_builtin_io final : public stmt_call {
         x.free_scratch_registers(tok(), indent, lea_registers);
     }
 
-    // without a count the whole array is transferred
+    // without a count the whole array is transferred, a sector function
+    // transfers the elements of one sector
     auto compile_count(toc& tc, const size_t indent, const operand& count,
                        const ident_info& buffer_info) const -> void {
 
@@ -205,8 +299,17 @@ class stmt_builtin_io final : public stmt_call {
 
         machine& x{tc.machine()};
 
+        size_t element_count{buffer_info.array_len};
+
+        if (is_sector_function()) {
+            assert_sector_buffer(tc, buffer_info);
+
+            element_count =
+                x.sector_size_bytes() / buffer_info.type_ref().size_bytes();
+        }
+
         x.copy_value(tok(), indent, count,
-                     operand::imm(std::format("{}", buffer_info.array_len),
+                     operand::imm(std::format("{}", element_count),
                                   tc.get_type_default()));
     }
 
@@ -218,7 +321,7 @@ class stmt_builtin_io final : public stmt_call {
 
         machine& x{tc.machine()};
 
-        const statement& start_arg{argument(3)};
+        const statement& start_arg{argument(argument_count() - 1)};
 
         const operand start{
             x.alloc_scratch_register(start_arg.tok(), indent,
@@ -257,7 +360,7 @@ class stmt_builtin_io final : public stmt_call {
     auto emit_call(machine& x, const size_t indent, const operand& result,
                    const std::vector<operand>& args) const -> void {
 
-        if (tok().is_text("read")) {
+        if (builtin_function() == machine::builtin_function::read) {
             x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
             return;
         }
@@ -265,12 +368,52 @@ class stmt_builtin_io final : public stmt_call {
         x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
     }
 
-    // 'read(fd, buf, count, start)': the count and the start are optional
+    auto emit_sector_call(machine& x, const size_t indent,
+                          const std::vector<operand>& args) const -> void {
+
+        if (builtin_function() == machine::builtin_function::sector_read) {
+            x.sector_read(tok(), indent, args.at(0), args.at(1), args.at(2));
+            return;
+        }
+
+        x.sector_write(tok(), indent, args.at(0), args.at(1), args.at(2));
+    }
+
+    [[nodiscard]] auto fills_buffer() const -> bool {
+        return function_info().fills_buffer;
+    }
+
+    // the parser creates the statement only for the names of 'functions_'
+    [[nodiscard]] auto function_info() const -> const io_function& {
+        for (const io_function& info : functions_) {
+            if (tok().is_text(info.name)) {
+                return info;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // 'read(fd, buf, count, start)': the count and the start are optional,
+    // a sector function has no count
     [[nodiscard]] auto has_count() const -> bool {
-        return argument_count() >= 3;
+        return not is_sector_function() and argument_count() >= 3;
     }
 
     [[nodiscard]] auto has_start() const -> bool {
-        return argument_count() == 4;
+        return argument_count() == (is_sector_function() ? 3 : 4);
+    }
+
+    [[nodiscard]] auto is_sector_function() const -> bool {
+        return function_info().is_sector;
+    }
+
+    // the call with all its arguments
+    [[nodiscard]] auto usage_text() const -> std::string {
+        if (is_sector_function()) {
+            return std::format("{}(sector, buf, start)", tok().text());
+        }
+
+        return std::format("{}(fd, buf, count, start)", tok().text());
     }
 };

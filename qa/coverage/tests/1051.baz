@@ -1,0 +1,6 @@
+# the buffer of a sector function is an array
+
+func main() {
+    var n = 0
+    sector_read(0, n)
+}

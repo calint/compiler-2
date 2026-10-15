@@ -64,16 +64,16 @@ COMPILER_MACHINE="${COMPILER_MACHINE%-fpga}"
 QEMU_SYSTEM=(qemu-system-riscv32 -machine virt -bios none -display none
     -serial stdio -monitor none -kernel gen-rv32i.bin)
 
-# the program does not use the sd card, so an empty image suffices
+# the image of the sector functions, see 'SDCARD'
 FPGA_EMULATOR_DIR="$SCRIPT_DIR/../../fpga-emulator"
-FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin /dev/null)
+FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin sdcard.img)
 
 case "$ACTION" in
 clean)
     echo $SEP
     rm -f -- *.profraw baz.profdata cov.err rv32i-driver gen gen.o gen.s diff.baz out err
     rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
-    rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin
+    rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin tests/sdcard.img
     rm -rf -- report/
     echo removed reports
     echo $SEP
@@ -266,6 +266,15 @@ expected_exit_code() {
     fi
 }
 
+# the sd card image 'sdcard.img' of the cases that follow, a sparse file of the
+# size of the argument, e.g. 5G, or no image for 'none'
+SDCARD() {
+    rm -f sdcard.img
+    if [[ $1 != none ]]; then
+        truncate -s "$1" sdcard.img
+    fi
+}
+
 # Test with exit code
 RUN() {
     echo -n "$SRC: "
@@ -414,11 +423,14 @@ COMPERR() {
     check_output "$expected"
 }
 
+# the emulator opens the image also for the cases that do not use it
+SDCARD 0
+
 # Run all test cases
 source "$SCRIPT_DIR/cases.sh"
 
 # Cleanup
-rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err
+rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err sdcard.img
 rm -f gen-image.o gen-image.elf gen-image.bin
 
 echo $SEP

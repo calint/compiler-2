@@ -107,6 +107,9 @@ options:
                       --report
   --bin=FILE          rv32i targets binary image (default: file without
                       extension followed by -MACHINE.bin)
+  --sdcard=FILE       x86_64 and rv32i sd card image that 'sector_read' and
+                      'sector_write' open at run time, relative to the working
+                      directory of the program (default: sdcard.img)
   --nopt              no jump optimizations
   --reproduce-source  write reproduced source to diff.baz and check that it
                       matches the input
@@ -160,10 +163,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    56           8264           3603          24532
-C++                              1            195             56            670
+C/C++ Header                    56           8376           3674          25033
+C++                              1            200             57            686
 -------------------------------------------------------------------------------
-SUM:                            57           8459           3659          25202
+SUM:                            57           8576           3731          25719
 -------------------------------------------------------------------------------
 ```
 

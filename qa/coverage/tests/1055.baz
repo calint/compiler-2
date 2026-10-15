@@ -1,0 +1,6 @@
+# a sector function has no value
+
+func main() {
+    var bytes = i8[512]
+    var n = sector_read(0, bytes)
+}

@@ -82,6 +82,8 @@ struct options {
     report_options reports;
     // empty until given, the default depends on the source and target
     std::string_view binary_file_name;
+    // read and written by the sector functions on x86_64 and rv32i
+    std::string_view sd_card_file_name{"sdcard.img"};
 };
 
 // an option with a value, e.g. '--vars=0x40000'
@@ -107,6 +109,7 @@ struct value_option {
 [[nodiscard]] auto apply_checks(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_report(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_bin(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_sdcard(std::string_view value, options& opts) -> bool;
 
 auto print_help(const char* const program_name) -> void;
 
@@ -236,6 +239,7 @@ template <typename T>
         value_option{.name{"--checks="}, .apply{apply_checks}},
         value_option{.name{"--report="}, .apply{apply_report}},
         value_option{.name{"--bin="}, .apply{apply_bin}},
+        value_option{.name{"--sdcard="}, .apply{apply_sdcard}},
     };
 
     const std::string_view arg{argument};
@@ -360,6 +364,19 @@ template <typename T>
     return true;
 }
 
+[[nodiscard]] auto apply_sdcard(const std::string_view value, options& opts)
+    -> bool {
+
+    opts.sd_card_file_name = value;
+
+    if (opts.sd_card_file_name.empty()) {
+        print_usage_error("invalid --sdcard: empty file name");
+        return false;
+    }
+
+    return true;
+}
+
 // same layout as the readme usage section which pastes this output
 auto print_help(const char* const program_name) -> void {
     std::print(R"(usage: {0} [options] [file]
@@ -386,6 +403,9 @@ options:
                       --report
   --bin=FILE          rv32i targets binary image (default: file without
                       extension followed by -MACHINE.bin)
+  --sdcard=FILE       x86_64 and rv32i sd card image that 'sector_read' and
+                      'sector_write' open at run time, relative to the working
+                      directory of the program (default: sdcard.img)
   --nopt              no jump optimizations
   --reproduce-source  write reproduced source to diff.baz and check that it
                       matches the input
@@ -457,6 +477,8 @@ examples:
         if (opts.reports.registers) {
             backend->enable_register_report();
         }
+
+        backend->set_sd_card_file_name(opts.sd_card_file_name);
 
         program prg{*backend, files, opts.vars_size_bytes, opts.checks};
 

@@ -56,6 +56,13 @@ class machine_x86_64 final : public machine {
     static constexpr int syscall_read{0};
     static constexpr int syscall_write{1};
     static constexpr int syscall_exit{60};
+    static constexpr int syscall_open{2};
+    static constexpr int syscall_lseek{8};
+    static constexpr int syscall_pread{17};
+    static constexpr int syscall_pwrite{18};
+    static constexpr size_t sector_size_bytes_{512};
+    static constexpr std::string_view sector_read_label_{"baz_sector_read"};
+    static constexpr std::string_view sector_write_label_{"baz_sector_write"};
 
     struct register_names {
         std::string_view qword;
@@ -191,6 +198,8 @@ class machine_x86_64 final : public machine {
     size_t overlap_label_count_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
+    bool sector_read_used_{};
+    bool sector_write_used_{};
     std::set<size_t> division_panic_lines_;
     // the lines that have a stub of the overflow failure handler
     std::set<size_t> overflow_panic_lines_;
@@ -326,6 +335,11 @@ class machine_x86_64 final : public machine {
     }
 
     auto begin_data(const size_t alignment) -> void override {
+        // unused routines contribute no code
+        if (sector_read_used_ or sector_write_used_) {
+            emit_sector_routines();
+        }
+
         assembler_.add_separator_newline();
         assembler_.switch_section(section::data);
         assembler_.align(alignment);
@@ -1146,6 +1160,16 @@ class machine_x86_64 final : public machine {
             };
         }
 
+        // the sector, the address and the size
+        if (function == builtin_function::sector_read or
+            function == builtin_function::sector_write) {
+
+            return {
+                .arguments{io_args},
+                .result{},
+            };
+        }
+
         return {
             .arguments{io_args},
             .result{"rax"},
@@ -1196,6 +1220,30 @@ class machine_x86_64 final : public machine {
 
     [[nodiscard]] auto scratch_register_total() const -> size_t override {
         return scratch_registers_.size();
+    }
+
+    auto sector_read(const token& src_loc_tk, const size_t indent,
+                     const operand& sector, const operand& address,
+                     const operand& size) -> void override {
+
+        call_sector_routine(src_loc_tk, indent, sector, address, size,
+                            sector_read_label_);
+
+        sector_read_used_ = true;
+    }
+
+    [[nodiscard]] auto sector_size_bytes() const -> size_t override {
+        return sector_size_bytes_;
+    }
+
+    auto sector_write(const token& src_loc_tk, const size_t indent,
+                      const operand& sector, const operand& address,
+                      const operand& size) -> void override {
+
+        call_sector_routine(src_loc_tk, indent, sector, address, size,
+                            sector_write_label_);
+
+        sector_write_used_ = true;
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -1397,18 +1445,13 @@ class machine_x86_64 final : public machine {
     }
 
     auto invoke_syscall(const size_t indent) -> void {
-        std::vector<operand> saved;
-        for (const std::string_view name : {"rcx", "r11"}) {
-            if (allocated_register_type(name) != nullptr) {
-                saved.push_back(qword_register(name));
-                push(indent, saved.back());
-            }
-        }
+        static constexpr std::array<std::string_view, 2> clobbered{
+            "rcx",
+            "r11",
+        };
 
-        syscall(indent);
-        for (const operand& reg : saved | std::views::reverse) {
-            pop(indent, reg);
-        }
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { syscall(indent); });
     }
 
     auto release_variables_base() -> void {
@@ -1618,6 +1661,35 @@ class machine_x86_64 final : public machine {
 
     // 'left' holds the product of two bytes in a register of the default
     // width, which fits when the low byte sign extended is the same value
+    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
+    // arguments, the allocated ones are saved around the call
+    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
+                             const operand& sector, const operand& address,
+                             const operand& size, const std::string_view label)
+        -> void {
+
+        for (const operand* value : {&sector, &address, &size}) {
+            assert(value->is_register() and
+                   value->type_ref().size_bytes() == size_qword);
+        }
+
+        assert(sector.base_register() == "rdi");
+        assert(address.base_register() == "rsi");
+        assert(size.base_register() == "rdx");
+
+        static constexpr std::array<std::string_view, 4> clobbered{
+            "rax",
+            "rcx",
+            "r10",
+            "r11",
+        };
+
+        comment(src_loc_tk, indent, "sector of the sd card");
+
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { assembler_.call(indent, label); });
+    }
+
     auto check_byte_product(const token& src_loc_tk, const size_t indent,
                             const operand& left, const operand& right,
                             const overflow_check_options& check) -> void {
@@ -2072,6 +2144,133 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::bss);
         assembler_.label(0, "num_buffer");
         assembler_.reserve(number_buffer_size_bytes);
+    }
+
+    // the routines take the sector in 'rdi', the address in 'rsi' and the size
+    // in 'rdx'; the image file is opened at the first transfer, a sector past
+    // its end or outside 32 bits, a failed open or a short transfer panics
+    auto emit_sector_routines() -> void {
+        // 'O_RDWR' and 'SEEK_END' of linux
+        constexpr int read_write{2};
+        constexpr int seek_end{2};
+        constexpr int sector_shift{std::countr_zero(sector_size_bytes_)};
+
+        // the descriptor is -1 until the file is opened
+        constexpr std::array<assembler_x86_64::data_value, 1> not_opened{
+            {
+                {
+                    .value{-1},
+                    .unary_operations{},
+                },
+            },
+        };
+
+        constexpr std::array<assembler_x86_64::data_value, 1> zero_value{
+            {
+                {
+                    .value{0},
+                    .unary_operations{},
+                },
+            },
+        };
+
+        constexpr std::string_view handler_label{"baz_sd_card_panic"};
+
+        assembler_x86_64::memory descriptor{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor"),
+        };
+
+        descriptor.size_bytes = size_qword;
+
+        assembler_x86_64::memory sector_count{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_sectors"),
+        };
+
+        sector_count.size_bytes = size_qword;
+
+        assembler_.add_separator_newline();
+
+        if (sector_read_used_) {
+            assembler_.label(0, sector_read_label_);
+            assembler_.instruction(1, op::mov, "eax", syscall_pread);
+            assembler_.jmp(1, "baz_sector_transfer");
+        }
+
+        if (sector_write_used_) {
+            assembler_.label(0, sector_write_label_);
+            assembler_.instruction(1, op::mov, "eax", syscall_pwrite);
+        }
+
+        assembler_.label(0, "baz_sector_transfer");
+        assembler_.comment(1, "the system call is kept on the stack");
+        assembler_.instruction(1, op::push, "rax");
+        assembler_.instruction(1, op::cmp, descriptor, 0);
+        assembler_.jcc(1, condition::ge, "baz_sector_opened");
+        assembler_.instruction(1, op::push, "rdi");
+        assembler_.instruction(1, op::push, "rsi");
+        assembler_.instruction(1, op::push, "rdx");
+        assembler_.instruction(1, op::mov, "eax", syscall_open);
+
+        assembler_.instruction(
+            1, op::lea, "rdi",
+            assembler_x86_64::memory::of_symbol("baz_sd_card_name"));
+
+        assembler_.instruction(1, op::mov, "esi", read_write);
+        assembler_.instruction(1, op::syscall);
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::s, handler_label);
+        assembler_.instruction(1, op::mov, descriptor, "rax");
+        assembler_.comment(1, "the size of the file in sectors");
+        assembler_.instruction(1, op::mov, "rdi", "rax");
+        assembler_.instruction(1, op::xor_op, "esi", "esi");
+        assembler_.instruction(1, op::mov, "edx", seek_end);
+        assembler_.instruction(1, op::mov, "eax", syscall_lseek);
+        assembler_.instruction(1, op::syscall);
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::s, handler_label);
+        assembler_.instruction(1, op::sar, "rax", sector_shift);
+        assembler_.instruction(1, op::mov, sector_count, "rax");
+        assembler_.instruction(1, op::pop, "rdx");
+        assembler_.instruction(1, op::pop, "rsi");
+        assembler_.instruction(1, op::pop, "rdi");
+        assembler_.label(0, "baz_sector_opened");
+        assembler_.comment(1, "the sector is an unsigned 32 bit number");
+        assembler_.instruction(1, op::mov, "eax", "edi");
+        assembler_.instruction(1, op::cmp, "rax", "rdi");
+        assembler_.jcc(1, condition::ne, handler_label);
+        assembler_.instruction(1, op::cmp, "rdi", sector_count);
+        assembler_.jcc(1, condition::ae, handler_label);
+        assembler_.instruction(1, op::mov, "r10", "rdi");
+        assembler_.instruction(1, op::shl, "r10", sector_shift);
+        assembler_.instruction(1, op::mov, "rdi", descriptor);
+        assembler_.instruction(1, op::pop, "rax");
+        assembler_.instruction(1, op::syscall);
+        assembler_.instruction(1, op::cmp, "rax", "rdx");
+        assembler_.jcc(1, condition::ne, handler_label);
+        assembler_.instruction(1, op::ret);
+
+        assembler_.label(0, handler_label);
+        emit_panic_message("msg_sd_card");
+        emit_panic_exit();
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, "msg_sd_card");
+        assembler_.string_data("panic: sd card\\n");
+        assembler_.define_length("msg_sd_card_len", "msg_sd_card");
+        assembler_.comment(0, "the file name ends with a zero byte");
+        assembler_.label(0, "baz_sd_card_name");
+
+        assembler_.string_data(token::encode_string(sd_card_file_name()));
+
+        assembler_.data(size_byte, zero_value);
+
+        assembler_.switch_section(section::data);
+        assembler_.align(size_qword);
+        assembler_.label(0, "baz_sd_card_descriptor");
+        assembler_.data(size_qword, not_opened);
+        assembler_.label(0, "baz_sd_card_sectors");
+        assembler_.data(size_qword, zero_value);
+        assembler_.switch_section(section::text);
     }
 
     // idiv takes the divisor as a qword register or memory operand, 'rax'
@@ -2639,6 +2838,27 @@ class machine_x86_64 final : public machine {
         emit(lowered_dst, lowered_src);
         free_scratch_registers(src_loc_tk, indent, registers);
         registers_.restore_unavailable(saved_unavailable);
+    }
+
+    // 'emit' changes the registers 'clobbered', the allocated ones are pushed
+    // before and popped after
+    auto with_saved_registers(const size_t indent,
+                              const std::span<const std::string_view> clobbered,
+                              const std::function_ref<void()> emit) -> void {
+
+        std::vector<operand> saved;
+        for (const std::string_view name : clobbered) {
+            if (allocated_register_type(name) != nullptr) {
+                saved.push_back(qword_register(name));
+                push(indent, saved.back());
+            }
+        }
+
+        emit();
+
+        for (const operand& reg : saved | std::views::reverse) {
+            pop(indent, reg);
+        }
     }
 
     auto xor_op(const token& src_loc_tk, const size_t indent,

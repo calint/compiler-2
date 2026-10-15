@@ -1,0 +1,7 @@
+# a sector number is 32 bits, a larger one panics even when its low 32 bits
+# are a sector of the image
+
+func main() {
+    var bytes = i8[512]
+    sector_write(4294967296, bytes)
+}

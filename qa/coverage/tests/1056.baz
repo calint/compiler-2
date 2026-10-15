@@ -1,0 +1,6 @@
+# a sector function name is not a variable name
+
+func main() {
+    var sector_write = 3
+    exit(sector_write)
+}

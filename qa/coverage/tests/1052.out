@@ -1,0 +1,4 @@
+
+1052.baz:5:20: pass the array and the start as 3rd argument, e.g. 'sector_read(sector, buf, start)'
+    sector_read(0, bytes[512])
+                   ^

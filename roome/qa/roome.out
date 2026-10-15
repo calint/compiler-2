@@ -1582,5 +1582,88 @@ u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
-w > go home
+w > help
+
+  help: this message
+  go to: go <exit>
+  inventory: i
+  create new object: on <name>
+  drop object: d <object>
+  give object: g <object> <entity>
+  tell entity: t <entity> <message>
+  say to room: s <text>
+  new room: rn <to exit> <from exit>
+  set room name: rnm <text>
+  set room description: rd <text>
+  set room note: rnt <text>
+  new entity: en <name>
+  write text to sd card sector: sdw <sector> <text>
+  read text from sd card sector: sdr <sector>
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > sdw 1000 hello from roome
+
+sector written
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > sdr 1000
+
+hello from roome
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > sdw 1001
+
+sector written
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > sdr 1001
+
+
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > sdw
+
+which sector
+--
+
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > sdr x1
+
+a sector is a number of at most 9 digits
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > sdr 1234567890
+
+a sector is a number of at most 9 digits
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > go home
 

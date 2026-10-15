@@ -17,6 +17,8 @@
 #                of the optimized compile with 'NNN.TARGET.diff'
 #   COMPERR      the compile fails with exit code 1 and its message is
 #                'NNN.TARGET.out' or else 'NNN.out'
+#   SDCARD SIZE  the sd card image of the cases that follow, sparse, or no
+#                image for 'none'
 #
 # A case inside 'if [[ $MACHINE ... ]]' runs only for those targets (x86_64,
 # rv32i, rv32i-qemu, rv32i-fpga). A commented case is disabled on purpose.
@@ -3217,3 +3219,55 @@ SRC=1042 && COMPERR
 
 # a 'bool' holds 'true', 'false' or a comparison, not an integer
 SRC=1043 && COMPERR
+
+# 'sector_write' and 'sector_read' transfer one sector: at a start, above 4 GB,
+# at the last sector and into arrays of other element types
+if [[ $MACHINE != rv32i-qemu ]]; then SDCARD 5G && SRC=1044 && DIFF; fi
+
+# the start of a sector function is bounds checked with the elements of a
+# sector
+if [[ $MACHINE != rv32i-qemu ]]; then SDCARD 1M && SRC=1045 && EXP=255 && RUN_ERR; fi
+
+# a sector past the end of the sd card image panics
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SDCARD 1M && SRC=1046 && EXP=255 && RUN_ERR; fi
+
+# a sector number is 32 bits, a larger one panics even when its low 32 bits
+# are a sector of the image
+if [[ $MACHINE == x86_64 ]]; then SDCARD 1M && SRC=1047 && EXP=255 && RUN_ERR; fi
+
+# an sd card image that cannot be opened panics
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1048 && EXP=255 && RUN_ERR_OPTS "--sdcard=missing.img"; fi
+
+# a sector is a whole number of elements of the buffer
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1049 && COMPERR; fi
+
+# the buffer of a sector function holds at least a sector
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1050 && COMPERR; fi
+
+# the buffer of a sector function is an array
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1051 && COMPERR; fi
+
+# the start of a sector function is its 3rd argument, not an element
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1052 && COMPERR; fi
+
+# 'sector_read' cannot fill an array parameter without 'mut'
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1053 && COMPERR; fi
+
+# a sector function takes the sector, the buffer and the optional start
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1054 && COMPERR; fi
+
+# a sector function has no value
+SRC=1055 && COMPERR
+
+# a sector function name is not a variable name
+SRC=1056 && COMPERR
+
+# the qemu machine has no sd card
+if [[ $MACHINE == rv32i-qemu ]]; then SRC=1057 && COMPERR; fi
+
+# the loop counters that registers hold survive the sector functions
+if [[ $MACHINE != rv32i-qemu ]]; then SDCARD 1M && SRC=1058 && EXP=32 && RUN; fi
+
+# on rv32i a sector from 2^31 is written as a negative number, -2147483648 is
+# the sector 2^31 at 1 TB
+if [[ $MACHINE == rv32i || $MACHINE == rv32i-fpga ]]; then SDCARD 1100G && SRC=1059 && DIFF; fi

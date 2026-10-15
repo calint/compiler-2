@@ -68,7 +68,9 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
     }
 
-    if (tk.is_text("read") or tk.is_text("write")) {
+    if (tk.is_text("read") or tk.is_text("write") or
+        tk.is_text("sector_read") or tk.is_text("sector_write")) {
+
         return std::make_unique<stmt_builtin_io>(tc, unary_ops{}, tk, tz);
     }
 
@@ -398,8 +400,12 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         return std::make_unique<stmt_builtin_io>(tc, std::move(uops), tk, tz);
     }
 
-    // 'exit' ends the program, it has no value to use
-    if (tk.is_text("exit") and tz.peek_char_after_whitespace() == '(') {
+    // 'exit' ends the program and the sector functions only transfer, they
+    // have no value to use
+    if ((tk.is_text("exit") or tk.is_text("sector_read") or
+         tk.is_text("sector_write")) and
+        tz.peek_char_after_whitespace() == '(') {
+
         throw compiler_exception{tk, "function does not return a value"};
     }
 

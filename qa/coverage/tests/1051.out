@@ -1,0 +1,4 @@
+
+1051.baz:5:20: argument 2 must be an array
+    sector_read(0, n)
+                   ^

@@ -371,3 +371,24 @@ func mut tokenizer.next_or_say(msg i8[]) res bool {
     res = not self.is_empty()
     if not res out.print_all(msg)
 }
+
+# at most 9 digits so that every number fits 32 bits
+let max_number_digits = 9
+
+# the token as a decimal number into 'value', false when it is not one
+func tokenizer.to_number(value mut) res bool {
+    res = false
+    if self.is_empty() or self.len() > max_number_digits return
+
+    value = 0
+    var ix = self.start
+    loop {
+        if ix == self.end break
+        let c = self.str.array[ix]
+        if c < '0' or c > '9' return
+        value = value * 10 + c - '0'
+        ix = ix + 1
+    }
+
+    res = true
+}

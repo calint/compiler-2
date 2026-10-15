@@ -54,6 +54,17 @@ class machine_rv32i : public machine {
     static constexpr int syscall_read_{63};
     static constexpr int syscall_write_{64};
     static constexpr int syscall_exit_{93};
+    static constexpr int syscall_openat_{56};
+    static constexpr int syscall_llseek_{62};
+    static constexpr int syscall_pread_{67};
+    static constexpr int syscall_pwrite_{68};
+    static constexpr size_t sector_size_bytes_{512};
+    static constexpr std::array<std::string_view, 4> sector_clobbered_{
+        "a3",
+        "a4",
+        "a5",
+        "a6",
+    };
     // shifting a word right by this spreads its sign bit over all bits
     static constexpr int sign_shift_{31};
     // sp stays 16-byte aligned, the return address slot of a frame is one unit
@@ -332,12 +343,20 @@ class machine_rv32i : public machine {
     bool multiply_helper_used_{};
     bool multiply_checked_helper_used_{};
     bool divide_helper_used_{};
+    bool sector_read_used_{};
+    bool sector_write_used_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
     std::vector<std::array<operand, 3>> bulk_registers_;
     std::vector<bulk_addresses> bulk_addresses_;
 
   protected:
+    // the sector routines, see 'emit_sector_routines'
+    static constexpr std::string_view sector_read_label_{".Lbaz_sector_read"};
+    static constexpr std::string_view sector_write_label_{
+        ".Lbaz_sector_write",
+    };
+
     //
     // overridden methods
     //
@@ -365,6 +384,15 @@ class machine_rv32i : public machine {
     virtual auto emit_read_call(const size_t indent) -> void {
         assembler_.li(indent, "a7", syscall_read_);
         assembler_.ecall(indent);
+    }
+
+    // the routines take the sector in a0, the address in a1 and the size in
+    // a2, return through a7 and may change a0 and a3 to a6; an operating
+    // system transfers the sector of the image file
+    virtual auto emit_sector_routines(const bool read_used,
+                                      const bool write_used) -> void {
+
+        emit_sector_system_call_routines(read_used, write_used);
     }
 
     // loads the lowest address the stack may reach into the register 'reg',
@@ -587,6 +615,12 @@ class machine_rv32i : public machine {
 
     auto begin_data(const size_t alignment) -> void override {
         emit_arithmetic_helpers();
+
+        // unused routines contribute no code
+        if (sector_read_used_ or sector_write_used_) {
+            emit_sector_routines(sector_read_used_, sector_write_used_);
+        }
+
         assembler_.switch_section(section::data);
         assembler_.align(alignment);
         label(0, data_label);
@@ -1436,6 +1470,16 @@ class machine_rv32i : public machine {
             };
         }
 
+        // the sector, the address and the size
+        if (function == builtin_function::sector_read or
+            function == builtin_function::sector_write) {
+
+            return {
+                .arguments{io_args},
+                .result{},
+            };
+        }
+
         return {
             .arguments{io_args},
             .result{"a0"},
@@ -1502,6 +1546,30 @@ class machine_rv32i : public machine {
         return scratch_registers_.size();
     }
 
+    auto sector_read(const token& src_loc_tk, const size_t indent,
+                     const operand& sector, const operand& address,
+                     const operand& size) -> void override {
+
+        call_sector_routine(src_loc_tk, indent, sector, address, size,
+                            sector_read_label_);
+
+        sector_read_used_ = true;
+    }
+
+    [[nodiscard]] auto sector_size_bytes() const -> size_t override {
+        return sector_size_bytes_;
+    }
+
+    auto sector_write(const token& src_loc_tk, const size_t indent,
+                      const operand& sector, const operand& address,
+                      const operand& size) -> void override {
+
+        call_sector_routine(src_loc_tk, indent, sector, address, size,
+                            sector_write_label_);
+
+        sector_write_used_ = true;
+    }
+
     auto shift(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
                const operand& count, const shift_check_options& check)
@@ -1565,6 +1633,8 @@ class machine_rv32i : public machine {
         multiply_helper_used_ = false;
         multiply_checked_helper_used_ = false;
         divide_helper_used_ = false;
+        sector_read_used_ = false;
+        sector_write_used_ = false;
         line_report_emitted_ = false;
 
         start_output();
@@ -1966,6 +2036,20 @@ class machine_rv32i : public machine {
     // a distance from the source to the destination that is not zero and below
     // the byte count jumps to the failure handler, the copy would overwrite
     // source bytes it has not read yet, the line is passed in 'a0'
+    // the sector is in a0 where 'read' has the descriptor, there is no result
+    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
+                             const operand& sector, const operand& address,
+                             const operand& size, const std::string_view label)
+        -> void {
+
+        const operand call_register{
+            reserve_call_register(src_loc_tk, indent, sector, address, size),
+        };
+
+        call_io_routine(indent, label, sector_clobbered_);
+        free_named_register(src_loc_tk, indent, call_register);
+    }
+
     auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
                             const operand& src, const operand& dst,
                             const operand& count_bytes,
@@ -3620,6 +3704,113 @@ class machine_rv32i : public machine {
     // the result replaces the value in 'loaded', a partial sum goes through a
     // scratch register
     //   x * 10  =>  t = x << 2; x = t + x; x = x << 1
+    // opens the image file at the first transfer and keeps its descriptor and
+    // sector count in '.Lbaz_sd_card', a sector past the end, a failed open or
+    // a short transfer panics
+    auto emit_sector_system_call_routines(const bool read_used,
+                                          const bool write_used) -> void {
+
+        // 'AT_FDCWD', 'O_RDWR' and 'SEEK_END' of linux
+        constexpr int current_directory{-100};
+        constexpr int read_write{2};
+        constexpr int seek_end{2};
+        // the descriptor, the sector count and the 64 bit size of the file
+        constexpr std::array<int64_t, 4> sd_card_words{-1, 0, 0, 0};
+        constexpr int64_t count_offset{4};
+        constexpr int64_t size_low_offset{8};
+        constexpr int64_t size_high_offset{12};
+        // the arguments and the system call are kept while the file is opened
+        constexpr std::array<std::string_view, 4> saved{"a0", "a1", "a2", "a5"};
+        // the file name ends with a zero byte for the system call
+        constexpr std::array<int64_t, 1> name_end{0};
+        // the byte offset of a sector is split into two words
+        constexpr int sector_shift{std::countr_zero(sector_size_bytes_)};
+
+        constexpr int high_shift{
+            static_cast<int>(register_bits_) - sector_shift,
+        };
+
+        constexpr std::string_view handler_label{"baz_sd_card_panic"};
+
+        assembler_rv32i& a{assembler_};
+
+        if (read_used) {
+            a.label(0, sector_read_label_);
+            a.li(1, "a5", syscall_pread_);
+            a.j(1, ".Lbaz_sector_transfer");
+        }
+
+        if (write_used) {
+            a.label(0, sector_write_label_);
+            a.li(1, "a5", syscall_pwrite_);
+        }
+
+        // a5 holds the system call, a6 the return address
+        a.label(0, ".Lbaz_sector_transfer");
+        a.mv(1, "a6", "a7");
+        a.la(1, "a3", ".Lbaz_sd_card");
+        a.lw(1, "a4", 0, "a3");
+        a.bgez(1, "a4", "2f");
+
+        const size_t stack_bytes{save_registers(1, saved)};
+
+        a.li(1, "a0", current_directory);
+        a.la(1, "a1", ".Lbaz_sd_card_name");
+        a.li(1, "a2", read_write);
+        a.li(1, "a3", 0);
+        a.li(1, "a7", syscall_openat_);
+        a.ecall(1);
+        a.bltz(1, "a0", handler_label);
+        a.la(1, "a3", ".Lbaz_sd_card");
+        a.sw(1, "a0", 0, "a3");
+        // 'llseek' writes the size of the file at a3
+        a.li(1, "a1", 0);
+        a.li(1, "a2", 0);
+        a.addi(1, "a3", "a3", size_low_offset);
+        a.li(1, "a4", seek_end);
+        a.li(1, "a7", syscall_llseek_);
+        a.ecall(1);
+        a.bnez(1, "a0", handler_label);
+        a.la(1, "a3", ".Lbaz_sd_card");
+        a.lw(1, "a4", size_low_offset, "a3");
+        a.lw(1, "a0", size_high_offset, "a3");
+        a.srli(1, "a4", "a4", sector_shift);
+        a.slli(1, "a1", "a0", high_shift);
+        a.or_op(1, "a4", "a4", "a1");
+        // an image of 2 TB or more has more sectors than a sector number
+        // reaches
+        a.srli(1, "a0", "a0", sector_shift);
+        a.beqz(1, "a0", "1f");
+        a.li(1, "a4", -1);
+        a.label(0, "1");
+        a.sw(1, "a4", count_offset, "a3");
+        restore_saved_registers(1, saved, stack_bytes);
+        a.label(0, "2");
+        a.lw(1, "a4", count_offset, "a3");
+        a.bgeu(1, "a0", "a4", handler_label);
+        // a0 the descriptor, a3 and a4 the low and high word of the offset
+        a.lw(1, "a7", 0, "a3");
+        a.slli(1, "a3", "a0", sector_shift);
+        a.srli(1, "a4", "a0", high_shift);
+        a.mv(1, "a0", "a7");
+        a.mv(1, "a7", "a5");
+        a.ecall(1);
+        a.bne(1, "a0", "a2", handler_label);
+        a.jr(1, "a6");
+
+        emit_named_failure_handler(handler_label, "sd card", false);
+
+        a.switch_section(section::data);
+        a.align(word_size_bytes_);
+        a.label(0, ".Lbaz_sd_card");
+        a.data(word_size_bytes_, sd_card_words);
+        a.switch_section(section::rodata);
+        a.label(0, ".Lbaz_sd_card_name");
+        a.ascii(sd_card_file_name());
+        a.data(1, name_end);
+        a.switch_section(section::text);
+    }
+
     auto emit_shift_add_sequence(const token& src_loc_tk, const size_t indent,
                                  const loaded_destination& loaded,
                                  const digit_sequence& sequence) -> void {
@@ -4089,26 +4280,37 @@ class machine_rv32i : public machine {
         bulk_addresses_.pop_back();
     }
 
-    auto reserve_io_call_register(const token& src_loc_tk, const size_t indent,
-                                  const operand& dst, const operand& descriptor,
-                                  const operand& address, const operand& count)
-        -> operand {
+    // the arguments are in a0, a1 and a2
+    auto reserve_call_register(const token& src_loc_tk, const size_t indent,
+                               const operand& first, const operand& address,
+                               const operand& count) -> operand {
 
-        for (const operand* value : {&dst, &descriptor, &address, &count}) {
+        for (const operand* value : {&first, &address, &count}) {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == word_size_bytes_);
         }
 
-        assert(register_index(dst.base_register()) == register_index("a0"));
-
-        assert(register_index(descriptor.base_register()) ==
-               register_index("a0"));
-
+        assert(register_index(first.base_register()) == register_index("a0"));
         assert(register_index(address.base_register()) == register_index("a1"));
         assert(register_index(count.base_register()) == register_index("a2"));
 
         // selects the system call or receives the return address
         return alloc_named_register(src_loc_tk, indent, "a7", default_type());
+    }
+
+    // the byte count of 'read' and 'write' replaces the descriptor in a0
+    auto reserve_io_call_register(const token& src_loc_tk, const size_t indent,
+                                  const operand& dst, const operand& descriptor,
+                                  const operand& address, const operand& count)
+        -> operand {
+
+        assert(dst.is_register() and
+               dst.type_ref().size_bytes() == word_size_bytes_);
+
+        assert(register_index(dst.base_register()) == register_index("a0"));
+
+        return reserve_call_register(src_loc_tk, indent, descriptor, address,
+                                     count);
     }
 
     auto restore_saved_registers(const size_t indent,

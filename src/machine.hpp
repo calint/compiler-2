@@ -510,12 +510,20 @@ class machine {
     const type* type_i16_{};
     const type* type_i8_{};
     size_t usage_max_scratch_regs_{};
+    // the image of the sd card on targets with an operating system
+    std::string sd_card_file_name_;
 
     // the inlined calls being compiled and what the registers held
     register_trace trace_;
 
   public:
-    enum class builtin_function : uint8_t { read, write, exit };
+    enum class builtin_function : uint8_t {
+        read,
+        write,
+        exit,
+        sector_read,
+        sector_write,
+    };
 
     // 'files' locate the tokens of comments, backend tests may leave it null
     // and give a stream that receives the lines as they are emitted
@@ -637,7 +645,7 @@ class machine {
         // argument register names in parameter order
         std::span<const std::string_view> arguments;
 
-        // result register name, empty for 'exit'
+        // result register name, empty for 'exit' and the sector functions
         std::string_view result;
     };
 
@@ -1009,6 +1017,22 @@ class machine {
     // how many scratch registers the backend can hand out
     [[nodiscard]] virtual auto scratch_register_total() const -> size_t = 0;
 
+    // reads the sd card sector, an unsigned 32 bit number, into the 'size'
+    // bytes at 'address', 'size' holds 'sector_size_bytes'; a sector past the
+    // end of the card panics where the target can tell
+    virtual auto sector_read(const token& src_loc_tk, const size_t indent,
+                             const operand& sector, const operand& address,
+                             const operand& size) -> void = 0;
+
+    // the size of a sector of the sd card, 0 when the target has no card
+    [[nodiscard]] virtual auto sector_size_bytes() const -> size_t = 0;
+
+    // writes the 'size' bytes at 'address' to the sd card sector, like
+    // 'sector_read'
+    virtual auto sector_write(const token& src_loc_tk, const size_t indent,
+                              const operand& sector, const operand& address,
+                              const operand& size) -> void = 0;
+
     // an enabled check makes a count below zero or not below the width of the
     // type of 'dst' jump to the shift failure handler
     virtual auto shift(const token& src_loc_tk, const size_t indent,
@@ -1221,6 +1245,12 @@ class machine {
         type_i32_ = &t_i32;
         type_i16_ = &t_i16;
         type_i8_ = &t_i8;
+    }
+
+    // the image file that the sector functions read and write on targets with
+    // an operating system
+    auto set_sd_card_file_name(const std::string_view file_name) -> void {
+        sd_card_file_name_ = file_name;
     }
 
     // what the output measured, for the report of the front end. the counts
@@ -1501,6 +1531,10 @@ class machine {
     auto record_scratch_registers(const register_pool& pool) -> void {
         usage_max_scratch_regs_ =
             std::max(usage_max_scratch_regs_, pool.scratch_count());
+    }
+
+    [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
+        return sd_card_file_name_;
     }
 
     // resolved and optimized jumps need every line before writing

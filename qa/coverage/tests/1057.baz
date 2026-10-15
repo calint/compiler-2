@@ -1,0 +1,6 @@
+# the qemu machine has no sd card
+
+func main() {
+    var bytes = i8[512]
+    sector_read(0, bytes)
+}

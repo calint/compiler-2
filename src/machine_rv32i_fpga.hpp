@@ -30,6 +30,12 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr int uart_out_offset_{-8};
     // uart_in reads -1 while no byte is received, uart_out while ready
     static constexpr int uart_idle_{-1};
+    // the sd card addresses 0xffff'fff0, 0xffff'ffec, 0xffff'ffe8 and
+    // 0xffff'ffe0 as offsets from the zero register like the uart
+    static constexpr int sd_busy_offset_{-16};
+    static constexpr int sd_read_sector_offset_{-20};
+    static constexpr int sd_next_byte_offset_{-24};
+    static constexpr int sd_write_sector_offset_{-32};
     // 'lui' places the immediate in the upper 20 bits
     static constexpr uint32_t lui_shift_{12};
     // the comment prints the address as two 16 bit halves
@@ -120,6 +126,47 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
             memory_end_address, stack_size_bytes(), memory_size_bytes_)};
     }
 
+    // the card has a buffer of one sector: a read fills it from the sector,
+    // a write sends it to the sector, the bytes pass one at a time through
+    // the next byte address; its index wraps, so every transfer moves the
+    // whole sector; a sector past the end of the card is not detected, the
+    // emulator stops at it
+    auto emit_sector_routines(const bool read_used, const bool write_used)
+        -> void override {
+
+        assembler_rv32i& a{assembler()};
+
+        if (read_used) {
+            a.label(0, sector_read_label_);
+            emit_wait_while_busy(a, "1");
+            a.sw(1, "a0", sd_read_sector_offset_, "zero");
+            emit_wait_while_busy(a, "2");
+            a.mv(1, "a5", "a1");
+            a.add(1, "a6", "a1", "a2");
+            a.label(0, "3");
+            a.lw(1, "a4", sd_next_byte_offset_, "zero");
+            a.sb(1, "a4", 0, "a5");
+            a.addi(1, "a5", "a5", 1);
+            a.bne(1, "a5", "a6", "3b");
+            a.jr(1, "a7");
+        }
+
+        if (write_used) {
+            a.label(0, sector_write_label_);
+            emit_wait_while_busy(a, "1");
+            a.mv(1, "a5", "a1");
+            a.add(1, "a6", "a1", "a2");
+            a.label(0, "2");
+            a.lbu(1, "a4", 0, "a5");
+            a.sw(1, "a4", sd_next_byte_offset_, "zero");
+            a.addi(1, "a5", "a5", 1);
+            a.bne(1, "a5", "a6", "2b");
+            a.sw(1, "a0", sd_write_sector_offset_, "zero");
+            emit_wait_while_busy(a, "3");
+            a.jr(1, "a7");
+        }
+    }
+
     // the stack is the 'stack_size_bytes' below the end of memory
     auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
         -> void override {
@@ -190,5 +237,20 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
         exit(token{}, 1,
              operand::imm(std::format("{}", exit_code), default_type()));
+    }
+
+    //
+    // statics
+    //
+
+    // the card is busy while it starts up and while it transfers a sector,
+    // 'local_label' is a numeric label of the routine
+    static auto emit_wait_while_busy(assembler_rv32i& a,
+                                     const std::string_view local_label)
+        -> void {
+
+        a.label(0, local_label);
+        a.lw(1, "a4", sd_busy_offset_, "zero");
+        a.bnez(1, "a4", std::format("{}b", local_label));
     }
 };

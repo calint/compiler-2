@@ -372,6 +372,12 @@ class assembler_rv32i final : public assembler {
         branch(indent, op::bgeu, rs1, rs2, target);
     }
 
+    auto bgez(const size_t indent, const std::string_view rs,
+              const std::string_view target) -> void {
+
+        branch_zero(indent, op::bgez, rs, target);
+    }
+
     auto bgtz(const size_t indent, const std::string_view rs,
               const std::string_view target) -> void {
 

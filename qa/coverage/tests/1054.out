@@ -1,0 +1,4 @@
+
+1054.baz:4:5: expected 2 or 3 arguments
+    sector_read(0)
+    ^~~~~~~~~~~

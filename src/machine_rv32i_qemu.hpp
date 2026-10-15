@@ -39,6 +39,15 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         }
     }
 
+    //
+    // overridden methods
+    //
+
+    // the machine has no sd card, so the sector functions are rejected
+    [[nodiscard]] auto sector_size_bytes() const -> size_t override {
+        return 0;
+    }
+
   private:
     //
     // overridden methods

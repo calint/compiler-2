@@ -2980,11 +2980,11 @@ class toc final {
     static auto assert_valid_variable_name(const token& name_tk) -> void {
         assert_valid_name(name_tk);
 
-        static constexpr std::array<std::string_view, 18> reserved_words{
-            "and",      "array_copy", "array_length", "arrays_equal", "break",
-            "continue", "dat",        "exit",         "foo",          "if",
-            "let",      "loop",       "not",          "or",           "read",
-            "return",   "var",        "write",
+        static constexpr std::array<std::string_view, 20> reserved_words{
+            "and",      "array_copy",  "array_length", "arrays_equal", "break",
+            "continue", "dat",         "exit",         "foo",          "if",
+            "let",      "loop",        "not",          "or",           "read",
+            "return",   "sector_read", "sector_write", "var",          "write",
         };
 
         for (const std::string_view word : reserved_words) {

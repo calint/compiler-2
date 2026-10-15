@@ -1,0 +1,4 @@
+
+1056.baz:4:9: 'sector_write' is reserved
+    var sector_write = 3
+        ^~~~~~~~~~~~

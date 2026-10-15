@@ -1,0 +1,8 @@
+# a sector is a whole number of elements of the buffer
+
+type rgb { r i32, g i32, b i32 }
+
+func main() {
+    var colors = rgb[100]
+    sector_read(0, colors)
+}

@@ -43,6 +43,8 @@ dat str_action_set_room_name = "rnm"
 dat str_action_set_room_description = "rd"
 dat str_action_set_room_note = "rnt"
 dat str_action_new_entity = "en"
+dat str_action_sector_write = "sdw"
+dat str_action_sector_read = "sdr"
 
 # note: `noinline` because it unfolds into a lot of code and called from 2
 #       locations
@@ -84,6 +86,12 @@ func noinline parse_input(eid, tz mut tokenizer) {
 
     } else if tz.is_array(str_action_say) {
         action_say(eid, tz)
+
+    } else if tz.is_array(str_action_sector_write) {
+        action_sector_write(eid, tz)
+
+    } else if tz.is_array(str_action_sector_read) {
+        action_sector_read(eid, tz)
 
     } else if tz.is_array(str_action_help) {
         action_help(eid, tz)

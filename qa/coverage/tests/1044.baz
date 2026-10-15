@@ -1,0 +1,56 @@
+# 'sector_write' and 'sector_read' transfer one sector: at a start, above 4 GB,
+# at the last sector and into arrays of other element types
+
+type pair { a i32, b i32 }
+
+dat newline = "\n"
+
+# writes the sector from a read-only array
+func save(sector, data i8[], start) {
+    sector_write(sector, data, start)
+}
+
+# reads the sector into a 'mut' array
+func load(sector, data mut i8[]) {
+    sector_read(sector, data)
+}
+
+func main() {
+    var bytes = i8[1024]
+    var i = 0
+    loop {
+        if i == 512 break
+        bytes[i + 512] = i8(i % 64 + 48)
+        i = i + 1
+    }
+
+    # the first sector whose byte offset needs more than 32 bits
+    save(8388608, bytes, 512)
+    load(8388608, bytes)
+    write(1, bytes, 8)
+    write(1, newline)
+
+    # little endian bytes '0', '1', '2' and '3'
+    var words = i32[256]
+    sector_read(8388608, words, 128)
+    if not words[128] == 0x33323130 exit(1)
+
+    var halves = i16[256]
+    sector_read(8388608, halves)
+    if not halves[1] == 0x3332 exit(2)
+
+    var pairs = pair[64]
+    sector_read(8388608, pairs)
+    if not pairs[1].b == words[131] exit(3)
+
+    # the last sector of the 5 GB image, a fresh sector reads zeros
+    var last = i32[128]
+    sector_read(10485759, last)
+    if not last[127] == 0 exit(4)
+    sector_write(10485759, words, 128)
+    sector_read(10485759, last)
+    if not last[127] == words[255] exit(5)
+
+    write(1, bytes, 8, 100)
+    write(1, newline)
+}

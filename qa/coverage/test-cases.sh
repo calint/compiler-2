@@ -112,6 +112,15 @@ check_output() {
     fi
 }
 
+# the sd card image 'sdcard.img' of the cases that follow, a sparse file of the
+# size of the argument, e.g. 5G, or no image for 'none'
+SDCARD() {
+    rm -f sdcard.img
+    if [ "$1" != none ]; then
+        truncate -s "$1" sdcard.img
+    fi
+}
+
 # Test with exit code
 RUN() {
     echo -n "$SRC: "
@@ -258,7 +267,7 @@ COMPERR() {
 source "$SCRIPT_DIR/cases.sh"
 
 # Cleanup
-rm -f gen gen.o gen.s gen-nopt.s diff.baz out err
+rm -f gen gen.o gen.s gen-nopt.s diff.baz out err sdcard.img
 
 echo $SEP
 

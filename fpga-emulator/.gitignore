@@ -2,3 +2,6 @@ osqa
 qa/ram.bin
 qa/ram.lst
 qa/osqa-test
+qa/sdcard-test
+qa/sdcard-firmware.bin
+qa/sdcard-firmware.lst

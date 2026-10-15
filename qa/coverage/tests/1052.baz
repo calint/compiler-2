@@ -1,0 +1,6 @@
+# the start of a sector function is its 3rd argument, not an element
+
+func main() {
+    var bytes = i8[1024]
+    sector_read(0, bytes[512])
+}

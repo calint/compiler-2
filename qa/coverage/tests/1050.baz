@@ -1,0 +1,6 @@
+# the buffer of a sector function holds at least a sector
+
+func main() {
+    var bytes = i8[100]
+    sector_write(0, bytes)
+}

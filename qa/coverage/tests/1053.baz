@@ -1,0 +1,10 @@
+# 'sector_read' cannot fill an array parameter without 'mut'
+
+func f(d i8[]) {
+    sector_read(0, d)
+}
+
+func main() {
+    var bytes = i8[512]
+    f(bytes)
+}

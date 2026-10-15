@@ -319,6 +319,8 @@ class program final {
 
         // add built-in calls
         tc_.add_func(src_loc_tk, "exit", type_void_, nullptr, {});
+        tc_.add_func(src_loc_tk, "sector_read", type_void_, nullptr, {});
+        tc_.add_func(src_loc_tk, "sector_write", type_void_, nullptr, {});
 
         // add built-in types
         tc_.add_type(src_loc_tk, type_i64_);

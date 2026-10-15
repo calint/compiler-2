@@ -1,0 +1,6 @@
+# an sd card image that cannot be opened panics
+
+func main() {
+    var bytes = i8[512]
+    sector_read(0, bytes)
+}

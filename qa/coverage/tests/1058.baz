@@ -1,0 +1,24 @@
+# the loop counters that registers hold survive the sector functions
+
+func main() {
+    var bytes = i8[512]
+    var a = i8[2]
+    var count = 0
+    foo a {
+        foo a {
+            foo a {
+                foo a {
+                    foo a {
+                        bytes[0] = i8(count)
+                        sector_write(count, bytes)
+                        bytes[0] = 0
+                        sector_read(count, bytes)
+                        if not count == bytes[0] exit(1)
+                        count = count + 1
+                    }
+                }
+            }
+        }
+    }
+    exit(count)
+}

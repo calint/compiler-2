@@ -1,0 +1,15 @@
+# on rv32i a sector from 2^31 is written as a negative number, -2147483648 is
+# the sector 2^31 at 1 TB
+
+dat newline = "\n"
+
+func main() {
+    var bytes = i8[512]
+    bytes[0] = 'o'
+    bytes[1] = 'k'
+    sector_write(-2147483648, bytes)
+    bytes[0] = 0
+    sector_read(-2147483648, bytes)
+    write(1, bytes, 2)
+    write(1, newline)
+}

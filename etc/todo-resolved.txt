@@ -1,6 +1,57 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: sd card: 'sector_read(sector, buf, start)' and
+    'sector_write(sector, buf, start)', 'sector' a 32 bit unsigned sector
+    number (images larger than 64 GB, up to 2 TB); 'buf' an array of at
+    least 512 bytes, 'start' (optional, default 0) in elements where the 512
+    bytes begin, bounds checked like the 'start' of 'read' with a count of
+    '512 / element size'; the element size must divide 512, any element type
+    is accepted, a 'bool' read from the card is assumed to be 0 or 1 like
+    with 'read'; 'sector_read' rejects read-only buffers like 'read'
+    => 1. 'fpga-emulator': keep the image file open read-write, 'pread' and
+       'pwrite' at 'sector * 512' instead of the 8 MB 'vector'; a sector past
+       the end of the file stops the emulator (bus error); writes persist
+       (upstream copy in 'tang-nano-20k--riscv--cache-sdram/emulator' too?)
+    => 2. 'machine': 'builtin_function' 'sector_read'/'sector_write',
+       'sector_size_bytes()' (0 for no device: rv32i-qemu), 'sector_read' and
+       'sector_write' operations, 'emit_sd_card_failure_handler' ('panic: sd
+       card', fpga exits with its own code)
+    => 3. 'stmt_builtin_sector.hpp': registered in 'program.hpp' and
+       'decouple_impl.hpp', array-only buffer and 'start' handling shared with
+       'stmt_builtin_io', errors: 'sector_size_bytes()' is 0, buffer below
+       512 bytes, element size not dividing 512
+    => 4. rv32i-fpga: routines '.Lbaz_sector_read'/'.Lbaz_sector_write' called
+       with 'jal a7', emitted on use, offsets from 'zero': busy -16, read
+       sector -20, next byte -24, write sector -32; wait busy, command, wait
+       busy, 512 bytes (index wraps, so always the whole sector)
+    => 5. x86_64 and rv32i (linux): '--sdcard=path' (default 'sdcard.img'),
+       opened lazily 'O_RDWR' into a descriptor variable that starts at -1,
+       size from 'fstat' at open; 'pread64'/'pwrite64' (x86_64 17/18, rv32i
+       67/68, 'openat' 257/56); rv32i offset pair a3 'sector << 9', a4
+       'sector >> 23' ('srli'), pair order verified under qemu; failed open
+       or sector past the end panics; x86_64 sector outside 0..2^32-1 panics
+    => 6. tests: write then read back, sector at or above 2^23 (offset above
+       4 GB) on a sparse image ('truncate -s 5G'), sector past the end, 'start'
+       at the last valid element and one past it, 'i32' and record buffers,
+       buffer too small, element size not dividing 512, not an array,
+       rv32i-qemu rejected; 'test-coverage.sh'
+       makes and removes one image per test
+    => done (2026-10-15): as planned with these differences: the emulator
+       has 'src/sdcard.hpp' with the tests 'qa/sdcard.cpp' (sparse image
+       above 4 GB) and 'qa/sdcard-firmware.cpp' (rv32i firmware through the
+       registers) in 'qa/test.sh', the upstream copy is unchanged; no
+       'emit_sd_card_failure_handler', the routines carry 'baz_sd_card_panic'
+       and the fpga does not detect a sector past the end; no
+       'stmt_builtin_sector.hpp', 'stmt_builtin_io' handles the sector
+       functions (the sector in place of the descriptor, a fixed count);
+       the size comes from 'lseek' (x86_64) and 'llseek' (rv32i), x86_64
+       opens with 'open'; a short transfer panics, an image of 2 TB or more
+       counts 2^32 - 1 sectors; 'bgez' in 'assembler_rv32i'; tests
+       1044-1059, 'SDCARD' in 'test-coverage.sh' and 'test-cases.sh',
+       '--sdcard' in 'test-cli.sh', 'sectors()' in 'etc/tutorial.baz'; on
+       rv32i the sectors from 2^31 are negative literals, documented in the
+       readme and the tutorial and tested by 1059 (sector 2^31 at 1 TB)
 [x] hard: --checks=noub: audit the language for operations without a check
     (probed 2026-10-09: bounds, frame, division, shift, overlap, stack and
     overflow are checked) and compare x86_64 with rv32i under 'noub' on

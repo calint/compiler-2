@@ -15,10 +15,11 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line "$DIR/../src/main.baz" >"$WORK/roome.s"
+./baz --target=rv32i-fpga --vars=0x20000 --checks=noub,line --bin="$DIR/../roome-rv32i-fpga.bin" \
+    "$DIR/../src/main.baz" >"$WORK/roome.s"
 
-# the emulator requires an sd card image which the program does not use
-: >"$WORK/sdcard"
+# the sd card image of the sector commands, 1 MB of zeros like in test.sh
+truncate -s 1M "$WORK/sdcard"
 
 echo "roome: recording, end the session with 'go home'"
 

@@ -175,4 +175,12 @@ on gem
 on gem
 on gem
 on gem
+help
+sdw 1000 hello from roome
+sdr 1000
+sdw 1001
+sdr 1001
+sdw
+sdr x1
+sdr 1234567890
 go home

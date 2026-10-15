@@ -1,0 +1,5 @@
+# a sector function takes the sector, the buffer and the optional start
+
+func main() {
+    sector_read(0)
+}
