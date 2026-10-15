@@ -1102,9 +1102,9 @@ class machine {
             return;
         }
 
-        const size_t column{locations_.column(src_loc_tk)};
+        const std::string location{locations_.for_comment(src_loc_tk)};
 
-        target_assembler().comment(indent, src_loc_tk.at_line(), column, text);
+        target_assembler().comment(indent, location, text);
     }
 
     template <typename... args_t>

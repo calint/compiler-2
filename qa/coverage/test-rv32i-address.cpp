@@ -729,7 +729,7 @@ auto check_comments_with_source_positions() -> void {
     const token location{0, {}, 10, "value", 15, {}, 2, false};
     located.comment(location, 1, "assignment");
     located.comment(token{}, 0, "generated");
-    assert(comments.str() == "    # [2:5] assignment\n# generated\n");
+    assert(comments.str() == "    # [test.baz:2:5] assignment\n# generated\n");
     located.set_builtin_types(integer64, integer, half, byte);
     comments.str({});
     const operand scratch{located.alloc_scratch_register(location, 1, integer)};
@@ -737,18 +737,18 @@ auto check_comments_with_source_positions() -> void {
         located.alloc_named_register(location, 1, "a0", integer)};
     located.free_named_register(location, 1, named);
     located.free_scratch_register(location, 1, scratch);
-    assert(comments.str() == "    # [2:5] allocate scratch register -> t0\n"
-                             "    # [2:5] allocate named register a0\n"
-                             "    # [2:5] free named register a0\n"
-                             "    # [2:5] free scratch register t0\n");
+    assert(comments.str() == "    # [test.baz:2:5] allocate scratch register -> t0\n"
+                             "    # [test.baz:2:5] allocate named register a0\n"
+                             "    # [test.baz:2:5] free named register a0\n"
+                             "    # [test.baz:2:5] free scratch register t0\n");
     comments.str({});
     located.add_subtract(location, 1, op_of('+'),
                          operand::mem("a0", {}, 1, 0, integer),
                          operand::imm("1", integer));
     assert(comments.str() ==
-           "    # [2:5] allocate scratch register -> t0\n"
+           "    # [test.baz:2:5] allocate scratch register -> t0\n"
            "    lw t0, 0(a0)\n    addi t0, t0, 1\n    sw t0, 0(a0)\n"
-           "    # [2:5] free scratch register t0\n");
+           "    # [test.baz:2:5] free scratch register t0\n");
     std::vector<operand> ordered;
     for (const std::string_view name :
          {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0",  "s1",  "s2",
@@ -780,7 +780,7 @@ auto check_comments_with_source_positions() -> void {
           "t2: elements to bytes (4 bytes/element)",
           "t4: end of words, t2: tail bytes", "copy 4-byte words",
           "copy optional 2-byte tail", "copy optional final byte"}) {
-        assert(comments.str().contains(std::format("# [2:5] {}\n", text)));
+        assert(comments.str().contains(std::format("# [test.baz:2:5] {}\n", text)));
     }
     located.finish();
 }

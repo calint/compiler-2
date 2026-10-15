@@ -229,6 +229,19 @@ CLI_UNINSTANTIATED_GENERICS() {
     echo ok
 }
 
+CLI_COMMENT_LOCATIONS() {
+    echo -n "cli comment locations: "
+    # 0906.baz includes 'include/cycle.baz'
+    local target
+    for target in x86_64 rv32i; do
+        "$BIN" --target=$target --bin=gen-rv32i.bin 0906.baz >gen.s 2>err
+        # files are named relative to the directory of the main file
+        grep -Fq '[0906.baz:4:5] exit(three())' gen.s
+        grep -Fq '[include/cycle.baz:4:5] res = 3' gen.s
+    done
+    echo ok
+}
+
 CLI_ADDRESS_RANGE() {
     echo -n "cli rv32i address range: "
     local target
@@ -412,5 +425,6 @@ CLI_REGISTER_REPORT
 CLI_ADDRESS_RANGE
 CLI_SOURCE_LINE_ENDS
 CLI_UNINSTANTIATED_GENERICS
+CLI_COMMENT_LOCATIONS
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

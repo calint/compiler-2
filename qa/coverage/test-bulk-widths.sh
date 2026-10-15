@@ -38,10 +38,11 @@ extract() {
         }
 
         # the comment that decides the width names it and the head
-        /# \[[0-9]+:[0-9]+\] / && match($0, /[124]-byte accesses( after a [0-9]+ B head)?/) {
+        /# \[[^:]+:[0-9]+:[0-9]+\] / && match($0, /[124]-byte accesses( after a [0-9]+ B head)?/) {
             text = substr($0, RSTART, RLENGTH)
             line = $0
             sub(/^[^[]*\[/, "", line)
+            sub(/^[^:]*:/, "", line)
             sub(/:.*/, "", line)
             printf "%d: %s: %s\n", line, source[line + 0], text
         }

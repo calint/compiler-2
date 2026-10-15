@@ -41,13 +41,14 @@ check() {
             next
         }
 
-        match($0, /^[[:space:]]*[;#][[:space:]]*\[[0-9]+:[0-9]+\] [a-z_0-9]+: [a-z_0-9]+(\[[0-9]+\])? \(/) {
+        match($0, /^[[:space:]]*[;#][[:space:]]*\[[^:]+:[0-9]+:[0-9]+\] [a-z_0-9]+: [a-z_0-9]+(\[[0-9]+\])? \(/) {
             text = $0
             sub(/^[[:space:]]*[;#][[:space:]]*\[/, "", text)
             line = text
+            sub(/^[^:]*:/, "", line)
             sub(/:.*/, "", line)
             line += 0
-            sub(/^[0-9]+:[0-9]+\] /, "", text)
+            sub(/^[^:]*:[0-9]+:[0-9]+\] /, "", text)
             split(text, words, /:? /)
             sub(/\[.*/, "", words[2])
             if (line in names && words[1] == names[line] && !(line in found)) {

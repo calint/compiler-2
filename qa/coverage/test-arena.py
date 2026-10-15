@@ -78,10 +78,10 @@ def elf_layout(path):
 
 
 def placement_offsets(assembly):
-    # Declarations are commented as '; [5:9] name: i8[3] (3 B @ [rbp + 16])';
+    # Declarations are commented as '; [main.baz:5:9] name: i8[3] (3 B @ [rbp + 16])';
     # returns each name's offsets from rbp in declaration order.
     offsets = {}
-    pattern = r";\s*\[\d+:\d+\] (\w+): \S+ \(\d+ B @ \[rbp(?: \+ (\d+))?\]\)"
+    pattern = r";\s*\[[^\]]+:\d+:\d+\] (\w+): \S+ \(\d+ B @ \[rbp(?: \+ (\d+))?\]\)"
     for name, offset in re.findall(pattern, assembly):
         offsets.setdefault(name, []).append(int(offset or 0))
     return offsets

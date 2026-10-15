@@ -40,9 +40,10 @@ extract() {
             next
         }
 
-        match($0, /^[[:space:]]*;[[:space:]]*\[[0-9]+:[0-9]+\] \? .*(==|!=) /) {
+        match($0, /^[[:space:]]*;[[:space:]]*\[[^:]+:[0-9]+:[0-9]+\] \? .*(==|!=) /) {
             line = $0
             sub(/^[[:space:]]*;[[:space:]]*\[/, "", line)
+            sub(/^[^:]*:/, "", line)
             sub(/:.*/, "", line)
             group = (line + 0) in selected ? line + 0 : 0
             next

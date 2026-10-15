@@ -184,12 +184,12 @@ class assembler_x86_64 final : public assembler {
         add_text(std::format("{} {}", comment_start(indent), text));
     }
 
-    // 'line' and 'column' locate the source the comment is about
-    auto comment(const size_t indent, const size_t line, const size_t column,
+    // 'location' is the source the comment is about
+    auto comment(const size_t indent, const std::string_view location,
                  const std::string_view text) -> void override {
 
-        add_text(std::format("{}[{}:{}] {}", comment_start(indent), line,
-                             column, text));
+        add_text(
+            std::format("{}[{}] {}", comment_start(indent), location, text));
     }
 
     [[nodiscard]] auto instruction_count() const -> size_t override {

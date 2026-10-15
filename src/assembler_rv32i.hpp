@@ -294,12 +294,12 @@ class assembler_rv32i final : public assembler {
         add_text(std::format("{}# {}", indentation(indent), text));
     }
 
-    // 'line' and 'column' locate the source the comment is about
-    auto comment(const size_t indent, const size_t line, const size_t column,
+    // 'location' is the source the comment is about
+    auto comment(const size_t indent, const std::string_view location,
                  const std::string_view text) -> void override {
 
-        add_text(std::format("{}# [{}:{}] {}", indentation(indent), line,
-                             column, text));
+        add_text(
+            std::format("{}# [{}] {}", indentation(indent), location, text));
     }
 
     // machine instructions, so pseudo instructions count as the ones they

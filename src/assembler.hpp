@@ -138,10 +138,9 @@ class assembler {
     virtual auto comment(const size_t indent, const std::string_view text)
         -> void = 0;
 
-    // 'line' and 'column' locate the source the comment is about
-    virtual auto comment(const size_t indent, const size_t line,
-                         const size_t column, const std::string_view text)
-        -> void = 0;
+    // 'location' is the source the comment is about, as 'file:line:column'
+    virtual auto comment(const size_t indent, const std::string_view location,
+                         const std::string_view text) -> void = 0;
 
     // machine instructions, so pseudo instructions count as the ones they
     // expand to, valid once jumps are resolved

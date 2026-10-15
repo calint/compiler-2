@@ -41,9 +41,9 @@ extract() {
         }
 
         # a located comment starts or continues the group of its source line
-        match($0, "^[[:space:]]*" comment "[[:space:]]*\\[[0-9]+:") {
+        match($0, "^[[:space:]]*" comment "[[:space:]]*\\[[^:]+:[0-9]+:") {
             line = substr($0, RSTART, RLENGTH)
-            sub("^[[:space:]]*" comment "[[:space:]]*\\[", "", line)
+            sub("^[[:space:]]*" comment "[[:space:]]*\\[[^:]+:", "", line)
             sub(":$", "", line)
             group = line + 0
             next

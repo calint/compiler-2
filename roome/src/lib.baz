@@ -376,7 +376,7 @@ func mut tokenizer.next_or_say(msg i8[]) res bool {
 let max_number_digits = 9
 
 # the token as a decimal number into 'value', false when it is not one
-func tokenizer.to_int(value mut) res bool {
+func noinline tokenizer.to_int(value mut) res bool {
     res = false
     if self.is_empty() or self.len() > max_number_digits return
 

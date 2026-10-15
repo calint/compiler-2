@@ -5,6 +5,7 @@
 #include <array>
 #include <cstddef>
 #include <deque>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <stdexcept>
@@ -131,6 +132,26 @@ class source_locations final {
     [[nodiscard]] auto column(const token& src_loc_tk) const -> size_t {
         return column_for_char_index(src_loc_tk.start_index(),
                                      files_->text(src_loc_tk.file_index()));
+    }
+
+    // the file is named relative to the directory of the main file, so the
+    // text does not depend on where the compiler was run from
+    [[nodiscard]] auto for_comment(const token& src_loc_tk) const
+        -> std::string {
+
+        const std::filesystem::path main_dir{
+            std::filesystem::path{files_->name(0)}.parent_path(),
+        };
+
+        const std::filesystem::path src_path{
+            files_->name(src_loc_tk.file_index()),
+        };
+
+        const std::filesystem::path relative{
+            src_path.lexically_relative(main_dir),
+        };
+
+        return std::format("{}:{}", relative.string(), text(src_loc_tk, ':'));
     }
 
     // the location in the main file has no file name, a label stays the same
