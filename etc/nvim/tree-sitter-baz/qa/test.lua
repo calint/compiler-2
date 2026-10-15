@@ -513,6 +513,12 @@ check(
 -- a keyword does not name a variable
 rename_fails("var @p = point", "if", "cannot name this declaration")
 
+-- a built-in function does not name a variable
+rename_fails("var @p = point", "read", "cannot name this declaration")
+
+-- a keyword does not name a result
+rename_fails("func add(a, b) @res {", "loop", "cannot name this declaration")
+
 definition("proj/src/user.baz: var x = @shared_helper()", "proj/src/core.baz: func @shared_helper()")
 definition("proj/outside.baz: var y = @shared_helper()", "proj/src/core.baz: func @shared_helper()")
 rename("proj/src/core.baz: func @shared_helper()", "common_helper", {

@@ -1,0 +1,8 @@
+# a 'bool' holds 'true', 'false' or a comparison, not an integer
+
+func main() {
+    var n = 5
+    var b = true
+    b = n
+    if b exit(1)
+}

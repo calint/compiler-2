@@ -1,4 +1,4 @@
-# boolean comparisons and coercion
+# boolean comparisons and negation
 
 func main(){
     var bt1 = i8(1)
@@ -8,7 +8,7 @@ func main(){
     if not b1 exit(1)
 
     var b2 = bt1==1
-    b2=not bt2
+    b2=not bt2!=0
     if b2 exit(2)
 
     bt1=-1+2

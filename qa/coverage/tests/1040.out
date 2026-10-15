@@ -1,0 +1,4 @@
+
+1040.baz:7:7: 'f' takes 0 arguments
+    f(1)
+      ^

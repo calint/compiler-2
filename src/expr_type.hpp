@@ -115,7 +115,8 @@ class expr_type final : public statement {
             return;
         }
 
-        // todo: a call may write its result into an argument, see etc/todo.txt
+        // a call that writes its result into an argument is rejected by the
+        // alias check of the call
         if (stmt_call_) {
             return;
         }

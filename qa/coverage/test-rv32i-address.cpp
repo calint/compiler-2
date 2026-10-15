@@ -2454,7 +2454,7 @@ func main() {
                 check_options{
                     .bounds_upper{true},
                     .bounds_lower{true},
-                    .bounds_with_line{true},
+                    .with_line{true},
                 }};
     prg.build(std::cout);
 }

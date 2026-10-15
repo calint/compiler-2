@@ -869,14 +869,18 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::rodata);
         for (const string_constant& s : strings) {
             assembler_.label(0, s.label);
-            assembler_.string_data(s.text);
+            emit_string_data(s.text);
         }
 
         assembler_.switch_section(section::text);
     }
 
+    // the escapes of the source are not those of nasm, e.g. nasm reads '\01'
+    // as one octal escape and '\`' would end the string, so the bytes are
+    // written again with the escapes both read the same
     auto emit_string_data(const std::string_view value) -> void override {
-        assembler_.string_data(value);
+        assembler_.string_data(
+            token::encode_string(token::decode_string(value)));
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {
@@ -1678,13 +1682,8 @@ class machine_x86_64 final : public machine {
                        const operand& divisor, const size_t dividend_size_bytes,
                        const bool with_line) -> void {
 
-        constexpr size_t bits_per_byte{8};
-
-        // note: setting all bits above the sign bit of the width gives its
-        //       minimum, -1 because the sign bit is the highest bit
         const int64_t minimum{
-            static_cast<int64_t>(
-                ~uint64_t{} << ((dividend_size_bytes * bits_per_byte) - 1)),
+            signed_minimum(dividend_size_bytes * bits_per_byte),
         };
 
         const std::string not_minimum{

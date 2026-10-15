@@ -76,10 +76,10 @@ struct options {
     size_t vars_size_bytes{default_vars_size_bytes};
     size_t stack_size_bytes{default_stack_size_bytes};
     size_t memory_size_bytes{default_memory_size_bytes};
-    check_options checks{};
+    check_options checks;
     bool optimize_jumps{true};
     bool reproduce_source{};
-    report_options reports{};
+    report_options reports;
     // empty until given, the default depends on the source and target
     std::string_view binary_file_name;
 };
@@ -571,7 +571,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
         return std::nullopt;
     }
 
-    report_options parsed{};
+    report_options parsed;
 
     for (const auto part : reports | std::views::split(',')) {
         const std::string_view report{part};
@@ -607,7 +607,7 @@ constexpr std::array<check_name, 10> check_names{
         {.text{"lower"}, .member{&check_options::bounds_lower}, .is_ub{true}},
         {
             .text{"line"},
-            .member{&check_options::bounds_with_line},
+            .member{&check_options::with_line},
             .is_ub{false},
         },
         {.text{"frame"}, .member{&check_options::frame}, .is_ub{true}},
@@ -642,7 +642,7 @@ constexpr std::array<check_name, 10> check_names{
 [[nodiscard]] auto parse_checks(const std::string_view checks)
     -> std::optional<check_options> {
 
-    check_options parsed{};
+    check_options parsed;
     std::vector<bool check_options::*> disabled;
 
     for (const auto part : checks | std::views::split(',')) {

@@ -1,33 +1,31 @@
-# shorthand bool truthiness with unary '~' across scalar widths
-
-func assert(err, expr bool) { if not expr exit(err) }
+# shorthand condition truthiness with unary '~' across scalar widths
 
 func main() {
     var b8 = i8(-1)
-    assert(1, b8)
-    assert(2, not ~b8)
+    if not b8 exit(1)
+    if ~b8 exit(2)
 
     var c8 = i8(1)
-    assert(3, ~c8)
+    if not ~c8 exit(3)
 
     var b16 = i16(-1)
-    assert(4, b16)
-    assert(5, not ~b16)
+    if not b16 exit(4)
+    if ~b16 exit(5)
 
     var c16 = i16(1)
-    assert(6, ~c16)
+    if not ~c16 exit(6)
 
     var b32 = i32(-1)
-    assert(7, b32)
-    assert(8, not ~b32)
+    if not b32 exit(7)
+    if ~b32 exit(8)
 
     var c32 = i32(1)
-    assert(9, ~c32)
+    if not ~c32 exit(9)
 
     var b64 = -1
-    assert(10, b64)
-    assert(11, not ~b64)
+    if not b64 exit(10)
+    if ~b64 exit(11)
 
     var c64 = 1
-    assert(12, ~c64)
+    if not ~c64 exit(12)
 }

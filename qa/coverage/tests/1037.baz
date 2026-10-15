@@ -1,0 +1,11 @@
+# a field name is declared once in a type
+
+type point {
+    x,
+    x,
+}
+
+func main() {
+    var p = point{1, 2}
+    exit(p.x)
+}

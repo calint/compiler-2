@@ -315,7 +315,7 @@ class program final {
         }
 
         // create a placeholder token to use with 'toc' functions
-        const token src_loc_tk{};
+        const token src_loc_tk;
 
         // add built-in calls
         tc_.add_func(src_loc_tk, "exit", type_void_, nullptr, {});
@@ -646,17 +646,17 @@ class program final {
 
         if (tc.is_division_check()) {
             x.comment({}, 0, "division failure handler (--checks=division)");
-            x.emit_division_failure_handler(tc.is_bounds_check_with_line());
+            x.emit_division_failure_handler(tc.is_check_with_line());
         }
 
         if (tc.is_overlap_check()) {
             x.comment({}, 0, "overlap failure handler (--checks=overlap)");
-            x.emit_overlap_failure_handler(tc.is_bounds_check_with_line());
+            x.emit_overlap_failure_handler(tc.is_check_with_line());
         }
 
         if (tc.is_overflow_check()) {
             x.comment({}, 0, "overflow failure handler (--checks=overflow)");
-            x.emit_overflow_failure_handler(tc.is_bounds_check_with_line());
+            x.emit_overflow_failure_handler(tc.is_check_with_line());
         }
 
         if (tc.is_stack_check()) {
@@ -666,7 +666,7 @@ class program final {
 
         if (tc.is_shift_check()) {
             x.comment({}, 0, "shift failure handler (--checks=shift)");
-            x.emit_shift_failure_handler(tc.is_bounds_check_with_line());
+            x.emit_shift_failure_handler(tc.is_check_with_line());
         }
 
         if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
@@ -674,7 +674,7 @@ class program final {
                       "bounds failure handler (--checks=upper or "
                       "--checks=lower)");
 
-            x.emit_bounds_failure_handler(tc.is_bounds_check_with_line());
+            x.emit_bounds_failure_handler(tc.is_check_with_line());
         }
     }
 

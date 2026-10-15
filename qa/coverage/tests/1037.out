@@ -1,0 +1,4 @@
+
+1037.baz:5:5: field 'x' is declared twice in type 'point'
+    x,
+    ^

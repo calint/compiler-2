@@ -2015,13 +2015,8 @@ class machine_rv32i : public machine {
                        const size_t dividend_size_bytes, const bool with_line)
         -> void {
 
-        constexpr size_t bits_per_byte{8};
-
-        // note: setting all bits above the sign bit of the width gives its
-        //       minimum, -1 because the sign bit is the highest bit
         const int64_t minimum{
-            static_cast<int32_t>(
-                ~uint32_t{} << ((dividend_size_bytes * bits_per_byte) - 1)),
+            signed_minimum(dividend_size_bytes * bits_per_byte),
         };
 
         constexpr local_label fail{
@@ -2166,11 +2161,8 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        // note: setting all bits above the sign bit of the width gives its
-        //       minimum, -1 because the sign bit is the highest bit
         const int64_t minimum_value{
-            static_cast<int32_t>(~uint32_t{}
-                                 << ((width_bytes * bits_per_byte) - 1)),
+            signed_minimum(width_bytes * bits_per_byte),
         };
 
         assembler_.li(indent, minimum.base_register(), minimum_value);
@@ -3552,9 +3544,9 @@ class machine_rv32i : public machine {
             };
 
             assembler_.switch_section(section::rodata);
-            assembler_.align(4);
+            assembler_.align(word_size_bytes_);
             assembler_.label(0, ".Lbaz_decimal_places");
-            assembler_.data(4, decimal_places);
+            assembler_.data(word_size_bytes_, decimal_places);
             assembler_.switch_section(section::text);
         }
 
@@ -4178,8 +4170,7 @@ class machine_rv32i : public machine {
 
         address_of(src_loc_tk, indent, end,
                    operand::mem(pointer.base_register(), {}, 1,
-                                static_cast<int64_t>(size_bytes),
-                                default_type()));
+                                address_offset(size_bytes), default_type()));
     }
 
     // a narrow register shifts to the top and back, extending in one pair
@@ -4359,7 +4350,7 @@ class machine_rv32i : public machine {
         if (dst.is_memory()) {
             assembler_.store(indent, store_op(width), value.base_register(),
                              address.displacement(), address.base_register());
-        } else if (width < 4 and normalize) {
+        } else if (width < word_size_bytes_ and normalize) {
             const size_t shift{register_bits_ - (width * bits_per_byte)};
 
             assembler_.slli(indent, value.base_register(),
@@ -5304,7 +5295,7 @@ class machine_rv32i : public machine {
                                         const size_t offset) -> operand {
 
         operand moved{address};
-        moved.increment_offset(static_cast<int64_t>(offset));
+        moved.increment_offset(address_offset(offset));
         return moved;
     }
 
@@ -5389,7 +5380,7 @@ class machine_rv32i : public machine {
             src.type_ref().is_bool() != dst_type.is_bool(),
         };
 
-        return dst_size_bytes < 4 and
+        return dst_size_bytes < word_size_bytes_ and
                (src.is_immediate() or src_size_bytes > dst_size_bytes or
                 (extension_differs and src_size_bytes == dst_size_bytes));
     }

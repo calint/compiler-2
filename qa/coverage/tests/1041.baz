@@ -1,0 +1,13 @@
+# a path that ends with 'exit' does not return, so it need not set the result
+
+func f(x) res int {
+    if x == 1 {
+        exit(1)
+    } else {
+        res = 2
+    }
+}
+
+func main() {
+    exit(f(3))
+}

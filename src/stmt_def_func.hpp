@@ -718,9 +718,24 @@ class stmt_def_func final : public statement {
 
         token type_tk{tz.next_token()};
 
-        if (not tc.has_type(type_tk.text())) {
+        // a word before the '{' of the body names the type, else a missing
+        // '{' is reported by the body, e.g. 'func f() res number {'
+        const bool is_type_before_body{
+            not type_tk.text().empty() and
+                tz.peek_char_after_whitespace() == '{',
+        };
+
+        if (not tc.has_type(type_tk.text()) and not is_type_before_body) {
             tz.put_back_token(type_tk);
             type_tk = {};
+        }
+
+        // a name before the body is the result, 'self' names the value a
+        // constructor builds
+        if (tz.peek_char_after_whitespace() == '{' and
+            not ident_tk.is_text(reserved_names::self)) {
+
+            toc::assert_valid_variable_name(ident_tk);
         }
 
         if (ident_tk.is_text(reserved_names::self)) {

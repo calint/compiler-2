@@ -1,0 +1,9 @@
+# a result is named like a variable
+
+func f() true int {
+    true = 1
+}
+
+func main() {
+    exit(f())
+}

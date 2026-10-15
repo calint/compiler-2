@@ -1,0 +1,4 @@
+
+1038.baz:3:10: 'true' is a boolean value
+func f() true int {
+         ^~~~

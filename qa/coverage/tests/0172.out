@@ -1,4 +1,4 @@
 
-0172.baz:4:18: expected ')' after arguments
+0172.baz:4:18: 'f' takes 1 argument
 func main() { f(1,2) }
                  ^

@@ -919,6 +919,22 @@ class stmt_call : public expression {
                                    arg.identifier(), read_only_hint(info))};
     }
 
+    // a ',' after the last parameter, or any argument of a function without
+    // parameters, is one argument too many, e.g. 'f(1, 2)' of 'func f(x)'
+    auto assert_no_surplus_argument(tokenizer& tz,
+                                    const size_t param_count) const -> void {
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == ')' or (param_count != 0 and next != ',')) {
+            return;
+        }
+
+        throw compiler_exception{tz, std::format("'{}' takes {} argument{}",
+                                                 func_name_, param_count,
+                                                 param_count == 1 ? "" : "s")};
+    }
+
     // the callee reaches the result and arguments through their addresses
     auto
     assert_noninline_call(const ident_info& dst_info, const stmt_def_func& func,
@@ -1503,6 +1519,8 @@ class stmt_call : public expression {
             // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
             args_.emplace_back(tc, tz, params.at(i).get_type(), true, false, 0);
         }
+
+        assert_no_surplus_argument(tz, params.size() - first_argument_index());
 
         // e.g. 'f(a, b' lacks it
         close_paren_tk_ =

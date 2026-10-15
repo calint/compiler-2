@@ -2223,7 +2223,7 @@ class assembler_rv32i final : public assembler {
         const auto locals{
             symbols.local_labels.find(name.substr(0, name.size() - 1)),
         };
-        // note: -1 because the name ends with ':'
+        // note: -1 because the reference ends with 'f' or 'b'
 
         assert(name.size() >= 2 and locals != symbols.local_labels.end());
 

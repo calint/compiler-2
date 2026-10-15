@@ -270,7 +270,7 @@ class stmt_identifier final : public statement {
                                               cur_elem.name_tk.text()),
                 };
 
-                address.increment_offset(static_cast<int64_t>(offset));
+                address.increment_offset(address_offset(offset));
             }
 
             const ident_info cur_info{tc.make_ident_info(src_loc_tk, path)};

@@ -28,5 +28,5 @@ func main() {
     if arrays_equal(a,b,2) exit(2)
     if not arrays_equal(a,b,2) hits = hits + 1
     assert(hits == 3)
-    assert(wide())
+    assert(wide() != 0)
 }

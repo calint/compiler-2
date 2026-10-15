@@ -27,14 +27,6 @@ local type_parents = {
 -- names 'foo' injects into its body
 local injected = { e = true, i = true, n = true }
 
--- built-in functions have no declaration in the source, they match by name
-local builtin_functions = {}
-for word in
-  ([[array_copy array_length arrays_equal exit read write]]):gmatch("%S+")
-do
-  builtin_functions[word] = true
-end
-
 local function word_set(words)
   local set = {}
   for word in words:gmatch("%S+") do
@@ -43,13 +35,19 @@ local function word_set(words)
   return set
 end
 
+-- built-in functions have no declaration in the source, they match by name
+local builtin_function_names = "array_copy array_length arrays_equal exit read write"
+local builtin_functions = word_set(builtin_function_names)
+
 -- the language allows a name that is a keyword where the keyword cannot start
 -- the construct, e.g. a function named 'include' or a member named 'if'; these
 -- are the words that cannot name a declaration in each context, some declare
 -- but cannot be used, e.g. 'let not = 3' declares but 'not + 1' does not parse
 local builtin_type_names = "bool int i8 i16 i32 i64"
--- same words as 'reserved_words' in 'toc::assert_valid_variable_name'
-local keyword_names = "and break continue dat if let loop not or return var"
+-- same words as 'reserved_words' in 'toc::assert_valid_variable_name': the
+-- keywords and the built-in functions, whose use would be read as a call
+local keyword_names = "and break continue dat foo if let loop not or return var "
+  .. builtin_function_names
 local reserved_names = {
   all = word_set("true false self"),
   let = word_set(keyword_names),
@@ -65,6 +63,7 @@ local reserved_by_declaration = {
   data_declaration = "let",
   variable_declaration = "var",
   parameter = "var",
+  return_annotation = "var",
 }
 
 local function is_reserved(target, new_name)

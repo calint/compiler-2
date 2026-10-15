@@ -209,7 +209,7 @@ class stmt_def_dat final : public statement {
             const token string_tk{tz.next_token()};
             set_type(tc.get_type_i8());
 
-            elem el{};
+            elem el;
             el.is_array = true;
             el.src_loc_tk = string_tk;
 
@@ -246,7 +246,7 @@ class stmt_def_dat final : public statement {
             set_named_type(tc, tk);
 
             // e.g. 'dat p = point' is 'point{}'
-            elem el{};
+            elem el;
             el.src_loc_tk = tk;
 
             return el;
@@ -262,7 +262,7 @@ class stmt_def_dat final : public statement {
         if (is_bare_builtin_type(tc, tk, tz)) {
             set_type(stmt_builtin_convert::conversion_type(tc, tk));
 
-            elem el{};
+            elem el;
             el.src_loc_tk = tk;
 
             return el;
@@ -488,7 +488,7 @@ class stmt_def_dat final : public statement {
                                                const size_t array_count)
         -> elem {
 
-        elem el{};
+        elem el;
         el.is_array = true;
         el.array_count = array_count;
 
@@ -558,8 +558,8 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    [[nodiscard]] static auto parse_bool_value(const token& tk, const type& tp)
-        -> int64_t {
+    // a 'bool' holds 'true' or 'false', not an integer
+    [[nodiscard]] static auto parse_bool_value(const token& tk) -> int64_t {
 
         if (tk.is_text(reserved_names::true_value)) {
             return 1;
@@ -570,14 +570,14 @@ class stmt_def_dat final : public statement {
         }
 
         throw compiler_exception{
-            tk, std::format("boolean field '{}' must be 'true' or 'false'",
-                            tp.name())};
+            tk, std::format("'{}' is not a 'bool', use 'true' or 'false'",
+                            tk.text())};
     }
 
     [[nodiscard]] static auto parse_builtin(const toc& tc, tokenizer& tz,
                                             const type& tp) -> elem {
 
-        elem el{};
+        elem el;
         el.uops = unary_ops{tz};
         el.src_loc_tk = tz.next_token();
 
@@ -589,7 +589,7 @@ class stmt_def_dat final : public statement {
         }
 
         if (tp.is_same(tc.get_type_bool())) {
-            el.value = parse_bool_value(el.src_loc_tk, tp);
+            el.value = parse_bool_value(el.src_loc_tk);
             return el;
         }
 
@@ -644,7 +644,7 @@ class stmt_def_dat final : public statement {
             return parse_array(tc, tz, src_loc_tk, tp, array_count);
         }
 
-        elem el{};
+        elem el;
         el.is_array = true;
         el.src_loc_tk = tk;
 
@@ -676,7 +676,7 @@ class stmt_def_dat final : public statement {
 
         const tokenizer::nesting_scope nesting{tz};
 
-        elem el{};
+        elem el;
         el.src_loc_tk = tz.cur_position_token();
 
         // e.g. the '{1, 2}' of 'dat p = point{1, 2}'

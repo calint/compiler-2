@@ -342,7 +342,7 @@ class ident_path final {
   private:
     auto refresh_path() -> void {
         path_.clear();
-        for (auto const part : id_ | std::views::split('.')) {
+        for (const auto part : id_ | std::views::split('.')) {
             path_.emplace_back(part.begin(), part.end());
         }
     }
@@ -895,7 +895,7 @@ class data_table final {
 struct check_options {
     bool bounds_upper{};
     bool bounds_lower{};
-    bool bounds_with_line{};
+    bool with_line{};
     bool frame{};
     // on unless '--checks=-alias'
     bool alias{true};
@@ -1557,7 +1557,8 @@ class builtin_types final {
     explicit builtin_types(const ::machine& backend) : machine_{backend} {}
 
     [[nodiscard]] auto address() const -> const type& {
-        return machine_.get().address_size_bytes() == 4 ? *i32_ : *i64_;
+        return machine_.get().address_size_bytes() == sizeof(int32_t) ? *i32_
+                                                                      : *i64_;
     }
 
     [[nodiscard]] auto boolean() const -> const type& { return *bool_; }
@@ -2279,7 +2280,7 @@ class toc final {
         return {
             .upper{checks_.bounds_upper},
             .lower{checks_.bounds_lower},
-            .with_line{checks_.bounds_with_line},
+            .with_line{checks_.with_line},
         };
     }
 
@@ -2332,7 +2333,7 @@ class toc final {
 
         return {
             .enabled{checks_.division},
-            .with_line{checks_.bounds_with_line},
+            .with_line{checks_.with_line},
         };
     }
 
@@ -2624,8 +2625,8 @@ class toc final {
         return checks_.bounds_upper;
     }
 
-    [[nodiscard]] auto is_bounds_check_with_line() const -> bool {
-        return checks_.bounds_with_line;
+    [[nodiscard]] auto is_check_with_line() const -> bool {
+        return checks_.with_line;
     }
 
     [[nodiscard]] auto is_division_check() const -> bool {
@@ -2776,7 +2777,7 @@ class toc final {
 
         return {
             .enabled{checks_.overflow},
-            .with_line{checks_.bounds_with_line},
+            .with_line{checks_.with_line},
         };
     }
 
@@ -2785,7 +2786,7 @@ class toc final {
 
         return {
             .enabled{checks_.overlap},
-            .with_line{checks_.bounds_with_line},
+            .with_line{checks_.with_line},
         };
     }
 
@@ -2848,7 +2849,7 @@ class toc final {
 
         return {
             .enabled{checks_.shift},
-            .with_line{checks_.bounds_with_line},
+            .with_line{checks_.with_line},
         };
     }
 
@@ -2975,12 +2976,15 @@ class toc final {
 
     // a name of a variable, constant, data or parameter, the
     // keywords are reserved because their use would be read as the keyword
+    // and the built-in functions because their use would be read as a call
     static auto assert_valid_variable_name(const token& name_tk) -> void {
         assert_valid_name(name_tk);
 
-        static constexpr std::array<std::string_view, 11> reserved_words{
-            "and",  "break", "continue", "dat",    "if",  "let",
-            "loop", "not",   "or",       "return", "var",
+        static constexpr std::array<std::string_view, 18> reserved_words{
+            "and",      "array_copy", "array_length", "arrays_equal", "break",
+            "continue", "dat",        "exit",         "foo",          "if",
+            "let",      "loop",       "not",          "or",           "read",
+            "return",   "var",        "write",
         };
 
         for (const std::string_view word : reserved_words) {

@@ -264,7 +264,8 @@ class token final {
     }
 
     // string text that 'decode_string' turns back into 'bytes', bytes that
-    // are not printable are written as hex escapes
+    // are not printable are written as hex escapes, line ends and tabs as
+    // their usual escapes
     [[nodiscard]] static auto encode_string(const std::string_view bytes)
         -> std::string {
 
@@ -273,6 +274,11 @@ class token final {
             if (c == '\\' or c == '"') {
                 text += '\\';
                 text += c;
+                continue;
+            }
+
+            if (const std::optional<std::string_view> named{named_escape(c)}) {
+                text += *named;
                 continue;
             }
 
@@ -336,5 +342,25 @@ class token final {
         }
 
         return static_cast<char>(decoded);
+    }
+
+    // the escape 'encode_string' writes for a line end or a tab, which reads
+    // better than its hex escape
+    [[nodiscard]] static auto named_escape(const char ch)
+        -> std::optional<std::string_view> {
+
+        switch (ch) {
+        case '\n':
+            return "\\n";
+
+        case '\r':
+            return "\\r";
+
+        case '\t':
+            return "\\t";
+
+        default:
+            return std::nullopt;
+        }
     }
 };

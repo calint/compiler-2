@@ -156,6 +156,27 @@ class expr_bool_op final : public statement {
         return &lhs_;
     }
 
+    // a stored 'bool' is 0 or 1, an integer is compared first, a condition
+    // such as 'if n' tests it without storing it
+    auto assert_boolean_operands() const -> void {
+        const type& lhs_type{lhs_.get_type()};
+
+        // an instance is reported as a condition when it is compiled
+        if (not is_shorthand_ or lhs_type.is_bool() or
+            not lhs_type.is_builtin()) {
+
+            return;
+        }
+
+        const std::string source{statement::trimmed_source(lhs_)};
+
+        throw compiler_exception{
+            lhs_.tok(),
+            std::format("'{}' of type '{}' is not a 'bool', compare it, e.g. "
+                        "'{} != 0'",
+                        source, lhs_type.name(), source)};
+    }
+
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
                                    const bool inverted, const operand& dst,
@@ -1081,6 +1102,15 @@ class expr_bool final : public statement {
 
         return bools_.front().visit(
             [](const auto& e) -> const expr_arith* { return e.arithmetic(); });
+    }
+
+    // every operand of a stored 'bool' is a boolean
+    auto assert_boolean_operands() const -> void {
+        for (const element& e : bools_) {
+            e.visit([](const auto& item) -> void {
+                item.assert_boolean_operands();
+            });
+        }
     }
 
     // decided at compile time only by constants before any run-time element,

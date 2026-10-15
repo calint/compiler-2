@@ -1,5 +1,5 @@
-func assert(exit, expr bool) {
-    if not expr exit(exit)
+func assert(code, expr bool) {
+    if not expr exit(code)
 }
 
 func inv(i i32) res i32 {

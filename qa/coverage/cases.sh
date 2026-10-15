@@ -180,7 +180,7 @@ SRC=0055 && EXP=0 && RUN
 # signed unary results across integer widths
 SRC=0056 && EXP=0 && RUN
 
-# boolean comparisons and coercion
+# boolean comparisons and negation
 SRC=0057 && EXP=0 && RUN
 
 # boolean function results
@@ -421,7 +421,7 @@ SRC=0144 && EXP=0 && RUN
 # == compares arrays
 SRC=0145 && EXP=0 && RUN
 
-# boolean assignment from comparisons and integers
+# boolean assignment from comparisons, an integer is compared first
 SRC=0146 && EXP=0 && RUN
 
 # arithmetic and bitwise assignment operators
@@ -1151,7 +1151,7 @@ SRC=0393 && EXP=0 && RUN
 # == compares indexed default-type values (true and false paths)
 SRC=0394 && EXP=0 && RUN
 
-# shorthand bool truthiness with unary '~' across scalar widths
+# shorthand condition truthiness with unary '~' across scalar widths
 SRC=0395 && EXP=0 && RUN
 
 # regression: stmt_call alias must pin indexed operand (is_indexed on)
@@ -3196,3 +3196,24 @@ SRC=1035 && COMPERR
 
 # a function is not named as the operator
 SRC=1036 && COMPERR
+
+# a field name is declared once in a type
+SRC=1037 && COMPERR
+
+# a string keeps its bytes when an escape is followed by a digit or is a backquote
+SRC=1039 && EXP=0 && RUN
+
+# a result is named like a variable
+SRC=1038 && COMPERR
+
+# a function without parameters takes no arguments
+SRC=1040 && COMPERR
+
+# a path that ends with 'exit' does not return, so it need not set the result
+SRC=1041 && EXP=2 && RUN
+
+# a built-in function name is not a variable name
+SRC=1042 && COMPERR
+
+# a 'bool' holds 'true', 'false' or a comparison, not an integer
+SRC=1043 && COMPERR

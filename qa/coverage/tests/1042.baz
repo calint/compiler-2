@@ -1,0 +1,6 @@
+# a built-in function name is not a variable name
+
+func main() {
+    var read = 3
+    exit(read)
+}

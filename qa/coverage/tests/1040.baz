@@ -1,0 +1,8 @@
+# a function without parameters takes no arguments
+
+func f() {
+}
+
+func main() {
+    f(1)
+}

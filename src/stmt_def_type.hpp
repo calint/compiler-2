@@ -162,6 +162,13 @@ class stmt_def_type final : public statement {
         for (const stmt_def_type_field& fld : fields_) {
             toc::assert_valid_name(fld.tok());
 
+            if (type_.has_field(fld.name())) {
+                throw compiler_exception{
+                    fld.tok(),
+                    std::format("field '{}' is declared twice in type '{}'",
+                                fld.name(), name_tk_.text())};
+            }
+
             // get the type of field. no type name means default
             const type& tp{
                 fld.type_str().empty()

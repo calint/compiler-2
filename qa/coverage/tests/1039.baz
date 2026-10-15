@@ -1,0 +1,24 @@
+# a string keeps its bytes when an escape is followed by a digit or is a
+# backquote
+
+dat zero_one = "\01"
+dat quote = "a\`b"
+dat after = 7
+
+func main() {
+    if zero_one[0] != 0 exit(1)
+    if zero_one[1] != '1' exit(2)
+    if quote[1] != '`' exit(3)
+    if quote[2] != 'b' exit(4)
+    if after != 7 exit(5)
+
+    var s = "\012345678901234567"
+    if s[0] != 0 exit(6)
+    if s[1] != '1' exit(7)
+    if array_length(s) != 18 exit(8)
+
+    var t = "\`\x412"
+    if t[0] != '`' exit(9)
+    if t[1] != 'A' exit(10)
+    if t[2] != '2' exit(11)
+}

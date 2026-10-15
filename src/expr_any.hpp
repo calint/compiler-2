@@ -250,13 +250,12 @@ class expr_any final : public statement {
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         assert(not is_array_);
 
+        // note: 'expr_type' does not have 'unary_ops' and cannot be
+        //       an argument in call
         return vars_.at(0).visit(
             [](const auto& expression) -> const unary_ops& {
                 return expression.get_unary_ops();
             });
-
-        // note: 'expr_type' does not have 'unary_ops' and cannot be
-        //       an argument in call
     }
 
     // only string and '{}' initializers leave 'vars_' empty, callers ask
@@ -812,7 +811,11 @@ class expr_any final : public statement {
             // note: rewound by position, a string token cannot be put back
             tz.rewind_to_position(pos_tk);
 
-            return expr_bool{tc, tz.next_whitespace_token(), tz};
+            expr_bool value{tc, tz.next_whitespace_token(), tz};
+
+            value.assert_boolean_operands();
+
+            return value;
         }
 
         // destination is a built-in (register) value

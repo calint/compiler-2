@@ -1,0 +1,4 @@
+
+1043.baz:6:9: 'n' of type 'i64' is not a 'bool', compare it, e.g. 'n != 0'
+    b = n
+        ^

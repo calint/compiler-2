@@ -1,0 +1,4 @@
+
+1042.baz:4:9: 'read' is reserved
+    var read = 3
+        ^~~~

@@ -284,11 +284,7 @@ class expr_arith final : public expression {
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
-        exprs_.front()->assert_not_narrowed(tc, dst_type);
-
-        for (const auto [o, e] :
-             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
-
+        for (const std::unique_ptr<statement>& e : exprs_) {
             e->assert_not_narrowed(tc, dst_type);
         }
     }
@@ -353,7 +349,8 @@ class expr_arith final : public expression {
         const int64_t result{uops_.evaluate_constant(*value)};
 
         if (tc.is_overflow_check() and
-            uops_.negation_overflows(*value, width_min(width_type))) {
+            uops_.negation_overflows(*value,
+                                     signed_minimum(width_type.size_bits()))) {
 
             throw compiler_exception{tok(),
                                      "constant expression overflows the type"};
@@ -566,7 +563,7 @@ class expr_arith final : public expression {
         // 'b - 3' rather than 'b + -3', the most negative value has no
         // positive counterpart in the width
         if (op == arithmetic_operator::add and value < 0 and
-            value != width_min(dst_info.type_ref())) {
+            value != signed_minimum(dst_info.type_ref().size_bits())) {
 
             asm_op_constant(tc, indent, arithmetic_operator::subtract, dst_info,
                             -value, folded_source);
@@ -1023,7 +1020,9 @@ class expr_arith final : public expression {
                    const int64_t rhs, const type& width_type)
         -> std::optional<int64_t> {
 
-        if (rhs == 0 or (rhs == -1 and lhs == width_min(width_type))) {
+        if (rhs == 0 or
+            (rhs == -1 and lhs == signed_minimum(width_type.size_bits()))) {
+
             return std::nullopt;
         }
 
@@ -1784,13 +1783,6 @@ class expr_arith final : public expression {
         }
 
         return static_cast<int64_t>(bits >> count);
-    }
-
-    // e.g. -128 for 'i8'
-    [[nodiscard]] static auto width_min(const type& width_type) -> int64_t {
-        return static_cast<int64_t>(~uint64_t{}
-                                    << (width_type.size_bits() - 1));
-        // note: -1 because the sign bit is the highest bit
     }
 
     // the value a register of 'width_type' holds, sign extended

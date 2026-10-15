@@ -1013,7 +1013,7 @@ auto expr_type::is_indexed() const -> bool {
 // declared in 'unary_ops.hpp'
 // solves circular reference: unary_ops -> toc -> statement -> unary_ops
 auto unary_ops::compile(toc& tc, const size_t indent, const token& src_loc_tk,
-                        const operand& dst_info) const -> void {
+                        const operand& dst) const -> void {
 
     machine& x{tc.machine()};
 
@@ -1021,7 +1021,7 @@ auto unary_ops::compile(toc& tc, const size_t indent, const token& src_loc_tk,
         x.unary(src_loc_tk, indent,
                 o == '-' ? machine::arithmetic_operator::negate
                          : machine::arithmetic_operator::complement,
-                dst_info, tc.overflow_check_options());
+                dst, tc.overflow_check_options());
     }
 }
 

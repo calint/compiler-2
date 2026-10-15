@@ -29,6 +29,17 @@ inline constexpr size_t max_size_bytes{
 
 } // namespace storage_limits
 
+// the most negative value of a signed integer of 'size_bits', e.g. -128 for 8,
+// which has no positive counterpart; setting all bits above the sign bit of the
+// width gives it
+[[nodiscard]] inline auto signed_minimum(const size_t size_bits) -> int64_t {
+    assert(size_bits != 0 and
+           size_bits <= std::numeric_limits<uint64_t>::digits);
+
+    return static_cast<int64_t>(~uint64_t{} << (size_bits - 1));
+    // note: -1 because the sign bit is the highest bit
+}
+
 [[nodiscard]] inline auto add_storage_size(const token& src_loc_tk,
                                            const size_t base,
                                            const size_t size_bytes) -> size_t {

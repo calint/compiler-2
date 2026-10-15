@@ -47,9 +47,10 @@ class stmt_builtin_exit final : public stmt_call {
         x.free_named_registers(tok(), indent, args);
     }
 
-    // ending the program conservatively does not count as an assignment
+    // the program ends here, so this path never returns and cannot leave the
+    // result unset
     auto trace_assignment(assignment_flow& flow) const -> void override {
         assert_var_not_used(flow.var, flow.assigned);
-        flow.is_reachable = false;
+        flow.end_path();
     }
 };

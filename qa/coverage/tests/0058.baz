@@ -14,7 +14,7 @@ func main(){
     r=f(b)
     if r exit(2)
     
-    r=f(q)
+    r=f(q != 0)
     if r exit(3)
     
     r=f(true)

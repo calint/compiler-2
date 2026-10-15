@@ -91,7 +91,7 @@ func main(){
     var h1 = not (not (value1 * 2 == value3) or (z * 2 > value3 + value4)) and (x < value4 and y > value1)
     var h2 = ( (value1 == 5 and value2 != 6) or (value3 > 100) ) and not (z - y == x or flag)
     var h3 = not (x < y and y < z and z > 0) or ( (value1 == value2) and (value3 == 10) and not (value4 * value1 > 10) )
-    var h4 = ( (value1 + value2 + value4) and (value3 + 2) and (x == 1) ) and not (flag or (y > value1) or (value4 < 2))
+    var h4 = ( (value1 + value2 + value4 != 0) and (value3 + 2 != 0) and (x == 1) ) and not (flag or (y > value1) or (value4 < 2))
     var h5 = not ( (x == z - y) and (value3 / value4 == value1) ) or (value1 + value2 > value3 and value3 - value1 == value2)
     var h6 = not (flag == true and x == 1) or ( (value1 * value4 <= value3 and value3 == 10) or not (z * x != 4 or y == 3) )
     var h7 = ( (value1 == value2 or value3 == value4) and not (z > x and y < z) ) and ( (flag or x != 1) or (value1 + value4 == 7) )
