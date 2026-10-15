@@ -52,7 +52,7 @@ the binary image itself.
 * `include "lib.baz"` at the top of a file adds the definitions of another file
   where it is, relative to the including file, each file once
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
-  `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
+  `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`
 * read and write sectors from and to sd card on fpga hardware using `rv32i-fpga`
 
