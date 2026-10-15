@@ -53,12 +53,14 @@ the binary image itself.
   where it is, relative to the including file, each file once
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
+* read and write sectors from and to file on x86_64 and rv32i
+* read and write sectors from and to sd card on fpga hardware
 
 ## Howto
 
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
-* [`./run.sh`](run.sh)` [options] [NAME.baz]` compiles, assembles and runs
+* [`./run.sh`](run.sh)`[options] [NAME.baz]` compiles, assembles and runs
   `NAME.baz` (default: `prog.baz`), the options are passed to `baz`
   * compiles to `NAME.s` and writes `NAME-without-comments.s`
   * builds and runs depending on `--target`
