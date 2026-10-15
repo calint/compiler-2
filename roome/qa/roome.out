@@ -1650,7 +1650,7 @@ exits: none, office
 todo: find an exit
 w > sdr x1
 
-a sector is a number of at most 9 digits
+not an integer
 --
 
 u r in study
@@ -1658,7 +1658,7 @@ a pleasant location
 exits: roome
 u > sdr 1234567890
 
-a sector is a number of at most 9 digits
+not an integer
 --
 
 u r in roome

@@ -4,3 +4,5 @@ qa/fpga-work/
 roome.s
 # the sd card of run.sh
 sdcard.img
+# the output of the last run of qa/test.sh
+qa/actual.out

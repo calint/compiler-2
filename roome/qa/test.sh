@@ -5,6 +5,8 @@
 # usage: test.sh [update]
 # 'update' rewrites roome.out with the output of rv32i-fpga, x86_64 is still
 # compared
+# the output of rv32i-fpga is kept in actual.out, copying it to roome.out
+# updates the expected output
 set -eu
 DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$DIR/../.."
@@ -34,13 +36,15 @@ if [[ $status -eq 124 ]]; then
     exit 1
 fi
 
+cp "$WORK/diff" "$DIR/actual.out"
+
 if [[ ${1:-} == update ]]; then
     cp "$WORK/diff" "$DIR/roome.out"
     echo "roome: updated $DIR/roome.out"
 fi
 
 if ! diff -u "$DIR/roome.out" "$WORK/diff"; then
-    echo "roome: rv32i-fpga output differs from $DIR/roome.out"
+    echo "roome: rv32i-fpga output differs from $DIR/roome.out, the output is in $DIR/actual.out"
     exit 1
 fi
 

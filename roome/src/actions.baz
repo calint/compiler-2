@@ -385,18 +385,18 @@ func action_say(eid, tz mut tokenizer) {
 }
 
 dat str_which_sector = "which sector\n"
-dat str_not_a_sector = "a sector is a number of at most 9 digits\n"
+dat str_not_an_int = "not an integer\n"
 dat str_sector_written = "sector written\n"
 
 let sector_size = 512
 
 # moves to the next token, it must be a sector number, else the user is told
-func mut tokenizer.next_sector_or_say(sector mut) res bool {
+func mut tokenizer.next_int_or_say(sector mut) res bool {
     res = false
     if not self.next_or_say(str_which_sector) return
 
-    if not self.to_number(sector) {
-        out.print_all(str_not_a_sector)
+    if not self.to_int(sector) {
+        out.print_all(str_not_an_int)
         return
     }
 
@@ -405,7 +405,7 @@ func mut tokenizer.next_sector_or_say(sector mut) res bool {
 
 func action_sector_write(eid, tz mut tokenizer) {
     var sector = 0
-    if not tz.next_sector_or_say(sector) return
+    if not tz.next_int_or_say(sector) return
 
     # the text is the rest of the line, the rest of the sector is zeros
     tz.to_end()
@@ -418,7 +418,7 @@ func action_sector_write(eid, tz mut tokenizer) {
 
 func action_sector_read(eid, tz mut tokenizer) {
     var sector = 0
-    if not tz.next_sector_or_say(sector) return
+    if not tz.next_int_or_say(sector) return
 
     var data = i8[sector_size]
     sector_read(sector, data)
