@@ -2174,14 +2174,17 @@ class machine_x86_64 final : public machine {
             },
         };
 
+        // every failure jumps here and exits with a panic message
         constexpr std::string_view handler_label{"baz_sd_card_panic"};
 
+        // the open file descriptor, a qword in '.data'
         assembler_x86_64::memory descriptor{
             assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor"),
         };
 
         descriptor.size_bytes = size_qword;
 
+        // the file size in whole sectors, set once at open
         assembler_x86_64::memory sector_count{
             assembler_x86_64::memory::of_symbol("baz_sd_card_sectors"),
         };
@@ -2190,25 +2193,32 @@ class machine_x86_64 final : public machine {
 
         assembler_.add_separator_newline();
 
+        // the read entry selects 'pread64' and joins the shared body
         if (sector_read_used_) {
             assembler_.label(0, sector_read_label_);
             assembler_.instruction(1, op::mov, "eax", syscall_pread);
             assembler_.jmp(1, "baz_sector_transfer");
         }
 
+        // the write entry selects 'pwrite64' and falls through into the body
         if (sector_write_used_) {
             assembler_.label(0, sector_write_label_);
             assembler_.instruction(1, op::mov, "eax", syscall_pwrite);
         }
 
+        // the shared body of read and write
         assembler_.label(0, "baz_sector_transfer");
         assembler_.comment(1, "the system call is kept on the stack");
+        // 'rax' is reused by 'open' and 'lseek', so the number is saved
         assembler_.instruction(1, op::push, "rax");
+        // a descriptor of 0 or more means the file is already open
         assembler_.instruction(1, op::cmp, descriptor, 0);
         assembler_.jcc(1, condition::ge, "baz_sector_opened");
+        // first transfer: save the arguments, 'open' and 'lseek' clobber them
         assembler_.instruction(1, op::push, "rdi");
         assembler_.instruction(1, op::push, "rsi");
         assembler_.instruction(1, op::push, "rdx");
+        // open(name, 'O_RDWR')
         assembler_.instruction(1, op::mov, "eax", syscall_open);
 
         assembler_.instruction(
@@ -2217,59 +2227,79 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(1, op::mov, "esi", read_write);
         assembler_.instruction(1, op::syscall);
+        // a negative result is '-errno', the open failed
         assembler_.instruction(1, op::test, "rax", "rax");
         assembler_.jcc(1, condition::s, handler_label);
+        // keep the descriptor for later transfers
         assembler_.instruction(1, op::mov, descriptor, "rax");
         assembler_.comment(1, "the size of the file in sectors");
+        // lseek(descriptor, 0, 'SEEK_END') returns the file size in bytes
         assembler_.instruction(1, op::mov, "rdi", "rax");
         assembler_.instruction(1, op::xor_op, "esi", "esi");
         assembler_.instruction(1, op::mov, "edx", seek_end);
         assembler_.instruction(1, op::mov, "eax", syscall_lseek);
         assembler_.instruction(1, op::syscall);
+        // a negative result is '-errno', the seek failed
         assembler_.instruction(1, op::test, "rax", "rax");
         assembler_.jcc(1, condition::s, handler_label);
+        // bytes to whole sectors, a partial last sector is not counted
         assembler_.instruction(1, op::sar, "rax", sector_shift);
         assembler_.instruction(1, op::mov, sector_count, "rax");
+        // restore the arguments in reverse order of the pushes
         assembler_.instruction(1, op::pop, "rdx");
         assembler_.instruction(1, op::pop, "rsi");
         assembler_.instruction(1, op::pop, "rdi");
+        // here the file is open and only the system call is on the stack
         assembler_.label(0, "baz_sector_opened");
         assembler_.comment(1, "the sector is an unsigned 32 bit number");
+        // zero extending 'edi' differs from 'rdi' when the upper half is set
         assembler_.instruction(1, op::mov, "eax", "edi");
         assembler_.instruction(1, op::cmp, "rax", "rdi");
         assembler_.jcc(1, condition::ne, handler_label);
+        // a sector at or past the end of the file panics
         assembler_.instruction(1, op::cmp, "rdi", sector_count);
         assembler_.jcc(1, condition::ae, handler_label);
+        // the byte offset, the fourth system call argument, goes in 'r10'
         assembler_.instruction(1, op::mov, "r10", "rdi");
         assembler_.instruction(1, op::shl, "r10", sector_shift);
+        // the descriptor replaces the sector as the first argument
         assembler_.instruction(1, op::mov, "rdi", descriptor);
+        // the saved system call number, which also balances the stack
         assembler_.instruction(1, op::pop, "rax");
+        // pread64 or pwrite64(descriptor, address 'rsi', size 'rdx', offset)
         assembler_.instruction(1, op::syscall);
+        // anything but the full size, an error or a short transfer, panics
         assembler_.instruction(1, op::cmp, "rax", "rdx");
         assembler_.jcc(1, condition::ne, handler_label);
         assembler_.instruction(1, op::ret);
 
+        // the stack is not unwound because the program exits
         assembler_.label(0, handler_label);
         emit_panic_message("msg_sd_card");
         emit_panic_exit();
 
+        // the panic message and its length symbol
         assembler_.switch_section(section::rodata);
         assembler_.label(0, "msg_sd_card");
         assembler_.string_data("panic: sd card\\n");
         assembler_.define_length("msg_sd_card_len", "msg_sd_card");
         assembler_.comment(0, "the file name ends with a zero byte");
+        // the image file name passed to 'open'
         assembler_.label(0, "baz_sd_card_name");
 
         assembler_.string_data(token::encode_string(sd_card_file_name()));
 
+        // the terminator 'open' expects
         assembler_.data(size_byte, zero_value);
 
+        // writable state, qword aligned for the 64 bit accesses
         assembler_.switch_section(section::data);
         assembler_.align(size_qword);
         assembler_.label(0, "baz_sd_card_descriptor");
         assembler_.data(size_qword, not_opened);
         assembler_.label(0, "baz_sd_card_sectors");
         assembler_.data(size_qword, zero_value);
+        // later code is emitted into '.text' again
         assembler_.switch_section(section::text);
     }
 
