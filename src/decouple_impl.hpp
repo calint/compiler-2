@@ -168,11 +168,16 @@ auto instantiate_generic_method(toc& tc, const token& func_tk,
                                 const token& start_tk,
                                 const generic_type_instance& instance) -> void {
 
-    // an error in the method is in the generic code, the frame names the alias
+    // an error in the method is in the generic code, the frames name the bases
+    // and the alias
     try {
         add_generic_instance(tc, func_tk, start_tk, {}, &instance);
     } catch (compiler_exception& e) {
-        e.add_call_frame(instance.src_loc_tk, instance.alias_text(),
+        for (const generic_base_frame& frame : instance.base_frames) {
+            e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
+        }
+
+        e.add_call_frame(instance.src_loc_tk, instance.alias_source,
                          "instantiated by");
 
         throw;

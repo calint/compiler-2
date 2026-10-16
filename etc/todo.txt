@@ -222,37 +222,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     checked, so an error in its body is silent until the first use
     => placeholder types would reject valid bodies, so the footer of the
        assembler lists the generic functions without an instance
-[p] hard: generics: a generic type based on another, e.g. 'type text<capacity>
-    = list<i8, capacity>'; an instance 'type str = text<8>' has the fields of
-    'list<i8, 8>', the methods of 'list' and those of 'text'; the methods of
-    'text' are made only for instances of 'text', so their bodies may use
-    'i8' where 'list<message, 16>' would not compile
-    => 1. 'generics.hpp': 'generic_type_info' gets the base generic name and
-       its argument tokens (empty for 'type list<T type, capacity> {...}')
-    => 2. 'stmt_def_type.hpp' 'define_generic': after the parameters '=' is a
-       base, else '{'; the base must be a generic type defined before, the
-       argument count is checked; 'source_to' keeps the text as now
-    => 3. instance: bind the parameters of 'text' in a block, resolve the base
-       arguments to types and constants in it, close it, then instantiate the
-       base with the resolved bindings (the order avoids 'generic parameter
-       'T' hides the type' for 'type vec<T type> = list<T, 8>'); recursive,
-       so a base of a base works; the fields come from the root
-    => 4. the instance is registered once per generic of the chain, each
-       with its own bindings, so 'instantiate_generic_methods' and
-       'define_generic_method' work in any order of definition; an error in
-       a method gets an 'instantiated by' frame per level
-    => 5. a method name defined on both 'text' and 'list' is an error at the
-       second definition (no override)
-    => 6. tests on x86_64 and rv32i-fpga: methods of both levels, methods
-       defined before and after the alias, a type parameter passed through,
-       a base of a base, 'i8' only bodies next to 'list<message, 16>';
-       errors: base not generic, base undefined, wrong base argument count,
-       base argument neither a parameter nor a type or constant, method name
-       on both levels
-    => 7. 'etc/tutorial.baz' generics section, tree-sitter grammar
-       ('generic_alias' after 'generic_parameters')
-    => 8. roome: 'type text<capacity> = list<i8, capacity>', 'text.input'
-       uses 'is_full', 'insert_at' and 'remove_at' could become list methods
 [ ] hard: string type ('var str = "hello world"', 'str.len')
 [ ] hard: strings as sources of 'arrays_equal' and 'array_copy'
     => parse a string token or identifier as the source, treated as 'i8'; the

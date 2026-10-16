@@ -205,6 +205,8 @@ local function generic_declaration(root, bufnr, node, name)
   return nil
 end
 
+local max_depth = 20
+
 -- for an alias 'type str = text<127>': the name of the generic type and the
 -- nodes of the arguments; nil for any other type
 local function alias_of(root, bufnr, type_name)
@@ -230,41 +232,73 @@ local function alias_of(root, bufnr, type_name)
   return nil
 end
 
--- the type that declares the members of a type: the generic type of an alias
-local function member_type_name(root, bufnr, type_name)
+-- the type and the generic types its members come from, each with the
+-- arguments of its parameters as text: 'str' of 'type str = text<8>' with
+-- 'type text<capacity> = list<i8, capacity>' gives 'str', then 'text' with
+-- 'capacity' 8, then 'list' with 'T' i8 and 'capacity' 8
+local function type_levels(root, bufnr, type_name)
+  local levels = { { name = type_name, arguments = {} } }
   local alias = alias_of(root, bufnr, type_name)
-  return alias and alias.generic or type_name
+  while alias and #levels <= max_depth do
+    local outer = levels[#levels].arguments
+    local generic_id = top_level(root, bufnr, "type", alias.generic)
+    local arguments = {}
+    for i, id in ipairs(generic_id and generic_parameter_names(generic_id:parent()) or {}) do
+      local argument = alias.arguments[i]
+      if argument then
+        -- an argument of a base can be a parameter of the type based on it
+        local argument_text = text(argument, bufnr)
+        arguments[text(id, bufnr)] = outer[argument_text] or argument_text
+      end
+    end
+    levels[#levels + 1] = { name = alias.generic, arguments = arguments }
+    alias = alias_of(root, bufnr, alias.generic)
+  end
+  return levels
+end
+
+-- the type that declares the members of a type: the generic type of an alias,
+-- the last base for a generic type based on another
+local function member_type_name(root, bufnr, type_name)
+  local levels = type_levels(root, bufnr, type_name)
+  return levels[#levels].name
 end
 
 -- inside the members of an alias a type parameter of its generic type means
 -- the argument of the alias; nil when it is not a parameter or the argument
--- is not a name
-local function alias_argument(root, bufnr, type_name, parameter_name)
-  local alias = alias_of(root, bufnr, type_name)
-  local generic_id = alias and top_level(root, bufnr, "type", alias.generic)
-  if not generic_id then
-    return nil
-  end
-  for i, id in ipairs(generic_parameter_names(generic_id:parent())) do
-    if text(id, bufnr) == parameter_name then
-      local argument = alias.arguments[i]
-      return argument and argument:type() == "identifier" and text(argument, bufnr) or nil
+-- is not a name. 'owner' is the generic type that declares the member
+local function alias_argument(root, bufnr, type_name, owner, parameter_name)
+  for _, level in ipairs(type_levels(root, bufnr, type_name)) do
+    if level.name == owner then
+      local argument = level.arguments[parameter_name]
+      return argument and argument:match("^[%a_]") and argument or nil
     end
   end
   return nil
 end
 
--- type_name is optional: without it the methods of every type match; the
--- methods of an alias 'type str = text<127>' are those of 'text'
-local function methods_named(root, bufnr, name, type_name)
-  local member_type = type_name and member_type_name(root, bufnr, type_name)
+-- the receiver names whose methods a type has, as a set; nil for nil
+local function receiver_names(root, bufnr, type_name)
+  if not type_name then
+    return nil
+  end
+  local names = {}
+  for _, level in ipairs(type_levels(root, bufnr, type_name)) do
+    names[level.name] = true
+  end
+  return names
+end
+
+-- receivers is optional: without it the methods of every type match; the
+-- methods of an alias 'type str = text<127>' are those of 'text' and of its
+-- bases, see 'receiver_names'
+local function methods_named(root, bufnr, name, receivers)
   local found = {}
   for child in root:iter_children() do
     local receiver = child:type() == "function_definition" and child:field("receiver_type")[1]
     if receiver then
       local id = child:field("name")[1]
-      local receiver_name = text(receiver, bufnr)
-      if text(id, bufnr) == name and (not type_name or receiver_name == type_name or receiver_name == member_type) then
+      if text(id, bufnr) == name and (not receivers or receivers[text(receiver, bufnr)]) then
         found[#found + 1] = id
       end
     end
@@ -394,8 +428,6 @@ local function previous_element(node)
   end
   return nil
 end
-
-local max_depth = 20
 
 local type_of_node
 
@@ -627,7 +659,8 @@ local function call_return_type(root, bufnr, call, func, type_name, depth)
     end
   end
   if type_name then
-    local argument = alias_argument(root, bufnr, type_name, result.name)
+    local owner = text(func:field("receiver_type")[1], bufnr)
+    local argument = alias_argument(root, bufnr, type_name, owner, result.name)
     if argument then
       return { name = argument, array = result.array }
     end
@@ -646,7 +679,7 @@ local function call_type(root, bufnr, call, depth)
     return id and call_return_type(root, bufnr, call, id:parent(), nil, depth)
   end
   local type_name = receiver_type_name(root, bufnr, call, depth)
-  local method = type_name and methods_named(root, bufnr, name, type_name)[1]
+  local method = type_name and methods_named(root, bufnr, name, receiver_names(root, bufnr, type_name))[1]
   return method and call_return_type(root, bufnr, call, method:parent(), type_name, depth)
 end
 
@@ -668,7 +701,9 @@ type_of_node = function(root, bufnr, node, depth)
     local field_type = field and type_from(bufnr, field:parent():field("type")[1])
     -- a field of a type parameter of the generic type has the type of the
     -- argument of the alias
-    local argument = field_type and alias_argument(root, bufnr, base.name, field_type.name)
+    -- member_field -> member_field_list -> type_definition
+    local owner = field and text(field:parent():parent():parent():field("name")[1], bufnr)
+    local argument = field_type and alias_argument(root, bufnr, base.name, owner, field_type.name)
     if argument then
       field_type.name = argument
     end
@@ -727,8 +762,9 @@ local function resolve_call(root, bufnr, node)
   end
 
   -- without a known receiver type the methods of every type match
-  local type_name = receiver_type_name(with_includes(root, bufnr), bufnr, call, 0)
-  local methods = methods_named(root, bufnr, name, type_name)
+  local wide = with_includes(root, bufnr)
+  local type_name = receiver_type_name(wide, bufnr, call, 0)
+  local methods = methods_named(root, bufnr, name, receiver_names(wide, bufnr, type_name))
   if #methods == 0 then
     return nil
   end
@@ -1020,8 +1056,8 @@ end
 
 -- the declarations of the name in the file by what the use looks like;
 -- members and methods match by name unless base_type_name is the known type
--- of the receiver
-local function declarations_named(root, bufnr, node, name, base_type_name)
+-- of the receiver, receivers is the set of 'receiver_names' of a method call
+local function declarations_named(root, bufnr, node, name, base_type_name, receivers)
   local parent = node:parent()
   if parent:type() == "member_access" then
     if base_type_name then
@@ -1032,7 +1068,7 @@ local function declarations_named(root, bufnr, node, name, base_type_name)
   end
   if parent:type() == "function_call" and parent:field("function")[1] and node:equal(parent:field("function")[1]) then
     if parent:field("receiver")[1] then
-      return methods_named(root, bufnr, name, base_type_name)
+      return methods_named(root, bufnr, name, receivers)
     end
     local id = top_level(root, bufnr, "function", name)
     return id and { id } or {}
@@ -1048,6 +1084,7 @@ local function included_declarations(uri, bufnr, root, node)
   local list = {}
   local name = text(node, bufnr)
   local base_type_name = nil
+  local receivers = nil
   local parent = node:parent()
   if parent:type() == "member_access" then
     -- the type of the receiver is inferred in this file, its members may be
@@ -1065,9 +1102,10 @@ local function included_declarations(uri, bufnr, root, node)
     -- the methods of an alias are declared by its generic type, which an
     -- included file does not know the alias of
     base_type_name = type_name and member_type_name(wide, bufnr, type_name)
+    receivers = receiver_names(wide, bufnr, type_name)
   end
   for _, file in ipairs(included_files(uri, bufnr, root)) do
-    for _, decl in ipairs(declarations_named(file.root, file.bufnr, node, name, base_type_name)) do
+    for _, decl in ipairs(declarations_named(file.root, file.bufnr, node, name, base_type_name, receivers)) do
       list[#list + 1] = { file = file, decl = decl }
     end
   end
@@ -1318,20 +1356,19 @@ end
 -- alias: 'T[capacity]' gives 'shape[limit]'
 local function with_alias_arguments(root, bufnr, access, decl, type_text)
   local base = type_of_node(root, bufnr, previous_element(access), 0)
-  local alias = base and not base.array and alias_of(root, bufnr, base.name)
-  local generic_id = alias and top_level(root, bufnr, "type", alias.generic)
-  -- member_field -> member_field_list -> type_definition
-  local owner = decl:parent():parent():parent()
-  if not generic_id or owner ~= generic_id:parent() then
+  if not base or base.array then
     return type_text
   end
-  local arguments = {}
-  for i, id in ipairs(generic_parameter_names(generic_id:parent())) do
-    if alias.arguments[i] then
-      arguments[text(id, bufnr)] = text(alias.arguments[i], bufnr)
+  -- member_field -> member_field_list -> type_definition
+  local owner = decl:parent():parent():parent()
+  local owner_name = text(owner:field("name")[1], bufnr)
+  -- the generic type that declares the member, possibly a base of a base
+  for _, level in ipairs(type_levels(root, bufnr, base.name)) do
+    if level.name == owner_name then
+      return (type_text:gsub("[%a_][%w_]*", level.arguments))
     end
   end
-  return (type_text:gsub("[%a_][%w_]*", arguments))
+  return type_text
 end
 
 local declaration_text_parents = {

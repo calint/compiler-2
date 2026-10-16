@@ -1,0 +1,57 @@
+# a generic type based on another has the fields and the methods of the base
+# and its own, its methods are made only for its instances so their bodies may
+# use 'i8' next to a list of records
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func list.is_full() res bool {
+    res = self.len == array_length(self.array)
+}
+
+func mut list.push(item T) {
+    self.array[self.len] = item
+    self.len = self.len + 1
+}
+
+type text<capacity> = list<i8, capacity>
+
+# defined before the alias
+func mut text.add_byte(b i8) {
+    self.array[self.len] = b
+    self.len = self.len + 1
+}
+
+type str = text<3>
+
+type message { from, kind }
+
+type messages = list<message, 2>
+
+# defined after the alias, uses the methods of both
+func mut text.add_twice(b i8) {
+    self.add_byte(b)
+    self.push(b)
+}
+
+# defined after the alias, a method of the base
+func list.last_index() res {
+    res = self.len - 1
+}
+
+func main() {
+    var s = str
+    s.push('a')
+    s.add_twice('b')
+    assert(1, s.len == 3 and s.is_full())
+    assert(2, s.array[0] == 'a' and s.array[2] == 'b')
+    assert(3, s.last_index() == 2)
+
+    var m = messages
+    m.push(message{1, 2})
+    assert(4, m.len == 1 and m.array[0].kind == 2 and not m.is_full())
+}

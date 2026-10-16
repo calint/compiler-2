@@ -1,0 +1,10 @@
+# the base of a generic type has arguments
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+type text<capacity> = list
+
+func main() {}

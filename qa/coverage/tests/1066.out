@@ -1,0 +1,7 @@
+
+1066.baz:9:28: generic parameter 'T' of 'list' needs a type, got the constant 'capacity'
+type text<capacity> = list<capacity, capacity>
+                           ^~~~~~~~
+1066.baz:11:6: instantiated by
+type str = text<8>
+     ^~~

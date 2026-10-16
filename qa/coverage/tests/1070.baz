@@ -1,0 +1,12 @@
+# an error in the fields of the base names each level that instantiated it
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+type text<capacity> = list<i8, capacity>
+
+type str = text<0>
+
+func main() {}

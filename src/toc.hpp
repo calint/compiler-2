@@ -1934,6 +1934,19 @@ class definition_checks final {
             const bool is_generic{not generic_method.empty()};
             const bool is_existing_generic{not fn.generic_method.empty()};
 
+            // e.g. 'text.print' and 'list.print' for 'type text<capacity> =
+            // list<i8, capacity>'
+            if (is_generic and is_existing_generic and
+                generic_method != fn.generic_method) {
+
+                throw compiler_exception{
+                    src_loc_tk,
+                    std::format("generic method '{}' clashes with the generic "
+                                "method '{}' defined at {}",
+                                generic_method, fn.generic_method,
+                                where(fn.src_loc_tk))};
+            }
+
             if (is_generic and is_existing_generic) {
                 throw compiler_exception{
                     src_loc_tk,
@@ -2204,13 +2217,12 @@ class toc final {
         generics_.add_func(std::move(name), std::move(info));
     }
 
-    auto add_generic_type(const token& src_loc_tk, const std::string_view name,
-                          const token& start_tk,
-                          std::vector<generic_param> params) -> void {
+    auto add_generic_type(const std::string_view name, generic_type_info info)
+        -> void {
 
-        definitions_.assert_type_not_defined(src_loc_tk, name);
+        definitions_.assert_type_not_defined(info.src_loc_tk, name);
 
-        generics_.add_type(src_loc_tk, name, start_tk, std::move(params));
+        generics_.add_type(name, std::move(info));
     }
 
     // a body is emitted once per distinct instance, for a call that is

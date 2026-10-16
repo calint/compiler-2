@@ -1,0 +1,19 @@
+# an error in a method of a base names each level from the base to the alias,
+# also for a method defined after the alias
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+type text<capacity> = list<i8, capacity>
+
+type name<n> = text<n>
+
+type short_name = name<4>
+
+func list.first_x() res {
+    res = self.array[0].x
+}
+
+func main() {}

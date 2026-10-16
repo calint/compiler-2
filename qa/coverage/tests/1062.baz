@@ -1,0 +1,37 @@
+# a generic type based on a generic type that has a base, each level adds
+# methods
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func mut list.push(item T) {
+    self.array[self.len] = item
+    self.len = self.len + 1
+}
+
+type text<capacity> = list<i8, capacity>
+
+func text.first() res i8 {
+    res = self.array[0]
+}
+
+type name<n> = text<n>
+
+func name.is_long() res bool {
+    res = self.len > 2
+}
+
+type short_name = name<4>
+
+func main() {
+    var s = short_name
+    s.push('a')
+    s.push('b')
+    s.push('c')
+    assert(1, s.first() == 'a' and s.is_long())
+    assert(2, array_length(s.array) == 4)
+}

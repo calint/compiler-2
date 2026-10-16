@@ -1,0 +1,4 @@
+
+1064.baz:3:23: 'list' is not a generic type, a generic type is defined before the type based on it
+type text<capacity> = list<i8, capacity>
+                      ^~~~

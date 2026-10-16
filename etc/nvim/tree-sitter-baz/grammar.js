@@ -99,9 +99,9 @@ module.exports = grammar({
     type_definition: $ => seq(
       $.type_keyword,
       field('name', $.identifier),
+      optional($.generic_parameters),
       choice(
         seq(
-          optional($.generic_parameters),
           '{',
           optional($.member_field_list),
           '}',
@@ -110,7 +110,8 @@ module.exports = grammar({
       ),
     ),
 
-    // e.g. 'type str = text<127>'
+    // e.g. 'type str = text<127>' or the base of 'type text<capacity> =
+    // list<i8, capacity>'
     generic_alias: $ => seq(
       '=',
       field('generic_type', $.identifier),

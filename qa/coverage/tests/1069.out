@@ -1,0 +1,4 @@
+
+1069.baz:8:23: generic type 'list' needs arguments, e.g. 'list<...>'
+type text<capacity> = list
+                      ^~~~

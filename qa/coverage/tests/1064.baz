@@ -1,0 +1,10 @@
+# the base of a generic type is defined before it
+
+type text<capacity> = list<i8, capacity>
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func main() {}

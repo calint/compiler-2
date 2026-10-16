@@ -696,6 +696,19 @@ type pair<first type, second type> {
 type small_large = pair<small, large>
 # a parameter can also be a type, here the types of the fields
 
+type deck<capacity> = buffer<capacity>
+type small_deck = deck<4>
+# a generic type can be based on another and pass on, rename or fix its
+# parameters, e.g. 'type text<capacity> = list<i8, capacity>'; an instance has
+# the fields and the methods of the base
+
+func mut deck.take() res {
+    self.count = self.count - 1
+    res = self.items[self.count]
+}
+# a method of 'deck' is made only for the instances of 'deck', not for every
+# 'buffer'
+
 func generics() {
     var s = small
     var l = large
@@ -733,6 +746,11 @@ func generics() {
     p.b.add(2)
     assert(p.a.count == 1 and p.b.items[0] == 2)
     # fields of different instances, a generic type is used through an alias
+
+    var d = small_deck
+    d.add(5)
+    assert(d.take() == 5 and d.count == 0)
+    # 'add' is a method of 'buffer' and 'take' of 'deck'
 
     # an instance is the definition parsed again with the arguments bound, so
     # an error in a generic shows up at its first use

@@ -1,0 +1,7 @@
+# a generic type is based on a generic type, not a type
+
+type point { x, y }
+
+type text<capacity> = point<capacity>
+
+func main() {}

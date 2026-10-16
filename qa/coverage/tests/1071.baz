@@ -1,0 +1,3 @@
+# a generic type is based on a generic type named after '='
+
+type text<capacity> =

@@ -1,0 +1,4 @@
+
+1071.baz:3:21: expected a generic type after '='
+type text<capacity> =
+                    ^

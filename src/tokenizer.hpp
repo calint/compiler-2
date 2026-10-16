@@ -268,11 +268,7 @@ class tokenizer final {
     // 'tk' to the end of the block
     auto skip_braced_block_after(const token& tk) -> std::string_view {
         skip_braced_block();
-
-        const size_t begin_ix{tk.source_end_index()};
-        // note: the text starts after 'tk' because its statement prints 'tk'
-
-        return src_.substr(begin_ix, char_ix_ - begin_ix);
+        return text_after(tk);
     }
 
     // reads a character the caller has no use for
@@ -286,6 +282,14 @@ class tokenizer final {
         if (not is_eos()) {
             skip_token();
         }
+    }
+
+    // the source text from the end of 'tk' to the current position
+    [[nodiscard]] auto text_after(const token& tk) const -> std::string_view {
+        const size_t begin_ix{tk.source_end_index()};
+        // note: the text starts after 'tk' because its statement prints 'tk'
+
+        return src_.substr(begin_ix, char_ix_ - begin_ix);
     }
 
   private:

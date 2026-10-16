@@ -1,0 +1,7 @@
+
+1068.baz:14:6: generic method 'text.size' clashes with the generic method 'list.size' defined at 8:6
+func text.size() res {
+     ^~~~
+1068.baz:18:6: instantiated by
+type str = text<8>
+     ^~~

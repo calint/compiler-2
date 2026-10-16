@@ -1,0 +1,36 @@
+include "lib.baz"
+
+type item {
+    weight,
+}
+
+func mut item.grow() {
+    self.weight = self.weight + 1
+}
+
+# a method of the same name on another type, the receiver must be known
+type crate {
+    size,
+}
+
+func crate.grow() {
+}
+
+type stack<T type> = list<T, lib_size>
+
+func mut stack.pop() res T {
+    self.len = self.len - 1
+    res = self.array[self.len]
+}
+
+type items = stack<item>
+
+func main() {
+    var st = items
+    var top = st.reserve()
+    var popped = st.pop()
+    popped.grow()
+    st.array[top].grow()
+    let heavy = st.array[0].weight
+    let last = st.array[1]
+}

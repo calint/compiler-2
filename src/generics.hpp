@@ -179,6 +179,13 @@ struct generic_binding {
     int64_t value{};
 };
 
+// a frame of an error in an instance of a base, e.g. 'list<i8, 8>' at the
+// 'list' of 'type text<capacity> = list<i8, capacity>'
+struct generic_base_frame {
+    token src_loc_tk;
+    std::string text;
+};
+
 // the methods of a generic type see the arguments of their instance
 struct generic_type_instance {
     // the name of the alias
@@ -186,10 +193,11 @@ struct generic_type_instance {
     std::string generic_name;
     const type* type_ptr{};
     std::vector<generic_binding> bindings;
-
-    [[nodiscard]] auto alias_text() const -> std::string {
-        return alias_text(type_ptr->name(), generic_name, bindings);
-    }
+    // e.g. 'type str = text<8>' for the instance of 'list' too
+    std::string alias_source;
+    // from the base of this instance outwards, empty for the generic type that
+    // the alias names
+    std::vector<generic_base_frame> base_frames;
 
     //
     // statics
@@ -201,9 +209,17 @@ struct generic_type_instance {
                const std::string_view generic_name,
                const std::span<const generic_binding> bindings) -> std::string {
 
-        std::string text{
-            std::format("type {} = {}<", alias_name, generic_name),
-        };
+        return std::format("type {} = {}", alias_name,
+                           instance_text(generic_name, bindings));
+    }
+
+    // e.g. 'list<i8, 8>', for the errors found in the base of an instance
+    [[nodiscard]] static auto
+    instance_text(const std::string_view generic_name,
+                  const std::span<const generic_binding> bindings)
+        -> std::string {
+
+        std::string text{std::format("{}<", generic_name)};
 
         for (const generic_binding& binding : bindings) {
             if (text.back() != '<') {
@@ -255,6 +271,11 @@ struct generic_type_info {
     token src_loc_tk;
     token start_tk;
     std::vector<generic_param> params;
+    // e.g. 'list' of 'type text<capacity> = list<i8, capacity>', empty when
+    // the fields follow the parameters
+    token base_tk;
+    // e.g. 'i8' and 'capacity' of 'list<i8, capacity>'
+    std::vector<token> base_arg_tks;
 };
 
 // a method of a generic type, e.g. 'func text.print()', every instance of the
@@ -289,15 +310,9 @@ class generic_registry final {
         });
     }
 
-    auto add_type(const token& src_loc_tk, const std::string_view name,
-                  const token& start_tk, std::vector<generic_param> params)
-        -> void {
+    auto add_type(const std::string_view name, generic_type_info info) -> void {
 
-        types_.put(std::string{name}, {
-                                          .src_loc_tk{src_loc_tk},
-                                          .start_tk{start_tk},
-                                          .params{std::move(params)},
-                                      });
+        types_.put(std::string{name}, std::move(info));
     }
 
     auto add_type_instance(generic_type_instance instance) -> void {

@@ -3271,3 +3271,48 @@ if [[ $MACHINE != rv32i-qemu ]]; then SDCARD 1M && SRC=1058 && EXP=32 && RUN; fi
 # on rv32i a sector from 2^31 is written as a negative number, -2147483648 is
 # the sector 2^31 at 1 TB
 if [[ $MACHINE == rv32i || $MACHINE == rv32i-fpga ]]; then SDCARD 1100G && SRC=1059 && DIFF; fi
+
+# a generic type based on another has the fields and the methods of the base
+# and its own, its methods are made only for its instances so their bodies may
+# use 'i8' next to a list of records
+SRC=1060 && EXP=0 && RUN
+
+# a generic type based on another passes a type parameter through and renames
+# a constant parameter
+SRC=1061 && EXP=0 && RUN
+
+# a generic type based on a generic type that has a base, each level adds
+# methods
+SRC=1062 && EXP=0 && RUN
+
+# a generic type is based on a generic type, not a type
+SRC=1063 && COMPERR
+
+# the base of a generic type is defined before it
+SRC=1064 && COMPERR
+
+# the base of a generic type gets an argument per parameter
+SRC=1065 && COMPERR
+
+# a type parameter of the base gets a type, the error is reported in the
+# definition with the alias that resolved it
+SRC=1066 && COMPERR
+
+# an argument of the base is a parameter, a type or a constant
+SRC=1067 && COMPERR
+
+# a method name is defined on one level of a generic type and its base
+SRC=1068 && COMPERR
+
+# the base of a generic type has arguments
+SRC=1069 && COMPERR
+
+# an error in the fields of the base names each level that instantiated it
+SRC=1070 && COMPERR
+
+# a generic type is based on a generic type named after '='
+SRC=1071 && COMPERR
+
+# an error in a method of a base names each level from the base to the alias,
+# also for a method defined after the alias
+SRC=1072 && COMPERR

@@ -453,11 +453,30 @@ references("lib.baz: type @text<capacity>", {
 references("lib.baz: func mut list.@reserve()", {
   "lib.baz: func mut list.@reserve()",
   "main.baz: var at = all.@reserve()",
+  "based.baz: var top = st.@reserve()",
 })
 
 references("lib.baz: type @list<T type, capacity>", {
   "lib.baz: type @list<T type, capacity>",
   "main.baz: type shapes = @list<shape, limit>",
+  "based.baz: type stack<T type> = @list<T, lib_size>",
+})
+
+-- a generic type based on another, declared in an included file: the members
+-- and the methods of every level, the type arguments passed through the levels
+
+definition("based.baz: st.@reserve()", "lib.baz: func mut list.@reserve()")
+definition("based.baz: st.@pop()", "based.baz: func mut stack.@pop()")
+definition("based.baz: popped.@grow()", "based.baz: func mut item.@grow()")
+definition("based.baz: st.array[top].@grow()", "based.baz: func mut item.@grow()")
+definition("based.baz: st.array[0].@weight", "based.baz:     @weight,")
+definition("based.baz: type items = @stack<item>", "based.baz: type @stack<T type>")
+definition("based.baz: = @list<T, lib_size>", "lib.baz: type @list<T type, capacity> {")
+definition("based.baz: list<@T, lib_size>", "based.baz: type stack<@T type>")
+definition("based.baz: list<T, @lib_size>", "lib.baz: let @lib_size = 8")
+references("based.baz: func mut stack.@pop()", {
+  "based.baz: func mut stack.@pop()",
+  "based.baz: var popped = st.@pop()",
 })
 
 -- an unknown receiver in an including file makes a rename unsafe
@@ -547,6 +566,7 @@ hover("local = @add(local, limit)", "```baz\nfunc add(a, b) res\n```")
 hover("func locals(@count)", "`int`\n\n```baz\ncount\n```")
 hover("var @local = count", "```baz\nvar local = count\n```")
 hover("let first = shapes.@array[0]", "`shape[limit]`\n\n```baz\narray T[capacity]\n```")
+hover("based.baz: let last = st.@array[1]", "`item[lib_size]`\n\n```baz\narray T[capacity]\n```")
 
 -- document symbols
 

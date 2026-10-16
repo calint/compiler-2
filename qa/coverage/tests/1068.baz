@@ -1,0 +1,20 @@
+# a method name is defined on one level of a generic type and its base
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func list.size() res {
+    res = self.len
+}
+
+type text<capacity> = list<i8, capacity>
+
+func text.size() res {
+    res = self.len
+}
+
+type str = text<8>
+
+func main() {}

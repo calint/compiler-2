@@ -1,0 +1,4 @@
+
+1063.baz:5:23: 'point' is a type, not a generic type
+type text<capacity> = point<capacity>
+                      ^~~~~

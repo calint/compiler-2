@@ -40,10 +40,81 @@ func printer.println_all(s i8[]) {
     self.println()
 }
 
-type text<capacity> {
-    array i8[capacity],
+# a list of up to 'capacity' items
+type list<T type, capacity> {
+    array T[capacity],
     len,
 }
+
+func list.is_full() res bool {
+    res = self.len == array_length(self.array)
+}
+
+# makes room for an item and returns its index, the caller writes the item in
+# place
+func mut list.reserve() res {
+    res = self.len
+    self.len = self.len + 1
+}
+
+func mut list.push(item T) {
+    let ix = self.reserve()
+    self.array[ix] = item
+}
+
+# makes room for 'item' at 'pos', the list must have room for one more item
+# the items move from the top down, 'array_copy' copies only down the array
+func mut list.insert_at(pos, item T) {
+    var i = self.len
+    loop {
+        if i == pos break
+        self.array[i] = self.array[i - 1]
+        i = i - 1
+    }
+    self.array[pos] = item
+    self.len = self.len + 1
+}
+
+func mut list.delete_index(ix) {
+    # array copy it away
+    array_copy(
+        self.array[ix + 1],
+        self.array[ix],
+        self.len - ix - 1
+    )
+
+    # set new len
+    self.len = self.len - 1
+}
+
+# the index of the first item equal to 'item' or the length
+func list.index_of(item T) res {
+    res = self.len
+    foo self.array, self.len {
+        if e == item {
+            res = i
+            break
+        }
+    }
+}
+
+# the index of 'item', it is added when not found
+func mut list.find_or_add(item T) res {
+    res = self.index_of(item)
+    if res != self.len return
+
+    res = self.reserve()
+    self.array[res] = item
+}
+
+func mut list.delete_item(item T) {
+    let found_ix = self.index_of(item)
+    if found_ix == self.len return
+
+    self.delete_index(found_ix)
+}
+
+type text<capacity> = list<i8, capacity>
 
 func text.print() {
     out.print(self.array, self.len)
@@ -88,29 +159,6 @@ func input_escape_action() res {
     if first == '3' and c[0] == '~' res = act_delete
 }
 
-# makes room for 'b' at 'pos', the text must have room for one more byte
-func mut text.insert_at(pos, b i8) {
-    var i = self.len
-    loop {
-        if i == pos break
-        self.array[i] = self.array[i - 1]
-        i = i - 1
-    }
-    self.array[pos] = b
-    self.len = self.len + 1
-}
-
-# removes the byte at 'pos'
-func mut text.remove_at(pos) {
-    var i = pos
-    loop {
-        if i == self.len - 1 break
-        self.array[i] = self.array[i + 1]
-        i = i + 1
-    }
-    self.len = self.len - 1
-}
-
 # writes the bytes from 'pos' on and moves the cursor back to 'pos', 'blanks'
 # is 1 to wipe the byte a removal left on the screen
 func text.redraw_from(pos, blanks) {
@@ -148,7 +196,7 @@ func mut text.input() res bool {
         if act == act_backspace {
             if pos > 0 {
                 pos = pos - 1
-                self.remove_at(pos)
+                self.delete_index(pos)
                 out.print_all(str_back)
                 self.redraw_from(pos, 1)
             }
@@ -156,7 +204,7 @@ func mut text.input() res bool {
         }
         if act == act_delete {
             if pos < self.len {
-                self.remove_at(pos)
+                self.delete_index(pos)
                 self.redraw_from(pos, 1)
             }
             continue
@@ -200,67 +248,6 @@ func text.equals<T type>(other T) res bool {
 let max_str_len = 128
 
 type str = text<max_str_len>
-
-# a list of up to 'capacity' items
-type list<T type, capacity> {
-    array T[capacity],
-    len,
-}
-
-func list.is_full() res bool {
-    res = self.len == array_length(self.array)
-}
-
-# makes room for an item and returns its index, the caller writes the item in
-# place
-func mut list.reserve() res {
-    res = self.len
-    self.len = self.len + 1
-}
-
-func mut list.push(item T) {
-    let ix = self.reserve()
-    self.array[ix] = item
-}
-
-func mut list.delete_index(ix) {
-    # array copy it away
-    array_copy(
-        self.array[ix + 1],
-        self.array[ix],
-        self.len - ix - 1
-    )
-
-    # set new len
-    self.len = self.len - 1
-}
-
-# the index of the first item equal to 'item' or the length
-func list.index_of(item T) res {
-    res = self.len
-    foo self.array, self.len {
-        if e == item {
-            res = i
-            break
-        }
-    }
-}
-
-# the index of 'item', it is added when not found
-func mut list.find_or_add(item T) res {
-    res = self.index_of(item)
-    if res != self.len return
-
-    res = self.reserve()
-    self.array[res] = item
-}
-
-func mut list.delete_item(item T) {
-    let found_ix = self.index_of(item)
-    if found_ix == self.len return
-
-    self.delete_index(found_ix)
-}
 
 # prints the lead-in before the first item of a list and a comma before the
 # others
