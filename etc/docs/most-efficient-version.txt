@@ -79,7 +79,17 @@ extra register.
       compile_inline_with_address_choice' as is, addresses in    rv32i
       indexed argument                    registers (2 ways)
 
-The last two have three versions: 'emit_most_efficient' with the second
+Narrow and wide are the type of the scratch register: narrow is the type of
+the destination (e.g. i8), wide is the default type ('get_type_default', i64
+on x86_64, i32 on rv32i). On a target without narrow register operations
+(rv32i) a narrow register is normalized after each operation; a wide
+register needs none, the store at the destination's width truncates. Wide is
+tried only when it gives the same value ('can_compute_wide'): the destination
+is narrower than the default type, no overflow check, and the low bits of the
+result do not depend on the high bits ('+', '-', '*', bitwise; not '/', '%',
+'>>').
+
+The last two rows of the table have three versions: 'emit_most_efficient' with the second
 version itself an 'emit_most_efficient_address' choice between keeping the
 displacement in the register or in each access:
 
