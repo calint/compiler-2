@@ -1,0 +1,30 @@
+# a generic type based on another declares its parameters in another order
+# than the base, the base arguments are resolved by name
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func mut list.push(item T) {
+    self.array[self.len] = item
+    self.len = self.len + 1
+}
+
+type swapped<capacity, T type> = list<T, capacity>
+
+func swapped.first() res T {
+    res = self.array[0]
+}
+
+type ints = swapped<3, int>
+
+func main() {
+    var s = ints
+    s.push(100000)
+    s.push(2)
+    assert(1, s.first() == 100000 and s.len == 2)
+    assert(2, array_length(s.array) == 3)
+}

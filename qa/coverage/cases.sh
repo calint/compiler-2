@@ -3316,3 +3316,7 @@ SRC=1071 && COMPERR
 # an error in a method of a base names each level from the base to the alias,
 # also for a method defined after the alias
 SRC=1072 && COMPERR
+
+# a generic type based on another declares its parameters in another order
+# than the base, the base arguments are resolved by name
+SRC=1073 && EXP=0 && RUN
