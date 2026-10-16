@@ -114,6 +114,12 @@ func mut list.delete_item(item T) {
     self.delete_index(found_ix)
 }
 
+# appends a list of any capacity with the same item type
+func mut list.append<L type>(src L) {
+    array_copy(src.array, self.array[self.len], src.len)
+    self.len = self.len + src.len
+}
+
 type text<capacity> = list<i8, capacity>
 
 func text.print() {
@@ -123,12 +129,6 @@ func text.print() {
 func mut text.add(s i8[]) {
     array_copy(s, self.array[self.len], array_length(s))
     self.len = self.len + array_length(s)
-}
-
-# appends a text of any capacity
-func mut text.append<T type>(s T) {
-    array_copy(s.array, self.array[self.len], s.len)
-    self.len = self.len + s.len
 }
 
 let act_insert = 0
