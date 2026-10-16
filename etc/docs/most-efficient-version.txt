@@ -1,0 +1,154 @@
+versions of the same code: compiled, measured, the shorter kept
+===============================================================
+
+source: src/machine.hpp ('emit_most_efficient')
+        src/machine_x86_64.hpp ('emit_most_efficient',
+        'assembler_x86_64::count_instructions')
+        src/machine_rv32i.hpp ('emit_most_efficient',
+        'assembler_rv32i::emit_smaller')
+        src/assembler.hpp ('capture', 'append', 'emit_buffered',
+        'code_size_of')
+used by: expr_arith.hpp, stmt_builtin_convert.hpp, decouple_impl.hpp
+         ('expr_type::compile_builtin_field'), stmt_call.hpp
+not to be confused with: the dry run of a noinline body
+                         ('noinline-alias-dry-run.txt'), which checks and
+                         keeps no code
+
+1. Problem
+----------
+
+Some statements can be compiled in more than one way, and which way is
+shorter depends on code that has not been compiled yet:
+
+    1.1 a memory destination: computing in place costs a load and a store per
+        operation on rv32i, a scratch register costs one extra store
+    1.2 an indexed address on rv32i (no base + index addressing): used as it
+        is, every access adds base and index again; folded into a register, it
+        costs one 'add' but holds a register
+    1.3 a displacement kept in each access ('28(t1)') saves an 'addi' unless
+        the field offsets then exceed the 12-bit immediate and each access
+        needs a 'lui'/'add'
+
+The answer for 1.2 depends on how many times the inlined body accesses the
+argument, and for 1.3 on the offsets of the fields it reaches. Predicting this
+means reimplementing the code generator as a cost model that must stay in
+step with every backend change. Compiling both versions and counting is
+exact and needs no model.
+
+2. Mechanism
+------------
+
+    machine::emit_most_efficient(tk, indent, emit_without_scratch,
+                                 emit_with_scratch)
+
+    2.1 'emit_buffered' turns off direct output, so the versions are not
+        written while being compared
+    2.2 'capture' runs each version into its own list of lines
+    2.3 the lists are measured, the shorter is appended, the first on ties
+    2.4 the other list is dropped
+
+The measure differs per target:
+
+    x86_64      lines that are not comments or blank
+                ('count_instructions'); a comment records the counts:
+                '; instructions without scratch register 5, with 4'
+    rv32i       bytes ('code_size_of'), so a 'li' is sized by its value
+                (one or two instructions)
+
+The first version is the plain one, so a tie keeps the code that holds no
+extra register.
+
+3. Where versions are tried
+---------------------------
+
+    site                                  versions               targets
+    'expr_arith::compile'                 in place, scratch      both
+      memory destination, more than one
+      element
+    'expr_arith::compile_through_scratch' narrow, wide scratch   both
+      the type can be computed wide
+    'stmt_builtin_convert::compile'       in place, wide         both
+      same width, memory destination
+    'expr_type::compile_builtin_field'    in field, scratch      both
+      record literal field with unary ops
+    'stmt_call::compile_inline_to_memory' as is, scratch         both
+      result with unary ops
+    'stmt_call::compile_inline_to_memory' as is, address in a    rv32i
+      indexed result                      register (2 ways)
+    'stmt_call::
+      compile_inline_with_address_choice' as is, addresses in    rv32i
+      indexed argument                    registers (2 ways)
+
+The last two have three versions: 'emit_most_efficient' with the second
+version itself an 'emit_most_efficient_address' choice between keeping the
+displacement in the register or in each access:
+
+    1. '[s0 + t0 * 4 + 28]' as is
+    2. '[t1]'               the displacement in the register
+    3. '[t1 + 28]'          the displacement in each access
+
+A destination that is a register, a single plain element or a destination
+read by a later element is compiled once, without a choice.
+
+4. Why so many versions are compiled
+------------------------------------
+
+A version compiles everything under it, including the choices inside it. An
+inlined body is a subtree, so each choice in the body runs once per version
+of every choice above it. The work is the product of the version counts along
+a path, not the sum.
+
+What keeps it from growing as a power of the depth: a version that folds the
+address into a register gives the body an argument that is no longer
+indexed, so the body's own calls have no address choice. Only the version
+that keeps the index passes it down.
+
+Measured with gdb, breakpoints on 'emit_most_efficient', on a chain of
+inlined calls each passing an indexed argument on:
+
+    func h0(p mut point) {
+        p.x = p.y * 2 + 1
+    }
+
+    func h1(p mut point) {
+        p.x = p.y * 2 + 1
+        h0(p)
+    }
+
+    func main() {
+        var ps = point[4]
+        var i = 1
+        h1(ps[i])
+    }
+
+    depth of the chain    0    1    2    3    4    5    6    7    8
+    x86_64 choices        1    2    3    4    5    6    7    8    9
+    rv32i choices         5   12   21   32   45   60   77   96  117
+
+x86_64 has base + index addressing, only the assignment chooses, once per
+body. rv32i grows as (n + 1) * (n + 5): each level's body is compiled again
+inside the 'as is' version of every level above it.
+
+Trade: compile time for code size. The depth 8 chain compiles in about 75 ms
+on rv32i against 12 ms on x86_64.
+
+5. What a discarded version leaves behind
+-----------------------------------------
+
+Only the lines are discarded. Unlike a dry run, nothing else is rolled back,
+so each version must keep the rest of the state balanced or idempotent:
+
+    5.1 scratch registers: a version frees what it allocates; registers
+        shared by the versions (the arguments of an inline call) are freed
+        after the choice ('compile_inline_with_address_choice')
+    5.2 the peak count of scratch registers ('usage_max_scratch_regs_') and
+        the register trace include the discarded version
+    5.3 string constants: identical strings share one label, both versions
+        add the same strings
+    5.4 labels: named by source location and call path
+        ('create_unique_label'), both versions make the same names and only
+        one is kept
+    5.5 noinline instances ('add_noninline_instance') are keyed by function
+        and array lengths, adding one twice adds nothing
+    5.6 errors: nothing catches; an error in either version stops the
+        compile, the first version is compiled first
