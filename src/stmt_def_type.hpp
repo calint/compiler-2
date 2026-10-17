@@ -478,7 +478,7 @@ class stmt_def_type final : public statement {
 
         type_alias_scope aliases{tc};
 
-        bind_args(tc, aliases, generic.params, arg_tks, bindings);
+        declare_params(tc, aliases, generic.params, arg_tks, bindings);
 
         parse_generic_fields(tc, generic);
 
@@ -544,10 +544,10 @@ class stmt_def_type final : public statement {
 
     // a type parameter names its argument, a constant parameter is a constant
     // of the current block
-    static auto bind_args(toc& tc, type_alias_scope& aliases,
-                          const std::span<const generic_param> params,
-                          const std::span<const token> arg_tks,
-                          const std::span<const generic_binding> bindings)
+    static auto declare_params(toc& tc, type_alias_scope& aliases,
+                               const std::span<const generic_param> params,
+                               const std::span<const token> arg_tks,
+                               const std::span<const generic_binding> bindings)
         -> void {
 
         for (const auto [param, arg_tk, binding] :
@@ -645,29 +645,19 @@ class stmt_def_type final : public statement {
 
         tc.enter_block();
 
+        // the parameters of 'generic' are names of the current block until the
+        // return, when 'aliases' unbinds the type parameters
+        type_alias_scope aliases{tc};
+
+        declare_params(tc, aliases, generic.params, arg_tks, bindings);
+
         std::vector<generic_binding> base_bindings{
-            resolve_bound_base_args(tc, generic, base, arg_tks, bindings),
+            resolve_args(tc, generic.base_tk.text(), base.params,
+                         generic.base_arg_tks),
         };
 
         tc.exit_block();
 
         return base_bindings;
-    }
-
-    // the parameters of 'generic' are names of the current block until the
-    // return, when 'aliases' unbinds the type parameters
-    [[nodiscard]] static auto
-    resolve_bound_base_args(toc& tc, const generic_type_info& generic,
-                            const generic_type_info& base,
-                            const std::span<const token> arg_tks,
-                            const std::span<const generic_binding> bindings)
-        -> std::vector<generic_binding> {
-
-        type_alias_scope aliases{tc};
-
-        bind_args(tc, aliases, generic.params, arg_tks, bindings);
-
-        return resolve_args(tc, generic.base_tk.text(), base.params,
-                            generic.base_arg_tks);
     }
 };
