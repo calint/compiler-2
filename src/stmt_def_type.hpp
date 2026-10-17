@@ -658,6 +658,17 @@ class stmt_def_type final : public statement {
     // 'i8' and '8' of 'list<i8, capacity>' for 'capacity' 8. the block is
     // closed before the base binds its parameters, which may have the same
     // names
+    //
+    // the argument tokens of a base are written with the parameter names of
+    // 'generic', so they have values only for one instance of 'generic'.
+    // 'bindings' are the values of that instance, 'arg_tks' its argument
+    // tokens, used as the source locations of the constants
+    //
+    // e.g. 'text<8>' with 'type text<capacity> = list<i8, capacity>':
+    //   'generic' is 'text', 'arg_tks' is '8', 'bindings' has 'capacity' 8
+    //   'base' is 'list', 'generic.base_arg_tks' are 'i8' and 'capacity'
+    //   in the block 'capacity' is the constant 8
+    //   the result binds 'T' of 'list' to 'i8' and 'capacity' of 'list' to 8
     [[nodiscard]] static auto
     resolve_base_args(toc& tc, const generic_type_info& generic,
                       const generic_type_info& base,
@@ -665,6 +676,8 @@ class stmt_def_type final : public statement {
                       const std::span<const generic_binding> bindings)
         -> std::vector<generic_binding> {
 
+        // the parameters of 'generic' are visible only while the base
+        // arguments are resolved
         tc.enter_block();
 
         // the parameters of 'generic' are names of the current block until the
@@ -673,6 +686,9 @@ class stmt_def_type final : public statement {
 
         declare_params(tc, aliases, generic.params, arg_tks, bindings);
 
+        // matches the parameters of the base with its argument tokens, a
+        // token that names a parameter of 'generic' gets its value
+        // e.g. 'T' with 'i8' and 'capacity' with 'capacity' that is 8
         std::vector<generic_binding> base_bindings{
             resolve_args(tc, generic.base_tk.text(), base.params,
                          generic.base_arg_tks),
