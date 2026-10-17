@@ -119,6 +119,14 @@ func sized_types() {
     # the arithmetic of a conversion wraps at the width of the type, without
     # the conversion the sum is an overflow, see the checks below
 
+    var bits = i8(-64)
+    bits = bits << 1
+    assert(bits == -128)
+    bits = bits << 1
+    assert(bits == 0)
+    # '<<' discards the bits shifted out at the width of the destination, it
+    # is not an overflow
+
     var wide = int(small)
     assert(wide == -56)
     # 'int(x)' converts to the default type, 'int' also names that type, e.g.

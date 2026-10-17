@@ -31,7 +31,7 @@ the binary image itself.
   * `frame`: non-inlined function frame capacity at runtime
   * `division`: division by zero and `MIN / -1` at runtime
   * `shift`: shift count outside the type width at runtime, a constant count
-    is rejected at compile time
+    is rejected at compile time, bits shifted out by `<<` are discarded
   * `overlap`: `array_copy` whose destination starts inside the source at
     runtime, a copy down the array is allowed
   * `stack`: stack capacity at `noinline` calls on `rv32i-qemu` and
