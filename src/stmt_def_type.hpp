@@ -406,28 +406,42 @@ class stmt_def_type final : public statement {
                      const std::span<const generic_base_frame> base_frames,
                      std::vector<generic_type_instance>& instances) -> void {
 
+        // e.g. the instance 'text<8>' of 'str', then 'list<i8, 8>' of 'str'
         instances.push_back({
+            // e.g. 'str' of 'type str = text<8>'
             .src_loc_tk{name_tk_},
+            // e.g. 'text', then 'list'
             .generic_name{generic_name},
+            // e.g. the type 'str'
             .type_ptr{&type_},
+            // e.g. 'capacity' is 8, then 'T' is 'i8' and 'capacity' is 8
             .bindings{bindings.begin(), bindings.end()},
+            // e.g. 'type str = text<8>', set by 'parse_instance'
             .alias_source{},
+            // e.g. none for 'text<8>', then 'list<i8, 8>' for 'list'
             .base_frames{base_frames.begin(), base_frames.end()},
         });
 
+        // e.g. 'list' of 'type list<T type, capacity> { ... }'
         if (generic.base_tk.is_empty()) {
+            // e.g. 'str' gets 'array i8[8]' and 'len'
             parse_root_fields(tc, generic, arg_tks, bindings);
             return;
         }
 
+        // e.g. 'list' of 'type text<capacity> = list<i8, capacity>'
         const std::string_view base_name{generic.base_tk.text()};
+        // e.g. 'type list<T type, capacity> { array T[capacity], len }'
         const generic_type_info& base{tc.generics().get_type(base_name)};
 
+        // e.g. 'T' is 'i8' and 'capacity' is 8 for 'list<i8, capacity>' with
+        // 'capacity' 8 of 'text'
         const std::vector<generic_binding> base_bindings{
             resolve_base_args(tc, generic, base, arg_tks, bindings),
         };
 
         // an error in the base is reported with the arguments it got
+        // e.g. 'list<i8, 8>' at the 'list' of 'list<i8, capacity>'
         const generic_base_frame base_frame{
             .src_loc_tk{generic.base_tk},
             .text{
@@ -435,13 +449,18 @@ class stmt_def_type final : public statement {
             },
         };
 
+        // e.g. 'list<i8, 8>' followed by the frames that lead to 'text'
         std::vector<generic_base_frame> base_frames_of_base{base_frame};
         base_frames_of_base.append_range(base_frames);
 
         try {
+            // e.g. 'list' with the tokens 'i8' and 'capacity' and their
+            // bindings 'i8' and 8
             parse_level(tc, base_name, base, generic.base_arg_tks,
                         base_bindings, base_frames_of_base, instances);
         } catch (compiler_exception& e) {
+            // e.g. an error in 'list' gets the frame 'list<i8, 8>' at the
+            // 'list' of 'type text<capacity> = list<i8, capacity>'
             e.add_call_frame(base_frame.src_loc_tk, base_frame.text,
                              "instantiated by");
 
