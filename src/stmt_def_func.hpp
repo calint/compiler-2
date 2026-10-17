@@ -608,9 +608,11 @@ class stmt_def_func final : public statement {
         // note: 'parse_returns' only creates a return with a name
         assert(not returns_ or not returns_->ident_tk.text().empty());
 
-        add_signature_vars(tc, 0, false, {}, {});
+        tc.parse_storage_unchecked([&] -> void {
+            add_signature_vars(tc, 0, false, {}, {});
 
-        code_ = {tc, tz, true};
+            code_ = {tc, tz, true};
+        });
 
         tc.exit_func(name());
     }

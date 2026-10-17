@@ -1,0 +1,38 @@
+# a method on a type larger than the vars section gets 'self' by reference, the
+# parse of its body does not allocate 'self' by value
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type big {
+    array i8[4096],
+    len,
+}
+
+func mut big.push(item i8) {
+    self.array[self.len] = item
+    self.len = self.len + 1
+}
+
+func big.is_full() res bool {
+    res = self.len == array_length(self.array)
+}
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func list.is_full() res bool {
+    res = self.len == array_length(self.array)
+}
+
+type bigs = list<i8, 4096>
+
+dat b = big
+dat l = bigs
+
+func main() {
+    b.push(1)
+    assert(1, not b.is_full() and b.len == 1 and b.array[0] == 1)
+    assert(2, not l.is_full())
+}

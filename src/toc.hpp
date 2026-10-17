@@ -2802,6 +2802,17 @@ class toc final {
         };
     }
 
+    // runs 'parse' with the storage capacity unchecked and its use of storage
+    // not recorded, a parse emits no code, e.g. a parameter 'self' of a type
+    // larger than the vars section is a pointer once the body is compiled
+    auto parse_storage_unchecked(const std::function_ref<void()> parse)
+        -> void {
+
+        const storage_layout::dry_run_state saved{storage_.begin_dry_run()};
+        parse();
+        storage_.end_dry_run(saved);
+    }
+
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
         return storage_.peak_frame_size_bytes();
     }

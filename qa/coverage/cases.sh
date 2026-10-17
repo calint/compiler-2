@@ -3320,3 +3320,7 @@ SRC=1072 && COMPERR
 # a generic type based on another declares its parameters in another order
 # than the base, the base arguments are resolved by name
 SRC=1073 && EXP=0 && RUN
+
+# a method on a type larger than the vars section gets 'self' by reference, the
+# parse of its body does not allocate 'self' by value
+SRC=1074 && EXP=0 && OPTS="--vars=0x400" RUN
