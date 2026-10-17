@@ -50,7 +50,7 @@ func entity.print() {
 type entities = list<entity, max_entities_len>
 
 # the bare entity, the creation script makes the rest
-dat entities = entities{
+dat entities = entities {
     { # array begin
         { { "u", 1 }, 0 }  # entity[0]
     }, # array end
@@ -180,7 +180,7 @@ func mut room.remove_entity(id) {
 type rooms = list<room, max_rooms_len>
 
 # the bare room, the creation script makes the rest
-dat rooms = rooms{
+dat rooms = rooms {
     { # array
         { # room[0]
             { }, # name
