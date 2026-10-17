@@ -340,8 +340,17 @@ class stmt_def_type final : public statement {
         // e.g. 'str' with the fields of 'list<i8, 8>'
         tc.add_type(name_tk_, type_);
 
+        // the methods of each generic type see the arguments of its instance,
+        // the methods of a base are made first
+        //
         // e.g. the methods of 'list<i8, 8>' then of 'text<8>' for 'str'
-        add_instances(tc, instances);
+        for (const generic_type_instance& instance :
+             instances | std::views::reverse) {
+
+            tc.generics().add_type_instance(instance);
+
+            instantiate_generic_methods(tc, instance);
+        }
     }
 
     auto parse_fields(toc& tc, tokenizer& tz) -> void {
@@ -518,22 +527,6 @@ class stmt_def_type final : public statement {
     //
     // statics
     //
-
-    // the methods of each generic type see the arguments of its instance, the
-    // methods of a base are made first
-    static auto
-    add_instances(toc& tc,
-                  const std::span<const generic_type_instance> instances)
-        -> void {
-
-        for (const generic_type_instance& instance :
-             instances | std::views::reverse) {
-
-            tc.generics().add_type_instance(instance);
-
-            instantiate_generic_methods(tc, instance);
-        }
-    }
 
     static auto assert_arg_count(const token& generic_tk,
                                  const generic_type_info& generic,
