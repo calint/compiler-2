@@ -610,6 +610,7 @@ class stmt_def_type final : public statement {
         std::vector<generic_binding> bindings;
 
         for (const auto [param, arg_tk] : std::views::zip(params, arg_tks)) {
+
             const std::string_view name{param.name_tk.text()};
             const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
 
