@@ -245,10 +245,6 @@ func text.equals<T type>(other T) res bool {
     res = arrays_equal(self.array, other.array, self.len)
 }
 
-let max_str_len = 1024
-
-type str = text<max_str_len>
-
 # prints the lead-in before the first item of a list and a comma before the
 # others
 type joiner {
@@ -265,8 +261,12 @@ func mut joiner.next(lead i8[]) {
     self.printed = true
 }
 
+let max_str_len = 1024
+
+type string = text<max_str_len>
+
 type tokenizer {
-    str str,
+    str string,
     start,
     end,
 }

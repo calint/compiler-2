@@ -494,9 +494,9 @@ module.exports = grammar({
     )),
 
     number_literal: $ => choice(
-      /0x[0-9a-fA-F]+/, // Hex
-      /0b[01]+/,        // Binary
-      /\d+(\.\d+)?/,    // Decimal (int or float)
+      /0[xX][0-9a-fA-F]+/, // Hex
+      /0[bB][01]+/,        // Binary
+      /\d+(\.\d+)?/,       // Decimal (int or float)
     ),
 
     character_literal: $ => /'([^'\\\n]|\\x[0-9a-fA-F]{2}|\\[^\n])'/,

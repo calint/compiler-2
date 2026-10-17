@@ -4,14 +4,14 @@ go officxe
 go oXffice[D[D[D[D[D[D[3~
 rd a pleasnt location[D[D[D[D[D[D[D[D[D[D[Da
 rnm
-rnm abcdefghijklmnopq
+rnm abcdefghijklmnopqrstuvwxyz0123456
 rnm stdy[D[Du[C[C[C
 go roome
 go roome
 [Di
 on key
-on abcdefghijklmnopq
-en abcdefghijklmnopq
+on abcdefghijklmnopqrstuvwxyz0123456
+en abcdefghijklmnopqrstuvwxyz0123456
 ix[D[3~
 i[3~[C
 g key[A me
@@ -43,7 +43,7 @@ on gem
 s y
 s z
 g gem w
-rn 99999999999999999999 back
+rn 999999999999999999999999999999999 back
 help
 sdw 1000 hello from roome
 sdr 1000

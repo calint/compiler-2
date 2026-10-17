@@ -85,7 +85,7 @@ what name
 a pleasant location
 u c me
 exits: roome
-u > rnm abcdefghijklmnopq
+u > rnm abcdefghijklmnopqrstuvwxyz0123456
 
 name too long
 --
@@ -139,7 +139,7 @@ u r in roome
 u c me
 exits: none, office
 todo: find an exit
-u > on abcdefghijklmnopq
+u > on abcdefghijklmnopqrstuvwxyz0123456
 
 name too long
 --
@@ -148,7 +148,7 @@ u r in roome
 u c u
 exits: none, office
 todo: find an exit
-me > en abcdefghijklmnopq
+me > en abcdefghijklmnopqrstuvwxyz0123456
 
 name too long
 --
@@ -438,7 +438,7 @@ u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
-w > rn 99999999999999999999 back
+w > rn 999999999999999999999999999999999 back
 
 name too long
 --

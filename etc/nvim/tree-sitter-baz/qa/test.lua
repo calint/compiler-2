@@ -510,6 +510,9 @@ references("guess.baz: func b.@show()", {
 rename_fails("guess.baz: func a.@show()", "display", "cannot tell which type")
 definitions("guess.baz: p.@show()", { "guess.baz: func a.@show()", "guess.baz: func b.@show()" })
 
+-- 'dat spaced = c {' with a space before '{' still has the type 'c'
+definitions("spaced.baz: spaced.@show()", { "guess_lib.baz: func c.@show()" })
+
 -- the search for uses in the files that include the declaring one stays in
 -- the 'src' folder of the file and does not load files without the name
 -- (it loaded and parsed every .baz file of the repository, which took long)

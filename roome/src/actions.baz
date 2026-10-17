@@ -2,7 +2,7 @@ include "model.baz"
 
 dat str_not_understood = "not understood\n"
 
-func notify_room(room_id, from, kind, text str) {
+func notify_room(room_id, from, kind, text message_text) {
     let room_entities_len = rooms.array[room_id].entities.len
     foo rooms.array[room_id].entities.array, room_entities_len {
         if e == from continue
@@ -61,7 +61,7 @@ func action_go(eid, tz mut tokenizer) {
     out.println()
 
     # the ones left behind see it
-    var went_text = str
+    var went_text = message_text
     went_text.add(str_went_to)
     went_text.append(link_names.array[link.link_name_id])
 
@@ -72,7 +72,7 @@ func action_go(eid, tz mut tokenizer) {
     # missing link back is program error
     assert(2, to_found_ix != rooms.array[to_room_id].links.len)
 
-    var arrived_text = str
+    var arrived_text = message_text
     arrived_text.add(str_arrived_from)
     arrived_text.append(
         link_names.array[
@@ -316,7 +316,7 @@ func action_give(eid, tz mut tokenizer) {
     entities.array[to_entity].name.print()
     out.println()
 
-    var gave_text = str
+    var gave_text = message_text
     gave_text.add(str_gave)
     gave_text.append(entities.array[to_entity].name)
     gave_text.add(str_space)
@@ -362,7 +362,7 @@ func action_tell(eid, tz mut tokenizer) {
         return
     }
 
-    let text = tz.token<str>()
+    let text = tz.token<message_text>()
 
     entities.array[to_entity].messages.add(eid, message_told, text)
 }
@@ -378,7 +378,7 @@ func action_say(eid, tz mut tokenizer) {
         return
     }
 
-    let text = tz.token<str>()
+    let text = tz.token<message_text>()
 
     notify_room(entities.array[eid].room_id, eid,
                     message_said, text)

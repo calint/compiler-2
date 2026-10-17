@@ -469,6 +469,13 @@ local function declared_type(root, bufnr, id, kind, name, depth)
       and top_level(root, bufnr, "type", name) then
       return { name = name, array = false }
     end
+    -- 'dat a = point {' with a space before '{' parses as an error holding the
+    -- type name followed by the initializer block
+    local error = last:type() == "initializer_block" and last:prev_named_sibling()
+    local type_id = error and error:type() == "ERROR" and error:named_child_count() == 1 and error:named_child(0)
+    if type_id and type_id:type() == "identifier" then
+      return { name = text(type_id, bufnr), array = false }
+    end
     return type_of_node(root, bufnr, last, depth + 1)
   end
   return nil

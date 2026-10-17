@@ -1,0 +1,10 @@
+include "guess_lib.baz"
+
+# the space before '{' makes the grammar parse the type name as an error
+dat spaced = c {
+    1
+}
+
+func main() {
+    spaced.show()
+}

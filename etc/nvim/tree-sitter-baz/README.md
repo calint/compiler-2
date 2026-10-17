@@ -79,3 +79,7 @@ project.
 `qa/test.sh` runs references, definition, rename and document symbols
 against `qa/src/` with the plugin in this directory (needs the parser
 from the steps above).
+
+`qa/parse-sources.sh` parses the `.baz` files of the repository and fails
+on `ERROR` and `MISSING` nodes, so that code the compiler accepts but the
+grammar does not is found; error tests are skipped.

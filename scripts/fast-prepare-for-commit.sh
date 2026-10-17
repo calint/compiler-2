@@ -10,6 +10,8 @@ echo format source
 qa/lint/format-source.sh
 echo test lsp
 etc/nvim/tree-sitter-baz/qa/test.sh
+echo parse sources
+etc/nvim/tree-sitter-baz/qa/parse-sources.sh
 echo build with -O3
 ./make.sh build -O3
 echo test roome

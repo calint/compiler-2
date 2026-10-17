@@ -3,18 +3,27 @@ include "lib.baz"
 dat       str_uc = "u c "
 dat    str_exits = "exits: "
 
-let max_name_len = 16
+let max_name_len = 32
+let max_description_len = 512
+let max_message_text_len = 512
+let max_note_len = 128
 let max_id_list_len = 128
 let max_rooms_len = 128
 let max_entities_len = 32
 let max_room_links_len = 16
-let max_link_names_len = 1024
+let max_link_names_len = 128
 let max_entity_messages_len = 8
 let max_objects_len = 1024
 
 type id_list = list<int, max_id_list_len>
 
 type name = text<max_name_len>
+
+type note = text<max_note_len>
+
+type description = text<max_description_len>
+
+type message_text = text<max_message_text_len>
 
 dat str_told_u = " told u "
 dat str_said = " said "
@@ -26,12 +35,12 @@ let message_event = 2
 type message {
     from,
     kind,
-    text str,
+    text message_text,
 }
 
 type messages = list<message, max_entity_messages_len>
 
-func mut messages.add(from, kind, text str) {
+func mut messages.add(from, kind, text message_text) {
     let ix = self.reserve()
     self.array[ix] = { from, kind, text }
 }
@@ -114,8 +123,8 @@ dat objects = objects
 
 type room {
     name name,
-    description str,
-    note str,
+    description description,
+    note note,
     entities id_list,
     links links,
     objects id_list,
