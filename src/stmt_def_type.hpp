@@ -193,6 +193,7 @@ class stmt_def_type final : public statement {
     auto define_based_generic(toc& tc, const token& type_tk, tokenizer& tz,
                               std::vector<generic_param> params) -> void {
 
+        // e.g. '=' and 'list' of '= list<i8, capacity>'
         const token equals_tk{tz.is_next_char_token('=')};
         const token base_tk{tz.next_token()};
 
@@ -203,6 +204,7 @@ class stmt_def_type final : public statement {
 
         assert_generic_type(tc, base_tk, "the type based on it");
 
+        // e.g. 'i8' and 'capacity' of '<i8, capacity>'
         generic_arguments args{parse_generic_args(tz, base_tk)};
 
         assert_arg_count(base_tk, tc.generics().get_type(base_tk.text()),
@@ -217,12 +219,14 @@ class stmt_def_type final : public statement {
                                 .base_arg_tks{std::move(args.arg_tks)},
                             });
 
+        // e.g. 'text<capacity> = list<i8, capacity>'
         generic_text_ = tz.text_after(type_tk);
     }
 
     // the text after 'type' is kept for 'source_to' and for the aliases, errors
     // in it are found when an alias parses it
     auto define_generic(toc& tc, const token& type_tk, tokenizer& tz) -> void {
+        // e.g. 'capacity' of '<capacity>'
         std::vector<generic_param> params{generic_param::parse(tz)};
 
         for (const generic_param& param : params) {
@@ -251,6 +255,7 @@ class stmt_def_type final : public statement {
                                                  .base_arg_tks{},
                                              });
 
+        // e.g. 'text<capacity> { items i8[capacity] }'
         generic_text_ = tz.skip_braced_block_after(type_tk);
     }
 
@@ -258,18 +263,23 @@ class stmt_def_type final : public statement {
     // generic type 'text' for the arguments
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
         kind_ = kind::alias;
+
+        // e.g. the '=' of 'type str = text<127>'
         alias_tks_.emplace_back(tz.is_next_char_token('='));
 
+        // e.g. 'text'
         const token generic_tk{parse_alias_generic(tc, tz)};
 
         const generic_type_info generic{
             tc.generics().get_type(generic_tk.text()),
         };
 
+        // e.g. '127' of '<127>'
         const std::vector<token> arg_tks{parse_alias_args(tz)};
 
         assert_arg_count(generic_tk, generic, arg_tks);
 
+        // e.g. the fields and methods of 'text<127>' and of its bases
         add_instances(tc, parse_instance(tc, generic_tk, generic, arg_tks));
     }
 
@@ -350,28 +360,35 @@ class stmt_def_type final : public statement {
                         const std::span<const token> arg_tks)
         -> std::vector<generic_type_instance> {
 
+        // e.g. 'capacity' is 8 for 'text<8>'
         const std::vector<generic_binding> bindings{
             resolve_args(tc, generic_tk.text(), generic.params, arg_tks),
         };
 
+        // e.g. 'type str = text<8>'
         const std::string alias_source{
             generic_type_instance::alias_text(name_tk_.text(),
                                               generic_tk.text(), bindings),
         };
 
+        // e.g. 'text<8>' then its base 'list<i8, 8>', filled by 'parse_level'
         std::vector<generic_type_instance> instances;
 
         try {
+            // e.g. adds 'text<8>', then 'list<i8, 8>' and its fields to 'str'
             parse_level(tc, generic_tk.text(), generic, arg_tks, bindings, {},
                         instances);
         } catch (compiler_exception& e) {
+            // e.g. the frame 'type str = text<8>' at 'str'
             e.add_call_frame(name_tk_, alias_source, "instantiated by");
 
             throw;
         }
 
+        // e.g. 'str' with the fields of 'list<i8, 8>'
         tc.add_type(name_tk_, type_);
 
+        // e.g. an error in a method of 'list' names 'type str = text<8>'
         for (generic_type_instance& instance : instances) {
             instance.alias_source = alias_source;
         }
