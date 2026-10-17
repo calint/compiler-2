@@ -601,6 +601,10 @@ class stmt_def_type final : public statement {
     }
 
     // a type parameter needs a type, a constant parameter a constant
+    //
+    // nothing is compiled here, the bindings are what each parameter means in
+    // one instance. 'declare_params' and 'bind_instance' declare them before
+    // the text of the generic type is parsed again for its fields and methods
     [[nodiscard]] static auto
     resolve_args(const toc& tc, const std::string_view generic_name,
                  const std::span<const generic_param> params,
