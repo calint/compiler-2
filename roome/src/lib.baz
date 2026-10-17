@@ -245,7 +245,7 @@ func text.equals<T type>(other T) res bool {
     res = arrays_equal(self.array, other.array, self.len)
 }
 
-let max_str_len = 128
+let max_str_len = 1024
 
 type str = text<max_str_len>
 

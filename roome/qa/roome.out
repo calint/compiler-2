@@ -438,18 +438,18 @@ u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
-w > s qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
-
---
-
-u r in study
-a pleasant location
-exits: roome
-u > rn 99999999999999999999 back
+w > rn 99999999999999999999 back
 
 name too long
 --
-w said qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+new object created
+--
 
 u r in roome
 u c w, key
@@ -1280,32 +1280,6 @@ a pleasant location
 exits: roome
 u > on gem
 
-new object created
---
-
-u r in roome
-u c w, key
-exits: none, office
-todo: find an exit
-me > on gem
-
-no room for another object
---
-
-u r in roome
-u c me, key
-exits: none, office
-todo: find an exit
-w > on gem
-
-no room for another object
---
-
-u r in study
-a pleasant location
-exits: roome
-u > on gem
-
 no room for another object
 --
 
@@ -1582,7 +1556,24 @@ u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
-w > help
+w > on gem
+
+no room for another object
+--
+
+u r in study
+a pleasant location
+exits: roome
+u > on gem
+
+no room for another object
+--
+
+u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > help
 
   help: this message
   go to: go <exit>
@@ -1601,54 +1592,63 @@ w > help
   read text from sd card sector: sdr <sector>
 --
 
-u r in study
-a pleasant location
-exits: roome
-u > sdw 1000 hello from roome
+u r in roome
+u c me, key
+exits: none, office
+todo: find an exit
+w > sdw 1000 hello from roome
 
 sector written
 --
 
-u r in roome
-u c w, key
-exits: none, office
-todo: find an exit
-me > sdr 1000
+u r in study
+a pleasant location
+exits: roome
+u > sdr 1000
 
 hello from roome
 --
 
 u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > sdw 1001
+
+sector written
+--
+
+u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
-w > sdw 1001
+w > sdr 1001
 
-sector written
+
 --
 
 u r in study
 a pleasant location
 exits: roome
-u > sdr 1001
-
-
---
-
-u r in roome
-u c w, key
-exits: none, office
-todo: find an exit
-me > sdw
+u > sdw
 
 which sector
 --
 
 u r in roome
+u c w, key
+exits: none, office
+todo: find an exit
+me > sdr x1
+
+not an integer
+--
+
+u r in roome
 u c me, key
 exits: none, office
 todo: find an exit
-w > sdr x1
+w > sdr 1234567890
 
 not an integer
 --
@@ -1656,14 +1656,5 @@ not an integer
 u r in study
 a pleasant location
 exits: roome
-u > sdr 1234567890
-
-not an integer
---
-
-u r in roome
-u c w, key
-exits: none, office
-todo: find an exit
-me > go home
+u > go home
 
