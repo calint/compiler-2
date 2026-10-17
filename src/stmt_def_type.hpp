@@ -260,10 +260,10 @@ class stmt_def_type final : public statement {
     }
 
     // an instance of a generic type for this alias
-    auto make_instance(const std::string_view generic_name,
-                       std::vector<generic_binding> bindings,
-                       std::vector<generic_base_frame> base_frames,
-                       const std::string& alias_source)
+    auto make_generic_type_instance(const std::string_view generic_name,
+                                    std::vector<generic_binding> bindings,
+                                    std::vector<generic_base_frame> base_frames,
+                                    const std::string& alias_source)
         -> generic_type_instance {
 
         return {
@@ -403,9 +403,9 @@ class stmt_def_type final : public statement {
         std::vector<generic_type_instance> instances;
 
         // e.g. 'text<8>', the named generic type has no frames of bases
-        instances.push_back(make_instance(generic_name,
-                                          {bindings.begin(), bindings.end()},
-                                          {}, alias_source));
+        instances.push_back(make_generic_type_instance(
+            generic_name, {bindings.begin(), bindings.end()}, {},
+            alias_source));
 
         try {
             // e.g. 'text' has the base 'list', 'list' has none
@@ -441,9 +441,9 @@ class stmt_def_type final : public statement {
                 base_frames.append_range(instances.back().base_frames);
 
                 // e.g. 'list<i8, 8>'
-                instances.push_back(
-                    make_instance(base_tk.text(), std::move(base_bindings),
-                                  std::move(base_frames), alias_source));
+                instances.push_back(make_generic_type_instance(
+                    base_tk.text(), std::move(base_bindings),
+                    std::move(base_frames), alias_source));
 
                 // the base is the next level
                 // e.g. 'list' with the tokens 'i8' and 'capacity'
@@ -454,6 +454,7 @@ class stmt_def_type final : public statement {
             // e.g. 'str' gets 'array i8[8]' and 'len'
             parse_root_fields(tc, *level, level_arg_tks,
                               instances.back().bindings);
+
         } catch (compiler_exception& e) {
             // e.g. an error in 'list' gets the frame 'list<i8, 8>' at the
             // 'list' of 'type text<capacity> = list<i8, capacity>'
