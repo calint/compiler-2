@@ -269,15 +269,15 @@ class stmt_def_type final : public statement {
         return {
             // e.g. 'str' of 'type str = text<8>'
             .src_loc_tk{name_tk_},
-            // e.g. 'text', then 'list'
+            // e.g. 'text'
             .generic_name{generic_name},
             // e.g. the type 'str'
             .type_ptr{&type_},
-            // e.g. 'capacity' is 8, then 'T' is 'i8' and 'capacity' is 8
+            // e.g. 'capacity' is 8
             .bindings{std::move(bindings)},
-            // e.g. 'type str = text<8>' for both
+            // e.g. 'type str = text<8>'
             .alias_source{alias_source},
-            // e.g. none for 'text<8>', then 'list<i8, 8>' for 'list'
+            // e.g. none, 'text' is the generic type that the alias names
             .base_frames{std::move(base_frames)},
         };
     }
