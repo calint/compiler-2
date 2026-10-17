@@ -4,15 +4,13 @@ dat       str_uc = "u c "
 dat    str_exits = "exits: "
 
 let max_name_len = 16
-let max_id_list_len = 32
-let max_room_objects_len = 64
-let max_room_entities_len = 32
-let max_room_links_len = 8
-let max_link_names_len = 1024
+let max_id_list_len = 128
 let max_rooms_len = 128
 let max_entities_len = 32
+let max_room_links_len = 16
+let max_link_names_len = 1024
+let max_entity_messages_len = 8
 let max_objects_len = 1024
-let max_entity_messages_len = 16
 
 type id_list = list<int, max_id_list_len>
 

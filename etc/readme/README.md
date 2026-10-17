@@ -31,7 +31,7 @@ the binary image itself.
   * `frame`: non-inlined function frame capacity at runtime
   * `division`: division by zero and `MIN / -1` at runtime
   * `shift`: shift count outside the type width at runtime, a constant count
-    is rejected at compile time
+    is rejected at compile time, bits shifted out by `<<` are discarded
   * `overlap`: `array_copy` whose destination starts inside the source at
     runtime, a copy down the array is allowed
   * `stack`: stack capacity at `noinline` calls on `rv32i-qemu` and
@@ -165,10 +165,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    56           8431           3747          25200
+C/C++ Header                    56           8433           3750          25208
 C++                              1            200             57            686
 -------------------------------------------------------------------------------
-SUM:                            57           8631           3804          25886
+SUM:                            57           8633           3807          25894
 -------------------------------------------------------------------------------
 ```
 

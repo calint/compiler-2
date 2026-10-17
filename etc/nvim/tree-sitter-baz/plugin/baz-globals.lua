@@ -274,7 +274,9 @@ local function declaration_kind(node, source)
   while scope do
     local t = scope:type()
     if t == "program" then
-      if in_program_or_includes(scope, source, function(p, s)
+      -- the initializer of a declaration does not see the name it declares,
+      -- e.g. the type in 'dat link_names = link_names'
+      if not declares(child, name, source) and in_program_or_includes(scope, source, function(p, s)
         return is_global(p, name, s)
       end) then
         return "global"
