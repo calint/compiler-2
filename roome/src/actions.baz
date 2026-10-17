@@ -410,7 +410,7 @@ func action_sector_write(eid, tz mut tokenizer) {
     # the text is the rest of the line, the rest of the sector is zeros
     tz.to_end()
     var data = i8[sector_size]
-    array_copy(tz.str.array[tz.start], data, tz.len())
+    array_copy(tz.string.array[tz.start], data, tz.len())
     sector_write(sector, data)
 
     out.print_all(str_sector_written)

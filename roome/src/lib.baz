@@ -266,7 +266,7 @@ let max_str_len = 1024
 type string = text<max_str_len>
 
 type tokenizer {
-    str string,
+    string string,
     start,
     end,
 }
@@ -278,23 +278,23 @@ func mut tokenizer.reset() {
 
 func mut tokenizer.input() res bool {
     self.reset()
-    res = self.str.input()
+    res = self.string.input()
 }
 
 func mut tokenizer.set_line(script i8[], line_start, count) {
     self.reset()
-    array_copy(script[line_start], self.str.array, count)
-    self.str.len = count
+    array_copy(script[line_start], self.string.array, count)
+    self.string.len = count
 }
 
 func mut tokenizer.skip_whitespace() {
     self.start = self.end
     loop {
-        if self.start >= self.str.len {
+        if self.start >= self.string.len {
             self.end = self.start
             return
         }
-        if self.str.array[self.start] != ' ' break
+        if self.string.array[self.start] != ' ' break
         self.start = self.start + 1
     }
     self.end = self.start
@@ -305,8 +305,8 @@ func mut tokenizer.next() {
     self.skip_whitespace()
     self.end = self.start
     loop {
-        if self.end >= self.str.len break
-        if self.str.array[self.end] == ' ' break
+        if self.end >= self.string.len break
+        if self.string.array[self.end] == ' ' break
         self.end = self.end + 1
     }
 }
@@ -316,17 +316,17 @@ func tokenizer.len() res {
 }
 
 func tokenizer.print() {
-    out.print_at(self.str.array, self.len(), self.start)
+    out.print_at(self.string.array, self.len(), self.start)
 }
 
 func tokenizer.is_array(str i8[]) res bool {
     res = self.len() == array_length(str) and
-          arrays_equal(str, self.str.array[self.start], array_length(str))
+          arrays_equal(str, self.string.array[self.start], array_length(str))
 }
 
 func tokenizer.is<T type>(s T) res bool {
     res = self.len() == s.len and
-          arrays_equal(s.array, self.str.array[self.start], s.len)
+          arrays_equal(s.array, self.string.array[self.start], s.len)
 }
 
 func tokenizer.is_empty() res bool {
@@ -336,20 +336,20 @@ func tokenizer.is_empty() res bool {
 func tokenizer.token<T type>() res T {
     res.len = self.len()
     res.array = {}
-    array_copy(self.str.array[self.start], res.array, res.len)
+    array_copy(self.string.array[self.start], res.array, res.len)
 }
 
 func tokenizer.token_to<T type>(dst mut T) {
     dst.len = self.len()
     dst.array = {}
-    array_copy(self.str.array[self.start], dst.array, dst.len)
+    array_copy(self.string.array[self.start], dst.array, dst.len)
 }
 
 # the token becomes the rest of the line without leading spaces
 func mut tokenizer.to_end() {
     self.skip_whitespace()
     self.start = self.end
-    self.end = self.str.len
+    self.end = self.string.len
 }
 
 # moves to the next token, when there is none the user is told 'msg'
@@ -371,7 +371,7 @@ func noinline tokenizer.to_int(value mut) res bool {
     var ix = self.start
     loop {
         if ix == self.end break
-        let c = self.str.array[ix]
+        let c = self.string.array[ix]
         if c < '0' or c > '9' return
         value = value * 10 + c - '0'
         ix = ix + 1
