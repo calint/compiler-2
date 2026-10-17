@@ -1,0 +1,94 @@
+================
+space before the brace of an initializer
+================
+
+dat a = point {1, 2}
+dat b = i8[] {1, 2}
+
+func f() {
+  p = point {}
+  q = i8[2] { }
+}
+
+---
+
+(program
+  (data_declaration
+    (dat_keyword)
+    (identifier)
+    (typed_initializer
+      (identifier)
+      (initializer_list
+        (number_literal)
+        (number_literal))))
+  (data_declaration
+    (dat_keyword)
+    (identifier)
+    (typed_array_initializer
+      (identifier)
+      (initializer_list
+        (number_literal)
+        (number_literal))))
+  (function_definition
+    (func_keyword)
+    (identifier)
+    (block
+      (assignment_statement
+        (identifier)
+        (typed_initializer
+          (identifier)))
+      (assignment_statement
+        (identifier)
+        (typed_array_initializer
+          (identifier)
+          (number_literal))))))
+
+================
+condition before a block
+================
+
+func f() {
+  if a {} x = 1
+  if a[i] { g() } g()
+  if [4] { g() }
+  foo a, n { g() }
+}
+
+---
+
+(program
+  (function_definition
+    (func_keyword)
+    (identifier)
+    (block
+      (if_statement
+        (if_keyword)
+        (identifier)
+        (block))
+      (assignment_statement
+        (identifier)
+        (number_literal))
+      (if_statement
+        (if_keyword)
+        (identifier)
+        (array_indexing
+          (identifier))
+        (block
+          (function_call
+            (identifier))))
+      (function_call
+        (identifier))
+      (if_statement
+        (if_keyword)
+        (default_array_value
+          (number_literal))
+        (block
+          (function_call
+            (identifier))))
+      (foo_statement
+        (foo_keyword)
+        (identifier)
+        (identifier)
+        (block
+          (function_call
+            (identifier)))))))

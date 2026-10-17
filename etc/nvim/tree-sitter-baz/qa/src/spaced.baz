@@ -1,6 +1,6 @@
 include "guess_lib.baz"
 
-# the space before '{' makes the grammar parse the type name as an error
+# the space before '{' does not change the initializer
 dat spaced = c {
     1
 }

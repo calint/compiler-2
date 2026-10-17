@@ -15,7 +15,8 @@
       "-Wno-braced-scalar-init",
       "-Wno-lifetime-safety-intra-tu-suggestions",
       "-Wno-lifetime-safety-intra-tu-constructor-suggestions",
-      "-Wno-lifetime-safety-invalidation"
+      "-Wno-lifetime-safety-invalidation",
+      "-Wno-lifetime-safety-cross-tu-suggestions"
     ],
     "directory": "/home/c/w/compiler-2",
     "file": "src/main.cpp"

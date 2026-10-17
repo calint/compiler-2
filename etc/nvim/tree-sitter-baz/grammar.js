@@ -10,6 +10,10 @@ module.exports = grammar({
   conflicts: $ => [
     [$._access_chain],
     [$.function_call, $._access_chain],
+    // 'a {' starts an initializer or ends a condition before a block
+    [$._access_chain, $.typed_initializer],
+    [$.typed_array_initializer, $.default_array_value],
+    [$.typed_array_initializer, $.array_indexing],
   ],
 
   rules: {
@@ -205,7 +209,7 @@ module.exports = grammar({
       $.let_keyword,
       field('destination', $.identifier),
       '=',
-      field('initializer', $._expression),
+      field('initializer', $._initializer),
     ),
 
     // dat identifier = expression, the initializer gives the type
@@ -213,7 +217,7 @@ module.exports = grammar({
       $.dat_keyword,
       field('destination', $.identifier),
       '=',
-      field('initializer', $._expression),
+      field('initializer', $._initializer),
     ),
 
     // var identifier = expression, the initializer gives the type
@@ -221,14 +225,22 @@ module.exports = grammar({
       $.var_keyword,
       field('destination', $.identifier),
       '=',
-      field('initializer', $._expression),
+      field('initializer', $._initializer),
     ),
 
     // access_chain = expression
     assignment_statement: $ => seq(
       field('destination', $._access_chain),
       '=',
+      $._initializer,
+    ),
+
+    // e.g. 'point {}' in 'p = point {}' is an initializer, not 'p = point'
+    // and a block, the dynamic precedence outweighs the initializer's -1
+    _initializer: $ => choice(
       $._expression,
+      prec(1, prec.dynamic(2, $.typed_initializer)),
+      prec(1, prec.dynamic(2, $.typed_array_initializer)),
     ),
 
     // return (no arguments)
@@ -422,28 +434,29 @@ module.exports = grammar({
       '}',
     ),
 
-    // e.g. 'point{1, 2}', the '{' follows the type name immediately so that
-    // 'if a == b {' stays a condition and a block
-    typed_initializer: $ => seq(
+    // e.g. 'point{1, 2}' or 'point {1, 2}', the compiler tells a type from a
+    // condition by its type; the grammar keeps both readings and the negative
+    // dynamic precedence makes 'if a == b {}' a condition and a block
+    typed_initializer: $ => prec.dynamic(-1, seq(
       field('type', $.identifier),
-      token.immediate('{'),
+      '{',
       optional($.initializer_list),
       '}',
-    ),
+    )),
 
     // e.g. 'i8[]{1, 2}', 'point[3]{{1, 2}}' or '[]{1, 2}' with the default
     // type, the elements take the type; an identifier since a builtin type
-    // keyword would break 'i8(x)' in expressions, and the '{' right after ']'
-    // keeps 'if a[i] {' an index and a block
-    typed_array_initializer: $ => seq(
+    // keyword would break 'i8(x)' in expressions; the dynamic precedence as in
+    // 'typed_initializer' keeps 'if a[i] {' an index and a block
+    typed_array_initializer: $ => prec.dynamic(-1, seq(
       optional(field('type', $.identifier)),
       '[',
       optional(field('size', $._expression)),
       ']',
-      token.immediate('{'),
+      '{',
       optional($.initializer_list),
       '}',
-    ),
+    )),
 
     // e.g. '[4]' is '[4]{}', an array of the default type that is not
     // initialized; with a type 'i8[4]' reads as an index

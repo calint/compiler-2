@@ -1,7 +1,7 @@
 #!/bin/sh
 # parses the '.baz' files of the repository with the grammar and fails on
 # 'ERROR' and 'MISSING' nodes, which the compiler may accept while the editor
-# loses the types around them, e.g. 'dat a = point {' with a space before '{'
+# loses the types around them
 # error tests are skipped: the first line of their '.out' that is not empty
 # starts with 'NAME.baz:line:column: '
 # usage: parse-sources.sh
@@ -12,8 +12,7 @@ ROOT=../../..
 
 # valid programs that the grammar does not parse on purpose
 # 0851.baz: bodies of generics that are never instantiated are not checked
-# spaced.baz: the language server test of 'dat a = point {' with a space
-SKIP="qa/coverage/tests/0851.baz etc/nvim/tree-sitter-baz/qa/src/spaced.baz"
+SKIP="qa/coverage/tests/0851.baz"
 
 LIST="$(mktemp)"
 LOG="$(mktemp)"

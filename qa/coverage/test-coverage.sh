@@ -71,7 +71,9 @@ FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin sdcard.img)
 case "$ACTION" in
 clean)
     echo $SEP
-    rm -f -- *.profraw baz.profdata cov.err rv32i-driver gen gen.o gen.s diff.baz out err
+    # 'find' since the profiles outgrow the argument list of 'rm'
+    find . -maxdepth 1 -name '*.profraw' -delete
+    rm -f -- baz.profdata cov.err profiles.txt rv32i-driver gen gen.o gen.s diff.baz out err
     rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/gen-rv32i.bin tests/diff.baz tests/out tests/err
     rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin tests/sdcard.img
     rm -rf -- report/
@@ -86,13 +88,17 @@ build)
     exit 0
     ;;
 report)
-    shopt -s nullglob
-    profiles=(*.profraw)
-    if [[ ${#profiles[@]} -eq 0 ]]; then
+    # a file list since the profiles outgrow the argument list; each line is
+    # 'weight,file', the explicit weight keeps a comma in a name, e.g. the
+    # profile of 'cli---checks=noub,-division'
+    find . -maxdepth 1 -name '*.profraw' | sed 's/^/1,/' >profiles.txt
+    if [[ ! -s profiles.txt ]]; then
+        rm -f -- profiles.txt
         echo "no coverage profiles found; build with coverage and run tests first" >&2
         exit 1
     fi
-    llvm-profdata merge -o baz.profdata -sparse "${profiles[@]}"
+    llvm-profdata merge -o baz.profdata -sparse -input-files=profiles.txt
+    rm -f -- profiles.txt
     objects=(-object="$BIN")
     # the driver of 'test-rv32i.sh' reaches lines the compiler cases do not
     if [[ -x rv32i-driver ]]; then
