@@ -109,10 +109,10 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
 
 // parses the generic definition again at 'start_tk' as an instance, the type
 // parameters of the callers are hidden meanwhile
-static auto add_generic_instance(toc& tc, const token& func_tk,
-                                 const token& start_tk,
-                                 const std::span<const type* const> type_args,
-                                 const generic_type_instance* const receiver)
+static auto add_func_instance(toc& tc, const token& func_tk,
+                              const token& start_tk,
+                              const std::span<const type* const> type_args,
+                              const generic_type_instance* const receiver)
     -> void {
 
     tc.types().hide_aliases();
@@ -151,7 +151,7 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
 
     // an error in the instance reports the call that needed it
     try {
-        add_generic_instance(
+        add_func_instance(
             tc, generic.func_tk, generic.start_tk, type_args,
             generic.receiver_instance ? &*generic.receiver_instance : nullptr);
     } catch (compiler_exception& e) {
@@ -171,7 +171,7 @@ auto instantiate_generic_method(toc& tc, const token& func_tk,
     // an error in the method is in the generic code, the frames name the bases
     // and the alias
     try {
-        add_generic_instance(tc, func_tk, start_tk, {}, &instance);
+        add_func_instance(tc, func_tk, start_tk, {}, &instance);
     } catch (compiler_exception& e) {
         for (const generic_base_frame& frame : instance.base_frames) {
             e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");

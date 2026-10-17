@@ -259,48 +259,89 @@ class stmt_def_type final : public statement {
         generic_text_ = tz.skip_braced_block_after(type_tk);
     }
 
-    // e.g. 'type str = text<127>' is the type 'str' with the fields of the
+    // an instance of a generic type for this alias
+    auto make_instance(const std::string_view generic_name,
+                       std::vector<generic_binding> bindings,
+                       std::vector<generic_base_frame> base_frames,
+                       const std::string& alias_source)
+        -> generic_type_instance {
+
+        return {
+            // e.g. 'str' of 'type str = text<8>'
+            .src_loc_tk{name_tk_},
+            // e.g. 'text', then 'list'
+            .generic_name{generic_name},
+            // e.g. the type 'str'
+            .type_ptr{&type_},
+            // e.g. 'capacity' is 8, then 'T' is 'i8' and 'capacity' is 8
+            .bindings{std::move(bindings)},
+            // e.g. 'type str = text<8>' for both
+            .alias_source{alias_source},
+            // e.g. none for 'text<8>', then 'list<i8, 8>' for 'list'
+            .base_frames{std::move(base_frames)},
+        };
+    }
+
+    // e.g. 'type str = text<8>' is the type 'str' with the fields of the
     // generic type 'text' for the arguments
+    //
+    // e.g. with 'type text<capacity> = list<i8, capacity>' and
+    // 'type list<T type, capacity> { array T[capacity], len }' the steps are:
+    //   1. read '= text<8>'
+    //   2. bind 'capacity' of 'text' to 8
+    //   3. follow the bases, 'text<8>' then 'list<i8, 8>', and parse the
+    //      fields of 'list' as those of 'str'
+    //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>'
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
         kind_ = kind::alias;
 
-        // e.g. the '=' of 'type str = text<127>'
+        // 'alias_tks_' keeps the tokens after the name for 'source_to'
+        // e.g. the '=' of 'type str = text<8>'
         alias_tks_.emplace_back(tz.is_next_char_token('='));
 
         // e.g. 'text'
-        const token generic_tk{parse_alias_generic(tc, tz)};
+        const token generic_tk{tz.next_token()};
+        alias_tks_.emplace_back(generic_tk);
 
+        // e.g. 'type str = i32<8>' or 'type str = undefined<8>' are errors
+        assert_generic_type(tc, generic_tk, "the alias that names it");
+
+        // e.g. 'type text<capacity> = list<i8, capacity>'
         const generic_type_info generic{
             tc.generics().get_type(generic_tk.text()),
         };
 
-        // e.g. '127' of '<127>'
-        const std::vector<token> arg_tks{parse_alias_args(tz)};
-
-        assert_arg_count(generic_tk, generic, arg_tks);
-
-        // e.g. the fields and methods of 'text<127>' and of its bases
-        add_instances(tc, parse_instance(tc, generic_tk, generic, arg_tks));
-    }
-
-    // appends the tokens after the name to 'alias_tks_' and returns the
-    // arguments
-    auto parse_alias_args(tokenizer& tz) -> std::vector<token> {
-        generic_arguments args{parse_generic_args(tz, alias_tks_.back())};
-
+        // e.g. '8' of '<8>', the '<', '8' and '>' go to 'alias_tks_'
+        generic_arguments args{parse_generic_args(tz, generic_tk)};
         alias_tks_.append_range(args.list_tks);
 
-        return std::move(args.arg_tks);
-    }
+        // e.g. 'text<8, 9>' is an error, 'text' has one parameter
+        assert_arg_count(generic_tk, generic, args.arg_tks);
 
-    // appends the name of the generic type to 'alias_tks_'
-    auto parse_alias_generic(const toc& tc, tokenizer& tz) -> token {
-        const token generic_tk{tz.next_token()};
-        alias_tks_.emplace_back(generic_tk);
+        // an error here is in the alias itself, so it gets no frame
+        // e.g. 'capacity' is 8 for 'text<8>'
+        const std::vector<generic_binding> bindings{
+            resolve_args(tc, generic_tk.text(), generic.params, args.arg_tks),
+        };
 
-        assert_generic_type(tc, generic_tk, "the alias that names it");
+        // e.g. 'type str = text<8>', names the alias in the errors found in
+        // the generic code
+        const std::string alias_source{
+            generic_type_instance::alias_text(name_tk_.text(),
+                                              generic_tk.text(), bindings),
+        };
 
-        return generic_tk;
+        // e.g. 'text<8>' then 'list<i8, 8>', 'type_' gets the fields of 'list'
+        const std::vector<generic_type_instance> instances{
+            parse_instances(tc, generic_tk.text(), generic, args.arg_tks,
+                            bindings, alias_source),
+        };
+
+        // e.g. 'str' with the fields of 'list<i8, 8>'
+        tc.add_type(name_tk_, type_);
+
+        // e.g. the methods of 'list<i8, 8>' then of 'text<8>' for 'str'
+        add_instances(tc, instances);
     }
 
     auto parse_fields(toc& tc, tokenizer& tz) -> void {
@@ -333,155 +374,141 @@ class stmt_def_type final : public statement {
         }
     }
 
-    // the fields are those of the generic definition, parsed again
-    auto parse_generic_fields(toc& tc, const generic_type_info& generic)
-        -> void {
-
-        tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
-
-        // skips the name and the parameters of the generic definition
-        std::ignore = generic_tz.next_token();
-        std::ignore = generic_param::parse(generic_tz);
-
-        open_brace_tk_ = generic_tz.is_next_char_token('{');
-
-        assert(not open_brace_tk_.is_empty());
-
-        parse_fields(tc, generic_tz);
-    }
-
-    // adds this type with the fields of the generic definition for the
-    // arguments, an error in the fields is in the generic definition, the
-    // frame names the alias. the result has an instance per generic type, e.g.
-    // 'type str = text<8>' with 'type text<capacity> = list<i8, capacity>' is
-    // an instance of 'text' and of 'list<i8, 8>'
-    auto parse_instance(toc& tc, const token& generic_tk,
-                        const generic_type_info& generic,
-                        const std::span<const token> arg_tks)
+    // follows the bases from the generic type that the alias names to the one
+    // with the fields and parses those fields as the fields of this type. the
+    // result has an instance per generic type, the named one first
+    //
+    // e.g. 'type str = text<8>' with 'type text<capacity> = list<i8, capacity>'
+    // and 'type list<T type, capacity> { array T[capacity], len }':
+    //   level 1: 'text' with the argument '8', 'capacity' is 8
+    //   level 2: 'list' with the arguments 'i8' and 'capacity', 'T' is 'i8' and
+    //            'capacity' is 8, has no base so 'str' gets its fields
+    //
+    // an error in a level is in the generic definition, it gets a frame per
+    // level before it and one that names the alias, e.g. an error in the
+    // fields of 'list' has the frames 'list<i8, 8>' and 'type str = text<8>'
+    auto parse_instances(toc& tc, const std::string_view generic_name,
+                         const generic_type_info& generic,
+                         const std::span<const token> arg_tks,
+                         const std::span<const generic_binding> bindings,
+                         const std::string& alias_source)
         -> std::vector<generic_type_instance> {
 
-        // e.g. 'capacity' is 8 for 'text<8>'
-        const std::vector<generic_binding> bindings{
-            resolve_args(tc, generic_tk.text(), generic.params, arg_tks),
-        };
+        // the generic type of the current level and its argument tokens
+        // e.g. 'text' and '8' of 'text<8>'
+        const generic_type_info* level{&generic};
+        std::vector<token> level_arg_tks{arg_tks.begin(), arg_tks.end()};
 
-        // e.g. 'type str = text<8>'
-        const std::string alias_source{
-            generic_type_instance::alias_text(name_tk_.text(),
-                                              generic_tk.text(), bindings),
-        };
-
-        // e.g. 'text<8>' then its base 'list<i8, 8>', filled by 'parse_level'
+        // e.g. 'text<8>' then its base 'list<i8, 8>'
         std::vector<generic_type_instance> instances;
 
+        // e.g. 'text<8>', the named generic type has no frames of bases
+        instances.push_back(make_instance(generic_name,
+                                          {bindings.begin(), bindings.end()},
+                                          {}, alias_source));
+
         try {
-            // e.g. adds 'text<8>', then 'list<i8, 8>' and its fields to 'str'
-            parse_level(tc, generic_tk.text(), generic, arg_tks, bindings, {},
-                        instances);
+            // e.g. 'text' has the base 'list', 'list' has none
+            while (not level->base_tk.is_empty()) {
+                // e.g. 'list' of 'type text<capacity> = list<i8, capacity>'
+                const token& base_tk{level->base_tk};
+
+                // e.g. 'type list<T type, capacity> { array T[capacity], len }'
+                const generic_type_info& base{
+                    tc.generics().get_type(base_tk.text()),
+                };
+
+                // e.g. 'T' is 'i8' and 'capacity' is 8 for 'list<i8,
+                // capacity>' with 'capacity' 8 of 'text'
+                std::vector<generic_binding> base_bindings{
+                    resolve_base_args(tc, *level, base, level_arg_tks,
+                                      instances.back().bindings),
+                };
+
+                // an error in the base is reported with the arguments it got
+                // e.g. 'list<i8, 8>' at the 'list' of 'list<i8, capacity>'
+                const generic_base_frame base_frame{
+                    .src_loc_tk{base_tk},
+                    .text{
+                        generic_type_instance::instance_text(base_tk.text(),
+                                                             base_bindings),
+                    },
+                };
+
+                // followed by the frames that lead to the named generic type
+                // e.g. none when the level before is 'text'
+                std::vector<generic_base_frame> base_frames{base_frame};
+                base_frames.append_range(instances.back().base_frames);
+
+                // e.g. 'list<i8, 8>'
+                instances.push_back(
+                    make_instance(base_tk.text(), std::move(base_bindings),
+                                  std::move(base_frames), alias_source));
+
+                // the base is the next level
+                // e.g. 'list' with the tokens 'i8' and 'capacity'
+                level_arg_tks = level->base_arg_tks;
+                level = &base;
+            }
+
+            // e.g. 'str' gets 'array i8[8]' and 'len'
+            parse_root_fields(tc, *level, level_arg_tks,
+                              instances.back().bindings);
         } catch (compiler_exception& e) {
+            // e.g. an error in 'list' gets the frame 'list<i8, 8>' at the
+            // 'list' of 'type text<capacity> = list<i8, capacity>'
+            for (const generic_base_frame& frame :
+                 instances.back().base_frames) {
+
+                e.add_call_frame(frame.src_loc_tk, frame.text,
+                                 "instantiated by");
+            }
+
             // e.g. the frame 'type str = text<8>' at 'str'
             e.add_call_frame(name_tk_, alias_source, "instantiated by");
 
             throw;
         }
 
-        // e.g. 'str' with the fields of 'list<i8, 8>'
-        tc.add_type(name_tk_, type_);
-
-        // e.g. an error in a method of 'list' names 'type str = text<8>'
-        for (generic_type_instance& instance : instances) {
-            instance.alias_source = alias_source;
-        }
-
         return instances;
     }
 
-    // the instance of 'generic' and of its bases, the fields are those of the
-    // generic type without a base. 'base_frames' lead from 'generic' to the
-    // generic type that the alias names
-    auto parse_level(toc& tc, const std::string_view generic_name,
-                     const generic_type_info& generic,
-                     const std::span<const token> arg_tks,
-                     const std::span<const generic_binding> bindings,
-                     const std::span<const generic_base_frame> base_frames,
-                     std::vector<generic_type_instance>& instances) -> void {
-
-        // e.g. the instance 'text<8>' of 'str', then 'list<i8, 8>' of 'str'
-        instances.push_back({
-            // e.g. 'str' of 'type str = text<8>'
-            .src_loc_tk{name_tk_},
-            // e.g. 'text', then 'list'
-            .generic_name{generic_name},
-            // e.g. the type 'str'
-            .type_ptr{&type_},
-            // e.g. 'capacity' is 8, then 'T' is 'i8' and 'capacity' is 8
-            .bindings{bindings.begin(), bindings.end()},
-            // e.g. 'type str = text<8>', set by 'parse_instance'
-            .alias_source{},
-            // e.g. none for 'text<8>', then 'list<i8, 8>' for 'list'
-            .base_frames{base_frames.begin(), base_frames.end()},
-        });
-
-        // e.g. 'list' of 'type list<T type, capacity> { ... }'
-        if (generic.base_tk.is_empty()) {
-            // e.g. 'str' gets 'array i8[8]' and 'len'
-            parse_root_fields(tc, generic, arg_tks, bindings);
-            return;
-        }
-
-        // e.g. 'list' of 'type text<capacity> = list<i8, capacity>'
-        const std::string_view base_name{generic.base_tk.text()};
-        // e.g. 'type list<T type, capacity> { array T[capacity], len }'
-        const generic_type_info& base{tc.generics().get_type(base_name)};
-
-        // e.g. 'T' is 'i8' and 'capacity' is 8 for 'list<i8, capacity>' with
-        // 'capacity' 8 of 'text'
-        const std::vector<generic_binding> base_bindings{
-            resolve_base_args(tc, generic, base, arg_tks, bindings),
-        };
-
-        // an error in the base is reported with the arguments it got
-        // e.g. 'list<i8, 8>' at the 'list' of 'list<i8, capacity>'
-        const generic_base_frame base_frame{
-            .src_loc_tk{generic.base_tk},
-            .text{
-                generic_type_instance::instance_text(base_name, base_bindings),
-            },
-        };
-
-        // e.g. 'list<i8, 8>' followed by the frames that lead to 'text'
-        std::vector<generic_base_frame> base_frames_of_base{base_frame};
-        base_frames_of_base.append_range(base_frames);
-
-        try {
-            // e.g. 'list' with the tokens 'i8' and 'capacity' and their
-            // bindings 'i8' and 8
-            parse_level(tc, base_name, base, generic.base_arg_tks,
-                        base_bindings, base_frames_of_base, instances);
-        } catch (compiler_exception& e) {
-            // e.g. an error in 'list' gets the frame 'list<i8, 8>' at the
-            // 'list' of 'type text<capacity> = list<i8, capacity>'
-            e.add_call_frame(base_frame.src_loc_tk, base_frame.text,
-                             "instantiated by");
-
-            throw;
-        }
-    }
-
-    // the constant arguments live in a block of their own
+    // the fields are those of the generic definition, parsed again with its
+    // parameters declared in a block of their own
+    // e.g. 'array T[capacity], len' of 'type list<T type, capacity> {...}'
+    // with 'T' 'i8' and 'capacity' 8
     auto parse_root_fields(toc& tc, const generic_type_info& generic,
                            const std::span<const token> arg_tks,
                            const std::span<const generic_binding> bindings)
         -> void {
 
+        // the constant arguments live in a block of their own
         tc.enter_block();
 
+        // unbinds the type parameters at return
         type_alias_scope aliases{tc};
 
+        // e.g. 'T' names the type 'i8' and 'capacity' is the constant 8
         declare_params(tc, aliases, generic.params, arg_tks, bindings);
 
-        parse_generic_fields(tc, generic);
+        // e.g. reads from the 'list' after 'type' of the generic definition
+        tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
 
+        // skips the name and the parameters of the generic definition
+        // e.g. 'list' and '<T type, capacity>'
+        std::ignore = generic_tz.next_token();
+        std::ignore = generic_param::parse(generic_tz);
+
+        // e.g. the '{' before 'array T[capacity], len }'
+        open_brace_tk_ = generic_tz.is_next_char_token('{');
+
+        // note: 'define_generic' checked the '{' of a generic without a base
+        assert(not open_brace_tk_.is_empty());
+
+        // e.g. 'array T[capacity]' and 'len'
+        parse_fields(tc, generic_tz);
+
+        // e.g. 'array' is 'i8[8]' because 'T' and 'capacity' are declared
         add_fields(tc);
 
         tc.exit_block();
