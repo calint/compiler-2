@@ -53,6 +53,11 @@ struct func_head {
     // e.g. 'func text.print()' of the generic type 'text', read up to 'text'
     bool is_generic_type_method{};
 
+    // kept as text, its instances are the functions
+    [[nodiscard]] auto is_generic() const -> bool {
+        return is_generic_type_method or not type_param_tks.empty();
+    }
+
     //
     // statics
     //
@@ -195,12 +200,19 @@ class stmt_def_func final : public statement {
     token close_paren_tk_;
     std::optional<func_return_info> returns_;
     stmt_block code_;
+
+    // what an instance keeps of its generic definition
+    struct instance_origin {
+        // the generic method, e.g. 'text.print' for 'str.print', empty for a
+        // generic function
+        std::string generic_method;
+        // the constants of the generic type of a method, added to the frame of
+        // the body
+        std::vector<generic_arg> constants;
+    };
+
     // the definition parsed again with the type arguments bound
-    bool is_instance_{};
-    // the generic type of the method that an instance is of, e.g. 'text'
-    std::string generic_type_name_;
-    // the constants of that instance, added to the frame of the body
-    std::vector<generic_arg> constants_;
+    std::optional<instance_origin> instance_;
 
   public:
     // a function of the user code, or an instance of a generic definition
@@ -254,7 +266,11 @@ class stmt_def_func final : public statement {
     // the constant arguments of the generic type of a method, in the frame of
     // the body
     auto add_constants(toc& tc, const size_t indent) const -> void {
-        for (const generic_arg& constant : constants_) {
+        if (not instance_) {
+            return;
+        }
+
+        for (const generic_arg& constant : instance_->constants) {
             tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
                          constant.value);
         }
@@ -272,10 +288,10 @@ class stmt_def_func final : public statement {
         -> std::string {
 
         if (array_lengths.empty()) {
-            return is_instance_ ? label_name(name()) : std::string{};
+            return instance_ ? label_name(name()) : std::string{};
         }
 
-        if (not is_instance_) {
+        if (not instance_) {
             return instance_path(array_lengths);
         }
 
@@ -558,17 +574,6 @@ class stmt_def_func final : public statement {
                                  "'mut' requires a method 'type.name'"};
     }
 
-    // e.g. 'text.size' for the instance 'str.size', empty if the function is
-    // not an instance of a method of a generic type
-    [[nodiscard]] auto generic_method_name() const -> std::string {
-        if (generic_type_name_.empty() or head_.method_name_tk.is_empty()) {
-            return {};
-        }
-
-        return std::format("{}.{}", generic_type_name_,
-                           head_.method_name_tk.text());
-    }
-
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
@@ -680,8 +685,14 @@ class stmt_def_func final : public statement {
             add_self_param(tc);
         }
 
+        // e.g. 'text.size' for the instance 'str.size', empty if the function
+        // is not an instance of a method of a generic type
+        const std::string generic_method{
+            instance_ ? instance_->generic_method : std::string{},
+        };
+
         tc.add_func(head_.name_tk, name_, statement::get_type(), this,
-                    generic_method_name());
+                    generic_method);
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'
@@ -712,12 +723,17 @@ class stmt_def_func final : public statement {
     auto set_instance(const generic_func_instance& instance) -> void {
         assert(instance.type_args.size() == head_.type_param_tks.size());
 
-        is_instance_ = true;
+        instance_.emplace();
 
         // e.g. 'text' of 'func text.print()' names 'str'
         if (instance.receiver != nullptr) {
-            generic_type_name_ = instance.receiver->generic_name;
-            constants_ = instance.receiver->constants();
+            assert(not head_.method_name_tk.is_empty());
+
+            instance_->generic_method =
+                std::format("{}.{}", instance.receiver->generic_name,
+                            head_.method_name_tk.text());
+
+            instance_->constants = instance.receiver->constants();
         }
 
         // e.g. 'tokenizer.to<name>'
@@ -881,7 +897,7 @@ class stmt_def_func_generic final : public statement {
                        tokenizer& tz) -> void {
 
         const generic_method_info method{
-            .src_loc_tk{head.name_tk},
+            .type_tk{head.name_tk},
             .func_tk{func_tk},
             .start_tk{head.start_tk},
         };
@@ -1115,7 +1131,7 @@ inline auto make_stmt_def_func(toc& tc, const token tk, tokenizer& tz)
     const func_head head{func_head::read(tc, tz)};
 
     // e.g. 'func text.print()' or 'func tokenizer.to<T type>()'
-    if (head.is_generic_type_method or not head.type_param_tks.empty()) {
+    if (head.is_generic()) {
         return std::make_unique<stmt_def_func_generic>(tc, tk, head, tz);
     }
 

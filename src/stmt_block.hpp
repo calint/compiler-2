@@ -10,18 +10,15 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
-#include "stmt_assign_var.hpp"
 #include "stmt_break.hpp"
 #include "stmt_builtin_array_copy.hpp"
 #include "stmt_continue.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_var.hpp"
-#include "stmt_identifier.hpp"
 #include "stmt_return.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "ub_assigned.hpp"
-#include "unary_ops.hpp"
 
 class stmt_block final : public statement {
     token open_brace_tk_;
@@ -187,48 +184,6 @@ class stmt_block final : public statement {
     // statics
     //
 
-    // a method call, an assignment or a function call
-    // note: 'unary_ops' not allowed before destination identifier
-    [[nodiscard]] static auto parse_identifier_statement(toc& tc, tokenizer& tz,
-                                                         const token tk)
-        -> std::unique_ptr<statement> {
-
-        // the discarded result is rejected at compile like any other call
-        // e.g. 'point.at(1, 2)'
-        if (is_constructor_call(tc, tk, tz)) {
-            return create_stmt_constructor_call(tc, tz, tk);
-        }
-
-        assert_no_type_args_for_plain_func(tc, tk, tz);
-
-        stmt_identifier si{tc, {}, tk, tz};
-
-        // e.g. 'lst.add(1)'
-        if (si.is_method_receiver()) {
-            return create_stmt_method_call(tc, tz, std::move(si));
-        }
-
-        // e.g. 'p1 = p2'
-        if (const token equals_tk{tz.is_next_char_token('=')};
-            not equals_tk.is_empty()) {
-
-            return std::make_unique<stmt_assign_var>(tc, tz, std::move(si),
-                                                     equals_tk);
-        }
-
-        // e.g. 'show(x)' or 'show<name>(x)', the call reads the type arguments
-        // note: solves circular reference
-        if (tz.peek_char_after_whitespace() == '(' or
-            is_generic_call(tc, si.identifier(), tz)) {
-
-            return create_stmt_call(tc, tz, si);
-        }
-
-        throw compiler_exception{
-            tz, "unexpected character; expected '=' for assignment or '(' "
-                "for function call"};
-    }
-
     // 'tk' is the first token of the statement
     [[nodiscard]] static auto parse_statement(toc& tc, tokenizer& tz,
                                               const token tk)
@@ -275,6 +230,7 @@ class stmt_block final : public statement {
             return built;
         }
 
-        return parse_identifier_statement(tc, tz, tk);
+        // e.g. 'lst.add(1)', 'p1 = p2' or 'show<name>(x)'
+        return create_statement_of_identifier(tc, tz, tk);
     }
 };

@@ -1,6 +1,49 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: generics and calls, third pass: one place decides what a name
+    starts, each call kind reads as its steps, an instance is one member;
+    behavior, '.out' files and messages unchanged
+    => 1. one dispatcher: the statement parser ('stmt_block.hpp'
+       'parse_identifier_statement') uses the expression's
+       'parse_call_or_identifier' (no unary operators, no expected type) and
+       only adds the assignment; 'create_stmt_call',
+       'create_stmt_constructor_call' and 'create_stmt_method_call' leave
+       'decouple', the two parsers stop checking the same cases in a
+       different order
+    => 2. 'stmt_call': each constructor reads callee, checks, arguments; the
+       kind checks become named helpers ('assert_method_callable' for the
+       constructor and array receiver errors, 'assert_constructor' for the
+       missing and not-a-constructor errors)
+    => 3. 'generic_call::written_type_arguments' uses 'resolve_type_arg' of
+       'toc.hpp' (the same message is written twice now)
+    => 4. 'stmt_def_func': 'is_instance_', 'generic_type_name_' and
+       'constants_' become one 'std::optional<instance_origin> instance_'
+       ('generic_method' name for the clash check, 'constants' for the
+       frame); 'set_instance' fills it, 'generic_method_name' goes away
+    => 5. 'func_head::is_generic()' replaces 'is_generic_type_method or not
+       type_param_tks.empty()' in 'make_stmt_def_func' and the assert
+    => 6. 'generic_method_info::src_loc_tk' becomes 'type_tk': it is the
+       generic type the registry matches ('get_methods'), not only a location
+    => 7. check per step: x86_64 and rv32i-fpga tests with no '.out' change,
+       'roome/qa/test.sh', clang-tidy clean, formatter applied
+    => done (2026-10-18): as planned; the statement parser's factory is
+       'create_statement_of_identifier' next to 'parse_call_or_identifier'
+       in 'decouple_impl.hpp', 'is_constructor_call' and
+       'assert_no_type_args_for_plain_func' became local to it; the
+       constructor call reads its '(' with 'read_callee' like the others;
+       the helpers are 'assert_method_receiver' and 'constructor_func'; the
+       assert of 'stmt_def_func' keeps its two conditions, an instance head
+       has type parameters;
+       one message changed, untested before: the statement 'a[0](1)' now
+       reports the missing '=' at the '(' instead of "function 'a' not
+       found"
+    => not in it: one generic function per source definition for a method
+       with type parameters of its own (the clash errors 0869, 1068, 1075
+       depend on the per-instance definition); deduction by parsing the
+       arguments (an argument is parsed against the parameter type, so the
+       lookahead stays); the inline and non-inline compile paths (their
+       choices shape the emitted code)
 [x] hard: generics and calls: a reviewer follows one path per kind of
     definition and of call
     => done (2026-10-18): 'stmt_call' reads the '<...>' and the '(' of every

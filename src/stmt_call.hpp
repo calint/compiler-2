@@ -266,19 +266,17 @@ struct generic_call {
 
         for (const auto [ix, type_tk] : std::views::enumerate(arg_tks)) {
             // a surplus argument is reported with the count
-            if (std::cmp_less(ix, param_tks.size()) and
-                tc.constant_value_of(type_tk)) {
+            if (std::cmp_less(ix, param_tks.size())) {
+                const std::string_view param_name{
+                    param_tks.at(static_cast<size_t>(ix)).text(),
+                };
 
-                throw compiler_exception{
-                    type_tk,
-                    std::format("generic parameter '{}' of '{}' needs a type, "
-                                "got the constant '{}'",
-                                param_tks.at(static_cast<size_t>(ix)).text(),
-                                generic_name, type_tk.text())};
+                type_args.emplace_back(
+                    &resolve_type_arg(tc, generic_name, param_name, type_tk));
+            } else {
+                type_args.emplace_back(
+                    &tc.get_type_or_throw(type_tk, type_tk.text()));
             }
-
-            type_args.emplace_back(
-                &tc.get_type_or_throw(type_tk, type_tk.text()));
         }
 
         return type_args;
@@ -1608,7 +1606,8 @@ struct constructor_call_tag {};
 // a call of a function, a method or a constructor
 //
 // parsing, in the constructors: the callee and its '(' ('read_callee', a
-// generic function through 'generic_call'), then the arguments
+// generic function through 'generic_call'), the kind of the callee
+// ('assert_method_receiver', 'constructor_func'), then the arguments
 // ('parse_arguments', each checked by 'assert_argument_usable' and
 // 'assert_argument_writable', or 'parse_builtin_arguments')
 //
@@ -1672,34 +1671,9 @@ class stmt_call : public expression {
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
-        // a constructor has no receiver, it builds its value
-        if (func.is_constructor()) {
-            throw compiler_exception{
-                tok(), std::format("'{}' is a constructor, call it as "
-                                   "'{}(...)'",
-                                   func_name_, func_name_)};
-        }
+        assert_method_receiver(func, receiver);
 
-        // only an element of an array can be the receiver, 'a[1].f()' but not
-        // 'a.f()'
-        if (receiver.is_array()) {
-            throw compiler_exception{
-                receiver.first_token(),
-                std::format("receiver of method '{}' cannot be an array",
-                            func_name_)};
-        }
-
-        // the whitespace before the receiver belongs to its first token
-        const token& first_tk{receiver.first_token()};
-
-        const token receiver_pos_tk{
-            token::position(first_tk.file_index(), first_tk.start_index(),
-                            first_tk.at_line()),
-        };
-
-        args_.emplace_back(
-            receiver_pos_tk,
-            expr_type{std::make_unique<stmt_identifier>(std::move(receiver))});
+        add_receiver_argument(std::move(receiver));
 
         parse_arguments(tc, tz, func);
     }
@@ -1717,34 +1691,9 @@ class stmt_call : public expression {
 
         assert(not constructor_dot_tk_.is_empty());
 
-        if (constructor_name_tk_.text().empty()) {
-            throw compiler_exception{tz, "expected constructor name after '.'"};
-        }
+        const stmt_def_func& func{constructor_func(tc, tz)};
 
-        if (not tc.is_func(func_name_)) {
-            throw compiler_exception{
-                constructor_name_tk_,
-                std::format("type '{}' has no constructor '{}'",
-                            type_description(tc, type_tk),
-                            constructor_name_tk_.text())};
-        }
-
-        const stmt_def_func& func{
-            tc.get_func_or_throw(constructor_name_tk_, func_name_),
-        };
-
-        if (not func.is_constructor()) {
-            throw compiler_exception{
-                constructor_name_tk_,
-                std::format("'{}' is a method, call it on a value of type '{}'",
-                            func_name_, type_tk.text())};
-        }
-
-        set_type(func.get_type());
-
-        open_paren_tk_ = tz.is_next_char_token('(');
-
-        assert_open_paren_found(tz, "constructor name");
+        read_callee(tc, tz, nullptr, "constructor name");
 
         parse_arguments(tc, tz, func);
     }
@@ -1883,6 +1832,21 @@ class stmt_call : public expression {
     }
 
   private:
+    // the receiver is the first argument
+    auto add_receiver_argument(stmt_identifier receiver) -> void {
+        // the whitespace before the receiver belongs to its first token
+        const token& first_tk{receiver.first_token()};
+
+        const token receiver_pos_tk{
+            token::position(first_tk.file_index(), first_tk.start_index(),
+                            first_tk.at_line()),
+        };
+
+        args_.emplace_back(
+            receiver_pos_tk,
+            expr_type{std::make_unique<stmt_identifier>(std::move(receiver))});
+    }
+
     // an argument reaches its parameter by reference, so a value that has no
     // storage or an array of the wrong shape cannot be passed
     auto assert_argument_usable(const toc& tc, const size_t index,
@@ -1955,6 +1919,28 @@ class stmt_call : public expression {
             arg.tok(), std::format("read-only '{}' cannot be passed to a "
                                    "'mut' parameter{}",
                                    arg.identifier(), read_only_hint(info))};
+    }
+
+    // the function is a method and the receiver is a value
+    auto assert_method_receiver(const stmt_def_func& func,
+                                const stmt_identifier& receiver) const -> void {
+
+        // a constructor has no receiver, it builds its value
+        if (func.is_constructor()) {
+            throw compiler_exception{
+                tok(), std::format("'{}' is a constructor, call it as "
+                                   "'{}(...)'",
+                                   func_name_, func_name_)};
+        }
+
+        // only an element of an array can be the receiver, 'a[1].f()' but not
+        // 'a.f()'
+        if (receiver.is_array()) {
+            throw compiler_exception{
+                receiver.first_token(),
+                std::format("receiver of method '{}' cannot be an array",
+                            func_name_)};
+        }
     }
 
     // the callee writes a 'mut' parameter in place, so storage shared with
@@ -2087,6 +2073,38 @@ class stmt_call : public expression {
     // the receiver of a method is written before the name
     [[nodiscard]] auto call_begin_token() const -> const token& {
         return is_method() ? args_.at(0).tok() : tok();
+    }
+
+    // the type names the constructor after the '.', e.g. 'at' of
+    // 'point.at(1, 2)', a method of the type is not one
+    [[nodiscard]] auto constructor_func(const toc& tc,
+                                        const tokenizer& tz) const
+        -> const stmt_def_func& {
+
+        if (constructor_name_tk_.text().empty()) {
+            throw compiler_exception{tz, "expected constructor name after '.'"};
+        }
+
+        if (not tc.is_func(func_name_)) {
+            throw compiler_exception{
+                constructor_name_tk_,
+                std::format("type '{}' has no constructor '{}'",
+                            type_description(tc, tok()),
+                            constructor_name_tk_.text())};
+        }
+
+        const stmt_def_func& func{
+            tc.get_func_or_throw(constructor_name_tk_, func_name_),
+        };
+
+        if (not func.is_constructor()) {
+            throw compiler_exception{
+                constructor_name_tk_,
+                std::format("'{}' is a method, call it on a value of type '{}'",
+                            func_name_, tok().text())};
+        }
+
+        return func;
     }
 
     [[nodiscard]] auto describe_argument(const size_t index) const

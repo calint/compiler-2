@@ -324,27 +324,15 @@ struct lea_request {
                                                   const token tk)
     -> std::unique_ptr<statement>;
 
-[[nodiscard]] auto create_stmt_call(toc& tc, tokenizer& tz,
-                                    const stmt_identifier& si)
-    -> std::unique_ptr<statement>;
-
-[[nodiscard]] auto create_stmt_constructor_call(toc& tc, tokenizer& tz,
-                                                const token type_tk)
-    -> std::unique_ptr<statement>;
-
-[[nodiscard]] auto create_stmt_method_call(toc& tc, tokenizer& tz,
-                                           stmt_identifier receiver)
+// a statement that starts with a name: a call or an assignment
+[[nodiscard]] auto create_statement_of_identifier(toc& tc, tokenizer& tz,
+                                                  const token tk)
     -> std::unique_ptr<statement>;
 
 // e.g. 'show<name>(x)', a generic function name followed by '<' has no other
 // meaning
 [[nodiscard]] auto is_generic_call(const toc& tc, std::string_view name,
                                    tokenizer& tz) -> bool;
-
-// e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
-// the '<' as an operator
-auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
-                                        tokenizer& tz) -> void;
 
 // compiles the element count of a bulk operation into the register the
 // machine asks for, the statement must outlive the emitter
@@ -356,9 +344,6 @@ auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
                                     tokenizer& tz) -> bool;
 
 [[nodiscard]] auto is_default_array_literal(tokenizer& tz) -> bool;
-
-[[nodiscard]] auto is_constructor_call(const toc& tc, const token& tk,
-                                       tokenizer& tz) -> bool;
 
 [[nodiscard]] auto is_record_literal(const toc& tc, const token& tk,
                                      tokenizer& tz) -> bool;

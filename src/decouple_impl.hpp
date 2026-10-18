@@ -29,6 +29,7 @@
 #include "expr_type.hpp"
 #include "generics.hpp"
 #include "operand.hpp"
+#include "stmt_assign_var.hpp"
 #include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_convert.hpp"
@@ -81,37 +82,10 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
     return nullptr;
 }
 
-// declared in 'decouple.hpp'
-// called from 'stmt_block'
-auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
-    -> std::unique_ptr<statement> {
-
-    // a call statement has no destination to deduce a type argument from
-    return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
-                                       tz, nullptr);
-}
-
-// declared in 'decouple.hpp'
-// called from 'stmt_block'
-auto create_stmt_constructor_call(toc& tc, tokenizer& tz, const token type_tk)
-    -> std::unique_ptr<statement> {
-
-    return std::make_unique<stmt_call>(constructor_call_tag{}, tc, unary_ops{},
-                                       type_tk, tz);
-}
-
-// declared in 'decouple.hpp'
-// called from 'stmt_block'
-auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
-    -> std::unique_ptr<statement> {
-
-    return std::make_unique<stmt_call>(tc, unary_ops{}, std::move(receiver), tz,
-                                       nullptr);
-}
-
-// declared in 'decouple.hpp'
-auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
-                                        tokenizer& tz) -> void {
+// e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
+// the '<' as an operator
+static auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
+                                               tokenizer& tz) -> void {
 
     // a variable of that name is an operand of '<'
     if (not tc.is_func(tk.text()) or tc.generics().has_func(tk.text()) or
@@ -156,9 +130,8 @@ auto is_default_array_literal(tokenizer& tz) -> bool {
     return tz.peek_char_after_whitespace() == '[';
 }
 
-// declared in 'decouple.hpp'
 // e.g. 'point.at(1, 2)', a type name followed by '.' has no other meaning
-auto is_constructor_call(const toc& tc, const token& tk, tokenizer& tz)
+static auto is_constructor_call(const toc& tc, const token& tk, tokenizer& tz)
     -> bool {
 
     return is_type_name_followed_by(tc, tk, tz, '.');
@@ -253,6 +226,7 @@ static auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 
     assert_no_type_args_for_plain_func(tc, tk, tz);
 
+    // e.g. 'point.at(1, 2)'
     if (is_constructor_call(tc, tk, tz)) {
         return {
             .call{
@@ -281,6 +255,37 @@ static auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
         .call{},
         .identifier{std::make_unique<stmt_identifier>(std::move(si))},
     };
+}
+
+// declared in 'decouple.hpp'
+// called from 'stmt_block'
+// a call as in an expression, e.g. 'f(x)', 'point.at(1, 2)' or 'lst.add(x)',
+// otherwise an assignment, e.g. 'p1 = p2'
+// note: 'unary_ops' not allowed before destination identifier
+auto create_statement_of_identifier(toc& tc, tokenizer& tz, const token tk)
+    -> std::unique_ptr<statement> {
+
+    // a call statement has no destination to deduce a type argument from
+    // the discarded result is rejected at compile like any other call
+    call_or_identifier parsed{
+        parse_call_or_identifier(tc, tz, tk, unary_ops{}, nullptr),
+    };
+
+    if (parsed.call) {
+        return std::move(parsed.call);
+    }
+
+    // e.g. 'p1 = p2'
+    if (const token equals_tk{tz.is_next_char_token('=')};
+        not equals_tk.is_empty()) {
+
+        return std::make_unique<stmt_assign_var>(
+            tc, tz, std::move(*parsed.identifier), equals_tk);
+    }
+
+    throw compiler_exception{
+        tz, "unexpected character; expected '=' for assignment or '(' "
+            "for function call"};
 }
 
 // called from 'expr_arith' to solve circular dependencies with function

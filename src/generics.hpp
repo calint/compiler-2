@@ -340,8 +340,8 @@ struct generic_func_instance {
 // a method of a generic type, e.g. 'func text.print()', every instance of the
 // type gets its own method
 struct generic_method_info {
-    // e.g. 'text'
-    token src_loc_tk;
+    // the generic type it is a method of, e.g. 'text'
+    token type_tk;
     // e.g. 'func'
     token func_tk;
     // where the definition continues after 'func', e.g. at 'text'
@@ -387,7 +387,7 @@ class generic_registry final {
         std::vector<generic_method_info> methods;
 
         for (const generic_method_info& method : methods_) {
-            if (method.src_loc_tk.text() == type_name) {
+            if (method.type_tk.text() == type_name) {
                 methods.push_back(method);
             }
         }
