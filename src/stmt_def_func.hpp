@@ -738,8 +738,7 @@ class stmt_def_func final : public statement {
 
         // e.g. 'tokenizer.to<name>'
         if (not instance.type_args.empty()) {
-            name_ =
-                generic_registry::instance_name(head_.name, instance.type_args);
+            name_ = generic_func_instance_name(head_.name, instance.type_args);
         }
     }
 
@@ -809,11 +808,10 @@ class stmt_def_func_generic final : public statement {
         : statement{tk} {
 
         if (head.is_generic_type_method) {
-            define_method(tc, tk, head, tz);
-            return;
+            define_method(tc, tk, head);
+        } else {
+            define_func(tc, tk, head, tz, nullptr);
         }
-
-        define_func(tc, tk, head, tz, nullptr);
 
         generic_text_ = tz.skip_braced_block_after(tk);
     }
@@ -859,7 +857,7 @@ class stmt_def_func_generic final : public statement {
         tc.generics().mark_func_instantiated(generic_name);
 
         std::string name{
-            generic_registry::instance_name(generic_name, type_args),
+            generic_func_instance_name(generic_name, type_args),
         };
 
         if (tc.is_func(name)) {
@@ -891,28 +889,6 @@ class stmt_def_func_generic final : public statement {
     }
 
   private:
-    // e.g. 'func text.print()' of the generic type 'text': every instance of
-    // the type gets the method, also those made after this definition
-    auto define_method(toc& tc, const token& func_tk, const func_head& head,
-                       tokenizer& tz) -> void {
-
-        const generic_method_info method{
-            .type_tk{head.name_tk},
-            .func_tk{func_tk},
-            .start_tk{head.start_tk},
-        };
-
-        tc.generics().add_method(method);
-
-        generic_text_ = tz.skip_braced_block_after(func_tk);
-
-        for (const generic_type_instance& instance :
-             tc.generics().get_type_instances(head.name_tk.text())) {
-
-            instantiate_method(tc, method, instance);
-        }
-    }
-
     //
     // statics
     //
@@ -989,6 +965,26 @@ class stmt_def_func_generic final : public statement {
                                            .deductions{deductions(head, tz)},
                                            .receiver{std::move(receiver_copy)},
                                        });
+    }
+
+    // e.g. 'func text.print()' of the generic type 'text': every instance of
+    // the type gets the method, also those made after this definition
+    static auto define_method(toc& tc, const token& func_tk,
+                              const func_head& head) -> void {
+
+        const generic_method_info method{
+            .type_tk{head.name_tk},
+            .func_tk{func_tk},
+            .start_tk{head.start_tk},
+        };
+
+        tc.generics().add_method(method);
+
+        for (const generic_type_instance& instance :
+             tc.generics().get_type_instances(head.name_tk.text())) {
+
+            instantiate_method(tc, method, instance);
+        }
     }
 
     // an error in the method is in the generic code, the frames name the bases

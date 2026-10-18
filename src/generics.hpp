@@ -202,6 +202,33 @@ struct generic_arg {
     int64_t value{};
 };
 
+// the two spellings of an instance: a function instance is a function named
+// by 'generic_func_instance_name', e.g. 'tokenizer.to<name>'; a type instance
+// is a type named by its alias, the errors in it show it as
+// 'generic_instance_text', e.g. 'list<i8, 8>'
+
+// e.g. 'tokenizer.to<name>' for the generic 'tokenizer.to'
+[[nodiscard]] inline auto
+generic_func_instance_name(const std::string_view generic_name,
+                           const std::span<const type* const> type_args)
+    -> std::string {
+
+    std::string name{generic_name};
+    name += '<';
+
+    for (const type* const type_arg : type_args) {
+        if (name.back() != '<') {
+            name += ',';
+        }
+
+        name += type_arg->name();
+    }
+
+    name += '>';
+
+    return name;
+}
+
 // e.g. 'list<i8, 8>', how the errors found in an instance name it
 [[nodiscard]] inline auto
 generic_instance_text(const std::string_view generic_name,
@@ -446,30 +473,5 @@ class generic_registry final {
         }
 
         return names;
-    }
-
-    //
-    // statics
-    //
-
-    // e.g. 'tokenizer.to<name>' for the generic 'tokenizer.to'
-    [[nodiscard]] static auto
-    instance_name(const std::string_view generic_name,
-                  const std::span<const type* const> type_args) -> std::string {
-
-        std::string name{generic_name};
-        name += '<';
-
-        for (const type* const type_arg : type_args) {
-            if (name.back() != '<') {
-                name += ',';
-            }
-
-            name += type_arg->name();
-        }
-
-        name += '>';
-
-        return name;
     }
 };

@@ -1234,8 +1234,7 @@ class noninline_call {
                      const std::span<const noninline_arg> arguments) const
         -> void {
 
-        call_.assert_result_use(dst_info, func);
-
+        // 'compile' checked the result use before the temporaries
         if (func.returns()) {
             // note: a result that is not in memory goes through a temporary
             assert(dst_info.operand.is_memory());
@@ -1752,28 +1751,7 @@ class stmt_call : public expression {
             return;
         }
 
-        // an inlined recursion ends at compile time when a constant argument
-        // makes its condition fold, otherwise it would expand without end
-        constexpr size_t max_inlined_nesting{64};
-
-        if (tc.inlined_nesting(func.name()) >= max_inlined_nesting) {
-            throw compiler_exception{
-                tok(), std::format("recursion of inlined function '{}' does "
-                                   "not end at compile time, declare it "
-                                   "'noinline'",
-                                   func.name())};
-        }
-
-        // each inlined call and block inside it recurses in the compiler
-        constexpr size_t max_frame_count{256};
-
-        if (tc.frame_count() >= max_frame_count) {
-            throw compiler_exception{
-                tok(), std::format("inlined calls are nested too deep, the "
-                                   "limit is {} levels, declare a function "
-                                   "'noinline'",
-                                   max_frame_count)};
-        }
+        assert_inline_nesting(tc, func);
 
         // an error found in the inlined body reports where it was called from
         try {
@@ -1919,6 +1897,34 @@ class stmt_call : public expression {
             arg.tok(), std::format("read-only '{}' cannot be passed to a "
                                    "'mut' parameter{}",
                                    arg.identifier(), read_only_hint(info))};
+    }
+
+    // an inlined call compiles its body in place, so nesting is limited
+    auto assert_inline_nesting(const toc& tc, const stmt_def_func& func) const
+        -> void {
+
+        // an inlined recursion ends at compile time when a constant argument
+        // makes its condition fold, otherwise it would expand without end
+        constexpr size_t max_inlined_nesting{64};
+
+        if (tc.inlined_nesting(func.name()) >= max_inlined_nesting) {
+            throw compiler_exception{
+                tok(), std::format("recursion of inlined function '{}' does "
+                                   "not end at compile time, declare it "
+                                   "'noinline'",
+                                   func.name())};
+        }
+
+        // each inlined call and block inside it recurses in the compiler
+        constexpr size_t max_frame_count{256};
+
+        if (tc.frame_count() >= max_frame_count) {
+            throw compiler_exception{
+                tok(), std::format("inlined calls are nested too deep, the "
+                                   "limit is {} levels, declare a function "
+                                   "'noinline'",
+                                   max_frame_count)};
+        }
     }
 
     // the function is a method and the receiver is a value

@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: generics and calls, fourth pass: smaller spots found on a fresh
+    read; behavior, '.out' files and messages unchanged
+    => 1. 'stmt_call::compile': the two inline nesting limits become
+       'assert_inline_nesting', so 'compile' reads comment, callee, shared
+       storage, then one of the two compilers
+    => 2. 'noninline_call::assert_call' checks the result use a second time,
+       'compile' already did before making the temporaries
+    => 3. 'generics.hpp': the name of a function instance
+       ('generic_registry::instance_name', e.g. 'tokenizer.to<name>') and the
+       text of a type instance in messages ('generic_instance_text', e.g.
+       'list<i8, 8>') are two free functions side by side, each saying what
+       it is for
+    => 4. 'stmt_def_func_generic': both kinds keep their text in the
+       constructor, 'define_method' is static like 'define_func'
+    => done (2026-10-18): as planned; the instance name is
+       'generic_func_instance_name'; a generic method now skips its text
+       after the instances made so far are parsed, like a generic function
+       after its deductions, no test output changed
 [x] hard: generics and calls, third pass: one place decides what a name
     starts, each call kind reads as its steps, an instance is one member;
     behavior, '.out' files and messages unchanged
