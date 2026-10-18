@@ -3076,72 +3076,15 @@ class toc final {
     }
 };
 
-// while an instance of a generic definition is parsed, each parameter names
-// its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
-// parameters of an enclosing instance are hidden, all of it ends with the scope
-class generic_scope final {
-    toc& tc_;
-    // the constants are in a block of their own
-    bool is_block_entered_{};
-
-  public:
-    explicit generic_scope(toc& tc) : tc_{tc} { tc_.types().enter_params(); }
-
-    generic_scope(const generic_scope&) = delete;
-    generic_scope(generic_scope&&) = delete;
-    auto operator=(const generic_scope&) -> generic_scope& = delete;
-    auto operator=(generic_scope&&) -> generic_scope& = delete;
-
-    ~generic_scope() {
-        if (is_block_entered_) {
-            tc_.exit_block();
-        }
-
-        tc_.types().exit_params();
-    }
-
-    // a type is located at its parameter, a constant at its argument
-    auto add_args(const std::span<const generic_arg> args) -> void {
-        for (const generic_arg& arg : args) {
-            if (arg.type_ptr != nullptr) {
-                add_type(arg.param_tk, arg.param_tk.text(), *arg.type_ptr);
-            } else {
-                add_const(arg.arg_tk, arg.param_tk.text(), arg.value);
-            }
-        }
-    }
-
-    // a method of an instance of a generic type sees the generic type as the
-    // instance and its type arguments, e.g. 'list' names 'str' and 'T' names
-    // 'i8'; its constants are in the frame of the body
-    auto add_receiver(const generic_type_instance& instance) -> void {
-        const generic_type_info& generic{
-            tc_.generics().get_type(instance.generic_name),
-        };
-
-        add_type(generic.src_loc_tk, instance.generic_name, *instance.type_ptr);
-        add_args(instance.type_args());
-    }
-
-  private:
-    auto add_const(const token& src_loc_tk, const std::string_view name,
-                   const int64_t value) -> void {
-
-        if (not is_block_entered_) {
-            tc_.enter_block();
-            is_block_entered_ = true;
-        }
-
-        tc_.add_const(src_loc_tk, 0, name, value);
-    }
-
-    auto add_type(const token& src_loc_tk, const std::string_view name,
-                  const type& tpe) -> void {
-
-        tc_.assert_generic_param_free(src_loc_tk, name);
-        tc_.types().add_param(src_loc_tk, name, tpe);
-    }
-};
+//
+// generics: an instance is made in two steps, see 'generics.hpp'
+//   1. 'resolve_generic_args' reads the argument tokens of an alias or a base
+//      as types and constants, e.g. '<i8, 8>' of 'list<T type, capacity>'
+//      gives 'T' 'i8' and 'capacity' 8; a call reads its type arguments in
+//      'stmt_call'
+//   2. a 'generic_scope' makes them names while the text of the definition is
+//      parsed again, 'type_table' holds the type names of the innermost scope
+//
 
 // e.g. 'i8' of 'list<i8, 8>' for 'T'
 [[nodiscard]] inline auto resolve_type_arg(const toc& tc,
@@ -3213,3 +3156,70 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
 
     return args;
 }
+
+// while an instance of a generic definition is parsed, each parameter names
+// its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
+// parameters of an enclosing instance are hidden, all of it ends with the scope
+class generic_scope final {
+    toc& tc_;
+    // the constants are in a block of their own
+    bool is_block_entered_{};
+
+  public:
+    explicit generic_scope(toc& tc) : tc_{tc} { tc_.types().enter_params(); }
+
+    generic_scope(const generic_scope&) = delete;
+    generic_scope(generic_scope&&) = delete;
+    auto operator=(const generic_scope&) -> generic_scope& = delete;
+    auto operator=(generic_scope&&) -> generic_scope& = delete;
+
+    ~generic_scope() {
+        if (is_block_entered_) {
+            tc_.exit_block();
+        }
+
+        tc_.types().exit_params();
+    }
+
+    // a type is located at its parameter, a constant at its argument
+    auto add_args(const std::span<const generic_arg> args) -> void {
+        for (const generic_arg& arg : args) {
+            if (arg.type_ptr != nullptr) {
+                add_type(arg.param_tk, arg.param_tk.text(), *arg.type_ptr);
+            } else {
+                add_const(arg.arg_tk, arg.param_tk.text(), arg.value);
+            }
+        }
+    }
+
+    // a method of an instance of a generic type sees the generic type as the
+    // instance and its type arguments, e.g. 'list' names 'str' and 'T' names
+    // 'i8'; its constants are in the frame of the body
+    auto add_receiver(const generic_type_instance& instance) -> void {
+        const generic_type_info& generic{
+            tc_.generics().get_type(instance.generic_name),
+        };
+
+        add_type(generic.src_loc_tk, instance.generic_name, *instance.type_ptr);
+        add_args(instance.type_args());
+    }
+
+  private:
+    auto add_const(const token& src_loc_tk, const std::string_view name,
+                   const int64_t value) -> void {
+
+        if (not is_block_entered_) {
+            tc_.enter_block();
+            is_block_entered_ = true;
+        }
+
+        tc_.add_const(src_loc_tk, 0, name, value);
+    }
+
+    auto add_type(const token& src_loc_tk, const std::string_view name,
+                  const type& tpe) -> void {
+
+        tc_.assert_generic_param_free(src_loc_tk, name);
+        tc_.types().add_param(src_loc_tk, name, tpe);
+    }
+};
