@@ -96,7 +96,7 @@ struct generic_call {
         const generic_arg_tokens args{generic_arg_tokens::parse(tz, open_tk)};
 
         const std::vector<const type*> type_args{
-            written_type_arguments(tc, generic_name, args.arg_tks),
+            written_type_arguments(tc, name_tk, generic_name, args.arg_tks),
         };
 
         return {
@@ -147,8 +147,9 @@ struct generic_call {
 
     // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
     // is the type of the argument for a parameter declared with that type, when
-    // the argument is a variable, or the type the call is assigned to when it
-    // is the result. a literal or an expression does not tell its type
+    // the argument tells it ('argument_type'), or the type the call is assigned
+    // to when it is the result. a literal or an expression does not tell its
+    // type
     [[nodiscard]] static auto
     deduced_type_arguments(toc& tc, const tokenizer& tz, const token& name_tk,
                            const std::string_view generic_name,
@@ -251,9 +252,11 @@ struct generic_call {
                    : nullptr;
     }
 
-    // the types between '<' and '>', e.g. 'name' of 'tz.to<name>()'
+    // the types between '<' and '>', one per type parameter, e.g. 'name' of
+    // 'tz.to<name>()'
     [[nodiscard]] static auto
-    written_type_arguments(const toc& tc, const std::string_view generic_name,
+    written_type_arguments(const toc& tc, const token& name_tk,
+                           const std::string_view generic_name,
                            const std::span<const token> arg_tks)
         -> std::vector<const type*> {
 
@@ -261,22 +264,22 @@ struct generic_call {
             tc.generics().get_func(generic_name).param_tks,
         };
 
+        if (arg_tks.size() != param_tks.size()) {
+            throw compiler_exception{
+                name_tk,
+                std::format("generic function '{}' takes {} type argument(s), "
+                            "got {}",
+                            generic_name, param_tks.size(), arg_tks.size())};
+        }
+
         std::vector<const type*> type_args;
         type_args.reserve(arg_tks.size());
 
-        for (const auto [ix, type_tk] : std::views::enumerate(arg_tks)) {
-            // a surplus argument is reported with the count
-            if (std::cmp_less(ix, param_tks.size())) {
-                const std::string_view param_name{
-                    param_tks.at(static_cast<size_t>(ix)).text(),
-                };
+        for (const auto [param_tk, arg_tk] :
+             std::views::zip(param_tks, arg_tks)) {
 
-                type_args.emplace_back(
-                    &resolve_type_arg(tc, generic_name, param_name, type_tk));
-            } else {
-                type_args.emplace_back(
-                    &tc.get_type_or_throw(type_tk, type_tk.text()));
-            }
+            type_args.emplace_back(
+                &resolve_type_arg(tc, generic_name, param_tk.text(), arg_tk));
         }
 
         return type_args;

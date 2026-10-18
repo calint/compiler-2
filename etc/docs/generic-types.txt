@@ -200,8 +200,8 @@ A call gives the type arguments in one of two ways ('generic_call::parse'):
 
 Written, after '<':
 
-1. Each argument names a type, a constant is rejected (0796).
-2. The count must match the type parameters (0769).
+1. The count must match the type parameters (0769, 1077).
+2. Each argument names a type, a constant is rejected (0796).
 
 Deduced, without '<', for each type parameter in order:
 

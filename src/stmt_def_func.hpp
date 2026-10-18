@@ -845,14 +845,9 @@ class stmt_def_func_generic final : public statement {
 
         const generic_func_info& generic{tc.generics().get_func(generic_name)};
 
-        if (type_args.size() != generic.param_tks.size()) {
-            throw compiler_exception{
-                call_tk,
-                std::format("generic function '{}' takes {} type argument(s), "
-                            "got {}",
-                            generic_name, generic.param_tks.size(),
-                            type_args.size())};
-        }
+        // note: the call checked the count of written type arguments, a
+        //       deduction gives one per parameter
+        assert(type_args.size() == generic.param_tks.size());
 
         tc.generics().mark_func_instantiated(generic_name);
 

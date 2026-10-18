@@ -3332,3 +3332,7 @@ SRC=1075 && COMPERR
 # a type defined after an alias and before a method of the generic type hides a
 # type parameter of the method's instance, the error is at the parameter
 SRC=1076 && COMPERR
+
+# a surplus written type argument is reported with the count, before the
+# arguments are resolved, like the arguments of a generic type
+SRC=1077 && COMPERR

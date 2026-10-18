@@ -1,6 +1,65 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] hard: generics: one generic function per source definition for a method
+    with type parameters of its own ('text.append' instead of 'str.append',
+    'name.append', ...)
+    => 1. 'generic_registry' keeps 'text.append' once; 'generic_func_info'
+       loses 'receiver' and 'report_name', 'mark_func_instantiated' uses the
+       key, 'parse_method_instance' loses its 'define_func' branch
+    => 2. a lookup by instance name, e.g. 'str.append', goes through the
+       type instances: 'str' is 'text<8>' (and 'list<i8, 8>' for a base), so
+       'str.append' is 'text.append' with the receiver 'text<8>';
+       'generic_registry::has_func' and 'get_func' do it, so the nine
+       lookup sites ('toc::is_func', 'stmt_identifier::is_method_name',
+       'stmt_call::read_callee', 'generic_call', 'value_type',
+       'assert_no_type_args_for_plain_func', 'is_generic_call', the clash
+       check, 'toc' 'resolver') stay as they are; 'get_func' returns the
+       receiver with the info
+    => 3. clash checks, which fall out of the per-instance registration
+       now: a generic method against the functions of the instances made
+       before it ('func str.append' then 'func text.append<T type>'), an
+       alias against the functions defined before it, the same method name
+       on two levels of a base ('text.append' and 'list.append'), each with
+       its own loop and message
+    => 4. tests: clash cases for a method with type parameters (none exist
+       today; 0869 and 1068 are methods without them and do not change),
+       1075 is checked at the definition against the parameters of the
+       type, without an 'instantiated by' frame
+    => cost: about 15 lines go ('receiver', 'report_name' and the branch);
+       a name resolver through the type instances and three clash loops
+       come, and 'str.append' stops being a name in the registry while
+       'str.print' (a method without type parameters) stays one, so the two
+       kinds of generic method would be looked up in two ways; the
+       per-instance registration is the simpler design
+    => discarded (2026-10-18): the cost above; the per-instance
+       registration keeps every generic method a name in the registry, so
+       lookups and clash checks are those of any function
+[-] hard: generics: deduce a type argument by parsing the argument instead
+    of looking ahead at it ('generic_call::argument_type', 'value_type')
+    => discarded (2026-10-18): an argument is parsed against the type of its
+       parameter, which is known only once the type arguments are; parsing
+       first would need an untyped parse of every argument of every call and
+       a typing step after it, a change of the expression parser for one
+       feature; the lookahead is about 100 lines, documented in
+       'etc/docs/generic-types.txt' 10.2 and covered by 0817, 0818, 0849,
+       0850 and 0860
+[-] hard: calls: restructure the inline and non-inline compile paths of
+    'stmt_call.hpp' for reading
+    => discarded (2026-10-18): each step is a named function and both
+       classes list their steps in the comment above them; the choices in
+       them shape the emitted code, so a change belongs to the instruction
+       count items of section 2 of 'etc/todo.txt', measured by code size
+[x] medium: generics: the count of written type arguments is checked where
+    they are read, before they are resolved
+    => done (2026-10-18): 'generic_call::written_type_arguments' checks the
+       count first and resolves each argument with 'resolve_type_arg', like
+       the arguments of a generic type; 'instantiate_func' asserts the
+       count, a deduction gives one per parameter; a surplus argument that is
+       not a type, e.g. 'same<i8, 3>(1, 2)', now reports the count instead of
+       "type '3' not found" (test 1077); 'etc/docs/generic-types.txt' 10.2
+       lists the count first; the comment of 'deduced_type_arguments' names
+       'argument_type' instead of only a variable
 [x] medium: generics and calls, fourth pass: smaller spots found on a fresh
     read; behavior, '.out' files and messages unchanged
     => 1. 'stmt_call::compile': the two inline nesting limits become
