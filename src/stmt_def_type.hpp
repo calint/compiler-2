@@ -552,6 +552,7 @@ class stmt_def_type_alias final : public statement {
                     tc.generics().get_type(base_tk.text()),
                 };
 
+                // the last instance is that of 'level'
                 // e.g. 'T' is 'i8' and 'capacity' is 8 for 'list<i8,
                 // capacity>' with 'capacity' 8 of 'text'
                 std::vector<generic_binding> base_bindings{
