@@ -117,8 +117,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     while the index register stays allocated until the body ends (x86 'imul
     r15, 518; lea r14, [rbp + r15 + 17484]' instead of 'lea r15, ...'; rv32i
     pushes 'arrays_equal' past t0-t6 into s1)
-    => 'compile_inline_with_address_register' allocates a new register because
-       the index may belong to an enclosing alias
+    => 'inline_call::compile_with_result_address_register' allocates a new
+       register because the index may belong to an enclosing alias
 [ ] medium: x86: a 'read'/'write' address with a run-time offset uses a scratch
     register ('mov r14, [..]; lea rsi, [..]; add rsi, r14' instead of 'add
     rsi, qword [..]'); same for the 'arrays_equal' destination

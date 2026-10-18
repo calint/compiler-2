@@ -1,8 +1,8 @@
 noinline calls: aliasing validated by a dry run of the body
 ===========================================================
 
-source: src/stmt_call.hpp ('check_noninline_aliasing', 'aliasing_signature',
-        'signature_part')
+source: src/stmt_call.hpp ('noninline_call::check_aliasing',
+        'aliasing_signature', 'signature_part')
         src/toc.hpp ('check_only', 'measure_only', 'add_checked_noninline_call',
         'add_noninline_instance'; 'storage_layout::begin_dry_run',
         'end_dry_run')
@@ -21,7 +21,7 @@ the body.
 ----------
 
 At each noinline call, before the call is compiled for real,
-'check_noninline_aliasing' compiles the body as an inline call of these
+'noninline_call::check_aliasing' compiles the body as an inline call of these
 arguments inside 'toc::check_only' and drops the result. The aliasing errors
 the inline compilation raises are the errors of the call. An error gets the
 call frame ('add_call_frame') so it points at the call and the line in the body.
