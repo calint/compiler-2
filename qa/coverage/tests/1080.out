@@ -1,0 +1,7 @@
+
+1080.baz:9:29: constructor 'list.make' cannot have type parameters
+func list.make<U type>(u U) self {
+                            ^~~~
+1080.baz:13:6: instantiated by
+type str = list<i8, 4>
+     ^~~

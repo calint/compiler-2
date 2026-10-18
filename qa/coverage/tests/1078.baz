@@ -1,0 +1,28 @@
+# the instance 'f<a,b>' of a generic function and the instance 'f.a<b>' of a
+# generic method of the type 'f' have labels of their own
+
+type a { x }
+type b { y }
+
+func noinline f<A type, B type>(p A, q B) res i32 {
+    res = 1
+}
+
+func noinline g() res i32 {
+    var pa = a{}
+    var pb = b{}
+    res = f(pa, pb)
+}
+
+type f { z }
+
+func noinline f.a<T type>(q T) res i32 {
+    res = 2
+}
+
+func main() {
+    var pb = b{}
+    var pf = f{}
+    var r = pf.a(pb)
+    exit(g() + r)
+}

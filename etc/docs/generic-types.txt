@@ -156,6 +156,10 @@ A generic function has type parameters only; a constant parameter is
 rejected. Like a generic type it is a recipe: the text after 'func' is kept
 and the body is not checked until a call needs an instance.
 
+A constructor cannot be generic: it is called as 'point.at(...)', with no
+place for type arguments, so 'func point.at<T type>(v T) self' is rejected at
+its 'self'.
+
 10.1 Definition
 
 Each type parameter has the kind 'type' and may not reuse the name of
@@ -248,7 +252,8 @@ type arguments", since there is nothing to deduce from.
 
 The instance is named by the generic name and the type names, e.g.
 'make<str>' or 'tokenizer.to<name>'. A label has no '<', '>' or ',', so there
-it is 'tokenizer.to.name'.
+it is 'tokenizer.to..name'. The '..' keeps two instances apart: a name has no
+'..', so 'f<a,b>' is 'f..a.b' and the method instance 'f.a<b>' is 'f.a..b'.
 
 An existing instance is used as it is, so each combination of types is
 compiled once. Otherwise the definition is read again from its start with

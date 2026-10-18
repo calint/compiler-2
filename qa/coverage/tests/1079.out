@@ -1,0 +1,4 @@
+
+1079.baz:6:28: constructor 'point.at' cannot have type parameters
+func point.at<T type>(v T) self {
+                           ^~~~

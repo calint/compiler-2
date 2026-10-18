@@ -78,33 +78,29 @@ struct generic_call {
 
         const token open_tk{tz.is_next_char_token('<')};
 
+        std::vector<const type*> type_args;
+        std::vector<token> generic_tks;
+
         if (open_tk.is_empty()) {
-            const std::vector<const type*> type_args{
-                deduced_type_arguments(tc, tz, name_tk, generic_name,
-                                       expected_type),
+            type_args = deduced_type_arguments(tc, tz, name_tk, generic_name,
+                                               expected_type);
+        } else {
+            const generic_arg_tokens args{
+                generic_arg_tokens::parse(tz, open_tk),
             };
 
-            return {
-                .func_name{
-                    stmt_def_func_generic::instantiate_func(
-                        tc, name_tk, generic_name, type_args),
-                },
-                .generic_tks{},
-            };
+            type_args =
+                written_type_arguments(tc, name_tk, generic_name, args.arg_tks);
+
+            generic_tks = args.list_tks;
         }
-
-        const generic_arg_tokens args{generic_arg_tokens::parse(tz, open_tk)};
-
-        const std::vector<const type*> type_args{
-            written_type_arguments(tc, name_tk, generic_name, args.arg_tks),
-        };
 
         return {
             .func_name{
-                stmt_def_func_generic::instantiate_func(
-                    tc, name_tk, generic_name, type_args),
+                func_instantiator::instantiate_func(tc, name_tk, generic_name,
+                                                    type_args),
             },
-            .generic_tks{args.list_tks},
+            .generic_tks{std::move(generic_tks)},
         };
     }
 

@@ -1,6 +1,54 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: generics: mechanical move of the static instantiation of
+    'stmt_def_func_generic' into a helper class next to it (e.g.
+    'func_instantiator'), the statement only parses the definition
+    => done (2026-10-18): as planned; 'func_instantiator' with
+       'define_func', 'define_method', 'instantiate_func' and
+       'instantiate_methods', 'stmt_def_func_generic' only keeps the text
+[x] easy: generics: 'generic_call::parse' computes the type arguments and
+    tokens, then instantiates once instead of in both branches
+    => done (2026-10-18): as planned
+[x] easy: generics: one reader for 'name [type]' of the result, used by
+    'parse_returns' and the deduction scan, instead of 'result_type_text'
+    => done (2026-10-18): as planned; 'func_result_syntax::read', the
+       deduction scan keeps it to tell a constructor
+[x] medium: generics: one record per function instance
+    => 'stmt_def_func_generic' builds the instance name, the generic method
+       name and the constants and gives them to 'stmt_def_func';
+       'generic_func_instance' and 'set_instance' go, the generic method
+       name is built once instead of in 'define_func' and 'set_instance',
+       'stmt_def_func' does not know 'generic_type_instance'
+    => done (2026-10-18): as planned; the record is 'func_instance' (name,
+       generic method, constants), 'generic_type_instance::method_name'
+       builds the generic method name, 'stmt_def_func::name' reads the
+       record or the head
+[x] easy: generics: 'func point.at<T type>(v T) self' is accepted but every
+    call fails with "function 'point.at' not found" ('stmt_call' looks up
+    the constructor before 'read_callee' resolves the generic)
+    => reject a constructor with type parameters at its definition, with an
+       error test
+    => done (2026-10-18): as planned; 'func_instantiator::define_func'
+       rejects it at 'self', named as written ('list.make' for a method of
+       a generic type); tests 1079 and 1080, 'generic-types.txt' 10
+[x] easy: rv32i: the internal assembler accepts a duplicate label (the
+    clashing program above exits 0 with '--target=rv32i-fpga'); a duplicate
+    is a defect of the compiler, so 'assert' it
+    => done (2026-10-18): as planned; 'symbol_table::add_value' asserts, it
+       fired on 1078 with the old labels
+[x] easy: generics: the labels of 'f<a,b>' and the method instance 'f.a<b>'
+    are both 'func.f.a.b', nasm rejects the redefinition
+    => 'label_name' writes '<' as '..': 'func.f..a.b' and 'func.f.a..b'; a
+       function name has at most one '.' and never two in a row, a type
+       name has none, so '..' splits the name from the type arguments once
+    => rejected: a '$' separator (nasm gives a leading '$' a meaning),
+       length-prefixed mangling (unreadable), '<>' in labels (assemblers
+       reject them)
+    => test: the clashing program runs on x86_64 and rv32i-fpga; update
+       'etc/docs/generic-types.txt' 10.3
+    => done (2026-10-18): as planned; test 1078, which nasm rejected
+       before, runs on x86_64 and rv32i-fpga
 [-] hard: generics: one generic function per source definition for a method
     with type parameters of its own ('text.append' instead of 'str.append',
     'name.append', ...)

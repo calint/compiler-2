@@ -34,7 +34,7 @@
 // 'list' parses it again as its own method, e.g. 'str.add'
 //
 // e.g. 'func f<T type>(x T)' is a 'generic_func_info', a call 'f<i8>(x)' or
-// 'f(x)' parses it again as 'f<i8>' (see 'stmt_def_func_generic')
+// 'f(x)' parses it again as 'f<i8>' (see 'func_instantiator')
 //
 // an error in the text of an instance gets the 'generic_frame's that led to it
 //
@@ -306,6 +306,14 @@ struct generic_type_instance {
         return result;
     }
 
+    // the name written in the source, e.g. 'text.print' for the method
+    // 'print' of 'text<8>'
+    [[nodiscard]] auto method_name(const std::string_view name) const
+        -> std::string {
+
+        return std::format("{}.{}", generic_name, name);
+    }
+
     // e.g. 'T' is 'i8'
     [[nodiscard]] auto type_args() const -> std::vector<generic_arg> {
         std::vector<generic_arg> result;
@@ -354,14 +362,16 @@ struct generic_func_info {
     std::optional<generic_type_instance> receiver;
 };
 
-// what a function definition is parsed again with for one instance
-// e.g. 'name' for 'tokenizer.to<name>' of 'func tokenizer.to<T type>()'
-// e.g. 'text<8>' for 'str.print' of 'func text.print()'
-struct generic_func_instance {
-    // the instance of the generic type of a method, null for a function
-    const generic_type_instance* receiver{};
-    // empty for a method without type parameters of its own
-    std::span<const type* const> type_args;
+// what a function made from a generic definition keeps of it
+// e.g. 'tokenizer.to<name>' of 'func tokenizer.to<T type>()'
+// e.g. 'str.print' of 'func text.print()' with 'size' 8 for 'text<8>'
+struct func_instance {
+    // e.g. 'tokenizer.to<name>' or 'str.print'
+    std::string name;
+    // e.g. 'text.print' for 'str.print', empty for a generic function
+    std::string generic_method;
+    // the constants of the generic type of a method, in the frame of the body
+    std::vector<generic_arg> constants;
 };
 
 // a method of a generic type, e.g. 'func text.print()', every instance of the

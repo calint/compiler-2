@@ -265,6 +265,15 @@ class assembler_rv32i final : public assembler {
         std::unordered_map<std::string_view,
                            std::vector<std::pair<size_t, int64_t>>>
             local_labels;
+
+        // a name defined twice is a defect of the compiler
+        auto add_value(const std::string_view name, const int64_t value)
+            -> void {
+
+            assert(not values.contains(name));
+
+            values.emplace(name, value);
+        }
     };
 
     std::vector<record> records_;
@@ -1163,7 +1172,7 @@ class assembler_rv32i final : public assembler {
             const constant* const defined{std::get_if<constant>(record_of(l))};
 
             if (defined != nullptr) {
-                symbols.values.emplace(defined->name, defined->value);
+                symbols.add_value(defined->name, defined->value);
             }
 
             if (l.label.empty()) {
@@ -1183,7 +1192,7 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            symbols.values.emplace(l.label, address);
+            symbols.add_value(l.label, address);
         }
 
         return symbols;

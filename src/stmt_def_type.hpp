@@ -464,7 +464,7 @@ class stmt_def_type_alias final : public statement {
 
             tc.generics().add_type_instance(instance);
 
-            stmt_def_func_generic::instantiate_methods(tc, instance);
+            func_instantiator::instantiate_methods(tc, instance);
         }
     }
 

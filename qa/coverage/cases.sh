@@ -3336,3 +3336,14 @@ SRC=1076 && COMPERR
 # a surplus written type argument is reported with the count, before the
 # arguments are resolved, like the arguments of a generic type
 SRC=1077 && COMPERR
+
+# the instance 'f<a,b>' of a generic function and the instance 'f.a<b>' of a
+# generic method of the type 'f' get labels that differ
+SRC=1078 && EXP=3 && RUN
+
+# a constructor with type parameters is rejected at its 'self'
+SRC=1079 && COMPERR
+
+# a constructor with type parameters of a generic type is rejected at its
+# 'self', with the alias that made the instance
+SRC=1080 && COMPERR

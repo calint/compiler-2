@@ -1,0 +1,16 @@
+# a method of a generic type with type parameters of its own cannot be a
+# constructor, the error names the method as written
+
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+
+func list.make<U type>(u U) self {
+    self.len = 0
+}
+
+type str = list<i8, 4>
+
+func main() {
+}

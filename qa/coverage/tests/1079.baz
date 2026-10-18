@@ -1,0 +1,11 @@
+# a constructor is called as 'point.at(...)', there is no place for type
+# arguments, so a constructor with type parameters is rejected at its 'self'
+
+type point { x, y }
+
+func point.at<T type>(v T) self {
+    self.x = v
+}
+
+func main() {
+}
