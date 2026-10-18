@@ -25,6 +25,45 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 
+// the parameters of a generic type declared for one instance in a block of
+// their own, exited at the end of the scope
+class generic_params_block final {
+    toc& tc_;
+    // unbinds the type parameters after the block is exited
+    type_alias_scope aliases_;
+
+  public:
+    // a type parameter names its argument, a constant parameter is a constant
+    // of the current block
+    generic_params_block(toc& tc, const std::span<const generic_param> params,
+                         const std::span<const token> arg_tks,
+                         const std::span<const generic_binding> bindings)
+        : tc_{tc}, aliases_{tc} {
+
+        // the constant arguments live in a block of their own
+        tc_.enter_block();
+
+        for (const auto [param, arg_tk, binding] :
+             std::views::zip(params, arg_tks, bindings)) {
+
+            if (binding.type_ptr != nullptr) {
+                aliases_.bind(param.name_tk, binding.name, *binding.type_ptr);
+                continue;
+            }
+
+            tc_.add_const(arg_tk, 0, binding.name, binding.value);
+        }
+    }
+
+    generic_params_block(const generic_params_block&) = delete;
+    generic_params_block(generic_params_block&&) = delete;
+    auto operator=(const generic_params_block&)
+        -> generic_params_block& = delete;
+    auto operator=(generic_params_block&&) -> generic_params_block& = delete;
+
+    ~generic_params_block() { tc_.exit_block(); }
+};
+
 class stmt_def_type final : public statement {
     enum class kind : uint8_t {
         plain,
@@ -51,24 +90,27 @@ class stmt_def_type final : public statement {
   public:
     stmt_def_type(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, start_tk_{tz.cur_position_token()},
-          name_tk_{tz.next_token()},
-          open_brace_tk_{tz.is_next_char_token('{')} {
+          name_tk_{tz.next_token()} {
 
         toc::assert_valid_name(name_tk_);
 
+        const char next{tz.peek_char_after_whitespace()};
+
         // e.g. 'type point { x, y }'
-        if (not open_brace_tk_.is_empty()) {
+        if (next == '{') {
+            open_brace_tk_ = tz.is_next_char_token('{');
+
             parse_fields(tc, tz);
 
-            add_type(tc);
+            add_fields(tc);
+
+            tc.add_type(name_tk_, type_);
 
             return;
         }
 
-        const char next{tz.peek_char_after_whitespace()};
-
-        // e.g. 'type text<capacity> {...}' or 'type text<capacity> = list<i8,
-        // capacity>'
+        // e.g. 'type text<capacity> {...}'
+        // e.g. 'type text<capacity> = list<i8, capacity>'
         if (next == '<') {
             define_generic(tc, tk, tz);
             return;
@@ -182,12 +224,6 @@ class stmt_def_type final : public statement {
         }
     }
 
-    auto add_type(toc& tc) -> void {
-        add_fields(tc);
-
-        tc.add_type(name_tk_, type_);
-    }
-
     // the fields and the methods are those of the base, the arguments of the
     // base are resolved when an alias names this type
     auto define_based_generic(toc& tc, const token& type_tk, tokenizer& tz,
@@ -257,6 +293,12 @@ class stmt_def_type final : public statement {
 
         // e.g. 'text<capacity> { items i8[capacity] }'
         generic_text_ = tz.skip_braced_block_after(type_tk);
+    }
+
+    // e.g. the '}' of 'type point { x, y }', kept for 'source_to'
+    auto is_next_close_brace(tokenizer& tz) -> bool {
+        close_brace_tk_ = tz.is_next_char_token('}');
+        return not close_brace_tk_.is_empty();
     }
 
     // an instance of a generic type for this alias
@@ -358,9 +400,8 @@ class stmt_def_type final : public statement {
             // read field definition with the next token being the name
             // e.g. 'x', 'x i32' or 'items point[4]'
             fields_.emplace_back(tc, tz.next_token(), tz);
-            close_brace_tk_ = tz.is_next_char_token('}');
 
-            if (not close_brace_tk_.is_empty()) {
+            if (is_next_close_brace(tz)) {
                 break;
             }
 
@@ -375,9 +416,7 @@ class stmt_def_type final : public statement {
 
             // a trailing ',' lets each field end its line the same way
             // e.g. 'type point { x, y, }'
-            close_brace_tk_ = tz.is_next_char_token('}');
-
-            if (not close_brace_tk_.is_empty()) {
+            if (is_next_close_brace(tz)) {
                 break;
             }
         }
@@ -492,14 +531,10 @@ class stmt_def_type final : public statement {
                            const std::span<const generic_binding> bindings)
         -> void {
 
-        // the constant arguments live in a block of their own
-        tc.enter_block();
-
         // unbinds the type parameters at return
-        type_alias_scope aliases{tc};
-
         // e.g. 'T' names the type 'i8' and 'capacity' is the constant 8
-        declare_params(tc, aliases, generic.params, arg_tks, bindings);
+        const generic_params_block params_block{tc, generic.params, arg_tks,
+                                                bindings};
 
         // e.g. reads from the 'list' after 'type' of the generic definition
         tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
@@ -520,8 +555,6 @@ class stmt_def_type final : public statement {
 
         // e.g. 'array' is 'i8[8]' because 'T' and 'capacity' are declared
         add_fields(tc);
-
-        tc.exit_block();
     }
 
     //
@@ -563,26 +596,6 @@ class stmt_def_type final : public statement {
         }
     }
 
-    // a type parameter names its argument, a constant parameter is a constant
-    // of the current block
-    static auto declare_params(toc& tc, type_alias_scope& aliases,
-                               const std::span<const generic_param> params,
-                               const std::span<const token> arg_tks,
-                               const std::span<const generic_binding> bindings)
-        -> void {
-
-        for (const auto [param, arg_tk, binding] :
-             std::views::zip(params, arg_tks, bindings)) {
-
-            if (binding.type_ptr != nullptr) {
-                aliases.bind(param.name_tk, binding.name, *binding.type_ptr);
-                continue;
-            }
-
-            tc.add_const(arg_tk, 0, binding.name, binding.value);
-        }
-    }
-
     // e.g. '<8>' after 'text'
     [[nodiscard]] static auto parse_generic_args(tokenizer& tz,
                                                  const token& generic_tk)
@@ -603,8 +616,9 @@ class stmt_def_type final : public statement {
     // a type parameter needs a type, a constant parameter a constant
     //
     // nothing is compiled here, the bindings are what each parameter means in
-    // one instance. 'declare_params' and 'bind_instance' declare them before
-    // the text of the generic type is parsed again for its fields and methods
+    // one instance. 'generic_params_block' and 'bind_instance' declare them
+    // before the text of the generic type is parsed again for its fields and
+    // methods
     [[nodiscard]] static auto
     resolve_args(const toc& tc, const std::string_view generic_name,
                  const std::span<const generic_param> params,
@@ -614,45 +628,13 @@ class stmt_def_type final : public statement {
         std::vector<generic_binding> bindings;
 
         for (const auto [param, arg_tk] : std::views::zip(params, arg_tks)) {
-
-            const std::string_view name{param.name_tk.text()};
-            const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
-
             if (param.is_type) {
-                if (value) {
-                    throw compiler_exception{
-                        arg_tk,
-                        std::format("generic parameter '{}' of '{}' needs a "
-                                    "type, got the constant '{}'",
-                                    name, generic_name, arg_tk.text())};
-                }
-
-                const type& type_arg{
-                    tc.get_type_or_throw(arg_tk, arg_tk.text()),
-                };
-
-                bindings.push_back({
-                    .name{name},
-                    .type_ptr{&type_arg},
-                });
-
-                continue;
+                bindings.push_back(
+                    resolve_type_arg(tc, generic_name, param, arg_tk));
+            } else {
+                bindings.push_back(
+                    resolve_const_arg(tc, generic_name, param, arg_tk));
             }
-
-            if (not value) {
-                throw compiler_exception{
-                    arg_tk,
-                    std::format("generic parameter '{}' of '{}' needs a "
-                                "constant, got {}'{}'",
-                                name, generic_name,
-                                tc.has_type(arg_tk.text()) ? "the type " : "",
-                                arg_tk.text())};
-            }
-
-            bindings.push_back({
-                .name{name},
-                .value{*value},
-            });
         }
 
         return bindings;
@@ -682,24 +664,64 @@ class stmt_def_type final : public statement {
 
         // the parameters of 'generic' are visible only while the base
         // arguments are resolved
-        tc.enter_block();
-
+        //
         // the parameters of 'generic' are names of the current block until the
-        // return, when 'aliases' unbinds the type parameters
-        type_alias_scope aliases{tc};
-
-        declare_params(tc, aliases, generic.params, arg_tks, bindings);
+        // return, when the type parameters are unbound
+        const generic_params_block params_block{tc, generic.params, arg_tks,
+                                                bindings};
 
         // matches the parameters of the base with its argument tokens, a
         // token that names a parameter of 'generic' gets its value
         // e.g. 'T' with 'i8' and 'capacity' with 'capacity' that is 8
-        std::vector<generic_binding> base_bindings{
-            resolve_args(tc, generic.base_tk.text(), base.params,
-                         generic.base_arg_tks),
+        return resolve_args(tc, generic.base_tk.text(), base.params,
+                            generic.base_arg_tks);
+    }
+
+    // e.g. '8' of 'list<i8, 8>' for 'capacity'
+    [[nodiscard]] static auto
+    resolve_const_arg(const toc& tc, const std::string_view generic_name,
+                      const generic_param& param, const token& arg_tk)
+        -> generic_binding {
+
+        const std::string_view name{param.name_tk.text()};
+        const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
+
+        if (not value) {
+            throw compiler_exception{
+                arg_tk,
+                std::format("generic parameter '{}' of '{}' needs a "
+                            "constant, got {}'{}'",
+                            name, generic_name,
+                            tc.has_type(arg_tk.text()) ? "the type " : "",
+                            arg_tk.text())};
+        }
+
+        return {
+            .name{name},
+            .value{*value},
         };
+    }
 
-        tc.exit_block();
+    // e.g. 'i8' of 'list<i8, 8>' for 'T'
+    [[nodiscard]] static auto
+    resolve_type_arg(const toc& tc, const std::string_view generic_name,
+                     const generic_param& param, const token& arg_tk)
+        -> generic_binding {
 
-        return base_bindings;
+        const std::string_view name{param.name_tk.text()};
+
+        if (tc.constant_value_of(arg_tk)) {
+            throw compiler_exception{
+                arg_tk, std::format("generic parameter '{}' of '{}' needs a "
+                                    "type, got the constant '{}'",
+                                    name, generic_name, arg_tk.text())};
+        }
+
+        const type& type_arg{tc.get_type_or_throw(arg_tk, arg_tk.text())};
+
+        return {
+            .name{name},
+            .type_ptr{&type_arg},
+        };
     }
 };

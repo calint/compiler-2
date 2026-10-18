@@ -6,6 +6,35 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: split 'stmt_def_type' by kind so each class reads as one
+    statement; 'kind_' and the three-way branches of 'source_to' and
+    'compile' go away; behavior, output and messages unchanged
+    => 1. 'stmt_def_type.hpp' keeps the three classes and their shared
+       helpers, near each other (no new headers):
+       'stmt_def_type' 'type point { x, y }',
+       'stmt_def_generic_type' 'type text<capacity> {...}' and
+       'type text<capacity> = list<i8, capacity>',
+       'stmt_def_type_alias' 'type str = text<8>'
+    => 2. 'type_fields' helper: 'open_brace_tk_', 'fields_',
+       'field_delims_tk_', 'close_brace_tk_' with 'parse', 'add_to(type)'
+       and 'source_to'; owned by 'stmt_def_type' and by
+       'stmt_def_type_alias' (its root fields, not printed by 'source_to')
+    => 3. free helpers shared by generic and alias: 'assert_arg_count',
+       'assert_generic_type', 'parse_generic_args'; the field layout
+       comment of 'compile' is one helper used by plain and alias
+    => 4. 'stmt_def_generic_type': 'define_generic', 'define_based_generic',
+       'generic_text_'; 'compile' emits nothing
+    => 5. 'stmt_def_type_alias': 'parse_alias', 'parse_instances',
+       'parse_root_fields', 'make_generic_type_instance', the 'resolve_*'
+       functions and 'generic_params_block'; 'alias_tks_'
+    => 6. dispatch: 'make_stmt_def_type(tc, tk, tz)' in 'stmt_def_type.hpp'
+       reads the name, peeks '{', '<' or '=', puts the name back and makes
+       the class; 'program.hpp' 'parse_definition' calls it; the error
+       "expected '{' to begin declaration of type" stays at the same place
+    => 7. update the "called from 'stmt_def_type'" comments in
+       'decouple_impl.hpp'
+    => 8. check: tests on x86_64 and rv32i-fpga with no '.out' change,
+       clang-tidy clean, formatter applied
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,
