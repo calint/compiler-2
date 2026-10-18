@@ -16,6 +16,9 @@
        'instantiate_generic_*' of 'decouple' are gone; 'format-source.py'
        no longer duplicates a one-line class such as 'struct tag {};';
        behavior, '.out' files and messages unchanged
+    => done (2026-10-18): 'stmt_def_func' keeps the 'func_head' as 'head_'
+       instead of copies of its tokens; 'name_' stays, it is the instance
+       name for an instance
     => not done: deducing a type argument by parsing the argument for real,
        an expression is parsed against a destination type so its own type is
        not known before; the lookahead of 'generic_call' stays

@@ -186,13 +186,10 @@ struct func_head {
 };
 
 class stmt_def_func final : public statement {
-    token noinline_tk_;
-    token mut_tk_;
-    token name_tk_;
-    token method_dot_tk_;
-    token method_name_tk_;
+    func_head head_;
+    // the name in the head, or the name of the instance, e.g.
+    // 'tokenizer.to<name>'
     std::string name_;
-    token open_paren_tk_;
     std::vector<stmt_def_func_param> params_;
     std::vector<token> param_delims_tk_;
     token close_paren_tk_;
@@ -211,10 +208,7 @@ class stmt_def_func final : public statement {
     // 'stmt_def_func_generic'. 'tz' is after 'head'
     stmt_def_func(toc& tc, const token tk, const func_head& head, tokenizer& tz,
                   const generic_func_instance* const instance)
-        : statement{tk}, noinline_tk_{head.noinline_tk}, mut_tk_{head.mut_tk},
-          name_tk_{head.name_tk}, method_dot_tk_{head.method_dot_tk},
-          method_name_tk_{head.method_name_tk}, name_{head.name},
-          open_paren_tk_{head.open_paren_tk} {
+        : statement{tk}, head_{head}, name_{head.name} {
 
         // note: a generic definition is a 'stmt_def_func_generic', its
         //       instance has the type arguments
@@ -222,7 +216,7 @@ class stmt_def_func final : public statement {
         assert(instance != nullptr or head.type_param_tks.empty());
 
         if (instance != nullptr) {
-            set_instance(head, *instance);
+            set_instance(*instance);
         }
 
         parse_signature(tc, tz);
@@ -261,7 +255,7 @@ class stmt_def_func final : public statement {
     // the body
     auto add_constants(toc& tc, const size_t indent) const -> void {
         for (const generic_arg& constant : constants_) {
-            tc.add_const(name_tk_, indent, constant.param_tk.text(),
+            tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
                          constant.value);
         }
     }
@@ -374,18 +368,18 @@ class stmt_def_func final : public statement {
     }
 
     [[nodiscard]] auto is_inlined() const -> bool {
-        return noinline_tk_.is_empty();
+        return head_.noinline_tk.is_empty();
     }
 
     // has the implicit first parameter 'self'
     [[nodiscard]] auto is_method() const -> bool {
-        return not method_dot_tk_.is_empty() and not is_constructor();
+        return not head_.method_dot_tk.is_empty() and not is_constructor();
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
     [[nodiscard]] auto noinline_token() const -> const token& {
-        return noinline_tk_;
+        return head_.noinline_tk;
     }
 
     [[nodiscard]] auto param(const size_t ix) const
@@ -418,21 +412,23 @@ class stmt_def_func final : public statement {
     auto source_def_comment_to(machine& x, const size_t indent) const -> void {
         std::stringstream ss;
         source_signature_to(ss);
-        x.comment(name_tk_, indent, "{}", statement::trimmed_source(ss.view()));
+
+        x.comment(head_.name_tk, indent, "{}",
+                  statement::trimmed_source(ss.view()));
     }
 
     // the definition after its first token, without the body
     auto source_signature_to(std::ostream& os) const -> void {
-        noinline_tk_.source_to(os);
-        mut_tk_.source_to(os);
-        name_tk_.source_to(os);
+        head_.noinline_tk.source_to(os);
+        head_.mut_tk.source_to(os);
+        head_.name_tk.source_to(os);
 
-        if (not method_dot_tk_.is_empty()) {
-            method_dot_tk_.source_to(os);
-            method_name_tk_.source_to(os);
+        if (not head_.method_dot_tk.is_empty()) {
+            head_.method_dot_tk.source_to(os);
+            head_.method_name_tk.source_to(os);
         }
 
-        open_paren_tk_.source_to(os);
+        head_.open_paren_tk.source_to(os);
 
         // the implicit 'self' has no source and no delimiter after it
         const size_t first_param{is_method() ? size_t{1} : size_t{0}};
@@ -465,16 +461,18 @@ class stmt_def_func final : public statement {
     // located at the method name for diagnostics
     auto add_self_param(const toc& tc) -> void {
         const token self_tk{
-            token::synthetic(method_name_tk_.file_index(), reserved_names::self,
-                             method_name_tk_.start_index(),
-                             method_name_tk_.at_line()),
+            token::synthetic(head_.method_name_tk.file_index(),
+                             reserved_names::self,
+                             head_.method_name_tk.start_index(),
+                             head_.method_name_tk.at_line()),
         };
 
         params_.insert(
             params_.begin(),
-            stmt_def_func_param{self_tk,
-                                tc.get_type_or_throw(name_tk_, name_tk_.text()),
-                                mut_tk_.is_empty()});
+            stmt_def_func_param{
+                self_tk,
+                tc.get_type_or_throw(head_.name_tk, head_.name_tk.text()),
+                head_.mut_tk.is_empty()});
     }
 
     // a non-inline body reaches the result and the arguments through pointer
@@ -546,27 +544,29 @@ class stmt_def_func final : public statement {
 
     // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
     auto assert_mut_has_receiver() const -> void {
-        if (mut_tk_.is_empty() or is_method()) {
+        if (head_.mut_tk.is_empty() or is_method()) {
             return;
         }
 
         if (is_constructor()) {
             throw compiler_exception{
-                mut_tk_, "a constructor builds 'self', 'mut' is not needed"};
+                head_.mut_tk,
+                "a constructor builds 'self', 'mut' is not needed"};
         }
 
-        throw compiler_exception{mut_tk_,
+        throw compiler_exception{head_.mut_tk,
                                  "'mut' requires a method 'type.name'"};
     }
 
     // e.g. 'text.size' for the instance 'str.size', empty if the function is
     // not an instance of a method of a generic type
     [[nodiscard]] auto generic_method_name() const -> std::string {
-        if (generic_type_name_.empty() or method_name_tk_.is_empty()) {
+        if (generic_type_name_.empty() or head_.method_name_tk.is_empty()) {
             return {};
         }
 
-        return std::format("{}.{}", generic_type_name_, method_name_tk_.text());
+        return std::format("{}.{}", generic_type_name_,
+                           head_.method_name_tk.text());
     }
 
     // the function scope is established before the body is parsed, its
@@ -665,7 +665,7 @@ class stmt_def_func final : public statement {
 
     // '(parameters) [result]', then the calls after it know the function
     auto parse_signature(toc& tc, tokenizer& tz) -> void {
-        if (open_paren_tk_.is_empty()) {
+        if (head_.open_paren_tk.is_empty()) {
             throw compiler_exception{tz, "expected '(' after function name"};
         }
 
@@ -680,7 +680,7 @@ class stmt_def_func final : public statement {
             add_self_param(tc);
         }
 
-        tc.add_func(name_tk_, name_, statement::get_type(), this,
+        tc.add_func(head_.name_tk, name_, statement::get_type(), this,
                     generic_method_name());
     }
 
@@ -688,7 +688,7 @@ class stmt_def_func final : public statement {
     auto set_constructor_result(const toc& tc, const token& self_tk,
                                 const token& type_tk) -> void {
 
-        if (method_dot_tk_.is_empty()) {
+        if (head_.method_dot_tk.is_empty()) {
             throw compiler_exception{
                 self_tk, "result 'self' requires a constructor 'type.name'"};
         }
@@ -699,7 +699,9 @@ class stmt_def_func final : public statement {
                 type_tk, "result 'self' has the type of the constructor"};
         }
 
-        const type& tp{tc.get_type_or_throw(name_tk_, name_tk_.text())};
+        const type& tp{
+            tc.get_type_or_throw(head_.name_tk, head_.name_tk.text()),
+        };
 
         returns_.emplace(type_tk, self_tk, &tp);
         set_type(tp);
@@ -707,10 +709,8 @@ class stmt_def_func final : public statement {
 
     // e.g. 'str.print' of 'func text.print()' or 'tokenizer.to<name>' of
     // 'func tokenizer.to<T type>()'
-    auto set_instance(const func_head& head,
-                      const generic_func_instance& instance) -> void {
-
-        assert(instance.type_args.size() == head.type_param_tks.size());
+    auto set_instance(const generic_func_instance& instance) -> void {
+        assert(instance.type_args.size() == head_.type_param_tks.size());
 
         is_instance_ = true;
 
@@ -723,7 +723,7 @@ class stmt_def_func final : public statement {
         // e.g. 'tokenizer.to<name>'
         if (not instance.type_args.empty()) {
             name_ =
-                generic_registry::instance_name(head.name, instance.type_args);
+                generic_registry::instance_name(head_.name, instance.type_args);
         }
     }
 
