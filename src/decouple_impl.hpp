@@ -163,7 +163,7 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
 }
 
 // declared in 'decouple.hpp'
-// called from 'stmt_def_func' and 'stmt_def_type'
+// called from 'stmt_def_func' and 'stmt_def_type_alias'
 auto instantiate_generic_method(toc& tc, const token& func_tk,
                                 const token& start_tk,
                                 const generic_type_instance& instance) -> void {
@@ -185,7 +185,7 @@ auto instantiate_generic_method(toc& tc, const token& func_tk,
 }
 
 // declared in 'decouple.hpp'
-// called from 'stmt_def_type'
+// called from 'stmt_def_type_alias'
 auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
     -> void {
 

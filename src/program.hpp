@@ -396,7 +396,7 @@ class program final {
         }
 
         if (tk.is_text("type")) {
-            return std::make_unique<stmt_def_type>(tc, tk, tz);
+            return make_stmt_def_type(tc, tk, tz);
         }
 
         if (tk.is_text("let")) {

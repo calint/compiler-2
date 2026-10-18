@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <print>
@@ -25,131 +26,73 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 
-// the parameters of a generic type declared for one instance in a block of
-// their own, exited at the end of the scope
-class generic_params_block final {
-    toc& tc_;
-    // unbinds the type parameters after the block is exited
-    type_alias_scope aliases_;
-
-  public:
-    // a type parameter names its argument, a constant parameter is a constant
-    // of the current block
-    generic_params_block(toc& tc, const std::span<const generic_param> params,
-                         const std::span<const token> arg_tks,
-                         const std::span<const generic_binding> bindings)
-        : tc_{tc}, aliases_{tc} {
-
-        // the constant arguments live in a block of their own
-        tc_.enter_block();
-
-        for (const auto [param, arg_tk, binding] :
-             std::views::zip(params, arg_tks, bindings)) {
-
-            if (binding.type_ptr != nullptr) {
-                aliases_.bind(param.name_tk, binding.name, *binding.type_ptr);
-                continue;
-            }
-
-            tc_.add_const(arg_tk, 0, binding.name, binding.value);
-        }
-    }
-
-    generic_params_block(const generic_params_block&) = delete;
-    generic_params_block(generic_params_block&&) = delete;
-    auto operator=(const generic_params_block&)
-        -> generic_params_block& = delete;
-    auto operator=(generic_params_block&&) -> generic_params_block& = delete;
-
-    ~generic_params_block() { tc_.exit_block(); }
-};
-
-class stmt_def_type final : public statement {
-    enum class kind : uint8_t {
-        plain,
-        // kept as text for its aliases
-        generic,
-        // e.g. 'type str = text<127>', an instance of a generic type
-        alias,
-    };
-
-    kind kind_{kind::plain};
-    // where the definition continues after 'type', an alias parses it again
-    token start_tk_;
-    token name_tk_;
+// the braces, fields and delimiters of 'type point { x, y }'
+class type_fields final {
     token open_brace_tk_;
     std::vector<stmt_def_type_field> fields_;
     std::vector<token> field_delims_tk_;
     token close_brace_tk_;
-    type type_;
-    // the tokens of 'type str = text<127>' after the name
-    std::vector<token> alias_tks_;
-    // the text after 'type' of a generic definition, only its aliases parse it
-    std::string_view generic_text_;
 
   public:
-    stmt_def_type(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, start_tk_{tz.cur_position_token()},
-          name_tk_{tz.next_token()} {
+    auto add_to(toc& tc, type& tp, const token& name_tk) const -> void {
+        tp.set_name(name_tk.text());
 
-        toc::assert_valid_name(name_tk_);
+        for (const stmt_def_type_field& fld : fields_) {
+            toc::assert_valid_name(fld.tok());
 
-        const char next{tz.peek_char_after_whitespace()};
-
-        // e.g. 'type point { x, y }'
-        if (next == '{') {
-            open_brace_tk_ = tz.is_next_char_token('{');
-
-            parse_fields(tc, tz);
-
-            add_fields(tc);
-
-            tc.add_type(name_tk_, type_);
-
-            return;
-        }
-
-        // e.g. 'type text<capacity> {...}'
-        // e.g. 'type text<capacity> = list<i8, capacity>'
-        if (next == '<') {
-            define_generic(tc, tk, tz);
-            return;
-        }
-
-        // e.g. 'type str = text<127>'
-        if (next == '=') {
-            parse_alias(tc, tz);
-            return;
-        }
-
-        throw compiler_exception{tz,
-                                 "expected '{' to begin declaration of type"};
-    }
-
-    stmt_def_type() = default;
-
-    //
-    // overridden methods
-    //
-
-    auto source_to(std::ostream& os) const -> void override {
-        statement::source_to(os);
-
-        if (kind_ == kind::generic) {
-            std::print(os, "{}", generic_text_);
-            return;
-        }
-
-        name_tk_.source_to(os);
-
-        if (kind_ == kind::alias) {
-            for (const token& t : alias_tks_) {
-                t.source_to(os);
+            if (tp.has_field(fld.name())) {
+                throw compiler_exception{
+                    fld.tok(),
+                    std::format("field '{}' is declared twice in type '{}'",
+                                fld.name(), name_tk.text())};
             }
 
-            return;
-        }
+            // get the type of field. no type name means default
+            const type& fld_tp{
+                fld.type_str().empty()
+                    ? tc.get_type_default()
+                    : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
+            };
 
+            tp.add_field(fld.tok(), fld.name(), fld_tp, fld.is_array(),
+                         fld.array_count());
+        }
+    }
+
+    // e.g. 'x, y }' after the '{' of 'type point { x, y }', 'name_tk' names
+    // the type in the errors
+    auto parse(toc& tc, tokenizer& tz, const token& open_brace_tk,
+               const token& name_tk) -> void {
+
+        open_brace_tk_ = open_brace_tk;
+
+        while (true) {
+            // read field definition with the next token being the name
+            // e.g. 'x', 'x i32' or 'items point[4]'
+            fields_.emplace_back(tc, tz.next_token(), tz);
+
+            if (is_next_close_brace(tz)) {
+                break;
+            }
+
+            const token delimiter_tk{
+                tz.expect_char_token(
+                    ',', std::format("expected ',' followed by another field "
+                                     "in type '{}'",
+                                     name_tk.text())),
+            };
+
+            field_delims_tk_.emplace_back(delimiter_tk);
+
+            // a trailing ',' lets each field end its line the same way
+            // e.g. 'type point { x, y, }'
+            if (is_next_close_brace(tz)) {
+                break;
+            }
+        }
+    }
+
+    auto source_to(std::ostream& os) const -> void {
         open_brace_tk_.source_to(os);
 
         // note: a type has at least one field
@@ -170,60 +113,162 @@ class stmt_def_type final : public statement {
         close_brace_tk_.source_to(os);
     }
 
+  private:
+    // e.g. the '}' of 'type point { x, y }', kept for 'source_to'
+    auto is_next_close_brace(tokenizer& tz) -> bool {
+        close_brace_tk_ = tz.is_next_char_token('}');
+        return not close_brace_tk_.is_empty();
+    }
+};
+
+// the field layout of the type named by 'name_tk' as comments
+inline auto comment_type_layout(toc& tc, const token& tk, const size_t indent,
+                                const token& name_tk) -> void {
+
+    const type& tp{tc.get_type_or_throw(tk, name_tk.text())};
+
+    machine& x{tc.machine()};
+
+    x.comment(tk, indent, "{} : {} B    fields:", name_tk.text(),
+              tp.size_bytes());
+
+    x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", "name",
+              "offset", "size", "array?", "array size");
+
+    for (const type_field& f : tp.fields()) {
+        x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
+                  f.offset, f.size_bytes, f.is_array ? "yes" : "no",
+                  f.is_array ? std::format("{}", f.array_count) : "");
+    }
+
+    x.comment({}, 0, "");
+}
+
+inline auto assert_arg_count(const token& generic_tk,
+                             const generic_type_info& generic,
+                             const std::span<const token> arg_tks) -> void {
+
+    if (arg_tks.size() == generic.params.size()) {
+        return;
+    }
+
+    throw compiler_exception{
+        generic_tk,
+        std::format("generic type '{}' takes {} argument(s), got {}",
+                    generic_tk.text(), generic.params.size(), arg_tks.size())};
+}
+
+// e.g. 'text' of 'type str = text<8>', 'user' is what must come after the
+// generic type
+inline auto assert_generic_type(const toc& tc, const token& generic_tk,
+                                const std::string_view user) -> void {
+
+    if (tc.has_type(generic_tk.text())) {
+        throw compiler_exception{
+            generic_tk, std::format("'{}' is a type, not a generic type",
+                                    generic_tk.text())};
+    }
+
+    if (not tc.generics().has_type(generic_tk.text())) {
+        throw compiler_exception{
+            generic_tk,
+            std::format("'{}' is not a generic type, a generic type is "
+                        "defined before {}",
+                        generic_tk.text(), user)};
+    }
+}
+
+// e.g. '<8>' after 'text'
+[[nodiscard]] inline auto parse_generic_args(tokenizer& tz,
+                                             const token& generic_tk)
+    -> generic_arguments {
+
+    const token open_tk{tz.is_next_char_token('<')};
+
+    if (open_tk.is_empty()) {
+        throw compiler_exception{
+            generic_tk,
+            std::format("generic type '{}' needs arguments, e.g. '{}<...>'",
+                        generic_tk.text(), generic_tk.text())};
+    }
+
+    return generic_arguments::parse(tz, open_tk);
+}
+
+// e.g. 'type point { x, y }'
+class stmt_def_type final : public statement {
+    token name_tk_;
+    type_fields fields_;
+    type type_;
+
+  public:
+    stmt_def_type(toc& tc, const token tk, const token name_tk, tokenizer& tz)
+        : statement{tk}, name_tk_{name_tk} {
+
+        // e.g. the '{' of 'type point { x, y }'
+        const token open_brace_tk{tz.is_next_char_token('{')};
+
+        fields_.parse(tc, tz, open_brace_tk, name_tk_);
+
+        fields_.add_to(tc, type_, name_tk_);
+
+        tc.add_type(name_tk_, type_);
+    }
+
+    stmt_def_type() = default;
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        name_tk_.source_to(os);
+        fields_.source_to(os);
+    }
+
     auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {
 
-        // only its aliases are types
-        if (kind_ == kind::generic) {
-            return;
-        }
-
-        const type& tp{tc.get_type_or_throw(tok(), name_tk_.text())};
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, "{} : {} B    fields:", name_tk_.text(),
-                  tp.size_bytes());
-
-        x.comment(tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
-                  "name", "offset", "size", "array?", "array size");
-
-        for (const type_field& f : tp.fields()) {
-            x.comment(tok(), indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}",
-                      f.name, f.offset, f.size_bytes, f.is_array ? "yes" : "no",
-                      f.is_array ? std::format("{}", f.array_count) : "");
-        }
-
-        x.comment({}, 0, "");
+        comment_type_layout(tc, tok(), indent, name_tk_);
     }
+};
+
+// e.g. 'type text<capacity> {...}'
+// e.g. 'type text<capacity> = list<i8, capacity>'
+class stmt_def_type_generic final : public statement {
+    // where the definition continues after 'type', an alias parses it again
+    token start_tk_;
+    token name_tk_;
+    // the text after 'type' of a generic definition, only its aliases parse it
+    std::string_view generic_text_;
+
+  public:
+    stmt_def_type_generic(toc& tc, const token tk, const token start_tk,
+                          const token name_tk, tokenizer& tz)
+        : statement{tk}, start_tk_{start_tk}, name_tk_{name_tk} {
+
+        define_generic(tc, tk, tz);
+    }
+
+    stmt_def_type_generic() = default;
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        std::print(os, "{}", generic_text_);
+    }
+
+    // only its aliases are types
+    auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
+                 [[maybe_unused]] const ident_info& dst_info) const
+        -> void override {}
 
   private:
-    auto add_fields(toc& tc) -> void {
-        type_.set_name(name_tk_.text());
-
-        for (const stmt_def_type_field& fld : fields_) {
-            toc::assert_valid_name(fld.tok());
-
-            if (type_.has_field(fld.name())) {
-                throw compiler_exception{
-                    fld.tok(),
-                    std::format("field '{}' is declared twice in type '{}'",
-                                fld.name(), name_tk_.text())};
-            }
-
-            // get the type of field. no type name means default
-            const type& tp{
-                fld.type_str().empty()
-                    ? tc.get_type_default()
-                    : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
-            };
-
-            type_.add_field(fld.tok(), fld.name(), tp, fld.is_array(),
-                            fld.array_count());
-        }
-    }
-
     // the fields and the methods are those of the base, the arguments of the
     // base are resolved when an alias names this type
     auto define_based_generic(toc& tc, const token& type_tk, tokenizer& tz,
@@ -269,8 +314,6 @@ class stmt_def_type final : public statement {
             tc.assert_generic_param_free(param.name_tk, param.name_tk.text());
         }
 
-        kind_ = kind::generic;
-
         // e.g. 'type text<capacity> = list<i8, capacity>'
         if (tz.peek_char_after_whitespace() == '=') {
             define_based_generic(tc, type_tk, tz, std::move(params));
@@ -294,13 +337,85 @@ class stmt_def_type final : public statement {
         // e.g. 'text<capacity> { items i8[capacity] }'
         generic_text_ = tz.skip_braced_block_after(type_tk);
     }
+};
 
-    // e.g. the '}' of 'type point { x, y }', kept for 'source_to'
-    auto is_next_close_brace(tokenizer& tz) -> bool {
-        close_brace_tk_ = tz.is_next_char_token('}');
-        return not close_brace_tk_.is_empty();
+// the parameters of a generic type declared for one instance in a block of
+// their own, exited at the end of the scope
+class generic_params_block final {
+    toc& tc_;
+    // unbinds the type parameters after the block is exited
+    type_alias_scope aliases_;
+
+  public:
+    // a type parameter names its argument, a constant parameter is a constant
+    // of the current block
+    generic_params_block(toc& tc, const std::span<const generic_param> params,
+                         const std::span<const token> arg_tks,
+                         const std::span<const generic_binding> bindings)
+        : tc_{tc}, aliases_{tc} {
+
+        // the constant arguments live in a block of their own
+        tc_.enter_block();
+
+        for (const auto [param, arg_tk, binding] :
+             std::views::zip(params, arg_tks, bindings)) {
+
+            if (binding.type_ptr != nullptr) {
+                aliases_.bind(param.name_tk, binding.name, *binding.type_ptr);
+                continue;
+            }
+
+            tc_.add_const(arg_tk, 0, binding.name, binding.value);
+        }
     }
 
+    generic_params_block(const generic_params_block&) = delete;
+    generic_params_block(generic_params_block&&) = delete;
+    auto operator=(const generic_params_block&)
+        -> generic_params_block& = delete;
+    auto operator=(generic_params_block&&) -> generic_params_block& = delete;
+
+    ~generic_params_block() { tc_.exit_block(); }
+};
+
+// e.g. 'type str = text<127>', an instance of a generic type
+class stmt_def_type_alias final : public statement {
+    token name_tk_;
+    type type_;
+    // the tokens of 'type str = text<127>' after the name
+    std::vector<token> alias_tks_;
+
+  public:
+    stmt_def_type_alias(toc& tc, const token tk, const token name_tk,
+                        tokenizer& tz)
+        : statement{tk}, name_tk_{name_tk} {
+
+        parse_alias(tc, tz);
+    }
+
+    stmt_def_type_alias() = default;
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        name_tk_.source_to(os);
+
+        for (const token& t : alias_tks_) {
+            t.source_to(os);
+        }
+    }
+
+    auto compile(toc& tc, const size_t indent,
+                 [[maybe_unused]] const ident_info& dst_info) const
+        -> void override {
+
+        comment_type_layout(tc, tok(), indent, name_tk_);
+    }
+
+  private:
     // an instance of a generic type for this alias
     auto make_generic_type_instance(const std::string_view generic_name,
                                     std::vector<generic_binding> bindings,
@@ -335,8 +450,6 @@ class stmt_def_type final : public statement {
     //      fields of 'list' as those of 'str'
     //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>'
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
-        kind_ = kind::alias;
-
         // 'alias_tks_' keeps the tokens after the name for 'source_to'
         // e.g. the '=' of 'type str = text<8>'
         alias_tks_.emplace_back(tz.is_next_char_token('='));
@@ -392,33 +505,6 @@ class stmt_def_type final : public statement {
             tc.generics().add_type_instance(instance);
 
             instantiate_generic_methods(tc, instance);
-        }
-    }
-
-    auto parse_fields(toc& tc, tokenizer& tz) -> void {
-        while (true) {
-            // read field definition with the next token being the name
-            // e.g. 'x', 'x i32' or 'items point[4]'
-            fields_.emplace_back(tc, tz.next_token(), tz);
-
-            if (is_next_close_brace(tz)) {
-                break;
-            }
-
-            const token delimiter_tk{
-                tz.expect_char_token(
-                    ',', std::format("expected ',' followed by another field "
-                                     "in type '{}'",
-                                     name_tk_.text())),
-            };
-
-            field_delims_tk_.emplace_back(delimiter_tk);
-
-            // a trailing ',' lets each field end its line the same way
-            // e.g. 'type point { x, y, }'
-            if (is_next_close_brace(tz)) {
-                break;
-            }
         }
     }
 
@@ -545,73 +631,23 @@ class stmt_def_type final : public statement {
         std::ignore = generic_param::parse(generic_tz);
 
         // e.g. the '{' before 'array T[capacity], len }'
-        open_brace_tk_ = generic_tz.is_next_char_token('{');
+        const token open_brace_tk{generic_tz.is_next_char_token('{')};
 
         // note: 'define_generic' checked the '{' of a generic without a base
-        assert(not open_brace_tk_.is_empty());
+        assert(not open_brace_tk.is_empty());
 
+        // only read to fill 'type_', not printed by 'source_to'
         // e.g. 'array T[capacity]' and 'len'
-        parse_fields(tc, generic_tz);
+        type_fields fields;
+        fields.parse(tc, generic_tz, open_brace_tk, name_tk_);
 
         // e.g. 'array' is 'i8[8]' because 'T' and 'capacity' are declared
-        add_fields(tc);
+        fields.add_to(tc, type_, name_tk_);
     }
 
     //
     // statics
     //
-
-    static auto assert_arg_count(const token& generic_tk,
-                                 const generic_type_info& generic,
-                                 const std::span<const token> arg_tks) -> void {
-
-        if (arg_tks.size() == generic.params.size()) {
-            return;
-        }
-
-        throw compiler_exception{
-            generic_tk,
-            std::format("generic type '{}' takes {} argument(s), got {}",
-                        generic_tk.text(), generic.params.size(),
-                        arg_tks.size())};
-    }
-
-    // e.g. 'text' of 'type str = text<8>', 'user' is what must come after the
-    // generic type
-    static auto assert_generic_type(const toc& tc, const token& generic_tk,
-                                    const std::string_view user) -> void {
-
-        if (tc.has_type(generic_tk.text())) {
-            throw compiler_exception{
-                generic_tk, std::format("'{}' is a type, not a generic type",
-                                        generic_tk.text())};
-        }
-
-        if (not tc.generics().has_type(generic_tk.text())) {
-            throw compiler_exception{
-                generic_tk,
-                std::format("'{}' is not a generic type, a generic type is "
-                            "defined before {}",
-                            generic_tk.text(), user)};
-        }
-    }
-
-    // e.g. '<8>' after 'text'
-    [[nodiscard]] static auto parse_generic_args(tokenizer& tz,
-                                                 const token& generic_tk)
-        -> generic_arguments {
-
-        const token open_tk{tz.is_next_char_token('<')};
-
-        if (open_tk.is_empty()) {
-            throw compiler_exception{
-                generic_tk,
-                std::format("generic type '{}' needs arguments, e.g. '{}<...>'",
-                            generic_tk.text(), generic_tk.text())};
-        }
-
-        return generic_arguments::parse(tz, open_tk);
-    }
 
     // a type parameter needs a type, a constant parameter a constant
     //
@@ -725,3 +761,34 @@ class stmt_def_type final : public statement {
         };
     }
 };
+
+// reads the name and makes the statement of the kind that follows it
+inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
+    -> std::unique_ptr<statement> {
+
+    const token start_tk{tz.cur_position_token()};
+    const token name_tk{tz.next_token()};
+
+    toc::assert_valid_name(name_tk);
+
+    const char next{tz.peek_char_after_whitespace()};
+
+    // e.g. 'type point { x, y }'
+    if (next == '{') {
+        return std::make_unique<stmt_def_type>(tc, tk, name_tk, tz);
+    }
+
+    // e.g. 'type text<capacity> {...}'
+    // e.g. 'type text<capacity> = list<i8, capacity>'
+    if (next == '<') {
+        return std::make_unique<stmt_def_type_generic>(tc, tk, start_tk,
+                                                       name_tk, tz);
+    }
+
+    // e.g. 'type str = text<127>'
+    if (next == '=') {
+        return std::make_unique<stmt_def_type_alias>(tc, tk, name_tk, tz);
+    }
+
+    throw compiler_exception{tz, "expected '{' to begin declaration of type"};
+}
