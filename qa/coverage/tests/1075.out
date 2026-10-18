@@ -1,0 +1,7 @@
+
+1075.baz:8:13: generic parameter 'T' hides the type 'T' defined at 4:11, use another name
+func list.f<T type>(x T) {}
+            ^
+1075.baz:10:6: instantiated by
+type s = list<i8>
+     ^

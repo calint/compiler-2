@@ -3324,3 +3324,11 @@ SRC=1073 && EXP=0 && RUN
 # a method on a type larger than the vars section gets 'self' by reference, the
 # parse of its body does not allocate 'self' by value
 SRC=1074 && EXP=0 && OPTS="--vars=0x400" RUN
+
+# a type parameter of a method of a generic type cannot have the name of a type
+# parameter of the type, the error names the parameter of the type
+SRC=1075 && COMPERR
+
+# a type defined after an alias and before a method of the generic type hides a
+# type parameter of the method's instance, the error is at the parameter
+SRC=1076 && COMPERR

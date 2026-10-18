@@ -62,16 +62,13 @@ class stmt_def_func final : public statement {
   public:
     // parses the function definition in the user code
     stmt_def_func(toc& tc, const token tk, tokenizer& tz)
-        : stmt_def_func{tc, tk, tz, {}, nullptr} {}
+        : stmt_def_func{tc, tk, tz, nullptr} {}
 
-    // 'type_args' are the arguments of an instance of a generic definition, the
-    // tokenizer is then at the start of that definition. 'receiver' is the
-    // instance of a generic type that an instance of its method is for.
-    // 'make_func_instance' and 'make_method_instance' make an instance, with
-    // the type names bound
+    // 'instance' is what an instance of a generic definition is parsed with,
+    // the tokenizer is then at the start of that definition and the type names
+    // are bound, see 'make_func_instance' and 'make_method_instance'
     stmt_def_func(toc& tc, const token tk, tokenizer& tz,
-                  const std::span<const type* const> type_args,
-                  const generic_type_instance* const receiver)
+                  const generic_func_instance* const instance)
         : statement{tk}, start_tk_{tz.cur_position_token()},
           name_tk_{tz.next_token()},
           open_paren_tk_{tz.is_next_char_token('(')} {
@@ -80,47 +77,11 @@ class stmt_def_func final : public statement {
 
         toc::assert_valid_function_name(name_tk_);
 
-        // e.g. 'func text.print()' of the generic type 'text'
-        if (receiver == nullptr and is_generic_method_head(tc, tz)) {
-            define_generic_method(tc, tk, tz);
-            return;
+        if (instance == nullptr) {
+            parse_definition(tc, tk, tz);
+        } else {
+            parse_instance(tc, tk, tz, *instance);
         }
-
-        // e.g. 'text' in 'func text.print()' names the instance of the type
-        if (receiver != nullptr) {
-            is_instance_ = true;
-            generic_type_name_ = receiver->generic_name;
-            constants_ = receiver->constants();
-        }
-
-        parse_receiver(tc, tz);
-
-        // e.g. 'func list.add(x)' or 'func f(x)'
-        if (not is_generic_head(tz)) {
-            assert(type_args.empty());
-
-            parse_function(tc, tz);
-
-            return;
-        }
-
-        // e.g. 'func tokenizer.to<T type>()' is kept for its instances
-        const std::vector<token> param_tks{parse_type_params(tz)};
-
-        if (type_args.empty()) {
-            define_generic(tc, tk, tz, param_tks, receiver);
-            return;
-        }
-
-        // an instance is the definition parsed with the type parameters bound
-        assert(type_args.size() == param_tks.size());
-
-        is_instance_ = true;
-
-        name_ = generic_registry::instance_name(name_, type_args);
-        open_paren_tk_ = tz.is_next_char_token('(');
-
-        parse_function(tc, tz);
     }
 
     stmt_def_func() = default;
@@ -160,7 +121,8 @@ class stmt_def_func final : public statement {
     // the body
     auto add_constants(toc& tc, const size_t indent) const -> void {
         for (const generic_arg& constant : constants_) {
-            tc.add_const(name_tk_, indent, constant.name, constant.value);
+            tc.add_const(name_tk_, indent, constant.param_tk.text(),
+                         constant.value);
         }
     }
 
@@ -374,36 +336,55 @@ class stmt_def_func final : public statement {
 
         // e.g. 'text' names 'str' for 'func text.append<T type>(s T)'
         if (generic.receiver) {
-            scope.add_receiver_types(generic.src_loc_tk, *generic.receiver);
+            scope.add_receiver(*generic.receiver);
         }
+
+        // e.g. 'T' names 'name'
+        std::vector<generic_arg> args;
 
         for (const auto [param_tk, type_arg] :
              std::views::zip(generic.param_tks, type_args)) {
 
-            scope.add_type(param_tk, param_tk.text(), *type_arg);
+            args.push_back({
+                .param_tk{param_tk},
+                .arg_tk{},
+                .type_ptr{type_arg},
+                .value{},
+            });
         }
+
+        scope.add_args(args);
+
+        const generic_func_instance instance{
+            .receiver{generic.receiver ? &*generic.receiver : nullptr},
+            .type_args{type_args},
+        };
 
         tokenizer tz{tc.source_of(generic.start_tk), generic.start_tk};
 
-        return std::make_shared<stmt_def_func>(
-            tc, generic.func_tk, tz, type_args,
-            generic.receiver ? &*generic.receiver : nullptr);
+        return std::make_shared<stmt_def_func>(tc, generic.func_tk, tz,
+                                               &instance);
     }
 
     // e.g. 'str.print' of 'func text.print()', 'text' names 'str' while the
     // definition is parsed again
     [[nodiscard]] static auto
     make_method_instance(toc& tc, const generic_method_info& method,
-                         const generic_type_instance& instance)
+                         const generic_type_instance& receiver)
         -> std::shared_ptr<stmt_def_func> {
 
         generic_scope scope{tc};
-        scope.add_receiver_types(method.src_loc_tk, instance);
+        scope.add_receiver(receiver);
+
+        const generic_func_instance instance{
+            .receiver{&receiver},
+            .type_args{},
+        };
 
         tokenizer tz{tc.source_of(method.start_tk), method.start_tk};
 
-        return std::make_shared<stmt_def_func>(
-            tc, method.func_tk, tz, std::span<const type* const>{}, &instance);
+        return std::make_shared<stmt_def_func>(tc, method.func_tk, tz,
+                                               &instance);
     }
 
   private:
@@ -610,10 +591,78 @@ class stmt_def_func final : public statement {
         tc.exit_func(name());
     }
 
+    // e.g. 'func f(x)', 'func list.add(x)' or the generic definitions
+    // 'func tokenizer.to<T type>()' and 'func text.print()' of the generic
+    // type 'text', which are kept as text for their instances
+    auto parse_definition(toc& tc, const token& func_tk, tokenizer& tz)
+        -> void {
+
+        // e.g. 'func text.print()'
+        if (is_generic_method_head(tc, tz)) {
+            define_generic_method(tc, func_tk, tz);
+            return;
+        }
+
+        parse_receiver(tc, tz);
+
+        // e.g. 'func tokenizer.to<T type>()'
+        if (is_generic_head(tz)) {
+            define_generic(tc, func_tk, tz, parse_type_params(tz), nullptr);
+            return;
+        }
+
+        // e.g. 'func f(x)' or 'func list.add(x)'
+        parse_function(tc, tz);
+    }
+
     auto parse_function(toc& tc, tokenizer& tz) -> void {
         parse_signature(tc, tz);
 
         parse_body(tc, tz);
+    }
+
+    // the definition parsed again for one instance
+    // e.g. 'tokenizer.to<name>' of 'func tokenizer.to<T type>()'
+    // e.g. 'str.print' of 'func text.print()' for 'type str = text<8>'
+    // e.g. 'str.append' of 'func text.append<T type>(s T)', a generic function
+    // of its own
+    auto parse_instance(toc& tc, const token& func_tk, tokenizer& tz,
+                        const generic_func_instance& instance) -> void {
+
+        // e.g. 'text' of 'func text.print()' names 'str'
+        if (instance.receiver != nullptr) {
+            generic_type_name_ = instance.receiver->generic_name;
+            constants_ = instance.receiver->constants();
+        }
+
+        parse_receiver(tc, tz);
+
+        // e.g. 'str.print'
+        if (not is_generic_head(tz)) {
+            assert(instance.type_args.empty());
+
+            is_instance_ = true;
+            parse_function(tc, tz);
+
+            return;
+        }
+
+        const std::vector<token> param_tks{parse_type_params(tz)};
+
+        // e.g. 'str.append' is kept for its own instances
+        if (instance.type_args.empty()) {
+            define_generic(tc, func_tk, tz, param_tks, instance.receiver);
+            return;
+        }
+
+        // e.g. 'tokenizer.to<name>'
+        assert(instance.type_args.size() == param_tks.size());
+
+        is_instance_ = true;
+        name_ = generic_registry::instance_name(name_, instance.type_args);
+        open_paren_tk_ = tz.is_next_char_token('(');
+
+        parse_function(tc, tz);
     }
 
     // 'name_tk_' is the receiver type, a method gets an implicit first

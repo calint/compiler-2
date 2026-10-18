@@ -337,22 +337,6 @@ class stmt_def_type_generic final : public statement {
     }
 };
 
-// the parameters of a generic type name the arguments of one instance, e.g.
-// 'T' names 'i8' and 'capacity' is the constant 8; a type is located at its
-// parameter and a constant at its argument
-inline auto add_instance_args(generic_scope& scope,
-                              const generic_type_info& generic,
-                              const std::span<const generic_arg> args) -> void {
-
-    for (const auto [param, arg] : std::views::zip(generic.params, args)) {
-        if (arg.type_ptr != nullptr) {
-            scope.add_type(param.name_tk, arg.name, *arg.type_ptr);
-        } else {
-            scope.add_const(arg.src_loc_tk, arg.name, arg.value);
-        }
-    }
-}
-
 // e.g. 'type str = text<127>', an instance of a generic type
 class stmt_def_type_alias final : public statement {
     token name_tk_;
@@ -497,7 +481,7 @@ class stmt_def_type_alias final : public statement {
         // e.g. 'T' names the type 'i8' and 'capacity' is the constant 8 until
         // the return
         generic_scope scope{tc};
-        add_instance_args(scope, generic, instance.args);
+        scope.add_args(instance.args);
 
         // e.g. reads from the 'list' after 'type' of the generic definition
         tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
@@ -582,7 +566,7 @@ class stmt_def_type_alias final : public statement {
 
         // e.g. 'size' is the constant 8 until the return
         generic_scope scope{tc};
-        add_instance_args(scope, generic, args);
+        scope.add_args(args);
 
         // e.g. 'type list<T type, capacity> { array T[capacity], len }'
         const generic_type_info& base{

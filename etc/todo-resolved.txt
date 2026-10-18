@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: generics: second pass, one location rule and a split function
+    constructor
+    => done (2026-10-18): 'generic_arg' has 'param_tk' and 'arg_tk';
+       'generic_scope::add_args' binds a type at its parameter and a
+       constant at its argument, 'add_receiver' binds the generic type to
+       the instance and its type arguments ('add_instance_args' and
+       'add_receiver_types' are gone); the 'stmt_def_func' constructor
+       dispatches to 'parse_definition' (user code) or 'parse_instance'
+       ('generic_func_instance' holds the receiver and the type arguments);
+       an overview comment at the top of 'generics.hpp'; one message
+       changed: a type parameter of a method instance that hides a type is
+       reported at the parameter of the generic type instead of the
+       method's type name, tests 1075-1076
 [x] hard: generics: streamline so the code reads line by line; one idea per
     concept: a definition is text with parameters, an instance is that text
     parsed again inside a scope where each parameter names its argument;

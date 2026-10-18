@@ -20,6 +20,25 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 
+//
+// generics: a generic definition is kept as text with its parameters, an
+// instance is that text parsed again in a 'generic_scope' (in 'toc.hpp')
+// where each parameter names its argument
+//
+// e.g. 'type list<T type, capacity> {...}' is a 'generic_type_info', the alias
+// 'type str = list<i8, 8>' makes the 'generic_type_instance' 'list<i8, 8>'
+// with the 'generic_arg's 'T' 'i8' and 'capacity' 8, it parses the fields of
+// 'list' again as those of 'str' (see 'stmt_def_type_alias')
+//
+// e.g. 'func list.add(x)' is a 'generic_method_info', every instance of
+// 'list' parses it again as its own method, e.g. 'str.add'
+//
+// e.g. 'func f<T type>(x T)' is a 'generic_func_info', a call 'f<i8>(x)' or
+// 'f(x)' parses it again as 'f<i8>' (see 'instantiate_generic_func')
+//
+// an error in the text of an instance gets the 'generic_frame's that led to it
+//
+
 // a parameter of a generic definition, e.g. 'T type' is a type and 'capacity'
 // is a constant
 struct generic_param {
@@ -174,9 +193,10 @@ struct generic_arg_tokens {
 // what a parameter is in one instance, a type or a constant, e.g. 'T' is 'i8'
 // and 'capacity' is 8 in 'list<i8, 8>'
 struct generic_arg {
-    std::string name;
-    // where the argument is written, e.g. the '8' of 'list<i8, 8>'
-    token src_loc_tk;
+    // e.g. 'T' of 'type list<T type, capacity>'
+    token param_tk;
+    // e.g. 'i8' of 'list<i8, 8>', empty for a deduced type argument
+    token arg_tk;
     // null for a constant
     const type* type_ptr{};
     int64_t value{};
@@ -214,7 +234,9 @@ struct generic_frame {
 // 'type str = list<i8, 8>' parses the fields again from 'start_tk' with the
 // parameters naming the arguments
 struct generic_type_info {
+    // e.g. 'list'
     token src_loc_tk;
+    // where the definition continues after 'type', e.g. at 'list'
     token start_tk;
     std::vector<generic_param> params;
     // e.g. 'list' of 'type text<size> = list<i8, size>', empty when
@@ -244,12 +266,25 @@ struct generic_type_instance {
         }
     }
 
-    // the constants of the instance, e.g. 'capacity' is 8
+    // e.g. 'capacity' is 8
     [[nodiscard]] auto constants() const -> std::vector<generic_arg> {
         std::vector<generic_arg> result;
 
         for (const generic_arg& arg : args) {
             if (arg.type_ptr == nullptr) {
+                result.push_back(arg);
+            }
+        }
+
+        return result;
+    }
+
+    // e.g. 'T' is 'i8'
+    [[nodiscard]] auto type_args() const -> std::vector<generic_arg> {
+        std::vector<generic_arg> result;
+
+        for (const generic_arg& arg : args) {
+            if (arg.type_ptr != nullptr) {
                 result.push_back(arg);
             }
         }
@@ -273,8 +308,11 @@ struct generic_deduction {
 // 'start_tk' as an instance. the method of a generic type with type parameters
 // of its own is one generic function per instance of the type
 struct generic_func_info {
+    // e.g. 'tokenizer'
     token src_loc_tk;
+    // e.g. 'func'
     token func_tk;
+    // where the definition continues after 'func', e.g. at 'tokenizer'
     token start_tk;
     // the name in the report, a method is one generic function for all the
     // instances of its type, e.g. 'text.append' for 'str.append' and
@@ -289,12 +327,24 @@ struct generic_func_info {
     std::optional<generic_type_instance> receiver;
 };
 
+// what a function definition is parsed again with for one instance
+// e.g. 'name' for 'tokenizer.to<name>' of 'func tokenizer.to<T type>()'
+// e.g. 'text<8>' for 'str.print' of 'func text.print()'
+struct generic_func_instance {
+    // the instance of the generic type of a method, null for a function
+    const generic_type_instance* receiver{};
+    // empty for a method without type parameters of its own
+    std::span<const type* const> type_args;
+};
+
 // a method of a generic type, e.g. 'func text.print()', every instance of the
 // type gets its own method
 struct generic_method_info {
     // e.g. 'text'
     token src_loc_tk;
+    // e.g. 'func'
     token func_tk;
+    // where the definition continues after 'func', e.g. at 'text'
     token start_tk;
 };
 

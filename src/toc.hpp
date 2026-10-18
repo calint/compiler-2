@@ -3100,7 +3100,30 @@ class generic_scope final {
         tc_.types().exit_params();
     }
 
-    // e.g. 'capacity' is 8
+    // a type is located at its parameter, a constant at its argument
+    auto add_args(const std::span<const generic_arg> args) -> void {
+        for (const generic_arg& arg : args) {
+            if (arg.type_ptr != nullptr) {
+                add_type(arg.param_tk, arg.param_tk.text(), *arg.type_ptr);
+            } else {
+                add_const(arg.arg_tk, arg.param_tk.text(), arg.value);
+            }
+        }
+    }
+
+    // a method of an instance of a generic type sees the generic type as the
+    // instance and its type arguments, e.g. 'list' names 'str' and 'T' names
+    // 'i8'; its constants are in the frame of the body
+    auto add_receiver(const generic_type_instance& instance) -> void {
+        const generic_type_info& generic{
+            tc_.generics().get_type(instance.generic_name),
+        };
+
+        add_type(generic.src_loc_tk, instance.generic_name, *instance.type_ptr);
+        add_args(instance.type_args());
+    }
+
+  private:
     auto add_const(const token& src_loc_tk, const std::string_view name,
                    const int64_t value) -> void {
 
@@ -3112,22 +3135,6 @@ class generic_scope final {
         tc_.add_const(src_loc_tk, 0, name, value);
     }
 
-    // a method of an instance of a generic type sees the generic type as the
-    // instance and its type arguments, e.g. 'list' names 'str' and 'T' names
-    // 'i8'; its constants are in the frame of the body
-    auto add_receiver_types(const token& src_loc_tk,
-                            const generic_type_instance& instance) -> void {
-
-        add_type(src_loc_tk, instance.generic_name, *instance.type_ptr);
-
-        for (const generic_arg& arg : instance.args) {
-            if (arg.type_ptr != nullptr) {
-                add_type(src_loc_tk, arg.name, *arg.type_ptr);
-            }
-        }
-    }
-
-    // e.g. 'T' names 'i8'
     auto add_type(const token& src_loc_tk, const std::string_view name,
                   const type& tpe) -> void {
 
@@ -3189,15 +3196,15 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
 
         if (param.is_type) {
             args.push_back({
-                .name{name},
-                .src_loc_tk{arg_tk},
+                .param_tk{param.name_tk},
+                .arg_tk{arg_tk},
                 .type_ptr{&resolve_type_arg(tc, generic_name, name, arg_tk)},
                 .value{},
             });
         } else {
             args.push_back({
-                .name{name},
-                .src_loc_tk{arg_tk},
+                .param_tk{param.name_tk},
+                .arg_tk{arg_tk},
                 .type_ptr{},
                 .value{resolve_const_arg(tc, generic_name, name, arg_tk)},
             });
