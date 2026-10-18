@@ -46,10 +46,11 @@
 
 ### Comments
 
-- Never delete or reword a comment; move it with its code. Change one only when
-  it is wrong.
+- Keep comments and move them with their code. Reword or remove one only when
+  it is wrong or its code was redesigned or removed.
 - Lowercase, no trailing punctuation, code names in single quotes.
-- One short line, only what code cannot show (why, not what).
+- One short line, only what code cannot show (why, not what); class and pass
+  header comments may be longer.
 - Marker: `todo:`.
 - Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: a `note:`
   line below naming offset and reason, e.g. `// note: +1 because the text
@@ -89,6 +90,23 @@
 - Plain lookup loops when ranges read worse.
 - Code user input cannot reach is dead: `assert`, remove or
   `std::unreachable()`. Reachable code gets a test.
+
+## Design
+
+- Goal: a reviewer understands the design without strain and judges it well
+  done.
+- Design tasks: propose the best design even if it changes interfaces; plan
+  first, wait for go-ahead.
+- Plan: problem, chosen design, rejected alternatives (one line each with the
+  reason), invariants, tests.
+- Follow existing patterns; a new pattern needs a reason in the plan.
+- New class or pass: a header comment with its role and invariants.
+- Carry invariants in types and names over comments and asserts when cheap.
+- Update all callers; no compatibility shims or leftover old paths.
+- Mechanical moves and behavior changes in separate steps, so each diff reads
+  on its own.
+- Design problems outside the topic: add to `etc/todo.txt`, do not fix in
+  passing.
 
 ## Baz code
 
