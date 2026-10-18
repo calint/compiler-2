@@ -34,7 +34,7 @@
 // 'list' parses it again as its own method, e.g. 'str.add'
 //
 // e.g. 'func f<T type>(x T)' is a 'generic_func_info', a call 'f<i8>(x)' or
-// 'f(x)' parses it again as 'f<i8>' (see 'instantiate_generic_func')
+// 'f(x)' parses it again as 'f<i8>' (see 'stmt_def_func_generic')
 //
 // an error in the text of an instance gets the 'generic_frame's that led to it
 //

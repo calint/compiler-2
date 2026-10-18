@@ -18,6 +18,7 @@
 #include "generics.hpp"
 #include "machine.hpp"
 #include "statement.hpp"
+#include "stmt_def_func.hpp"
 #include "stmt_def_type_field.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -463,7 +464,7 @@ class stmt_def_type_alias final : public statement {
 
             tc.generics().add_type_instance(instance);
 
-            instantiate_generic_methods(tc, instance);
+            stmt_def_func_generic::instantiate_methods(tc, instance);
         }
     }
 

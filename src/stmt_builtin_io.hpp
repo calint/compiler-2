@@ -59,7 +59,7 @@ class stmt_builtin_io final : public stmt_call {
 
   public:
     stmt_builtin_io(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
-        : stmt_call{tc, std::move(uops), tk, tz.is_next_char_token('('), tz} {
+        : stmt_call{tc, std::move(uops), tk, tz, nullptr} {
 
         if (is_sector_function()) {
             assert_sector_function_call(tc);

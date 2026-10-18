@@ -392,7 +392,7 @@ class program final {
         -> std::unique_ptr<statement> {
 
         if (tk.is_text("func")) {
-            return std::make_unique<stmt_def_func>(tc, tk, tz);
+            return make_stmt_def_func(tc, tk, tz);
         }
 
         if (tk.is_text("type")) {

@@ -67,27 +67,27 @@ struct generic_call {
     //
 
     // the instance of a generic function, e.g. '<name>' in 'tz.to<name>()'
-    // without '<' the types are taken from the arguments. 'is_paren_read' is
-    // set when the '(' has been read already
+    // without '<' the types are taken from the arguments. 'tz' is after the
+    // name and before the '<' or the '('
     // note: 'name_tk' is the name as written, e.g. 'to', and 'generic_name'
     //       the generic function, e.g. 'tokenizer.to'
     [[nodiscard]] static auto
     parse(toc& tc, tokenizer& tz, const token& name_tk,
-          const std::string_view generic_name, const bool is_paren_read,
-          const type* const expected_type) -> generic_call {
+          const std::string_view generic_name, const type* const expected_type)
+        -> generic_call {
 
         const token open_tk{tz.is_next_char_token('<')};
 
         if (open_tk.is_empty()) {
             const std::vector<const type*> type_args{
                 deduced_type_arguments(tc, tz, name_tk, generic_name,
-                                       is_paren_read, expected_type),
+                                       expected_type),
             };
 
             return {
                 .func_name{
-                    instantiate_generic_func(tc, name_tk, generic_name,
-                                             type_args),
+                    stmt_def_func_generic::instantiate_func(
+                        tc, name_tk, generic_name, type_args),
                 },
                 .generic_tks{},
             };
@@ -101,7 +101,8 @@ struct generic_call {
 
         return {
             .func_name{
-                instantiate_generic_func(tc, name_tk, generic_name, type_args),
+                stmt_def_func_generic::instantiate_func(
+                    tc, name_tk, generic_name, type_args),
             },
             .generic_tks{args.list_tks},
         };
@@ -148,16 +149,18 @@ struct generic_call {
     // is the type of the argument for a parameter declared with that type, when
     // the argument is a variable, or the type the call is assigned to when it
     // is the result. a literal or an expression does not tell its type
-    [[nodiscard]] static auto deduced_type_arguments(
-        toc& tc, const tokenizer& tz, const token& name_tk,
-        const std::string_view generic_name, const bool is_paren_read,
-        const type* const expected_type) -> std::vector<const type*> {
+    [[nodiscard]] static auto
+    deduced_type_arguments(toc& tc, const tokenizer& tz, const token& name_tk,
+                           const std::string_view generic_name,
+                           const type* const expected_type)
+        -> std::vector<const type*> {
 
         const generic_func_info& generic{tc.generics().get_func(generic_name)};
 
+        // the arguments are looked at ahead, the call reads them later
         tokenizer scan{tz};
 
-        if (not is_paren_read and scan.is_next_char_token('(').is_empty()) {
+        if (scan.is_next_char_token('(').is_empty()) {
             throw compiler_exception{
                 name_tk, std::format("generic function '{}' needs type "
                                      "arguments, e.g. '{}<...>'",
@@ -1599,6 +1602,9 @@ class noninline_call {
     }
 };
 
+// selects the constructor of 'stmt_call' for 'point.at(1, 2)'
+struct constructor_call_tag {};
+
 // a call of a function, a method or a constructor
 //
 // parsing, in the constructors: the callee and its '(' ('read_callee', a
@@ -1635,14 +1641,14 @@ class stmt_call : public expression {
     };
 
   public:
+    // 'tz' is after the name, e.g. 'f' of 'f(x)' or 'show' of 'show<name>(x)'.
     // 'expected_type' is the type the call is assigned to, it tells a type
     // parameter that is the result, e.g. 'x.f = tz.to()'
-    stmt_call(toc& tc, unary_ops uops, const token tk,
-              const token open_paren_tk, tokenizer& tz,
-              const type* const expected_type = nullptr)
+    stmt_call(toc& tc, unary_ops uops, const token tk, tokenizer& tz,
+              const type* const expected_type)
         : expression{tk, std::move(uops)}, func_name_{tk.text()} {
 
-        read_callee(tc, tz, open_paren_tk, expected_type, "function name");
+        read_callee(tc, tz, expected_type, "function name");
 
         if (not tc.is_func_builtin(func_name_)) {
             parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
@@ -1654,7 +1660,7 @@ class stmt_call : public expression {
 
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
     stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz,
-              const type* const expected_type = nullptr)
+              const type* const expected_type)
         : expression{receiver.method_name_token(), std::move(uops)},
           method_dot_tk_{receiver.method_dot_token()},
           func_name_{
@@ -1662,7 +1668,7 @@ class stmt_call : public expression {
                           receiver.method_name_token().text()),
           } {
 
-        read_callee(tc, tz, token{}, expected_type, "method name");
+        read_callee(tc, tz, expected_type, "method name");
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
@@ -1698,8 +1704,10 @@ class stmt_call : public expression {
         parse_arguments(tc, tz, func);
     }
 
-    // e.g. 'point.at(1, 2)' calls the constructor 'point.at'
-    stmt_call(toc& tc, unary_ops uops, const token type_tk, tokenizer& tz)
+    // e.g. 'point.at(1, 2)' calls the constructor 'point.at', 'tz' is after
+    // 'point'
+    stmt_call(constructor_call_tag /*tag*/, toc& tc, unary_ops uops,
+              const token type_tk, tokenizer& tz)
         : expression{type_tk, std::move(uops)},
           constructor_dot_tk_{tz.is_next_char_token('.')},
           constructor_name_tk_{tz.next_token()},
@@ -2182,29 +2190,23 @@ class stmt_call : public expression {
         }
     }
 
-    // a generic function has its type arguments before the '(', e.g.
-    // 'convert<i8>(x)'. 'found' is the '(' a caller has read, otherwise it is
-    // read here
+    // the name is read, a generic function has its type arguments before the
+    // '(', e.g. 'convert<i8>(x)'
     // note: 'func_name_' becomes the name of the instance and the type is its
     //       return type, 'what' names the callee in the error of a missing '('
-    auto read_callee(toc& tc, tokenizer& tz, const token& found,
-                     const type* const expected_type,
+    auto read_callee(toc& tc, tokenizer& tz, const type* const expected_type,
                      const std::string_view what) -> void {
-
-        // a caller that found no '(' passes an empty token
-        const bool is_paren_read{not found.is_empty()};
 
         if (tc.generics().has_func(func_name_)) {
             const generic_call generic{
-                generic_call::parse(tc, tz, tok(), func_name_, is_paren_read,
-                                    expected_type),
+                generic_call::parse(tc, tz, tok(), func_name_, expected_type),
             };
 
             func_name_ = generic.func_name;
             generic_tks_ = generic.generic_tks;
         }
 
-        open_paren_tk_ = is_paren_read ? found : tz.is_next_char_token('(');
+        open_paren_tk_ = tz.is_next_char_token('(');
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 

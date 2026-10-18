@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: generics and calls: a reviewer follows one path per kind of
+    definition and of call
+    => done (2026-10-18): 'stmt_call' reads the '<...>' and the '(' of every
+       call, callers only peek ('is_paren_read', the 'found' token and the
+       'token{}' markers are gone, the statement and expression entries have
+       one branch for 'f(x)' and 'f<T>(x)'); the constructor call is selected
+       by 'constructor_call_tag'; 'func_head' reads 'func [noinline] [mut]
+       name[.method] [<T type>] (' once, 'make_stmt_def_func' picks the
+       class like 'make_stmt_def_type'; 'stmt_def_func' is always a function
+       (user code or an instance), 'stmt_def_func_generic' keeps the text of
+       a generic function or method and makes the instances
+       ('instantiate_func', 'instantiate_methods'), the three
+       'instantiate_generic_*' of 'decouple' are gone; 'format-source.py'
+       no longer duplicates a one-line class such as 'struct tag {};';
+       behavior, '.out' files and messages unchanged
+    => not done: deducing a type argument by parsing the argument for real,
+       an expression is parsed against a destination type so its own type is
+       not known before; the lookahead of 'generic_call' stays
+    => not done: one generic function per source definition for a method
+       with type parameters of its own ('text.append' instead of
+       'str.append'), the clash and hiding errors at the alias (0869, 1068,
+       1075) depend on the per-instance definition
 [x] hard: generics: second pass, one location rule and a split function
     constructor
     => done (2026-10-18): 'generic_arg' has 'param_tk' and 'arg_tk';

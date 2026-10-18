@@ -208,11 +208,6 @@ class stmt_block final : public statement {
             return create_stmt_method_call(tc, tz, std::move(si));
         }
 
-        // e.g. 'show<name>(x)', the call reads the type arguments
-        if (is_generic_call(tc, si.identifier(), tz)) {
-            return create_stmt_call(tc, tz, si, token{});
-        }
-
         // e.g. 'p1 = p2'
         if (const token equals_tk{tz.is_next_char_token('=')};
             not equals_tk.is_empty()) {
@@ -221,12 +216,12 @@ class stmt_block final : public statement {
                                                      equals_tk);
         }
 
-        // e.g. 'show(x)'
+        // e.g. 'show(x)' or 'show<name>(x)', the call reads the type arguments
         // note: solves circular reference
-        if (const token open_paren_tk{tz.is_next_char_token('(')};
-            not open_paren_tk.is_empty()) {
+        if (tz.peek_char_after_whitespace() == '(' or
+            is_generic_call(tc, si.identifier(), tz)) {
 
-            return create_stmt_call(tc, tz, si, open_paren_tk);
+            return create_stmt_call(tc, tz, si);
         }
 
         throw compiler_exception{

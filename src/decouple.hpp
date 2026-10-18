@@ -28,8 +28,6 @@ class stmt_identifier;
 class stmt_call;
 class type;
 class expr_any;
-struct generic_method_info;
-struct generic_type_instance;
 // why a name cannot be written, for the diagnostic; 'none' is writable
 enum class read_only_cause : uint8_t {
     none,
@@ -327,8 +325,7 @@ struct lea_request {
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto create_stmt_call(toc& tc, tokenizer& tz,
-                                    const stmt_identifier& si,
-                                    const token open_paren_tk)
+                                    const stmt_identifier& si)
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto create_stmt_constructor_call(toc& tc, tokenizer& tz,
@@ -338,21 +335,6 @@ struct lea_request {
 [[nodiscard]] auto create_stmt_method_call(toc& tc, tokenizer& tz,
                                            stmt_identifier receiver)
     -> std::unique_ptr<statement>;
-
-// parses the method of a generic type again for an instance of the type
-auto instantiate_generic_method(toc& tc, const generic_method_info& method,
-                                const generic_type_instance& instance) -> void;
-
-// the methods defined so far for a new instance of a generic type
-auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
-    -> void;
-
-// parses the generic function again with the type arguments and returns the
-// name of the instance, an instance made before is reused
-[[nodiscard]] auto
-instantiate_generic_func(toc& tc, const token& call_tk,
-                         std::string_view generic_name,
-                         std::span<const type* const> type_args) -> std::string;
 
 // e.g. 'show<name>(x)', a generic function name followed by '<' has no other
 // meaning

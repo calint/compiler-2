@@ -13,7 +13,7 @@
 class stmt_builtin_exit final : public stmt_call {
   public:
     stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)
-        : stmt_call{tc, {}, tk, tz.is_next_char_token('('), tz} {
+        : stmt_call{tc, {}, tk, tz, nullptr} {
 
         if (argument_count() != 1) {
             throw compiler_exception{tok(), "expected 1 argument"};

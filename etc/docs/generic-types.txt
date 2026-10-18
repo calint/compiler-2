@@ -1,14 +1,15 @@
 generic types: how 'type' with parameters becomes real types
 ============================================================
 
-source: src/stmt_def_type.hpp ('stmt_def_type')
+source: src/stmt_def_type.hpp ('stmt_def_type', 'stmt_def_type_generic',
+        'stmt_def_type_alias')
 helpers: src/generics.hpp ('generic_registry', 'generic_type_instance'),
-         src/decouple_impl.hpp ('instantiate_generic_method'),
-         src/toc.hpp ('type_alias_scope')
-methods: src/stmt_def_func.hpp ('define_generic_method')
-functions: src/stmt_def_func.hpp ('define_generic', 'deductions'),
-           src/stmt_call.hpp ('generic_call', 'stmt_call::read_callee'),
-           src/decouple_impl.hpp ('instantiate_generic_func')
+         src/toc.hpp ('generic_scope')
+methods: src/stmt_def_func.hpp ('stmt_def_func_generic::define_method',
+         'stmt_def_func_generic::instantiate_methods')
+functions: src/stmt_def_func.hpp ('func_head', 'stmt_def_func_generic':
+           'define_func', 'deductions', 'instantiate_func'),
+           src/stmt_call.hpp ('generic_call', 'stmt_call::read_callee')
 tests: 0774, 0776, 0812 (generic types), 1060-1072 (generic types based on
        other generic types), 0767-0772, 0779-0782, 0817-0820, 0828, 0844,
        0848-0850, 0860, 0861 (generic functions) in qa/coverage/tests

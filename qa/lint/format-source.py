@@ -293,6 +293,10 @@ def declaration_lines(cursor, lines, start, end):
 
     open_n, close_n = body_lines(cursor)
 
+    # a body on one line, e.g. 'struct tag {};', has nothing to lay out
+    if open_n == close_n:
+        return lines[start : end + 1]
+
     return lines[start : open_n + 1] + format_body(cursor, lines) + [
         lines[close_n]
     ]
@@ -830,6 +834,11 @@ def format_file(tu, path):
     n = 0
     for c in classes:
         open_n, close_n = body_lines(c)
+
+        # a body on one line, e.g. 'struct tag {};', has nothing to lay out
+        if open_n == close_n:
+            continue
+
         out += lines[n : open_n + 1]
         out += format_body(c, lines)
         n = close_n

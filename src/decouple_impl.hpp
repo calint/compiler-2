@@ -83,11 +83,12 @@ auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
 
 // declared in 'decouple.hpp'
 // called from 'stmt_block'
-auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si,
-                      const token open_paren_tk) -> std::unique_ptr<statement> {
+auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si)
+    -> std::unique_ptr<statement> {
 
+    // a call statement has no destination to deduce a type argument from
     return std::make_unique<stmt_call>(tc, si.get_unary_ops(), si.first_token(),
-                                       open_paren_tk, tz);
+                                       tz, nullptr);
 }
 
 // declared in 'decouple.hpp'
@@ -95,7 +96,8 @@ auto create_stmt_call(toc& tc, tokenizer& tz, const stmt_identifier& si,
 auto create_stmt_constructor_call(toc& tc, tokenizer& tz, const token type_tk)
     -> std::unique_ptr<statement> {
 
-    return std::make_unique<stmt_call>(tc, unary_ops{}, type_tk, tz);
+    return std::make_unique<stmt_call>(constructor_call_tag{}, tc, unary_ops{},
+                                       type_tk, tz);
 }
 
 // declared in 'decouple.hpp'
@@ -103,74 +105,8 @@ auto create_stmt_constructor_call(toc& tc, tokenizer& tz, const token type_tk)
 auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
     -> std::unique_ptr<statement> {
 
-    return std::make_unique<stmt_call>(tc, unary_ops{}, std::move(receiver),
-                                       tz);
-}
-
-// declared in 'decouple.hpp'
-// called from 'stmt_call'
-auto instantiate_generic_func(toc& tc, const token& call_tk,
-                              const std::string_view generic_name,
-                              const std::span<const type* const> type_args)
-    -> std::string {
-
-    const generic_func_info& generic{tc.generics().get_func(generic_name)};
-
-    if (type_args.size() != generic.param_tks.size()) {
-        throw compiler_exception{
-            call_tk,
-            std::format("generic function '{}' takes {} type argument(s), "
-                        "got {}",
-                        generic_name, generic.param_tks.size(),
-                        type_args.size())};
-    }
-
-    tc.generics().mark_func_instantiated(generic_name);
-
-    std::string name{generic_registry::instance_name(generic_name, type_args)};
-
-    if (tc.is_func(name)) {
-        return name;
-    }
-
-    // an error in the instance reports the call that needed it
-    try {
-        tc.add_func_instance(
-            stmt_def_func::make_func_instance(tc, generic, type_args));
-    } catch (compiler_exception& e) {
-        e.add_call_frame(call_tk, name);
-        throw;
-    }
-
-    return name;
-}
-
-// declared in 'decouple.hpp'
-// called from 'stmt_def_func' and 'stmt_def_type_alias'
-auto instantiate_generic_method(toc& tc, const generic_method_info& method,
-                                const generic_type_instance& instance) -> void {
-
-    // an error in the method is in the generic code, the frames name the bases
-    // and the alias
-    try {
-        tc.add_func_instance(
-            stmt_def_func::make_method_instance(tc, method, instance));
-    } catch (compiler_exception& e) {
-        instance.add_frames_to(e);
-        throw;
-    }
-}
-
-// declared in 'decouple.hpp'
-// called from 'stmt_def_type_alias'
-auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
-    -> void {
-
-    for (const generic_method_info& method :
-         tc.generics().get_methods(instance.generic_name)) {
-
-        instantiate_generic_method(tc, method, instance);
-    }
+    return std::make_unique<stmt_call>(tc, unary_ops{}, std::move(receiver), tz,
+                                       nullptr);
 }
 
 // declared in 'decouple.hpp'
@@ -302,25 +238,14 @@ static auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                      const type* const expected_type)
     -> call_or_identifier {
 
-    // e.g.  foo(...)
-    if (const token open_paren_tk{tz.is_next_char_token('(')};
-        not open_paren_tk.is_empty()) {
+    // e.g. 'foo(x)' or 'show<name>(x)', the call reads the type arguments
+    if (tz.peek_char_after_whitespace() == '(' or
+        is_generic_call(tc, tk.text(), tz)) {
 
         return {
             .call{
-                std::make_unique<stmt_call>(tc, std::move(uops), tk,
-                                            open_paren_tk, tz, expected_type),
-            },
-            .identifier{},
-        };
-    }
-
-    // e.g. 'show<name>(x)', the call reads the type arguments
-    if (is_generic_call(tc, tk.text(), tz)) {
-        return {
-            .call{
-                std::make_unique<stmt_call>(tc, std::move(uops), tk, token{},
-                                            tz, expected_type),
+                std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
+                                            expected_type),
             },
             .identifier{},
         };
@@ -331,7 +256,8 @@ static auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     if (is_constructor_call(tc, tk, tz)) {
         return {
             .call{
-                std::make_unique<stmt_call>(tc, std::move(uops), tk, tz),
+                std::make_unique<stmt_call>(constructor_call_tag{}, tc,
+                                            std::move(uops), tk, tz),
             },
             .identifier{},
         };
