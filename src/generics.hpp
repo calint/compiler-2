@@ -180,7 +180,7 @@ struct generic_binding {
 };
 
 // a frame of an error in an instance of a base, e.g. 'list<i8, 8>' at the
-// 'list' of 'type text<capacity> = list<i8, capacity>'
+// 'list' of 'type text<size> = list<i8, size>'
 struct generic_base_frame {
     token src_loc_tk;
     std::string text;
@@ -271,10 +271,10 @@ struct generic_type_info {
     token src_loc_tk;
     token start_tk;
     std::vector<generic_param> params;
-    // e.g. 'list' of 'type text<capacity> = list<i8, capacity>', empty when
+    // e.g. 'list' of 'type text<size> = list<i8, size>', empty when
     // the fields follow the parameters
     token base_tk;
-    // e.g. 'i8' and 'capacity' of 'list<i8, capacity>'
+    // e.g. 'i8' and 'size' of 'list<i8, size>'
     std::vector<token> base_arg_tks;
 };
 

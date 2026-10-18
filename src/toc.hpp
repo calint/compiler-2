@@ -1934,8 +1934,8 @@ class definition_checks final {
             const bool is_generic{not generic_method.empty()};
             const bool is_existing_generic{not fn.generic_method.empty()};
 
-            // e.g. 'text.print' and 'list.print' for 'type text<capacity> =
-            // list<i8, capacity>'
+            // e.g. 'text.print' and 'list.print' for 'type text<size> =
+            // list<i8, size>'
             if (is_generic and is_existing_generic and
                 generic_method != fn.generic_method) {
 

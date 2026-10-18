@@ -236,7 +236,7 @@ class stmt_def_type final : public statement {
 };
 
 // e.g. 'type text<capacity> {...}'
-// e.g. 'type text<capacity> = list<i8, capacity>'
+// e.g. 'type text<size> = list<i8, size>'
 class stmt_def_type_generic final : public statement {
     // where the definition continues after 'type', an alias parses it again
     token start_tk_;
@@ -274,7 +274,7 @@ class stmt_def_type_generic final : public statement {
     auto define_based_generic(toc& tc, const token& type_tk, tokenizer& tz,
                               std::vector<generic_param> params) -> void {
 
-        // e.g. '=' and 'list' of '= list<i8, capacity>'
+        // e.g. '=' and 'list' of '= list<i8, size>'
         const token equals_tk{tz.is_next_char_token('=')};
         const token base_tk{tz.next_token()};
 
@@ -285,7 +285,7 @@ class stmt_def_type_generic final : public statement {
 
         assert_generic_type(tc, base_tk, "the type based on it");
 
-        // e.g. 'i8' and 'capacity' of '<i8, capacity>'
+        // e.g. 'i8' and 'size' of '<i8, size>'
         generic_arguments args{parse_generic_args(tz, base_tk)};
 
         assert_arg_count(base_tk, tc.generics().get_type(base_tk.text()),
@@ -300,7 +300,7 @@ class stmt_def_type_generic final : public statement {
                                 .base_arg_tks{std::move(args.arg_tks)},
                             });
 
-        // e.g. 'text<capacity> = list<i8, capacity>'
+        // e.g. 'text<size> = list<i8, size>'
         generic_text_ = tz.text_after(type_tk);
     }
 
@@ -314,7 +314,7 @@ class stmt_def_type_generic final : public statement {
             tc.assert_generic_param_free(param.name_tk, param.name_tk.text());
         }
 
-        // e.g. 'type text<capacity> = list<i8, capacity>'
+        // e.g. 'type text<size> = list<i8, size>'
         if (tz.peek_char_after_whitespace() == '=') {
             define_based_generic(tc, type_tk, tz, std::move(params));
             return;
@@ -430,7 +430,7 @@ class stmt_def_type_alias final : public statement {
             .generic_name{generic_name},
             // e.g. the type 'str'
             .type_ptr{&type_},
-            // e.g. 'capacity' is 8
+            // e.g. 'size' is 8
             .bindings{std::move(bindings)},
             // e.g. 'type str = text<8>'
             .alias_source{alias_source},
@@ -442,10 +442,10 @@ class stmt_def_type_alias final : public statement {
     // e.g. 'type str = text<8>' is the type 'str' with the fields of the
     // generic type 'text' for the arguments
     //
-    // e.g. with 'type text<capacity> = list<i8, capacity>' and
+    // e.g. with 'type text<size> = list<i8, size>' and
     // 'type list<T type, capacity> { array T[capacity], len }' the steps are:
     //   1. read '= text<8>'
-    //   2. bind 'capacity' of 'text' to 8
+    //   2. bind 'size' of 'text' to 8
     //   3. follow the bases, 'text<8>' then 'list<i8, 8>', and parse the
     //      fields of 'list' as those of 'str'
     //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>'
@@ -461,7 +461,7 @@ class stmt_def_type_alias final : public statement {
         // e.g. 'type str = i32<8>' or 'type str = undefined<8>' are errors
         assert_generic_type(tc, generic_tk, "the alias that names it");
 
-        // e.g. 'type text<capacity> = list<i8, capacity>'
+        // e.g. 'type text<size> = list<i8, size>'
         const generic_type_info generic{
             tc.generics().get_type(generic_tk.text()),
         };
@@ -474,7 +474,7 @@ class stmt_def_type_alias final : public statement {
         assert_arg_count(generic_tk, generic, args.arg_tks);
 
         // an error here is in the alias itself, so it gets no frame
-        // e.g. 'capacity' is 8 for 'text<8>'
+        // e.g. 'size' is 8 for 'text<8>'
         const std::vector<generic_binding> bindings{
             resolve_args(tc, generic_tk.text(), generic.params, args.arg_tks),
         };
@@ -508,15 +508,35 @@ class stmt_def_type_alias final : public statement {
         }
     }
 
-    // follows the bases from the generic type that the alias names to the one
-    // with the fields and parses those fields as the fields of this type. the
-    // result has an instance per generic type, the named one first
+    // follows the bases from the generic type that the alias names down to
+    // the one that has fields, and parses those fields as the fields of this
+    // type
     //
-    // e.g. 'type str = text<8>' with 'type text<capacity> = list<i8, capacity>'
-    // and 'type list<T type, capacity> { array T[capacity], len }':
-    //   level 1: 'text' with the argument '8', 'capacity' is 8
-    //   level 2: 'list' with the arguments 'i8' and 'capacity', 'T' is 'i8' and
-    //            'capacity' is 8, has no base so 'str' gets its fields
+    // e.g. with the definitions
+    //   type list<T type, capacity> { array T[capacity], len }
+    //   type text<size> = list<i8, size>
+    //   type str = text<8>
+    //
+    // level 1 is 'text', what the caller resolved:
+    //   'generic_name' is 'text' and 'generic' its definition
+    //   'arg_tks' is '8' and 'bindings' has 'size' 8
+    //   'alias_source' is 'type str = text<8>'
+    //
+    // level 2 is 'list', the base of 'text', with the argument tokens 'i8'
+    // and 'size' of 'list<i8, size>':
+    //   the tokens are read with the parameters of 'text' declared, so
+    //   'size' is the constant 8
+    //   the values are matched by position with the parameters of 'list',
+    //   'T' is 'i8' and 'capacity' is 8
+    //   'list' has no base, so 'array T[capacity], len' is parsed with these
+    //   bindings and 'str' gets 'array i8[8], len'
+    //
+    // a level needs only the bindings of the level before it, the argument
+    // tokens of a base can only name parameters of the type that declares it
+    //
+    // the result has an instance per level, the named one first, e.g.
+    // 'text<8>' then 'list<i8, 8>', so the methods of each generic type see
+    // the arguments of their level
     //
     // an error in a level is in the generic definition, it gets a frame per
     // level before it and one that names the alias, e.g. an error in the
@@ -544,7 +564,7 @@ class stmt_def_type_alias final : public statement {
         try {
             // e.g. 'text' has the base 'list', 'list' has none
             while (not level->base_tk.is_empty()) {
-                // e.g. 'list' of 'type text<capacity> = list<i8, capacity>'
+                // e.g. 'list' of 'type text<size> = list<i8, size>'
                 const token& base_tk{level->base_tk};
 
                 // e.g. 'type list<T type, capacity> { array T[capacity], len }'
@@ -553,15 +573,15 @@ class stmt_def_type_alias final : public statement {
                 };
 
                 // the last instance is that of 'level'
-                // e.g. 'T' is 'i8' and 'capacity' is 8 for 'list<i8,
-                // capacity>' with 'capacity' 8 of 'text'
+                // e.g. 'T' is 'i8' and 'capacity' is 8 for 'list<i8, size>'
+                // with 'size' 8 of 'text'
                 std::vector<generic_binding> base_bindings{
                     resolve_base_args(tc, *level, base, level_arg_tks,
                                       instances.back().bindings),
                 };
 
                 // an error in the base is reported with the arguments it got
-                // e.g. 'list<i8, 8>' at the 'list' of 'list<i8, capacity>'
+                // e.g. 'list<i8, 8>' at the 'list' of 'list<i8, size>'
                 const generic_base_frame base_frame{
                     .src_loc_tk{base_tk},
                     .text{
@@ -581,7 +601,7 @@ class stmt_def_type_alias final : public statement {
                     std::move(base_frames), alias_source));
 
                 // the base is the next level
-                // e.g. 'list' with the tokens 'i8' and 'capacity'
+                // e.g. 'list' with the tokens 'i8' and 'size'
                 level_arg_tks = level->base_arg_tks;
                 level = &base;
             }
@@ -592,7 +612,7 @@ class stmt_def_type_alias final : public statement {
 
         } catch (compiler_exception& e) {
             // e.g. an error in 'list' gets the frame 'list<i8, 8>' at the
-            // 'list' of 'type text<capacity> = list<i8, capacity>'
+            // 'list' of 'type text<size> = list<i8, size>'
             for (const generic_base_frame& frame :
                  instances.back().base_frames) {
 
@@ -678,7 +698,7 @@ class stmt_def_type_alias final : public statement {
     }
 
     // the arguments of the base with the parameters of 'generic' bound, e.g.
-    // 'i8' and '8' of 'list<i8, capacity>' for 'capacity' 8. the block is
+    // 'i8' and '8' of 'list<i8, size>' for 'size' 8. the block is
     // closed before the base binds its parameters, which may have the same
     // names
     //
@@ -687,10 +707,10 @@ class stmt_def_type_alias final : public statement {
     // 'bindings' are the values of that instance, 'arg_tks' its argument
     // tokens, used as the source locations of the constants
     //
-    // e.g. 'text<8>' with 'type text<capacity> = list<i8, capacity>':
-    //   'generic' is 'text', 'arg_tks' is '8', 'bindings' has 'capacity' 8
-    //   'base' is 'list', 'generic.base_arg_tks' are 'i8' and 'capacity'
-    //   in the block 'capacity' is the constant 8
+    // e.g. 'text<8>' with 'type text<size> = list<i8, size>':
+    //   'generic' is 'text', 'arg_tks' is '8', 'bindings' has 'size' 8
+    //   'base' is 'list', 'generic.base_arg_tks' are 'i8' and 'size'
+    //   in the block 'size' is the constant 8
     //   the result binds 'T' of 'list' to 'i8' and 'capacity' of 'list' to 8
     [[nodiscard]] static auto
     resolve_base_args(toc& tc, const generic_type_info& generic,
@@ -709,7 +729,7 @@ class stmt_def_type_alias final : public statement {
 
         // matches the parameters of the base with its argument tokens, a
         // token that names a parameter of 'generic' gets its value
-        // e.g. 'T' with 'i8' and 'capacity' with 'capacity' that is 8
+        // e.g. 'T' with 'i8' and 'capacity' with 'size' that is 8
         return resolve_args(tc, generic.base_tk.text(), base.params,
                             generic.base_arg_tks);
     }
@@ -780,7 +800,7 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
     }
 
     // e.g. 'type text<capacity> {...}'
-    // e.g. 'type text<capacity> = list<i8, capacity>'
+    // e.g. 'type text<size> = list<i8, size>'
     if (next == '<') {
         return std::make_unique<stmt_def_type_generic>(tc, tk, start_tk,
                                                        name_tk, tz);
