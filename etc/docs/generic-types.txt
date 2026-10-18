@@ -185,27 +185,61 @@ A call gives the type arguments in one of two ways:
 Written, after '<', the count must match the type parameters and each
 argument names a type; a constant is rejected.
 
-Deduced, without '<', each type parameter is taken in order from:
+Deduced, without '<', each type parameter is looked for in two places, in
+this order. The examples use 'make' and 'same' from the start of section 10
+and a type 'name'.
 
-1. The argument of the parameter declared with it (10.1 1). The type
-   arguments must be known before the arguments are parsed (10.4), so the
-   argument is only looked at ahead, without parsing it. Only forms whose
-   type is plain from their text tell a type:
-   1.1. a variable, a field or an element that is the whole argument, e.g.
-        'p', 'p.x' or 'a[i]'
-   1.2. an instance literal 'point{1, 2}', a constructor call
-        'point.at(1, 2)' or a call 'mk(1, 2)' of a function that is not
-        generic and returns a value
-   1.3. anything else tells nothing: a literal (its type depends on where
-        it goes), an expression 'a + 1', a method call or a missing argument
-2. Else, if the result is declared with it (10.1 2), the type the call is
-   assigned to.
-3. Else the call is rejected and asks for the type arguments to be written:
+1. The argument for the parameter declared with it (10.1 1). For
+   'same(a T, b T)' that is the first argument; the second is not looked at.
+
+   The argument is not parsed yet: it is parsed with the type its parameter
+   has in the instance, so the instance must be known first (10.4 2).
+   Instead the argument is read ahead as text, and only an argument whose
+   type shows in that text tells the type:
+
+   1.1. a variable, a field or an element that is the whole argument
+
+            same(s, t)              T = the type of 's'
+            same(p.x, q.x)          T = the type of the field 'x'
+            same(a[i], t)           T = the element type of 'a'
+
+   1.2. a value that names its type: an instance literal, a constructor call,
+        or a call of a function that is not generic and returns a value
+
+            same(name{}, t)         T = name
+            same(point.at(1, 2), p) T = point
+            same(mk(), t)           T = the return type of 'mk'
+
+        A generic function does not count: its return type is not known
+        until it is instantiated.
+
+   1.3. anything else tells nothing, and step 2 is tried
+
+            same(1, t)              a literal: its type depends on where it
+                                    goes
+            same({}, t)             '{}' does not name a type
+            same(s + 1, t)          an expression, not the whole argument
+            same(s.get(), t)        a method call
+            same()                  the argument is missing
+
+2. The destination, when the result is declared with it (10.1 2): the type
+   the call is assigned to.
+
+        var m = name{}
+        m = make(2)                 T = name, the type of 'm'
+
+   'var m = make(2)' has no destination type: 'm' takes its type from the
+   call, so there is nothing to take it from.
+
+3. If neither tells the type, the call is rejected and asks for the type
+   arguments to be written:
 
     example.baz:15:13: cannot deduce 'T' of generic function 'make', write
                        'make<...>'
     var m = make(2)
             ^~~~
+
+   Written, the same call is 'var m = make<name>(2)'.
 
 A generic method called without '(' and without '<' is rejected with "needs
 type arguments", since there is nothing to deduce from.

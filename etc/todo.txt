@@ -218,6 +218,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     become a run test again if the semantics change
 [ ] medium: low priority: generics: constants as parameters of functions
     ('func f<n>()') and constructors of generic types
+    => fits: 'generic_param' reads constants, 'resolve_generic_args' resolves
+       both kinds, constants join 'instance_->constants' like those of a
+       receiver ('add_constants')
+    => a constant is never deduced: a function with one is always called
+       with '<...>'
+    => the instance name and label get the values ('f<name,8>',
+       'f.name.8'); a negative value puts '-' in a label
+    => gain is only a size in the body ('var buf = i8[n]'): a value is a
+       plain parameter, 'a T[]' already gives one instance per length, a
+       result 'res list<i8, n>' is not possible (an instance needs an alias)
+    => no use case yet
 [ ] medium: low priority: generics: a generic that is never instantiated is not
     checked, so an error in its body is silent until the first use
     => placeholder types would reject valid bodies, so the footer of the
