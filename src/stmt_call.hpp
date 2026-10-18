@@ -1368,8 +1368,8 @@ class stmt_call : public expression {
 
         std::vector<const type*> type_args;
 
-        for (const auto [param_name, deduction] :
-             std::views::zip(generic.param_names, generic.deductions)) {
+        for (const auto [param_tk, deduction] :
+             std::views::zip(generic.param_tks, generic.deductions)) {
 
             const type* arg_type{
                 deduction.param_index
@@ -1386,7 +1386,7 @@ class stmt_call : public expression {
                     tok(),
                     std::format("cannot deduce '{}' of generic function '{}', "
                                 "write '{}<...>'",
-                                param_name, func_name_, tok().text())};
+                                param_tk.text(), func_name_, tok().text())};
             }
 
             type_args.push_back(arg_type);
@@ -1587,12 +1587,12 @@ class stmt_call : public expression {
                                             expected_type);
         }
 
-        const generic_arguments args{generic_arguments::parse(tz, open_tk)};
+        const generic_arg_tokens args{generic_arg_tokens::parse(tz, open_tk)};
 
         generic_tks_.append_range(args.list_tks);
 
-        const std::span<const std::string> param_names{
-            tc.generics().get_func(func_name_).param_names,
+        const std::span<const token> param_tks{
+            tc.generics().get_func(func_name_).param_tks,
         };
 
         std::vector<const type*> type_args;
@@ -1600,14 +1600,14 @@ class stmt_call : public expression {
 
         for (const auto [ix, type_tk] : std::views::enumerate(args.arg_tks)) {
             // a surplus argument is reported with the count
-            if (std::cmp_less(ix, param_names.size()) and
+            if (std::cmp_less(ix, param_tks.size()) and
                 tc.constant_value_of(type_tk)) {
 
                 throw compiler_exception{
                     type_tk,
                     std::format("generic parameter '{}' of '{}' needs a type, "
                                 "got the constant '{}'",
-                                param_names.at(static_cast<size_t>(ix)),
+                                param_tks.at(static_cast<size_t>(ix)).text(),
                                 func_name_, type_tk.text())};
             }
 

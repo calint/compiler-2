@@ -1,6 +1,63 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: generics: streamline so the code reads line by line; one idea per
+    concept: a definition is text with parameters, an instance is that text
+    parsed again inside a scope where each parameter names its argument;
+    behavior, '.out' files and messages unchanged
+    => 1. one word per concept: 'generic_binding' becomes 'generic_arg'
+       (name, its source token, a type or a constant); 'alias' only means
+       'type str = text<8>' (the type parameter names in 'type_table' stop
+       being called aliases)
+    => 2. one scope class 'generic_scope(tc, args)' replaces
+       'type_alias_scope', 'bind_instance', 'generic_params_block' and
+       'type_table::hide_aliases'/'restore_aliases': it hides the names of
+       an enclosing instance, binds the type arguments, adds the constant
+       arguments in a block of its own, and undoes all of it at the end;
+       a function instance passes only type arguments (its constants go to
+       the frame of the body, as now)
+    => 3. the receiver of a method instance is one more argument, e.g.
+       'text' names 'str', so 'bind_instance' has no special case
+    => 4. 'generic_arg' keeps its source token: the parallel 'arg_tks'
+       spans next to the bindings go away
+    => 5. errors: an instance keeps one list of 'instantiated by' frames,
+       the alias last; 'alias_source' and 'base_frames' merge, and one
+       helper 'add_instance_frames(e, frames)' serves fields, bases and
+       methods
+    => 6. 'stmt_def_type_alias': the base chain is one function
+       'base_instance(instance) -> instance' (resolve the base arguments in
+       a 'generic_scope' of the instance, add the frame); 'parse_alias'
+       reads: resolve named args, follow 'base_instance' while there is a
+       base, parse the root fields, add the type, make the methods base
+       first; 'parse_instances', 'resolve_base_args' and the 'level'
+       pointer go away
+    => 7. 'stmt_def_func': the five-way constructor becomes the user-code
+       constructor plus 'make_instance(tc, generic, args)'; 'generic_part'
+       (enum and four fields) becomes 'generic_text_' (a definition) and
+       'instance_args_' (an instance, its constants for the frame)
+    => 8. one argument resolver for types and functions:
+       'resolve_args(tc, generic_name, params, arg_tks)', used by the alias,
+       the base and 'stmt_call::parse_generic_arguments' (which now repeats
+       the type check); the order of the count check and the constant check
+       stays as now for each caller
+    => 9. 'generics.hpp' reads top-down: parameters, arguments, scope,
+       generic type, generic function, type instance, registry; each with a
+       short example of what it holds
+    => 10. check per step: x86_64 and rv32i-fpga tests with no '.out'
+       change, 'roome/qa/test.sh', clang-tidy clean, formatter applied
+    => done (2026-10-18): as planned with these differences:
+       'generic_scope' has 'add_type', 'add_const' and 'add_receiver_types'
+       instead of taking the arguments, because a type parameter is located
+       at its declaration in a type instance, at the method's type name in
+       a method instance, and a constant at its argument; the block of the
+       constants is entered at the first constant; 'stmt_call' keeps its own
+       type argument loop (a shared resolver made it longer);
+       'stmt_def_func' keeps the constructor and gets 'make_func_instance'
+       and 'make_method_instance', which bind the names before the parse;
+       'generic_part' became four plain members; 'generic_arguments' is
+       'generic_arg_tokens'; 'add_type_alias' for 'int' keeps its name; asm
+       and messages of all tests, tutorial and roome unchanged on x86_64 and
+       rv32i-fpga
 [x] medium: split 'stmt_def_type' by kind so each class reads as one
     statement; 'kind_' and the three-way branches of 'source_to' and
     'compile' go away; behavior, output and messages unchanged

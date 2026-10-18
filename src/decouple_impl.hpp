@@ -107,22 +107,6 @@ auto create_stmt_method_call(toc& tc, tokenizer& tz, stmt_identifier receiver)
                                        tz);
 }
 
-// parses the generic definition again at 'start_tk' as an instance, the type
-// parameters of the callers are hidden meanwhile
-static auto add_func_instance(toc& tc, const token& func_tk,
-                              const token& start_tk,
-                              const std::span<const type* const> type_args,
-                              const generic_type_instance* const receiver)
-    -> void {
-
-    tc.types().hide_aliases();
-
-    tc.add_func_instance(stmt_def_func::make_instance(tc, func_tk, start_tk,
-                                                      type_args, receiver));
-
-    tc.types().restore_aliases();
-}
-
 // declared in 'decouple.hpp'
 // called from 'stmt_call'
 auto instantiate_generic_func(toc& tc, const token& call_tk,
@@ -132,12 +116,12 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
 
     const generic_func_info& generic{tc.generics().get_func(generic_name)};
 
-    if (type_args.size() != generic.param_names.size()) {
+    if (type_args.size() != generic.param_tks.size()) {
         throw compiler_exception{
             call_tk,
             std::format("generic function '{}' takes {} type argument(s), "
                         "got {}",
-                        generic_name, generic.param_names.size(),
+                        generic_name, generic.param_tks.size(),
                         type_args.size())};
     }
 
@@ -151,9 +135,8 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
 
     // an error in the instance reports the call that needed it
     try {
-        add_func_instance(
-            tc, generic.func_tk, generic.start_tk, type_args,
-            generic.receiver_instance ? &*generic.receiver_instance : nullptr);
+        tc.add_func_instance(
+            stmt_def_func::make_func_instance(tc, generic, type_args));
     } catch (compiler_exception& e) {
         e.add_call_frame(call_tk, name);
         throw;
@@ -164,22 +147,16 @@ auto instantiate_generic_func(toc& tc, const token& call_tk,
 
 // declared in 'decouple.hpp'
 // called from 'stmt_def_func' and 'stmt_def_type_alias'
-auto instantiate_generic_method(toc& tc, const token& func_tk,
-                                const token& start_tk,
+auto instantiate_generic_method(toc& tc, const generic_method_info& method,
                                 const generic_type_instance& instance) -> void {
 
     // an error in the method is in the generic code, the frames name the bases
     // and the alias
     try {
-        add_func_instance(tc, func_tk, start_tk, {}, &instance);
+        tc.add_func_instance(
+            stmt_def_func::make_method_instance(tc, method, instance));
     } catch (compiler_exception& e) {
-        for (const generic_base_frame& frame : instance.base_frames) {
-            e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
-        }
-
-        e.add_call_frame(instance.src_loc_tk, instance.alias_source,
-                         "instantiated by");
-
+        instance.add_frames_to(e);
         throw;
     }
 }
@@ -192,8 +169,7 @@ auto instantiate_generic_methods(toc& tc, const generic_type_instance& instance)
     for (const generic_method_info& method :
          tc.generics().get_methods(instance.generic_name)) {
 
-        instantiate_generic_method(tc, method.func_tk, method.start_tk,
-                                   instance);
+        instantiate_generic_method(tc, method, instance);
     }
 }
 

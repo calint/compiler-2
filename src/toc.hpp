@@ -528,20 +528,18 @@ class ident_builder final {
     }
 };
 
-// the types by name. a generic instance also names the arguments of its type
-// parameters while it is parsed, those names are aliases
+// the types by name. while an instance of a generic definition is parsed, its
+// type parameters are names of types too, e.g. 'T' names 'i8'; only those of
+// the innermost instance are visible
 class type_table final {
     struct entry {
         token src_loc_tk;
         const type* type_ptr;
     };
 
-    using alias_list = std::vector<std::pair<std::string, entry>>;
-
     lut<entry> entries_;
-    alias_list aliases_;
-    // the aliases of the callers of the instance being parsed
-    std::vector<alias_list> hidden_aliases_;
+    // the type parameters of the instances being parsed, the innermost last
+    std::vector<lut<entry>> params_;
 
   public:
     auto add(const token& src_loc_tk, const type& tpe) -> void {
@@ -561,61 +559,49 @@ class type_table final {
                                         });
     }
 
-    // a type parameter names its argument until 'unbind', the name is free
-    auto bind(const token& src_loc_tk, const std::string_view name,
-              const type& tpe) -> void {
+    // e.g. 'T' names 'i8' in an instance of 'func f<T type>()'
+    auto add_param(const token& src_loc_tk, const std::string_view name,
+                   const type& tpe) -> void {
 
         assert(not has(name));
 
-        entries_.put(std::string{name}, {
-                                            .src_loc_tk{src_loc_tk},
-                                            .type_ptr{&tpe},
-                                        });
-
-        aliases_.emplace_back(std::string{name}, entries_.get_const_ref(name));
+        params_.back().put(std::string{name}, {
+                                                  .src_loc_tk{src_loc_tk},
+                                                  .type_ptr{&tpe},
+                                              });
     }
 
+    // the parameters of an enclosing instance are hidden until 'exit_params'
+    auto enter_params() -> void { params_.emplace_back(); }
+
+    auto exit_params() -> void { params_.pop_back(); }
+
     [[nodiscard]] auto get(const std::string_view name) const -> const type& {
-        return *entries_.get_const_ref(name).type_ptr;
+        return *find(name).type_ptr;
     }
 
     [[nodiscard]] auto has(const std::string_view name) const -> bool {
-        return entries_.has(name);
-    }
-
-    // an instance sees the types, not the type parameters of its callers
-    auto hide_aliases() -> void {
-        for (const auto& [name, entry] : aliases_) {
-            entries_.erase(name);
-        }
-
-        hidden_aliases_.push_back(std::move(aliases_));
-        aliases_.clear();
-    }
-
-    auto restore_aliases() -> void {
-        assert(aliases_.empty());
-
-        aliases_ = std::move(hidden_aliases_.back());
-        hidden_aliases_.pop_back();
-
-        for (const auto& [name, entry] : aliases_) {
-            entries_.put(name, entry);
-        }
+        return is_param(name) or entries_.has(name);
     }
 
     [[nodiscard]] auto src_loc_tk_of(const std::string_view name) const
         -> const token& {
 
-        return entries_.get_const_ref(name).src_loc_tk;
+        return find(name).src_loc_tk;
     }
 
-    auto unbind(const std::string_view name) -> void {
-        entries_.erase(name);
+  private:
+    [[nodiscard]] auto find(const std::string_view name) const -> const entry& {
 
-        std::erase_if(aliases_, [name](const auto& alias) -> bool {
-            return alias.first == name;
-        });
+        if (is_param(name)) {
+            return params_.back().get_const_ref(name);
+        }
+
+        return entries_.get_const_ref(name);
+    }
+
+    [[nodiscard]] auto is_param(const std::string_view name) const -> bool {
+        return not params_.empty() and params_.back().has(name);
     }
 };
 
@@ -3090,44 +3076,133 @@ class toc final {
     }
 };
 
-// type names that stand for the arguments of a generic definition while an
-// instance is parsed, they are unbound when the scope ends
-class type_alias_scope final {
+// while an instance of a generic definition is parsed, each parameter names
+// its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
+// parameters of an enclosing instance are hidden, all of it ends with the scope
+class generic_scope final {
     toc& tc_;
-    std::vector<std::string> names_;
+    // the constants are in a block of their own
+    bool is_block_entered_{};
 
   public:
-    explicit type_alias_scope(toc& tc) : tc_{tc} {}
+    explicit generic_scope(toc& tc) : tc_{tc} { tc_.types().enter_params(); }
 
-    type_alias_scope(const type_alias_scope&) = delete;
-    type_alias_scope(type_alias_scope&&) = delete;
-    auto operator=(const type_alias_scope&) -> type_alias_scope& = delete;
-    auto operator=(type_alias_scope&&) -> type_alias_scope& = delete;
+    generic_scope(const generic_scope&) = delete;
+    generic_scope(generic_scope&&) = delete;
+    auto operator=(const generic_scope&) -> generic_scope& = delete;
+    auto operator=(generic_scope&&) -> generic_scope& = delete;
 
-    ~type_alias_scope() {
-        for (const std::string& name : names_) {
-            tc_.types().unbind(name);
+    ~generic_scope() {
+        if (is_block_entered_) {
+            tc_.exit_block();
         }
+
+        tc_.types().exit_params();
     }
 
-    auto bind(const token& src_loc_tk, const std::string_view name,
-              const type& tpe) -> void {
+    // e.g. 'capacity' is 8
+    auto add_const(const token& src_loc_tk, const std::string_view name,
+                   const int64_t value) -> void {
 
-        tc_.assert_generic_param_free(src_loc_tk, name);
-        tc_.types().bind(src_loc_tk, name, tpe);
-        names_.emplace_back(name);
+        if (not is_block_entered_) {
+            tc_.enter_block();
+            is_block_entered_ = true;
+        }
+
+        tc_.add_const(src_loc_tk, 0, name, value);
     }
 
-    // the generic type and the type arguments of the instance
-    auto bind_instance(const token& src_loc_tk,
-                       const generic_type_instance& instance) -> void {
+    // a method of an instance of a generic type sees the generic type as the
+    // instance and its type arguments, e.g. 'list' names 'str' and 'T' names
+    // 'i8'; its constants are in the frame of the body
+    auto add_receiver_types(const token& src_loc_tk,
+                            const generic_type_instance& instance) -> void {
 
-        bind(src_loc_tk, instance.generic_name, *instance.type_ptr);
+        add_type(src_loc_tk, instance.generic_name, *instance.type_ptr);
 
-        for (const generic_binding& binding : instance.bindings) {
-            if (binding.type_ptr != nullptr) {
-                bind(src_loc_tk, binding.name, *binding.type_ptr);
+        for (const generic_arg& arg : instance.args) {
+            if (arg.type_ptr != nullptr) {
+                add_type(src_loc_tk, arg.name, *arg.type_ptr);
             }
         }
     }
+
+    // e.g. 'T' names 'i8'
+    auto add_type(const token& src_loc_tk, const std::string_view name,
+                  const type& tpe) -> void {
+
+        tc_.assert_generic_param_free(src_loc_tk, name);
+        tc_.types().add_param(src_loc_tk, name, tpe);
+    }
 };
+
+// e.g. 'i8' of 'list<i8, 8>' for 'T'
+[[nodiscard]] inline auto resolve_type_arg(const toc& tc,
+                                           const std::string_view generic_name,
+                                           const std::string_view param_name,
+                                           const token& arg_tk) -> const type& {
+
+    if (tc.constant_value_of(arg_tk)) {
+        throw compiler_exception{
+            arg_tk, std::format("generic parameter '{}' of '{}' needs a "
+                                "type, got the constant '{}'",
+                                param_name, generic_name, arg_tk.text())};
+    }
+
+    return tc.get_type_or_throw(arg_tk, arg_tk.text());
+}
+
+// e.g. '8' of 'list<i8, 8>' for 'capacity'
+[[nodiscard]] inline auto resolve_const_arg(const toc& tc,
+                                            const std::string_view generic_name,
+                                            const std::string_view param_name,
+                                            const token& arg_tk) -> int64_t {
+
+    const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
+
+    if (not value) {
+        throw compiler_exception{
+            arg_tk, std::format("generic parameter '{}' of '{}' needs a "
+                                "constant, got {}'{}'",
+                                param_name, generic_name,
+                                tc.has_type(arg_tk.text()) ? "the type " : "",
+                                arg_tk.text())};
+    }
+
+    return *value;
+}
+
+// a type parameter needs a type, a constant parameter a constant, e.g. 'T' is
+// 'i8' and 'capacity' is 8 for '<i8, 8>' of 'list<T type, capacity>'
+[[nodiscard]] inline auto
+resolve_generic_args(const toc& tc, const std::string_view generic_name,
+                     const std::span<const generic_param> params,
+                     const std::span<const token> arg_tks)
+    -> std::vector<generic_arg> {
+
+    assert(params.size() == arg_tks.size());
+
+    std::vector<generic_arg> args;
+
+    for (const auto [param, arg_tk] : std::views::zip(params, arg_tks)) {
+        const std::string_view name{param.name_tk.text()};
+
+        if (param.is_type) {
+            args.push_back({
+                .name{name},
+                .src_loc_tk{arg_tk},
+                .type_ptr{&resolve_type_arg(tc, generic_name, name, arg_tk)},
+                .value{},
+            });
+        } else {
+            args.push_back({
+                .name{name},
+                .src_loc_tk{arg_tk},
+                .type_ptr{},
+                .value{resolve_const_arg(tc, generic_name, name, arg_tk)},
+            });
+        }
+    }
+
+    return args;
+}

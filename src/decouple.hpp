@@ -28,6 +28,7 @@ class stmt_identifier;
 class stmt_call;
 class type;
 class expr_any;
+struct generic_method_info;
 struct generic_type_instance;
 // why a name cannot be written, for the diagnostic; 'none' is writable
 enum class read_only_cause : uint8_t {
@@ -339,8 +340,7 @@ struct lea_request {
     -> std::unique_ptr<statement>;
 
 // parses the method of a generic type again for an instance of the type
-auto instantiate_generic_method(toc& tc, const token& func_tk,
-                                const token& start_tk,
+auto instantiate_generic_method(toc& tc, const generic_method_info& method,
                                 const generic_type_instance& instance) -> void;
 
 // the methods defined so far for a new instance of a generic type
