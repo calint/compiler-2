@@ -1,19 +1,6 @@
 generic types: how 'type' with parameters becomes real types
 ============================================================
 
-source: src/stmt_def_type.hpp ('stmt_def_type', 'stmt_def_type_generic',
-        'stmt_def_type_alias')
-helpers: src/generics.hpp ('generic_registry', 'generic_type_instance'),
-         src/toc.hpp ('generic_scope')
-methods: src/stmt_def_func.hpp ('stmt_def_func_generic::define_method',
-         'stmt_def_func_generic::instantiate_methods')
-functions: src/stmt_def_func.hpp ('func_head', 'stmt_def_func_generic':
-           'define_func', 'deductions', 'instantiate_func'),
-           src/stmt_call.hpp ('generic_call', 'stmt_call::read_callee')
-tests: 0774, 0776, 0812 (generic types), 1060-1072 (generic types based on
-       other generic types), 0767-0772, 0779-0782, 0817-0820, 0828, 0844,
-       0848-0850, 0860, 0861 (generic functions) in qa/coverage/tests
-
 1. The three kinds of 'type'
 ----------------------------
 
@@ -24,21 +11,27 @@ tests: 0774, 0776, 0812 (generic types), 1060-1072 (generic types based on
 
 A plain type is a type right away.
 
-A generic type is not a type. It is a recipe. Nothing is checked inside it
-yet, the compiler only remembers where its text starts.
+A generic type is not a type. It is a recipe. Its fields depend on the
+parameters, so the size of an array or the type of a field is not known until
+the parameters have values. Nothing is checked inside it yet; the compiler
+only remembers where its text starts.
 
 An alias names a generic type with arguments. Only an alias makes a real
 type, and it does so by reading the recipe again with the arguments filled
-in.
+in. Reading the text again, instead of substituting into a stored form, means
+an instance is checked and laid out exactly like a type written by hand: there
+is one way to read fields, not two that must agree.
+
+An instance needs a name, because a type is printed in errors and used in
+labels. The alias gives it that name, so 'text<127>' is not written in place
+of a type; it is named once and the name is used.
 
 2. Plain type
 -------------
 
-1. Read the fields between '{' and '}', separated by ',' (a trailing ','
-   is allowed).
-2. For each field: reject a duplicate name, look up its type (no type name
-   means the default type), add it to the type.
-3. Register the type under its name.
+The fields are read between '{' and '}', separated by ',' (a trailing ',' is
+allowed). A duplicate name is rejected, a field without a type name has the
+default type, and the type is registered under its name.
 
 3. Generic type
 ---------------
@@ -48,51 +41,41 @@ in.
         len,
     }
 
-1. Read the parameters. 'T type' is a type parameter, 'capacity' is a
-   constant parameter. A parameter may not reuse the name of something that
-   already exists.
-2. Check that '{' follows, then skip the whole braced block without reading
-   the fields.
-3. Register the generic type with its parameters and the position where its
-   text starts.
-4. Keep the text so the source can be printed back.
+'T type' is a type parameter, 'capacity' is a constant parameter. A parameter
+may not reuse the name of something that already exists, so that inside the
+recipe a name has one meaning.
 
-Errors in the fields are not found here. They are found when an alias reads
-the fields.
+The braced block is skipped without reading the fields. An error in the fields
+is therefore found only when an alias reads them: until then there are no
+values to check them with. The text is kept so the source can be printed back.
 
 4. Generic type based on another generic type
 ---------------------------------------------
 
     type text<capacity> = list<i8, capacity>
 
-1. Read the parameters, as above.
-2. After '=', read the name of the base. It must already be a generic type
-   (not a plain type, not undefined).
-3. Read the arguments of the base and check their count. The arguments are
-   kept as tokens, they may name parameters ('capacity') that have no value
-   yet.
-4. Register the generic type with its parameters, its base and the base
-   arguments. It has no fields of its own: its fields are those of the base.
+This specializes a generic type without repeating its fields. The base must
+already be a generic type. Its arguments are kept as written, because they may
+name parameters ('capacity') that have no value yet; they are resolved when an
+alias gives the values. The type has no fields of its own: its fields are
+those of the base.
 
 5. Alias
 --------
 
     type str = text<8>
 
-1. After '=', read the name of the generic type. It must already be defined.
-2. Read the arguments and check their count.
-3. Resolve the arguments: a type parameter must get a type, a constant
-   parameter must get a constant. The result is a list of bindings
-   ('capacity' = 8).
-4. Build the instance level by level (section 6).
-5. Register 'str' as a real type.
-6. Make the methods of every level (section 7).
+The generic type must already be defined, and the count of arguments must
+match. Each argument is checked against its parameter: a type parameter gets a
+type, a constant parameter gets a constant. The result is a list of bindings
+('capacity' = 8), from which the instance is built (section 6), 'str' is
+registered as a real type, and the methods are made (section 7).
 
 6. Building the instance, level by level
 ----------------------------------------
 
-Start at the generic type the alias names and walk down the bases until one
-has fields of its own.
+Starting at the generic type the alias names, the bases are followed down
+until one has fields of its own.
 
     str = text<8>
       level 1: text, bindings capacity = 8
@@ -100,56 +83,55 @@ has fields of its own.
       level 2: list, bindings T = i8, capacity = 8
                no base: read the fields here
 
-At each level:
+At a level with a base, the parameters of that level are made visible in a
+temporary block ('capacity' becomes the constant 8, a type parameter becomes a
+name for its type) and the base arguments are resolved in it, giving the
+bindings of the next level. The block is then closed. Each level has its own
+parameters, and closing the block lets a base reuse the same parameter names
+without a clash.
 
-1. Record an instance: which generic type, which bindings, and the type
-   being built ('str'). All levels share the same type.
-2. If the level has a base:
-   2.1. Open a temporary block and make the parameters of this level
-        visible: 'capacity' becomes the constant 8, a type parameter becomes
-        a name for its type.
-   2.2. Resolve the base arguments in that block: 'i8, capacity' becomes
-        T = i8, capacity = 8.
-   2.3. Close the block, so the base can reuse the same parameter names.
-   2.4. Go to the next level with the new bindings.
-3. If the level has no base (the last one):
-   3.1. Open a block and make the parameters visible, as in 2.1.
-   3.2. Go back to the saved start of the generic definition, skip its name
-        and parameters, and read the fields as for a plain type.
-   3.3. Add the fields to the type being built.
-   3.4. Close the block.
+At the last level the parameters are made visible the same way, the fields are
+read from the saved start of the generic definition as for a plain type, and
+they are added to the type being built. All levels build the same type, so
+'str' gets the fields 'array i8[8]' and 'len'.
 
-So 'str' gets the fields 'array i8[8]' and 'len'.
+Every level is recorded as an instance of its generic type with its bindings.
+This is what lets the methods of every level be made for 'str', and what lets
+an error name each step that led to it.
 
 7. Methods
 ----------
 
     func list.is_full() res bool { ... }
 
-A method of a generic type is also a recipe. Every instance of the type
-gets its own copy, read again with the bindings of that instance visible.
+A method of a generic type is a recipe too, for the same reason as the fields:
+its body depends on the parameters. Every instance of the type gets its own
+copy, read again with the bindings of that instance visible.
 
 1. When an alias is made, the methods are made for every level, starting at
-   the deepest base. So 'str' gets the methods of 'list' first, then those
-   of 'text', and a method of 'text' can call one of 'list'.
+   the deepest base. So 'str' gets the methods of 'list' first, then those of
+   'text', and a method of 'text' can call one of 'list'.
 2. When a method of a generic type is defined after some aliases already
-   exist, it is made at once for each of those existing instances.
+   exist, it is made at once for each of them. Otherwise the order of methods
+   and aliases in the source would decide which instances have the method.
 
 8. Errors
 ---------
 
-The error is reported where the bad code is, in the generic definition, and
-then each step that led there is listed with "instantiated by".
+An error in an instance is caused by the arguments but is in the generic
+text. Reporting only one of the two places is not enough to fix it, so the
+error is reported where the bad code is, and then each step that led there is
+listed with "instantiated by".
 
     type list<T type, capacity> { ... }
     type text<capacity> = list<capacity, capacity>
     type str = text<8>
 
-    1066.baz:9:28: generic parameter 'T' of 'list' needs a type, got the
-                   constant 'capacity'
+    example.baz:9:28: generic parameter 'T' of 'list' needs a type, got the
+                      constant 'capacity'
     type text<capacity> = list<capacity, capacity>
                                ^~~~~~~~
-    1066.baz:11:6: instantiated by
+    example.baz:11:6: instantiated by
     type str = text<8>
          ^~~
 
@@ -159,8 +141,8 @@ base with the arguments it got, e.g. 'list<i8, 8>', before the alias frame.
 9. Order rules
 --------------
 
-1. A generic type must be defined before an alias or a based generic type
-   names it.
+1. A generic type is defined before an alias or a based generic type names
+   it, since the alias reads it at once.
 2. A method of a generic type may come before or after the aliases (7.2).
 
 10. Generic functions
@@ -170,83 +152,87 @@ base with the arguments it got, e.g. 'list<i8, 8>', before the alias frame.
     func same<T type>(a T, b T) res bool { ... }
     func tokenizer.to<T type>() res T { ... }
 
-A generic function has type parameters only, a constant parameter is
+A generic function has type parameters only; a constant parameter is
 rejected. Like a generic type it is a recipe: the text after 'func' is kept
 and the body is not checked until a call needs an instance.
 
 10.1 Definition
 
-1. Read the type parameters. Each has the kind 'type' and may not reuse the
-   name of something that already exists.
-2. Record for each type parameter how a call without type arguments can
-   tell it ('deductions'):
-   2.1. the first parameter declared with exactly that type, e.g. 'a T';
-        an array parameter 'a T[]' does not count
-   2.2. whether the result is declared with exactly that type, 'res T'
-3. Register the generic function with its start position and skip the body.
+Each type parameter has the kind 'type' and may not reuse the name of
+something that already exists.
+
+So that a call can omit the type arguments, the definition records for each
+type parameter where a call can find it:
+
+1. the first parameter declared with exactly that type, e.g. 'a T'; an array
+   parameter 'a T[]' does not count, since the argument's type is an array of
+   'T', not 'T'
+2. whether the result is declared with exactly that type, 'res T'
 
 A method of a generic type with type parameters of its own, e.g.
-'func text.append<T type>(s T)', is one generic function per instance of
-the type ('str.append', 'name.append'). Errors name it after the generic
-type, 'text.append'.
+'func text.append<T type>(s T)', is one generic function per instance of the
+type ('str.append', 'name.append'). Errors name it after the generic type,
+'text.append', which is the name written in the source.
 
 10.2 Call: the type arguments
 
-A call gives the type arguments in one of two ways ('generic_call::parse'):
+A call gives the type arguments in one of two ways:
 
     make<str>(3)       written: T = str
     same(s, t)         deduced from the argument 's': T = the type of 's'
     x = tz.to()        deduced from the destination: T = the type of 'x'
 
-Written, after '<':
+Written, after '<', the count must match the type parameters and each
+argument names a type; a constant is rejected.
 
-1. The count must match the type parameters (0769, 1077).
-2. Each argument names a type, a constant is rejected (0796).
+Deduced, without '<', each type parameter is taken in order from:
 
-Deduced, without '<', for each type parameter in order:
-
-1. If a parameter is declared with it (10.1 2.1), look at that argument
-   ahead of parsing, on a copy of the tokenizer:
-   1.1. a variable, a field or an element that is the whole argument tells
-        its type, e.g. 'p', 'p.x' or 'a[i]' (0817)
+1. The argument of the parameter declared with it (10.1 1). The type
+   arguments must be known before the arguments are parsed (10.4), so the
+   argument is only looked at ahead, without parsing it. Only forms whose
+   type is plain from their text tell a type:
+   1.1. a variable, a field or an element that is the whole argument, e.g.
+        'p', 'p.x' or 'a[i]'
    1.2. an instance literal 'point{1, 2}', a constructor call
         'point.at(1, 2)' or a call 'mk(1, 2)' of a function that is not
-        generic and returns a value tells that type (0860)
-   1.3. anything else tells nothing: a literal (0818), an expression
-        'a + 1' (0849), a method call or a missing argument (0850)
-2. Else, if the result is declared with it (10.1 2.2), the type the call is
-   assigned to (0828).
-3. Else the call is rejected:
+        generic and returns a value
+   1.3. anything else tells nothing: a literal (its type depends on where
+        it goes), an expression 'a + 1', a method call or a missing argument
+2. Else, if the result is declared with it (10.1 2), the type the call is
+   assigned to.
+3. Else the call is rejected and asks for the type arguments to be written:
 
-    0768.baz:15:13: cannot deduce 'T' of generic function 'make', write
-                    'make<...>'
+    example.baz:15:13: cannot deduce 'T' of generic function 'make', write
+                       'make<...>'
     var m = make(2)
             ^~~~
 
-A generic method called without '(' and without '<' is rejected with
-"needs type arguments" (0844).
+A generic method called without '(' and without '<' is rejected with "needs
+type arguments", since there is nothing to deduce from.
 
 10.3 Call: the instance
 
-1. The instance is named by the generic name and the type names, e.g.
-   'make<str>' or 'tokenizer.to<name>'. A label has no '<', '>' or ',':
-   'tokenizer.to.name'.
-2. An existing instance is used as it is. Otherwise the definition is read
-   again from its start with each type parameter naming its type argument
-   (and the generic type of a method naming its instance), and the result
-   is added as an ordinary function.
-3. The call is then a call of that function: its return type is the type of
-   the call, the arguments are parsed for its parameters and checked like
-   those of any call (0819), and it is compiled inline or noinline like any
-   function.
+The instance is named by the generic name and the type names, e.g.
+'make<str>' or 'tokenizer.to<name>'. A label has no '<', '>' or ',', so there
+it is 'tokenizer.to.name'.
+
+An existing instance is used as it is, so each combination of types is
+compiled once. Otherwise the definition is read again from its start with
+each type parameter naming its type argument (and the generic type of a method
+naming its instance), and the result is added as an ordinary function.
+
+From then on the call is a call of an ordinary function: its return type is
+the type of the call, its arguments are checked like those of any call, and it
+is compiled inline or noinline like any function. Nothing after the instance
+is made needs to know it came from a generic.
 
 An error in the body of the instance is reported where the bad code is, then
-the call that needed the instance:
+the call that needed the instance, for the same reason as in section 8:
 
-    0771.baz:9:9: field 'size' not found in type 'name'
+    example.baz:9:9: field 'size' not found in type 'name'
         res.size = n
             ^~~~
-    0771.baz:13:13: called from 'make<name>'
+    example.baz:13:13: called from 'make<name>'
         var m = make<name>(2)
                 ^~~~
 
@@ -254,4 +240,5 @@ the call that needed the instance:
 
 1. A generic function is defined before a call names it.
 2. The type arguments are fixed before the arguments are parsed, so an
-   argument is parsed with the type its parameter has in the instance.
+   argument is parsed with the type its parameter has in the instance. This
+   is why deduction looks ahead instead of parsing the argument first.

@@ -1,47 +1,46 @@
 noinline calls: aliasing validated by a dry run of the body
 ===========================================================
 
-source: src/stmt_call.hpp ('noninline_call::check_aliasing',
-        'aliasing_signature', 'signature_part')
-        src/toc.hpp ('check_only', 'measure_only', 'add_checked_noninline_call',
-        'add_noninline_instance'; 'storage_layout::begin_dry_run',
-        'end_dry_run')
-
 1. Problem
 ----------
 
 An inline call is compiled at the call site, so its parameters are aliases of
-the arguments and the aliasing check ('ub-alias-design.txt') sees which
-arguments name the same variable. A noinline body is compiled once and
+the arguments and the aliasing check (see the aliasing design document) sees
+which arguments name the same variable. A noinline body is compiled once and
 receives addresses, so it cannot know which arguments are the same variable.
-The error ("may share storage") has to be reported at the call, not once for
-the body.
+Whether a body is unsafe depends on the call, so the error ("may share
+storage") has to be reported at the call, not once for the body.
 
 2. Dry run
 ----------
 
-At each noinline call, before the call is compiled for real,
-'noninline_call::check_aliasing' compiles the body as an inline call of these
-arguments inside 'toc::check_only' and drops the result. The aliasing errors
-the inline compilation raises are the errors of the call. An error gets the
-call frame ('add_call_frame') so it points at the call and the line in the body.
+At each noinline call, before the call is compiled for real, the body is
+compiled as if it were inlined with these arguments, and the result is
+dropped. The aliasing errors that this inline compilation raises are the
+errors of the call. An error carries the call as a frame, so it points both at
+the call and at the line in the body.
 
-A dry run leaves no trace:
+This reuses the inline check as it is. A separate analysis of which parameters
+a body writes and reads would duplicate the check and could disagree with it.
 
-    2.1 code is measured and discarded ('machine::measure_code_size')
-    2.2 string constants added meanwhile are removed ('resize_constants')
-    2.3 the frame depth and the peak storage size are restored
-        ('storage_layout::begin_dry_run', 'end_dry_run'); the locals of the
-        body live in the callee's frame, so the capacity is not checked
-    2.4 'add_noninline_instance' does nothing while 'dry_run_depth_' is not
-        0, a noinline call inside a dry run is not emitted
+A dry run must leave no trace, or the program would change depending on which
+calls were checked:
+
+1. the code is measured and discarded
+2. string constants added meanwhile are removed
+3. the frame depth and the peak storage size are restored; the locals of the
+   body live in the callee's own frame, so the caller's frame capacity is not
+   checked against them
+4. a noinline call reached inside a dry run does not emit an instance of its
+   function
 
 3. Signature: checked once per kind of call
 -------------------------------------------
 
-What the body can reject depends only on which arguments are the same
-variable, and on which are globals (the body may name the global too). The
-call is reduced to a signature:
+A dry run costs a compilation of the body, so it is not repeated for calls
+that cannot differ. What the body can reject depends only on which arguments
+are the same variable and on which are globals (the body may name the global
+too). The call is reduced to a signature:
 
     name + for the result and each argument:
         ' array N'          when an array, the body can reject an index by
@@ -54,19 +53,23 @@ call is reduced to a signature:
     f(v, w, n)   "f local 0 local 1 local 2 ..."
     f(x, y, z)   same as the line above, checked once
 
-'add_checked_noninline_call' returns false when the signature is already
-there, and the call is not dry run again. The signature is added before the
-dry run, so a call of the same kind reached inside the body (recursion)
-returns at once; the kinds are finitely many, so nested dry runs end.
+Locals are numbered by first appearance, not named, because which local is
+passed does not matter, only which arguments are the same one. A global is
+named, because the body may refer to it directly.
 
-A pointer argument gives no signature (it cannot tell which variable it
-names): the dry run is skipped and no aliasing is reported for it.
+A signature already seen is not dry run again. The signature is recorded
+before the dry run starts, so a call of the same kind reached inside the body
+(recursion) stops at once. The kinds are finitely many, so nested dry runs
+end.
+
+A pointer argument cannot tell which variable it names, so it gives no
+signature: the dry run is skipped and no aliasing is reported for it.
 
 4. Temporaries
 --------------
 
 A value without storage (a constant, 'point{1, 2}') is passed in a temporary
-of the call. The dry run names it through 'temporary_argument_name', not a
-register of the caller that the body does not see. The body is checked with
-the value of the first call of its kind, so 'temporary' vs 'variable' is part
-of the signature.
+of the call. The dry run names it as a temporary argument, not as a register
+of the caller that the body does not see. The body is checked with the value
+of the first call of its kind, so whether an argument is a temporary or a
+variable is part of the signature.

@@ -1,12 +1,5 @@
-access_path: aliasing check of what is reached through run-time indexes
-=======================================================================
-
-source: src/ub_alias.hpp ('access_path', 'path_step')
-used by: stmt_assign_var.hpp, stmt_call.hpp (storage_target in toc.hpp)
-built by: stmt_identifier.hpp, toc.hpp
-          ('storage_target_of', 'scope_stack::root_span')
-tests: 931-971 in qa/coverage/tests (970 and 971: a constant element and a
-       field against a run-time indexed read)
+access paths: aliasing check of what is reached through run-time indexes
+========================================================================
 
 1. Problem
 ----------
@@ -15,20 +8,22 @@ Two accesses to the same root variable alias when they can reach a common
 byte. With a run-time index the byte is not known, so the check must answer
 "can these ever be the same byte for some value of the indexes".
 
-Answer false only when provably disjoint. Anything unknown is "may alias".
+The check answers false only when the accesses are provably disjoint.
+Anything unknown is "may alias": a missed alias is undefined behavior in the
+compiled program, a false alarm only asks for the code to be written
+differently.
 
 2. The path
 -----------
 
-An access is the path from its root variable: one 'path_step' per field,
-constant index or run-time index. The root variable itself is not a step.
+An access is described by the path from its root variable: one step per
+field, constant index or run-time index. The root variable itself is not a
+step.
 
-    path_step { kind, number }
-
-    kind                number
-    field               offset of the field in its parent
-    fixed_index         the index
-    run_time_index      unused
+    step         holds
+    field        offset of the field in its parent
+    fixed index  the index
+    run-time     nothing
 
     rooms[i].items[1].name
 
@@ -42,11 +37,21 @@ A field is identified by its offset in the parent. Fields never overlap (every
 field has a size, a type has a field and an array has at least one element),
 so different offsets are different fields.
 
-3. overlaps(lhs, rhs)
----------------------
+3. Why paths and not bytes
+--------------------------
 
-'overlaps' is 'not are_disjoint(lhs.path, rhs.path)'. The steps line up, walk
-them together:
+A run-time index turns a single byte range into a set of ranges, one per
+element, spaced by the element size. Comparing two such sets as bytes means
+lining up periods, slots and alignment, and a constant index after a run-time
+index makes the set harder still to describe. A path keeps the structure that
+the bytes lose: two accesses that take different fields at the same position
+can never meet, whatever the indexes are. The check never compares bytes, so
+it is exact for every path the language can write.
+
+4. Comparing two paths
+----------------------
+
+The steps line up, so they are walked together:
 
     run-time index on either side             => go on, may be the same
     field, different offset in the parent     => disjoint
@@ -70,48 +75,27 @@ examples
     'es' and 'es[i].other'
         the first path ran out                            => may alias
 
-No bytes are compared, so there are no periods, slots or alignment to line up
-and a constant index in the middle of a path does not lose information.
-
-4. Building paths
+5. Building paths
 -----------------
 
-An identifier adds a step per path element ('stmt_identifier::
-resolve_accessed_bytes'):
-
-    add_field(offset)        '.name'
-    add_fixed_index(index)   '[3]', an index known at compile time
-    add_run_time_index()     '[i]'
+An identifier adds a step per element of what it names: '.name' adds a field,
+'[3]' a constant index, '[i]' a run-time index.
 
 An alias (a parameter, a result, the element 'e' of a 'foo') is bound to the
-path of what it names; an access through it joins the paths:
+path of what it names, and an access through it is the path of the target
+followed by the path of the access inside it. This way an access through any
+number of aliases is compared as if it were written out on the root variable.
+The element 'e' of a 'foo' adds a run-time index, since it is any element of
+the array.
 
-    extended_by(suffix)      the path of the bound target followed by the path
-                             of the access inside it
-    add_run_time_index()     'e' of a 'foo' is any element of the array
+A target whose path is not known has no path. It stands for the whole
+variable and always may alias.
 
-A target whose path is not known has no path, which is the whole variable and
-always may alias.
+6. The other checks on a read
+-----------------------------
 
-5. The other checks on a read (not part of this one)
-----------------------------------------------------
-
-Three checks look at the reads of a variable; each has its own header:
-
-    ub_alias.hpp      this file: 'access_path', 'path_step'; paths, no bytes
-    ub_assigned.hpp   'assigned_bytes', 'assignment_flow': a variable is set
-                      before it is read and before a function returns
-    ub_reads.hpp      'read_filter', 'read_visitor': the walk over the reads
-                      that the checks share
-
-The constructor order check ('expr_type::constructor_target': a field of an
-instance value must not read bytes of the destination that an earlier field
-has overwritten in the same statement) also works on bytes and uses the
-walk of 'ub_reads.hpp'.
-
-These checks need bytes, not a path: a read must be inside the assigned
-bytes. 'stmt_identifier' keeps the bytes of its path in 'accessed_bytes_' and
-the path in 'access_path_', and 'read_visitor' hands out both.
+Other checks look at the reads of a variable and do need bytes, because they
+ask whether a read is inside what has been assigned:
 
     type point {x, y}
 
@@ -133,25 +117,28 @@ the path in 'access_path_', and 'read_visitor' hands out both.
                                    read but has been overwritten in the same
                                    statement"
 
-The root variable is the whole variable, each field and each constant index
-narrows it ('stmt_identifier::narrow_accessed_bytes'). After a run-time index
-the element is unknown, so the bytes stay the whole array: a write through
-'arr[i]' assigns nothing and a read through it needs the whole array.
-'access_path' holds only the path.
+These checks share one walk over the reads, which hands out both the bytes and
+the path of each access, so each check takes what it needs.
 
-6. Fuzz
--------
+The root variable is the whole variable, and each field and each constant
+index narrows it. After a run-time index the element is unknown, so the bytes
+stay the whole array: a write through 'arr[i]' assigns nothing, and a read
+through it needs the whole array to be assigned. Both are the safe answer when
+the element is not known.
 
-qa/fuzz/fuzz-alias.sh checks the aliasing check against a brute force of the
-bytes (every value of every run-time index is tried). qa/fuzz/fuzz-alias-long.sh
-runs it with one seed per core and large counts, about six minutes on 16
-cores, for a change to the check:
+7. Fuzzing
+----------
 
-    alias-path-fuzz.cpp   'access_path::overlaps' on random types and pairs of
-                          paths; the answer must be exact, neither unsound
-                          nor imprecise
-    alias-foo-fuzz.py     random programs through the compiler: the element
-                          'e' of a 'foo' and 'mut' parameters (inline and
-                          noinline) against a read of the variable, with
-                          mixed scalar sizes; "may share storage" must be
-                          reported exactly when the bytes can be the same
+The aliasing check is tested against a brute force of the bytes, in which
+every value of every run-time index is tried. Two fuzzers do this:
+
+1. one compares the path comparison with the brute force on random types and
+   pairs of paths; the answer must be exact, neither unsound (a missed alias)
+   nor imprecise (a false alarm)
+2. one sends random programs through the compiler: the element 'e' of a 'foo'
+   and 'mut' parameters, inline and noinline, against a read of the variable,
+   with mixed scalar sizes; "may share storage" must be reported exactly when
+   the bytes can be the same
+
+A long run, one seed per core with large counts, takes about six minutes on 16
+cores and is meant for any change to the check.
