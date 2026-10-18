@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: 'instance' names two things: an instance of a generic definition
+    ('func_instance', 'generic_type_instance') and a non-inline body for
+    one kind of call ('noninline_instance', 'add_noninline_instance' in
+    'toc.hpp'); rename the second, e.g. 'noninline_body'
+    => done (2026-10-18): 'noninline_body', 'add_noninline_body',
+       'noninline_body_at', 'noninline_body_count', 'clear_noninline_bodies'
+       and their comments; 'instance' also names a value of a user type
+       ('instance literal'), that is the language's word and stays
 [x] easy: generics: mechanical move of the static instantiation of
     'stmt_def_func_generic' into a helper class next to it (e.g.
     'func_instantiator'), the statement only parses the definition

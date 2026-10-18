@@ -398,7 +398,7 @@ class stmt_def_type_alias final : public statement {
         assert_generic_type(tc, generic_tk, "the alias that names it");
 
         // e.g. 'type text<size> = list<i8, size>'
-        const generic_type_info generic{
+        const generic_type_info& generic{
             tc.generics().get_type(generic_tk.text()),
         };
 

@@ -627,13 +627,12 @@ class program final {
     static auto compile_noninline_functions(toc& tc, const size_t indent)
         -> void {
 
-        // note: the calls in a body can request more instances, so the count
+        // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
-        for (size_t i{}; i < tc.noninline_instance_count(); ++i) {
-            const noninline_instance instance{tc.noninline_instance_at(i)};
+        for (size_t i{}; i < tc.noninline_body_count(); ++i) {
+            const noninline_body body{tc.noninline_body_at(i)};
 
-            compile_noninline_body(tc, indent, *instance.func,
-                                   instance.array_lengths);
+            compile_noninline_body(tc, indent, *body.func, body.array_lengths);
         }
     }
 

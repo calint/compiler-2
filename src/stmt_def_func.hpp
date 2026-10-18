@@ -26,6 +26,23 @@
 #include "toc.hpp"
 #include "token.hpp"
 
+//
+// a function definition, e.g. 'func f(x)', is the classes below, in reading
+// order:
+//
+//   'make_stmt_def_func'     reads the head and picks the statement (last in
+//                            the file, it uses the others)
+//   'func_head'              'func [noinline] [mut] name[.method] [<T type>] ('
+//   'func_result_syntax'     the tokens of the result 'name [type]'
+//   'stmt_def_func'          a function, of the user code or an instance
+//   'func_instantiator'      records the generic definitions and makes their
+//                            instances, each a 'stmt_def_func'
+//   'stmt_def_func_generic'  a generic definition, kept as text
+//
+// the formatter sorts the functions of a class by name, so the comment above
+// 'func_instantiator' lists its functions in the order they run
+//
+
 // the head of a function definition, 'func [noinline] [mut] name[.method]
 // [<T type>] (', read before the kind of the definition is known
 //
@@ -63,6 +80,9 @@ struct func_head {
     //
 
     // 'tz' is after 'func'
+    //
+    // the '(' is looked for after each word: a word followed by '(' is the
+    // name, e.g. 'func noinline()' names a function 'noinline'
     [[nodiscard]] static auto read(const toc& tc, tokenizer& tz) -> func_head {
         func_head head;
         head.start_tk = tz.cur_position_token();
@@ -73,7 +93,9 @@ struct func_head {
 
         toc::assert_valid_function_name(head.name_tk);
 
-        // e.g. 'func text.print()', each instance of 'text' reads the rest
+        // e.g. 'func text.print()': each instance of 'text' reads the head
+        // again from 'start_tk', where 'text' names a type, e.g. 'str', and
+        // this returns false
         if (head.names_generic_type(tc, tz)) {
             head.is_generic_type_method = true;
             return head;
@@ -223,6 +245,8 @@ struct func_result_syntax {
 
         // a word before the '{' of the body names the type, else a missing
         // '{' is reported by the body, e.g. 'func f() res number {'
+        // note: the '{' also tells the type of a generic definition, where
+        //       'T' of 'res T {' is not a type yet
         const bool is_type_before_body{
             not type_tk.text().empty() and
                 tz.peek_char_after_whitespace() == '{',
@@ -258,8 +282,8 @@ class stmt_def_func final : public statement {
                   std::optional<func_instance> instance)
         : statement{tk}, head_{head}, instance_{std::move(instance)} {
 
-        // note: a generic definition is a 'stmt_def_func_generic', its
-        //       instance has the type arguments
+        // note: a generic definition is a 'stmt_def_func_generic', a head
+        //       with type parameters is read here only for an instance
         assert(not head.is_generic_type_method);
         assert(instance_ or head.type_param_tks.empty());
 
@@ -287,6 +311,8 @@ class stmt_def_func final : public statement {
         code_.source_to(os);
     }
 
+    // the body is compiled by its calls: in place when inlined, else once per
+    // kind of call ('compile_body')
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const ident_info& dst_info) const
         -> void override {}
@@ -313,8 +339,9 @@ class stmt_def_func final : public statement {
             std::ranges::count_if(params_, &stmt_def_func_param::is_array));
     }
 
-    // keeps the labels of the body unique per instance: instances of one
-    // generic definition have the same source locations
+    // keeps the labels of the body unique: the instances of one generic
+    // definition have the same source locations, and a non-inline body is
+    // compiled once per array lengths
     [[nodiscard]] auto
     body_call_path(const std::span<const size_t> array_lengths) const
         -> std::string {
@@ -324,11 +351,11 @@ class stmt_def_func final : public statement {
         }
 
         if (not instance_) {
-            return instance_path(array_lengths);
+            return array_lengths_path(array_lengths);
         }
 
         return std::format("{}.{}", label_name(name()),
-                           instance_path(array_lengths));
+                           array_lengths_path(array_lengths));
     }
 
     // 'func' is a keyword so no user name or internal label starts with 'func.'
@@ -342,7 +369,7 @@ class stmt_def_func final : public statement {
         }
 
         return std::format("func.{}.{}", label_name(name()),
-                           instance_path(array_lengths));
+                           array_lengths_path(array_lengths));
     }
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
@@ -744,7 +771,8 @@ class stmt_def_func final : public statement {
 
     // e.g. 'len.4.8', unlike the 'L.C' pairs of inlined calls
     [[nodiscard]] static auto
-    instance_path(const std::span<const size_t> array_lengths) -> std::string {
+    array_lengths_path(const std::span<const size_t> array_lengths)
+        -> std::string {
 
         std::string path{"len"};
 
@@ -790,6 +818,18 @@ class stmt_def_func final : public statement {
 // e.g. 'func text.append<T type>(s T)' is both: every instance of 'text' makes
 // a generic function, e.g. 'str.append', and a call makes its instance, e.g.
 // 'str.append<i8>'
+//
+// the steps:
+//
+//   1. a definition: 'define_func' records a generic function with how a call
+//      deduces its types ('read_signature_types', 'deductions'),
+//      'define_method' records a method and makes it for the instances of the
+//      type made so far
+//   2. an alias: 'instantiate_methods' makes each method for the new instance
+//      ('instantiate_method', 'parse_method_instance'), a method with type
+//      parameters of its own goes to 'define_func'
+//   3. a call: 'instantiate_func' makes the instance for the type arguments
+//      once ('parse_func_instance')
 class func_instantiator final {
     // the types a signature names, as written
     struct signature_types {
@@ -806,10 +846,11 @@ class func_instantiator final {
 
     // records a generic function for its calls, e.g. 'func f<T type>(x T)'; a
     // method of an instance of a generic type keeps that instance, e.g.
-    // 'str.append' of 'func text.append<T type>(s T)' keeps 'text<8>'
+    // 'str.append' of 'func text.append<T type>(s T)' keeps 'text<8>'. 'tz'
+    // is after the '(' of 'head'
     static auto define_func(toc& tc, const token& func_tk,
                             const func_head& head, const tokenizer& tz,
-                            const generic_type_instance* const receiver)
+                            std::optional<generic_type_instance> receiver)
         -> void {
 
         for (const token& param_tk : head.type_param_tks) {
@@ -818,9 +859,8 @@ class func_instantiator final {
 
         // e.g. 'text.append' for the instance 'str.append' of 'text'
         std::string report_name{
-            receiver != nullptr
-                ? receiver->method_name(head.method_name_tk.text())
-                : head.name,
+            receiver ? receiver->method_name(head.method_name_tk.text())
+                     : head.name,
         };
 
         // note: a missing '(' is reported when an instance is parsed
@@ -838,10 +878,6 @@ class func_instantiator final {
                             report_name)};
         }
 
-        std::optional<generic_type_instance> receiver_copy{
-            receiver != nullptr ? std::optional{*receiver} : std::nullopt,
-        };
-
         tc.add_generic_func(head.name, {
                                            .src_loc_tk{head.name_tk},
                                            .func_tk{func_tk},
@@ -849,7 +885,7 @@ class func_instantiator final {
                                            .report_name{std::move(report_name)},
                                            .param_tks{head.type_param_tks},
                                            .deductions{deductions(head, types)},
-                                           .receiver{std::move(receiver_copy)},
+                                           .receiver{std::move(receiver)},
                                        });
     }
 
@@ -880,12 +916,16 @@ class func_instantiator final {
         toc& tc, const token& call_tk, const std::string_view generic_name,
         const std::span<const type* const> type_args) -> std::string {
 
+        // note: the reference stays valid while the instance is parsed, a body
+        //       defines no generic function
         const generic_func_info& generic{tc.generics().get_func(generic_name)};
 
         // note: the call checked the count of written type arguments, a
         //       deduction gives one per parameter
         assert(type_args.size() == generic.param_tks.size());
 
+        // the generic functions that no call instantiates are listed in the
+        // usage report
         tc.generics().mark_func_instantiated(generic_name);
 
         std::string name{
@@ -1004,22 +1044,24 @@ class func_instantiator final {
 
         scope.add_args(args);
 
-        // e.g. 'str.append<i8>' of 'text.append' with the constants of
-        // 'text<8>'
+        tokenizer tz{tc.source_of(generic.start_tk), generic.start_tk};
+
+        const func_head head{func_head::read(tc, tz)};
+
         func_instance instance{
             .name{name},
             .generic_method{},
             .constants{},
         };
 
+        // e.g. 'str.append<i8>' keeps 'text.append' and the constants of
+        // 'text<8>', like the instance of a method without type parameters
         if (generic.receiver) {
-            instance.generic_method = generic.report_name;
+            instance.generic_method =
+                generic.receiver->method_name(head.method_name_tk.text());
+
             instance.constants = generic.receiver->constants();
         }
-
-        tokenizer tz{tc.source_of(generic.start_tk), generic.start_tk};
-
-        const func_head head{func_head::read(tc, tz)};
 
         tc.add_func_instance(std::make_shared<stmt_def_func>(
             tc, generic.func_tk, head, tz, std::move(instance)));
@@ -1039,10 +1081,13 @@ class func_instantiator final {
 
         tokenizer tz{tc.source_of(method.start_tk), method.start_tk};
 
+        // note: 'text' names 'str' now, so the head is the method 'str.print'
         const func_head head{func_head::read(tc, tz)};
 
+        assert(not head.is_generic_type_method);
+
         if (not head.type_param_tks.empty()) {
-            define_func(tc, method.func_tk, head, tz, &receiver);
+            define_func(tc, method.func_tk, head, tz, receiver);
             return;
         }
 
@@ -1068,6 +1113,8 @@ class func_instantiator final {
         bool is_closed{not tz.is_next_char_token(')').is_empty()};
 
         while (not is_closed) {
+            // a malformed signature is reported when an instance is parsed,
+            // the types read so far are kept
             if (not types.parameters.empty() and
                 tz.is_next_char_token(',').is_empty()) {
 
@@ -1108,7 +1155,7 @@ class stmt_def_func_generic final : public statement {
         if (head.is_generic_type_method) {
             func_instantiator::define_method(tc, tk, head);
         } else {
-            func_instantiator::define_func(tc, tk, head, tz, nullptr);
+            func_instantiator::define_func(tc, tk, head, tz, std::nullopt);
         }
 
         generic_text_ = tz.skip_braced_block_after(tk);

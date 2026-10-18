@@ -49,7 +49,7 @@ struct func_return_info {
 };
 
 // a non-inline body compiled for the array lengths of one kind of call
-struct noninline_instance {
+struct noninline_body {
     const stmt_def_func* func{};
     // one per array parameter, in parameter order
     std::vector<size_t> array_lengths;
@@ -725,7 +725,7 @@ class function_table final {
     lut<func_info> funcs_;
     std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
-    std::vector<noninline_instance> noninline_instances_;
+    std::vector<noninline_body> noninline_bodies_;
     std::set<std::string> checked_calls_;
 
   public:
@@ -757,26 +757,25 @@ class function_table final {
         instances_.emplace_back(std::move(instance));
     }
 
-    // a body is emitted once per distinct instance
-    auto add_noninline_instance(const stmt_def_func& func,
-                                std::vector<size_t> array_lengths) -> void {
+    // a body is emitted once per kind of call
+    auto add_noninline_body(const stmt_def_func& func,
+                            std::vector<size_t> array_lengths) -> void {
 
-        const auto is_same_instance =
-            [&](const noninline_instance& known) -> bool {
+        const auto is_same_body = [&](const noninline_body& known) -> bool {
             return known.func == &func and known.array_lengths == array_lengths;
         };
 
-        if (std::ranges::any_of(noninline_instances_, is_same_instance)) {
+        if (std::ranges::any_of(noninline_bodies_, is_same_body)) {
             return;
         }
 
-        noninline_instances_.push_back({
+        noninline_bodies_.push_back({
             .func{&func},
             .array_lengths{std::move(array_lengths)},
         });
     }
 
-    auto clear_noninline_instances() -> void { noninline_instances_.clear(); }
+    auto clear_noninline_bodies() -> void { noninline_bodies_.clear(); }
 
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
         return defs_;
@@ -793,15 +792,15 @@ class function_table final {
         return funcs_.has(name);
     }
 
-    // a copy, the list grows while the instances compile
-    [[nodiscard]] auto noninline_instance_at(const size_t index) const
-        -> noninline_instance {
+    // a copy, the list grows while the bodies compile
+    [[nodiscard]] auto noninline_body_at(const size_t index) const
+        -> noninline_body {
 
-        return noninline_instances_.at(index);
+        return noninline_bodies_.at(index);
     }
 
-    [[nodiscard]] auto noninline_instance_count() const -> size_t {
-        return noninline_instances_.size();
+    [[nodiscard]] auto noninline_body_count() const -> size_t {
+        return noninline_bodies_.size();
     }
 };
 
@@ -2211,16 +2210,16 @@ class toc final {
         generics_.add_type(name, std::move(info));
     }
 
-    // a body is emitted once per distinct instance, for a call that is
+    // a body is emitted once per kind of call, for a call that is
     // compiled for real: a dry run leaves no trace, the call is compiled again
-    auto add_noninline_instance(const stmt_def_func& func,
-                                std::vector<size_t> array_lengths) -> void {
+    auto add_noninline_body(const stmt_def_func& func,
+                            std::vector<size_t> array_lengths) -> void {
 
         if (dry_run_depth_ != 0) {
             return;
         }
 
-        funcs_.add_noninline_instance(func, std::move(array_lengths));
+        funcs_.add_noninline_body(func, std::move(array_lengths));
     }
 
     // identical strings share the label of the first one compiled
@@ -2759,15 +2758,15 @@ class toc final {
         return storage_.next_frame_address(get_type_address());
     }
 
-    // a copy, the list grows while the instances compile
-    [[nodiscard]] auto noninline_instance_at(const size_t index) const
-        -> noninline_instance {
+    // a copy, the list grows while the bodies compile
+    [[nodiscard]] auto noninline_body_at(const size_t index) const
+        -> noninline_body {
 
-        return funcs_.noninline_instance_at(index);
+        return funcs_.noninline_body_at(index);
     }
 
-    [[nodiscard]] auto noninline_instance_count() const -> size_t {
-        return funcs_.noninline_instance_count();
+    [[nodiscard]] auto noninline_body_count() const -> size_t {
+        return funcs_.noninline_body_count();
     }
 
     [[nodiscard]] auto overflow_check_options() const
@@ -2808,7 +2807,7 @@ class toc final {
 
         storage_.reset_usage();
         scopes_.set_max_depth(0);
-        funcs_.clear_noninline_instances();
+        funcs_.clear_noninline_bodies();
     }
 
     [[nodiscard]] auto root_path(const std::string_view name,

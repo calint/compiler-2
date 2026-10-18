@@ -195,10 +195,11 @@ struct generic_arg_tokens {
 struct generic_arg {
     // e.g. 'T' of 'type list<T type, capacity>'
     token param_tk;
-    // e.g. 'i8' of 'list<i8, 8>', empty for a deduced type argument
+    // e.g. 'i8' of 'list<i8, 8>', empty for a type argument of a function
     token arg_tk;
     // null for a constant
     const type* type_ptr{};
+    // the constant, unused for a type
     int64_t value{};
 };
 

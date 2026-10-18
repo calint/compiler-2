@@ -130,6 +130,8 @@ struct generic_call {
             return value_type(tc, tz, tk);
         }
 
+        // note: read from the copy to find where the argument ends and its
+        //       type, the call parses it again
         const stmt_identifier si{tc, {}, tk, tz};
 
         const char next{tz.peek_char_after_whitespace()};
@@ -216,6 +218,7 @@ struct generic_call {
 
         // e.g. 'point.at(1, 2)'
         if (is_type and not tz.is_next_char_token('.').is_empty()) {
+            // e.g. 'at'
             std::ignore = tz.next_token();
 
             if (tz.is_next_char_token('(').is_empty()) {
@@ -1323,7 +1326,7 @@ class noninline_call {
 
         // a body is emitted for a function that is called, once for all calls
         // without array parameters
-        tc.add_noninline_instance(func, array_lengths);
+        tc.add_noninline_body(func, array_lengths);
 
         // the registers stay allocated until the callee frame is populated
         std::vector<operand> address_registers;
@@ -1689,6 +1692,8 @@ class stmt_call : public expression {
 
         assert(not constructor_dot_tk_.is_empty());
 
+        // note: a constructor is never generic ('func_instantiator::
+        //       define_func' rejects it), so it is found before 'read_callee'
         const stmt_def_func& func{constructor_func(tc, tz)};
 
         read_callee(tc, tz, nullptr, "constructor name");
