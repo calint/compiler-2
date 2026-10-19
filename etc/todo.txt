@@ -6,6 +6,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[p] easy: low priority: x86_64: the error of 'array_copy' or 'arrays_equal'
+    whose count calls a function that copies or compares arrays itself is
+    'cannot allocate register rsi' with a register report that suggests
+    'noinline'; the fix is a 'let' for the count ('let count = f()' then
+    'array_copy(a, b, count)', test 1108)
+    => e.g. name the 'let' in the message when the held register is one
+       of the bulk registers
 [p] medium: low priority: reading order of the large classes: the formatter
     sorts the functions of a class by name, so one operation of
     'machine_rv32i.hpp', 'toc.hpp' or 'stmt_call.hpp' is read by jumping
