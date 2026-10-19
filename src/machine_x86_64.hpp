@@ -215,11 +215,13 @@ class machine_x86_64 final : public machine {
     size_t equal_label_count_{};
     // numbers the labels of the checks of divisions
     size_t division_label_count_{};
+    // numbers the labels of the checks of copy overlaps
     size_t overlap_label_count_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
     bool sector_read_used_{};
     bool sector_write_used_{};
+    // the lines that have a stub of the division failure handler
     std::set<size_t> division_panic_lines_;
     // the lines that have a stub of the overflow failure handler
     std::set<size_t> overflow_panic_lines_;
@@ -1357,49 +1359,7 @@ class machine_x86_64 final : public machine {
     // class methods
     //
 
-    [[nodiscard]] auto
-    allocated_register_type(const std::string_view name) const -> const type* {
-
-        const size_t size_bytes{register_size_bytes(name)};
-
-        assert(size_bytes != 0);
-
-        const size_t index{register_index(name)};
-
-        for (const register_pool::allocation& allocated :
-             registers_.allocations()) {
-
-            if (allocated.index == index) {
-                return allocated.type_ptr->size_bytes() == size_bytes
-                           ? allocated.type_ptr
-                           : &builtin_type_for_size_bytes(size_bytes);
-            }
-        }
-
-        return nullptr;
-    }
-
-    auto check_lower_bound(const token& src_loc_tk, const size_t indent,
-                           const operand& reg_to_check,
-                           const operand& reg_count, const bounds_plan& plan,
-                           const std::optional<size_t> reported_line) -> void {
-
-        comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan);
-
-        if (not plan.upper_covers_lower) {
-            test_sign(src_loc_tk, indent, reg_to_check, reported_line);
-
-            // a negative count passes 'start + count' but spans the address
-            // space
-            if (not plan.count_known) {
-                test_sign(src_loc_tk, indent, reg_count, reported_line);
-            }
-        }
-
-        registers_.mark_lower_checked(
-            register_bit(lower_checked_register(reg_to_check, reg_count)));
-    }
-
+    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
     auto invoke_syscall(const size_t indent) -> void {
         static constexpr std::array<std::string_view, 2> clobbered{
             "rcx",
@@ -1408,83 +1368,6 @@ class machine_x86_64 final : public machine {
 
         with_saved_registers(indent, clobbered,
                              [&] -> void { syscall(indent); });
-    }
-
-    auto release_variables_base() -> void {
-        assert(variables_base_reserved_);
-
-        release_named_register(token{}, 0, variables_base_register_);
-
-        variables_base_reserved_ = false;
-    }
-
-    auto reserve_variables_base() -> void {
-        assert(not variables_base_reserved_);
-
-        reserve_named_register(token{}, 0, variables_base_register_,
-                               default_type());
-
-        variables_base_reserved_ = true;
-    }
-
-    // a negative value is out of bounds, an empty operand has none to test
-    auto test_sign(const token& src_loc_tk, const size_t indent,
-                   const operand& value,
-                   const std::optional<size_t> reported_line) -> void {
-
-        if (value.is_empty()) {
-            return;
-        }
-
-        test(src_loc_tk, indent, value, value);
-        branch_to_bounds_panic(indent, condition::s, reported_line);
-    }
-
-    //
-    // statics
-    //
-
-    // the unsigned upper comparison also fails a negative value when the lower
-    // bound is covered by it
-    [[nodiscard]] static auto out_of_bounds_condition(const bool allow_end,
-                                                      const bool is_unsigned)
-        -> condition {
-
-        if (is_unsigned) {
-            return allow_end ? condition::a : condition::ae;
-        }
-
-        return allow_end ? condition::g : condition::ge;
-    }
-
-    // returns 0 if name is not a register
-    [[nodiscard]] static auto register_size_bytes(const std::string_view name)
-        -> size_t {
-
-        for (const register_names& names : register_names_) {
-            if (name == names.qword) {
-                return size_qword;
-            }
-
-            if (name == names.dword) {
-                return size_dword;
-            }
-
-            if (name == names.word) {
-                return size_word;
-            }
-
-            if (name == names.byte) {
-                return size_byte;
-            }
-        }
-
-        return 0;
-    }
-
-    // the most that a value of the width of 'value' holds as a signed number
-    [[nodiscard]] static auto signed_maximum(const operand& value) -> uint64_t {
-        return (uint64_t{1} << (value.type_ref().size_bits() - 1)) - 1;
     }
 
   protected:
@@ -1536,6 +1419,28 @@ class machine_x86_64 final : public machine {
         reserve_named_register(src_loc_tk, indent, "rsi", default_type());
         reserve_named_register(src_loc_tk, indent, "rdi", default_type());
         return alloc_named_register(src_loc_tk, indent, "rcx", default_type());
+    }
+
+    [[nodiscard]] auto
+    allocated_register_type(const std::string_view name) const -> const type* {
+
+        const size_t size_bytes{register_size_bytes(name)};
+
+        assert(size_bytes != 0);
+
+        const size_t index{register_index(name)};
+
+        for (const register_pool::allocation& allocated :
+             registers_.allocations()) {
+
+            if (allocated.index == index) {
+                return allocated.type_ptr->size_bytes() == size_bytes
+                           ? allocated.type_ptr
+                           : &builtin_type_for_size_bytes(size_bytes);
+            }
+        }
+
+        return nullptr;
     }
 
     auto branch_comparison(const size_t indent,
@@ -1719,6 +1624,27 @@ class machine_x86_64 final : public machine {
         assembler_.label(indent, not_minimum);
 
         comment(src_loc_tk, indent, "division check end");
+    }
+
+    auto check_lower_bound(const token& src_loc_tk, const size_t indent,
+                           const operand& reg_to_check,
+                           const operand& reg_count, const bounds_plan& plan,
+                           const std::optional<size_t> reported_line) -> void {
+
+        comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan);
+
+        if (not plan.upper_covers_lower) {
+            test_sign(src_loc_tk, indent, reg_to_check, reported_line);
+
+            // a negative count passes 'start + count' but spans the address
+            // space
+            if (not plan.count_known) {
+                test_sign(src_loc_tk, indent, reg_count, reported_line);
+            }
+        }
+
+        registers_.mark_lower_checked(
+            register_bit(lower_checked_register(reg_to_check, reg_count)));
     }
 
     // a count in 'rcx' below zero or not below the width jumps to the failure
@@ -2022,18 +1948,19 @@ class machine_x86_64 final : public machine {
 
         constexpr int newline{10};
         constexpr int decimal_base{10};
-        // the digits of a 64-bit number and a newline
+        // the 20 digits of a 64-bit number and a newline, the digits are
+        // written backwards before the newline at the end of the buffer
         constexpr size_t number_buffer_size_bytes{21};
+        constexpr size_t newline_offset{number_buffer_size_bytes - 1};
 
         assembler_.comment(1, "line number is in `rbp`");
         assembler_.instruction(1, op::mov, "rax", "rbp");
         assembler_.comment(1, "convert to string");
 
-        assembler_.instruction(1, op::mov, "rdi",
-                               assembler_x86_64::immediate::of_expression(
-                                   "num_buffer + 19", true));
-        // note: 19 is the offset of the newline, the digits of the number are
-        //       written backwards before it, the text ends at offset 20
+        assembler_.instruction(
+            1, op::mov, "rdi",
+            assembler_x86_64::immediate::of_expression(
+                std::format("num_buffer + {}", newline_offset), true));
 
         assembler_.instruction(
             1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
@@ -2059,10 +1986,12 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::mov, "rax", syscall_write);
         assembler_.instruction(1, op::mov, "rsi", "rdi");
 
-        assembler_.instruction(1, op::mov, "rdx",
-                               assembler_x86_64::immediate::of_expression(
-                                   "num_buffer + 20", true));
-        // note: 20 is the end of the text, the length is end minus start
+        // the length is the end of the buffer minus the first digit
+        assembler_.instruction(
+            1, op::mov, "rdx",
+            assembler_x86_64::immediate::of_expression(
+                std::format("num_buffer + {}", number_buffer_size_bytes),
+                true));
 
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
@@ -2551,6 +2480,14 @@ class machine_x86_64 final : public machine {
         pop_allocation(reg);
     }
 
+    auto release_variables_base() -> void {
+        assert(variables_base_reserved_);
+
+        release_named_register(token{}, 0, variables_base_register_);
+
+        variables_base_reserved_ = false;
+    }
+
     auto reserve_named_register(const token& src_loc_tk, const size_t indent,
                                 const std::string_view reg,
                                 const type& type_ref) -> void {
@@ -2563,6 +2500,15 @@ class machine_x86_64 final : public machine {
         }
 
         throw_register_in_use(src_loc_tk, reg);
+    }
+
+    auto reserve_variables_base() -> void {
+        assert(not variables_base_reserved_);
+
+        reserve_named_register(token{}, 0, variables_base_register_,
+                               default_type());
+
+        variables_base_reserved_ = true;
     }
 
     auto scale_by_element_size_bytes(const token& src_loc_tk,
@@ -2685,6 +2631,19 @@ class machine_x86_64 final : public machine {
               const operand& src) -> void {
 
         emit_binary(src_loc_tk, indent, op::test, dst, src);
+    }
+
+    // a negative value is out of bounds, an empty operand has none to test
+    auto test_sign(const token& src_loc_tk, const size_t indent,
+                   const operand& value,
+                   const std::optional<size_t> reported_line) -> void {
+
+        if (value.is_empty()) {
+            return;
+        }
+
+        test(src_loc_tk, indent, value, value);
+        branch_to_bounds_panic(indent, condition::s, reported_line);
     }
 
     [[noreturn]] auto throw_register_in_use(const token& src_loc_tk,
@@ -2898,6 +2857,19 @@ class machine_x86_64 final : public machine {
         return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
     }
 
+    // the unsigned upper comparison also fails a negative value when the lower
+    // bound is covered by it
+    [[nodiscard]] static auto out_of_bounds_condition(const bool allow_end,
+                                                      const bool is_unsigned)
+        -> condition {
+
+        if (is_unsigned) {
+            return allow_end ? condition::a : condition::ae;
+        }
+
+        return allow_end ? condition::g : condition::ge;
+    }
+
     // bit in the mask of 'registers_' for any size alias of a register, 0 for
     // other text such as labels
     [[nodiscard]] static auto register_bit(const std::string_view name)
@@ -2929,6 +2901,31 @@ class machine_x86_64 final : public machine {
         assert(bit != 0);
 
         return static_cast<size_t>(std::countr_zero(bit));
+    }
+
+    // returns 0 if name is not a register
+    [[nodiscard]] static auto register_size_bytes(const std::string_view name)
+        -> size_t {
+
+        for (const register_names& names : register_names_) {
+            if (name == names.qword) {
+                return size_qword;
+            }
+
+            if (name == names.dword) {
+                return size_dword;
+            }
+
+            if (name == names.word) {
+                return size_word;
+            }
+
+            if (name == names.byte) {
+                return size_byte;
+            }
+        }
+
+        return 0;
     }
 
     [[nodiscard]] static auto register_sum(const std::string_view base,
@@ -2972,6 +2969,11 @@ class machine_x86_64 final : public machine {
                lhs.index_register() == rhs.index_register() and
                lhs.displacement() == rhs.displacement() and
                lhs.scale() == rhs.scale();
+    }
+
+    // the most that a value of the width of 'value' holds as a signed number
+    [[nodiscard]] static auto signed_maximum(const operand& value) -> uint64_t {
+        return (uint64_t{1} << (value.type_ref().size_bits() - 1)) - 1;
     }
 
     [[nodiscard]] static auto sized_register_name(const std::string_view name,

@@ -389,11 +389,6 @@ class stmt_def_dat final : public statement {
 
             written_bytes = f.offset + f.size_bytes;
 
-            if (f.type().is_builtin()) {
-                compile_data_builtin(tc, f.type(), e);
-                continue;
-            }
-
             compile_data_rec(tc, f.type(), e);
         }
 
@@ -423,7 +418,10 @@ class stmt_def_dat final : public statement {
                 }),
         };
 
-        x.emit_data_array(tp.size_bytes(), values);
+        // e.g. 'dat a = i8[4]' lists no element
+        if (not el.elems.empty()) {
+            x.emit_data_array(tp.size_bytes(), values);
+        }
 
         // the elements not listed are zero, as in a 'var'
         if (el.array_count != el.elems.size()) {
@@ -440,8 +438,8 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // note: only 'i8[]' can be initialized with a string token
-        if (el.src_loc_tk.is_string()) {
+        // the values of a built-in array, also a string, are one directive
+        if (tp.is_builtin()) {
             compile_data_builtin(tc, tp, el);
             return;
         }

@@ -1,0 +1,9 @@
+# a record field takes its type from the record, a literal names none
+
+type point { x, y }
+type t { p point }
+
+func main() {
+    var q = t{point{1, 2}}
+    exit(q.p.y)
+}

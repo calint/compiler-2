@@ -1,0 +1,7 @@
+# the zero value assigned to a built-in is '0', not the type name
+
+func main() {
+    var n = i8(7)
+    n = i8
+    exit(n)
+}

@@ -52,6 +52,6 @@ func main() {
     assert(3, s.last_index() == 2)
 
     var m = messages
-    m.push(message{1, 2})
+    m.push({1, 2})
     assert(4, m.len == 1 and m.array[0].kind == 2 and not m.is_full())
 }

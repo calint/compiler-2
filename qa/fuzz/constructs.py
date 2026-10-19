@@ -315,7 +315,7 @@ CONSTRUCTS = [
         "func noinline add_all(a []) res {\nres = 0\nfoo a { res = res + e }\n"
         "}\n")),
     Construct("noinline-record-argument", r"\bnoinline \w+\(\w+ \w+\)", program(
-        "assert(sum(point{1, 2}) == 3 and sum({3, 4}) == 7)",
+        "assert(sum({1, 2}) == 3 and sum({3, 4}) == 7)",
         "type point {x, y}\nfunc noinline sum(p point) res {\n"
         "res = p.x + p.y\n}\n")),
     Construct("generic-type", r"^type \w+<\w+", program(

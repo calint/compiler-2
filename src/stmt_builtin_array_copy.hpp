@@ -57,7 +57,8 @@ class stmt_builtin_array_copy final : public statement {
         dst_delim_tk_ =
             tz.expect_char_token(',', "expected ',' followed by 'count'");
 
-        count_ = {tc, tz, tc.builtins().default_type()};
+        count_ = {tc, tz, tc.builtins().default_type(),
+                  literal_typing::from_destination};
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the arguments");

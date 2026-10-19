@@ -1,0 +1,9 @@
+# the zero value of a record field is '{}', not the type name
+
+type point { x, y }
+type line { a point, b point }
+
+func main() {
+    var l = line{point, {3, 4}}
+    exit(l.b.y)
+}

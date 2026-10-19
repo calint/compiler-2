@@ -113,7 +113,7 @@ func main() {
     var q = p # is point
     assert(13, q.x == 1 and q.y == 2)
 
-    var o = object{point{3, 4}, 5} # is object
+    var o = object{{3, 4}, 5} # is object
     assert(14, o.pos.x == 3 and o.pos.y == 4 and o.color == 5)
 
     var pos = o.pos # is point
@@ -124,7 +124,7 @@ func main() {
 
     # an array literal names its element type and size, '[]' counts the
     # elements
-    var points = point[3]{{1, 2}, point{3, 4}} # is point
+    var points = point[3]{{1, 2}, {3, 4}} # is point
     assert(19, points[0].x == 1 and points[1].y == 4 and points[2].x == 0)
 
     var sized = i16[]{300, -300} # is i16
@@ -147,9 +147,4 @@ func main() {
     var copy = sized # is i16
     copy[0] = 1
     assert(26, array_length(copy) == 2 and copy[1] == -300 and sized[0] == 300)
-
-    # a typed literal is also a value in assignments and fields
-    p = point{8, 9}
-    o.pos = point{10, 11}
-    assert(17, p.x == 8 and p.y == 9 and o.pos.x == 10 and o.pos.y == 11)
 }

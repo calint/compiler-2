@@ -22,7 +22,7 @@ func text.size() res {
 func text.cap2() res { res = self.size() * 2 }
 
 func wrap<T type>() res T {
-    res = T
+    res = {}
 }
 
 func outer<T type>() res {

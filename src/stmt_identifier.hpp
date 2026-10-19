@@ -647,7 +647,8 @@ class stmt_identifier final : public statement {
         is_indexed_ = true;
 
         std::unique_ptr<expr_any> index_expr{
-            std::make_unique<expr_any>(tc, tz, tc.builtins().default_type()),
+            std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
+                                       literal_typing::from_destination),
         };
 
         const token close_bracket_tk{
@@ -735,7 +736,7 @@ class stmt_identifier final : public statement {
     // adds the element index of 'cur_elem' to 'address', which has no index
     // yet, keeping its base and displacement
     [[nodiscard]] static auto
-    add_index(toc& tc, const token& src_loc_tk, const size_t indent,
+    add_index(toc& tc, const size_t indent, const token& src_loc_tk,
               path_registers& registers, const ident_elem& cur_elem,
               const ident_info& cur_info, const operand& reg_count,
               const operand& address) -> operand {
@@ -922,7 +923,7 @@ class stmt_identifier final : public statement {
                                 cur_info.type_ref());
         }
 
-        return add_index(tc, cur_elem.array_index_expr->tok(), indent,
+        return add_index(tc, indent, cur_elem.array_index_expr->tok(),
                          registers, cur_elem, cur_info, range_count, base);
     }
 

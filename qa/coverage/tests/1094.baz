@@ -1,0 +1,8 @@
+# an array field takes its type from the record, a literal names none
+
+type t { a i8[2] }
+
+func main() {
+    var q = t{i8[]{4, 5}}
+    exit(q.a[1])
+}

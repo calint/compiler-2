@@ -357,11 +357,11 @@ func main() {
 
     o2.pos = {x, y}
     assert(o2.pos.x == 1)
-    o2.pos = point{y, x}
+    o2.pos = {y, x}
     assert(o2.pos.x == 2)
-    # the type name of a record literal is optional when assigned
+    # an assigned literal takes its type from the destination and names none
 
-#   o2.pos = point{o2.pos.y, o2.pos.x}
+#   o2.pos = {o2.pos.y, o2.pos.x}
 #   compile time error because `o2.pos.x` is read after the first field
 #   overwrote it
 

@@ -55,10 +55,22 @@
 // deduces the types with 'deduced_type_arguments', which looks ahead at the
 // arguments with 'argument_type' and 'value_type'; then the instance is made
 struct generic_call {
+  private:
+    // the type arguments of a call without '<...>' and the arguments they
+    // were taken from
+    struct deduction {
+        std::vector<const type*> type_args;
+        std::vector<size_t> argument_indexes;
+    };
+
+  public:
     // the name of the instance
     std::string func_name;
     // e.g. '<', 'name' and '>' in 'tz.to<name>()', empty when deduced
     std::vector<token> generic_tks;
+    // the arguments a type was deduced from, counted without a receiver, e.g.
+    // 0 for 'take(point{3, 4})', a literal there names its type
+    std::vector<size_t> deducing_args;
 
     //
     // statics
@@ -78,10 +90,16 @@ struct generic_call {
 
         std::vector<const type*> type_args;
         std::vector<token> generic_tks;
+        std::vector<size_t> deducing_args;
 
         if (open_tk.is_empty()) {
-            type_args = deduced_type_arguments(tc, tz, name_tk, generic_name,
-                                               expected_type);
+            deduction deduced{
+                deduced_type_arguments(tc, tz, name_tk, generic_name,
+                                       expected_type),
+            };
+
+            type_args = std::move(deduced.type_args);
+            deducing_args = std::move(deduced.argument_indexes);
         } else {
             const generic_arg_tokens args{
                 generic_arg_tokens::parse(tz, open_tk),
@@ -99,6 +117,7 @@ struct generic_call {
                                                     type_args),
             },
             .generic_tks{std::move(generic_tks)},
+            .deducing_args{std::move(deducing_args)},
         };
     }
 
@@ -149,8 +168,7 @@ struct generic_call {
     [[nodiscard]] static auto
     deduced_type_arguments(toc& tc, const tokenizer& tz, const token& name_tk,
                            const std::string_view generic_name,
-                           const type* const expected_type)
-        -> std::vector<const type*> {
+                           const type* const expected_type) -> deduction {
 
         const generic_func_info& generic{tc.generics().get_func(generic_name)};
 
@@ -164,18 +182,22 @@ struct generic_call {
                                      generic_name, name_tk.text())};
         }
 
-        std::vector<const type*> type_args;
+        deduction deduced;
 
-        for (const auto [param_tk, deduction] :
+        for (const auto [param_tk, source] :
              std::views::zip(generic.param_tks, generic.deductions)) {
 
-            const type* arg_type{
-                deduction.param_index
-                    ? argument_type(tc, scan, *deduction.param_index)
-                    : nullptr,
-            };
+            const type* arg_type{};
 
-            if (arg_type == nullptr and deduction.is_result) {
+            if (source.param_index) {
+                arg_type = argument_type(tc, scan, *source.param_index);
+
+                if (arg_type != nullptr) {
+                    deduced.argument_indexes.push_back(*source.param_index);
+                }
+            }
+
+            if (arg_type == nullptr and source.is_result) {
                 arg_type = expected_type;
             }
 
@@ -187,10 +209,10 @@ struct generic_call {
                                 param_tk.text(), generic_name, name_tk.text())};
             }
 
-            type_args.push_back(arg_type);
+            deduced.type_args.push_back(arg_type);
         }
 
-        return type_args;
+        return deduced;
     }
 
     // the type of an instance literal, a constructor call or a call of a
@@ -1687,10 +1709,14 @@ class stmt_call : public expression {
               const type* const expected_type)
         : expression{tk, std::move(uops)}, func_name_{tk.text()} {
 
-        read_callee(tc, tz, expected_type, "function name");
+        const std::vector<size_t> deducing_args{
+            read_callee(tc, tz, expected_type, "function name"),
+        };
 
         if (not tc.funcs().is_builtin(func_name_)) {
-            parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
+            parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_),
+                            deducing_args);
+
             return;
         }
 
@@ -1707,7 +1733,9 @@ class stmt_call : public expression {
                           receiver.method_name_token().text()),
           } {
 
-        read_callee(tc, tz, expected_type, "method name");
+        const std::vector<size_t> deducing_args{
+            read_callee(tc, tz, expected_type, "method name"),
+        };
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
@@ -1715,7 +1743,7 @@ class stmt_call : public expression {
 
         add_receiver_argument(std::move(receiver));
 
-        parse_arguments(tc, tz, func);
+        parse_arguments(tc, tz, func, deducing_args);
     }
 
     // e.g. 'point.at(1, 2)' calls the constructor 'point.at', 'tz' is after
@@ -1735,9 +1763,9 @@ class stmt_call : public expression {
         //       define_func' rejects it), so it is found before 'read_callee'
         const stmt_def_func& func{constructor_func(tc, tz)};
 
-        read_callee(tc, tz, nullptr, "constructor name");
+        std::ignore = read_callee(tc, tz, nullptr, "constructor name");
 
-        parse_arguments(tc, tz, func);
+        parse_arguments(tc, tz, func, {});
     }
 
     stmt_call() = default;
@@ -2160,9 +2188,11 @@ class stmt_call : public expression {
         return not method_dot_tk_.is_empty();
     }
 
-    // a method receiver is already in 'args_'
-    auto parse_arguments(toc& tc, tokenizer& tz, const stmt_def_func& func)
-        -> void {
+    // a method receiver is already in 'args_', the parameter gives the type of
+    // a literal argument unless its type was deduced from it, see
+    // 'generic_call::deducing_args'
+    auto parse_arguments(toc& tc, tokenizer& tz, const stmt_def_func& func,
+                         const std::span<const size_t> deducing_args) -> void {
 
         const std::span<const stmt_def_func_param> params{func.params()};
         const size_t first{args_.size()};
@@ -2188,8 +2218,15 @@ class stmt_call : public expression {
                 arg_delims_tk_.emplace_back(delimiter_tk);
             }
 
+            const bool is_deducing{
+                std::ranges::contains(deducing_args,
+                                      i - first_argument_index()),
+            };
+
             // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
-            args_.emplace_back(tc, tz, params.at(i).get_type());
+            args_.emplace_back(tc, tz, params.at(i).get_type(),
+                               is_deducing ? literal_typing::written
+                                           : literal_typing::from_destination);
         }
 
         assert_no_surplus_argument(tz, params.size() - first_argument_index());
@@ -2220,7 +2257,8 @@ class stmt_call : public expression {
                 return;
             }
 
-            args_.emplace_back(tc, tz, tc.builtins().default_type());
+            args_.emplace_back(tc, tz, tc.builtins().default_type(),
+                               literal_typing::from_destination);
 
             const token delim_tk{tz.is_next_char_token(',')};
             expect_arg = not delim_tk.is_empty();
@@ -2241,17 +2279,23 @@ class stmt_call : public expression {
     // the name is read, a generic function has its type arguments before the
     // '(', e.g. 'convert<i8>(x)'
     // note: 'func_name_' becomes the name of the instance and the type is its
-    //       return type, 'what' names the callee in the error of a missing '('
-    auto read_callee(toc& tc, tokenizer& tz, const type* const expected_type,
-                     const std::string_view what) -> void {
+    //       return type, 'what' names the callee in the error of a missing '(';
+    //       returns 'generic_call::deducing_args'
+    [[nodiscard]] auto read_callee(toc& tc, tokenizer& tz,
+                                   const type* const expected_type,
+                                   const std::string_view what)
+        -> std::vector<size_t> {
+
+        std::vector<size_t> deducing_args;
 
         if (tc.generics().has_func(func_name_)) {
-            const generic_call generic{
+            generic_call generic{
                 generic_call::parse(tc, tz, tok(), func_name_, expected_type),
             };
 
-            func_name_ = generic.func_name;
-            generic_tks_ = generic.generic_tks;
+            func_name_ = std::move(generic.func_name);
+            generic_tks_ = std::move(generic.generic_tks);
+            deducing_args = std::move(generic.deducing_args);
         }
 
         open_paren_tk_ = tz.is_next_char_token('(');
@@ -2259,6 +2303,8 @@ class stmt_call : public expression {
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
         assert_open_paren_found(tz, what);
+
+        return deducing_args;
     }
 
     // what 'inline_call' and 'noinline_call' need of this call

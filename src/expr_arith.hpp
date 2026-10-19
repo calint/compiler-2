@@ -700,7 +700,7 @@ class expr_arith final : public expression {
         // that changes nothing must still not reach the backend
         const bool is_checked_constant{
             tc.checks().overflow and s.value.has_value() and
-                is_commutative(s.op),
+                is_regroupable(s.op),
         };
 
         if (s.value and (s.element == nullptr or is_checked_constant)) {
@@ -822,7 +822,7 @@ class expr_arith final : public expression {
             return arithmetic_operator::add;
         }
 
-        return is_commutative(first) ? first : arithmetic_operator::assign;
+        return is_regroupable(first) ? first : arithmetic_operator::assign;
     }
 
     // a sub-expression is enclosed in parentheses
@@ -934,7 +934,7 @@ class expr_arith final : public expression {
             return steps;
         }
 
-        steps = merge_commutative_constants(steps, width_type);
+        steps = merge_regroupable_constants(steps, width_type);
         steps = merge_divisors(steps, width_type);
         lead_with_constant(tc, steps);
 
@@ -1339,7 +1339,18 @@ class expr_arith final : public expression {
         return -1;
     }
 
-    [[nodiscard]] static auto is_commutative(const arithmetic_operator op)
+    // a lone negation folds into add/sub: 'a - -b' is 'a + b'
+    [[nodiscard]] static auto is_negated_operand(const toc& tc,
+                                                 const statement& src) -> bool {
+
+        return is_stored_value(tc, src) and
+               src.get_unary_ops().is_only_negated();
+    }
+
+    // the constants of a run of the operator can be merged and moved to the
+    // end of the run, '-' is the add of a negated value; not '/', '%' and
+    // shifts, whose operands have fixed roles
+    [[nodiscard]] static auto is_regroupable(const arithmetic_operator op)
         -> bool {
 
         return op == arithmetic_operator::add or
@@ -1348,14 +1359,6 @@ class expr_arith final : public expression {
                op == arithmetic_operator::bit_and or
                op == arithmetic_operator::bit_or or
                op == arithmetic_operator::bit_xor;
-    }
-
-    // a lone negation folds into add/sub: 'a - -b' is 'a + b'
-    [[nodiscard]] static auto is_negated_operand(const toc& tc,
-                                                 const statement& src) -> bool {
-
-        return is_stored_value(tc, src) and
-               src.get_unary_ops().is_only_negated();
     }
 
     // a register or memory location, neither computed nor constant
@@ -1399,40 +1402,6 @@ class expr_arith final : public expression {
         // note: -1 moves the last step to the front
     }
 
-    // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
-    // operation merge into one constant at the end of the run, '/' and '%'
-    // end a run since moving a constant across them changes the result, a
-    // lower precedence operation continues the list left to right and starts
-    // a new run
-    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 3 * 2 / 3 / 2 * 4 + 8'
-    //   'a * 3 * 2 / 3 / 2 * 4'          =>  'a * 6 / 3 / 2 * 4'
-    //   '2 * b * 3 / c'                  =>  'b * 6 / c'
-    //   'b & 7 & 13'                     =>  'b & 5'
-    //   'b & 1 | 2 | 4'                  =>  'b & 1 | 6'
-    //   'b * 2 - 3 + c + 4'              =>  'b * 2 + c + 1'
-    [[nodiscard]] static auto
-    merge_commutative_constants(const std::span<const step> steps,
-                                const type& width_type) -> std::vector<step> {
-
-        // a dividend or a divisor is a run of its own
-        const auto same_run{
-            [](const step& a, const step& b) -> bool {
-                return is_commutative(a.op) and is_commutative(b.op) and
-                       precedence_for_op(a.op) == precedence_for_op(b.op);
-            },
-        };
-
-        std::vector<step> merged;
-
-        for (const std::span<const step> run :
-             steps | std::views::chunk_by(same_run)) {
-
-            merge_run(merged, run, width_type);
-        }
-
-        return merged;
-    }
-
     // pass 2: consecutive constant divisors merge into their product
     //   'a * 6 / 3 / 2 * 4'  =>  'a * 6 / 6 * 4'
     //   'b / 2 / c / 3'      =>  'b / 2 / c / 3'
@@ -1462,6 +1431,40 @@ class expr_arith final : public expression {
         return merged;
     }
 
+    // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
+    // operation merge into one constant at the end of the run, '/' and '%'
+    // end a run since moving a constant across them changes the result, a
+    // lower precedence operation continues the list left to right and starts
+    // a new run
+    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 3 * 2 / 3 / 2 * 4 + 8'
+    //   'a * 3 * 2 / 3 / 2 * 4'          =>  'a * 6 / 3 / 2 * 4'
+    //   '2 * b * 3 / c'                  =>  'b * 6 / c'
+    //   'b & 7 & 13'                     =>  'b & 5'
+    //   'b & 1 | 2 | 4'                  =>  'b & 1 | 6'
+    //   'b * 2 - 3 + c + 4'              =>  'b * 2 + c + 1'
+    [[nodiscard]] static auto
+    merge_regroupable_constants(const std::span<const step> steps,
+                                const type& width_type) -> std::vector<step> {
+
+        // a dividend or a divisor is a run of its own
+        const auto same_run{
+            [](const step& a, const step& b) -> bool {
+                return is_regroupable(a.op) and is_regroupable(b.op) and
+                       precedence_for_op(a.op) == precedence_for_op(b.op);
+            },
+        };
+
+        std::vector<step> merged;
+
+        for (const std::span<const step> run :
+             steps | std::views::chunk_by(same_run)) {
+
+            merge_run(merged, run, width_type);
+        }
+
+        return merged;
+    }
+
     static auto merge_run(std::vector<step>& merged,
                           const std::span<const step> run,
                           const type& width_type) -> void {
@@ -1473,7 +1476,7 @@ class expr_arith final : public expression {
                 : run.front().op,
         };
 
-        if (not is_commutative(op)) {
+        if (not is_regroupable(op)) {
             merged.append_range(run);
             return;
         }

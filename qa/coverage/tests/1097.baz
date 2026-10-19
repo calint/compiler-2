@@ -1,0 +1,8 @@
+# an element of an array literal takes its type from the array
+
+type point { x, y }
+
+func main() {
+    var ps = point[2]{{1, 2}, point{3, 4}}
+    exit(ps[1].y)
+}

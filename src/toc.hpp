@@ -1967,57 +1967,8 @@ class definition_checks final {
         const std::string_view generic_method) const -> void {
 
         if (funcs_.get().has(name)) {
-            const func_info& fn{funcs_.get().get(name)};
-
-            // a built-in function has no source location
-            if (fn.src_loc_tk.at_line() == 0) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("function '{}' is a built-in function", name)};
-            }
-
-            const bool is_generic{not generic_method.empty()};
-            const bool is_existing_generic{not fn.generic_method.empty()};
-
-            // e.g. 'text.print' and 'list.print' for
-            // 'type text<size> = list<i8, size>'
-            if (is_generic and is_existing_generic and
-                generic_method != fn.generic_method) {
-
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("generic method '{}' clashes with the generic "
-                                "method '{}' defined at {}",
-                                generic_method, fn.generic_method,
-                                where(fn.src_loc_tk))};
-            }
-
-            if (is_generic and is_existing_generic) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("generic method '{}' already defined at {}",
-                                generic_method, where(fn.src_loc_tk))};
-            }
-
-            if (is_generic) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("generic method '{}' clashes with the method "
-                                "'{}' defined at {}",
-                                generic_method, name, where(fn.src_loc_tk))};
-            }
-
-            if (is_existing_generic) {
-                throw compiler_exception{
-                    src_loc_tk,
-                    std::format("method '{}' clashes with the generic method "
-                                "'{}' defined at {}",
-                                name, fn.generic_method, where(fn.src_loc_tk))};
-            }
-
-            throw compiler_exception{
-                src_loc_tk, std::format("function '{}' already defined at {}",
-                                        name, where(fn.src_loc_tk))};
+            throw_function_defined(src_loc_tk, name, generic_method,
+                                   funcs_.get().get(name));
         }
 
         if (generics_.get().has_func(name)) {
@@ -2081,6 +2032,64 @@ class definition_checks final {
     }
 
   private:
+    // the message tells a built-in, an instance of a generic method and a
+    // function written in the source apart
+    [[noreturn]] auto
+    throw_function_defined(const token& src_loc_tk, const std::string_view name,
+                           const std::string_view generic_method,
+                           const func_info& fn) const -> void {
+
+        // a built-in function has no source location
+        if (fn.src_loc_tk.at_line() == 0) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("function '{}' is a built-in function", name)};
+        }
+
+        const bool is_generic{not generic_method.empty()};
+        const bool is_existing_generic{not fn.generic_method.empty()};
+
+        // e.g. 'text.print' and 'list.print' for
+        // 'type text<size> = list<i8, size>'
+        if (is_generic and is_existing_generic and
+            generic_method != fn.generic_method) {
+
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("generic method '{}' clashes with the generic "
+                            "method '{}' defined at {}",
+                            generic_method, fn.generic_method,
+                            where(fn.src_loc_tk))};
+        }
+
+        if (is_generic and is_existing_generic) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("generic method '{}' already defined at {}",
+                            generic_method, where(fn.src_loc_tk))};
+        }
+
+        if (is_generic) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("generic method '{}' clashes with the method "
+                            "'{}' defined at {}",
+                            generic_method, name, where(fn.src_loc_tk))};
+        }
+
+        if (is_existing_generic) {
+            throw compiler_exception{
+                src_loc_tk,
+                std::format("method '{}' clashes with the generic method "
+                            "'{}' defined at {}",
+                            name, fn.generic_method, where(fn.src_loc_tk))};
+        }
+
+        throw compiler_exception{
+            src_loc_tk, std::format("function '{}' already defined at {}", name,
+                                    where(fn.src_loc_tk))};
+    }
+
     [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
         return locations_.get().human_readable(src_loc_tk);
     }

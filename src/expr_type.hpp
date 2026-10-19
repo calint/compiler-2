@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <memory>
 #include <optional>
@@ -18,6 +19,22 @@
 #include "token.hpp"
 #include "type.hpp"
 #include "ub_reads.hpp"
+
+// whether a literal names its type, e.g. 'point{1, 2}': only where the name
+// decides the type, elsewhere the destination gives it, e.g. '{1, 2}'
+enum class literal_typing : uint8_t { written, from_destination };
+
+// a type written where the destination gives it, 'value' is how to write the
+// value without it, e.g. '{...}' or the zero value '{}'
+[[noreturn]] inline auto throw_known_type(const token& type_tk,
+                                          const std::string_view type_name,
+                                          const std::string_view value)
+    -> void {
+
+    throw compiler_exception{
+        type_tk, std::format("the destination gives the type '{}', write '{}'",
+                             type_name, value)};
+}
 
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
 //       implemented in 'decouple_impl.hpp', those headers include this one
@@ -52,7 +69,7 @@ class expr_type final : public statement {
     // 'stmt_identifier'; the type name alone is its zero value, e.g.
     // 'var p = point' is 'point{}'
     expr_type(toc& tc, tokenizer& tz, const type& tp,
-              const destination_kind kind);
+              const destination_kind kind, const literal_typing typing);
 
     // a method receiver that has already been parsed
     explicit expr_type(std::unique_ptr<stmt_identifier> receiver);

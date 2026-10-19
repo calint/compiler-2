@@ -45,14 +45,15 @@ class stmt_assign_var final : public statement {
 
         set_type(dst_info.type_ref());
 
-        // the value is parsed as the type of the destination, e.g. 'p1 = p2' or
-        // 'a = {1, 2}' or 'x = y + 1'
+        // the value is parsed as the type of the destination, which gives the
+        // type of a literal, e.g. 'p1 = p2' or 'a = {1, 2}' or 'x = y + 1'
         const std::optional<size_t> array_count{
             stmt_ident_.is_array() ? std::optional{stmt_ident_.array_count()}
                                    : std::nullopt,
         };
 
-        expr_ = {tc, tz, dst_info.type_ref(), array_count};
+        expr_ = {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
+                 array_count};
     }
 
     // the initializer of a declaration, parsed before the variable was

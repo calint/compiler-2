@@ -1,0 +1,9 @@
+# an argument takes its type from a parameter of a known type
+
+type point { x, y }
+
+func sum(p point) res { res = p.x + p.y }
+
+func main() {
+    exit(sum(point{1, 2}))
+}

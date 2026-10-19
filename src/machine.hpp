@@ -1181,8 +1181,8 @@ class machine {
         return static_cast<uint64_t>(value.immediate());
     }
 
-    // a word or double word is sign extended so a value that fits a signed
-    // 32-bit immediate is recognized
+    // 4 and 8 bytes are read as signed so a value that fits a signed 32-bit
+    // immediate is recognized
     [[nodiscard]] static auto little_endian_value(const std::string_view bytes)
         -> int64_t {
 

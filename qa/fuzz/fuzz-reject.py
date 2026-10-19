@@ -258,7 +258,7 @@ def rule_alias_result(rnd, c):
 
 
 def rule_record_overwrite(rnd, c):
-    for p, text in ((c.bad, "p = point{p.y, p.x}"), (c.good, "p = point{2, 1}")):
+    for p, text in ((c.bad, "p = {p.y, p.x}"), (c.good, "p = {2, 1}")):
         p.add("type point {x, y}")
         p.add("func main() {")
         p.add("    var p = point{1, 2}")

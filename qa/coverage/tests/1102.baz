@@ -1,0 +1,7 @@
+# the zero value assigned to a 'bool' is 'false', not the type name
+
+func main() {
+    var f = true
+    f = bool
+    exit(0)
+}

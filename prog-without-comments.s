@@ -1584,7 +1584,7 @@ baz_division_panic:
     syscall
 baz_report_line:
     mov rax, rbp
-    mov rdi, strict qword num_buffer + 19
+    mov rdi, strict qword num_buffer + 20
     mov byte [rdi], 10
     dec rdi
     mov rcx, 10
@@ -1599,7 +1599,7 @@ baz_report_line:
     inc rdi
     mov rax, 1
     mov rsi, rdi
-    mov rdx, strict qword num_buffer + 20
+    mov rdx, strict qword num_buffer + 21
     sub rdx, rdi
     mov rdi, 2
     syscall
@@ -1797,7 +1797,7 @@ db `\n`
 db `: `
 times 1 db 0
 dq 1
-times 24 db 0
+times 3 dq 0
 db 3
 times 127 db 0
 db 3

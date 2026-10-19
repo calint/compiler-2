@@ -418,6 +418,11 @@ this order. The examples use 'make' and 'same' from the start of
       A generic function does not count: its return type is not known
       until it is instantiated.
 
+      Only such a deducing argument names the type of its literal: where
+      the parameter type is known, e.g. 'same<name>({}, t)', the literal is
+      written without it, like a field, an element or an assigned value
+      ('literal_typing' in 'expr_type.hpp').
+
    3. anything else tells nothing, and step 2 is tried
 
       ```text
@@ -605,7 +610,7 @@ func make() res point {        the same for the result of a function
     res.x = 1
 }
 
-p = point{p.y, p.x}            the field 'x' is written first, bytes 0..4,
+p = {p.y, p.x}                 the field 'x' is written first, bytes 0..4,
                                then the item 'p.x' reads them => "'p.x' is
                                read but has been overwritten in the same
                                statement"

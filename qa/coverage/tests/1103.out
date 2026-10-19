@@ -1,0 +1,4 @@
+
+1103.baz:5:9: the destination gives the type 'i8[]', write '{}'
+    a = i8[2]
+        ^~

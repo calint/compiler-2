@@ -1492,7 +1492,8 @@ auto check_string_data_escapes() -> void {
 // 6. host checks: arithmetic on registers only (no scratch register is free)
 // ============================================================================
 
-// shifts: register counts, immediate counts of 0 to 31 and rejected others
+// shifts: register counts and immediate counts of 0 to 31, the front end
+// rejects other constant counts (tests 0713 and 0750)
 auto check_shifts() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
@@ -1524,17 +1525,6 @@ auto check_shifts() -> void {
         for (const unsigned count : {2U, 31U}) {
             assert(shifted(operation, operand::imm(count, integer)) ==
                    std::format("{} a0, a0, {}\n", by_constant, count));
-        }
-
-        for (const int64_t count : {-1, 32, 35, 64}) {
-            assert(rejected_with(
-                [&] {
-                    backend.shift(source_tk, 0, op_of(operation), value,
-                                  operand::imm(count, integer),
-                                  machine::runtime_check{});
-                },
-                "RV32I shift count must be 0 to 31 for 32-bit values"));
-            assert(rv32i.output.str().empty());
         }
     }
 
@@ -1661,8 +1651,7 @@ auto check_zero_operations_and_zero_shifts() -> void {
 }
 
 // byte values: an operation with a known result loads it, a shift extends the
-// sign again, a count of the width is rejected, and constants beyond 12 bits
-// take two instructions
+// sign again, and constants beyond 12 bits take two instructions
 auto check_narrow_values_and_large_constants() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
@@ -1690,23 +1679,6 @@ auto check_narrow_values_and_large_constants() -> void {
     // note: 24 more shifts the byte to the top of the register, 'srai' brings
     //       its sign back
     assert(shifted_left(7) == "slli a0, a0, 31\nsrai a0, a0, 24\n");
-
-    for (const type* narrow : {&byte, &half, &boolean}) {
-        const size_t bits{narrow->size_bytes() * 8};
-
-        assert(rejected_with(
-            [&] {
-                backend.shift(source_tk, 0, op_of('<'),
-                              operand::reg("a0", *narrow),
-                              operand::imm(bits, integer),
-                              machine::runtime_check{});
-            },
-            std::format("RV32I shift count must be 0 to {} for {}-bit values",
-                        bits - 1, bits)));
-        // note: -1 because the count is below the width
-
-        assert(rv32i.output.str().empty());
-    }
 
     assert(shifted_left(1) == "slli a0, a0, 25\nsrai a0, a0, 24\n");
 

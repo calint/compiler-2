@@ -1,0 +1,7 @@
+# the zero value assigned to an array is '{}', not the array type
+
+func main() {
+    var a = i8[]{1, 2}
+    a = i8[2]
+    exit(a[0])
+}

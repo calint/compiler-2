@@ -1,0 +1,7 @@
+# an array literal of the default type assigned names no type either
+
+func main() {
+    var a = []{1, 2}
+    a = []{3, 4}
+    exit(a[0])
+}

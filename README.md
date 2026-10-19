@@ -536,11 +536,11 @@ func main() {
 
     o2.pos = {x, y}
     assert(o2.pos.x == 1)
-    o2.pos = point{y, x}
+    o2.pos = {y, x}
     assert(o2.pos.x == 2)
-    # the type name of a record literal is optional when assigned
+    # an assigned literal takes its type from the destination and names none
 
-#   o2.pos = point{o2.pos.y, o2.pos.x}
+#   o2.pos = {o2.pos.y, o2.pos.x}
 #   compile time error because `o2.pos.x` is read after the first field
 #   overwrote it
 
@@ -2200,7 +2200,7 @@ baz_division_panic:
     syscall
 baz_report_line:
     mov rax, rbp
-    mov rdi, strict qword num_buffer + 19
+    mov rdi, strict qword num_buffer + 20
     mov byte [rdi], 10
     dec rdi
     mov rcx, 10
@@ -2215,7 +2215,7 @@ baz_report_line:
     inc rdi
     mov rax, 1
     mov rsi, rdi
-    mov rdx, strict qword num_buffer + 20
+    mov rdx, strict qword num_buffer + 21
     sub rdx, rdi
     mov rdi, 2
     syscall
@@ -2413,7 +2413,7 @@ db `\n`
 db `: `
 times 1 db 0
 dq 1
-times 24 db 0
+times 3 dq 0
 db 3
 times 127 db 0
 db 3
@@ -4630,17 +4630,17 @@ main:
         if.38.24.359.5.end:
 ;       [prog.baz:359:5] free scratch register r15
     func.assert.359.5.end:
-;   [prog.baz:360:5] o2.pos = point{y, x}
-;   [prog.baz:360:20] copy field 'x'
-;   [prog.baz:360:20] allocate scratch register -> r15
+;   [prog.baz:360:5] o2.pos = {y, x}
+;   [prog.baz:360:15] copy field 'x'
+;   [prog.baz:360:15] allocate scratch register -> r15
     mov r15, qword [rbp + 632]
     mov qword [rbp + 680], r15
-;   [prog.baz:360:20] free scratch register r15
-;   [prog.baz:360:23] copy field 'y'
-;   [prog.baz:360:23] allocate scratch register -> r15
+;   [prog.baz:360:15] free scratch register r15
+;   [prog.baz:360:18] copy field 'y'
+;   [prog.baz:360:18] allocate scratch register -> r15
     mov r15, qword [rbp + 624]
     mov qword [rbp + 688], r15
-;   [prog.baz:360:23] free scratch register r15
+;   [prog.baz:360:18] free scratch register r15
 ;   [prog.baz:361:5] assert(o2.pos.x == 2)
 ;   [prog.baz:361:12] allocate scratch register -> r15
 ;   [prog.baz:361:12] ? o2.pos.x == 2
@@ -5887,7 +5887,7 @@ baz_report_line:
 ;    line number is in `rbp`
     mov rax, rbp
 ;    convert to string
-    mov rdi, strict qword num_buffer + 19
+    mov rdi, strict qword num_buffer + 20
     mov byte [rdi], 10
     dec rdi
     mov rcx, 10
@@ -5903,7 +5903,7 @@ baz_report_line:
 ;    print line number to stderr
     mov rax, 1
     mov rsi, rdi
-    mov rdx, strict qword num_buffer + 20
+    mov rdx, strict qword num_buffer + 21
     sub rdx, rdi
     mov rdi, 2
     syscall
@@ -6128,11 +6128,8 @@ db `: `
 times 1 db 0
 ;[prog.baz:29:8] nums
 ;[prog.baz:29:15] i64[4]
-;[prog.baz:29:20] [0]
-;[prog.baz:29:20] i64
 dq 1
-;[prog.baz:29:15] pad 3 'i64' of size 8
-times 24 db 0
+times 3 dq 0
 ;[prog.baz:30:8] str1
 ;[prog.baz:30:20] i8
 db 3

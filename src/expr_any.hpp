@@ -54,9 +54,11 @@ class expr_any final : public statement {
 
   public:
     // a single value, or with 'array_count' an array of that many elements, 0
-    // when the initializer gives the count; a type or array may be written
-    // without '{}', e.g. 'var p = point', 'p = point' and 'var a = i8[4]'
+    // when the initializer gives the count; where 'typing' is 'written' a
+    // type or array may be written without '{}', e.g. 'var p = point' and
+    // 'var a = i8[4]'
     expr_any(toc& tc, tokenizer& tz, const type& tp,
+             const literal_typing typing,
              const std::optional<size_t> array_count = std::nullopt)
         : statement{tz.next_whitespace_token()},
           array_count_{array_count.value_or(0)},
@@ -66,7 +68,7 @@ class expr_any final : public statement {
 
         // the basic case, e.g. 'x + 1' or 'point{1, 2}'
         if (not is_array_) {
-            elements_.emplace_back(parse_variant(tc, tz, tp));
+            elements_.emplace_back(parse_variant(tc, tz, tp, typing));
             return;
         }
 
@@ -87,7 +89,7 @@ class expr_any final : public statement {
         // an array is initialized by a '{ ... }' or by the name of an array,
         // e.g. 'str.data'
 
-        parse_element_type(tc, tz, tp);
+        parse_element_type(tc, tz, tp, typing);
 
         open_brace_tk_ = tz.is_next_char_token('{');
 
@@ -109,7 +111,7 @@ class expr_any final : public statement {
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
             elements_.emplace_back(expr_type{
-                tc, tz, tp, expr_type::destination_kind::whole_array});
+                tc, tz, tp, expr_type::destination_kind::whole_array, typing});
 
             is_identifier_ = true;
 
@@ -587,7 +589,9 @@ class expr_any final : public statement {
 
             assert_room_for_element(tz);
 
-            elements_.emplace_back(parse_variant(tc, tz, tp));
+            // the array gives the type of its elements
+            elements_.emplace_back(
+                parse_variant(tc, tz, tp, literal_typing::from_destination));
 
             close_brace_tk_ = tz.is_next_char_token('}');
         }
@@ -611,7 +615,9 @@ class expr_any final : public statement {
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
     // the default type
-    auto parse_element_type(toc& tc, tokenizer& tz, const type& tp) -> void {
+    auto parse_element_type(toc& tc, tokenizer& tz, const type& tp,
+                            const literal_typing typing) -> void {
+
         const token tk{tz.next_token()};
         const bool is_typed{is_array_literal(tc, tk, tz)};
 
@@ -647,6 +653,15 @@ class expr_any final : public statement {
         close_bracket_tk_ =
             tz.expect_char_token(']', "expected ']' after array size");
 
+        // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
+        // is '{}'
+        if (typing == literal_typing::from_destination) {
+            throw_known_type(is_typed ? tk : open_bracket_tk_,
+                             std::format("{}[]", literal_type.name()),
+                             tz.peek_char_after_whitespace() == '{' ? "{...}"
+                                                                    : "{}");
+        }
+
         if (not literal_count_const_.has_value()) {
             return;
         }
@@ -659,13 +674,9 @@ class expr_any final : public statement {
 
         const size_t count{static_cast<size_t>(literal_count_const_.value())};
 
-        // e.g. 'a = i8[3]{1, 2}' for 'var a = i8[2]{}'
-        if (array_count_ != 0 and array_count_ != count) {
-            throw compiler_exception{
-                literal_count_const_.tok(),
-                std::format("array size {} does not match destination size {}",
-                            count, array_count_)};
-        }
+        // note: only a declaration names the array type, its size is the one
+        //       of this literal
+        assert(array_count_ == 0 or array_count_ == count);
 
         array_count_ = count;
     }
@@ -795,11 +806,14 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
-                                            const type& tp) -> expr_variant {
+                                            const type& tp,
+                                            const literal_typing typing)
+        -> expr_variant {
 
         // an instance value, e.g. 'point{1, 2}' or 'p'
         if (not tp.is_builtin()) {
-            return expr_type{tc, tz, tp, expr_type::destination_kind::instance};
+            return expr_type{tc, tz, tp, expr_type::destination_kind::instance,
+                             typing};
         }
 
         if (tp.is_bool()) {
@@ -808,6 +822,10 @@ class expr_any final : public statement {
             const token tk{tz.next_token()};
 
             if (is_bare_builtin_type(tc, tk, tz)) {
+                if (typing == literal_typing::from_destination) {
+                    throw_known_type(tk, tk.text(), "false");
+                }
+
                 return expr_bool{
                     tc,
                     pos_tk,
@@ -831,6 +849,10 @@ class expr_any final : public statement {
         const token tk{tz.next_token()};
 
         if (is_bare_builtin_type(tc, tk, tz)) {
+            if (typing == literal_typing::from_destination) {
+                throw_known_type(tk, tk.text(), "0");
+            }
+
             return expr_arith{
                 tc,
                 tz,

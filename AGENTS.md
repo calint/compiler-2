@@ -61,7 +61,8 @@
   `// add aliases`); a data member may say what it holds.
 - No review stamps. The formatter writes the section banners
   (`// statics`, `// class methods`), keep them.
-- Marker: `todo:`.
+- Markers: `todo:` for work left; `note:` for a remark or annotation that
+  the code relies on, e.g. why an `assert` holds or why a choice was made.
 - Magic numbers whose reason is not obvious (`subspan(1, n - 2)` over quotes):
   a `note:` line below naming offset and reason, e.g. `// note: +1 because the
   text starts after the opening quote`. Idioms and offsets that a named

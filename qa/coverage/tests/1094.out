@@ -1,0 +1,4 @@
+
+1094.baz:6:15: the destination gives the type 'i8[]', write '{...}'
+    var q = t{i8[]{4, 5}}
+              ^~

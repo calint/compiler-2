@@ -132,12 +132,26 @@ class machine_rv32i : public machine {
         size_t phase{};
     };
 
-    // the addresses given to an active bulk operation, each start taken with
-    // alignment 1 since the type alignment is given at the end
-    struct bulk_addresses {
+    // the registers of an active copy or comparison of arrays and where its
+    // two addresses start, each start taken with alignment 1 since the type
+    // alignment is given at the end
+    struct bulk_operation {
+        // the two pointers then the count, in the order of allocation
+        std::array<operand, 3> registers;
         std::array<access_start, 2> starts;
         // a missing address would leave the word alignment unproven
-        size_t count{};
+        size_t address_count{};
+
+        [[nodiscard]] auto count() const -> const operand& {
+            return registers.back();
+        }
+
+        // 0 the first address and 1 the second
+        [[nodiscard]] auto pointer(const size_t slot) const -> const operand& {
+            assert(slot < starts.size());
+
+            return registers.at(slot);
+        }
     };
 
     // the indexes are those of 'register_names_'
@@ -207,6 +221,10 @@ class machine_rv32i : public machine {
         uint32_t upper;
         int32_t low;
     };
+
+    // what a call of '.Lbaz_multiply', '.Lbaz_multiply_checked' or
+    // '.Lbaz_divide' computes
+    enum class helper_result : uint8_t { product, quotient, remainder };
 
     // a 32-bit multiplier can need one digit above bit 31 in non-adjacent form
     static constexpr size_t multiplier_digit_count{33};
@@ -379,8 +397,7 @@ class machine_rv32i : public machine {
     bool sector_write_used_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
-    std::vector<std::array<operand, 3>> bulk_registers_;
-    std::vector<bulk_addresses> bulk_addresses_;
+    std::vector<bulk_operation> bulk_operations_;
 
   protected:
     // the sector routines, see 'emit_sector_routines'
@@ -610,34 +627,33 @@ class machine_rv32i : public machine {
 
         // borrowed pointers avoid a temporary address and final move for
         // indexing
-        request.lhs(count, bulk_registers_.back().at(0),
+        request.lhs(count, bulk_operations_.back().pointer(0),
                     [&](const operand& address) -> void {
                         set_bulk_address(src_loc_tk, indent, 0, address);
                     });
 
-        request.rhs(count, bulk_registers_.back().at(1),
+        request.rhs(count, bulk_operations_.back().pointer(1),
                     [&](const operand& address) -> void {
                         set_bulk_address(src_loc_tk, indent, 1, address);
                     });
 
-        const std::array<operand, 3>& registers{bulk_registers_.back()};
+        const bulk_operation& bulk{bulk_operations_.back()};
         {
             // scaling the count must not pick the result registers
             const address_scope scope{*this, request.dst, operand{}};
 
             comment(src_loc_tk, indent,
                     "{}: elements to bytes ({} bytes/element)",
-                    registers.at(2).base_register(), element_size_bytes);
+                    bulk.count().base_register(), element_size_bytes);
 
-            scale_index(src_loc_tk, indent, registers.at(2),
-                        element_size_bytes);
+            scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
         }
 
         compare_runtime_count(src_loc_tk, indent,
                               {
-                                  .left{registers.at(0)},
-                                  .right{registers.at(1)},
-                                  .count{registers.at(2)},
+                                  .left{bulk.pointer(0)},
+                                  .right{bulk.pointer(1)},
+                                  .count{bulk.count()},
                                   .starts{bulk_starts()},
                               },
                               request);
@@ -1020,31 +1036,30 @@ class machine_rv32i : public machine {
 
         // borrowed pointers avoid a temporary address and final move for
         // indexing
-        request.src(count, bulk_registers_.back().at(0),
+        request.src(count, bulk_operations_.back().pointer(0),
                     [&](const operand& address) -> void {
                         set_bulk_address(src_loc_tk, indent, 0, address);
                     });
 
-        request.dst(count, bulk_registers_.back().at(1),
+        request.dst(count, bulk_operations_.back().pointer(1),
                     [&](const operand& address) -> void {
                         set_bulk_address(src_loc_tk, indent, 1, address);
                     });
 
-        const std::array<operand, 3>& registers{bulk_registers_.back()};
+        const bulk_operation& bulk{bulk_operations_.back()};
 
         comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
-                registers.at(2).base_register(), element_size_bytes);
+                bulk.count().base_register(), element_size_bytes);
 
-        scale_index(src_loc_tk, indent, registers.at(2), element_size_bytes);
+        scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
 
         if (request.overlap.enabled) {
-            check_copy_overlap(src_loc_tk, indent, registers.at(0),
-                               registers.at(1), registers.at(2),
-                               request.overlap);
+            check_copy_overlap(src_loc_tk, indent, bulk.pointer(0),
+                               bulk.pointer(1), bulk.count(), request.overlap);
         }
 
-        copy_runtime_count(src_loc_tk, indent, registers.at(0), registers.at(1),
-                           registers.at(2), bulk_starts(), request.alignment);
+        copy_runtime_count(src_loc_tk, indent, bulk.pointer(0), bulk.pointer(1),
+                           bulk.count(), bulk_starts(), request.alignment);
 
         release_bulk(src_loc_tk, indent);
     }
@@ -1145,8 +1160,10 @@ class machine_rv32i : public machine {
 
         divide_helper_used_ = true;
 
-        call_arithmetic_helper(src_loc_tk, indent, dst, divisor, true,
-                               operation == arithmetic_operator::remainder,
+        call_arithmetic_helper(src_loc_tk, indent, dst, divisor,
+                               operation == arithmetic_operator::remainder
+                                   ? helper_result::remainder
+                                   : helper_result::quotient,
                                check);
     }
 
@@ -1275,7 +1292,7 @@ class machine_rv32i : public machine {
             release_variables_base();
         }
 
-        assert(bulk_registers_.empty());
+        assert(bulk_operations_.empty());
         assert(registers_.is_empty());
         assert(registers_.unavailable_mask() == 0);
         assert(not variables_base_reserved_);
@@ -1431,8 +1448,9 @@ class machine_rv32i : public machine {
 
             const runtime_check no_division_check;
 
-            call_arithmetic_helper(src_loc_tk, indent, product, factor, false,
-                                   false, no_division_check, check);
+            call_arithmetic_helper(src_loc_tk, indent, product, factor,
+                                   helper_result::product, no_division_check,
+                                   check);
 
             return;
         }
@@ -1772,21 +1790,6 @@ class machine_rv32i : public machine {
     // class methods
     //
 
-    auto extend_register(const size_t indent, const type& dst_type,
-                         const operand& value) -> void {
-
-        const size_t shift{register_bits_ - dst_type.size_bits()};
-
-        // the register holds the value at the full width, as the comparisons
-        // and the arithmetic of the narrow type read it
-        assembler_.slli(indent, value.base_register(), value.base_register(),
-                        shift);
-
-        assembler_.immediate_op(indent, extend_shift_op(dst_type),
-                                value.base_register(), value.base_register(),
-                                shift);
-    }
-
     auto release_variables_base() -> void {
         assert(variables_base_reserved_);
 
@@ -1808,16 +1811,6 @@ class machine_rv32i : public machine {
             token{}, 0, variables_base_register(), default_type());
 
         variables_base_reserved_ = true;
-    }
-
-    auto store_low_bits(const token& src_loc_tk, const size_t indent,
-                        const operand& dst, const operand& value) -> void {
-
-        const operand lowered{lower_address(src_loc_tk, indent, dst)};
-
-        assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
-                         value.base_register(), lowered.displacement(),
-                         lowered.base_register());
     }
 
   private:
@@ -1895,11 +1888,11 @@ class machine_rv32i : public machine {
 
         const operand count{begin_bulk(src_loc_tk, indent)};
 
-        const std::array<operand, 3>& registers{bulk_registers_.back()};
+        const bulk_operation& bulk{bulk_operations_.back()};
 
         comment(src_loc_tk, indent, "{}: source, {}: destination, {}: count",
-                registers.at(0).base_register(),
-                registers.at(1).base_register(), count.base_register());
+                bulk.pointer(0).base_register(),
+                bulk.pointer(1).base_register(), count.base_register());
 
         return count;
     }
@@ -1907,15 +1900,14 @@ class machine_rv32i : public machine {
     auto begin_bulk(const token& src_loc_tk, const size_t indent) -> operand {
         // argument-order allocation keeps pointer and count names easy to
         // follow
-        std::array<operand, 3> registers;
-        for (operand& reg : registers) {
+        bulk_operation bulk;
+        for (operand& reg : bulk.registers) {
             reg = alloc_scratch_register(src_loc_tk, indent, default_type());
         }
 
-        bulk_registers_.push_back(registers);
-        bulk_addresses_.emplace_back();
+        bulk_operations_.push_back(bulk);
 
-        return registers.back();
+        return bulk.count();
     }
 
     auto binary_operation(const token& src_loc_tk, const size_t indent,
@@ -1961,16 +1953,16 @@ class machine_rv32i : public machine {
 
     // a missing address would leave the loop width unproven
     [[nodiscard]] auto bulk_starts() const -> std::array<access_start, 2> {
-        const bulk_addresses& addresses{bulk_addresses_.back()};
+        const bulk_operation& bulk{bulk_operations_.back()};
 
-        assert(addresses.count == 2);
+        assert(bulk.address_count == bulk.starts.size());
 
-        return addresses.starts;
+        return bulk.starts;
     }
 
     auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
                                 const operand& dst, const operand& source,
-                                const bool division, const bool remainder,
+                                const helper_result result_kind,
                                 const runtime_check& division_check,
                                 const runtime_check& overflow_check = {})
         -> void {
@@ -1979,8 +1971,10 @@ class machine_rv32i : public machine {
 
         const uint32_t live{registers_.unavailable_mask()};
 
+        const bool is_division{result_kind != helper_result::product};
+
         const std::span<const std::string_view> clobbered{
-            helper_clobbers(division),
+            helper_clobbers(is_division),
         };
 
         const std::vector<std::string_view> saved{
@@ -2007,7 +2001,7 @@ class machine_rv32i : public machine {
                           division_check.with_line);
         }
 
-        if (division) {
+        if (is_division) {
             assembler_.call(indent, ".Lbaz_divide");
         } else if (overflow_check.enabled) {
             assembler_.call(indent, ".Lbaz_multiply_checked");
@@ -2017,7 +2011,8 @@ class machine_rv32i : public machine {
         }
 
         const operand result{
-            operand::reg(remainder ? "a1" : "a0", default_type()),
+            operand::reg(result_kind == helper_result::remainder ? "a1" : "a0",
+                         default_type()),
         };
 
         // the destination is not restored so it can retain the result
@@ -3889,6 +3884,21 @@ class machine_rv32i : public machine {
         return result;
     }
 
+    auto extend_register(const size_t indent, const type& dst_type,
+                         const operand& value) -> void {
+
+        const size_t shift{register_bits_ - dst_type.size_bits()};
+
+        // the register holds the value at the full width, as the comparisons
+        // and the arithmetic of the narrow type read it
+        assembler_.slli(indent, value.base_register(), value.base_register(),
+                        shift);
+
+        assembler_.immediate_op(indent, extend_shift_op(dst_type),
+                                value.base_register(), value.base_register(),
+                                shift);
+    }
+
     // jumps to the overflow failure handler, the line is passed in 'a0'
     auto fail_on_overflow(const token& src_loc_tk, const size_t indent,
                           const runtime_check& check) -> void {
@@ -4262,18 +4272,11 @@ class machine_rv32i : public machine {
         record_register_use(registers_);
     }
 
-    // the pointers advance together so both starts decide the loop width
-    auto record_bulk_address_start(const operand& address) -> void {
-        bulk_addresses& addresses{bulk_addresses_.back()};
-        addresses.starts.at(addresses.count) = start_of(address, 1);
-        ++addresses.count;
-    }
-
     auto release_bulk(const token& src_loc_tk, const size_t indent) -> void {
-        free_scratch_registers(src_loc_tk, indent, bulk_registers_.back());
+        free_scratch_registers(src_loc_tk, indent,
+                               bulk_operations_.back().registers);
 
-        bulk_registers_.pop_back();
-        bulk_addresses_.pop_back();
+        bulk_operations_.pop_back();
     }
 
     // the arguments are in a0, a1 and a2
@@ -4349,14 +4352,17 @@ class machine_rv32i : public machine {
     }
 
     // the pointer of 'slot', 0 the first address and 1 the second, holds the
-    // address, its start decides the width of the loop
+    // address; the pointers advance together so both starts decide the width
+    // of the loop
     auto set_bulk_address(const token& src_loc_tk, const size_t indent,
                           const size_t slot, const operand& address) -> void {
 
-        record_bulk_address_start(address);
+        bulk_operation& bulk{bulk_operations_.back()};
 
-        address_of(src_loc_tk, indent, bulk_registers_.back().at(slot),
-                   address);
+        bulk.starts.at(slot) = start_of(address, 1);
+        ++bulk.address_count;
+
+        address_of(src_loc_tk, indent, bulk.pointer(slot), address);
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that
@@ -4537,6 +4543,16 @@ class machine_rv32i : public machine {
 
         assembler_.li(indent, value.base_register(), constant);
         store_operation_result(indent, dst, address, value, false);
+    }
+
+    auto store_low_bits(const token& src_loc_tk, const size_t indent,
+                        const operand& dst, const operand& value) -> void {
+
+        const operand lowered{lower_address(src_loc_tk, indent, dst)};
+
+        assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
+                         value.base_register(), lowered.displacement(),
+                         lowered.base_register());
     }
 
     auto store_operation_result(const size_t indent, const operand& dst,
@@ -5231,7 +5247,7 @@ class machine_rv32i : public machine {
     }
 
     // the registers that a call of the helper changes
-    [[nodiscard]] static auto helper_clobbers(const bool division)
+    [[nodiscard]] static auto helper_clobbers(const bool is_division)
         -> std::span<const std::string_view> {
 
         // argument registers are allocated last, so the helpers rarely
@@ -5243,8 +5259,8 @@ class machine_rv32i : public machine {
         // the multiply helper changes the first five, the divide helper all
         constexpr size_t multiply_clobber_count{5};
 
-        return std::span{clobbers}.first(division ? clobbers.size()
-                                                  : multiply_clobber_count);
+        return std::span{clobbers}.first(is_division ? clobbers.size()
+                                                     : multiply_clobber_count);
     }
 
     // the register-immediate form of 'add', 'and', 'or' and 'xor', 'sub' adds

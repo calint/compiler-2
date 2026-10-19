@@ -1,6 +1,6 @@
-# an array size in both the destination and the literal must agree
+# a literal assigned to an array names no type, the destination gives it
 
 func main() {
     var a = i8[2]{}
-    a = i8[3]{1, 2}
+    a = i8[2]{1, 2}
 }

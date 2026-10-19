@@ -1,0 +1,9 @@
+# the zero value assigned to a record is '{}', not the type name
+
+type point { x, y }
+
+func main() {
+    var p = point{1, 2}
+    p = point
+    exit(p.x)
+}

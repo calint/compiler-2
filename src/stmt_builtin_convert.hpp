@@ -116,16 +116,15 @@ class stmt_builtin_convert final : public expression {
             return;
         }
 
-        // the store at the narrow width does the truncation, and an argument
-        // of the same width computes the same either way unless the
-        // destination is narrower than the type
-        const bool is_stored_whole{
-            dst.type_ref().size_bytes() >= get_type().size_bytes(),
+        // the destination is at most as wide as the type, the store at its
+        // width does the truncation; that is right when the low bits of the
+        // argument do not depend on its high bits or nothing is narrowed
+        const bool is_same_width{
+            dst.type_ref().size_bytes() == get_type().size_bytes() and
+                arg_.get_type().size_bytes() == get_type().size_bytes(),
         };
 
-        if (arg_.keeps_low_bits_when_narrowed() or
-            (is_stored_whole and
-             arg_.get_type().size_bytes() == get_type().size_bytes())) {
+        if (arg_.keeps_low_bits_when_narrowed() or is_same_width) {
 
             // a narrower argument wraps at the width of the destination, a
             // register of the argument's width would wrap earlier

@@ -54,7 +54,6 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
                                            const token tk)
     -> std::unique_ptr<statement> {
 
-    // note: no 'std::move' on 'tk' because it is trivially copyable
     if (tk.is_text("loop")) {
         return std::make_unique<stmt_loop>(tc, tk, tz);
     }
@@ -207,7 +206,6 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
 inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
-    // note: no 'std::move' on 'tk' because it is trivially copyable
     unary_ops uops{tz};
     const token tk{tz.next_token()};
 
@@ -271,7 +269,8 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 //
 
 inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
-                            const destination_kind kind)
+                            const destination_kind kind,
+                            const literal_typing typing)
     : statement{tz.next_token()},
       is_array_destination_{kind == destination_kind::whole_array} {
 
@@ -299,6 +298,11 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         throw compiler_exception{tok(),
                                  std::format("expected type '{}', got '{}'",
                                              tp.name(), tok().text())};
+    }
+
+    // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
+    if (is_typed_literal and typing == literal_typing::from_destination) {
+        throw_known_type(tok(), tok().text(), is_bare ? "{}" : "{...}");
     }
 
     // e.g. 'var p = point', no fields are listed
@@ -351,8 +355,8 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
             tf.is_array ? std::optional{tf.array_count} : std::nullopt,
         };
 
-        exprs_.emplace_back(
-            std::make_unique<expr_any>(tc, tz, tf.type(), array_count));
+        exprs_.emplace_back(std::make_unique<expr_any>(
+            tc, tz, tf.type(), literal_typing::from_destination, array_count));
     }
 }
 

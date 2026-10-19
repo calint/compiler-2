@@ -1,0 +1,4 @@
+
+1095.baz:7:15: the destination gives the type 'point', write '{...}'
+    var q = t{point{1, 2}}
+              ^~~~~

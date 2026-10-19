@@ -151,6 +151,8 @@ class operand final {
 
     kind kind_{kind::empty};
     const type* type_ptr_{};
+    // the register the backend allocated, e.g. 'rax' for the operand 'eax',
+    // empty when the operand does not own the register it names
     std::string allocation_register_;
     std::string base_register_;
     std::string index_register_;

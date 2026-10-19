@@ -1,0 +1,4 @@
+
+1102.baz:5:9: the destination gives the type 'bool', write 'false'
+    f = bool
+        ^~~~

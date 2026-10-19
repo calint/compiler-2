@@ -1,0 +1,4 @@
+
+1105.baz:9:22: the destination gives the type 'point', write '{...}'
+    exit(take<point>(point{3, 4}))
+                     ^~~~~

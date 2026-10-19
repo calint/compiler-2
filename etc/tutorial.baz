@@ -452,7 +452,9 @@ func user_types() {
     px.pos.x = 5
     px.tags[1] = 'z'
     assert(px.pos.x == 5 and px.color == 0xff0000 and px.tags[1] == 'z')
-    # nested literals need no type name, fields are accessed with '.'
+    # a nested literal takes its type from the field and names none, as does
+    # a literal assigned or passed to a parameter of a known type, fields are
+    # accessed with '.'
 
     var q = px.pos
     q.y = 4
@@ -648,7 +650,6 @@ func non_inlined() {
     var arr = []{ 1, 2, 3 }
     assert(add_all(arr) == 6)
     assert(factorial(n - 2) == 6)
-    assert(sum(point{1, 2}) == 3)
     assert(sum({ 3, 4 }) == 7)
     # an argument can be an expression, a constant or a record literal, it is
     # evaluated into a temporary of the parameter's type before the call
@@ -818,10 +819,10 @@ func checks() {
 #   other are rejected, '--checks=-alias' turns that check off
 
     var p = point{1, 2}
-    p = point{2, 1}
+    p = {2, 1}
     assert(p.x == 2 and p.y == 1)
 
-#   p = point{p.y, p.x}
+#   p = {p.y, p.x}
 #   compile error because 'p.x' is read after the first field overwrote it
 }
 # '--checks=noub' enables all checks against undefined behavior, aliasing is

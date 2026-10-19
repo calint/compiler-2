@@ -1,0 +1,4 @@
+
+1097.baz:6:31: the destination gives the type 'point', write '{...}'
+    var ps = point[2]{{1, 2}, point{3, 4}}
+                              ^~~~~

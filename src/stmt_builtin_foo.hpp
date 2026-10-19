@@ -42,7 +42,8 @@ class stmt_builtin_foo final : public statement {
         count_delim_tk_ = tz.is_next_char_token(',');
 
         if (has_count()) {
-            count_ = {tc, tz, tc.builtins().default_type()};
+            count_ = {tc, tz, tc.builtins().default_type(),
+                      literal_typing::from_destination};
         }
 
         // the element and the counter are declared during the parse so the

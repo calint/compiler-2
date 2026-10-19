@@ -1854,7 +1854,7 @@ SRC=0607 && COMPERR
 # an array literal must name the element type of the destination
 SRC=0608 && COMPERR
 
-# an array size in both the destination and the literal must agree
+# a literal assigned to an array names no type, the destination gives it
 SRC=0609 && COMPERR
 
 # an array literal without elements and without a size has no size
@@ -2535,16 +2535,17 @@ SRC=0819 && COMPERR
 # an array parameter does not tell the type
 SRC=0820 && COMPERR
 
-# a type name assigned is the zero value of that type
+# '{}' assigned is the zero value of an instance or an array, '0' and 'false'
+# of a built-in
 SRC=0821 && EXP=0 && RUN
 
-# a type name alone is its zero value in an instance literal and in an index
+# '{}' is the zero value of a field in an instance literal
 SRC=0822 && EXP=0 && RUN
 
-# a type name alone as an argument is a temporary, a zeroed instance
+# '{}' as an argument is a temporary, a zeroed instance
 SRC=0823 && EXP=1 && RUN
 
-# an array assigned without braces needs a size
+# an array declared without braces needs a size
 SRC=0824 && COMPERR
 
 # an array declared without braces needs a size
@@ -2654,7 +2655,7 @@ SRC=0858 && EXP=40 && RUN
 
 # instance arguments that are not variables, to an inlined and a non-inline
 # function
-SRC=0859 && EXP=72 && RUN
+SRC=0859 && EXP=58 && RUN
 
 # a type parameter is deduced from an instance literal, a constructor call and
 # a call result
@@ -3394,3 +3395,40 @@ if [[ $MACHINE != x86_64 ]]; then SRC=1092 && COMPERR; fi
 
 # a constant expression argument that does not fit the parameter
 SRC=1093 && COMPERR
+
+# an array field takes its type from the record, a literal names none
+SRC=1094 && COMPERR
+
+# a record field takes its type from the record, a literal names none
+SRC=1095 && COMPERR
+
+# a record literal assigned names no type, the destination gives it
+SRC=1096 && COMPERR
+
+# an element of an array literal takes its type from the array
+SRC=1097 && COMPERR
+
+# an argument takes its type from a parameter of a known type
+SRC=1098 && COMPERR
+
+# the zero value assigned to a record is '{}', not the type name
+SRC=1099 && COMPERR
+
+# the zero value of a record field is '{}', not the type name
+SRC=1100 && COMPERR
+
+# the zero value assigned to a built-in is '0', not the type name
+SRC=1101 && COMPERR
+
+# the zero value assigned to a 'bool' is 'false', not the type name
+SRC=1102 && COMPERR
+
+# the zero value assigned to an array is '{}', not the array type
+SRC=1103 && COMPERR
+
+# an array literal of the default type assigned names no type either
+SRC=1104 && COMPERR
+
+# a type argument written makes the parameter type known, so a literal
+# argument names no type, only a deducing argument does
+SRC=1105 && COMPERR

@@ -121,7 +121,7 @@ class type_fields final {
 };
 
 // the field layout of the type named by 'name_tk' as comments
-inline auto comment_type_layout(toc& tc, const token& tk, const size_t indent,
+inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
                                 const token& name_tk) -> void {
 
     const type& tp{tc.get_type_or_throw(tk, name_tk.text())};
@@ -230,7 +230,7 @@ class stmt_def_type final : public statement {
                  [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        comment_type_layout(tc, tok(), indent, name_tk_);
+        comment_type_layout(tc, indent, tok(), name_tk_);
     }
 };
 
@@ -372,7 +372,7 @@ class stmt_def_type_alias final : public statement {
                  [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        comment_type_layout(tc, tok(), indent, name_tk_);
+        comment_type_layout(tc, indent, tok(), name_tk_);
     }
 
   private:

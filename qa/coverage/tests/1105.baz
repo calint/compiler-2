@@ -1,0 +1,10 @@
+# a type argument written makes the parameter type known, so a literal
+# argument names no type, only a deducing argument does
+
+type point { x, y }
+
+func take<T type>(item T) res { res = item.x + item.y }
+
+func main() {
+    exit(take<point>(point{3, 4}))
+}

@@ -1,0 +1,9 @@
+# a record literal assigned names no type, the destination gives it
+
+type point { x, y }
+
+func main() {
+    var p = point{1, 2}
+    p = point{2, 1}
+    exit(p.x)
+}

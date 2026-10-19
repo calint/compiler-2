@@ -46,7 +46,7 @@ func noinline reset<T type>(t mut T) {
 }
 
 func main() {
-    var tz = tokenizer{ str{ "abcdefg", 7 } }
+    var tz = tokenizer{ { "abcdefg", 7 } }
 
     var n = tz.to<name>()
     var s = tz.to<str>()
