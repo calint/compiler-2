@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: low priority: a constant operand that does not fit the type of
+    its expression wraps silently ('let f = 4294967296 + 5' is 5 on rv32i,
+    even with '--checks=overflow'; '-9223372036854775807 - 1' is 0 there)
+    => 'element_constant' in 'expr_arith.hpp' wraps with 'wrap_to_width';
+       the wrap is wanted inside a conversion ('i32(...)'), not elsewhere
+    => plan: tell the fold whether it is inside a conversion and reject
+       an operand that does not fit with the message of a constant that does
+       not fit, then run the suites for tests that rely on the wrap
+    => done (2026-10-19): no flag needed, 'var' and assignments already ran
+       'assert_not_narrowed' before folding, the folds of
+       'expr_any::constant_value' ('let', constant indexes, 'array_copy'
+       counts, inline arguments) did not; now they do after a successful
+       fold, a conversion folds its own argument and does not ask; also
+       fixed 'f(300 + 1)' wrapping into an 'i8' parameter on every target;
+       tests 1091-1093, 0731 keeps the rv32i copy size check with a count
+       that fits 'i32'
 [x] medium: high priority: parse once where the shape can be decided first
     => 1. 'expr_bool::parse_element' parses '(...)' as a nested list and, when
        an operator follows the ')', rewinds and parses it again as a

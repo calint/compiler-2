@@ -352,9 +352,13 @@ def fuzz_one(args):
             if noub and x86.finished() and rv.finished():
                 stats["compared"] += 1
                 same = x86.code == rv.code and (
-                    x86.stdout == rv.stdout or FOREIGN_WRITE.search(text))
-                # the default integer is 32 bits on rv32i, 64 on x86_64
-                width = rv.kind == "panic" and rv.code == 249 and x86.kind == "exit"
+                    x86.stdout == rv.stdout or FOREIGN_WRITE.search(text)
+                    or is_default_width_output(x86.stdout, rv.stdout))
+                # the default integer is 32 bits on rv32i, 64 on x86_64: a
+                # value or a shift count that fits 64 bits panics on rv32i
+                # only, x86_64 goes on and may panic later on another check
+                width = rv.kind == "panic" and x86.code != rv.code and \
+                    rv.code in (fl.PANIC_CODE["overflow"], fl.PANIC_CODE["shift"])
                 foreign_read = FOREIGN_READ.search(text)
                 if not same and not stack_difference(x86, rv) and not width \
                         and not foreign_read:
@@ -415,6 +419,19 @@ def bucket(outcome):
 FOREIGN_WRITE = re.compile(r"write\(\s*(?!1\s*,)")
 # and a read from another one than 0 fails on x86_64 and reads the uart there
 FOREIGN_READ = re.compile(r"read\(\s*(?!0\s*,)")
+
+
+def is_default_width_output(x86_stdout, rv_stdout):
+    # a written array of the default integer has 8-byte elements on x86_64 and
+    # 4-byte ones on rv32i, the same values are the same output
+    if len(x86_stdout) != 2 * len(rv_stdout) or len(rv_stdout) % 4 != 0:
+        return False
+
+    def values(data, size):
+        return [int.from_bytes(data[i:i + size], "little", signed=True)
+                for i in range(0, len(data), size)]
+
+    return values(x86_stdout, 8) == values(rv_stdout, 4)
 
 
 def stack_difference(x86, rv):

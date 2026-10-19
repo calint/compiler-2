@@ -1,0 +1,8 @@
+# rv32i: a constant index that does not fit the default type is rejected, not
+# folded to its low bits
+
+func main() {
+    var a = i32[4]
+    a[4294967296 + 1] = 2
+    exit(a[1])
+}

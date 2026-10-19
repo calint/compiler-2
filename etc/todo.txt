@@ -79,14 +79,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     adding virtuals
     => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
        'std::variant' and rejected it, see 'etc/todo-resolved.txt'
-[ ] medium: low priority: a constant operand that does not fit the type of
-    its expression wraps silently ('let f = 4294967296 + 5' is 5 on rv32i,
-    even with '--checks=overflow'; '-9223372036854775807 - 1' is 0 there)
-    => 'element_constant' in 'expr_arith.hpp' wraps with 'wrap_to_width';
-       the wrap is wanted inside a conversion ('i32(...)'), not elsewhere
-    => plan: tell the fold whether it is inside a conversion and reject
-       an operand that does not fit with the message of a constant that does
-       not fit, then run the suites for tests that rely on the wrap
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------

@@ -1,7 +1,8 @@
-# rv32i: a constant copy size beyond the 32-bit address range
+# rv32i: a constant copy size beyond the 32-bit address range, the count fits
+# 'i32' but its bytes do not
 
 func main() {
-    var a = i8[8]{}
-    var b = i8[8]{}
-    array_copy(a, b, 5000000000)
+    var a = i32[8]
+    var b = i32[8]
+    array_copy(a, b, 2000000000)
 }

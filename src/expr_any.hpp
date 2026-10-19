@@ -750,6 +750,25 @@ class expr_any final : public statement {
         });
     }
 
+    [[nodiscard]] static auto constant_arith_value(const toc& tc,
+                                                   const expr_arith& arith,
+                                                   const type& width_type)
+        -> std::optional<int64_t> {
+
+        // e.g. 'array_length(a)'
+        if (arith.is_expression()) {
+            return arith.folded_constant(tc, width_type);
+        }
+
+        const ident_info info{tc.make_ident_info(arith)};
+
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        return arith.get_unary_ops().evaluate_constant(info.const_value());
+    }
+
     // 'bool' and instance elements are not packed
     [[nodiscard]] static auto constant_element_value(const toc& tc,
                                                      const expr_variant& e,
@@ -762,18 +781,17 @@ class expr_any final : public statement {
             return std::nullopt;
         }
 
-        // e.g. 'array_length(a)'
-        if (arith->is_expression()) {
-            return arith->folded_constant(tc, width_type);
+        const std::optional<int64_t> value{
+            constant_arith_value(tc, *arith, width_type),
+        };
+
+        // the fold keeps the low bits of an operand that does not fit, which
+        // only a conversion asks for
+        if (value) {
+            arith->assert_not_narrowed(tc, width_type);
         }
 
-        const ident_info info{tc.make_ident_info(*arith)};
-
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        return arith->get_unary_ops().evaluate_constant(info.const_value());
+        return value;
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,

@@ -3385,3 +3385,12 @@ SRC=1089 && EXP=0 && RUN
 # the initializer of an inner variable reads the variable it declares, not an
 # outer one of the same name
 SRC=1090 && COMPERR
+
+# rv32i: a constant operand that does not fit the default type
+if [[ $MACHINE != x86_64 ]]; then SRC=1091 && COMPERR; fi
+
+# rv32i: a constant index that does not fit the default type
+if [[ $MACHINE != x86_64 ]]; then SRC=1092 && COMPERR; fi
+
+# a constant expression argument that does not fit the parameter
+SRC=1093 && COMPERR

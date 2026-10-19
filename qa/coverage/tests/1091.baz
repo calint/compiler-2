@@ -1,0 +1,8 @@
+# rv32i: a constant operand that does not fit the default type is rejected,
+# not folded to its low bits
+
+let f = 4294967296 + 5
+
+func main() {
+    exit(f)
+}

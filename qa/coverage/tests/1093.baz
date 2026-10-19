@@ -1,0 +1,10 @@
+# a constant argument that does not fit the parameter is rejected, also when
+# it is an expression
+
+func f(v i8) {
+    exit(v)
+}
+
+func main() {
+    f(300 + 1)
+}

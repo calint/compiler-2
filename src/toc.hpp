@@ -34,7 +34,7 @@
 
 //
 // the table of contents: what the names of the program are while it is parsed
-// and compiled, see 'etc/docs/architecture.txt'. the classes below, in reading
+// and compiled, see 'etc/docs/README.md'. the classes below, in reading
 // order:
 //
 //   records         'func_info', 'noinline_body', 'storage_target',

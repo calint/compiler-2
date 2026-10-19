@@ -81,8 +81,7 @@ the binary image itself.
   with syntax highlighting and lsp (symbols, go to definition, rename,
   references)
 * example application [`roome/src/main.baz`](roome/src/main.baz)
-* how the compiler works in
-  [`etc/docs/architecture.txt`](etc/docs/architecture.txt)
+* how the compiler works in [`etc/docs/README.md`](etc/docs/README.md)
 * todo list of planned fixes and features in [`etc/todo.txt`](etc/todo.txt)
 
 ## Usage
@@ -168,10 +167,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    62           8423           4081          25303
+C/C++ Header                    62           8426           4085          25308
 C++                              1            201             57            691
 -------------------------------------------------------------------------------
-SUM:                            63           8624           4138          25994
+SUM:                            63           8627           4142          25999
 -------------------------------------------------------------------------------
 ```
 

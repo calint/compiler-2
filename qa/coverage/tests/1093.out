@@ -1,0 +1,4 @@
+
+1093.baz:9:7: constant '300' does not fit 'i8', use 'i8(...)'
+    f(300 + 1)
+      ^~~

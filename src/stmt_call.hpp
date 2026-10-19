@@ -49,7 +49,7 @@
 
 // the instance of a generic function that a call names, its type arguments
 // written, e.g. 'tz.to<name>()', or deduced from the arguments, e.g. 'f(x)' of
-// 'func f<T type>(s T)', see 'etc/docs/generic-types.txt' section 10
+// 'func f<T type>(s T)', see 'etc/docs/README.md' section 2.10
 //
 // 'parse' reads '<...>' with 'written_type_arguments' or, without '<',
 // deduces the types with 'deduced_type_arguments', which looks ahead at the
@@ -1149,7 +1149,7 @@ class inline_call {
 //   2. 'compile_with_arguments': the types are checked ('assert_call'), the
 //      aliasing of this call is checked by a dry run of the body as an
 //      inlined call ('check_aliasing', see
-//      'etc/docs/noinline-alias-dry-run.txt'), the addresses are written to
+//      'etc/docs/README.md' chapter 4), the addresses are written to
 //      the callee frame ('frame_slot_addresses', 'write_frame_slots') and the
 //      function is called
 class noinline_call {
