@@ -149,4 +149,14 @@ class stmt_builtin_arrays_equal final : public expression {
                         get_type().name(), dst_type.name()),
         };
     }
+
+    // a 'bool' result has no meaningful negation
+    auto assert_no_unary_ops() const -> void {
+        if (get_unary_ops().is_empty()) {
+            return;
+        }
+
+        throw compiler_exception{
+            tok(), "this built-in function does not accept unary operations"};
+    }
 };

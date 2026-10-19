@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
-#include <vector>
 
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -38,13 +38,19 @@ class stmt_builtin_exit final : public stmt_call {
             x.registers_for_builtin_function(machine::builtin_function::exit),
         };
 
-        const std::vector<operand> args{
-            compile_builtin_arguments(tc, indent, registers.arguments),
+        // note: the exit code is the only argument
+        assert(registers.arguments.size() == 1);
+
+        const operand exit_code{
+            x.alloc_named_register(tok(), indent, registers.arguments.front(),
+                                   tc.builtins().default_type()),
         };
 
-        x.exit(tok(), indent, args.at(0));
+        argument(0).compile(tc, indent, destination::of_register(exit_code));
 
-        x.free_named_registers(tok(), indent, args);
+        x.exit(tok(), indent, exit_code);
+
+        x.free_named_register(tok(), indent, exit_code);
     }
 
     // the program ends here, so this path never returns and cannot leave the

@@ -26,12 +26,12 @@
 #include "register_pool.hpp"
 #include "source_files.hpp"
 #include "token.hpp"
+#include "type.hpp"
 
-class type;
-
-// an enabled check makes a signed result that does not fit the width of the
-// destination jump to the overflow failure handler
-struct overflow_check_options {
+// a check of an operation at run time: enabled, a failure jumps to the failure
+// handler of the check, which reports the line when 'with_line'; the operation
+// that takes it tells what fails
+struct runtime_check {
     bool enabled{};
     bool with_line{};
 };
@@ -150,7 +150,10 @@ class machine {
         greater_equal,
     };
 
-    using overflow_check_options = ::overflow_check_options;
+    // note: at namespace scope because a default argument '= {}' of a
+    //       member function cannot use a nested class with default member
+    //       initializers
+    using runtime_check = ::runtime_check;
 
     struct output_statistics {
         // false when written output was not kept to count
@@ -180,21 +183,6 @@ class machine {
     struct bounds_check_options {
         bool upper{};
         bool lower{};
-        bool with_line{};
-    };
-
-    struct division_check_options {
-        bool enabled{};
-        bool with_line{};
-    };
-
-    struct shift_check_options {
-        bool enabled{};
-        bool with_line{};
-    };
-
-    struct overlap_check_options {
-        bool enabled{};
         bool with_line{};
     };
 
@@ -252,7 +240,7 @@ class machine {
         address_emitter dst;
         // an enabled check makes a copy where the destination starts inside
         // the source jump to the overlap failure handler
-        overlap_check_options overlap;
+        runtime_check overlap;
     };
 
     // what a bounds check does about the lower bound, decided from its
@@ -312,11 +300,13 @@ class machine {
     // virtual methods
     //
 
+    // an enabled check makes a signed result that does not fit the width of
+    // 'dst' jump to the overflow failure handler, also in 'multiply' and
+    // 'unary'
     virtual auto add_subtract(const token& src_loc_tk, const size_t indent,
                               const arithmetic_operator operation,
                               const operand& dst, const operand& src,
-                              const overflow_check_options& check = {})
-        -> void = 0;
+                              const runtime_check& check = {}) -> void = 0;
 
     virtual auto address_of(const token& src_loc_tk, const size_t indent,
                             const operand& dst, const operand& address)
@@ -440,8 +430,8 @@ class machine {
     // 'dst' divided by -1, jump to the division failure handler
     virtual auto divide(const token& src_loc_tk, const size_t indent,
                         const arithmetic_operator operation, const operand& dst,
-                        const operand& divisor,
-                        const division_check_options& check) -> void = 0;
+                        const operand& divisor, const runtime_check& check)
+        -> void = 0;
 
     virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
 
@@ -459,13 +449,6 @@ class machine {
 
     // prints 'panic: frame overflow'
     virtual auto emit_frame_overflow_handler() -> void = 0;
-
-    // emits both versions and keeps the one with less code, the first on ties
-    virtual auto
-    emit_most_efficient(const token& src_loc_tk, const size_t indent,
-                        const std::function_ref<void()> emit_without_scratch,
-                        const std::function_ref<void()> emit_with_scratch)
-        -> void = 0;
 
     // prints 'panic: overflow', with the line when 'with_line'
     virtual auto emit_overflow_failure_handler(const bool with_line)
@@ -547,7 +530,7 @@ class machine {
     virtual auto multiply(const token& src_loc_tk, const size_t indent,
                           const operand& product, const operand& factor,
                           const bool reuse_source = {},
-                          const overflow_check_options& check = {}) -> void = 0;
+                          const runtime_check& check = {}) -> void = 0;
 
     virtual auto read(const token& src_loc_tk, const size_t indent,
                       const operand& dst, const operand& descriptor,
@@ -600,7 +583,7 @@ class machine {
     // type of 'dst' jump to the shift failure handler
     virtual auto shift(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
-                       const operand& count, const shift_check_options& check)
+                       const operand& count, const runtime_check& check)
         -> void = 0;
 
     // the register that carries the address of one slot of a call, empty when
@@ -615,7 +598,7 @@ class machine {
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
-                       const overflow_check_options& check = {}) -> void = 0;
+                       const runtime_check& check = {}) -> void = 0;
 
     // 'dat' is where the variables base register points, unless it points past
     // the 'vars' label, then this is the distance
@@ -712,6 +695,30 @@ class machine {
                         std::function_ref<bool(int64_t&)>{next});
     }
 
+    // emits both versions and keeps the one with less code, the first on ties;
+    // both are buffered to be compared, even when output is otherwise written
+    // as emitted
+    auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
+                             const std::function_ref<void()> emit_first,
+                             const std::function_ref<void()> emit_second)
+        -> void {
+
+        assembler& output{target_assembler()};
+
+        output.emit_buffered([&] -> void {
+            assembler::version_choice choice{
+                output.choose_smaller(emit_first, emit_second),
+            };
+
+            comment(src_loc_tk, indent,
+                    "smaller of two versions of {} and {} instructions",
+                    choice.first_instruction_count,
+                    choice.second_instruction_count);
+
+            output.append(std::move(choice.kept));
+        });
+    }
+
     // the report of the use of registers is kept for 'register_peak_report'
     auto enable_register_report() -> void { trace_.enable(); }
 
@@ -791,13 +798,12 @@ class machine {
         target_assembler().add_separator_newline();
     }
 
-    auto set_builtin_types(const type& t_i64, const type& t_i32,
-                           const type& t_i16, const type& t_i8) -> void {
-
-        type_i64_ = &t_i64;
-        type_i32_ = &t_i32;
-        type_i16_ = &t_i16;
-        type_i8_ = &t_i8;
+    // the machine is made before the program that owns the types
+    auto set_builtin_types(const builtin_type_set& types) -> void {
+        type_i64_ = types.i64;
+        type_i32_ = types.i32;
+        type_i16_ = types.i16;
+        type_i8_ = types.i8;
     }
 
     // the image file that the sector functions read and write on targets with

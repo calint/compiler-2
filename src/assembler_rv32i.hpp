@@ -542,20 +542,6 @@ class assembler_rv32i final : public assembler {
                         {});
     }
 
-    // keeps the version with less code, the first on ties
-    auto emit_smaller(const std::function_ref<void()> emit_first,
-                      const std::function_ref<void()> emit_second) -> void {
-
-        std::vector<line> first{capture(emit_first)};
-        std::vector<line> second{capture(emit_second)};
-
-        std::vector<line>& kept{
-            code_size_of(first) <= code_size_of(second) ? first : second,
-        };
-
-        append(std::move(kept));
-    }
-
     auto globl(const std::string_view name) -> void {
         add_text(std::format(".globl {}", name));
     }

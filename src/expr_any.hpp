@@ -76,8 +76,8 @@ class expr_any final : public statement {
         if (tz.is_peek_char('"')) {
             string_tk_ = tz.next_token();
 
-            array_count_ = string_array_count(tc.get_type_i8(), string_tk_, tp,
-                                              array_count_);
+            array_count_ = string_array_count(tc.builtins().i8(), string_tk_,
+                                              tp, array_count_);
 
             return;
         }
@@ -795,9 +795,6 @@ class expr_any final : public statement {
                     tc,
                     pos_tk,
                     tz,
-                    false,
-                    {},
-                    {},
                     std::make_unique<stmt_builtin_convert>(tc, tk),
                 };
             }

@@ -172,7 +172,7 @@ class stmt_def_var final : public statement {
         }
 
         is_array_ = true;
-        set_type(is_string ? tc.get_type_i8() : array_element_type(tc, tz));
+        set_type(is_string ? tc.builtins().i8() : array_element_type(tc, tz));
 
         // later statements read the size while parsing, e.g. 'var b = a'
         token bracket_tk;
@@ -188,7 +188,7 @@ class stmt_def_var final : public statement {
             // e.g. the '[' of 'var a = i8[]{}', a string has no bracket
             throw compiler_exception{
                 bracket_tk.is_empty() ? name_tk_ : bracket_tk,
-                "expected array size greater than 0",
+                "an empty array needs a size",
             };
         }
     }

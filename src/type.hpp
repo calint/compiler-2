@@ -44,6 +44,17 @@ struct byte_range {
 // of its size
 enum class type_kind : uint8_t { user, builtin, boolean };
 
+// the types of the language that the source does not define, owned by the
+// program and given to the front end and the machine
+struct builtin_type_set {
+    const type* void_type{};
+    const type* boolean{};
+    const type* i64{};
+    const type* i32{};
+    const type* i16{};
+    const type* i8{};
+};
+
 class type final {
     std::string name_;
     size_t size_bytes_{};       // total size of type in bytes including padding

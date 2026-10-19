@@ -888,13 +888,8 @@ struct check_options {
         };
     }
 
-    [[nodiscard]] auto division_options() const
-        -> machine::division_check_options {
-
-        return {
-            .enabled{division},
-            .with_line{with_line},
-        };
+    [[nodiscard]] auto division_options() const -> machine::runtime_check {
+        return runtime(division);
     }
 
     // either bound
@@ -902,27 +897,25 @@ struct check_options {
         return bounds_upper or bounds_lower;
     }
 
-    [[nodiscard]] auto overflow_options() const
-        -> machine::overflow_check_options {
-
-        return {
-            .enabled{overflow},
-            .with_line{with_line},
-        };
+    [[nodiscard]] auto overflow_options() const -> machine::runtime_check {
+        return runtime(overflow);
     }
 
-    [[nodiscard]] auto overlap_options() const
-        -> machine::overlap_check_options {
-
-        return {
-            .enabled{overlap},
-            .with_line{with_line},
-        };
+    [[nodiscard]] auto overlap_options() const -> machine::runtime_check {
+        return runtime(overlap);
     }
 
-    [[nodiscard]] auto shift_options() const -> machine::shift_check_options {
+    [[nodiscard]] auto shift_options() const -> machine::runtime_check {
+        return runtime(shift);
+    }
+
+  private:
+    // every run-time check reports the line when '--checks=line' is given
+    [[nodiscard]] auto runtime(const bool enabled) const
+        -> machine::runtime_check {
+
         return {
-            .enabled{shift},
+            .enabled{enabled},
             .with_line{with_line},
         };
     }
@@ -979,6 +972,17 @@ class scope_stack final {
         }
 
         std::unreachable();
+    }
+
+    // the value of the constant 'name', which is declared
+    [[nodiscard]] auto const_value(const std::string_view name) const
+        -> int64_t {
+
+        const const_info* const c{find_const(name)};
+
+        assert(c != nullptr);
+
+        return c->value;
     }
 
     // blocks and loops belong to the function frame below them
@@ -1083,6 +1087,48 @@ class scope_stack final {
 
     [[nodiscard]] auto front() const -> const frame& { return frames_.front(); }
 
+    // the address of what the path 'path' names is computed at run time: its
+    // root is a pointer, or a parameter whose argument has a computed address
+    [[nodiscard]] auto has_computed_address(const std::string_view path) const
+        -> bool {
+
+        std::string_view id_base{ident_info::root_of(path)};
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(id_base)) {
+                return frm.get_var_const_ref(id_base).is_pointer;
+            }
+
+            // aliases are declared at the root frame of a function
+            if (not frm.is_func()) {
+                continue;
+            }
+
+            if (not frm.has_alias(id_base)) {
+                return false;
+            }
+
+            const bound_storage* const storage{
+                std::get_if<bound_storage>(&frm.get_alias(id_base).binding),
+            };
+
+            // note: a constant or a register has no address
+            if (storage == nullptr) {
+                return false;
+            }
+
+            if (not storage->lea.is_empty()) {
+                return true;
+            }
+
+            id_base = ident_info::root_of(storage->path);
+        }
+
+        // a constant is declared by no frame, e.g. in the initializer of a
+        // global variable
+        return false;
+    }
+
     [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
         return find_const(name) != nullptr;
     }
@@ -1128,6 +1174,12 @@ class scope_stack final {
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return frames_.empty(); }
+
+    // the initializer of a global variable is outside of any function
+    [[nodiscard]] auto is_in_func() const -> bool {
+        return std::ranges::any_of(
+            frames_, [](const frame& frm) -> bool { return frm.is_func(); });
+    }
 
     [[nodiscard]] auto is_in_loop_block() const -> bool {
         for (const frame& frm : frames_ | std::views::reverse) {
@@ -1590,51 +1642,40 @@ class storage_layout final {
 // program and the ones the machine decides
 class builtin_types final {
     std::reference_wrapper<const ::machine> machine_;
-    const type* void_{};
-    const type* bool_{};
-    const type* i64_{};
-    const type* i32_{};
-    const type* i16_{};
-    const type* i8_{};
+    builtin_type_set types_;
 
   public:
-    explicit builtin_types(const ::machine& backend) : machine_{backend} {}
+    builtin_types(const ::machine& backend, const builtin_type_set& types)
+        : machine_{backend}, types_{types} {}
 
     [[nodiscard]] auto address() const -> const type& {
-        return machine_.get().address_size_bytes() == sizeof(int32_t) ? *i32_
-                                                                      : *i64_;
+        return machine_.get().address_size_bytes() == sizeof(int32_t)
+                   ? *types_.i32
+                   : *types_.i64;
     }
 
-    [[nodiscard]] auto boolean() const -> const type& { return *bool_; }
+    [[nodiscard]] auto boolean() const -> const type& {
+        return *types_.boolean;
+    }
 
     [[nodiscard]] auto default_type() const -> const type& {
         return machine_.get().default_type();
     }
 
-    [[nodiscard]] auto i8() const -> const type& { return *i8_; }
+    [[nodiscard]] auto i8() const -> const type& { return *types_.i8; }
 
     // 'int' and the names of the builtin integer types
     [[nodiscard]] auto is_integer_name(const std::string_view name) const
         -> bool {
 
-        return name == "int" or name == i8_->name() or name == i16_->name() or
-               name == i32_->name() or name == i64_->name();
+        return name == "int" or name == types_.i8->name() or
+               name == types_.i16->name() or name == types_.i32->name() or
+               name == types_.i64->name();
     }
 
-    auto set_boolean(const type& tpe) -> void { bool_ = &tpe; }
-
-    auto set_integers(const type& t_i64, const type& t_i32, const type& t_i16,
-                      const type& t_i8) -> void {
-
-        i64_ = &t_i64;
-        i32_ = &t_i32;
-        i16_ = &t_i16;
-        i8_ = &t_i8;
+    [[nodiscard]] auto void_type() const -> const type& {
+        return *types_.void_type;
     }
-
-    auto set_void(const type& tpe) -> void { void_ = &tpe; }
-
-    [[nodiscard]] auto void_type() const -> const type& { return *void_; }
 };
 
 // resolves a name to a variable, a register or a constant by walking the
@@ -2189,10 +2230,12 @@ class toc final {
     };
 
     toc(::machine& backend, const source_files& files,
-        const size_t vars_capacity_bytes, const check_options& checks)
+        const builtin_type_set& builtin_set, const size_t vars_capacity_bytes,
+        const check_options& checks)
         : machine_{backend}, locations_{&files},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
-          builtins_{backend}, resolver_{scopes_, backend, generics_, builtins_},
+          builtins_{backend, builtin_set},
+          resolver_{scopes_, backend, generics_, builtins_},
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
           checks_{checks} {}
@@ -2389,7 +2432,7 @@ class toc final {
         }
 
         if (scopes_.has_const(tk.text())) {
-            return get_const(tk.text());
+            return scopes_.const_value(tk.text());
         }
 
         return std::nullopt;
@@ -2487,19 +2530,11 @@ class toc final {
 
     // empty outside of a function, e.g. in the initializer of a global variable
     [[nodiscard]] auto get_call_path() const -> std::string_view {
-        if (not is_in_func()) {
+        if (not scopes_.is_in_func()) {
             return {};
         }
 
         return scopes_.current_func_frame().call_path();
-    }
-
-    [[nodiscard]] auto get_const(const std::string_view name) const -> int64_t {
-        const const_info* const c{scopes_.find_const(name)};
-
-        assert(c != nullptr);
-
-        return c->value;
     }
 
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
@@ -2523,7 +2558,7 @@ class toc final {
                                        std::vector<operand>& lea_registers)
         -> operand {
 
-        if (not src.is_indexed() and not src_info.has_lea() and
+        if (not src.is_indexed() and not src_info.has_known_address() and
             not src_info.is_pointer()) {
 
             return src_info.operand();
@@ -2544,10 +2579,6 @@ class toc final {
         }
 
         return *funcs_.get(reserved_names::main).def;
-    }
-
-    [[nodiscard]] auto get_type_i8() const -> const type& {
-        return builtins_.i8();
     }
 
     [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
@@ -2576,48 +2607,6 @@ class toc final {
         return types_.get(name);
     }
 
-    [[nodiscard]] auto has_lea(const statement& st) const -> bool {
-        if (not st.is_name_or_literal()) {
-            return false;
-        }
-
-        std::string_view id_base{ident_info::root_of(st.name_or_literal())};
-
-        for (const frame& frm : scopes_.frames() | std::views::reverse) {
-            if (frm.has_var(id_base)) {
-                return frm.get_var_const_ref(id_base).is_pointer;
-            }
-
-            // aliases are declared at the root frame of a function
-            if (not frm.is_func()) {
-                continue;
-            }
-
-            if (not frm.has_alias(id_base)) {
-                return false;
-            }
-
-            const bound_storage* const storage{
-                std::get_if<bound_storage>(&frm.get_alias(id_base).binding),
-            };
-
-            // note: a constant or a register has no address
-            if (storage == nullptr) {
-                return false;
-            }
-
-            if (not storage->lea.is_empty()) {
-                return true;
-            }
-
-            id_base = ident_info::root_of(storage->path);
-        }
-
-        // a constant is declared by no frame, e.g. in the initializer of a
-        // global variable
-        return false;
-    }
-
     // whether the backend passes the address of the receiver of a method in a
     // register
     [[nodiscard]] auto has_slot_register() const -> bool {
@@ -2626,13 +2615,6 @@ class toc final {
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name) or generics_.has_func(name);
-    }
-
-    // the initializer of a global variable is outside of any function
-    [[nodiscard]] auto is_in_func() const -> bool {
-        return std::ranges::any_of(
-            scopes_.frames(),
-            [](const frame& frm) -> bool { return frm.is_func(); });
     }
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
@@ -2728,16 +2710,6 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
-
-    auto set_builtin_types(const type& t_i64, const type& t_i32,
-                           const type& t_i16, const type& t_i8) -> void {
-
-        builtins_.set_integers(t_i64, t_i32, t_i16, t_i8);
-    }
-
-    auto set_type_bool(const type& tpe) -> void { builtins_.set_boolean(tpe); }
-
-    auto set_type_void(const type& tpe) -> void { builtins_.set_void(tpe); }
 
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const

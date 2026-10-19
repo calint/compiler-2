@@ -30,7 +30,8 @@
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
 - Backend access: always `machine& x{tc.machine()};`, even for one use, never
-  `tc.machine().call(...)`; just before its use, blank line around.
+  `tc.machine().call(...)`; just before its use, blank line around;
+  `const machine& x{tc.machine()};` when clang-tidy asks for `const`.
 
 ### Blank lines
 

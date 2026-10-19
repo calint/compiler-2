@@ -22,7 +22,7 @@
 //   <mode>     print one special program on stdout instead (parts 9 and 10):
 //              'noninline', 'frame-checks', 'long-loop', 'far-jumps',
 //              'far-jumps-optimized', 'far-foo', 'far-foo-optimized', 'bulk',
-//              'strings-syscall', 'bounds-matrix' and 'bounds-silent'
+//              'strings-syscall', 'bounds-matrix' and 'bounds-no-line'
 //
 // Every check is a function named after the behavior it shows. Checks that
 // differ only in data are rows of a table.
@@ -118,6 +118,19 @@ const type half{"i16", 2, type_kind::builtin};
 const type byte{"i8", 1, type_kind::builtin};
 const type boolean{"bool", 1, type_kind::boolean};
 
+// the built-in types the checks give the backend and the front end, the
+// front end checks need no 'void' of its own
+auto test_types() -> builtin_type_set {
+    return {
+        .void_type{&integer},
+        .boolean{&boolean},
+        .i64{&integer64},
+        .i32{&integer},
+        .i16{&half},
+        .i8{&byte},
+    };
+}
+
 // the diagnostics of the rejected calls need a real position
 const token source_tk{token::position(0, 0, 1)};
 
@@ -147,7 +160,7 @@ struct captured_rv32i {
     machine_rv32i backend{&stream};
 
     captured_rv32i() {
-        backend.set_builtin_types(integer64, integer, half, byte);
+        backend.set_builtin_types(test_types());
     }
 
     // the text that 'emit' adds, the output is empty again afterwards
@@ -167,7 +180,7 @@ struct captured_x86_64 {
     machine_x86_64 backend{&output, {}};
 
     captured_x86_64() {
-        backend.set_builtin_types(integer64, integer, half, byte);
+        backend.set_builtin_types(test_types());
     }
 };
 
@@ -669,15 +682,23 @@ auto check_data_takes_no_code_offset() -> void {
            "beq a0, a1, end\n.data\n" + words + ".text\nend:\n");
 }
 
-// 'emit_smaller' keeps the smaller version, a tie keeps the first
+// the version 'choose_smaller' keeps, added to 'assembler'
+auto emit_smaller(assembler_rv32i& assembler,
+                  const std::function_ref<void()> emit_first,
+                  const std::function_ref<void()> emit_second) -> void {
+
+    assembler.append(assembler.choose_smaller(emit_first, emit_second).kept);
+}
+
+// 'choose_smaller' keeps the smaller version, a tie keeps the first
 auto check_smaller_version_kept() -> void {
     assembler_rv32i assembler;
 
-    assembler.emit_smaller([&] { add_padding(assembler, 2); },
-                           [&] { assembler.addi(0, "a0", "a0", 1); });
+    emit_smaller(assembler, [&] { add_padding(assembler, 2); },
+                 [&] { assembler.addi(0, "a0", "a0", 1); });
 
-    assembler.emit_smaller([&] { assembler.sw(0, "a0", 0, "sp"); },
-                           [&] { add_padding(assembler, 1); });
+    emit_smaller(assembler, [&] { assembler.sw(0, "a0", 0, "sp"); },
+                 [&] { add_padding(assembler, 1); });
 
     assert(resolved_text(assembler) == "addi a0, a0, 1\nsw a0, 0(sp)\n");
 }
@@ -686,11 +707,12 @@ auto check_smaller_version_kept() -> void {
 auto check_nested_version_choice() -> void {
     assembler_rv32i assembler;
 
-    assembler.emit_smaller(
+    emit_smaller(
+        assembler,
         [&] {
             assembler.lw(0, "a0", 0, "sp");
-            assembler.emit_smaller([&] { add_padding(assembler, 2); },
-                                   [&] { assembler.addi(0, "a0", "a0", 1); });
+            emit_smaller(assembler, [&] { add_padding(assembler, 2); },
+                         [&] { assembler.addi(0, "a0", "a0", 1); });
         },
         [&] { add_padding(assembler, 3); });
 
@@ -701,8 +723,8 @@ auto check_nested_version_choice() -> void {
 auto check_jump_in_kept_version_grows() -> void {
     assembler_rv32i assembler;
 
-    assembler.emit_smaller(
-        [&] { add_jump(assembler, "beq", "a0, a1", "end", "t0"); },
+    emit_smaller(
+        assembler, [&] { add_jump(assembler, "beq", "a0, a1", "end", "t0"); },
         [&] { add_padding(assembler, 2); });
 
     add_padding(assembler, 1100);
@@ -740,7 +762,7 @@ auto check_equal_size_choice() -> void {
          {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
         machine_rv32i backend{&output, {}, jumps};
-        backend.set_builtin_types(integer64, integer, half, byte);
+        backend.set_builtin_types(test_types());
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -761,7 +783,12 @@ auto check_equal_size_choice() -> void {
         backend.finish();
         backend.write_assembly(output);
 
-        assert(output.str().contains("li a0, 2047\naddi a0, a1, 0\n"));
+        // note: each choice is commented with the sizes of both versions
+        assert(output.str().contains(
+            "# smaller of two versions of 1 and 1 instructions\n"
+            "li a0, 2047\n"
+            "# smaller of two versions of 2 and 1 instructions\n"
+            "addi a0, a1, 0\n"));
     }
 }
 
@@ -769,7 +796,7 @@ auto check_equal_size_choice() -> void {
 auto check_backend_jump_optimization() -> void {
     std::ostringstream output;
     machine_rv32i backend{&output, {}, assembler::jump_mode::optimized};
-    backend.set_builtin_types(integer64, integer, half, byte);
+    backend.set_builtin_types(test_types());
     backend.start();
 
     const operand left{operand::reg("a0", integer)};
@@ -873,7 +900,7 @@ struct located_rv32i {
 
     located_rv32i() : backend{&comments, &files} {
         files.add("test.baz", "first\n    value");
-        backend.set_builtin_types(integer64, integer, half, byte);
+        backend.set_builtin_types(test_types());
     }
 };
 
@@ -1480,7 +1507,7 @@ auto check_shifts() -> void {
                              const operand& count) -> std::string {
         return rv32i.emitted([&] {
             backend.shift(token{}, 0, op_of(operation), value, count,
-                          machine::shift_check_options{});
+                          machine::runtime_check{});
         });
     };
 
@@ -1504,7 +1531,7 @@ auto check_shifts() -> void {
                 [&] {
                     backend.shift(source_tk, 0, op_of(operation), value,
                                   operand::imm(count, integer),
-                                  machine::shift_check_options{});
+                                  machine::runtime_check{});
                 },
                 "RV32I shift count must be 0 to 31 for 32-bit values"));
             assert(rv32i.output.str().empty());
@@ -1599,7 +1626,7 @@ auto check_zero_operations_and_zero_shifts() -> void {
                     for (const char operation : {'<', '>'}) {
                         backend.shift(token{}, 0, op_of(operation), dst,
                                       operand::imm(0, integer),
-                                      machine::shift_check_options{});
+                                      machine::runtime_check{});
                     }
                 }),
             };
@@ -1650,7 +1677,7 @@ auto check_narrow_values_and_large_constants() -> void {
         return rv32i.emitted([&] {
             backend.shift(token{}, 0, op_of('<'), value,
                           operand::imm(count, integer),
-                          machine::shift_check_options{});
+                          machine::runtime_check{});
         });
     };
 
@@ -1672,7 +1699,7 @@ auto check_narrow_values_and_large_constants() -> void {
                 backend.shift(source_tk, 0, op_of('<'),
                               operand::reg("a0", *narrow),
                               operand::imm(bits, integer),
-                              machine::shift_check_options{});
+                              machine::runtime_check{});
             },
             std::format("RV32I shift count must be 0 to {} for {}-bit values",
                         bits - 1, bits)));
@@ -2298,14 +2325,14 @@ auto check_multiply_divide_routines() -> void {
     for (const char operation : {'*', '/', '%', '+'}) {
         std::ostringstream output;
         machine_rv32i backend{&output};
-        backend.set_builtin_types(integer64, integer, half, byte);
+        backend.set_builtin_types(test_types());
 
         const auto computed = [&](const operand& dst, const operand& src) {
             if (operation == '*') {
                 backend.multiply(token{}, 0, dst, src);
             } else {
                 backend.divide(token{}, 0, op_of(operation), dst, src,
-                               machine::division_check_options{});
+                               machine::runtime_check{});
             }
         };
 
@@ -2433,7 +2460,7 @@ auto generate_noninline() -> void {
     constexpr size_t variables_base_offset{2032};
 
     machine_rv32i backend{&std::cout};
-    backend.set_builtin_types(integer64, integer, half, byte);
+    backend.set_builtin_types(test_types());
     backend.start();
 
     hand_written(backend, "    addi sp, sp, -128\n    sw sp, 124(sp)");
@@ -2532,7 +2559,7 @@ auto generate_frame_checks() -> void {
     constexpr int vars_size_bytes{256};
 
     machine_rv32i backend{&std::cout};
-    backend.set_builtin_types(integer64, integer, half, byte);
+    backend.set_builtin_types(test_types());
     backend.start();
 
     // 's3' is where the overflow handler continues
@@ -2615,7 +2642,7 @@ auto generate_long_loop() -> void {
     constexpr int64_t iteration_count{3};
 
     machine_rv32i backend{&std::cout};
-    backend.set_builtin_types(integer64, integer, half, byte);
+    backend.set_builtin_types(test_types());
     backend.start();
     hand_written(backend, "    addi sp, sp, -16");
 
@@ -2659,7 +2686,7 @@ auto generate_long_loop() -> void {
 // executed in every direction
 auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
     machine_rv32i backend{&std::cout, {}, jumps};
-    backend.set_builtin_types(integer64, integer, half, byte);
+    backend.set_builtin_types(test_types());
     backend.start();
 
     // buffered output must come from the backend, so pad with 'xori' on a
@@ -2906,9 +2933,9 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
                  parameters.index, parameters.count);
 }
 
-// 'bounds-silent': the failure handler without a line exits with status 255
-// and prints nothing
-auto generate_bounds_silent(machine_rv32i& backend) -> void {
+// 'bounds-no-line': the failure handler without a line prints
+// 'panic: bounds' and exits with status 255
+auto generate_bounds_no_line(machine_rv32i& backend) -> void {
     std::println("    li a0, -1");
     backend.check_bounds(token{}, 1, operand::reg("a0", integer), 4, false, {},
                          {.upper{true}, .lower{true}, .with_line{}});
@@ -2960,13 +2987,13 @@ auto generate_bounds_matrix(machine_rv32i& backend) -> void {
     backend.exit(token{}, 1, operand::imm(1, integer));
 }
 
-auto generate_bounds(const bool silent) -> void {
+auto generate_bounds(const bool no_line) -> void {
     machine_rv32i backend{&std::cout};
-    backend.set_builtin_types(integer64, integer, half, byte);
+    backend.set_builtin_types(test_types());
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
-    if (silent) {
-        generate_bounds_silent(backend);
+    if (no_line) {
+        generate_bounds_no_line(backend);
     } else {
         generate_bounds_matrix(backend);
     }
@@ -3135,7 +3162,7 @@ auto emit_division_tests(machine_rv32i& backend) -> void {
                                                operand::imm(initial, integer));
                             backend.divide(token{}, 1, op_of(operation), dst,
                                            source_at(place, divisor, integer),
-                                           machine::division_check_options{});
+                                           machine::runtime_check{});
                             backend.copy_value(token{}, 1,
                                                operand::reg("a0", integer),
                                                dst);
@@ -3190,7 +3217,7 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
             backend.multiply(token{}, 1, dst, src);
         } else {
             backend.divide(token{}, 1, op_of(operation), dst, src,
-                           machine::division_check_options{});
+                           machine::runtime_check{});
         }
 
         for (const auto [index, reg] : std::views::enumerate(live)) {
@@ -3218,7 +3245,7 @@ auto emit_division_same_address(machine_rv32i& backend) -> void {
         const operand address{operand::mem("t0", {}, 1, 0, integer)};
 
         backend.divide(token{}, 1, op_of(operation), address, address,
-                       machine::division_check_options{});
+                       machine::runtime_check{});
         std::println("    lw a0, 0(t0)");
         emit_expect("a0", operation == '/' ? 1 : 0);
         backend.finish();
@@ -3695,7 +3722,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
                                        operand::imm(-16, integer));
                     backend.shift(token{}, 1, op_of(operation), dst,
                                   source_at(place, 3, byte),
-                                  machine::shift_check_options{});
+                                  machine::runtime_check{});
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
                                        dst);
 
@@ -3716,7 +3743,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
     // the count is the shifted register itself
     std::println("    li a0, 3");
     backend.shift(token{}, 1, op_of('<'), operand::reg("a0", integer),
-                  operand::reg("a0", integer), machine::shift_check_options{});
+                  operand::reg("a0", integer), machine::runtime_check{});
     emit_expect("a0", 24);
     backend.finish();
 }
@@ -3926,7 +3953,7 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 // separately (division by zero, bounds failures) with the failure path
 auto generate_runtime_program() -> void {
     machine_rv32i backend{&std::cout};
-    backend.set_builtin_types(integer64, integer, half, byte);
+    backend.set_builtin_types(test_types());
 
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
@@ -3954,7 +3981,7 @@ auto generate_runtime_program() -> void {
 
     std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, op_of('/'), operand::reg("a0", integer),
-                   operand::imm(0, integer), machine::division_check_options{});
+                   operand::imm(0, integer), machine::runtime_check{});
     backend.exit(token{}, 1, operand::imm(0, integer));
 
     // the line of a failed check is printed, also the largest one
@@ -3993,13 +4020,11 @@ struct front_end {
     token at{0, {}, 0, {}, 0, {}, 1, false};
 
     explicit front_end(const size_t vars_capacity_bytes_in)
-        : tc{backend, files, vars_capacity_bytes_in, check_options{}} {
+        : tc{backend, files, test_types(), vars_capacity_bytes_in,
+             check_options{}} {
 
         files.add("test.baz", "");
-        backend.set_builtin_types(integer64, integer, half, byte);
-        tc.set_builtin_types(integer64, integer, half, byte);
-        tc.set_type_bool(boolean);
-        tc.set_type_void(integer);
+        backend.set_builtin_types(test_types());
         tc.begin_compile();
         tc.enter_block();
     }
@@ -4204,8 +4229,8 @@ auto main(const int argc, const char* argv[]) -> int {
         generate_bulk();
     } else if (mode == "strings-syscall") {
         generate_strings_syscall();
-    } else if (mode == "bounds-matrix" or mode == "bounds-silent") {
-        generate_bounds(mode == "bounds-silent");
+    } else if (mode == "bounds-matrix" or mode == "bounds-no-line") {
+        generate_bounds(mode == "bounds-no-line");
     } else {
         run_host_checks();
         generate_runtime_program();

@@ -667,7 +667,10 @@ inline auto expr_type::write_builtin_field(
     // the paths below that copy directly skip the check in 'expr_any'
     src.assert_not_narrowed(tc, field.type());
 
-    if (src.is_expression() or (src.is_name_or_literal() and tc.has_lea(src))) {
+    if (src.is_expression() or
+        (src.is_name_or_literal() and
+         tc.scopes().has_computed_address(src.name_or_literal()))) {
+
         src.compile(tc, indent, dst.with_operand(dst_operand));
         return;
     }

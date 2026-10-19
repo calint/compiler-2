@@ -492,8 +492,7 @@ class machine_rv32i : public machine {
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
                       const arithmetic_operator operation, const operand& dst,
-                      const operand& src,
-                      const overflow_check_options& check = {})
+                      const operand& src, const runtime_check& check = {})
         -> void override {
 
         assert(operation == arithmetic_operator::add or
@@ -1132,7 +1131,7 @@ class machine_rv32i : public machine {
 
     auto divide(const token& src_loc_tk, const size_t indent,
                 const arithmetic_operator operation, const operand& dst,
-                const operand& divisor, const division_check_options& check)
+                const operand& divisor, const runtime_check& check)
         -> void override {
 
         assert(operation == arithmetic_operator::divide or
@@ -1151,13 +1150,8 @@ class machine_rv32i : public machine {
     }
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
-        label(0, bounds_failure_handler_label);
-
-        if (with_line) {
-            emit_line_failure(".Lbaz_bounds_message", "panic: bounds at line ");
-        }
-
-        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
+        emit_named_failure_handler(bounds_failure_handler_label, "bounds",
+                                   with_line);
     }
 
     auto emit_data(const size_t element_size_bytes, const int64_t value)
@@ -1199,20 +1193,6 @@ class machine_rv32i : public machine {
         assembler_.ascii(message);
         assembler_.data(1, newline);
         assembler_.switch_section(section::text);
-    }
-
-    auto
-    emit_most_efficient([[maybe_unused]] const token& src_loc_tk,
-                        [[maybe_unused]] const size_t indent,
-                        const std::function_ref<void()> emit_without_scratch,
-                        const std::function_ref<void()> emit_with_scratch)
-        -> void override {
-
-        // both versions are buffered to compare sizes, even when output is
-        // otherwise written as emitted
-        assembler_.emit_buffered([&] -> void {
-            assembler_.emit_smaller(emit_without_scratch, emit_with_scratch);
-        });
     }
 
     auto emit_overflow_failure_handler(const bool with_line) -> void override {
@@ -1419,7 +1399,7 @@ class machine_rv32i : public machine {
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
                   [[maybe_unused]] const bool reuse_source = {},
-                  const overflow_check_options& check = {}) -> void override {
+                  const runtime_check& check = {}) -> void override {
 
         validate_scalar(src_loc_tk, product.type_ref());
         validate_scalar(src_loc_tk, factor.type_ref());
@@ -1449,7 +1429,7 @@ class machine_rv32i : public machine {
                 multiply_helper_used_ = true;
             }
 
-            const division_check_options no_division_check;
+            const runtime_check no_division_check;
 
             call_arithmetic_helper(src_loc_tk, indent, product, factor, false,
                                    false, no_division_check, check);
@@ -1603,7 +1583,7 @@ class machine_rv32i : public machine {
 
     auto shift(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const operand& count, const shift_check_options& check)
+               const operand& count, const runtime_check& check)
         -> void override {
 
         assert(operation == arithmetic_operator::shift_left or
@@ -1695,7 +1675,7 @@ class machine_rv32i : public machine {
 
     auto unary(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const overflow_check_options& check = {}) -> void override {
+               const runtime_check& check = {}) -> void override {
 
         assert(operation == arithmetic_operator::negate or
                operation == arithmetic_operator::complement);
@@ -1947,8 +1927,8 @@ class machine_rv32i : public machine {
 
     auto binary_operation(const token& src_loc_tk, const size_t indent,
                           const op instruction, const operand& dst,
-                          const operand& src,
-                          const overflow_check_options& check = {}) -> void {
+                          const operand& src, const runtime_check& check = {})
+        -> void {
 
         validate_operands(src_loc_tk, dst, src);
 
@@ -1998,8 +1978,8 @@ class machine_rv32i : public machine {
     auto call_arithmetic_helper(const token& src_loc_tk, const size_t indent,
                                 const operand& dst, const operand& source,
                                 const bool division, const bool remainder,
-                                const division_check_options& check,
-                                const overflow_check_options& overflow = {})
+                                const runtime_check& division_check,
+                                const runtime_check& overflow_check = {})
         -> void {
 
         const address_scope scope{*this, dst, source};
@@ -2029,16 +2009,16 @@ class machine_rv32i : public machine {
 
         load_helper_arguments(src_loc_tk, indent, dst, source);
 
-        if (check.enabled) {
+        if (division_check.enabled) {
             check_divisor(src_loc_tk, indent, dst.type_ref().size_bytes(),
-                          check.with_line);
+                          division_check.with_line);
         }
 
         if (division) {
             assembler_.call(indent, ".Lbaz_divide");
-        } else if (overflow.enabled) {
+        } else if (overflow_check.enabled) {
             assembler_.call(indent, ".Lbaz_multiply_checked");
-            check_multiply_result(src_loc_tk, indent, dst, overflow);
+            check_multiply_result(src_loc_tk, indent, dst, overflow_check);
         } else {
             assembler_.call(indent, ".Lbaz_multiply");
         }
@@ -2084,7 +2064,7 @@ class machine_rv32i : public machine {
     auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
                             const operand& src, const operand& dst,
                             const operand& count_bytes,
-                            const overlap_check_options& check) -> void {
+                            const runtime_check& check) -> void {
 
         constexpr local_label passed{
             .name{"1"},
@@ -2174,7 +2154,7 @@ class machine_rv32i : public machine {
     // fits when sign extending its low bits gives it back
     auto check_fits_width(const token& src_loc_tk, const size_t indent,
                           const operand& value, const size_t width_bytes,
-                          const overflow_check_options& check) -> void {
+                          const runtime_check& check) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -2231,8 +2211,8 @@ class machine_rv32i : public machine {
     // after the checked multiply helper: the flag is in 'a1', the product in
     // 'a0' must fit the width of the destination
     auto check_multiply_result(const token& src_loc_tk, const size_t indent,
-                               const operand& dst,
-                               const overflow_check_options& check) -> void {
+                               const operand& dst, const runtime_check& check)
+        -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -2269,7 +2249,7 @@ class machine_rv32i : public machine {
     // the minimum of the width has no positive counterpart
     auto check_negate(const token& src_loc_tk, const size_t indent,
                       const operand& value, const size_t width_bytes,
-                      const overflow_check_options& check) -> void {
+                      const runtime_check& check) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -2301,7 +2281,7 @@ class machine_rv32i : public machine {
     // a negative count is a large unsigned one, the line is passed in 'a0'
     auto check_shift_count(const token& src_loc_tk, const size_t indent,
                            const operand& amount, const type& dst_type,
-                           const shift_check_options& check) -> void {
+                           const runtime_check& check) -> void {
 
         constexpr local_label pass{
             .name{"1"},
@@ -3261,8 +3241,7 @@ class machine_rv32i : public machine {
                                    const operand& value,
                                    const size_t width_bytes,
                                    const std::optional<int32_t> constant,
-                                   const overflow_check_options& check)
-        -> void {
+                                   const runtime_check& check) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -3347,11 +3326,13 @@ class machine_rv32i : public machine {
     // immediate: the first operand is 'result - second' for an add and
     // 'result + second' for a subtract, the result is below it exactly when
     // the second operand is negative for an add or positive for a subtract
-    auto emit_checked_with_one_register(
-        const token& src_loc_tk, const size_t indent, const op instruction,
-        const operand& src, const operand& value,
-        const std::optional<int32_t> constant,
-        const overflow_check_options& check) -> void {
+    auto emit_checked_with_one_register(const token& src_loc_tk,
+                                        const size_t indent,
+                                        const op instruction,
+                                        const operand& src,
+                                        const operand& value,
+                                        const std::optional<int32_t> constant,
+                                        const runtime_check& check) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -3918,7 +3899,7 @@ class machine_rv32i : public machine {
 
     // jumps to the overflow failure handler, the line is passed in 'a0'
     auto fail_on_overflow(const token& src_loc_tk, const size_t indent,
-                          const overflow_check_options& check) -> void {
+                          const runtime_check& check) -> void {
 
         if (check.with_line) {
             assembler_.li(indent, "a0", src_loc_tk.at_line());
@@ -4215,7 +4196,7 @@ class machine_rv32i : public machine {
         if (factor_info.kind == factor_kind::power_of_two) {
             shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
                   operand::imm(factor_info.shift, default_type()),
-                  shift_check_options{});
+                  runtime_check{});
 
             return;
         }
@@ -4439,7 +4420,7 @@ class machine_rv32i : public machine {
                            const arithmetic_operator operation,
                            const operand& dst, const operand& count,
                            const loaded_destination& loaded,
-                           const shift_check_options& check) -> void {
+                           const runtime_check& check) -> void {
 
         const operand amount{
             source_register(src_loc_tk, indent, count, std::nullopt),

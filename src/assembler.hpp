@@ -59,6 +59,14 @@ class assembler {
     // inverts jumps
     enum class jump_mode : uint8_t { resolved, optimized };
 
+    // changes made by 'optimize_jumps'
+    struct optimization_counts {
+        size_t jumps_to_next{};
+        size_t unreachable_jumps{};
+        size_t same_outcome_branches{};
+        size_t inverted_branches{};
+    };
+
   protected:
     struct jump_info {
         std::string mnemonic;
@@ -69,7 +77,6 @@ class assembler {
         std::string scratch;
     };
 
-  public:
     struct line {
         std::string text;
         std::string label;
@@ -85,12 +92,13 @@ class assembler {
         std::optional<size_t> record;
     };
 
-    // changes made by 'optimize_jumps'
-    struct optimization_counts {
-        size_t jumps_to_next{};
-        size_t unreachable_jumps{};
-        size_t same_outcome_branches{};
-        size_t inverted_branches{};
+  public:
+    // two versions of the same code: the one with less code, the first on ties,
+    // and the size of each in instructions
+    struct version_choice {
+        std::vector<line> kept;
+        size_t first_instruction_count{};
+        size_t second_instruction_count{};
     };
 
     // the bodies of one noinline function, valid once jumps are resolved
@@ -179,6 +187,28 @@ class assembler {
         std::vector<line> captured{std::move(captures_.back())};
         captures_.pop_back();
         return captured;
+    }
+
+    // emits both versions apart, nothing is added until the caller appends
+    // the kept one
+    [[nodiscard]] auto
+    choose_smaller(const std::function_ref<void()> emit_first,
+                   const std::function_ref<void()> emit_second)
+        -> version_choice {
+
+        std::vector<line> first{capture(emit_first)};
+        std::vector<line> second{capture(emit_second)};
+
+        const size_t first_size{code_size_of(first)};
+        const size_t second_size{code_size_of(second)};
+
+        std::vector<line>& kept{first_size <= second_size ? first : second};
+
+        return {
+            .kept{std::move(kept)},
+            .first_instruction_count{instructions_in(first_size)},
+            .second_instruction_count{instructions_in(second_size)},
+        };
     }
 
     // 'emit' is buffered even when lines are otherwise written as added, so

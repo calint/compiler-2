@@ -305,7 +305,8 @@ class program final {
     // the main file is the first of 'files', the included ones are added
     program(machine& backend, source_files& files, const size_t vars_size_bytes,
             const check_options& checks)
-        : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
+        : files_{files},
+          tc_{backend, files, builtin_set(), vars_size_bytes, checks} {
 
         if (vars_size_bytes > backend.max_storage_bytes()) {
             throw compiler_exception::file_level(
@@ -331,14 +332,9 @@ class program final {
         tc_.add_type(src_loc_tk, type_bool_);
         tc_.add_type(src_loc_tk, type_void_);
 
-        // the types the front end needs by role
-        tc_.set_type_void(type_void_);
-        tc_.set_type_bool(type_bool_);
-
         machine& x{tc_.machine()};
 
-        tc_.set_builtin_types(type_i64_, type_i32_, type_i16_, type_i8_);
-        x.set_builtin_types(type_i64_, type_i32_, type_i16_, type_i8_);
+        x.set_builtin_types(builtin_set());
 
         // the default type has a name of its own so that it is portable
         tc_.add_type_alias(src_loc_tk, "int", tc_.builtins().default_type());
@@ -427,6 +423,18 @@ class program final {
     }
 
   private:
+    // the types the front end and the machine need by role
+    [[nodiscard]] auto builtin_set() const -> builtin_type_set {
+        return {
+            .void_type{&type_void_},
+            .boolean{&type_bool_},
+            .i64{&type_i64_},
+            .i32{&type_i32_},
+            .i16{&type_i16_},
+            .i8{&type_i8_},
+        };
+    }
+
     auto compile(const size_t indent) -> void {
         tc_.reset_usage();
 

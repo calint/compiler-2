@@ -241,8 +241,8 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        if (not array_info.has_lea() and not array_info.is_pointer() and
-            not ident_.is_indexed()) {
+        if (not array_info.has_known_address() and
+            not array_info.is_pointer() and not ident_.is_indexed()) {
 
             x.address_of(tok(), indent, reg_iter, array_info.operand());
             return;

@@ -956,7 +956,10 @@ class inline_call {
         -> alias_info {
 
         const bool is_reference{
-            not arg.is_expression() and (arg.is_indexed() or tc.has_lea(arg)),
+            not arg.is_expression() and
+                (arg.is_indexed() or
+                 (arg.is_name_or_literal() and
+                  tc.scopes().has_computed_address(arg.name_or_literal()))),
         };
 
         if (is_reference and not arg.get_unary_ops().is_empty()) {
@@ -1771,7 +1774,7 @@ class stmt_call : public expression {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        if (not tc.is_in_func()) {
+        if (not tc.scopes().is_in_func()) {
             throw compiler_exception{
                 tok(), "a global variable cannot be initialized with a call"};
         }
@@ -1829,30 +1832,6 @@ class stmt_call : public expression {
     }
 
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
-
-    [[nodiscard]] auto compile_builtin_arguments(
-        toc& tc, const size_t indent,
-        const std::span<const std::string_view> registers) const
-        -> std::vector<operand> {
-
-        assert(registers.size() == args_.size());
-
-        machine& x{tc.machine()};
-
-        std::vector<operand> args;
-        args.reserve(registers.size());
-
-        for (size_t index{}; index < registers.size(); ++index) {
-            args.push_back(
-                x.alloc_named_register(tok(), indent, registers.at(index),
-                                       tc.builtins().default_type()));
-
-            argument(index).compile(tc, indent,
-                                    destination::of_register(args.back()));
-        }
-
-        return args;
-    }
 
   private:
     // the receiver is the first argument

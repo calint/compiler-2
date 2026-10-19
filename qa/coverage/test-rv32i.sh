@@ -56,8 +56,8 @@ for line in 0 9 123 4294967295; do
     cmp "$TEST_DIR/err" "$TEST_DIR/expected"
 done
 # the bounds matrix finishes without a failure, and the failure handler
-# without line information exits silently
-for mode in bounds-matrix bounds-silent; do
+# without line information prints its message and exits with 255
+for mode in bounds-matrix bounds-no-line; do
     printf 'rv32i bounds: %s\n' "$mode"
     "$SCRIPT_DIR/rv32i-driver" "$mode" > "$TEST_DIR/bounds.s"
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj \
@@ -65,12 +65,13 @@ for mode in bounds-matrix bounds-silent; do
     ld.lld -m elf32lriscv -e _start -o "$TEST_DIR/bounds" "$TEST_DIR/bounds.o"
     status=0
     qemu-riscv32 "$TEST_DIR/bounds" 2> "$TEST_DIR/err" || status=$?
-    expected=0
-    if [ "$mode" = bounds-silent ]; then
-        expected=255
+    if [ "$mode" = bounds-no-line ]; then
+        test "$status" -eq 255
+        printf 'panic: bounds\n' | cmp - "$TEST_DIR/err"
+    else
+        test "$status" -eq 0
+        test ! -s "$TEST_DIR/err"
     fi
-    test "$status" -eq "$expected"
-    test ! -s "$TEST_DIR/err"
 done
 printf 'rv32i address lowering: ok\n'
 # every escape of a string literal reaches the output unchanged

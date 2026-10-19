@@ -387,21 +387,6 @@ class assembler_x86_64 final : public assembler {
         return memory_text;
     }
 
-    // lines other than comments and blank lines, the measure for choosing
-    // between versions of the same code
-    [[nodiscard]] static auto count_instructions(const std::vector<line>& lines)
-        -> size_t {
-
-        size_t count{};
-        for (const line& l : lines) {
-            if (not is_comment_or_blank(l.text)) {
-                ++count;
-            }
-        }
-
-        return count;
-    }
-
   private:
     //
     // overridden methods

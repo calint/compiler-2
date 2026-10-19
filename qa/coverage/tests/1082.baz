@@ -1,0 +1,11 @@
+# a parenthesized condition on the line after its 'not' keeps its indentation
+# when the source is reproduced
+
+func main() {
+    var a = 1
+    if not
+        (a == 2) {
+        exit(1)
+    }
+    exit(0)
+}

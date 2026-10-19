@@ -125,7 +125,9 @@ class ident_info final {
         return elem_path_;
     }
 
-    [[nodiscard]] auto has_lea() const -> bool { return known().has_value(); }
+    [[nodiscard]] auto has_known_address() const -> bool {
+        return known().has_value();
+    }
 
     // e.g. 'p.x', the name as resolved
     [[nodiscard]] auto id() const -> const std::string& { return id_; }
@@ -333,9 +335,6 @@ class destination final {
     bool is_array_{};
     // the elements of an array, an unsized one gets them from the argument
     size_t array_len_{};
-    // a reference to storage that the value may read under another name,
-    // e.g. a 'mut' parameter or the element of a 'foo'
-    bool is_reference_{};
     // the path of the root variable, empty when unknown or the whole variable
     std::optional<access_path> accessed_path_;
 
@@ -344,7 +343,6 @@ class destination final {
         ::operand address;
         bool is_address_known{};
         std::optional<access_path> accessed_path;
-        bool is_reference{};
     };
 
   public:
@@ -401,8 +399,6 @@ class destination final {
 
     [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::none; }
 
-    [[nodiscard]] auto is_reference() const -> bool { return is_reference_; }
-
     [[nodiscard]] auto is_register() const -> bool {
         return kind_ == kind::reg;
     }
@@ -444,7 +440,6 @@ class destination final {
                                  .address{info.operand()},
                                  .is_address_known{},
                                  .accessed_path{},
-                                 .is_reference{},
                              });
     }
 
@@ -461,10 +456,12 @@ class destination final {
         result.type_ptr_ = &info.type_ref();
         result.name_ = info.id();
         result.src_loc_tk_ = info.src_loc_tk();
-        result.is_address_known_ = parts.is_address_known or info.has_lea();
+
+        result.is_address_known_ =
+            parts.is_address_known or info.has_known_address();
+
         result.is_array_ = info.is_array();
         result.array_len_ = info.array_len();
-        result.is_reference_ = parts.is_reference;
         result.accessed_path_ = std::move(parts.accessed_path);
 
         return result;

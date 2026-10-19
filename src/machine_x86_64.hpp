@@ -250,8 +250,7 @@ class machine_x86_64 final : public machine {
 
     auto add_subtract(const token& src_loc_tk, const size_t indent,
                       const arithmetic_operator operation, const operand& dst,
-                      const operand& src,
-                      const overflow_check_options& check = {})
+                      const operand& src, const runtime_check& check = {})
         -> void override {
 
         assert(operation == arithmetic_operator::add or
@@ -739,7 +738,7 @@ class machine_x86_64 final : public machine {
 
     auto divide(const token& src_loc_tk, const size_t indent,
                 const arithmetic_operator operation, const operand& dst,
-                const operand& divisor, const division_check_options& check)
+                const operand& divisor, const runtime_check& check)
         -> void override {
 
         assert(operation == arithmetic_operator::divide or
@@ -762,28 +761,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
-        if (not with_line) {
-            assembler_.label(0, bounds_failure_handler_label);
-            emit_panic_exit();
-            return;
-        }
-
-        // one stub per line sets rbp and enters the handler
-        for (const size_t line : bounds_panic_lines_) {
-            assembler_.label(0, line_panic_label("bounds", line));
-            assembler_.instruction(1, op::mov, "rbp", line);
-            assembler_.jmp(1, bounds_failure_handler_label);
-        }
-
-        assembler_.label(0, bounds_failure_handler_label);
-        emit_panic_message("msg_panic");
-        emit_report_line();
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, "msg_panic");
-        assembler_.string_data("panic: bounds at line ");
-        assembler_.define_length("msg_panic_len", "msg_panic");
-
-        assembler_.switch_section(section::text);
+        emit_line_panic_handler(with_line, "bounds", bounds_panic_lines_,
+                                bounds_failure_handler_label);
     }
 
     auto emit_data(const size_t element_size_bytes, const int64_t value)
@@ -824,40 +803,6 @@ class machine_x86_64 final : public machine {
                                  "msg_frame_overflow");
 
         assembler_.switch_section(section::text);
-    }
-
-    auto
-    emit_most_efficient(const token& src_loc_tk, const size_t indent,
-                        const std::function_ref<void()> emit_without_scratch,
-                        const std::function_ref<void()> emit_with_scratch)
-        -> void override {
-
-        // both versions are buffered to count instructions, even when output
-        // is otherwise written as emitted
-        assembler_.emit_buffered([&] -> void {
-            std::vector<assembler::line> without_scratch{
-                assembler_.capture(emit_without_scratch),
-            };
-
-            std::vector<assembler::line> with_scratch{
-                assembler_.capture(emit_with_scratch),
-            };
-
-            const size_t without_count{
-                assembler_x86_64::count_instructions(without_scratch),
-            };
-
-            const size_t with_count{
-                assembler_x86_64::count_instructions(with_scratch),
-            };
-
-            comment(src_loc_tk, indent,
-                    "instructions without scratch register {}, with {}",
-                    without_count, with_count);
-
-            assembler_.append(std::move(
-                without_count <= with_count ? without_scratch : with_scratch));
-        });
     }
 
     auto emit_overflow_failure_handler(const bool with_line) -> void override {
@@ -1064,8 +1009,8 @@ class machine_x86_64 final : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  const bool reuse_source = {},
-                  const overflow_check_options& check = {}) -> void override {
+                  const bool reuse_source = {}, const runtime_check& check = {})
+        -> void override {
 
         if (multiply_by_constant(src_loc_tk, indent, product, factor, check)) {
             return;
@@ -1260,7 +1205,7 @@ class machine_x86_64 final : public machine {
 
     auto shift(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const operand& count, const shift_check_options& check)
+               const operand& count, const runtime_check& check)
         -> void override {
 
         assert(operation == arithmetic_operator::shift_left or
@@ -1330,7 +1275,7 @@ class machine_x86_64 final : public machine {
 
     auto unary(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
-               const overflow_check_options& check = {}) -> void override {
+               const runtime_check& check = {}) -> void override {
 
         if (operation == arithmetic_operator::complement) {
             not_op(src_loc_tk, indent, dst);
@@ -1629,7 +1574,7 @@ class machine_x86_64 final : public machine {
     // jumps to the overflow failure handler when the instruction before set
     // the overflow flag
     auto branch_on_overflow(const size_t indent, const token& src_loc_tk,
-                            const overflow_check_options& check) -> void {
+                            const runtime_check& check) -> void {
 
         assembler_.jcc(indent, condition::o,
                        failure_label("overflow", overflow_panic_lines_,
@@ -1706,7 +1651,7 @@ class machine_x86_64 final : public machine {
     // width, which fits when the low byte sign extended is the same value
     auto check_byte_product(const token& src_loc_tk, const size_t indent,
                             const operand& left, const operand& right,
-                            const overflow_check_options& check) -> void {
+                            const runtime_check& check) -> void {
 
         const operand low_byte{
             make_register_operand(left.base_register(), builtin_type_i8()),
@@ -1726,7 +1671,7 @@ class machine_x86_64 final : public machine {
     // not zero and below the count jumps to the failure handler, the copy
     // would overwrite source bytes it has not read yet
     auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
-                            const overlap_check_options& check) -> void {
+                            const runtime_check& check) -> void {
 
         comment(src_loc_tk, indent, "overlap check begin");
 
@@ -1803,8 +1748,8 @@ class machine_x86_64 final : public machine {
     // a count in 'rcx' below zero or not below the width jumps to the failure
     // handler, a negative count is a large unsigned one
     auto check_shift_count(const token& src_loc_tk, const size_t indent,
-                           const type& dst_type,
-                           const shift_check_options& check) -> void {
+                           const type& dst_type, const runtime_check& check)
+        -> void {
 
         comment(src_loc_tk, indent, "shift check begin");
 
@@ -2298,8 +2243,7 @@ class machine_x86_64 final : public machine {
     // idiv takes the divisor as a qword register or memory operand, 'rax'
     // holds the dividend, 'rdx' is free until it is extended
     auto emit_signed_divide(const token& src_loc_tk, const size_t indent,
-                            const operand& divisor,
-                            const division_check_options& check,
+                            const operand& divisor, const runtime_check& check,
                             const size_t dividend_size_bytes) -> void {
 
         if (not divisor.is_immediate() and
@@ -2514,7 +2458,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto
     multiply_by_constant(const token& src_loc_tk, const size_t indent,
                          const operand& product, const operand& factor,
-                         const overflow_check_options& check) -> bool {
+                         const runtime_check& check) -> bool {
 
         const std::optional<uint64_t> bits{immediate_bits(factor)};
 

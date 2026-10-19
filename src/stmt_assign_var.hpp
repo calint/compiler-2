@@ -24,7 +24,6 @@ class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;
     token equals_tk_;
-    size_t array_count_{};
 
     // a read of a variable in the value
     struct value_read {
@@ -39,8 +38,6 @@ class stmt_assign_var final : public statement {
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
 
-        const size_t array_count{stmt_ident_.array_count()};
-
         const ident_info dst_info{tc.make_ident_info(stmt_ident_)};
 
         assert_not_read_only(tok(), "assign to", stmt_ident_.name_or_literal(),
@@ -51,12 +48,13 @@ class stmt_assign_var final : public statement {
         // the value is parsed as the type of the destination, e.g. 'p1 = p2' or
         // 'a = {1, 2}' or 'x = y + 1'
         expr_ = {
-            tc,         tz, dst_info.type_ref(), false, stmt_ident_.is_array(),
-            array_count};
-
-        if (array_count == 0) {
-            array_count_ = expr_.array_count();
-        }
+            tc,
+            tz,
+            dst_info.type_ref(),
+            false,
+            stmt_ident_.is_array(),
+            stmt_ident_.array_count(),
+        };
     }
 
     stmt_assign_var() = default;
@@ -90,9 +88,7 @@ class stmt_assign_var final : public statement {
         // what the destination resolves to
         const ident_info var_info{tc.make_ident_info(stmt_ident_)};
 
-        const bool is_reference{is_reference_destination(tc, var_info)};
-
-        assert_reference_not_read(tc, is_reference);
+        assert_reference_not_read(tc, var_info);
 
         if (var_info.is_const()) {
             throw compiler_exception{
@@ -118,11 +114,10 @@ class stmt_assign_var final : public statement {
             tc.get_lea_operand(indent, stmt_ident_, var_info, lea_registers),
         };
 
-        // an array, an indexed element or a loaded pointer is written at the
-        // address computed here
+        // an indexed element or a loaded pointer is written at the address
+        // computed here
         const bool is_address_known{
-            array_count_ > 0 or stmt_ident_.is_indexed() or
-                var_info.is_pointer(),
+            stmt_ident_.is_indexed() or var_info.is_pointer(),
         };
 
         const destination var_dst{
@@ -132,7 +127,6 @@ class stmt_assign_var final : public statement {
                     .address{address},
                     .is_address_known{is_address_known},
                     .accessed_path{stmt_ident_.accessed_path()},
-                    .is_reference{is_reference},
                 }),
         };
 
@@ -163,10 +157,12 @@ class stmt_assign_var final : public statement {
     // a destination that names storage under another name, e.g. a parameter or
     // the element of a 'foo', may be read by the value under that name, only
     // for '--checks=alias'
-    auto assert_reference_not_read(const toc& tc, const bool is_reference) const
-        -> void {
+    auto assert_reference_not_read(const toc& tc,
+                                   const ident_info& var_info) const -> void {
 
-        if (not tc.checks().alias or not is_reference) {
+        if (not tc.checks().alias or
+            not is_reference_destination(tc, var_info)) {
+
             return;
         }
 

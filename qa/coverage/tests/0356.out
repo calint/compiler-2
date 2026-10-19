@@ -1,4 +1,4 @@
 
-0356.baz:3:15: empty arrays require a specified size
+0356.baz:3:15: an empty array needs a size
 dat value = i8[]{}
               ^

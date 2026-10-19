@@ -35,8 +35,8 @@ class unary_ops final {
 
     // applies the ops to 'dst', the innermost first
     auto compile(machine& x, const size_t indent, const token& src_loc_tk,
-                 const operand& dst,
-                 const machine::overflow_check_options& check) const -> void {
+                 const operand& dst, const machine::runtime_check& check) const
+        -> void {
 
         for (const char o : ops_ | std::views::reverse) {
             x.unary(src_loc_tk, indent,

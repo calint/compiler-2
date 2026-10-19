@@ -3351,3 +3351,7 @@ SRC=1080 && COMPERR
 # an empty string right before the '}' that ends a generic body does not hide
 # that '}' from the skip of the generic text
 SRC=1081 && EXP=7 && RUN
+
+# a parenthesized condition on the line after its 'not' keeps its indentation
+# when the source is reproduced
+SRC=1082 && EXP=1 && RUN

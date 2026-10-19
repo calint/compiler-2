@@ -173,7 +173,7 @@ class stmt_def_dat final : public statement {
 
         if (el.array_count == 0) {
             throw compiler_exception{open_bracket_tk_,
-                                     "empty arrays require a specified size"};
+                                     "an empty array needs a size"};
         }
 
         return el;
@@ -188,7 +188,7 @@ class stmt_def_dat final : public statement {
 
             throw compiler_exception{
                 array_count_const_.tok(),
-                "expected array size to be greater than 0"};
+                "expected a constant array size greater than 0"};
         }
 
         close_bracket_tk_ =
@@ -217,14 +217,14 @@ class stmt_def_dat final : public statement {
         // e.g. 'dat greeting = "hello"'
         if (tz.peek_char_after_whitespace() == '"') {
             const token string_tk{tz.next_token()};
-            set_type(tc.get_type_i8());
+            set_type(tc.builtins().i8());
 
             elem el;
             el.is_array = true;
             el.src_loc_tk = string_tk;
 
-            el.array_count =
-                string_array_count(tc.get_type_i8(), string_tk, get_type(), 0);
+            el.array_count = string_array_count(tc.builtins().i8(), string_tk,
+                                                get_type(), 0);
 
             return el;
         }
@@ -649,7 +649,7 @@ class stmt_def_dat final : public statement {
         el.src_loc_tk = tk;
 
         el.array_count =
-            string_array_count(tc.get_type_i8(), tk, tp, array_count);
+            string_array_count(tc.builtins().i8(), tk, tp, array_count);
 
         return el;
     }
