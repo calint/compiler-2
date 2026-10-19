@@ -224,7 +224,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     https://needlesscomplexity.substack.com/p/rvint-integer-mathematical-algorithms)
     before changing it
 [ ] medium: --checks=overflow: 0746.baz needs every rv32i scratch register and
-    fails to compile under the check ('out of RV32I scratch registers');
+    fails to compile under the check ('out of scratch registers');
     the memory source add or sub needs two registers, one would do with a
     reload of the second operand
 [ ] medium: qa/lint/format-source.py crashes on a digit separator

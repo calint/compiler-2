@@ -28,7 +28,8 @@ SESSION = os.path.join(fl.ROOT, "roome", "qa", "roome.in")
 BUILD = os.path.join(fl.HERE, "build")
 X86 = os.path.join(BUILD, "roome-x86")
 IMAGE = os.path.join(BUILD, "roome-fpga.bin")
-SDCARD = os.path.join(BUILD, "sdcard")
+# the size of the sd card images of a session, as in 'roome/qa/test.sh'
+SDCARD_SIZE_BYTES = 1 << 20
 NASTY = [b"\x00", b"\x1b[A", b"\x1b[D", b"\x1b[3~", b"\x7f", b"\x08", b"\xff",
          b"\xc3\xa9", b"\t", b"%s", b"\\", b"\"", b"'"]
 
@@ -52,7 +53,6 @@ def build():
                           os.devnull)
     if c.returncode:
         sys.exit("roome does not compile for rv32i-fpga: " + c.stderr)
-    open(SDCARD, "wb").close()
 
 
 def words_of(lines):
@@ -126,9 +126,18 @@ def fuzz_one(args):
     # the emulator needs about 0.2 seconds per megabyte
     data = data[:1 << 20] + b"\ngo home\n"
     found = []
-    r86 = fl.run([X86], 10, stdin_bytes=data)
+    # each target starts with an sd card of its own that no other session
+    # writes, the x86_64 program opens 'sdcard.img' in its working directory
+    with tempfile.TemporaryDirectory() as work:
+        sdcard_x86 = os.path.join(work, "sdcard.img")
+        sdcard_fpga = os.path.join(work, "sdcard-fpga.img")
+        for path in (sdcard_x86, sdcard_fpga):
+            with open(path, "wb") as f:
+                f.truncate(SDCARD_SIZE_BYTES)
+        r86 = fl.run([X86], 10, cwd=work, stdin_bytes=data)
+        rf = fl.run([fl.EMULATOR, IMAGE, sdcard_fpga], 10,
+                    stdin_bytes=data + b"\x04")
     o86 = fl.outcome_x86(r86)
-    rf = fl.run([fl.EMULATOR, IMAGE, SDCARD], 10, stdin_bytes=data + b"\x04")
     ofpga = fl.outcome_fpga(rf)
     text = data.decode("latin-1")
     for target, o in (("x86", o86), ("fpga", ofpga)):

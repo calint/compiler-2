@@ -180,7 +180,7 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
     -> std::unique_ptr<statement> {
 
     // a call statement has no destination to deduce a type argument from
-    // the discarded result is rejected at compile like any other call
+    // the discarded result is rejected at compile time like any other call
     call_or_identifier parsed{
         parse_call_or_identifier(tc, tz, tk, unary_ops{}, nullptr),
     };
@@ -318,7 +318,6 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
-    // e.g. obj.pos = {x, y}
     open_brace_tk_ = tz.expect_char_token(
         '{',
         std::format("expected '{{' to begin a value of type '{}'", tp.name()));
@@ -347,8 +346,12 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 
         // the value is parsed as the type of the field, so a nested '{...}'
         // is another 'expr_type'
-        exprs_.emplace_back(std::make_unique<expr_any>(
-            tc, tz, tf.type(), true, tf.is_array, tf.array_count));
+        const std::optional<size_t> array_count{
+            tf.is_array ? std::optional{tf.array_count} : std::nullopt,
+        };
+
+        exprs_.emplace_back(
+            std::make_unique<expr_any>(tc, tz, tf.type(), array_count));
     }
 }
 
@@ -589,7 +592,6 @@ inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
     }
 
     // zero out the remaining fields and the padding after the written ones
-
     const size_t remaining_bytes{dst_type.size_bytes() - written_bytes};
 
     zero_unwritten(
@@ -607,7 +609,6 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     const ident_info src_info{tc.make_ident_info(*this)};
 
     // 'expr_type' validates the source type before entering here
-
     assert(dst_type.is_same(src_info.type_ref()));
 
     // the copy size comes from the source, a whole array would overflow
@@ -794,8 +795,8 @@ inline auto expr_type::name_or_literal() const -> std::string_view {
     return stmt_ident_->name_or_literal();
 }
 
-inline auto expr_type::accessed_path() const -> std::optional<access_path> {
-    // note: only a copy has an accessed range
+inline auto expr_type::accessed_path() const -> access_path {
+    // note: only a copy has an accessed path
     assert(stmt_ident_);
 
     return stmt_ident_->accessed_path();

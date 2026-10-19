@@ -1,0 +1,6 @@
+# a negated 'bool' is not 0 or 1, '-' and '~' are rejected like '+'
+
+func main() {
+    var t = true
+    var n = -t
+}

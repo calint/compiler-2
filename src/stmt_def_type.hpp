@@ -444,7 +444,6 @@ class stmt_def_type_alias final : public statement {
 
             // e.g. 'str' gets 'array i8[8]' and 'len' of 'list<i8, 8>'
             parse_root_fields(tc, instances.back());
-
         } catch (compiler_exception& e) {
             // e.g. an error in 'list' gets the frames 'list<i8, 8>' and
             // 'type str = text<8>'

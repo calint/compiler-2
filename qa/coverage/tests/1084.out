@@ -1,0 +1,4 @@
+
+1084.baz:4:15: boolean values cannot be arithmetic operands
+    var b = ~(false)
+              ^~~~~

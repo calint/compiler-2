@@ -268,7 +268,7 @@ class machine_x86_64 final : public machine {
                 src);
 
         if (check.enabled) {
-            branch_on_overflow(indent, src_loc_tk, check);
+            branch_on_overflow(src_loc_tk, indent, check);
         }
     }
 
@@ -321,10 +321,9 @@ class machine_x86_64 final : public machine {
             return result;
         }
 
-        throw register_error(src_loc_tk,
-                             "out of scratch registers. try to reduce "
-                             "expression complexity",
-                             registers_);
+        throw register_error(
+            src_loc_tk, "out of scratch registers, simplify the expression",
+            registers_);
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -1044,7 +1043,7 @@ class machine_x86_64 final : public machine {
             imul(src_loc_tk, indent, product, factor);
 
             if (check.enabled) {
-                branch_on_overflow(indent, src_loc_tk, check);
+                branch_on_overflow(src_loc_tk, indent, check);
             }
 
             return;
@@ -1057,7 +1056,7 @@ class machine_x86_64 final : public machine {
             mov(src_loc_tk, indent, product, factor);
 
             if (check.enabled) {
-                branch_on_overflow(indent, src_loc_tk, check);
+                branch_on_overflow(src_loc_tk, indent, check);
             }
 
             return;
@@ -1073,7 +1072,7 @@ class machine_x86_64 final : public machine {
         imul(src_loc_tk, indent, reg, factor);
 
         if (check.enabled) {
-            branch_on_overflow(indent, src_loc_tk, check);
+            branch_on_overflow(src_loc_tk, indent, check);
         }
 
         mov(src_loc_tk, indent, product, reg);
@@ -1216,12 +1215,10 @@ class machine_x86_64 final : public machine {
         };
 
         if (count.is_immediate()) {
-            if (check.enabled) {
-                validate_shift_constant(src_loc_tk, dst, count);
-            }
+            // note: the front end rejects a constant count outside the width
+            assert(immediate_bits(count) < dst.type_ref().size_bits());
 
-            emit_op(src_loc_tk, indent, code, dst,
-                    shift_count_immediate(count));
+            emit_op(src_loc_tk, indent, code, dst, count);
 
             return;
         }
@@ -1287,7 +1284,7 @@ class machine_x86_64 final : public machine {
         neg(src_loc_tk, indent, dst);
 
         if (check.enabled) {
-            branch_on_overflow(indent, src_loc_tk, check);
+            branch_on_overflow(src_loc_tk, indent, check);
         }
     }
 
@@ -1486,29 +1483,6 @@ class machine_x86_64 final : public machine {
     // the most that a value of the width of 'value' holds as a signed number
     [[nodiscard]] static auto signed_maximum(const operand& value) -> uint64_t {
         return (uint64_t{1} << (value.type_ref().size_bits() - 1)) - 1;
-        // note: -1 gives the signed maximum 2^(bits - 1) - 1
-    }
-
-    // a constant count outside the width is a compile error under the check
-    static auto validate_shift_constant(const token& src_loc_tk,
-                                        const operand& dst,
-                                        const operand& count) -> void {
-
-        const std::optional<uint64_t> bits{immediate_bits(count)};
-
-        assert(bits);
-
-        const size_t width_bits{dst.type_ref().size_bits()};
-
-        if (static_cast<int64_t>(*bits) >= 0 and *bits < width_bits) {
-            return;
-        }
-
-        throw compiler_exception{
-            src_loc_tk,
-            std::format("shift count must be 0 to {} for {}-bit values",
-                        width_bits - 1, width_bits)};
-        // note: width_bits - 1 because the count is below the width
     }
 
   protected:
@@ -1573,7 +1547,7 @@ class machine_x86_64 final : public machine {
 
     // jumps to the overflow failure handler when the instruction before set
     // the overflow flag
-    auto branch_on_overflow(const size_t indent, const token& src_loc_tk,
+    auto branch_on_overflow(const token& src_loc_tk, const size_t indent,
                             const runtime_check& check) -> void {
 
         assembler_.jcc(indent, condition::o,
@@ -2489,7 +2463,7 @@ class machine_x86_64 final : public machine {
             neg(src_loc_tk, indent, product);
 
             if (check.enabled) {
-                branch_on_overflow(indent, src_loc_tk, check);
+                branch_on_overflow(src_loc_tk, indent, check);
             }
 
             return true;
@@ -2739,8 +2713,8 @@ class machine_x86_64 final : public machine {
             throw register_error(
                 src_loc_tk,
                 std::format("cannot allocate register {} because it holds a "
-                            "scratch value allocated at {}. try to reduce "
-                            "expression complexity",
+                            "scratch value allocated at {}, simplify the "
+                            "expression",
                             reg, holder_location),
                 registers_);
         }
@@ -2996,21 +2970,6 @@ class machine_x86_64 final : public machine {
                lhs.index_register() == rhs.index_register() and
                lhs.displacement() == rhs.displacement() and
                lhs.scale() == rhs.scale();
-    }
-
-    // the hardware keeps only the low bits of a shift count and nasm warns
-    // about a count that is not an unsigned byte, such as '-4', '~3' or 300, so
-    // the low byte is written
-    [[nodiscard]] static auto shift_count_immediate(const operand& count)
-        -> operand {
-
-        const std::optional<uint64_t> bits{immediate_bits(count)};
-
-        assert(bits);
-
-        const uint8_t low_byte{static_cast<uint8_t>(*bits)};
-
-        return operand::imm(low_byte, count.type_ref());
     }
 
     [[nodiscard]] static auto sized_register_name(const std::string_view name,

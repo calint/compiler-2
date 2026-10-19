@@ -102,7 +102,7 @@ The result name maps to the destination of the call. Resolving 'p.x' in the
 body follows the alias and continues the walk in the frames of the caller.
 
 A noinline function has a body of its own and a frame in memory that holds the
-addresses of its result and arguments ('stmt_call.hpp', 'noninline_call').
+addresses of its result and arguments ('stmt_call.hpp', 'noinline_call').
 
 What resolution gives is an 'ident_info': a constant, a register or a
 variable with its memory operand and the deepest address known from the calls

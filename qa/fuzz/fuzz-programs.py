@@ -435,7 +435,7 @@ def fuzz_one(args):
             if c.returncode in fl.SANITIZER_EXIT or c.returncode < 0 or sanitizer:
                 found.append(("compiler-crash", fl.signature(c.stderr),
                               c.stderr[-3000:]))
-            elif "reduce expression complexity" in c.stderr:
+            elif "simplify the expression" in c.stderr:
                 # the registers of the target are used up, a limit of the
                 # language and not a defect
                 stats["rejected"] += 1
@@ -462,7 +462,7 @@ def fuzz_one(args):
         elif c2.returncode:
             sanitizer = any(t in c2.stderr for t in fl.SANITIZER_TEXT)
             kindname = "compiler-crash" if sanitizer or c2.returncode in fl.SANITIZER_EXIT else "gen-reject"
-            if kindname == "gen-reject" and "reduce expression complexity" in c2.stderr:
+            if kindname == "gen-reject" and "simplify the expression" in c2.stderr:
                 return source, found, stats
             found.append((kindname, "rv32i " + (fl.signature(c2.stderr) if sanitizer else c2.stderr.strip().split("\n")[0][-60:]),
                           c2.stderr[-1500:]))
@@ -478,7 +478,7 @@ def fuzz_one(args):
         if x86.finished():
             for category, options in variants:
                 c3, other, p3 = fl.run_x86(compiler, path, options, work, "v")
-                if c3.returncode and "reduce expression complexity" in c3.stderr:
+                if c3.returncode and "simplify the expression" in c3.stderr:
                     # folding changes how many registers an expression needs
                     continue
                 if c3.returncode or p3:

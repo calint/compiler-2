@@ -387,6 +387,7 @@ func action_say(eid, tz mut tokenizer) {
 dat str_which_sector = "which sector\n"
 dat str_not_an_int = "not an integer\n"
 dat str_sector_written = "sector written\n"
+dat str_text_too_long = "text too long\n"
 
 let sector_size = 512
 
@@ -409,6 +410,11 @@ func action_sector_write(eid, tz mut tokenizer) {
 
     # the text is the rest of the line, the rest of the sector is zeros
     tz.to_end()
+    if tz.len() > sector_size {
+        out.print_all(str_text_too_long)
+        return
+    }
+
     var data = i8[sector_size]
     array_copy(tz.string.array[tz.start], data, tz.len())
     sector_write(sector, data)

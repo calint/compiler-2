@@ -505,9 +505,7 @@ class assembler {
     // the spaces before an instruction or a label, four for each level
     [[nodiscard]] static auto indentation(const size_t indent) -> std::string {
         constexpr size_t spaces_per_level{4};
-
         std::string text(indent * spaces_per_level, ' ');
-
         return text;
     }
 
@@ -552,7 +550,6 @@ class assembler {
         }
 
         return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
-        // note: +1 because the end position is inclusive
     }
 
   private:
@@ -602,7 +599,6 @@ class assembler {
         -> std::optional<size_t> {
 
         for (size_t next{index + 1}; next < lines_.size(); ++next) {
-
             const line& l{lines_.at(next)};
 
             if (is_enterable(l, referenced)) {
@@ -640,7 +636,7 @@ class assembler {
         return not code.empty() and code.back() == ':';
     }
 
-    // labels named by lines other than jumps e.g. calls, addresses and
+    // labels named by lines other than jumps, e.g. calls, addresses and
     // '.globl', these keep their references while jumps are optimized
     [[nodiscard]] auto labels_named_outside_jumps(
         const std::unordered_map<std::string_view, size_t>& labels) const
@@ -686,7 +682,6 @@ class assembler {
 
         // execution continues at the target anyway
         if (target_code == next_instruction(index + 1)) {
-
             remove(branch);
             ++optimizations_.jumps_to_next;
             return true;
@@ -720,7 +715,6 @@ class assembler {
 
         // branching over the jump is the inverse branch to its target
         if (target_code != next_instruction(*jump_index + 1)) {
-
             return false;
         }
 

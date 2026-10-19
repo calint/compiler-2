@@ -245,7 +245,7 @@ class machine_rv32i : public machine {
     //       'plan_loop_start', 'plan_known_loop'); copy and compare share the
     //       walk of a run-time count ('walk_runtime_count') and differ only in
     //       the access they emit
-    //       * the variables base 's0' and a non-inline frame base 's1' are
+    //       * the variables base 's0' and a noinline frame base 's1' are
     //         word aligned, so an unindexed address from them has a known
     //         position within a word; other addresses are only as aligned as
     //         their type
@@ -594,8 +594,9 @@ class machine_rv32i : public machine {
             return result;
         }
 
-        throw register_error(src_loc_tk, "out of RV32I scratch registers",
-                             registers_);
+        throw register_error(
+            src_loc_tk, "out of scratch registers, simplify the expression",
+            registers_);
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -1407,7 +1408,6 @@ class machine_rv32i : public machine {
 
         // validate memory operands even when a constant eliminates the
         // operation
-
         if (factor.is_memory()) {
             validate_address(src_loc_tk, factor);
         }
@@ -1421,7 +1421,7 @@ class machine_rv32i : public machine {
                 *constant != 1,
         };
 
-        // variable factors use the shared runtime helper
+        // variable factors use the shared run-time helper
         if (not constant.has_value() or is_checked_constant) {
             if (check.enabled) {
                 multiply_checked_helper_used_ = true;
@@ -1600,16 +1600,9 @@ class machine_rv32i : public machine {
 
         const size_t bits{dst.type_ref().size_bits()};
 
-        if (constant.has_value() and
-            (*constant < 0 or std::cmp_greater_equal(*constant, bits))) {
-
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("RV32I shift count must be 0 to {} for {}-bit "
-                            "values",
-                            bits - 1, bits)};
-            // note: bits - 1 because the count is below the width
-        }
+        // note: the front end rejects a constant count outside the width
+        assert(not constant.has_value() or
+               (*constant >= 0 and std::cmp_less(*constant, bits)));
 
         const uint32_t shift_count{
             static_cast<uint32_t>(constant.value_or(0)),
@@ -3099,7 +3092,6 @@ class machine_rv32i : public machine {
             assembler_.sub(1, "a1", "a1", "a4");
             assembler_.ret(1);
             assembler_.label(0, "5");
-
             assembler_.ebreak(1);
             assembler_.j(1, "5b");
         }
@@ -4154,7 +4146,6 @@ class machine_rv32i : public machine {
         const std::string& result_name{result.base_register()};
 
         // only the upper part; the memory instruction adds the low
-
         assembler_.lui(indent, result_name, parts.upper);
 
         assembler_.add(indent, result_name, result_name, base);
@@ -4580,7 +4571,6 @@ class machine_rv32i : public machine {
 
         if (lowered.displacement() + static_cast<int64_t>(size_bytes) - 1 >
             immediate_max) {
-            // note: -1 because the last byte accessed is at 'size_bytes - 1'
 
             const operand pointer{
                 alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -4687,7 +4677,6 @@ class machine_rv32i : public machine {
                         -static_cast<int64_t>(width));
 
         assembler_.andi(walk.indent, count, count, width - 1);
-        // note: -1 turns the power of two 'width' into a mask of the tail bytes
 
         assembler_.beqz(walk.indent, chunks.base_register(),
                         after_chunks.reference);

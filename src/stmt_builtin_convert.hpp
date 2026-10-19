@@ -37,7 +37,7 @@ class stmt_builtin_convert final : public expression {
 
         set_type(conversion_type(tc, tk));
 
-        arg_ = {tc, tz, true};
+        arg_ = {tc, tz};
 
         if (not arg_.get_type().is_builtin()) {
             throw compiler_exception{

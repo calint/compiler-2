@@ -28,11 +28,11 @@ class stmt_builtin_foo final : public statement {
 
   public:
     stmt_builtin_foo(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk, unary_ops{}} {
+        : statement{src_loc_tk} {
 
         set_type(tc.builtins().void_type());
 
-        ident_ = {tc, unary_ops{}, tz.next_token(), tz};
+        ident_ = {tc, {}, tz.next_token(), tz};
 
         if (not ident_.is_array()) {
             throw compiler_exception{ident_.tok(), "expected an array"};
@@ -42,7 +42,7 @@ class stmt_builtin_foo final : public statement {
         count_delim_tk_ = tz.is_next_char_token(',');
 
         if (has_count()) {
-            count_ = {tc, tz, tc.builtins().default_type(), false, false, 0};
+            count_ = {tc, tz, tc.builtins().default_type()};
         }
 
         // the element and the counter are declared during the parse so the

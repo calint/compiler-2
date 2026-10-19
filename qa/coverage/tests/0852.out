@@ -1,5 +1,5 @@
 
-0852.baz:9:21: out of scratch registers. try to reduce expression complexity
+0852.baz:9:21: out of scratch registers, simplify the expression
     res = a + (b + (c + (d + (e + (f + (v[1]))))))
                     ^
 0852.baz:18:36: called from 'wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf(v)'

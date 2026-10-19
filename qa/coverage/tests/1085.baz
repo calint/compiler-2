@@ -1,0 +1,9 @@
+# a unary operator on the 'bool' result of a call is rejected
+
+func is_on() res bool {
+    res = true
+}
+
+func main() {
+    var b = -is_on()
+}

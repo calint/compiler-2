@@ -1,0 +1,5 @@
+# the unary operators of a parenthesized 'bool' are rejected at the operand
+
+func main() {
+    var b = ~(false)
+}

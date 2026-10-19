@@ -1587,7 +1587,6 @@ class assembler_rv32i final : public assembler {
 
         return (value + alignment_bytes - 1) / alignment_bytes *
                alignment_bytes;
-        // note: -1 rounds up to a multiple of 'alignment_bytes'
     }
 
     [[nodiscard]] static auto ascii_text(const std::string_view bytes)

@@ -43,11 +43,10 @@ BITS = {"i8": 8, "i16": 16, "i32": 32, "i64": 64}
 # exit codes of a panic on rv32i-fpga
 FPGA_PANIC = {"overflow": 249, "stack": 250, "overlap": 251, "shift": 252,
               "division": 253, "frame": 254, "bounds": 255}
-# stderr of a panic on x86_64, a failed bounds check prints nothing without
-# '--checks=line'
+# stderr of a panic on x86_64
 X86_PANIC = {"overflow": "panic: overflow", "overlap": "panic: overlap",
              "shift": "panic: shift", "division": "panic: division",
-             "frame": "panic: frame overflow"}
+             "frame": "panic: frame overflow", "bounds": "panic: bounds"}
 CHECKS = os.environ.get("FUZZ_CHECKS", "noub")
 SIGSEGV = 139
 TIMEOUT = 1000
@@ -1381,10 +1380,6 @@ def compile_run(work, source, target):
             for kind, message in X86_PANIC.items():
                 if message in r.stderr:
                     return ("panic", kind)
-            # the bounds failure prints nothing without '--checks=line'
-            if not r.stderr:
-                return ("panic", "bounds")
-
             return ("panic", "unknown:" + r.stderr.strip())
         return ("exit", r.returncode)
     image = os.path.join(work, "f.bin")

@@ -47,14 +47,12 @@ class stmt_assign_var final : public statement {
 
         // the value is parsed as the type of the destination, e.g. 'p1 = p2' or
         // 'a = {1, 2}' or 'x = y + 1'
-        expr_ = {
-            tc,
-            tz,
-            dst_info.type_ref(),
-            false,
-            stmt_ident_.is_array(),
-            stmt_ident_.array_count(),
+        const std::optional<size_t> array_count{
+            stmt_ident_.is_array() ? std::optional{stmt_ident_.array_count()}
+                                   : std::nullopt,
         };
+
+        expr_ = {tc, tz, dst_info.type_ref(), array_count};
     }
 
     stmt_assign_var() = default;

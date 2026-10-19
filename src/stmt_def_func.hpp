@@ -339,7 +339,7 @@ class stmt_def_func final : public statement {
     }
 
     // keeps the labels of the body unique: the instances of one generic
-    // definition have the same source locations, and a non-inline body is
+    // definition have the same source locations, and a noinline body is
     // compiled once per array lengths
     [[nodiscard]] auto
     body_call_path(const std::span<const size_t> array_lengths) const
@@ -385,14 +385,13 @@ class stmt_def_func final : public statement {
 
         x.reserve_frame_base();
 
-        tc.enter_noninline_func(name(), body_call_path(array_lengths),
-                                x.frame_base_register());
+        tc.enter_noinline_func(name(), body_call_path(array_lengths),
+                               x.frame_base_register());
 
         // the register is held while the body runs
         operand slot_register;
 
         if (has_slot_register(tc)) {
-
             slot_register = x.alloc_named_register(
                 tok(), indent + 1, x.slot_register(), tc.builtins().address());
         }
@@ -553,7 +552,7 @@ class stmt_def_func final : public statement {
                 head_.mut_tk.is_empty()});
     }
 
-    // a non-inline body reaches the result and the arguments through pointer
+    // a noinline body reaches the result and the arguments through pointer
     // slots in its frame. the array lengths are those of the body instance,
     // empty where the body is only parsed. the parameter of the slot at
     // 'register_slot_index' is at 'address_register' instead of the frame,
@@ -642,7 +641,7 @@ class stmt_def_func final : public statement {
         if (is_inlined()) {
             tc.enter_func(name());
         } else {
-            tc.enter_noninline_func(name(), {}, {});
+            tc.enter_noinline_func(name(), {}, {});
         }
 
         add_constants(tc, 0);

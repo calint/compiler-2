@@ -1,4 +1,5 @@
-# x86: a constant shift count beyond the width is not folded
+# a constant shift count beyond the width is rejected, also in code that does
+# not run
 
 func main() {
     var zero = 0

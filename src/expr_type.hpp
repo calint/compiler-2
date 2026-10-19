@@ -40,13 +40,13 @@ class expr_type final : public statement {
         std::string_view root;
         byte_range range;
 
-        // false when a runtime index leaves the element unknown
+        // false when a run-time index leaves the element unknown
         bool is_exact{};
     };
 
     // parses 'expr_any' items and creates the 'stmt_call' or
-    // 'stmt_identifier'; the type name alone is its zero value, e.g. 'var p =
-    // point' is 'point{}'
+    // 'stmt_identifier'; the type name alone is its zero value, e.g.
+    // 'var p = point' is 'point{}'
     expr_type(toc& tc, tokenizer& tz, const type& tp,
               const bool is_array_destination);
 
@@ -73,8 +73,7 @@ class expr_type final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override;
 
-    [[nodiscard]] auto accessed_path() const
-        -> std::optional<access_path> override;
+    [[nodiscard]] auto accessed_path() const -> access_path override;
 
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
@@ -265,7 +264,7 @@ class expr_type final : public statement {
             .size_bytes{written_size_bytes},
         };
 
-        // with a runtime index any element of the array may already be written
+        // with a run-time index any element of the array may already be written
         const byte_range& written{dst.is_exact ? exact : dst.range};
 
         item.visit_reads(
@@ -278,7 +277,7 @@ class expr_type final : public statement {
                     return;
                 }
 
-                // a runtime index may or may not refer to the written element
+                // a run-time index may or may not refer to the written element
                 if (not dst.is_exact) {
                     throw compiler_exception{
                         src_loc_tk,
@@ -322,7 +321,6 @@ class expr_type final : public statement {
         }
 
         // 'expr_any' validates the source element type before entering here
-
         assert(fld.type().is_same(src_info.type_ref()));
 
         if (fld.array_count != src_info.array_len()) {

@@ -1,4 +1,4 @@
 
-0832.baz:8:13: source and compare types are not the same. source is 'point' and compare is 'other'
+0832.baz:8:13: source type 'point' does not match compare type 'other'
     if a == b exit(1)
             ^

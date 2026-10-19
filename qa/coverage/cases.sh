@@ -2203,8 +2203,9 @@ SRC=0711 && EXP=0 && RUN
 # an instance value reads the whole destination after writing a field
 SRC=0712 && COMPERR
 
-# a constant shift by a negative count is not folded, rv32i rejects it
-if [[ $MACHINE == x86_64 ]]; then SRC=0713 && EXP=0 && RUN; else SRC=0713 && COMPERR; fi
+# a constant shift by a negative count is rejected, also in code that does not
+# run
+SRC=0713 && COMPERR
 
 # dat is only allowed in the global scope
 SRC=0714 && COMPERR
@@ -2315,14 +2316,15 @@ SRC=0748 && OPTS="--vars=0x40000 --checks=upper --reproduce-source" DIFF
 # rv32i: a constant shift count of a 32-bit value must be below 32
 if [[ $MACHINE != x86_64 ]]; then SRC=0749 && COMPERR; fi
 
-# x86: a constant shift count beyond the width is not folded
-if [[ $MACHINE == x86_64 ]]; then SRC=0750 && EXP=7 && RUN; fi
+# a constant shift count beyond the width is rejected, also in code that does
+# not run
+SRC=0750 && COMPERR
 
-# rv32i: a constant shift count of an 8-bit value must be below 8
-if [[ $MACHINE != x86_64 ]]; then SRC=0751 && COMPERR; fi
+# a constant shift count of an 8-bit value must be below 8
+SRC=0751 && COMPERR
 
-# rv32i: a constant right shift count of a 16-bit value must be below 16
-if [[ $MACHINE != x86_64 ]]; then SRC=0752 && COMPERR; fi
+# a constant right shift count of a 16-bit value must be below 16
+SRC=0752 && COMPERR
 
 # a constant shift by zero changes nothing
 SRC=0753 && EXP=5 && RUN
@@ -2818,9 +2820,9 @@ SRC=0912 && EXP=0 && RUN
 # the mark under a token counts characters, not bytes
 SRC=0913 && COMPERR
 
-# a constant shift count that is not a byte is written as one, rv32i rejects
-# a count outside the width
-if [[ $MACHINE == x86_64 ]]; then SRC=0914 && EXP=0 && RUN; fi
+# a constant shift count from unary operators is checked like a literal, '~n'
+# is -4
+SRC=0914 && COMPERR
 
 # a conversion truncates to its type also when the value is stored in a wider
 # variable, and is computed at its own width in a narrow expression
@@ -3355,3 +3357,19 @@ SRC=1081 && EXP=7 && RUN
 # a parenthesized condition on the line after its 'not' keeps its indentation
 # when the source is reproduced
 SRC=1082 && EXP=1 && RUN
+
+# a negated 'bool' is not 0 or 1, '-' and '~' are rejected like '+'
+SRC=1083 && COMPERR
+
+# the unary operators of a parenthesized 'bool' are rejected at the operand
+SRC=1084 && COMPERR
+
+# a unary operator on the 'bool' result of a call is rejected
+SRC=1085 && COMPERR
+
+# a negated 'bool' literal does not initialize a 'dat' of the default type
+SRC=1086 && COMPERR
+
+# a complemented 'bool' element of a 'dat' array would store a byte that is
+# neither 'true' nor 'false'
+SRC=1087 && COMPERR

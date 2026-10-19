@@ -36,6 +36,16 @@ ENVIRONMENT = dict(
 PANIC_CODE = {"overflow": 249, "stack overflow": 250, "overlap": 251,
               "shift": 252, "division": 253, "frame overflow": 254,
               "bounds": 255}
+# the last line of the emulator when it stops at an illegal instruction or
+# address, on its standard output after the program's; it exits with the status
+# modulo 256
+CPU_ERROR = re.compile(rb"CPU error: (\d+)\n\Z")
+# the emulator stops at the store of a sector number past the end of the image,
+# 13xx is a 'sw' and 4 the write and 5 the read sector address; x86_64 prints
+# 'panic: sd card' instead, both are the outcome 'sdcard'
+SDCARD_PAST_END_ERRORS = (1304, 1305)
+# the code of the outcome 'sdcard', no exit code of a program
+SDCARD_CODE = -1
 CRASH_SIGNALS = (signal.SIGSEGV, signal.SIGFPE, signal.SIGILL, signal.SIGBUS,
                  signal.SIGABRT)
 
@@ -196,7 +206,7 @@ class Outcome:
         return self.code == other.code and self.stdout == other.stdout
 
     def finished(self):
-        return self.kind in ("exit", "panic")
+        return self.kind in ("exit", "panic", "sdcard")
 
     def __repr__(self):
         return f"{self.kind} {self.code} {len(self.stdout)}B {self.detail}"
@@ -212,6 +222,8 @@ def outcome_x86(result):
     if result.signal:
         return Outcome("signal", result.signal, result.stdout,
                        signal.Signals(result.signal).name)
+    if result.returncode == 255 and "panic: sd card" in result.stderr:
+        return Outcome("sdcard", SDCARD_CODE, result.stdout, "sd card")
     if result.returncode == 255:
         for message, code in PANIC_CODE.items():
             if f"panic: {message}" in result.stderr:
@@ -229,9 +241,14 @@ def outcome_fpga(result):
     if result.signal:
         return Outcome("emulator-signal", result.signal, result.stdout,
                        signal.Signals(result.signal).name)
-    if "CPU error" in result.stderr:
-        return Outcome("cpu-error", result.returncode, result.stdout,
-                       result.stderr.strip())
+    cpu_error = CPU_ERROR.search(result.stdout)
+    if cpu_error and int(cpu_error.group(1)) in SDCARD_PAST_END_ERRORS:
+        return Outcome("sdcard", SDCARD_CODE, result.stdout[:cpu_error.start()],
+                       "sd card")
+    if cpu_error:
+        return Outcome("cpu-error", int(cpu_error.group(1)),
+                       result.stdout[:cpu_error.start()],
+                       cpu_error.group(0).decode().strip())
     if 249 <= result.returncode <= 254:
         return Outcome("panic", result.returncode, result.stdout)
     return Outcome("exit", result.returncode, result.stdout)

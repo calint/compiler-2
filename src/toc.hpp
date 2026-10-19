@@ -37,7 +37,7 @@
 // and compiled, see 'etc/docs/architecture.txt'. the classes below, in reading
 // order:
 //
-//   records         'func_info', 'noninline_body', 'storage_target',
+//   records         'func_info', 'noinline_body', 'storage_target',
 //                   'alias_info' (what a parameter of an inlined call stands
 //                   for), 'const_info'
 //   'frame'         one scope: its constants, variables and aliases
@@ -79,8 +79,8 @@ struct func_return_info {
     const type* type_ptr{}; // type
 };
 
-// a non-inline body compiled for the array lengths of one kind of call
-struct noninline_body {
+// a noinline body compiled for the array lengths of one kind of call
+struct noinline_body {
     const stmt_def_func* func{};
     // one per array parameter, in parameter order
     std::vector<size_t> array_lengths;
@@ -565,25 +565,22 @@ class ident_builder final {
             info.elem_path().size() - 1 - known->trailing_count,
         };
 
-        // identifier has lea, construct operand
-
         // example of resulting data structure:
         //
-        // type string { len : i8, data : i8[127] }
-        // type room { name : string, description : string, note : string }
-        // type world { rooms : room[128] }
+        // type string { len i8, data i8[127] }
+        // type room { name string, description string, note string }
+        // type world { rooms room[128] }
         //
         // id path     |  type  |  lea          |
         // ------------|--------|---------------|
         // wld         | world  | -             |
-        // rooms[2]    | room   | r15           |
+        // rooms[i]    | room   | r15           |
         // description | string | -             |
         // data        | i8     | r15 + 129     |
         //
-        // the indexing in 'rooms' is done at runtime thus the memory
-        // location of 'rooms[2]' cannot be deduced statically, thus the
-        // last lea encountered is the starting point when accessing
-        // identifiers
+        // the index into 'rooms' is known only at run time, so the address of
+        // 'rooms[i]' is in a register and the fields after it are addressed
+        // from that register
 
         // the fields after the known address are at fixed offsets from it
         const std::span<const std::string> elem_path_from_lea{
@@ -685,7 +682,6 @@ class type_table final {
 
   private:
     [[nodiscard]] auto find(const std::string_view name) const -> const entry& {
-
         if (is_param(name)) {
             return params_.back().get_const_ref(name);
         }
@@ -699,12 +695,12 @@ class type_table final {
 };
 
 // the functions of the program: the built-in ones, the defined ones and the
-// instances of generic ones, and the bodies of non-inline functions to compile
+// instances of generic ones, and the bodies of noinline functions to compile
 class function_table final {
     lut<func_info> funcs_;
     std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
-    std::vector<noninline_body> noninline_bodies_;
+    std::vector<noinline_body> noinline_bodies_;
     std::set<std::string> checked_calls_;
 
   public:
@@ -737,24 +733,24 @@ class function_table final {
     }
 
     // a body is emitted once per kind of call
-    auto add_noninline_body(const stmt_def_func& func,
-                            std::vector<size_t> array_lengths) -> void {
+    auto add_noinline_body(const stmt_def_func& func,
+                           std::vector<size_t> array_lengths) -> void {
 
-        const auto is_same_body = [&](const noninline_body& known) -> bool {
+        const auto is_same_body = [&](const noinline_body& known) -> bool {
             return known.func == &func and known.array_lengths == array_lengths;
         };
 
-        if (std::ranges::any_of(noninline_bodies_, is_same_body)) {
+        if (std::ranges::any_of(noinline_bodies_, is_same_body)) {
             return;
         }
 
-        noninline_bodies_.push_back({
+        noinline_bodies_.push_back({
             .func{&func},
             .array_lengths{std::move(array_lengths)},
         });
     }
 
-    auto clear_noninline_bodies() -> void { noninline_bodies_.clear(); }
+    auto clear_noinline_bodies() -> void { noinline_bodies_.clear(); }
 
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
         return defs_;
@@ -777,14 +773,14 @@ class function_table final {
     }
 
     // a copy, the list grows while the bodies compile
-    [[nodiscard]] auto noninline_body_at(const size_t index) const
-        -> noninline_body {
+    [[nodiscard]] auto noinline_body_at(const size_t index) const
+        -> noinline_body {
 
-        return noninline_bodies_.at(index);
+        return noinline_bodies_.at(index);
     }
 
-    [[nodiscard]] auto noninline_body_count() const -> size_t {
-        return noninline_bodies_.size();
+    [[nodiscard]] auto noinline_body_count() const -> size_t {
+        return noinline_bodies_.size();
     }
 };
 
@@ -880,7 +876,6 @@ struct check_options {
     bool overflow{};
 
     [[nodiscard]] auto bounds_options() const -> machine::bounds_check_options {
-
         return {
             .upper{bounds_upper},
             .lower{bounds_lower},
@@ -946,32 +941,22 @@ class scope_stack final {
     [[nodiscard]] auto bound_root(const std::string_view name) const
         -> std::string_view {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.has_var(name)) {
-                return {};
-            }
+        const alias_info* const alias{find_alias(name)};
 
-            if (not frm.is_func()) {
-                continue;
-            }
-
-            if (not frm.has_alias(name)) {
-                return {};
-            }
-
-            const bound_storage* const storage{
-                std::get_if<bound_storage>(&frm.get_alias(name).binding),
-            };
-
-            // note: a constant or a register names no variable
-            if (storage == nullptr) {
-                return {};
-            }
-
-            return storage->bound.root;
+        if (alias == nullptr) {
+            return {};
         }
 
-        std::unreachable();
+        const bound_storage* const storage{
+            std::get_if<bound_storage>(&alias->binding),
+        };
+
+        // note: a constant or a register names no variable
+        if (storage == nullptr) {
+            return {};
+        }
+
+        return storage->bound.root;
     }
 
     // the value of the constant 'name', which is declared
@@ -1025,9 +1010,9 @@ class scope_stack final {
 
     // a function with a body of its own, its variables are placed from
     // 'storage_base_register' when not empty
-    auto enter_noninline_func(const std::string_view name,
-                              const std::string_view call_path,
-                              const std::string_view storage_base_register)
+    auto enter_noinline_func(const std::string_view name,
+                             const std::string_view call_path,
+                             const std::string_view storage_base_register)
         -> void {
 
         frames_.emplace_back(name, frame::frame_type::func,
@@ -1150,7 +1135,7 @@ class scope_stack final {
             }
 
             if (frm.is_name(name)) {
-                count++;
+                ++count;
             }
         }
 
@@ -1159,18 +1144,7 @@ class scope_stack final {
 
     // true when 'name' is a parameter that names its argument
     [[nodiscard]] auto is_alias(const std::string_view name) const -> bool {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.has_var(name)) {
-                return false;
-            }
-
-            if (frm.is_func()) {
-                return frm.has_alias(name);
-            }
-        }
-
-        // statements are compiled inside a function
-        std::unreachable();
+        return find_alias(name) != nullptr;
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return frames_.empty(); }
@@ -1239,38 +1213,27 @@ class scope_stack final {
                                  const std::optional<access_path>& path) const
         -> std::optional<access_path> {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.has_var(name)) {
-                return path;
-            }
+        const alias_info* const alias{find_alias(name)};
 
-            if (not frm.is_func()) {
-                continue;
-            }
-
-            if (not frm.has_alias(name)) {
-                return path;
-            }
-
-            const bound_storage* const storage{
-                std::get_if<bound_storage>(&frm.get_alias(name).binding),
-            };
-
-            if (storage == nullptr) {
-                return std::nullopt;
-            }
-
-            const std::optional<access_path>& bound{storage->bound.path};
-
-            if (not bound or not path) {
-                return std::nullopt;
-            }
-
-            return bound->extended_by(*path);
+        if (alias == nullptr) {
+            return path;
         }
 
-        // statements are compiled inside a function
-        std::unreachable();
+        const bound_storage* const storage{
+            std::get_if<bound_storage>(&alias->binding),
+        };
+
+        if (storage == nullptr) {
+            return std::nullopt;
+        }
+
+        const std::optional<access_path>& bound{storage->bound.path};
+
+        if (not bound or not path) {
+            return std::nullopt;
+        }
+
+        return bound->extended_by(*path);
     }
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
@@ -1292,6 +1255,25 @@ class scope_stack final {
     }
 
   private:
+    // the alias 'name' of the innermost function, null when a variable of
+    // that function or of a block inside it hides it or there is none
+    [[nodiscard]] auto find_alias(const std::string_view name) const
+        -> const alias_info* {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.has_var(name)) {
+                return nullptr;
+            }
+
+            if (frm.is_func()) {
+                return frm.has_alias(name) ? &frm.get_alias(name) : nullptr;
+            }
+        }
+
+        // statements are compiled inside a function
+        std::unreachable();
+    }
+
     auto track_depth() -> void {
         max_depth_ = std::max(frames_.size(), max_depth_);
     }
@@ -1836,7 +1818,6 @@ class ident_resolver final {
 
         // the innermost frame that knows the root name decides, e.g. 'lnks' of
         // 'lnks[1].pos.y'
-
         walk step{ident_path{std::string{ident}}};
 
         for (const frame& cur_frame :
@@ -1998,8 +1979,8 @@ class definition_checks final {
             const bool is_generic{not generic_method.empty()};
             const bool is_existing_generic{not fn.generic_method.empty()};
 
-            // e.g. 'text.print' and 'list.print' for 'type text<size> =
-            // list<i8, size>'
+            // e.g. 'text.print' and 'list.print' for
+            // 'type text<size> = list<i8, size>'
             if (is_generic and is_existing_generic and
                 generic_method != fn.generic_method) {
 
@@ -2128,7 +2109,7 @@ class variable_comments final {
             std::format("{}: {}", var.name, name_info.type_ref().name()),
         };
 
-        if (var.array_len) {
+        if (var.array_len != 0) {
             text += std::format("[{}]", var.array_len);
         }
 
@@ -2254,7 +2235,7 @@ class toc final {
     }
 
     // false when the signature was already added, so a call is checked once
-    [[nodiscard]] auto add_checked_noninline_call(std::string signature)
+    [[nodiscard]] auto add_checked_noinline_call(std::string signature)
         -> bool {
 
         return funcs_.add_checked_call(std::move(signature));
@@ -2331,14 +2312,14 @@ class toc final {
 
     // a body is emitted once per kind of call, for a call that is
     // compiled for real: a dry run leaves no trace, the call is compiled again
-    auto add_noninline_body(const stmt_def_func& func,
-                            std::vector<size_t> array_lengths) -> void {
+    auto add_noinline_body(const stmt_def_func& func,
+                           std::vector<size_t> array_lengths) -> void {
 
         if (dry_run_depth_ != 0) {
             return;
         }
 
-        funcs_.add_noninline_body(func, std::move(array_lengths));
+        funcs_.add_noinline_body(func, std::move(array_lengths));
     }
 
     // identical strings share the label of the first one compiled
@@ -2479,12 +2460,12 @@ class toc final {
 
     // a function with a body of its own, its variables are placed from
     // 'storage_base_register' when not empty
-    auto enter_noninline_func(const std::string_view name,
-                              const std::string_view call_path,
-                              const std::string_view storage_base_register)
+    auto enter_noinline_func(const std::string_view name,
+                             const std::string_view call_path,
+                             const std::string_view storage_base_register)
         -> void {
 
-        scopes_.enter_noninline_func(name, call_path, storage_base_register);
+        scopes_.enter_noinline_func(name, call_path, storage_base_register);
     }
 
     auto exit_block() -> void {
@@ -2681,7 +2662,7 @@ class toc final {
 
         storage_.reset_usage();
         scopes_.set_max_depth(0);
-        funcs_.clear_noninline_bodies();
+        funcs_.clear_noinline_bodies();
     }
 
     // the variable that 'name' names, a parameter is followed to its argument
@@ -2834,9 +2815,9 @@ class toc final {
         }
     }
 
-    // a name of a variable, constant, data or parameter, the
-    // keywords are reserved because their use would be read as the keyword
-    // and the built-in functions because their use would be read as a call
+    // a name of a variable, constant, data or parameter, the keywords are
+    // reserved because their use would be read as the keyword and the
+    // built-in functions because their use would be read as a call
     static auto assert_valid_variable_name(const token& name_tk) -> void {
         assert_valid_name(name_tk);
 

@@ -1,0 +1,4 @@
+
+1085.baz:8:14: boolean values cannot be arithmetic operands
+    var b = -is_on()
+             ^~~~~

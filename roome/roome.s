@@ -275,7 +275,7 @@ lui sp, 2048
 # [actions.baz:391:5] const sector_size = 512
 # [actions.baz:439:1] dat str_help = "  help: this message\n  go to: go <exit>\n  inventory: i\n  create new object: on <name>\n  drop object: d <object>\n  give object: g <object> <entity>\n  tell entity: t <entity> <message>\n  say to room: s <text>\n  new room: rn <to exit> <from exit>\n  set room name: rnm <text>\n  set room description: rd <text>\n  set room note: rnt <text>\n  new entity: en <name>\n  write text to sd card sector: sdw <sector> <text>\n  read text from sd card sector: sdr <sector>\n"
 # [actions.baz:439:5] str_help: i8[456] (456 B @ [s0 - 3483])
-# [main.baz:3:1] dat str_ascii_art = "                                   oOo.o.\n          frameless osca          oOo.oOo\n       __________________________  .oOo.\n      O\\        -_   .. \\    ___ \\   ||\n     O  \\                \\   \\ \\\\ \\ //\\\\\n    o   /\\     rv32i      \\   \\|\\\\ \\\n   .   //\\\\      fpga      \\   ||   \\\n    .  \\\\/\\\\       baz      \\  \\_\\   \\\n     .  \\\\//\\________________\\________\\\n      .  \\/_/, \\\\\\--\\\\..\\\\ - /\\_____  /\n       .  \\ \\ . \\\\\\__\\\\__\\\\./ / \\__/ /\n        .  \\ \\ , \\    \\\\ ///./ ,/./ /\n         .  \\ \\___\\ sticky notes / /\n          .  \\/\\________________/ /\n     ./\\.  . / /                 /\n     /--\\   .\\/_________________/\n          ___.                 .\n         |o o|. . . . . . . . .\n         /| |\\ . .\n     ____       . .\n    |O  O|       . .\n    |_ -_|        . .\n     /||\\\n       ___\n      /- -\\\n     /\\_-_/\\\n       | |\n\n"
+# [main.baz:3:1] dat str_ascii_art = "                                   oOo.o.\n          frameless osca          oOo.oOo\n       __________________________  .oOo.\n      O\\        -_   .. \\    ___ \\   ||\n     O  \\                \\   \\ \\\\ \\ //\\\\\n    o   /\\      fpga      \\   \\|\\\\ \\\n   .   //\\\\      rv32i     \\   ||   \\\n    .  \\\\/\\\\      baz       \\  \\_\\   \\\n     .  \\\\//\\________________\\________\\\n      .  \\/_/, \\\\\\--\\\\..\\\\ - /\\_____  /\n       .  \\ \\ . \\\\\\__\\\\__\\\\./ / \\__/ /\n        .  \\ \\ , \\    \\\\ ///./ ,/./ /\n         .  \\ \\___\\ sticky notes / /\n          .  \\/\\________________/ /\n     ./\\.  . / /                 /\n     /--\\   .\\/_________________/\n          ___.                 .\n         |o o|. . . . . . . . .\n         /| |\\ . .\n     ____       . .\n    |O  O|       . .\n    |_ -_|        . .\n     /||\\\n       ___\n      /- -\\\n     /\\_-_/\\\n       | |\n\n"
 # [main.baz:3:5] str_ascii_art: i8[824] (824 B @ [s0 - 3027])
 # [main.baz:33:1] dat str_action_help = "help"
 # [main.baz:33:5] str_action_help: i8[4] (4 B @ [s0 - 2203])
@@ -309,50 +309,29 @@ lui sp, 2048
 # [main.baz:47:5] str_action_sector_read: i8[3] (3 B @ [s0 - 2175])
 # [main.baz:104:1] dat str_creation_script = "rnm roome\nrnt todo: find an exit\nrn none roome\ngo none\nrnm office\ngo roome\nen me\n"
 # [main.baz:104:5] str_creation_script: i8[81] (81 B @ [s0 - 2172])
-# [main.baz:128:1] dat str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
-# [main.baz:128:8] str_hello: i8[41] (41 B @ [s0 - 2091])
-# [main.baz:129:1] dat str_prompt = " > "
-# [main.baz:129:7] str_prompt: i8[3] (3 B @ [s0 - 2050])
-# [main.baz:130:1] dat str_turn_end = "--\n"
-# [main.baz:130:5] str_turn_end: i8[3] (3 B @ [s0 - 2047])
-# [main.baz:132:1] dat flag = "\n\nFLAG\n\n"
-# [main.baz:132:5] flag: i8[8] (8 B @ [s0 - 2044])
+# [main.baz:136:1] dat str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
+# [main.baz:136:8] str_hello: i8[41] (41 B @ [s0 - 2091])
+# [main.baz:137:1] dat str_prompt = " > "
+# [main.baz:137:7] str_prompt: i8[3] (3 B @ [s0 - 2050])
+# [main.baz:138:1] dat str_turn_end = "--\n"
+# [main.baz:138:5] str_turn_end: i8[3] (3 B @ [s0 - 2047])
+# [main.baz:140:1] dat flag = "\n\nFLAG\n\n"
+# [main.baz:140:5] flag: i8[8] (8 B @ [s0 - 2044])
 #
 main:
-    # [main.baz:135:5] run_creation_script()
+    # [main.baz:143:5] run_creation_script()
     # [main.baz:114:6] run_creation_script()
-    func.run_creation_script.135.5:
-        # [main.baz:115:5] var tz = tokenizer
-        # [main.baz:115:9] tz: tokenizer (1036 B @ [s0 - 2032])
-        # [main.baz:115:9] tz = tokenizer
-        # [main.baz:115:14] zero remaining fields: 1036 B
-        # [main.baz:115:14] zero loop of 4-byte accesses: start word aligned
-        # [main.baz:115:14] allocate scratch register -> t0
-        addi t0, s0, -2032
-        # [main.baz:115:14] allocate scratch register -> t1
-        # [main.baz:115:14] zero 4-byte words
-        addi t1, t0, 1036
-        1:
-        sw zero, 0(t0)
-        addi t0, t0, 4
-        bne t0, t1, 1b
-        # [main.baz:115:14] free scratch register t1
-        # [main.baz:115:14] free scratch register t0
-        # [main.baz:116:5] var line_start = 0
-        # [main.baz:116:9] line_start: i32 (4 B @ [s0 - 996])
-        # [main.baz:116:9] line_start = 0
-        # [main.baz:116:22] 0
-        sw zero, -996(s0)
-        # [main.baz:117:9] out.set_silenced(true)
+    func.run_creation_script.143.5:
+        # [main.baz:115:9] out.set_silenced(true)
         # [lib.baz:16:10] mut printer.set_silenced(silenced bool)
-        func.printer.set_silenced.117.9.135.5:
-            # [main.baz:117:9] alias self -> out
-            # [main.baz:117:9] alias silenced -> 1
+        func.printer.set_silenced.115.9.143.5:
+            # [main.baz:115:9] alias self -> out
+            # [main.baz:115:9] alias silenced -> 1
             # [lib.baz:17:5] self.silenced = silenced
             # [lib.baz:17:21] ? shorthand: silenced
-            cmp.f3.17.21.117.9.135.5:
+            cmp.f3.17.21.115.9.143.5:
             # [lib.baz:17:21] const eval to true
-            bool.f3.17.21.117.9.135.5.end:
+            bool.f3.17.21.115.9.143.5.end:
             # [lib.baz:17:21] allocate scratch register -> t0
             lui t0, 1048470
             add t0, t0, s0
@@ -361,64 +340,85 @@ main:
             sb t1, -59(t0)
             # [lib.baz:17:21] free scratch register t1
             # [lib.baz:17:21] free scratch register t0
-        func.printer.set_silenced.117.9.135.5.end:
-        # [main.baz:118:5] foo str_creation_script
-        # [main.baz:118:9] allocate scratch register -> t0
-        # [main.baz:118:9] initiate iterator e
+        func.printer.set_silenced.115.9.143.5.end:
+        # [main.baz:117:5] var tz = tokenizer
+        # [main.baz:117:9] tz: tokenizer (1036 B @ [s0 - 2032])
+        # [main.baz:117:9] tz = tokenizer
+        # [main.baz:117:14] zero remaining fields: 1036 B
+        # [main.baz:117:14] zero loop of 4-byte accesses: start word aligned
+        # [main.baz:117:14] allocate scratch register -> t0
+        addi t0, s0, -2032
+        # [main.baz:117:14] allocate scratch register -> t1
+        # [main.baz:117:14] zero 4-byte words
+        addi t1, t0, 1036
+        1:
+        sw zero, 0(t0)
+        addi t0, t0, 4
+        bne t0, t1, 1b
+        # [main.baz:117:14] free scratch register t1
+        # [main.baz:117:14] free scratch register t0
+        # [main.baz:118:5] var line_start = 0
+        # [main.baz:118:9] line_start: i32 (4 B @ [s0 - 996])
+        # [main.baz:118:9] line_start = 0
+        # [main.baz:118:22] 0
+        sw zero, -996(s0)
+        # [main.baz:120:5] foo str_creation_script
+        # [main.baz:120:9] allocate scratch register -> t0
+        # [main.baz:120:9] initiate iterator e
         lui t0, 1048575
         add t0, t0, s0
         addi t0, t0, 1924
-        # [main.baz:118:5] allocate scratch register -> t1
-        # [main.baz:118:9] e: i8 (t0)
-        # [main.baz:118:9] i: i32 (t1)
-        # [main.baz:118:9] const n = 81
-        # [main.baz:118:5] initiate counter i
+        # [main.baz:120:5] allocate scratch register -> t1
+        # [main.baz:120:9] e: i8 (t0)
+        # [main.baz:120:9] i: i32 (t1)
+        # [main.baz:120:9] const n = 81
+        # [main.baz:120:5] initiate counter i
         li t1, 0
-        foo.118.5.135.5:
-            if.119.12.135.5:
-            # [main.baz:119:12] ? e == '\n'
-            cmp.119.12.135.5:
-            # [main.baz:119:12] allocate scratch register -> t2
+        foo.120.5.143.5:
+            if.121.12.143.5:
+            # [main.baz:121:12] ? e == '\n'
+            cmp.121.12.143.5:
+            # [main.baz:121:12] allocate scratch register -> t2
             lb t2, 0(t0)
-            # [main.baz:119:12] allocate scratch register -> t3
+            # [main.baz:121:12] allocate scratch register -> t3
             li t3, 10
-            bne t2, t3, if.119.9.135.5.end
-            # [main.baz:119:12] free scratch register t3
-            # [main.baz:119:12] free scratch register t2
-            if.119.12.135.5.code:
-                # [main.baz:120:16] tz.set_line(str_creation_script, line_start, i - line_start)
-                # [main.baz:120:58] allocate scratch register -> t2
-                # [main.baz:120:58] i
+            bne t2, t3, if.121.9.143.5.end
+            # [main.baz:121:12] free scratch register t3
+            # [main.baz:121:12] free scratch register t2
+            if.121.12.143.5.code:
+                # [main.baz:122:16] tz.set_line(str_creation_script, line_start, i - line_start)
+                # [main.baz:122:58] allocate scratch register -> t2
+                # [main.baz:122:58] i
                 addi t2, t1, 0
-                # [main.baz:120:62] t2 - line_start
-                # [main.baz:120:62] src: operand
-                # [main.baz:120:62] overflow check begin
-                # [main.baz:120:62] allocate scratch register -> t3
+                # [main.baz:122:62] t2 - line_start
+                # [main.baz:122:62] src: operand
+                # [main.baz:122:62] overflow check begin
+                # [main.baz:122:62] allocate scratch register -> t3
                 mv t3, t2
-                # [main.baz:120:62] allocate scratch register -> t4
+                # [main.baz:122:62] allocate scratch register -> t4
                 lw t4, -996(s0)
                 sub t2, t2, t4
-                # [main.baz:120:62] allocate scratch register -> t5
+                # [main.baz:122:62] allocate scratch register -> t5
                 slt t5, t2, t3
                 sub t3, t3, t2
                 slt t3, zero, t3
                 beq t5, t3, 2f
-                li a0, 120
+                li a0, 122
                 j baz_overflow_panic
                 2:
-                # [main.baz:120:62] overflow check end
-                # [main.baz:120:62] free scratch register t5
-                # [main.baz:120:62] free scratch register t4
-                # [main.baz:120:62] free scratch register t3
+                # [main.baz:122:62] overflow check end
+                # [main.baz:122:62] free scratch register t5
+                # [main.baz:122:62] free scratch register t4
+                # [main.baz:122:62] free scratch register t3
                 # [lib.baz:284:10] mut tokenizer.set_line(script i8[], line_start, count)
-                func.tokenizer.set_line.120.16.135.5:
-                    # [main.baz:120:16] alias self -> tz
-                    # [main.baz:120:16] alias script -> str_creation_script
-                    # [main.baz:120:16] alias line_start -> line_start
-                    # [main.baz:120:16] alias count -> t2
+                func.tokenizer.set_line.122.16.143.5:
+                    # [main.baz:122:16] alias self -> tz
+                    # [main.baz:122:16] alias script -> str_creation_script
+                    # [main.baz:122:16] alias line_start -> line_start
+                    # [main.baz:122:16] alias count -> t2
                     # [lib.baz:285:10] self.reset()
                     # [lib.baz:274:10] mut tokenizer.reset()
-                    func.tokenizer.reset.f3.285.10.120.16.135.5:
+                    func.tokenizer.reset.f3.285.10.122.16.143.5:
                         # [lib.baz:285:10] alias self -> self
                         # [lib.baz:275:5] self.start = 0
                         # [lib.baz:275:18] 0
@@ -426,7 +426,7 @@ main:
                         # [lib.baz:276:5] self.end = 0
                         # [lib.baz:276:16] 0
                         sw zero, -1000(s0)
-                    func.tokenizer.reset.f3.285.10.120.16.135.5.end:
+                    func.tokenizer.reset.f3.285.10.122.16.143.5.end:
                     # [lib.baz:286:5] array_copy(script[line_start], self.string.array, count)
                     # [lib.baz:286:5] allocate scratch register -> t3
                     # [lib.baz:286:5] allocate scratch register -> t4
@@ -514,16 +514,16 @@ main:
                     # [lib.baz:287:5] self.string.len = count
                     # [lib.baz:287:23] count
                     sw t2, -1008(s0)
-                    # [main.baz:120:16] free scratch register t2
-                func.tokenizer.set_line.120.16.135.5.end:
-                # [main.baz:121:13] parse_input(0, tz)
-                # [main.baz:121:13] call-arg-3420-0: i32 (4 B @ [s0 - 992])
-                # [main.baz:121:25] 0
+                    # [main.baz:122:16] free scratch register t2
+                func.tokenizer.set_line.122.16.143.5.end:
+                # [main.baz:123:13] parse_input(0, tz)
+                # [main.baz:123:13] call-arg-3423-0: i32 (4 B @ [s0 - 992])
+                # [main.baz:123:25] 0
                 sw zero, -992(s0)
-                # [main.baz:121:13] frame capacity check begin
-                # [main.baz:121:13] callee storage starts after the caller's storage (s0 - 988)
-                # [main.baz:121:13] allocate scratch register -> t2
-                # [main.baz:121:13] allocate scratch register -> t3
+                # [main.baz:123:13] frame capacity check begin
+                # [main.baz:123:13] callee storage starts after the caller's storage (s0 - 988)
+                # [main.baz:123:13] allocate scratch register -> t2
+                # [main.baz:123:13] allocate scratch register -> t3
                 addi t2, s0, -988
                 bgtu t2, s0, 1f
                 la t3, vars
@@ -537,171 +537,171 @@ main:
                 1:
                 j baz_frame_overflow
                 2:
-                # [main.baz:121:13] free scratch register t3
-                # [main.baz:121:13] free scratch register t2
-                # [main.baz:121:13] frame capacity check end
-                # [main.baz:121:13] stack capacity check begin
-                # [main.baz:121:13] allocate scratch register -> t2
-                # [main.baz:121:13] allocate scratch register -> t3
+                # [main.baz:123:13] free scratch register t3
+                # [main.baz:123:13] free scratch register t2
+                # [main.baz:123:13] frame capacity check end
+                # [main.baz:123:13] stack capacity check begin
+                # [main.baz:123:13] allocate scratch register -> t2
+                # [main.baz:123:13] allocate scratch register -> t3
                 li t2, 8323072
-                # [main.baz:121:13] lowest stack pointer the call reaches
+                # [main.baz:123:13] lowest stack pointer the call reaches
                 addi t3, sp, -96
                 bgeu t3, t2, 2f
                 j baz_stack_overflow
                 2:
-                # [main.baz:121:13] free scratch register t3
-                # [main.baz:121:13] free scratch register t2
-                # [main.baz:121:13] stack capacity check end
-                # [main.baz:121:13] address of argument '0' to parameter 'eid'
-                # [main.baz:121:13] allocate scratch register -> t2
+                # [main.baz:123:13] free scratch register t3
+                # [main.baz:123:13] free scratch register t2
+                # [main.baz:123:13] stack capacity check end
+                # [main.baz:123:13] address of argument '0' to parameter 'eid'
+                # [main.baz:123:13] allocate scratch register -> t2
                 addi t2, s0, -992
                 sw t2, -988(s0)
-                # [main.baz:121:13] free scratch register t2
-                # [main.baz:121:13] address of argument 'tz' to parameter 'tz'
-                # [main.baz:121:13] allocate scratch register -> t2
+                # [main.baz:123:13] free scratch register t2
+                # [main.baz:123:13] address of argument 'tz' to parameter 'tz'
+                # [main.baz:123:13] allocate scratch register -> t2
                 addi t2, s0, -2032
                 sw t2, -984(s0)
-                # [main.baz:121:13] free scratch register t2
-                # [main.baz:121:13] before call: save allocated registers
+                # [main.baz:123:13] free scratch register t2
+                # [main.baz:123:13] before call: save allocated registers
                 addi sp, sp, -16
                 sw t0, 0(sp)
                 sw t1, 4(sp)
-                # [main.baz:121:13] set function frame base
+                # [main.baz:123:13] set function frame base
                 addi s1, s0, -988
                 call func.parse_input
-                # [main.baz:121:13] after call: restore saved registers
+                # [main.baz:123:13] after call: restore saved registers
                 lw t0, 0(sp)
                 lw t1, 4(sp)
                 addi sp, sp, 16
-                # [main.baz:122:13] line_start = i + 1
-                # [main.baz:122:26] smaller of two versions of 8 and 7 instructions
-                # [main.baz:122:26] allocate scratch register -> t2
-                # [main.baz:122:26] i
+                # [main.baz:124:13] line_start = i + 1
+                # [main.baz:124:26] smaller of two versions of 8 and 7 instructions
+                # [main.baz:124:26] allocate scratch register -> t2
+                # [main.baz:124:26] i
                 addi t2, t1, 0
-                # [main.baz:122:26] t2 + 1
-                # [main.baz:122:26] src: folded constant '+ 1'
-                # [main.baz:122:26] overflow check begin
+                # [main.baz:124:26] t2 + 1
+                # [main.baz:124:26] src: folded constant '+ 1'
+                # [main.baz:124:26] overflow check begin
                 addi t2, t2, 1
-                # [main.baz:122:26] allocate scratch register -> t3
+                # [main.baz:124:26] allocate scratch register -> t3
                 addi t3, t2, -1
                 bge t2, t3, 2f
-                li a0, 122
+                li a0, 124
                 j baz_overflow_panic
                 2:
-                # [main.baz:122:26] overflow check end
-                # [main.baz:122:26] free scratch register t3
+                # [main.baz:124:26] overflow check end
+                # [main.baz:124:26] free scratch register t3
                 sw t2, -996(s0)
-                # [main.baz:122:26] free scratch register t2
-            if.119.9.135.5.end:
-            foo.118.5.135.5.continue:
+                # [main.baz:124:26] free scratch register t2
+            if.121.9.143.5.end:
+            foo.120.5.143.5.continue:
                 addi t0, t0, 1
                 addi t1, t1, 1
-                # [main.baz:118:5] allocate scratch register -> t2
+                # [main.baz:120:5] allocate scratch register -> t2
                 li t2, 81
-                bne t1, t2, foo.118.5.135.5
-                # [main.baz:118:5] free scratch register t2
-        foo.118.5.135.5.end:
-        # [main.baz:118:5] free scratch register t1
-        # [main.baz:118:5] free scratch register t0
-        # [main.baz:125:9] out.set_silenced(false)
+                bne t1, t2, foo.120.5.143.5
+                # [main.baz:120:5] free scratch register t2
+        foo.120.5.143.5.end:
+        # [main.baz:120:5] free scratch register t1
+        # [main.baz:120:5] free scratch register t0
+        # [main.baz:129:5] foo entities.array, entities.len
+        # [main.baz:129:9] allocate scratch register -> t0
+        # [main.baz:129:9] initiate iterator e
+        lui t0, 1048470
+        add t0, t0, s0
+        addi t0, t0, -32
+        # [main.baz:129:25] allocate scratch register -> t1
+        # [main.baz:129:25] count entities.len
+        # [main.baz:129:25] entities.len
+        lui t1, 1048507
+        add t1, t1, s0
+        lw t1, 480(t1)
+        # [main.baz:129:25] bounds check begin
+        # [main.baz:129:25] lower bound
+        # [main.baz:129:25] t1 lower bound covered by the unsigned upper bound
+        # [main.baz:129:25] upper bound
+        # [main.baz:129:25] allocate scratch register -> t2
+        li t2, 32
+        bgeu t2, t1, 2f
+        1:
+        # [main.baz:129:25] source line
+        li a0, 129
+        j baz_bounds_panic
+        2:
+        # [main.baz:129:25] free scratch register t2
+        # [main.baz:129:25] bounds check end
+        # [main.baz:129:5] allocate scratch register -> t2
+        # [main.baz:129:9] e: entity (t0)
+        # [main.baz:129:9] i: i32 (t2)
+        # [main.baz:129:9] const n = 32
+        # [main.baz:129:5] initiate counter i
+        li t2, 0
+        bge zero, t1, foo.129.5.143.5.end
+        foo.129.5.143.5:
+            # [main.baz:130:9] e.messages.len = 0
+            # [main.baz:130:26] 0
+            # [main.baz:130:26] allocate scratch register -> t3
+            lui t3, 1
+            add t3, t3, t0
+            sw zero, 652(t3)
+            # [main.baz:130:26] free scratch register t3
+            foo.129.5.143.5.continue:
+                # [main.baz:129:5] allocate scratch register -> t3
+                li t3, 4752
+                add t0, t0, t3
+                # [main.baz:129:5] free scratch register t3
+                addi t2, t2, 1
+                bne t2, t1, foo.129.5.143.5
+        foo.129.5.143.5.end:
+        # [main.baz:129:5] free scratch register t2
+        # [main.baz:129:5] free scratch register t1
+        # [main.baz:129:5] free scratch register t0
+        # [main.baz:133:9] out.set_silenced(false)
         # [lib.baz:16:10] mut printer.set_silenced(silenced bool)
-        func.printer.set_silenced.125.9.135.5:
-            # [main.baz:125:9] alias self -> out
-            # [main.baz:125:9] alias silenced -> 0
+        func.printer.set_silenced.133.9.143.5:
+            # [main.baz:133:9] alias self -> out
+            # [main.baz:133:9] alias silenced -> 0
             # [lib.baz:17:5] self.silenced = silenced
             # [lib.baz:17:21] ? shorthand: silenced
-            cmp.f3.17.21.125.9.135.5:
+            cmp.f3.17.21.133.9.143.5:
             # [lib.baz:17:21] const eval to false
-            bool.f3.17.21.125.9.135.5.end:
+            bool.f3.17.21.133.9.143.5.end:
             # [lib.baz:17:21] allocate scratch register -> t0
             lui t0, 1048470
             add t0, t0, s0
             sb zero, -59(t0)
             # [lib.baz:17:21] free scratch register t0
-        func.printer.set_silenced.125.9.135.5.end:
-    func.run_creation_script.135.5.end:
-    # [main.baz:138:5] foo entities.array, entities.len
-    # [main.baz:138:9] allocate scratch register -> t0
-    # [main.baz:138:9] initiate iterator e
-    lui t0, 1048470
-    add t0, t0, s0
-    addi t0, t0, -32
-    # [main.baz:138:25] allocate scratch register -> t1
-    # [main.baz:138:25] count entities.len
-    # [main.baz:138:25] entities.len
-    lui t1, 1048507
-    add t1, t1, s0
-    lw t1, 480(t1)
-    # [main.baz:138:25] bounds check begin
-    # [main.baz:138:25] lower bound
-    # [main.baz:138:25] t1 lower bound covered by the unsigned upper bound
-    # [main.baz:138:25] upper bound
-    # [main.baz:138:25] allocate scratch register -> t2
-    li t2, 32
-    bgeu t2, t1, 2f
-    1:
-    # [main.baz:138:25] source line
-    li a0, 138
-    j baz_bounds_panic
-    2:
-    # [main.baz:138:25] free scratch register t2
-    # [main.baz:138:25] bounds check end
-    # [main.baz:138:5] allocate scratch register -> t2
-    # [main.baz:138:9] e: entity (t0)
-    # [main.baz:138:9] i: i32 (t2)
-    # [main.baz:138:9] const n = 32
-    # [main.baz:138:5] initiate counter i
-    li t2, 0
-    bge zero, t1, foo.138.5.end
-    foo.138.5:
-        # [main.baz:139:9] e.messages.len = 0
-        # [main.baz:139:26] 0
-        # [main.baz:139:26] allocate scratch register -> t3
-        lui t3, 1
-        add t3, t3, t0
-        sw zero, 652(t3)
-        # [main.baz:139:26] free scratch register t3
-        foo.138.5.continue:
-            # [main.baz:138:5] allocate scratch register -> t3
-            li t3, 4752
-            add t0, t0, t3
-            # [main.baz:138:5] free scratch register t3
-            addi t2, t2, 1
-            bne t2, t1, foo.138.5
-    foo.138.5.end:
-    # [main.baz:138:5] free scratch register t2
-    # [main.baz:138:5] free scratch register t1
-    # [main.baz:138:5] free scratch register t0
-    # [main.baz:142:9] out.print_all(str_ascii_art)
+        func.printer.set_silenced.133.9.143.5.end:
+    func.run_creation_script.143.5.end:
+    # [main.baz:145:9] out.print_all(str_ascii_art)
     # [lib.baz:30:6] printer.print_all(s i8[])
-    func.printer.print_all.142.9:
-        # [main.baz:142:9] alias self -> out
-        # [main.baz:142:9] alias s -> str_ascii_art
+    func.printer.print_all.145.9:
+        # [main.baz:145:9] alias self -> out
+        # [main.baz:145:9] alias s -> str_ascii_art
         # [lib.baz:31:10] self.print(s, array_length(s))
         # [lib.baz:26:6] printer.print(s i8[], count)
-        func.printer.print.f3.31.10.142.9:
+        func.printer.print.f3.31.10.145.9:
             # [lib.baz:31:10] alias self -> self
             # [lib.baz:31:10] alias s -> s
             # [lib.baz:31:10] alias count -> 824
             # [lib.baz:27:10] self.print_at(s, count, 0)
             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-            func.printer.print_at.f3.27.10.f3.31.10.142.9:
+            func.printer.print_at.f3.27.10.f3.31.10.145.9:
                 # [lib.baz:27:10] alias self -> self
                 # [lib.baz:27:10] alias s -> s
                 # [lib.baz:27:10] alias count -> 824
                 # [lib.baz:27:10] alias start -> 0
-                if.f3.21.8.f3.27.10.f3.31.10.142.9:
+                if.f3.21.8.f3.27.10.f3.31.10.145.9:
                 # [lib.baz:21:8] ? shorthand: self.silenced
-                cmp.f3.21.8.f3.27.10.f3.31.10.142.9:
+                cmp.f3.21.8.f3.27.10.f3.31.10.145.9:
                 # [lib.baz:21:8] allocate scratch register -> t0
                 lui t0, 1048470
                 add t0, t0, s0
                 lbu t0, -59(t0)
-                bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.142.9.end
+                bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.145.9.end
                 # [lib.baz:21:8] free scratch register t0
-                if.f3.21.8.f3.27.10.f3.31.10.142.9.code:
+                if.f3.21.8.f3.27.10.f3.31.10.145.9.code:
                     # [lib.baz:21:22] return
-                if.f3.21.5.f3.27.10.f3.31.10.142.9.end:
+                if.f3.21.5.f3.27.10.f3.31.10.145.9.end:
                 # [lib.baz:23:5] write(1, s, count, start)
                 # [lib.baz:23:5] allocate named register a0
                 # [lib.baz:23:5] allocate named register a1
@@ -742,39 +742,39 @@ main:
                 # [lib.baz:23:5] free named register a2
                 # [lib.baz:23:5] free named register a1
                 # [lib.baz:23:5] free named register a0
-            func.printer.print_at.f3.27.10.f3.31.10.142.9.end:
-        func.printer.print.f3.31.10.142.9.end:
-    func.printer.print_all.142.9.end:
-    # [main.baz:143:9] out.print_all(str_hello)
+            func.printer.print_at.f3.27.10.f3.31.10.145.9.end:
+        func.printer.print.f3.31.10.145.9.end:
+    func.printer.print_all.145.9.end:
+    # [main.baz:146:9] out.print_all(str_hello)
     # [lib.baz:30:6] printer.print_all(s i8[])
-    func.printer.print_all.143.9:
-        # [main.baz:143:9] alias self -> out
-        # [main.baz:143:9] alias s -> str_hello
+    func.printer.print_all.146.9:
+        # [main.baz:146:9] alias self -> out
+        # [main.baz:146:9] alias s -> str_hello
         # [lib.baz:31:10] self.print(s, array_length(s))
         # [lib.baz:26:6] printer.print(s i8[], count)
-        func.printer.print.f3.31.10.143.9:
+        func.printer.print.f3.31.10.146.9:
             # [lib.baz:31:10] alias self -> self
             # [lib.baz:31:10] alias s -> s
             # [lib.baz:31:10] alias count -> 41
             # [lib.baz:27:10] self.print_at(s, count, 0)
             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-            func.printer.print_at.f3.27.10.f3.31.10.143.9:
+            func.printer.print_at.f3.27.10.f3.31.10.146.9:
                 # [lib.baz:27:10] alias self -> self
                 # [lib.baz:27:10] alias s -> s
                 # [lib.baz:27:10] alias count -> 41
                 # [lib.baz:27:10] alias start -> 0
-                if.f3.21.8.f3.27.10.f3.31.10.143.9:
+                if.f3.21.8.f3.27.10.f3.31.10.146.9:
                 # [lib.baz:21:8] ? shorthand: self.silenced
-                cmp.f3.21.8.f3.27.10.f3.31.10.143.9:
+                cmp.f3.21.8.f3.27.10.f3.31.10.146.9:
                 # [lib.baz:21:8] allocate scratch register -> t0
                 lui t0, 1048470
                 add t0, t0, s0
                 lbu t0, -59(t0)
-                bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.143.9.end
+                bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.146.9.end
                 # [lib.baz:21:8] free scratch register t0
-                if.f3.21.8.f3.27.10.f3.31.10.143.9.code:
+                if.f3.21.8.f3.27.10.f3.31.10.146.9.code:
                     # [lib.baz:21:22] return
-                if.f3.21.5.f3.27.10.f3.31.10.143.9.end:
+                if.f3.21.5.f3.27.10.f3.31.10.146.9.end:
                 # [lib.baz:23:5] write(1, s, count, start)
                 # [lib.baz:23:5] allocate named register a0
                 # [lib.baz:23:5] allocate named register a1
@@ -815,69 +815,69 @@ main:
                 # [lib.baz:23:5] free named register a2
                 # [lib.baz:23:5] free named register a1
                 # [lib.baz:23:5] free named register a0
-            func.printer.print_at.f3.27.10.f3.31.10.143.9.end:
-        func.printer.print.f3.31.10.143.9.end:
-    func.printer.print_all.143.9.end:
-    # [main.baz:145:5] var tz = tokenizer
-    # [main.baz:145:9] tz: tokenizer (1036 B @ [s0 - 2032])
-    # [main.baz:145:9] tz = tokenizer
-    # [main.baz:145:14] zero remaining fields: 1036 B
-    # [main.baz:145:14] zero loop of 4-byte accesses: start word aligned
-    # [main.baz:145:14] allocate scratch register -> t0
+            func.printer.print_at.f3.27.10.f3.31.10.146.9.end:
+        func.printer.print.f3.31.10.146.9.end:
+    func.printer.print_all.146.9.end:
+    # [main.baz:148:5] var tz = tokenizer
+    # [main.baz:148:9] tz: tokenizer (1036 B @ [s0 - 2032])
+    # [main.baz:148:9] tz = tokenizer
+    # [main.baz:148:14] zero remaining fields: 1036 B
+    # [main.baz:148:14] zero loop of 4-byte accesses: start word aligned
+    # [main.baz:148:14] allocate scratch register -> t0
     addi t0, s0, -2032
-    # [main.baz:145:14] allocate scratch register -> t1
-    # [main.baz:145:14] zero 4-byte words
+    # [main.baz:148:14] allocate scratch register -> t1
+    # [main.baz:148:14] zero 4-byte words
     addi t1, t0, 1036
     1:
     sw zero, 0(t0)
     addi t0, t0, 4
     bne t0, t1, 1b
-    # [main.baz:145:14] free scratch register t1
-    # [main.baz:145:14] free scratch register t0
-    # [main.baz:146:5] var eid = 0
-    # [main.baz:146:9] eid: i32 (4 B @ [s0 - 996])
-    # [main.baz:146:9] eid = 0
-    # [main.baz:146:15] 0
+    # [main.baz:148:14] free scratch register t1
+    # [main.baz:148:14] free scratch register t0
+    # [main.baz:149:5] var eid = 0
+    # [main.baz:149:9] eid: i32 (4 B @ [s0 - 996])
+    # [main.baz:149:9] eid = 0
+    # [main.baz:149:15] 0
     sw zero, -996(s0)
-    # [main.baz:147:5] loop
-    loop.147.5:
-        if.148.12:
-        # [main.baz:148:12] ? eid == entities.len
-        cmp.148.12:
-        # [main.baz:148:12] allocate scratch register -> t0
+    # [main.baz:150:5] loop
+    loop.150.5:
+        if.151.12:
+        # [main.baz:151:12] ? eid == entities.len
+        cmp.151.12:
+        # [main.baz:151:12] allocate scratch register -> t0
         lw t0, -996(s0)
-        # [main.baz:148:12] allocate scratch register -> t1
+        # [main.baz:151:12] allocate scratch register -> t1
         lui t1, 1048507
         add t1, t1, s0
         lw t1, 480(t1)
-        bne t0, t1, if.148.9.end
-        # [main.baz:148:12] free scratch register t1
-        # [main.baz:148:12] free scratch register t0
-        if.148.12.code:
-            # [main.baz:149:13] eid = 0
-            # [main.baz:149:19] 0
+        bne t0, t1, if.151.9.end
+        # [main.baz:151:12] free scratch register t1
+        # [main.baz:151:12] free scratch register t0
+        if.151.12.code:
+            # [main.baz:152:13] eid = 0
+            # [main.baz:152:19] 0
             sw zero, -996(s0)
-        if.148.9.end:
-        # [main.baz:151:29] entities.array[eid].print_messages()
-        # [main.baz:151:24] allocate scratch register -> t0
-        # [main.baz:151:24] set array index
-        # [main.baz:151:24] eid
+        if.151.9.end:
+        # [main.baz:154:29] entities.array[eid].print_messages()
+        # [main.baz:154:24] allocate scratch register -> t0
+        # [main.baz:154:24] set array index
+        # [main.baz:154:24] eid
         lw t0, -996(s0)
-        # [main.baz:151:24] bounds check begin
-        # [main.baz:151:24] lower bound
-        # [main.baz:151:24] t0 lower bound covered by the unsigned upper bound
-        # [main.baz:151:24] upper bound
-        # [main.baz:151:24] allocate scratch register -> t1
+        # [main.baz:154:24] bounds check begin
+        # [main.baz:154:24] lower bound
+        # [main.baz:154:24] t0 lower bound covered by the unsigned upper bound
+        # [main.baz:154:24] upper bound
+        # [main.baz:154:24] allocate scratch register -> t1
         li t1, 32
         bltu t0, t1, 2f
         1:
-        # [main.baz:151:24] source line
-        li a0, 151
+        # [main.baz:154:24] source line
+        li a0, 154
         j baz_bounds_panic
         2:
-        # [main.baz:151:24] free scratch register t1
-        # [main.baz:151:24] bounds check end
-        # [main.baz:151:24] allocate scratch register -> t1
+        # [main.baz:154:24] free scratch register t1
+        # [main.baz:154:24] bounds check end
+        # [main.baz:154:24] allocate scratch register -> t1
         slli t1, t0, 3
         add t1, t1, t0
         slli t1, t1, 2
@@ -885,15 +885,15 @@ main:
         slli t1, t1, 3
         add t0, t1, t0
         slli t0, t0, 4
-        # [main.baz:151:24] free scratch register t1
-        # [main.baz:151:29] smaller of two versions of 178 and 176 instructions
-        # [main.baz:151:29] smaller of two versions of 177 and 176 instructions
-        # [main.baz:151:29] allocate scratch register -> t1
-        # [main.baz:151:29] address of parameter 'self'
+        # [main.baz:154:24] free scratch register t1
+        # [main.baz:154:29] smaller of two versions of 178 and 176 instructions
+        # [main.baz:154:29] smaller of two versions of 177 and 176 instructions
+        # [main.baz:154:29] allocate scratch register -> t1
+        # [main.baz:154:29] address of parameter 'self'
         add t1, s0, t0
         # [model.baz:81:10] mut entity.print_messages()
-        func.entity.print_messages.151.29:
-            # [main.baz:151:29] alias self -> entities.array
+        func.entity.print_messages.154.29:
+            # [main.baz:154:29] alias self -> entities.array
             # [model.baz:82:5] foo self.messages.array, self.messages.len
             # [model.baz:82:9] allocate scratch register -> t2
             # [model.baz:82:9] initiate iterator e
@@ -926,11 +926,11 @@ main:
             # [model.baz:82:9] const n = 8
             # [model.baz:82:5] initiate counter i
             li t4, 0
-            bge zero, t3, foo.f2.82.5.151.29.end
-            foo.f2.82.5.151.29:
+            bge zero, t3, foo.f2.82.5.154.29.end
+            foo.f2.82.5.154.29:
                 # [model.baz:83:11] e.print()
                 # [model.baz:69:6] message.print()
-                func.message.print.f2.83.11.151.29:
+                func.message.print.f2.83.11.154.29:
                     # [model.baz:83:11] alias self -> e
                     # [model.baz:70:36] entities.array[self.from].name.print()
                     # [model.baz:70:20] allocate scratch register -> t5
@@ -971,34 +971,34 @@ main:
                     # [model.baz:70:36] free scratch register s1
                     addi t6, t6, -32
                     # [lib.baz:125:6] text.print()
-                    func.name.print.f2.70.36.f2.83.11.151.29:
+                    func.name.print.f2.70.36.f2.83.11.154.29:
                         # [lib.baz:125:6] const capacity = 32
                         # [model.baz:70:36] alias self -> entities.array.name
                         # [lib.baz:126:9] out.print(self.array, self.len)
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.126.9.f2.70.36.f2.83.11.151.29:
+                        func.printer.print.f3.126.9.f2.70.36.f2.83.11.154.29:
                             # [lib.baz:126:9] alias self -> out
                             # [lib.baz:126:9] alias s -> self.array
                             # [lib.baz:126:9] alias count -> self.len
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.126.9.f2.70.36.f2.83.11.151.29:
+                            func.printer.print_at.f3.27.10.f3.126.9.f2.70.36.f2.83.11.154.29:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> count
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.126.9.f2.70.36.f2.83.11.151.29:
+                                if.f3.21.8.f3.27.10.f3.126.9.f2.70.36.f2.83.11.154.29:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.126.9.f2.70.36.f2.83.11.151.29:
+                                cmp.f3.21.8.f3.27.10.f3.126.9.f2.70.36.f2.83.11.154.29:
                                 # [lib.baz:21:8] allocate scratch register -> s1
                                 lui s1, 1048470
                                 add s1, s1, s0
                                 lbu s1, -59(s1)
-                                bne s1, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.70.36.f2.83.11.151.29.end
+                                bne s1, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.70.36.f2.83.11.154.29.end
                                 # [lib.baz:21:8] free scratch register s1
-                                if.f3.21.8.f3.27.10.f3.126.9.f2.70.36.f2.83.11.151.29.code:
+                                if.f3.21.8.f3.27.10.f3.126.9.f2.70.36.f2.83.11.154.29.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.126.9.f2.70.36.f2.83.11.151.29.end:
+                                if.f3.21.5.f3.27.10.f3.126.9.f2.70.36.f2.83.11.154.29.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -1037,52 +1037,52 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.126.9.f2.70.36.f2.83.11.151.29.end:
-                        func.printer.print.f3.126.9.f2.70.36.f2.83.11.151.29.end:
+                            func.printer.print_at.f3.27.10.f3.126.9.f2.70.36.f2.83.11.154.29.end:
+                        func.printer.print.f3.126.9.f2.70.36.f2.83.11.154.29.end:
                         # [model.baz:70:36] free scratch register t6
-                    func.name.print.f2.70.36.f2.83.11.151.29.end:
+                    func.name.print.f2.70.36.f2.83.11.154.29.end:
                         # [model.baz:70:36] free scratch register t5
-                    if.f2.71.8.f2.83.11.151.29:
+                    if.f2.71.8.f2.83.11.154.29:
                     # [model.baz:71:8] ? self.kind == message_said
-                    cmp.f2.71.8.f2.83.11.151.29:
+                    cmp.f2.71.8.f2.83.11.154.29:
                     # [model.baz:71:8] allocate scratch register -> t5
                     lw t5, 4(t2)
                     # [model.baz:71:8] allocate scratch register -> t6
                     li t6, 1
-                    bne t5, t6, if.f2.73.15.f2.83.11.151.29
+                    bne t5, t6, if.f2.73.15.f2.83.11.154.29
                     # [model.baz:71:8] free scratch register t6
                     # [model.baz:71:8] free scratch register t5
-                    if.f2.71.8.f2.83.11.151.29.code:
+                    if.f2.71.8.f2.83.11.154.29.code:
                         # [model.baz:72:13] out.print_all(str_said)
                         # [lib.baz:30:6] printer.print_all(s i8[])
-                        func.printer.print_all.f2.72.13.f2.83.11.151.29:
+                        func.printer.print_all.f2.72.13.f2.83.11.154.29:
                             # [model.baz:72:13] alias self -> out
                             # [model.baz:72:13] alias s -> str_said
                             # [lib.baz:31:10] self.print(s, array_length(s))
                             # [lib.baz:26:6] printer.print(s i8[], count)
-                            func.printer.print.f3.31.10.f2.72.13.f2.83.11.151.29:
+                            func.printer.print.f3.31.10.f2.72.13.f2.83.11.154.29:
                                 # [lib.baz:31:10] alias self -> self
                                 # [lib.baz:31:10] alias s -> s
                                 # [lib.baz:31:10] alias count -> 6
                                 # [lib.baz:27:10] self.print_at(s, count, 0)
                                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.72.13.f2.83.11.151.29:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.72.13.f2.83.11.154.29:
                                     # [lib.baz:27:10] alias self -> self
                                     # [lib.baz:27:10] alias s -> s
                                     # [lib.baz:27:10] alias count -> 6
                                     # [lib.baz:27:10] alias start -> 0
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.72.13.f2.83.11.151.29:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.72.13.f2.83.11.154.29:
                                     # [lib.baz:21:8] ? shorthand: self.silenced
-                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.72.13.f2.83.11.151.29:
+                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.72.13.f2.83.11.154.29:
                                     # [lib.baz:21:8] allocate scratch register -> t5
                                     lui t5, 1048470
                                     add t5, t5, s0
                                     lbu t5, -59(t5)
-                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.72.13.f2.83.11.151.29.end
+                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.72.13.f2.83.11.154.29.end
                                     # [lib.baz:21:8] free scratch register t5
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.72.13.f2.83.11.151.29.code:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.72.13.f2.83.11.154.29.code:
                                         # [lib.baz:21:22] return
-                                    if.f3.21.5.f3.27.10.f3.31.10.f2.72.13.f2.83.11.151.29.end:
+                                    if.f3.21.5.f3.27.10.f3.31.10.f2.72.13.f2.83.11.154.29.end:
                                     # [lib.baz:23:5] write(1, s, count, start)
                                     # [lib.baz:23:5] allocate named register a0
                                     # [lib.baz:23:5] allocate named register a1
@@ -1123,48 +1123,48 @@ main:
                                     # [lib.baz:23:5] free named register a2
                                     # [lib.baz:23:5] free named register a1
                                     # [lib.baz:23:5] free named register a0
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.72.13.f2.83.11.151.29.end:
-                            func.printer.print.f3.31.10.f2.72.13.f2.83.11.151.29.end:
-                        func.printer.print_all.f2.72.13.f2.83.11.151.29.end:
-                    j if.f2.71.5.f2.83.11.151.29.end
-                    if.f2.73.15.f2.83.11.151.29:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.72.13.f2.83.11.154.29.end:
+                            func.printer.print.f3.31.10.f2.72.13.f2.83.11.154.29.end:
+                        func.printer.print_all.f2.72.13.f2.83.11.154.29.end:
+                    j if.f2.71.5.f2.83.11.154.29.end
+                    if.f2.73.15.f2.83.11.154.29:
                     # [model.baz:73:15] ? self.kind == message_told
-                    cmp.f2.73.15.f2.83.11.151.29:
+                    cmp.f2.73.15.f2.83.11.154.29:
                     # [model.baz:73:15] allocate scratch register -> t5
                     lw t5, 4(t2)
-                    bne t5, zero, if.f2.75.15.f2.83.11.151.29
+                    bne t5, zero, if.f2.75.15.f2.83.11.154.29
                     # [model.baz:73:15] free scratch register t5
-                    if.f2.73.15.f2.83.11.151.29.code:
+                    if.f2.73.15.f2.83.11.154.29.code:
                         # [model.baz:74:13] out.print_all(str_told_u)
                         # [lib.baz:30:6] printer.print_all(s i8[])
-                        func.printer.print_all.f2.74.13.f2.83.11.151.29:
+                        func.printer.print_all.f2.74.13.f2.83.11.154.29:
                             # [model.baz:74:13] alias self -> out
                             # [model.baz:74:13] alias s -> str_told_u
                             # [lib.baz:31:10] self.print(s, array_length(s))
                             # [lib.baz:26:6] printer.print(s i8[], count)
-                            func.printer.print.f3.31.10.f2.74.13.f2.83.11.151.29:
+                            func.printer.print.f3.31.10.f2.74.13.f2.83.11.154.29:
                                 # [lib.baz:31:10] alias self -> self
                                 # [lib.baz:31:10] alias s -> s
                                 # [lib.baz:31:10] alias count -> 8
                                 # [lib.baz:27:10] self.print_at(s, count, 0)
                                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.74.13.f2.83.11.151.29:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.74.13.f2.83.11.154.29:
                                     # [lib.baz:27:10] alias self -> self
                                     # [lib.baz:27:10] alias s -> s
                                     # [lib.baz:27:10] alias count -> 8
                                     # [lib.baz:27:10] alias start -> 0
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.74.13.f2.83.11.151.29:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.74.13.f2.83.11.154.29:
                                     # [lib.baz:21:8] ? shorthand: self.silenced
-                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.74.13.f2.83.11.151.29:
+                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.74.13.f2.83.11.154.29:
                                     # [lib.baz:21:8] allocate scratch register -> t5
                                     lui t5, 1048470
                                     add t5, t5, s0
                                     lbu t5, -59(t5)
-                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.74.13.f2.83.11.151.29.end
+                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.74.13.f2.83.11.154.29.end
                                     # [lib.baz:21:8] free scratch register t5
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.74.13.f2.83.11.151.29.code:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.74.13.f2.83.11.154.29.code:
                                         # [lib.baz:21:22] return
-                                    if.f3.21.5.f3.27.10.f3.31.10.f2.74.13.f2.83.11.151.29.end:
+                                    if.f3.21.5.f3.27.10.f3.31.10.f2.74.13.f2.83.11.154.29.end:
                                     # [lib.baz:23:5] write(1, s, count, start)
                                     # [lib.baz:23:5] allocate named register a0
                                     # [lib.baz:23:5] allocate named register a1
@@ -1205,51 +1205,51 @@ main:
                                     # [lib.baz:23:5] free named register a2
                                     # [lib.baz:23:5] free named register a1
                                     # [lib.baz:23:5] free named register a0
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.74.13.f2.83.11.151.29.end:
-                            func.printer.print.f3.31.10.f2.74.13.f2.83.11.151.29.end:
-                        func.printer.print_all.f2.74.13.f2.83.11.151.29.end:
-                    j if.f2.71.5.f2.83.11.151.29.end
-                    if.f2.75.15.f2.83.11.151.29:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.74.13.f2.83.11.154.29.end:
+                            func.printer.print.f3.31.10.f2.74.13.f2.83.11.154.29.end:
+                        func.printer.print_all.f2.74.13.f2.83.11.154.29.end:
+                    j if.f2.71.5.f2.83.11.154.29.end
+                    if.f2.75.15.f2.83.11.154.29:
                     # [model.baz:75:15] ? self.kind == message_event
-                    cmp.f2.75.15.f2.83.11.151.29:
+                    cmp.f2.75.15.f2.83.11.154.29:
                     # [model.baz:75:15] allocate scratch register -> t5
                     lw t5, 4(t2)
                     # [model.baz:75:15] allocate scratch register -> t6
                     li t6, 2
-                    bne t5, t6, if.f2.71.5.f2.83.11.151.29.end
+                    bne t5, t6, if.f2.71.5.f2.83.11.154.29.end
                     # [model.baz:75:15] free scratch register t6
                     # [model.baz:75:15] free scratch register t5
-                    if.f2.75.15.f2.83.11.151.29.code:
+                    if.f2.75.15.f2.83.11.154.29.code:
                         # [model.baz:76:13] out.print_all(str_space)
                         # [lib.baz:30:6] printer.print_all(s i8[])
-                        func.printer.print_all.f2.76.13.f2.83.11.151.29:
+                        func.printer.print_all.f2.76.13.f2.83.11.154.29:
                             # [model.baz:76:13] alias self -> out
                             # [model.baz:76:13] alias s -> str_space
                             # [lib.baz:31:10] self.print(s, array_length(s))
                             # [lib.baz:26:6] printer.print(s i8[], count)
-                            func.printer.print.f3.31.10.f2.76.13.f2.83.11.151.29:
+                            func.printer.print.f3.31.10.f2.76.13.f2.83.11.154.29:
                                 # [lib.baz:31:10] alias self -> self
                                 # [lib.baz:31:10] alias s -> s
                                 # [lib.baz:31:10] alias count -> 1
                                 # [lib.baz:27:10] self.print_at(s, count, 0)
                                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.76.13.f2.83.11.151.29:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.76.13.f2.83.11.154.29:
                                     # [lib.baz:27:10] alias self -> self
                                     # [lib.baz:27:10] alias s -> s
                                     # [lib.baz:27:10] alias count -> 1
                                     # [lib.baz:27:10] alias start -> 0
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.76.13.f2.83.11.151.29:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.76.13.f2.83.11.154.29:
                                     # [lib.baz:21:8] ? shorthand: self.silenced
-                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.76.13.f2.83.11.151.29:
+                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.76.13.f2.83.11.154.29:
                                     # [lib.baz:21:8] allocate scratch register -> t5
                                     lui t5, 1048470
                                     add t5, t5, s0
                                     lbu t5, -59(t5)
-                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.76.13.f2.83.11.151.29.end
+                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.76.13.f2.83.11.154.29.end
                                     # [lib.baz:21:8] free scratch register t5
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.76.13.f2.83.11.151.29.code:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.76.13.f2.83.11.154.29.code:
                                         # [lib.baz:21:22] return
-                                    if.f3.21.5.f3.27.10.f3.31.10.f2.76.13.f2.83.11.151.29.end:
+                                    if.f3.21.5.f3.27.10.f3.31.10.f2.76.13.f2.83.11.154.29.end:
                                     # [lib.baz:23:5] write(1, s, count, start)
                                     # [lib.baz:23:5] allocate named register a0
                                     # [lib.baz:23:5] allocate named register a1
@@ -1290,40 +1290,40 @@ main:
                                     # [lib.baz:23:5] free named register a2
                                     # [lib.baz:23:5] free named register a1
                                     # [lib.baz:23:5] free named register a0
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.76.13.f2.83.11.151.29.end:
-                            func.printer.print.f3.31.10.f2.76.13.f2.83.11.151.29.end:
-                        func.printer.print_all.f2.76.13.f2.83.11.151.29.end:
-                    if.f2.71.5.f2.83.11.151.29.end:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.76.13.f2.83.11.154.29.end:
+                            func.printer.print.f3.31.10.f2.76.13.f2.83.11.154.29.end:
+                        func.printer.print_all.f2.76.13.f2.83.11.154.29.end:
+                    if.f2.71.5.f2.83.11.154.29.end:
                     # [model.baz:78:15] self.text.print()
                     # [lib.baz:125:6] text.print()
-                    func.message_text.print.f2.78.15.f2.83.11.151.29:
+                    func.message_text.print.f2.78.15.f2.83.11.154.29:
                         # [lib.baz:125:6] const capacity = 512
                         # [model.baz:78:15] alias self -> self.text
                         # [lib.baz:126:9] out.print(self.array, self.len)
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.126.9.f2.78.15.f2.83.11.151.29:
+                        func.printer.print.f3.126.9.f2.78.15.f2.83.11.154.29:
                             # [lib.baz:126:9] alias self -> out
                             # [lib.baz:126:9] alias s -> self.array
                             # [lib.baz:126:9] alias count -> self.len
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.126.9.f2.78.15.f2.83.11.151.29:
+                            func.printer.print_at.f3.27.10.f3.126.9.f2.78.15.f2.83.11.154.29:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> count
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.126.9.f2.78.15.f2.83.11.151.29:
+                                if.f3.21.8.f3.27.10.f3.126.9.f2.78.15.f2.83.11.154.29:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.126.9.f2.78.15.f2.83.11.151.29:
+                                cmp.f3.21.8.f3.27.10.f3.126.9.f2.78.15.f2.83.11.154.29:
                                 # [lib.baz:21:8] allocate scratch register -> t5
                                 lui t5, 1048470
                                 add t5, t5, s0
                                 lbu t5, -59(t5)
-                                bne t5, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.78.15.f2.83.11.151.29.end
+                                bne t5, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.78.15.f2.83.11.154.29.end
                                 # [lib.baz:21:8] free scratch register t5
-                                if.f3.21.8.f3.27.10.f3.126.9.f2.78.15.f2.83.11.151.29.code:
+                                if.f3.21.8.f3.27.10.f3.126.9.f2.78.15.f2.83.11.154.29.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.126.9.f2.78.15.f2.83.11.151.29.end:
+                                if.f3.21.5.f3.27.10.f3.126.9.f2.78.15.f2.83.11.154.29.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -1362,44 +1362,44 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.126.9.f2.78.15.f2.83.11.151.29.end:
-                        func.printer.print.f3.126.9.f2.78.15.f2.83.11.151.29.end:
-                    func.message_text.print.f2.78.15.f2.83.11.151.29.end:
-                func.message.print.f2.83.11.151.29.end:
+                            func.printer.print_at.f3.27.10.f3.126.9.f2.78.15.f2.83.11.154.29.end:
+                        func.printer.print.f3.126.9.f2.78.15.f2.83.11.154.29.end:
+                    func.message_text.print.f2.78.15.f2.83.11.154.29.end:
+                func.message.print.f2.83.11.154.29.end:
                 # [model.baz:84:13] out.println()
                 # [lib.baz:34:6] printer.println()
-                func.printer.println.f2.84.13.151.29:
+                func.printer.println.f2.84.13.154.29:
                     # [model.baz:84:13] alias self -> out
                     # [lib.baz:35:10] self.print_all(str_nl)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.35.10.f2.84.13.151.29:
+                    func.printer.print_all.f3.35.10.f2.84.13.154.29:
                         # [lib.baz:35:10] alias self -> self
                         # [lib.baz:35:10] alias s -> str_nl
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.35.10.f2.84.13.151.29:
+                        func.printer.print.f3.31.10.f3.35.10.f2.84.13.154.29:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 1
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.84.13.151.29:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.84.13.154.29:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 1
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.84.13.151.29:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.84.13.154.29:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.84.13.151.29:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.84.13.154.29:
                                 # [lib.baz:21:8] allocate scratch register -> t5
                                 lui t5, 1048470
                                 add t5, t5, s0
                                 lbu t5, -59(t5)
-                                bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.84.13.151.29.end
+                                bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.84.13.154.29.end
                                 # [lib.baz:21:8] free scratch register t5
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.84.13.151.29.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.84.13.154.29.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.84.13.151.29.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.84.13.154.29.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -1440,15 +1440,15 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.84.13.151.29.end:
-                        func.printer.print.f3.31.10.f3.35.10.f2.84.13.151.29.end:
-                    func.printer.print_all.f3.35.10.f2.84.13.151.29.end:
-                func.printer.println.f2.84.13.151.29.end:
-                foo.f2.82.5.151.29.continue:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.84.13.154.29.end:
+                        func.printer.print.f3.31.10.f3.35.10.f2.84.13.154.29.end:
+                    func.printer.print_all.f3.35.10.f2.84.13.154.29.end:
+                func.printer.println.f2.84.13.154.29.end:
+                foo.f2.82.5.154.29.continue:
                     addi t2, t2, 524
                     addi t4, t4, 1
-                    bne t4, t3, foo.f2.82.5.151.29
-            foo.f2.82.5.151.29.end:
+                    bne t4, t3, foo.f2.82.5.154.29
+            foo.f2.82.5.154.29.end:
             # [model.baz:82:5] free scratch register t4
             # [model.baz:82:5] free scratch register t3
             # [model.baz:82:5] free scratch register t2
@@ -1459,43 +1459,43 @@ main:
             add t2, t2, t1
             sw zero, 620(t2)
             # [model.baz:87:25] free scratch register t2
-            # [main.baz:151:29] free scratch register t1
-        func.entity.print_messages.151.29.end:
-            # [main.baz:151:29] free scratch register t0
-        # [main.baz:152:13] out.println()
+            # [main.baz:154:29] free scratch register t1
+        func.entity.print_messages.154.29.end:
+            # [main.baz:154:29] free scratch register t0
+        # [main.baz:155:13] out.println()
         # [lib.baz:34:6] printer.println()
-        func.printer.println.152.13:
-            # [main.baz:152:13] alias self -> out
+        func.printer.println.155.13:
+            # [main.baz:155:13] alias self -> out
             # [lib.baz:35:10] self.print_all(str_nl)
             # [lib.baz:30:6] printer.print_all(s i8[])
-            func.printer.print_all.f3.35.10.152.13:
+            func.printer.print_all.f3.35.10.155.13:
                 # [lib.baz:35:10] alias self -> self
                 # [lib.baz:35:10] alias s -> str_nl
                 # [lib.baz:31:10] self.print(s, array_length(s))
                 # [lib.baz:26:6] printer.print(s i8[], count)
-                func.printer.print.f3.31.10.f3.35.10.152.13:
+                func.printer.print.f3.31.10.f3.35.10.155.13:
                     # [lib.baz:31:10] alias self -> self
                     # [lib.baz:31:10] alias s -> s
                     # [lib.baz:31:10] alias count -> 1
                     # [lib.baz:27:10] self.print_at(s, count, 0)
                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.152.13:
+                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.155.13:
                         # [lib.baz:27:10] alias self -> self
                         # [lib.baz:27:10] alias s -> s
                         # [lib.baz:27:10] alias count -> 1
                         # [lib.baz:27:10] alias start -> 0
-                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.152.13:
+                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.155.13:
                         # [lib.baz:21:8] ? shorthand: self.silenced
-                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.152.13:
+                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.155.13:
                         # [lib.baz:21:8] allocate scratch register -> t0
                         lui t0, 1048470
                         add t0, t0, s0
                         lbu t0, -59(t0)
-                        bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.152.13.end
+                        bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.155.13.end
                         # [lib.baz:21:8] free scratch register t0
-                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.152.13.code:
+                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.155.13.code:
                             # [lib.baz:21:22] return
-                        if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.152.13.end:
+                        if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.155.13.end:
                         # [lib.baz:23:5] write(1, s, count, start)
                         # [lib.baz:23:5] allocate named register a0
                         # [lib.baz:23:5] allocate named register a1
@@ -1536,33 +1536,33 @@ main:
                         # [lib.baz:23:5] free named register a2
                         # [lib.baz:23:5] free named register a1
                         # [lib.baz:23:5] free named register a0
-                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.152.13.end:
-                func.printer.print.f3.31.10.f3.35.10.152.13.end:
-            func.printer.print_all.f3.35.10.152.13.end:
-        func.printer.println.152.13.end:
-        # [main.baz:153:50] rooms.array[entities.array[eid].room_id].print(eid)
-        # [main.baz:153:21] allocate scratch register -> t0
-        # [main.baz:153:21] set array index
-        # [main.baz:153:21] entities.array[eid].room_id
-        # [main.baz:153:36] allocate scratch register -> t1
-        # [main.baz:153:36] set array index
-        # [main.baz:153:36] eid
+                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.155.13.end:
+                func.printer.print.f3.31.10.f3.35.10.155.13.end:
+            func.printer.print_all.f3.35.10.155.13.end:
+        func.printer.println.155.13.end:
+        # [main.baz:156:50] rooms.array[entities.array[eid].room_id].print(eid)
+        # [main.baz:156:21] allocate scratch register -> t0
+        # [main.baz:156:21] set array index
+        # [main.baz:156:21] entities.array[eid].room_id
+        # [main.baz:156:36] allocate scratch register -> t1
+        # [main.baz:156:36] set array index
+        # [main.baz:156:36] eid
         lw t1, -996(s0)
-        # [main.baz:153:36] bounds check begin
-        # [main.baz:153:36] lower bound
-        # [main.baz:153:36] t1 lower bound covered by the unsigned upper bound
-        # [main.baz:153:36] upper bound
-        # [main.baz:153:36] allocate scratch register -> t2
+        # [main.baz:156:36] bounds check begin
+        # [main.baz:156:36] lower bound
+        # [main.baz:156:36] t1 lower bound covered by the unsigned upper bound
+        # [main.baz:156:36] upper bound
+        # [main.baz:156:36] allocate scratch register -> t2
         li t2, 32
         bltu t1, t2, 2f
         1:
-        # [main.baz:153:36] source line
-        li a0, 153
+        # [main.baz:156:36] source line
+        li a0, 156
         j baz_bounds_panic
         2:
-        # [main.baz:153:36] free scratch register t2
-        # [main.baz:153:36] bounds check end
-        # [main.baz:153:36] allocate scratch register -> t2
+        # [main.baz:156:36] free scratch register t2
+        # [main.baz:156:36] bounds check end
+        # [main.baz:156:36] allocate scratch register -> t2
         slli t2, t1, 3
         add t2, t2, t1
         slli t2, t2, 2
@@ -1570,29 +1570,29 @@ main:
         slli t2, t2, 3
         add t1, t2, t1
         slli t1, t1, 4
-        # [main.baz:153:36] free scratch register t2
+        # [main.baz:156:36] free scratch register t2
         add t0, s0, t1
-        # [main.baz:153:21] allocate scratch register -> t2
+        # [main.baz:156:21] allocate scratch register -> t2
         lui t2, 1048470
         add t0, t0, t2
-        # [main.baz:153:21] free scratch register t2
+        # [main.baz:156:21] free scratch register t2
         lw t0, 4(t0)
-        # [main.baz:153:21] free scratch register t1
-        # [main.baz:153:21] bounds check begin
-        # [main.baz:153:21] lower bound
-        # [main.baz:153:21] t0 lower bound covered by the unsigned upper bound
-        # [main.baz:153:21] upper bound
-        # [main.baz:153:21] allocate scratch register -> t1
+        # [main.baz:156:21] free scratch register t1
+        # [main.baz:156:21] bounds check begin
+        # [main.baz:156:21] lower bound
+        # [main.baz:156:21] t0 lower bound covered by the unsigned upper bound
+        # [main.baz:156:21] upper bound
+        # [main.baz:156:21] allocate scratch register -> t1
         li t1, 128
         bltu t0, t1, 2f
         1:
-        # [main.baz:153:21] source line
-        li a0, 153
+        # [main.baz:156:21] source line
+        li a0, 156
         j baz_bounds_panic
         2:
-        # [main.baz:153:21] free scratch register t1
-        # [main.baz:153:21] bounds check end
-        # [main.baz:153:21] allocate scratch register -> t1
+        # [main.baz:156:21] free scratch register t1
+        # [main.baz:156:21] bounds check end
+        # [main.baz:156:21] allocate scratch register -> t1
         slli t1, t0, 3
         sub t1, t1, t0
         slli t1, t1, 2
@@ -1600,59 +1600,59 @@ main:
         slli t1, t1, 3
         sub t0, t1, t0
         slli t0, t0, 3
-        # [main.baz:153:21] free scratch register t1
-        # [main.baz:153:50] smaller of two versions of 534 and 496 instructions
-        # [main.baz:153:50] smaller of two versions of 496 and 525 instructions
-        # [main.baz:153:50] allocate scratch register -> t1
-        # [main.baz:153:50] address of parameter 'self'
+        # [main.baz:156:21] free scratch register t1
+        # [main.baz:156:50] smaller of two versions of 534 and 496 instructions
+        # [main.baz:156:50] smaller of two versions of 496 and 525 instructions
+        # [main.baz:156:50] allocate scratch register -> t1
+        # [main.baz:156:50] address of parameter 'self'
         add t1, s0, t0
-        # [main.baz:153:50] allocate scratch register -> t2
+        # [main.baz:156:50] allocate scratch register -> t2
         lui t2, 1048517
         add t1, t1, t2
-        # [main.baz:153:50] free scratch register t2
+        # [main.baz:156:50] free scratch register t2
         addi t1, t1, 1012
         # [model.baz:135:6] room.print(cur_entity)
-        func.room.print.153.50:
-            # [main.baz:153:50] alias self -> rooms.array
-            # [main.baz:153:50] alias cur_entity -> eid
-            if.f2.136.8.153.50:
+        func.room.print.156.50:
+            # [main.baz:156:50] alias self -> rooms.array
+            # [main.baz:156:50] alias cur_entity -> eid
+            if.f2.136.8.156.50:
             # [model.baz:136:8] ? self.name.len != 0
-            cmp.f2.136.8.153.50:
+            cmp.f2.136.8.156.50:
             # [model.baz:136:8] allocate scratch register -> t2
             lw t2, 32(t1)
-            beq t2, zero, if.f2.136.5.153.50.end
+            beq t2, zero, if.f2.136.5.156.50.end
             # [model.baz:136:8] free scratch register t2
-            if.f2.136.8.153.50.code:
+            if.f2.136.8.156.50.code:
                 # [model.baz:137:13] out.print_all(str_u_r_in)
                 # [lib.baz:30:6] printer.print_all(s i8[])
-                func.printer.print_all.f2.137.13.153.50:
+                func.printer.print_all.f2.137.13.156.50:
                     # [model.baz:137:13] alias self -> out
                     # [model.baz:137:13] alias s -> str_u_r_in
                     # [lib.baz:31:10] self.print(s, array_length(s))
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f3.31.10.f2.137.13.153.50:
+                    func.printer.print.f3.31.10.f2.137.13.156.50:
                         # [lib.baz:31:10] alias self -> self
                         # [lib.baz:31:10] alias s -> s
                         # [lib.baz:31:10] alias count -> 7
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f3.31.10.f2.137.13.153.50:
+                        func.printer.print_at.f3.27.10.f3.31.10.f2.137.13.156.50:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> 7
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f3.31.10.f2.137.13.153.50:
+                            if.f3.21.8.f3.27.10.f3.31.10.f2.137.13.156.50:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f3.31.10.f2.137.13.153.50:
+                            cmp.f3.21.8.f3.27.10.f3.31.10.f2.137.13.156.50:
                             # [lib.baz:21:8] allocate scratch register -> t2
                             lui t2, 1048470
                             add t2, t2, s0
                             lbu t2, -59(t2)
-                            bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.137.13.153.50.end
+                            bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.137.13.156.50.end
                             # [lib.baz:21:8] free scratch register t2
-                            if.f3.21.8.f3.27.10.f3.31.10.f2.137.13.153.50.code:
+                            if.f3.21.8.f3.27.10.f3.31.10.f2.137.13.156.50.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f3.31.10.f2.137.13.153.50.end:
+                            if.f3.21.5.f3.27.10.f3.31.10.f2.137.13.156.50.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -1693,39 +1693,39 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f3.31.10.f2.137.13.153.50.end:
-                    func.printer.print.f3.31.10.f2.137.13.153.50.end:
-                func.printer.print_all.f2.137.13.153.50.end:
+                        func.printer.print_at.f3.27.10.f3.31.10.f2.137.13.156.50.end:
+                    func.printer.print.f3.31.10.f2.137.13.156.50.end:
+                func.printer.print_all.f2.137.13.156.50.end:
                 # [model.baz:138:19] self.name.print()
                 # [lib.baz:125:6] text.print()
-                func.name.print.f2.138.19.153.50:
+                func.name.print.f2.138.19.156.50:
                     # [lib.baz:125:6] const capacity = 32
                     # [model.baz:138:19] alias self -> self.name
                     # [lib.baz:126:9] out.print(self.array, self.len)
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f3.126.9.f2.138.19.153.50:
+                    func.printer.print.f3.126.9.f2.138.19.156.50:
                         # [lib.baz:126:9] alias self -> out
                         # [lib.baz:126:9] alias s -> self.array
                         # [lib.baz:126:9] alias count -> self.len
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.138.19.153.50:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.138.19.156.50:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> count
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.138.19.153.50:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.138.19.156.50:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.138.19.153.50:
+                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.138.19.156.50:
                             # [lib.baz:21:8] allocate scratch register -> t2
                             lui t2, 1048470
                             add t2, t2, s0
                             lbu t2, -59(t2)
-                            bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.138.19.153.50.end
+                            bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.138.19.156.50.end
                             # [lib.baz:21:8] free scratch register t2
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.138.19.153.50.code:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.138.19.156.50.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f3.126.9.f2.138.19.153.50.end:
+                            if.f3.21.5.f3.27.10.f3.126.9.f2.138.19.156.50.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -1764,43 +1764,43 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.138.19.153.50.end:
-                    func.printer.print.f3.126.9.f2.138.19.153.50.end:
-                func.name.print.f2.138.19.153.50.end:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.138.19.156.50.end:
+                    func.printer.print.f3.126.9.f2.138.19.156.50.end:
+                func.name.print.f2.138.19.156.50.end:
                 # [model.baz:139:13] out.println()
                 # [lib.baz:34:6] printer.println()
-                func.printer.println.f2.139.13.153.50:
+                func.printer.println.f2.139.13.156.50:
                     # [model.baz:139:13] alias self -> out
                     # [lib.baz:35:10] self.print_all(str_nl)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.35.10.f2.139.13.153.50:
+                    func.printer.print_all.f3.35.10.f2.139.13.156.50:
                         # [lib.baz:35:10] alias self -> self
                         # [lib.baz:35:10] alias s -> str_nl
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.35.10.f2.139.13.153.50:
+                        func.printer.print.f3.31.10.f3.35.10.f2.139.13.156.50:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 1
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.139.13.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.139.13.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 1
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.139.13.153.50:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.139.13.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.139.13.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.139.13.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> t2
                                 lui t2, 1048470
                                 add t2, t2, s0
                                 lbu t2, -59(t2)
-                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.139.13.153.50.end
+                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.139.13.156.50.end
                                 # [lib.baz:21:8] free scratch register t2
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.139.13.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.139.13.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.139.13.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.139.13.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -1841,49 +1841,49 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.139.13.153.50.end:
-                        func.printer.print.f3.31.10.f3.35.10.f2.139.13.153.50.end:
-                    func.printer.print_all.f3.35.10.f2.139.13.153.50.end:
-                func.printer.println.f2.139.13.153.50.end:
-            if.f2.136.5.153.50.end:
-            if.f2.141.8.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.139.13.156.50.end:
+                        func.printer.print.f3.31.10.f3.35.10.f2.139.13.156.50.end:
+                    func.printer.print_all.f3.35.10.f2.139.13.156.50.end:
+                func.printer.println.f2.139.13.156.50.end:
+            if.f2.136.5.156.50.end:
+            if.f2.141.8.156.50:
             # [model.baz:141:8] ? self.description.len != 0
-            cmp.f2.141.8.153.50:
+            cmp.f2.141.8.156.50:
             # [model.baz:141:8] allocate scratch register -> t2
             lw t2, 548(t1)
-            beq t2, zero, if.f2.141.5.153.50.end
+            beq t2, zero, if.f2.141.5.156.50.end
             # [model.baz:141:8] free scratch register t2
-            if.f2.141.8.153.50.code:
+            if.f2.141.8.156.50.code:
                 # [model.baz:142:26] self.description.print()
                 # [lib.baz:125:6] text.print()
-                func.description.print.f2.142.26.153.50:
+                func.description.print.f2.142.26.156.50:
                     # [lib.baz:125:6] const capacity = 512
                     # [model.baz:142:26] alias self -> self.description
                     # [lib.baz:126:9] out.print(self.array, self.len)
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f3.126.9.f2.142.26.153.50:
+                    func.printer.print.f3.126.9.f2.142.26.156.50:
                         # [lib.baz:126:9] alias self -> out
                         # [lib.baz:126:9] alias s -> self.array
                         # [lib.baz:126:9] alias count -> self.len
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.142.26.153.50:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.142.26.156.50:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> count
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.142.26.153.50:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.142.26.156.50:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.142.26.153.50:
+                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.142.26.156.50:
                             # [lib.baz:21:8] allocate scratch register -> t2
                             lui t2, 1048470
                             add t2, t2, s0
                             lbu t2, -59(t2)
-                            bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.142.26.153.50.end
+                            bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.142.26.156.50.end
                             # [lib.baz:21:8] free scratch register t2
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.142.26.153.50.code:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.142.26.156.50.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f3.126.9.f2.142.26.153.50.end:
+                            if.f3.21.5.f3.27.10.f3.126.9.f2.142.26.156.50.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -1922,43 +1922,43 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.142.26.153.50.end:
-                    func.printer.print.f3.126.9.f2.142.26.153.50.end:
-                func.description.print.f2.142.26.153.50.end:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.142.26.156.50.end:
+                    func.printer.print.f3.126.9.f2.142.26.156.50.end:
+                func.description.print.f2.142.26.156.50.end:
                 # [model.baz:143:13] out.println()
                 # [lib.baz:34:6] printer.println()
-                func.printer.println.f2.143.13.153.50:
+                func.printer.println.f2.143.13.156.50:
                     # [model.baz:143:13] alias self -> out
                     # [lib.baz:35:10] self.print_all(str_nl)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.35.10.f2.143.13.153.50:
+                    func.printer.print_all.f3.35.10.f2.143.13.156.50:
                         # [lib.baz:35:10] alias self -> self
                         # [lib.baz:35:10] alias s -> str_nl
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.35.10.f2.143.13.153.50:
+                        func.printer.print.f3.31.10.f3.35.10.f2.143.13.156.50:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 1
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.143.13.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.143.13.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 1
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.143.13.153.50:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.143.13.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.143.13.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.143.13.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> t2
                                 lui t2, 1048470
                                 add t2, t2, s0
                                 lbu t2, -59(t2)
-                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.143.13.153.50.end
+                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.143.13.156.50.end
                                 # [lib.baz:21:8] free scratch register t2
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.143.13.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.143.13.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.143.13.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.143.13.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -1999,11 +1999,11 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.143.13.153.50.end:
-                        func.printer.print.f3.31.10.f3.35.10.f2.143.13.153.50.end:
-                    func.printer.print_all.f3.35.10.f2.143.13.153.50.end:
-                func.printer.println.f2.143.13.153.50.end:
-            if.f2.141.5.153.50.end:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.143.13.156.50.end:
+                        func.printer.print.f3.31.10.f3.35.10.f2.143.13.156.50.end:
+                    func.printer.print_all.f3.35.10.f2.143.13.156.50.end:
+                func.printer.println.f2.143.13.156.50.end:
+            if.f2.141.5.156.50.end:
             # [model.baz:145:5] var present = joiner
             # [model.baz:145:9] present: joiner (1 B @ [s0 - 992])
             # [model.baz:145:9] present = joiner
@@ -2037,64 +2037,64 @@ main:
             # [model.baz:146:9] const n = 128
             # [model.baz:146:5] initiate counter i
             li t4, 0
-            bge zero, t3, foo.f2.146.5.153.50.end
-            foo.f2.146.5.153.50:
-                if.f2.147.12.153.50:
+            bge zero, t3, foo.f2.146.5.156.50.end
+            foo.f2.146.5.156.50:
+                if.f2.147.12.156.50:
                 # [model.baz:147:12] ? e == cur_entity
-                cmp.f2.147.12.153.50:
+                cmp.f2.147.12.156.50:
                 # [model.baz:147:12] allocate scratch register -> t5
                 lw t5, 0(t2)
                 # [model.baz:147:12] allocate scratch register -> t6
                 lw t6, -996(s0)
-                beq t5, t6, foo.f2.146.5.153.50.continue
+                beq t5, t6, foo.f2.146.5.156.50.continue
                 # [model.baz:147:12] free scratch register t6
                 # [model.baz:147:12] free scratch register t5
-                if.f2.147.12.153.50.code:
+                if.f2.147.12.156.50.code:
                     # [model.baz:147:28] continue
-                if.f2.147.9.153.50.end:
+                if.f2.147.9.156.50.end:
                 # [model.baz:148:17] present.next(str_uc)
                 # [lib.baz:254:10] mut joiner.next(lead i8[])
-                func.joiner.next.f2.148.17.153.50:
+                func.joiner.next.f2.148.17.156.50:
                     # [model.baz:148:17] alias self -> present
                     # [model.baz:148:17] alias lead -> str_uc
-                    if.f3.255.8.f2.148.17.153.50:
+                    if.f3.255.8.f2.148.17.156.50:
                     # [lib.baz:255:8] ? shorthand: self.printed
-                    cmp.f3.255.8.f2.148.17.153.50:
+                    cmp.f3.255.8.f2.148.17.156.50:
                     # [lib.baz:255:8] allocate scratch register -> t5
                     lbu t5, -992(s0)
-                    beq t5, zero, if.f3.255.5.f2.148.17.153.50.end
+                    beq t5, zero, if.f3.255.5.f2.148.17.156.50.end
                     # [lib.baz:255:8] free scratch register t5
-                    if.f3.255.8.f2.148.17.153.50.code:
+                    if.f3.255.8.f2.148.17.156.50.code:
                         # [lib.baz:256:13] out.print_all(str_comma)
                         # [lib.baz:30:6] printer.print_all(s i8[])
-                        func.printer.print_all.f3.256.13.f2.148.17.153.50:
+                        func.printer.print_all.f3.256.13.f2.148.17.156.50:
                             # [lib.baz:256:13] alias self -> out
                             # [lib.baz:256:13] alias s -> str_comma
                             # [lib.baz:31:10] self.print(s, array_length(s))
                             # [lib.baz:26:6] printer.print(s i8[], count)
-                            func.printer.print.f3.31.10.f3.256.13.f2.148.17.153.50:
+                            func.printer.print.f3.31.10.f3.256.13.f2.148.17.156.50:
                                 # [lib.baz:31:10] alias self -> self
                                 # [lib.baz:31:10] alias s -> s
                                 # [lib.baz:31:10] alias count -> 2
                                 # [lib.baz:27:10] self.print_at(s, count, 0)
                                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.148.17.153.50:
+                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.148.17.156.50:
                                     # [lib.baz:27:10] alias self -> self
                                     # [lib.baz:27:10] alias s -> s
                                     # [lib.baz:27:10] alias count -> 2
                                     # [lib.baz:27:10] alias start -> 0
-                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.148.17.153.50:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.148.17.156.50:
                                     # [lib.baz:21:8] ? shorthand: self.silenced
-                                    cmp.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.148.17.153.50:
+                                    cmp.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.148.17.156.50:
                                     # [lib.baz:21:8] allocate scratch register -> t5
                                     lui t5, 1048470
                                     add t5, t5, s0
                                     lbu t5, -59(t5)
-                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.148.17.153.50.end
+                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.148.17.156.50.end
                                     # [lib.baz:21:8] free scratch register t5
-                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.148.17.153.50.code:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.148.17.156.50.code:
                                         # [lib.baz:21:22] return
-                                    if.f3.21.5.f3.27.10.f3.31.10.f3.256.13.f2.148.17.153.50.end:
+                                    if.f3.21.5.f3.27.10.f3.31.10.f3.256.13.f2.148.17.156.50.end:
                                     # [lib.baz:23:5] write(1, s, count, start)
                                     # [lib.baz:23:5] allocate named register a0
                                     # [lib.baz:23:5] allocate named register a1
@@ -2135,42 +2135,42 @@ main:
                                     # [lib.baz:23:5] free named register a2
                                     # [lib.baz:23:5] free named register a1
                                     # [lib.baz:23:5] free named register a0
-                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.148.17.153.50.end:
-                            func.printer.print.f3.31.10.f3.256.13.f2.148.17.153.50.end:
-                        func.printer.print_all.f3.256.13.f2.148.17.153.50.end:
+                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.148.17.156.50.end:
+                            func.printer.print.f3.31.10.f3.256.13.f2.148.17.156.50.end:
+                        func.printer.print_all.f3.256.13.f2.148.17.156.50.end:
                         # [lib.baz:257:9] return
-                        j func.joiner.next.f2.148.17.153.50.end
-                    if.f3.255.5.f2.148.17.153.50.end:
+                        j func.joiner.next.f2.148.17.156.50.end
+                    if.f3.255.5.f2.148.17.156.50.end:
                     # [lib.baz:260:9] out.print_all(lead)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.260.9.f2.148.17.153.50:
+                    func.printer.print_all.f3.260.9.f2.148.17.156.50:
                         # [lib.baz:260:9] alias self -> out
                         # [lib.baz:260:9] alias s -> lead
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.260.9.f2.148.17.153.50:
+                        func.printer.print.f3.31.10.f3.260.9.f2.148.17.156.50:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 4
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.148.17.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.148.17.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 4
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.148.17.153.50:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.148.17.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.148.17.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.148.17.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> t5
                                 lui t5, 1048470
                                 add t5, t5, s0
                                 lbu t5, -59(t5)
-                                bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.148.17.153.50.end
+                                bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.148.17.156.50.end
                                 # [lib.baz:21:8] free scratch register t5
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.148.17.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.148.17.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.260.9.f2.148.17.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.260.9.f2.148.17.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -2211,15 +2211,15 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.148.17.153.50.end:
-                        func.printer.print.f3.31.10.f3.260.9.f2.148.17.153.50.end:
-                    func.printer.print_all.f3.260.9.f2.148.17.153.50.end:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.148.17.156.50.end:
+                        func.printer.print.f3.31.10.f3.260.9.f2.148.17.156.50.end:
+                    func.printer.print_all.f3.260.9.f2.148.17.156.50.end:
                     # [lib.baz:261:5] self.printed = true
                     # [lib.baz:261:20] allocate scratch register -> t5
                     li t5, 1
                     sb t5, -992(s0)
                     # [lib.baz:261:20] free scratch register t5
-                func.joiner.next.f2.148.17.153.50.end:
+                func.joiner.next.f2.148.17.156.50.end:
                 # [model.baz:149:27] entities.array[e].print()
                 # [model.baz:149:24] allocate scratch register -> t5
                 # [model.baz:149:24] set array index
@@ -2259,33 +2259,33 @@ main:
                 # [model.baz:149:27] free scratch register s1
                 addi t6, t6, -32
                 # [model.baz:55:6] entity.print()
-                func.entity.print.f2.149.27.153.50:
+                func.entity.print.f2.149.27.156.50:
                     # [model.baz:149:27] alias self -> entities.array
                     # [model.baz:56:9] out.print(self.name.array, self.name.len)
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f2.56.9.f2.149.27.153.50:
+                    func.printer.print.f2.56.9.f2.149.27.156.50:
                         # [model.baz:56:9] alias self -> out
                         # [model.baz:56:9] alias s -> self.name.array
                         # [model.baz:56:9] alias count -> self.name.len
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f2.56.9.f2.149.27.153.50:
+                        func.printer.print_at.f3.27.10.f2.56.9.f2.149.27.156.50:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> count
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f2.56.9.f2.149.27.153.50:
+                            if.f3.21.8.f3.27.10.f2.56.9.f2.149.27.156.50:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f2.56.9.f2.149.27.153.50:
+                            cmp.f3.21.8.f3.27.10.f2.56.9.f2.149.27.156.50:
                             # [lib.baz:21:8] allocate scratch register -> s1
                             lui s1, 1048470
                             add s1, s1, s0
                             lbu s1, -59(s1)
-                            bne s1, zero, func.printer.print_at.f3.27.10.f2.56.9.f2.149.27.153.50.end
+                            bne s1, zero, func.printer.print_at.f3.27.10.f2.56.9.f2.149.27.156.50.end
                             # [lib.baz:21:8] free scratch register s1
-                            if.f3.21.8.f3.27.10.f2.56.9.f2.149.27.153.50.code:
+                            if.f3.21.8.f3.27.10.f2.56.9.f2.149.27.156.50.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f2.56.9.f2.149.27.153.50.end:
+                            if.f3.21.5.f3.27.10.f2.56.9.f2.149.27.156.50.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -2324,16 +2324,16 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f2.56.9.f2.149.27.153.50.end:
-                    func.printer.print.f2.56.9.f2.149.27.153.50.end:
+                        func.printer.print_at.f3.27.10.f2.56.9.f2.149.27.156.50.end:
+                    func.printer.print.f2.56.9.f2.149.27.156.50.end:
                     # [model.baz:149:27] free scratch register t6
-                func.entity.print.f2.149.27.153.50.end:
+                func.entity.print.f2.149.27.156.50.end:
                     # [model.baz:149:27] free scratch register t5
-                foo.f2.146.5.153.50.continue:
+                foo.f2.146.5.156.50.continue:
                     addi t2, t2, 4
                     addi t4, t4, 1
-                    bne t4, t3, foo.f2.146.5.153.50
-            foo.f2.146.5.153.50.end:
+                    bne t4, t3, foo.f2.146.5.156.50
+            foo.f2.146.5.156.50.end:
             # [model.baz:146:5] free scratch register t4
             # [model.baz:146:5] free scratch register t3
             # [model.baz:146:5] free scratch register t2
@@ -2365,51 +2365,51 @@ main:
             # [model.baz:151:9] const n = 128
             # [model.baz:151:5] initiate counter i
             li t4, 0
-            bge zero, t3, foo.f2.151.5.153.50.end
-            foo.f2.151.5.153.50:
+            bge zero, t3, foo.f2.151.5.156.50.end
+            foo.f2.151.5.156.50:
                 # [model.baz:152:17] present.next(str_uc)
                 # [lib.baz:254:10] mut joiner.next(lead i8[])
-                func.joiner.next.f2.152.17.153.50:
+                func.joiner.next.f2.152.17.156.50:
                     # [model.baz:152:17] alias self -> present
                     # [model.baz:152:17] alias lead -> str_uc
-                    if.f3.255.8.f2.152.17.153.50:
+                    if.f3.255.8.f2.152.17.156.50:
                     # [lib.baz:255:8] ? shorthand: self.printed
-                    cmp.f3.255.8.f2.152.17.153.50:
+                    cmp.f3.255.8.f2.152.17.156.50:
                     # [lib.baz:255:8] allocate scratch register -> t5
                     lbu t5, -992(s0)
-                    beq t5, zero, if.f3.255.5.f2.152.17.153.50.end
+                    beq t5, zero, if.f3.255.5.f2.152.17.156.50.end
                     # [lib.baz:255:8] free scratch register t5
-                    if.f3.255.8.f2.152.17.153.50.code:
+                    if.f3.255.8.f2.152.17.156.50.code:
                         # [lib.baz:256:13] out.print_all(str_comma)
                         # [lib.baz:30:6] printer.print_all(s i8[])
-                        func.printer.print_all.f3.256.13.f2.152.17.153.50:
+                        func.printer.print_all.f3.256.13.f2.152.17.156.50:
                             # [lib.baz:256:13] alias self -> out
                             # [lib.baz:256:13] alias s -> str_comma
                             # [lib.baz:31:10] self.print(s, array_length(s))
                             # [lib.baz:26:6] printer.print(s i8[], count)
-                            func.printer.print.f3.31.10.f3.256.13.f2.152.17.153.50:
+                            func.printer.print.f3.31.10.f3.256.13.f2.152.17.156.50:
                                 # [lib.baz:31:10] alias self -> self
                                 # [lib.baz:31:10] alias s -> s
                                 # [lib.baz:31:10] alias count -> 2
                                 # [lib.baz:27:10] self.print_at(s, count, 0)
                                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.152.17.153.50:
+                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.152.17.156.50:
                                     # [lib.baz:27:10] alias self -> self
                                     # [lib.baz:27:10] alias s -> s
                                     # [lib.baz:27:10] alias count -> 2
                                     # [lib.baz:27:10] alias start -> 0
-                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.152.17.153.50:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.152.17.156.50:
                                     # [lib.baz:21:8] ? shorthand: self.silenced
-                                    cmp.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.152.17.153.50:
+                                    cmp.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.152.17.156.50:
                                     # [lib.baz:21:8] allocate scratch register -> t5
                                     lui t5, 1048470
                                     add t5, t5, s0
                                     lbu t5, -59(t5)
-                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.152.17.153.50.end
+                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.152.17.156.50.end
                                     # [lib.baz:21:8] free scratch register t5
-                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.152.17.153.50.code:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f3.256.13.f2.152.17.156.50.code:
                                         # [lib.baz:21:22] return
-                                    if.f3.21.5.f3.27.10.f3.31.10.f3.256.13.f2.152.17.153.50.end:
+                                    if.f3.21.5.f3.27.10.f3.31.10.f3.256.13.f2.152.17.156.50.end:
                                     # [lib.baz:23:5] write(1, s, count, start)
                                     # [lib.baz:23:5] allocate named register a0
                                     # [lib.baz:23:5] allocate named register a1
@@ -2450,42 +2450,42 @@ main:
                                     # [lib.baz:23:5] free named register a2
                                     # [lib.baz:23:5] free named register a1
                                     # [lib.baz:23:5] free named register a0
-                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.152.17.153.50.end:
-                            func.printer.print.f3.31.10.f3.256.13.f2.152.17.153.50.end:
-                        func.printer.print_all.f3.256.13.f2.152.17.153.50.end:
+                                func.printer.print_at.f3.27.10.f3.31.10.f3.256.13.f2.152.17.156.50.end:
+                            func.printer.print.f3.31.10.f3.256.13.f2.152.17.156.50.end:
+                        func.printer.print_all.f3.256.13.f2.152.17.156.50.end:
                         # [lib.baz:257:9] return
-                        j func.joiner.next.f2.152.17.153.50.end
-                    if.f3.255.5.f2.152.17.153.50.end:
+                        j func.joiner.next.f2.152.17.156.50.end
+                    if.f3.255.5.f2.152.17.156.50.end:
                     # [lib.baz:260:9] out.print_all(lead)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.260.9.f2.152.17.153.50:
+                    func.printer.print_all.f3.260.9.f2.152.17.156.50:
                         # [lib.baz:260:9] alias self -> out
                         # [lib.baz:260:9] alias s -> lead
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.260.9.f2.152.17.153.50:
+                        func.printer.print.f3.31.10.f3.260.9.f2.152.17.156.50:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 4
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.152.17.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.152.17.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 4
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.152.17.153.50:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.152.17.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.152.17.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.152.17.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> t5
                                 lui t5, 1048470
                                 add t5, t5, s0
                                 lbu t5, -59(t5)
-                                bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.152.17.153.50.end
+                                bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.152.17.156.50.end
                                 # [lib.baz:21:8] free scratch register t5
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.152.17.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.260.9.f2.152.17.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.260.9.f2.152.17.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.260.9.f2.152.17.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -2526,15 +2526,15 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.152.17.153.50.end:
-                        func.printer.print.f3.31.10.f3.260.9.f2.152.17.153.50.end:
-                    func.printer.print_all.f3.260.9.f2.152.17.153.50.end:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.260.9.f2.152.17.156.50.end:
+                        func.printer.print.f3.31.10.f3.260.9.f2.152.17.156.50.end:
+                    func.printer.print_all.f3.260.9.f2.152.17.156.50.end:
                     # [lib.baz:261:5] self.printed = true
                     # [lib.baz:261:20] allocate scratch register -> t5
                     li t5, 1
                     sb t5, -992(s0)
                     # [lib.baz:261:20] free scratch register t5
-                func.joiner.next.f2.152.17.153.50.end:
+                func.joiner.next.f2.152.17.156.50.end:
                 # [model.baz:153:31] objects.array[e].name.print()
                 # [model.baz:153:23] allocate scratch register -> t5
                 # [model.baz:153:23] set array index
@@ -2570,34 +2570,34 @@ main:
                 # [model.baz:153:31] free scratch register s1
                 addi t6, t6, 1000
                 # [lib.baz:125:6] text.print()
-                func.name.print.f2.153.31.153.50:
+                func.name.print.f2.153.31.156.50:
                     # [lib.baz:125:6] const capacity = 32
                     # [model.baz:153:31] alias self -> objects.array.name
                     # [lib.baz:126:9] out.print(self.array, self.len)
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f3.126.9.f2.153.31.153.50:
+                    func.printer.print.f3.126.9.f2.153.31.156.50:
                         # [lib.baz:126:9] alias self -> out
                         # [lib.baz:126:9] alias s -> self.array
                         # [lib.baz:126:9] alias count -> self.len
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.153.31.153.50:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.153.31.156.50:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> count
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.153.31.153.50:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.153.31.156.50:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.153.31.153.50:
+                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.153.31.156.50:
                             # [lib.baz:21:8] allocate scratch register -> s1
                             lui s1, 1048470
                             add s1, s1, s0
                             lbu s1, -59(s1)
-                            bne s1, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.153.31.153.50.end
+                            bne s1, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.153.31.156.50.end
                             # [lib.baz:21:8] free scratch register s1
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.153.31.153.50.code:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.153.31.156.50.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f3.126.9.f2.153.31.153.50.end:
+                            if.f3.21.5.f3.27.10.f3.126.9.f2.153.31.156.50.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -2636,61 +2636,61 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.153.31.153.50.end:
-                    func.printer.print.f3.126.9.f2.153.31.153.50.end:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.153.31.156.50.end:
+                    func.printer.print.f3.126.9.f2.153.31.156.50.end:
                     # [model.baz:153:31] free scratch register t6
-                func.name.print.f2.153.31.153.50.end:
+                func.name.print.f2.153.31.156.50.end:
                     # [model.baz:153:31] free scratch register t5
-                foo.f2.151.5.153.50.continue:
+                foo.f2.151.5.156.50.continue:
                     addi t2, t2, 4
                     addi t4, t4, 1
-                    bne t4, t3, foo.f2.151.5.153.50
-            foo.f2.151.5.153.50.end:
+                    bne t4, t3, foo.f2.151.5.156.50
+            foo.f2.151.5.156.50.end:
             # [model.baz:151:5] free scratch register t4
             # [model.baz:151:5] free scratch register t3
             # [model.baz:151:5] free scratch register t2
-            if.f2.155.8.153.50:
+            if.f2.155.8.156.50:
             # [model.baz:155:8] ? shorthand: present.printed
-            cmp.f2.155.8.153.50:
+            cmp.f2.155.8.156.50:
             # [model.baz:155:8] allocate scratch register -> t2
             lbu t2, -992(s0)
-            beq t2, zero, if.f2.155.5.153.50.end
+            beq t2, zero, if.f2.155.5.156.50.end
             # [model.baz:155:8] free scratch register t2
-            if.f2.155.8.153.50.code:
+            if.f2.155.8.156.50.code:
                 # [model.baz:156:13] out.println()
                 # [lib.baz:34:6] printer.println()
-                func.printer.println.f2.156.13.153.50:
+                func.printer.println.f2.156.13.156.50:
                     # [model.baz:156:13] alias self -> out
                     # [lib.baz:35:10] self.print_all(str_nl)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.35.10.f2.156.13.153.50:
+                    func.printer.print_all.f3.35.10.f2.156.13.156.50:
                         # [lib.baz:35:10] alias self -> self
                         # [lib.baz:35:10] alias s -> str_nl
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.35.10.f2.156.13.153.50:
+                        func.printer.print.f3.31.10.f3.35.10.f2.156.13.156.50:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 1
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.156.13.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.156.13.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 1
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.156.13.153.50:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.156.13.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.156.13.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.156.13.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> t2
                                 lui t2, 1048470
                                 add t2, t2, s0
                                 lbu t2, -59(t2)
-                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.156.13.153.50.end
+                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.156.13.156.50.end
                                 # [lib.baz:21:8] free scratch register t2
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.156.13.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.156.13.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.156.13.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.156.13.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -2731,49 +2731,49 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.156.13.153.50.end:
-                        func.printer.print.f3.31.10.f3.35.10.f2.156.13.153.50.end:
-                    func.printer.print_all.f3.35.10.f2.156.13.153.50.end:
-                func.printer.println.f2.156.13.153.50.end:
-            if.f2.155.5.153.50.end:
-            if.f2.158.8.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.156.13.156.50.end:
+                        func.printer.print.f3.31.10.f3.35.10.f2.156.13.156.50.end:
+                    func.printer.print_all.f3.35.10.f2.156.13.156.50.end:
+                func.printer.println.f2.156.13.156.50.end:
+            if.f2.155.5.156.50.end:
+            if.f2.158.8.156.50:
             # [model.baz:158:8] ? self.links.len != 0
-            cmp.f2.158.8.153.50:
+            cmp.f2.158.8.156.50:
             # [model.baz:158:8] allocate scratch register -> t2
             lw t2, 1328(t1)
-            beq t2, zero, if.f2.158.5.153.50.end
+            beq t2, zero, if.f2.158.5.156.50.end
             # [model.baz:158:8] free scratch register t2
-            if.f2.158.8.153.50.code:
+            if.f2.158.8.156.50.code:
                 # [model.baz:159:13] out.print_all(str_exits)
                 # [lib.baz:30:6] printer.print_all(s i8[])
-                func.printer.print_all.f2.159.13.153.50:
+                func.printer.print_all.f2.159.13.156.50:
                     # [model.baz:159:13] alias self -> out
                     # [model.baz:159:13] alias s -> str_exits
                     # [lib.baz:31:10] self.print(s, array_length(s))
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f3.31.10.f2.159.13.153.50:
+                    func.printer.print.f3.31.10.f2.159.13.156.50:
                         # [lib.baz:31:10] alias self -> self
                         # [lib.baz:31:10] alias s -> s
                         # [lib.baz:31:10] alias count -> 7
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f3.31.10.f2.159.13.153.50:
+                        func.printer.print_at.f3.27.10.f3.31.10.f2.159.13.156.50:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> 7
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f3.31.10.f2.159.13.153.50:
+                            if.f3.21.8.f3.27.10.f3.31.10.f2.159.13.156.50:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f3.31.10.f2.159.13.153.50:
+                            cmp.f3.21.8.f3.27.10.f3.31.10.f2.159.13.156.50:
                             # [lib.baz:21:8] allocate scratch register -> t2
                             lui t2, 1048470
                             add t2, t2, s0
                             lbu t2, -59(t2)
-                            bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.159.13.153.50.end
+                            bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.159.13.156.50.end
                             # [lib.baz:21:8] free scratch register t2
-                            if.f3.21.8.f3.27.10.f3.31.10.f2.159.13.153.50.code:
+                            if.f3.21.8.f3.27.10.f3.31.10.f2.159.13.156.50.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f3.31.10.f2.159.13.153.50.end:
+                            if.f3.21.5.f3.27.10.f3.31.10.f2.159.13.156.50.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -2814,9 +2814,9 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f3.31.10.f2.159.13.153.50.end:
-                    func.printer.print.f3.31.10.f2.159.13.153.50.end:
-                func.printer.print_all.f2.159.13.153.50.end:
+                        func.printer.print_at.f3.27.10.f3.31.10.f2.159.13.156.50.end:
+                    func.printer.print.f3.31.10.f2.159.13.156.50.end:
+                func.printer.print_all.f2.159.13.156.50.end:
                 # [model.baz:160:9] foo self.links.array, self.links.len
                 # [model.baz:160:13] allocate scratch register -> t2
                 # [model.baz:160:13] initiate iterator e
@@ -2845,43 +2845,43 @@ main:
                 # [model.baz:160:13] const n = 16
                 # [model.baz:160:9] initiate counter i
                 li t4, 0
-                bge zero, t3, foo.f2.160.9.153.50.end
-                foo.f2.160.9.153.50:
-                    if.f2.161.16.153.50:
+                bge zero, t3, foo.f2.160.9.156.50.end
+                foo.f2.160.9.156.50:
+                    if.f2.161.16.156.50:
                     # [model.baz:161:16] ? i != 0
-                    cmp.f2.161.16.153.50:
-                    beq t4, zero, if.f2.161.13.153.50.end
-                    if.f2.161.16.153.50.code:
+                    cmp.f2.161.16.156.50:
+                    beq t4, zero, if.f2.161.13.156.50.end
+                    if.f2.161.16.156.50.code:
                         # [model.baz:161:27] out.print_all(str_comma)
                         # [lib.baz:30:6] printer.print_all(s i8[])
-                        func.printer.print_all.f2.161.27.153.50:
+                        func.printer.print_all.f2.161.27.156.50:
                             # [model.baz:161:27] alias self -> out
                             # [model.baz:161:27] alias s -> str_comma
                             # [lib.baz:31:10] self.print(s, array_length(s))
                             # [lib.baz:26:6] printer.print(s i8[], count)
-                            func.printer.print.f3.31.10.f2.161.27.153.50:
+                            func.printer.print.f3.31.10.f2.161.27.156.50:
                                 # [lib.baz:31:10] alias self -> self
                                 # [lib.baz:31:10] alias s -> s
                                 # [lib.baz:31:10] alias count -> 2
                                 # [lib.baz:27:10] self.print_at(s, count, 0)
                                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.161.27.153.50:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.161.27.156.50:
                                     # [lib.baz:27:10] alias self -> self
                                     # [lib.baz:27:10] alias s -> s
                                     # [lib.baz:27:10] alias count -> 2
                                     # [lib.baz:27:10] alias start -> 0
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.161.27.153.50:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.161.27.156.50:
                                     # [lib.baz:21:8] ? shorthand: self.silenced
-                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.161.27.153.50:
+                                    cmp.f3.21.8.f3.27.10.f3.31.10.f2.161.27.156.50:
                                     # [lib.baz:21:8] allocate scratch register -> t5
                                     lui t5, 1048470
                                     add t5, t5, s0
                                     lbu t5, -59(t5)
-                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.161.27.153.50.end
+                                    bne t5, zero, func.printer.print_at.f3.27.10.f3.31.10.f2.161.27.156.50.end
                                     # [lib.baz:21:8] free scratch register t5
-                                    if.f3.21.8.f3.27.10.f3.31.10.f2.161.27.153.50.code:
+                                    if.f3.21.8.f3.27.10.f3.31.10.f2.161.27.156.50.code:
                                         # [lib.baz:21:22] return
-                                    if.f3.21.5.f3.27.10.f3.31.10.f2.161.27.153.50.end:
+                                    if.f3.21.5.f3.27.10.f3.31.10.f2.161.27.156.50.end:
                                     # [lib.baz:23:5] write(1, s, count, start)
                                     # [lib.baz:23:5] allocate named register a0
                                     # [lib.baz:23:5] allocate named register a1
@@ -2922,10 +2922,10 @@ main:
                                     # [lib.baz:23:5] free named register a2
                                     # [lib.baz:23:5] free named register a1
                                     # [lib.baz:23:5] free named register a0
-                                func.printer.print_at.f3.27.10.f3.31.10.f2.161.27.153.50.end:
-                            func.printer.print.f3.31.10.f2.161.27.153.50.end:
-                        func.printer.print_all.f2.161.27.153.50.end:
-                    if.f2.161.13.153.50.end:
+                                func.printer.print_at.f3.27.10.f3.31.10.f2.161.27.156.50.end:
+                            func.printer.print.f3.31.10.f2.161.27.156.50.end:
+                        func.printer.print_all.f2.161.27.156.50.end:
+                    if.f2.161.13.156.50.end:
                     # [model.baz:162:46] link_names.array[e.link_name_id].print()
                     # [model.baz:162:30] allocate scratch register -> t5
                     # [model.baz:162:30] set array index
@@ -2961,34 +2961,34 @@ main:
                     # [model.baz:162:46] free scratch register s1
                     addi t6, t6, 484
                     # [lib.baz:125:6] text.print()
-                    func.name.print.f2.162.46.153.50:
+                    func.name.print.f2.162.46.156.50:
                         # [lib.baz:125:6] const capacity = 32
                         # [model.baz:162:46] alias self -> link_names.array
                         # [lib.baz:126:9] out.print(self.array, self.len)
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.126.9.f2.162.46.153.50:
+                        func.printer.print.f3.126.9.f2.162.46.156.50:
                             # [lib.baz:126:9] alias self -> out
                             # [lib.baz:126:9] alias s -> self.array
                             # [lib.baz:126:9] alias count -> self.len
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.126.9.f2.162.46.153.50:
+                            func.printer.print_at.f3.27.10.f3.126.9.f2.162.46.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> count
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.126.9.f2.162.46.153.50:
+                                if.f3.21.8.f3.27.10.f3.126.9.f2.162.46.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.126.9.f2.162.46.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.126.9.f2.162.46.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> s1
                                 lui s1, 1048470
                                 add s1, s1, s0
                                 lbu s1, -59(s1)
-                                bne s1, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.162.46.153.50.end
+                                bne s1, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.162.46.156.50.end
                                 # [lib.baz:21:8] free scratch register s1
-                                if.f3.21.8.f3.27.10.f3.126.9.f2.162.46.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.126.9.f2.162.46.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.126.9.f2.162.46.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.126.9.f2.162.46.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -3027,53 +3027,53 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.126.9.f2.162.46.153.50.end:
-                        func.printer.print.f3.126.9.f2.162.46.153.50.end:
+                            func.printer.print_at.f3.27.10.f3.126.9.f2.162.46.156.50.end:
+                        func.printer.print.f3.126.9.f2.162.46.156.50.end:
                         # [model.baz:162:46] free scratch register t6
-                    func.name.print.f2.162.46.153.50.end:
+                    func.name.print.f2.162.46.156.50.end:
                         # [model.baz:162:46] free scratch register t5
-                    foo.f2.160.9.153.50.continue:
+                    foo.f2.160.9.156.50.continue:
                         addi t2, t2, 8
                         addi t4, t4, 1
-                        bne t4, t3, foo.f2.160.9.153.50
-                foo.f2.160.9.153.50.end:
+                        bne t4, t3, foo.f2.160.9.156.50
+                foo.f2.160.9.156.50.end:
                 # [model.baz:160:9] free scratch register t4
                 # [model.baz:160:9] free scratch register t3
                 # [model.baz:160:9] free scratch register t2
                 # [model.baz:164:13] out.println()
                 # [lib.baz:34:6] printer.println()
-                func.printer.println.f2.164.13.153.50:
+                func.printer.println.f2.164.13.156.50:
                     # [model.baz:164:13] alias self -> out
                     # [lib.baz:35:10] self.print_all(str_nl)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.35.10.f2.164.13.153.50:
+                    func.printer.print_all.f3.35.10.f2.164.13.156.50:
                         # [lib.baz:35:10] alias self -> self
                         # [lib.baz:35:10] alias s -> str_nl
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.35.10.f2.164.13.153.50:
+                        func.printer.print.f3.31.10.f3.35.10.f2.164.13.156.50:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 1
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.164.13.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.164.13.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 1
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.164.13.153.50:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.164.13.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.164.13.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.164.13.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> t2
                                 lui t2, 1048470
                                 add t2, t2, s0
                                 lbu t2, -59(t2)
-                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.164.13.153.50.end
+                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.164.13.156.50.end
                                 # [lib.baz:21:8] free scratch register t2
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.164.13.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.164.13.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.164.13.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.164.13.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -3114,49 +3114,49 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.164.13.153.50.end:
-                        func.printer.print.f3.31.10.f3.35.10.f2.164.13.153.50.end:
-                    func.printer.print_all.f3.35.10.f2.164.13.153.50.end:
-                func.printer.println.f2.164.13.153.50.end:
-            if.f2.158.5.153.50.end:
-            if.f2.166.8.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.164.13.156.50.end:
+                        func.printer.print.f3.31.10.f3.35.10.f2.164.13.156.50.end:
+                    func.printer.print_all.f3.35.10.f2.164.13.156.50.end:
+                func.printer.println.f2.164.13.156.50.end:
+            if.f2.158.5.156.50.end:
+            if.f2.166.8.156.50:
             # [model.baz:166:8] ? self.note.len != 0
-            cmp.f2.166.8.153.50:
+            cmp.f2.166.8.156.50:
             # [model.baz:166:8] allocate scratch register -> t2
             lw t2, 680(t1)
-            beq t2, zero, if.f2.166.5.153.50.end
+            beq t2, zero, if.f2.166.5.156.50.end
             # [model.baz:166:8] free scratch register t2
-            if.f2.166.8.153.50.code:
+            if.f2.166.8.156.50.code:
                 # [model.baz:167:19] self.note.print()
                 # [lib.baz:125:6] text.print()
-                func.note.print.f2.167.19.153.50:
+                func.note.print.f2.167.19.156.50:
                     # [lib.baz:125:6] const capacity = 128
                     # [model.baz:167:19] alias self -> self.note
                     # [lib.baz:126:9] out.print(self.array, self.len)
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f3.126.9.f2.167.19.153.50:
+                    func.printer.print.f3.126.9.f2.167.19.156.50:
                         # [lib.baz:126:9] alias self -> out
                         # [lib.baz:126:9] alias s -> self.array
                         # [lib.baz:126:9] alias count -> self.len
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.167.19.153.50:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.167.19.156.50:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> count
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.167.19.153.50:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.167.19.156.50:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.167.19.153.50:
+                            cmp.f3.21.8.f3.27.10.f3.126.9.f2.167.19.156.50:
                             # [lib.baz:21:8] allocate scratch register -> t2
                             lui t2, 1048470
                             add t2, t2, s0
                             lbu t2, -59(t2)
-                            bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.167.19.153.50.end
+                            bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.f2.167.19.156.50.end
                             # [lib.baz:21:8] free scratch register t2
-                            if.f3.21.8.f3.27.10.f3.126.9.f2.167.19.153.50.code:
+                            if.f3.21.8.f3.27.10.f3.126.9.f2.167.19.156.50.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f3.126.9.f2.167.19.153.50.end:
+                            if.f3.21.5.f3.27.10.f3.126.9.f2.167.19.156.50.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -3195,43 +3195,43 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f3.126.9.f2.167.19.153.50.end:
-                    func.printer.print.f3.126.9.f2.167.19.153.50.end:
-                func.note.print.f2.167.19.153.50.end:
+                        func.printer.print_at.f3.27.10.f3.126.9.f2.167.19.156.50.end:
+                    func.printer.print.f3.126.9.f2.167.19.156.50.end:
+                func.note.print.f2.167.19.156.50.end:
                 # [model.baz:168:13] out.println()
                 # [lib.baz:34:6] printer.println()
-                func.printer.println.f2.168.13.153.50:
+                func.printer.println.f2.168.13.156.50:
                     # [model.baz:168:13] alias self -> out
                     # [lib.baz:35:10] self.print_all(str_nl)
                     # [lib.baz:30:6] printer.print_all(s i8[])
-                    func.printer.print_all.f3.35.10.f2.168.13.153.50:
+                    func.printer.print_all.f3.35.10.f2.168.13.156.50:
                         # [lib.baz:35:10] alias self -> self
                         # [lib.baz:35:10] alias s -> str_nl
                         # [lib.baz:31:10] self.print(s, array_length(s))
                         # [lib.baz:26:6] printer.print(s i8[], count)
-                        func.printer.print.f3.31.10.f3.35.10.f2.168.13.153.50:
+                        func.printer.print.f3.31.10.f3.35.10.f2.168.13.156.50:
                             # [lib.baz:31:10] alias self -> self
                             # [lib.baz:31:10] alias s -> s
                             # [lib.baz:31:10] alias count -> 1
                             # [lib.baz:27:10] self.print_at(s, count, 0)
                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.168.13.153.50:
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.168.13.156.50:
                                 # [lib.baz:27:10] alias self -> self
                                 # [lib.baz:27:10] alias s -> s
                                 # [lib.baz:27:10] alias count -> 1
                                 # [lib.baz:27:10] alias start -> 0
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.168.13.153.50:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.168.13.156.50:
                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.168.13.153.50:
+                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.168.13.156.50:
                                 # [lib.baz:21:8] allocate scratch register -> t2
                                 lui t2, 1048470
                                 add t2, t2, s0
                                 lbu t2, -59(t2)
-                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.168.13.153.50.end
+                                bne t2, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.168.13.156.50.end
                                 # [lib.baz:21:8] free scratch register t2
-                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.168.13.153.50.code:
+                                if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.f2.168.13.156.50.code:
                                     # [lib.baz:21:22] return
-                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.168.13.153.50.end:
+                                if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.f2.168.13.156.50.end:
                                 # [lib.baz:23:5] write(1, s, count, start)
                                 # [lib.baz:23:5] allocate named register a0
                                 # [lib.baz:23:5] allocate named register a1
@@ -3272,34 +3272,34 @@ main:
                                 # [lib.baz:23:5] free named register a2
                                 # [lib.baz:23:5] free named register a1
                                 # [lib.baz:23:5] free named register a0
-                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.168.13.153.50.end:
-                        func.printer.print.f3.31.10.f3.35.10.f2.168.13.153.50.end:
-                    func.printer.print_all.f3.35.10.f2.168.13.153.50.end:
-                func.printer.println.f2.168.13.153.50.end:
-            if.f2.166.5.153.50.end:
-            # [main.baz:153:50] free scratch register t1
-        func.room.print.153.50.end:
-            # [main.baz:153:50] free scratch register t0
-        # [main.baz:154:34] entities.array[eid].name.print()
-        # [main.baz:154:24] allocate scratch register -> t0
-        # [main.baz:154:24] set array index
-        # [main.baz:154:24] eid
+                            func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.f2.168.13.156.50.end:
+                        func.printer.print.f3.31.10.f3.35.10.f2.168.13.156.50.end:
+                    func.printer.print_all.f3.35.10.f2.168.13.156.50.end:
+                func.printer.println.f2.168.13.156.50.end:
+            if.f2.166.5.156.50.end:
+            # [main.baz:156:50] free scratch register t1
+        func.room.print.156.50.end:
+            # [main.baz:156:50] free scratch register t0
+        # [main.baz:157:34] entities.array[eid].name.print()
+        # [main.baz:157:24] allocate scratch register -> t0
+        # [main.baz:157:24] set array index
+        # [main.baz:157:24] eid
         lw t0, -996(s0)
-        # [main.baz:154:24] bounds check begin
-        # [main.baz:154:24] lower bound
-        # [main.baz:154:24] t0 lower bound covered by the unsigned upper bound
-        # [main.baz:154:24] upper bound
-        # [main.baz:154:24] allocate scratch register -> t1
+        # [main.baz:157:24] bounds check begin
+        # [main.baz:157:24] lower bound
+        # [main.baz:157:24] t0 lower bound covered by the unsigned upper bound
+        # [main.baz:157:24] upper bound
+        # [main.baz:157:24] allocate scratch register -> t1
         li t1, 32
         bltu t0, t1, 2f
         1:
-        # [main.baz:154:24] source line
-        li a0, 154
+        # [main.baz:157:24] source line
+        li a0, 157
         j baz_bounds_panic
         2:
-        # [main.baz:154:24] free scratch register t1
-        # [main.baz:154:24] bounds check end
-        # [main.baz:154:24] allocate scratch register -> t1
+        # [main.baz:157:24] free scratch register t1
+        # [main.baz:157:24] bounds check end
+        # [main.baz:157:24] allocate scratch register -> t1
         slli t1, t0, 3
         add t1, t1, t0
         slli t1, t1, 2
@@ -3307,46 +3307,46 @@ main:
         slli t1, t1, 3
         add t0, t1, t0
         slli t0, t0, 4
-        # [main.baz:154:24] free scratch register t1
-        # [main.baz:154:34] smaller of two versions of 26 and 24 instructions
-        # [main.baz:154:34] smaller of two versions of 24 and 25 instructions
-        # [main.baz:154:34] allocate scratch register -> t1
-        # [main.baz:154:34] address of parameter 'self'
+        # [main.baz:157:24] free scratch register t1
+        # [main.baz:157:34] smaller of two versions of 26 and 24 instructions
+        # [main.baz:157:34] smaller of two versions of 24 and 25 instructions
+        # [main.baz:157:34] allocate scratch register -> t1
+        # [main.baz:157:34] address of parameter 'self'
         add t1, s0, t0
-        # [main.baz:154:34] allocate scratch register -> t2
+        # [main.baz:157:34] allocate scratch register -> t2
         lui t2, 1048470
         add t1, t1, t2
-        # [main.baz:154:34] free scratch register t2
+        # [main.baz:157:34] free scratch register t2
         addi t1, t1, -32
         # [lib.baz:125:6] text.print()
-        func.name.print.154.34:
+        func.name.print.157.34:
             # [lib.baz:125:6] const capacity = 32
-            # [main.baz:154:34] alias self -> entities.array.name
+            # [main.baz:157:34] alias self -> entities.array.name
             # [lib.baz:126:9] out.print(self.array, self.len)
             # [lib.baz:26:6] printer.print(s i8[], count)
-            func.printer.print.f3.126.9.154.34:
+            func.printer.print.f3.126.9.157.34:
                 # [lib.baz:126:9] alias self -> out
                 # [lib.baz:126:9] alias s -> self.array
                 # [lib.baz:126:9] alias count -> self.len
                 # [lib.baz:27:10] self.print_at(s, count, 0)
                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                func.printer.print_at.f3.27.10.f3.126.9.154.34:
+                func.printer.print_at.f3.27.10.f3.126.9.157.34:
                     # [lib.baz:27:10] alias self -> self
                     # [lib.baz:27:10] alias s -> s
                     # [lib.baz:27:10] alias count -> count
                     # [lib.baz:27:10] alias start -> 0
-                    if.f3.21.8.f3.27.10.f3.126.9.154.34:
+                    if.f3.21.8.f3.27.10.f3.126.9.157.34:
                     # [lib.baz:21:8] ? shorthand: self.silenced
-                    cmp.f3.21.8.f3.27.10.f3.126.9.154.34:
+                    cmp.f3.21.8.f3.27.10.f3.126.9.157.34:
                     # [lib.baz:21:8] allocate scratch register -> t2
                     lui t2, 1048470
                     add t2, t2, s0
                     lbu t2, -59(t2)
-                    bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.154.34.end
+                    bne t2, zero, func.printer.print_at.f3.27.10.f3.126.9.157.34.end
                     # [lib.baz:21:8] free scratch register t2
-                    if.f3.21.8.f3.27.10.f3.126.9.154.34.code:
+                    if.f3.21.8.f3.27.10.f3.126.9.157.34.code:
                         # [lib.baz:21:22] return
-                    if.f3.21.5.f3.27.10.f3.126.9.154.34.end:
+                    if.f3.21.5.f3.27.10.f3.126.9.157.34.end:
                     # [lib.baz:23:5] write(1, s, count, start)
                     # [lib.baz:23:5] allocate named register a0
                     # [lib.baz:23:5] allocate named register a1
@@ -3385,41 +3385,41 @@ main:
                     # [lib.baz:23:5] free named register a2
                     # [lib.baz:23:5] free named register a1
                     # [lib.baz:23:5] free named register a0
-                func.printer.print_at.f3.27.10.f3.126.9.154.34.end:
-            func.printer.print.f3.126.9.154.34.end:
-            # [main.baz:154:34] free scratch register t1
-        func.name.print.154.34.end:
-            # [main.baz:154:34] free scratch register t0
-        # [main.baz:155:13] out.print_all(str_prompt)
+                func.printer.print_at.f3.27.10.f3.126.9.157.34.end:
+            func.printer.print.f3.126.9.157.34.end:
+            # [main.baz:157:34] free scratch register t1
+        func.name.print.157.34.end:
+            # [main.baz:157:34] free scratch register t0
+        # [main.baz:158:13] out.print_all(str_prompt)
         # [lib.baz:30:6] printer.print_all(s i8[])
-        func.printer.print_all.155.13:
-            # [main.baz:155:13] alias self -> out
-            # [main.baz:155:13] alias s -> str_prompt
+        func.printer.print_all.158.13:
+            # [main.baz:158:13] alias self -> out
+            # [main.baz:158:13] alias s -> str_prompt
             # [lib.baz:31:10] self.print(s, array_length(s))
             # [lib.baz:26:6] printer.print(s i8[], count)
-            func.printer.print.f3.31.10.155.13:
+            func.printer.print.f3.31.10.158.13:
                 # [lib.baz:31:10] alias self -> self
                 # [lib.baz:31:10] alias s -> s
                 # [lib.baz:31:10] alias count -> 3
                 # [lib.baz:27:10] self.print_at(s, count, 0)
                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                func.printer.print_at.f3.27.10.f3.31.10.155.13:
+                func.printer.print_at.f3.27.10.f3.31.10.158.13:
                     # [lib.baz:27:10] alias self -> self
                     # [lib.baz:27:10] alias s -> s
                     # [lib.baz:27:10] alias count -> 3
                     # [lib.baz:27:10] alias start -> 0
-                    if.f3.21.8.f3.27.10.f3.31.10.155.13:
+                    if.f3.21.8.f3.27.10.f3.31.10.158.13:
                     # [lib.baz:21:8] ? shorthand: self.silenced
-                    cmp.f3.21.8.f3.27.10.f3.31.10.155.13:
+                    cmp.f3.21.8.f3.27.10.f3.31.10.158.13:
                     # [lib.baz:21:8] allocate scratch register -> t0
                     lui t0, 1048470
                     add t0, t0, s0
                     lbu t0, -59(t0)
-                    bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.155.13.end
+                    bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.158.13.end
                     # [lib.baz:21:8] free scratch register t0
-                    if.f3.21.8.f3.27.10.f3.31.10.155.13.code:
+                    if.f3.21.8.f3.27.10.f3.31.10.158.13.code:
                         # [lib.baz:21:22] return
-                    if.f3.21.5.f3.27.10.f3.31.10.155.13.end:
+                    if.f3.21.5.f3.27.10.f3.31.10.158.13.end:
                     # [lib.baz:23:5] write(1, s, count, start)
                     # [lib.baz:23:5] allocate named register a0
                     # [lib.baz:23:5] allocate named register a1
@@ -3460,23 +3460,23 @@ main:
                     # [lib.baz:23:5] free named register a2
                     # [lib.baz:23:5] free named register a1
                     # [lib.baz:23:5] free named register a0
-                func.printer.print_at.f3.27.10.f3.31.10.155.13.end:
-            func.printer.print.f3.31.10.155.13.end:
-        func.printer.print_all.155.13.end:
-        if.157.12:
-        # [main.baz:157:12] ? shorthand: not tz.input()
-        cmp.157.12:
-        # [main.baz:157:16] allocate scratch register -> t0
-            # [main.baz:157:19] t0 = tz.input()
-            # [main.baz:157:19] = expression
-            # [main.baz:157:19] tz.input()
+                func.printer.print_at.f3.27.10.f3.31.10.158.13.end:
+            func.printer.print.f3.31.10.158.13.end:
+        func.printer.print_all.158.13.end:
+        if.160.12:
+        # [main.baz:160:12] ? shorthand: not tz.input()
+        cmp.160.12:
+        # [main.baz:160:16] allocate scratch register -> t0
+            # [main.baz:160:19] t0 = tz.input()
+            # [main.baz:160:19] = expression
+            # [main.baz:160:19] tz.input()
             # [lib.baz:279:10] mut tokenizer.input() res bool
-            func.tokenizer.input.157.19:
-                # [main.baz:157:19] alias res -> t0
-                # [main.baz:157:19] alias self -> tz
+            func.tokenizer.input.160.19:
+                # [main.baz:160:19] alias res -> t0
+                # [main.baz:160:19] alias self -> tz
                 # [lib.baz:280:10] self.reset()
                 # [lib.baz:274:10] mut tokenizer.reset()
-                func.tokenizer.reset.f3.280.10.157.19:
+                func.tokenizer.reset.f3.280.10.160.19:
                     # [lib.baz:280:10] alias self -> self
                     # [lib.baz:275:5] self.start = 0
                     # [lib.baz:275:18] 0
@@ -3484,15 +3484,15 @@ main:
                     # [lib.baz:276:5] self.end = 0
                     # [lib.baz:276:16] 0
                     sw zero, -1000(s0)
-                func.tokenizer.reset.f3.280.10.157.19.end:
+                func.tokenizer.reset.f3.280.10.160.19.end:
                 # [lib.baz:281:5] res = self.string.input()
                 # [lib.baz:281:11] ? shorthand: self.string.input()
-                cmp.f3.281.11.157.19:
+                cmp.f3.281.11.160.19:
                     # [lib.baz:281:23] t0 = self.string.input()
                     # [lib.baz:281:23] = expression
                     # [lib.baz:281:23] self.string.input()
                     # [lib.baz:181:10] mut text.input() res bool
-                    func.string.input.f3.281.23.157.19:
+                    func.string.input.f3.281.23.160.19:
                         # [lib.baz:181:10] const capacity = 1024
                         # [lib.baz:281:23] alias res -> t0
                         # [lib.baz:281:23] alias self -> self.string
@@ -3512,10 +3512,10 @@ main:
                         # [lib.baz:186:16] 0
                         sw zero, -1008(s0)
                         # [lib.baz:187:5] loop
-                        loop.f3.187.5.f3.281.23.157.19:
-                            if.f3.188.12.f3.281.23.157.19:
+                        loop.f3.187.5.f3.281.23.160.19:
+                            if.f3.188.12.f3.281.23.160.19:
                             # [lib.baz:188:12] ? read(0, c, 1) == 0
-                            cmp.f3.188.12.f3.281.23.157.19:
+                            cmp.f3.188.12.f3.281.23.160.19:
                             # [lib.baz:188:12] allocate scratch register -> t1
                                 # [lib.baz:188:12] t1 = read(0, c, 1)
                                 # [lib.baz:188:12] = expression
@@ -3549,64 +3549,64 @@ main:
                                 # [lib.baz:188:12] free named register a2
                                 # [lib.baz:188:12] free named register a1
                                 # [lib.baz:188:12] free named register a0
-                            bne t1, zero, if.f3.188.9.f3.281.23.157.19.end
+                            bne t1, zero, if.f3.188.9.f3.281.23.160.19.end
                             # [lib.baz:188:12] free scratch register t1
-                            if.f3.188.12.f3.281.23.157.19.code:
+                            if.f3.188.12.f3.281.23.160.19.code:
                                 # [lib.baz:189:13] res = false
                                 li t0, 0
                                 # [lib.baz:190:13] break
-                                j loop.f3.187.5.f3.281.23.157.19.end
-                            if.f3.188.9.f3.281.23.157.19.end:
+                                j loop.f3.187.5.f3.281.23.160.19.end
+                            if.f3.188.9.f3.281.23.160.19.end:
                             # [lib.baz:192:9] var act = act_insert
                             # [lib.baz:192:13] act: i32 (4 B @ [s0 - 984])
                             # [lib.baz:192:13] act = act_insert
                             # [lib.baz:192:19] act_insert
                             sw zero, -984(s0)
-                            if.f3.193.12.f3.281.23.157.19:
+                            if.f3.193.12.f3.281.23.160.19:
                             # [lib.baz:193:12] ? c[0] == '\x7f' or c[0] == '\b'
                             # [lib.baz:193:12] ? c[0] == '\x7f'
-                            cmp.f3.193.12.f3.281.23.157.19:
+                            cmp.f3.193.12.f3.281.23.160.19:
                             # [lib.baz:193:12] allocate scratch register -> t1
                             lb t1, -992(s0)
                             # [lib.baz:193:12] allocate scratch register -> t2
                             li t2, 127
-                            beq t1, t2, if.f3.193.12.f3.281.23.157.19.code
+                            beq t1, t2, if.f3.193.12.f3.281.23.160.19.code
                             # [lib.baz:193:12] free scratch register t2
                             # [lib.baz:193:12] free scratch register t1
                             # [lib.baz:193:30] ? c[0] == '\b'
-                            cmp.f3.193.30.f3.281.23.157.19:
+                            cmp.f3.193.30.f3.281.23.160.19:
                             # [lib.baz:193:30] allocate scratch register -> t1
                             lb t1, -992(s0)
                             # [lib.baz:193:30] allocate scratch register -> t2
                             li t2, 8
-                            bne t1, t2, if.f3.193.9.f3.281.23.157.19.end
+                            bne t1, t2, if.f3.193.9.f3.281.23.160.19.end
                             # [lib.baz:193:30] free scratch register t2
                             # [lib.baz:193:30] free scratch register t1
-                            if.f3.193.12.f3.281.23.157.19.code:
+                            if.f3.193.12.f3.281.23.160.19.code:
                                 # [lib.baz:193:43] act = act_backspace
                                 # [lib.baz:193:49] act_backspace
                                 # [lib.baz:193:49] allocate scratch register -> t1
                                 li t1, 1
                                 sw t1, -984(s0)
                                 # [lib.baz:193:49] free scratch register t1
-                            if.f3.193.9.f3.281.23.157.19.end:
-                            if.f3.194.12.f3.281.23.157.19:
+                            if.f3.193.9.f3.281.23.160.19.end:
+                            if.f3.194.12.f3.281.23.160.19:
                             # [lib.baz:194:12] ? c[0] == '\x1b'
-                            cmp.f3.194.12.f3.281.23.157.19:
+                            cmp.f3.194.12.f3.281.23.160.19:
                             # [lib.baz:194:12] allocate scratch register -> t1
                             lb t1, -992(s0)
                             # [lib.baz:194:12] allocate scratch register -> t2
                             li t2, 27
-                            bne t1, t2, if.f3.194.9.f3.281.23.157.19.end
+                            bne t1, t2, if.f3.194.9.f3.281.23.160.19.end
                             # [lib.baz:194:12] free scratch register t2
                             # [lib.baz:194:12] free scratch register t1
-                            if.f3.194.12.f3.281.23.157.19.code:
+                            if.f3.194.12.f3.281.23.160.19.code:
                                 # [lib.baz:194:27] act = input_escape_action()
                                 # [lib.baz:194:33] act = input_escape_action()
                                 # [lib.baz:194:33] = expression
                                 # [lib.baz:194:33] input_escape_action()
                                 # [lib.baz:144:6] input_escape_action() res
-                                func.input_escape_action.f3.194.33.f3.281.23.157.19:
+                                func.input_escape_action.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:194:33] alias res -> act
                                     # [lib.baz:145:5] res = act_ignore
                                     # [lib.baz:145:11] act_ignore
@@ -3619,9 +3619,9 @@ main:
                                     # [lib.baz:146:9] c = i8[1]
                                     # [lib.baz:146:13] zero remaining elements: 1 * 1 B = 1 B
                                     sb zero, -980(s0)
-                                    if.f3.147.8.f3.194.33.f3.281.23.157.19:
+                                    if.f3.147.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:147:8] ? read(0, c, 1) == 0
-                                    cmp.f3.147.8.f3.194.33.f3.281.23.157.19:
+                                    cmp.f3.147.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:147:8] allocate scratch register -> t1
                                         # [lib.baz:147:8] t1 = read(0, c, 1)
                                         # [lib.baz:147:8] = expression
@@ -3655,34 +3655,34 @@ main:
                                         # [lib.baz:147:8] free named register a2
                                         # [lib.baz:147:8] free named register a1
                                         # [lib.baz:147:8] free named register a0
-                                    beq t1, zero, func.input_escape_action.f3.194.33.f3.281.23.157.19.end
+                                    beq t1, zero, func.input_escape_action.f3.194.33.f3.281.23.160.19.end
                                     # [lib.baz:147:8] free scratch register t1
-                                    if.f3.147.8.f3.194.33.f3.281.23.157.19.code:
+                                    if.f3.147.8.f3.194.33.f3.281.23.160.19.code:
                                         # [lib.baz:147:27] return
-                                    if.f3.147.5.f3.194.33.f3.281.23.157.19.end:
-                                    if.f3.148.8.f3.194.33.f3.281.23.157.19:
+                                    if.f3.147.5.f3.194.33.f3.281.23.160.19.end:
+                                    if.f3.148.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:148:8] ? c[0] != '['
-                                    cmp.f3.148.8.f3.194.33.f3.281.23.157.19:
+                                    cmp.f3.148.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:148:8] allocate scratch register -> t1
                                     lb t1, -980(s0)
                                     # [lib.baz:148:8] allocate scratch register -> t2
                                     li t2, 91
-                                    bne t1, t2, func.input_escape_action.f3.194.33.f3.281.23.157.19.end
+                                    bne t1, t2, func.input_escape_action.f3.194.33.f3.281.23.160.19.end
                                     # [lib.baz:148:8] free scratch register t2
                                     # [lib.baz:148:8] free scratch register t1
-                                    if.f3.148.8.f3.194.33.f3.281.23.157.19.code:
+                                    if.f3.148.8.f3.194.33.f3.281.23.160.19.code:
                                         # [lib.baz:148:20] return
-                                    if.f3.148.5.f3.194.33.f3.281.23.157.19.end:
+                                    if.f3.148.5.f3.194.33.f3.281.23.160.19.end:
                                     # [lib.baz:151:5] var first = 0
                                     # [lib.baz:151:9] first: i32 (4 B @ [s0 - 976])
                                     # [lib.baz:151:9] first = 0
                                     # [lib.baz:151:17] 0
                                     sw zero, -976(s0)
                                     # [lib.baz:152:5] loop
-                                    loop.f3.152.5.f3.194.33.f3.281.23.157.19:
-                                        if.f3.153.12.f3.194.33.f3.281.23.157.19:
+                                    loop.f3.152.5.f3.194.33.f3.281.23.160.19:
+                                        if.f3.153.12.f3.194.33.f3.281.23.160.19:
                                         # [lib.baz:153:12] ? read(0, c, 1) == 0
-                                        cmp.f3.153.12.f3.194.33.f3.281.23.157.19:
+                                        cmp.f3.153.12.f3.194.33.f3.281.23.160.19:
                                         # [lib.baz:153:12] allocate scratch register -> t1
                                             # [lib.baz:153:12] t1 = read(0, c, 1)
                                             # [lib.baz:153:12] = expression
@@ -3716,138 +3716,138 @@ main:
                                             # [lib.baz:153:12] free named register a2
                                             # [lib.baz:153:12] free named register a1
                                             # [lib.baz:153:12] free named register a0
-                                        beq t1, zero, func.input_escape_action.f3.194.33.f3.281.23.157.19.end
+                                        beq t1, zero, func.input_escape_action.f3.194.33.f3.281.23.160.19.end
                                         # [lib.baz:153:12] free scratch register t1
-                                        if.f3.153.12.f3.194.33.f3.281.23.157.19.code:
+                                        if.f3.153.12.f3.194.33.f3.281.23.160.19.code:
                                             # [lib.baz:153:31] return
-                                        if.f3.153.9.f3.194.33.f3.281.23.157.19.end:
-                                        if.f3.154.12.f3.194.33.f3.281.23.157.19:
+                                        if.f3.153.9.f3.194.33.f3.281.23.160.19.end:
+                                        if.f3.154.12.f3.194.33.f3.281.23.160.19:
                                         # [lib.baz:154:12] ? first == 0
-                                        cmp.f3.154.12.f3.194.33.f3.281.23.157.19:
+                                        cmp.f3.154.12.f3.194.33.f3.281.23.160.19:
                                         # [lib.baz:154:12] allocate scratch register -> t1
                                         lw t1, -976(s0)
-                                        bne t1, zero, if.f3.154.9.f3.194.33.f3.281.23.157.19.end
+                                        bne t1, zero, if.f3.154.9.f3.194.33.f3.281.23.160.19.end
                                         # [lib.baz:154:12] free scratch register t1
-                                        if.f3.154.12.f3.194.33.f3.281.23.157.19.code:
+                                        if.f3.154.12.f3.194.33.f3.281.23.160.19.code:
                                             # [lib.baz:154:23] first = c[0]
                                             # [lib.baz:154:31] c[0]
                                             # [lib.baz:154:31] allocate scratch register -> t1
                                             lb t1, -980(s0)
                                             sw t1, -976(s0)
                                             # [lib.baz:154:31] free scratch register t1
-                                        if.f3.154.9.f3.194.33.f3.281.23.157.19.end:
-                                        if.f3.155.12.f3.194.33.f3.281.23.157.19:
+                                        if.f3.154.9.f3.194.33.f3.281.23.160.19.end:
+                                        if.f3.155.12.f3.194.33.f3.281.23.160.19:
                                         # [lib.baz:155:12] ? c[0] >= '@'
-                                        cmp.f3.155.12.f3.194.33.f3.281.23.157.19:
+                                        cmp.f3.155.12.f3.194.33.f3.281.23.160.19:
                                         # [lib.baz:155:12] allocate scratch register -> t1
                                         lb t1, -980(s0)
                                         # [lib.baz:155:12] allocate scratch register -> t2
                                         li t2, 64
-                                        blt t1, t2, loop.f3.152.5.f3.194.33.f3.281.23.157.19
+                                        blt t1, t2, loop.f3.152.5.f3.194.33.f3.281.23.160.19
                                         # [lib.baz:155:12] free scratch register t2
                                         # [lib.baz:155:12] free scratch register t1
-                                        if.f3.155.12.f3.194.33.f3.281.23.157.19.code:
+                                        if.f3.155.12.f3.194.33.f3.281.23.160.19.code:
                                             # [lib.baz:155:24] break
-                                        if.f3.155.9.f3.194.33.f3.281.23.157.19.end:
-                                    loop.f3.152.5.f3.194.33.f3.281.23.157.19.end:
-                                    if.f3.157.8.f3.194.33.f3.281.23.157.19:
+                                        if.f3.155.9.f3.194.33.f3.281.23.160.19.end:
+                                    loop.f3.152.5.f3.194.33.f3.281.23.160.19.end:
+                                    if.f3.157.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:157:8] ? c[0] == 'D'
-                                    cmp.f3.157.8.f3.194.33.f3.281.23.157.19:
+                                    cmp.f3.157.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:157:8] allocate scratch register -> t1
                                     lb t1, -980(s0)
                                     # [lib.baz:157:8] allocate scratch register -> t2
                                     li t2, 68
-                                    bne t1, t2, if.f3.157.5.f3.194.33.f3.281.23.157.19.end
+                                    bne t1, t2, if.f3.157.5.f3.194.33.f3.281.23.160.19.end
                                     # [lib.baz:157:8] free scratch register t2
                                     # [lib.baz:157:8] free scratch register t1
-                                    if.f3.157.8.f3.194.33.f3.281.23.157.19.code:
+                                    if.f3.157.8.f3.194.33.f3.281.23.160.19.code:
                                         # [lib.baz:157:20] res = act_left
                                         # [lib.baz:157:26] act_left
                                         # [lib.baz:157:26] allocate scratch register -> t1
                                         li t1, 3
                                         sw t1, -984(s0)
                                         # [lib.baz:157:26] free scratch register t1
-                                    if.f3.157.5.f3.194.33.f3.281.23.157.19.end:
-                                    if.f3.158.8.f3.194.33.f3.281.23.157.19:
+                                    if.f3.157.5.f3.194.33.f3.281.23.160.19.end:
+                                    if.f3.158.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:158:8] ? c[0] == 'C'
-                                    cmp.f3.158.8.f3.194.33.f3.281.23.157.19:
+                                    cmp.f3.158.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:158:8] allocate scratch register -> t1
                                     lb t1, -980(s0)
                                     # [lib.baz:158:8] allocate scratch register -> t2
                                     li t2, 67
-                                    bne t1, t2, if.f3.158.5.f3.194.33.f3.281.23.157.19.end
+                                    bne t1, t2, if.f3.158.5.f3.194.33.f3.281.23.160.19.end
                                     # [lib.baz:158:8] free scratch register t2
                                     # [lib.baz:158:8] free scratch register t1
-                                    if.f3.158.8.f3.194.33.f3.281.23.157.19.code:
+                                    if.f3.158.8.f3.194.33.f3.281.23.160.19.code:
                                         # [lib.baz:158:20] res = act_right
                                         # [lib.baz:158:26] act_right
                                         # [lib.baz:158:26] allocate scratch register -> t1
                                         li t1, 4
                                         sw t1, -984(s0)
                                         # [lib.baz:158:26] free scratch register t1
-                                    if.f3.158.5.f3.194.33.f3.281.23.157.19.end:
-                                    if.f3.159.8.f3.194.33.f3.281.23.157.19:
+                                    if.f3.158.5.f3.194.33.f3.281.23.160.19.end:
+                                    if.f3.159.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:159:8] ? first == '3' and c[0] == '~'
                                     # [lib.baz:159:8] ? first == '3'
-                                    cmp.f3.159.8.f3.194.33.f3.281.23.157.19:
+                                    cmp.f3.159.8.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:159:8] allocate scratch register -> t1
                                     lw t1, -976(s0)
                                     # [lib.baz:159:8] allocate scratch register -> t2
                                     li t2, 51
-                                    bne t1, t2, if.f3.159.5.f3.194.33.f3.281.23.157.19.end
+                                    bne t1, t2, if.f3.159.5.f3.194.33.f3.281.23.160.19.end
                                     # [lib.baz:159:8] free scratch register t2
                                     # [lib.baz:159:8] free scratch register t1
                                     # [lib.baz:159:25] ? c[0] == '~'
-                                    cmp.f3.159.25.f3.194.33.f3.281.23.157.19:
+                                    cmp.f3.159.25.f3.194.33.f3.281.23.160.19:
                                     # [lib.baz:159:25] allocate scratch register -> t1
                                     lb t1, -980(s0)
                                     # [lib.baz:159:25] allocate scratch register -> t2
                                     li t2, 126
-                                    bne t1, t2, if.f3.159.5.f3.194.33.f3.281.23.157.19.end
+                                    bne t1, t2, if.f3.159.5.f3.194.33.f3.281.23.160.19.end
                                     # [lib.baz:159:25] free scratch register t2
                                     # [lib.baz:159:25] free scratch register t1
-                                    if.f3.159.8.f3.194.33.f3.281.23.157.19.code:
+                                    if.f3.159.8.f3.194.33.f3.281.23.160.19.code:
                                         # [lib.baz:159:37] res = act_delete
                                         # [lib.baz:159:43] act_delete
                                         # [lib.baz:159:43] allocate scratch register -> t1
                                         li t1, 2
                                         sw t1, -984(s0)
                                         # [lib.baz:159:43] free scratch register t1
-                                    if.f3.159.5.f3.194.33.f3.281.23.157.19.end:
-                                func.input_escape_action.f3.194.33.f3.281.23.157.19.end:
-                            if.f3.194.9.f3.281.23.157.19.end:
-                            if.f3.195.12.f3.281.23.157.19:
+                                    if.f3.159.5.f3.194.33.f3.281.23.160.19.end:
+                                func.input_escape_action.f3.194.33.f3.281.23.160.19.end:
+                            if.f3.194.9.f3.281.23.160.19.end:
+                            if.f3.195.12.f3.281.23.160.19:
                             # [lib.baz:195:12] ? act == act_ignore
-                            cmp.f3.195.12.f3.281.23.157.19:
+                            cmp.f3.195.12.f3.281.23.160.19:
                             # [lib.baz:195:12] allocate scratch register -> t1
                             lw t1, -984(s0)
                             # [lib.baz:195:12] allocate scratch register -> t2
                             li t2, 5
-                            beq t1, t2, loop.f3.187.5.f3.281.23.157.19
+                            beq t1, t2, loop.f3.187.5.f3.281.23.160.19
                             # [lib.baz:195:12] free scratch register t2
                             # [lib.baz:195:12] free scratch register t1
-                            if.f3.195.12.f3.281.23.157.19.code:
+                            if.f3.195.12.f3.281.23.160.19.code:
                                 # [lib.baz:195:30] continue
-                            if.f3.195.9.f3.281.23.157.19.end:
-                            if.f3.196.12.f3.281.23.157.19:
+                            if.f3.195.9.f3.281.23.160.19.end:
+                            if.f3.196.12.f3.281.23.160.19:
                             # [lib.baz:196:12] ? act == act_backspace
-                            cmp.f3.196.12.f3.281.23.157.19:
+                            cmp.f3.196.12.f3.281.23.160.19:
                             # [lib.baz:196:12] allocate scratch register -> t1
                             lw t1, -984(s0)
                             # [lib.baz:196:12] allocate scratch register -> t2
                             li t2, 1
-                            bne t1, t2, if.f3.196.9.f3.281.23.157.19.end
+                            bne t1, t2, if.f3.196.9.f3.281.23.160.19.end
                             # [lib.baz:196:12] free scratch register t2
                             # [lib.baz:196:12] free scratch register t1
-                            if.f3.196.12.f3.281.23.157.19.code:
-                                if.f3.197.16.f3.281.23.157.19:
+                            if.f3.196.12.f3.281.23.160.19.code:
+                                if.f3.197.16.f3.281.23.160.19:
                                 # [lib.baz:197:16] ? pos > 0
-                                cmp.f3.197.16.f3.281.23.157.19:
+                                cmp.f3.197.16.f3.281.23.160.19:
                                 # [lib.baz:197:16] allocate scratch register -> t1
                                 lw t1, -988(s0)
-                                bge zero, t1, if.f3.197.13.f3.281.23.157.19.end
+                                bge zero, t1, if.f3.197.13.f3.281.23.160.19.end
                                 # [lib.baz:197:16] free scratch register t1
-                                if.f3.197.16.f3.281.23.157.19.code:
+                                if.f3.197.16.f3.281.23.160.19.code:
                                     # [lib.baz:198:17] pos = pos - 1
                                     # [lib.baz:198:23] smaller of two versions of 7 and 7 instructions
                                     # [lib.baz:198:23] pos
@@ -3869,7 +3869,7 @@ main:
                                     # [lib.baz:198:23] free scratch register t1
                                     # [lib.baz:199:22] self.delete_index(pos)
                                     # [lib.baz:78:10] mut list.delete_index(ix)
-                                    func.string.delete_index.f3.199.22.f3.281.23.157.19:
+                                    func.string.delete_index.f3.199.22.f3.281.23.160.19:
                                         # [lib.baz:78:10] const capacity = 1024
                                         # [lib.baz:199:22] alias self -> self
                                         # [lib.baz:199:22] alias ix -> pos
@@ -4026,37 +4026,37 @@ main:
                                         sw t1, -1008(s0)
                                         # [lib.baz:87:16] free scratch register t2
                                         # [lib.baz:87:16] free scratch register t1
-                                    func.string.delete_index.f3.199.22.f3.281.23.157.19.end:
+                                    func.string.delete_index.f3.199.22.f3.281.23.160.19.end:
                                     # [lib.baz:200:21] out.print_all(str_back)
                                     # [lib.baz:30:6] printer.print_all(s i8[])
-                                    func.printer.print_all.f3.200.21.f3.281.23.157.19:
+                                    func.printer.print_all.f3.200.21.f3.281.23.160.19:
                                         # [lib.baz:200:21] alias self -> out
                                         # [lib.baz:200:21] alias s -> str_back
                                         # [lib.baz:31:10] self.print(s, array_length(s))
                                         # [lib.baz:26:6] printer.print(s i8[], count)
-                                        func.printer.print.f3.31.10.f3.200.21.f3.281.23.157.19:
+                                        func.printer.print.f3.31.10.f3.200.21.f3.281.23.160.19:
                                             # [lib.baz:31:10] alias self -> self
                                             # [lib.baz:31:10] alias s -> s
                                             # [lib.baz:31:10] alias count -> 1
                                             # [lib.baz:27:10] self.print_at(s, count, 0)
                                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                            func.printer.print_at.f3.27.10.f3.31.10.f3.200.21.f3.281.23.157.19:
+                                            func.printer.print_at.f3.27.10.f3.31.10.f3.200.21.f3.281.23.160.19:
                                                 # [lib.baz:27:10] alias self -> self
                                                 # [lib.baz:27:10] alias s -> s
                                                 # [lib.baz:27:10] alias count -> 1
                                                 # [lib.baz:27:10] alias start -> 0
-                                                if.f3.21.8.f3.27.10.f3.31.10.f3.200.21.f3.281.23.157.19:
+                                                if.f3.21.8.f3.27.10.f3.31.10.f3.200.21.f3.281.23.160.19:
                                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.200.21.f3.281.23.157.19:
+                                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.200.21.f3.281.23.160.19:
                                                 # [lib.baz:21:8] allocate scratch register -> t1
                                                 lui t1, 1048470
                                                 add t1, t1, s0
                                                 lbu t1, -59(t1)
-                                                bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.200.21.f3.281.23.157.19.end
+                                                bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.200.21.f3.281.23.160.19.end
                                                 # [lib.baz:21:8] free scratch register t1
-                                                if.f3.21.8.f3.27.10.f3.31.10.f3.200.21.f3.281.23.157.19.code:
+                                                if.f3.21.8.f3.27.10.f3.31.10.f3.200.21.f3.281.23.160.19.code:
                                                     # [lib.baz:21:22] return
-                                                if.f3.21.5.f3.27.10.f3.31.10.f3.200.21.f3.281.23.157.19.end:
+                                                if.f3.21.5.f3.27.10.f3.31.10.f3.200.21.f3.281.23.160.19.end:
                                                 # [lib.baz:23:5] write(1, s, count, start)
                                                 # [lib.baz:23:5] allocate named register a0
                                                 # [lib.baz:23:5] allocate named register a1
@@ -4097,12 +4097,12 @@ main:
                                                 # [lib.baz:23:5] free named register a2
                                                 # [lib.baz:23:5] free named register a1
                                                 # [lib.baz:23:5] free named register a0
-                                            func.printer.print_at.f3.27.10.f3.31.10.f3.200.21.f3.281.23.157.19.end:
-                                        func.printer.print.f3.31.10.f3.200.21.f3.281.23.157.19.end:
-                                    func.printer.print_all.f3.200.21.f3.281.23.157.19.end:
+                                            func.printer.print_at.f3.27.10.f3.31.10.f3.200.21.f3.281.23.160.19.end:
+                                        func.printer.print.f3.31.10.f3.200.21.f3.281.23.160.19.end:
+                                    func.printer.print_all.f3.200.21.f3.281.23.160.19.end:
                                     # [lib.baz:201:22] self.redraw_from(pos, 1)
                                     # [lib.baz:164:6] text.redraw_from(pos, blanks)
-                                    func.string.redraw_from.f3.201.22.f3.281.23.157.19:
+                                    func.string.redraw_from.f3.201.22.f3.281.23.160.19:
                                         # [lib.baz:164:6] const capacity = 1024
                                         # [lib.baz:201:22] alias self -> self
                                         # [lib.baz:201:22] alias pos -> pos
@@ -4136,33 +4136,33 @@ main:
                                         # [lib.baz:165:27] free scratch register t2
                                         sw t1, -980(s0)
                                         # [lib.baz:165:16] free scratch register t1
-                                        if.f3.166.8.f3.201.22.f3.281.23.157.19:
+                                        if.f3.166.8.f3.201.22.f3.281.23.160.19:
                                         # [lib.baz:166:8] ? back > 0
-                                        cmp.f3.166.8.f3.201.22.f3.281.23.157.19:
+                                        cmp.f3.166.8.f3.201.22.f3.281.23.160.19:
                                         # [lib.baz:166:8] allocate scratch register -> t1
                                         lw t1, -980(s0)
-                                        bge zero, t1, if.f3.166.5.f3.201.22.f3.281.23.157.19.end
+                                        bge zero, t1, if.f3.166.5.f3.201.22.f3.281.23.160.19.end
                                         # [lib.baz:166:8] free scratch register t1
-                                        if.f3.166.8.f3.201.22.f3.281.23.157.19.code:
+                                        if.f3.166.8.f3.201.22.f3.281.23.160.19.code:
                                             # [lib.baz:166:21] out.print_at(self.array, back, pos)
                                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                            func.printer.print_at.f3.166.21.f3.201.22.f3.281.23.157.19:
+                                            func.printer.print_at.f3.166.21.f3.201.22.f3.281.23.160.19:
                                                 # [lib.baz:166:21] alias self -> out
                                                 # [lib.baz:166:21] alias s -> self.array
                                                 # [lib.baz:166:21] alias count -> back
                                                 # [lib.baz:166:21] alias start -> pos
-                                                if.f3.21.8.f3.166.21.f3.201.22.f3.281.23.157.19:
+                                                if.f3.21.8.f3.166.21.f3.201.22.f3.281.23.160.19:
                                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                                cmp.f3.21.8.f3.166.21.f3.201.22.f3.281.23.157.19:
+                                                cmp.f3.21.8.f3.166.21.f3.201.22.f3.281.23.160.19:
                                                 # [lib.baz:21:8] allocate scratch register -> t1
                                                 lui t1, 1048470
                                                 add t1, t1, s0
                                                 lbu t1, -59(t1)
-                                                bne t1, zero, func.printer.print_at.f3.166.21.f3.201.22.f3.281.23.157.19.end
+                                                bne t1, zero, func.printer.print_at.f3.166.21.f3.201.22.f3.281.23.160.19.end
                                                 # [lib.baz:21:8] free scratch register t1
-                                                if.f3.21.8.f3.166.21.f3.201.22.f3.281.23.157.19.code:
+                                                if.f3.21.8.f3.166.21.f3.201.22.f3.281.23.160.19.code:
                                                     # [lib.baz:21:22] return
-                                                if.f3.21.5.f3.166.21.f3.201.22.f3.281.23.157.19.end:
+                                                if.f3.21.5.f3.166.21.f3.201.22.f3.281.23.160.19.end:
                                                 # [lib.baz:23:5] write(1, s, count, start)
                                                 # [lib.baz:23:5] allocate named register a0
                                                 # [lib.baz:23:5] allocate named register a1
@@ -4201,43 +4201,43 @@ main:
                                                 # [lib.baz:23:5] free named register a2
                                                 # [lib.baz:23:5] free named register a1
                                                 # [lib.baz:23:5] free named register a0
-                                            func.printer.print_at.f3.166.21.f3.201.22.f3.281.23.157.19.end:
-                                        if.f3.166.5.f3.201.22.f3.281.23.157.19.end:
-                                        if.f3.167.8.f3.201.22.f3.281.23.157.19:
+                                            func.printer.print_at.f3.166.21.f3.201.22.f3.281.23.160.19.end:
+                                        if.f3.166.5.f3.201.22.f3.281.23.160.19.end:
+                                        if.f3.167.8.f3.201.22.f3.281.23.160.19:
                                         # [lib.baz:167:8] ? blanks == 1
-                                        cmp.f3.167.8.f3.201.22.f3.281.23.157.19:
+                                        cmp.f3.167.8.f3.201.22.f3.281.23.160.19:
                                         # [lib.baz:167:8] const eval to true
-                                        if.f3.167.8.f3.201.22.f3.281.23.157.19.code:
+                                        if.f3.167.8.f3.201.22.f3.281.23.160.19.code:
                                             # [lib.baz:168:13] out.print_all(str_space)
                                             # [lib.baz:30:6] printer.print_all(s i8[])
-                                            func.printer.print_all.f3.168.13.f3.201.22.f3.281.23.157.19:
+                                            func.printer.print_all.f3.168.13.f3.201.22.f3.281.23.160.19:
                                                 # [lib.baz:168:13] alias self -> out
                                                 # [lib.baz:168:13] alias s -> str_space
                                                 # [lib.baz:31:10] self.print(s, array_length(s))
                                                 # [lib.baz:26:6] printer.print(s i8[], count)
-                                                func.printer.print.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19:
+                                                func.printer.print.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19:
                                                     # [lib.baz:31:10] alias self -> self
                                                     # [lib.baz:31:10] alias s -> s
                                                     # [lib.baz:31:10] alias count -> 1
                                                     # [lib.baz:27:10] self.print_at(s, count, 0)
                                                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19:
                                                         # [lib.baz:27:10] alias self -> self
                                                         # [lib.baz:27:10] alias s -> s
                                                         # [lib.baz:27:10] alias count -> 1
                                                         # [lib.baz:27:10] alias start -> 0
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] ? shorthand: self.silenced
-                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19:
+                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] allocate scratch register -> t1
                                                         lui t1, 1048470
                                                         add t1, t1, s0
                                                         lbu t1, -59(t1)
-                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19.end
+                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19.end
                                                         # [lib.baz:21:8] free scratch register t1
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19.code:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19.code:
                                                             # [lib.baz:21:22] return
-                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19.end:
+                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19.end:
                                                         # [lib.baz:23:5] write(1, s, count, start)
                                                         # [lib.baz:23:5] allocate named register a0
                                                         # [lib.baz:23:5] allocate named register a1
@@ -4278,9 +4278,9 @@ main:
                                                         # [lib.baz:23:5] free named register a2
                                                         # [lib.baz:23:5] free named register a1
                                                         # [lib.baz:23:5] free named register a0
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19.end:
-                                                func.printer.print.f3.31.10.f3.168.13.f3.201.22.f3.281.23.157.19.end:
-                                            func.printer.print_all.f3.168.13.f3.201.22.f3.281.23.157.19.end:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19.end:
+                                                func.printer.print.f3.31.10.f3.168.13.f3.201.22.f3.281.23.160.19.end:
+                                            func.printer.print_all.f3.168.13.f3.201.22.f3.281.23.160.19.end:
                                             # [lib.baz:169:9] back = back + 1
                                             # [lib.baz:169:16] smaller of two versions of 7 and 7 instructions
                                             # [lib.baz:169:16] back
@@ -4300,49 +4300,49 @@ main:
                                             sw t1, -980(s0)
                                             # [lib.baz:169:16] free scratch register t2
                                             # [lib.baz:169:16] free scratch register t1
-                                        if.f3.167.5.f3.201.22.f3.281.23.157.19.end:
+                                        if.f3.167.5.f3.201.22.f3.281.23.160.19.end:
                                         # [lib.baz:171:5] loop
-                                        loop.f3.171.5.f3.201.22.f3.281.23.157.19:
-                                            if.f3.172.12.f3.201.22.f3.281.23.157.19:
+                                        loop.f3.171.5.f3.201.22.f3.281.23.160.19:
+                                            if.f3.172.12.f3.201.22.f3.281.23.160.19:
                                             # [lib.baz:172:12] ? back == 0
-                                            cmp.f3.172.12.f3.201.22.f3.281.23.157.19:
+                                            cmp.f3.172.12.f3.201.22.f3.281.23.160.19:
                                             # [lib.baz:172:12] allocate scratch register -> t1
                                             lw t1, -980(s0)
-                                            beq t1, zero, loop.f3.171.5.f3.201.22.f3.281.23.157.19.end
+                                            beq t1, zero, loop.f3.171.5.f3.201.22.f3.281.23.160.19.end
                                             # [lib.baz:172:12] free scratch register t1
-                                            if.f3.172.12.f3.201.22.f3.281.23.157.19.code:
+                                            if.f3.172.12.f3.201.22.f3.281.23.160.19.code:
                                                 # [lib.baz:172:22] break
-                                            if.f3.172.9.f3.201.22.f3.281.23.157.19.end:
+                                            if.f3.172.9.f3.201.22.f3.281.23.160.19.end:
                                             # [lib.baz:173:13] out.print_all(str_back)
                                             # [lib.baz:30:6] printer.print_all(s i8[])
-                                            func.printer.print_all.f3.173.13.f3.201.22.f3.281.23.157.19:
+                                            func.printer.print_all.f3.173.13.f3.201.22.f3.281.23.160.19:
                                                 # [lib.baz:173:13] alias self -> out
                                                 # [lib.baz:173:13] alias s -> str_back
                                                 # [lib.baz:31:10] self.print(s, array_length(s))
                                                 # [lib.baz:26:6] printer.print(s i8[], count)
-                                                func.printer.print.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19:
+                                                func.printer.print.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19:
                                                     # [lib.baz:31:10] alias self -> self
                                                     # [lib.baz:31:10] alias s -> s
                                                     # [lib.baz:31:10] alias count -> 1
                                                     # [lib.baz:27:10] self.print_at(s, count, 0)
                                                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19:
                                                         # [lib.baz:27:10] alias self -> self
                                                         # [lib.baz:27:10] alias s -> s
                                                         # [lib.baz:27:10] alias count -> 1
                                                         # [lib.baz:27:10] alias start -> 0
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] ? shorthand: self.silenced
-                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19:
+                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] allocate scratch register -> t1
                                                         lui t1, 1048470
                                                         add t1, t1, s0
                                                         lbu t1, -59(t1)
-                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19.end
+                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19.end
                                                         # [lib.baz:21:8] free scratch register t1
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19.code:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19.code:
                                                             # [lib.baz:21:22] return
-                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19.end:
+                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19.end:
                                                         # [lib.baz:23:5] write(1, s, count, start)
                                                         # [lib.baz:23:5] allocate named register a0
                                                         # [lib.baz:23:5] allocate named register a1
@@ -4383,9 +4383,9 @@ main:
                                                         # [lib.baz:23:5] free named register a2
                                                         # [lib.baz:23:5] free named register a1
                                                         # [lib.baz:23:5] free named register a0
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19.end:
-                                                func.printer.print.f3.31.10.f3.173.13.f3.201.22.f3.281.23.157.19.end:
-                                            func.printer.print_all.f3.173.13.f3.201.22.f3.281.23.157.19.end:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19.end:
+                                                func.printer.print.f3.31.10.f3.173.13.f3.201.22.f3.281.23.160.19.end:
+                                            func.printer.print_all.f3.173.13.f3.201.22.f3.281.23.160.19.end:
                                             # [lib.baz:174:9] back = back - 1
                                             # [lib.baz:174:16] smaller of two versions of 7 and 7 instructions
                                             # [lib.baz:174:16] back
@@ -4405,38 +4405,38 @@ main:
                                             sw t1, -980(s0)
                                             # [lib.baz:174:16] free scratch register t2
                                             # [lib.baz:174:16] free scratch register t1
-                                        j loop.f3.171.5.f3.201.22.f3.281.23.157.19
-                                        loop.f3.171.5.f3.201.22.f3.281.23.157.19.end:
-                                    func.string.redraw_from.f3.201.22.f3.281.23.157.19.end:
-                                if.f3.197.13.f3.281.23.157.19.end:
+                                        j loop.f3.171.5.f3.201.22.f3.281.23.160.19
+                                        loop.f3.171.5.f3.201.22.f3.281.23.160.19.end:
+                                    func.string.redraw_from.f3.201.22.f3.281.23.160.19.end:
+                                if.f3.197.13.f3.281.23.160.19.end:
                                 # [lib.baz:203:13] continue
-                                j loop.f3.187.5.f3.281.23.157.19
-                            if.f3.196.9.f3.281.23.157.19.end:
-                            if.f3.205.12.f3.281.23.157.19:
+                                j loop.f3.187.5.f3.281.23.160.19
+                            if.f3.196.9.f3.281.23.160.19.end:
+                            if.f3.205.12.f3.281.23.160.19:
                             # [lib.baz:205:12] ? act == act_delete
-                            cmp.f3.205.12.f3.281.23.157.19:
+                            cmp.f3.205.12.f3.281.23.160.19:
                             # [lib.baz:205:12] allocate scratch register -> t1
                             lw t1, -984(s0)
                             # [lib.baz:205:12] allocate scratch register -> t2
                             li t2, 2
-                            bne t1, t2, if.f3.205.9.f3.281.23.157.19.end
+                            bne t1, t2, if.f3.205.9.f3.281.23.160.19.end
                             # [lib.baz:205:12] free scratch register t2
                             # [lib.baz:205:12] free scratch register t1
-                            if.f3.205.12.f3.281.23.157.19.code:
-                                if.f3.206.16.f3.281.23.157.19:
+                            if.f3.205.12.f3.281.23.160.19.code:
+                                if.f3.206.16.f3.281.23.160.19:
                                 # [lib.baz:206:16] ? pos < self.len
-                                cmp.f3.206.16.f3.281.23.157.19:
+                                cmp.f3.206.16.f3.281.23.160.19:
                                 # [lib.baz:206:16] allocate scratch register -> t1
                                 lw t1, -988(s0)
                                 # [lib.baz:206:16] allocate scratch register -> t2
                                 lw t2, -1008(s0)
-                                bge t1, t2, if.f3.206.13.f3.281.23.157.19.end
+                                bge t1, t2, if.f3.206.13.f3.281.23.160.19.end
                                 # [lib.baz:206:16] free scratch register t2
                                 # [lib.baz:206:16] free scratch register t1
-                                if.f3.206.16.f3.281.23.157.19.code:
+                                if.f3.206.16.f3.281.23.160.19.code:
                                     # [lib.baz:207:22] self.delete_index(pos)
                                     # [lib.baz:78:10] mut list.delete_index(ix)
-                                    func.string.delete_index.f3.207.22.f3.281.23.157.19:
+                                    func.string.delete_index.f3.207.22.f3.281.23.160.19:
                                         # [lib.baz:78:10] const capacity = 1024
                                         # [lib.baz:207:22] alias self -> self
                                         # [lib.baz:207:22] alias ix -> pos
@@ -4593,10 +4593,10 @@ main:
                                         sw t1, -1008(s0)
                                         # [lib.baz:87:16] free scratch register t2
                                         # [lib.baz:87:16] free scratch register t1
-                                    func.string.delete_index.f3.207.22.f3.281.23.157.19.end:
+                                    func.string.delete_index.f3.207.22.f3.281.23.160.19.end:
                                     # [lib.baz:208:22] self.redraw_from(pos, 1)
                                     # [lib.baz:164:6] text.redraw_from(pos, blanks)
-                                    func.string.redraw_from.f3.208.22.f3.281.23.157.19:
+                                    func.string.redraw_from.f3.208.22.f3.281.23.160.19:
                                         # [lib.baz:164:6] const capacity = 1024
                                         # [lib.baz:208:22] alias self -> self
                                         # [lib.baz:208:22] alias pos -> pos
@@ -4630,33 +4630,33 @@ main:
                                         # [lib.baz:165:27] free scratch register t2
                                         sw t1, -980(s0)
                                         # [lib.baz:165:16] free scratch register t1
-                                        if.f3.166.8.f3.208.22.f3.281.23.157.19:
+                                        if.f3.166.8.f3.208.22.f3.281.23.160.19:
                                         # [lib.baz:166:8] ? back > 0
-                                        cmp.f3.166.8.f3.208.22.f3.281.23.157.19:
+                                        cmp.f3.166.8.f3.208.22.f3.281.23.160.19:
                                         # [lib.baz:166:8] allocate scratch register -> t1
                                         lw t1, -980(s0)
-                                        bge zero, t1, if.f3.166.5.f3.208.22.f3.281.23.157.19.end
+                                        bge zero, t1, if.f3.166.5.f3.208.22.f3.281.23.160.19.end
                                         # [lib.baz:166:8] free scratch register t1
-                                        if.f3.166.8.f3.208.22.f3.281.23.157.19.code:
+                                        if.f3.166.8.f3.208.22.f3.281.23.160.19.code:
                                             # [lib.baz:166:21] out.print_at(self.array, back, pos)
                                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                            func.printer.print_at.f3.166.21.f3.208.22.f3.281.23.157.19:
+                                            func.printer.print_at.f3.166.21.f3.208.22.f3.281.23.160.19:
                                                 # [lib.baz:166:21] alias self -> out
                                                 # [lib.baz:166:21] alias s -> self.array
                                                 # [lib.baz:166:21] alias count -> back
                                                 # [lib.baz:166:21] alias start -> pos
-                                                if.f3.21.8.f3.166.21.f3.208.22.f3.281.23.157.19:
+                                                if.f3.21.8.f3.166.21.f3.208.22.f3.281.23.160.19:
                                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                                cmp.f3.21.8.f3.166.21.f3.208.22.f3.281.23.157.19:
+                                                cmp.f3.21.8.f3.166.21.f3.208.22.f3.281.23.160.19:
                                                 # [lib.baz:21:8] allocate scratch register -> t1
                                                 lui t1, 1048470
                                                 add t1, t1, s0
                                                 lbu t1, -59(t1)
-                                                bne t1, zero, func.printer.print_at.f3.166.21.f3.208.22.f3.281.23.157.19.end
+                                                bne t1, zero, func.printer.print_at.f3.166.21.f3.208.22.f3.281.23.160.19.end
                                                 # [lib.baz:21:8] free scratch register t1
-                                                if.f3.21.8.f3.166.21.f3.208.22.f3.281.23.157.19.code:
+                                                if.f3.21.8.f3.166.21.f3.208.22.f3.281.23.160.19.code:
                                                     # [lib.baz:21:22] return
-                                                if.f3.21.5.f3.166.21.f3.208.22.f3.281.23.157.19.end:
+                                                if.f3.21.5.f3.166.21.f3.208.22.f3.281.23.160.19.end:
                                                 # [lib.baz:23:5] write(1, s, count, start)
                                                 # [lib.baz:23:5] allocate named register a0
                                                 # [lib.baz:23:5] allocate named register a1
@@ -4695,43 +4695,43 @@ main:
                                                 # [lib.baz:23:5] free named register a2
                                                 # [lib.baz:23:5] free named register a1
                                                 # [lib.baz:23:5] free named register a0
-                                            func.printer.print_at.f3.166.21.f3.208.22.f3.281.23.157.19.end:
-                                        if.f3.166.5.f3.208.22.f3.281.23.157.19.end:
-                                        if.f3.167.8.f3.208.22.f3.281.23.157.19:
+                                            func.printer.print_at.f3.166.21.f3.208.22.f3.281.23.160.19.end:
+                                        if.f3.166.5.f3.208.22.f3.281.23.160.19.end:
+                                        if.f3.167.8.f3.208.22.f3.281.23.160.19:
                                         # [lib.baz:167:8] ? blanks == 1
-                                        cmp.f3.167.8.f3.208.22.f3.281.23.157.19:
+                                        cmp.f3.167.8.f3.208.22.f3.281.23.160.19:
                                         # [lib.baz:167:8] const eval to true
-                                        if.f3.167.8.f3.208.22.f3.281.23.157.19.code:
+                                        if.f3.167.8.f3.208.22.f3.281.23.160.19.code:
                                             # [lib.baz:168:13] out.print_all(str_space)
                                             # [lib.baz:30:6] printer.print_all(s i8[])
-                                            func.printer.print_all.f3.168.13.f3.208.22.f3.281.23.157.19:
+                                            func.printer.print_all.f3.168.13.f3.208.22.f3.281.23.160.19:
                                                 # [lib.baz:168:13] alias self -> out
                                                 # [lib.baz:168:13] alias s -> str_space
                                                 # [lib.baz:31:10] self.print(s, array_length(s))
                                                 # [lib.baz:26:6] printer.print(s i8[], count)
-                                                func.printer.print.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19:
+                                                func.printer.print.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19:
                                                     # [lib.baz:31:10] alias self -> self
                                                     # [lib.baz:31:10] alias s -> s
                                                     # [lib.baz:31:10] alias count -> 1
                                                     # [lib.baz:27:10] self.print_at(s, count, 0)
                                                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19:
                                                         # [lib.baz:27:10] alias self -> self
                                                         # [lib.baz:27:10] alias s -> s
                                                         # [lib.baz:27:10] alias count -> 1
                                                         # [lib.baz:27:10] alias start -> 0
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] ? shorthand: self.silenced
-                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19:
+                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] allocate scratch register -> t1
                                                         lui t1, 1048470
                                                         add t1, t1, s0
                                                         lbu t1, -59(t1)
-                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19.end
+                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19.end
                                                         # [lib.baz:21:8] free scratch register t1
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19.code:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19.code:
                                                             # [lib.baz:21:22] return
-                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19.end:
+                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19.end:
                                                         # [lib.baz:23:5] write(1, s, count, start)
                                                         # [lib.baz:23:5] allocate named register a0
                                                         # [lib.baz:23:5] allocate named register a1
@@ -4772,9 +4772,9 @@ main:
                                                         # [lib.baz:23:5] free named register a2
                                                         # [lib.baz:23:5] free named register a1
                                                         # [lib.baz:23:5] free named register a0
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19.end:
-                                                func.printer.print.f3.31.10.f3.168.13.f3.208.22.f3.281.23.157.19.end:
-                                            func.printer.print_all.f3.168.13.f3.208.22.f3.281.23.157.19.end:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19.end:
+                                                func.printer.print.f3.31.10.f3.168.13.f3.208.22.f3.281.23.160.19.end:
+                                            func.printer.print_all.f3.168.13.f3.208.22.f3.281.23.160.19.end:
                                             # [lib.baz:169:9] back = back + 1
                                             # [lib.baz:169:16] smaller of two versions of 7 and 7 instructions
                                             # [lib.baz:169:16] back
@@ -4794,49 +4794,49 @@ main:
                                             sw t1, -980(s0)
                                             # [lib.baz:169:16] free scratch register t2
                                             # [lib.baz:169:16] free scratch register t1
-                                        if.f3.167.5.f3.208.22.f3.281.23.157.19.end:
+                                        if.f3.167.5.f3.208.22.f3.281.23.160.19.end:
                                         # [lib.baz:171:5] loop
-                                        loop.f3.171.5.f3.208.22.f3.281.23.157.19:
-                                            if.f3.172.12.f3.208.22.f3.281.23.157.19:
+                                        loop.f3.171.5.f3.208.22.f3.281.23.160.19:
+                                            if.f3.172.12.f3.208.22.f3.281.23.160.19:
                                             # [lib.baz:172:12] ? back == 0
-                                            cmp.f3.172.12.f3.208.22.f3.281.23.157.19:
+                                            cmp.f3.172.12.f3.208.22.f3.281.23.160.19:
                                             # [lib.baz:172:12] allocate scratch register -> t1
                                             lw t1, -980(s0)
-                                            beq t1, zero, loop.f3.171.5.f3.208.22.f3.281.23.157.19.end
+                                            beq t1, zero, loop.f3.171.5.f3.208.22.f3.281.23.160.19.end
                                             # [lib.baz:172:12] free scratch register t1
-                                            if.f3.172.12.f3.208.22.f3.281.23.157.19.code:
+                                            if.f3.172.12.f3.208.22.f3.281.23.160.19.code:
                                                 # [lib.baz:172:22] break
-                                            if.f3.172.9.f3.208.22.f3.281.23.157.19.end:
+                                            if.f3.172.9.f3.208.22.f3.281.23.160.19.end:
                                             # [lib.baz:173:13] out.print_all(str_back)
                                             # [lib.baz:30:6] printer.print_all(s i8[])
-                                            func.printer.print_all.f3.173.13.f3.208.22.f3.281.23.157.19:
+                                            func.printer.print_all.f3.173.13.f3.208.22.f3.281.23.160.19:
                                                 # [lib.baz:173:13] alias self -> out
                                                 # [lib.baz:173:13] alias s -> str_back
                                                 # [lib.baz:31:10] self.print(s, array_length(s))
                                                 # [lib.baz:26:6] printer.print(s i8[], count)
-                                                func.printer.print.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19:
+                                                func.printer.print.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19:
                                                     # [lib.baz:31:10] alias self -> self
                                                     # [lib.baz:31:10] alias s -> s
                                                     # [lib.baz:31:10] alias count -> 1
                                                     # [lib.baz:27:10] self.print_at(s, count, 0)
                                                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19:
                                                         # [lib.baz:27:10] alias self -> self
                                                         # [lib.baz:27:10] alias s -> s
                                                         # [lib.baz:27:10] alias count -> 1
                                                         # [lib.baz:27:10] alias start -> 0
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] ? shorthand: self.silenced
-                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19:
+                                                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19:
                                                         # [lib.baz:21:8] allocate scratch register -> t1
                                                         lui t1, 1048470
                                                         add t1, t1, s0
                                                         lbu t1, -59(t1)
-                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19.end
+                                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19.end
                                                         # [lib.baz:21:8] free scratch register t1
-                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19.code:
+                                                        if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19.code:
                                                             # [lib.baz:21:22] return
-                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19.end:
+                                                        if.f3.21.5.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19.end:
                                                         # [lib.baz:23:5] write(1, s, count, start)
                                                         # [lib.baz:23:5] allocate named register a0
                                                         # [lib.baz:23:5] allocate named register a1
@@ -4877,9 +4877,9 @@ main:
                                                         # [lib.baz:23:5] free named register a2
                                                         # [lib.baz:23:5] free named register a1
                                                         # [lib.baz:23:5] free named register a0
-                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19.end:
-                                                func.printer.print.f3.31.10.f3.173.13.f3.208.22.f3.281.23.157.19.end:
-                                            func.printer.print_all.f3.173.13.f3.208.22.f3.281.23.157.19.end:
+                                                    func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19.end:
+                                                func.printer.print.f3.31.10.f3.173.13.f3.208.22.f3.281.23.160.19.end:
+                                            func.printer.print_all.f3.173.13.f3.208.22.f3.281.23.160.19.end:
                                             # [lib.baz:174:9] back = back - 1
                                             # [lib.baz:174:16] smaller of two versions of 7 and 7 instructions
                                             # [lib.baz:174:16] back
@@ -4899,32 +4899,32 @@ main:
                                             sw t1, -980(s0)
                                             # [lib.baz:174:16] free scratch register t2
                                             # [lib.baz:174:16] free scratch register t1
-                                        j loop.f3.171.5.f3.208.22.f3.281.23.157.19
-                                        loop.f3.171.5.f3.208.22.f3.281.23.157.19.end:
-                                    func.string.redraw_from.f3.208.22.f3.281.23.157.19.end:
-                                if.f3.206.13.f3.281.23.157.19.end:
+                                        j loop.f3.171.5.f3.208.22.f3.281.23.160.19
+                                        loop.f3.171.5.f3.208.22.f3.281.23.160.19.end:
+                                    func.string.redraw_from.f3.208.22.f3.281.23.160.19.end:
+                                if.f3.206.13.f3.281.23.160.19.end:
                                 # [lib.baz:210:13] continue
-                                j loop.f3.187.5.f3.281.23.157.19
-                            if.f3.205.9.f3.281.23.157.19.end:
-                            if.f3.212.12.f3.281.23.157.19:
+                                j loop.f3.187.5.f3.281.23.160.19
+                            if.f3.205.9.f3.281.23.160.19.end:
+                            if.f3.212.12.f3.281.23.160.19:
                             # [lib.baz:212:12] ? act == act_left
-                            cmp.f3.212.12.f3.281.23.157.19:
+                            cmp.f3.212.12.f3.281.23.160.19:
                             # [lib.baz:212:12] allocate scratch register -> t1
                             lw t1, -984(s0)
                             # [lib.baz:212:12] allocate scratch register -> t2
                             li t2, 3
-                            bne t1, t2, if.f3.212.9.f3.281.23.157.19.end
+                            bne t1, t2, if.f3.212.9.f3.281.23.160.19.end
                             # [lib.baz:212:12] free scratch register t2
                             # [lib.baz:212:12] free scratch register t1
-                            if.f3.212.12.f3.281.23.157.19.code:
-                                if.f3.213.16.f3.281.23.157.19:
+                            if.f3.212.12.f3.281.23.160.19.code:
+                                if.f3.213.16.f3.281.23.160.19:
                                 # [lib.baz:213:16] ? pos > 0
-                                cmp.f3.213.16.f3.281.23.157.19:
+                                cmp.f3.213.16.f3.281.23.160.19:
                                 # [lib.baz:213:16] allocate scratch register -> t1
                                 lw t1, -988(s0)
-                                bge zero, t1, if.f3.213.13.f3.281.23.157.19.end
+                                bge zero, t1, if.f3.213.13.f3.281.23.160.19.end
                                 # [lib.baz:213:16] free scratch register t1
-                                if.f3.213.16.f3.281.23.157.19.code:
+                                if.f3.213.16.f3.281.23.160.19.code:
                                     # [lib.baz:214:17] pos = pos - 1
                                     # [lib.baz:214:23] smaller of two versions of 7 and 7 instructions
                                     # [lib.baz:214:23] pos
@@ -4946,34 +4946,34 @@ main:
                                     # [lib.baz:214:23] free scratch register t1
                                     # [lib.baz:215:21] out.print_all(str_back)
                                     # [lib.baz:30:6] printer.print_all(s i8[])
-                                    func.printer.print_all.f3.215.21.f3.281.23.157.19:
+                                    func.printer.print_all.f3.215.21.f3.281.23.160.19:
                                         # [lib.baz:215:21] alias self -> out
                                         # [lib.baz:215:21] alias s -> str_back
                                         # [lib.baz:31:10] self.print(s, array_length(s))
                                         # [lib.baz:26:6] printer.print(s i8[], count)
-                                        func.printer.print.f3.31.10.f3.215.21.f3.281.23.157.19:
+                                        func.printer.print.f3.31.10.f3.215.21.f3.281.23.160.19:
                                             # [lib.baz:31:10] alias self -> self
                                             # [lib.baz:31:10] alias s -> s
                                             # [lib.baz:31:10] alias count -> 1
                                             # [lib.baz:27:10] self.print_at(s, count, 0)
                                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                            func.printer.print_at.f3.27.10.f3.31.10.f3.215.21.f3.281.23.157.19:
+                                            func.printer.print_at.f3.27.10.f3.31.10.f3.215.21.f3.281.23.160.19:
                                                 # [lib.baz:27:10] alias self -> self
                                                 # [lib.baz:27:10] alias s -> s
                                                 # [lib.baz:27:10] alias count -> 1
                                                 # [lib.baz:27:10] alias start -> 0
-                                                if.f3.21.8.f3.27.10.f3.31.10.f3.215.21.f3.281.23.157.19:
+                                                if.f3.21.8.f3.27.10.f3.31.10.f3.215.21.f3.281.23.160.19:
                                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.215.21.f3.281.23.157.19:
+                                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.215.21.f3.281.23.160.19:
                                                 # [lib.baz:21:8] allocate scratch register -> t1
                                                 lui t1, 1048470
                                                 add t1, t1, s0
                                                 lbu t1, -59(t1)
-                                                bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.215.21.f3.281.23.157.19.end
+                                                bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.215.21.f3.281.23.160.19.end
                                                 # [lib.baz:21:8] free scratch register t1
-                                                if.f3.21.8.f3.27.10.f3.31.10.f3.215.21.f3.281.23.157.19.code:
+                                                if.f3.21.8.f3.27.10.f3.31.10.f3.215.21.f3.281.23.160.19.code:
                                                     # [lib.baz:21:22] return
-                                                if.f3.21.5.f3.27.10.f3.31.10.f3.215.21.f3.281.23.157.19.end:
+                                                if.f3.21.5.f3.27.10.f3.31.10.f3.215.21.f3.281.23.160.19.end:
                                                 # [lib.baz:23:5] write(1, s, count, start)
                                                 # [lib.baz:23:5] allocate named register a0
                                                 # [lib.baz:23:5] allocate named register a1
@@ -5014,54 +5014,54 @@ main:
                                                 # [lib.baz:23:5] free named register a2
                                                 # [lib.baz:23:5] free named register a1
                                                 # [lib.baz:23:5] free named register a0
-                                            func.printer.print_at.f3.27.10.f3.31.10.f3.215.21.f3.281.23.157.19.end:
-                                        func.printer.print.f3.31.10.f3.215.21.f3.281.23.157.19.end:
-                                    func.printer.print_all.f3.215.21.f3.281.23.157.19.end:
-                                if.f3.213.13.f3.281.23.157.19.end:
+                                            func.printer.print_at.f3.27.10.f3.31.10.f3.215.21.f3.281.23.160.19.end:
+                                        func.printer.print.f3.31.10.f3.215.21.f3.281.23.160.19.end:
+                                    func.printer.print_all.f3.215.21.f3.281.23.160.19.end:
+                                if.f3.213.13.f3.281.23.160.19.end:
                                 # [lib.baz:217:13] continue
-                                j loop.f3.187.5.f3.281.23.157.19
-                            if.f3.212.9.f3.281.23.157.19.end:
-                            if.f3.219.12.f3.281.23.157.19:
+                                j loop.f3.187.5.f3.281.23.160.19
+                            if.f3.212.9.f3.281.23.160.19.end:
+                            if.f3.219.12.f3.281.23.160.19:
                             # [lib.baz:219:12] ? act == act_right
-                            cmp.f3.219.12.f3.281.23.157.19:
+                            cmp.f3.219.12.f3.281.23.160.19:
                             # [lib.baz:219:12] allocate scratch register -> t1
                             lw t1, -984(s0)
                             # [lib.baz:219:12] allocate scratch register -> t2
                             li t2, 4
-                            bne t1, t2, if.f3.219.9.f3.281.23.157.19.end
+                            bne t1, t2, if.f3.219.9.f3.281.23.160.19.end
                             # [lib.baz:219:12] free scratch register t2
                             # [lib.baz:219:12] free scratch register t1
-                            if.f3.219.12.f3.281.23.157.19.code:
-                                if.f3.220.16.f3.281.23.157.19:
+                            if.f3.219.12.f3.281.23.160.19.code:
+                                if.f3.220.16.f3.281.23.160.19:
                                 # [lib.baz:220:16] ? pos < self.len
-                                cmp.f3.220.16.f3.281.23.157.19:
+                                cmp.f3.220.16.f3.281.23.160.19:
                                 # [lib.baz:220:16] allocate scratch register -> t1
                                 lw t1, -988(s0)
                                 # [lib.baz:220:16] allocate scratch register -> t2
                                 lw t2, -1008(s0)
-                                bge t1, t2, if.f3.220.13.f3.281.23.157.19.end
+                                bge t1, t2, if.f3.220.13.f3.281.23.160.19.end
                                 # [lib.baz:220:16] free scratch register t2
                                 # [lib.baz:220:16] free scratch register t1
-                                if.f3.220.16.f3.281.23.157.19.code:
+                                if.f3.220.16.f3.281.23.160.19.code:
                                     # [lib.baz:221:21] out.print_at(self.array, 1, pos)
                                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                    func.printer.print_at.f3.221.21.f3.281.23.157.19:
+                                    func.printer.print_at.f3.221.21.f3.281.23.160.19:
                                         # [lib.baz:221:21] alias self -> out
                                         # [lib.baz:221:21] alias s -> self.array
                                         # [lib.baz:221:21] alias count -> 1
                                         # [lib.baz:221:21] alias start -> pos
-                                        if.f3.21.8.f3.221.21.f3.281.23.157.19:
+                                        if.f3.21.8.f3.221.21.f3.281.23.160.19:
                                         # [lib.baz:21:8] ? shorthand: self.silenced
-                                        cmp.f3.21.8.f3.221.21.f3.281.23.157.19:
+                                        cmp.f3.21.8.f3.221.21.f3.281.23.160.19:
                                         # [lib.baz:21:8] allocate scratch register -> t1
                                         lui t1, 1048470
                                         add t1, t1, s0
                                         lbu t1, -59(t1)
-                                        bne t1, zero, func.printer.print_at.f3.221.21.f3.281.23.157.19.end
+                                        bne t1, zero, func.printer.print_at.f3.221.21.f3.281.23.160.19.end
                                         # [lib.baz:21:8] free scratch register t1
-                                        if.f3.21.8.f3.221.21.f3.281.23.157.19.code:
+                                        if.f3.21.8.f3.221.21.f3.281.23.160.19.code:
                                             # [lib.baz:21:22] return
-                                        if.f3.21.5.f3.221.21.f3.281.23.157.19.end:
+                                        if.f3.21.5.f3.221.21.f3.281.23.160.19.end:
                                         # [lib.baz:23:5] write(1, s, count, start)
                                         # [lib.baz:23:5] allocate named register a0
                                         # [lib.baz:23:5] allocate named register a1
@@ -5100,7 +5100,7 @@ main:
                                         # [lib.baz:23:5] free named register a2
                                         # [lib.baz:23:5] free named register a1
                                         # [lib.baz:23:5] free named register a0
-                                    func.printer.print_at.f3.221.21.f3.281.23.157.19.end:
+                                    func.printer.print_at.f3.221.21.f3.281.23.160.19.end:
                                     # [lib.baz:222:17] pos = pos + 1
                                     # [lib.baz:222:23] smaller of two versions of 7 and 7 instructions
                                     # [lib.baz:222:23] pos
@@ -5120,46 +5120,46 @@ main:
                                     sw t1, -988(s0)
                                     # [lib.baz:222:23] free scratch register t2
                                     # [lib.baz:222:23] free scratch register t1
-                                if.f3.220.13.f3.281.23.157.19.end:
+                                if.f3.220.13.f3.281.23.160.19.end:
                                 # [lib.baz:224:13] continue
-                                j loop.f3.187.5.f3.281.23.157.19
-                            if.f3.219.9.f3.281.23.157.19.end:
-                            if.f3.226.12.f3.281.23.157.19:
+                                j loop.f3.187.5.f3.281.23.160.19
+                            if.f3.219.9.f3.281.23.160.19.end:
+                            if.f3.226.12.f3.281.23.160.19:
                             # [lib.baz:226:12] ? c[0] == '\n'
-                            cmp.f3.226.12.f3.281.23.157.19:
+                            cmp.f3.226.12.f3.281.23.160.19:
                             # [lib.baz:226:12] allocate scratch register -> t1
                             lb t1, -992(s0)
                             # [lib.baz:226:12] allocate scratch register -> t2
                             li t2, 10
-                            bne t1, t2, if.f3.226.9.f3.281.23.157.19.end
+                            bne t1, t2, if.f3.226.9.f3.281.23.160.19.end
                             # [lib.baz:226:12] free scratch register t2
                             # [lib.baz:226:12] free scratch register t1
-                            if.f3.226.12.f3.281.23.157.19.code:
+                            if.f3.226.12.f3.281.23.160.19.code:
                                 # [lib.baz:227:17] out.print(c, 1)
                                 # [lib.baz:26:6] printer.print(s i8[], count)
-                                func.printer.print.f3.227.17.f3.281.23.157.19:
+                                func.printer.print.f3.227.17.f3.281.23.160.19:
                                     # [lib.baz:227:17] alias self -> out
                                     # [lib.baz:227:17] alias s -> c
                                     # [lib.baz:227:17] alias count -> 1
                                     # [lib.baz:27:10] self.print_at(s, count, 0)
                                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                    func.printer.print_at.f3.27.10.f3.227.17.f3.281.23.157.19:
+                                    func.printer.print_at.f3.27.10.f3.227.17.f3.281.23.160.19:
                                         # [lib.baz:27:10] alias self -> self
                                         # [lib.baz:27:10] alias s -> s
                                         # [lib.baz:27:10] alias count -> 1
                                         # [lib.baz:27:10] alias start -> 0
-                                        if.f3.21.8.f3.27.10.f3.227.17.f3.281.23.157.19:
+                                        if.f3.21.8.f3.27.10.f3.227.17.f3.281.23.160.19:
                                         # [lib.baz:21:8] ? shorthand: self.silenced
-                                        cmp.f3.21.8.f3.27.10.f3.227.17.f3.281.23.157.19:
+                                        cmp.f3.21.8.f3.27.10.f3.227.17.f3.281.23.160.19:
                                         # [lib.baz:21:8] allocate scratch register -> t1
                                         lui t1, 1048470
                                         add t1, t1, s0
                                         lbu t1, -59(t1)
-                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.227.17.f3.281.23.157.19.end
+                                        bne t1, zero, func.printer.print_at.f3.27.10.f3.227.17.f3.281.23.160.19.end
                                         # [lib.baz:21:8] free scratch register t1
-                                        if.f3.21.8.f3.27.10.f3.227.17.f3.281.23.157.19.code:
+                                        if.f3.21.8.f3.27.10.f3.227.17.f3.281.23.160.19.code:
                                             # [lib.baz:21:22] return
-                                        if.f3.21.5.f3.27.10.f3.227.17.f3.281.23.157.19.end:
+                                        if.f3.21.5.f3.27.10.f3.227.17.f3.281.23.160.19.end:
                                         # [lib.baz:23:5] write(1, s, count, start)
                                         # [lib.baz:23:5] allocate named register a0
                                         # [lib.baz:23:5] allocate named register a1
@@ -5198,50 +5198,50 @@ main:
                                         # [lib.baz:23:5] free named register a2
                                         # [lib.baz:23:5] free named register a1
                                         # [lib.baz:23:5] free named register a0
-                                    func.printer.print_at.f3.27.10.f3.227.17.f3.281.23.157.19.end:
-                                func.printer.print.f3.227.17.f3.281.23.157.19.end:
+                                    func.printer.print_at.f3.27.10.f3.227.17.f3.281.23.160.19.end:
+                                func.printer.print.f3.227.17.f3.281.23.160.19.end:
                                 # [lib.baz:228:13] break
-                                j loop.f3.187.5.f3.281.23.157.19.end
-                            if.f3.226.9.f3.281.23.157.19.end:
-                            if.f3.230.12.f3.281.23.157.19:
+                                j loop.f3.187.5.f3.281.23.160.19.end
+                            if.f3.226.9.f3.281.23.160.19.end:
+                            if.f3.230.12.f3.281.23.160.19:
                             # [lib.baz:230:12] ? self.len == array_length(self.array)
-                            cmp.f3.230.12.f3.281.23.157.19:
+                            cmp.f3.230.12.f3.281.23.160.19:
                             # [lib.baz:230:24] src: folded constant 'array_length(self.array)'
                             # [lib.baz:230:12] allocate scratch register -> t1
                             lw t1, -1008(s0)
                             # [lib.baz:230:12] allocate scratch register -> t2
                             li t2, 1024
-                            beq t1, t2, loop.f3.187.5.f3.281.23.157.19
+                            beq t1, t2, loop.f3.187.5.f3.281.23.160.19
                             # [lib.baz:230:12] free scratch register t2
                             # [lib.baz:230:12] free scratch register t1
-                            if.f3.230.12.f3.281.23.157.19.code:
+                            if.f3.230.12.f3.281.23.160.19.code:
                                 # [lib.baz:230:49] continue
-                            if.f3.230.9.f3.281.23.157.19.end:
+                            if.f3.230.9.f3.281.23.160.19.end:
                             # [lib.baz:231:13] out.print(c, 1)
                             # [lib.baz:26:6] printer.print(s i8[], count)
-                            func.printer.print.f3.231.13.f3.281.23.157.19:
+                            func.printer.print.f3.231.13.f3.281.23.160.19:
                                 # [lib.baz:231:13] alias self -> out
                                 # [lib.baz:231:13] alias s -> c
                                 # [lib.baz:231:13] alias count -> 1
                                 # [lib.baz:27:10] self.print_at(s, count, 0)
                                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                func.printer.print_at.f3.27.10.f3.231.13.f3.281.23.157.19:
+                                func.printer.print_at.f3.27.10.f3.231.13.f3.281.23.160.19:
                                     # [lib.baz:27:10] alias self -> self
                                     # [lib.baz:27:10] alias s -> s
                                     # [lib.baz:27:10] alias count -> 1
                                     # [lib.baz:27:10] alias start -> 0
-                                    if.f3.21.8.f3.27.10.f3.231.13.f3.281.23.157.19:
+                                    if.f3.21.8.f3.27.10.f3.231.13.f3.281.23.160.19:
                                     # [lib.baz:21:8] ? shorthand: self.silenced
-                                    cmp.f3.21.8.f3.27.10.f3.231.13.f3.281.23.157.19:
+                                    cmp.f3.21.8.f3.27.10.f3.231.13.f3.281.23.160.19:
                                     # [lib.baz:21:8] allocate scratch register -> t1
                                     lui t1, 1048470
                                     add t1, t1, s0
                                     lbu t1, -59(t1)
-                                    bne t1, zero, func.printer.print_at.f3.27.10.f3.231.13.f3.281.23.157.19.end
+                                    bne t1, zero, func.printer.print_at.f3.27.10.f3.231.13.f3.281.23.160.19.end
                                     # [lib.baz:21:8] free scratch register t1
-                                    if.f3.21.8.f3.27.10.f3.231.13.f3.281.23.157.19.code:
+                                    if.f3.21.8.f3.27.10.f3.231.13.f3.281.23.160.19.code:
                                         # [lib.baz:21:22] return
-                                    if.f3.21.5.f3.27.10.f3.231.13.f3.281.23.157.19.end:
+                                    if.f3.21.5.f3.27.10.f3.231.13.f3.281.23.160.19.end:
                                     # [lib.baz:23:5] write(1, s, count, start)
                                     # [lib.baz:23:5] allocate named register a0
                                     # [lib.baz:23:5] allocate named register a1
@@ -5280,11 +5280,11 @@ main:
                                     # [lib.baz:23:5] free named register a2
                                     # [lib.baz:23:5] free named register a1
                                     # [lib.baz:23:5] free named register a0
-                                func.printer.print_at.f3.27.10.f3.231.13.f3.281.23.157.19.end:
-                            func.printer.print.f3.231.13.f3.281.23.157.19.end:
+                                func.printer.print_at.f3.27.10.f3.231.13.f3.281.23.160.19.end:
+                            func.printer.print.f3.231.13.f3.281.23.160.19.end:
                             # [lib.baz:232:14] self.insert_at(pos, c[0])
                             # [lib.baz:67:10] mut list.insert_at(pos, item T)
-                            func.string.insert_at.f3.232.14.f3.281.23.157.19:
+                            func.string.insert_at.f3.232.14.f3.281.23.160.19:
                                 # [lib.baz:67:10] const capacity = 1024
                                 # [lib.baz:232:14] alias self -> self
                                 # [lib.baz:232:14] alias pos -> pos
@@ -5298,20 +5298,20 @@ main:
                                 sw t1, -980(s0)
                                 # [lib.baz:68:13] free scratch register t1
                                 # [lib.baz:69:5] loop
-                                loop.f3.69.5.f3.232.14.f3.281.23.157.19:
-                                    if.f3.70.12.f3.232.14.f3.281.23.157.19:
+                                loop.f3.69.5.f3.232.14.f3.281.23.160.19:
+                                    if.f3.70.12.f3.232.14.f3.281.23.160.19:
                                     # [lib.baz:70:12] ? i == pos
-                                    cmp.f3.70.12.f3.232.14.f3.281.23.157.19:
+                                    cmp.f3.70.12.f3.232.14.f3.281.23.160.19:
                                     # [lib.baz:70:12] allocate scratch register -> t1
                                     lw t1, -980(s0)
                                     # [lib.baz:70:12] allocate scratch register -> t2
                                     lw t2, -988(s0)
-                                    beq t1, t2, loop.f3.69.5.f3.232.14.f3.281.23.157.19.end
+                                    beq t1, t2, loop.f3.69.5.f3.232.14.f3.281.23.160.19.end
                                     # [lib.baz:70:12] free scratch register t2
                                     # [lib.baz:70:12] free scratch register t1
-                                    if.f3.70.12.f3.232.14.f3.281.23.157.19.code:
+                                    if.f3.70.12.f3.232.14.f3.281.23.160.19.code:
                                         # [lib.baz:70:21] break
-                                    if.f3.70.9.f3.232.14.f3.281.23.157.19.end:
+                                    if.f3.70.9.f3.232.14.f3.281.23.160.19.end:
                                     # [lib.baz:71:9] self.array[i] = self.array[i - 1]
                                     # [lib.baz:71:20] allocate scratch register -> t1
                                     # [lib.baz:71:20] set array index
@@ -5391,8 +5391,8 @@ main:
                                     sw t1, -980(s0)
                                     # [lib.baz:72:13] free scratch register t2
                                     # [lib.baz:72:13] free scratch register t1
-                                j loop.f3.69.5.f3.232.14.f3.281.23.157.19
-                                loop.f3.69.5.f3.232.14.f3.281.23.157.19.end:
+                                j loop.f3.69.5.f3.232.14.f3.281.23.160.19
+                                loop.f3.69.5.f3.232.14.f3.281.23.160.19.end:
                                 # [lib.baz:74:5] self.array[pos] = item
                                 # [lib.baz:74:16] allocate scratch register -> t1
                                 # [lib.baz:74:16] set array index
@@ -5440,7 +5440,7 @@ main:
                                 sw t1, -1008(s0)
                                 # [lib.baz:75:16] free scratch register t2
                                 # [lib.baz:75:16] free scratch register t1
-                            func.string.insert_at.f3.232.14.f3.281.23.157.19.end:
+                            func.string.insert_at.f3.232.14.f3.281.23.160.19.end:
                             # [lib.baz:233:9] pos = pos + 1
                             # [lib.baz:233:15] smaller of two versions of 7 and 7 instructions
                             # [lib.baz:233:15] pos
@@ -5462,7 +5462,7 @@ main:
                             # [lib.baz:233:15] free scratch register t1
                             # [lib.baz:234:14] self.redraw_from(pos, 0)
                             # [lib.baz:164:6] text.redraw_from(pos, blanks)
-                            func.string.redraw_from.f3.234.14.f3.281.23.157.19:
+                            func.string.redraw_from.f3.234.14.f3.281.23.160.19:
                                 # [lib.baz:164:6] const capacity = 1024
                                 # [lib.baz:234:14] alias self -> self
                                 # [lib.baz:234:14] alias pos -> pos
@@ -5496,33 +5496,33 @@ main:
                                 # [lib.baz:165:27] free scratch register t2
                                 sw t1, -980(s0)
                                 # [lib.baz:165:16] free scratch register t1
-                                if.f3.166.8.f3.234.14.f3.281.23.157.19:
+                                if.f3.166.8.f3.234.14.f3.281.23.160.19:
                                 # [lib.baz:166:8] ? back > 0
-                                cmp.f3.166.8.f3.234.14.f3.281.23.157.19:
+                                cmp.f3.166.8.f3.234.14.f3.281.23.160.19:
                                 # [lib.baz:166:8] allocate scratch register -> t1
                                 lw t1, -980(s0)
-                                bge zero, t1, if.f3.166.5.f3.234.14.f3.281.23.157.19.end
+                                bge zero, t1, if.f3.166.5.f3.234.14.f3.281.23.160.19.end
                                 # [lib.baz:166:8] free scratch register t1
-                                if.f3.166.8.f3.234.14.f3.281.23.157.19.code:
+                                if.f3.166.8.f3.234.14.f3.281.23.160.19.code:
                                     # [lib.baz:166:21] out.print_at(self.array, back, pos)
                                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                    func.printer.print_at.f3.166.21.f3.234.14.f3.281.23.157.19:
+                                    func.printer.print_at.f3.166.21.f3.234.14.f3.281.23.160.19:
                                         # [lib.baz:166:21] alias self -> out
                                         # [lib.baz:166:21] alias s -> self.array
                                         # [lib.baz:166:21] alias count -> back
                                         # [lib.baz:166:21] alias start -> pos
-                                        if.f3.21.8.f3.166.21.f3.234.14.f3.281.23.157.19:
+                                        if.f3.21.8.f3.166.21.f3.234.14.f3.281.23.160.19:
                                         # [lib.baz:21:8] ? shorthand: self.silenced
-                                        cmp.f3.21.8.f3.166.21.f3.234.14.f3.281.23.157.19:
+                                        cmp.f3.21.8.f3.166.21.f3.234.14.f3.281.23.160.19:
                                         # [lib.baz:21:8] allocate scratch register -> t1
                                         lui t1, 1048470
                                         add t1, t1, s0
                                         lbu t1, -59(t1)
-                                        bne t1, zero, func.printer.print_at.f3.166.21.f3.234.14.f3.281.23.157.19.end
+                                        bne t1, zero, func.printer.print_at.f3.166.21.f3.234.14.f3.281.23.160.19.end
                                         # [lib.baz:21:8] free scratch register t1
-                                        if.f3.21.8.f3.166.21.f3.234.14.f3.281.23.157.19.code:
+                                        if.f3.21.8.f3.166.21.f3.234.14.f3.281.23.160.19.code:
                                             # [lib.baz:21:22] return
-                                        if.f3.21.5.f3.166.21.f3.234.14.f3.281.23.157.19.end:
+                                        if.f3.21.5.f3.166.21.f3.234.14.f3.281.23.160.19.end:
                                         # [lib.baz:23:5] write(1, s, count, start)
                                         # [lib.baz:23:5] allocate named register a0
                                         # [lib.baz:23:5] allocate named register a1
@@ -5561,55 +5561,55 @@ main:
                                         # [lib.baz:23:5] free named register a2
                                         # [lib.baz:23:5] free named register a1
                                         # [lib.baz:23:5] free named register a0
-                                    func.printer.print_at.f3.166.21.f3.234.14.f3.281.23.157.19.end:
-                                if.f3.166.5.f3.234.14.f3.281.23.157.19.end:
-                                if.f3.167.8.f3.234.14.f3.281.23.157.19:
+                                    func.printer.print_at.f3.166.21.f3.234.14.f3.281.23.160.19.end:
+                                if.f3.166.5.f3.234.14.f3.281.23.160.19.end:
+                                if.f3.167.8.f3.234.14.f3.281.23.160.19:
                                 # [lib.baz:167:8] ? blanks == 1
-                                cmp.f3.167.8.f3.234.14.f3.281.23.157.19:
+                                cmp.f3.167.8.f3.234.14.f3.281.23.160.19:
                                 # [lib.baz:167:8] const eval to false
-                                if.f3.167.5.f3.234.14.f3.281.23.157.19.end:
+                                if.f3.167.5.f3.234.14.f3.281.23.160.19.end:
                                 # [lib.baz:171:5] loop
-                                loop.f3.171.5.f3.234.14.f3.281.23.157.19:
-                                    if.f3.172.12.f3.234.14.f3.281.23.157.19:
+                                loop.f3.171.5.f3.234.14.f3.281.23.160.19:
+                                    if.f3.172.12.f3.234.14.f3.281.23.160.19:
                                     # [lib.baz:172:12] ? back == 0
-                                    cmp.f3.172.12.f3.234.14.f3.281.23.157.19:
+                                    cmp.f3.172.12.f3.234.14.f3.281.23.160.19:
                                     # [lib.baz:172:12] allocate scratch register -> t1
                                     lw t1, -980(s0)
-                                    beq t1, zero, loop.f3.171.5.f3.234.14.f3.281.23.157.19.end
+                                    beq t1, zero, loop.f3.171.5.f3.234.14.f3.281.23.160.19.end
                                     # [lib.baz:172:12] free scratch register t1
-                                    if.f3.172.12.f3.234.14.f3.281.23.157.19.code:
+                                    if.f3.172.12.f3.234.14.f3.281.23.160.19.code:
                                         # [lib.baz:172:22] break
-                                    if.f3.172.9.f3.234.14.f3.281.23.157.19.end:
+                                    if.f3.172.9.f3.234.14.f3.281.23.160.19.end:
                                     # [lib.baz:173:13] out.print_all(str_back)
                                     # [lib.baz:30:6] printer.print_all(s i8[])
-                                    func.printer.print_all.f3.173.13.f3.234.14.f3.281.23.157.19:
+                                    func.printer.print_all.f3.173.13.f3.234.14.f3.281.23.160.19:
                                         # [lib.baz:173:13] alias self -> out
                                         # [lib.baz:173:13] alias s -> str_back
                                         # [lib.baz:31:10] self.print(s, array_length(s))
                                         # [lib.baz:26:6] printer.print(s i8[], count)
-                                        func.printer.print.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19:
+                                        func.printer.print.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19:
                                             # [lib.baz:31:10] alias self -> self
                                             # [lib.baz:31:10] alias s -> s
                                             # [lib.baz:31:10] alias count -> 1
                                             # [lib.baz:27:10] self.print_at(s, count, 0)
                                             # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                                            func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19:
+                                            func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19:
                                                 # [lib.baz:27:10] alias self -> self
                                                 # [lib.baz:27:10] alias s -> s
                                                 # [lib.baz:27:10] alias count -> 1
                                                 # [lib.baz:27:10] alias start -> 0
-                                                if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19:
+                                                if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19:
                                                 # [lib.baz:21:8] ? shorthand: self.silenced
-                                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19:
+                                                cmp.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19:
                                                 # [lib.baz:21:8] allocate scratch register -> t1
                                                 lui t1, 1048470
                                                 add t1, t1, s0
                                                 lbu t1, -59(t1)
-                                                bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19.end
+                                                bne t1, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19.end
                                                 # [lib.baz:21:8] free scratch register t1
-                                                if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19.code:
+                                                if.f3.21.8.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19.code:
                                                     # [lib.baz:21:22] return
-                                                if.f3.21.5.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19.end:
+                                                if.f3.21.5.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19.end:
                                                 # [lib.baz:23:5] write(1, s, count, start)
                                                 # [lib.baz:23:5] allocate named register a0
                                                 # [lib.baz:23:5] allocate named register a1
@@ -5650,9 +5650,9 @@ main:
                                                 # [lib.baz:23:5] free named register a2
                                                 # [lib.baz:23:5] free named register a1
                                                 # [lib.baz:23:5] free named register a0
-                                            func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19.end:
-                                        func.printer.print.f3.31.10.f3.173.13.f3.234.14.f3.281.23.157.19.end:
-                                    func.printer.print_all.f3.173.13.f3.234.14.f3.281.23.157.19.end:
+                                            func.printer.print_at.f3.27.10.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19.end:
+                                        func.printer.print.f3.31.10.f3.173.13.f3.234.14.f3.281.23.160.19.end:
+                                    func.printer.print_all.f3.173.13.f3.234.14.f3.281.23.160.19.end:
                                     # [lib.baz:174:9] back = back - 1
                                     # [lib.baz:174:16] smaller of two versions of 7 and 7 instructions
                                     # [lib.baz:174:16] back
@@ -5672,52 +5672,52 @@ main:
                                     sw t1, -980(s0)
                                     # [lib.baz:174:16] free scratch register t2
                                     # [lib.baz:174:16] free scratch register t1
-                                j loop.f3.171.5.f3.234.14.f3.281.23.157.19
-                                loop.f3.171.5.f3.234.14.f3.281.23.157.19.end:
-                            func.string.redraw_from.f3.234.14.f3.281.23.157.19.end:
-                        j loop.f3.187.5.f3.281.23.157.19
-                        loop.f3.187.5.f3.281.23.157.19.end:
-                    func.string.input.f3.281.23.157.19.end:
+                                j loop.f3.171.5.f3.234.14.f3.281.23.160.19
+                                loop.f3.171.5.f3.234.14.f3.281.23.160.19.end:
+                            func.string.redraw_from.f3.234.14.f3.281.23.160.19.end:
+                        j loop.f3.187.5.f3.281.23.160.19
+                        loop.f3.187.5.f3.281.23.160.19.end:
+                    func.string.input.f3.281.23.160.19.end:
                 sltu t0, zero, t0
-                bool.f3.281.11.157.19.end:
-            func.tokenizer.input.157.19.end:
-        bne t0, zero, if.157.9.end
-        # [main.baz:157:12] free scratch register t0
-        if.157.12.code:
-            # [main.baz:158:17] out.println()
+                bool.f3.281.11.160.19.end:
+            func.tokenizer.input.160.19.end:
+        bne t0, zero, if.160.9.end
+        # [main.baz:160:12] free scratch register t0
+        if.160.12.code:
+            # [main.baz:161:17] out.println()
             # [lib.baz:34:6] printer.println()
-            func.printer.println.158.17:
-                # [main.baz:158:17] alias self -> out
+            func.printer.println.161.17:
+                # [main.baz:161:17] alias self -> out
                 # [lib.baz:35:10] self.print_all(str_nl)
                 # [lib.baz:30:6] printer.print_all(s i8[])
-                func.printer.print_all.f3.35.10.158.17:
+                func.printer.print_all.f3.35.10.161.17:
                     # [lib.baz:35:10] alias self -> self
                     # [lib.baz:35:10] alias s -> str_nl
                     # [lib.baz:31:10] self.print(s, array_length(s))
                     # [lib.baz:26:6] printer.print(s i8[], count)
-                    func.printer.print.f3.31.10.f3.35.10.158.17:
+                    func.printer.print.f3.31.10.f3.35.10.161.17:
                         # [lib.baz:31:10] alias self -> self
                         # [lib.baz:31:10] alias s -> s
                         # [lib.baz:31:10] alias count -> 1
                         # [lib.baz:27:10] self.print_at(s, count, 0)
                         # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                        func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.158.17:
+                        func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.161.17:
                             # [lib.baz:27:10] alias self -> self
                             # [lib.baz:27:10] alias s -> s
                             # [lib.baz:27:10] alias count -> 1
                             # [lib.baz:27:10] alias start -> 0
-                            if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.158.17:
+                            if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.161.17:
                             # [lib.baz:21:8] ? shorthand: self.silenced
-                            cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.158.17:
+                            cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.161.17:
                             # [lib.baz:21:8] allocate scratch register -> t0
                             lui t0, 1048470
                             add t0, t0, s0
                             lbu t0, -59(t0)
-                            bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.158.17.end
+                            bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.161.17.end
                             # [lib.baz:21:8] free scratch register t0
-                            if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.158.17.code:
+                            if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.161.17.code:
                                 # [lib.baz:21:22] return
-                            if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.158.17.end:
+                            if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.161.17.end:
                             # [lib.baz:23:5] write(1, s, count, start)
                             # [lib.baz:23:5] allocate named register a0
                             # [lib.baz:23:5] allocate named register a1
@@ -5758,51 +5758,51 @@ main:
                             # [lib.baz:23:5] free named register a2
                             # [lib.baz:23:5] free named register a1
                             # [lib.baz:23:5] free named register a0
-                        func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.158.17.end:
-                    func.printer.print.f3.31.10.f3.35.10.158.17.end:
-                func.printer.print_all.f3.35.10.158.17.end:
-            func.printer.println.158.17.end:
-            # [main.baz:159:13] exit(0)
-            # [main.baz:159:13] allocate named register a0
-            # [main.baz:159:18] 0
+                        func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.161.17.end:
+                    func.printer.print.f3.31.10.f3.35.10.161.17.end:
+                func.printer.print_all.f3.35.10.161.17.end:
+            func.printer.println.161.17.end:
+            # [main.baz:162:13] exit(0)
+            # [main.baz:162:13] allocate named register a0
+            # [main.baz:162:18] 0
             li a0, 0
             j .Lbaz_exit
-            # [main.baz:159:13] free named register a0
-        if.157.9.end:
-        # [main.baz:161:13] out.println()
+            # [main.baz:162:13] free named register a0
+        if.160.9.end:
+        # [main.baz:164:13] out.println()
         # [lib.baz:34:6] printer.println()
-        func.printer.println.161.13:
-            # [main.baz:161:13] alias self -> out
+        func.printer.println.164.13:
+            # [main.baz:164:13] alias self -> out
             # [lib.baz:35:10] self.print_all(str_nl)
             # [lib.baz:30:6] printer.print_all(s i8[])
-            func.printer.print_all.f3.35.10.161.13:
+            func.printer.print_all.f3.35.10.164.13:
                 # [lib.baz:35:10] alias self -> self
                 # [lib.baz:35:10] alias s -> str_nl
                 # [lib.baz:31:10] self.print(s, array_length(s))
                 # [lib.baz:26:6] printer.print(s i8[], count)
-                func.printer.print.f3.31.10.f3.35.10.161.13:
+                func.printer.print.f3.31.10.f3.35.10.164.13:
                     # [lib.baz:31:10] alias self -> self
                     # [lib.baz:31:10] alias s -> s
                     # [lib.baz:31:10] alias count -> 1
                     # [lib.baz:27:10] self.print_at(s, count, 0)
                     # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.161.13:
+                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.164.13:
                         # [lib.baz:27:10] alias self -> self
                         # [lib.baz:27:10] alias s -> s
                         # [lib.baz:27:10] alias count -> 1
                         # [lib.baz:27:10] alias start -> 0
-                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.161.13:
+                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.164.13:
                         # [lib.baz:21:8] ? shorthand: self.silenced
-                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.161.13:
+                        cmp.f3.21.8.f3.27.10.f3.31.10.f3.35.10.164.13:
                         # [lib.baz:21:8] allocate scratch register -> t0
                         lui t0, 1048470
                         add t0, t0, s0
                         lbu t0, -59(t0)
-                        bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.161.13.end
+                        bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.164.13.end
                         # [lib.baz:21:8] free scratch register t0
-                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.161.13.code:
+                        if.f3.21.8.f3.27.10.f3.31.10.f3.35.10.164.13.code:
                             # [lib.baz:21:22] return
-                        if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.161.13.end:
+                        if.f3.21.5.f3.27.10.f3.31.10.f3.35.10.164.13.end:
                         # [lib.baz:23:5] write(1, s, count, start)
                         # [lib.baz:23:5] allocate named register a0
                         # [lib.baz:23:5] allocate named register a1
@@ -5843,15 +5843,15 @@ main:
                         # [lib.baz:23:5] free named register a2
                         # [lib.baz:23:5] free named register a1
                         # [lib.baz:23:5] free named register a0
-                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.161.13.end:
-                func.printer.print.f3.31.10.f3.35.10.161.13.end:
-            func.printer.print_all.f3.35.10.161.13.end:
-        func.printer.println.161.13.end:
-        # [main.baz:162:9] parse_input(eid, tz)
-        # [main.baz:162:9] frame capacity check begin
-        # [main.baz:162:9] callee storage starts after the caller's storage (s0 - 992)
-        # [main.baz:162:9] allocate scratch register -> t0
-        # [main.baz:162:9] allocate scratch register -> t1
+                    func.printer.print_at.f3.27.10.f3.31.10.f3.35.10.164.13.end:
+                func.printer.print.f3.31.10.f3.35.10.164.13.end:
+            func.printer.print_all.f3.35.10.164.13.end:
+        func.printer.println.164.13.end:
+        # [main.baz:165:9] parse_input(eid, tz)
+        # [main.baz:165:9] frame capacity check begin
+        # [main.baz:165:9] callee storage starts after the caller's storage (s0 - 992)
+        # [main.baz:165:9] allocate scratch register -> t0
+        # [main.baz:165:9] allocate scratch register -> t1
         addi t0, s0, -992
         bgtu t0, s0, 1f
         la t1, vars
@@ -5865,64 +5865,64 @@ main:
         1:
         j baz_frame_overflow
         2:
-        # [main.baz:162:9] free scratch register t1
-        # [main.baz:162:9] free scratch register t0
-        # [main.baz:162:9] frame capacity check end
-        # [main.baz:162:9] stack capacity check begin
-        # [main.baz:162:9] allocate scratch register -> t0
-        # [main.baz:162:9] allocate scratch register -> t1
+        # [main.baz:165:9] free scratch register t1
+        # [main.baz:165:9] free scratch register t0
+        # [main.baz:165:9] frame capacity check end
+        # [main.baz:165:9] stack capacity check begin
+        # [main.baz:165:9] allocate scratch register -> t0
+        # [main.baz:165:9] allocate scratch register -> t1
         li t0, 8323072
-        # [main.baz:162:9] lowest stack pointer the call reaches
+        # [main.baz:165:9] lowest stack pointer the call reaches
         addi t1, sp, -80
         bgeu t1, t0, 2f
         j baz_stack_overflow
         2:
-        # [main.baz:162:9] free scratch register t1
-        # [main.baz:162:9] free scratch register t0
-        # [main.baz:162:9] stack capacity check end
-        # [main.baz:162:9] address of argument 'eid' to parameter 'eid'
-        # [main.baz:162:9] allocate scratch register -> t0
+        # [main.baz:165:9] free scratch register t1
+        # [main.baz:165:9] free scratch register t0
+        # [main.baz:165:9] stack capacity check end
+        # [main.baz:165:9] address of argument 'eid' to parameter 'eid'
+        # [main.baz:165:9] allocate scratch register -> t0
         addi t0, s0, -996
         sw t0, -992(s0)
-        # [main.baz:162:9] free scratch register t0
-        # [main.baz:162:9] address of argument 'tz' to parameter 'tz'
-        # [main.baz:162:9] allocate scratch register -> t0
+        # [main.baz:165:9] free scratch register t0
+        # [main.baz:165:9] address of argument 'tz' to parameter 'tz'
+        # [main.baz:165:9] allocate scratch register -> t0
         addi t0, s0, -2032
         sw t0, -988(s0)
-        # [main.baz:162:9] free scratch register t0
-        # [main.baz:162:9] set function frame base
+        # [main.baz:165:9] free scratch register t0
+        # [main.baz:165:9] set function frame base
         addi s1, s0, -992
         call func.parse_input
-        # [main.baz:163:13] out.print_all(str_turn_end)
+        # [main.baz:166:13] out.print_all(str_turn_end)
         # [lib.baz:30:6] printer.print_all(s i8[])
-        func.printer.print_all.163.13:
-            # [main.baz:163:13] alias self -> out
-            # [main.baz:163:13] alias s -> str_turn_end
+        func.printer.print_all.166.13:
+            # [main.baz:166:13] alias self -> out
+            # [main.baz:166:13] alias s -> str_turn_end
             # [lib.baz:31:10] self.print(s, array_length(s))
             # [lib.baz:26:6] printer.print(s i8[], count)
-            func.printer.print.f3.31.10.163.13:
+            func.printer.print.f3.31.10.166.13:
                 # [lib.baz:31:10] alias self -> self
                 # [lib.baz:31:10] alias s -> s
                 # [lib.baz:31:10] alias count -> 3
                 # [lib.baz:27:10] self.print_at(s, count, 0)
                 # [lib.baz:20:6] printer.print_at(s i8[], count, start)
-                func.printer.print_at.f3.27.10.f3.31.10.163.13:
+                func.printer.print_at.f3.27.10.f3.31.10.166.13:
                     # [lib.baz:27:10] alias self -> self
                     # [lib.baz:27:10] alias s -> s
                     # [lib.baz:27:10] alias count -> 3
                     # [lib.baz:27:10] alias start -> 0
-                    if.f3.21.8.f3.27.10.f3.31.10.163.13:
+                    if.f3.21.8.f3.27.10.f3.31.10.166.13:
                     # [lib.baz:21:8] ? shorthand: self.silenced
-                    cmp.f3.21.8.f3.27.10.f3.31.10.163.13:
+                    cmp.f3.21.8.f3.27.10.f3.31.10.166.13:
                     # [lib.baz:21:8] allocate scratch register -> t0
                     lui t0, 1048470
                     add t0, t0, s0
                     lbu t0, -59(t0)
-                    bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.163.13.end
+                    bne t0, zero, func.printer.print_at.f3.27.10.f3.31.10.166.13.end
                     # [lib.baz:21:8] free scratch register t0
-                    if.f3.21.8.f3.27.10.f3.31.10.163.13.code:
+                    if.f3.21.8.f3.27.10.f3.31.10.166.13.code:
                         # [lib.baz:21:22] return
-                    if.f3.21.5.f3.27.10.f3.31.10.163.13.end:
+                    if.f3.21.5.f3.27.10.f3.31.10.166.13.end:
                     # [lib.baz:23:5] write(1, s, count, start)
                     # [lib.baz:23:5] allocate named register a0
                     # [lib.baz:23:5] allocate named register a1
@@ -5961,30 +5961,30 @@ main:
                     # [lib.baz:23:5] free named register a2
                     # [lib.baz:23:5] free named register a1
                     # [lib.baz:23:5] free named register a0
-                func.printer.print_at.f3.27.10.f3.31.10.163.13.end:
-            func.printer.print.f3.31.10.163.13.end:
-        func.printer.print_all.163.13.end:
-        # [main.baz:164:9] eid = eid + 1
-        # [main.baz:164:15] smaller of two versions of 7 and 7 instructions
-        # [main.baz:164:15] eid
-        # [main.baz:164:15] eid + 1
-        # [main.baz:164:15] src: folded constant '+ 1'
-        # [main.baz:164:15] allocate scratch register -> t0
+                func.printer.print_at.f3.27.10.f3.31.10.166.13.end:
+            func.printer.print.f3.31.10.166.13.end:
+        func.printer.print_all.166.13.end:
+        # [main.baz:167:9] eid = eid + 1
+        # [main.baz:167:15] smaller of two versions of 7 and 7 instructions
+        # [main.baz:167:15] eid
+        # [main.baz:167:15] eid + 1
+        # [main.baz:167:15] src: folded constant '+ 1'
+        # [main.baz:167:15] allocate scratch register -> t0
         lw t0, -996(s0)
-        # [main.baz:164:15] overflow check begin
+        # [main.baz:167:15] overflow check begin
         addi t0, t0, 1
-        # [main.baz:164:15] allocate scratch register -> t1
+        # [main.baz:167:15] allocate scratch register -> t1
         addi t1, t0, -1
         bge t0, t1, 2f
-        li a0, 164
+        li a0, 167
         j baz_overflow_panic
         2:
-        # [main.baz:164:15] overflow check end
+        # [main.baz:167:15] overflow check end
         sw t0, -996(s0)
-        # [main.baz:164:15] free scratch register t1
-        # [main.baz:164:15] free scratch register t0
-    j loop.147.5
-    loop.147.5.end:
+        # [main.baz:167:15] free scratch register t1
+        # [main.baz:167:15] free scratch register t0
+    j loop.150.5
+    loop.150.5.end:
 #
 # [main.baz:51:15] noinline parse_input(eid, tz mut tokenizer)
 func.parse_input:
@@ -27268,7 +27268,7 @@ dat:
 .ascii "  help: this message\n  go to: go <exit>\n  inventory: i\n  create new object: on <name>\n  drop object: d <object>\n  give object: g <object> <entity>\n  tell entity: t <entity> <message>\n  say to room: s <text>\n  new room: rn <to exit> <from exit>\n  set room name: rnm <text>\n  set room description: rd <text>\n  set room note: rnt <text>\n  new entity: en <name>\n  write text to sd card sector: sdw <sector> <text>\n  read text from sd card sector: sdr <sector>\n"
 # [main.baz:3:5] str_ascii_art
 # [main.baz:3:21] i8[824]
-.ascii "                                   oOo.o.\n          frameless osca          oOo.oOo\n       __________________________  .oOo.\n      O\\        -_   .. \\    ___ \\   ||\n     O  \\                \\   \\ \\\\ \\ //\\\\\n    o   /\\     rv32i      \\   \\|\\\\ \\\n   .   //\\\\      fpga      \\   ||   \\\n    .  \\\\/\\\\       baz      \\  \\_\\   \\\n     .  \\\\//\\________________\\________\\\n      .  \\/_/, \\\\\\--\\\\..\\\\ - /\\_____  /\n       .  \\ \\ . \\\\\\__\\\\__\\\\./ / \\__/ /\n        .  \\ \\ , \\    \\\\ ///./ ,/./ /\n         .  \\ \\___\\ sticky notes / /\n          .  \\/\\________________/ /\n     ./\\.  . / /                 /\n     /--\\   .\\/_________________/\n          ___.                 .\n         |o o|. . . . . . . . .\n         /| |\\ . .\n     ____       . .\n    |O  O|       . .\n    |_ -_|        . .\n     /||\\\n       ___\n      /- -\\\n     /\\_-_/\\\n       | |\n\n"
+.ascii "                                   oOo.o.\n          frameless osca          oOo.oOo\n       __________________________  .oOo.\n      O\\        -_   .. \\    ___ \\   ||\n     O  \\                \\   \\ \\\\ \\ //\\\\\n    o   /\\      fpga      \\   \\|\\\\ \\\n   .   //\\\\      rv32i     \\   ||   \\\n    .  \\\\/\\\\      baz       \\  \\_\\   \\\n     .  \\\\//\\________________\\________\\\n      .  \\/_/, \\\\\\--\\\\..\\\\ - /\\_____  /\n       .  \\ \\ . \\\\\\__\\\\__\\\\./ / \\__/ /\n        .  \\ \\ , \\    \\\\ ///./ ,/./ /\n         .  \\ \\___\\ sticky notes / /\n          .  \\/\\________________/ /\n     ./\\.  . / /                 /\n     /--\\   .\\/_________________/\n          ___.                 .\n         |o o|. . . . . . . . .\n         /| |\\ . .\n     ____       . .\n    |O  O|       . .\n    |_ -_|        . .\n     /||\\\n       ___\n      /- -\\\n     /\\_-_/\\\n       | |\n\n"
 # [main.baz:33:5] str_action_help
 # [main.baz:33:23] i8[4]
 .ascii "help"
@@ -27317,17 +27317,17 @@ dat:
 # [main.baz:104:5] str_creation_script
 # [main.baz:104:27] i8[81]
 .ascii "rnm roome\nrnt todo: find an exit\nrn none roome\ngo none\nrnm office\ngo roome\nen me\n"
-# [main.baz:128:8] str_hello
-# [main.baz:128:20] i8[41]
+# [main.baz:136:8] str_hello
+# [main.baz:136:20] i8[41]
 .ascii "\nwelcome to adventure #7\n    type 'help'\n"
-# [main.baz:129:7] str_prompt
-# [main.baz:129:20] i8[3]
+# [main.baz:137:7] str_prompt
+# [main.baz:137:20] i8[3]
 .ascii " > "
-# [main.baz:130:5] str_turn_end
-# [main.baz:130:20] i8[3]
+# [main.baz:138:5] str_turn_end
+# [main.baz:138:20] i8[3]
 .ascii "--\n"
-# [main.baz:132:5] flag
-# [main.baz:132:12] i8[8]
+# [main.baz:140:5] flag
+# [main.baz:140:12] i8[8]
 .ascii "\n\nFLAG\n\n"
 dat.end:
 .bss
@@ -27360,9 +27360,9 @@ vars.end:
 #
 #   held  frame, registers (allocated at)
 #      2  main
-#           t0 151:24
-#           t1 151:29
-#      3  entity.print_messages called at 151:29
+#           t0 154:24
+#           t1 154:29
+#      3  entity.print_messages called at 154:29
 #           t2 src/model.baz:82:9
 #           t3 src/model.baz:82:30
 #           t4 src/model.baz:82:5
@@ -27432,7 +27432,6 @@ vars.end:
 #     4      1  action_tell
 #     4     15  id_list.push
 #     4      6  links.add
-#     4      1  main
 #     4      1  string.insert_at
 #     4      3  string.redraw_from
 #     3      1  action_say
@@ -27447,6 +27446,7 @@ vars.end:
 #     3     25  id_list.reserve
 #     3      2  link_names.reserve
 #     3     10  links.reserve
+#     3      1  main
 #     3      3  message.print
 #     3     35  messages.reserve
 #     3     45  name.print
@@ -27486,4 +27486,4 @@ vars.end:
 #   saved  calls  callee, most saved at
 #       5      2  tokenizer.to_int src/actions.baz:398:17
 #       3      2  entity.find_object src/actions.baz:237:40
-#       2      2  parse_input 121:13
+#       2      2  parse_input 123:13

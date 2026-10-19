@@ -16,7 +16,6 @@ class stmt_def_type_field final : public statement {
     token close_bracket_tk_;
     stmt_const array_count_const_;
     size_t array_count_{};
-    bool is_array_{};
 
   public:
     stmt_def_type_field(const toc& tc, const token tk, tokenizer& tz)
@@ -38,8 +37,6 @@ class stmt_def_type_field final : public statement {
         if (open_bracket_tk_.is_empty()) {
             return;
         }
-
-        is_array_ = true;
 
         array_count_const_ = {tc, tz, 0};
 
@@ -70,7 +67,7 @@ class stmt_def_type_field final : public statement {
             type_tk_.source_to(os);
         }
 
-        if (is_array_) {
+        if (is_array()) {
             open_bracket_tk_.source_to(os);
             array_count_const_.source_to(os);
             close_bracket_tk_.source_to(os);
@@ -83,7 +80,9 @@ class stmt_def_type_field final : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+    [[nodiscard]] auto is_array() const -> bool {
+        return not open_bracket_tk_.is_empty();
+    }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 

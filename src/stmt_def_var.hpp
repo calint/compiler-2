@@ -178,7 +178,7 @@ class stmt_def_var final : public statement {
         token bracket_tk;
 
         trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
-            const expr_any initializer{tc, tz, get_type(), false, true, 0};
+            const expr_any initializer{tc, tz, get_type(), 0};
 
             array_count_ = initializer.array_count();
             bracket_tk = initializer.open_bracket_token();
@@ -246,19 +246,19 @@ class stmt_def_var final : public statement {
     [[nodiscard]] auto fold_initializer(toc& tc, tokenizer& tz)
         -> std::optional<int64_t> {
 
-        if (is_array_ or &get_type() != &tc.builtins().default_type()) {
+        if (is_array_ or not get_type().is_same(tc.builtins().default_type())) {
             return std::nullopt;
         }
 
         std::optional<int64_t> value;
 
         trial_parse(tc, tz, [this, &tc, &tz, &value] -> void {
-            const expr_any initializer{tc, tz, get_type(), false, false, 0};
+            const expr_any initializer{tc, tz, get_type()};
             value = initializer.constant_value(tc);
         });
 
         if (value.has_value()) {
-            constant_expr_ = {tc, tz, get_type(), false, false, 0};
+            constant_expr_ = {tc, tz, get_type()};
         }
 
         return value;

@@ -70,7 +70,6 @@ class expr_bool_op final : public statement {
 
         lhs_ = {tc, tz,
                 expr_arith::options{
-                    .in_args{true},
                     .uops{},
                     .open_paren_tk{},
                     .is_implied_subexpression{},
@@ -95,7 +94,7 @@ class expr_bool_op final : public statement {
 
         ws_post_op_ = tz.next_whitespace_token();
 
-        rhs_ = {tc, tz, true};
+        rhs_ = {tc, tz};
 
         classify_operands(tc);
 
@@ -186,7 +185,7 @@ class expr_bool_op final : public statement {
         return compile_element(tc, indent, "and", inverted,
                                {
                                    .operation{op_},
-                                   .inverted{inverted != is_not()},
+                                   .inverted{inverted != is_negated()},
                                    .destination{dst},
                                    .target{jmp_to_if_false},
                                    .branch_on_true{},
@@ -203,7 +202,7 @@ class expr_bool_op final : public statement {
         return compile_element(tc, indent, "or", inverted,
                                {
                                    .operation{op_},
-                                   .inverted{inverted != is_not()},
+                                   .inverted{inverted != is_negated()},
                                    .destination{dst},
                                    .target{jmp_to_if_true},
                                    .branch_on_true{true},
@@ -223,7 +222,7 @@ class expr_bool_op final : public statement {
         }
 
         if (is_shorthand_) {
-            return (*lhs_value != 0) != is_not();
+            return (*lhs_value != 0) != is_negated();
         }
 
         const std::optional<int64_t> rhs_value{side_constant(tc, rhs_)};
@@ -233,7 +232,7 @@ class expr_bool_op final : public statement {
         }
 
         return constant_arith::eval_constant(*lhs_value, op_, *rhs_value) !=
-               is_not();
+               is_negated();
     }
 
   private:
@@ -387,7 +386,9 @@ class expr_bool_op final : public statement {
     }
 
     // true when the 'not's make an odd count
-    [[nodiscard]] auto is_not() const -> bool { return nots_.size() % 2 == 1; }
+    [[nodiscard]] auto is_negated() const -> bool {
+        return nots_.size() % 2 == 1;
+    }
 
     // e.g. if not a == 3 ...
     auto parse_nots(tokenizer& tz) -> void {
@@ -475,7 +476,7 @@ class expr_bool_op final : public statement {
     auto resolve_if_op_is_expression() -> void {
         // a negated expression, a comparison and a shorthand condition on an
         // expression are expressions
-        if (is_not() or not is_shorthand_ or lhs_.is_expression()) {
+        if (is_negated() or not is_shorthand_ or lhs_.is_expression()) {
             is_expression_ = true;
             return;
         }
@@ -616,8 +617,7 @@ class expr_bool_op final : public statement {
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compiler_exception{
                 rhs.tok(),
-                std::format("source and compare types are not the "
-                            "same. source is '{}' and compare is '{}'",
+                std::format("source type '{}' does not match compare type '{}'",
                             lhs_info.type_ref().name(),
                             rhs_info.type_ref().name())};
         }
@@ -636,7 +636,6 @@ class expr_bool_op final : public statement {
 
         // arrays are compared element by element, so their lengths must agree
         // note: a whole array on one side only was rejected above
-
         if (lhs_info.array_len() != rhs_info.array_len()) {
             throw compiler_exception{lhs.tok(),
                                      "cannot compare arrays of different "
@@ -1106,7 +1105,7 @@ class expr_bool final : public statement {
         }
 
         throw compiler_exception{op_tk,
-                                 "mixing 'and' and 'or' without parenthesis"};
+                                 "mixing 'and' and 'or' without parentheses"};
     }
 
     // an element that does not decide the list continues at the next element
@@ -1130,7 +1129,6 @@ class expr_bool final : public statement {
                         return tc.create_cmp_label(next.tok());
                     }),
             };
-            // note: +1 because the next element is the continuation
 
             // an 'or' continues when false and an 'and' continues when true
             const std::string_view jmp_false{
@@ -1221,9 +1219,7 @@ class expr_bool final : public statement {
         }
 
         // invert, according to De Morgan's laws
-        const bool invert{
-            inverted ? not is_negated() : is_negated(),
-        };
+        const bool invert{inverted != is_negated()};
 
         bool has_runtime_element{};
 

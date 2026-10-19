@@ -56,7 +56,7 @@ class stmt_builtin_arrays_equal final : public expression {
         rhs_delim_tk_ =
             tz.expect_char_token(',', "expected ',' followed by 'count'");
 
-        count_ = {tc, tz, tc.builtins().default_type(), true, false, 0};
+        count_ = {tc, tz, tc.builtins().default_type()};
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the arguments");

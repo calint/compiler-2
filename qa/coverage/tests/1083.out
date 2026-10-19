@@ -1,0 +1,4 @@
+
+1083.baz:5:14: boolean values cannot be arithmetic operands
+    var n = -t
+             ^

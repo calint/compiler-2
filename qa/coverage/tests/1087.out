@@ -1,0 +1,4 @@
+
+1087.baz:4:27: boolean values cannot be arithmetic operands
+dat flags = bool[]{true, ~false}
+                          ^~~~~

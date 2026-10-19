@@ -1,4 +1,3 @@
-
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -652,11 +651,7 @@ constexpr std::array<check_name, 10> check_names{
     {
         {.text{"upper"}, .member{&check_options::bounds_upper}, .is_ub{true}},
         {.text{"lower"}, .member{&check_options::bounds_lower}, .is_ub{true}},
-        {
-            .text{"line"},
-            .member{&check_options::with_line},
-            .is_ub{false},
-        },
+        {.text{"line"}, .member{&check_options::with_line}, .is_ub{false}},
         {.text{"frame"}, .member{&check_options::frame}, .is_ub{true}},
         {.text{"alias"}, .member{&check_options::alias}, .is_ub{true}},
         {.text{"division"}, .member{&check_options::division}, .is_ub{true}},
@@ -867,7 +862,6 @@ auto trimmed_line_at(const std::string_view src, const size_t index)
     assert(first != std::string_view::npos);
 
     return line.substr(first, line.find_last_not_of(whitespace) - first + 1);
-    // note: +1 because the end position is inclusive
 }
 
 // 'line' and 'start_index' locate the error, the column is derived from them,

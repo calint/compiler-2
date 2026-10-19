@@ -392,9 +392,9 @@ class register_reporter final {
 
         std::vector<std::string> lines{split_lines(text)};
 
-        append_lines(lines, peak_note_lines(peak.frames));
-        append_lines(lines, callee_lines());
-        append_lines(lines, noinline_call_lines());
+        lines.append_range(peak_note_lines(peak.frames));
+        lines.append_range(callee_lines());
+        lines.append_range(noinline_call_lines());
 
         return lines;
     }
@@ -413,12 +413,6 @@ class register_reporter final {
     //
     // statics
     //
-
-    static auto append_lines(std::vector<std::string>& lines,
-                             const std::vector<std::string>& more) -> void {
-
-        lines.insert(lines.end(), more.begin(), more.end());
-    }
 
     // the entries ordered by the member 'peak', the highest first
     template <typename use_t>

@@ -1,0 +1,6 @@
+# a complemented 'bool' element of a 'dat' array would store a byte that is
+# neither 'true' nor 'false'
+
+dat flags = bool[]{true, ~false}
+
+func main() {}

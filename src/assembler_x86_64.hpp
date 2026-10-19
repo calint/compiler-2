@@ -64,8 +64,8 @@ class assembler_x86_64 final : public assembler {
         cmpsq,
     };
 
-    // suffixes of 'jcc' and 'setcc', 'nz' is spelled apart from
-    // 'ne' to keep the handler text
+    // suffixes of 'jcc' and 'setcc', 'nz' is spelled apart from 'ne' to keep
+    // the handler text
     enum class condition : uint8_t { e, ne, l, le, g, ge, a, b, s, nz, ae, o };
 
     // 'variables' is the uninitialized section after the data
@@ -602,13 +602,6 @@ class assembler_x86_64 final : public assembler {
         static_assert(infos.size() == op_count);
 
         return infos.at(std::to_underlying(code));
-    }
-
-    [[nodiscard]] static auto is_comment_or_blank(const std::string_view text)
-        -> bool {
-
-        const size_t first{text.find_first_not_of(" \t\n\r\f\v")};
-        return first == std::string_view::npos or text.at(first) == ';';
     }
 
     // lines such as 'bits 64', 'global _start' and 'size.func.f equ 32'

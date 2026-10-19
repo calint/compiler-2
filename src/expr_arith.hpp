@@ -88,9 +88,6 @@ class expr_arith final : public expression {
   public:
     // how a list is parsed when it is not a plain one
     struct options {
-        // the list ends at a ',' or a ')' of the arguments of a call
-        bool in_args{};
-
         // the unary ops of an enclosed list apply to all of it
         unary_ops uops;
 
@@ -107,10 +104,9 @@ class expr_arith final : public expression {
         std::unique_ptr<statement> first_expression;
     };
 
-    expr_arith(toc& tc, tokenizer& tz, const bool in_args = {})
+    expr_arith(toc& tc, tokenizer& tz)
         : expr_arith{tc, tz,
                      options{
-                         .in_args{in_args},
                          .uops{},
                          .open_paren_tk{},
                          .is_implied_subexpression{},
@@ -124,8 +120,6 @@ class expr_arith final : public expression {
           enclosed_{opts.open_paren_tk.has_value()},
           is_implied_subexpression_{opts.is_implied_subexpression} {
 
-        const bool in_args{opts.in_args};
-
         const tokenizer::nesting_scope nesting{tz};
 
         // a recursive call might have supplied the first element it already
@@ -134,7 +128,7 @@ class expr_arith final : public expression {
         if (opts.first_expression) {
             exprs_.emplace_back(std::move(opts.first_expression));
         } else {
-            parsed_element first{parse_element(tc, tz, in_args)};
+            parsed_element first{parse_element(tc, tz)};
             is_first_enclosed_ = first.is_enclosed;
             exprs_.emplace_back(std::move(first.node));
         }
@@ -148,7 +142,6 @@ class expr_arith final : public expression {
         uint8_t precedence{opts.first_op_precedence};
 
         while (true) {
-
             // a sub-expression is closed by its ')'
             // e.g. '(a + b)'
             if (is_closed(tz)) {
@@ -177,7 +170,7 @@ class expr_arith final : public expression {
             // follows, so parse that as a sub-expression
             // e.g. the '*' of 'a + b * c' groups 'b * c'
             if (next_precedence > precedence) {
-                open_implied_subexpression(tc, tz, in_args, next_precedence,
+                open_implied_subexpression(tc, tz, next_precedence,
                                            ws_before_op_tk);
 
                 continue;
@@ -199,7 +192,7 @@ class expr_arith final : public expression {
             ws_before_ops_.emplace_back(ws_before_op_tk);
             consume_peeked_operator(tz);
 
-            exprs_.emplace_back(parse_element(tc, tz, in_args).node);
+            exprs_.emplace_back(parse_element(tc, tz).node);
         }
     }
 
@@ -282,8 +275,7 @@ class expr_arith final : public expression {
             [&] -> void { compile_through_scratch(tc, indent, dst); });
     }
 
-    [[nodiscard]] auto accessed_path() const
-        -> std::optional<access_path> override {
+    [[nodiscard]] auto accessed_path() const -> access_path override {
 
         assert(exprs_.size() == 1);
 
@@ -778,7 +770,6 @@ class expr_arith final : public expression {
         };
 
         if (not is_plain and first.reads_var(root)) {
-
             return true;
         }
 
@@ -906,7 +897,7 @@ class expr_arith final : public expression {
     // moves the last element to the front of a sub-expression that takes the
     // operator with the higher precedence
     //   a + b * c  ->  [a] + [b * c]
-    auto open_implied_subexpression(toc& tc, tokenizer& tz, const bool in_args,
+    auto open_implied_subexpression(toc& tc, tokenizer& tz,
                                     const uint8_t next_precedence,
                                     const token& ws_before_op_tk) -> void {
 
@@ -923,7 +914,6 @@ class expr_arith final : public expression {
         exprs_.emplace_back(std::make_unique<expr_arith>(
             tc, tz,
             options{
-                .in_args{in_args},
                 .uops{},
                 .open_paren_tk{},
                 .is_implied_subexpression{true},
@@ -971,23 +961,15 @@ class expr_arith final : public expression {
         return info.type_ref();
     }
 
+    // the elements are operands of the operators of the list or of its unary
+    // ops, e.g. '-(a)'
     auto validate_arithmetic_operands(const toc& tc) const -> void {
-        if (ops_.empty()) {
+        if (ops_.empty() and uops_.is_empty()) {
             return;
         }
 
         for (const std::unique_ptr<statement>& expr : exprs_) {
-            const type& expr_type{
-                expr->is_name_or_literal()
-                    ? tc.make_ident_info(*expr).type_ref()
-                    : expr->get_type(),
-            };
-
-            if (expr_type.is_bool()) {
-                throw compiler_exception{
-                    expr->tok(),
-                    "boolean values cannot be arithmetic operands"};
-            }
+            assert_not_boolean(tc, *expr);
         }
     }
 
@@ -1152,9 +1134,51 @@ class expr_arith final : public expression {
 
         emit_with_source(tc, indent, src, dst.type_ref(),
                          [&](const operand& count, const bool) -> void {
+                             if (count.is_immediate()) {
+                                 assert_shift_count_fits(src.tok(),
+                                                         count.immediate(),
+                                                         dst.type_ref());
+                             }
+
                              x.shift(src.tok(), indent, op, dst.operand(),
                                      count, tc.checks().shift_options());
                          });
+    }
+
+    // a stored 'bool' is 0 or 1, arithmetic would make other values
+    static auto assert_not_boolean(const toc& tc, const statement& operand)
+        -> void {
+
+        const type& operand_type{
+            operand.is_name_or_literal()
+                ? tc.make_ident_info(operand).type_ref()
+                : operand.get_type(),
+        };
+
+        if (not operand_type.is_bool()) {
+            return;
+        }
+
+        throw compiler_exception{
+            operand.tok(), "boolean values cannot be arithmetic operands"};
+    }
+
+    // the targets shift differently by a count outside the width, so a
+    // constant one is an error, e.g. 'x << 8' of an 'i8'
+    static auto assert_shift_count_fits(const token& src_loc_tk,
+                                        const int64_t count,
+                                        const type& width_type) -> void {
+
+        const size_t width_bits{width_type.size_bits()};
+
+        if (count >= 0 and std::cmp_less(count, width_bits)) {
+            return;
+        }
+
+        throw compiler_exception{
+            src_loc_tk,
+            std::format("shift count must be 0 to {} for {}-bit values",
+                        width_bits - 1, width_bits)};
     }
 
     // an identifier copies itself, anything else is assigned with '='
@@ -1525,8 +1549,7 @@ class expr_arith final : public expression {
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
-    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
-                                            const bool in_args)
+    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz)
         -> parsed_element {
 
         // '-(a + b)' negates the list, so its unary ops come before the '('
@@ -1540,7 +1563,6 @@ class expr_arith final : public expression {
                 std::make_unique<expr_arith>(
                     tc, tz,
                     options{
-                        .in_args{in_args},
                         .uops{std::move(uo)},
                         .open_paren_tk{open_paren_tk},
                         .is_implied_subexpression{},
@@ -1558,8 +1580,16 @@ class expr_arith final : public expression {
         // the element reads its own unary ops: '[-a] + b'
         uo.put_back(tz);
 
+        std::unique_ptr<statement> element{
+            create_statement_in_expr_arith(tc, tz),
+        };
+
+        if (not uo.is_empty()) {
+            assert_not_boolean(tc, *element);
+        }
+
         return {
-            .node{create_statement_in_expr_arith(tc, tz)},
+            .node{std::move(element)},
             .is_enclosed{},
         };
     }

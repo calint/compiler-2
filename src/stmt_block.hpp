@@ -24,7 +24,6 @@ class stmt_block final : public statement {
     token open_brace_tk_;
     std::vector<std::unique_ptr<statement>> statements_;
     token close_brace_tk_;
-    bool is_one_statement_{};
 
   public:
     // note: without '{', a single statement is allowed unless braces are
@@ -32,20 +31,19 @@ class stmt_block final : public statement {
     // e.g. '{ a = 1 b = 2 }', or the 'exit(1)' of 'if a == 1 exit(1)'
     stmt_block(toc& tc, tokenizer& tz, const bool braces_required = {})
         : statement{tz.cur_position_token()},
-          open_brace_tk_{tz.is_next_char_token('{')},
-          is_one_statement_{open_brace_tk_.is_empty()} {
+          open_brace_tk_{tz.is_next_char_token('{')} {
 
         const tokenizer::nesting_scope nesting{tz};
 
         set_type(tc.builtins().void_type());
 
-        if (is_one_statement_ and braces_required) {
+        if (is_one_statement() and braces_required) {
             throw compiler_exception{tz, "expected '{' to begin block"};
         }
 
         tc.enter_block();
 
-        if (is_one_statement_) {
+        if (is_one_statement()) {
             parse_single_statement(tc, tz);
         } else {
             parse_statements(tc, tz);
@@ -61,7 +59,7 @@ class stmt_block final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        if (not is_one_statement_) {
+        if (not is_one_statement()) {
             open_brace_tk_.source_to(os);
         }
 
@@ -69,7 +67,7 @@ class stmt_block final : public statement {
             s->source_to(os);
         }
 
-        if (not is_one_statement_) {
+        if (not is_one_statement()) {
             close_brace_tk_.source_to(os);
         }
     }
@@ -127,6 +125,10 @@ class stmt_block final : public statement {
     }
 
   private:
+    [[nodiscard]] auto is_one_statement() const -> bool {
+        return open_brace_tk_.is_empty();
+    }
+
     // a block without braces is one statement, none at the end of the source
     // e.g. 'exit(1)' of 'if a == 1 exit(1)'
     auto parse_single_statement(toc& tc, tokenizer& tz) -> void {
@@ -193,11 +195,7 @@ class stmt_block final : public statement {
             throw compiler_exception{tk, "expected a statement"};
         }
 
-        if (tk.is_text("var")) {
-            return std::make_unique<stmt_def_var>(tc, tk, tz);
-        }
-
-        if (tk.is_text("let")) {
+        if (tk.is_text("var") or tk.is_text("let")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
 

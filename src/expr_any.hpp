@@ -53,18 +53,20 @@ class expr_any final : public statement {
     bool is_unsized_destination_{};
 
   public:
-    // a type or array may be written without '{}', e.g. 'var p = point', 'p =
-    // point' and 'var a = i8[4]'
-    expr_any(toc& tc, tokenizer& tz, const type& tp, const bool in_args,
-             const bool is_array, const size_t array_count)
-        : statement{tz.next_whitespace_token()}, array_count_{array_count},
-          is_array_{is_array} {
+    // a single value, or with 'array_count' an array of that many elements, 0
+    // when the initializer gives the count; a type or array may be written
+    // without '{}', e.g. 'var p = point', 'p = point' and 'var a = i8[4]'
+    expr_any(toc& tc, tokenizer& tz, const type& tp,
+             const std::optional<size_t> array_count = std::nullopt)
+        : statement{tz.next_whitespace_token()},
+          array_count_{array_count.value_or(0)},
+          is_array_{array_count.has_value()} {
 
         set_type(tp);
 
         // the basic case, e.g. 'x + 1' or 'point{1, 2}'
-        if (not is_array) {
-            elements_.emplace_back(parse_variant(tc, tz, tp, in_args));
+        if (not is_array_) {
+            elements_.emplace_back(parse_variant(tc, tz, tp));
             return;
         }
 
@@ -112,7 +114,7 @@ class expr_any final : public statement {
         }
 
         // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}'
-        parse_braced_elements(tc, tz, tp, in_args);
+        parse_braced_elements(tc, tz, tp);
     }
 
     // a method receiver, the first argument of the call
@@ -205,17 +207,15 @@ class expr_any final : public statement {
                                            array_count - elements_.size());
     }
 
-    [[nodiscard]] auto accessed_path() const
-        -> std::optional<access_path> override {
+    [[nodiscard]] auto accessed_path() const -> access_path override {
 
         // note: only identifier arguments ask, and those are never arrays
         assert(not is_array_);
         assert(elements_.size() == 1);
 
-        return elements_.at(0).visit(
-            [](const auto& expression) -> std::optional<access_path> {
-                return expression.accessed_path();
-            });
+        return elements_.at(0).visit([](const auto& expression) -> access_path {
+            return expression.accessed_path();
+        });
     }
 
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
@@ -560,8 +560,8 @@ class expr_any final : public statement {
         return bytes;
     }
 
-    // an unsized destination e.g. a parameter 's[]' has the size of the
-    // argument which is known only at compile
+    // an unsized destination, e.g. a parameter 's[]', has the size of the
+    // argument, which is known only at compile time
     [[nodiscard]] auto destination_array_count(const destination& dst) const
         -> size_t {
 
@@ -573,8 +573,7 @@ class expr_any final : public statement {
     }
 
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
-    auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
-                               const bool in_args) -> void {
+    auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp) -> void {
 
         close_brace_tk_ = tz.is_next_char_token('}');
 
@@ -585,7 +584,7 @@ class expr_any final : public statement {
 
             assert_room_for_element(tz);
 
-            elements_.emplace_back(parse_variant(tc, tz, tp, in_args));
+            elements_.emplace_back(parse_variant(tc, tz, tp));
 
             close_brace_tk_ = tz.is_next_char_token('}');
         }
@@ -693,7 +692,6 @@ class expr_any final : public statement {
 
         // stored comparisons would change what later elements read
         if (dst.is_register() or not condition.reads_var(dst.root_id())) {
-
             compile_bool_list(tc, indent, src_loc_tk, condition, dst.operand());
             return;
         }
@@ -738,8 +736,7 @@ class expr_any final : public statement {
 
         exp.visit(overloaded{
             [&](const expr_arith& e) -> void {
-                // the value boundary is where a wider source
-                // loses bits
+                // the value boundary is where a wider source loses bits
                 e.assert_not_narrowed(tc, dst.type_ref());
                 e.compile(tc, indent, dst);
             },
@@ -777,8 +774,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
-                                            const type& tp, const bool in_args)
-        -> expr_variant {
+                                            const type& tp) -> expr_variant {
 
         // an instance value, e.g. 'point{1, 2}' or 'p'
         if (not tp.is_builtin()) {
@@ -818,7 +814,6 @@ class expr_any final : public statement {
                 tc,
                 tz,
                 expr_arith::options{
-                    .in_args{in_args},
                     .uops{},
                     .open_paren_tk{},
                     .is_implied_subexpression{},
@@ -832,6 +827,6 @@ class expr_any final : public statement {
 
         tz.rewind_to_position(pos_tk);
 
-        return expr_arith{tc, tz, in_args};
+        return expr_arith{tc, tz};
     }
 };

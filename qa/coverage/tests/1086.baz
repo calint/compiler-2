@@ -1,0 +1,5 @@
+# a negated 'bool' literal does not initialize a 'dat' of the default type
+
+dat d = -true
+
+func main() {}

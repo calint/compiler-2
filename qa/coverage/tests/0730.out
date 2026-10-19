@@ -1,5 +1,5 @@
 
-0730.baz:21:61: out of RV32I scratch registers
+0730.baz:21:61: out of scratch registers, simplify the expression
                                                             foo a {
                                                             ^~~
 

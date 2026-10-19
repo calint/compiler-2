@@ -1,0 +1,4 @@
+
+1086.baz:3:10: boolean values cannot be arithmetic operands
+dat d = -true
+         ^~~~

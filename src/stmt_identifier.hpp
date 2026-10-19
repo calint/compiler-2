@@ -101,7 +101,7 @@ class stmt_identifier final : public statement {
     // the fields and indexes of this path
     access_path access_path_;
 
-    // false when a runtime index leaves the element unknown
+    // false when a run-time index leaves the element unknown
     bool is_exact_access_{};
 
     // e.g. '.add' in 'lst.add(x)', the path is the receiver
@@ -176,8 +176,7 @@ class stmt_identifier final : public statement {
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
-    [[nodiscard]] auto accessed_path() const
-        -> std::optional<access_path> override {
+    [[nodiscard]] auto accessed_path() const -> access_path override {
 
         return access_path_;
     }
@@ -400,7 +399,7 @@ class stmt_identifier final : public statement {
         return statement::trimmed_source(ss.view());
     }
 
-    // a runtime index does not prove which element is written
+    // a run-time index does not prove which element is written
     auto record_assignment(assignment_flow& flow) const -> void {
         if (not first_token().is_text(flow.var) or not is_exact_access_) {
             return;
@@ -647,19 +646,17 @@ class stmt_identifier final : public statement {
 
         is_indexed_ = true;
 
-        elems_.emplace_back(
-            tk, token{},
-            std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
-                                       false, false, 0),
-            token{});
+        std::unique_ptr<expr_any> index_expr{
+            std::make_unique<expr_any>(tc, tz, tc.builtins().default_type()),
+        };
 
         const token close_bracket_tk{
             tz.expect_char_token(
                 ']', "expected ']' to close array index expression"),
         };
 
-        elems_.back().open_bracket_tk = open_bracket_tk;
-        elems_.back().close_bracket_tk = close_bracket_tk;
+        elems_.emplace_back(tk, open_bracket_tk, std::move(index_expr),
+                            close_bracket_tk);
     }
 
     auto resolve_accessed_bytes(toc& tc) -> void {
@@ -725,7 +722,6 @@ class stmt_identifier final : public statement {
 
     // the variable keeps the offset and covers its whole storage
     [[nodiscard]] auto root_range(const ident_info& info) const -> byte_range {
-
         return {
             .offset{},
             .size_bytes{storage_size_bytes(tok(), info)},
@@ -792,8 +788,8 @@ class stmt_identifier final : public statement {
                             cur_info.type_ref());
     }
 
-    // the array size is known at compile, also for an inlined array argument,
-    // so a constant index out of bounds is always a bug
+    // the array size is known at compile time, also for an inlined array
+    // argument, so a constant index out of bounds is always a bug
     static auto assert_index_in_bounds(const ident_elem& elem,
                                        const ident_info& array_info,
                                        const int64_t index,

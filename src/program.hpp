@@ -237,7 +237,7 @@ class assignment_analysis final {
     //
 
     static auto assert_functions_set_return_value(
-        const std::span<const stmt_def_func* const>& funcs) -> void {
+        const std::span<const stmt_def_func* const> funcs) -> void {
 
         for (const stmt_def_func* f : funcs) {
             const std::optional<func_return_info> ret_info{f->returns()};
@@ -401,16 +401,12 @@ class program final {
             return make_stmt_def_type(tc, tk, tz);
         }
 
-        if (tk.is_text("let")) {
+        if (tk.is_text("var") or tk.is_text("let")) {
             return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
 
         if (tk.is_text("dat")) {
             return std::make_unique<stmt_def_dat>(tc, tk, tz);
-        }
-
-        if (tk.is_text("var")) {
-            return std::make_unique<stmt_def_var>(tc, tk, tz);
         }
 
         if (tk.is_text("include")) {
@@ -445,7 +441,7 @@ class program final {
         }
 
         compile_main(tc_, indent);
-        compile_noninline_functions(tc_, indent);
+        compile_noinline_functions(tc_, indent);
 
         tc_.exit_block();
 
@@ -601,9 +597,10 @@ class program final {
         }
     }
 
-    static auto compile_noninline_body(
-        toc& tc, const size_t indent, const stmt_def_func& func,
-        const std::span<const size_t> array_lengths) -> void {
+    static auto
+    compile_noinline_body(toc& tc, const size_t indent,
+                          const stmt_def_func& func,
+                          const std::span<const size_t> array_lengths) -> void {
 
         machine& x{tc.machine()};
 
@@ -636,17 +633,17 @@ class program final {
         x.end_noinline_body();
     }
 
-    // each noninline function that is called has one body per kind of call,
+    // each noinline function that is called has one body per kind of call,
     // after 'main'; a function nothing calls leaves no code
-    static auto compile_noninline_functions(toc& tc, const size_t indent)
+    static auto compile_noinline_functions(toc& tc, const size_t indent)
         -> void {
 
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
-        for (size_t i{}; i < tc.funcs().noninline_body_count(); ++i) {
-            const noninline_body body{tc.funcs().noninline_body_at(i)};
+        for (size_t i{}; i < tc.funcs().noinline_body_count(); ++i) {
+            const noinline_body body{tc.funcs().noinline_body_at(i)};
 
-            compile_noninline_body(tc, indent, *body.func, body.array_lengths);
+            compile_noinline_body(tc, indent, *body.func, body.array_lengths);
         }
     }
 

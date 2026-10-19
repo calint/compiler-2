@@ -13,7 +13,6 @@ class stmt_def_func_param final : public statement {
     token type_tk_;
     token open_bracket_tk_;
     token close_bracket_tk_;
-    bool is_array_{};
 
     // not declared 'mut', so the body cannot write it and arguments sharing
     // storage are not a hazard
@@ -126,7 +125,7 @@ class stmt_def_func_param final : public statement {
             type_tk_.source_to(os);
         }
 
-        if (is_array_) {
+        if (is_array()) {
             open_bracket_tk_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
@@ -136,7 +135,9 @@ class stmt_def_func_param final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+    [[nodiscard]] auto is_array() const -> bool {
+        return not open_bracket_tk_.is_empty();
+    }
 
     [[nodiscard]] auto is_read_only() const -> bool { return is_read_only_; }
 
@@ -147,7 +148,6 @@ class stmt_def_func_param final : public statement {
         : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
           type_tk_{tokens.type_tk}, open_bracket_tk_{tokens.open_bracket_tk},
           close_bracket_tk_{tokens.close_bracket_tk},
-          is_array_{tokens.is_array()},
           is_read_only_{tokens.mut_tk.is_empty()} {
 
         toc::assert_valid_variable_name(tok());

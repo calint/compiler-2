@@ -258,10 +258,9 @@ class statement {
     // virtual methods
     //
 
-    // the bytes of its root variable that an identifier path reaches, a path
-    // with a run-time index reaches its whole array
-    [[nodiscard]] virtual auto accessed_path() const
-        -> std::optional<access_path> {
+    // the fields and indexes from the root variable to what an identifier
+    // names, e.g. 'es[1].items[i]'
+    [[nodiscard]] virtual auto accessed_path() const -> access_path {
 
         std::unreachable();
     }
@@ -309,8 +308,8 @@ class statement {
         std::unreachable();
     }
 
-    // the value computed in a register of 'width_type' when known at compile,
-    // empty when computed at run time
+    // the value computed in a register of 'width_type' when known at compile
+    // time, empty when computed at run time
     [[nodiscard]] virtual auto
     folded_constant([[maybe_unused]] const toc& tc,
                     [[maybe_unused]] const type& width_type) const
@@ -366,8 +365,8 @@ class statement {
 
     [[nodiscard]] virtual auto tok() const -> const token& { return token_; }
 
-    // used in UB check
-    // checks the reads of 'flow.var' and records its assignments
+    // definite assignment: checks the reads of 'flow.var' and records its
+    // assignments
     virtual auto trace_assignment(assignment_flow& flow) const -> void {
         assert_var_not_used(flow.var, flow.assigned);
     }
@@ -410,8 +409,8 @@ class statement {
         };
     }
 
-    // used in UB check
-    // throws if 'var' is read outside of the 'assigned' bytes
+    // definite assignment: throws if 'var' is read outside of the 'assigned'
+    // bytes
     auto assert_var_not_used(const std::string_view var,
                              const assigned_bytes& assigned) const -> void {
 

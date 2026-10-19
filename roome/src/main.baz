@@ -6,9 +6,9 @@ dat str_ascii_art = "\
        __________________________  .oOo.\n\
       O\\        -_   .. \\    ___ \\   ||\n\
      O  \\                \\   \\ \\\\ \\ //\\\\\n\
-    o   /\\     rv32i      \\   \\|\\\\ \\\n\
-   .   //\\\\      fpga      \\   ||   \\\n\
-    .  \\\\/\\\\       baz      \\  \\_\\   \\\n\
+    o   /\\      fpga      \\   \\|\\\\ \\\n\
+   .   //\\\\      rv32i     \\   ||   \\\n\
+    .  \\\\/\\\\      baz       \\  \\_\\   \\\n\
      .  \\\\//\\________________\\________\\\n\
       .  \\/_/, \\\\\\--\\\\..\\\\ - /\\_____  /\n\
        .  \\ \\ . \\\\\\__\\\\__\\\\./ / \\__/ /\n\
@@ -112,9 +112,11 @@ en me\n"
 
 # runs the lines of the script as the bare entity, a line ends with '\n'
 func run_creation_script() {
+    out.set_silenced(true)
+
     var tz = tokenizer
     var line_start = 0
-    out.set_silenced(true)
+ 
     foo str_creation_script {
         if e == '\n' {
             tz.set_line(str_creation_script, line_start, i - line_start)
@@ -122,6 +124,12 @@ func run_creation_script() {
             line_start = i + 1
         }
     }
+
+    # clear messages to entities 
+    foo entities.array, entities.len {
+        e.messages.len = 0
+    }
+
     out.set_silenced(false)
 }
 
@@ -133,11 +141,6 @@ dat flag = "\n\nFLAG\n\n"
 
 func main() {
     run_creation_script()
-
-    # clear messages to entities 
-    foo entities.array, entities.len {
-        e.messages.len = 0
-    }
 
     out.print_all(str_ascii_art)
     out.print_all(str_hello)

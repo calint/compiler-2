@@ -109,7 +109,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     //
 
     // the stack below the end of memory may not reach into the variables,
-    // how much of it is used at runtime is checked only by
+    // how much of it is used at run time is checked only by
     // '--checks=stack'
     auto check_memory_end(const size_t memory_end_address) const
         -> void override {

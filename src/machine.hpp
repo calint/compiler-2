@@ -107,8 +107,8 @@ class machine {
     virtual ~machine() = default;
 
   protected:
-    // output is held from 'start' to 'finish' so jumps can be
-    // optimized and grown to reach their targets
+    // output is held from 'start' to 'finish' so jumps can be optimized and
+    // grown to reach their targets
     using jump_mode = assembler::jump_mode;
 
   public:
@@ -365,7 +365,7 @@ class machine {
                                       const bool enabled = {}) -> void = 0;
 
     // a target without an operating system jumps to the stack overflow handler
-    // when a non-inlined call, made with the registers allocated now, does not
+    // when a noinline call, made with the registers allocated now, does not
     // fit in the stack
     virtual auto check_stack_capacity(const token& src_loc_tk,
                                       const size_t indent,
@@ -414,8 +414,8 @@ class machine {
     [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
 
     // why a backend cannot emit data elements of this size, none by default
-    [[nodiscard]] virtual auto
-    data_element_size_error(const size_t /*element_size_bytes*/) const
+    [[nodiscard]] virtual auto data_element_size_error(
+        [[maybe_unused]] const size_t element_size_bytes) const
         -> std::optional<std::string> {
 
         return std::nullopt;

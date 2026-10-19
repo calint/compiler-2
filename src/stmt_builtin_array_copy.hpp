@@ -57,7 +57,7 @@ class stmt_builtin_array_copy final : public statement {
         dst_delim_tk_ =
             tz.expect_char_token(',', "expected ',' followed by 'count'");
 
-        count_ = {tc, tz, tc.builtins().default_type(), true, false, 0};
+        count_ = {tc, tz, tc.builtins().default_type()};
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the arguments");
@@ -103,8 +103,7 @@ class stmt_builtin_array_copy final : public statement {
         const std::optional<int64_t> count{count_.constant_value(tc)};
 
         // a negative count keeps the loop so '--checks=lower' rejects it at
-        // run time
-        // the overlap check compares the addresses of the runtime copy
+        // run time, and the overlap check compares the addresses of that loop
         if (count and *count >= 0 and not tc.checks().overlap) {
             compile_constant_count(tc, indent, array_src_info, array_dst_info,
                                    static_cast<size_t>(*count));

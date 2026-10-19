@@ -41,7 +41,7 @@
 //   'generic_call'    the instance of a generic function that the call names
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place
-//   'noninline_call'  passes addresses to the body that is emitted once
+//   'noinline_call'  passes addresses to the body that is emitted once
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -283,9 +283,9 @@ struct generic_call {
     }
 };
 
-// what a non-inline call passes for an argument: the variable it names or
+// what a noinline call passes for an argument: the variable it names or
 // a temporary that holds its value
-struct noninline_arg {
+struct noinline_arg {
     ident_info info;
     bool is_temporary;
 };
@@ -346,7 +346,7 @@ struct call_site {
                         func.get_type().name(), dst.type_ref().name()),
         };
 
-        // a non-inline result needs a memory destination, not the register
+        // a noinline result needs a memory destination, not the register
         // the conversion computes into
         if (not func.is_inlined()) {
             throw compiler_exception{dst.error_token(tk), message};
@@ -458,7 +458,7 @@ struct call_site {
 //   4. 'compile_body': the body under labels unique to the call, with the
 //      aliases added
 //
-// a 'noninline_call' runs step 3 as a dry run to check its aliasing
+// a 'noinline_call' runs step 3 as a dry run to check its aliasing
 class inline_call {
     call_site call_;
 
@@ -515,8 +515,7 @@ class inline_call {
     auto compile_with_aliases(
         toc& tc, const size_t indent, const destination& dst,
         const stmt_def_func& func,
-        const std::span<const noninline_arg> call_arguments = {}) const
-        -> void {
+        const std::span<const noinline_arg> call_arguments = {}) const -> void {
 
         // scratch registers stay allocated until the inlined body is compiled
         std::vector<operand> allocated_registers;
@@ -563,7 +562,7 @@ class inline_call {
 
         const func_return_info& return_info{*func.returns()};
 
-        const ident_info& ret_info{
+        const ident_info ret_info{
             tc.make_ident_info(call_.tk, return_info.ident_tk.text()),
         };
 
@@ -622,8 +621,6 @@ class inline_call {
 
         x.label(indent, call_label);
 
-        // enter function scope
-
         tc.enter_func(func.name(), new_call_path, ret_jmp_label);
 
         const machine::call_frame_scope call_frame{
@@ -653,7 +650,6 @@ class inline_call {
         x.free_scratch_registers(call_.tk, indent + 1, registers_to_free);
 
         // provide the exit label for 'return' to jump to
-
         x.label(indent, ret_jmp_label);
 
         apply_unary_ops_to_result(tc, indent, func);
@@ -867,7 +863,7 @@ class inline_call {
     [[nodiscard]] auto
     make_aliases(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func,
-                 const std::span<const noninline_arg> call_arguments,
+                 const std::span<const noinline_arg> call_arguments,
                  std::vector<operand>& allocated_registers) const
         -> std::vector<alias_info> {
 
@@ -1059,8 +1055,8 @@ class inline_call {
                                          param.get_type(), reg);
     }
 
-    // an indexed argument keeps its computed address, e.g. [rbp + r14 * 4 +
-    // 205] or [r15 + r14] or simply [r15]
+    // an indexed argument keeps its computed address, e.g.
+    // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
     [[nodiscard]] static auto
     make_reference_alias(toc& tc, const size_t indent, const expr_any& arg,
                          const stmt_def_func_param& param,
@@ -1156,7 +1152,7 @@ class inline_call {
 //      'etc/docs/noinline-alias-dry-run.txt'), the addresses are written to
 //      the callee frame ('frame_slot_addresses', 'write_frame_slots') and the
 //      function is called
-class noninline_call {
+class noinline_call {
     // what the aliasing signature reads of the result or of an argument
     struct signature_item {
         // the variable, e.g. 'v' of 'v.x'
@@ -1169,7 +1165,7 @@ class noninline_call {
     call_site call_;
 
   public:
-    explicit noninline_call(call_site call) : call_{std::move(call)} {}
+    explicit noinline_call(call_site call) : call_{std::move(call)} {}
 
     // the callee reaches the result and the arguments through their addresses,
     // a result destination or an argument that is not a variable in memory,
@@ -1204,7 +1200,7 @@ class noninline_call {
         // the block frees the temporaries after the call
         tc.enter_block();
 
-        std::vector<noninline_arg> arguments;
+        std::vector<noinline_arg> arguments;
 
         for (const auto [i, arg, param] : std::views::zip(
                  std::views::iota(size_t{}), call_.args, func.params())) {
@@ -1267,7 +1263,7 @@ class noninline_call {
 
     // the callee reaches the result and arguments through their addresses
     auto assert_call(const destination& dst, const stmt_def_func& func,
-                     const std::span<const noninline_arg> arguments) const
+                     const std::span<const noinline_arg> arguments) const
         -> void {
 
         // 'compile' checked the result use before the temporaries
@@ -1292,7 +1288,7 @@ class noninline_call {
     // checked by compiling the body as an inline call and dropping the code
     auto check_aliasing(toc& tc, const size_t indent, const destination& dst,
                         const stmt_def_func& func,
-                        const std::span<const noninline_arg> arguments) const
+                        const std::span<const noinline_arg> arguments) const
         -> void {
 
         const std::optional<std::string> signature{
@@ -1309,7 +1305,7 @@ class noninline_call {
         //       call reached inside it, e.g. a recursive call, returns here;
         //       the kinds are finitely many, so the nested dry runs end
 
-        if (not signature or not tc.add_checked_noninline_call(*signature)) {
+        if (not signature or not tc.add_checked_noinline_call(*signature)) {
             return;
         }
 
@@ -1346,7 +1342,7 @@ class noninline_call {
     auto
     compile_with_arguments(toc& tc, const size_t indent, const destination& dst,
                            const stmt_def_func& func,
-                           const std::span<const noninline_arg> arguments) const
+                           const std::span<const noinline_arg> arguments) const
         -> void {
 
         assert_call(dst, func, arguments);
@@ -1360,7 +1356,7 @@ class noninline_call {
 
         // a body is emitted for a function that is called, once for all calls
         // without array parameters
-        tc.add_noninline_body(func, array_lengths);
+        tc.add_noinline_body(func, array_lengths);
 
         // the registers stay allocated until the callee frame is populated
         std::vector<operand> address_registers;
@@ -1422,7 +1418,7 @@ class noninline_call {
     [[nodiscard]] auto
     frame_slot_addresses(toc& tc, const size_t indent, const destination& dst,
                          const stmt_def_func& func,
-                         const std::span<const noninline_arg> arguments,
+                         const std::span<const noinline_arg> arguments,
                          std::vector<operand>& address_registers) const
         -> std::vector<operand> {
 
@@ -1449,9 +1445,9 @@ class noninline_call {
     }
 
     [[nodiscard]] auto variable_arguments(const toc& tc) const
-        -> std::vector<noninline_arg> {
+        -> std::vector<noinline_arg> {
 
-        std::vector<noninline_arg> arguments;
+        std::vector<noinline_arg> arguments;
         arguments.reserve(call_.args.size());
 
         for (const expr_any& arg : call_.args) {
@@ -1495,12 +1491,12 @@ class noninline_call {
 
     // the callee and which arguments are globals or the same local, the only
     // facts the aliasing checks of the body depend on. empty when an argument
-    // is a parameter of the enclosing non-inline function, the calls of that
+    // is a parameter of the enclosing noinline function, the calls of that
     // function are checked with their own arguments
     [[nodiscard]] static auto
     aliasing_signature(const toc& tc, const destination& dst,
                        const stmt_def_func& func,
-                       const std::span<const noninline_arg> arguments)
+                       const std::span<const noinline_arg> arguments)
         -> std::optional<std::string> {
 
         std::vector<signature_item> items;
@@ -1515,7 +1511,7 @@ class noninline_call {
             });
         }
 
-        for (const noninline_arg& argument : arguments) {
+        for (const noinline_arg& argument : arguments) {
             // note: a temporary is a local of the call
             assert(not argument.info.elem_path().empty());
 
@@ -1544,7 +1540,7 @@ class noninline_call {
 
         // the body is checked with the value, e.g. a constant, of the first
         // call of its kind
-        for (const noninline_arg& argument : arguments) {
+        for (const noinline_arg& argument : arguments) {
             signature += argument.is_temporary ? " temporary" : " variable";
         }
 
@@ -1554,7 +1550,7 @@ class noninline_call {
     // the body is compiled for the lengths of the array arguments
     [[nodiscard]] static auto
     array_argument_lengths(const stmt_def_func& func,
-                           const std::span<const noninline_arg> arguments)
+                           const std::span<const noinline_arg> arguments)
         -> std::vector<size_t> {
 
         std::vector<size_t> lengths;
@@ -1570,7 +1566,7 @@ class noninline_call {
         return lengths;
     }
 
-    // a non-inline call passes addresses, a value without storage is passed
+    // a noinline call passes addresses, a value without storage is passed
     // in a temporary of the parameter's type
     static auto assert_argument(const expr_any& arg, const ident_info& info,
                                 const stmt_def_func_param& param) -> void {
@@ -1656,7 +1652,7 @@ struct constructor_call_tag {};
 // 'assert_argument_writable', or 'parse_builtin_arguments')
 //
 // compiling, in 'compile': no two arguments may share storage
-// ('assert_no_shared_storage'), then 'inline_call' or 'noninline_call'
+// ('assert_no_shared_storage'), then 'inline_call' or 'noinline_call'
 // compiles the call
 class stmt_call : public expression {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument
@@ -1794,7 +1790,7 @@ class stmt_call : public expression {
         assert_no_shared_storage(tc, dst, func);
 
         if (not func.is_inlined()) {
-            noninline_call{call}.compile(tc, indent, dst, func);
+            noinline_call{call}.compile(tc, indent, dst, func);
             return;
         }
 
@@ -2193,7 +2189,7 @@ class stmt_call : public expression {
             }
 
             // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
-            args_.emplace_back(tc, tz, params.at(i).get_type(), true, false, 0);
+            args_.emplace_back(tc, tz, params.at(i).get_type());
         }
 
         assert_no_surplus_argument(tz, params.size() - first_argument_index());
@@ -2224,8 +2220,7 @@ class stmt_call : public expression {
                 return;
             }
 
-            args_.emplace_back(tc, tz, tc.builtins().default_type(), true,
-                               false, 0);
+            args_.emplace_back(tc, tz, tc.builtins().default_type());
 
             const token delim_tk{tz.is_next_char_token(',')};
             expect_arg = not delim_tk.is_empty();
@@ -2266,7 +2261,7 @@ class stmt_call : public expression {
         assert_open_paren_found(tz, what);
     }
 
-    // what 'inline_call' and 'noninline_call' need of this call
+    // what 'inline_call' and 'noinline_call' need of this call
     [[nodiscard]] auto site() const -> call_site {
         return {
             .tk{tok()},

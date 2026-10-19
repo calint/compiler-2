@@ -210,9 +210,9 @@ class stmt_def_dat final : public statement {
     }
 
     // e.g. 'dat s = "hi"' is an 'i8' array of 2, 'dat a = i8[4]{1, 2}' an 'i8'
-    // array of 4, 'dat a = [4]{1, 2}' a default type array of 4, 'dat p =
-    // point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8', 'dat b = true' a 'bool'
-    // and 'dat n = 3' has the default type
+    // array of 4, 'dat a = [4]{1, 2}' a default type array of 4,
+    // 'dat p = point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8',
+    // 'dat b = true' a 'bool' and 'dat n = 3' has the default type
     [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) -> elem {
         // e.g. 'dat greeting = "hello"'
         if (tz.peek_char_after_whitespace() == '"') {
@@ -245,8 +245,8 @@ class stmt_def_dat final : public statement {
 
         const token tk{tz.next_token()};
 
-        // e.g. 'dat bytes = i8[]{1, 2}' or 'dat points = point[2]{{1, 2}, {3,
-        // 4}}'
+        // e.g. 'dat bytes = i8[]{1, 2}' or
+        // 'dat points = point[2]{{1, 2}, {3, 4}}'
         if (is_array_literal(tc, tk, tz)) {
             set_named_type(tc, tk);
             return parse_array_literal(tc, tz);
@@ -312,6 +312,18 @@ class stmt_def_dat final : public statement {
     // statics
     //
 
+    // a stored 'bool' is 0 or 1, '-' and '~' would make other values
+    static auto assert_unary_ops_on_number(const elem& el,
+                                           const type& value_type) -> void {
+
+        if (el.uops.is_empty() or not value_type.is_bool()) {
+            return;
+        }
+
+        throw compiler_exception{
+            el.src_loc_tk, "boolean values cannot be arithmetic operands"};
+    }
+
     // the '}' that ends the initializer, when it is the next character, e.g.
     // the '}' of '{1, 2}'
     [[nodiscard]] static auto at_closing_brace(tokenizer& tz, elem& el)
@@ -361,8 +373,6 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // user-defined type
-
         machine& x{tc.machine()};
 
         // bytes of the instance emitted so far, fields in order then padding
@@ -388,7 +398,6 @@ class stmt_def_dat final : public statement {
         }
 
         // zero out remaining fields and the padding after the last field
-
         const size_t size_bytes{tp.size_bytes() - written_bytes};
 
         if (size_bytes == 0) {
@@ -396,7 +405,8 @@ class stmt_def_dat final : public statement {
         }
 
         const std::string_view what{
-            el.elems.size() == flds.size() ? "padding" : "remaining fields"};
+            el.elems.size() == flds.size() ? "padding" : "remaining fields",
+        };
 
         x.comment(el.src_loc_tk, 0, "zero {}: {} B", what, size_bytes);
         x.emit_zero_data(size_bytes);
@@ -430,17 +440,11 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // array
-
-        // special case for a string
-        // note: only i8[] can be initialized with a string token
-
+        // note: only 'i8[]' can be initialized with a string token
         if (el.src_loc_tk.is_string()) {
             compile_data_builtin(tc, tp, el);
             return;
         }
-
-        // regular arrays
 
         machine& x{tc.machine()};
 
@@ -452,7 +456,6 @@ class stmt_def_dat final : public statement {
         }
 
         // zero out the remaining array elements
-
         const size_t remaining_count{el.array_count - el.elems.size()};
 
         if (remaining_count == 0) {
@@ -561,7 +564,6 @@ class stmt_def_dat final : public statement {
 
     // a 'bool' holds 'true' or 'false', not an integer
     [[nodiscard]] static auto parse_bool_value(const token& tk) -> int64_t {
-
         if (tk.is_text(reserved_names::true_value)) {
             return 1;
         }
@@ -590,6 +592,7 @@ class stmt_def_dat final : public statement {
         }
 
         if (tp.is_same(tc.builtins().boolean())) {
+            assert_unary_ops_on_number(el, tp);
             el.value = parse_bool_value(el.src_loc_tk);
             return el;
         }
@@ -597,6 +600,8 @@ class stmt_def_dat final : public statement {
         const ident_info info{
             tc.make_ident_info(el.src_loc_tk, el.src_loc_tk.text()),
         };
+
+        assert_unary_ops_on_number(el, info.type_ref());
 
         if (not info.is_const()) {
             throw compiler_exception{

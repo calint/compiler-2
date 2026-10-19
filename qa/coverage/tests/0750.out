@@ -1,0 +1,4 @@
+
+0750.baz:7:22: shift count must be 0 to 63 for 64-bit values
+        var c = 1 << 64
+                     ^~

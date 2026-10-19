@@ -333,14 +333,18 @@ func tokenizer.is_empty() res bool {
     res = self.start == self.end
 }
 
+# a token longer than 'T' holds is cut at its capacity
 func tokenizer.token<T type>() res T {
     res.len = self.len()
+    if res.len > array_length(res.array) res.len = array_length(res.array)
     res.array = {}
     array_copy(self.string.array[self.start], res.array, res.len)
 }
 
+# a token longer than 'T' holds is cut at its capacity
 func tokenizer.token_to<T type>(dst mut T) {
     dst.len = self.len()
+    if dst.len > array_length(dst.array) dst.len = array_length(dst.array)
     dst.array = {}
     array_copy(self.string.array[self.start], dst.array, dst.len)
 }

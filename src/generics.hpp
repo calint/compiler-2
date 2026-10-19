@@ -405,7 +405,6 @@ class generic_registry final {
     }
 
     auto add_type(const std::string_view name, generic_type_info info) -> void {
-
         types_.put(std::string{name}, std::move(info));
     }
 

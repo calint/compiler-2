@@ -1,0 +1,4 @@
+
+0914.baz:8:15: shift count must be 0 to 63 for 64-bit values
+    a = a << ~n
+              ^
