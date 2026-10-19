@@ -176,7 +176,6 @@ class assembler_rv32i final : public assembler {
     };
 
     static constexpr size_t op_count{std::to_underlying(op::ret) + 1};
-    // note: +1 because the last enumerator is counted too
 
     static constexpr uint32_t addi_encoding{0x00000013};
     static constexpr uint32_t lui_encoding{0x00000037};
@@ -1458,7 +1457,6 @@ class assembler_rv32i final : public assembler {
         records_.push_back(std::move(structured));
 
         return records_.size() - 1;
-        // note: -1 because the record was just added
     }
 
     auto write_code(std::ostream& os, const line& l, const size_t line_index,

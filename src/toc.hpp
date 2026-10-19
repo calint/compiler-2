@@ -564,7 +564,6 @@ class ident_builder final {
         const size_t lea_index{
             info.elem_path().size() - 1 - known->trailing_count,
         };
-        // note: -1 is the index of the last element
 
         // identifier has lea, construct operand
 

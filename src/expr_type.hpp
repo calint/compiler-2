@@ -44,16 +44,16 @@ class expr_type final : public statement {
         bool is_exact{};
     };
 
-    // out-of-line: parses 'expr_any' items and creates the 'stmt_call' or
+    // parses 'expr_any' items and creates the 'stmt_call' or
     // 'stmt_identifier'; the type name alone is its zero value, e.g. 'var p =
     // point' is 'point{}'
     expr_type(toc& tc, tokenizer& tz, const type& tp,
               const bool is_array_destination);
 
-    // out-of-line: a method receiver that has already been parsed
+    // a method receiver that has already been parsed
     explicit expr_type(std::unique_ptr<stmt_identifier> receiver);
 
-    // out-of-line: a 'unique_ptr' of a class that is incomplete here needs
+    // a 'unique_ptr' of a class that is incomplete here needs
     // the special members where 'stmt_identifier' and 'stmt_call' are complete
     expr_type();
 
@@ -68,38 +68,30 @@ class expr_type final : public statement {
     // overridden methods
     //
 
-    // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
     auto source_to(std::ostream& os) const -> void override;
 
-    // out-of-line: calls 'stmt_call'
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override;
 
-    // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto accessed_path() const
         -> std::optional<access_path> override;
 
-    // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
                                    const lea_request& request) const
         -> operand override;
 
-    // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto is_array_element() const -> bool override;
 
-    // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto is_indexed() const -> bool override;
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
         return stmt_ident_ != nullptr;
     }
 
-    // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto name_or_literal() const -> std::string_view override;
 
-    // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override;
 
@@ -159,10 +151,8 @@ class expr_type final : public statement {
     }
 
   private:
-    // out-of-line: calls 'stmt_call'
     auto assert_call_type(const type& tp) const -> void;
 
-    // out-of-line: calls 'expr_any'
     auto assert_items_not_reading(const constructor_target& dst,
                                   const size_t record_offset) const -> void;
 
@@ -173,31 +163,26 @@ class expr_type final : public statement {
         return not close_brace_tk_.is_empty();
     }
 
-    // out-of-line: calls 'expr_any'
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
                         const destination& dst, operand& dst_op) const -> void;
 
-    // out-of-line: calls 'stmt_call'
     auto compile_call_field(toc& tc, const size_t indent, const type& dst_type,
                             const destination& dst, operand& dst_op) const
         -> void;
 
-    // out-of-line: calls 'expr_any'
     auto compile_field(toc& tc, const size_t indent, const expr_any& src,
                        const type_field& field, const destination& dst,
                        operand& dst_op) const -> void;
 
-    // out-of-line: calls 'expr_any'
     auto compile_field_list(toc& tc, const size_t indent, const type& dst_type,
                             const destination& dst, operand& dst_op) const
         -> void;
 
-    // out-of-line: calls 'stmt_identifier'
     auto compile_identifier_copy(toc& tc, const size_t indent,
                                  const type& dst_type, operand& dst_op) const
         -> void;
 
-    // out-of-line: creates the 'stmt_call' or 'stmt_identifier'
+    // creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
 
     // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'
@@ -215,10 +200,9 @@ class expr_type final : public statement {
         expr_delims_tk_.emplace_back(delimiter_tk);
     }
 
-    // out-of-line: creates an 'expr_any' for each field
+    // creates an 'expr_any' for each field
     auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
 
-    // out-of-line: calls 'expr_any'
     auto write_builtin_field(toc& tc, const size_t indent, const expr_any& src,
                              const type_field& field, const destination& dst,
                              const operand& dst_op) const -> void;
@@ -312,20 +296,17 @@ class expr_type final : public statement {
             });
     }
 
-    // out-of-line: calls 'expr_any'
     static auto assert_record_field_not_reading(const expr_any& src,
                                                 const type_field& field,
                                                 const constructor_target& dst,
                                                 const size_t field_offset)
         -> void;
 
-    // out-of-line: calls 'expr_any'
     static auto compile_builtin_field(toc& tc, const size_t indent,
                                       const expr_any& src,
                                       const operand& src_op, const operand& dst)
         -> void;
 
-    // out-of-line: calls 'expr_any'
     static auto compile_record_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,

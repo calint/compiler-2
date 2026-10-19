@@ -268,8 +268,8 @@ class machine {
     };
 
   public:
-    // a failed check prints its message to this descriptor and exits with this
-    // code
+    // a failed check prints its message, the 'panic: ...' of its handler, to
+    // this descriptor and exits with this code
     static constexpr int stderr_descriptor{2};
     static constexpr int panic_exit_code{255};
 
@@ -453,12 +453,11 @@ class machine {
                                  const std::function_ref<bool(int64_t&)> next)
         -> void = 0;
 
-    // prints 'panic: division' to stderr, with the line when 'with_line', and
-    // exits with 255
+    // prints 'panic: division', with the line when 'with_line'
     virtual auto emit_division_failure_handler(const bool with_line)
         -> void = 0;
 
-    // prints 'panic: frame overflow' to stderr and exits with 255
+    // prints 'panic: frame overflow'
     virtual auto emit_frame_overflow_handler() -> void = 0;
 
     // emits both versions and keeps the one with less code, the first on ties
@@ -468,25 +467,22 @@ class machine {
                         const std::function_ref<void()> emit_with_scratch)
         -> void = 0;
 
-    // prints 'panic: overflow' to stderr, with the line when 'with_line', and
-    // exits with 255
+    // prints 'panic: overflow', with the line when 'with_line'
     virtual auto emit_overflow_failure_handler(const bool with_line)
         -> void = 0;
 
-    // prints 'panic: overlap' to stderr, with the line when 'with_line', and
-    // exits with 255
+    // prints 'panic: overlap', with the line when 'with_line'
     virtual auto emit_overlap_failure_handler(const bool with_line) -> void = 0;
 
     virtual auto emit_repeated_data(const size_t element_size_bytes,
                                     const size_t count, const int64_t value)
         -> void = 0;
 
-    // prints 'panic: shift' to stderr, with the line when 'with_line', and
-    // exits with 255
+    // prints 'panic: shift', with the line when 'with_line'
     virtual auto emit_shift_failure_handler(const bool with_line) -> void = 0;
 
-    // prints 'panic: stack overflow' to stderr and exits with 255, emits
-    // nothing on a target where an operating system stops the overflow
+    // prints 'panic: stack overflow', emits nothing on a target where an
+    // operating system stops the overflow
     virtual auto emit_stack_overflow_handler() -> void = 0;
 
     // leaves the code section current
@@ -1126,7 +1122,6 @@ class machine {
                 ? std::numeric_limits<uint64_t>::max()
                 : (uint64_t{1} << width_bits) - 1,
         };
-        // note: -1 makes a mask of 'width_bits' ones
 
         const uint64_t multiplier{bits & mask};
 

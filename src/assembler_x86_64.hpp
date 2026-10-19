@@ -154,7 +154,6 @@ class assembler_x86_64 final : public assembler {
     };
 
     static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
-    // note: +1 because the last enumerator is counted too
 
   public:
     // the widths of the operands
@@ -546,7 +545,6 @@ class assembler_x86_64 final : public assembler {
         };
 
         static_assert(suffixes.size() == std::to_underlying(condition::o) + 1);
-        // note: +1 because the last enumerator is counted too
 
         return suffixes.at(std::to_underlying(cc));
     }
@@ -657,7 +655,6 @@ class assembler_x86_64 final : public assembler {
 
         static_assert(directives.size() ==
                       std::to_underlying(section::variables) + 1);
-        // note: +1 because the last enumerator is counted too
 
         return directives.at(std::to_underlying(which));
     }

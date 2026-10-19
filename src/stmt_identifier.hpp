@@ -244,7 +244,6 @@ class stmt_identifier final : public statement {
         const size_t start_index{
             known == nullptr ? 0 : elems_.size() - 1 - known->trailing_count,
         };
-        // note: -1 is the index of the last element
 
         std::string path{elems_.at(start_index).name_tk.text()};
 
@@ -281,7 +280,6 @@ class stmt_identifier final : public statement {
             parent_type = &cur_info.type_ref();
 
             const bool is_last_elem{elem_index == elems_.size() - 1};
-            // note: -1 is the index of the last element
 
             // an unindexed element only needs a possible range bounds check
             if (not cur_elem.array_index_expr) {
@@ -628,7 +626,6 @@ class stmt_identifier final : public statement {
 
         // the last element keeps the padding after the array
         const bool is_last_element{*index == array_info.array_len() - 1};
-        // note: -1 is the index of the last element
 
         access_path_.add_fixed_index(*index);
 

@@ -64,6 +64,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => no 'call_kind' enum: the dot tokens are needed to reproduce the source,
        an enum would be a second source of truth for what they already say
     => left: a class per mode, only if the compile paths differ enough
+[ ] medium: rv32i: 'compare_known_walk', 'copy_known_size' and
+    'zero_known_size' repeat one structure (a head at a far offset, a loop of
+    the widest width, a tail at a loop boundary) and the comments that
+    explain it; one walk that takes the per-access step would state the
+    structure once
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
 [ ] medium: low priority: long parameter lists: 'stmt_identifier::
     compile_indexed_element' (11), 'machine::compare_memory' and its rv32i

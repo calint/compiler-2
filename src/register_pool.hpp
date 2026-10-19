@@ -179,7 +179,6 @@ class register_trace final {
     // the frame that allocations belong to
     [[nodiscard]] auto current_frame() const -> size_t {
         return frames_.empty() ? 0 : frames_.size() - 1;
-        // note: -1 is the index of the last frame
     }
 
     auto enable() -> void { enabled_ = true; }

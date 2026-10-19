@@ -134,14 +134,12 @@ class stmt_if final : public statement {
 
         const stmt_if_branch& if_branch{branches_.at(branch_index)};
         const bool is_last_branch{branch_index == branch_count - 1};
-        // note: -1 is the index of the last branch
 
         // a false condition continues at the next branch or the 'else'
         const std::string jmp_if_false{
             is_last_branch ? std::string{label_else_branch}
                            : branches_.at(branch_index + 1).begin_label(tc),
         };
-        // note: +1 is the branch after the current one
 
         // the last branch without an 'else' continues after the 'if'
         // without a jump

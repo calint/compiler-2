@@ -963,7 +963,6 @@ class machine_rv32i : public machine {
                     const std::function_ref<std::string()> add_constant)
         -> void override {
 
-        // the scope keeps 'dst' registers from being picked for scratch
         const address_scope scope{*this, dst, operand{}};
 
         const size_t width{bulk_width(access_alignment(dst, alignment))};
@@ -1196,7 +1195,6 @@ class machine_rv32i : public machine {
         assembler_.label(0, ".Lbaz_frame_message");
         assembler_.ascii(message);
         assembler_.data(1, newline);
-        // the bounds handler may follow and must stay in the code section
         assembler_.switch_section(section::text);
     }
 
@@ -2469,10 +2467,8 @@ class machine_rv32i : public machine {
         const operand& right{memory.right};
         const operand& result{request.dst};
 
-        // keeps the registers of both addresses from being picked for scratch
         const address_scope operand_scope{*this, right, left};
 
-        // keeps the result registers from being picked for scratch
         const address_scope result_scope{*this, result, operand{}};
 
         const std::array<operand, 2> in_use{left, right};
@@ -2634,10 +2630,8 @@ class machine_rv32i : public machine {
         const operand& count{range.count};
         const operand& result{request.dst};
 
-        // keeps the registers of both addresses from being picked for scratch
         const address_scope operand_scope{*this, right, left};
 
-        // keeps the result registers from being picked for scratch
         const address_scope result_scope{*this, result, operand{}};
 
         const std::array<operand, 3> in_use{left, right, count};
@@ -2841,8 +2835,6 @@ class machine_rv32i : public machine {
                          const size_t size_bytes,
                          const std::array<access_start, 2>& starts) -> void {
 
-        // keeps the registers of both addresses from being picked for scratch
-        // and frees the registers allocated below
         const address_scope scope{*this, dst, src};
 
         const operand value{
@@ -2952,8 +2944,6 @@ class machine_rv32i : public machine {
                             const std::array<access_start, 2>& starts,
                             const size_t alignment) -> void {
 
-        // keeps the registers of both addresses from being picked for scratch
-        // and frees the registers allocated below
         const address_scope scope{*this, dst, src};
 
         const operand value{
@@ -3724,7 +3714,6 @@ class machine_rv32i : public machine {
         assembler_.label(0, message_label);
         assembler_.ascii(message);
         assembler_.data(1, newline);
-        // the next handler may follow and must stay in the code section
         assembler_.switch_section(section::text);
     }
 
@@ -4889,8 +4878,6 @@ class machine_rv32i : public machine {
                          const operand& dst, const size_t size_bytes,
                          const access_start& start) -> void {
 
-        // keeps the registers of the address from being picked for scratch and
-        // frees the registers allocated below
         const address_scope scope{*this, dst, operand{}};
 
         const std::span<const access_start> starts{&start, 1};
@@ -5406,7 +5393,6 @@ class machine_rv32i : public machine {
 
         // the leading nonzero digit is now plus one and starts the result
         size_t top{digits.size() - 1};
-        // note: -1 is the index of the top digit
 
         while (digits.at(top) == 0) {
             --top;
@@ -5466,7 +5452,6 @@ class machine_rv32i : public machine {
 
         if (not value_type.is_bool() and
             (value & (uint32_t{1} << (bits - 1))) != 0) {
-            // note: -1 because the sign bit is the highest bit
 
             value |= ~mask;
         }
@@ -5514,7 +5499,6 @@ class machine_rv32i : public machine {
         const int64_t limit{
             static_cast<int64_t>(uint64_t{1} << (dst_type.size_bits() - 1)),
         };
-        // note: -1 because the sign bit is the highest bit of the type
 
         return *constant < -limit or *constant >= limit;
     }

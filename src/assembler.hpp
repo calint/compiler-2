@@ -572,7 +572,6 @@ class assembler {
         -> std::optional<size_t> {
 
         for (size_t next{index + 1}; next < lines_.size(); ++next) {
-            // note: +1 because the search starts after 'index'
 
             const line& l{lines_.at(next)};
 
@@ -657,7 +656,6 @@ class assembler {
 
         // execution continues at the target anyway
         if (target_code == next_instruction(index + 1)) {
-            // note: +1 because the next instruction is after the branch
 
             remove(branch);
             ++optimizations_.jumps_to_next;
@@ -692,7 +690,6 @@ class assembler {
 
         // branching over the jump is the inverse branch to its target
         if (target_code != next_instruction(*jump_index + 1)) {
-            // note: +1 because the next instruction is after the jump
 
             return false;
         }

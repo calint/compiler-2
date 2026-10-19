@@ -216,7 +216,6 @@ class constant_arith final {
                size_bits <= std::numeric_limits<uint64_t>::digits);
 
         return static_cast<int64_t>(~uint64_t{} << (size_bits - 1));
-        // note: -1 because the sign bit is the highest bit
     }
 
     // the value a register of 'width_type' holds, sign extended
@@ -230,7 +229,6 @@ class constant_arith final {
         }
 
         const uint64_t sign_bit{uint64_t{1} << (bits - 1)};
-        // note: -1 because the sign bit is the highest bit
 
         const uint64_t low{
             static_cast<uint64_t>(value) & ((sign_bit << 1U) - 1U),

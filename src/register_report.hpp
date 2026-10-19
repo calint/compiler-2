@@ -338,7 +338,6 @@ class register_reporter final {
             }
 
             const size_t frame{std::min(allocated.frame, uses.size() - 1)};
-            // note: -1 is the index of the last frame
 
             uses.at(frame).registers.push_back(register_text(allocated));
 

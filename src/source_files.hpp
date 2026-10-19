@@ -58,7 +58,6 @@ class source_files final {
         });
 
         return files_.size() - 1;
-        // note: -1 because the file is the last one
     }
 
     [[nodiscard]] auto count() const -> size_t { return files_.size(); }

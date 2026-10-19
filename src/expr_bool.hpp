@@ -1239,7 +1239,6 @@ class expr_bool final : public statement {
         bool has_runtime_element{};
 
         const size_t last_index{bools_.size() - 1};
-        // note: -1 is the index of the last element
 
         for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
             const condition_result const_eval{

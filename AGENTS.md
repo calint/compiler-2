@@ -58,8 +58,10 @@
 - Marker: `todo:`.
 - Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: a `note:`
   line below naming offset and reason, e.g. `// note: +1 because the text
-  starts after the opening quote`. Multiline `note:` blocks get a blank line
-  above and below.
+  starts after the opening quote`. Idioms need none: the last index
+  (`size() - 1`), the next element (`i + 1`), the count of an enum
+  (`last + 1`), the sign bit (`bits - 1`), a low-bit mask (`(1 << n) - 1`).
+  Multiline `note:` blocks get a blank line above and below.
 
 ### Names
 

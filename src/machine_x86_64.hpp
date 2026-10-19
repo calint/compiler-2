@@ -783,7 +783,6 @@ class machine_x86_64 final : public machine {
         assembler_.string_data("panic: bounds at line ");
         assembler_.define_length("msg_panic_len", "msg_panic");
 
-        // the next handler may follow and must stay in the code section
         assembler_.switch_section(section::text);
     }
 
@@ -824,7 +823,6 @@ class machine_x86_64 final : public machine {
         assembler_.define_length("msg_frame_overflow_len",
                                  "msg_frame_overflow");
 
-        // the bounds handler may follow and must stay in the code section
         assembler_.switch_section(section::text);
     }
 
@@ -1973,7 +1971,6 @@ class machine_x86_64 final : public machine {
         assembler_.define_length(std::format("{}_len", message_label),
                                  message_label);
 
-        // the next handler may follow and must stay in the code section
         assembler_.switch_section(section::text);
     }
 

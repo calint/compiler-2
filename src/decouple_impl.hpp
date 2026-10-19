@@ -48,13 +48,10 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
-// definitions are intentionally not 'inline': single translation unit build
-// NOLINTBEGIN(misc-definitions-in-headers)
-
-// declared in 'decouple.hpp'
 // called from 'stmt_block' to solve circular dependencies with 'loop', 'if',
 // 'exit', 'read', 'write' and 'foo', null for any other keyword
-auto create_statement_in_stmt_block(toc& tc, tokenizer& tz, const token tk)
+inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
+                                           const token tk)
     -> std::unique_ptr<statement> {
 
     // note: no 'std::move' on 'tk' because it is trivially copyable
@@ -174,12 +171,12 @@ static auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     };
 }
 
-// declared in 'decouple.hpp'
 // called from 'stmt_block'
 // a call as in an expression, e.g. 'f(x)', 'point.at(1, 2)' or 'lst.add(x)',
 // otherwise an assignment, e.g. 'p1 = p2'
 // note: 'unary_ops' not allowed before destination identifier
-auto create_statement_of_identifier(toc& tc, tokenizer& tz, const token tk)
+inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
+                                           const token tk)
     -> std::unique_ptr<statement> {
 
     // a call statement has no destination to deduce a type argument from
@@ -207,7 +204,7 @@ auto create_statement_of_identifier(toc& tc, tokenizer& tz, const token tk)
 
 // called from 'expr_arith' to solve circular dependencies with function
 // calls
-auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
+inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     // note: no 'std::move' on 'tk' because it is trivially copyable
@@ -268,12 +265,13 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     return std::move(parsed.identifier);
 }
 
-// declared in 'expr_type.hpp'
-// note: constructor is implemented here (rather than in the header) because
-//       it needs the 'expr_any' definition, which would otherwise create a
-//       circular include between 'expr_type.hpp' and 'expr_any.hpp'
-expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
-                     const bool is_array_destination)
+//
+// the members of 'expr_type' that use 'expr_any', 'stmt_identifier' or
+// 'stmt_call'
+//
+
+inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
+                            const bool is_array_destination)
     : statement{tz.next_token()}, is_array_destination_{is_array_destination} {
 
     const tokenizer::nesting_scope nesting{tz};
@@ -316,9 +314,10 @@ expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     parse_fields(tc, tz, tp);
 }
 
-// declared in 'expr_type.hpp'
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
-auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void {
+inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
+    -> void {
+
     // e.g. obj.pos = {x, y}
     open_brace_tk_ = tz.expect_char_token(
         '{',
@@ -353,25 +352,21 @@ auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void {
     }
 }
 
-// declared in 'expr_type.hpp'
 // the special members need the complete 'stmt_identifier' and 'stmt_call'
-expr_type::expr_type() = default;
-expr_type::expr_type(expr_type&&) noexcept = default;
-auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
-expr_type::~expr_type() = default;
+inline expr_type::expr_type() = default;
+inline expr_type::expr_type(expr_type&&) noexcept = default;
+inline auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
+inline expr_type::~expr_type() = default;
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
+inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
     : statement{receiver->first_token()}, stmt_ident_{std::move(receiver)} {
 
     set_type(stmt_ident_->get_type());
 }
 
-// declared in 'expr_type.hpp'
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
 // 'o.pos = point.at(1, 2)'
-auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
+inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
     call_or_identifier parsed{
@@ -399,9 +394,7 @@ auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     }
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::assert_call_type(const type& tp) const -> void {
+inline auto expr_type::assert_call_type(const type& tp) const -> void {
     // a function returns one value, not an array
     if (is_array_destination_) {
         throw compiler_exception{
@@ -417,9 +410,7 @@ auto expr_type::assert_call_type(const type& tp) const -> void {
                            stmt_call_->get_type().name())};
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::source_to(std::ostream& os) const -> void {
+inline auto expr_type::source_to(std::ostream& os) const -> void {
     if (stmt_call_) {
         stmt_call_->source_to(os);
         return;
@@ -448,16 +439,12 @@ auto expr_type::source_to(std::ostream& os) const -> void {
     close_brace_tk_.source_to(os);
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::is_array_element() const -> bool {
+inline auto expr_type::is_array_element() const -> bool {
     return stmt_ident_ and stmt_ident_->is_array_element();
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::compile(toc& tc, const size_t indent,
-                        const destination& dst) const -> void {
+inline auto expr_type::compile(toc& tc, const size_t indent,
+                               const destination& dst) const -> void {
 
     if (stmt_call_) {
         zero_padding(tc, indent, dst.type_ref(), dst.operand());
@@ -470,11 +457,9 @@ auto expr_type::compile(toc& tc, const size_t indent,
     compile_assign(tc, indent, tp, dst, op);
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::assert_items_not_reading(const constructor_target& dst,
-                                         const size_t record_offset) const
-    -> void {
+inline auto
+expr_type::assert_items_not_reading(const constructor_target& dst,
+                                    const size_t record_offset) const -> void {
 
     for (const auto [expr, field] :
          std::views::zip(exprs_, get_type().fields())) {
@@ -495,14 +480,11 @@ auto expr_type::assert_items_not_reading(const constructor_target& dst,
     }
 }
 
-// declared in 'expr_type.hpp'
 // each element of an instance array field is an item of its own, a plain
 // instance field is the single element
-auto expr_type::assert_record_field_not_reading(const expr_any& src,
-                                                const type_field& field,
-                                                const constructor_target& dst,
-                                                const size_t field_offset)
-    -> void {
+inline auto expr_type::assert_record_field_not_reading(
+    const expr_any& src, const type_field& field, const constructor_target& dst,
+    const size_t field_offset) -> void {
 
     const size_t element_size_bytes{field.type().size_bytes()};
 
@@ -523,11 +505,10 @@ auto expr_type::assert_record_field_not_reading(const expr_any& src,
     }
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::compile_assign(toc& tc, const size_t indent,
-                               const type& dst_type, const destination& dst,
-                               operand& dst_op) const -> void {
+inline auto expr_type::compile_assign(toc& tc, const size_t indent,
+                                      const type& dst_type,
+                                      const destination& dst,
+                                      operand& dst_op) const -> void {
 
     if (stmt_call_) {
         compile_call_field(tc, indent, dst_type, dst, dst_op);
@@ -542,11 +523,11 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
     compile_field_list(tc, indent, dst_type, dst, dst_op);
 }
 
-// declared in 'expr_type.hpp'
 // e.g. 'f()' in '{f(), 3}' writes the field in place
-auto expr_type::compile_call_field(toc& tc, const size_t indent,
-                                   const type& dst_type, const destination& dst,
-                                   operand& dst_op) const -> void {
+inline auto expr_type::compile_call_field(toc& tc, const size_t indent,
+                                          const type& dst_type,
+                                          const destination& dst,
+                                          operand& dst_op) const -> void {
 
     const destination call_dst_info{
         dst.at_address(operand::mem(dst_op, dst_type)),
@@ -558,11 +539,12 @@ auto expr_type::compile_call_field(toc& tc, const size_t indent,
     dst_op.increment_offset(address_offset(dst_type.size_bytes()));
 }
 
-// declared in 'expr_type.hpp'
 // advances 'dst_op' past the field, an instance field does it in the recursion
-auto expr_type::compile_field(toc& tc, const size_t indent, const expr_any& src,
-                              const type_field& field, const destination& dst,
-                              operand& dst_op) const -> void {
+inline auto expr_type::compile_field(toc& tc, const size_t indent,
+                                     const expr_any& src,
+                                     const type_field& field,
+                                     const destination& dst,
+                                     operand& dst_op) const -> void {
 
     if (not field.type().is_builtin()) {
         compile_record_field(tc, indent, src, field, dst, dst_op);
@@ -574,12 +556,12 @@ auto expr_type::compile_field(toc& tc, const size_t indent, const expr_any& src,
     dst_op.increment_offset(address_offset(field.size_bytes));
 }
 
-// declared in 'expr_type.hpp'
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
 // and the padding
-auto expr_type::compile_field_list(toc& tc, const size_t indent,
-                                   const type& dst_type, const destination& dst,
-                                   operand& dst_op) const -> void {
+inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
+                                          const type& dst_type,
+                                          const destination& dst,
+                                          operand& dst_op) const -> void {
 
     // each field is written at 'dst_op', which advances past it
     const destination record{dst.at_address(dst_op)};
@@ -617,11 +599,10 @@ auto expr_type::compile_field_list(toc& tc, const size_t indent,
         dst_op);
 }
 
-// declared in 'expr_type.hpp'
 // e.g. 'pt1 = pt2'
-auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
-                                        const type& dst_type,
-                                        operand& dst_op) const -> void {
+inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
+                                               const type& dst_type,
+                                               operand& dst_op) const -> void {
 
     const ident_info src_info{tc.make_ident_info(*this)};
 
@@ -658,13 +639,10 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     x.free_scratch_registers(tok(), indent, allocated_registers);
 }
 
-// declared in 'expr_type.hpp'
 // the caller advances 'dst_op' past the field
-auto expr_type::write_builtin_field(toc& tc, const size_t indent,
-                                    const expr_any& src,
-                                    const type_field& field,
-                                    const destination& dst,
-                                    const operand& dst_op) const -> void {
+inline auto expr_type::write_builtin_field(
+    toc& tc, const size_t indent, const expr_any& src, const type_field& field,
+    const destination& dst, const operand& dst_op) const -> void {
 
     machine& x{tc.machine()};
 
@@ -709,13 +687,12 @@ auto expr_type::write_builtin_field(toc& tc, const size_t indent,
     compile_builtin_field(tc, indent, src, src_info.operand(), dst_operand);
 }
 
-// declared in 'expr_type.hpp'
 // unary ops on a memory field are a load, modify and store each on a
 // load/store machine, a scratch register can be shorter
-auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
-                                      const expr_any& src,
-                                      const operand& src_op, const operand& dst)
-    -> void {
+inline auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
+                                             const expr_any& src,
+                                             const operand& src_op,
+                                             const operand& dst) -> void {
 
     machine& x{tc.machine()};
 
@@ -747,13 +724,12 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
     });
 }
 
-// declared in 'expr_type.hpp'
 // an instance field, or each element of an instance array field in turn
-auto expr_type::compile_record_field(toc& tc, const size_t indent,
-                                     const expr_any& src,
-                                     const type_field& field,
-                                     const destination& dst, operand& dst_op)
-    -> void {
+inline auto expr_type::compile_record_field(toc& tc, const size_t indent,
+                                            const expr_any& src,
+                                            const type_field& field,
+                                            const destination& dst,
+                                            operand& dst_op) -> void {
 
     // the copy size comes from the source so it must match the field
     if (field.is_array and src.is_array_identifier()) {
@@ -781,10 +757,8 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
     dst_op.increment_offset(address_offset(zeroed_size_bytes));
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::visit_reads(const read_filter var,
-                            const read_visitor reader) const -> void {
+inline auto expr_type::visit_reads(const read_filter var,
+                                   const read_visitor reader) const -> void {
 
     // a copy or a call reads its source instead of the '{...}' items
     if (stmt_ident_) {
@@ -800,39 +774,30 @@ auto expr_type::visit_reads(const read_filter var,
     }
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::compile_lea(toc& tc, const size_t indent,
-                            const token& src_loc_tk,
-                            std::vector<operand>& allocated_registers,
-                            const lea_request& request) const -> operand {
+inline auto expr_type::compile_lea(toc& tc, const size_t indent,
+                                   const token& src_loc_tk,
+                                   std::vector<operand>& allocated_registers,
+                                   const lea_request& request) const
+    -> operand {
 
     return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
                                     request);
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::name_or_literal() const -> std::string_view {
+inline auto expr_type::name_or_literal() const -> std::string_view {
     // note: only a copy is asked for its variable, a '{...}' value is not
     assert(stmt_ident_);
 
     return stmt_ident_->name_or_literal();
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::accessed_path() const -> std::optional<access_path> {
+inline auto expr_type::accessed_path() const -> std::optional<access_path> {
     // note: only a copy has an accessed range
     assert(stmt_ident_);
 
     return stmt_ident_->accessed_path();
 }
 
-// declared in 'expr_type.hpp'
-// solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::is_indexed() const -> bool {
+inline auto expr_type::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
 }
-
-// NOLINTEND(misc-definitions-in-headers)
