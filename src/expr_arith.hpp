@@ -58,6 +58,11 @@ class expr_arith final : public expression {
     //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
     bool is_implied_subexpression_{};
 
+    // the first element is an enclosed list, e.g. the '(a + b)' of
+    // '(a + b) * c'; a list given its first element by the caller has two or
+    // more elements and keeps it false
+    bool is_first_enclosed_{};
+
     // an operation of the list being folded: an element, or merged constants
     // when 'element' is null
     struct step {
@@ -65,6 +70,12 @@ class expr_arith final : public expression {
         const statement* element{};
         std::optional<int64_t> value; // set when the step is a constant
         std::string folded_source;    // e.g. '* 3 * 2' for the comment
+    };
+
+    // an element of the list, 'is_enclosed' for a '(...)' list
+    struct parsed_element {
+        std::unique_ptr<statement> node;
+        bool is_enclosed{};
     };
 
     static constexpr uint8_t precedence_additive{1};
@@ -120,9 +131,13 @@ class expr_arith final : public expression {
         // a recursive call might have supplied the first element it already
         // parsed
         // e.g. the 'b' of 'b * c' in 'a + b * c'
-        exprs_.emplace_back(opts.first_expression
-                                ? std::move(opts.first_expression)
-                                : parse_element(tc, tz, in_args));
+        if (opts.first_expression) {
+            exprs_.emplace_back(std::move(opts.first_expression));
+        } else {
+            parsed_element first{parse_element(tc, tz, in_args)};
+            is_first_enclosed_ = first.is_enclosed;
+            exprs_.emplace_back(std::move(first.node));
+        }
 
         // set the type of this list same as first element
         // e.g. 'x + 1' has the type of the variable 'x'
@@ -185,7 +200,7 @@ class expr_arith final : public expression {
             ws_before_ops_.emplace_back(ws_before_op_tk);
             consume_peeked_operator(tz);
 
-            exprs_.emplace_back(parse_element(tc, tz, in_args));
+            exprs_.emplace_back(parse_element(tc, tz, in_args).node);
 
             // continue to next arithmetic op + element
         }
@@ -376,8 +391,6 @@ class expr_arith final : public expression {
         return exprs_.size() == 1 and exprs_.front()->is_array_element();
     }
 
-    [[nodiscard]] auto is_expr_arith() const -> bool override { return true; }
-
     [[nodiscard]] auto is_expression() const -> bool override {
         // if unary operators on the list then it will need to compile the
         // expression
@@ -496,7 +509,7 @@ class expr_arith final : public expression {
             return false;
         }
 
-        return not exprs_.front()->is_expr_arith();
+        return not is_first_enclosed_;
     }
 
     // the list type of a folded 'i8(-3)' is the default type of a constant
@@ -1539,7 +1552,7 @@ class expr_arith final : public expression {
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
     [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
                                             const bool in_args)
-        -> std::unique_ptr<statement> {
+        -> parsed_element {
 
         // read the unary ops before checking for open parenthesis
         unary_ops uo{tz};
@@ -1548,22 +1561,32 @@ class expr_arith final : public expression {
         if (const token open_paren_tk{tz.is_next_char_token('(')};
             not open_paren_tk.is_empty()) {
 
-            return std::make_unique<expr_arith>(
-                tc, tz,
-                options{
-                    .in_args{in_args},
-                    .uops{std::move(uo)},
-                    .open_paren_tk{open_paren_tk},
-                    .is_implied_subexpression{},
-                    .first_op_precedence{initial_precedence},
-                    .first_expression{},
-                });
+            std::unique_ptr<statement> enclosed{
+                std::make_unique<expr_arith>(
+                    tc, tz,
+                    options{
+                        .in_args{in_args},
+                        .uops{std::move(uo)},
+                        .open_paren_tk{open_paren_tk},
+                        .is_implied_subexpression{},
+                        .first_op_precedence{initial_precedence},
+                        .first_expression{},
+                    }),
+            };
+
+            return {
+                .node{std::move(enclosed)},
+                .is_enclosed{true},
+            };
         }
 
         // the element reads its own unary ops: '[-a] + b'
         uo.put_back(tz);
 
-        return create_statement_in_expr_arith(tc, tz);
+        return {
+            .node{create_statement_in_expr_arith(tc, tz)},
+            .is_enclosed{},
+        };
     }
 
     // the operator at the next character, not consumed

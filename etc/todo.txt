@@ -6,161 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[p] hard: design clarity: a reviewer follows the design without strain; the
-    steps below one at a time, each built, tested on x86_64 and rv32i-fpga,
-    linted and formatted, the mechanical ones leave every generated '.s' and
-    '.out' unchanged; go-ahead per step
-    => problem: the core records live in files named after include cycles
-       ('decouple.hpp', 'decouple_impl.hpp'); the two central records
-       ('ident_info', 'alias_info') are flat structs whose fields are valid
-       only for some kinds and that carry values as text; the passes (parse,
-       definite assignment, compile, dry runs, jump optimization) are written
-       down nowhere as a whole
-    => rejected: a parser that builds a tree before names are known, the
-       grammar needs them ('point{', 'f<', 'T.at', 'var x = i8'), a rewrite of
-       every statement without a change in behavior
-    => rejected: 'statement' as a 'std::variant' of node kinds now (item
-       below), revisit after step 8 when fewer virtuals remain
-    => rejected: splitting 'machine_rv32i.hpp' or 'toc.hpp' for size
-       (AGENTS.md), step 12 gives them a reading order instead
-    => 1. easy, doc: 'etc/docs/architecture.txt': the pipeline 'main' ->
-       'program' (parse each file, definite assignment, compile 'main', the
-       noinline bodies, the handlers, the data) -> 'machine' -> 'assembler'
-       (jump optimization, rv32i image); what 'toc' holds during the parse
-       and during the compile; inlining as aliases of parameter names; the
-       dry runs ('check_only', 'measure_only', 'emit_most_efficient') and the
-       rule that a statement compiled twice adds nothing twice; linked from
-       'README.md'
-       => done (2026-10-19): as planned
-    => 2. easy, mechanical: 'decouple.hpp' and 'decouple_impl.hpp' go:
-       'ident_info', 'var_info', 'lea_request', 'read_only_cause' and
-       'foo_array_info' to 'ident_info.hpp'; the statement factories and the
-       lookahead predicates ('is_array_literal', ...) to 'parse_dispatch.hpp'
-       with the definitions in 'parse_dispatch_impl.hpp'; the out-of-line
-       members of 'expr_type' to 'expr_type_impl.hpp'; 'unary_ops::compile'
-       and 'make_count_emitter' next to their users; 'main.cpp' includes the
-       '_impl' files, still one translation unit
-       => done (2026-10-19), changed: 'decouple.hpp' keeps only what breaks
-          a cycle (the forward declarations and the three statement
-          factories), 'decouple_impl.hpp' their definitions and the members
-          of 'expr_type'; the records to 'ident_info.hpp', the lookahead
-          predicates to 'parse_lookahead.hpp', 'make_count_emitter' to
-          'toc.hpp', 'unary_ops::compile' takes the machine and the overflow
-          options and is inline in 'unary_ops.hpp'; output unchanged
-    => 3. easy, mechanical, one concern per header: 'report_section' and
-       'report_renderer' from 'program.hpp' to 'report.hpp';
-       'assignment_analysis' to 'ub_assigned.hpp'; 'register_pool',
-       'register_trace', 'register_use_report' and 'register_reporter' from
-       'machine.hpp' to 'register_report.hpp' (a split by role, not size:
-       'machine.hpp' keeps the interface)
-       => done (2026-10-19): 'report.hpp' and 'assignment_analysis.hpp'
-          went back into 'program.hpp', their only user (rule: what one file
-          uses stays next to its use); 'register_pool'
-          and 'register_trace' are members
-          of 'machine' so they went to 'register_pool.hpp' before it, the
-          report texts to 'register_report.hpp' after it; the generated
-          output of every test is unchanged
-    => 4. easy, mechanical: the integer semantics of constants in one
-       'constant_arith.hpp': 'wrap_to_width', 'combine', 'apply_operation',
-       'apply_division', 'apply_shift', 'shift_constant', 'overflows_width'
-       ('expr_arith'), 'eval_constant' ('expr_bool'), 'to_width'
-       ('stmt_builtin_convert', the same as 'wrap_to_width'),
-       'fits_size_bytes' ('statement'), 'signed_minimum' ('operand.hpp');
-       'constant_parser' from 'toc.hpp' to 'constant_parser.hpp'
-       => done (2026-10-19): the class 'constant_arith' with these as
-          statics, 'to_width' became 'wrap_to_width'; output unchanged
-    => 5. discarded (2026-10-19): the names stay
-    => 5. easy, renames, names to agree on: 'expr_any' -> 'expr_value' (the
-       value for a destination of a known type: a scalar, a record or an
-       array initializer), 'expr_type' -> 'expr_record' (a '{...}', a copy or
-       a call that makes a user type value), 'expr_bool_op' ->
-       'expr_comparison'
-    => 6. medium, behavior: 'toc' knows its phase; the parse declares names
-       without comments and without the storage capacity checks, so the
-       comments that 'start_output' throws away are not made and
-       'parse_storage_unchecked' goes; the capacity is checked where the
-       declaration is compiled; risk: a program with several errors may
-       report another one first, review the '.out' diffs
-       => done (2026-10-19): 'toc::begin_compile', called by 'program::build';
-          'machine::start_output' asserts that nothing was emitted; no
-          '.out' changed, a global that overflows '--vars' is now reported
-          when it is compiled; the fixture of 'test-rv32i-address.cpp'
-          begins the compile
-    => 7. medium, behavior preserving: 'alias_info' becomes a binding of one
-       kind: a constant (value and type), a register (operand) or storage
-       (path, known address, element or not, 'storage_target');
-       'follow_alias' switches on the kind instead of parsing 'to' as a
-       number, 'has_lea' and 'bound_root' read the kind
-       => done (2026-10-19): 'bound_constant', 'bound_register' and
-          'bound_storage' in 'alias_info::binding'; a register keeps the name
-          its comment shows; the generated output of every test is unchanged
-    => 8. hard, behavior preserving: 'ident_info' has two roles, the
-       resolution of a name and the destination of 'compile', and callers
-       patch it between them ('use_operand', 'is_pointer = false',
-       'is_array = false', 'accessed_path', 'is_reference')
-       8.1 a 'destination' record (operand, type, root name, accessed path,
-           reference or not, array length of an unsized destination) made
-           from an 'ident_info' by one function
-       8.2 'statement::compile' and its callers take a 'destination'
-       8.3 'ident_info' keeps the resolution only, the fields of each kind
-           (constant, register, variable) in a part of their own
-       => done (2026-10-19): 8.1 and 8.2 as planned, 'destination' in
-          'ident_info.hpp' ('of_name', 'of_register', 'field', 'as_element',
-          'at_address', 'with_operand'); of 8.3 the destination members left
-          'ident_info' ('use_operand', 'is_reference', 'accessed_path',
-          'push', 'pop', 'increment_offset'), the parts per kind are not done;
-          output unchanged
-       => 8.3 done (2026-10-19): 'ident_info' is a class with a
-          'std::variant' of 'constant_part', 'register_part' and
-          'storage_part' (empty is 'std::monostate'), read through
-          accessors that give a kind without the field as empty, e.g.
-          'is_array()' of a constant is false; the name, the paths and the
-          token are private too; the resolver writes through 'storage()'
-          and 'set_src_loc_tk'; the unused 'offset' went (the test reads the
-          displacement of the operand); output unchanged
-    => 9. medium, behavior preserving: 'operand::imm' holds a number or a
-       symbol instead of text; the front end folds the unary ops of a
-       constant ('make_constant_operand') instead of prefixing '-' and '~'
-       that 'machine::immediate_bits' parses back; the frame size label is a
-       symbol immediate
-       => done (2026-10-19): also the data initializers, 'data_initializer'
-          and the unary op text of both assemblers went; the assembly shows
-          folded constants ('~2' is '-3'), the messages, exit codes and
-          images of every test are unchanged
-    => 10. medium, behavior preserving: one 'dry_run_scope' in 'toc' saves
-       and restores what 'measure_only' and 'machine::measure_code_size' now
-       save by hand, also when an error unwinds; its header lists that state
-       => done (2026-10-19): 'toc::dry_run_scope' and 'machine::measure_scope'
-    => 11. easy: 'toc::checks()' returns the 'check_options', which build the
-       'machine::*_check_options'; the 15 'is_*_check' and '*_options'
-       forwarders of 'toc' go
-       => done (2026-10-19): as planned, plus 'check_options::is_bounds';
-          the generated output of every test is unchanged
-    => 12. easy, comments: a reading order header like that of
-       'stmt_call.hpp' for 'toc.hpp' (the tables, then the facade),
-       'statement' (which classes override which virtual), 'machine_x86_64'
-       and 'machine_rv32i' (registers, arithmetic, helper routines, bulk
-       memory, checks, handlers, system calls)
-       => done (2026-10-19): as planned
-    => 13. pending, fewer virtuals of 'statement' (asked to come back to it)
-       13.1 easy: 'compile_data' and 'dat_size_bytes' leave 'statement':
-            'data_table' keeps 'const stmt_def_dat*' (a forward declaration
-            in 'toc.hpp'), 'stmt_def_dat' passes its size to 'add_dat'
-       13.2 easy: 'is_expr_arith' goes, 'expr_arith::parse_element' records
-            that the first element is a parenthesized list
-       13.3 medium: one virtual 'as_identifier' returns the 'stmt_identifier'
-            a node is or holds, the callers of 'compile_lea',
-            'compile_address', 'accessed_path', 'is_indexed',
-            'is_array_element', 'name_token' and 'identifier' use it and the
-            forwarders of 'expr_any', 'expr_arith' and 'expr_type' go; first
-            study 'stmt_builtin_convert', which shows a folded literal as an
-            identifier without a 'stmt_identifier'
-       13.4 waiting: the 'expr_any' visitor as one accessor 'element(i)'
-            returning the element as a 'statement'
-    => related open items join the step that touches their code: the
-       'expr_any' visitor (5), the 24 virtuals of 'statement' (after 8),
-       'rename compiler_exception' (5), 'lea_path may be unnecessary' (8)
-       => 'lea_path' done (2026-10-19), see 'etc/todo-resolved.txt'
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,
@@ -226,13 +71,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     chain (8-9), 'fold_indexed_address' (8), 'add_generic_func' (8): group
     what travels together into a struct (several files, plan and go-ahead
     first)
-[ ] hard: questionable: 'statement' has 24 virtuals whose defaults are
+[ ] hard: questionable: 'statement' has 20 virtuals whose defaults are
     'std::unreachable()' plus 'is_*' tests; a closed set of node kinds as
     'std::variant' with visitors would drop the defaults but costs
     indirection, compile time and a visitor change per node kind; every
     statement also parses, reproduces source, compiles and takes part in the
     flow analysis (four concerns in one class); only if the next features keep
     adding virtuals
+    => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
+       'std::variant' and rejected it, see 'etc/todo-resolved.txt'
 [ ] medium: low priority: a constant operand that does not fit the type of
     its expression wraps silently ('let f = 4294967296 + 5' is 5 on rv32i,
     even with '--checks=overflow'; '-9223372036854775807 - 1' is 0 there)

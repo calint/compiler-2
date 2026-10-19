@@ -59,6 +59,7 @@
 //   'make_count_emitter' compiles the count of a bulk operation
 //
 
+class stmt_def_dat;
 class stmt_def_func;
 
 struct func_info {
@@ -781,9 +782,16 @@ class function_table final {
     }
 };
 
+// what the data of a 'dat' takes, from its declaration
+struct dat_extent {
+    token src_loc_tk;
+    size_t alignment{};
+    size_t size_bytes{};
+};
+
 // the 'dat' declarations and the read-only constants of the program
 class data_table final {
-    std::vector<const statement*> statements_;
+    std::vector<const stmt_def_dat*> dats_;
     std::vector<machine::string_constant> constants_;
     size_t total_size_bytes_{};
     // padding after the dats so that the variables are aligned
@@ -809,16 +817,16 @@ class data_table final {
     }
 
     // 'data_alignment' is the alignment of the data section of the machine
-    auto add_dat(const statement* const stmt, const size_t data_alignment)
-        -> void {
+    auto add_dat(const stmt_def_dat& dat, const dat_extent& extent,
+                 const size_t data_alignment) -> void {
 
-        statements_.emplace_back(stmt);
+        dats_.emplace_back(&dat);
 
         // same padding as 'add_var' places before the dat
         total_size_bytes_ = add_storage_size(
-            stmt->tok(),
-            align_storage_size(total_size_bytes_, stmt->get_type().alignment()),
-            stmt->dat_size_bytes());
+            extent.src_loc_tk,
+            align_storage_size(total_size_bytes_, extent.alignment),
+            extent.size_bytes);
 
         entry_gap_ = (data_alignment - (total_size_bytes_ % data_alignment)) %
                      data_alignment;
@@ -834,17 +842,15 @@ class data_table final {
         return constants_;
     }
 
+    [[nodiscard]] auto dats() const -> const std::vector<const stmt_def_dat*>& {
+        return dats_;
+    }
+
     [[nodiscard]] auto entry_gap() const -> size_t { return entry_gap_; }
 
     // drops the constants added after the first 'count'
     auto resize_constants(const size_t count) -> void {
         constants_.resize(count);
-    }
-
-    [[nodiscard]] auto statements() const
-        -> const std::vector<const statement*>& {
-
-        return statements_;
     }
 
     [[nodiscard]] auto total_size_bytes() const -> size_t {
@@ -2223,18 +2229,18 @@ class toc final {
                                        });
     }
 
-    auto add_dat(const statement* const stmt) -> void {
+    auto add_dat(const stmt_def_dat& dat, const dat_extent& extent) -> void {
         if (scopes_.frames().size() != 1) {
-            throw compiler_exception{stmt->tok(),
+            throw compiler_exception{extent.src_loc_tk,
                                      "'dat' can only be added in global scope"};
         }
 
         if (scopes_.front().has_non_dat_var_been_added()) {
             throw compiler_exception{
-                stmt->tok(), "'dat' can only be added before any 'var'"};
+                extent.src_loc_tk, "'dat' can only be added before any 'var'"};
         }
 
-        data_.add_dat(stmt, machine_.get().data_alignment());
+        data_.add_dat(dat, extent, machine_.get().data_alignment());
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
@@ -2494,9 +2500,9 @@ class toc final {
     }
 
     [[nodiscard]] auto get_data() const
-        -> const std::vector<const statement*>& {
+        -> const std::vector<const stmt_def_dat*>& {
 
-        return data_.statements();
+        return data_.dats();
     }
 
     [[nodiscard]] auto get_func_defs() const

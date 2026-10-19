@@ -238,7 +238,6 @@ class one_line_source final {
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and
 //                  'expr_arith', 'expr_any' and 'expr_type' that hold one
-//   a 'dat'        'compile_data', 'dat_size_bytes': 'stmt_def_dat'
 class statement {
     token token_;
     unary_ops uops_;
@@ -302,20 +301,12 @@ class statement {
         std::unreachable();
     }
 
-    virtual auto compile_data([[maybe_unused]] toc& tc) const -> void {
-        std::unreachable();
-    }
-
     [[nodiscard]] virtual auto
     compile_lea([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                 [[maybe_unused]] const token& src_loc_tk,
                 [[maybe_unused]] std::vector<operand>& allocated_registers,
                 [[maybe_unused]] const lea_request& request) const -> operand {
 
-        std::unreachable();
-    }
-
-    [[nodiscard]] virtual auto dat_size_bytes() const -> size_t {
         std::unreachable();
     }
 
@@ -342,8 +333,6 @@ class statement {
     }
 
     // lets callers identify 'expr_arith' without rtti
-    [[nodiscard]] virtual auto is_expr_arith() const -> bool { return false; }
-
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
     [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }

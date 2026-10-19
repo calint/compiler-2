@@ -452,7 +452,7 @@ class program final {
 
         // zero padding places each dat at the offset 'toc::add_var' gave it
         size_t dat_offset{};
-        for (const statement* s : tc_.get_data()) {
+        for (const stmt_def_dat* s : tc_.get_data()) {
             const size_t padding_bytes{
                 align_storage_size(dat_offset, s->get_type().alignment()) -
                     dat_offset,
@@ -466,7 +466,7 @@ class program final {
             s->compile_data(tc_);
 
             dat_offset = add_storage_size(s->tok(), dat_offset + padding_bytes,
-                                          s->dat_size_bytes());
+                                          s->size_bytes());
         }
 
         x.reserve_variables(alignment, tc_.vars_capacity_bytes());

@@ -74,7 +74,11 @@ class stmt_def_dat final : public statement {
         // during subsequent parsing
         tc.add_var(name_tk_, 0, make_var_info(), var_kind::dat);
 
-        tc.add_dat(this);
+        tc.add_dat(*this, {
+                              .src_loc_tk{tok()},
+                              .alignment{get_type().alignment()},
+                              .size_bytes{size_bytes()},
+                          });
     }
 
     stmt_def_dat() = default;
@@ -118,14 +122,19 @@ class stmt_def_dat final : public statement {
         tc.add_var(name_tk_, indent, make_var_info(), var_kind::dat);
     }
 
-    auto compile_data(toc& tc) const -> void override {
+    //
+    // class methods
+    //
+
+    // the initial values, in the data section
+    auto compile_data(toc& tc) const -> void {
         machine& x{tc.machine()};
 
         x.comment(name_tk_, 0, name_tk_.text());
         compile_data_rec(tc, get_type(), elroot_);
     }
 
-    [[nodiscard]] auto dat_size_bytes() const -> size_t override {
+    [[nodiscard]] auto size_bytes() const -> size_t {
         return multiply_storage_size(name_tk_, get_type().size_bytes(),
                                      elroot_.is_array ? elroot_.array_count
                                                       : 1);
