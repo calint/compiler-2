@@ -71,7 +71,6 @@ main:
 ;   [prog.baz:189:5] assert(answer == 0)
 ;   [prog.baz:189:12] allocate scratch register -> r15
 ;   [prog.baz:189:12] ? answer == 0
-;   [prog.baz:189:12] ? answer == 0
     cmp.189.12:
     cmp qword [rbp + 384], 0
     sete r15b
@@ -80,7 +79,6 @@ main:
     func.assert.189.5:
 ;       [prog.baz:189:5] alias ok -> r15b
         if.38.27.189.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.189.5:
         cmp r15b, 0
@@ -102,7 +100,6 @@ main:
 ;   [prog.baz:192:5] assert(answer == -1)
 ;   [prog.baz:192:12] allocate scratch register -> r15
 ;   [prog.baz:192:12] ? answer == -1
-;   [prog.baz:192:12] ? answer == -1
     cmp.192.12:
     cmp qword [rbp + 384], -1
     sete r15b
@@ -111,7 +108,6 @@ main:
     func.assert.192.5:
 ;       [prog.baz:192:5] alias ok -> r15b
         if.38.27.192.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.192.5:
         cmp r15b, 0
@@ -134,7 +130,6 @@ main:
         func.assert.198.9:
 ;           [prog.baz:198:9] alias ok -> 1
             if.38.27.198.9:
-;           [prog.baz:38:27] ? not ok
 ;           [prog.baz:38:27] ? shorthand: not ok
             cmp.38.27.198.9:
 ;           [prog.baz:38:31] const eval to false
@@ -145,7 +140,6 @@ main:
     func.assert.201.5:
 ;       [prog.baz:201:5] alias ok -> 1
         if.38.27.201.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.201.5:
 ;       [prog.baz:38:31] const eval to false
@@ -168,7 +162,6 @@ main:
     func.assert.203.5:
 ;       [prog.baz:203:5] alias ok -> r15b
         if.38.27.203.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.203.5:
         cmp r15b, 0
@@ -201,7 +194,6 @@ main:
     func.assert.204.5:
 ;       [prog.baz:204:5] alias ok -> r15b
         if.38.27.204.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.204.5:
         cmp r15b, 0
@@ -225,7 +217,6 @@ main:
 ;   [prog.baz:207:5] assert(a & 3 == 3)
 ;   [prog.baz:207:12] allocate scratch register -> r15
 ;   [prog.baz:207:12] ? a & 3 == 3
-;   [prog.baz:207:12] ? a & 3 == 3
     cmp.207.12:
 ;   [prog.baz:207:12] allocate scratch register -> r14
 ;       [prog.baz:207:12] a
@@ -241,7 +232,6 @@ main:
     func.assert.207.5:
 ;       [prog.baz:207:5] alias ok -> r15b
         if.38.27.207.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.207.5:
         cmp r15b, 0
@@ -260,7 +250,6 @@ main:
 ;   [prog.baz:208:5] assert(a | 8 == 15)
 ;   [prog.baz:208:12] allocate scratch register -> r15
 ;   [prog.baz:208:12] ? a | 8 == 15
-;   [prog.baz:208:12] ? a | 8 == 15
     cmp.208.12:
 ;   [prog.baz:208:12] allocate scratch register -> r14
 ;       [prog.baz:208:12] a
@@ -276,7 +265,6 @@ main:
     func.assert.208.5:
 ;       [prog.baz:208:5] alias ok -> r15b
         if.38.27.208.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.208.5:
         cmp r15b, 0
@@ -295,7 +283,6 @@ main:
 ;   [prog.baz:209:5] assert(a ^ 1 == 6)
 ;   [prog.baz:209:12] allocate scratch register -> r15
 ;   [prog.baz:209:12] ? a ^ 1 == 6
-;   [prog.baz:209:12] ? a ^ 1 == 6
     cmp.209.12:
 ;   [prog.baz:209:12] allocate scratch register -> r14
 ;       [prog.baz:209:12] a
@@ -311,7 +298,6 @@ main:
     func.assert.209.5:
 ;       [prog.baz:209:5] alias ok -> r15b
         if.38.27.209.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.209.5:
         cmp r15b, 0
@@ -330,7 +316,6 @@ main:
 ;   [prog.baz:210:5] assert(a << 2 == 28)
 ;   [prog.baz:210:12] allocate scratch register -> r15
 ;   [prog.baz:210:12] ? a << 2 == 28
-;   [prog.baz:210:12] ? a << 2 == 28
     cmp.210.12:
 ;   [prog.baz:210:12] allocate scratch register -> r14
 ;       [prog.baz:210:12] a
@@ -346,7 +331,6 @@ main:
     func.assert.210.5:
 ;       [prog.baz:210:5] alias ok -> r15b
         if.38.27.210.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.210.5:
         cmp r15b, 0
@@ -365,7 +349,6 @@ main:
 ;   [prog.baz:211:5] assert(-a >> 1 == -4)
 ;   [prog.baz:211:12] allocate scratch register -> r15
 ;   [prog.baz:211:12] ? -a >> 1 == -4
-;   [prog.baz:211:12] ? -a >> 1 == -4
     cmp.211.12:
 ;   [prog.baz:211:12] allocate scratch register -> r14
 ;       [prog.baz:211:13] -a
@@ -383,7 +366,6 @@ main:
     func.assert.211.5:
 ;       [prog.baz:211:5] alias ok -> r15b
         if.38.27.211.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.211.5:
         cmp r15b, 0
@@ -401,7 +383,6 @@ main:
     func.assert.211.5.end:
 ;   [prog.baz:214:5] assert(a + a << 1 == 21)
 ;   [prog.baz:214:12] allocate scratch register -> r15
-;   [prog.baz:214:12] ? a + a << 1 == 21
 ;   [prog.baz:214:12] ? a + a << 1 == 21
     cmp.214.12:
 ;   [prog.baz:214:12] allocate scratch register -> r14
@@ -426,7 +407,6 @@ main:
     func.assert.214.5:
 ;       [prog.baz:214:5] alias ok -> r15b
         if.38.27.214.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.214.5:
         cmp r15b, 0
@@ -444,7 +424,6 @@ main:
     func.assert.214.5.end:
 ;   [prog.baz:215:5] assert((a + a) << 1 == 28)
 ;   [prog.baz:215:12] allocate scratch register -> r15
-;   [prog.baz:215:12] ? (a + a) << 1 == 28
 ;   [prog.baz:215:12] ? (a + a) << 1 == 28
     cmp.215.12:
 ;   [prog.baz:215:12] allocate scratch register -> r14
@@ -467,7 +446,6 @@ main:
     func.assert.215.5:
 ;       [prog.baz:215:5] alias ok -> r15b
         if.38.27.215.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.215.5:
         cmp r15b, 0
@@ -507,7 +485,6 @@ main:
     func.assert.220.5:
 ;       [prog.baz:220:5] alias ok -> r15b
         if.38.27.220.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.220.5:
         cmp r15b, 0
@@ -530,8 +507,8 @@ main:
 ;   [prog.baz:224:5] small = i8(small + small)
 ;   [prog.baz:224:13] small = i8(small + small)
 ;   [prog.baz:224:13] = expression
-;   [prog.baz:224:13] instructions without scratch register 3, with 3
-;   [prog.baz:224:16] instructions without scratch register 3, with 4
+;   [prog.baz:224:13] smaller of two versions of 3 and 3 instructions
+;   [prog.baz:224:16] smaller of two versions of 3 and 4 instructions
 ;   [prog.baz:224:16] allocate scratch register -> r15
 ;   [prog.baz:224:16] small
     mov r15b, byte [rbp + 400]
@@ -543,7 +520,6 @@ main:
 ;   [prog.baz:225:5] assert(small == -56)
 ;   [prog.baz:225:12] allocate scratch register -> r15
 ;   [prog.baz:225:12] ? small == -56
-;   [prog.baz:225:12] ? small == -56
     cmp.225.12:
     cmp byte [rbp + 400], -56
     sete r15b
@@ -552,7 +528,6 @@ main:
     func.assert.225.5:
 ;       [prog.baz:225:5] alias ok -> r15b
         if.38.27.225.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.225.5:
         cmp r15b, 0
@@ -584,7 +559,6 @@ main:
 ;   [prog.baz:229:5] assert(wide == -56)
 ;   [prog.baz:229:12] allocate scratch register -> r15
 ;   [prog.baz:229:12] ? wide == -56
-;   [prog.baz:229:12] ? wide == -56
     cmp.229.12:
     cmp qword [rbp + 408], -56
     sete r15b
@@ -593,7 +567,6 @@ main:
     func.assert.229.5:
 ;       [prog.baz:229:5] alias ok -> r15b
         if.38.27.229.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.229.5:
         cmp r15b, 0
@@ -617,7 +590,6 @@ main:
 ;   [prog.baz:237:5] assert(letter == 'A')
 ;   [prog.baz:237:12] allocate scratch register -> r15
 ;   [prog.baz:237:12] ? letter == 'A'
-;   [prog.baz:237:12] ? letter == 'A'
     cmp.237.12:
     cmp qword [rbp + 416], 65
     sete r15b
@@ -626,7 +598,6 @@ main:
     func.assert.237.5:
 ;       [prog.baz:237:5] alias ok -> r15b
         if.38.27.237.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.237.5:
         cmp r15b, 0
@@ -706,7 +677,6 @@ main:
 ;   [prog.baz:245:5] assert(arr[1] == 2)
 ;   [prog.baz:245:12] allocate scratch register -> r15
 ;   [prog.baz:245:12] ? arr[1] == 2
-;   [prog.baz:245:12] ? arr[1] == 2
     cmp.245.12:
     cmp dword [rbp + 428], 2
     sete r15b
@@ -715,7 +685,6 @@ main:
     func.assert.245.5:
 ;       [prog.baz:245:5] alias ok -> r15b
         if.38.27.245.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.245.5:
         cmp r15b, 0
@@ -734,7 +703,6 @@ main:
 ;   [prog.baz:246:5] assert(arr[2] == 2)
 ;   [prog.baz:246:12] allocate scratch register -> r15
 ;   [prog.baz:246:12] ? arr[2] == 2
-;   [prog.baz:246:12] ? arr[2] == 2
     cmp.246.12:
     cmp dword [rbp + 432], 2
     sete r15b
@@ -743,7 +711,6 @@ main:
     func.assert.246.5:
 ;       [prog.baz:246:5] alias ok -> r15b
         if.38.27.246.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.246.5:
         cmp r15b, 0
@@ -815,7 +782,6 @@ main:
 ;   [prog.baz:249:5] assert(arr[0] == 2)
 ;   [prog.baz:249:12] allocate scratch register -> r15
 ;   [prog.baz:249:12] ? arr[0] == 2
-;   [prog.baz:249:12] ? arr[0] == 2
     cmp.249.12:
     cmp dword [rbp + 424], 2
     sete r15b
@@ -824,7 +790,6 @@ main:
     func.assert.249.5:
 ;       [prog.baz:249:5] alias ok -> r15b
         if.38.27.249.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.249.5:
         cmp r15b, 0
@@ -894,7 +859,6 @@ main:
 ;   [prog.baz:254:5] var eq = arrays_equal(arr[1], arr1[1], 3)
 ;   [prog.baz:254:9] eq: bool (1 B @ [rbp + 480])
 ;   [prog.baz:254:9] eq = arrays_equal(arr[1], arr1[1], 3)
-;   [prog.baz:254:14] ? arrays_equal(arr[1], arr1[1], 3)
 ;   [prog.baz:254:14] ? shorthand: arrays_equal(arr[1], arr1[1], 3)
     cmp.254.14:
 ;       [prog.baz:254:14] arrays_equal(arr[1], arr1[1], 3)
@@ -953,7 +917,6 @@ main:
     bool.254.14.end:
 ;   [prog.baz:257:5] assert(eq)
 ;   [prog.baz:257:12] allocate scratch register -> r15
-;   [prog.baz:257:12] ? eq
 ;   [prog.baz:257:12] ? shorthand: eq
     cmp.257.12:
     mov r15b, byte [rbp + 480]
@@ -962,7 +925,6 @@ main:
     func.assert.257.5:
 ;       [prog.baz:257:5] alias ok -> r15b
         if.38.27.257.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.257.5:
         cmp r15b, 0
@@ -979,12 +941,11 @@ main:
 ;       [prog.baz:257:5] free scratch register r15
     func.assert.257.5.end:
 ;   [prog.baz:259:5] arr1[2] = -1
-;   [prog.baz:259:15] instructions without scratch register 1, with 2
+;   [prog.baz:259:15] smaller of two versions of 1 and 2 instructions
 ;   [prog.baz:259:16] -1
     mov dword [rbp + 456], -1
 ;   [prog.baz:260:5] assert(not arrays_equal(arr, arr1, 4))
 ;   [prog.baz:260:12] allocate scratch register -> r15
-;   [prog.baz:260:12] ? not arrays_equal(arr, arr1, 4)
 ;   [prog.baz:260:12] ? shorthand: not arrays_equal(arr, arr1, 4)
     cmp.260.12:
 ;       [prog.baz:260:16] arrays_equal(arr, arr1, 4)
@@ -1024,7 +985,6 @@ main:
     func.assert.260.5:
 ;       [prog.baz:260:5] alias ok -> r15b
         if.38.27.260.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.260.5:
         cmp r15b, 0
@@ -1053,7 +1013,6 @@ main:
 ;   [prog.baz:263:5] assert(arr == arr4)
 ;   [prog.baz:263:12] allocate scratch register -> r15
 ;   [prog.baz:263:12] ? arr == arr4
-;   [prog.baz:263:12] ? arr == arr4
     cmp.263.12:
 ;       [prog.baz:263:12] allocate named register rsi
 ;       [prog.baz:263:12] allocate named register rdi
@@ -1076,7 +1035,6 @@ main:
     func.assert.263.5:
 ;       [prog.baz:263:5] alias ok -> r15b
         if.38.27.263.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.263.5:
         cmp r15b, 0
@@ -1101,7 +1059,7 @@ main:
 ;   [prog.baz:271:16] tmp = ~inv(arr[ix - 1])
 ;   [prog.baz:271:16] = expression
 ;   [prog.baz:271:16] ~inv(arr[ix - 1])
-;   [prog.baz:271:16] instructions without scratch register 11, with 11
+;   [prog.baz:271:16] smaller of two versions of 9 and 9 instructions
 ;   [prog.baz:271:24] allocate scratch register -> r15
 ;   [prog.baz:271:24] set array index
 ;   [prog.baz:271:24] ix
@@ -1122,7 +1080,7 @@ main:
 ;       [prog.baz:271:16] alias res -> tmp
 ;       [prog.baz:271:16] alias i -> arr (lea: rbp + r15 * 4 + 424)
 ;       [prog.baz:73:5] res = ~i
-;       [prog.baz:73:11] instructions without scratch register 3, with 3
+;       [prog.baz:73:11] smaller of two versions of 3 and 3 instructions
 ;       [prog.baz:73:12] ~i
 ;       [prog.baz:73:12] allocate scratch register -> r14
         mov r14d, dword [rbp + r15 * 4 + 424]
@@ -1153,7 +1111,6 @@ main:
 ;   [prog.baz:273:5] assert(arr[ix] == 2)
 ;   [prog.baz:273:12] allocate scratch register -> r15
 ;   [prog.baz:273:12] ? arr[ix] == 2
-;   [prog.baz:273:12] ? arr[ix] == 2
     cmp.273.12:
 ;   [prog.baz:273:16] allocate scratch register -> r14
 ;   [prog.baz:273:16] set array index
@@ -1174,7 +1131,6 @@ main:
     func.assert.273.5:
 ;       [prog.baz:273:5] alias ok -> r15b
         if.38.27.273.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.273.5:
         cmp r15b, 0
@@ -1201,7 +1157,6 @@ main:
 ;   [prog.baz:276:5] assert(arr[1] == 0xfe)
 ;   [prog.baz:276:12] allocate scratch register -> r15
 ;   [prog.baz:276:12] ? arr[1] == 0xfe
-;   [prog.baz:276:12] ? arr[1] == 0xfe
     cmp.276.12:
     cmp dword [rbp + 428], 254
     sete r15b
@@ -1210,7 +1165,6 @@ main:
     func.assert.276.5:
 ;       [prog.baz:276:5] alias ok -> r15b
         if.38.27.276.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.276.5:
         cmp r15b, 0
@@ -1244,7 +1198,7 @@ main:
     mov r14, 0
     foo.279.5:
 ;       [prog.baz:280:9] e = e + i + n
-;       [prog.baz:280:13] instructions without scratch register 4, with 6
+;       [prog.baz:280:13] smaller of two versions of 4 and 6 instructions
 ;       [prog.baz:280:13] e
 ;       [prog.baz:280:17] e + i
 ;       [prog.baz:280:17] src: operand
@@ -1265,7 +1219,6 @@ main:
 ;   [prog.baz:282:5] assert(arr3[0] == 3 + 0 + 2)
 ;   [prog.baz:282:12] allocate scratch register -> r15
 ;   [prog.baz:282:12] ? arr3[0] == 3 + 0 + 2
-;   [prog.baz:282:12] ? arr3[0] == 3 + 0 + 2
     cmp.282.12:
 ;   [prog.baz:282:23] src: folded constant '3 + 0 + 2'
     cmp qword [rbp + 504], 5
@@ -1275,7 +1228,6 @@ main:
     func.assert.282.5:
 ;       [prog.baz:282:5] alias ok -> r15b
         if.38.27.282.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.282.5:
         cmp r15b, 0
@@ -1294,7 +1246,6 @@ main:
 ;   [prog.baz:283:5] assert(arr3[1] == 5 + 1 + 2)
 ;   [prog.baz:283:12] allocate scratch register -> r15
 ;   [prog.baz:283:12] ? arr3[1] == 5 + 1 + 2
-;   [prog.baz:283:12] ? arr3[1] == 5 + 1 + 2
     cmp.283.12:
 ;   [prog.baz:283:23] src: folded constant '5 + 1 + 2'
     cmp qword [rbp + 512], 8
@@ -1304,7 +1255,6 @@ main:
     func.assert.283.5:
 ;       [prog.baz:283:5] alias ok -> r15b
         if.38.27.283.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.283.5:
         cmp r15b, 0
@@ -1341,7 +1291,6 @@ main:
 ;   [prog.baz:294:5] assert(p.x == 2)
 ;   [prog.baz:294:12] allocate scratch register -> r15
 ;   [prog.baz:294:12] ? p.x == 2
-;   [prog.baz:294:12] ? p.x == 2
     cmp.294.12:
     cmp qword [rbp + 520], 2
     sete r15b
@@ -1350,7 +1299,6 @@ main:
     func.assert.294.5:
 ;       [prog.baz:294:5] alias ok -> r15b
         if.38.27.294.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.294.5:
         cmp r15b, 0
@@ -1369,7 +1317,6 @@ main:
 ;   [prog.baz:295:5] assert(p.y == 0xb)
 ;   [prog.baz:295:12] allocate scratch register -> r15
 ;   [prog.baz:295:12] ? p.y == 0xb
-;   [prog.baz:295:12] ? p.y == 0xb
     cmp.295.12:
     cmp qword [rbp + 528], 11
     sete r15b
@@ -1378,7 +1325,6 @@ main:
     func.assert.295.5:
 ;       [prog.baz:295:5] alias ok -> r15b
         if.38.27.295.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.295.5:
         cmp r15b, 0
@@ -1407,7 +1353,6 @@ main:
 ;   [prog.baz:300:5] assert(p == q)
 ;   [prog.baz:300:12] allocate scratch register -> r15
 ;   [prog.baz:300:12] ? p == q
-;   [prog.baz:300:12] ? p == q
     cmp.300.12:
 ;       [prog.baz:300:12] allocate named register rsi
 ;       [prog.baz:300:12] allocate named register rdi
@@ -1430,7 +1375,6 @@ main:
     func.assert.300.5:
 ;       [prog.baz:300:5] alias ok -> r15b
         if.38.27.300.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.300.5:
         cmp r15b, 0
@@ -1451,7 +1395,6 @@ main:
     mov qword [rbp + 536], 3
 ;   [prog.baz:305:5] assert(p != q)
 ;   [prog.baz:305:12] allocate scratch register -> r15
-;   [prog.baz:305:12] ? p != q
 ;   [prog.baz:305:12] ? p != q
     cmp.305.12:
 ;       [prog.baz:305:12] allocate named register rsi
@@ -1475,7 +1418,6 @@ main:
     func.assert.305.5:
 ;       [prog.baz:305:5] alias ok -> r15b
         if.38.27.305.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.305.5:
         cmp r15b, 0
@@ -1502,7 +1444,6 @@ main:
 ;       [prog.baz:308:5] alias arg -> i
         if.60.8.308.5:
 ;       [prog.baz:60:8] ? arg == 0
-;       [prog.baz:60:8] ? arg == 0
         cmp.60.8.308.5:
         cmp qword [rbp + 552], 0
         je func.bar.308.5.end
@@ -1516,7 +1457,6 @@ main:
 ;   [prog.baz:309:5] assert(i == 0)
 ;   [prog.baz:309:12] allocate scratch register -> r15
 ;   [prog.baz:309:12] ? i == 0
-;   [prog.baz:309:12] ? i == 0
     cmp.309.12:
     cmp qword [rbp + 552], 0
     sete r15b
@@ -1525,7 +1465,6 @@ main:
     func.assert.309.5:
 ;       [prog.baz:309:5] alias ok -> r15b
         if.38.27.309.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.309.5:
         cmp r15b, 0
@@ -1550,7 +1489,6 @@ main:
 ;       [prog.baz:312:5] alias arg -> i
         if.60.8.312.5:
 ;       [prog.baz:60:8] ? arg == 0
-;       [prog.baz:60:8] ? arg == 0
         cmp.60.8.312.5:
         cmp qword [rbp + 552], 0
         je func.bar.312.5.end
@@ -1564,7 +1502,6 @@ main:
 ;   [prog.baz:313:5] assert(i == 0xff)
 ;   [prog.baz:313:12] allocate scratch register -> r15
 ;   [prog.baz:313:12] ? i == 0xff
-;   [prog.baz:313:12] ? i == 0xff
     cmp.313.12:
     cmp qword [rbp + 552], 255
     sete r15b
@@ -1573,7 +1510,6 @@ main:
     func.assert.313.5:
 ;       [prog.baz:313:5] alias ok -> r15b
         if.38.27.313.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.313.5:
         cmp r15b, 0
@@ -1605,7 +1541,7 @@ main:
 ;       [prog.baz:316:13] alias res -> k
 ;       [prog.baz:316:13] alias arg -> j
 ;       [prog.baz:67:5] res = arg * 2
-;       [prog.baz:67:11] instructions without scratch register 6, with 4
+;       [prog.baz:67:11] smaller of two versions of 6 and 4 instructions
 ;       [prog.baz:67:11] allocate scratch register -> r15
 ;       [prog.baz:67:11] arg
         mov r15, qword [rbp + 560]
@@ -1619,7 +1555,6 @@ main:
 ;   [prog.baz:317:5] assert(k == 2)
 ;   [prog.baz:317:12] allocate scratch register -> r15
 ;   [prog.baz:317:12] ? k == 2
-;   [prog.baz:317:12] ? k == 2
     cmp.317.12:
     cmp qword [rbp + 568], 2
     sete r15b
@@ -1628,7 +1563,6 @@ main:
     func.assert.317.5:
 ;       [prog.baz:317:5] alias ok -> r15b
         if.38.27.317.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.317.5:
         cmp r15b, 0
@@ -1660,7 +1594,6 @@ main:
 ;   [prog.baz:320:5] assert(k == 2)
 ;   [prog.baz:320:12] allocate scratch register -> r15
 ;   [prog.baz:320:12] ? k == 2
-;   [prog.baz:320:12] ? k == 2
     cmp.320.12:
     cmp qword [rbp + 568], 2
     sete r15b
@@ -1669,7 +1602,6 @@ main:
     func.assert.320.5:
 ;       [prog.baz:320:5] alias ok -> r15b
         if.38.27.320.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.320.5:
         cmp r15b, 0
@@ -1729,7 +1661,6 @@ main:
 ;   [prog.baz:324:5] assert(f == 120)
 ;   [prog.baz:324:12] allocate scratch register -> r15
 ;   [prog.baz:324:12] ? f == 120
-;   [prog.baz:324:12] ? f == 120
     cmp.324.12:
     cmp qword [rbp + 584], 120
     sete r15b
@@ -1738,7 +1669,6 @@ main:
     func.assert.324.5:
 ;       [prog.baz:324:5] alias ok -> r15b
         if.38.27.324.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.324.5:
         cmp r15b, 0
@@ -1775,7 +1705,6 @@ main:
 ;   [prog.baz:327:5] assert(p0.x == 6)
 ;   [prog.baz:327:12] allocate scratch register -> r15
 ;   [prog.baz:327:12] ? p0.x == 6
-;   [prog.baz:327:12] ? p0.x == 6
     cmp.327.12:
     cmp qword [rbp + 592], 6
     sete r15b
@@ -1784,7 +1713,6 @@ main:
     func.assert.327.5:
 ;       [prog.baz:327:5] alias ok -> r15b
         if.38.27.327.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.327.5:
         cmp r15b, 0
@@ -1819,7 +1747,6 @@ main:
 ;   [prog.baz:333:5] assert(pt.x == -1)
 ;   [prog.baz:333:12] allocate scratch register -> r15
 ;   [prog.baz:333:12] ? pt.x == -1
-;   [prog.baz:333:12] ? pt.x == -1
     cmp.333.12:
     cmp qword [rbp + 608], -1
     sete r15b
@@ -1828,7 +1755,6 @@ main:
     func.assert.333.5:
 ;       [prog.baz:333:5] alias ok -> r15b
         if.38.27.333.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.333.5:
         cmp r15b, 0
@@ -1847,7 +1773,6 @@ main:
 ;   [prog.baz:334:5] assert(pt.y == -2)
 ;   [prog.baz:334:12] allocate scratch register -> r15
 ;   [prog.baz:334:12] ? pt.y == -2
-;   [prog.baz:334:12] ? pt.y == -2
     cmp.334.12:
     cmp qword [rbp + 616], -2
     sete r15b
@@ -1856,7 +1781,6 @@ main:
     func.assert.334.5:
 ;       [prog.baz:334:5] alias ok -> r15b
         if.38.27.334.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.334.5:
         cmp r15b, 0
@@ -1884,7 +1808,6 @@ main:
 ;   [prog.baz:337:5] assert(pt.x == 2)
 ;   [prog.baz:337:12] allocate scratch register -> r15
 ;   [prog.baz:337:12] ? pt.x == 2
-;   [prog.baz:337:12] ? pt.x == 2
     cmp.337.12:
     cmp qword [rbp + 608], 2
     sete r15b
@@ -1893,7 +1816,6 @@ main:
     func.assert.337.5:
 ;       [prog.baz:337:5] alias ok -> r15b
         if.38.27.337.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.337.5:
         cmp r15b, 0
@@ -1911,7 +1833,6 @@ main:
     func.assert.337.5.end:
 ;   [prog.baz:338:5] assert(pt.sum() == 0)
 ;   [prog.baz:338:12] allocate scratch register -> r15
-;   [prog.baz:338:12] ? pt.sum() == 0
 ;   [prog.baz:338:12] ? pt.sum() == 0
     cmp.338.12:
 ;   [prog.baz:338:12] allocate scratch register -> r14
@@ -1938,7 +1859,6 @@ main:
     func.assert.338.5:
 ;       [prog.baz:338:5] alias ok -> r15b
         if.38.27.338.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.338.5:
         cmp r15b, 0
@@ -1969,7 +1889,7 @@ main:
 ;   [prog.baz:343:9] o1 = object{{x * 10, y}, 0xff0000}
 ;   [prog.baz:343:21] copy field 'pos'
 ;   [prog.baz:343:22] copy field 'x'
-;   [prog.baz:343:22] instructions without scratch register 6, with 4
+;   [prog.baz:343:22] smaller of two versions of 6 and 4 instructions
 ;   [prog.baz:343:22] allocate scratch register -> r15
 ;   [prog.baz:343:22] x
     mov r15, qword [rbp + 624]
@@ -1992,7 +1912,6 @@ main:
 ;   [prog.baz:344:5] assert(o1.pos.x == 10)
 ;   [prog.baz:344:12] allocate scratch register -> r15
 ;   [prog.baz:344:12] ? o1.pos.x == 10
-;   [prog.baz:344:12] ? o1.pos.x == 10
     cmp.344.12:
     cmp qword [rbp + 640], 10
     sete r15b
@@ -2001,7 +1920,6 @@ main:
     func.assert.344.5:
 ;       [prog.baz:344:5] alias ok -> r15b
         if.38.27.344.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.344.5:
         cmp r15b, 0
@@ -2020,7 +1938,6 @@ main:
 ;   [prog.baz:345:5] assert(o1.pos.y == 2)
 ;   [prog.baz:345:12] allocate scratch register -> r15
 ;   [prog.baz:345:12] ? o1.pos.y == 2
-;   [prog.baz:345:12] ? o1.pos.y == 2
     cmp.345.12:
     cmp qword [rbp + 648], 2
     sete r15b
@@ -2029,7 +1946,6 @@ main:
     func.assert.345.5:
 ;       [prog.baz:345:5] alias ok -> r15b
         if.38.27.345.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.345.5:
         cmp r15b, 0
@@ -2048,7 +1964,6 @@ main:
 ;   [prog.baz:346:5] assert(o1.color == 0xff0000)
 ;   [prog.baz:346:12] allocate scratch register -> r15
 ;   [prog.baz:346:12] ? o1.color == 0xff0000
-;   [prog.baz:346:12] ? o1.color == 0xff0000
     cmp.346.12:
     cmp dword [rbp + 656], 16711680
     sete r15b
@@ -2057,7 +1972,6 @@ main:
     func.assert.346.5:
 ;       [prog.baz:346:5] alias ok -> r15b
         if.38.27.346.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.346.5:
         cmp r15b, 0
@@ -2077,7 +1991,7 @@ main:
 ;   [prog.baz:348:9] p1: point (16 B @ [rbp + 664])
 ;   [prog.baz:348:9] p1 = point{-x, -y}
 ;   [prog.baz:348:20] copy field 'x'
-;   [prog.baz:348:20] instructions without scratch register 4, with 4
+;   [prog.baz:348:20] smaller of two versions of 4 and 4 instructions
 ;   [prog.baz:348:20] allocate scratch register -> r15
     mov r15, qword [rbp + 624]
     mov qword [rbp + 664], r15
@@ -2085,7 +1999,7 @@ main:
     neg qword [rbp + 664]
     jo baz_overflow_line_348
 ;   [prog.baz:348:24] copy field 'y'
-;   [prog.baz:348:24] instructions without scratch register 4, with 4
+;   [prog.baz:348:24] smaller of two versions of 4 and 4 instructions
 ;   [prog.baz:348:24] allocate scratch register -> r15
     mov r15, qword [rbp + 632]
     mov qword [rbp + 672], r15
@@ -2103,7 +2017,6 @@ main:
 ;   [prog.baz:350:5] assert(o1.pos.x == -1)
 ;   [prog.baz:350:12] allocate scratch register -> r15
 ;   [prog.baz:350:12] ? o1.pos.x == -1
-;   [prog.baz:350:12] ? o1.pos.x == -1
     cmp.350.12:
     cmp qword [rbp + 640], -1
     sete r15b
@@ -2112,7 +2025,6 @@ main:
     func.assert.350.5:
 ;       [prog.baz:350:5] alias ok -> r15b
         if.38.27.350.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.350.5:
         cmp r15b, 0
@@ -2131,7 +2043,6 @@ main:
 ;   [prog.baz:351:5] assert(o1.pos.y == -2)
 ;   [prog.baz:351:12] allocate scratch register -> r15
 ;   [prog.baz:351:12] ? o1.pos.y == -2
-;   [prog.baz:351:12] ? o1.pos.y == -2
     cmp.351.12:
     cmp qword [rbp + 648], -2
     sete r15b
@@ -2140,7 +2051,6 @@ main:
     func.assert.351.5:
 ;       [prog.baz:351:5] alias ok -> r15b
         if.38.27.351.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.351.5:
         cmp r15b, 0
@@ -2172,7 +2082,6 @@ main:
 ;   [prog.baz:354:5] assert(o2.pos.x == -1)
 ;   [prog.baz:354:12] allocate scratch register -> r15
 ;   [prog.baz:354:12] ? o2.pos.x == -1
-;   [prog.baz:354:12] ? o2.pos.x == -1
     cmp.354.12:
     cmp qword [rbp + 680], -1
     sete r15b
@@ -2181,7 +2090,6 @@ main:
     func.assert.354.5:
 ;       [prog.baz:354:5] alias ok -> r15b
         if.38.27.354.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.354.5:
         cmp r15b, 0
@@ -2200,7 +2108,6 @@ main:
 ;   [prog.baz:355:5] assert(o2.pos.y == -2)
 ;   [prog.baz:355:12] allocate scratch register -> r15
 ;   [prog.baz:355:12] ? o2.pos.y == -2
-;   [prog.baz:355:12] ? o2.pos.y == -2
     cmp.355.12:
     cmp qword [rbp + 688], -2
     sete r15b
@@ -2209,7 +2116,6 @@ main:
     func.assert.355.5:
 ;       [prog.baz:355:5] alias ok -> r15b
         if.38.27.355.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.355.5:
         cmp r15b, 0
@@ -2228,7 +2134,6 @@ main:
 ;   [prog.baz:356:5] assert(o2.color == 0xff0000)
 ;   [prog.baz:356:12] allocate scratch register -> r15
 ;   [prog.baz:356:12] ? o2.color == 0xff0000
-;   [prog.baz:356:12] ? o2.color == 0xff0000
     cmp.356.12:
     cmp dword [rbp + 696], 16711680
     sete r15b
@@ -2237,7 +2142,6 @@ main:
     func.assert.356.5:
 ;       [prog.baz:356:5] alias ok -> r15b
         if.38.27.356.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.356.5:
         cmp r15b, 0
@@ -2267,7 +2171,6 @@ main:
 ;   [prog.baz:359:5] assert(o2.pos.x == 1)
 ;   [prog.baz:359:12] allocate scratch register -> r15
 ;   [prog.baz:359:12] ? o2.pos.x == 1
-;   [prog.baz:359:12] ? o2.pos.x == 1
     cmp.359.12:
     cmp qword [rbp + 680], 1
     sete r15b
@@ -2276,7 +2179,6 @@ main:
     func.assert.359.5:
 ;       [prog.baz:359:5] alias ok -> r15b
         if.38.27.359.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.359.5:
         cmp r15b, 0
@@ -2306,7 +2208,6 @@ main:
 ;   [prog.baz:361:5] assert(o2.pos.x == 2)
 ;   [prog.baz:361:12] allocate scratch register -> r15
 ;   [prog.baz:361:12] ? o2.pos.x == 2
-;   [prog.baz:361:12] ? o2.pos.x == 2
     cmp.361.12:
     cmp qword [rbp + 680], 2
     sete r15b
@@ -2315,7 +2216,6 @@ main:
     func.assert.361.5:
 ;       [prog.baz:361:5] alias ok -> r15b
         if.38.27.361.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.361.5:
         cmp r15b, 0
@@ -2351,7 +2251,6 @@ main:
 ;   [prog.baz:371:5] assert(o3[0].pos.y == 73)
 ;   [prog.baz:371:12] allocate scratch register -> r15
 ;   [prog.baz:371:12] ? o3[0].pos.y == 73
-;   [prog.baz:371:12] ? o3[0].pos.y == 73
     cmp.371.12:
     cmp qword [rbp + 712], 73
     sete r15b
@@ -2360,7 +2259,6 @@ main:
     func.assert.371.5:
 ;       [prog.baz:371:5] alias ok -> r15b
         if.38.27.371.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.371.5:
         cmp r15b, 0
@@ -2408,7 +2306,6 @@ main:
 ;   [prog.baz:373:5] assert(o3[1].pos.y == 74)
 ;   [prog.baz:373:12] allocate scratch register -> r15
 ;   [prog.baz:373:12] ? o3[1].pos.y == 74
-;   [prog.baz:373:12] ? o3[1].pos.y == 74
     cmp.373.12:
     cmp qword [rbp + 736], 74
     sete r15b
@@ -2417,7 +2314,6 @@ main:
     func.assert.373.5:
 ;       [prog.baz:373:5] alias ok -> r15b
         if.38.27.373.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.373.5:
         cmp r15b, 0
@@ -2447,7 +2343,6 @@ main:
 ;   [prog.baz:376:5] assert(o3[1].pos.sum() == 13)
 ;   [prog.baz:376:12] allocate scratch register -> r15
 ;   [prog.baz:376:12] ? o3[1].pos.sum() == 13
-;   [prog.baz:376:12] ? o3[1].pos.sum() == 13
     cmp.376.12:
 ;   [prog.baz:376:12] allocate scratch register -> r14
 ;       [prog.baz:376:22] r14 = o3[1].pos.sum()
@@ -2473,7 +2368,6 @@ main:
     func.assert.376.5:
 ;       [prog.baz:376:5] alias ok -> r15b
         if.38.27.376.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.376.5:
         cmp r15b, 0
@@ -2509,7 +2403,6 @@ main:
 ;   [prog.baz:381:5] assert(worlds[1].locations[1] == 0xffee)
 ;   [prog.baz:381:12] allocate scratch register -> r15
 ;   [prog.baz:381:12] ? worlds[1].locations[1] == 0xffee
-;   [prog.baz:381:12] ? worlds[1].locations[1] == 0xffee
     cmp.381.12:
     cmp qword [rbp + 824], 65518
     sete r15b
@@ -2518,7 +2411,6 @@ main:
     func.assert.381.5:
 ;       [prog.baz:381:5] alias ok -> r15b
         if.38.27.381.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.381.5:
         cmp r15b, 0
@@ -2580,7 +2472,6 @@ main:
 ;   [prog.baz:390:5] assert(worlds[0].locations[1] == 0xffee)
 ;   [prog.baz:390:12] allocate scratch register -> r15
 ;   [prog.baz:390:12] ? worlds[0].locations[1] == 0xffee
-;   [prog.baz:390:12] ? worlds[0].locations[1] == 0xffee
     cmp.390.12:
     cmp qword [rbp + 760], 65518
     sete r15b
@@ -2589,7 +2480,6 @@ main:
     func.assert.390.5:
 ;       [prog.baz:390:5] alias ok -> r15b
         if.38.27.390.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.390.5:
         cmp r15b, 0
@@ -2607,7 +2497,6 @@ main:
     func.assert.390.5.end:
 ;   [prog.baz:391:5] assert(arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) ))
 ;   [prog.baz:391:12] allocate scratch register -> r15
-;   [prog.baz:391:12] ? arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
 ;   [prog.baz:391:12] ? shorthand: arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
     cmp.391.12:
 ;       [prog.baz:391:12] arrays_equal( worlds[0].locations, worlds[1].locations, array_length(worlds[0].locations) )
@@ -2648,7 +2537,6 @@ main:
     func.assert.391.5:
 ;       [prog.baz:391:5] alias ok -> r15b
         if.38.27.391.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.391.5:
         cmp r15b, 0
@@ -2675,7 +2563,6 @@ main:
     func.assert.398.5:
 ;       [prog.baz:398:5] alias ok -> 1
         if.38.27.398.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.398.5:
 ;       [prog.baz:38:31] const eval to false
@@ -2683,7 +2570,6 @@ main:
     func.assert.398.5.end:
 ;   [prog.baz:399:5] assert(arr2[0] == -1)
 ;   [prog.baz:399:12] allocate scratch register -> r15
-;   [prog.baz:399:12] ? arr2[0] == -1
 ;   [prog.baz:399:12] ? arr2[0] == -1
     cmp.399.12:
     cmp qword [rbp + 1264], -1
@@ -2693,7 +2579,6 @@ main:
     func.assert.399.5:
 ;       [prog.baz:399:5] alias ok -> r15b
         if.38.27.399.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.399.5:
         cmp r15b, 0
@@ -2712,7 +2597,6 @@ main:
 ;   [prog.baz:400:5] assert(arr2[1] == 2)
 ;   [prog.baz:400:12] allocate scratch register -> r15
 ;   [prog.baz:400:12] ? arr2[1] == 2
-;   [prog.baz:400:12] ? arr2[1] == 2
     cmp.400.12:
     cmp qword [rbp + 1272], 2
     sete r15b
@@ -2721,7 +2605,6 @@ main:
     func.assert.400.5:
 ;       [prog.baz:400:5] alias ok -> r15b
         if.38.27.400.5:
-;       [prog.baz:38:27] ? not ok
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.400.5:
         cmp r15b, 0
@@ -2776,10 +2659,10 @@ main:
 ;       [prog.baz:42:5] free named register rsi
 ;       [prog.baz:42:5] free named register rdi
     func.print.404.5.end:
-;   [prog.baz:405:5] label
+;   [prog.baz:405:5] loop
     loop.405.5:
 ;       [prog.baz:406:9] counter = counter + 1
-;       [prog.baz:406:19] instructions without scratch register 2, with 4
+;       [prog.baz:406:19] smaller of two versions of 2 and 4 instructions
 ;       [prog.baz:406:19] counter
 ;       [prog.baz:406:19] counter + 1
 ;       [prog.baz:406:19] src: folded constant '+ 1'
@@ -2879,8 +2762,8 @@ main:
 ;           [prog.baz:92:5] self.len = i8(nbytes - 1)
 ;           [prog.baz:92:16] self.len = i8(nbytes - 1)
 ;           [prog.baz:92:16] = expression
-;           [prog.baz:92:16] instructions without scratch register 3, with 3
-;           [prog.baz:92:19] instructions without scratch register 3, with 3
+;           [prog.baz:92:16] smaller of two versions of 3 and 3 instructions
+;           [prog.baz:92:19] smaller of two versions of 3 and 3 instructions
 ;           [prog.baz:92:19] nbytes
 ;           [prog.baz:92:19] allocate scratch register -> r15
             mov r15b, byte [rbp + 1416]
@@ -2892,14 +2775,12 @@ main:
         func.str.input.410.12.end:
         if.412.12:
 ;       [prog.baz:412:12] ? nm.len <= 0
-;       [prog.baz:412:12] ? nm.len <= 0
         cmp.412.12:
         cmp byte [rbp + 1288], 0
         jle loop.405.5.end
         if.412.12.code:
 ;           [prog.baz:413:13] break
         if.414.19:
-;       [prog.baz:414:19] ? nm.len <= 4
 ;       [prog.baz:414:19] ? nm.len <= 4
         cmp.414.19:
         cmp byte [rbp + 1288], 4
@@ -3021,7 +2902,7 @@ main:
 ;                   [prog.baz:42:5] free named register rdi
                 func.print.103.5.418.13.end:
 ;               [prog.baz:104:5] names = names + 1
-;               [prog.baz:104:13] instructions without scratch register 2, with 4
+;               [prog.baz:104:13] smaller of two versions of 2 and 4 instructions
 ;               [prog.baz:104:13] names
 ;               [prog.baz:104:13] names + 1
 ;               [prog.baz:104:13] src: folded constant '+ 1'
@@ -3180,7 +3061,6 @@ func.factorial:
 ;   [prog.baz:176:5] free scratch register r15
     if.177.8:
 ;   [prog.baz:177:8] ? n <= 1
-;   [prog.baz:177:8] ? n <= 1
     cmp.177.8:
 ;   [prog.baz:177:8] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
@@ -3194,7 +3074,7 @@ func.factorial:
 ;   [prog.baz:179:5] var m = n - 1
 ;   [prog.baz:179:9] m: i64 (8 B @ [rbx + 16])
 ;   [prog.baz:179:9] m = n - 1
-;   [prog.baz:179:13] instructions without scratch register 5, with 5
+;   [prog.baz:179:13] smaller of two versions of 5 and 5 instructions
 ;   [prog.baz:179:13] n
 ;   [prog.baz:179:13] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
@@ -3250,7 +3130,7 @@ func.factorial:
 ;   [prog.baz:181:5] res = n * partial
 ;   [prog.baz:181:5] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [prog.baz:181:11] instructions without scratch register 7, with 5
+;   [prog.baz:181:11] smaller of two versions of 7 and 5 instructions
 ;   [prog.baz:181:11] allocate scratch register -> r14
 ;   [prog.baz:181:11] n
 ;   [prog.baz:181:11] allocate scratch register -> r13
@@ -3297,7 +3177,6 @@ func.print_num:
     mov byte [rbx + 40], 0
     if.144.8:
 ;   [prog.baz:144:8] ? n < 0
-;   [prog.baz:144:8] ? n < 0
     cmp.144.8:
     cmp qword [rbx + 32], 0
     jge if.144.5.end
@@ -3306,7 +3185,6 @@ func.print_num:
         mov byte [rbx + 40], 1
     if.144.5.end:
     if.147.8:
-;   [prog.baz:147:8] ? n > 0
 ;   [prog.baz:147:8] ? n > 0
     cmp.147.8:
     cmp qword [rbx + 32], 0
@@ -3326,10 +3204,10 @@ func.print_num:
 ;   [prog.baz:151:9] i = buf_count
 ;   [prog.baz:151:13] buf_count
     mov qword [rbx + 48], 20
-;   [prog.baz:152:5] label
+;   [prog.baz:152:5] loop
     loop.152.5:
 ;       [prog.baz:153:9] i = i - 1
-;       [prog.baz:153:13] instructions without scratch register 2, with 4
+;       [prog.baz:153:13] smaller of two versions of 2 and 4 instructions
 ;       [prog.baz:153:13] i
 ;       [prog.baz:153:13] i - 1
 ;       [prog.baz:153:13] src: folded constant '- 1'
@@ -3389,7 +3267,7 @@ func.print_num:
 ;       [prog.baz:154:18] free scratch register r14
 ;       [prog.baz:154:9] free scratch register r15
 ;       [prog.baz:155:9] n = n / 10
-;       [prog.baz:155:13] instructions without scratch register 13, with 15
+;       [prog.baz:155:13] smaller of two versions of 12 and 14 instructions
 ;       [prog.baz:155:13] n
 ;       [prog.baz:155:17] n / 10
 ;       [prog.baz:155:17] src: constant
@@ -3418,7 +3296,6 @@ func.print_num:
 ;       [prog.baz:155:17] free named register rax
         if.156.12:
 ;       [prog.baz:156:12] ? n == 0
-;       [prog.baz:156:12] ? n == 0
         cmp.156.12:
         cmp qword [rbx + 32], 0
         jne loop.152.5
@@ -3427,14 +3304,13 @@ func.print_num:
         if.156.9.end:
     loop.152.5.end:
     if.159.8:
-;   [prog.baz:159:8] ? is_negative
 ;   [prog.baz:159:8] ? shorthand: is_negative
     cmp.159.8:
     cmp byte [rbx + 40], 0
     je if.159.5.end
     if.159.8.code:
 ;       [prog.baz:160:9] i = i - 1
-;       [prog.baz:160:13] instructions without scratch register 2, with 4
+;       [prog.baz:160:13] smaller of two versions of 2 and 4 instructions
 ;       [prog.baz:160:13] i
 ;       [prog.baz:160:13] i - 1
 ;       [prog.baz:160:13] src: folded constant '- 1'
@@ -3461,7 +3337,7 @@ func.print_num:
 ;   [prog.baz:164:9] write_pos = 0
 ;   [prog.baz:164:21] 0
     mov qword [rbx + 56], 0
-;   [prog.baz:165:5] label
+;   [prog.baz:165:5] loop
     loop.165.5:
 ;       [prog.baz:166:9] buf[write_pos] = buf[i]
 ;       [prog.baz:166:13] allocate scratch register -> r15
@@ -3494,21 +3370,20 @@ func.print_num:
 ;       [prog.baz:166:26] free scratch register r14
 ;       [prog.baz:166:9] free scratch register r15
 ;       [prog.baz:167:9] write_pos = write_pos + 1
-;       [prog.baz:167:21] instructions without scratch register 2, with 4
+;       [prog.baz:167:21] smaller of two versions of 2 and 4 instructions
 ;       [prog.baz:167:21] write_pos
 ;       [prog.baz:167:21] write_pos + 1
 ;       [prog.baz:167:21] src: folded constant '+ 1'
         add qword [rbx + 56], 1
         jo baz_overflow_line_167
 ;       [prog.baz:168:9] i = i + 1
-;       [prog.baz:168:13] instructions without scratch register 2, with 4
+;       [prog.baz:168:13] smaller of two versions of 2 and 4 instructions
 ;       [prog.baz:168:13] i
 ;       [prog.baz:168:13] i + 1
 ;       [prog.baz:168:13] src: folded constant '+ 1'
         add qword [rbx + 48], 1
         jo baz_overflow_line_168
         if.169.12:
-;       [prog.baz:169:12] ? i == buf_count
 ;       [prog.baz:169:12] ? i == buf_count
         cmp.169.12:
         cmp qword [rbx + 48], 20
@@ -3779,14 +3654,14 @@ baz_bounds_panic:
 ;    print message to stderr
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_panic]
-    mov rdx, msg_panic_len
+    lea rsi, [msg_bounds]
+    mov rdx, msg_bounds_len
     syscall
     jmp baz_report_line
 section .rodata
-msg_panic:
+msg_bounds:
 db `panic: bounds at line `
-msg_panic_len equ $ - msg_panic
+msg_bounds_len equ $ - msg_bounds
 section .text
 
 section .data

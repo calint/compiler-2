@@ -48,7 +48,12 @@
 ### Comments
 
 - Keep comments and move them with their code. Reword or remove one only when
-  it is wrong, narrates its code, or its code was redesigned or removed.
+  it is wrong, narrates or restates its code, or its code was redesigned or
+  removed.
+- Fewer, better comments: a function comment says what the name and the
+  signature cannot (why, an invariant, a precondition); none when they say it
+  all. An example (`e.g. ...`) only where the meaning is not obvious, one per
+  comment.
 - Lowercase, no trailing punctuation, code names in single quotes.
 - One short line, only what code cannot show; class and pass header comments
   may be longer.
@@ -57,11 +62,13 @@
 - No review stamps. The formatter writes the section banners
   (`// statics`, `// class methods`), keep them.
 - Marker: `todo:`.
-- Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: a `note:`
-  line below naming offset and reason, e.g. `// note: +1 because the text
-  starts after the opening quote`. Idioms need none: the last index
+- Magic numbers whose reason is not obvious (`subspan(1, n - 2)` over quotes):
+  a `note:` line below naming offset and reason, e.g. `// note: +1 because the
+  text starts after the opening quote`. Idioms and offsets that a named
+  variable or the line itself explains need none: the last index
   (`size() - 1`), the next element (`i + 1`), the count of an enum
-  (`last + 1`), the sign bit (`bits - 1`), a low-bit mask (`(1 << n) - 1`).
+  (`last + 1`), the sign bit (`bits - 1`), a low-bit mask (`(1 << n) - 1`),
+  rounding up (`+ alignment - 1`), the end after an inclusive position.
   Multiline `note:` blocks get a blank line above and below.
 
 ### Names

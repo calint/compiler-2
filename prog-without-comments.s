@@ -1776,14 +1776,14 @@ baz_bounds_line_428:
 baz_bounds_panic:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_panic]
-    mov rdx, msg_panic_len
+    lea rsi, [msg_bounds]
+    mov rdx, msg_bounds_len
     syscall
     jmp baz_report_line
 section .rodata
-msg_panic:
+msg_bounds:
 db `panic: bounds at line `
-msg_panic_len equ $ - msg_panic
+msg_bounds_len equ $ - msg_bounds
 section .text
 section .data
 align 16

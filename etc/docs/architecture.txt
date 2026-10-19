@@ -25,6 +25,39 @@ architecture: from source to assembly and binary image
 
 The build is one translation unit: 'main.cpp' includes the headers.
 
+Reading order, each file assumes the ones before it:
+
+    1. main.cpp, program.hpp       the driver and the passes
+    2. statement.hpp               the node interface every statement has
+    3. stmt_block.hpp, stmt_if.hpp, stmt_loop.hpp
+                                   control flow, the simplest nodes
+    4. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
+                                   values: arithmetic, conditions, instances
+    5. stmt_identifier.hpp         a place: a name with fields and indexes
+    6. stmt_def_func.hpp, stmt_call.hpp
+                                   functions, inlined and noinline calls
+    7. toc.hpp                     what the names are while compiling
+    8. machine.hpp, machine_x86_64.hpp, assembler.hpp
+                                   the operations and one backend
+    9. machine_rv32i.hpp, assembler_rv32i.hpp
+                                   the load/store backend and its image
+
+Invariants the code relies on:
+
+    1. a statement parses in its constructor and emits nothing until it is
+       compiled; a compile may run more than once (section 4) and adds the
+       same to 'toc' each time
+    2. the front end never writes assembly, it calls 'machine' operations
+       with operands; the backend lowers them to what the target encodes
+    3. registers are freed in the reverse order of their allocation, an
+       operation frees the registers it allocated before it returns
+    4. a name is resolved again at every compile through the frames, an
+       inlined parameter is an alias of its argument, never a copy
+    5. a 'destination' is not changed after it is made, a field or element
+       of it is a destination of its own
+    6. labels are named by source location and call path, so a body inlined
+       twice or compiled twice gets the same or distinct labels as needed
+
 2. Passes
 ---------
 

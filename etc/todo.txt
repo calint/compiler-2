@@ -6,6 +6,24 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: high priority: parse once where the shape can be decided first
+    => 1. 'expr_bool::parse_element' parses '(...)' as a nested list and, when
+       an operator follows the ')', rewinds and parses it again as a
+       comparison; the first parse resolves names and can make generic
+       instances before it is thrown away. plan: a look-ahead in
+       'parse_lookahead.hpp' on a copy of the tokenizer skips to the
+       matching ')' and peeks at the next character, then one parse
+    => 2. 'stmt_def_var' parses its initializer up to four times
+       ('deduce_declaration', 'fold_initializer', 'constant_expr_', then
+       'stmt_assign_var' after a rewind to the name). plan for scalars: the
+       deduction parse already builds the 'expr_bool' or its 'expr_arith',
+       keep it as the value ('stmt_assign_var' takes a parsed value), a
+       'let' folds the same tree with 'folded_constant'; 'trial_parse',
+       'fold_initializer', 'constant_expr_' and the rewind go away. arrays
+       keep two parses (unsized to learn the count, then sized), say why
+    => check: the placeholder variable of the trial parse has the default
+       type, nothing kept in the tree may depend on it ('var x = x + 1' is
+       still rejected); assembly of all tests byte for byte the same
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,
