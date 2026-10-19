@@ -3373,3 +3373,15 @@ SRC=1086 && COMPERR
 # a complemented 'bool' element of a 'dat' array would store a byte that is
 # neither 'true' nor 'false'
 SRC=1087 && COMPERR
+
+# a '(' that starts a condition is a parenthesized list unless an operator
+# follows its ')', then it starts an operand of a comparison
+SRC=1088 && EXP=0 && RUN
+
+# a 'let' whose initializer folds is a constant, else a read-only variable;
+# the initializer is parsed once at the deduced type
+SRC=1089 && EXP=0 && RUN
+
+# the initializer of an inner variable reads the variable it declares, not an
+# outer one of the same name
+SRC=1090 && COMPERR

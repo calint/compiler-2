@@ -1,0 +1,14 @@
+# a '(' that starts a condition is a parenthesized list unless an operator
+# follows its ')', then it starts an operand of a comparison
+
+func main() {
+    var a = 2
+    var b = 3
+    var c = ')'
+    if not ((a) > 1) exit(1)
+    if not (((a + b)) == 5) exit(2)
+    if not ((a + b) * 2 == 10) exit(3)
+    if not ((c == ')') and (a < b)) exit(4)
+    if not (not (a == b) and ((b - a) == 1)) exit(5)
+    exit(0)
+}

@@ -1,0 +1,17 @@
+# a 'let' whose initializer folds is a constant, else a read-only variable;
+# the initializer is parsed once at the deduced type
+
+func main() {
+    let n = 2 * 3
+    var a = i8[n]
+    let len = array_length(a)
+    var x = 7
+    let y = x + n
+    if len != 6 exit(1)
+    if y != 13 exit(2)
+    let flag = x > n
+    if not flag exit(3)
+    let s = "hi"
+    if array_length(s) != 2 exit(4)
+    exit(0)
+}

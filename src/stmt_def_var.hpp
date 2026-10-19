@@ -44,18 +44,21 @@ class stmt_def_var final : public statement {
 
         toc::assert_valid_variable_name(name_tk_);
 
-        const token after_name_tk{tz.cur_position_token()};
+        // the destination is read where it ends at '=', past it the '[2]' in
+        // 'var a = [2]{}' would read as an index
+        tokenizer at_name{tz};
 
         equals_tk_ = parse_initializer_equals(tz, tk.text());
 
         deduce_declaration(tc, tz);
 
-        if (is_let_) {
-            constant_value_ = fold_initializer(tc, tz);
-        }
+        expr_any value{parse_initializer(tc, tz)};
+
+        constant_value_ = folded_let(tc, value);
 
         // nothing is stored for a constant
         if (constant_value_.has_value()) {
+            constant_expr_ = std::move(value);
             tc.add_const(name_tk_, 0, name_tk_.text(), *constant_value_);
             return;
         }
@@ -64,13 +67,12 @@ class stmt_def_var final : public statement {
         // name it
         tc.add_var(name_tk_, 0, make_var_info(), var_kind::var);
 
-        // the identifier is parsed where it ends at '=', past it the '[2]' in
-        // 'var a = [2]{}' would read as an index
-        tz.rewind_to_position(after_name_tk);
-        stmt_identifier si{tc, {}, name_tk_, tz};
-        equals_tk_ = parse_initializer_equals(tz, tk.text());
-
-        assign_var_ = {tc, tz, std::move(si), equals_tk_};
+        assign_var_ = {
+            tc,
+            stmt_identifier{tc, {}, name_tk_, at_name},
+            equals_tk_,
+            std::move(value),
+        };
 
         // the newly defined variable is not yet assigned in its initialization
         assert_var_not_used(name_tk_.text(),
@@ -241,27 +243,17 @@ class stmt_def_var final : public statement {
     }
 
     // the value of the initializer of a 'let' of the default type when it folds
-    // to a constant, e.g. '2 * 3 + k', otherwise none and the position is the
-    // start of the initializer; the initializer is kept to reproduce the source
-    [[nodiscard]] auto fold_initializer(toc& tc, tokenizer& tz)
+    // to a constant, e.g. '2 * 3 + k', otherwise none
+    [[nodiscard]] auto folded_let(const toc& tc, const expr_any& value) const
         -> std::optional<int64_t> {
 
-        if (is_array_ or not get_type().is_same(tc.builtins().default_type())) {
+        if (not is_let_ or is_array_ or
+            not get_type().is_same(tc.builtins().default_type())) {
+
             return std::nullopt;
         }
 
-        std::optional<int64_t> value;
-
-        trial_parse(tc, tz, [this, &tc, &tz, &value] -> void {
-            const expr_any initializer{tc, tz, get_type()};
-            value = initializer.constant_value(tc);
-        });
-
-        if (value.has_value()) {
-            constant_expr_ = {tc, tz, get_type()};
-        }
-
-        return value;
+        return value.constant_value(tc);
     }
 
     [[nodiscard]] auto make_var_info() const -> var_info {
@@ -278,14 +270,39 @@ class stmt_def_var final : public statement {
         };
     }
 
-    // the initializer is parsed to learn the type or size and parsed again
-    // once they are known; a placeholder variable resolves a read in its own
-    // initializer, e.g. 'var x = x + 1', which is rejected later as
-    // uninitialized
+    // the value at the deduced type and size
+    [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) const
+        -> expr_any {
+
+        const std::optional<size_t> array_count{
+            is_array_ ? std::optional{array_count_} : std::nullopt,
+        };
+
+        expr_any value;
+
+        with_placeholder(
+            tc, [&] -> void { value = {tc, tz, get_type(), array_count}; });
+
+        return value;
+    }
+
+    // a value cannot be parsed at its type before the type is known, so the
+    // initializer is parsed once to learn the type or size and that tree is
+    // dropped
     auto trial_parse(toc& tc, tokenizer& tz,
                      const std::function_ref<void()> parse) const -> void {
 
         const token start_tk{tz.cur_position_token()};
+
+        with_placeholder(tc, parse);
+
+        tz.rewind_to_position(start_tk);
+    }
+
+    // the variable is in scope while its initializer is parsed, so a read of
+    // it, e.g. 'var x = x + 1', resolves and is rejected as uninitialized
+    auto with_placeholder(toc& tc, const std::function_ref<void()> parse) const
+        -> void {
 
         tc.enter_block();
         tc.add_var(name_tk_, 0, make_var_info(), var_kind::var);
@@ -293,7 +310,6 @@ class stmt_def_var final : public statement {
         parse();
 
         tc.exit_block();
-        tz.rewind_to_position(start_tk);
     }
 
     //

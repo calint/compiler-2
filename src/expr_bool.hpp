@@ -1290,7 +1290,7 @@ class expr_bool final : public statement {
 
     // a comparison or a parenthesized list, either may follow 'not'
     auto parse_element(toc& tc, tokenizer& tz) -> void {
-        // a speculative parse may need to start over from here
+        // a comparison reads its 'not's itself, from here
         const token rewind_pos_tk{tz.cur_position_token()};
 
         // the 'not's before a parenthesis, e.g. 'not not (a == b)'
@@ -1314,26 +1314,15 @@ class expr_bool final : public statement {
 
         const token open_paren_tk{tz.is_next_char_token('(')};
 
-        // 'expr_bool_op' parses the 'not' itself
-        if (open_paren_tk.is_empty()) {
+        // e.g. '(t1 + t2) > 3' is a comparison with a parenthesized operand
+        if (open_paren_tk.is_empty() or is_parenthesized_operand(tz)) {
             tz.rewind_to_position(rewind_pos_tk);
             bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
             return;
         }
 
-        // '(t1 + t2) > 3' parses as a list but is a comparison
-        expr_bool nested{tc, pos_tk, tz, std::move(not_tks), open_paren_tk};
-
-        // an operator after ')' means the parentheses belonged to an operand
-        if (std::string_view{"<>=!+-*/%&|^"}.contains(
-                tz.peek_char_after_whitespace())) {
-
-            tz.rewind_to_position(rewind_pos_tk);
-            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
-            return;
-        }
-
-        bools_.emplace_back(std::move(nested));
+        bools_.emplace_back(std::in_place_type<expr_bool>, tc, pos_tk, tz,
+                            std::move(not_tks), open_paren_tk);
     }
 
     // the operands are joined by 'and' or by 'or', not by both, e.g.
@@ -1431,5 +1420,22 @@ class expr_bool final : public statement {
         x.branch(indent, jmp_to_if_true);
 
         return condition_result::unknown;
+    }
+
+    //
+    // statics
+    //
+
+    // an operator after the ')' that closes the '(' just read makes the
+    // parentheses part of an operand, decided on a copy before anything is
+    // parsed
+    [[nodiscard]] static auto is_parenthesized_operand(const tokenizer& tz)
+        -> bool {
+
+        tokenizer after_paren{tz};
+        after_paren.skip_to_close_paren();
+
+        return std::string_view{"<>=!+-*/%&|^"}.contains(
+            after_paren.peek_char_after_whitespace());
     }
 };

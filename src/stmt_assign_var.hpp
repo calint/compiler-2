@@ -55,6 +55,16 @@ class stmt_assign_var final : public statement {
         expr_ = {tc, tz, dst_info.type_ref(), array_count};
     }
 
+    // the initializer of a declaration, parsed before the variable was
+    // declared, which is writable until then
+    stmt_assign_var(const toc& tc, stmt_identifier si, const token equals_tk,
+                    expr_any value)
+        : statement{si.tok()}, stmt_ident_{std::move(si)},
+          expr_{std::move(value)}, equals_tk_{equals_tk} {
+
+        set_type(tc.make_ident_info(stmt_ident_).type_ref());
+    }
+
     stmt_assign_var() = default;
 
     //

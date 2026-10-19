@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: high priority: parse once where the shape can be decided first
+    => 1. 'expr_bool::parse_element' parses '(...)' as a nested list and, when
+       an operator follows the ')', rewinds and parses it again as a
+       comparison. plan: a look-ahead on a copy of the tokenizer skips to the
+       matching ')' ('skip_to_close_paren') and peeks at the next character,
+       then one parse
+    => 2. 'stmt_def_var' parses its initializer up to four times. plan: the
+       deduction parse stays and its tree is dropped (the type must be known
+       before the value is parsed at it, for scalars and arrays alike); the
+       value is parsed once at the deduced type with a placeholder of that
+       type in scope; a 'let' folds that value ('fold_initializer' and the
+       separate 'constant_expr_' parse go); 'stmt_assign_var' takes a parsed
+       value; the destination is read from a copy of the tokenizer at the
+       name, so the rewind and the second '=' go
+    => rejected: keeping the deduction tree as the value, the 'expr_bool'
+       shape would have to become the 'expr_any' value of the type (the
+       earlier attempt that was reverted)
+    => check: 'var x = x + 1' is still rejected; assembly of all tests byte
+       for byte the same
+    => done (2026-10-19): 1. 'expr_bool::is_parenthesized_operand' looks ahead
+       on a copy; 2. 'stmt_def_var' parses the initializer twice at most, the
+       deduction parse and the parse at the deduced type
+       ('parse_initializer'), a 'let' folds that value ('folded_let'), the
+       destination is read from a copy of the tokenizer at the name;
+       'stmt_assign_var' takes a parsed initializer; the assembly and the
+       messages of all tests, roome, the tutorial and 'prog.baz' are the
+       same; tests 1088-1090
 [x] medium: make the ai written test suite in c++ human readable
     => problem: 'qa/coverage/test-rv32i-address.cpp' (3568 lines, 77
        functions) has checks of 100 to 200 lines that test several behaviors

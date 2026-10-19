@@ -1,0 +1,10 @@
+# the initializer of an inner variable reads the variable it declares, not an
+# outer one of the same name
+
+func main() {
+    var x = 1
+    {
+        var x = x + 1
+        exit(x)
+    }
+}
