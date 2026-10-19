@@ -3085,7 +3085,8 @@ class machine_x86_64 final : public machine {
                                                   const size_t size_bytes)
         -> std::string {
 
-        // map canonical 64-bit register names to size-specific aliases
+        // a register is allocated by its 64-bit name, an operand names the
+        // part of its width
         for (const register_names& names : register_names_) {
             if (name != names.qword and name != names.dword and
                 name != names.word and name != names.byte) {

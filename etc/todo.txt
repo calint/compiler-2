@@ -48,7 +48,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        1049 missed branches of 7653 (86.29%), 3296 missed regions of 15320
     => then branches and regions
 [ ] easy: a comment file explaining lea and array indexing
-[ ] easy: make the ai written test suite in c++ human readable
 [ ] medium: lift the ai generated tests of 'test-rv32i.sh' to end-to-end .baz
     tests
 [ ] medium: drop the visitor pattern in 'expr_any' because lcov does not

@@ -1,6 +1,71 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: make the ai written test suite in c++ human readable
+    => problem: 'qa/coverage/test-rv32i-address.cpp' (3568 lines, 77
+       functions) has checks of 100 to 200 lines that test several behaviors
+       each, set-ups repeated inline (the 'address_use' lambdas of each
+       compare, 25 held registers), a small assembly parser inside
+       'check_jump_optimizer', and asserts of 'contains' on fragments, so a
+       failure does not say which behavior broke
+    => plan, one part of the file per step, 'test-rv32i.sh' passes and the
+       line coverage of 'src' it reaches ('test-coverage-full.sh') does not
+       drop:
+       1. one check per behavior, named by the behavior, e.g.
+          'jump_to_next_instruction_is_removed'; a table of input and
+          expected text where the checks differ only in data
+       2. the repeated set-ups become named fixtures next to the shared ones
+          ('compare_request_of(backend, lhs, rhs)', 'parse_assembly')
+       3. an expected output is the whole emitted text when it is stable,
+          a 'contains' only where register choice may vary, with a comment
+          saying so
+       4. checks of programs a '.baz' source can produce (parts 3, 10 and
+          11) move to '.baz' tests with '.out' files (joins the item 'lift
+          the ai generated tests'), the driver keeps what only the API
+          reaches
+    => rejected: a test framework (gtest, catch2): a dependency for what
+       named functions and 'assert' already do
+    => done (2026-10-19): steps 1 to 3; fixtures 'captured_rv32i::emitted',
+       'captured_x86_64', 'located_rv32i', 'compiled_rv32i',
+       'compiled_x86_64', 'fixed_address', 'store_of', 'load_of', 'wrapped',
+       'optimized'; tables of 'rewrite', 'address_form' and
+       'comparison_form'; the numbered modes became 'source_place',
+       'factor_form' and 'comparison_layout'; 39 checks became 56; the
+       output of every mode is byte for byte the same and the 11926 lines of
+       'src' it reaches are the same; step 4 joins the item 'lift the ai
+       generated tests', the part 3 checks assert instruction shapes that a
+       '.out' of results cannot show
+[x] hard: 'toc' facade: about 100 public methods, 45 of them forward one call
+    to one table
+    => problem: a statement reaches every table through 'tc', so a reader
+       cannot tell a query of one table from a write that keeps several
+       consistent ('add_var' places storage, declares the name and writes
+       the comment; 'is_alias' only asks the scopes)
+    => design: the rule "a method of 'toc' changes state; a query reads one
+       table through a const accessor"
+       1. const accessors next to 'checks()', 'types()' and 'generics()':
+          'scopes()', 'funcs()', 'builtins()', 'data()', 'storage()'
+       2. the one-line queries go, callers ask the table, e.g.
+          'tc.is_alias(n)' -> 'tc.scopes().is_alias(n)',
+          'tc.get_type_bool()' -> 'tc.builtins().boolean()',
+          'tc.get_string_constants()' -> 'tc.data().constants()'
+       3. writes stay on 'toc' also when they forward to one table
+          ('enter_block' pairs with 'exit_block', which also frees storage)
+       4. the reading-order comment of 'toc.hpp' states the rule
+    => expected: about 45 forwarders go, about 55 methods remain, each a
+       write or a query that combines tables ('make_ident_info',
+       'get_type_or_throw', 'has_lea')
+    => rejected: role objects with write access ('tc.names().add_var'): a
+       write touches several tables, so the coordination would move into
+       the role objects and be split
+    => rejected: passing the tables to the statements: every constructor
+       and 'compile' signature would change for no gain in reading
+    => steps: one table per step, mechanical, output unchanged
+    => done (2026-10-19): accessors 'scopes()', 'funcs()', 'builtins()',
+       'data()', 'storage()' and a const 'types()'; 29 forwarders went
+       ('scope_stack::has_const' and 'function_table::is_builtin' were added
+       for two that compared), 81 methods remain; the rule is in the
+       header of 'toc.hpp'; output unchanged
 [x] hard: design clarity: a reviewer follows the design without strain; the
     steps below one at a time, each built, tested on x86_64 and rv32i-fpga,
     linted and formatted, the mechanical ones leave every generated '.s' and

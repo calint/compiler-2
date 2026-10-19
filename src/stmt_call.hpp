@@ -1,7 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
-//           2025-10-08
-//           2026-09-08
 
 #include <algorithm>
 #include <cassert>
@@ -127,7 +124,7 @@ struct generic_call {
 
         const token tk{tz.next_token()};
 
-        if (not tc.is_var_or_alias(tk.text())) {
+        if (not tc.scopes().is_var_or_alias(tk.text())) {
             return value_type(tc, tz, tk);
         }
 
@@ -207,7 +204,7 @@ struct generic_call {
             return next == ',' or next == ')';
         };
 
-        const bool is_type{tc.has_type(tk.text())};
+        const bool is_type{tc.types().has(tk.text())};
 
         // e.g. 'point{1, 2}'
         if (is_type and tz.peek_char_after_whitespace() == '{') {
@@ -219,7 +216,7 @@ struct generic_call {
 
         // e.g. 'point.at(1, 2)'
         if (is_type and not tz.is_next_char_token('.').is_empty()) {
-            // e.g. 'at'
+            // the type names the result, the constructor, e.g. 'at', does not
             std::ignore = tz.next_token();
 
             if (tz.is_next_char_token('(').is_empty()) {
@@ -247,7 +244,7 @@ struct generic_call {
         };
 
         return is_whole_argument() and
-                       not return_type.is_same(tc.get_type_void())
+                       not return_type.is_same(tc.builtins().void_type())
                    ? &return_type
                    : nullptr;
     }
@@ -393,7 +390,7 @@ struct call_site {
         -> storage_target {
 
         return tc.storage_target_of(arg.tok(),
-                                    ident_info::root_of(arg.identifier()),
+                                    ident_info::root_of(arg.name_or_literal()),
                                     arg.accessed_path());
     }
 
@@ -402,7 +399,8 @@ struct call_site {
     is_instance_temporary(const expr_any& arg, const stmt_def_func_param& param)
         -> bool {
 
-        return not param.get_type().is_builtin() and not arg.is_identifier();
+        return not param.get_type().is_builtin() and
+               not arg.is_name_or_literal();
     }
 
     // the root variable and the bytes of it that the destination names
@@ -530,7 +528,8 @@ class inline_call {
 
         // the result alias has its own address choice in
         // 'compile_to_destination'
-        // note: it comes first, if any
+        // note: the result alias is made before the aliases of the arguments,
+        //       which are the last 'call_.args.size()'
         const size_t first_argument_alias{aliases.size() - call_.args.size()};
 
         const bool has_indexed_argument{
@@ -600,7 +599,8 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        // create unique labels for inlined functions
+        // the body is inlined at every call, so its labels are named by the
+        // call
         const std::string_view call_path{tc.get_call_path()};
 
         const std::string src_loc{
@@ -634,7 +634,7 @@ class inline_call {
 
         func.add_constants(tc, indent + 1);
 
-        // add aliases
+        // the body names the arguments and the result by the parameters
         for (const alias_info& e : aliases_to_add) {
             const bound_storage* const storage{
                 std::get_if<bound_storage>(&e.binding),
@@ -655,8 +655,6 @@ class inline_call {
         // provide the exit label for 'return' to jump to
 
         x.label(indent, ret_jmp_label);
-
-        // apply unary ops to result if present
 
         apply_unary_ops_to_result(tc, indent, func);
 
@@ -686,7 +684,7 @@ class inline_call {
 
             const operand address{
                 x.alloc_scratch_register(call_.tk, indent,
-                                         tc.get_type_address()),
+                                         tc.builtins().address()),
             };
 
             address_registers.push_back(address);
@@ -814,7 +812,7 @@ class inline_call {
         machine& x{tc.machine()};
 
         const operand address{
-            x.alloc_scratch_register(call_.tk, indent, tc.get_type_address()),
+            x.alloc_scratch_register(call_.tk, indent, tc.builtins().address()),
         };
 
         comment_result_address(tc, indent, dst);
@@ -998,7 +996,7 @@ class inline_call {
         };
 
         if (value) {
-            return alias_info::make_constant(param.identifier(),
+            return alias_info::make_constant(param.name_or_literal(),
                                              param.get_type(), *value);
         }
 
@@ -1011,8 +1009,8 @@ class inline_call {
         allocated_registers.push_back(reg);
         arg.compile(tc, indent, destination::of_register(reg));
 
-        return alias_info::make_register(param.identifier(), param.get_type(),
-                                         reg);
+        return alias_info::make_register(param.name_or_literal(),
+                                         param.get_type(), reg);
     }
 
     // an identifier or a constant, with or without unary operators
@@ -1033,12 +1031,12 @@ class inline_call {
         // e.g. '~1' is not
         if (arg_info.is_const()) {
             return alias_info::make_constant(
-                param.identifier(), param.get_type(),
+                param.name_or_literal(), param.get_type(),
                 arg.get_unary_ops().evaluate_constant(arg_info.const_value()));
         }
 
         if (arg.get_unary_ops().is_empty()) {
-            return make_storage_alias(param, arg.identifier(),
+            return make_storage_alias(param, arg.name_or_literal(),
                                       call_site::argument_target(tc, arg));
         }
 
@@ -1054,8 +1052,8 @@ class inline_call {
         arg.get_unary_ops().compile(x, indent, arg.tok(), reg,
                                     tc.checks().overflow_options());
 
-        return alias_info::make_register(param.identifier(), param.get_type(),
-                                         reg);
+        return alias_info::make_register(param.name_or_literal(),
+                                         param.get_type(), reg);
     }
 
     // an indexed argument keeps its computed address, e.g. [rbp + r14 * 4 +
@@ -1084,9 +1082,9 @@ class inline_call {
         allocated_registers.append_range(regs_lea);
 
         return alias_info::make_storage(
-            param.identifier(), param.get_type(),
+            param.name_or_literal(), param.get_type(),
             {
-                .path{std::string{arg.identifier()}},
+                .path{std::string{arg.name_or_literal()}},
                 .lea{lea},
                 .is_element{arg.is_array_element()},
                 .bound{call_site::argument_target(tc, arg)},
@@ -1130,7 +1128,8 @@ class inline_call {
                        const std::string_view path,
                        const storage_target& bound = {}) -> alias_info {
 
-        return alias_info::make_storage(param.identifier(), param.get_type(),
+        return alias_info::make_storage(param.name_or_literal(),
+                                        param.get_type(),
                                         {
                                             .path{std::string{path}},
                                             .lea{},
@@ -1391,7 +1390,7 @@ class noninline_call {
         x.check_frame_capacity(
             call_.tk, indent, frame_address,
             operand::symbol(func.frame_size_label(array_lengths),
-                            tc.get_type_address()),
+                            tc.builtins().address()),
             tc.checks().frame);
 
         // the registers holding the addresses of the arguments are still
@@ -1628,7 +1627,8 @@ class noninline_call {
 
         const std::string_view root{item.root};
 
-        if (tc.is_global_var(root)) {
+        // note: also true when a local of the same name shadows the global
+        if (tc.scopes().front().has_var(root)) {
             return part + std::format(" global {}", root);
         }
 
@@ -1690,7 +1690,7 @@ class stmt_call : public expression {
 
         read_callee(tc, tz, expected_type, "function name");
 
-        if (not tc.is_func_builtin(func_name_)) {
+        if (not tc.funcs().is_builtin(func_name_)) {
             parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_));
             return;
         }
@@ -1778,7 +1778,7 @@ class stmt_call : public expression {
 
         // note: 'read', 'write' and 'exit' are built-ins with a statement of
         //       their own
-        assert(not tc.is_func_builtin(func_name_));
+        assert(not tc.funcs().is_builtin(func_name_));
 
         const call_site call{site()};
 
@@ -1843,8 +1843,9 @@ class stmt_call : public expression {
         args.reserve(registers.size());
 
         for (size_t index{}; index < registers.size(); ++index) {
-            args.push_back(x.alloc_named_register(
-                tok(), indent, registers.at(index), tc.get_type_default()));
+            args.push_back(
+                x.alloc_named_register(tok(), indent, registers.at(index),
+                                       tc.builtins().default_type()));
 
             argument(index).compile(tc, indent,
                                     destination::of_register(args.back()));
@@ -1879,7 +1880,7 @@ class stmt_call : public expression {
         if (param.is_array()) {
             // an expression is not an array
             const bool is_array_arg{
-                arg.is_identifier() and not arg.is_expression() and
+                arg.is_name_or_literal() and not arg.is_expression() and
                     tc.make_ident_info(arg).is_array(),
             };
 
@@ -1896,7 +1897,7 @@ class stmt_call : public expression {
         }
 
         // the alias would make the parameter name the whole array
-        if (arg.is_identifier()) {
+        if (arg.is_name_or_literal()) {
             toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
         }
     }
@@ -1910,7 +1911,7 @@ class stmt_call : public expression {
         const expr_any& arg{args_.at(index)};
 
         // expressions and unary operators pass a copied value
-        if (not arg.is_identifier() or arg.is_expression() or
+        if (not arg.is_name_or_literal() or arg.is_expression() or
             not arg.get_unary_ops().is_empty()) {
 
             return;
@@ -1933,14 +1934,15 @@ class stmt_call : public expression {
                 arg.tok(),
                 std::format("read-only '{}' cannot be the receiver of 'mut' "
                             "method '{}'{}",
-                            arg.identifier(), func_name_,
+                            arg.name_or_literal(), func_name_,
                             read_only_hint(info))};
         }
 
         throw compiler_exception{
-            arg.tok(), std::format("read-only '{}' cannot be passed to a "
-                                   "'mut' parameter{}",
-                                   arg.identifier(), read_only_hint(info))};
+            arg.tok(),
+            std::format("read-only '{}' cannot be passed to a "
+                        "'mut' parameter{}",
+                        arg.name_or_literal(), read_only_hint(info))};
     }
 
     // an inlined call compiles its body in place, so nesting is limited
@@ -1951,7 +1953,7 @@ class stmt_call : public expression {
         // makes its condition fold, otherwise it would expand without end
         constexpr size_t max_inlined_nesting{64};
 
-        if (tc.inlined_nesting(func.name()) >= max_inlined_nesting) {
+        if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
             throw compiler_exception{
                 tok(), std::format("recursion of inlined function '{}' does "
                                    "not end at compile time, declare it "
@@ -1962,7 +1964,7 @@ class stmt_call : public expression {
         // each inlined call and block inside it recurses in the compiler
         constexpr size_t max_frame_count{256};
 
-        if (tc.frame_count() >= max_frame_count) {
+        if (tc.scopes().frames().size() >= max_frame_count) {
             throw compiler_exception{
                 tok(), std::format("inlined calls are nested too deep, the "
                                    "limit is {} levels, declare a function "
@@ -2018,7 +2020,7 @@ class stmt_call : public expression {
 
             // expressions, instance literals and calls, and unary operators
             // pass a copied value
-            if (arg.is_expression() or not arg.is_identifier() or
+            if (arg.is_expression() or not arg.is_name_or_literal() or
                 not arg.get_unary_ops().is_empty()) {
 
                 continue;
@@ -2084,9 +2086,9 @@ class stmt_call : public expression {
                 arg.tok(),
                 std::format("{} '{}' may share storage with {} '{}' "
                             "(both name '{}'), {}",
-                            describe_argument(index), arg.identifier(),
+                            describe_argument(index), arg.name_or_literal(),
                             describe_argument(other.index),
-                            args_.at(other.index).identifier(),
+                            args_.at(other.index).name_or_literal(),
                             target.display_root(), use_temporary_fix)};
         }
     }
@@ -2105,7 +2107,8 @@ class stmt_call : public expression {
             args_.at(index).tok(),
             std::format("{} '{}' may share storage with the "
                         "result destination '{}' (both name '{}'), {}",
-                        describe_argument(index), args_.at(index).identifier(),
+                        describe_argument(index),
+                        args_.at(index).name_or_literal(),
                         result.display_root(), target.display_root(),
                         use_temporary_fix)};
     }
@@ -2242,7 +2245,8 @@ class stmt_call : public expression {
                 return;
             }
 
-            args_.emplace_back(tc, tz, tc.get_type_default(), true, false, 0);
+            args_.emplace_back(tc, tz, tc.builtins().default_type(), true,
+                               false, 0);
 
             const token delim_tk{tz.is_next_char_token(',')};
             expect_arg = not delim_tk.is_empty();
@@ -2347,7 +2351,7 @@ class stmt_call : public expression {
             std::format("{}.{}", type_tk.text(), constructor_name_tk.text()),
         };
 
-        if (tc.is_func(name) or not tc.has_type(type_tk.text())) {
+        if (tc.is_func(name) or not tc.types().has(type_tk.text())) {
             return name;
         }
 
@@ -2366,7 +2370,7 @@ class stmt_call : public expression {
 
         std::string description{type_tk.text()};
 
-        if (tc.has_type(type_tk.text())) {
+        if (tc.types().has(type_tk.text())) {
             const std::string_view bound{
                 tc.get_type_or_throw(type_tk, type_tk.text()).name(),
             };

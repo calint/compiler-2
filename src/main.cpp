@@ -1,4 +1,3 @@
-// reviewed: 2025-09-29
 
 #include <algorithm>
 #include <array>

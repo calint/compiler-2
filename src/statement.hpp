@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cassert>
 #include <cstddef>
@@ -234,7 +233,7 @@ class one_line_source final {
 //                  'expr_arith', 'expr_any', 'stmt_builtin_convert',
 //                  'stmt_builtin_array_length', 'stmt_builtin_arrays_equal',
 //                  'stmt_call'
-//   a place        'identifier', 'is_identifier', 'accessed_path',
+//   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and
 //                  'expr_arith', 'expr_any' and 'expr_type' that hold one
@@ -324,24 +323,30 @@ class statement {
         return uops_;
     }
 
-    [[nodiscard]] virtual auto identifier() const -> std::string_view {
-        return token_.text();
-    }
-
     [[nodiscard]] virtual auto is_array_element() const -> bool {
         return false;
     }
 
-    // lets callers identify 'expr_arith' without rtti
+    // the value is computed, it is not a name or a constant read in place
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
-    [[nodiscard]] virtual auto is_identifier() const -> bool { return false; }
-
     [[nodiscard]] virtual auto is_indexed() const -> bool { return false; }
+
+    // a name or a literal, its unary ops aside, e.g. '-x' is one too; 'x' is
+    // read in place when also not 'is_expression'
+    [[nodiscard]] virtual auto is_name_or_literal() const -> bool {
+        return false;
+    }
 
     // true when computing at a narrower width gives the same low bits
     [[nodiscard]] virtual auto keeps_low_bits_when_narrowed() const -> bool {
         return false;
+    }
+
+    // the text the resolver looks up: a name such as 'p.x', or a literal such
+    // as '3', 'true' or the folded '-3' of 'i8(-3)', which resolve to constants
+    [[nodiscard]] virtual auto name_or_literal() const -> std::string_view {
+        return token_.text();
     }
 
     // where the name an error is about is, the last name of a path for an
@@ -373,7 +378,7 @@ class statement {
                              [[maybe_unused]] const read_visitor reader) const
         -> void {
 
-        assert(identifier() != var);
+        assert(name_or_literal() != var);
     }
 
     //

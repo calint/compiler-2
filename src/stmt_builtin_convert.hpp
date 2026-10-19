@@ -56,7 +56,7 @@ class stmt_builtin_convert final : public expression {
         }
 
         const std::optional<int64_t> value{
-            constant_parser::parse_constant(tk, arg_.identifier()),
+            constant_parser::parse_constant(tk, arg_.name_or_literal()),
         };
 
         if (value) {
@@ -169,24 +169,24 @@ class stmt_builtin_convert final : public expression {
         return expression::get_unary_ops();
     }
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(not folded_.empty());
-
-        return folded_;
-    }
-
     [[nodiscard]] auto is_expression() const -> bool override {
         return folded_.empty();
     }
 
     // a folded literal is a constant, and constants are identifiers
-    [[nodiscard]] auto is_identifier() const -> bool override {
+    [[nodiscard]] auto is_name_or_literal() const -> bool override {
         return not folded_.empty();
     }
 
     // the builtin computes its own width before the destination narrows it
     [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
         return true;
+    }
+
+    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
+        assert(not folded_.empty());
+
+        return folded_;
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
@@ -205,7 +205,7 @@ class stmt_builtin_convert final : public expression {
         -> const type& {
 
         if (tk.is_text("int")) {
-            return tc.get_type_default();
+            return tc.builtins().default_type();
         }
 
         return tc.get_type_or_throw(tk, tk.text());

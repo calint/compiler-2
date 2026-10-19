@@ -35,7 +35,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
         assert_no_unary_ops();
 
-        set_type(tc.get_type_bool());
+        set_type(tc.builtins().boolean());
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{
@@ -56,7 +56,7 @@ class stmt_builtin_arrays_equal final : public expression {
         rhs_delim_tk_ =
             tz.expect_char_token(',', "expected ',' followed by 'count'");
 
-        count_ = {tc, tz, tc.get_type_default(), true, false, 0};
+        count_ = {tc, tz, tc.builtins().default_type(), true, false, 0};
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the arguments");

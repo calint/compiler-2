@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-29
 
 #include <algorithm>
 #include <array>
@@ -53,7 +52,10 @@
 //   'ident_resolver' resolves a name by walking the frames, following aliases
 //   'definition_checks' the errors of a name defined twice
 //   'variable_comments' the comment of where a variable is stored
-//   'toc'           the facade the statements use, owns all of the above
+//   'toc'           the facade the statements use, owns all of the above; a
+//                   method of 'toc' changes state or combines tables, a query
+//                   of one table goes through its const accessor, e.g.
+//                   'tc.scopes().is_alias(name)'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
 //   'make_count_emitter' compiles the count of a bulk operation
@@ -521,7 +523,8 @@ class ident_builder final {
             var.base_register.empty() ? base_register : var.base_register,
         };
 
-        // find first field so operand gets a valid built-in
+        // a memory operand needs a built-in type, the first field of an
+        // instance starts at its address
         while (not tp->is_builtin()) {
             tp = tp->fields().front().type_ptr;
         }
@@ -583,12 +586,11 @@ class ident_builder final {
         // last lea encountered is the starting point when accessing
         // identifiers
 
-        // start from the lea address and calculate offset to referred field
+        // the fields after the known address are at fixed offsets from it
         const std::span<const std::string> elem_path_from_lea{
             std::span{info.elem_path()}.subspan(lea_index),
         };
 
-        // navigate to referred element and get offset
         const size_t offset{
             info.type_path().at(lea_index)->field_offset(src_loc_tk,
                                                          elem_path_from_lea),
@@ -768,6 +770,11 @@ class function_table final {
 
     [[nodiscard]] auto has(const std::string_view name) const -> bool {
         return funcs_.has(name);
+    }
+
+    // declared without a definition, e.g. 'exit'
+    [[nodiscard]] auto is_builtin(const std::string_view name) const -> bool {
+        return get(name).def == nullptr;
     }
 
     // a copy, the list grows while the bodies compile
@@ -1076,6 +1083,10 @@ class scope_stack final {
     [[nodiscard]] auto front() -> frame& { return frames_.front(); }
 
     [[nodiscard]] auto front() const -> const frame& { return frames_.front(); }
+
+    [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
+        return find_const(name) != nullptr;
+    }
 
     // how many times the inlined function 'name' is being compiled in place
     // by the current function body, inlined bodies are searched down to the
@@ -1725,7 +1736,7 @@ class ident_resolver final {
                 ident, id.str(), builtins_.get().default_type(), named->value);
         }
 
-        // not resolved, return empty info
+        // the caller reports an unknown name with its own wording
         return ident_info::make_empty();
     }
 
@@ -1736,7 +1747,6 @@ class ident_resolver final {
                const std::string_view ident, walk& step) const
         -> std::optional<ident_info> {
 
-        // does this frame contain the variable?
         if (cur_frame.has_var(step.id.base())) {
             return resolve_var_in(cur_frame, src_loc_tk, ident, step);
         }
@@ -1747,8 +1757,8 @@ class ident_resolver final {
             return std::nullopt;
         }
 
-        // this is an alias, continue resolving until it is a variable,
-        // register or constant
+        // an alias names something of the caller, so the walk continues in
+        // the frames outside
         if (cur_frame.has_alias(step.id.base())) {
             return follow_alias(cur_frame.get_alias(step.id.base()), ident,
                                 step);
@@ -1764,32 +1774,30 @@ class ident_resolver final {
                      const std::optional<known_address>& known) const
         -> ident_info {
 
-        // try function scope
+        // a local hides a global of the same name
         if (frm.has_var(id.base())) {
             return resolve_var(src_loc_tk, ident, id,
                                frm.get_var_const_ref(id.base()), known);
         }
 
-        // try global scope
         if (scopes_.get().front().has_var(id.base())) {
             return resolve_var(
                 src_loc_tk, ident, id,
                 scopes_.get().front().get_var_const_ref(id.base()), known);
         }
 
-        // try constant
+        // a constant is found after the variables, a variable may hide it
         return resolve_constant_or_empty(src_loc_tk, ident, id);
     }
 
-    // reviewed: 2026-09-09
     [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
                                         const std::string_view ident) const
         -> ident_info {
 
         assert(not ident.empty());
 
-        // get the base of the identifier: e.g. lnks[1].pos.y -> lnks
-        // traverse the frames and resolve to a variable, register or constant
+        // the innermost frame that knows the root name decides, e.g. 'lnks' of
+        // 'lnks[1].pos.y'
 
         walk step{ident_path{std::string{ident}}};
 
@@ -2354,6 +2362,12 @@ class toc final {
         storage_.begin_compile();
     }
 
+    // the tables are read through these accessors, a change goes through a
+    // method of 'toc' because it keeps several of them consistent
+    [[nodiscard]] auto builtins() const -> const builtin_types& {
+        return builtins_;
+    }
+
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace
     auto check_only(const std::function_ref<void()> compile) -> void {
@@ -2377,7 +2391,7 @@ class toc final {
             return value;
         }
 
-        if (has_const(tk.text())) {
+        if (scopes_.has_const(tk.text())) {
             return get_const(tk.text());
         }
 
@@ -2402,6 +2416,8 @@ class toc final {
                            call_path.empty() ? std::string{}
                                              : std::format(".{}", call_path));
     }
+
+    [[nodiscard]] auto data() const -> const data_table& { return data_; }
 
     auto enter_block() -> void { scopes_.enter_block(); }
 
@@ -2464,17 +2480,7 @@ class toc final {
         scopes_.set_max_depth(0);
     }
 
-    [[nodiscard]] auto foo_array(const std::string_view name) const
-        -> foo_array_info {
-
-        return scopes_.foo_array(name);
-    }
-
-    // the scopes inside each other, the calls inlined in each other and their
-    // blocks
-    [[nodiscard]] auto frame_count() const -> size_t {
-        return scopes_.frames().size();
-    }
+    [[nodiscard]] auto funcs() const -> const function_table& { return funcs_; }
 
     [[nodiscard]] auto generics() -> generic_registry& { return generics_; }
 
@@ -2499,27 +2505,11 @@ class toc final {
         return c->value;
     }
 
-    [[nodiscard]] auto get_data() const
-        -> const std::vector<const stmt_def_dat*>& {
-
-        return data_.dats();
-    }
-
-    [[nodiscard]] auto get_func_defs() const
-        -> std::span<const stmt_def_func* const> {
-
-        return funcs_.defs();
-    }
-
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
                                          const std::string_view name) const
         -> const stmt_def_func& {
 
         return *get_func_info_or_throw(src_loc_tk, name).def;
-    }
-
-    [[nodiscard]] auto get_func_return_label() const -> std::string_view {
-        return scopes_.current_func_frame().func_ret_label();
     }
 
     [[nodiscard]] auto
@@ -2550,12 +2540,6 @@ class toc final {
                                });
     }
 
-    [[nodiscard]] auto get_looping_label_or_throw(const token& src_loc_tk) const
-        -> std::string_view {
-
-        return scopes_.looping_label_or_throw(src_loc_tk);
-    }
-
     // no token names a missing 'main'
     [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
         if (not funcs_.has(reserved_names::main)) {
@@ -2563,24 +2547,6 @@ class toc final {
         }
 
         return *funcs_.get(reserved_names::main).def;
-    }
-
-    [[nodiscard]] auto get_string_constants() const
-        -> std::span<const machine::string_constant> {
-
-        return data_.constants();
-    }
-
-    [[nodiscard]] auto get_type_address() const -> const type& {
-        return builtins_.address();
-    }
-
-    [[nodiscard]] auto get_type_bool() const -> const type& {
-        return builtins_.boolean();
-    }
-
-    [[nodiscard]] auto get_type_default() const -> const type& {
-        return builtins_.default_type();
     }
 
     [[nodiscard]] auto get_type_i8() const -> const type& {
@@ -2613,20 +2579,12 @@ class toc final {
         return types_.get(name);
     }
 
-    [[nodiscard]] auto get_type_void() const -> const type& {
-        return builtins_.void_type();
-    }
-
-    [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
-        return scopes_.find_const(name) != nullptr;
-    }
-
     [[nodiscard]] auto has_lea(const statement& st) const -> bool {
-        if (not st.is_identifier()) {
+        if (not st.is_name_or_literal()) {
             return false;
         }
 
-        std::string_view id_base{ident_info::root_of(st.identifier())};
+        std::string_view id_base{ident_info::root_of(st.name_or_literal())};
 
         for (const frame& frm : scopes_.frames() | std::views::reverse) {
             if (frm.has_var(id_base)) {
@@ -2669,36 +2627,8 @@ class toc final {
         return not machine_.get().slot_register().empty();
     }
 
-    [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
-        return types_.has(name);
-    }
-
-    [[nodiscard]] auto inlined_nesting(const std::string_view name) const
-        -> size_t {
-
-        return scopes_.inlined_nesting(name);
-    }
-
-    // a parameter of the function being compiled, it names the argument
-    [[nodiscard]] auto is_alias(const std::string_view name) const -> bool {
-        return scopes_.is_alias(name);
-    }
-
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name) or generics_.has_func(name);
-    }
-
-    [[nodiscard]] auto is_func_builtin(const std::string_view name) const
-        -> bool {
-
-        return funcs_.get(name).def == nullptr;
-    }
-
-    // a local with the same name shadows it, so this may report a local
-    [[nodiscard]] auto is_global_var(const std::string_view name) const
-        -> bool {
-
-        return scopes_.front().has_var(name);
     }
 
     // the initializer of a global variable is outside of any function
@@ -2708,27 +2638,6 @@ class toc final {
             [](const frame& frm) -> bool { return frm.is_func(); });
     }
 
-    [[nodiscard]] auto is_in_loop_block() const -> bool {
-        return scopes_.is_in_loop_block();
-    }
-
-    [[nodiscard]] auto is_inlined_func() const -> bool {
-        return scopes_.current_func_frame().is_inlined_func();
-    }
-
-    // 'int' and the names of the builtin integer types
-    [[nodiscard]] auto is_integer_type_name(const std::string_view name) const
-        -> bool {
-
-        return builtins_.is_integer_name(name);
-    }
-
-    [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
-        -> bool {
-
-        return scopes_.is_var_or_alias(name);
-    }
-
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
     [[nodiscard]] auto make_ident_info(const statement& st) const
@@ -2736,7 +2645,7 @@ class toc final {
 
         // the name refers to the declared array, 'ps[1]' accesses one element
         const ident_info declared{
-            resolver_.resolve(st.tok(), st.identifier()),
+            resolver_.resolve(st.tok(), st.name_or_literal()),
         };
 
         const bool is_element{st.is_array_element()};
@@ -2785,22 +2694,7 @@ class toc final {
 
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
-        return storage_.next_frame_address(get_type_address());
-    }
-
-    // a copy, the list grows while the bodies compile
-    [[nodiscard]] auto noninline_body_at(const size_t index) const
-        -> noninline_body {
-
-        return funcs_.noninline_body_at(index);
-    }
-
-    [[nodiscard]] auto noninline_body_count() const -> size_t {
-        return funcs_.noninline_body_count();
-    }
-
-    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        return storage_.peak_frame_size_bytes();
+        return storage_.next_frame_address(builtins_.address());
     }
 
     auto reset_usage() -> void {
@@ -2809,13 +2703,6 @@ class toc final {
         storage_.reset_usage();
         scopes_.set_max_depth(0);
         funcs_.clear_noninline_bodies();
-    }
-
-    [[nodiscard]] auto root_path(const std::string_view name,
-                                 const std::optional<access_path>& path) const
-        -> std::optional<access_path> {
-
-        return scopes_.root_path(name, path);
     }
 
     // the variable that 'name' names, a parameter is followed to its argument
@@ -2843,6 +2730,8 @@ class toc final {
                            scopes_.var_frame_index(info.elem_path().front()));
     }
 
+    [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
+
     auto set_builtin_types(const type& t_i64, const type& t_i32,
                            const type& t_i16, const type& t_i8) -> void {
 
@@ -2867,6 +2756,10 @@ class toc final {
         return locations_.source_of(src_loc_tk);
     }
 
+    [[nodiscard]] auto storage() const -> const storage_layout& {
+        return storage_;
+    }
+
     // what 'name' names with 'path' inside it, as a root variable and bytes
     // of it. a parameter is followed to its argument and the element 'e' of a
     // 'foo' is any element of the array it iterates
@@ -2875,12 +2768,12 @@ class toc final {
                       const std::optional<access_path>& path) const
         -> storage_target {
 
-        const foo_array_info array{foo_array(name)};
+        const foo_array_info array{scopes_.foo_array(name)};
 
         if (array.root.empty()) {
             return {
                 .root{root_variable_of(src_loc_tk, name)},
-                .path{root_path(name, path)},
+                .path{scopes_.root_path(name, path)},
             };
         }
 
@@ -2902,6 +2795,8 @@ class toc final {
         };
     }
 
+    [[nodiscard]] auto types() const -> const type_table& { return types_; }
+
     [[nodiscard]] auto types() -> type_table& { return types_; }
 
     [[nodiscard]] auto usage() const -> usage_statistics {
@@ -2912,10 +2807,6 @@ class toc final {
             .dat_var_padding_bytes{data_.entry_gap()},
             .uninstantiated_generics{generics_.uninstantiated_func_names()},
         };
-    }
-
-    [[nodiscard]] auto vars_capacity_bytes() const -> size_t {
-        return storage_.vars_capacity_bytes();
     }
 
     //
@@ -2931,7 +2822,7 @@ class toc final {
 
         throw compiler_exception{
             st.tok(),
-            std::format("array '{}' must be indexed", st.identifier())};
+            std::format("array '{}' must be indexed", st.name_or_literal())};
     }
 
     // a function named 'not' is read as the operator in every expression,
@@ -3097,11 +2988,12 @@ class toc final {
 
     if (not value) {
         throw compiler_exception{
-            arg_tk, std::format("generic parameter '{}' of '{}' needs a "
-                                "constant, got {}'{}'",
-                                param_name, generic_name,
-                                tc.has_type(arg_tk.text()) ? "the type " : "",
-                                arg_tk.text())};
+            arg_tk,
+            std::format("generic parameter '{}' of '{}' needs a "
+                        "constant, got {}'{}'",
+                        param_name, generic_name,
+                        tc.types().has(arg_tk.text()) ? "the type " : "",
+                        arg_tk.text())};
     }
 
     return *value;

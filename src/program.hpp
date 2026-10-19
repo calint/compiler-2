@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <algorithm>
 #include <cstddef>
@@ -316,15 +315,16 @@ class program final {
                             vars_size_bytes, backend.max_storage_bytes()));
         }
 
-        // create a placeholder token to use with 'toc' functions
+        // a built-in has no place in the source
         const token src_loc_tk;
 
-        // add built-in calls
+        // the built-in functions are called like the defined ones, so their
+        // names are declared the same way
         tc_.add_func(src_loc_tk, "exit", type_void_, nullptr, {});
         tc_.add_func(src_loc_tk, "sector_read", type_void_, nullptr, {});
         tc_.add_func(src_loc_tk, "sector_write", type_void_, nullptr, {});
 
-        // add built-in types
+        // the built-in types are looked up by name like the defined ones
         tc_.add_type(src_loc_tk, type_i64_);
         tc_.add_type(src_loc_tk, type_i32_);
         tc_.add_type(src_loc_tk, type_i16_);
@@ -342,10 +342,13 @@ class program final {
         x.set_builtin_types(type_i64_, type_i32_, type_i16_, type_i8_);
 
         // the default type has a name of its own so that it is portable
-        tc_.add_type_alias(src_loc_tk, "int", tc_.get_type_default());
+        tc_.add_type_alias(src_loc_tk, "int", tc_.builtins().default_type());
 
-        tc_.add_func(src_loc_tk, "read", tc_.get_type_default(), nullptr, {});
-        tc_.add_func(src_loc_tk, "write", tc_.get_type_default(), nullptr, {});
+        tc_.add_func(src_loc_tk, "read", tc_.builtins().default_type(), nullptr,
+                     {});
+
+        tc_.add_func(src_loc_tk, "write", tc_.builtins().default_type(),
+                     nullptr, {});
 
         tc_.enter_block();
 
@@ -356,7 +359,7 @@ class program final {
         tc_.exit_block();
 
         assignment_analysis::assert_functions_set_return_value(
-            tc_.get_func_defs());
+            tc_.funcs().defs());
     }
 
     auto build(std::ostream& os) -> void {
@@ -452,7 +455,7 @@ class program final {
 
         // zero padding places each dat at the offset 'toc::add_var' gave it
         size_t dat_offset{};
-        for (const stmt_def_dat* s : tc_.get_data()) {
+        for (const stmt_def_dat* s : tc_.data().dats()) {
             const size_t padding_bytes{
                 align_storage_size(dat_offset, s->get_type().alignment()) -
                     dat_offset,
@@ -469,7 +472,7 @@ class program final {
                                           s->size_bytes());
         }
 
-        x.reserve_variables(alignment, tc_.vars_capacity_bytes());
+        x.reserve_variables(alignment, tc_.storage().vars_capacity_bytes());
     }
 
     auto load_file(const std::filesystem::path& path, const token& path_tk)
@@ -633,8 +636,8 @@ class program final {
 
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
-        for (size_t i{}; i < tc.noninline_body_count(); ++i) {
-            const noninline_body body{tc.noninline_body_at(i)};
+        for (size_t i{}; i < tc.funcs().noninline_body_count(); ++i) {
+            const noninline_body body{tc.funcs().noninline_body_at(i)};
 
             compile_noninline_body(tc, indent, *body.func, body.array_lengths);
         }
@@ -687,13 +690,13 @@ class program final {
 
     static auto emit_read_only_data(toc& tc) -> void {
         // no section switches without strings
-        if (tc.get_string_constants().empty()) {
+        if (tc.data().constants().empty()) {
             return;
         }
 
         machine& x{tc.machine()};
 
         x.comment({}, 0, "");
-        x.emit_string_constants(tc.get_string_constants());
+        x.emit_string_constants(tc.data().constants());
     }
 };

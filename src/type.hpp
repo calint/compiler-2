@@ -1,6 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
-//           2026-09-09
 
 #include <algorithm>
 #include <cassert>

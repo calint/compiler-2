@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <string_view>
@@ -15,7 +14,7 @@
 class stmt_return final : public statement {
   public:
     stmt_return(const toc& tc, const token src_loc_tk) : statement{src_loc_tk} {
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
     }
 
     stmt_return() = default;
@@ -32,20 +31,24 @@ class stmt_return final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        if (not tc.is_inlined_func()) {
+        if (not tc.scopes().current_func_frame().is_inlined_func()) {
             x.return_function(indent);
             return;
         }
 
-        const std::string_view return_label{tc.get_func_return_label()};
+        const std::string_view return_label{
+            tc.scopes().current_func_frame().func_ret_label(),
+        };
 
         if (return_label.empty()) {
             // note: return from 'main' is exiting
-            x.exit(tok(), indent, operand::imm(0, tc.get_type_default()));
+            x.exit(tok(), indent,
+                   operand::imm(0, tc.builtins().default_type()));
+
             return;
         }
 
-        // jump to return labels
+        // an inlined body ends where the call continues
         x.branch(indent, return_label);
     }
 

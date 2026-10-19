@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cassert>
 #include <cstddef>
@@ -46,10 +45,11 @@ class type_fields final {
                                 fld.name(), name_tk.text())};
             }
 
-            // get the type of field. no type name means default
+            // a field without a type name has the default type, e.g. 'x' of
+            // 'type point { x, y }'
             const type& fld_tp{
                 fld.type_str().empty()
-                    ? tc.get_type_default()
+                    ? tc.builtins().default_type()
                     : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
             };
 
@@ -66,7 +66,7 @@ class type_fields final {
         open_brace_tk_ = open_brace_tk;
 
         while (true) {
-            // read field definition with the next token being the name
+            // a field starts with its name
             // e.g. 'x', 'x i32' or 'items point[4]'
             fields_.emplace_back(tc, tz.next_token(), tz);
 
@@ -162,7 +162,7 @@ inline auto assert_arg_count(const token& generic_tk,
 inline auto assert_generic_type(const toc& tc, const token& generic_tk,
                                 const std::string_view user) -> void {
 
-    if (tc.has_type(generic_tk.text())) {
+    if (tc.types().has(generic_tk.text())) {
         throw compiler_exception{
             generic_tk, std::format("'{}' is a type, not a generic type",
                                     generic_tk.text())};

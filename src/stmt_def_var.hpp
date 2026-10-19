@@ -1,6 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
-//           2026-09-09
 
 #include <cstddef>
 #include <cstdint>
@@ -62,8 +60,8 @@ class stmt_def_var final : public statement {
             return;
         }
 
-        // add var to toc without emitting output so the further parsing has the
-        // variable declared
+        // the variable is declared during the parse so later statements can
+        // name it
         tc.add_var(name_tk_, 0, make_var_info(), var_kind::var);
 
         // the identifier is parsed where it ends at '=', past it the '[2]' in
@@ -151,7 +149,7 @@ class stmt_def_var final : public statement {
         if (info.array_len() == 0) {
             throw compiler_exception{
                 tk, std::format("size of array '{}' is not known",
-                                arith.identifier())};
+                                arith.name_or_literal())};
         }
 
         is_array_ = true;
@@ -164,7 +162,7 @@ class stmt_def_var final : public statement {
         const bool is_string{tz.peek_char_after_whitespace() == '"'};
 
         if (not is_string and not starts_array_literal(tc, tz)) {
-            set_type(tc.get_type_default());
+            set_type(tc.builtins().default_type());
 
             trial_parse(tc, tz, [this, &tc, &tz] -> void {
                 deduce_from_initializer(tc, tz);
@@ -221,7 +219,7 @@ class stmt_def_var final : public statement {
         const expr_arith* const arith{condition.arithmetic()};
 
         if (arith == nullptr) {
-            set_type(tc.get_type_bool());
+            set_type(tc.builtins().boolean());
             return;
         }
 
@@ -233,7 +231,7 @@ class stmt_def_var final : public statement {
 
         set_type(arith->single_operand_type());
 
-        if (not arith->is_identifier() or
+        if (not arith->is_name_or_literal() or
             not arith->get_unary_ops().is_empty()) {
 
             return;
@@ -248,7 +246,7 @@ class stmt_def_var final : public statement {
     [[nodiscard]] auto fold_initializer(toc& tc, tokenizer& tz)
         -> std::optional<int64_t> {
 
-        if (is_array_ or &get_type() != &tc.get_type_default()) {
+        if (is_array_ or &get_type() != &tc.builtins().default_type()) {
             return std::nullopt;
         }
 
@@ -307,7 +305,7 @@ class stmt_def_var final : public statement {
         -> const type& {
 
         if (is_default_array_literal(tz)) {
-            return tc.get_type_default();
+            return tc.builtins().default_type();
         }
 
         const token tk{tz.next_token()};

@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cassert>
 #include <cstddef>
@@ -232,7 +231,7 @@ class stmt_def_dat final : public statement {
 
         // e.g. 'dat primes = []{2, 3, 5}'
         if (is_default_array_literal(tz)) {
-            set_type(tc.get_type_default());
+            set_type(tc.builtins().default_type());
             return parse_array_literal(tc, tz);
         }
 
@@ -280,7 +279,7 @@ class stmt_def_dat final : public statement {
         }
 
         // e.g. 'dat x = i8(3)'
-        if (tc.is_integer_type_name(tk.text()) and
+        if (tc.builtins().is_integer_name(tk.text()) and
             tz.peek_char_after_whitespace() == '(') {
 
             type_tk_ = tk;
@@ -294,7 +293,8 @@ class stmt_def_dat final : public statement {
                 tk.is_text(reserved_names::false_value),
         };
 
-        set_type(is_bool ? tc.get_type_bool() : tc.get_type_default());
+        set_type(is_bool ? tc.builtins().boolean()
+                         : tc.builtins().default_type());
 
         // the constant may start with unary operations, e.g. '-1'
         tz.put_back_token(tk);
@@ -418,7 +418,7 @@ class stmt_def_dat final : public statement {
 
         x.emit_data_array(tp.size_bytes(), values);
 
-        // pad remaining array with 0
+        // the elements not listed are zero, as in a 'var'
         if (elroot.array_count != elroot.elems.size()) {
             x.emit_repeated_data(tp.size_bytes(),
                                  elroot.array_count - elroot.elems.size(), 0);
@@ -477,7 +477,7 @@ class stmt_def_dat final : public statement {
         x.emit_string_data(elroot.src_loc_tk.string_text());
         const size_t size_bytes{elroot.src_loc_tk.string_size_bytes()};
 
-        // pad remaining array with 0
+        // the bytes after the text are zero, as in a 'var'
         assert(elroot.array_count != 0);
 
         if (size_bytes < elroot.array_count) {
@@ -593,7 +593,7 @@ class stmt_def_dat final : public statement {
                 std::format("expected a constant for '{}'", tp.name())};
         }
 
-        if (tp.is_same(tc.get_type_bool())) {
+        if (tp.is_same(tc.builtins().boolean())) {
             el.value = parse_bool_value(el.src_loc_tk);
             return el;
         }
@@ -632,7 +632,6 @@ class stmt_def_dat final : public statement {
             return parse_builtin(tc, tz, tp);
         }
 
-        // user-defined type
         if (not is_array) {
             return parse_type(tc, tz, tp);
         }
@@ -749,7 +748,7 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        // special case for string
+        // a string initializes an array but is written as one token
         if (elroot.src_loc_tk.is_string()) {
             elroot.src_loc_tk.source_to(os);
             return;

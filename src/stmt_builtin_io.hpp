@@ -63,7 +63,7 @@ class stmt_builtin_io final : public stmt_call {
 
         if (is_sector_function()) {
             assert_sector_function_call(tc);
-            set_type(tc.get_type_void());
+            set_type(tc.builtins().void_type());
         } else if (argument_count() < 2 or argument_count() > 4) {
             throw compiler_exception{tok(), "expected 2 to 4 arguments"};
         }
@@ -71,12 +71,12 @@ class stmt_builtin_io final : public stmt_call {
         // 'read' and 'sector_read' fill the buffer, the second argument
         const statement& buffer{argument(1)};
 
-        if (fills_buffer() and buffer.is_identifier()) {
+        if (fills_buffer() and buffer.is_name_or_literal()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
             if (info.is_var()) {
                 assert_not_read_only(buffer.tok(), "read into",
-                                     buffer.identifier(), info);
+                                     buffer.name_or_literal(), info);
             }
         }
     }
@@ -113,9 +113,9 @@ class stmt_builtin_io final : public stmt_call {
         const operand result{
             result_is_argument
                 ? x.make_register_operand(registers.result,
-                                          tc.get_type_default())
+                                          tc.builtins().default_type())
                 : x.alloc_named_register(tok(), indent, registers.result,
-                                         tc.get_type_default()),
+                                         tc.builtins().default_type()),
         };
 
         emit_call(x, indent, result, args);
@@ -149,7 +149,7 @@ class stmt_builtin_io final : public stmt_call {
                             usage_text())};
         }
 
-        if (buffer.is_identifier()) {
+        if (buffer.is_name_or_literal()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
             if (info.is_var() and info.is_array()) {
@@ -216,7 +216,7 @@ class stmt_builtin_io final : public stmt_call {
 
         machine& x{tc.machine()};
 
-        const type& type_default{tc.get_type_default()};
+        const type& type_default{tc.builtins().default_type()};
 
         std::vector<operand> args;
         args.reserve(registers.size());
@@ -306,7 +306,7 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         x.copy_value(tok(), indent, count,
-                     operand::imm(element_count, tc.get_type_default()));
+                     operand::imm(element_count, tc.builtins().default_type()));
     }
 
     // the start register stays allocated for the caller
@@ -321,7 +321,7 @@ class stmt_builtin_io final : public stmt_call {
 
         const operand start{
             x.alloc_scratch_register(start_arg.tok(), indent,
-                                     tc.get_type_default()),
+                                     tc.builtins().default_type()),
         };
 
         start_arg.compile(tc, indent, destination::of_register(start));

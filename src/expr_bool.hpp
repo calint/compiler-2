@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-29
 
 #include <cassert>
 #include <cstddef>
@@ -63,7 +62,7 @@ class expr_bool_op final : public statement {
         : statement{first_expression ? tz.cur_position_token()
                                      : tz.next_whitespace_token()} {
 
-        set_type(tc.get_type_bool());
+        set_type(tc.builtins().boolean());
 
         if (not first_expression) {
             parse_nots(tz);
@@ -85,7 +84,7 @@ class expr_bool_op final : public statement {
             parse_comparison_operator(tz),
         };
 
-        // e.g. if a ...
+        // without an operator the operand is the condition, e.g. 'if a {...}'
         if (not comparison) {
             is_shorthand_ = true;
             resolve_if_op_is_expression();
@@ -127,14 +126,14 @@ class expr_bool_op final : public statement {
         rhs_.source_to(os);
     }
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(not is_expression_);
-
-        return lhs_.identifier();
-    }
-
     [[nodiscard]] auto is_expression() const -> bool override {
         return is_expression_;
+    }
+
+    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
+        assert(not is_expression_);
+
+        return lhs_.name_or_literal();
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
@@ -270,7 +269,7 @@ class expr_bool_op final : public statement {
         branch_action.inverted = false;
 
         x.compare_and_branch(tok(), indent, action.destination,
-                             operand::imm(0, tc.get_type_default()),
+                             operand::imm(0, tc.builtins().default_type()),
                              branch_action, {});
     }
 
@@ -446,8 +445,8 @@ class expr_bool_op final : public statement {
 
         std::vector<operand> allocated_registers;
 
-        // optimization: copy a plain 'bool' instead of evaluating the
-        // shorthand as '!= 0'
+        // a plain 'bool' already holds 0 or 1, a copy is shorter than
+        // evaluating the shorthand as '!= 0'
         if (is_bool_copy(lhs, action)) {
             machine& x{tc.machine()};
 
@@ -468,8 +467,8 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, dst,
-                             operand::imm(0, tc.get_type_default()), action,
-                             allocated_registers);
+                             operand::imm(0, tc.builtins().default_type()),
+                             action, allocated_registers);
     }
 
     auto resolve_if_op_is_expression() -> void {
@@ -482,7 +481,7 @@ class expr_bool_op final : public statement {
 
         // if not expression, then it is a single statement and identifier is
         // valid
-        const std::string_view id{lhs_.identifier()};
+        const std::string_view id{lhs_.name_or_literal()};
 
         // a boolean value is not an expression
         if (id == reserved_names::true_value or
@@ -521,7 +520,7 @@ class expr_bool_op final : public statement {
         }
 
         const operand result{
-            x.alloc_scratch_register(tok(), indent, tc.get_type_bool()),
+            x.alloc_scratch_register(tok(), indent, tc.builtins().boolean()),
         };
 
         compile_memory_equality(tc, indent + 1, tok(), lhs, rhs, result,
@@ -533,7 +532,7 @@ class expr_bool_op final : public statement {
         const std::vector<operand> allocated_registers{result};
 
         x.compare_and_branch(tok(), indent, result,
-                             operand::imm(0, tc.get_type_default()),
+                             operand::imm(0, tc.builtins().default_type()),
                              branch_action, allocated_registers);
     }
 
@@ -642,7 +641,7 @@ class expr_bool_op final : public statement {
             return element_size_bytes;
         }
 
-        // check comparing 2 arrays of the same size without indexing
+        // arrays are compared element by element, so their lengths must agree
         // note: a whole array on one side only was rejected above
 
         if (lhs_info.array_len() != rhs_info.array_len()) {
@@ -724,7 +723,9 @@ class expr_bool_op final : public statement {
                                                 const expr_arith& side)
         -> bool {
 
-        if (not side.is_identifier() or not side.get_unary_ops().is_empty()) {
+        if (not side.is_name_or_literal() or
+            not side.get_unary_ops().is_empty()) {
+
             return false;
         }
 
@@ -822,7 +823,7 @@ class expr_bool_op final : public statement {
             x.comment(expr.tok(), indent, "src: folded constant '{}'",
                       statement::trimmed_source(expr));
 
-            return operand::imm(*value, tc.get_type_default());
+            return operand::imm(*value, tc.builtins().default_type());
         }
 
         const ident_info expr_info{tc.make_scalar_ident_info(expr)};
@@ -931,8 +932,10 @@ class expr_bool_op final : public statement {
     }
 };
 
-// list of boolean expressions / lists instead of tree
-// note: quirky parsing and compiling but supports short-circuiting
+// a list of conditions and nested lists joined by 'and' or by 'or', instead
+// of a tree
+// note: a list branches at the first operand that decides it, which is the
+//       short-circuit of 'and' and 'or'
 class expr_bool final : public statement {
     using element = std::variant<expr_bool_op, expr_bool>;
 
@@ -954,7 +957,7 @@ class expr_bool final : public statement {
 
         const tokenizer::nesting_scope nesting{tz};
 
-        set_type(tc.get_type_bool());
+        set_type(tc.builtins().boolean());
 
         // a caller might have supplied the first operand it already parsed
         // e.g. the 'bool' of 'var b = bool'
@@ -1024,13 +1027,6 @@ class expr_bool final : public statement {
                            dst);
     }
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(bools_.size() == 1);
-
-        return bools_.at(0).visit(
-            [](const auto& e) -> std::string_view { return e.identifier(); });
-    }
-
     // assumes callers only query this when expression status is relevant
     [[nodiscard]] auto is_expression() const -> bool override {
         // more than one bool in the list is an expression
@@ -1038,7 +1034,7 @@ class expr_bool final : public statement {
             return true;
         }
 
-        // 'identifier' cannot carry the negation
+        // 'name_or_literal' cannot carry the negation
         if (has_not()) {
             return true;
         }
@@ -1049,6 +1045,14 @@ class expr_bool final : public statement {
 
         return bools_.at(0).visit(
             [](const auto& e) -> bool { return e.is_expression(); });
+    }
+
+    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
+        assert(bools_.size() == 1);
+
+        return bools_.at(0).visit([](const auto& e) -> std::string_view {
+            return e.name_or_literal();
+        });
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
@@ -1208,7 +1212,7 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        // if not yet jumped to false, then jump to true
+        // every element that failed has branched to false
         x.branch(indent, jmp_to_if_true);
 
         return condition_result::unknown;
@@ -1381,8 +1385,8 @@ class expr_bool final : public statement {
             }
         }
 
-        // read 'and' or 'or'
-        // e.g. the 'and' of 'a == 1 and b == 2'
+        // the connective after an operand, e.g. the 'and' of
+        // 'a == 1 and b == 2'
         const token pos_tk{tz.cur_position_token()};
         const token op_tk{tz.next_token()};
 

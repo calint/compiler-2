@@ -19,7 +19,7 @@ class stmt_builtin_exit final : public stmt_call {
             throw compiler_exception{tok(), "expected 1 argument"};
         }
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
     }
 
     //

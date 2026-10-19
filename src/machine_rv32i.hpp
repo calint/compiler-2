@@ -1054,7 +1054,8 @@ class machine_rv32i : public machine {
 
         assert(not src.is_empty());
 
-        // skip self assignment
+        // a copy onto itself, e.g. of an alias to its argument, changes
+        // nothing
         if (same_memory(dst, src)) {
             return;
         }
@@ -1802,7 +1803,8 @@ class machine_rv32i : public machine {
 
         const size_t shift{register_bits_ - dst_type.size_bits()};
 
-        // discard high bits, then sign-extend integers or zero-extend bool
+        // the register holds the value at the full width, as the comparisons
+        // and the arithmetic of the narrow type read it
         assembler_.slli(indent, value.base_register(), value.base_register(),
                         shift);
 
@@ -1839,7 +1841,6 @@ class machine_rv32i : public machine {
 
         const operand lowered{lower_address(src_loc_tk, indent, dst)};
 
-        // store the low 32, 16, or 8 bits at base + displacement
         assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
                          value.base_register(), lowered.displacement(),
                          lowered.base_register());
@@ -4264,7 +4265,7 @@ class machine_rv32i : public machine {
             return result;
         }
 
-        // protect a result register being restored
+        // restoring the saved registers would overwrite the result
         const operand kept{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };

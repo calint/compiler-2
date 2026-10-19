@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <memory>
@@ -38,7 +37,7 @@ class stmt_block final : public statement {
 
         const tokenizer::nesting_scope nesting{tz};
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
 
         if (is_one_statement_ and braces_required) {
             throw compiler_exception{tz, "expected '{' to begin block"};

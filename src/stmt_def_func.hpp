@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <algorithm>
 #include <cassert>
@@ -122,7 +121,7 @@ struct func_head {
 
         return open_paren_tk.is_empty() and
                tc.generics().has_type(name_tk.text()) and
-               not tc.has_type(name_tk.text()) and
+               not tc.types().has(name_tk.text()) and
                tz.peek_char_after_whitespace() == '.';
     }
 
@@ -252,7 +251,7 @@ struct func_result_syntax {
                 tz.peek_char_after_whitespace() == '{',
         };
 
-        if (not tc.has_type(type_tk.text()) and not is_type_before_body) {
+        if (not tc.types().has(type_tk.text()) and not is_type_before_body) {
             tz.put_back_token(type_tk);
             type_tk = {};
         }
@@ -395,7 +394,7 @@ class stmt_def_func final : public statement {
         if (has_slot_register(tc)) {
 
             slot_register = x.alloc_named_register(
-                tok(), indent + 1, x.slot_register(), tc.get_type_address());
+                tok(), indent + 1, x.slot_register(), tc.builtins().address());
         }
 
         add_constants(tc, indent + 1);
@@ -404,7 +403,7 @@ class stmt_def_func final : public statement {
 
         code_.compile(tc, indent, destination{});
         x.return_function(indent + 1);
-        const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
+        const size_t frame_size_bytes{tc.storage().peak_frame_size_bytes()};
         tc.exit_func(name());
 
         if (not slot_register.is_empty()) {
@@ -688,7 +687,7 @@ class stmt_def_func final : public statement {
         const func_result_syntax result{func_result_syntax::read(tc, tz)};
 
         if (result.name_tk.is_empty()) {
-            set_type(tc.get_type_void());
+            set_type(tc.builtins().void_type());
             return;
         }
 
@@ -705,7 +704,7 @@ class stmt_def_func final : public statement {
 
         const type& tp{
             result.type_tk.is_empty()
-                ? tc.get_type_default()
+                ? tc.builtins().default_type()
                 : tc.get_type_or_throw(result.type_tk, result.type_tk.text()),
         };
 

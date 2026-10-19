@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cassert>
 #include <cstddef>
@@ -340,7 +339,7 @@ class tokenizer final {
 
         while (true) {
             if (is_next_char('\\')) {
-                // read the escaped character
+                // a backslash at the end of the source escapes nothing
                 if (is_eos()) {
                     throw compiler_exception{open_quote_tk,
                                              "unterminated string"};

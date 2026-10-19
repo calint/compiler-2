@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <ostream>
 #include <string_view>
@@ -154,7 +153,7 @@ class stmt_def_func_param final : public statement {
         toc::assert_valid_variable_name(tok());
 
         set_type(type_tk_.is_empty()
-                     ? tc.get_type_default()
+                     ? tc.builtins().default_type()
                      : tc.get_type_or_throw(type_tk_, type_tk_.text()));
     }
 };

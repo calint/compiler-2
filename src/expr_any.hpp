@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-29
 
 #include <cassert>
 #include <cstddef>
@@ -83,7 +82,8 @@ class expr_any final : public statement {
             return;
         }
 
-        // check if it is '{ ... }' or identifier e.g. 'str.data'
+        // an array is initialized by a '{ ... }' or by the name of an array,
+        // e.g. 'str.data'
 
         parse_element_type(tc, tz, tp);
 
@@ -255,17 +255,6 @@ class expr_any final : public statement {
             });
     }
 
-    // only string and '{}' initializers leave 'vars_' empty, callers ask
-    // arrays only when 'is_array_identifier' and arguments are never arrays
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(not vars_.empty());
-
-        return vars_.at(0).visit(
-            [](const auto& expression) -> std::string_view {
-                return expression.identifier();
-            });
-    }
-
     [[nodiscard]] auto is_array_element() const -> bool override {
         if (is_array_ or vars_.size() != 1) {
             return false;
@@ -286,18 +275,29 @@ class expr_any final : public statement {
         });
     }
 
-    [[nodiscard]] auto is_identifier() const -> bool override {
-        return vars_.at(0).visit([](const auto& expression) -> bool {
-            return expression.is_identifier();
-        });
-    }
-
     [[nodiscard]] auto is_indexed() const -> bool override {
         assert(not is_array_);
 
         return vars_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_indexed();
         });
+    }
+
+    [[nodiscard]] auto is_name_or_literal() const -> bool override {
+        return vars_.at(0).visit([](const auto& expression) -> bool {
+            return expression.is_name_or_literal();
+        });
+    }
+
+    // only string and '{}' initializers leave 'vars_' empty, callers ask
+    // arrays only when 'is_array_identifier' and arguments are never arrays
+    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
+        assert(not vars_.empty());
+
+        return vars_.at(0).visit(
+            [](const auto& expression) -> std::string_view {
+                return expression.name_or_literal();
+            });
     }
 
     [[nodiscard]] auto tok() const -> const token& override {
@@ -370,7 +370,7 @@ class expr_any final : public statement {
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
 
-        return constant_value(tc, tc.get_type_default());
+        return constant_value(tc, tc.builtins().default_type());
     }
 
     // folded at the width of 'width_type'
@@ -538,7 +538,7 @@ class expr_any final : public statement {
         std::string bytes;
         for (const expr_variant& e : vars_) {
             const std::optional<int64_t> value{
-                constant_element_value(tc, e, tc.get_type_default()),
+                constant_element_value(tc, e, tc.builtins().default_type()),
             };
 
             if (not value) {
@@ -623,7 +623,7 @@ class expr_any final : public statement {
 
         const type& literal_type{
             is_typed ? tc.get_type_or_throw(tk, tk.text())
-                     : tc.get_type_default(),
+                     : tc.builtins().default_type(),
         };
 
         if (not literal_type.is_same(tp)) {
@@ -710,19 +710,18 @@ class expr_any final : public statement {
                                   const expr_bool& condition,
                                   const operand& dst) -> void {
 
-        // labels to jump to depending on the evaluation
+        // the condition stores its value in 'dst', so both outcomes continue
+        // at the same label
         const std::string jmp_to_end{
             toc::end_label(tc.create_unique_label(src_loc_tk, "bool")),
         };
 
-        // compile and possibly evaluate constant expression
         const condition_result const_eval{
             condition.compile(tc, indent, jmp_to_end, jmp_to_end, dst),
         };
 
         machine& x{tc.machine()};
 
-        // not constant evaluation
         x.label(indent, jmp_to_end);
 
         // a constant evaluation stores its value

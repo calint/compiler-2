@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <format>
@@ -44,7 +43,7 @@ class stmt_assign_var final : public statement {
 
         const ident_info dst_info{tc.make_ident_info(stmt_ident_)};
 
-        assert_not_read_only(tok(), "assign to", stmt_ident_.identifier(),
+        assert_not_read_only(tok(), "assign to", stmt_ident_.name_or_literal(),
                              dst_info);
 
         set_type(dst_info.type_ref());
@@ -187,7 +186,7 @@ class stmt_assign_var final : public statement {
                 std::format("'{}' may share storage with the destination '{}' "
                             "(both name '{}'), compute the value in a "
                             "temporary variable first",
-                            read.text, stmt_ident_.identifier(),
+                            read.text, stmt_ident_.name_or_literal(),
                             dst.display_root())};
         }
     }
@@ -199,8 +198,8 @@ class stmt_assign_var final : public statement {
 
         const std::string_view root{stmt_ident_.first_token().text()};
 
-        return var_info.is_pointer() or tc.is_alias(root) or
-               not tc.foo_array(root).root.empty();
+        return var_info.is_pointer() or tc.scopes().is_alias(root) or
+               not tc.scopes().foo_array(root).root.empty();
     }
 
     // true when the read may be of bytes of the destination under another
@@ -217,7 +216,7 @@ class stmt_assign_var final : public statement {
             return false;
         }
 
-        if (not tc.is_var_or_alias(read_name)) {
+        if (not tc.scopes().is_var_or_alias(read_name)) {
             return false;
         }
 

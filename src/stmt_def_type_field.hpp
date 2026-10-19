@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <ostream>
@@ -23,7 +22,7 @@ class stmt_def_type_field final : public statement {
     stmt_def_type_field(const toc& tc, const token tk, tokenizer& tz)
         : statement{tk} {
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
 
         if (tk.text().empty()) {
             throw compiler_exception{tk, "expected field name"};

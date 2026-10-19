@@ -28,7 +28,7 @@ class stmt_builtin_array_length final : public expression {
         : expression{src_loc_tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
-        set_type(tc.get_type_default());
+        set_type(tc.builtins().default_type());
 
         if (open_paren_tk_.is_empty()) {
             throw compiler_exception{tz,
@@ -61,11 +61,11 @@ class stmt_builtin_array_length final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        if (not dst.type_ref().is_same(tc.get_type_default())) {
+        if (not dst.type_ref().is_same(tc.builtins().default_type())) {
             throw compiler_exception{
                 dst.error_token(tok()),
                 std::format("destination must be an '{}'",
-                            tc.get_type_default().name()),
+                            tc.builtins().default_type().name()),
             };
         }
 
@@ -90,7 +90,7 @@ class stmt_builtin_array_length final : public expression {
                                        const type& width_type) const
         -> std::optional<int64_t> override {
 
-        if (not width_type.is_same(tc.get_type_default())) {
+        if (not width_type.is_same(tc.builtins().default_type())) {
             return std::nullopt;
         }
 

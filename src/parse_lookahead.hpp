@@ -27,7 +27,8 @@
                                                    tokenizer& tz,
                                                    const char next) -> bool {
 
-    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
+    return tc.types().has(tk.text()) and
+           not tc.scopes().is_var_or_alias(tk.text()) and
            tz.peek_char_after_whitespace() == next;
 }
 
@@ -67,7 +68,9 @@
 [[nodiscard]] inline auto is_bare_record_type(const toc& tc, const token& tk,
                                               tokenizer& tz) -> bool {
 
-    if (not tc.has_type(tk.text()) or tc.is_var_or_alias(tk.text())) {
+    if (not tc.types().has(tk.text()) or
+        tc.scopes().is_var_or_alias(tk.text())) {
+
         return false;
     }
 
@@ -85,8 +88,9 @@
 [[nodiscard]] inline auto is_bare_builtin_type(const toc& tc, const token& tk,
                                                tokenizer& tz) -> bool {
 
-    if (not(tc.is_integer_type_name(tk.text()) or tk.is_text("bool")) or
-        tc.is_var_or_alias(tk.text()) or tc.has_const(tk.text())) {
+    if (not(tc.builtins().is_integer_name(tk.text()) or tk.is_text("bool")) or
+        tc.scopes().is_var_or_alias(tk.text()) or
+        tc.scopes().has_const(tk.text())) {
 
         return false;
     }

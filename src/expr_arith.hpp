@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <algorithm>
 #include <cassert>
@@ -40,7 +39,8 @@
 // same-precedence operations stay flat; higher-precedence operations become
 // nested lists
 //
-// note: a bit quirky parsing but compilation is trivial and register efficient
+// note: a list is computed left to right in its destination, only a nested
+//       list needs a scratch register
 //
 class expr_arith final : public expression {
     using arithmetic_operator = machine::arithmetic_operator;
@@ -139,13 +139,12 @@ class expr_arith final : public expression {
             exprs_.emplace_back(std::move(first.node));
         }
 
-        // set the type of this list same as first element
+        // the first element decides the width the list is computed at
         // e.g. 'x + 1' has the type of the variable 'x'
         set_type(type_of_first_element(tc));
 
-        // start the loop of arithmetic operator and element
-
-        // start with provided precedence
+        // a sub-expression starts at the precedence of the operator that
+        // opened it
         uint8_t precedence{opts.first_op_precedence};
 
         while (true) {
@@ -192,17 +191,15 @@ class expr_arith final : public expression {
                 return;
             }
 
-            // possible new lower or same precedence
+            // an operator of the same precedence continues this list
             // e.g. the '-' of 'a + b - c'
             precedence = next_precedence;
 
-            // consume the peeked operator
+            // the whitespace is kept to reproduce the source
             ws_before_ops_.emplace_back(ws_before_op_tk);
             consume_peeked_operator(tz);
 
             exprs_.emplace_back(parse_element(tc, tz, in_args).node);
-
-            // continue to next arithmetic op + element
         }
     }
 
@@ -278,8 +275,8 @@ class expr_arith final : public expression {
             return;
         }
 
-        // compile with and without the scratch register to find the best
-        // compilation
+        // a scratch register saves loads and stores of a memory destination
+        // or costs a copy, which depends on the elements, so both are measured
         x.emit_most_efficient(
             tok(), indent, [&] -> void { do_compile(tc, indent, dst); },
             [&] -> void { compile_through_scratch(tc, indent, dst); });
@@ -381,40 +378,33 @@ class expr_arith final : public expression {
         return exprs_.at(0)->get_unary_ops();
     }
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        assert(exprs_.size() == 1);
-
-        return exprs_.at(0)->identifier();
-    }
-
     [[nodiscard]] auto is_array_element() const -> bool override {
         return exprs_.size() == 1 and exprs_.front()->is_array_element();
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        // if unary operators on the list then it will need to compile the
-        // expression
+        // unary operators apply to the computed list, e.g. '-(a)'
         if (not uops_.is_empty()) {
             return true;
         }
 
-        // if only 1 element, then it decides if it is an expression
+        // a single element is read in place unless it is computed itself
         if (exprs_.size() == 1) {
             return exprs_.at(0)->is_expression();
         }
 
-        // more than 1 element, automatically an expression
+        // several elements are combined by instructions
         return true;
-    }
-
-    [[nodiscard]] auto is_identifier() const -> bool override {
-        return exprs_.size() == 1 and exprs_.at(0)->is_identifier();
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
         assert(exprs_.size() == 1);
 
         return exprs_.at(0)->is_indexed();
+    }
+
+    [[nodiscard]] auto is_name_or_literal() const -> bool override {
+        return exprs_.size() == 1 and exprs_.at(0)->is_name_or_literal();
     }
 
     // '/', '%' and '>>' read the high bits of their operands
@@ -435,6 +425,12 @@ class expr_arith final : public expression {
         }
 
         return true;
+    }
+
+    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
+        assert(exprs_.size() == 1);
+
+        return exprs_.at(0)->name_or_literal();
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {
@@ -497,7 +493,7 @@ class expr_arith final : public expression {
 
     // the statement of an arithmetic that is only an identifier
     [[nodiscard]] auto identifier_statement() const -> const statement& {
-        assert(is_identifier());
+        assert(is_name_or_literal());
 
         return *exprs_.front();
     }
@@ -629,7 +625,8 @@ class expr_arith final : public expression {
         // note: a register destination is compiled directly by 'compile'
         assert(dst.operand().is_memory());
 
-        if (dst.type_ref().size_bytes() >= tc.get_type_default().size_bytes()) {
+        if (dst.type_ref().size_bytes() >=
+            tc.builtins().default_type().size_bytes()) {
 
             return false;
         }
@@ -751,7 +748,7 @@ class expr_arith final : public expression {
             },
             [&] -> void {
                 compile_through_scratch_as(tc, indent, dst,
-                                           tc.get_type_default());
+                                           tc.builtins().default_type());
             });
     }
 
@@ -800,7 +797,7 @@ class expr_arith final : public expression {
         const statement& first{*exprs_.front()};
 
         const bool is_plain{
-            first.is_identifier() and first.get_unary_ops().is_empty(),
+            first.is_name_or_literal() and first.get_unary_ops().is_empty(),
         };
 
         if (not is_plain and first.reads_var(root)) {
@@ -822,7 +819,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        // apply unary expressions on destination
+        // the unary ops of the list apply to its result, e.g. '-(a + b)'
         uops_.compile(x, indent, tok(), dst.operand(),
                       tc.checks().overflow_options());
     }
@@ -895,7 +892,7 @@ class expr_arith final : public expression {
 
         const statement& e{*exprs_.front()};
 
-        if (not e.is_identifier()) {
+        if (not e.is_name_or_literal()) {
             return true;
         }
 
@@ -983,7 +980,7 @@ class expr_arith final : public expression {
 
         const statement& first_expr{*exprs_.front()};
 
-        if (not first_expr.is_identifier()) {
+        if (not first_expr.is_name_or_literal()) {
             return first_expr.get_type();
         }
 
@@ -1004,8 +1001,9 @@ class expr_arith final : public expression {
 
         for (const std::unique_ptr<statement>& expr : exprs_) {
             const type& expr_type{
-                expr->is_identifier() ? tc.make_ident_info(*expr).type_ref()
-                                      : expr->get_type(),
+                expr->is_name_or_literal()
+                    ? tc.make_ident_info(*expr).type_ref()
+                    : expr->get_type(),
             };
 
             if (expr_type.is_bool()) {
@@ -1187,7 +1185,7 @@ class expr_arith final : public expression {
                                       const destination& dst,
                                       const statement& first) -> void {
 
-        if (first.is_identifier()) {
+        if (first.is_name_or_literal()) {
             first.compile(tc, indent, dst);
             return;
         }
@@ -1215,14 +1213,13 @@ class expr_arith final : public expression {
     [[nodiscard]] static auto constant_operand(const toc& tc,
                                                const int64_t value) -> operand {
 
-        return operand::imm(value, tc.get_type_default());
+        return operand::imm(value, tc.builtins().default_type());
     }
 
     static auto consume_peeked_operator(tokenizer& tz) -> void {
         const char ch{tz.next_char()};
 
-        // consume the second character of a previously recognized shift
-        // operator
+        // 'peek_operator' recognized a shift by both of its characters
         // e.g. the second '<' of 'a << 2'
         if (ch == '<' or ch == '>') {
             tz.skip_char();
@@ -1554,7 +1551,7 @@ class expr_arith final : public expression {
                                             const bool in_args)
         -> parsed_element {
 
-        // read the unary ops before checking for open parenthesis
+        // '-(a + b)' negates the list, so its unary ops come before the '('
         unary_ops uo{tz};
 
         // the unary ops apply to the whole sub-expression

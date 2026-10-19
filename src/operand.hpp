@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 // the backend value type and the storage size and address offset arithmetic
 

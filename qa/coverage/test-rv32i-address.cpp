@@ -16,17 +16,16 @@
 // command line argument of 'main' at the end of the file:
 //
 //   (none)     the host checks (parts 1 to 8 and 12) assert on the emitted
-//   text, then
-//              the runtime program (part 11) is printed on stdout, which the
-//              script assembles and runs under QEMU; a wrong result jumps to
-//              the label 'failure'
+//              text, then the runtime program (part 11) is printed on stdout,
+//              which the script assembles and runs under QEMU; a wrong result
+//              jumps to the label 'failure'
 //   <mode>     print one special program on stdout instead (parts 9 and 10):
 //              'noninline', 'frame-checks', 'long-loop', 'far-jumps',
 //              'far-jumps-optimized', 'far-foo', 'far-foo-optimized', 'bulk',
 //              'strings-syscall', 'bounds-matrix' and 'bounds-silent'
 //
-// Every check is a function named after what it tests, with a comment that
-// says what the expected output shows.
+// Every check is a function named after the behavior it shows. Checks that
+// differ only in data are rows of a table.
 //
 // parts
 //   1  the assembler: jump optimizer and jump resolution
@@ -122,6 +121,12 @@ const type boolean{"bool", 1, type_kind::boolean};
 // the diagnostics of the rejected calls need a real position
 const token source_tk{token::position(0, 0, 1)};
 
+// the variables section of the compiled .baz programs
+constexpr size_t vars_capacity_bytes{4096};
+
+// every scratch register of an RV32I backend that reserves no base register
+constexpr size_t rv32i_scratch_count{30};
+
 // whether 'action' is rejected with a compiler error that contains 'text'
 template <typename action_t>
 auto rejected_with(const action_t& action, const std::string_view text = {})
@@ -144,10 +149,30 @@ struct captured_rv32i {
     captured_rv32i() {
         backend.set_builtin_types(integer64, integer, half, byte);
     }
+
+    // the text that 'emit' adds, the output is empty again afterwards
+    auto emitted(const auto& emit) -> std::string {
+        output.str({});
+        emit();
+        std::string text{output.str()};
+        output.str({});
+
+        return text;
+    }
+};
+
+// an x86_64 backend whose output is captured
+struct captured_x86_64 {
+    std::ostringstream output;
+    machine_x86_64 backend{&output, {}};
+
+    captured_x86_64() {
+        backend.set_builtin_types(integer64, integer, half, byte);
+    }
 };
 
 // allocates scratch registers so that a check proves it needs no more
-auto hold_scratch_registers(machine_rv32i& backend, const size_t count,
+auto hold_scratch_registers(machine& backend, const size_t count,
                             const type& value_type) -> std::vector<operand> {
     std::vector<operand> held;
     for (size_t i{}; i < count; ++i) {
@@ -155,6 +180,73 @@ auto hold_scratch_registers(machine_rv32i& backend, const size_t count,
     }
 
     return held;
+}
+
+// an address of a bulk operation that is 'address' whatever the backend
+// offers
+auto fixed_address(const operand& address) -> machine::address_emitter {
+    return [address](const operand&, const operand&,
+                     const machine::address_use use) -> void { use(address); };
+}
+
+// the assembly of a .baz program compiled for RV32I
+auto compiled_rv32i(const std::string_view source) -> std::string {
+    std::ostringstream output;
+    source_files files;
+    files.add("test.baz", std::string{source});
+
+    machine_rv32i compiler{&output};
+    program prg{compiler, files, vars_capacity_bytes, check_options{}};
+    prg.build(output);
+
+    return output.str();
+}
+
+// the assembly of a .baz program compiled for x86_64
+auto compiled_x86_64(const std::string_view source) -> std::string {
+    std::ostringstream output;
+    source_files files;
+    files.add("test.baz", std::string{source});
+
+    machine_x86_64 compiler{&output, &files};
+    program prg{compiler, files, vars_capacity_bytes, check_options{}};
+    prg.build(output);
+
+    return output.str();
+}
+
+// the RV32I store of a value of 'value_type'
+auto store_of(const type& value_type) -> std::string_view {
+    if (&value_type == &integer) {
+        return "sw";
+    }
+
+    return &value_type == &half ? "sh" : "sb";
+}
+
+// the RV32I load of a value of 'value_type', sign extending
+auto load_of(const type& value_type) -> std::string_view {
+    if (&value_type == &integer) {
+        return "lw";
+    }
+
+    return &value_type == &half ? "lh" : "lb";
+}
+
+// what a register holds for the value 'bits' of 'value_type': the low bits
+// of the width, sign extended unless it is a 'bool'
+auto wrapped(const uint32_t bits, const type& value_type) -> int32_t {
+    const size_t width{value_type.size_bytes() * 8};
+    const uint32_t mask{UINT32_MAX >> (32 - width)};
+    uint32_t value{bits & mask};
+
+    const bool is_negative{(value & (uint32_t{1} << (width - 1))) != 0};
+
+    if (&value_type != &boolean and is_negative) {
+        value |= ~mask;
+    }
+
+    return std::bit_cast<int32_t>(value);
 }
 
 // ----------------------------------------------------------------------------
@@ -214,380 +306,411 @@ auto add_jump(assembler_rv32i& assembler, const std::string_view mnemonic,
                               registers.at(1), target, scratch);
 }
 
+// 'count' instructions of 4 bytes, as text and emitted
+auto padding_text(const size_t count) -> std::string {
+    std::string text;
+    for (size_t i{}; i < count; ++i) {
+        text += "addi a0, a0, 1\n";
+    }
+
+    return text;
+}
+
+auto add_padding(assembler_rv32i& assembler, const size_t count) -> void {
+    for (size_t i{}; i < count; ++i) {
+        assembler.addi(0, "a0", "a0", 1);
+    }
+}
+
+// the text after the jumps are resolved to their sizes
+auto resolved_text(assembler_rv32i& assembler) -> std::string {
+    std::ostringstream output;
+    assembler.resolve_jumps();
+    assembler.write_resolved(output);
+
+    return output.str();
+}
+
+// a jump to 'end' over 'count' instructions
+auto forward_jump(const std::string_view mnemonic,
+                  const std::string_view operands, const size_t count,
+                  const std::string_view scratch) -> std::string {
+    assembler_rv32i assembler;
+    add_jump(assembler, mnemonic, operands, "end", scratch);
+    add_padding(assembler, count);
+    assembler.label(0, "end");
+
+    return resolved_text(assembler);
+}
+
+// a jump back to 'end' over 'count' instructions
+auto backward_jump(const std::string_view mnemonic,
+                   const std::string_view operands, const size_t count)
+    -> std::string {
+    assembler_rv32i assembler;
+    assembler.label(0, "end");
+    add_padding(assembler, count);
+    add_jump(assembler, mnemonic, operands, "end", "t0");
+
+    return resolved_text(assembler);
+}
+
+// what 'optimize_jumps' leaves of RV32I text: 'name:' lines are labels, '# '
+// lines comments, 'j' and the branches jumps, 'addi', 'ecall' and 'call'
+// instructions
+auto optimized(const std::string_view assembly) -> std::string {
+    assembler_rv32i assembler;
+    for (const auto part : assembly | std::views::split('\n')) {
+        const std::string_view text{part};
+        const size_t start{text.find_first_not_of(' ')};
+        if (start == std::string_view::npos) {
+            continue;
+        }
+        const size_t indent{start / 4};
+        const std::string_view code{text.substr(start)};
+
+        if (code.starts_with("# ")) {
+            assembler.comment(indent, code.substr(2));
+            continue;
+        }
+
+        if (code.back() == ':') {
+            assembler.label(indent, code.substr(0, code.size() - 1));
+            continue;
+        }
+
+        const size_t split{code.find(' ')};
+        const std::string_view mnemonic{code.substr(0, split)};
+        if (mnemonic == "ecall") {
+            assembler.ecall(indent);
+            continue;
+        }
+
+        const std::vector<std::string_view> operands{
+            split_operands(code.substr(split + 1)),
+        };
+
+        if (mnemonic == "addi") {
+            assert(operands.at(2) == "1");
+            assembler.addi(indent, operands.at(0), operands.at(1), 1);
+            continue;
+        }
+
+        if (mnemonic == "call") {
+            assembler.call(indent, operands.at(0));
+            continue;
+        }
+
+        if (mnemonic == "j") {
+            assembler.resolved_jump(indent, operands.at(0), "t0");
+            continue;
+        }
+
+        assembler.resolved_branch(indent, branch_op(mnemonic), operands.at(0),
+                                  operands.at(1), operands.at(2), "t0");
+    }
+
+    // real output ends with an instruction, which is no jump
+    assembler.ecall(0);
+    assembler.optimize_jumps();
+
+    std::string text{resolved_text(assembler)};
+    constexpr std::string_view end_instruction{"ecall\n"};
+    assert(text.ends_with(end_instruction));
+    text.resize(text.size() - end_instruction.size());
+
+    return text;
+}
+
 // ============================================================================
 // 1. host checks: the assembler (jump optimizer and jump resolution)
 // ============================================================================
 
-// 'optimize_jumps' on rv32i text: which jumps and branches are removed,
-// inverted or kept
-auto check_jump_optimizer() -> void {
-    // 'name:' lines are labels, '# ' lines comments, 'j' and branches jump,
-    // and 'addi', 'ecall' and 'call' are instructions
-    const auto optimize = [&](const std::string_view assembly) -> std::string {
-        assembler_rv32i assembler;
-        for (const auto part : assembly | std::views::split('\n')) {
-            const std::string_view text{part};
-            const size_t start{text.find_first_not_of(' ')};
-            if (start == std::string_view::npos) {
-                continue;
-            }
-            const size_t indent{start / 4};
-            const std::string_view code{text.substr(start)};
+// a text and what the jump optimizer makes of it
+struct rewrite {
+    std::string_view input;
+    std::string_view expected;
+};
 
-            if (code.starts_with("# ")) {
-                assembler.comment(indent, code.substr(2));
-                continue;
-            }
-
-            if (code.back() == ':') {
-                assembler.label(indent, code.substr(0, code.size() - 1));
-                continue;
-            }
-
-            const size_t split{code.find(' ')};
-            const std::string_view mnemonic{code.substr(0, split)};
-            if (mnemonic == "ecall") {
-                assembler.ecall(indent);
-                continue;
-            }
-
-            const std::vector<std::string_view> operands{
-                split_operands(code.substr(split + 1))};
-
-            if (mnemonic == "addi") {
-                assert(operands.at(2) == "1");
-                assembler.addi(indent, operands.at(0), operands.at(1), 1);
-                continue;
-            }
-
-            if (mnemonic == "call") {
-                assembler.call(indent, operands.at(0));
-                continue;
-            }
-
-            if (mnemonic == "j") {
-                assembler.resolved_jump(indent, operands.at(0), "t0");
-                continue;
-            }
-
-            assembler.resolved_branch(indent, branch_op(mnemonic),
-                                      operands.at(0), operands.at(1),
-                                      operands.at(2), "t0");
-        }
-        // real output ends with an instruction, which is no jump
-        assembler.ecall(0);
-        assembler.optimize_jumps();
-        std::ostringstream output;
-        assembler.resolve_jumps();
-        assembler.write_resolved(output);
-
-        std::string text{output.str()};
-        constexpr std::string_view end_instruction{"ecall\n"};
-        assert(text.ends_with(end_instruction));
-        text.resize(text.size() - end_instruction.size());
-
-        return text;
+// the jumps 'optimize_jumps' removes or inverts
+auto check_removed_and_inverted_jumps() -> void {
+    constexpr std::array rewrites{
+        // a jump to the next instruction is removed
+        rewrite{
+            .input{"    j cmp_13_26\n    cmp_13_26:\n"},
+            .expected{"    cmp_13_26:\n"},
+        },
+        // a branch and a jump to the label right after them are both removed
+        rewrite{
+            .input{"    bne a0, a1, bool_end_15_9\n    j bool_end_15_9\n"
+                   "    bool_end_15_9:\n"},
+            .expected{"    bool_end_15_9:\n"},
+        },
+        // a branch over a jump becomes the inverted branch to the jump target
+        rewrite{
+            .input{"    bne a0, a1, cmp_14_26\n    j if_14_8_code\n"
+                   "    cmp_14_26:\n    ecall\n    if_14_8_code:\n"},
+            .expected{"    beq a0, a1, if_14_8_code\n    cmp_14_26:\n"
+                      "    ecall\n    if_14_8_code:\n"},
+        },
+        // numeric labels are entries and jumps to the next instruction go
+        rewrite{
+            .input{"    j done\n    1:\n    j done\n    done:\n"},
+            .expected{"    1:\n    done:\n"},
+        },
+        // the same inversion without indentation
+        rewrite{
+            .input{"beq a0, a1, skip\nj end\nskip:\naddi a0, a0, 1\nend:\n"},
+            .expected{"bne a0, a1, end\nskip:\naddi a0, a0, 1\nend:\n"},
+        },
+        // comments between a jump and its target do not keep the jump
+        rewrite{
+            .input{"top:\naddi a0, a0, 1\nbne a0, zero, top\nj next\n"
+                   "# next\nnext:\n"},
+            .expected{"top:\naddi a0, a0, 1\nbne a0, zero, top\n# next\n"
+                      "next:\n"},
+        },
+        // both outcomes continue at the same place
+        rewrite{
+            .input{"beq a0, zero, end\nj end\naddi a0, a0, 1\nend:\n"},
+            .expected{"j end\naddi a0, a0, 1\nend:\n"},
+        },
+        // nothing reaches a jump right after another
+        rewrite{
+            .input{"j end\nj other\naddi a0, a0, 1\nother:\necall\nend:\n"},
+            .expected{"j end\naddi a0, a0, 1\nother:\necall\nend:\n"},
+        },
+        // a backward jump after a branch to the next label also inverts
+        rewrite{
+            .input{"top:\naddi a0, a0, 1\nbeq a0, zero, done\nj top\n"
+                   "done:\n"},
+            .expected{"top:\naddi a0, a0, 1\nbne a0, zero, top\ndone:\n"},
+        },
+        // a label nothing names cannot be entered
+        rewrite{
+            .input{"beq a0, zero, skip\nentry:\nj end\nskip:\necall\nend:\n"},
+            .expected{"bne a0, zero, end\nentry:\nskip:\necall\nend:\n"},
+        },
     };
 
-    // --- the patterns 'assembler' documents, in rv32i form
+    for (const rewrite& r : rewrites) {
+        assert(optimized(r.input) == r.expected);
+    }
+}
 
-    // a jump to the next instruction is removed
-    assert(optimize("    j cmp_13_26\n    cmp_13_26:\n") == "    cmp_13_26:\n");
+// every branch kind inverts to its pair with the operands in order, also with
+// a comment between the branch and the jump, and the result is stable
+auto check_every_branch_inverts() -> void {
+    constexpr std::array<std::pair<std::string_view, std::string_view>, 5>
+        inverse_pairs{{
+            {"beq", "bne"},
+            {"blt", "bge"},
+            {"bltu", "bgeu"},
+            {"bgt", "ble"},
+            {"bgtu", "bleu"},
+        }};
 
-    // a branch and a jump to the label right after them are both removed
-    assert(optimize("    bne a0, a1, bool_end_15_9\n    j bool_end_15_9\n"
-                    "    bool_end_15_9:\n") == "    bool_end_15_9:\n");
-
-    // a branch over a jump becomes the inverted branch to the jump target
-    assert(optimize("    bne a0, a1, cmp_14_26\n    j if_14_8_code\n"
-                    "    cmp_14_26:\n    ecall\n    if_14_8_code:\n") ==
-           "    beq a0, a1, if_14_8_code\n    cmp_14_26:\n    ecall\n"
-           "    if_14_8_code:\n");
-
-    // numeric labels are entries and jumps to the next instruction go
-    assert(optimize("    j done\n    1:\n    j done\n    done:\n") ==
-           "    1:\n    done:\n");
-
-    // the same inversion without indentation
-    assert(optimize("beq a0, a1, skip\nj end\nskip:\naddi a0, a0, 1\n"
-                    "end:\n") ==
-           "bne a0, a1, end\nskip:\naddi a0, a0, 1\nend:\n");
-
-    // comments between a jump and its target do not keep the jump
-    assert(optimize("top:\naddi a0, a0, 1\nbne a0, zero, top\nj next\n"
-                    "# next\nnext:\n") ==
-           "top:\naddi a0, a0, 1\nbne a0, zero, top\n# next\nnext:\n");
-
-    // --- inversion of every branch kind
-
-    // every supported inverse must preserve operand order in both
-    // directions, also with a comment between the branch and the jump
-    for (const auto& [first, second] :
-         std::array<std::pair<std::string_view, std::string_view>, 5>{{
-             {"beq", "bne"},
-             {"blt", "bge"},
-             {"bltu", "bgeu"},
-             {"bgt", "ble"},
-             {"bgtu", "bleu"},
-         }}) {
+    for (const auto& [first, second] : inverse_pairs) {
         for (const bool reverse : {false, true}) {
             const std::string_view mnemonic{reverse ? second : first};
             const std::string_view inverted{reverse ? first : second};
-            const std::string_view operands{"a0, a1"};
 
-            const std::string input{std::format(
-                "{} {}, skip\n# keep\nj done\nskip:\naddi a0, a0, 1\n"
-                "done:\n",
-                mnemonic, operands)};
+            const std::string input{
+                std::format("{} a0, a1, skip\n# keep\nj done\nskip:\n"
+                            "addi a0, a0, 1\ndone:\n",
+                            mnemonic),
+            };
 
-            const std::string expected{std::format(
-                "{} {}, done\n# keep\nskip:\naddi a0, a0, 1\ndone:\n", inverted,
-                operands)};
+            const std::string expected{
+                std::format("{} a0, a1, done\n# keep\nskip:\n"
+                            "addi a0, a0, 1\ndone:\n",
+                            inverted),
+            };
 
-            assert(optimize(input) == expected);
-            assert(optimize(expected) == expected);
+            assert(optimized(input) == expected);
+            assert(optimized(expected) == expected);
         }
     }
+}
 
-    // --- when a branch or jump stays or goes
-
-    // both outcomes continue at the same place
-    assert(optimize("beq a0, zero, end\nj end\naddi a0, a0, 1\nend:\n") ==
-           "j end\naddi a0, a0, 1\nend:\n");
-
-    // nothing reaches a jump right after another
-    assert(optimize("j end\nj other\naddi a0, a0, 1\nother:\necall\nend:\n") ==
-           "j end\naddi a0, a0, 1\nother:\necall\nend:\n");
-
-    // a backward jump after a branch to the next label also inverts
-    assert(optimize("top:\naddi a0, a0, 1\nbeq a0, zero, done\nj top\n"
-                    "done:\n") ==
-           "top:\naddi a0, a0, 1\nbne a0, zero, top\ndone:\n");
-
-    // labels between the jumps let execution enter
+// a label between the jumps lets execution enter, so the jumps stay
+auto check_jumps_kept_at_entries() -> void {
     for (const std::string_view unchanged :
          {"top:\nj top\n", "call end\nend:\n",
           "call entry\nbeq a0, zero, skip\nentry:\nj end\nskip:\necall\n"
           "end:\n",
           "beq a0, zero, skip\n1:\nj end\nskip:\necall\nend:\n"}) {
-        assert(optimize(unchanged) == unchanged);
-    }
-
-    // a label nothing names cannot be entered
-    assert(optimize("beq a0, zero, skip\nentry:\nj end\nskip:\necall\n"
-                    "end:\n") ==
-           "bne a0, zero, end\nentry:\nskip:\necall\nend:\n");
-
-    // folding ignores reach because resolving grows the branch again
-    std::string distant{"beq a0, zero, skip\nj end\nskip:\n"};
-    for (size_t count{}; count < 1024; ++count) {
-        distant += "addi a0, a0, 1\n";
-    }
-    distant += "end:\n";
-
-    assert(optimize(distant) ==
-           "beq a0, zero, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
-               distant.substr(distant.find("skip:")));
-
-    {
-        // code continues across data placed in another section
-        assembler_rv32i assembler;
-        add_jump(assembler, "beq", "a0, a1", "skip", "t0");
-        assembler.switch_section(assembler_rv32i::section::data);
-        const std::array<int64_t, 1> word{1};
-        assembler.data(4, word);
-        assembler.switch_section(assembler_rv32i::section::text);
-        add_jump(assembler, "j", {}, "end", "t0");
-        assembler.label(0, "skip");
-        assembler.ecall(0);
-        assembler.label(0, "end");
-        assembler.optimize_jumps();
-        std::ostringstream output;
-        assembler.resolve_jumps();
-        assembler.write_resolved(output);
-        assert(output.str() == "bne a0, a1, end\n.data\n.word 1\n.text\n"
-                               "skip:\necall\nend:\n");
+        assert(optimized(unchanged) == unchanged);
     }
 }
 
-// jump resolution: the size of a branch or jump follows its distance to the
-// target, the limits below are the exact byte counts of the encodings, and
-// 'emit_smaller' keeps the shorter of two code versions
-auto check_jump_resolution() -> void {
-    const auto padding = [](const size_t count) -> std::string {
-        std::string text;
-        for (size_t i{}; i < count; ++i) {
-            text += "addi a0, a0, 1\n";
-        }
-
-        return text;
+// the folding ignores reach, a branch to a far target grows again when it is
+// resolved
+auto check_far_branch_folds_and_grows() -> void {
+    // note: 1024 instructions put 'end' beyond the 4 KiB a branch reaches
+    const std::string distant{
+        "beq a0, zero, skip\nj end\nskip:\n" + padding_text(1024) + "end:\n",
     };
 
-    const auto add_padding = [](assembler_rv32i& assembler,
-                                const size_t count) -> void {
-        for (size_t i{}; i < count; ++i) {
-            assembler.addi(0, "a0", "a0", 1);
-        }
-    };
+    assert(optimized(distant) ==
+           "beq a0, zero, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
+               distant.substr(distant.find("skip:")));
+}
 
-    const auto written = [](assembler_rv32i& assembler) -> std::string {
-        std::ostringstream output;
-        assembler.resolve_jumps();
-        assembler.write_resolved(output);
+// code continues across data placed in another section, so a branch over the
+// data still inverts
+auto check_jumps_across_data() -> void {
+    assembler_rv32i assembler;
+    add_jump(assembler, "beq", "a0, a1", "skip", "t0");
+    assembler.switch_section(assembler_rv32i::section::data);
+    const std::array<int64_t, 1> word{1};
+    assembler.data(4, word);
+    assembler.switch_section(assembler_rv32i::section::text);
+    add_jump(assembler, "j", {}, "end", "t0");
+    assembler.label(0, "skip");
+    assembler.ecall(0);
+    assembler.label(0, "end");
+    assembler.optimize_jumps();
 
-        return output.str();
-    };
+    assert(resolved_text(assembler) == "bne a0, a1, end\n.data\n.word 1\n"
+                                       ".text\nskip:\necall\nend:\n");
+}
 
-    const auto forward =
-        [&](const std::string_view mnemonic, const std::string_view operands,
-            const size_t count, const std::string_view scratch) -> std::string {
-        assembler_rv32i assembler;
-        add_jump(assembler, mnemonic, operands, "end", scratch);
-        add_padding(assembler, count);
-        assembler.label(0, "end");
+// a branch reaches 4094 bytes forward and 4096 bytes backward, beyond that it
+// inverts around a 'j'
+auto check_branch_reach() -> void {
+    // note: 1022 instructions of 4 bytes after the branch end 4092 bytes on
+    assert(forward_jump("beq", "a0, a1", 1022, "t0") ==
+           "beq a0, a1, end\n" + padding_text(1022) + "end:\n");
 
-        return written(assembler);
-    };
+    assert(forward_jump("beq", "a0, a1", 1023, "t0") ==
+           "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
+               padding_text(1023) + "end:\n");
 
-    const auto backward = [&](const std::string_view mnemonic,
-                              const std::string_view operands,
-                              const size_t count) -> std::string {
-        assembler_rv32i assembler;
-        assembler.label(0, "end");
-        add_padding(assembler, count);
-        add_jump(assembler, mnemonic, operands, "end", "t0");
+    assert(backward_jump("beq", "a0, a1", 1024) ==
+           "end:\n" + padding_text(1024) + "beq a0, a1, end\n");
 
-        return written(assembler);
-    };
-
-    const auto rejects = [](const auto& action) -> bool {
-        try {
-            action();
-        } catch (const std::runtime_error&) {
-            return true;
-        }
-
-        return false;
-    };
-
-    // --- reach of conditional branches
-
-    // branches reach 4094 bytes forward and 4096 bytes backward
-    assert(forward("beq", "a0, a1", 1022, "t0") ==
-           "beq a0, a1, end\n" + padding(1022) + "end:\n");
-
-    assert(forward("beq", "a0, a1", 1023, "t0") ==
-           "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" + padding(1023) +
-               "end:\n");
-
-    assert(backward("beq", "a0, a1", 1024) ==
-           "end:\n" + padding(1024) + "beq a0, a1, end\n");
-
-    assert(backward("beq", "a0, a1", 1025) ==
-           "end:\n" + padding(1025) +
+    assert(backward_jump("beq", "a0, a1", 1025) ==
+           "end:\n" + padding_text(1025) +
                "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n");
+}
 
-    // --- reach of unconditional jumps
+// 'jal' reaches 1048574 bytes forward and 1048576 bytes backward, beyond that
+// a 'jump' through the scratch register
+auto check_jump_reach() -> void {
+    assert(forward_jump("j", {}, 262142, "t0") ==
+           "j end\n" + padding_text(262142) + "end:\n");
 
-    // 'jal' reaches 1048574 bytes forward and 1048576 bytes backward
-    assert(forward("j", {}, 262142, "t0") ==
-           "j end\n" + padding(262142) + "end:\n");
+    assert(forward_jump("j", {}, 262143, "t0") ==
+           "jump end, t0\n" + padding_text(262143) + "end:\n");
 
-    assert(forward("j", {}, 262143, "t0") ==
-           "jump end, t0\n" + padding(262143) + "end:\n");
+    assert(backward_jump("j", {}, 262144) ==
+           "end:\n" + padding_text(262144) + "j end\n");
 
-    assert(backward("j", {}, 262144) == "end:\n" + padding(262144) + "j end\n");
-
-    assert(backward("j", {}, 262145) ==
-           "end:\n" + padding(262145) + "jump end, t0\n");
+    assert(backward_jump("j", {}, 262145) ==
+           "end:\n" + padding_text(262145) + "jump end, t0\n");
 
     // a branch beyond 'jal' reach inverts around the long jump
-    assert(forward("bne", "a0, zero", 262143, "t1") ==
+    assert(forward_jump("bne", "a0, zero", 262143, "t1") ==
            "beq a0, zero, .Lbaz_jump.0\njump end, t1\n.Lbaz_jump.0:\n" +
-               padding(262143) + "end:\n");
+               padding_text(262143) + "end:\n");
+}
 
-    // --- interaction between jumps and sections
+// a far jump without a scratch register cannot be built
+auto check_far_jump_needs_scratch() -> void {
+    bool rejected{};
 
-    {
-        // growing the inner branch pushes the outer one out of reach
-        assembler_rv32i assembler;
-        add_jump(assembler, "beq", "a0, a1", "end", "t0");
-        add_padding(assembler, 1021);
-        add_jump(assembler, "beq", "a0, a1", "far", "t0");
-        assembler.label(0, "end");
-        add_padding(assembler, 1100);
-        assembler.label(0, "far");
-        const std::string chained{written(assembler)};
-        assert(chained.starts_with("bne a0, a1, .Lbaz_jump.0\nj end\n"));
-        assert(chained.contains("bne a0, a1, .Lbaz_jump.1\nj far\n"));
-    }
-    {
-        // other sections do not count towards code offsets
-        assembler_rv32i assembler;
-        add_jump(assembler, "beq", "a0, a1", "end", "t0");
-        assembler.switch_section(assembler_rv32i::section::data);
-        const std::array<int64_t, 1> word{1};
-        for (size_t i{}; i < 2000; ++i) {
-            assembler.data(4, word);
-        }
-        assembler.switch_section(assembler_rv32i::section::text);
-        assembler.label(0, "end");
-
-        std::string words;
-        for (size_t i{}; i < 2000; ++i) {
-            words += ".word 1\n";
-        }
-
-        assert(written(assembler) ==
-               "beq a0, a1, end\n.data\n" + words + ".text\nend:\n");
-    }
-    // --- choosing the smaller of two code versions ('emit_smaller')
-
-    {
-        // the smaller version is kept and ties keep the first
-        assembler_rv32i assembler;
-
-        assembler.emit_smaller([&] { add_padding(assembler, 2); },
-                               [&] { assembler.addi(0, "a0", "a0", 1); });
-
-        assembler.emit_smaller([&] { assembler.sw(0, "a0", 0, "sp"); },
-                               [&] { add_padding(assembler, 1); });
-
-        assert(written(assembler) == "addi a0, a0, 1\nsw a0, 0(sp)\n");
-    }
-    {
-        // a nested choice lands inside the version that contains it
-        assembler_rv32i assembler;
-
-        assembler.emit_smaller(
-            [&] {
-                assembler.lw(0, "a0", 0, "sp");
-                assembler.emit_smaller(
-                    [&] { add_padding(assembler, 2); },
-                    [&] { assembler.addi(0, "a0", "a0", 1); });
-            },
-            [&] { add_padding(assembler, 3); });
-
-        assert(written(assembler) == "lw a0, 0(sp)\naddi a0, a0, 1\n");
-    }
-    {
-        // a jump inside a kept version still grows
-        assembler_rv32i assembler;
-
-        assembler.emit_smaller(
-            [&] { add_jump(assembler, "beq", "a0, a1", "end", "t0"); },
-            [&] { add_padding(assembler, 2); });
-
-        add_padding(assembler, 1100);
-        assembler.label(0, "end");
-        assert(written(assembler) ==
-               "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
-                   padding(1100) + "end:\n");
+    try {
+        std::ignore = forward_jump("j", {}, 262143, {});
+    } catch (const std::runtime_error&) {
+        rejected = true;
     }
 
-    // --- invalid jumps are rejected
+    assert(rejected);
+}
 
-    assert(rejects([&] { static_cast<void>(forward("j", {}, 262143, {})); }));
+// growing the inner branch pushes the outer one out of reach
+auto check_growth_moves_other_jumps() -> void {
+    assembler_rv32i assembler;
+    add_jump(assembler, "beq", "a0, a1", "end", "t0");
+    add_padding(assembler, 1021);
+    add_jump(assembler, "beq", "a0, a1", "far", "t0");
+    assembler.label(0, "end");
+    add_padding(assembler, 1100);
+    assembler.label(0, "far");
+
+    const std::string chained{resolved_text(assembler)};
+
+    assert(chained.starts_with("bne a0, a1, .Lbaz_jump.0\nj end\n"));
+    assert(chained.contains("bne a0, a1, .Lbaz_jump.1\nj far\n"));
+}
+
+// other sections do not count towards code offsets
+auto check_data_takes_no_code_offset() -> void {
+    // note: 2000 words of data would be beyond a branch's reach as code
+    constexpr size_t word_count{2000};
+
+    assembler_rv32i assembler;
+    add_jump(assembler, "beq", "a0, a1", "end", "t0");
+    assembler.switch_section(assembler_rv32i::section::data);
+    const std::array<int64_t, 1> word{1};
+    for (size_t i{}; i < word_count; ++i) {
+        assembler.data(4, word);
+    }
+    assembler.switch_section(assembler_rv32i::section::text);
+    assembler.label(0, "end");
+
+    std::string words;
+    for (size_t i{}; i < word_count; ++i) {
+        words += ".word 1\n";
+    }
+
+    assert(resolved_text(assembler) ==
+           "beq a0, a1, end\n.data\n" + words + ".text\nend:\n");
+}
+
+// 'emit_smaller' keeps the smaller version, a tie keeps the first
+auto check_smaller_version_kept() -> void {
+    assembler_rv32i assembler;
+
+    assembler.emit_smaller([&] { add_padding(assembler, 2); },
+                           [&] { assembler.addi(0, "a0", "a0", 1); });
+
+    assembler.emit_smaller([&] { assembler.sw(0, "a0", 0, "sp"); },
+                           [&] { add_padding(assembler, 1); });
+
+    assert(resolved_text(assembler) == "addi a0, a0, 1\nsw a0, 0(sp)\n");
+}
+
+// a nested choice lands inside the version that contains it
+auto check_nested_version_choice() -> void {
+    assembler_rv32i assembler;
+
+    assembler.emit_smaller(
+        [&] {
+            assembler.lw(0, "a0", 0, "sp");
+            assembler.emit_smaller([&] { add_padding(assembler, 2); },
+                                   [&] { assembler.addi(0, "a0", "a0", 1); });
+        },
+        [&] { add_padding(assembler, 3); });
+
+    assert(resolved_text(assembler) == "lw a0, 0(sp)\naddi a0, a0, 1\n");
+}
+
+// a jump inside a kept version still grows
+auto check_jump_in_kept_version_grows() -> void {
+    assembler_rv32i assembler;
+
+    assembler.emit_smaller(
+        [&] { add_jump(assembler, "beq", "a0, a1", "end", "t0"); },
+        [&] { add_padding(assembler, 2); });
+
+    add_padding(assembler, 1100);
+    assembler.label(0, "end");
+
+    assert(resolved_text(assembler) ==
+           "bne a0, a1, .Lbaz_jump.0\nj end\n.Lbaz_jump.0:\n" +
+               padding_text(1100) + "end:\n");
 }
 
 // ============================================================================
@@ -610,9 +733,9 @@ auto check_line_sizes() -> void {
     }
 }
 
-// 'emit_most_efficient' on versions of equal size, in every jump mode
+// 'emit_most_efficient' on versions of equal size keeps the version without
+// scratch, in every jump mode
 auto check_equal_size_choice() -> void {
-    // equal sizes keep the version without scratch
     for (const assembler::jump_mode jumps :
          {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
@@ -631,19 +754,19 @@ auto check_equal_size_choice() -> void {
             backend.copy_value(token{}, 0, result, operand::reg("a1", integer));
         };
 
+        // note: 2047 is one 'li', 2048 does not fit the 12-bit immediate
         backend.emit_most_efficient(token{}, 0, [&] { load(2047); }, copy);
-
         backend.emit_most_efficient(token{}, 0, [&] { load(2048); }, copy);
 
         backend.finish();
         backend.write_assembly(output);
+
         assert(output.str().contains("li a0, 2047\naddi a0, a1, 0\n"));
     }
 }
 
 // the jump optimizer sees the jumps and labels that the backend emits
 auto check_backend_jump_optimization() -> void {
-    // the backend's jumps and labels reach the optimizer
     std::ostringstream output;
     machine_rv32i backend{&output, {}, assembler::jump_mode::optimized};
     backend.set_builtin_types(integer64, integer, half, byte);
@@ -686,103 +809,176 @@ auto check_backend_jump_optimization() -> void {
                                  "if_14_8_code:\n"));
 }
 
-// copies between equal addresses, and the comments that describe variables
-auto check_copies_and_variable_comments() -> void {
-    assembly_output copies;
-    machine_rv32i backend{&copies};
-    backend.set_builtin_types(integer64, integer, half, byte);
-    // --- a copy to the same address emits nothing, others load and store
+// a copy to the same address emits nothing, others load and store
+auto check_copy_to_same_address() -> void {
+    captured_rv32i rv32i;
+    machine_rv32i& backend{rv32i.backend};
 
     const operand address{operand::mem("s0", {}, 1, 24, integer)};
-    backend.copy_value(token{}, 0, address, address);
-    assert(copies.str().empty());
-    backend.copy_value(token{}, 0, operand::mem("s0", {}, 1, 28, integer),
-                       address);
-    assert(copies.str().contains("lw t0, 24(s0)\n"));
-    assert(copies.str().contains("sw t0, 28(s0)\n"));
 
-    copies.str({});
-    backend.copy_value(token{}, 0, operand::mem("s0", {}, 1, 24, byte),
-                       address);
-    assert(copies.str().contains("lw t0, 24(s0)\n"));
-    assert(copies.str().contains("sb t0, 24(s0)\n"));
+    assert(rv32i
+               .emitted([&] {
+                   backend.copy_value(token{}, 0, address, address);
+               })
+               .empty());
 
-    // --- variable comments name size and place
+    const std::string to_next{
+        rv32i.emitted([&] {
+            backend.copy_value(token{}, 0,
+                               operand::mem("s0", {}, 1, 28, integer), address);
+        }),
+    };
 
-    copies.str({});
-    backend.comment_variable(token{}, 0, "arr: i32[4]", 16,
-                             operand::mem("s0", {}, 1, 208, integer));
-    backend.comment_variable(token{}, 0, "first", 4,
-                             operand::mem("s0", {}, 1, 0, integer));
-    assert(copies.str() == "# arr: i32[4] (16 B @ [s0 + 208])\n"
-                           "# first (4 B @ [s0])\n");
+    assert(to_next.contains("lw t0, 24(s0)\n"));
+    assert(to_next.contains("sw t0, 28(s0)\n"));
+
+    // the same address at another width is a narrowing store
+    const std::string narrowed{
+        rv32i.emitted([&] {
+            backend.copy_value(token{}, 0, operand::mem("s0", {}, 1, 24, byte),
+                               address);
+        }),
+    };
+
+    assert(narrowed.contains("lw t0, 24(s0)\n"));
+    assert(narrowed.contains("sb t0, 24(s0)\n"));
 }
 
-// comments carry the source position of their token, and the register and
-// array copy helpers describe their registers in comments
-auto check_comments_with_source_positions() -> void {
-    // columns must be relative to the source line rather than the file
+// a variable comment names the size and the place
+auto check_variable_comments() -> void {
+    captured_rv32i rv32i;
+    machine_rv32i& backend{rv32i.backend};
+
+    const std::string comments{
+        rv32i.emitted([&] {
+            backend.comment_variable(token{}, 0, "arr: i32[4]", 16,
+                                     operand::mem("s0", {}, 1, 208, integer));
+            backend.comment_variable(token{}, 0, "first", 4,
+                                     operand::mem("s0", {}, 1, 0, integer));
+        }),
+    };
+
+    assert(comments == "# arr: i32[4] (16 B @ [s0 + 208])\n"
+                       "# first (4 B @ [s0])\n");
+}
+
+// an RV32I backend over a source file, its comments carry source positions
+struct located_rv32i {
     std::ostringstream comments;
     source_files files;
-    files.add("test.baz", "first\n    value");
-    machine_rv32i located{&comments, &files};
+    machine_rv32i backend;
+
+    // 'value' on the second line, at column 5
     const token location{0, {}, 10, "value", 15, {}, 2, false};
-    located.comment(location, 1, "assignment");
-    located.comment(token{}, 0, "generated");
-    assert(comments.str() == "    # [test.baz:2:5] assignment\n# generated\n");
-    located.set_builtin_types(integer64, integer, half, byte);
-    comments.str({});
-    const operand scratch{located.alloc_scratch_register(location, 1, integer)};
+
+    located_rv32i() : backend{&comments, &files} {
+        files.add("test.baz", "first\n    value");
+        backend.set_builtin_types(integer64, integer, half, byte);
+    }
+};
+
+// columns are relative to the source line, not the file, and a comment
+// without a token has no position
+auto check_comment_positions() -> void {
+    located_rv32i located;
+
+    located.backend.comment(located.location, 1, "assignment");
+    located.backend.comment(token{}, 0, "generated");
+
+    assert(located.comments.str() ==
+           "    # [test.baz:2:5] assignment\n# generated\n");
+}
+
+// the allocation of a register is a comment at the token that needs it
+auto check_allocation_comments() -> void {
+    located_rv32i located;
+    machine_rv32i& backend{located.backend};
+
+    const operand scratch{
+        backend.alloc_scratch_register(located.location, 1, integer),
+    };
     const operand named{
-        located.alloc_named_register(location, 1, "a0", integer)};
-    located.free_named_register(location, 1, named);
-    located.free_scratch_register(location, 1, scratch);
-    assert(comments.str() == "    # [test.baz:2:5] allocate scratch register -> t0\n"
-                             "    # [test.baz:2:5] allocate named register a0\n"
-                             "    # [test.baz:2:5] free named register a0\n"
-                             "    # [test.baz:2:5] free scratch register t0\n");
-    comments.str({});
-    located.add_subtract(location, 1, op_of('+'),
-                         operand::mem("a0", {}, 1, 0, integer),
-                         operand::imm(1, integer));
-    assert(comments.str() ==
+        backend.alloc_named_register(located.location, 1, "a0", integer),
+    };
+    backend.free_named_register(located.location, 1, named);
+    backend.free_scratch_register(located.location, 1, scratch);
+
+    assert(located.comments.str() ==
+           "    # [test.baz:2:5] allocate scratch register -> t0\n"
+           "    # [test.baz:2:5] allocate named register a0\n"
+           "    # [test.baz:2:5] free named register a0\n"
+           "    # [test.baz:2:5] free scratch register t0\n");
+
+    backend.finish();
+}
+
+// an operation on memory loads, computes and stores through a scratch
+// register, all at the position of its token
+auto check_memory_operation_comments() -> void {
+    located_rv32i located;
+
+    located.backend.add_subtract(located.location, 1, op_of('+'),
+                                 operand::mem("a0", {}, 1, 0, integer),
+                                 operand::imm(1, integer));
+
+    assert(located.comments.str() ==
            "    # [test.baz:2:5] allocate scratch register -> t0\n"
            "    lw t0, 0(a0)\n    addi t0, t0, 1\n    sw t0, 0(a0)\n"
            "    # [test.baz:2:5] free scratch register t0\n");
-    std::vector<operand> ordered;
-    for (const std::string_view name :
-         {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0",  "s1",  "s2",
-          "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "tp",
-          "gp", "ra", "a1", "a2", "a3", "a4", "a5", "a6",  "a7",  "a0"}) {
-        ordered.push_back(located.alloc_scratch_register(location, 1, integer));
-        assert(ordered.back().base_register() == name);
+
+    located.backend.finish();
+}
+
+// the scratch registers are handed out temporaries first and the argument
+// registers last, 'a0' at the very end because results come back in it
+auto check_rv32i_scratch_order() -> void {
+    located_rv32i located;
+    machine_rv32i& backend{located.backend};
+
+    constexpr std::array<std::string_view, rv32i_scratch_count> order{
+        "t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0",  "s1",  "s2",
+        "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "tp",
+        "gp", "ra", "a1", "a2", "a3", "a4", "a5", "a6",  "a7",  "a0",
+    };
+
+    std::vector<operand> allocated;
+    for (const std::string_view name : order) {
+        allocated.push_back(
+            backend.alloc_scratch_register(located.location, 1, integer));
+        assert(allocated.back().base_register() == name);
     }
-    located.free_scratch_registers(location, 1, ordered);
-    comments.str({});
-    located.copy_elements(location, 1, 4,
-                          [&](const operand& count) -> void {
-                              located.copy_value(location, 1, count,
-                                                 operand::imm(2, integer));
-                          },
-                          {
-                              .alignment{4},
-                              .src{[&](const operand&, const operand&,
-                                       const machine::address_use use) -> void {
-                                  use(operand::mem("s0", {}, 1, 216, integer));
-                              }},
-                              .dst{[&](const operand&, const operand&,
-                                       const machine::address_use use) -> void {
-                                  use(operand::mem("s0", {}, 1, 208, integer));
-                              }},
-                          });
+
+    backend.free_scratch_registers(located.location, 1, allocated);
+    backend.finish();
+}
+
+// the copy helper describes the registers it uses and its steps
+auto check_copy_helper_comments() -> void {
+    located_rv32i located;
+    machine_rv32i& backend{located.backend};
+
+    backend.copy_elements(
+        located.location, 1, 4,
+        [&](const operand& count) -> void {
+            backend.copy_value(located.location, 1, count,
+                               operand::imm(2, integer));
+        },
+        {
+            .alignment{4},
+            .src{fixed_address(operand::mem("s0", {}, 1, 216, integer))},
+            .dst{fixed_address(operand::mem("s0", {}, 1, 208, integer))},
+        });
+
     for (const std::string_view text :
          {"t0: source, t1: destination, t2: count",
           "t2: elements to bytes (4 bytes/element)",
           "t4: end of words, t2: tail bytes", "copy 4-byte words",
           "copy optional 2-byte tail", "copy optional final byte"}) {
-        assert(comments.str().contains(std::format("# [test.baz:2:5] {}\n", text)));
+        assert(located.comments.str().contains(
+            std::format("# [test.baz:2:5] {}\n", text)));
     }
-    located.finish();
+
+    backend.finish();
 }
 
 // ============================================================================
@@ -792,56 +988,44 @@ auto check_comments_with_source_positions() -> void {
 // 'array_copy' on offset arrays: the pointer registers hold the address
 // throughout the index arithmetic
 auto check_array_copy_pointers() -> void {
-    const std::string_view source{R"baz(
+    const std::string assembly{compiled_rv32i(R"baz(
 func main() {
     var source = i32[4]{}
     var destination = i32[4]{}
     var count = 2
     array_copy(source[2], destination[1], count)
 }
-)baz"};
-    std::ostringstream output;
-    source_files files;
-    files.add("test.baz", std::string{source});
+)baz")};
 
-    machine_rv32i compiler{&output};
-    program prg{compiler, files, 4096, check_options{}};
-    prg.build(output);
-    // reserved pointers must hold the address throughout index arithmetic
-    assert(output.str().contains("slli t0, t3, 2\n"));
-    assert(output.str().contains("add t0, t0, s0\n"));
-    assert(output.str().contains("slli t1, t3, 2\n"));
-    assert(output.str().contains("add t1, t1, s0\n"));
-    assert(not output.str().contains("addi t0, t3, 0\n"));
-    assert(not output.str().contains("addi t1, t3, 0\n"));
+    assert(assembly.contains("slli t0, t3, 2\n"));
+    assert(assembly.contains("add t0, t0, s0\n"));
+    assert(assembly.contains("slli t1, t3, 2\n"));
+    assert(assembly.contains("add t1, t1, s0\n"));
+    assert(not assembly.contains("addi t0, t3, 0\n"));
+    assert(not assembly.contains("addi t1, t3, 0\n"));
 }
 
 // 'arrays_equal' on offset arrays: same pointer rule as 'array_copy', no
 // extra scratch register or boolean normalization, and described registers
 auto check_arrays_equal_registers_rv32i() -> void {
-    const std::string_view source{R"baz(
+    const std::string assembly{compiled_rv32i(R"baz(
 func assert(ok bool) { if not ok exit(1) }
 func main() {
     var source = i32[4]{}
     var destination = i32[4]{}
     assert(arrays_equal(source[2], destination[1], 2))
 }
-)baz"};
-    std::ostringstream output;
-    source_files files;
-    files.add("test.baz", std::string{source});
+)baz")};
 
-    machine_rv32i compiler{&output};
-    program prg{compiler, files, 4096, check_options{}};
-    prg.build(output);
-    assert(output.str().contains("slli t1, t4, 2\n"));
-    assert(output.str().contains("add t1, t1, s0\n"));
-    assert(output.str().contains("slli t2, t4, 2\n"));
-    assert(output.str().contains("add t2, t2, s0\n"));
-    assert(not output.str().contains("addi t1, t4, 0\n"));
-    assert(not output.str().contains("addi t2, t4, 0\n"));
-    assert(not output.str().contains("sltu t0, zero, t0\n"));
-    assert(not output.str().contains("allocate scratch register -> t6\n"));
+    assert(assembly.contains("slli t1, t4, 2\n"));
+    assert(assembly.contains("add t1, t1, s0\n"));
+    assert(assembly.contains("slli t2, t4, 2\n"));
+    assert(assembly.contains("add t2, t2, s0\n"));
+    assert(not assembly.contains("addi t1, t4, 0\n"));
+    assert(not assembly.contains("addi t2, t4, 0\n"));
+    assert(not assembly.contains("sltu t0, zero, t0\n"));
+    assert(not assembly.contains("allocate scratch register -> t6\n"));
+
     for (const std::string_view text :
          {"t1: source, t2: destination, t3: count",
           "t3: elements to bytes (4 bytes/element)",
@@ -850,7 +1034,7 @@ func main() {
           "compare 4-byte words", "compare optional 2-byte tail",
           "compare optional final byte", "all matched or empty: true",
           "mismatch: false"}) {
-        assert(output.str().contains(std::format("# {}\n", text)));
+        assert(assembly.contains(std::format("# {}\n", text)));
     }
 }
 
@@ -858,7 +1042,7 @@ func main() {
 // without inverting or comparing the result and without an extra scratch
 // register
 auto check_arrays_equal_condition_x86() -> void {
-    const std::string_view source{R"baz(
+    const std::string assembly{compiled_x86_64(R"baz(
 func assert(ok bool) { if not ok exit(1) }
 func main() {
     var left = i8[2]{1, 2}
@@ -867,19 +1051,13 @@ func main() {
     right[1] = 3
     assert(not arrays_equal(left, right, 2))
 }
-)baz"};
-    std::ostringstream output;
-    source_files files;
-    files.add("test.baz", std::string{source});
+)baz")};
 
-    machine_x86_64 compiler{&output, &files};
-    program prg{compiler, files, 4096, check_options{}};
-    prg.build(output);
-    assert(output.str().contains("sete r15b\n"));
-    assert(not output.str().contains("xor r15b, 1\n"));
-    assert(output.str().contains("setne r15b\n"));
-    assert(not output.str().contains("\n    cmp r15b, 0\n"));
-    assert(not output.str().contains("allocate scratch register -> r14\n"));
+    assert(assembly.contains("sete r15b\n"));
+    assert(not assembly.contains("xor r15b, 1\n"));
+    assert(assembly.contains("setne r15b\n"));
+    assert(not assembly.contains("\n    cmp r15b, 0\n"));
+    assert(not assembly.contains("allocate scratch register -> r14\n"));
 }
 
 // 'arrays_equal' and 'equal' stored in a variable: both targets store the
@@ -895,28 +1073,22 @@ func main() {
     same = left != right
 }
 )baz"};
-    std::ostringstream x86_output;
-    source_files files;
-    files.add("test.baz", std::string{source});
 
-    machine_x86_64 x86_compiler{&x86_output, &files};
-    program x86_program{x86_compiler, files, 4096, check_options{}};
-    x86_program.build(x86_output);
-    assert(x86_output.str().contains("sete byte [rbp + 4]\n"));
-    assert(x86_output.str().contains("setne byte [rbp + 4]\n"));
-    assert(not x86_output.str().contains("sete r15b\n"));
-    assert(not x86_output.str().contains("setne r15b\n"));
-    assert(not x86_output.str().contains("cmp r15b, 0\n"));
-    assert(not x86_output.str().contains("xor r15b, 1\n"));
+    const std::string x86{compiled_x86_64(source)};
 
-    std::ostringstream rv32i_output;
-    machine_rv32i rv32i_compiler{&rv32i_output};
-    program rv32i_program{rv32i_compiler, files, 4096, check_options{}};
-    rv32i_program.build(rv32i_output);
-    assert(rv32i_output.str().contains("sb t3, -2028(s0)\n"));
-    assert(not rv32i_output.str().contains("sltu "));
-    assert(not rv32i_output.str().contains("sltiu "));
-    assert(not rv32i_output.str().contains("xori "));
+    assert(x86.contains("sete byte [rbp + 4]\n"));
+    assert(x86.contains("setne byte [rbp + 4]\n"));
+    assert(not x86.contains("sete r15b\n"));
+    assert(not x86.contains("setne r15b\n"));
+    assert(not x86.contains("cmp r15b, 0\n"));
+    assert(not x86.contains("xor r15b, 1\n"));
+
+    const std::string rv32i{compiled_rv32i(source)};
+
+    assert(rv32i.contains("sb t3, -2028(s0)\n"));
+    assert(not rv32i.contains("sltu "));
+    assert(not rv32i.contains("sltiu "));
+    assert(not rv32i.contains("xori "));
 }
 
 // ============================================================================
@@ -927,50 +1099,53 @@ func main() {
 // 'rax' come late and 'rsi', 'rdi' and 'rcx', which every copy and compare of
 // memory needs, last, also after a register was freed again
 auto check_x86_scratch_registers() -> void {
-    std::ostringstream x86_output;
-    machine_x86_64 x86_backend{&x86_output, {}};
-    x86_backend.set_builtin_types(integer64, integer, half, byte);
-    constexpr std::array<std::string_view, 14> x86_scratch_order{
-        "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
-        "r11", "rbx", "rdx", "rax", "rsi", "rdi", "rcx"};
+    captured_x86_64 x86;
+    machine_x86_64& backend{x86.backend};
 
+    constexpr std::array<std::string_view, 14> order{
+        "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
+        "r11", "rbx", "rdx", "rax", "rsi", "rdi", "rcx",
+    };
+
+    // the order holds again after every register was freed
     for (size_t pass{}; pass < 2; ++pass) {
         std::vector<operand> registers;
-        for (const std::string_view expected : x86_scratch_order) {
-            const operand reg{
-                x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-            assert(reg.base_register() == expected);
-            registers.push_back(reg);
+        for (const std::string_view expected : order) {
+            registers.push_back(
+                backend.alloc_scratch_register(token{}, 0, integer64));
+            assert(registers.back().base_register() == expected);
         }
+
         // scratch registers are exhausted after the last one
         assert(rejected_with([&] {
-            static_cast<void>(
-                x86_backend.alloc_scratch_register(source_tk, 0, integer64));
+            std::ignore =
+                backend.alloc_scratch_register(source_tk, 0, integer64);
         }));
 
         // a register needed by an instruction is rejected, not overwritten
         assert(rejected_with(
             [&] {
-                static_cast<void>(x86_backend.alloc_named_register(
-                    source_tk, 0, "rcx", integer64));
+                std::ignore = backend.alloc_named_register(source_tk, 0, "rcx",
+                                                           integer64);
             },
             "holds a scratch value"));
 
         // freed registers are handed out again in the same order
         for (size_t count{}; count < 2; ++count) {
-            x86_backend.free_scratch_register(token{}, 0, registers.back());
+            backend.free_scratch_register(token{}, 0, registers.back());
             registers.pop_back();
         }
-        const operand ordinary{
-            x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-        assert(ordinary.base_register() == "rdi");
-        registers.push_back(ordinary);
-        const operand special{
-            x86_backend.alloc_scratch_register(token{}, 0, integer64)};
-        assert(special.base_register() == "rcx");
-        registers.push_back(special);
-        x86_backend.free_scratch_registers(token{}, 0, registers);
-        x86_backend.finish();
+
+        registers.push_back(
+            backend.alloc_scratch_register(token{}, 0, integer64));
+        assert(registers.back().base_register() == "rdi");
+
+        registers.push_back(
+            backend.alloc_scratch_register(token{}, 0, integer64));
+        assert(registers.back().base_register() == "rcx");
+
+        backend.free_scratch_registers(token{}, 0, registers);
+        backend.finish();
     }
 }
 
@@ -978,95 +1153,107 @@ auto check_x86_scratch_registers() -> void {
 // the syscall instruction clobbers) exactly when they are in use, around the
 // syscall and without touching 'rsp'
 auto check_x86_syscall_register_saving() -> void {
-    std::ostringstream x86_output;
-    machine_x86_64 x86_backend{&x86_output, {}};
-    x86_backend.set_builtin_types(integer64, integer, half, byte);
+    captured_x86_64 x86;
+    machine_x86_64& backend{x86.backend};
 
-    for (const unsigned live_mask : {0U, 1U, 2U, 3U}) {
-        const bool rcx_allocated{(live_mask & 1U) != 0};
-        const bool r11_allocated{(live_mask & 2U) != 0};
-        std::vector<operand> scratch;
-        operand live_rcx;
-        if (rcx_allocated) {
-            live_rcx =
-                x86_backend.alloc_named_register(token{}, 0, "rcx", byte);
-        }
-        if (r11_allocated) {
-            for (size_t count{}; count < 8; ++count) {
-                scratch.push_back(
-                    x86_backend.alloc_scratch_register(token{}, 0, byte));
+    // note: 8 scratch registers reach 'r11', the eighth of the order
+    constexpr size_t scratch_count_to_r11{8};
+
+    for (const bool r11_allocated : {false, true}) {
+        for (const bool rcx_allocated : {false, true}) {
+            operand live_rcx;
+            if (rcx_allocated) {
+                live_rcx = backend.alloc_named_register(token{}, 0, "rcx", byte);
             }
-        }
-        const machine::builtin_function_registers contract{
-            x86_backend.registers_for_builtin_function(
-                machine::builtin_function::write)};
 
-        std::vector<operand> args;
-        for (const std::string_view name : contract.arguments) {
-            args.push_back(
-                x86_backend.alloc_named_register(token{}, 0, name, integer64));
-        }
-        const operand result{x86_backend.alloc_named_register(
-            token{}, 0, contract.result, integer64)};
-        for (const unsigned operation : {0U, 1U, 2U}) {
-            x86_output.str({});
-            if (operation == 0) {
-                x86_backend.read(token{}, 0, result, args.at(0), args.at(1),
+            std::vector<operand> scratch;
+            if (r11_allocated) {
+                scratch =
+                    hold_scratch_registers(backend, scratch_count_to_r11, byte);
+            }
+
+            const machine::builtin_function_registers contract{
+                backend.registers_for_builtin_function(
+                    machine::builtin_function::write),
+            };
+
+            std::vector<operand> args;
+            for (const std::string_view name : contract.arguments) {
+                args.push_back(
+                    backend.alloc_named_register(token{}, 0, name, integer64));
+            }
+
+            const operand result{
+                backend.alloc_named_register(token{}, 0, contract.result,
+                                             integer64),
+            };
+
+            const std::array<std::function<void()>, 3> system_calls{
+                [&] {
+                    backend.read(token{}, 0, result, args.at(0), args.at(1),
                                  args.at(2));
-            } else if (operation == 1) {
-                x86_backend.write(token{}, 0, result, args.at(0), args.at(1),
+                },
+                [&] {
+                    backend.write(token{}, 0, result, args.at(0), args.at(1),
                                   args.at(2));
-            } else {
-                x86_backend.invoke_syscall(0);
-            }
-            const std::string assembly{x86_output.str()};
-            assert(assembly.contains("push rcx") == rcx_allocated);
-            assert(assembly.contains("pop rcx") == rcx_allocated);
-            assert(assembly.contains("push r11") == r11_allocated);
-            assert(assembly.contains("pop r11") == r11_allocated);
-            assert(not assembly.contains("rsp"));
-            assert(not assembly.contains("push rax"));
-            assert(not assembly.contains("push rdi"));
-            for (const std::string_view name : {"rcx", "r11"}) {
-                if (assembly.contains(std::format("push {}", name))) {
-                    assert(assembly.find(std::format("push {}", name)) <
-                           assembly.find("syscall"));
-                    assert(assembly.find(std::format("pop {}", name)) >
-                           assembly.find("syscall"));
+                },
+                [&] { backend.invoke_syscall(0); },
+            };
+
+            for (const std::function<void()>& system_call : system_calls) {
+                x86.output.str({});
+                system_call();
+
+                const std::string assembly{x86.output.str()};
+
+                assert(assembly.contains("push rcx") == rcx_allocated);
+                assert(assembly.contains("pop rcx") == rcx_allocated);
+                assert(assembly.contains("push r11") == r11_allocated);
+                assert(assembly.contains("pop r11") == r11_allocated);
+                assert(not assembly.contains("rsp"));
+                assert(not assembly.contains("push rax"));
+                assert(not assembly.contains("push rdi"));
+
+                // a saved register is pushed before and popped after the call
+                for (const std::string_view name : {"rcx", "r11"}) {
+                    const std::string push{std::format("push {}", name)};
+                    if (assembly.contains(push)) {
+                        assert(assembly.find(push) < assembly.find("syscall"));
+                        assert(assembly.find(std::format("pop {}", name)) >
+                               assembly.find("syscall"));
+                    }
                 }
             }
+
+            // 'exit' does not return, so nothing is saved
+            x86.output.str({});
+            backend.exit(token{}, 0, args.at(0));
+            assert(not x86.output.str().contains("push "));
+            assert(not x86.output.str().contains("pop "));
+
+            backend.free_named_register(token{}, 0, result);
+            backend.free_named_registers(token{}, 0, args);
+            backend.free_scratch_registers(token{}, 0, scratch);
+            if (rcx_allocated) {
+                backend.free_named_register(token{}, 0, live_rcx);
+            }
+            backend.finish();
         }
-        x86_output.str({});
-        x86_backend.exit(token{}, 0, args.at(0));
-        assert(not x86_output.str().contains("push "));
-        assert(not x86_output.str().contains("pop "));
-        x86_backend.free_named_register(token{}, 0, result);
-        x86_backend.free_named_registers(token{}, 0, args);
-        x86_backend.free_scratch_registers(token{}, 0, scratch);
-        if (rcx_allocated) {
-            x86_backend.free_named_register(token{}, 0, live_rcx);
-        }
-        x86_backend.finish();
     }
 }
 
 // a compiled 'write' in 'main' needs no saves and no scratch register
 auto check_x86_write_in_program() -> void {
-    const std::string_view source{
-        "func main() { var b = i8[1]{} var value = write(1, b, 0) "
-        "exit(value) }"};
+    const std::string assembly{
+        compiled_x86_64("func main() { var b = i8[1]{} "
+                        "var value = write(1, b, 0) exit(value) }"),
+    };
 
-    std::ostringstream output;
-    source_files files;
-    files.add("test.baz", std::string{source});
-
-    machine_x86_64 compiler{&output, &files};
-    program prg{compiler, files, 4096, check_options{}};
-    prg.build(output);
-    const std::string assembly{output.str()};
     const size_t main_start{assembly.find("main:")};
     assert(main_start != std::string::npos);
+
     const std::string main_body{assembly.substr(main_start)};
+
     assert(main_body.contains("mov rdi, 1"));
     assert(not main_body.contains("push "));
     assert(not main_body.contains("pop "));
@@ -1079,13 +1266,7 @@ auto check_x86_nested_syscalls_rejected() -> void {
     for (const std::string_view source :
          {"func main() { var b = i8[1]{} write(1, b, write(1, b, 0)) }",
           "func main() { var b = i8[1]{} exit(write(1, b, 0)) }"}) {
-        std::ostringstream output;
-        source_files files;
-        files.add("test.baz", std::string{source});
-
-        machine_x86_64 compiler{&output, &files};
-        program prg{compiler, files, 4096, check_options{}};
-        assert(rejected_with([&] { prg.build(output); },
+        assert(rejected_with([&] { std::ignore = compiled_x86_64(source); },
                              "cannot allocate register rdi"));
     }
 }
@@ -1098,7 +1279,8 @@ auto check_x86_nested_syscalls_rejected() -> void {
 // temporary register is used.
 // ============================================================================
 
-// the index scales that address lowering accepts
+// the index scales that address lowering accepts: powers of two that a shift
+// reaches within 32 bits
 auto check_index_scale_support() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
@@ -1120,72 +1302,66 @@ auto check_index_scale_support() -> void {
 auto check_memory_comparison_tail() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
+
+    // note: 25 held registers leave the comparison 5 of the pool
+    constexpr size_t held_count{25};
+
+    // note: 7 bytes are a word, a halfword and a byte
+    constexpr int64_t size_bytes{7};
 
     for (const bool counted : {false, true}) {
-        std::vector<operand> held;
-        for (size_t count{}; count < 25; ++count) {
-            held.push_back(backend.alloc_scratch_register(token{}, 0, boolean));
-        }
+        const std::vector<operand> held{
+            hold_scratch_registers(backend, held_count, boolean),
+        };
+
         const operand result{held.front()};
+        const operand buffer{operand::mem(held.back(), byte)};
+
         if (counted) {
             backend.arrays_equal(
                 token{}, 0, 1,
                 [&](const operand& count) -> void {
                     backend.copy_value(token{}, 0, count,
-                                       operand::imm(7, integer));
-                    std::println(output, "la {}, buffer",
-                                 held.back().base_register());
+                                       operand::imm(size_bytes, integer));
                 },
                 {
                     .alignment{4},
-                    .lhs{[&](const operand&, const operand&,
-                             const machine::address_use use) -> void {
-                        use(operand::mem(held.back(), byte));
-                    }},
+                    .lhs{fixed_address(buffer)},
+                    // note: the text before the right address sets up the
+                    //       count and is not checked
                     .rhs{[&](const operand&, const operand&,
                              const machine::address_use use) -> void {
-                        use(operand::mem(held.back(), byte));
-                        output.str({});
+                        use(buffer);
+                        rv32i.output.str({});
                     }},
                     .dst{result},
                     .inverted{false},
                 });
         } else {
-            std::println(output, "la {}, buffer", held.back().base_register());
-            output.str({});
-            backend.memory_equal(
-                token{}, 0, 7,
-                {
-                    .alignment{4},
-                    .lhs{[&](const operand&, const operand&,
-                             const machine::address_use use) -> void {
-                        use(operand::mem(held.back(), byte));
-                    }},
-                    .rhs{[&](const operand&, const operand&,
-                             const machine::address_use use) -> void {
-                        use(operand::mem(held.back(), byte));
-                    }},
-                    .dst{result},
-                    .inverted{false},
-                });
+            backend.memory_equal(token{}, 0, size_bytes,
+                                 {
+                                     .alignment{4},
+                                     .lhs{fixed_address(buffer)},
+                                     .rhs{fixed_address(buffer)},
+                                     .dst{result},
+                                     .inverted{false},
+                                 });
         }
-        const std::string assembly{output.str()};
-        // a known size takes its tail at offsets, a run-time count advances
-        for (const std::string_view instruction : {"lw", "lhu", "lbu"}) {
-            assert(assembly.contains(
-                std::format("{} {}, ", instruction, result.base_register())));
+
+        const std::string assembly{rv32i.output.str()};
+        const std::string_view reg{result.base_register()};
+
+        for (const std::string_view load : {"lw", "lhu", "lbu"}) {
+            assert(assembly.contains(std::format("{} {}, ", load, reg)));
         }
-        assert(
-            assembly.contains(std::format("li {}, 1", result.base_register())));
-        assert(
-            assembly.contains(std::format("li {}, 0", result.base_register())));
-        assert(not assembly.contains(
-            std::format("addi {},", result.base_register())));
+        assert(assembly.contains(std::format("li {}, 1", reg)));
+        assert(assembly.contains(std::format("li {}, 0", reg)));
+        assert(not assembly.contains(std::format("addi {},", reg)));
         assert(not assembly.contains("slli"));
+
         backend.free_scratch_registers(token{}, 0, held);
         backend.finish();
-        output.str({});
+        rv32i.output.str({});
     }
 }
 
@@ -1194,33 +1370,53 @@ auto check_memory_comparison_tail() -> void {
 auto check_known_size_copy() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
+
+    // note: 16 bytes are the most copied without a loop
+    constexpr size_t unrolled_limit_bytes{16};
+
+    // the unsigned loads of the copy, they move bits only
+    struct access_pair {
+        size_t width;
+        std::string_view load;
+        std::string_view store;
+    };
+
+    constexpr std::array<access_pair, 3> accesses{{
+        {.width{4}, .load{"lw "}, .store{"sw "}},
+        {.width{2}, .load{"lhu "}, .store{"sh "}},
+        {.width{1}, .load{"lbu "}, .store{"sb "}},
+    }};
 
     for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
-        backend.copy(token{}, 0, operand::mem("a0", {}, 1, 0, byte),
-                     operand::mem("a1", {}, 1, 0, byte), size_bytes, 4);
-        const std::string assembly{output.str()};
-        assert(assembly.contains("bne ") == (size_bytes > 16));
+        const std::string assembly{
+            rv32i.emitted([&] {
+                backend.copy(token{}, 0, operand::mem("a0", {}, 1, 0, byte),
+                             operand::mem("a1", {}, 1, 0, byte), size_bytes,
+                             4);
+            }),
+        };
+
+        assert(assembly.contains("bne ") == (size_bytes > unrolled_limit_bytes));
+
         if (size_bytes == 0) {
             assert(assembly.empty());
-        } else if (size_bytes <= 16) {
-            for (const size_t width : {size_t{4}, size_t{2}, size_t{1}}) {
-                const std::string load{width == 4   ? "lw "
-                                       : width == 2 ? "lhu "
-                                                    : "lbu "};
-                const std::string store{width == 4   ? "sw "
-                                        : width == 2 ? "sh "
-                                                     : "sb "};
+        } else if (size_bytes <= unrolled_limit_bytes) {
+            // the words, then at most one halfword and one byte
+            for (const access_pair& access : accesses) {
                 size_t loads{};
                 size_t stores{};
                 std::istringstream lines{assembly};
                 for (std::string line; std::getline(lines, line);) {
-                    loads += line.starts_with(load);
-                    stores += line.starts_with(store);
+                    loads += line.starts_with(access.load);
+                    stores += line.starts_with(access.store);
                 }
-                const size_t expected{width == 4
-                                          ? size_bytes / 4
-                                          : (size_bytes % (width * 2)) / width};
+
+                const size_t expected{
+                    access.width == 4
+                        ? size_bytes / 4
+                        : (size_bytes % (access.width * 2)) / access.width,
+                };
+
                 assert(loads == expected and stores == expected);
             }
             assert(not assembly.contains("beqz"));
@@ -1234,8 +1430,8 @@ auto check_known_size_copy() -> void {
             assert(not assembly.contains("srli ") and
                    not assembly.contains("andi "));
         }
+
         backend.finish();
-        output.str({});
     }
 }
 
@@ -1243,25 +1439,26 @@ auto check_known_size_copy() -> void {
 auto check_string_data_escapes() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    backend.emit_string_data({});
-    assert(output.str() == ".ascii \"\"\n");
-    output.str({});
-    backend.emit_string_data(
-        R"baz(\0\a\b\t\n\v\f\r\e\"\'`\\\x00\x7F\x80\xff\x41B)baz");
+    const auto string_data = [&](const std::string_view text) -> std::string {
+        return rv32i.emitted([&] { backend.emit_string_data(text); });
+    };
+
+    assert(string_data({}) == ".ascii \"\"\n");
+
     assert(
-        output.str() ==
+        string_data(R"baz(\0\a\b\t\n\v\f\r\e\"\'`\\\x00\x7F\x80\xff\x41B)baz") ==
         R"baz(.ascii "\000\007\010\t\n\013\014\r\033\"'`\\\000\177\200\377AB")baz"
         "\n");
-    output.str({});
-    backend.emit_string_data("\xc3\xa9\n");
-    assert(output.str() == R"baz(.ascii "\303\251\n")baz"
-                           "\n");
-    output.str({});
-    backend.emit_string_data(R"baz(hello\n\x007)baz");
-    assert(output.str() == R"baz(.ascii "hello\n\0007")baz"
-                           "\n");
+
+    // the bytes of utf-8 are written as they are
+    assert(string_data("\xc3\xa9\n") == R"baz(.ascii "\303\251\n")baz"
+                                        "\n");
+
+    // a digit after '\x00' is not read as part of the octal escape
+    assert(string_data(R"baz(hello\n\x007)baz") ==
+           R"baz(.ascii "hello\n\0007")baz"
+           "\n");
 }
 
 // ============================================================================
@@ -1272,189 +1469,234 @@ auto check_string_data_escapes() -> void {
 auto check_shifts() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> shift_registers{
-        hold_scratch_registers(backend, 30, integer)};
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
+
+    const operand value{operand::reg("a0", integer)};
+
+    const auto shifted = [&](const char operation,
+                             const operand& count) -> std::string {
+        return rv32i.emitted([&] {
+            backend.shift(token{}, 0, op_of(operation), value, count,
+                          machine::shift_check_options{});
+        });
+    };
+
     for (const char operation : {'<', '>'}) {
-        output.str({});
+        const std::string_view by_register{operation == '<' ? "sll" : "sra"};
+        const std::string_view by_constant{operation == '<' ? "slli" : "srai"};
 
-        backend.shift(token{}, 0, op_of(operation), operand::reg("a0", integer),
-                      operand::reg("a1", integer), machine::shift_check_options{});
+        assert(shifted(operation, operand::reg("a1", integer)) ==
+               std::format("{} a0, a0, a1\n", by_register));
 
-        assert(output.str() ==
-               (operation == '<' ? "sll a0, a0, a1\n" : "sra a0, a0, a1\n"));
-        output.str({});
+        // a shift by 0 changes nothing
+        assert(shifted(operation, operand::imm(0, integer)).empty());
 
-        for (const unsigned count : {0U, 2U, 31U}) {
-            output.str({});
-            backend.shift(token{}, 0, op_of(operation),
-                          operand::reg("a0", integer),
-                          operand::imm(count, integer), machine::shift_check_options{});
-            assert(output.str() ==
-                   (count == 0 ? std::string{}
-                               : std::format("{} a0, a0, {}\n",
-                                             operation == '<' ? "slli" : "srai",
-                                             count)));
+        for (const unsigned count : {2U, 31U}) {
+            assert(shifted(operation, operand::imm(count, integer)) ==
+                   std::format("{} a0, a0, {}\n", by_constant, count));
         }
+
         for (const int64_t count : {-1, 32, 35, 64}) {
-            output.str({});
             assert(rejected_with(
                 [&] {
-                    backend.shift(source_tk, 0, op_of(operation),
-                                  operand::reg("a0", integer),
-                                  operand::imm(count, integer), machine::shift_check_options{});
+                    backend.shift(source_tk, 0, op_of(operation), value,
+                                  operand::imm(count, integer),
+                                  machine::shift_check_options{});
                 },
                 "RV32I shift count must be 0 to 31 for 32-bit values"));
-            assert(output.str().empty());
+            assert(rv32i.output.str().empty());
         }
     }
-    backend.free_scratch_registers(token{}, 0, shift_registers);
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
-// 'add_subtract' and 'bitwise' with register and constant operands
+// 'add_subtract' and 'bitwise' with register and constant operands, a
+// subtracted constant is added negated
 auto check_add_subtract_bitwise() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> shift_registers{
-        hold_scratch_registers(backend, 30, integer)};
-    for (const char operation : {'+', '-', '&', '|', '^'}) {
-        output.str({});
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
+
+    struct operation_form {
+        char operation;
         std::string_view instruction;
-        if (operation == '+' or operation == '-') {
-            instruction = operation == '+' ? "add" : "sub";
+    };
 
-            backend.add_subtract(token{}, 0, op_of(operation),
-                                 operand::reg("a0", integer),
-                                 operand::reg("a1", integer));
+    constexpr std::array<operation_form, 5> forms{{
+        {.operation{'+'}, .instruction{"add"}},
+        {.operation{'-'}, .instruction{"sub"}},
+        {.operation{'&'}, .instruction{"and"}},
+        {.operation{'|'}, .instruction{"or"}},
+        {.operation{'^'}, .instruction{"xor"}},
+    }};
 
-        } else {
-            instruction = operation == '&'   ? "and"
-                          : operation == '|' ? "or"
-                                             : "xor";
+    const operand dst{operand::reg("a0", integer)};
 
-            backend.bitwise(token{}, 0, op_of(operation),
-                            operand::reg("a0", integer),
-                            operand::reg("a1", integer));
-        }
-        assert(output.str() == std::format("{} a0, a0, a1\n", instruction));
+    for (const operation_form& form : forms) {
+        const bool is_additive{form.operation == '+' or form.operation == '-'};
+
+        const auto computed = [&](const operand& src) -> std::string {
+            return rv32i.emitted([&] {
+                if (is_additive) {
+                    backend.add_subtract(token{}, 0, op_of(form.operation), dst,
+                                         src);
+                } else {
+                    backend.bitwise(token{}, 0, op_of(form.operation), dst,
+                                    src);
+                }
+            });
+        };
+
+        assert(computed(operand::reg("a1", integer)) ==
+               std::format("{} a0, a0, a1\n", form.instruction));
+
+        // note: 2047 is the largest 12-bit immediate
         for (const int64_t constant : {7, -7, 2047, -2047}) {
-            output.str({});
+            const std::string_view immediate_form{
+                form.operation == '-' ? "add" : form.instruction,
+            };
 
-            const operand source{operand::imm(constant, integer)};
+            const int64_t immediate{
+                form.operation == '-' ? -constant : constant,
+            };
 
-            if (operation == '+' or operation == '-') {
-                backend.add_subtract(token{}, 0, op_of(operation),
-                                     operand::reg("a0", integer), source);
-            } else {
-                backend.bitwise(token{}, 0, op_of(operation),
-                                operand::reg("a0", integer), source);
-            }
-            int64_t expected{constant};
-            if (operation == '-') {
-                expected = -expected;
-            }
-
-            assert(output.str() ==
-                   std::format("{}i a0, a0, {}\n",
-                               operation == '-' ? "add" : instruction,
-                               expected));
+            assert(computed(operand::imm(constant, integer)) ==
+                   std::format("{}i a0, a0, {}\n", immediate_form, immediate));
         }
     }
-    backend.free_scratch_registers(token{}, 0, shift_registers);
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
-// 'x & 0' loads its known result for every value width, and a shift by 0
-// emits nothing
+// 'x & 0' stores or loads its known result for every value width, a shift by
+// 0 emits nothing, '~' is an 'xori' and '-' a 'sub' from zero
 auto check_zero_operations_and_zero_shifts() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> shift_registers{
-        hold_scratch_registers(backend, 30, integer)};
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
+
     for (const type* value_type : {&integer, &half, &byte}) {
-        for (const bool memory_destination : {false, true}) {
-            const operand destination{
-                memory_destination ? operand::mem("a0", {}, 1, 0, *value_type)
-                                   : operand::reg("a0", *value_type)};
+        for (const bool in_memory : {false, true}) {
+            const operand dst{
+                in_memory ? operand::mem("a0", {}, 1, 0, *value_type)
+                          : operand::reg("a0", *value_type),
+            };
 
-            output.str({});
-            backend.shift(token{}, 0, op_of('<'), destination,
-                          operand::imm(0, integer), machine::shift_check_options{});
-            backend.shift(token{}, 0, op_of('>'), destination,
-                          operand::imm(0, integer), machine::shift_check_options{});
-            assert(output.str().empty());
-            output.str({});
-            backend.bitwise(token{}, 0, op_of('&'), destination,
-                            operand::imm(0, integer));
+            const std::string zero_shifts{
+                rv32i.emitted([&] {
+                    for (const char operation : {'<', '>'}) {
+                        backend.shift(token{}, 0, op_of(operation), dst,
+                                      operand::imm(0, integer),
+                                      machine::shift_check_options{});
+                    }
+                }),
+            };
 
-            const std::string_view store{value_type == &integer ? "sw"
-                                         : value_type == &half  ? "sh"
-                                                                : "sb"};
-            const std::string zero_result{
-                memory_destination ? std::format("{} zero, 0(a0)\n", store)
-                                   : "li a0, 0\n"};
+            assert(zero_shifts.empty());
 
-            assert(output.str() == zero_result);
+            const std::string masked_out{
+                rv32i.emitted([&] {
+                    backend.bitwise(token{}, 0, op_of('&'), dst,
+                                    operand::imm(0, integer));
+                }),
+            };
+
+            assert(masked_out ==
+                   (in_memory ? std::format("{} zero, 0(a0)\n",
+                                            store_of(*value_type))
+                              : "li a0, 0\n"));
         }
-        output.str({});
-        backend.unary(token{}, 0, unary_of('~'),
-                      operand::reg("a0", *value_type));
-        assert(output.str() == "xori a0, a0, -1\n");
+
+        assert(rv32i.emitted([&] {
+            backend.unary(token{}, 0, unary_of('~'),
+                          operand::reg("a0", *value_type));
+        }) == "xori a0, a0, -1\n");
     }
-    output.str({});
-    backend.unary(token{}, 0, unary_of('-'), operand::reg("a0", integer));
-    assert(output.str() == "sub a0, zero, a0\n");
-    backend.free_scratch_registers(token{}, 0, shift_registers);
+
+    assert(rv32i.emitted([&] {
+        backend.unary(token{}, 0, unary_of('-'), operand::reg("a0", integer));
+    }) == "sub a0, zero, a0\n");
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
-// byte values: operations with a known result load it, a shift extends the
-// sign again, and constants beyond 12 bits take two instructions
+// byte values: an operation with a known result loads it, a shift extends the
+// sign again, a count of the width is rejected, and constants beyond 12 bits
+// take two instructions
 auto check_narrow_values_and_large_constants() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> shift_registers{
-        hold_scratch_registers(backend, 30, integer)};
-    backend.bitwise(token{}, 0, op_of('|'), operand::reg("a0", byte),
-                    operand::imm(255, integer));
-    assert(output.str() == "li a0, -1\n");
-    output.str({});
-    backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
-                  operand::imm(7, integer), machine::shift_check_options{});
-    assert(output.str() == "slli a0, a0, 31\nsrai a0, a0, 24\n");
-    output.str({});
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
+
+    const operand value{operand::reg("a0", byte)};
+
+    const auto shifted_left = [&](const int64_t count) -> std::string {
+        return rv32i.emitted([&] {
+            backend.shift(token{}, 0, op_of('<'), value,
+                          operand::imm(count, integer),
+                          machine::shift_check_options{});
+        });
+    };
+
+    // every bit of a byte set is -1
+    assert(rv32i.emitted([&] {
+        backend.bitwise(token{}, 0, op_of('|'), value,
+                        operand::imm(255, integer));
+    }) == "li a0, -1\n");
+
+    // note: 24 more shifts the byte to the top of the register, 'srai' brings
+    //       its sign back
+    assert(shifted_left(7) == "slli a0, a0, 31\nsrai a0, a0, 24\n");
+
     for (const type* narrow : {&byte, &half, &boolean}) {
         const size_t bits{narrow->size_bytes() * 8};
+
         assert(rejected_with(
             [&] {
                 backend.shift(source_tk, 0, op_of('<'),
                               operand::reg("a0", *narrow),
-                              operand::imm(bits, integer), machine::shift_check_options{});
+                              operand::imm(bits, integer),
+                              machine::shift_check_options{});
             },
             std::format("RV32I shift count must be 0 to {} for {}-bit values",
                         bits - 1, bits)));
-        assert(output.str().empty());
+        // note: -1 because the count is below the width
+
+        assert(rv32i.output.str().empty());
     }
-    backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
-                  operand::imm(1, integer), machine::shift_check_options{});
-    assert(output.str() == "slli a0, a0, 25\nsrai a0, a0, 24\n");
-    output.str({});
-    backend.add_subtract(token{}, 0, op_of('+'), operand::reg("a0", integer),
-                         operand::imm(2048, integer));
-    assert(output.str() == "addi a0, a0, 2047\naddi a0, a0, 1\n");
-    output.str({});
-    backend.add_subtract(token{}, 0, op_of('-'), operand::reg("a0", integer),
-                         operand::imm(2049, integer));
-    assert(output.str() == "addi a0, a0, -2048\naddi a0, a0, -1\n");
-    backend.free_scratch_registers(token{}, 0, shift_registers);
+
+    assert(shifted_left(1) == "slli a0, a0, 25\nsrai a0, a0, 24\n");
+
+    // note: 2048 and -2049 are one past the 12-bit immediates
+    assert(rv32i.emitted([&] {
+        backend.add_subtract(token{}, 0, op_of('+'),
+                             operand::reg("a0", integer),
+                             operand::imm(2048, integer));
+    }) == "addi a0, a0, 2047\naddi a0, a0, 1\n");
+
+    assert(rv32i.emitted([&] {
+        backend.add_subtract(token{}, 0, op_of('-'),
+                             operand::reg("a0", integer),
+                             operand::imm(2049, integer));
+    }) == "addi a0, a0, -2048\naddi a0, a0, -1\n");
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
@@ -1462,154 +1704,167 @@ auto check_narrow_values_and_large_constants() -> void {
 // 7. host checks: copies, comparisons, addresses and zeroing
 // ============================================================================
 
-// copies between a register and memory use the load and store of the width
+// copies between a register and memory use the load and store of the width,
+// a copy of a register to itself emits nothing
 auto check_copy_widths() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
     for (const type* value_type : {&integer, &half, &byte}) {
-        output.str({});
+        const operand memory{operand::mem("a0", {}, 1, 0, *value_type)};
+        const operand reg{operand::reg("a1", *value_type)};
 
-        backend.copy_value(token{}, 0,
-                           operand::mem("a0", {}, 1, 0, *value_type),
-                           operand::reg("a1", *value_type));
+        assert(rv32i.emitted([&] {
+            backend.copy_value(token{}, 0, memory, reg);
+        }) == std::format("{} a1, 0(a0)\n", store_of(*value_type)));
 
-        const std::string_view store{value_type == &integer ? "sw"
-                                     : value_type == &half  ? "sh"
-                                                            : "sb"};
-        assert(output.str() == std::format("{} a1, 0(a0)\n", store));
-        output.str({});
+        assert(rv32i.emitted([&] {
+            backend.copy_value(token{}, 0, reg, memory);
+        }) == std::format("{} a1, 0(a0)\n", load_of(*value_type)));
 
-        backend.copy_value(token{}, 0, operand::reg("a1", *value_type),
-                           operand::mem("a0", {}, 1, 0, *value_type));
+        assert(rv32i.emitted([&] { backend.copy_value(token{}, 0, reg, reg); })
+                   .empty());
 
-        const std::string_view load{value_type == &integer ? "lw"
-                                    : value_type == &half  ? "lh"
-                                                           : "lb"};
-        assert(output.str() == std::format("{} a1, 0(a0)\n", load));
-        output.str({});
-
-        backend.copy_value(token{}, 0, operand::reg("a1", *value_type),
-                           operand::reg("a1", *value_type));
-
-        assert(output.str().empty());
         backend.finish();
     }
 }
 
-// bitwise operations on byte registers need one instruction
+// bitwise operations on byte registers need one instruction, the bits above
+// the byte are the sign of both operands already
 auto check_byte_bitwise() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
     for (const char operation : {'&', '|', '^'}) {
-        output.str({});
+        const std::string assembly{
+            rv32i.emitted([&] {
+                backend.bitwise(token{}, 0, op_of(operation),
+                                operand::reg("a0", byte),
+                                operand::reg("a1", byte));
+            }),
+        };
 
-        backend.bitwise(token{}, 0, op_of(operation), operand::reg("a0", byte),
-                        operand::reg("a1", byte));
+        assert(std::ranges::count(assembly, '\n') == 1);
 
-        assert(std::ranges::count(output.str(), '\n') == 1);
         backend.finish();
     }
 }
 
 // a shift of variables compiles without a copy of the count
 auto check_shift_of_variables() -> void {
-    const std::string_view source{
-        "func main() { var a = 3 var b = 2 var x = a << b exit(x) }"};
+    const std::string assembly{
+        compiled_rv32i(
+            "func main() { var a = 3 var b = 2 var x = a << b exit(x) }"),
+    };
 
-    std::ostringstream output;
-    source_files files;
-    files.add("test.baz", std::string{source});
-
-    machine_rv32i compiler{&output};
-    program prg{compiler, files, 4096, check_options{}};
-    prg.build(output);
-    assert(output.str().contains("sll t0, t0, t1"));
-    assert(not output.str().contains("addi t1, t0, 0"));
+    assert(assembly.contains("sll t0, t0, t1"));
+    assert(not assembly.contains("addi t1, t0, 0"));
 }
 
-// addresses of the form base + index * scale + offset: the shortest code for
-// the offset and scale, and registers reused when they are free
+// an address and the text that loads from it into 'a1'
+struct address_form {
+    operand address;
+    std::string_view expected;
+};
+
+// addresses of the form base + index * scale + offset with free registers:
+// an offset beyond 12 bits takes a temporary, a scale is a shift
 auto check_address_lowering() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a2", "a3", 1, 8196, integer));
+    const operand dst{operand::reg("a1", integer)};
 
-    assert(output.str() ==
+    const auto loaded = [&](const operand& address) -> std::string {
+        return rv32i.emitted(
+            [&] { backend.copy_value(token{}, 0, dst, address); });
+    };
+
+    // note: 8196 is 2 << 12 plus 4, 'lui' loads the 2
+    assert(loaded(operand::mem("a2", "a3", 1, 8196, integer)) ==
            "add a1, a2, a3\nlui t0, 2\nadd a1, a1, t0\nlw a1, 4(a1)\n");
-    output.str({});
 
     for (const uint64_t scale :
          {UINT64_C(2), UINT64_C(256), UINT64_C(2147483648)}) {
-        backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                           operand::mem("a2", "a3", scale, 40, integer));
-        assert(output.str() ==
+        assert(loaded(operand::mem("a2", "a3", scale, 40, integer)) ==
                std::format("slli a1, a3, {}\nadd a1, a1, a2\nlw a1, 40(a1)\n",
                            std::countr_zero(scale)));
-        output.str({});
-    }
-    std::vector<operand> address_registers{
-        hold_scratch_registers(backend, 30, integer)};
-    assert(address_registers.back().base_register() == "a0");
-    backend.free_scratch_register(token{}, 0, address_registers.back());
-    address_registers.pop_back();
-    output.str({});
-
-    std::println(output, "la a1, buffer");
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a1", {}, 1, 4, integer));
-
-    assert(output.str() == "la a1, buffer\nlw a1, 4(a1)\n");
-    output.str({});
-
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a2", "a3", 1, 4, integer));
-
-    assert(output.str() == "add a1, a2, a3\nlw a1, 4(a1)\n");
-    output.str({});
-
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a2", {}, 1, 8196, integer));
-
-    assert(output.str() == "lui a1, 2\nadd a1, a1, a2\nlw a1, 4(a1)\n");
-    output.str({});
-
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a2", {}, 1, -2049, integer));
-
-    assert(output.str() ==
-           "lui a1, 1048575\nadd a1, a1, a2\nlw a1, 2047(a1)\n");
-    output.str({});
-
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("zero", {}, 1, 8196, integer));
-
-    assert(output.str() == "lui a1, 2\nadd a1, a1, zero\nlw a1, 4(a1)\n");
-    output.str({});
-
-    for (const int64_t offset : {INT64_C(-4294967295), INT64_C(4294967295)}) {
-        const int32_t low{offset < 0 ? 1 : -1};
-        for (const std::string_view base : {"a1", "zero"}) {
-            backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                               operand::mem(base, {}, 1, offset, integer));
-
-            assert(output.str() == std::format("lw a1, {}({})\n", low, base));
-            output.str({});
-        }
     }
 
-    std::println(output, "la a1, buffer");
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a1", "a3", 1, 4, integer));
+    backend.finish();
+}
 
-    assert(output.str() == "la a1, buffer\nadd a1, a1, a3\nlw a1, 4(a1)\n");
-    backend.free_scratch_registers(token{}, 0, address_registers);
+// with every scratch register but 'a0' held, an address is built in the
+// destination register: the register terms first, then the offset
+auto check_address_lowering_in_destination() -> void {
+    captured_rv32i rv32i;
+    machine_rv32i& backend{rv32i.backend};
+
+    std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
+
+    assert(held.back().base_register() == "a0");
+    backend.free_scratch_register(token{}, 0, held.back());
+    held.pop_back();
+
+    const operand dst{operand::reg("a1", integer)};
+
+    const std::array forms{
+        // the destination as the base keeps its value
+        address_form{
+            .address{operand::mem("a1", {}, 1, 4, integer)},
+            .expected{"lw a1, 4(a1)\n"},
+        },
+        address_form{
+            .address{operand::mem("a2", "a3", 1, 4, integer)},
+            .expected{"add a1, a2, a3\nlw a1, 4(a1)\n"},
+        },
+        // note: 8196 is 2 << 12 plus 4
+        address_form{
+            .address{operand::mem("a2", {}, 1, 8196, integer)},
+            .expected{"lui a1, 2\nadd a1, a1, a2\nlw a1, 4(a1)\n"},
+        },
+        // note: -2049 is -1 << 12 plus 2047, the upper part wraps
+        address_form{
+            .address{operand::mem("a2", {}, 1, -2049, integer)},
+            .expected{"lui a1, 1048575\nadd a1, a1, a2\nlw a1, 2047(a1)\n"},
+        },
+        address_form{
+            .address{operand::mem("zero", {}, 1, 8196, integer)},
+            .expected{"lui a1, 2\nadd a1, a1, zero\nlw a1, 4(a1)\n"},
+        },
+        // an offset of the size of the address space wraps to its low bits
+        address_form{
+            .address{operand::mem("a1", {}, 1, INT64_C(-4294967295), integer)},
+            .expected{"lw a1, 1(a1)\n"},
+        },
+        address_form{
+            .address{
+                operand::mem("zero", {}, 1, INT64_C(-4294967295), integer)},
+            .expected{"lw a1, 1(zero)\n"},
+        },
+        address_form{
+            .address{operand::mem("a1", {}, 1, INT64_C(4294967295), integer)},
+            .expected{"lw a1, -1(a1)\n"},
+        },
+        address_form{
+            .address{operand::mem("zero", {}, 1, INT64_C(4294967295), integer)},
+            .expected{"lw a1, -1(zero)\n"},
+        },
+        address_form{
+            .address{operand::mem("a1", "a3", 1, 4, integer)},
+            .expected{"add a1, a1, a3\nlw a1, 4(a1)\n"},
+        },
+    };
+
+    for (const address_form& form : forms) {
+        assert(rv32i.emitted([&] {
+            backend.copy_value(token{}, 0, dst, form.address);
+        }) == form.expected);
+    }
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
@@ -1618,200 +1873,233 @@ auto check_address_lowering() -> void {
 auto check_address_forms_without_temporaries() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> address_registers{
-        hold_scratch_registers(backend, 30, integer)};
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
 
-    for (const std::string_view base : {"a2", "a1"}) {
-        backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                           operand::mem(base, "a1", 1, 4, integer));
-        assert(output.str() ==
-               std::format("add a1, {}, a1\nlw a1, 4(a1)\n", base));
-        output.str({});
+    const operand dst{operand::reg("a1", integer)};
+
+    const std::array forms{
+        // the destination as the index
+        address_form{
+            .address{operand::mem("a2", "a1", 1, 4, integer)},
+            .expected{"add a1, a2, a1\nlw a1, 4(a1)\n"},
+        },
+        // the destination as base and index
+        address_form{
+            .address{operand::mem("a1", "a1", 1, 4, integer)},
+            .expected{"add a1, a1, a1\nlw a1, 4(a1)\n"},
+        },
+        // the destination as the base
+        address_form{
+            .address{operand::mem("a1", "a2", 1, 4, integer)},
+            .expected{"add a1, a1, a2\nlw a1, 4(a1)\n"},
+        },
+        // a scaled destination index is shifted in place
+        address_form{
+            .address{operand::mem("a2", "a1", 4, 4, integer)},
+            .expected{"slli a1, a1, 2\nadd a1, a1, a2\nlw a1, 4(a1)\n"},
+        },
+        address_form{
+            .address{operand::mem("zero", "a2", 1, 4, integer)},
+            .expected{"add a1, zero, a2\nlw a1, 4(a1)\n"},
+        },
+    };
+
+    for (const address_form& form : forms) {
+        assert(rv32i.emitted([&] {
+            backend.copy_value(token{}, 0, dst, form.address);
+        }) == form.expected);
     }
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a1", "a2", 1, 4, integer));
-    assert(output.str() == "add a1, a1, a2\nlw a1, 4(a1)\n");
-    output.str({});
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a2", "a1", 4, 4, integer));
-    assert(output.str() == "slli a1, a1, 2\nadd a1, a1, a2\nlw a1, 4(a1)\n");
-    output.str({});
 
-    std::println(output, "la a1, buffer");
-    backend.address_of(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("a1", {}, 1, 0, integer));
+    // the address of the destination itself is already in it
+    assert(rv32i
+               .emitted([&] {
+                   backend.address_of(token{}, 0, dst,
+                                      operand::mem("a1", {}, 1, 0, integer));
+               })
+               .empty());
 
-    assert(output.str() == "la a1, buffer\n");
-    output.str({});
-
-    backend.copy_value(token{}, 0, operand::reg("a1", integer),
-                       operand::mem("zero", "a2", 1, 4, integer));
-
-    assert(output.str() == "add a1, zero, a2\nlw a1, 4(a1)\n");
-    output.str({});
-    backend.free_scratch_registers(token{}, 0, address_registers);
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
-// stores of constants and zeroing of small ranges need no temporary register
+// stores of constants and zeroing of small ranges need no temporary register:
+// zero is the register 'zero'
 auto check_constant_stores_and_small_zeroing() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> address_registers{
-        hold_scratch_registers(backend, 30, integer)};
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
 
-    backend.copy_value(token{}, 0, operand::mem("a2", {}, 1, 0, integer),
-                       operand::imm(0, integer));
+    assert(rv32i.emitted([&] {
+        backend.copy_value(token{}, 0, operand::mem("a2", {}, 1, 0, integer),
+                           operand::imm(0, integer));
+    }) == "sw zero, 0(a2)\n");
 
-    assert(output.str() == "sw zero, 0(a2)\n");
-    output.str({});
-    backend.copy_value(token{}, 0, operand::reg("a1", byte),
-                       operand::imm(255, integer));
-    assert(output.str() == "li a1, -1\n");
-    output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 1, 4);
-    assert(output.str() == "sb zero, 0(a2)\n");
-    output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 208, byte), 16, 4);
-    assert(output.str() == "sw zero, 208(a2)\nsw zero, 212(a2)\nsw "
-                           "zero, 216(a2)\nsw zero, 220(a2)\n");
-    output.str({});
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 4, 4);
-    assert(output.str() == "sw zero, 0(a2)\n");
-    output.str({});
-    backend.free_scratch_registers(token{}, 0, address_registers);
+    // 255 in a byte is -1
+    assert(rv32i.emitted([&] {
+        backend.copy_value(token{}, 0, operand::reg("a1", byte),
+                           operand::imm(255, integer));
+    }) == "li a1, -1\n");
+
+    const auto zeroed = [&](const int64_t offset,
+                            const size_t size_bytes) -> std::string {
+        return rv32i.emitted([&] {
+            backend.zero(token{}, 0, operand::mem("a2", {}, 1, offset, byte),
+                         size_bytes, 4);
+        });
+    };
+
+    assert(zeroed(0, 1) == "sb zero, 0(a2)\n");
+    assert(zeroed(208, 16) == "sw zero, 208(a2)\nsw zero, 212(a2)\n"
+                              "sw zero, 216(a2)\nsw zero, 220(a2)\n");
+    assert(zeroed(0, 4) == "sw zero, 0(a2)\n");
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
+
+// a comparison, its operands and the text it emits with every scratch
+// register held
+struct comparison_form {
+    operand lhs;
+    operand rhs;
+    machine::comparison_action action;
+    std::string_view expected;
+};
 
 // comparisons that produce a boolean or branch, with every scratch register
 // held: loads go to the destination, constants use the immediate forms
 auto check_comparison_selection() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> address_registers{
-        hold_scratch_registers(backend, 30, integer)};
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
 
-    backend.compare_and_branch(
-        token{}, 0, operand::reg("a0", integer), operand::reg("a1", integer),
-        {
-            .operation{machine::comparison_operator::less},
-            .destination{operand::reg("a2", boolean)},
-        },
-        {});
-
-    assert(output.str() == "slt a2, a0, a1\n");
-    output.str({});
-
-    backend.compare_and_branch(
-        token{}, 0, operand::mem("a0", {}, 1, 0, integer),
-        operand::reg("a1", integer),
-        {
-            .operation{machine::comparison_operator::less},
-            .destination{operand::reg("a2", boolean)},
-        },
-        {});
-    assert(output.str() == "lw a2, 0(a0)\nslt a2, a2, a1\n");
-    output.str({});
-    backend.compare_and_branch(
-        token{}, 0, operand::reg("a0", integer),
-        operand::mem("a1", {}, 1, 0, integer),
-        {
-            .operation{machine::comparison_operator::equal},
-            .destination{operand::reg("a1", boolean)},
-        },
-        {});
-    assert(output.str() == "lw a1, 0(a1)\nxor a1, a0, a1\nsltiu a1, a1, 1\n");
-    output.str({});
-    backend.compare_and_branch(
-        token{}, 0, operand::reg("a0", byte), operand::reg("a1", integer),
-        {
-            .operation{machine::comparison_operator::less},
-            .destination{operand::reg("a1", boolean)},
-        },
-        {});
-    assert(output.str() ==
-           "slli a1, a1, 24\nsrai a1, a1, 24\nslt a1, a0, a1\n");
-    output.str({});
-
-    backend.compare_and_branch(
-        token{}, 0, operand::reg("a0", integer), operand::reg("a1", integer),
-        {
-            .operation{machine::comparison_operator::equal},
-            .target{"comparison_target"},
-            .branch_on_true{true},
-        },
-        {});
-
-    // every scratch register is held here, so no far jump register is named
-    assert(output.str() == "beq a0, a1, comparison_target\n");
     using comparison = machine::comparison_operator;
-    for (const comparison operation :
-         {comparison::less, comparison::equal, comparison::not_equal}) {
-        output.str({});
 
-        backend.compare_and_branch(
-            token{}, 0, operand::reg("a0", integer),
-            operand::imm(operation == comparison::less ? 7 : 0, integer),
-            {
-                .operation{operation},
-                .destination{operand::reg("a0", boolean)},
-            },
-            {});
+    const operand a0{operand::reg("a0", integer)};
+    const operand a1{operand::reg("a1", integer)};
 
-        if (operation == comparison::less) {
-            assert(output.str() == "slti a0, a0, 7\n");
-        } else if (operation == comparison::equal) {
-            assert(output.str() == "sltiu a0, a0, 1\n");
-        } else {
-            assert(output.str() == "sltu a0, zero, a0\n");
-        }
-    }
-    output.str({});
+    const auto into = [](const comparison operation,
+                         const std::string_view reg)
+        -> machine::comparison_action {
+        return {
+            .operation{operation},
+            .destination{operand::reg(reg, boolean)},
+        };
+    };
 
-    backend.compare_and_branch(
-        token{}, 0, operand::reg("a0", byte), operand::imm(255, integer),
-        {
-            .operation{machine::comparison_operator::less},
-            .destination{operand::reg("a1", boolean)},
+    const std::array forms{
+        comparison_form{
+            .lhs{a0},
+            .rhs{a1},
+            .action{into(comparison::less, "a2")},
+            .expected{"slt a2, a0, a1\n"},
         },
-        {});
+        // a memory operand is loaded into the destination
+        comparison_form{
+            .lhs{operand::mem("a0", {}, 1, 0, integer)},
+            .rhs{a1},
+            .action{into(comparison::less, "a2")},
+            .expected{"lw a2, 0(a0)\nslt a2, a2, a1\n"},
+        },
+        comparison_form{
+            .lhs{a0},
+            .rhs{operand::mem("a1", {}, 1, 0, integer)},
+            .action{into(comparison::equal, "a1")},
+            .expected{"lw a1, 0(a1)\nxor a1, a0, a1\nsltiu a1, a1, 1\n"},
+        },
+        // the wider operand is narrowed to the byte of the other
+        comparison_form{
+            .lhs{operand::reg("a0", byte)},
+            .rhs{a1},
+            .action{into(comparison::less, "a1")},
+            .expected{"slli a1, a1, 24\nsrai a1, a1, 24\nslt a1, a0, a1\n"},
+        },
+        // every scratch register is held here, so no far jump register is
+        // named
+        comparison_form{
+            .lhs{a0},
+            .rhs{a1},
+            .action{machine::comparison_action{
+                .operation{comparison::equal},
+                .target{"comparison_target"},
+                .branch_on_true{true},
+            }},
+            .expected{"beq a0, a1, comparison_target\n"},
+        },
+        comparison_form{
+            .lhs{a0},
+            .rhs{operand::imm(7, integer)},
+            .action{into(comparison::less, "a0")},
+            .expected{"slti a0, a0, 7\n"},
+        },
+        // a comparison with zero is a test of the value
+        comparison_form{
+            .lhs{a0},
+            .rhs{operand::imm(0, integer)},
+            .action{into(comparison::equal, "a0")},
+            .expected{"sltiu a0, a0, 1\n"},
+        },
+        comparison_form{
+            .lhs{a0},
+            .rhs{operand::imm(0, integer)},
+            .action{into(comparison::not_equal, "a0")},
+            .expected{"sltu a0, zero, a0\n"},
+        },
+        // 255 is -1 at the width of the byte
+        comparison_form{
+            .lhs{operand::reg("a0", byte)},
+            .rhs{operand::imm(255, integer)},
+            .action{into(comparison::less, "a1")},
+            .expected{"slti a1, a0, -1\n"},
+        },
+    };
 
-    assert(output.str() == "slti a1, a0, -1\n");
-    output.str({});
-    backend.free_scratch_registers(token{}, 0, address_registers);
+    for (const comparison_form& form : forms) {
+        assert(rv32i.emitted([&] {
+            backend.compare_and_branch(token{}, 0, form.lhs, form.rhs,
+                                       form.action, {});
+        }) == form.expected);
+    }
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
-// multiplication by constants: no-op, shift, negation and zero
+// multiplication by constants: 1 changes nothing, a power of two is a shift,
+// -1 a negation and 0 a store of zero
 auto check_multiply_by_constants() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    std::vector<operand> address_registers{
-        hold_scratch_registers(backend, 30, integer)};
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count, integer),
+    };
 
-    backend.multiply(token{}, 0, operand::reg("a1", integer),
-                     operand::imm(1, integer));
-    assert(output.str().empty());
-    backend.multiply(token{}, 0, operand::reg("a1", integer),
-                     operand::imm(8, integer));
-    assert(output.str() == "slli a1, a1, 3\n");
-    output.str({});
-    backend.multiply(token{}, 0, operand::reg("a1", integer),
-                     operand::imm(-1, integer));
-    assert(output.str() == "sub a1, zero, a1\n");
-    output.str({});
-    backend.multiply(token{}, 0, operand::mem("a2", {}, 1, 0, integer),
-                     operand::imm(0, integer));
-    assert(output.str() == "sw zero, 0(a2)\n");
-    backend.free_scratch_registers(token{}, 0, address_registers);
+    const auto multiplied = [&](const operand& product,
+                                const int64_t factor) -> std::string {
+        return rv32i.emitted([&] {
+            backend.multiply(token{}, 0, product, operand::imm(factor, integer));
+        });
+    };
+
+    const operand reg{operand::reg("a1", integer)};
+
+    assert(multiplied(reg, 1).empty());
+    assert(multiplied(reg, 8) == "slli a1, a1, 3\n");
+    assert(multiplied(reg, -1) == "sub a1, zero, a1\n");
+    assert(multiplied(operand::mem("a2", {}, 1, 0, integer), 0) ==
+           "sw zero, 0(a2)\n");
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
@@ -1820,24 +2108,31 @@ auto check_multiply_by_constants() -> void {
 auto check_copy_temporaries() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    backend.copy(token{}, 0, operand::mem("a1", {}, 1, 208, byte),
-                 operand::mem("a2", {}, 1, 240, byte), 4, 4);
-    assert(output.str() == "lw t0, 208(a1)\nsw t0, 240(a2)\n");
-    output.str({});
-    backend.copy(token{}, 0, operand::mem("a1", {}, 1, -16, byte),
-                 operand::mem("a2", {}, 1, 16, byte), 7, 4);
-    assert(output.str() ==
+    const auto copied = [&](const int64_t src_offset, const int64_t dst_offset,
+                            const size_t size_bytes) -> std::string {
+        return rv32i.emitted([&] {
+            backend.copy(token{}, 0, operand::mem("a1", {}, 1, src_offset, byte),
+                         operand::mem("a2", {}, 1, dst_offset, byte),
+                         size_bytes, 4);
+        });
+    };
+
+    assert(copied(208, 240, 4) == "lw t0, 208(a1)\nsw t0, 240(a2)\n");
+
+    // note: 7 bytes are a word, a halfword and a byte
+    assert(copied(-16, 16, 7) ==
            "lw t0, -16(a1)\nsw t0, 16(a2)\nlhu t0, -12(a1)\nsh t0, 20(a2)\n"
            "lbu t0, -10(a1)\nsb t0, 22(a2)\n");
-    output.str({});
-    std::vector<operand> address_registers{
-        hold_scratch_registers(backend, 29, integer)};
-    backend.copy(token{}, 0, operand::mem("a1", {}, 1, 208, byte),
-                 operand::mem("a2", {}, 1, 240, byte), 4, 4);
-    assert(output.str() == "lw a0, 208(a1)\nsw a0, 240(a2)\n");
-    backend.free_scratch_registers(token{}, 0, address_registers);
+
+    // note: -1 leaves 'a0', the last of the pool, free
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count - 1, integer),
+    };
+
+    assert(copied(208, 240, 4) == "lw a0, 208(a1)\nsw a0, 240(a2)\n");
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
@@ -1846,30 +2141,35 @@ auto check_copy_temporaries() -> void {
 auto check_zeroing_ranges() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 2047, byte), 16, 4);
-    assert(output.str() ==
-           "addi t0, a2, 2047\nsw zero, 0(t0)\nsw zero, 4(t0)\nsw zero, "
-           "8(t0)\nsw zero, 12(t0)\n");
-    output.str({});
-    // above 16 stores the loop keeps the code small and stores the tail
-    backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 67, 4);
-    assert(output.str() ==
+    const auto zeroed = [&](const int64_t offset,
+                            const size_t size_bytes) -> std::string {
+        return rv32i.emitted([&] {
+            backend.zero(token{}, 0, operand::mem("a2", {}, 1, offset, byte),
+                         size_bytes, 4);
+        });
+    };
+
+    // note: 2047 plus the 12 of the last word is beyond the 12-bit offset
+    assert(zeroed(2047, 16) == "addi t0, a2, 2047\nsw zero, 0(t0)\n"
+                               "sw zero, 4(t0)\nsw zero, 8(t0)\n"
+                               "sw zero, 12(t0)\n");
+
+    // note: 67 bytes are 16 words and a tail of 3
+    assert(zeroed(0, 67) ==
            "# zero loop of 4-byte accesses: start word aligned\n"
-           "addi t0, a2, 0\n# zero 4-byte words\naddi t1, t0, 64\n1:\nsw "
-           "zero, 0(t0)\naddi t0, t0, 4\nbne t0, t1, 1b\n"
+           "addi t0, a2, 0\n# zero 4-byte words\naddi t1, t0, 64\n1:\n"
+           "sw zero, 0(t0)\naddi t0, t0, 4\nbne t0, t1, 1b\n"
            "# zero 3 B tail\nsh zero, 0(t0)\nsb zero, 2(t0)\n");
-    output.str({});
+
     backend.finish();
 }
 
-// addresses that cannot be lowered are rejected: offsets beyond the 32-bit
-// address range, and no free scratch register for the intermediate address
+// an address that cannot be lowered is rejected: an offset beyond the 32-bit
+// address range, or an intermediate address without a free scratch register
 auto check_invalid_addresses_rejected() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
-    assembly_output& output{rv32i.output};
 
     for (const int64_t offset :
          {INT64_MIN, INT64_C(-4294967296), INT64_C(4294967296), INT64_MAX}) {
@@ -1879,26 +2179,29 @@ auto check_invalid_addresses_rejected() -> void {
         }));
         backend.finish();
     }
+
     for (const uint64_t scale :
          {UINT64_C(4294967296), UINT64_C(9223372036854775808)}) {
         assert(not backend.can_lower_index_scale(scale));
     }
 
     // 'finish' reports scratch usage even when nothing was emitted
-    std::istringstream rejected_lines{output.str()};
-    std::string rejected_line;
-    while (std::getline(rejected_lines, rejected_line)) {
-        assert(rejected_line.empty() or
-               rejected_line == "# max scratch registers in use: 0");
+    std::istringstream rejected_lines{rv32i.output.str()};
+    for (std::string line; std::getline(rejected_lines, line);) {
+        assert(line.empty() or line == "# max scratch registers in use: 0");
     }
 
-    std::vector<operand> held_registers{
-        hold_scratch_registers(backend, 29, integer)};
+    // note: -1 leaves 'a0' free, it is also the destination
+    const std::vector<operand> held{
+        hold_scratch_registers(backend, rv32i_scratch_count - 1, integer),
+    };
+
     assert(rejected_with([&] {
         backend.address_of(source_tk, 1, operand::reg("a0", integer),
                            operand::mem("a0", {}, 1, 8196, integer));
     }));
-    backend.free_scratch_registers(token{}, 0, held_registers);
+
+    backend.free_scratch_registers(token{}, 0, held);
     backend.finish();
 }
 
@@ -1909,62 +2212,75 @@ auto check_scratch_register_pool() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
 
-    std::vector<operand> held_registers;
+    // note: the 8 argument registers come last in the order
+    constexpr size_t argument_register_count{8};
+
     for (const size_t reserved_count : {size_t{}, size_t{1}, size_t{2}}) {
+        // the argument registers can be allocated by name and freed again
         for (const std::string_view name :
              {"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7"}) {
             const operand reg{
-                backend.alloc_named_register(token{}, 0, name, integer)};
+                backend.alloc_named_register(token{}, 0, name, integer),
+            };
             backend.free_named_register(token{}, 0, reg);
         }
+
         if (reserved_count >= 1) {
             backend.reserve_variables_base();
         }
         if (reserved_count == 2) {
             backend.reserve_frame_base();
         }
-        held_registers.clear();
-        uint32_t register_mask{};
-        for (size_t count{}; count < 30 - reserved_count; ++count) {
+
+        const size_t available{rv32i_scratch_count - reserved_count};
+
+        std::vector<operand> held;
+        bool has_ra{};
+        bool has_gp{};
+        bool has_tp{};
+        for (size_t count{}; count < available; ++count) {
             const operand reg{
-                backend.alloc_scratch_register(token{}, 0, integer)};
-            assert(reg.base_register() != "zero" and
-                   reg.base_register() != "sp");
-            assert(reserved_count == 0 or reg.base_register() != "s0");
-            assert(reserved_count != 2 or reg.base_register() != "s1");
-            assert(reg.base_register().starts_with("a") ==
-                   (count >= 22 - reserved_count));
-            if (reg.base_register() == "ra") {
-                register_mask |= 1;
-            }
-            if (reg.base_register() == "gp") {
-                register_mask |= 2;
-            }
-            if (reg.base_register() == "tp") {
-                register_mask |= 4;
-            }
-            held_registers.push_back(reg);
+                backend.alloc_scratch_register(token{}, 0, integer),
+            };
+            const std::string_view name{reg.base_register()};
+
+            assert(name != "zero" and name != "sp");
+            assert(reserved_count == 0 or name != "s0");
+            assert(reserved_count != 2 or name != "s1");
+            assert(name.starts_with("a") ==
+                   (count >= available - argument_register_count));
+
+            has_ra = has_ra or name == "ra";
+            has_gp = has_gp or name == "gp";
+            has_tp = has_tp or name == "tp";
+            held.push_back(reg);
         }
-        assert(register_mask == 7);
+
+        // 'ra', 'gp' and 'tp' are ordinary scratch registers
+        assert(has_ra and has_gp and has_tp);
+
         assert(rejected_with([&] {
-            static_cast<void>(
-                backend.alloc_scratch_register(source_tk, 0, integer));
+            std::ignore = backend.alloc_scratch_register(source_tk, 0, integer);
         }));
+
         for (const std::string_view name : {"zero", "sp", "s0", "s1"}) {
             assert(rejected_with([&] {
-                static_cast<void>(
-                    backend.alloc_named_register(source_tk, 0, name, integer));
+                std::ignore =
+                    backend.alloc_named_register(source_tk, 0, name, integer);
             }));
         }
-        backend.free_scratch_registers(token{}, 0, held_registers);
+
+        backend.free_scratch_registers(token{}, 0, held);
         if (reserved_count == 2) {
             backend.release_frame_base();
         }
         if (reserved_count >= 1) {
             backend.release_variables_base();
         }
+
         const operand named{
-            backend.alloc_named_register(token{}, 0, "ra", integer)};
+            backend.alloc_named_register(token{}, 0, "ra", integer),
+        };
         assert(named.base_register() == "ra");
         backend.free_named_register(token{}, 0, named);
         backend.finish();
@@ -1981,66 +2297,81 @@ auto check_scratch_register_pool() -> void {
 auto check_multiply_divide_routines() -> void {
     for (const char operation : {'*', '/', '%', '+'}) {
         std::ostringstream output;
-        machine_rv32i helper_backend{&output};
-        helper_backend.set_builtin_types(integer64, integer, half, byte);
-        if (operation != '+') {
-            const auto emit = [&]() {
-                if (operation == '*') {
-                    helper_backend.multiply(token{}, 0,
-                                            operand::reg("s2", integer),
-                                            operand::reg("s3", integer));
-                } else {
-                    helper_backend.divide(token{}, 0, op_of(operation),
-                                          operand::reg("s2", integer),
-                                          operand::reg("s3", integer), machine::division_check_options{});
-                }
-            };
-            emit();
-            assert(
-                output.str() ==
-                std::format(
-                    "addi a0, s2, 0\naddi a1, s3, 0\ncall {}\naddi s2, {}, 0\n",
-                    operation == '*' ? ".Lbaz_multiply" : ".Lbaz_divide",
-                    operation == '%' ? "a1" : "a0"));
-            std::vector<operand> occupied;
-            for (size_t count{}; count < 30; ++count) {
-                occupied.push_back(
-                    helper_backend.alloc_scratch_register(token{}, 0, integer));
+        machine_rv32i backend{&output};
+        backend.set_builtin_types(integer64, integer, half, byte);
+
+        const auto computed = [&](const operand& dst, const operand& src) {
+            if (operation == '*') {
+                backend.multiply(token{}, 0, dst, src);
+            } else {
+                backend.divide(token{}, 0, op_of(operation), dst, src,
+                               machine::division_check_options{});
             }
-            emit();
-            helper_backend.free_scratch_registers(token{}, 0, occupied);
+        };
+
+        if (operation != '+') {
+            // the operands go to the argument registers and the result comes
+            // back in 'a0', the remainder in 'a1'
+            const operand dst{operand::reg("s2", integer)};
+            const operand src{operand::reg("s3", integer)};
+
+            computed(dst, src);
+
+            assert(output.str() ==
+                   std::format("addi a0, s2, 0\naddi a1, s3, 0\ncall {}\n"
+                               "addi s2, {}, 0\n",
+                               operation == '*' ? ".Lbaz_multiply"
+                                                : ".Lbaz_divide",
+                               operation == '%' ? "a1" : "a0"));
+
+            // the call is made also with every scratch register held
+            const std::vector<operand> held{
+                hold_scratch_registers(backend, rv32i_scratch_count, integer),
+            };
+            computed(dst, src);
+            backend.free_scratch_registers(token{}, 0, held);
+
             output.str({});
         }
+
         for (size_t count{}; count < 2; ++count) {
-            if (operation == '*' or operation == '+') {
-                helper_backend.multiply(token{}, 0, operand::reg("a0", integer),
-                                        operation == '+'
-                                            ? operand::imm(3, integer)
-                                            : operand::reg("a1", integer));
+            if (operation == '+') {
+                backend.multiply(token{}, 0, operand::reg("a0", integer),
+                                 operand::imm(3, integer));
             } else {
-                helper_backend.divide(token{}, 0, op_of(operation),
-                                      operand::reg("a0", integer),
-                                      operand::reg("a1", integer), machine::division_check_options{});
+                computed(operand::reg("a0", integer),
+                         operand::reg("a1", integer));
             }
         }
+
+        // the routines follow the code of 'main'
         assert(not output.str().contains(".Lbaz_multiply:"));
         assert(not output.str().contains(".Lbaz_divide:"));
-        helper_backend.end_main();
-        helper_backend.begin_data(4);
+
+        backend.end_main();
+        backend.begin_data(4);
+
         const std::string assembly{output.str()};
+
         for (const std::string_view label :
              {".Lbaz_multiply:", ".Lbaz_divide:"}) {
-            const bool expected{label == ".Lbaz_multiply:"
-                                    ? operation == '*'
-                                    : operation == '/' or operation == '%'};
+            const bool is_called{
+                label == ".Lbaz_multiply:" ? operation == '*'
+                                           : operation == '/' or
+                                                 operation == '%',
+            };
+
             const size_t first{assembly.find(label)};
-            assert((first != std::string::npos) == expected);
-            if (expected) {
+
+            assert((first != std::string::npos) == is_called);
+
+            if (is_called) {
                 assert(assembly.find(label, first + label.size()) ==
                        std::string::npos);
             }
         }
-        helper_backend.finish();
+
+        backend.finish();
     }
 }
 
@@ -2072,6 +2403,7 @@ auto write_with_hand_written(machine_rv32i& backend) -> void {
             marker_at != std::string::npos and
                 line.find_first_not_of(' ') == marker_at - 2,
         };
+        // note: -2 because the comment starts with '# '
 
         std::println("{}",
                      is_hand_written
@@ -2080,20 +2412,37 @@ auto write_with_hand_written(machine_rv32i& backend) -> void {
     }
 }
 
+// a hand-written check that 's1', the frame base, is 'offset' past 'dat'
+auto expect_frame_base(machine_rv32i& backend, const size_t offset) -> void {
+    hand_written(backend,
+                 std::format("    la t0, dat\n    li t1, {}\n    add t0, t0, t1\n"
+                             "    beq s1, t0, 1f\n    j call_failure\n1:",
+                             offset));
+}
+
 // 'noninline': a function call preserves exactly the allocated registers
 // and callees never write the variables base
 auto generate_noninline() -> void {
-    // hand-written lines are interleaved with the backend's output
+    // the registers 'x1' to 'x31' by number, 'x2' is 'sp' and 'x8' the
+    // variables base 's0'
+    constexpr size_t register_count{32};
+    constexpr size_t sp_index{2};
+    constexpr size_t s0_index{8};
+
+    // note: 2032 is where 'start' puts the variables base past 'dat'
+    constexpr size_t variables_base_offset{2032};
+
     machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
-    hand_written(backend,
-                 std::format("    addi sp, sp, -128\n    sw sp, 124(sp)"));
+
+    hand_written(backend, "    addi sp, sp, -128\n    sw sp, 124(sp)");
+
     // a call keeps only allocated registers, the variables base s0 is
     // already allocated
     std::vector<operand> live;
-    for (size_t index{1}; index < 32; ++index) {
-        if (index != 2 and index != 8) {
+    for (size_t index{1}; index < register_count; ++index) {
+        if (index != sp_index and index != s0_index) {
             live.push_back(backend.alloc_named_register(
                 token{}, 0, assembler_rv32i::register_names.at(index),
                 integer));
@@ -2101,67 +2450,74 @@ auto generate_noninline() -> void {
                          std::format("    li x{}, {}", index, 100 + index));
         }
     }
+
     backend.call_function(token{}, 1, "outer",
                           operand::mem("s0", {}, 1, 4096, integer), operand{});
-    for (size_t index{1}; index < 32; ++index) {
-        if (index != 2) {
+
+    // every register after the call is saved and compared with what it held
+    for (size_t index{1}; index < register_count; ++index) {
+        if (index != sp_index) {
             hand_written(backend, std::format("    sw x{}, {}(sp)", index,
                                               (index - 1) * 4));
         }
     }
-    hand_written(
-        backend,
-        std::format(
-            "    lw t0, 124(sp)\n    beq t0, sp, 1f\n    j call_failure\n1:"));
-    for (size_t index{1}; index < 32; ++index) {
-        if (index == 2) {
+
+    hand_written(backend, "    lw t0, 124(sp)\n    beq t0, sp, 1f\n"
+                          "    j call_failure\n1:");
+
+    for (size_t index{1}; index < register_count; ++index) {
+        if (index == sp_index) {
             continue;
         }
+
         hand_written(backend,
                      std::format("    lw t0, {}(sp)", (index - 1) * 4));
-        if (index == 8) {
+
+        if (index == s0_index) {
             hand_written(backend,
-                         std::format("    la t1, dat\n    addi t1, t1, 2032"));
+                         std::format("    la t1, dat\n    addi t1, t1, {}",
+                                     variables_base_offset));
         } else {
             hand_written(backend, std::format("    li t1, {}", 100 + index));
         }
-        hand_written(backend,
-                     std::format("    beq t0, t1, 1f\n    j call_failure\n1:"));
+
+        hand_written(backend, "    beq t0, t1, 1f\n    j call_failure\n1:");
     }
-    hand_written(backend, std::format("    addi sp, sp, 128"));
+
+    hand_written(backend, "    addi sp, sp, 128");
+
     for (const operand& reg : live | std::views::reverse) {
         backend.free_named_register(token{}, 0, reg);
     }
+
     backend.end_main();
     backend.label(0, "call_failure");
     backend.exit(token{}, 1, operand::imm(1, integer));
+
+    // note: 6128 is the variables base plus the 4096 of the frame of 'outer'
     backend.label(0, "outer");
     backend.reserve_frame_base();
-    hand_written(
-        backend,
-        std::format("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
-                    "    beq s1, t0, 1f\n    j call_failure\n1:"));
+    expect_frame_base(backend, 6128);
     backend.call_function(token{}, 1, "inner",
                           operand::mem("s1", {}, 1, 8192, integer), operand{});
+
     // the frame base is live here, so the call restores it
-    hand_written(
-        backend,
-        std::format("    la t0, dat\n    li t1, 6128\n    add t0, t0, t1\n"
-                    "    beq s1, t0, 1f\n    j call_failure\n1:"));
+    expect_frame_base(backend, 6128);
     backend.return_function(1);
     backend.release_frame_base();
+
+    // note: 14320 is the frame base of 'outer' plus 8192
     backend.label(0, "inner");
     backend.reserve_frame_base();
-    hand_written(
-        backend,
-        std::format("    la t0, dat\n    li t1, 14320\n    add t0, t0, t1\n"
-                    "    beq s1, t0, 1f\n    j call_failure\n1:"));
+    expect_frame_base(backend, 14320);
+
     // callees never write the variables base s0
-    for (size_t index{1}; index < 32; ++index) {
-        if (index != 2 and index != 8) {
+    for (size_t index{1}; index < register_count; ++index) {
+        if (index != sp_index and index != s0_index) {
             hand_written(backend, std::format("    li x{}, -1", index));
         }
     }
+
     backend.return_function(1);
     backend.release_frame_base();
     backend.finish();
@@ -2173,58 +2529,75 @@ auto generate_noninline() -> void {
 // when the check is enabled and the frame at 'vars + offset' does not fit in
 // the 256 bytes of 'vars', for every offset and size around the limit
 auto generate_frame_checks() -> void {
+    constexpr int vars_size_bytes{256};
+
     machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
+
+    // 's3' is where the overflow handler continues
     const operand continuation{
-        backend.alloc_named_register(token{}, 0, "s3", integer)};
+        backend.alloc_named_register(token{}, 0, "s3", integer),
+    };
+
+    // 'a3' is set to 1 by the handler, it is compared with the expectation
+    const auto expect_failed = [&](const size_t case_index,
+                                   const bool failed) -> void {
+        hand_written(backend,
+                     std::format("    li a3, 0\nframe_result_{}:\n    li a4, {}\n"
+                                 "    beq a3, a4, 1f\n    j frame_failure\n1:",
+                                 case_index, failed ? 1 : 0));
+    };
+
     size_t case_index{};
     for (const bool enabled : {false, true}) {
         for (const int offset : {-1, 0, 1, 255, 256, 257}) {
             for (const uint32_t size : {0U, 1U, 256U, 257U, UINT32_MAX}) {
-                const bool failed{enabled and
-                                  (offset < 0 or offset > 256 or
-                                   size > static_cast<uint32_t>(256 - offset))};
+                const bool failed{
+                    enabled and
+                        (offset < 0 or offset > vars_size_bytes or
+                         size > static_cast<uint32_t>(vars_size_bytes - offset)),
+                };
+
                 const std::string size_label{
-                    std::format("frame_size_{}", case_index)};
-                hand_written(
-                    backend,
-                    std::format("    la a0, vars\n    addi a0, a0, {}\n"
-                                "    la s3, frame_result_{}",
-                                offset, case_index));
+                    std::format("frame_size_{}", case_index),
+                };
+
+                hand_written(backend,
+                             std::format("    la a0, vars\n    addi a0, a0, {}\n"
+                                         "    la s3, frame_result_{}",
+                                         offset, case_index));
+
                 backend.check_frame_capacity(
                     token{}, 1, operand::mem("a0", {}, 1, 0, integer),
                     operand::symbol(size_label, integer), enabled);
-                hand_written(
-                    backend,
-                    std::format(
-                        "    li a3, 0\nframe_result_{}:\n    li a4, {}\n"
-                        "    beq a3, a4, 1f\n    j frame_failure\n1:",
-                        case_index++, failed ? 1 : 0));
+
+                expect_failed(case_index++, failed);
                 backend.define_constant(size_label, size);
             }
         }
     }
+
+    // a frame at a displacement of the size of the address space fails
     for (const bool positive : {false, true}) {
-        hand_written(
-            backend,
-            std::format("    la a0, vars\n    addi a0, a0, {}\n    la s3, "
-                        "frame_result_{}",
-                        positive ? 1 : -1, case_index));
+        hand_written(backend, std::format("    la a0, vars\n    addi a0, a0, {}\n"
+                                          "    la s3, frame_result_{}",
+                                          positive ? 1 : -1, case_index));
+
+        const int64_t displacement{
+            positive ? int64_t{UINT32_MAX} : -int64_t{UINT32_MAX},
+        };
+
         backend.check_frame_capacity(
-            token{}, 1,
-            operand::mem("a0", {}, 1,
-                         positive ? int64_t{UINT32_MAX} : -int64_t{UINT32_MAX},
-                         integer),
+            token{}, 1, operand::mem("a0", {}, 1, displacement, integer),
             operand::symbol("0", integer), true);
-        hand_written(
-            backend,
-            std::format("    li a3, 0\nframe_result_{}:\n    li a4, 1\n"
-                        "    beq a3, a4, 1f\n    j frame_failure\n1:",
-                        case_index++));
+
+        expect_failed(case_index++, true);
     }
+
     backend.free_named_register(token{}, 0, continuation);
     backend.end_main();
+
     // the backend jumps to the label, so it defines it
     backend.label(0, machine::frame_overflow_handler_label);
     hand_written(backend, "    li a3, 1\n    jr s3");
@@ -2238,31 +2611,41 @@ auto generate_frame_checks() -> void {
 // 'long-loop': an array iteration whose body is larger than a branch reaches
 // (8 KiB) still repeats, for strides on both sides of the immediate limits
 auto generate_long_loop() -> void {
+    // note: 3 iterations of 'foo'
+    constexpr int64_t iteration_count{3};
+
     machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
     backend.start();
-    hand_written(backend, std::format("    addi sp, sp, -16"));
+    hand_written(backend, "    addi sp, sp, -16");
+
     for (const size_t stride : {4U, 2047U, 2048U, 4094U, 4095U, 8192U}) {
         const std::string loop_label{std::format("long_loop_{}", stride)};
-        hand_written(backend, std::format("    sw zero, 0(sp)\n    li s2, 0"));
+
+        hand_written(backend, "    sw zero, 0(sp)\n    li s2, 0");
         backend.label(0, loop_label);
-        hand_written(
-            backend,
-            std::format(
-                "    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1"));
+
+        // note: 2048 instructions are 8 KiB
+        hand_written(backend,
+                     "    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1");
+
         backend.foo_advance_iteration(token{}, 1, operand::reg("s2", integer),
                                       operand::mem("sp", {}, 1, 0, integer),
-                                      stride, operand::imm(3, integer),
+                                      stride,
+                                      operand::imm(iteration_count, integer),
                                       loop_label);
-        hand_written(
-            backend,
-            std::format("    li t0, {}\n    beq s2, t0, 1f\n"
-                        "    j long_loop_failure\n1:\n"
-                        "    lw t1, 0(sp)\n    li t0, 3\n"
-                        "    beq t1, t0, 1f\n    j long_loop_failure\n1:",
-                        3 * (stride + 1)));
+
+        // the iterator advanced by the stride and the body's 1, the counter
+        // reached the count
+        hand_written(backend,
+                     std::format("    li t0, {}\n    beq s2, t0, 1f\n"
+                                 "    j long_loop_failure\n1:\n"
+                                 "    lw t1, 0(sp)\n    li t0, 3\n"
+                                 "    beq t1, t0, 1f\n    j long_loop_failure\n1:",
+                                 iteration_count * (stride + 1)));
     }
-    hand_written(backend, std::format("    addi sp, sp, 16"));
+
+    hand_written(backend, "    addi sp, sp, 16");
     backend.end_main();
     backend.label(0, "long_loop_failure");
     backend.exit(token{}, 1, operand::imm(1, integer));
@@ -2288,14 +2671,27 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
         }
     };
 
+    const auto branch_if = [&](const machine::comparison_operator operation,
+                               const std::string_view target) -> void {
+        // note: 15 is the iterator after 3 iterations of 4 and 1
+        backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),
+                                   operand::imm(15, integer),
+                                   {
+                                       .operation{operation},
+                                       .target{target},
+                                       .branch_on_true{true},
+                                   },
+                                   {});
+    };
+
     const operand stack{operand::reg("sp", integer)};
     const operand iterator{operand::reg("s2", integer)};
     const operand counter{operand::mem("sp", {}, 1, 0, integer)};
 
-    // 8 KiB needs 'j' and 1.08 MiB needs 'jump' in every direction
     backend.add_subtract(token{}, 1, op_of('-'), stack,
                          operand::imm(16, integer));
 
+    // note: 2048 instructions are 8 KiB, 270000 are 1.08 MiB
     for (const size_t count : {2048U, 270000U}) {
         const std::string loop_label{std::format("far_loop_{}", count)};
         backend.copy_value(token{}, 1, counter, operand::imm(0, integer));
@@ -2309,37 +2705,23 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
         backend.foo_advance_iteration(token{}, 1, iterator, counter, 4,
                                       operand::imm(3, integer), loop_label);
 
-        backend.compare_and_branch(
-            token{}, 1, operand::reg("s2", integer),
-            operand::imm(15, integer),
-            {
-                .operation{machine::comparison_operator::not_equal},
-                .target{"far_failure"},
-                .branch_on_true{true},
-            },
-            {});
+        branch_if(machine::comparison_operator::not_equal, "far_failure");
 
         const std::string taken_label{std::format("far_taken_{}", count)};
 
-        backend.compare_and_branch(
-            token{}, 1, operand::reg("s2", integer),
-            operand::imm(15, integer),
-            {
-                .operation{machine::comparison_operator::equal},
-                .target{taken_label},
-                .branch_on_true{true},
-            },
-            {});
-
+        branch_if(machine::comparison_operator::equal, taken_label);
         padding(count);
         backend.exit(token{}, 1, operand::imm(2, integer));
         backend.label(0, taken_label);
+
         const std::string skipped_label{std::format("far_skipped_{}", count)};
+
         backend.branch(1, skipped_label);
         padding(count);
         backend.exit(token{}, 1, operand::imm(3, integer));
         backend.label(0, skipped_label);
     }
+
     backend.add_subtract(token{}, 1, op_of('+'), stack,
                          operand::imm(16, integer));
 
@@ -2389,7 +2771,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
 
     machine_rv32i compiler{&std::cout, {}, jumps};
 
-    program prg{compiler, files, 4096, check_options{}};
+    program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(std::cout);
 }
 
@@ -2442,7 +2824,7 @@ func main() {
     files.add("test.baz", std::string{source});
 
     machine_rv32i compiler{&std::cout};
-    program prg{compiler, files, 4096,
+    program prg{compiler, files, vars_capacity_bytes,
                 check_options{
                     .bounds_upper{true},
                     .bounds_lower{true},
@@ -2468,7 +2850,7 @@ func main() {
     files.add("test.baz", std::string{source});
 
     machine_rv32i compiler{&std::cout};
-    program prg{compiler, files, 4096, check_options{}};
+    program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(std::cout);
 }
 
@@ -2503,7 +2885,8 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
 
     // a count found non-negative is remembered until allocated again
     const operand count_register{
-        backend.alloc_named_register(token{}, 0, "a1", integer)};
+        backend.alloc_named_register(token{}, 0, "a1", integer),
+    };
 
     backend.check_bounds(
         token{}, 1, operand::reg("a0", integer), parameters.size,
@@ -2523,61 +2906,72 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
                  parameters.index, parameters.count);
 }
 
+// 'bounds-silent': the failure handler without a line exits with status 255
+// and prints nothing
+auto generate_bounds_silent(machine_rv32i& backend) -> void {
+    std::println("    li a0, -1");
+    backend.check_bounds(token{}, 1, operand::reg("a0", integer), 4, false, {},
+                         {.upper{true}, .lower{true}, .with_line{}});
+    backend.end_main();
+    backend.emit_bounds_failure_handler(false);
+}
+
 // 'bounds-matrix': 'check_bounds' reports a violation exactly when the index
 // (or the slice end) is outside the size, for every combination of enabled
-// checks, size, index and count; 'bounds-silent': the failure handler without
-// a line exits with status 255 and prints nothing
-auto generate_bounds(const bool silent) -> void {
-    machine_rv32i bounds_backend{&std::cout};
-    bounds_backend.set_builtin_types(integer64, integer, half, byte);
-    std::println(
-        ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
-    if (silent) {
-        std::println("    li a0, -1");
-        bounds_backend.check_bounds(token{}, 1, operand::reg("a0", integer), 4,
-                                    false, {},
-                                    {.upper{true}, .lower{true}, .with_line{}});
-        bounds_backend.end_main();
-        bounds_backend.emit_bounds_failure_handler(false);
-    } else {
-        const operand continuation{
-            bounds_backend.alloc_named_register(token{}, 0, "s3", integer)};
-        size_t case_index{};
-        for (const bool upper : {false, true}) {
-            for (const bool lower : {false, true}) {
-                for (const bool allow_end : {false, true}) {
-                    for (const uint32_t size :
-                         {0U, 4U, uint32_t{INT32_MAX}, UINT32_MAX}) {
-                        for (const int32_t index :
-                             {INT32_MIN, -1, 0, 3, 4, 5, INT32_MAX}) {
-                            for (const int32_t count :
-                                 {INT32_MIN, -1, 0, 1, 4, INT32_MAX}) {
-                                for (const bool slice : {false, true}) {
-                                    emit_bounds_case(bounds_backend,
-                                                     {
-                                                         .upper{upper},
-                                                         .lower{lower},
-                                                         .allow_end{allow_end},
-                                                         .size{size},
-                                                         .index{index},
-                                                         .count{count},
-                                                         .slice{slice},
-                                                     },
-                                                     case_index++);
-                                }
+// checks, size, index and count
+auto generate_bounds_matrix(machine_rv32i& backend) -> void {
+    const operand continuation{
+        backend.alloc_named_register(token{}, 0, "s3", integer),
+    };
+
+    size_t case_index{};
+    for (const bool upper : {false, true}) {
+        for (const bool lower : {false, true}) {
+            for (const bool allow_end : {false, true}) {
+                for (const uint32_t size :
+                     {0U, 4U, uint32_t{INT32_MAX}, UINT32_MAX}) {
+                    for (const int32_t index :
+                         {INT32_MIN, -1, 0, 3, 4, 5, INT32_MAX}) {
+                        for (const int32_t count :
+                             {INT32_MIN, -1, 0, 1, 4, INT32_MAX}) {
+                            for (const bool slice : {false, true}) {
+                                emit_bounds_case(backend,
+                                                 {
+                                                     .upper{upper},
+                                                     .lower{lower},
+                                                     .allow_end{allow_end},
+                                                     .size{size},
+                                                     .index{index},
+                                                     .count{count},
+                                                     .slice{slice},
+                                                 },
+                                                 case_index++);
                             }
                         }
                     }
                 }
             }
         }
-        bounds_backend.free_named_register(token{}, 0, continuation);
-        bounds_backend.end_main();
-        std::println(
-            "baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
-        bounds_backend.exit(token{}, 1, operand::imm(1, integer));
     }
-    bounds_backend.finish();
+
+    backend.free_named_register(token{}, 0, continuation);
+    backend.end_main();
+    std::println("baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
+    backend.exit(token{}, 1, operand::imm(1, integer));
+}
+
+auto generate_bounds(const bool silent) -> void {
+    machine_rv32i backend{&std::cout};
+    backend.set_builtin_types(integer64, integer, half, byte);
+    std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+
+    if (silent) {
+        generate_bounds_silent(backend);
+    } else {
+        generate_bounds_matrix(backend);
+    }
+
+    backend.finish();
 }
 
 // ============================================================================
@@ -2596,44 +2990,85 @@ auto emit_expect(const std::string_view reg, const int64_t value,
                  scratch, value, reg, scratch);
 }
 
+// where the second operand of a runtime case is: 'a1', the word at
+// 'buffer + 4' that holds the same value, or a constant
+enum class source_place : uint8_t { reg, memory, constant };
+
+constexpr std::array source_places{
+    source_place::reg,
+    source_place::memory,
+    source_place::constant,
+};
+
+// the second operand of a runtime case of 'value' at 'place'; 'a2' holds
+// 'buffer'
+auto source_at(const source_place place, const int32_t value,
+               const type& reg_type) -> operand {
+    if (place == source_place::memory) {
+        return operand::mem("a2", {}, 1, 4, reg_type);
+    }
+
+    if (place == source_place::constant) {
+        return operand::imm(value, integer);
+    }
+
+    return operand::reg("a1", reg_type);
+}
+
+// the destination of a runtime case of 'value_type': 'a0' or the word at
+// 'buffer'
+auto destination_at(const bool in_memory, const type& value_type) -> operand {
+    return in_memory ? operand::mem("a2", {}, 1, 0, value_type)
+                     : operand::reg("a0", value_type);
+}
+
 // copies of 0 to 24 bytes, with a known size and a run-time count, between
 // addresses at every alignment: only the copied bytes change, and both
 // pointers are left unchanged
 auto emit_copy_tests(machine_rv32i& backend) -> void {
+    // note: the source bytes are 128 and up at 'sp', the destination bytes 85
+    //       at 'sp + 32', the copy starts 4 bytes into each
+    constexpr size_t area_bytes{32};
+    constexpr int fill_byte{85};
+
     for (const bool counted : {false, true}) {
         for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
             for (size_t alignment{}; alignment < 4; ++alignment) {
+                // displacements on both sides of the 12-bit offsets
                 const int displacement{
-                    std::array{-2048, 0, 2047, 2048}.at(alignment)};
+                    std::array{-2048, 0, 2047, 2048}.at(alignment),
+                };
+
                 std::println("    addi sp, sp, -64");
-                for (size_t offset{}; offset < 32; ++offset) {
-                    std::println("    li a2, {}\n    sb a2, {}(sp)\n    li a2, "
-                                 "85\n    sb a2, {}(sp)",
-                                 128 + offset, offset, 32 + offset);
+
+                for (size_t offset{}; offset < area_bytes; ++offset) {
+                    std::println("    li a2, {}\n    sb a2, {}(sp)\n"
+                                 "    li a2, {}\n    sb a2, {}(sp)",
+                                 128 + offset, offset, fill_byte,
+                                 area_bytes + offset);
                 }
+
+                // note: +4 is the start of the copy in the destination
                 std::println("    addi a0, sp, {}\n    addi a1, sp, {}",
-                             alignment, 36 + alignment);
+                             alignment, area_bytes + 4 + alignment);
+
                 // both addresses are 'alignment' bytes past a word boundary
                 const size_t known_alignment{offset_alignment(alignment, 4)};
+
                 if (counted) {
                     backend.copy_elements(
                         token{}, 1, 1,
                         [&](const operand& count) -> void {
                             backend.copy_value(
                                 token{}, 1, count,
-                                operand::imm(size_bytes,
-                                             integer));
+                                operand::imm(size_bytes, integer));
                         },
                         {
                             .alignment{known_alignment},
-                            .src{[&](const operand&, const operand&,
-                                     const machine::address_use use) -> void {
-                                use(operand::mem("a0", {}, 1, 0, byte));
-                            }},
-                            .dst{[&](const operand&, const operand&,
-                                     const machine::address_use use) -> void {
-                                use(operand::mem("a1", {}, 1, 0, byte));
-                            }},
+                            .src{fixed_address(
+                                operand::mem("a0", {}, 1, 0, byte))},
+                            .dst{fixed_address(
+                                operand::mem("a1", {}, 1, 0, byte))},
                         });
                 } else {
                     std::println(
@@ -2647,19 +3082,29 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                         "    li a2, {}\n    add a0, a0, a2\n    add a1, a1, a2",
                         displacement);
                 }
-                for (size_t offset{}; offset < 32; ++offset) {
+
+                for (size_t offset{}; offset < area_bytes; ++offset) {
                     const size_t start{4 + alignment};
-                    const int expected{offset >= start and
-                                               offset < start + size_bytes
-                                           ? static_cast<int>(128 + offset - 4)
-                                           : 85};
-                    std::println("    lbu a2, {}(sp)", 32 + offset);
+                    const bool is_copied{
+                        offset >= start and offset < start + size_bytes,
+                    };
+
+                    // note: -4 because the copy starts 4 bytes into the
+                    //       destination
+                    const int expected{
+                        is_copied ? static_cast<int>(128 + offset - 4)
+                                  : fill_byte,
+                    };
+
+                    std::println("    lbu a2, {}(sp)", area_bytes + offset);
                     emit_expect("a2", expected);
                 }
-                std::println("    addi a2, sp, {}\n    beq a0, a2, 1f\n    j "
-                             "failure\n1:\n    addi a2, sp, {}\n    beq a1, "
-                             "a2, 1f\n    j failure\n1:\n    addi sp, sp, 64",
-                             alignment, 36 + alignment);
+
+                std::println("    addi a2, sp, {}\n    beq a0, a2, 1f\n"
+                             "    j failure\n1:\n    addi a2, sp, {}\n"
+                             "    beq a1, a2, 1f\n    j failure\n1:\n"
+                             "    addi sp, sp, 64",
+                             alignment, area_bytes + 4 + alignment);
                 backend.finish();
             }
         }
@@ -2671,54 +3116,48 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
 // width, and a register source is left unchanged
 auto emit_division_tests(machine_rv32i& backend) -> void {
     for (const type* value_type : {&integer, &half, &byte}) {
-        const size_t bits{value_type->size_bytes() * 8};
-        const uint32_t mask{UINT32_MAX >> (32 - bits)};
-        const auto normalize{[mask, bits](const int64_t value) -> int32_t {
-            uint32_t narrowed{static_cast<uint32_t>(value) & mask};
-            if ((narrowed & (uint32_t{1} << (bits - 1))) != 0) {
-                narrowed |= ~mask;
-            }
-
-            return std::bit_cast<int32_t>(narrowed);
-        }};
-        for (const bool memory_destination : {false, true}) {
+        for (const bool in_memory : {false, true}) {
             for (const int32_t initial :
                  {0, 1, -1, 7, -7, -128, -32768, 32767, INT32_MIN, INT32_MAX}) {
                 for (const int32_t divisor :
                      {1, -1, 2, -2, 3, -7, 255, 65536, INT32_MIN, INT32_MAX}) {
-                    for (const unsigned source_kind : {0U, 1U, 2U}) {
+                    for (const source_place place : source_places) {
                         for (const char operation : {'/', '%'}) {
-                            std::println("    la a2, buffer\n    li a1, {}\n   "
-                                         " sw a1, 4(a2)",
+                            std::println("    la a2, buffer\n    li a1, {}\n"
+                                         "    sw a1, 4(a2)",
                                          divisor);
-                            const operand destination{
-                                memory_destination
-                                    ? operand::mem("a2", {}, 1, 0, *value_type)
-                                    : operand::reg("a0", *value_type)};
 
-                            operand source{operand::reg("a1", integer)};
-                            if (source_kind == 1) {
-                                source = operand::mem("a2", {}, 1, 4, integer);
-                            } else if (source_kind == 2) {
-                                source = operand::imm(divisor, integer);
-                            }
-                            backend.copy_value(
-                                token{}, 1, destination,
-                                operand::imm(initial,
-                                             integer));
-                            backend.divide(token{}, 1, op_of(operation),
-                                           destination, source, machine::division_check_options{});
+                            const operand dst{
+                                destination_at(in_memory, *value_type),
+                            };
+
+                            backend.copy_value(token{}, 1, dst,
+                                               operand::imm(initial, integer));
+                            backend.divide(token{}, 1, op_of(operation), dst,
+                                           source_at(place, divisor, integer),
+                                           machine::division_check_options{});
                             backend.copy_value(token{}, 1,
                                                operand::reg("a0", integer),
-                                               destination);
-                            const int64_t dividend{normalize(initial)};
-                            const int32_t expected{normalize(
+                                               dst);
+
+                            const int64_t dividend{
+                                wrapped(static_cast<uint32_t>(initial),
+                                        *value_type),
+                            };
+
+                            const int64_t result{
                                 operation == '/' ? dividend / divisor
-                                                 : dividend % divisor)};
-                            emit_expect("a0", expected);
-                            if (source_kind == 0) {
+                                                 : dividend % divisor,
+                            };
+
+                            emit_expect("a0",
+                                        wrapped(static_cast<uint32_t>(result),
+                                                *value_type));
+
+                            if (place == source_place::reg) {
                                 emit_expect("a1", divisor);
                             }
+
                             backend.finish();
                         }
                     }
@@ -2739,87 +3178,107 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
                 backend.alloc_named_register(token{}, 0, name, integer));
             std::println("    li {}, {}", name, 100 + live.size());
         }
-        std::println("    addi sp, sp, -16\n    mv s2, sp\n    li a2, -17\n    "
-                     "sw a2, 0(sp)\n    li a2, 3\n    sw a2, 4(sp)");
-        const operand destination{operand::mem("s2", {}, 1, 0, integer)};
-        const operand source{operand::mem("s2", {}, 1, 4, integer)};
+
+        // note: -17 and 3 at 'sp' and 'sp + 4'
+        std::println("    addi sp, sp, -16\n    mv s2, sp\n    li a2, -17\n"
+                     "    sw a2, 0(sp)\n    li a2, 3\n    sw a2, 4(sp)");
+
+        const operand dst{operand::mem("s2", {}, 1, 0, integer)};
+        const operand src{operand::mem("s2", {}, 1, 4, integer)};
+
         if (operation == '*') {
-            backend.multiply(token{}, 1, destination, source);
+            backend.multiply(token{}, 1, dst, src);
         } else {
-            backend.divide(token{}, 1, op_of(operation), destination, source, machine::division_check_options{});
+            backend.divide(token{}, 1, op_of(operation), dst, src,
+                           machine::division_check_options{});
         }
+
         for (const auto [index, reg] : std::views::enumerate(live)) {
             emit_expect(reg.base_register(), 101 + index, "a2");
         }
+
+        // -17 * 3, -17 / 3 and -17 % 3
         const int expected{operation == '*' ? -51 : operation == '/' ? -5 : -2};
-        std::println("    lw a2, 0(sp)\n    li a3, {}\n    beq a2, a3, 1f\n    "
-                     "j failure\n1:\n    beq sp, s2, 1f\n    j failure\n1:\n   "
-                     " addi sp, sp, 16",
+
+        std::println("    lw a2, 0(sp)\n    li a3, {}\n    beq a2, a3, 1f\n"
+                     "    j failure\n1:\n    beq sp, s2, 1f\n    j failure\n1:\n"
+                     "    addi sp, sp, 16",
                      expected);
+
         backend.free_named_registers(token{}, 0, live);
         backend.finish();
     }
 }
 
-// '/' and '%' at the same address
+// '/' and '%' at the same address: a value by itself is 1 with no remainder
 auto emit_division_same_address(machine_rv32i& backend) -> void {
     for (const char operation : {'/', '%'}) {
         std::println("    la t0, buffer\n    li a0, -17\n    sw a0, 0(t0)");
+
         const operand address{operand::mem("t0", {}, 1, 0, integer)};
-        backend.divide(token{}, 1, op_of(operation), address, address, machine::division_check_options{});
+
+        backend.divide(token{}, 1, op_of(operation), address, address,
+                       machine::division_check_options{});
         std::println("    lw a0, 0(t0)");
         emit_expect("a0", operation == '/' ? 1 : 0);
         backend.finish();
     }
 }
 
+// a factor of a runtime case: where it is, and whether the multiplication
+// may reuse its register
+struct factor_form {
+    source_place place;
+    bool reuse;
+};
+
 // '*' on every value width, product in a register or memory, and factor in
-// a register, memory, constant or the product itself (as 'reuse')
+// a register, memory, constant or a register the multiplication may reuse
 auto emit_multiplication_tests(machine_rv32i& backend) -> void {
+    constexpr std::array factors{
+        factor_form{.place{source_place::reg}, .reuse{}},
+        factor_form{.place{source_place::memory}, .reuse{}},
+        factor_form{.place{source_place::constant}, .reuse{}},
+        factor_form{.place{source_place::reg}, .reuse{true}},
+    };
+
     for (const type* value_type : {&integer, &half, &byte}) {
-        for (const bool memory_product : {false, true}) {
+        for (const bool in_memory : {false, true}) {
             for (const int32_t initial :
                  {0, 1, -1, 7, -128, 32767, INT32_MIN, INT32_MAX}) {
                 for (const int32_t multiplier :
                      {0, 1, -1, 2, 3, 12, -7, 255, INT32_MIN, INT32_MAX}) {
-                    for (const unsigned source_kind : {0U, 1U, 2U, 3U}) {
-                        std::println("    la a2, buffer\n    li a1, {}\n    sw "
-                                     "a1, 4(a2)",
+                    for (const factor_form& factor : factors) {
+                        std::println("    la a2, buffer\n    li a1, {}\n"
+                                     "    sw a1, 4(a2)",
                                      multiplier);
 
                         const operand product{
-                            memory_product
-                                ? operand::mem("a2", {}, 1, 0, *value_type)
-                                : operand::reg("a0", *value_type)};
+                            destination_at(in_memory, *value_type),
+                        };
 
-                        operand factor{operand::reg("a1", integer)};
-                        if (source_kind == 1) {
-                            factor = operand::mem("a2", {}, 1, 4, integer);
-                        } else if (source_kind == 2) {
-                            factor = operand::imm(multiplier,
-                                                  integer);
-                        }
-                        backend.copy_value(
+                        backend.copy_value(token{}, 1, product,
+                                           operand::imm(initial, integer));
+                        backend.multiply(
                             token{}, 1, product,
-                            operand::imm(initial, integer));
-                        backend.multiply(token{}, 1, product, factor,
-                                         source_kind == 3);
-                        backend.copy_value(
-                            token{}, 1, operand::reg("a0", integer), product);
-                        const size_t bits{value_type->size_bytes() * 8};
-                        const uint32_t mask{UINT32_MAX >> (32 - bits)};
-                        uint32_t expected{(static_cast<uint32_t>(initial) *
-                                           static_cast<uint32_t>(multiplier)) &
-                                          mask};
-                        if ((expected & (uint32_t{1} << (bits - 1))) != 0) {
-                            expected |= ~mask;
-                        }
+                            source_at(factor.place, multiplier, integer),
+                            factor.reuse);
+                        backend.copy_value(token{}, 1,
+                                           operand::reg("a0", integer),
+                                           product);
 
-                        emit_expect("a0", std::bit_cast<int32_t>(expected));
+                        const uint32_t expected{
+                            static_cast<uint32_t>(initial) *
+                                static_cast<uint32_t>(multiplier),
+                        };
 
-                        if (source_kind == 0) {
+                        emit_expect("a0", wrapped(expected, *value_type));
+
+                        if (factor.place == source_place::reg and
+                            not factor.reuse) {
                             emit_expect("a1", multiplier);
                         }
+
                         backend.finish();
                     }
                 }
@@ -2833,7 +3292,9 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
 auto emit_multiplication_aliased_operands(machine_rv32i& backend) -> void {
     for (const bool reuse : {false, true}) {
         std::println("    la a2, buffer\n    li a0, -7\n    sw a0, 0(a2)");
+
         const operand address{operand::mem("a2", {}, 1, 0, integer)};
+
         backend.multiply(token{}, 1, address, address, reuse);
         std::println("    lw a0, 0(a2)");
         emit_expect("a0", 49);
@@ -2844,14 +3305,17 @@ auto emit_multiplication_aliased_operands(machine_rv32i& backend) -> void {
 // 'scale_index' multiplies an index register by a constant scale, wrapping
 // at 32 bits
 auto emit_index_scaling_tests(machine_rv32i& backend) -> void {
+    // note: -7 as the bits of a register
+    constexpr uint32_t minus_seven{0xfffffff9};
+
     for (const size_t scale :
          {size_t{0}, size_t{1}, size_t{2}, size_t{3}, size_t{7}, size_t{12},
           size_t{256}, size_t{4097}}) {
         std::println("    li a0, -7");
         backend.scale_index(token{}, 1, operand::reg("a0", integer), scale);
 
-        emit_expect("a0", std::bit_cast<int32_t>(uint32_t{0xfffffff9} *
-                                                 static_cast<uint32_t>(scale)));
+        emit_expect("a0", std::bit_cast<int32_t>(
+                              minus_seven * static_cast<uint32_t>(scale)));
 
         backend.finish();
     }
@@ -2861,8 +3325,9 @@ auto emit_index_scaling_tests(machine_rv32i& backend) -> void {
 // the same base as the left one
 auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
     for (const bool shared_address : {false, true}) {
-        std::println("    la a0, buffer\n    li a1, -257\n    sw a1, 0(a0)\n   "
-                     " li a1, 257\n    sw a1, 4(a0)");
+        std::println("    la a0, buffer\n    li a1, -257\n    sw a1, 0(a0)\n"
+                     "    li a1, 257\n    sw a1, 4(a0)");
+
         backend.compare_and_branch(
             token{}, 1, operand::mem("a0", {}, 1, 0, integer),
             shared_address ? operand::mem("a0", {}, 1, 4, integer)
@@ -2872,76 +3337,156 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
                 .destination{operand::reg("a0", boolean)},
             },
             {});
+
         emit_expect("a0", 1);
         backend.finish();
     }
 }
 
-// every comparison operator against the value -7, inverted or not, branching
-// on true or on false, with the operands and the boolean destination in the
-// places 'mode' selects:
-//
-//   mode  operands                 boolean result      branch
-//   0     register, register       none                yes
-//   1     register, register       a0                  yes
-//   2     register, register       a1 (right operand)  yes
-//   3     register, register       memory              yes
-//   4     register, register       a0                  no
-//   5     memory, memory           memory              yes
-//   6     register, constant       a0                  yes
-//   7     register, constant       memory              yes
-auto emit_comparison_matrix(machine_rv32i& backend) -> void {
-    size_t comparison_index{};
+// whether 'operation' holds between 'lhs' and 'rhs'
+auto holds(const machine::comparison_operator operation, const int32_t lhs,
+           const int32_t rhs) -> bool {
     using comparison = machine::comparison_operator;
+
+    if (operation == comparison::equal) {
+        return lhs == rhs;
+    }
+    if (operation == comparison::not_equal) {
+        return lhs != rhs;
+    }
+    if (operation == comparison::less) {
+        return lhs < rhs;
+    }
+    if (operation == comparison::greater_equal) {
+        return lhs >= rhs;
+    }
+    if (operation == comparison::greater) {
+        return lhs > rhs;
+    }
+
+    assert(operation == comparison::less_equal);
+
+    return lhs <= rhs;
+}
+
+// where the boolean result of a comparison of the matrix goes
+enum class result_place : uint8_t { none, a0, a1, memory };
+
+// the places of the operands and the result of a comparison of the matrix
+struct comparison_layout {
+    // both operands at 'buffer', else in 'a0' and 'a1'
+    bool memory_operands;
+    // the right operand a constant
+    bool constant_right;
+    result_place result;
+    bool branches;
+};
+
+// every comparison operator against the value -7, inverted or not, branching
+// on true or on false, in every layout of operands and result
+auto emit_comparison_matrix(machine_rv32i& backend) -> void {
+    using comparison = machine::comparison_operator;
+
+    constexpr std::array layouts{
+        comparison_layout{
+            .memory_operands{},
+            .constant_right{},
+            .result{result_place::none},
+            .branches{true},
+        },
+        comparison_layout{
+            .memory_operands{},
+            .constant_right{},
+            .result{result_place::a0},
+            .branches{true},
+        },
+        // the result in the register of the right operand
+        comparison_layout{
+            .memory_operands{},
+            .constant_right{},
+            .result{result_place::a1},
+            .branches{true},
+        },
+        comparison_layout{
+            .memory_operands{},
+            .constant_right{},
+            .result{result_place::memory},
+            .branches{true},
+        },
+        comparison_layout{
+            .memory_operands{},
+            .constant_right{},
+            .result{result_place::a0},
+            .branches{},
+        },
+        comparison_layout{
+            .memory_operands{true},
+            .constant_right{},
+            .result{result_place::memory},
+            .branches{true},
+        },
+        comparison_layout{
+            .memory_operands{},
+            .constant_right{true},
+            .result{result_place::a0},
+            .branches{true},
+        },
+        comparison_layout{
+            .memory_operands{},
+            .constant_right{true},
+            .result{result_place::memory},
+            .branches{true},
+        },
+    };
+
+    constexpr int32_t left_value{-7};
+
+    size_t comparison_index{};
     for (const comparison operation :
          {comparison::equal, comparison::not_equal, comparison::less,
           comparison::greater_equal, comparison::greater,
           comparison::less_equal}) {
         for (const bool inverted : {false, true}) {
             for (const bool branch_on_true : {false, true}) {
+                // values on both sides of the 12-bit immediates
                 for (const int32_t right_value :
                      {INT32_MIN, -2049, -2048, -9, -7, 0, 3, 2046, 2047, 2048,
                       INT32_MAX}) {
-                    for (const unsigned mode :
-                         {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U}) {
+                    for (const comparison_layout& layout : layouts) {
                         const std::string target{
-                            std::format("comparison_{}", comparison_index++)};
-                        bool expected{};
-                        if (operation == comparison::equal) {
-                            expected = -7 == right_value;
-                        } else if (operation == comparison::not_equal) {
-                            expected = -7 != right_value;
-                        } else if (operation == comparison::less) {
-                            expected = -7 < right_value;
-                        } else if (operation == comparison::greater_equal) {
-                            expected = -7 >= right_value;
-                        } else if (operation == comparison::greater) {
-                            expected = -7 > right_value;
-                        } else {
-                            expected = -7 <= right_value;
+                            std::format("comparison_{}", comparison_index++),
+                        };
+
+                        const bool expected{
+                            holds(operation, left_value, right_value) !=
+                                inverted,
+                        };
+
+                        operand result;
+                        if (layout.result == result_place::a0) {
+                            result = operand::reg("a0", boolean);
+                        } else if (layout.result == result_place::a1) {
+                            result = operand::reg("a1", boolean);
+                        } else if (layout.result == result_place::memory) {
+                            result = operand::mem("a2", {}, 1, 8, boolean);
                         }
-                        expected = expected != inverted;
-                        operand destination;
-                        if (mode == 1 or mode == 4 or mode == 6) {
-                            destination = operand::reg("a0", boolean);
-                        } else if (mode == 2) {
-                            destination = operand::reg("a1", boolean);
-                        } else if (mode == 3 or mode == 5 or mode == 7) {
-                            destination = operand::mem("a2", {}, 1, 8, boolean);
-                        }
-                        std::println(
-                            "    li a0, -7\n    li a1, {}\n    la a2, buffer\n "
-                            "   sw a0, 0(a2)\n    sw a1, 4(a2)",
-                            right_value);
+
+                        std::println("    li a0, {}\n    li a1, {}\n"
+                                     "    la a2, buffer\n    sw a0, 0(a2)\n"
+                                     "    sw a1, 4(a2)",
+                                     left_value, right_value);
+
                         const operand lhs{
-                            mode == 5 ? operand::mem("a2", {}, 1, 0, integer)
-                                      : operand::reg("a0", integer)};
+                            layout.memory_operands
+                                ? operand::mem("a2", {}, 1, 0, integer)
+                                : operand::reg("a0", integer),
+                        };
+
                         operand rhs{operand::reg("a1", integer)};
-                        if (mode == 5) {
+                        if (layout.memory_operands) {
                             rhs = operand::mem("a2", {}, 1, 4, integer);
-                        } else if (mode >= 6) {
-                            rhs = operand::imm(right_value,
-                                               integer);
+                        } else if (layout.constant_right) {
+                            rhs = operand::imm(right_value, integer);
                         }
 
                         backend.compare_and_branch(
@@ -2949,28 +3494,31 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                             {
                                 .operation{operation},
                                 .inverted{inverted},
-                                .destination{destination},
-                                .target{mode == 4 ? std::string_view{}
-                                                  : target},
+                                .destination{result},
+                                .target{layout.branches ? std::string_view{target}
+                                                        : std::string_view{}},
                                 .branch_on_true{branch_on_true},
                             },
                             {});
 
-                        if (mode != 4) {
+                        // the branch is taken exactly when expected
+                        if (layout.branches) {
                             if (expected == branch_on_true) {
                                 std::println("    j failure\n{}:", target);
                             } else {
-                                std::println("    j {}_done\n{}:\n    j "
-                                             "failure\n{}_done:",
+                                std::println("    j {}_done\n{}:\n"
+                                             "    j failure\n{}_done:",
                                              target, target, target);
                             }
                         }
-                        if (not destination.is_empty()) {
+
+                        if (not result.is_empty()) {
                             backend.copy_value(token{}, 1,
                                                operand::reg("a3", integer),
-                                               destination);
+                                               result);
                             emit_expect("a3", expected ? 1 : 0, "a4");
                         }
+
                         backend.finish();
                     }
                 }
@@ -2982,26 +3530,33 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
 // 'zero' of 1 to 35 bytes at every alignment and at base offsets on both
 // sides of the 12-bit limit: exactly the range becomes zero
 auto emit_zeroing_tests(machine_rv32i& backend) -> void {
+    constexpr size_t area_bytes{64};
+
     for (size_t count{1}; count <= 35; ++count) {
         for (size_t alignment{}; alignment < 4; ++alignment) {
             std::println("    addi sp, sp, -64\n    li a0, -1");
-            for (size_t offset{}; offset < 64; offset += 4) {
+            for (size_t offset{}; offset < area_bytes; offset += 4) {
                 std::println("    sw a0, {}(sp)", offset);
             }
+
+            // note: +4 keeps the zeroing inside the area at every alignment
             const size_t start{4 + alignment};
             const size_t displacement{count % 2 == 0 ? 2047U : 2048U};
+
             std::println("    li a2, {}\n    sub a2, sp, a2",
                          displacement - start);
+
             backend.zero(token{}, 1,
                          operand::mem("a2", {}, 1,
                                       static_cast<int64_t>(displacement), byte),
                          count, offset_alignment(start, 4));
-            for (size_t offset{}; offset < 64; ++offset) {
-                const int expected{
-                    offset >= start and offset < start + count ? 0 : 255};
+
+            for (size_t offset{}; offset < area_bytes; ++offset) {
+                const bool is_zeroed{offset >= start and offset < start + count};
                 std::println("    lbu a0, {}(sp)", offset);
-                emit_expect("a0", expected, "a1");
+                emit_expect("a0", is_zeroed ? 0 : 255, "a1");
             }
+
             std::println("    addi sp, sp, 64");
             backend.finish();
         }
@@ -3012,33 +3567,25 @@ auto emit_zeroing_tests(machine_rv32i& backend) -> void {
 // memory
 auto emit_unary_tests(machine_rv32i& backend) -> void {
     for (const type* value_type : {&integer, &half, &byte, &boolean}) {
-        for (const bool memory_destination : {false, true}) {
+        for (const bool in_memory : {false, true}) {
             for (const int32_t initial : {0, 1, -1, -128, -32768, INT32_MIN}) {
                 for (const char operation : {'-', '~'}) {
                     std::println("    la a2, buffer");
 
-                    const operand destination{
-                        memory_destination
-                            ? operand::mem("a2", {}, 1, 0, *value_type)
-                            : operand::reg("a0", *value_type)};
+                    const operand dst{destination_at(in_memory, *value_type)};
 
-                    backend.copy_value(
-                        token{}, 1, destination,
-                        operand::imm(initial, integer));
-                    backend.unary(token{}, 1, unary_of(operation), destination);
+                    backend.copy_value(token{}, 1, dst,
+                                       operand::imm(initial, integer));
+                    backend.unary(token{}, 1, unary_of(operation), dst);
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
-                                       destination);
-                    const uint32_t bits{static_cast<uint32_t>(initial)};
-                    const size_t width{value_type->size_bytes() * 8};
-                    const uint32_t mask{UINT32_MAX >> (32 - width)};
-                    uint32_t expected{
-                        (operation == '-' ? uint32_t{} - bits : ~bits) & mask};
-                    if (value_type != &boolean and
-                        (expected & (uint32_t{1} << (width - 1))) != 0) {
-                        expected |= ~mask;
-                    }
+                                       dst);
 
-                    emit_expect("a0", std::bit_cast<int32_t>(expected));
+                    const uint32_t bits{static_cast<uint32_t>(initial)};
+                    const uint32_t result{
+                        operation == '-' ? uint32_t{} - bits : ~bits,
+                    };
+
+                    emit_expect("a0", wrapped(result, *value_type));
 
                     backend.finish();
                 }
@@ -3047,14 +3594,37 @@ auto emit_unary_tests(machine_rv32i& backend) -> void {
     }
 }
 
+// what 'operation' gives for 'lhs' and 'rhs', as the bits of 32-bit values
+auto applied(const char operation, const uint32_t lhs, const uint32_t rhs)
+    -> uint32_t {
+    if (operation == '+') {
+        return lhs + rhs;
+    }
+    if (operation == '-') {
+        return lhs - rhs;
+    }
+    if (operation == '&') {
+        return lhs & rhs;
+    }
+    if (operation == '|') {
+        return lhs | rhs;
+    }
+
+    assert(operation == '^');
+
+    return lhs ^ rhs;
+}
+
 // '+', '-', '&', '|' and '^' on every value width, destination in a register
 // or memory, and source in a register, memory or constant around the 12-bit
 // immediate limits: the result wraps at the width of the destination
 auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
+    constexpr int32_t initial{127};
+
     for (const type* value_type : {&integer, &half, &byte}) {
         for (const char operation : {'+', '-', '&', '|', '^'}) {
-            for (const bool memory_destination : {false, true}) {
-                for (const unsigned source_kind : {0U, 1U, 2U}) {
+            for (const bool in_memory : {false, true}) {
+                for (const source_place place : source_places) {
                     for (const int32_t source_value :
                          {-2049, -2048, -1, 0, 1, 2047, 2048}) {
                         const size_t bits{value_type->size_bytes() * 8};
@@ -3063,57 +3633,43 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
                         // folding removes the constants that keep the
                         // destination
                         const uint32_t kept{operation == '&' ? mask : 0U};
-                        if (source_kind == 2 and
+                        if (place == source_place::constant and
                             (static_cast<uint32_t>(source_value) & mask) ==
                                 kept) {
                             continue;
                         }
 
-                        std::println("    la a2, buffer\n    li a1, {}\n    sw "
-                                     "a1, 4(a2)",
+                        std::println("    la a2, buffer\n    li a1, {}\n"
+                                     "    sw a1, 4(a2)",
                                      source_value);
 
-                        const operand destination{
-                            memory_destination
-                                ? operand::mem("a2", {}, 1, 0, *value_type)
-                                : operand::reg("a0", *value_type)};
+                        const operand dst{
+                            destination_at(in_memory, *value_type),
+                        };
+                        const operand src{
+                            source_at(place, source_value, integer),
+                        };
 
-                        operand source{operand::reg("a1", integer)};
-                        if (source_kind == 1) {
-                            source = operand::mem("a2", {}, 1, 4, integer);
-                        } else if (source_kind == 2) {
-                            source = operand::imm(source_value, integer);
-                        }
-                        backend.copy_value(token{}, 1, destination,
-                                           operand::imm(127, integer));
-                        uint32_t expected{127};
-                        const uint32_t rhs{static_cast<uint32_t>(source_value)};
+                        backend.copy_value(token{}, 1, dst,
+                                           operand::imm(initial, integer));
+
                         if (operation == '+' or operation == '-') {
                             backend.add_subtract(token{}, 1, op_of(operation),
-                                                 destination, source);
-                            expected = operation == '+' ? expected + rhs
-                                                        : expected - rhs;
+                                                 dst, src);
                         } else {
-                            backend.bitwise(token{}, 1, op_of(operation),
-                                            destination, source);
-                            if (operation == '&') {
-                                expected &= rhs;
-                            } else if (operation == '|') {
-                                expected |= rhs;
-                            } else {
-                                expected ^= rhs;
-                            }
+                            backend.bitwise(token{}, 1, op_of(operation), dst,
+                                            src);
                         }
-                        const uint32_t sign{uint32_t{1} << (bits - 1)};
-                        expected &= mask;
-                        if ((expected & sign) != 0) {
-                            expected |= ~mask;
-                        }
-                        backend.copy_value(token{}, 1,
-                                           operand::reg("a0", integer),
-                                           destination);
 
-                        emit_expect("a0", std::bit_cast<int32_t>(expected));
+                        backend.copy_value(token{}, 1,
+                                           operand::reg("a0", integer), dst);
+
+                        const uint32_t result{
+                            applied(operation, initial,
+                                    static_cast<uint32_t>(source_value)),
+                        };
+
+                        emit_expect("a0", wrapped(result, *value_type));
 
                         backend.finish();
                     }
@@ -3123,38 +3679,33 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
     }
 }
 
-// '<<' and '>>' on every value width (and 'bool'), with the count (35 in a
-// register or memory, whose hardware masks it to 3, or the constant 3)
+// '<<' and '>>' on every value width (and 'bool'), with the count 35 in a
+// register or memory, which the hardware masks to 3, or the constant 3
 auto emit_shift_tests(machine_rv32i& backend) -> void {
     for (const type* value_type : {&integer, &half, &byte, &boolean}) {
         for (const char operation : {'<', '>'}) {
-            for (const bool memory_destination : {false, true}) {
-                for (const unsigned count_kind : {0U, 1U, 2U}) {
+            for (const bool in_memory : {false, true}) {
+                for (const source_place place : source_places) {
                     std::println(
                         "    la a2, buffer\n    li a1, 35\n    sw a1, 4(a2)");
 
-                    const operand destination{
-                        memory_destination
-                            ? operand::mem("a2", {}, 1, 0, *value_type)
-                            : operand::reg("a0", *value_type)};
+                    const operand dst{destination_at(in_memory, *value_type)};
 
-                    operand count{operand::reg("a1", byte)};
-                    if (count_kind == 1) {
-                        count = operand::mem("a2", {}, 1, 4, byte);
-                    } else if (count_kind == 2) {
-                        count = operand::imm(3, integer);
-                    }
-
-                    backend.copy_value(token{}, 1, destination,
+                    backend.copy_value(token{}, 1, dst,
                                        operand::imm(-16, integer));
-                    backend.shift(token{}, 1, op_of(operation), destination,
-                                  count, machine::shift_check_options{});
+                    backend.shift(token{}, 1, op_of(operation), dst,
+                                  source_at(place, 3, byte),
+                                  machine::shift_check_options{});
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
-                                       destination);
+                                       dst);
 
-                    emit_expect("a0", value_type == &boolean
-                                          ? (operation == '<' ? 128 : 30)
-                                          : (operation == '<' ? -128 : -2));
+                    // -16 is 240 in a 'bool', which does not extend its sign
+                    const int expected{
+                        value_type == &boolean ? (operation == '<' ? 128 : 30)
+                                               : (operation == '<' ? -128 : -2),
+                    };
+
+                    emit_expect("a0", expected);
 
                     backend.finish();
                 }
@@ -3174,29 +3725,44 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
 // 32-bit limits, with and without a scaled index register: the address is
 // always 'buffer'
 auto emit_address_range_tests(machine_rv32i& backend) -> void {
+    // note: 5 in the index register 't5'
+    constexpr uint64_t index_value{5};
+
     for (const int64_t offset :
          {INT64_C(-4294967295), INT64_C(-2147483648), INT64_C(-2049),
           INT64_C(-2048), INT64_C(2047), INT64_C(2048), INT64_C(8196),
           INT64_C(2147483648), INT64_C(4294967295)}) {
+        // the base is 'buffer - offset'
         std::println("    la t6, buffer\n    li a3, {}\n    sub t6, t6, a3",
                      static_cast<uint32_t>(offset));
+
         const operand direct{operand::mem("t6", {}, 1, offset, integer)};
+
         backend.copy_value(token{}, 1, direct, operand::imm(42, integer));
         backend.copy_value(token{}, 1, operand::reg("a0", integer), direct);
         std::println("    li a3, 42\n    bne a0, a3, failure");
         backend.address_of(token{}, 1, operand::reg("t6", integer), direct);
         std::println("    la a3, buffer\n    bne t6, a3, failure");
         backend.finish();
+
         for (const uint64_t scale :
              std::array<uint64_t, 11>{1, 2, 4, 8, 16, 32, 64, 128, 256, 65536,
                                       UINT64_C(2147483648)}) {
-            std::println("    la t6, buffer\n    li a3, {}\n    "
-                         "sub t6, t6, a3\n    li t5, 5\n    li a3, "
-                         "{}\n    sub t6, t6, a3\n    li t4, 42",
-                         static_cast<uint32_t>(offset),
-                         static_cast<uint32_t>(5 * scale));
+            // the base is 'buffer - offset - index * scale'
+            const std::string base_setup{
+                std::format("    la t6, buffer\n    li a3, {}\n"
+                            "    sub t6, t6, a3\n    li t5, {}\n    li a3, {}\n"
+                            "    sub t6, t6, a3",
+                            static_cast<uint32_t>(offset), index_value,
+                            static_cast<uint32_t>(index_value * scale)),
+            };
+
+            std::println("{}\n    li t4, 42", base_setup);
+
             const operand address{
-                operand::mem("t6", "t5", scale, offset, integer)};
+                operand::mem("t6", "t5", scale, offset, integer),
+            };
+
             backend.copy_value(token{}, 1, address,
                                operand::reg("t4", integer));
             backend.copy_value(token{}, 1, operand::reg("t3", integer),
@@ -3205,17 +3771,17 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
             backend.address_of(token{}, 1, operand::reg("t3", integer),
                                address);
             std::println("    la a3, buffer\n    bne t3, a3, failure");
+
+            // a copy from memory to memory
             std::println("    la a4, buffer_copy");
             backend.copy_value(token{}, 1,
                                operand::mem("a4", {}, 1, 0, integer), address);
             backend.copy_value(token{}, 1, operand::reg("t3", integer),
                                operand::mem("a4", {}, 1, 0, integer));
             std::println("    li a3, 42\n    bne t3, a3, failure");
-            std::println("    la t6, buffer\n    li a3, {}\n    "
-                         "sub t6, t6, a3\n    li t5, 5\n    li a3, "
-                         "{}\n    sub t6, t6, a3",
-                         static_cast<uint32_t>(offset),
-                         static_cast<uint32_t>(5 * scale));
+
+            // the address stored in memory
+            std::println("{}", base_setup);
             std::println("    la a4, pointer");
             backend.address_of(token{}, 1,
                                operand::mem("a4", {}, 1, 0, integer), address);
@@ -3231,28 +3797,42 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
 // destination and base register, including a destination that is the base or
 // the index and bases that are 'zero'
 auto emit_address_of_register_tests(machine_rv32i& backend) -> void {
+    // note: 'a2' holds 100, 'a3' the index 5 and 'a4' 'buffer'
+    constexpr uint32_t a2_value{100};
+    constexpr uint32_t index_value{5};
+    constexpr uint32_t offset{40};
+
     for (const uint64_t scale :
          {UINT64_C(1), UINT64_C(2), UINT64_C(4), UINT64_C(256), UINT64_C(65536),
           UINT64_C(2147483648)}) {
         for (const std::string_view base : {"a2", "a3", "a4", "zero"}) {
-            for (const std::string_view destination : {"a2", "a3", "a4"}) {
-                std::println("    li a2, 100\n    li a3, 5\n    la a4, buffer");
+            for (const std::string_view dst : {"a2", "a3", "a4"}) {
+                std::println("    li a2, {}\n    li a3, {}\n    la a4, buffer",
+                             a2_value, index_value);
+
                 backend.address_of(
-                    token{}, 1, operand::reg(destination, integer),
-                    operand::mem(base, "a3", scale, 40, integer));
-                const uint32_t offset{static_cast<uint32_t>(5 * scale + 40)};
+                    token{}, 1, operand::reg(dst, integer),
+                    operand::mem(base, "a3", scale, offset, integer));
+
+                const uint32_t displacement{
+                    static_cast<uint32_t>(index_value * scale + offset),
+                };
+
                 if (base == "a4") {
                     std::println(
                         "    la a5, buffer\n    li a6, {}\n    add a5, a5, a6",
-                        offset);
+                        displacement);
                 } else {
-                    const uint32_t base_value{base == "a2"   ? 100U
-                                              : base == "a3" ? 5U
-                                                             : 0U};
-                    std::println("    li a5, {}", offset + base_value);
+                    const uint32_t base_value{
+                        base == "a2"   ? a2_value
+                        : base == "a3" ? index_value
+                                       : 0U,
+                    };
+
+                    std::println("    li a5, {}", displacement + base_value);
                 }
-                std::println("    beq {}, a5, 1f\n    j failure\n1:",
-                             destination);
+
+                std::println("    beq {}, a5, 1f\n    j failure\n1:", dst);
                 backend.finish();
             }
         }
@@ -3272,16 +3852,20 @@ auto emit_narrow_memory_tests(machine_rv32i& backend) -> void {
         std::println("    li a1, {}\n    bne a0, a1, failure",
                      value_type == &boolean ? 255 : -1);
     }
+
     backend.address_of(token{}, 1, operand::reg("t6", integer),
                        operand::mem("sp", "sp", 4, 2048, integer));
-    std::println("    slli a0, sp, 2\n    add a0, a0, sp\n    li a1, 2048\n    "
-                 "add a0, a0, a1\n    bne t6, a0, failure");
+    std::println("    slli a0, sp, 2\n    add a0, a0, sp\n    li a1, 2048\n"
+                 "    add a0, a0, a1\n    bne t6, a0, failure");
 }
 
 // 'read' and 'write' system calls: results, argument registers, the stack
 // pointer, and the rejection of a held syscall register. Input comes from
 // stdin and is written to stdout, which 'test-rv32i.sh' compares.
 auto emit_io_tests(machine_rv32i& backend) -> void {
+    // note: -9 is '-EBADF', the result for the descriptor -1
+    constexpr int bad_descriptor_result{-9};
+
     std::vector<operand> io_args;
     for (const std::string_view name :
          backend.registers_for_builtin_function(machine::builtin_function::read)
@@ -3289,33 +3873,51 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
         io_args.push_back(
             backend.alloc_named_register(token{}, 0, name, integer));
     }
-    std::println(
-        "    mv s2, sp\n    li a0, 0\n    la a1, buffer\n    li a2, 6");
-    backend.read(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
-                 io_args.at(2));
-    std::println("    li t0, 6\n    bne a0, t0, failure\n    bne a2, t0, "
-                 "failure\n    la t0, buffer\n    bne a1, t0, failure\n    bne "
-                 "sp, s2, failure\n    li a0, 1");
-    backend.write(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
-                  io_args.at(2));
-    std::println(
-        "    li t0, 6\n    bne a0, t0, failure\n    bne a2, t0, failure\n    "
-        "la t0, buffer\n    bne a1, t0, failure\n    li a0, -1");
-    backend.read(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
-                 io_args.at(2));
-    std::println("    li t0, -9\n    bne a0, t0, failure\n    li a0, -1");
-    backend.write(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
-                  io_args.at(2));
-    std::println(
-        "    li t0, -9\n    bne a0, t0, failure\n    bne sp, s2, failure");
+
+    const auto read = [&] {
+        backend.read(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
+                     io_args.at(2));
+    };
+
+    const auto write = [&] {
+        backend.write(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
+                      io_args.at(2));
+    };
+
+    // 6 bytes from stdin to 'buffer' and back to stdout
+    std::println("    mv s2, sp\n    li a0, 0\n    la a1, buffer\n    li a2, 6");
+    read();
+    std::println("    li t0, 6\n    bne a0, t0, failure\n"
+                 "    bne a2, t0, failure\n    la t0, buffer\n"
+                 "    bne a1, t0, failure\n    bne sp, s2, failure\n"
+                 "    li a0, 1");
+    write();
+    std::println("    li t0, 6\n    bne a0, t0, failure\n"
+                 "    bne a2, t0, failure\n    la t0, buffer\n"
+                 "    bne a1, t0, failure\n    li a0, -1");
+
+    // a bad descriptor is reported in the result
+    read();
+    std::println("    li t0, {}\n    bne a0, t0, failure\n    li a0, -1",
+                 bad_descriptor_result);
+    write();
+    std::println("    li t0, {}\n    bne a0, t0, failure\n"
+                 "    bne sp, s2, failure",
+                 bad_descriptor_result);
+
     backend.free_named_registers(token{}, 0, io_args);
+
+    // 'a7' selects the system call, it cannot be held by the caller
     const operand held_syscall_register{
-        backend.alloc_named_register(token{}, 0, "a7", integer)};
+        backend.alloc_named_register(token{}, 0, "a7", integer),
+    };
+
     assert(rejected_with([&] {
         backend.read(source_tk, 1, operand::reg("a0", integer),
                      operand::reg("a0", integer), operand::reg("a1", integer),
                      operand::reg("a2", integer));
     }));
+
     backend.free_named_register(token{}, 0, held_syscall_register);
 }
 
@@ -3326,8 +3928,7 @@ auto generate_runtime_program() -> void {
     machine_rv32i backend{&std::cout};
     backend.set_builtin_types(integer64, integer, half, byte);
 
-    std::println(
-        ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
     emit_copy_tests(backend);
     emit_division_tests(backend);
@@ -3350,19 +3951,25 @@ auto generate_runtime_program() -> void {
     // the end of the straight-line test; the symbols below are entered by
     // 'test-rv32i.sh' as separate programs
     backend.end_main();
+
     std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, op_of('/'), operand::reg("a0", integer),
                    operand::imm(0, integer), machine::division_check_options{});
     backend.exit(token{}, 1, operand::imm(0, integer));
+
+    // the line of a failed check is printed, also the largest one
     for (const uint32_t line : {0U, 9U, 123U, UINT32_MAX}) {
         std::println(".globl bounds_line_{}\nbounds_line_{}:\n    li a0, -1",
                      line, line);
+
         const token location{0, {}, 0, {}, 0, {}, line, false};
+
         backend.check_bounds(location, 1, operand::reg("a0", integer), 4, false,
                              {},
                              {.upper{true}, .lower{true}, .with_line{true}});
         backend.exit(token{}, 1, operand::imm(0, integer));
     }
+
     backend.emit_bounds_failure_handler(true);
     std::println("failure:\n    li a0, 1\n    li a7, 93\n    ecall");
     backend.begin_data(4);
@@ -3385,8 +3992,8 @@ struct front_end {
     // errors need a token with a line
     token at{0, {}, 0, {}, 0, {}, 1, false};
 
-    explicit front_end(const size_t vars_capacity_bytes)
-        : tc{backend, files, vars_capacity_bytes, check_options{}} {
+    explicit front_end(const size_t vars_capacity_bytes_in)
+        : tc{backend, files, vars_capacity_bytes_in, check_options{}} {
 
         files.add("test.baz", "");
         backend.set_builtin_types(integer64, integer, half, byte);
@@ -3397,7 +4004,8 @@ struct front_end {
         tc.enter_block();
     }
 
-    // a scalar or an array of 'array_len' elements of 'value_type'
+    // a scalar or an array of 'array_len' elements of 'value_type', its
+    // offset in the variables section
     auto add_var(const std::string_view name, const type& value_type,
                  const size_t array_len = 0) -> int64_t {
 
@@ -3448,8 +4056,9 @@ auto check_dry_run_leaves_no_trace() -> void {
     fe.tc.enter_block();
     fe.add_var("a", integer);
     const usage_statistics before{fe.tc.usage()};
-    const size_t constants_before{fe.tc.get_string_constants().size()};
+    const size_t constants_before{fe.tc.data().constants().size()};
 
+    // note: 16 elements of 8 bytes are twice the capacity
     assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
                          "would overflow allocated vars section"));
 
@@ -3465,7 +4074,7 @@ auto check_dry_run_leaves_no_trace() -> void {
     const usage_statistics after{fe.tc.usage()};
     assert(after.max_vars_size_bytes == before.max_vars_size_bytes);
     assert(after.max_frame_count == before.max_frame_count);
-    assert(fe.tc.get_string_constants().size() == constants_before);
+    assert(fe.tc.data().constants().size() == constants_before);
 
     // the capacity is enforced again after the dry run
     assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
@@ -3485,14 +4094,91 @@ auto check_constant_scopes() -> void {
     fe.tc.enter_func("outer");
     fe.tc.add_const(token{}, 0, "outer_only", 2);
     fe.tc.enter_func("inner", "path", "");
-    assert(fe.tc.has_const("global"));
-    assert(not fe.tc.has_const("outer_only"));
+    assert(fe.tc.scopes().has_const("global"));
+    assert(not fe.tc.scopes().has_const("outer_only"));
     fe.tc.exit_func("inner");
-    assert(fe.tc.has_const("outer_only"));
+    assert(fe.tc.scopes().has_const("outer_only"));
     fe.tc.exit_func("outer");
 
     fe.tc.exit_block();
     fe.tc.finish();
+}
+
+// the host checks in the order of the parts
+auto run_host_checks() -> void {
+    // 1. the assembler
+    check_removed_and_inverted_jumps();
+    check_every_branch_inverts();
+    check_jumps_kept_at_entries();
+    check_far_branch_folds_and_grows();
+    check_jumps_across_data();
+    check_branch_reach();
+    check_jump_reach();
+    check_far_jump_needs_scratch();
+    check_growth_moves_other_jumps();
+    check_data_takes_no_code_offset();
+    check_smaller_version_kept();
+    check_nested_version_choice();
+    check_jump_in_kept_version_grows();
+
+    // 2. the machine
+    check_line_sizes();
+    check_equal_size_choice();
+    check_backend_jump_optimization();
+    check_copy_to_same_address();
+    check_variable_comments();
+    check_comment_positions();
+    check_allocation_comments();
+    check_memory_operation_comments();
+    check_rv32i_scratch_order();
+    check_copy_helper_comments();
+
+    // 3. compiled programs
+    check_array_copy_pointers();
+    check_arrays_equal_registers_rv32i();
+    check_arrays_equal_condition_x86();
+    check_equal_results_stored_directly();
+
+    // 4. x86_64
+    check_x86_scratch_registers();
+    check_x86_syscall_register_saving();
+    check_x86_write_in_program();
+    check_x86_nested_syscalls_rejected();
+
+    // 5. instruction shapes
+    check_index_scale_support();
+    check_memory_comparison_tail();
+    check_known_size_copy();
+    check_string_data_escapes();
+
+    // 6. arithmetic on registers only
+    check_shifts();
+    check_add_subtract_bitwise();
+    check_zero_operations_and_zero_shifts();
+    check_narrow_values_and_large_constants();
+
+    // 7. copies, comparisons, addresses and zeroing
+    check_copy_widths();
+    check_byte_bitwise();
+    check_shift_of_variables();
+    check_address_lowering();
+    check_address_lowering_in_destination();
+    check_address_forms_without_temporaries();
+    check_constant_stores_and_small_zeroing();
+    check_comparison_selection();
+    check_multiply_by_constants();
+    check_copy_temporaries();
+    check_zeroing_ranges();
+    check_invalid_addresses_rejected();
+    check_scratch_register_pool();
+
+    // 8. helper routines
+    check_multiply_divide_routines();
+
+    // 12. the front end tables
+    check_storage_placement();
+    check_dry_run_leaves_no_trace();
+    check_constant_scopes();
 }
 
 } // namespace
@@ -3521,46 +4207,7 @@ auto main(const int argc, const char* argv[]) -> int {
     } else if (mode == "bounds-matrix" or mode == "bounds-silent") {
         generate_bounds(mode == "bounds-silent");
     } else {
-        // no argument: host checks, then the runtime program on stdout
-        check_jump_optimizer();
-        check_jump_resolution();
-        check_line_sizes();
-        check_equal_size_choice();
-        check_backend_jump_optimization();
-        check_copies_and_variable_comments();
-        check_comments_with_source_positions();
-        check_array_copy_pointers();
-        check_arrays_equal_registers_rv32i();
-        check_arrays_equal_condition_x86();
-        check_equal_results_stored_directly();
-        check_x86_scratch_registers();
-        check_x86_syscall_register_saving();
-        check_x86_write_in_program();
-        check_x86_nested_syscalls_rejected();
-        check_index_scale_support();
-        check_memory_comparison_tail();
-        check_known_size_copy();
-        check_string_data_escapes();
-        check_shifts();
-        check_add_subtract_bitwise();
-        check_zero_operations_and_zero_shifts();
-        check_narrow_values_and_large_constants();
-        check_copy_widths();
-        check_byte_bitwise();
-        check_shift_of_variables();
-        check_address_lowering();
-        check_address_forms_without_temporaries();
-        check_constant_stores_and_small_zeroing();
-        check_comparison_selection();
-        check_multiply_by_constants();
-        check_copy_temporaries();
-        check_zeroing_ranges();
-        check_invalid_addresses_rejected();
-        check_scratch_register_pool();
-        check_multiply_divide_routines();
-        check_storage_placement();
-        check_dry_run_leaves_no_trace();
-        check_constant_scopes();
+        run_host_checks();
         generate_runtime_program();
     }
 

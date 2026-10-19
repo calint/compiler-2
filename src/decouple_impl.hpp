@@ -90,7 +90,7 @@ static auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
 
     // a variable of that name is an operand of '<'
     if (not tc.is_func(tk.text()) or tc.generics().has_func(tk.text()) or
-        tc.is_var_or_alias(tk.text()) or
+        tc.scopes().is_var_or_alias(tk.text()) or
         tz.peek_char_after_whitespace() != '<') {
 
         return;
@@ -106,7 +106,7 @@ static auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
 static auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
     -> std::unique_ptr<statement> {
 
-    if (call->get_type().is_same(tc.get_type_void())) {
+    if (call->get_type().is_same(tc.builtins().void_type())) {
         throw compiler_exception{call->tok(),
                                  "function does not return a value"};
     }
@@ -248,7 +248,7 @@ auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
                                                            tk, tz);
     }
 
-    if (tc.is_integer_type_name(tk.text()) and
+    if (tc.builtins().is_integer_name(tk.text()) and
         tz.peek_char_after_whitespace() == '(') {
 
         return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
@@ -346,8 +346,8 @@ auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void {
             parse_field_delimiter(tz, tp, tf);
         }
 
-        // create an expression that assigns to field
-        // might recurse creating 'expr_type'
+        // the value is parsed as the type of the field, so a nested '{...}'
+        // is another 'expr_type'
         exprs_.emplace_back(std::make_unique<expr_any>(
             tc, tz, tf.type(), true, tf.is_array, tf.array_count));
     }
@@ -514,7 +514,7 @@ auto expr_type::assert_record_field_not_reading(const expr_any& src,
                 multiply_storage_size(src.tok(), element_size_bytes, i),
         };
 
-        if (element.is_identifier()) {
+        if (element.is_name_or_literal()) {
             assert_item_not_reading(element, dst, element_offset);
             continue;
         }
@@ -534,7 +534,7 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
         return;
     }
 
-    if (is_identifier()) {
+    if (is_name_or_literal()) {
         compile_identifier_copy(tc, indent, dst_type, dst_op);
         return;
     }
@@ -689,7 +689,7 @@ auto expr_type::write_builtin_field(toc& tc, const size_t indent,
     // the paths below that copy directly skip the check in 'expr_any'
     src.assert_not_narrowed(tc, field.type());
 
-    if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
+    if (src.is_expression() or (src.is_name_or_literal() and tc.has_lea(src))) {
         src.compile(tc, indent, dst.with_operand(dst_operand));
         return;
     }
@@ -813,11 +813,11 @@ auto expr_type::compile_lea(toc& tc, const size_t indent,
 
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
-auto expr_type::identifier() const -> std::string_view {
+auto expr_type::name_or_literal() const -> std::string_view {
     // note: only a copy is asked for its variable, a '{...}' value is not
     assert(stmt_ident_);
 
-    return stmt_ident_->identifier();
+    return stmt_ident_->name_or_literal();
 }
 
 // declared in 'expr_type.hpp'

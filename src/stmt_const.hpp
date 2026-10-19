@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstdint>
 #include <format>
@@ -26,7 +25,7 @@ class stmt_const final : public statement {
         : statement{tz.next_whitespace_token()}, uops_{tz},
           literal_tk_{tz.next_token()}, value_{default_value} {
 
-        set_type(tc.get_type_default());
+        set_type(tc.builtins().default_type());
 
         if (literal_tk_.has_whitespace_before()) {
             throw compiler_exception{
@@ -39,7 +38,7 @@ class stmt_const final : public statement {
 
         has_value_ = true;
 
-        if (tc.has_const(literal_tk_.text())) {
+        if (tc.scopes().has_const(literal_tk_.text())) {
             value_ = uops_.evaluate_constant(tc.get_const(literal_tk_.text()));
             return;
         }

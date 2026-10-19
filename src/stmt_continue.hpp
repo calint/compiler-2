@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <string_view>
@@ -16,7 +15,7 @@ class stmt_continue final : public statement {
     stmt_continue(const toc& tc, const token src_loc_tk)
         : statement{src_loc_tk} {
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
     }
 
     stmt_continue() = default;
@@ -33,15 +32,16 @@ class stmt_continue final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // get current loop start labels
-        const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};
+        const std::string_view loop_label{
+            tc.scopes().looping_label_or_throw(tok()),
+        };
 
-        if (tc.is_in_loop_block()) {
+        if (tc.scopes().is_in_loop_block()) {
             x.branch(indent, loop_label);
             return;
         }
 
-        // is in foo block
+        // a 'foo' advances its counter before the next iteration
         x.branch(indent, toc::continue_label(loop_label));
     }
 

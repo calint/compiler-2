@@ -299,23 +299,25 @@ class stmt_identifier final : public statement {
         return operand::mem(address, *parent_type);
     }
 
-    [[nodiscard]] auto identifier() const -> std::string_view override {
-        return path_as_string_;
-    }
-
     [[nodiscard]] auto is_array_element() const -> bool override {
         return not elems_.empty() and elems_.back().array_index_expr != nullptr;
     }
-
-    [[nodiscard]] auto is_identifier() const -> bool override { return true; }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
         return is_indexed_;
     }
 
+    [[nodiscard]] auto is_name_or_literal() const -> bool override {
+        return true;
+    }
+
     // the low bytes are at the start address of the storage
     [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
         return true;
+    }
+
+    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
+        return path_as_string_;
     }
 
     [[nodiscard]] auto name_token() const -> const token& override {
@@ -586,8 +588,9 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto names_function(const toc& tc) const -> bool {
         const std::string_view root{ident_info::root_of(path_as_string_)};
 
-        return tc.is_func(path_as_string_) and not tc.is_var_or_alias(root) and
-               not tc.has_const(root);
+        return tc.is_func(path_as_string_) and
+               not tc.scopes().is_var_or_alias(root) and
+               not tc.scopes().has_const(root);
     }
 
     // note: after a run-time index the range stays the whole array
@@ -647,10 +650,11 @@ class stmt_identifier final : public statement {
 
         is_indexed_ = true;
 
-        elems_.emplace_back(tk, token{},
-                            std::make_unique<expr_any>(
-                                tc, tz, tc.get_type_default(), false, false, 0),
-                            token{});
+        elems_.emplace_back(
+            tk, token{},
+            std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
+                                       false, false, 0),
+            token{});
 
         const token close_bracket_tk{
             tz.expect_char_token(
@@ -750,7 +754,7 @@ class stmt_identifier final : public statement {
         if (registers.index_register().is_empty()) {
             // index expressions are parsed with the default type
             registers.set_index_register(x.alloc_scratch_register(
-                src_loc_tk, indent, tc.get_type_default()));
+                src_loc_tk, indent, tc.builtins().default_type()));
 
             registers.add(registers.index_register());
         }
@@ -943,7 +947,7 @@ class stmt_identifier final : public statement {
 
         if (target.is_empty()) {
             target = x.alloc_scratch_register(src_loc_tk, indent,
-                                              tc.get_type_address());
+                                              tc.builtins().address());
 
             registers.add(target);
         }
@@ -1015,15 +1019,16 @@ class stmt_identifier final : public statement {
         machine& x{tc.machine()};
 
         const operand pointer_register{
-            x.alloc_scratch_register(src_loc_tk, indent, tc.get_type_address()),
+            x.alloc_scratch_register(src_loc_tk, indent,
+                                     tc.builtins().address()),
         };
 
         registers.add(pointer_register);
 
         x.copy_value(src_loc_tk, indent, pointer_register,
-                     operand::mem(pointer_slot, tc.get_type_address()));
+                     operand::mem(pointer_slot, tc.builtins().address()));
 
-        return operand::mem(pointer_register, tc.get_type_address());
+        return operand::mem(pointer_register, tc.builtins().address());
     }
 
     // an inlined argument's known address, a loaded pointer or the storage

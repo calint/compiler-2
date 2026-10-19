@@ -1,6 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
-//           2026-09-09
 
 #include <cstddef>
 #include <cstdint>
@@ -96,7 +94,7 @@ class unary_ops final {
     }
 
     auto put_back(tokenizer& tz) const -> void {
-        // put back in reverse order
+        // the last character read is put back first
         for (const char o : ops_ | std::views::reverse) {
             tz.put_back_char(o);
         }

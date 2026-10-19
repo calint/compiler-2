@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 // the declarations that break include cycles, defined in 'decouple_impl.hpp':
 //   - the statement factories create every statement class, and the

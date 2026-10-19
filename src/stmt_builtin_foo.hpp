@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <cstdint>
@@ -31,7 +30,7 @@ class stmt_builtin_foo final : public statement {
     stmt_builtin_foo(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk, unary_ops{}} {
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
 
         ident_ = {tc, unary_ops{}, tz.next_token(), tz};
 
@@ -43,11 +42,11 @@ class stmt_builtin_foo final : public statement {
         count_delim_tk_ = tz.is_next_char_token(',');
 
         if (has_count()) {
-            count_ = {tc, tz, tc.get_type_default(), false, false, 0};
+            count_ = {tc, tz, tc.builtins().default_type(), false, false, 0};
         }
 
-        // add vars to toc without emitting output so that the code block can be
-        // parsed
+        // the element and the counter are declared during the parse so the
+        // block can name them
         const ident_info array_info{tc.make_ident_info(ident_)};
         tc.enter_foo("");
 
@@ -94,7 +93,7 @@ class stmt_builtin_foo final : public statement {
 
         const operand reg_iter{
             x.alloc_scratch_register(ident_.tok(), indent,
-                                     tc.get_type_default()),
+                                     tc.builtins().default_type()),
         };
 
         x.comment(ident_.tok(), indent, "initiate iterator e");
@@ -118,7 +117,7 @@ class stmt_builtin_foo final : public statement {
         x.comment(tok(), indent, "initiate counter i");
 
         x.copy_value(tok(), indent, counter,
-                     operand::imm(0, tc.get_type_default()));
+                     operand::imm(0, tc.builtins().default_type()));
 
         skip_empty_loop(x, tc, indent, limit, end_label);
 
@@ -168,14 +167,14 @@ class stmt_builtin_foo final : public statement {
                   std::vector<operand>& allocated_registers) const -> operand {
 
         if (not has_count()) {
-            return operand::imm(array_len, tc.get_type_default());
+            return operand::imm(array_len, tc.builtins().default_type());
         }
 
         machine& x{tc.machine()};
 
         const operand reg_count{
             x.alloc_scratch_register(count_.tok(), indent,
-                                     tc.get_type_default()),
+                                     tc.builtins().default_type()),
         };
 
         allocated_registers.push_back(reg_count);
@@ -205,8 +204,8 @@ class stmt_builtin_foo final : public statement {
         operand reg_counter;
 
         if (not counter_in_memory) {
-            reg_counter =
-                x.alloc_scratch_register(tok(), indent, tc.get_type_default());
+            reg_counter = x.alloc_scratch_register(
+                tok(), indent, tc.builtins().default_type());
 
             allocated_registers.push_back(reg_counter);
         }
@@ -275,7 +274,8 @@ class stmt_builtin_foo final : public statement {
         }
 
         x.compare_and_branch(
-            count_.tok(), indent, limit, operand::imm(0, tc.get_type_default()),
+            count_.tok(), indent, limit,
+            operand::imm(0, tc.builtins().default_type()),
             {
                 .operation{machine::comparison_operator::less_equal},
                 .inverted{},
@@ -319,7 +319,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_var(src_loc_tk, indent,
                    {
                        .name{"i"},
-                       .type_ptr{&tc.get_type_default()},
+                       .type_ptr{&tc.builtins().default_type()},
                        .src_loc_tk{decl_tk},
                        .read_only_why{read_only_cause::foo_counter},
                        .pointer_register{},

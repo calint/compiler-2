@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-29
 
 #include <cassert>
 #include <cstddef>
@@ -88,17 +87,17 @@ class expr_type final : public statement {
         -> operand override;
 
     // out-of-line: calls 'stmt_identifier'
-    [[nodiscard]] auto identifier() const -> std::string_view override;
-
-    // out-of-line: calls 'stmt_identifier'
     [[nodiscard]] auto is_array_element() const -> bool override;
 
-    [[nodiscard]] auto is_identifier() const -> bool override {
+    // out-of-line: calls 'stmt_identifier'
+    [[nodiscard]] auto is_indexed() const -> bool override;
+
+    [[nodiscard]] auto is_name_or_literal() const -> bool override {
         return stmt_ident_ != nullptr;
     }
 
     // out-of-line: calls 'stmt_identifier'
-    [[nodiscard]] auto is_indexed() const -> bool override;
+    [[nodiscard]] auto name_or_literal() const -> std::string_view override;
 
     // out-of-line: calls 'stmt_call', 'stmt_identifier' and 'expr_any'
     auto visit_reads(const read_filter var, const read_visitor reader) const

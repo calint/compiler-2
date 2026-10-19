@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <format>
@@ -24,7 +23,7 @@ class stmt_if_branch final : public statement {
         : statement{tz.next_whitespace_token()},
           condition_{tc, tz.next_whitespace_token(), tz}, code_{tc, tz} {
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
     }
 
     stmt_if_branch() = default;
@@ -82,19 +81,16 @@ class stmt_if_branch final : public statement {
             return const_eval;
         }
 
-        // the label where to jump if evaluation of the condition is true
+        // an 'or' condition branches here as soon as one operand is true
         x.label(indent, jmp_to_if_true_label);
-        // the code of the branch
         code_.compile(tc, indent, destination{});
 
         if (const_eval == condition_result::always_true) {
             return const_eval;
         }
 
-        // after the branch code executes, jump to the end of the
-        // 'if ... else if ... else ...' block
-        // if the jump label is not provided, then there is no 'else' and this
-        // is the last 'if' so just continue execution
+        // the last branch without an 'else' falls through to the code after
+        // the 'if'
         if (not jmp_to_after_code_label.empty()) {
             x.branch(indent, jmp_to_after_code_label);
         }

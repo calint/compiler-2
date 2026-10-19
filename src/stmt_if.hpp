@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <format>
@@ -34,7 +33,7 @@ class stmt_if final : public statement {
     stmt_if(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
 
         // 'if a == b {x = 1} else if c == d {y = 2} else {z = 3}' breaks down
         // into the branches 'a == b {x = 1}' and 'c == d {y = 2}' and an
@@ -54,7 +53,6 @@ class stmt_if final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        // output first branch
         const stmt_if_branch& branch{branches_.at(0)};
         branch.source_to(os);
         const auto else_if_branches{branches_ | std::views::drop(1)};
@@ -151,8 +149,7 @@ class stmt_if final : public statement {
             is_last_branch and else_code_.is_empty() ? "" : label_after_if,
         };
 
-        // compile the condition which might return that the condition was a
-        // constant evaluation
+        // a condition that is constant true ends the chain at this branch
         const condition_result const_eval{
             if_branch.compile_branch(tc, indent, jmp_if_false, jmp_if_done),
         };

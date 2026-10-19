@@ -1,5 +1,4 @@
 #pragma once
-// reviewed: 2025-09-28
 
 #include <cstddef>
 #include <string_view>
@@ -14,7 +13,7 @@
 class stmt_break final : public statement {
   public:
     stmt_break(const toc& tc, const token src_loc_tk) : statement{src_loc_tk} {
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
     }
 
     stmt_break() = default;
@@ -31,10 +30,10 @@ class stmt_break final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // get current loop exit label
-        const std::string_view loop_label{tc.get_looping_label_or_throw(tok())};
+        const std::string_view loop_label{
+            tc.scopes().looping_label_or_throw(tok()),
+        };
 
-        // jump out of the loop or foo
         x.branch(indent, toc::end_label(loop_label));
     }
 

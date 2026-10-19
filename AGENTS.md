@@ -47,10 +47,14 @@
 ### Comments
 
 - Keep comments and move them with their code. Reword or remove one only when
-  it is wrong or its code was redesigned or removed.
+  it is wrong, narrates its code, or its code was redesigned or removed.
 - Lowercase, no trailing punctuation, code names in single quotes.
-- One short line, only what code cannot show (why, not what); class and pass
-  header comments may be longer.
+- One short line, only what code cannot show; class and pass header comments
+  may be longer.
+- Say why, never narrate the next line (`// get the loop label`,
+  `// add aliases`); a data member may say what it holds.
+- No review stamps. The formatter writes the section banners
+  (`// statics`, `// class methods`), keep them.
 - Marker: `todo:`.
 - Magic numbers (`+ 1`, `subspan(1, n - 2)`) in new or touched code: a `note:`
   line below naming offset and reason, e.g. `// note: +1 because the text

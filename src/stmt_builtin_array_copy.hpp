@@ -38,7 +38,7 @@ class stmt_builtin_array_copy final : public statement {
                 tz, "expected '(', 'from', 'to', 'count', and ')'"};
         }
 
-        set_type(tc.get_type_void());
+        set_type(tc.builtins().void_type());
 
         src_ = {tc, {}, tz.next_token(), tz};
 
@@ -51,13 +51,13 @@ class stmt_builtin_array_copy final : public statement {
 
         dst_.assert_array_or_element("destination");
 
-        assert_not_read_only(dst_.tok(), "copy into", dst_.identifier(),
+        assert_not_read_only(dst_.tok(), "copy into", dst_.name_or_literal(),
                              tc.make_ident_info(dst_));
 
         dst_delim_tk_ =
             tz.expect_char_token(',', "expected ',' followed by 'count'");
 
-        count_ = {tc, tz, tc.get_type_default(), true, false, 0};
+        count_ = {tc, tz, tc.builtins().default_type(), true, false, 0};
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the arguments");
@@ -159,8 +159,8 @@ class stmt_builtin_array_copy final : public statement {
         operand count_register;
 
         if (tc.checks().is_bounds()) {
-            count_register =
-                x.alloc_scratch_register(tok(), indent, tc.get_type_default());
+            count_register = x.alloc_scratch_register(
+                tok(), indent, tc.builtins().default_type());
 
             allocated_scratch_registers.push_back(count_register);
 
