@@ -319,6 +319,9 @@ class machine_rv32i : public machine {
     // what a known size needs as a loop; e.g. 24 bytes with both addresses 1 B
     // past a word boundary and an access of 4 bytes is a 3 B head, 5 chunks of
     // 4 B and a 1 B tail
+    // note: 'compare_known_walk', 'copy_known_size' and 'zero_known_size' each
+    //       walk the head, the loop and the tail themselves; one merged walk
+    //       was tried and read harder than the repetition
     struct known_loop {
         size_t head_size_bytes{};
         size_t width{};
