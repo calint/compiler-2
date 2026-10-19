@@ -1,0 +1,12 @@
+# '{}' is the zero value of a built-in in a 'dat' too: a field, an element of
+# an array field and of an array
+
+type point { x, y }
+type t { n i8, b bool, p point, a i16[2] }
+dat q = t{ {}, {}, {}, { {}, 3 } }
+dat a = []{ 1, {}, 2 }
+dat f = bool[]{ true, {} }
+func main() {
+    if q.b or f[1] or q.n != 0 or q.p.x != 0 exit(1)
+    exit(int(q.a[1]) + a[1] + a[2])
+}

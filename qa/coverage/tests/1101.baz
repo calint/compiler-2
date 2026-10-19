@@ -1,4 +1,4 @@
-# the zero value assigned to a built-in is '0', not the type name
+# the zero value assigned to a built-in is '{}', not the type name
 
 func main() {
     var n = i8(7)

@@ -1,4 +1,4 @@
 
-0254.baz:4:17: expected constant, identifier, or function call
+0254.baz:4:17: parameter 1 requires an array
 func main() { f({}) }
                 ^

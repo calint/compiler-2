@@ -18,6 +18,7 @@
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "expr_type.hpp"
+#include "expr_zero.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
@@ -685,6 +686,30 @@ class expr_any final : public statement {
     // statics
     //
 
+    // a built-in value whose first element is parsed, e.g. the zero value of
+    // 'i8' or '{}', 'pos_tk' is where the value starts
+    [[nodiscard]] static auto builtin_value(toc& tc, tokenizer& tz,
+                                            const token& pos_tk, const type& tp,
+                                            std::unique_ptr<statement> first)
+        -> expr_variant {
+
+        if (tp.is_bool()) {
+            return expr_bool{tc, pos_tk, tz, std::move(first)};
+        }
+
+        return expr_arith{
+            tc,
+            tz,
+            expr_arith::options{
+                .uops{},
+                .open_paren_tk{},
+                .is_implied_subexpression{},
+                .first_op_precedence{expr_arith::initial_precedence},
+                .first_expression{std::move(first)},
+            },
+        };
+    }
+
     static auto compile_bool(toc& tc, const size_t indent,
                              const destination& dst, const token& src_loc_tk,
                              const expr_bool& condition) -> void {
@@ -816,60 +841,47 @@ class expr_any final : public statement {
                              typing};
         }
 
-        if (tp.is_bool()) {
-            // e.g. 'var b = bool' is 'var b = false'
-            const token pos_tk{tz.cur_position_token()};
-            const token tk{tz.next_token()};
+        const token pos_tk{tz.cur_position_token()};
 
-            if (is_bare_builtin_type(tc, tk, tz)) {
-                if (typing == literal_typing::from_destination) {
-                    throw_known_type(tk, tk.text(), "false");
-                }
+        // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'
+        if (const token open_brace_tk{tz.is_next_char_token('{')};
+            not open_brace_tk.is_empty()) {
 
-                return expr_bool{
-                    tc,
-                    pos_tk,
-                    tz,
-                    std::make_unique<stmt_builtin_convert>(tc, tk),
-                };
-            }
+            const token close_brace_tk{
+                tz.expect_char_token(
+                    '}', "expected '}', the zero value of a built-in is '{}'"),
+            };
 
-            // note: rewound by position, a string token cannot be put back
-            tz.rewind_to_position(pos_tk);
-
-            expr_bool value{tc, tz.next_whitespace_token(), tz};
-
-            value.assert_boolean_operands();
-
-            return value;
+            return builtin_value(
+                tc, tz, pos_tk, tp,
+                std::make_unique<expr_zero>(tp, open_brace_tk, close_brace_tk));
         }
 
-        // e.g. 'var x = i8' is 'var x = i8(0)'
-        const token pos_tk{tz.cur_position_token()};
+        // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is
+        // 'var b = false'
         const token tk{tz.next_token()};
 
         if (is_bare_builtin_type(tc, tk, tz)) {
             if (typing == literal_typing::from_destination) {
-                throw_known_type(tk, tk.text(), "0");
+                throw_known_type(tk, tk.text(), "{}");
             }
 
-            return expr_arith{
-                tc,
-                tz,
-                expr_arith::options{
-                    .uops{},
-                    .open_paren_tk{},
-                    .is_implied_subexpression{},
-                    .first_op_precedence{expr_arith::initial_precedence},
-                    .first_expression{
-                        std::make_unique<stmt_builtin_convert>(tc, tk),
-                    },
-                },
-            };
+            return builtin_value(
+                tc, tz, pos_tk, tp,
+                std::make_unique<stmt_builtin_convert>(tc, tk));
         }
 
+        // note: rewound by position, a string token cannot be put back
         tz.rewind_to_position(pos_tk);
 
-        return expr_arith{tc, tz};
+        if (not tp.is_bool()) {
+            return expr_arith{tc, tz};
+        }
+
+        expr_bool value{tc, tz.next_whitespace_token(), tz};
+
+        value.assert_boolean_operands();
+
+        return value;
     }
 };

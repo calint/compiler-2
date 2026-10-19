@@ -38,7 +38,14 @@ class stmt_def_dat final : public statement {
         std::vector<elem> elems;
         std::vector<token> elem_delims_tk;
 
+        // a built-in value, '{}' is its zero value
         auto source_to(std::ostream& os) const -> void {
+            if (not open_brace_tk.is_empty()) {
+                open_brace_tk.source_to(os);
+                close_brace_tk.source_to(os);
+                return;
+            }
+
             uops.source_to(os);
             src_loc_tk.source_to(os);
         }
@@ -579,6 +586,19 @@ class stmt_def_dat final : public statement {
                                             const type& tp) -> elem {
 
         elem el;
+
+        // e.g. the '{}' of 'point{{}, 2}' is 0, or 'false' for a 'bool'
+        el.open_brace_tk = tz.is_next_char_token('{');
+
+        if (not el.open_brace_tk.is_empty()) {
+            el.close_brace_tk = tz.expect_char_token(
+                '}', "expected '}', the zero value of a built-in is '{}'");
+
+            el.src_loc_tk = el.open_brace_tk;
+
+            return el;
+        }
+
         el.uops = unary_ops{tz};
         el.src_loc_tk = tz.next_token();
 

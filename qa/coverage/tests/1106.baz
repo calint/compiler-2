@@ -1,0 +1,22 @@
+# '{}' is the zero value of a built-in too: assigned, a field, an element, an
+# argument and the result of a generic function for a built-in and a record
+
+type point { x, y }
+type t { n i8, b bool, p point, a i16[2] }
+func zero<T type>() res T { res = {} }
+func twice(v i8) res i8 { res = v * 2 }
+func main() {
+    var n = i8(5)
+    n = {}
+    var b = true
+    b = {}
+    var q = t{ {}, {}, {}, {} }
+    var r = t{7, true, {1, 2}, {3, 4}}
+    r = {}
+    var a = i16[]{1, 2, 3}
+    a = { {}, 9 }
+    if b or q.b or r.n != 0 or q.a[1] != 0 or a[0] != 0 or a[2] != 0 exit(1)
+    var p = zero<point>()
+    exit(int(zero<i8>()) + p.x + int(twice({})) + int(n) + int(a[1]))
+    # zero<bool>() is checked below
+}

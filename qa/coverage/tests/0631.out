@@ -1,4 +1,4 @@
 
-0631.baz:5:16: expected a constant for 'i16'
+0631.baz:5:18: expected '}', the zero value of a built-in is '{}'
 dat p = point{ { 1 }, 2 }
-               ^
+                 ^

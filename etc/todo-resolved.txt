@@ -1,6 +1,71 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: the zero value of a type parameter that may be a built-in: 'res = {}'
+    zeroes a record or an array 'T' but not an 'i8', 'res = T' was never
+    accepted for a built-in either ("cannot resolve identifier 'T'")
+    => e.g. let '{}' be the zero value of a built-in too, then it is the one
+       spelling for every type
+    => done (2026-10-19): '{}' is the zero value of a built-in too
+       ('expr_zero' in 'var' code, the braces of an 'elem' in 'dat'), the
+       error of a bare type name suggests '{}'; tests 1106 and 1107
+[x] medium: a type name before a literal only where it decides the type
+    => problem: 'var' accepts two spellings of a value whose type the
+       destination fixes, 't{i8[]{4, 5}}' and 't{{4, 5}}', 'q.p =
+       point{5, 6}' and 'q.p = {5, 6}', 'q.p = point' and 'q.p = {}'; 'dat'
+       accepts only the second, so the two disagree and a reader must check
+       that the written type equals the destination's
+    => rule: the type is written exactly where it decides the type: the
+       initializer of 'var', 'let' and 'dat' ('var p = point{1, 2}', 'var a
+       = i8[]{1, 2}', 'var p = point', 'var x = i8') and an argument whose
+       parameter type is deduced from it ('take(point{3, 4})' of 'func
+       take<T type>(item T)', test 0860); everywhere else the destination
+       gives it: fields, array elements, assignments, arguments of a known
+       parameter type ('ls.push({1, 2})'); the zero value is '{}' for an
+       instance or an array and '0' or 'false' for a built-in ('n = 0' for
+       'n = i8')
+    => design: 'expr_any' takes a 'literal_typing' enum, 'written' or
+       'from_destination', instead of deciding by itself; the places that
+       read a type name before a value ('expr_type' constructor for
+       'point{...}' and bare 'point', 'expr_any::parse_element_type' for
+       'i8[]{...}' and '[]{...}', the bare array 'i8[4]', 'parse_variant'
+       for bare 'i8' and 'bool') reject it under 'from_destination' at the
+       type name: "the type 'point' is known here, write '{1, 2}'" (or
+       '{}', '0', 'false'); nested values (fields, elements) are always
+       'from_destination'
+    => callers: 'stmt_def_var' initializer and its trial parse 'written',
+       'stmt_assign_var' 'from_destination', 'stmt_call::parse_arguments'
+       'written' only for an argument that deduced a type parameter
+       ('generic_call::parse' returns those argument indexes), 'dat' already
+       follows the rule and is unchanged
+    => steps:
+       1. rewrite the sources to the brace form, which the compiler accepts
+          now: tests, 'roome', 'etc/tutorial.baz', 'README.md',
+          'etc/docs/README.md'; the assembly of every test stays the same
+          byte for byte (no behavior change)
+       2. the parser change and its errors; the compiler finds any use
+          step 1 missed
+    => rejected: keep both spellings (two ways to write one value, 'var'
+       and 'dat' disagree); reject the type name everywhere ('var p = {1,
+       2}' has no type to deduce); a separate pass over the tree (the parser
+       already knows the context where it reads the name); require
+       'take<point>({3, 4})' instead of deducing from a literal (drops a
+       documented feature, test 0860)
+    => invariant: a literal has a written type exactly when no destination
+       gives it one
+    => tests: one error test per rejected form with its caret checked (array
+       field, record field, assignment of a record and of an array, element
+       of an array literal, argument of a known parameter type, bare record
+       in an assignment and in a field, bare built-in in an assignment);
+       accepted: declarations, deduced argument (0860); both targets
+    => done (2026-10-19): 'literal_typing' in 'expr_type.hpp', passed to
+       'expr_any' and 'expr_type', 'written' for declarations and deducing
+       arguments ('generic_call::deducing_args'); the size mismatch of a
+       typed array literal became an 'assert' (only a declaration names the
+       type, its size is the literal's); the sources were rewritten first
+       and the code of every rewritten test compared without comments and
+       label numbers; tests 0609, 0824 and 1094-1105 reject or keep a form,
+       0821-0823 use the brace forms
 [x] medium: low priority: a constant operand that does not fit the type of
     its expression wraps silently ('let f = 4294967296 + 5' is 5 on rv32i,
     even with '--checks=overflow'; '-9223372036854775807 - 1' is 0 there)

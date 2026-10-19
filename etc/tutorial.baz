@@ -448,6 +448,13 @@ func user_types() {
     # without a literal all fields are zeroed, 'point{}' is the same, and
     # missing fields of a literal are zeroed too
 
+    origin = {1, 1}
+    origin = {}
+    assert(origin.x == 0)
+    # where the destination gives the type, '{}' is the zero value of any
+    # type, also of a built-in: 'n = {}' is 'n = 0' and 'b = {}' is
+    # 'b = false'
+
     var px = pixel{{3, 4}, 0xff0000}
     px.pos.x = 5
     px.tags[1] = 'z'

@@ -3417,10 +3417,10 @@ SRC=1099 && COMPERR
 # the zero value of a record field is '{}', not the type name
 SRC=1100 && COMPERR
 
-# the zero value assigned to a built-in is '0', not the type name
+# the zero value assigned to a built-in is '{}', not the type name
 SRC=1101 && COMPERR
 
-# the zero value assigned to a 'bool' is 'false', not the type name
+# the zero value assigned to a 'bool' is '{}', not the type name
 SRC=1102 && COMPERR
 
 # the zero value assigned to an array is '{}', not the array type
@@ -3432,3 +3432,11 @@ SRC=1104 && COMPERR
 # a type argument written makes the parameter type known, so a literal
 # argument names no type, only a deducing argument does
 SRC=1105 && COMPERR
+
+# '{}' is the zero value of a built-in too: assigned, a field, an element, an
+# argument and the result of a generic function for a built-in and a record
+SRC=1106 && EXP=9 && RUN
+
+# '{}' is the zero value of a built-in in a 'dat' too: a field, an element of
+# an array field and of an array
+SRC=1107 && EXP=5 && RUN
