@@ -3440,3 +3440,18 @@ SRC=1106 && EXP=9 && RUN
 # '{}' is the zero value of a built-in in a 'dat' too: a field, an element of
 # an array field and of an array
 SRC=1107 && EXP=5 && RUN
+
+# '==', 'arrays_equal' and 'array_copy' on arrays of records: indexed starts,
+# overlapping and empty ranges and a count from a call that copies too
+SRC=1108 && EXP=0 && RUN
+
+# every escape of a string literal reaches the output byte for byte
+SRC=1109 && DIFF
+
+# 'write' to a descriptor that is not open returns the error, -9 is 'EBADF';
+# the bare-metal targets have no descriptors
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1110 && EXP=0 && RUN; fi
+
+# a negative index fails the bounds check with both bounds enabled, the
+# handler without a line prints only its message
+SRC=1111 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=upper,lower"

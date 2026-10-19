@@ -21,8 +21,11 @@
 //              jumps to the label 'failure'
 //   <mode>     print one special program on stdout instead (parts 9 and 10):
 //              'noninline', 'frame-checks', 'long-loop', 'far-jumps',
-//              'far-jumps-optimized', 'far-foo', 'far-foo-optimized', 'bulk',
-//              'strings-syscall', 'bounds-matrix' and 'bounds-no-line'
+//              'far-jumps-optimized', 'far-foo', 'far-foo-optimized' and
+//              'bounds-matrix'
+//
+// What a .baz program can show is a case of 'cases.sh' instead, e.g. 1108 to
+// 1111 were programs of this driver.
 //
 // Every check is a function named after the behavior it shows. Checks that
 // differ only in data are rows of a table.
@@ -37,7 +40,7 @@
 //   7  copies, comparisons, addresses and zeroing
 //   8  helper routines for multiplication and division
 //   9  special programs with hand-written lines between the backend's output
-//   10 special programs from .baz sources, and bounds checks
+//   10 the bounds check for every combination of its parameters
 //   11 the runtime program
 //   12 the front end tables: scopes and storage
 // ============================================================================
@@ -2775,83 +2778,8 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
 }
 
 // ============================================================================
-// 10. generated programs from .baz sources, and bounds checks
+// 10. the bounds check for every combination of its parameters
 // ============================================================================
-
-// 'bulk': 'equal', 'arrays_equal' and 'array_copy' on arrays of structs,
-// overlapping ranges and empty ranges, with all runtime checks enabled
-auto generate_bulk() -> void {
-    const std::string_view source{R"baz(
-func assert(ok bool) { if not ok exit(1) }
-type packed { first i8, second i16 }
-func nested(source packed[], destination mut packed[]) count i32 {
-    array_copy(source, destination, 1)
-    count = 2
-}
-func main() {
-    var source = packed[3]{{1, 300}, {2, -400}, {3, 500}}
-    var destination = packed[3]{}
-    var single = source[1]
-    assert(single == source[1])
-    single.second = 12
-    assert(single != source[1])
-    array_copy(source, destination, nested(source, destination))
-    assert(arrays_equal(source, destination, 2))
-    assert(not arrays_equal(source, destination, 3))
-    var index = i32(2)
-    array_copy(source[index], destination[index], 1)
-    assert(arrays_equal(source[index], destination[index], 1))
-    destination[index].second = 501
-    assert(not arrays_equal(source[index], destination[index], 1))
-    destination[index].second = 500
-    assert(source == destination)
-    array_copy(source, destination, 0)
-    assert(arrays_equal(source, destination, 0))
-    array_copy(source, source, 3)
-    assert(source == destination)
-    array_copy(destination[1], destination, 2)
-    assert(destination[0] == source[1])
-    assert(destination[1] == source[2])
-    destination[0].first = 7
-    assert(not arrays_equal(source[1], destination, 1))
-    destination[0] = source[1]
-    destination[0].second = 10
-    assert(not arrays_equal(source[1], destination, 1))
-}
-)baz"};
-    source_files files;
-    files.add("test.baz", std::string{source});
-
-    machine_rv32i compiler{&std::cout};
-    program prg{compiler, files, vars_capacity_bytes,
-                check_options{
-                    .bounds_upper{true},
-                    .bounds_lower{true},
-                    .with_line{true},
-                }};
-    prg.build(std::cout);
-}
-
-// 'strings-syscall': every string escape reaches the output byte for byte
-// through 'write', and 'write' reports a bad file descriptor
-auto generate_strings_syscall() -> void {
-    const std::string_view source{R"baz(
-dat text = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
-func main() {
-    var count = write(1, text, array_length(text))
-    if count != 20 exit(1)
-    var bad = write(-1, text, 1)
-    if bad != -9 exit(2)
-    exit(0)
-}
-)baz"};
-    source_files files;
-    files.add("test.baz", std::string{source});
-
-    machine_rv32i compiler{&std::cout};
-    program prg{compiler, files, vars_capacity_bytes, check_options{}};
-    prg.build(std::cout);
-}
 
 // one combination of the parameters of 'check_bounds'
 struct bounds_case {
@@ -2905,16 +2833,6 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
                  parameters.index, parameters.count);
 }
 
-// 'bounds-no-line': the failure handler without a line prints
-// 'panic: bounds' and exits with status 255
-auto generate_bounds_no_line(machine_rv32i& backend) -> void {
-    std::println("    li a0, -1");
-    backend.check_bounds(token{}, 1, operand::reg("a0", integer), 4, false, {},
-                         {.upper{true}, .lower{true}, .with_line{}});
-    backend.end_main();
-    backend.emit_bounds_failure_handler(false);
-}
-
 // 'bounds-matrix': 'check_bounds' reports a violation exactly when the index
 // (or the slice end) is outside the size, for every combination of enabled
 // checks, size, index and count
@@ -2959,16 +2877,12 @@ auto generate_bounds_matrix(machine_rv32i& backend) -> void {
     backend.exit(token{}, 1, operand::imm(1, integer));
 }
 
-auto generate_bounds(const bool no_line) -> void {
+auto generate_bounds() -> void {
     machine_rv32i backend{&std::cout};
     backend.set_builtin_types(test_types());
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
-    if (no_line) {
-        generate_bounds_no_line(backend);
-    } else {
-        generate_bounds_matrix(backend);
-    }
+    generate_bounds_matrix(backend);
 
     backend.finish();
 }
@@ -4197,12 +4111,8 @@ auto main(const int argc, const char* argv[]) -> int {
     } else if (mode == "far-foo" or mode == "far-foo-optimized") {
         generate_far_foo(mode == "far-foo" ? assembler::jump_mode::resolved
                                            : assembler::jump_mode::optimized);
-    } else if (mode == "bulk") {
-        generate_bulk();
-    } else if (mode == "strings-syscall") {
-        generate_strings_syscall();
-    } else if (mode == "bounds-matrix" or mode == "bounds-no-line") {
-        generate_bounds(mode == "bounds-no-line");
+    } else if (mode == "bounds-matrix") {
+        generate_bounds();
     } else {
         run_host_checks();
         generate_runtime_program();

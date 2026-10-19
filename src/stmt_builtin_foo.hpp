@@ -49,14 +49,15 @@ class stmt_builtin_foo final : public statement {
         // the element and the counter are declared during the parse so the
         // block can name them
         const ident_info array_info{tc.make_ident_info(ident_)};
-        tc.enter_foo("");
+        const std::string label{tc.create_unique_label(tok(), "foo")};
+        tc.enter_foo(label);
 
         add_loop_names(tc, 0, src_loc_tk, src_loc_tk, array_info, operand{},
                        operand{}, foo_array(tc));
 
         code_ = {tc, tz};
 
-        tc.exit_foo("");
+        tc.exit_foo(label);
     }
 
     stmt_builtin_foo() = default;

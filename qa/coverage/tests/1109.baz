@@ -1,0 +1,7 @@
+# every escape of a string literal reaches the output byte for byte
+
+dat text = "A\0\a\b\t\n\v\f\r\e\"'`\\\x00\x7f\x80\xff\x41B"
+func main() {
+    var count = write(1, text, array_length(text))
+    if count != 20 exit(1)
+}

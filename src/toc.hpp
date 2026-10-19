@@ -243,11 +243,10 @@ struct const_info {
 // what a variable is declared by: 'var' or 'dat'
 enum class var_kind : uint8_t { var, dat };
 
+// one scope; the static functions make each kind, e.g. 'frame::block()'
 class frame final {
-  public:
     enum class frame_type : uint8_t { func, block, loop, foo };
 
-  private:
     // optional name
     std::string_view name_;
 
@@ -281,15 +280,6 @@ class frame final {
     size_t peak_storage_size_bytes_{};
 
   public:
-    frame(const std::string_view name, const frame_type frm_type,
-          std::string call_path = {}, std::string func_ret_label = {},
-          const bool is_inlined = true,
-          const std::string_view storage_base_register = {}) noexcept
-        : name_{name}, call_path_{std::move(call_path)},
-          func_ret_label_{std::move(func_ret_label)}, type_{frm_type},
-          is_inlined_{is_inlined},
-          storage_base_register_{storage_base_register} {}
-
     auto add_alias(const alias_info& ai) -> void {
         aliases_.put(std::string{ai.from}, ai);
     }
@@ -420,6 +410,58 @@ class frame final {
     [[nodiscard]] auto storage_base_register() const -> std::string_view {
         return storage_base_register_;
     }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto block() -> frame {
+        return {"", frame_type::block, {}, {}, true, {}};
+    }
+
+    // the body of a 'foo' named by its loop label
+    [[nodiscard]] static auto foo(const std::string_view name) -> frame {
+        return {name, frame_type::foo, {}, {}, true, {}};
+    }
+
+    // a function compiled in place, 'call_path' keeps its labels unique and
+    // 'return' jumps to 'return_label'
+    [[nodiscard]] static auto inlined_func(const std::string_view name,
+                                           std::string call_path,
+                                           std::string return_label) -> frame {
+
+        return {name,
+                frame_type::func,
+                std::move(call_path),
+                std::move(return_label),
+                true,
+                {}};
+    }
+
+    // the body of a loop named by its label
+    [[nodiscard]] static auto loop(const std::string_view name) -> frame {
+        return {name, frame_type::loop, {}, {}, true, {}};
+    }
+
+    // a function with a body of its own, its variables are placed from
+    // 'storage_base_register' when not empty
+    [[nodiscard]] static auto
+    noinline_func(const std::string_view name, std::string call_path,
+                  const std::string_view storage_base_register) -> frame {
+
+        return {name,  frame_type::func,     std::move(call_path), {},
+                false, storage_base_register};
+    }
+
+  private:
+    frame(const std::string_view name, const frame_type frm_type,
+          std::string call_path, std::string func_ret_label,
+          const bool is_inlined,
+          const std::string_view storage_base_register) noexcept
+        : name_{name}, call_path_{std::move(call_path)},
+          func_ret_label_{std::move(func_ret_label)}, type_{frm_type},
+          is_inlined_{is_inlined},
+          storage_base_register_{storage_base_register} {}
 };
 
 class ident_path final {
@@ -982,12 +1024,12 @@ class scope_stack final {
     }
 
     auto enter_block() -> void {
-        frames_.emplace_back("", frame::frame_type::block);
+        frames_.push_back(frame::block());
         track_depth();
     }
 
     auto enter_foo(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::foo);
+        frames_.push_back(frame::foo(name));
         track_depth();
     }
 
@@ -996,15 +1038,14 @@ class scope_stack final {
                     const std::string_view call_path,
                     const std::string_view return_jmp_label) -> void {
 
-        frames_.emplace_back(name, frame::frame_type::func,
-                             std::string{call_path},
-                             std::string{return_jmp_label}, true);
+        frames_.push_back(frame::inlined_func(name, std::string{call_path},
+                                              std::string{return_jmp_label}));
 
         track_depth();
     }
 
     auto enter_loop(const std::string_view name) -> void {
-        frames_.emplace_back(name, frame::frame_type::loop);
+        frames_.push_back(frame::loop(name));
         track_depth();
     }
 
@@ -1015,9 +1056,8 @@ class scope_stack final {
                              const std::string_view storage_base_register)
         -> void {
 
-        frames_.emplace_back(name, frame::frame_type::func,
-                             std::string{call_path}, std::string{}, false,
-                             storage_base_register);
+        frames_.push_back(frame::noinline_func(name, std::string{call_path},
+                                               storage_base_register));
 
         track_depth();
     }

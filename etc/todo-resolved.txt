@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] medium: x86_64: 'array_copy' or 'arrays_equal' whose count is an inlined
+    call that copies or compares arrays itself runs out of registers
+    ('cannot allocate register rsi', test 1108 ran only on rv32i): the
+    bulk registers 'rsi', 'rdi' and 'rcx' are reserved before the count is
+    compiled
+    => compile the count into a scratch register first, then reserve the
+       bulk registers and move it to 'rcx', one more 'mov' for every
+       run-time count; then run 1108 on x86_64 too
+    => discarded (2026-10-19): the compile error stays, a count computed
+       into a 'let' first works on every target ('let count = f()' then
+       'array_copy(a, b, count)', test 1108), so no code changes for the
+       counts that work now
+[x] medium: lift the ai generated tests of 'test-rv32i.sh' to end-to-end .baz
+    tests
+    => done (2026-10-19): the programs of '.baz' source and the bounds
+       handler without a line are cases 1108-1111; the rest stays in the
+       driver: the host checks compare emitted text, the runtime program
+       calls backend operations with operand shapes the front end may
+       never make, the bounds matrix uses array sizes 0 and 2^32 - 1,
+       far-foo is megabytes of generated source and greps the jump forms
+[x] easy: a comment file explaining lea and array indexing
+    => done (2026-10-19): chapter 6 of 'etc/docs/README.md', the operand,
+       the walk of the path with x86_64 and rv32i code of one example, the
+       scale, a constant added to an index, addresses of inlined calls, the
+       bases, the registers and where each step is in the code
 [x] easy: the zero value of a type parameter that may be a built-in: 'res = {}'
     zeroes a record or an array 'T' but not an 'i8', 'res = T' was never
     accepted for a built-in either ("cannot resolve identifier 'T'")

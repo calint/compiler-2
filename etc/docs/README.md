@@ -39,6 +39,15 @@ assumes the ones before it.
 - [5. Versions of the same code: compiled, measured, the shorter kept](#5-versions-of-the-same-code-compiled-measured-the-shorter-kept)
     - [5.1 Why](#51-why)
     - [5.2 Why so many](#52-why-so-many)
+- [6. Addresses: how a path such as 'w.rooms[i].items[j].x' becomes an operand](#6-addresses-how-a-path-such-as-wroomsiitemsjx-becomes-an-operand)
+    - [6.1 The operand](#61-the-operand)
+    - [6.2 Walking the path](#62-walking-the-path)
+    - [6.3 The scale](#63-the-scale)
+    - [6.4 A constant added to an index](#64-a-constant-added-to-an-index)
+    - [6.5 Addresses an inlined call computed](#65-addresses-an-inlined-call-computed)
+    - [6.6 The bases](#66-the-bases)
+    - [6.7 Registers](#67-registers)
+    - [6.8 Where in the code](#68-where-in-the-code)
 
 ## 1. Architecture: from source to assembly and binary image
 
@@ -764,3 +773,190 @@ x86_64 has base + index addressing, so only the assignment chooses, once per
 body. rv32i grows as (n + 1) * (n + 5). The trade is compile time for code
 size: the depth 8 chain compiles in about 75 ms on rv32i against 12 ms on
 x86_64.
+
+## 6. Addresses: how a path such as 'w.rooms[i].items[j].x' becomes an operand
+
+### 6.1 The operand
+
+A variable, a field or an element is reached through one memory operand:
+
+```text
+[base + index * scale + displacement]
+```
+
+The front end builds it ('compile_lea' in 'stmt_identifier.hpp', named after
+the x86 instruction because the result is what 'lea' would compute) and the
+backend lowers it to what the target encodes:
+
+```text
+x86_64   base and index registers, scale 1, 2, 4 or 8, a 32-bit displacement
+rv32i    a base register and a 12-bit offset; an index, a scale and a larger
+         displacement are added into a register right before the access
+```
+
+So the front end never asks how an access is encoded, it only asks the
+backend which scales it can lower ('can_lower_index_scale'). The operand holds
+one index register; the second run-time index of a path needs the address so
+far in a register first.
+
+### 6.2 Walking the path
+
+'compile_lea' walks the elements of the path from the root variable and keeps
+the operand built so far:
+
+```text
+start      the storage of the root variable, '[rbp + 0]'; or the address of
+           a parameter of a noinline function, loaded from its frame slot;
+           or an address an inlined call already computed (6.5)
+field      its offset is added to the displacement
+constant   index * element size is added to the displacement, the index is
+index      checked against the array size at compile time
+run-time   the index is computed into a register and becomes the index of
+index      the operand, with the element size as the scale; an operand that
+           already has an index is folded into a register first
+           ('fold_indexed_address')
+```
+
+The example below has
+
+```text
+type item { tag i8, x }               x86_64: 16 B, 'x' at 8
+type room { id, items item[4] }       x86_64: 72 B, 'items' at 8
+type world { rooms room[8] }
+var w = world                         at '[rbp]'
+```
+
+A path of constants only is one displacement, no instruction computes it:
+
+```text
+w.rooms[1].items[2].x = 6             1 * 72 + 8 + 2 * 16 + 8 = 120
+
+    mov qword [rbp + 120], 6
+```
+
+Two run-time indexes:
+
+```text
+w.rooms[i].items[j].x = 5
+
+    mov r15, qword [rbp + 576]        i
+    imul r15, 72                      72 is not a scale x86 encodes (6.3)
+    lea r15, [rbp + r15 + 8]          'rooms[i].items' folded, the operand
+                                      had an index already
+    mov r14, qword [rbp + 584]        j
+    shl r14, 4                        16 is not encodable either
+    mov qword [r15 + r14 + 8], 5      '+ 8' is the field 'x'
+```
+
+On rv32i ('item' is 8 B with 'x' at 4, 'room' is 36 B with 'items' at 4, 's0'
+points 2032 B past 'vars', 6.6) the scale 8 of 'j' stays in the operand and
+is lowered at the store:
+
+```text
+    lw t0, -1744(s0)                  i
+    slli t1, t0, 3                    i * 36 as (i * 8 + i) * 4
+    add t0, t1, t0
+    slli t0, t0, 2
+    add t0, s0, t0                    'rooms[i].items' folded
+    addi t0, t0, -2028                'w' at -2032, 'items' at +4
+    lw t1, -1740(s0)                  j
+    slli t2, t1, 3                    the operand '[t0 + t1 * 8 + 4]' lowered
+    add t2, t2, t0
+    sw t3, 4(t2)
+```
+
+### 6.3 The scale
+
+An element size the backend can lower stays the scale of the operand: 1, 2, 4
+and 8 on x86_64, any power of two on rv32i (a shift at the access). Any other
+size multiplies the index register first ('scale_index') and the operand gets
+scale 1: 'imul' on x86_64, shifts and adds on rv32i (the non-adjacent form of
+the factor, 'multiply_by_constant').
+
+### 6.4 A constant added to an index
+
+'w.rooms[i].items[j + 1]' needs no 'add': the '+ 1' becomes 16 more of
+displacement ('compile_without_trailing_addend'):
+
+```text
+    mov qword [r15 + r14 + 24], 7     8 for 'x' and 16 for the '+ 1'
+```
+
+Only without bounds checks: a check compares the whole index with the array
+size, so with '--checks=upper' the index is 'j + 1' in the register:
+
+```text
+    mov r14, qword [rbp + 584]
+    add r14, 1
+    cmp r14, 4
+    jge baz_bounds_panic
+    shl r14, 4
+    mov qword [r15 + r14 + 8], 7
+```
+
+A run-time index is checked in its register before it is scaled. With the
+count of a bulk operation, e.g. 'array_copy(a[i], b, n)', the check covers
+'i + n' ('lea_request::reg_count').
+
+### 6.5 Addresses an inlined call computed
+
+An argument with a run-time index is computed once at the call, the body of
+the inlined function reaches it through its parameter. The alias of the
+parameter keeps the operand ('bound_storage::lea'):
+
+```text
+w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
+
+    ...                               r15 and r14 as in 6.2
+    alias self -> w.rooms.items (lea: r15 + r14)
+    mov qword [r15 + r14 + 8], 8      'self.x'
+```
+
+A path in the body starts at that address instead of at the root variable
+('known_address'): its 'trailing_count' is the number of elements of the path
+after the parameter, 1 for the 'x' of 'self.x', so 'compile_lea' starts at the
+element the address belongs to and adds only the rest. The registers stay
+allocated until the body is compiled. On rv32i the body may instead use the
+address folded into one register, whichever is shorter (5.1).
+
+### 6.6 The bases
+
+x86_64 addresses variables from 'rbp', which points at the data. rv32i
+addresses them from 's0', which points 2032 B past the start of 'vars', so
+the 12-bit offsets, -2048 to 2047, reach the first 4080 B of variables
+directly ('variables_base_past_vars_bytes'), further ones need a 'lui'. A noinline body addresses its locals from
+its frame base, 'rbx' or 's1'.
+
+### 6.7 Registers
+
+The scratch registers of a path ('path_registers') are the caller's until the
+path allocates its own. A fold may overwrite only registers that are the
+path's own ('fold_register'):
+
+```text
+1. the register the caller loads the final address into anyway
+2. a base the path loaded itself, a pointer or an earlier fold
+3. the index register being folded, the next index then gets a new one
+4. otherwise a new register
+```
+
+The caller frees all of them after its access, in reverse order of
+allocation.
+
+### 6.8 Where in the code
+
+```text
+stmt_identifier::compile_lea          the walk of 6.2
+stmt_identifier::compile_indexed_element
+                                      a constant or a run-time index
+stmt_identifier::add_index            the index register and the scale
+stmt_identifier::fold_indexed_address the second index
+stmt_identifier::compile_checked_index
+                                      the bounds check and the '+ c' of 6.4
+toc::get_lea_operand                  an operand without a path to walk is
+                                      the storage of the name
+ident_builder::place_operand_from_lea a built-in reached below a known
+                                      address, for the resolver
+machine_x86_64::with_lowered_addresses, machine_rv32i::lower_address
+                                      what the target encodes
+```

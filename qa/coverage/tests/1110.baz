@@ -1,0 +1,7 @@
+# 'write' to a descriptor that is not open returns the error, -9 is 'EBADF'
+
+dat text = "A"
+func main() {
+    var bad = write(-1, text, 1)
+    if bad != -9 exit(1)
+}

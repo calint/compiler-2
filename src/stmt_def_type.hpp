@@ -387,37 +387,30 @@ class stmt_def_type_alias final : public statement {
     //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>'
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
         // 'alias_tks_' keeps the tokens after the name for 'source_to'
-        // e.g. the '=' of 'type str = text<8>'
         alias_tks_.emplace_back(tz.is_next_char_token('='));
 
-        // e.g. 'text'
         const token generic_tk{tz.next_token()};
         alias_tks_.emplace_back(generic_tk);
 
-        // e.g. 'type str = i32<8>' or 'type str = undefined<8>' are errors
         assert_generic_type(tc, generic_tk, "the alias that names it");
 
-        // e.g. 'type text<size> = list<i8, size>'
         const generic_type_info& generic{
             tc.generics().get_type(generic_tk.text()),
         };
 
-        // e.g. '8' of '<8>', the '<', '8' and '>' go to 'alias_tks_'
         const generic_arg_tokens arg_tokens{parse_generic_args(tz, generic_tk)};
         alias_tks_.append_range(arg_tokens.list_tks);
 
-        // e.g. 'text<8, 9>' is an error, 'text' has one parameter
         assert_arg_count(generic_tk, generic, arg_tokens.arg_tks);
 
-        // an error here is in the alias itself, so it gets no frame
-        // e.g. 'size' is 8 for 'text<8>'
+        // step 1, an error here is in the alias itself, so it gets no frame
         std::vector<generic_arg> args{
             resolve_generic_args(tc, generic_tk.text(), generic.params,
                                  arg_tokens.arg_tks),
         };
 
-        // an error in the generic code names the alias
-        // e.g. 'type str = text<8>' at 'str'
+        // an error in the generic code names the alias, e.g. 'type str =
+        // text<8>' at 'str'
         const generic_frame alias_frame{
             .src_loc_tk{name_tk_},
             .text{
@@ -426,7 +419,7 @@ class stmt_def_type_alias final : public statement {
             },
         };
 
-        // e.g. 'text<8>' then its base 'list<i8, 8>'
+        // step 2, the instance then its bases
         std::vector<generic_type_instance> instances{
             {
                 .generic_name{generic_tk.text()},
@@ -437,27 +430,23 @@ class stmt_def_type_alias final : public statement {
         };
 
         try {
-            // e.g. 'text' has the base 'list', 'list' has none
             while (has_base(tc, instances.back())) {
                 instances.push_back(base_instance(tc, instances.back()));
             }
 
-            // e.g. 'str' gets 'array i8[8]' and 'len' of 'list<i8, 8>'
+            // step 3
             parse_root_fields(tc, instances.back());
         } catch (compiler_exception& e) {
-            // e.g. an error in 'list' gets the frames 'list<i8, 8>' and
-            // 'type str = text<8>'
+            // the frames name the instances that led to the error, the alias
+            // last
             instances.back().add_frames_to(e);
             throw;
         }
 
-        // e.g. 'str' with the fields of 'list<i8, 8>'
+        // step 4, the methods of each generic type see the arguments of its
+        // instance, the methods of a base are made first
         tc.add_type(name_tk_, type_);
 
-        // the methods of each generic type see the arguments of its instance,
-        // the methods of a base are made first
-        //
-        // e.g. the methods of 'list<i8, 8>' then of 'text<8>' for 'str'
         for (const generic_type_instance& instance :
              instances | std::views::reverse) {
 
@@ -478,31 +467,24 @@ class stmt_def_type_alias final : public statement {
             tc.generics().get_type(instance.generic_name),
         };
 
-        // e.g. 'T' names the type 'i8' and 'capacity' is the constant 8 until
-        // the return
+        // the parameters name the arguments until the return
         generic_scope scope{tc};
         scope.add_args(instance.args);
 
-        // e.g. reads from the 'list' after 'type' of the generic definition
         tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
 
-        // skips the name and the parameters of the generic definition
-        // e.g. 'list' and '<T type, capacity>'
+        // the name and the parameters, e.g. 'list' and '<T type, capacity>'
         std::ignore = generic_tz.next_token();
         std::ignore = generic_param::parse(generic_tz);
 
-        // e.g. the '{' before 'array T[capacity], len }'
         const token open_brace_tk{generic_tz.is_next_char_token('{')};
 
         // note: 'define_generic' checked the '{' of a generic without a base
         assert(not open_brace_tk.is_empty());
 
         // only read to fill 'type_', not printed by 'source_to'
-        // e.g. 'array T[capacity]' and 'len'
         type_fields fields;
         fields.parse(tc, generic_tz, open_brace_tk, name_tk_);
-
-        // e.g. 'array' is 'i8[8]' because 'T' and 'capacity' are declared
         fields.add_to(tc, type_, name_tk_);
     }
 
@@ -519,10 +501,8 @@ class stmt_def_type_alias final : public statement {
             tc.generics().get_type(instance.generic_name),
         };
 
-        // e.g. 'list' of 'list<i8, size>'
         const token& base_tk{generic.base_tk};
 
-        // e.g. 'T' is 'i8' and 'capacity' is 8
         std::vector<generic_arg> base_args{
             resolve_base_args(tc, generic, instance.args),
         };
@@ -564,16 +544,13 @@ class stmt_def_type_alias final : public statement {
                       const std::span<const generic_arg> args)
         -> std::vector<generic_arg> {
 
-        // e.g. 'size' is the constant 8 until the return
         generic_scope scope{tc};
         scope.add_args(args);
 
-        // e.g. 'type list<T type, capacity> { array T[capacity], len }'
         const generic_type_info& base{
             tc.generics().get_type(generic.base_tk.text()),
         };
 
-        // e.g. 'T' with 'i8' and 'capacity' with 'size' that is 8
         return resolve_generic_args(tc, generic.base_tk.text(), base.params,
                                     generic.base_arg_tks);
     }

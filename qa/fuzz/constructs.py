@@ -348,7 +348,7 @@ CONSTRUCTS = [
         options=("--checks=upper,lower,line",), gate=False),
     Construct("alias-ok", r"\w+ = \w+\(\w+\)", program(
         "var x = 5\nvar y = add_to_zero(x)\nassert(y == 5)\n"
-        "var p = point{1, 2}\np = point{2, 1}\nassert(p.x == 2 and p.y == 1)",
+        "var p = point{1, 2}\np = {2, 1}\nassert(p.x == 2 and p.y == 1)",
         "type point {x, y}\nfunc add_to_zero(v) res {\nres = 0\nres = res + v\n"
         "}\n")),
     Construct("main", r"^func main\(\)", "func main() {\n}\n"),
@@ -380,8 +380,8 @@ REJECTED = [
     Rejected("reject-alias", r"\w+ = \w+\(\w+\)", program(
         "var x = 5\nx = add_to_zero(x) # error",
         "func add_to_zero(v) res {\nres = 0\nres = res + v\n}\n")),
-    Rejected("reject-record-self-read", r"\w+\{\w+\.\w+", program(
-        "var p = point{1, 2}\np = point{p.y, p.x} # error",
+    Rejected("reject-record-self-read", r"= \{\w+\.\w+", program(
+        "var p = point{1, 2}\np = {p.y, p.x} # error",
         "type point {x, y}\n")),
     Rejected("reject-literal-range", r"\d{9,}", program(
         "var m = -9223372036854775808 # error")),

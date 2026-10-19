@@ -1,0 +1,8 @@
+# a negative index fails the bounds check with both bounds enabled, the
+# handler without a line prints only its message
+
+func main() {
+    var arr = i8[4]{}
+    var index = -1
+    arr[index] = 1
+}

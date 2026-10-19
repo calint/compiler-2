@@ -1,0 +1,40 @@
+# '==', 'arrays_equal' and 'array_copy' on arrays of records: indexed starts,
+# overlapping and empty ranges and a count from a call that copies too
+
+func assert(ok bool) { if not ok exit(1) }
+type packed { first i8, second i16 }
+func nested(source packed[], destination mut packed[]) count {
+    array_copy(source, destination, 1)
+    count = 2
+}
+func main() {
+    var source = packed[3]{{1, 300}, {2, -400}, {3, 500}}
+    var destination = packed[3]{}
+    var single = source[1]
+    assert(single == source[1])
+    single.second = 12
+    assert(single != source[1])
+    let count = nested(source, destination)
+    array_copy(source, destination, count)
+    assert(arrays_equal(source, destination, 2))
+    assert(not arrays_equal(source, destination, 3))
+    var index = i32(2)
+    array_copy(source[index], destination[index], 1)
+    assert(arrays_equal(source[index], destination[index], 1))
+    destination[index].second = 501
+    assert(not arrays_equal(source[index], destination[index], 1))
+    destination[index].second = 500
+    assert(source == destination)
+    array_copy(source, destination, 0)
+    assert(arrays_equal(source, destination, 0))
+    array_copy(source, source, 3)
+    assert(source == destination)
+    array_copy(destination[1], destination, 2)
+    assert(destination[0] == source[1])
+    assert(destination[1] == source[2])
+    destination[0].first = 7
+    assert(not arrays_equal(source[1], destination, 1))
+    destination[0] = source[1]
+    destination[0].second = 10
+    assert(not arrays_equal(source[1], destination, 1))
+}

@@ -203,7 +203,7 @@ class Generator:
                 self.emit(f"array_copy(arr, dst, {text} & 3)")
                 self.mix("dst[0] + dst[1] + dst[2] + dst[3]",
                          sum(arr[:n]))
-                self.emit("dst = [4]")
+                self.emit("dst = {}")
             else:
                 self.mix(f"({text} + a) * 2 - ({text} ^ b)",
                          (v + 3) * 2 - (v ^ 5))
