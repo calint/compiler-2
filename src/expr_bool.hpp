@@ -259,14 +259,13 @@ class expr_bool_op final : public statement {
                                  const machine::comparison_action& action) const
         -> void {
 
-        machine& x{tc.machine()};
-
-        // branch on the stored result using 'action.branch_on_true'
         machine::comparison_action branch_action{action};
 
         // 'compile_boolean' already stored the result and applied inversion
         branch_action.destination = {};
         branch_action.inverted = false;
+
+        machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, action.destination,
                              operand::imm(0, tc.builtins().default_type()),
@@ -479,20 +478,11 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        // if not expression, then it is a single statement and identifier is
-        // valid
+        // a boolean value is read in place, a variable is tested
         const std::string_view id{lhs_.name_or_literal()};
 
-        // a boolean value is not an expression
-        if (id == reserved_names::true_value or
-            id == reserved_names::false_value) {
-
-            is_expression_ = false;
-            return;
-        }
-
-        // not a boolean value thus a variable
-        is_expression_ = true;
+        is_expression_ = id != reserved_names::true_value and
+                         id != reserved_names::false_value;
     }
 
     // the bytes are compared and the result is branched on as for a shorthand
@@ -505,7 +495,6 @@ class expr_bool_op final : public statement {
         const statement& rhs{rhs_.identifier_statement()};
 
         const bool is_not_equal{op_ == machine::comparison_operator::not_equal};
-        machine& x{tc.machine()};
 
         if (not action.destination.is_empty()) {
             compile_memory_equality(tc, indent + 1, tok(), lhs, rhs,
@@ -518,6 +507,8 @@ class expr_bool_op final : public statement {
 
             return;
         }
+
+        machine& x{tc.machine()};
 
         const operand result{
             x.alloc_scratch_register(tok(), indent, tc.builtins().boolean()),
@@ -1029,7 +1020,6 @@ class expr_bool final : public statement {
 
     // assumes callers only query this when expression status is relevant
     [[nodiscard]] auto is_expression() const -> bool override {
-        // more than one bool in the list is an expression
         if (bools_.size() > 1) {
             return true;
         }
@@ -1040,8 +1030,6 @@ class expr_bool final : public statement {
         }
 
         assert(not bools_.empty());
-
-        // 1 expression in the list
 
         return bools_.at(0).visit(
             [](const auto& e) -> bool { return e.is_expression(); });

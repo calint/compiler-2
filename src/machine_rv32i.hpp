@@ -2064,9 +2064,6 @@ class machine_rv32i : public machine {
         copy_value(src_loc_tk, indent, dst, kept);
     }
 
-    // a distance from the source to the destination that is not zero and below
-    // the byte count jumps to the failure handler, the copy would overwrite
-    // source bytes it has not read yet, the line is passed in 'a0'
     // the sector is in a0 where 'read' has the descriptor, there is no result
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
                              const operand& sector, const operand& address,
@@ -2081,6 +2078,9 @@ class machine_rv32i : public machine {
         free_named_register(src_loc_tk, indent, call_register);
     }
 
+    // a distance from the source to the destination that is not zero and below
+    // the byte count jumps to the failure handler, the copy would overwrite
+    // source bytes it has not read yet, the line is passed in 'a0'
     auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
                             const operand& src, const operand& dst,
                             const operand& count_bytes,
@@ -2239,6 +2239,12 @@ class machine_rv32i : public machine {
             .reference{"2f"},
         };
 
+        // the product of a narrow width also fits the width
+        constexpr local_label fits_width{
+            .name{"1"},
+            .reference{"1f"},
+        };
+
         comment(src_loc_tk, indent, "overflow check begin");
 
         assembler_.beqz(indent, "a1", fits.reference);
@@ -2252,9 +2258,9 @@ class machine_rv32i : public machine {
 
             assembler_.slli(indent, "a1", "a0", shift);
             assembler_.srai(indent, "a1", "a1", shift);
-            assembler_.beq(indent, "a1", "a0", "1f");
+            assembler_.beq(indent, "a1", "a0", fits_width.reference);
             fail_on_overflow(src_loc_tk, indent, check);
-            assembler_.label(indent, "1");
+            assembler_.label(indent, fits_width.name);
         }
 
         comment(src_loc_tk, indent, "overflow check end");
@@ -3720,9 +3726,6 @@ class machine_rv32i : public machine {
         assembler_.switch_section(section::text);
     }
 
-    // the result replaces the value in 'loaded', a partial sum goes through a
-    // scratch register
-    //   x * 10  =>  t = x << 2; x = t + x; x = x << 1
     // opens the image file at the first transfer and keeps its descriptor and
     // sector count in '.Lbaz_sd_card', a sector past the end, a failed open or
     // a short transfer panics
@@ -3830,6 +3833,9 @@ class machine_rv32i : public machine {
         a.switch_section(section::text);
     }
 
+    // the result replaces the value in 'loaded', a partial sum goes through a
+    // scratch register
+    //   x * 10  =>  t = x << 2; x = t + x; x = x << 1
     auto emit_shift_add_sequence(const token& src_loc_tk, const size_t indent,
                                  const loaded_destination& loaded,
                                  const digit_sequence& sequence) -> void {
@@ -5788,12 +5794,7 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_scalar(src_loc_tk, src.type_ref());
-
-        assert(dst.is_register() or dst.is_memory());
-
-        if (dst.is_memory()) {
-            validate_address(src_loc_tk, dst);
-        }
+        validate_destination_storage(src_loc_tk, dst);
 
         if (src.is_memory()) {
             validate_address(src_loc_tk, src);

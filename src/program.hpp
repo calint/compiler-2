@@ -134,8 +134,7 @@ class report_renderer final {
     }
 
     [[nodiscard]] static auto
-    noinline_report(const ::machine::output_statistics& stats)
-        -> report_section {
+    noinline_report(const machine::output_statistics& stats) -> report_section {
 
         report_section section{
             .title{"noinline functions"},
@@ -160,7 +159,7 @@ class report_renderer final {
     }
 
     [[nodiscard]] static auto
-    optimization_report(const ::machine::output_statistics& stats)
+    optimization_report(const machine::output_statistics& stats)
         -> report_section {
 
         const assembler::optimization_counts& o{stats.optimizations};

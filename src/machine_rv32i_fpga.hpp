@@ -64,7 +64,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     // the fpga has no console, a panic exits with the code of its failure,
     // which lights a diode, and the exit routine loops, 'a0' holds the line of
-    // a bounds or division failure and is dropped
+    // a failure under '--checks=line' and is dropped
     auto emit_bounds_failure_handler([[maybe_unused]] const bool with_line)
         -> void override {
 
@@ -243,13 +243,13 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     //
 
     // the card is busy while it starts up and while it transfers a sector,
-    // 'local_label' is a numeric label of the routine
+    // 'label_name' is a numeric label of the routine
     static auto emit_wait_while_busy(assembler_rv32i& a,
-                                     const std::string_view local_label)
+                                     const std::string_view label_name)
         -> void {
 
-        a.label(0, local_label);
+        a.label(0, label_name);
         a.lw(1, "a4", sd_busy_offset_, "zero");
-        a.bnez(1, "a4", std::format("{}b", local_label));
+        a.bnez(1, "a4", std::format("{}b", label_name));
     }
 };

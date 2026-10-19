@@ -1391,21 +1391,18 @@ class storage_layout final {
 
         const size_t frame_alignment{machine_.get().address_size_bytes()};
 
-        size_t local_size_bytes{};
-        for (const frame& frm : scopes_.get().frames() | std::views::reverse) {
-            local_size_bytes = sum_storage_size(
-                local_size_bytes, frm.allocated_stack_size_bytes());
+        const storage_location location{find_storage_location(var_kind::var)};
 
-            if (not frm.storage_base_register().empty()) {
-                return operand::mem(frm.storage_base_register(), {}, 1,
-                                    address_offset(align_storage_size(
-                                        local_size_bytes, frame_alignment)),
-                                    address_type);
-            }
+        if (location.storage_frame) {
+            return operand::mem(location.storage_frame->storage_base_register(),
+                                {}, 1,
+                                address_offset(align_storage_size(
+                                    location.base_offset, frame_alignment)),
+                                address_type);
         }
 
         const size_t root_size_bytes{
-            sum_storage_size(vars_size_bytes_,
+            sum_storage_size(location.base_offset,
                              entry_gap_applied_ ? 0 : data_.get().entry_gap()),
         };
 
@@ -1424,13 +1421,14 @@ class storage_layout final {
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        for (const frame& frm : scopes_.get().frames() | std::views::reverse) {
-            if (not frm.storage_base_register().empty()) {
-                return frm.peak_storage_size_bytes();
-            }
-        }
+        const frame* const storage_frame{
+            find_storage_location(var_kind::var).storage_frame,
+        };
 
-        std::unreachable();
+        // note: asked inside a noinline body, which has a storage base
+        assert(storage_frame != nullptr);
+
+        return storage_frame->peak_storage_size_bytes();
     }
 
     // the root frame applies the dat var gap again when it is entered anew
@@ -1510,7 +1508,7 @@ class storage_layout final {
     // a local starts after the storage in use of the nearest frame with its own
     // storage base and of the frames inside it, other variables and dats start
     // at the variables base
-    [[nodiscard]] auto find_storage_location(const var_kind kind)
+    [[nodiscard]] auto find_storage_location(const var_kind kind) const
         -> storage_location {
 
         if (kind == var_kind::dat) {

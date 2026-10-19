@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <functional>
 #include <limits>
 #include <ranges>
 #include <span>
@@ -288,32 +289,16 @@ class assembler_x86_64 final : public assembler {
     auto repeated_data(const size_t element_size_bytes, const size_t count,
                        const int64_t value) -> void {
 
-        // nasm rejects a count above the signed 32-bit range
-        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
-
-        size_t remaining{count};
-        while (remaining > max_chunk) {
-            add_text(std::format("times {} {} {}", max_chunk,
+        for_each_chunk(count, [&](const size_t chunk) -> void {
+            add_text(std::format("times {} {} {}", chunk,
                                  data_directive(element_size_bytes), value));
-
-            remaining -= max_chunk;
-        }
-
-        add_text(std::format("times {} {} {}", remaining,
-                             data_directive(element_size_bytes), value));
+        });
     }
 
-    // nasm rejects a single reservation above the signed 32-bit range
     auto reserve(const size_t size_bytes) -> void {
-        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
-
-        size_t remaining{size_bytes};
-        while (remaining > max_chunk) {
-            add_text(std::format("resb {}", max_chunk));
-            remaining -= max_chunk;
-        }
-
-        add_text(std::format("resb {}", remaining));
+        for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
+            add_text(std::format("resb {}", chunk));
+        });
     }
 
     auto setcc(const size_t indent, const condition cc, const argument& dst)
@@ -568,6 +553,23 @@ class assembler_x86_64 final : public assembler {
         default:
             std::unreachable();
         }
+    }
+
+    // nasm rejects a count above the signed 32-bit range in 'times' and 'resb',
+    // a larger one is emitted in parts, the last one with the rest
+    static auto for_each_chunk(const size_t count,
+                               const std::function_ref<void(size_t)> emit)
+        -> void {
+
+        constexpr size_t max_chunk{std::numeric_limits<int32_t>::max()};
+
+        size_t remaining{count};
+        while (remaining > max_chunk) {
+            emit(max_chunk);
+            remaining -= max_chunk;
+        }
+
+        emit(remaining);
     }
 
     // the table is inside a function because 'op_info' default member

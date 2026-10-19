@@ -513,10 +513,12 @@ class tokenizer final {
     }
 
     // skips a token, or the character of a delimiter, which has an empty token
-    // text
+    // text; an empty string has an empty text too but is a token
     // e.g. 'ab+c' skips 'ab', then '+', then 'c'
     auto skip_token() -> void {
-        if (next_token().text().empty() and not is_eos()) {
+        const token tk{next_token()};
+
+        if (tk.text().empty() and not tk.is_string() and not is_eos()) {
             skip_char();
         }
     }

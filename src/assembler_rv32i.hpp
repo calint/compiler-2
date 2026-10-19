@@ -30,6 +30,9 @@
 // buffers rv32i output until every label has an offset, then grows the jumps
 // that cannot reach their targets, writes the assembly source and, from the
 // same structured lines, a flat binary image
+//
+// registers are passed by name, as backend operands hold them, and the
+// encoded fields follow the instruction formats of the rv32i specification
 
 class assembler_rv32i final : public assembler {
   public:
@@ -748,8 +751,6 @@ class assembler_rv32i final : public assembler {
 
         immediate_op(indent, op::ori, rd, rs1, std::move(value));
     }
-
-    // note: registers are passed by name, as backend operands hold them
 
     auto register_op(const size_t indent, const op code,
                      const std::string_view rd, const std::string_view rs1,
@@ -2167,8 +2168,6 @@ class assembler_rv32i final : public assembler {
             encode_immediate(second_encoding, rd, base, lower_part(distance)),
         };
     }
-
-    // note: fields follow the instruction formats of the rv32i specification
 
     [[nodiscard]] static auto register_fields(const uint8_t rd,
                                               const uint8_t rs1,

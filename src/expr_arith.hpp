@@ -256,7 +256,7 @@ class expr_arith final : public expression {
         // function, writing it early would change what later elements read
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (dst.is_register() and destination_is_clobbered_before_read(dst)) {
-            compile_through_scratch_register(tc, indent, dst);
+            compile_through_scratch_as(tc, indent, dst, dst.type_ref());
             return;
         }
 
@@ -708,12 +708,7 @@ class expr_arith final : public expression {
         // that changes nothing must still not reach the backend
         const bool is_checked_constant{
             tc.checks().overflow and s.value.has_value() and
-                (s.op == arithmetic_operator::add or
-                 s.op == arithmetic_operator::subtract or
-                 s.op == arithmetic_operator::multiply or
-                 s.op == arithmetic_operator::bit_and or
-                 s.op == arithmetic_operator::bit_or or
-                 s.op == arithmetic_operator::bit_xor),
+                is_commutative(s.op),
         };
 
         if (s.value and (s.element == nullptr or is_checked_constant)) {
@@ -766,24 +761,6 @@ class expr_arith final : public expression {
 
         x.copy_value(tok(), indent, dst.operand(), reg);
 
-        x.free_scratch_register(tok(), indent, reg);
-    }
-
-    // the register destination keeps its value until the whole expression is
-    // computed in another register
-    auto compile_through_scratch_register(toc& tc, const size_t indent,
-                                          const destination& dst) const
-        -> void {
-
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register(tok(), indent, dst.type_ref()),
-        };
-
-        do_compile(tc, indent, destination::of_register(reg));
-
-        x.copy_value(tok(), indent, dst.operand(), reg);
         x.free_scratch_register(tok(), indent, reg);
     }
 
@@ -1102,7 +1079,7 @@ class expr_arith final : public expression {
 
         // a negated operand is computed at the width of the destination so
         // the overflow check sees it
-        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
+        emit_with_source(tc, indent, src, dst.type_ref(),
                          [&](const operand& term, const bool) -> void {
                              x.add_subtract(src.tok(), indent, op,
                                             dst.operand(), term,
@@ -1119,7 +1096,7 @@ class expr_arith final : public expression {
 
         // a negated operand is computed at the width of the destination so
         // the overflow check sees it
-        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
+        emit_with_source(tc, indent, src, dst.type_ref(),
                          [&](const operand& value, const bool) -> void {
                              x.bitwise(src.tok(), indent, op, dst.operand(),
                                        value);
@@ -1132,7 +1109,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
+        emit_with_source(tc, indent, src, dst.type_ref(),
                          [&](const operand& divisor, const bool) -> void {
                              x.divide(src.tok(), indent, op, dst.operand(),
                                       divisor, tc.checks().division_options());
@@ -1159,7 +1136,7 @@ class expr_arith final : public expression {
 
         // a scratch register factor can be overwritten by the backend
         emit_with_source(
-            tc, indent, src, dst.type_ref(), dst.type_ref(),
+            tc, indent, src, dst.type_ref(),
             [&](const operand& factor, const bool is_scratch) -> void {
                 x.multiply(src.tok(), indent, dst.operand(), factor, is_scratch,
                            tc.checks().overflow_options());
@@ -1173,7 +1150,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
+        emit_with_source(tc, indent, src, dst.type_ref(),
                          [&](const operand& count, const bool) -> void {
                              x.shift(src.tok(), indent, op, dst.operand(),
                                      count, tc.checks().shift_options());
@@ -1250,7 +1227,7 @@ class expr_arith final : public expression {
     // operation and frees the registers that producing the operand needed
     static auto emit_with_source(
         toc& tc, const size_t indent, const statement& src,
-        const type& expression_type, const type& unary_type,
+        const type& operand_type,
         const std::function_ref<void(const operand&, bool is_scratch)> emit)
         -> void {
 
@@ -1259,7 +1236,7 @@ class expr_arith final : public expression {
         if (src.is_expression()) {
             // e.g. 'a / (1 + 1)'
             const std::optional<int64_t> value{
-                src.folded_constant(tc, expression_type),
+                src.folded_constant(tc, operand_type),
             };
 
             if (value) {
@@ -1274,7 +1251,7 @@ class expr_arith final : public expression {
             x.comment(src.tok(), indent, "src: expression");
 
             const operand reg{
-                compile_to_scratch(tc, indent, src, expression_type),
+                compile_to_scratch(tc, indent, src, operand_type),
             };
 
             emit(reg, true);
@@ -1307,7 +1284,8 @@ class expr_arith final : public expression {
         x.comment(src.tok(), indent, "src: operand with unary ops");
 
         const operand reg{
-            compile_unary_to_scratch(tc, indent, src, src_operand, unary_type),
+            compile_unary_to_scratch(tc, indent, src, src_operand,
+                                     operand_type),
         };
 
         emit(reg, true);

@@ -770,7 +770,7 @@ class machine_x86_64 final : public machine {
 
         // one stub per line sets rbp and enters the handler
         for (const size_t line : bounds_panic_lines_) {
-            assembler_.label(0, bounds_panic_label(line));
+            assembler_.label(0, line_panic_label("bounds", line));
             assembler_.instruction(1, op::mov, "rbp", line);
             assembler_.jmp(1, bounds_failure_handler_label);
         }
@@ -924,8 +924,8 @@ class machine_x86_64 final : public machine {
         syscall(indent);
     }
 
-    // asserts register pools are balanced and prints usage stats; called
-    // once at the end of the compile pass
+    // releases the variables base, optimizes the jumps and asserts that the
+    // registers are balanced; called once at the end of the compile pass
     auto finish() -> void override {
         // reserved by 'start', not set in backend testing mode
         if (variables_base_reserved_) {
@@ -1632,7 +1632,9 @@ class machine_x86_64 final : public machine {
                             const overflow_check_options& check) -> void {
 
         assembler_.jcc(indent, condition::o,
-                       overflow_failure_label(src_loc_tk, check));
+                       failure_label("overflow", overflow_panic_lines_,
+                                     overflow_failure_handler_label, src_loc_tk,
+                                     check.with_line));
     }
 
     // a reported line goes through the stub of its line, which sets rbp for
@@ -1646,7 +1648,7 @@ class machine_x86_64 final : public machine {
         }
 
         bounds_panic_lines_.insert(*line);
-        assembler_.jcc(indent, failed, bounds_panic_label(*line));
+        assembler_.jcc(indent, failed, line_panic_label("bounds", *line));
     }
 
     // returns the cached built-in type (i64/i32/i16/i8) matching 'size'
@@ -1671,8 +1673,6 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    // 'left' holds the product of two bytes in a register of the default
-    // width, which fits when the low byte sign extended is the same value
     // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
     // arguments, the allocated ones are saved around the call
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
@@ -1702,6 +1702,8 @@ class machine_x86_64 final : public machine {
                              [&] -> void { assembler_.call(indent, label); });
     }
 
+    // 'left' holds the product of two bytes in a register of the default
+    // width, which fits when the low byte sign extended is the same value
     auto check_byte_product(const token& src_loc_tk, const size_t indent,
                             const operand& left, const operand& right,
                             const overflow_check_options& check) -> void {
@@ -1714,7 +1716,9 @@ class machine_x86_64 final : public machine {
         cmp(src_loc_tk, indent, right, left);
 
         assembler_.jcc(indent, condition::ne,
-                       overflow_failure_label(src_loc_tk, check));
+                       failure_label("overflow", overflow_panic_lines_,
+                                     overflow_failure_handler_label, src_loc_tk,
+                                     check.with_line));
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
@@ -1726,14 +1730,11 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "overlap check begin");
 
-        const std::string failure_label{
-            check.with_line ? line_panic_label("overlap", src_loc_tk.at_line())
-                            : std::string{overlap_failure_handler_label},
+        const std::string failed{
+            failure_label("overlap", overlap_panic_lines_,
+                          overlap_failure_handler_label, src_loc_tk,
+                          check.with_line),
         };
-
-        if (check.with_line) {
-            overlap_panic_lines_.insert(src_loc_tk.at_line());
-        }
 
         const std::string passed{
             std::format(".Lbaz_overlap.{}", overlap_label_count_++),
@@ -1753,7 +1754,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "destination starts inside the source");
 
         cmp(src_loc_tk, indent, distance, qword_register("rcx"));
-        assembler_.jcc(indent, condition::b, failure_label);
+        assembler_.jcc(indent, condition::b, failed);
         assembler_.label(indent, passed);
         free_scratch_register(src_loc_tk, indent, distance);
 
@@ -1776,19 +1777,16 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "division check begin");
 
-        const std::string failure_label{
-            with_line ? line_panic_label("division", src_loc_tk.at_line())
-                      : std::string{division_failure_handler_label},
+        const std::string failed{
+            failure_label("division", division_panic_lines_,
+                          division_failure_handler_label, src_loc_tk,
+                          with_line),
         };
-
-        if (with_line) {
-            division_panic_lines_.insert(src_loc_tk.at_line());
-        }
 
         comment(src_loc_tk, indent, "zero divisor");
 
         cmp(src_loc_tk, indent, divisor, immediate(0));
-        assembler_.jcc(indent, condition::e, failure_label);
+        assembler_.jcc(indent, condition::e, failed);
 
         comment(src_loc_tk, indent, "minimum divided by -1 overflows");
 
@@ -1796,7 +1794,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(indent, condition::ne, not_minimum);
         mov(src_loc_tk, indent, qword_register("rdx"), immediate(minimum));
         cmp(src_loc_tk, indent, qword_register("rax"), qword_register("rdx"));
-        assembler_.jcc(indent, condition::e, failure_label);
+        assembler_.jcc(indent, condition::e, failed);
         assembler_.label(indent, not_minimum);
 
         comment(src_loc_tk, indent, "division check end");
@@ -1810,19 +1808,16 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "shift check begin");
 
-        const std::string failure_label{
-            check.with_line ? line_panic_label("shift", src_loc_tk.at_line())
-                            : std::string{shift_failure_handler_label},
+        const std::string failed{
+            failure_label("shift", shift_panic_lines_,
+                          shift_failure_handler_label, src_loc_tk,
+                          check.with_line),
         };
-
-        if (check.with_line) {
-            shift_panic_lines_.insert(src_loc_tk.at_line());
-        }
 
         cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
             immediate(static_cast<int64_t>(dst_type.size_bits())));
 
-        assembler_.jcc(indent, condition::ae, failure_label);
+        assembler_.jcc(indent, condition::ae, failed);
 
         comment(src_loc_tk, indent, "shift check end");
     }
@@ -2579,20 +2574,6 @@ class machine_x86_64 final : public machine {
         emit_unary(src_loc_tk, indent, op::not_op, value);
     }
 
-    // the handler to jump to, one stub per line reports the line
-    [[nodiscard]] auto
-    overflow_failure_label(const token& src_loc_tk,
-                           const overflow_check_options& check) -> std::string {
-
-        if (not check.with_line) {
-            return std::string{overflow_failure_handler_label};
-        }
-
-        overflow_panic_lines_.insert(src_loc_tk.at_line());
-
-        return line_panic_label("overflow", src_loc_tk.at_line());
-    }
-
     auto pop(const size_t indent, const operand& dst) -> void {
         assert(dst.is_register() and dst.type_ref().size_bytes() == size_qword);
 
@@ -2898,12 +2879,6 @@ class machine_x86_64 final : public machine {
     // statics
     //
 
-    [[nodiscard]] static auto bounds_panic_label(const size_t line)
-        -> std::string {
-
-        return std::format("baz_bounds_line_{}", line);
-    }
-
     [[nodiscard]] static auto
     condition_for_comparison(const comparison_operator comparison,
                              const bool inverted) -> condition {
@@ -2935,6 +2910,22 @@ class machine_x86_64 final : public machine {
         assert(holds == comparison_operator::greater_equal);
 
         return condition::ge;
+    }
+
+    // the handler 'handler_label' to jump to, or with the line the stub of
+    // the line, which 'panic_lines' records so the handler emits it
+    [[nodiscard]] static auto
+    failure_label(const std::string_view name, std::set<size_t>& panic_lines,
+                  const std::string_view handler_label, const token& src_loc_tk,
+                  const bool with_line) -> std::string {
+
+        if (not with_line) {
+            return std::string{handler_label};
+        }
+
+        panic_lines.insert(src_loc_tk.at_line());
+
+        return line_panic_label(name, src_loc_tk.at_line());
     }
 
     [[nodiscard]] static auto line_panic_label(const std::string_view name,

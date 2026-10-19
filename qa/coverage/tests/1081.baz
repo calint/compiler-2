@@ -1,0 +1,12 @@
+# an empty string right before the '}' that ends a generic body does not hide
+# that '}' from the skip of the generic text
+
+func first<T type>(x T) res T {
+    res = x
+    var a = i8[4]
+    a = ""}
+
+func main() {
+    var x = first<int>(7)
+    exit(x)
+}

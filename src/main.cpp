@@ -155,6 +155,14 @@ auto print_call_frames(const source_files& files,
                        std::span<const compiler_exception::call_frame> frames)
     -> void;
 
+// a line of the source, 'begin' is the index of its first character
+struct source_line {
+    size_t begin;
+    std::string_view text;
+};
+
+[[nodiscard]] auto line_at(std::string_view src, size_t index) -> source_line;
+
 auto trimmed_line_at(std::string_view src, size_t index) -> std::string_view;
 
 auto print_source_error(const source_files& files, const size_t file_ix,
@@ -225,6 +233,24 @@ template <typename T>
     destination = *parsed;
 
     return true;
+}
+
+// the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
+template <typename Name, size_t count>
+[[nodiscard]] auto joined_texts(const std::array<Name, count>& names)
+    -> std::string {
+
+    std::string texts;
+
+    for (const Name& name : names) {
+        if (not texts.empty()) {
+            texts += ", ";
+        }
+
+        texts += name.text;
+    }
+
+    return texts;
 }
 
 [[nodiscard]] auto parse_option(const char* const argument, options& opts)
@@ -643,17 +669,7 @@ constexpr std::array<check_name, 10> check_names{
 
 // e.g. 'upper, lower, line'
 [[nodiscard]] auto check_texts() -> std::string {
-    std::string texts;
-
-    for (const check_name& name : check_names) {
-        if (not texts.empty()) {
-            texts += ", ";
-        }
-
-        texts += name.text;
-    }
-
-    return texts;
+    return joined_texts(check_names);
 }
 
 // each '--checks' replaces the earlier ones, empty parts are ignored, 'alias'
@@ -742,17 +758,7 @@ constexpr std::array<check_name, 10> check_names{
 
 // e.g. 'x86_64, rv32i, rv32i-qemu, rv32i-fpga'
 [[nodiscard]] auto supported_target_texts() -> std::string {
-    std::string texts;
-
-    for (const target_name& name : target_names) {
-        if (not texts.empty()) {
-            texts += ", ";
-        }
-
-        texts += name.text;
-    }
-
-    return texts;
+    return joined_texts(target_names);
 }
 
 // keeps the directory so the image lands next to its source
@@ -825,17 +831,35 @@ auto print_call_frames(
     }
 }
 
+// the line of the character at 'index' without its line end, the character can
+// be the line end itself
+[[nodiscard]] auto line_at(const std::string_view src, const size_t index)
+    -> source_line {
+
+    const size_t before_index{
+        index == 0 ? std::string_view::npos : src.rfind('\n', index - 1),
+    };
+
+    const size_t begin{
+        before_index == std::string_view::npos ? 0 : before_index + 1,
+    };
+    // note: +1 because the line starts after the line end
+
+    const size_t end{std::min(src.find('\n', index), src.size())};
+
+    return {
+        .begin{begin},
+        .text{src.substr(begin, end - begin)},
+    };
+}
+
 // the line of the character at 'index' without its surrounding whitespace
 auto trimmed_line_at(const std::string_view src, const size_t index)
     -> std::string_view {
 
     constexpr std::string_view whitespace{" \t\r"};
 
-    const size_t line_start{src.rfind('\n', index) + 1};
-    // note: +1 because the line starts after the newline, npos + 1 is 0
-
-    const size_t line_end{std::min(src.find('\n', index), src.size())};
-    const std::string_view line{src.substr(line_start, line_end - line_start)};
+    const std::string_view line{line_at(src, index).text};
 
     const size_t first{line.find_first_not_of(whitespace)};
 
@@ -887,20 +911,9 @@ auto print_source_line(const std::string_view src, const size_t start_index,
         return;
     }
 
-    // note: the character at 'start_index' can be the line end
-    const size_t before_start{
-        start_index == 0 ? std::string_view::npos
-                         : src.rfind('\n', start_index - 1),
-    };
-
-    const size_t line_bgn{
-        before_start == std::string_view::npos ? 0 : before_start + 1,
-    };
-    // note: +1 because the line starts after the line end
-
-    const size_t line_end{std::min(src.find('\n', start_index), src.size())};
-
-    std::string_view line{src.substr(line_bgn, line_end - line_bgn)};
+    const source_line located{line_at(src, start_index)};
+    const size_t line_bgn{located.begin};
+    std::string_view line{located.text};
 
     if (line.ends_with('\r')) {
         line.remove_suffix(1);

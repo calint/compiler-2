@@ -82,7 +82,7 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
 
 // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
 // the '<' as an operator
-static auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
+inline auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
                                                tokenizer& tz) -> void {
 
     // a variable of that name is an operand of '<'
@@ -100,7 +100,7 @@ static auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
 }
 
 // a call in an expression is a value, a function without a result has none
-static auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
+inline auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
     -> std::unique_ptr<statement> {
 
     if (call->get_type().is_same(tc.builtins().void_type())) {
@@ -120,7 +120,7 @@ struct call_or_identifier {
 // parses what follows the token 'tk' as a call of a function, a generic
 // function, a constructor or a method, otherwise as an identifier, 'uops' go to
 // the call and 'expected_type' is the type the call is assigned to or null
-static auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
+inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                      unary_ops uops,
                                      const type* const expected_type)
     -> call_or_identifier {
@@ -416,7 +416,7 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
         return;
     }
 
-    // identifier case: base statement already emitted token text
+    // the token of the base statement is the first one of the identifier
     if (stmt_ident_) {
         stmt_ident_->source_to(os);
         return;

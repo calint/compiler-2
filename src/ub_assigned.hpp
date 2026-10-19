@@ -156,11 +156,10 @@ struct assignment_flow {
         // the first break sets the coverage, later ones narrow it
         if (not at_breaks) {
             at_breaks = assigned;
-            end_path();
-            return;
+        } else {
+            at_breaks->intersect(assigned);
         }
 
-        at_breaks->intersect(assigned);
         end_path();
     }
 };

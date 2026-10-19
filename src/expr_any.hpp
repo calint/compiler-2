@@ -36,8 +36,8 @@ class expr_any final : public statement {
         using Ts::operator()...;
     };
 
-    std::vector<expr_variant> vars_;
-    std::vector<token> var_delims_tk_;
+    std::vector<expr_variant> elements_;
+    std::vector<token> element_delims_tk_;
     // e.g. 'i8[3]' in 'i8[3]{1, 2}'
     token element_type_tk_;
     token open_bracket_tk_;
@@ -64,7 +64,7 @@ class expr_any final : public statement {
 
         // the basic case, e.g. 'x + 1' or 'point{1, 2}'
         if (not is_array) {
-            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+            elements_.emplace_back(parse_variant(tc, tz, tp, in_args));
             return;
         }
 
@@ -106,7 +106,7 @@ class expr_any final : public statement {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
-            vars_.emplace_back(expr_type{tc, tz, tp, true});
+            elements_.emplace_back(expr_type{tc, tz, tp, true});
             is_identifier_ = true;
             return;
         }
@@ -118,7 +118,7 @@ class expr_any final : public statement {
     // a method receiver, the first argument of the call
     expr_any(const token pos_tk, expr_type receiver) : statement{pos_tk} {
         set_type(receiver.get_type());
-        vars_.emplace_back(std::move(receiver));
+        elements_.emplace_back(std::move(receiver));
     }
 
     expr_any() = default;
@@ -140,13 +140,13 @@ class expr_any final : public statement {
 
         open_brace_tk_.source_to(os);
 
-        if (not vars_.empty()) {
-            vars_.front().visit([&os](const auto& expression) -> void {
+        if (not elements_.empty()) {
+            elements_.front().visit([&os](const auto& expression) -> void {
                 expression.source_to(os);
             });
 
-            for (const auto [d, e] :
-                 std::views::zip(var_delims_tk_, vars_ | std::views::drop(1))) {
+            for (const auto [d, e] : std::views::zip(
+                     element_delims_tk_, elements_ | std::views::drop(1))) {
 
                 d.source_to(os);
 
@@ -172,7 +172,7 @@ class expr_any final : public statement {
 
         // the base case
         if (is_identifier_ or not is_array_) {
-            compile_variant(tc, indent, dst, tok(), vars_.at(0));
+            compile_variant(tc, indent, dst, tok(), elements_.at(0));
             return;
         }
 
@@ -181,14 +181,12 @@ class expr_any final : public statement {
             return;
         }
 
-        // assign array elements
-
         const size_t array_count{destination_array_count(dst)};
 
         // the parser could not check the size of an unsized destination
-        if (vars_.size() > array_count) {
+        if (elements_.size() > array_count) {
             throw compiler_exception{
-                vars_.at(array_count)
+                elements_.at(array_count)
                     .visit([](const auto& expression) -> const token& {
                         return expression.tok();
                     }),
@@ -204,7 +202,7 @@ class expr_any final : public statement {
 
         expr_type::zero_remaining_elements(tc, indent, tok(), after_elements,
                                            first.type_ref(),
-                                           array_count - vars_.size());
+                                           array_count - elements_.size());
     }
 
     [[nodiscard]] auto accessed_path() const
@@ -212,9 +210,9 @@ class expr_any final : public statement {
 
         // note: only identifier arguments ask, and those are never arrays
         assert(not is_array_);
-        assert(vars_.size() == 1);
+        assert(elements_.size() == 1);
 
-        return vars_.at(0).visit(
+        return elements_.at(0).visit(
             [](const auto& expression) -> std::optional<access_path> {
                 return expression.accessed_path();
             });
@@ -227,7 +225,7 @@ class expr_any final : public statement {
             return;
         }
 
-        vars_.at(0).visit([&](const auto& expression) -> void {
+        elements_.at(0).visit([&](const auto& expression) -> void {
             expression.assert_not_narrowed(tc, dst_type);
         });
     }
@@ -238,7 +236,7 @@ class expr_any final : public statement {
                                    const lea_request& request) const
         -> operand override {
 
-        return vars_.at(0).visit([&](const auto& expression) -> operand {
+        return elements_.at(0).visit([&](const auto& expression) -> operand {
             return expression.compile_lea(tc, indent, src_loc_tk,
                                           allocated_registers, request);
         });
@@ -249,18 +247,18 @@ class expr_any final : public statement {
 
         // note: 'expr_type' does not have 'unary_ops' and cannot be
         //       an argument in call
-        return vars_.at(0).visit(
+        return elements_.at(0).visit(
             [](const auto& expression) -> const unary_ops& {
                 return expression.get_unary_ops();
             });
     }
 
     [[nodiscard]] auto is_array_element() const -> bool override {
-        if (is_array_ or vars_.size() != 1) {
+        if (is_array_ or elements_.size() != 1) {
             return false;
         }
 
-        return vars_.at(0).visit([](const auto& expression) -> bool {
+        return elements_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_array_element();
         });
     }
@@ -270,7 +268,7 @@ class expr_any final : public statement {
             return true;
         }
 
-        return vars_.at(0).visit([](const auto& expression) -> bool {
+        return elements_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_expression();
         });
     }
@@ -278,23 +276,23 @@ class expr_any final : public statement {
     [[nodiscard]] auto is_indexed() const -> bool override {
         assert(not is_array_);
 
-        return vars_.at(0).visit([](const auto& expression) -> bool {
+        return elements_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_indexed();
         });
     }
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return vars_.at(0).visit([](const auto& expression) -> bool {
+        return elements_.at(0).visit([](const auto& expression) -> bool {
             return expression.is_name_or_literal();
         });
     }
 
-    // only string and '{}' initializers leave 'vars_' empty, callers ask
+    // only string and '{}' initializers leave 'elements_' empty, callers ask
     // arrays only when 'is_array_identifier' and arguments are never arrays
     [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        assert(not vars_.empty());
+        assert(not elements_.empty());
 
-        return vars_.at(0).visit(
+        return elements_.at(0).visit(
             [](const auto& expression) -> std::string_view {
                 return expression.name_or_literal();
             });
@@ -305,20 +303,21 @@ class expr_any final : public statement {
             return string_tk_;
         }
 
-        if (vars_.empty()) {
+        if (elements_.empty()) {
             return statement::tok();
         }
 
-        return vars_.at(0).visit([](const auto& expression) -> const token& {
-            return expression.tok();
-        });
+        return elements_.at(0).visit(
+            [](const auto& expression) -> const token& {
+                return expression.tok();
+            });
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
         // a non-array expression is the single element
-        for (const expr_variant& e : vars_) {
+        for (const expr_variant& e : elements_) {
             e.visit([&var, &reader](const auto& expression) -> void {
                 expression.visit_reads(var, reader);
             });
@@ -334,13 +333,15 @@ class expr_any final : public statement {
     [[nodiscard]] auto as_expr_type(const size_t index = 0) const
         -> const expr_type& {
 
-        return std::get<expr_type>(vars_.at(index));
+        return std::get<expr_type>(elements_.at(index));
     }
 
     auto assert_record_value_not_reading(
         const expr_type::constructor_target& dst) const -> void {
 
-        if (is_array_ or not std::holds_alternative<expr_type>(vars_.at(0))) {
+        if (is_array_ or
+            not std::holds_alternative<expr_type>(elements_.at(0))) {
+
             return;
         }
 
@@ -359,7 +360,7 @@ class expr_any final : public statement {
         //       the default type
         assert(not is_array_);
 
-        const expr_arith& arith{std::get<expr_arith>(vars_.front())};
+        const expr_arith& arith{std::get<expr_arith>(elements_.front())};
 
         arith.assert_not_narrowed(tc, dst.type_ref());
 
@@ -380,7 +381,7 @@ class expr_any final : public statement {
 
         assert(not is_array_);
 
-        const expr_variant& e{vars_.front()};
+        const expr_variant& e{elements_.front()};
 
         // e.g. 'maybe == 33' with 'maybe' a constant
         const expr_bool* const bol{std::get_if<expr_bool>(&e)};
@@ -398,7 +399,9 @@ class expr_any final : public statement {
         return constant_element_value(tc, e, width_type);
     }
 
-    [[nodiscard]] auto element_count() const -> size_t { return vars_.size(); }
+    [[nodiscard]] auto element_count() const -> size_t {
+        return elements_.size();
+    }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
@@ -407,7 +410,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
-        return vars_.empty() and not is_string();
+        return elements_.empty() and not is_string();
     }
 
     [[nodiscard]] auto is_string() const -> bool {
@@ -421,7 +424,7 @@ class expr_any final : public statement {
   private:
     // the remaining count would wrap around past the array size
     auto assert_room_for_element(const tokenizer& tz) const -> void {
-        if (array_count_ == 0 or vars_.size() != array_count_) {
+        if (array_count_ == 0 or elements_.size() != array_count_) {
             return;
         }
 
@@ -458,16 +461,15 @@ class expr_any final : public statement {
             return cursor;
         }
 
-        for (const auto [i, e] : std::views::enumerate(vars_)) {
+        for (const auto [i, e] : std::views::enumerate(elements_)) {
             x.comment(tok(), indent, "[{}]", i);
 
             // note: labels of the element are named after its own token, two
             //       elements that are conditions would share the label of
             //       the array
             const token element_tk{
-                std::visit(
-                    [](const auto& element) -> token { return element.tok(); },
-                    e),
+                e.visit(
+                    [](const auto& element) -> token { return element.tok(); }),
             };
 
             compile_variant(tc, indent, first.with_operand(cursor), element_tk,
@@ -531,12 +533,12 @@ class expr_any final : public statement {
                                       const type& element_type) const
         -> std::optional<std::string> {
 
-        if (vars_.empty()) {
+        if (elements_.empty()) {
             return std::nullopt;
         }
 
         std::string bytes;
-        for (const expr_variant& e : vars_) {
+        for (const expr_variant& e : elements_) {
             const std::optional<int64_t> value{
                 constant_element_value(tc, e, tc.builtins().default_type()),
             };
@@ -577,19 +579,19 @@ class expr_any final : public statement {
         close_brace_tk_ = tz.is_next_char_token('}');
 
         while (close_brace_tk_.is_empty()) {
-            if (not vars_.empty()) {
+            if (not elements_.empty()) {
                 parse_element_delimiter(tz, tp);
             }
 
             assert_room_for_element(tz);
 
-            vars_.emplace_back(parse_variant(tc, tz, tp, in_args));
+            elements_.emplace_back(parse_variant(tc, tz, tp, in_args));
 
             close_brace_tk_ = tz.is_next_char_token('}');
         }
 
         if (array_count_ == 0) {
-            array_count_ = vars_.size();
+            array_count_ = elements_.size();
         }
     }
 
@@ -601,7 +603,7 @@ class expr_any final : public statement {
                                  tp.name())),
         };
 
-        var_delims_tk_.emplace_back(delimiter_tk);
+        element_delims_tk_.emplace_back(delimiter_tk);
     }
 
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
@@ -778,15 +780,12 @@ class expr_any final : public statement {
                                             const type& tp, const bool in_args)
         -> expr_variant {
 
+        // an instance value, e.g. 'point{1, 2}' or 'p'
         if (not tp.is_builtin()) {
-            // destination is not a built-in (register) value
-            // assume assign type value
             return expr_type{tc, tz, tp, false};
         }
 
         if (tp.is_bool()) {
-            // destination is boolean
-
             // e.g. 'var b = bool' is 'var b = false'
             const token pos_tk{tz.cur_position_token()};
             const token tk{tz.next_token()};
@@ -812,8 +811,6 @@ class expr_any final : public statement {
 
             return value;
         }
-
-        // destination is a built-in (register) value
 
         // e.g. 'var x = i8' is 'var x = i8(0)'
         const token pos_tk{tz.cur_position_token()};

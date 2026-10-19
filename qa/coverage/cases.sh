@@ -3347,3 +3347,7 @@ SRC=1079 && COMPERR
 # a constructor with type parameters of a generic type is rejected at its
 # 'self', with the alias that made the instance
 SRC=1080 && COMPERR
+
+# an empty string right before the '}' that ends a generic body does not hide
+# that '}' from the skip of the generic text
+SRC=1081 && EXP=7 && RUN

@@ -164,7 +164,9 @@ class stmt_builtin_io final : public stmt_call {
     auto assert_sector_buffer(toc& tc, const ident_info& buffer_info) const
         -> void {
 
-        const size_t sector_size_bytes{tc.machine().sector_size_bytes()};
+        const machine& x{tc.machine()};
+
+        const size_t sector_size_bytes{x.sector_size_bytes()};
 
         const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
 
@@ -193,7 +195,9 @@ class stmt_builtin_io final : public stmt_call {
 
     // the target must have a card, the buffer is checked when it is compiled
     auto assert_sector_function_call(toc& tc) const -> void {
-        if (tc.machine().sector_size_bytes() == 0) {
+        const machine& x{tc.machine()};
+
+        if (x.sector_size_bytes() == 0) {
             throw compiler_exception{tok(), "the target has no sd card"};
         }
 

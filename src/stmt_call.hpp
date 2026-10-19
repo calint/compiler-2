@@ -538,7 +538,7 @@ class inline_call {
                                 is_indexed_reference),
         };
 
-        machine const& x{tc.machine()};
+        const machine& x{tc.machine()};
 
         // an access can use the indexed address as it is, so computing it
         // into a register is not tried

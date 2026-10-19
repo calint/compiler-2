@@ -52,7 +52,7 @@ class stmt_def_dat final : public statement {
     token close_bracket_tk_;
     token open_paren_tk_;
     token close_paren_tk_;
-    elem elroot_;
+    elem root_elem_;
 
   public:
     // e.g. 'dat x = i32(0)', the initializer gives the type
@@ -67,7 +67,7 @@ class stmt_def_dat final : public statement {
 
         equals_tk_ = parse_initializer_equals(tz, "dat");
 
-        elroot_ = parse_initializer(tc, tz);
+        root_elem_ = parse_initializer(tc, tz);
 
         // register the data without emitting output so it is available
         // during subsequent parsing
@@ -106,7 +106,7 @@ class stmt_def_dat final : public statement {
         }
 
         open_paren_tk_.source_to(os);
-        print_source_elem(os, get_type(), elroot_);
+        print_source_elem(os, get_type(), root_elem_);
         close_paren_tk_.source_to(os);
     }
 
@@ -130,13 +130,13 @@ class stmt_def_dat final : public statement {
         machine& x{tc.machine()};
 
         x.comment(name_tk_, 0, name_tk_.text());
-        compile_data_rec(tc, get_type(), elroot_);
+        compile_data_rec(tc, get_type(), root_elem_);
     }
 
     [[nodiscard]] auto size_bytes() const -> size_t {
-        return multiply_storage_size(name_tk_, get_type().size_bytes(),
-                                     elroot_.is_array ? elroot_.array_count
-                                                      : 1);
+        return multiply_storage_size(
+            name_tk_, get_type().size_bytes(),
+            root_elem_.is_array ? root_elem_.array_count : 1);
     }
 
   private:
@@ -145,8 +145,8 @@ class stmt_def_dat final : public statement {
             .name{name_tk_.text()},
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
-            .is_array{elroot_.is_array},
-            .array_len{elroot_.array_count},
+            .is_array{root_elem_.is_array},
+            .array_len{root_elem_.array_count},
             .pointer_register{},
             .base_register{},
             .value_register{},
@@ -321,8 +321,8 @@ class stmt_def_dat final : public statement {
         return not el.close_brace_tk.is_empty();
     }
 
-    static auto compile_data_builtin(toc& tc, const type& tp,
-                                     const elem& elroot) -> void {
+    static auto compile_data_builtin(toc& tc, const type& tp, const elem& el)
+        -> void {
 
         machine& x{tc.machine()};
 
@@ -331,35 +331,33 @@ class stmt_def_dat final : public statement {
         };
 
         if (size_error) {
-            throw compiler_exception{elroot.src_loc_tk, *size_error};
+            throw compiler_exception{el.src_loc_tk, *size_error};
         }
 
-        if (not elroot.is_array) {
-            x.comment(elroot.src_loc_tk, 0, "{}", tp.name());
+        if (not el.is_array) {
+            x.comment(el.src_loc_tk, 0, "{}", tp.name());
 
-            x.emit_data(tp.size_bytes(),
-                        elroot.uops.evaluate_constant(elroot.value));
+            x.emit_data(tp.size_bytes(), el.uops.evaluate_constant(el.value));
 
             return;
         }
 
-        x.comment(elroot.src_loc_tk, 0, "{}[{}]", tp.name(),
-                  elroot.array_count);
+        x.comment(el.src_loc_tk, 0, "{}[{}]", tp.name(), el.array_count);
 
         // only 'i8[]' can be initialized with a string token
-        if (elroot.src_loc_tk.is_string()) {
-            compile_data_string(x, tp, elroot);
+        if (el.src_loc_tk.is_string()) {
+            compile_data_string(x, tp, el);
             return;
         }
 
-        compile_data_elements(x, tp, elroot);
+        compile_data_elements(x, tp, el);
     }
 
-    static auto compile_data_elem(toc& tc, const type& tp, const elem& elroot)
+    static auto compile_data_elem(toc& tc, const type& tp, const elem& el)
         -> void {
 
         if (tp.is_builtin()) {
-            compile_data_builtin(tc, tp, elroot);
+            compile_data_builtin(tc, tp, el);
             return;
         }
 
@@ -371,7 +369,7 @@ class stmt_def_dat final : public statement {
         size_t written_bytes{};
 
         const std::span<const type_field> flds{tp.fields()};
-        for (const auto [e, f] : std::views::zip(elroot.elems, flds)) {
+        for (const auto [e, f] : std::views::zip(el.elems, flds)) {
             const size_t padding_bytes{f.offset - written_bytes};
 
             if (padding_bytes != 0) {
@@ -397,20 +395,19 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        const std::string_view what{elroot.elems.size() == flds.size()
-                                        ? "padding"
-                                        : "remaining fields"};
+        const std::string_view what{
+            el.elems.size() == flds.size() ? "padding" : "remaining fields"};
 
-        x.comment(elroot.src_loc_tk, 0, "zero {}: {} B", what, size_bytes);
+        x.comment(el.src_loc_tk, 0, "zero {}: {} B", what, size_bytes);
         x.emit_zero_data(size_bytes);
     }
 
     // e.g. 'dat primes = []{2, 3, 5}'
     static auto compile_data_elements(machine& x, const type& tp,
-                                      const elem& elroot) -> void {
+                                      const elem& el) -> void {
 
         const auto values{
-            elroot.elems |
+            el.elems |
                 std::views::transform([](const elem& element) -> int64_t {
                     return element.uops.evaluate_constant(element.value);
                 }),
@@ -419,17 +416,17 @@ class stmt_def_dat final : public statement {
         x.emit_data_array(tp.size_bytes(), values);
 
         // the elements not listed are zero, as in a 'var'
-        if (elroot.array_count != elroot.elems.size()) {
+        if (el.array_count != el.elems.size()) {
             x.emit_repeated_data(tp.size_bytes(),
-                                 elroot.array_count - elroot.elems.size(), 0);
+                                 el.array_count - el.elems.size(), 0);
         }
     }
 
-    static auto compile_data_rec(toc& tc, const type& tp, const elem& elroot)
+    static auto compile_data_rec(toc& tc, const type& tp, const elem& el)
         -> void {
 
-        if (not elroot.is_array) {
-            compile_data_elem(tc, tp, elroot);
+        if (not el.is_array) {
+            compile_data_elem(tc, tp, el);
             return;
         }
 
@@ -438,8 +435,8 @@ class stmt_def_dat final : public statement {
         // special case for a string
         // note: only i8[] can be initialized with a string token
 
-        if (elroot.src_loc_tk.is_string()) {
-            compile_data_builtin(tc, tp, elroot);
+        if (el.src_loc_tk.is_string()) {
+            compile_data_builtin(tc, tp, el);
             return;
         }
 
@@ -447,44 +444,43 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        x.comment(elroot.src_loc_tk, 0, "{}[{}]", tp.name(),
-                  elroot.array_count);
+        x.comment(el.src_loc_tk, 0, "{}[{}]", tp.name(), el.array_count);
 
-        for (const auto [i, e] : std::views::enumerate(elroot.elems)) {
+        for (const auto [i, e] : std::views::enumerate(el.elems)) {
             x.comment(e.src_loc_tk, 0, "[{}]", i);
             compile_data_elem(tc, tp, e);
         }
 
         // zero out the remaining array elements
 
-        const size_t remaining_count{elroot.array_count - elroot.elems.size()};
+        const size_t remaining_count{el.array_count - el.elems.size()};
 
         if (remaining_count == 0) {
             return;
         }
 
-        x.comment(elroot.src_loc_tk, 0, "pad {} '{}' of size {}",
-                  remaining_count, tp.name(), tp.size_bytes());
+        x.comment(el.src_loc_tk, 0, "pad {} '{}' of size {}", remaining_count,
+                  tp.name(), tp.size_bytes());
 
-        x.emit_zero_data(multiply_storage_size(
-            elroot.src_loc_tk, tp.size_bytes(), remaining_count));
+        x.emit_zero_data(multiply_storage_size(el.src_loc_tk, tp.size_bytes(),
+                                               remaining_count));
     }
 
     // e.g. 'dat greeting = "hello"'
-    static auto compile_data_string(machine& x, const type& tp,
-                                    const elem& elroot) -> void {
+    static auto compile_data_string(machine& x, const type& tp, const elem& el)
+        -> void {
 
-        x.emit_string_data(elroot.src_loc_tk.string_text());
-        const size_t size_bytes{elroot.src_loc_tk.string_size_bytes()};
+        x.emit_string_data(el.src_loc_tk.string_text());
+        const size_t size_bytes{el.src_loc_tk.string_size_bytes()};
 
         // the bytes after the text are zero, as in a 'var'
-        assert(elroot.array_count != 0);
+        assert(el.array_count != 0);
 
-        if (size_bytes < elroot.array_count) {
-            x.comment(elroot.src_loc_tk, 0, "zero remaining array");
+        if (size_bytes < el.array_count) {
+            x.comment(el.src_loc_tk, 0, "zero remaining array");
 
-            x.emit_repeated_data(tp.size_bytes(),
-                                 elroot.array_count - size_bytes, 0);
+            x.emit_repeated_data(tp.size_bytes(), el.array_count - size_bytes,
+                                 0);
         }
     }
 
@@ -719,52 +715,52 @@ class stmt_def_dat final : public statement {
 
     // '{' items separated by their delimiters '}'
     static auto print_source_braced(
-        std::ostream& os, const elem& elroot,
+        std::ostream& os, const elem& el,
         const std::function_ref<void(size_t, const elem&)> print_item) -> void {
 
-        elroot.open_brace_tk.source_to(os);
-        for (size_t i{}; i < elroot.elems.size(); ++i) {
+        el.open_brace_tk.source_to(os);
+        for (size_t i{}; i < el.elems.size(); ++i) {
             if (i != 0) {
-                elroot.elem_delims_tk.at(i - 1).source_to(os);
+                el.elem_delims_tk.at(i - 1).source_to(os);
                 // note: -1 because there is one delimiter fewer than elements
             }
 
-            print_item(i, elroot.elems.at(i));
+            print_item(i, el.elems.at(i));
         }
 
-        elroot.close_brace_tk.source_to(os);
+        el.close_brace_tk.source_to(os);
     }
 
     static auto print_source_elem(std::ostream& os, const type& tp,
-                                  const elem& elroot) -> void {
+                                  const elem& el) -> void {
 
         if (not tp.is_builtin()) {
-            print_source_type(os, tp, elroot);
+            print_source_type(os, tp, el);
             return;
         }
 
-        if (not elroot.is_array) {
-            elroot.source_to(os);
+        if (not el.is_array) {
+            el.source_to(os);
             return;
         }
 
         // a string initializes an array but is written as one token
-        if (elroot.src_loc_tk.is_string()) {
-            elroot.src_loc_tk.source_to(os);
+        if (el.src_loc_tk.is_string()) {
+            el.src_loc_tk.source_to(os);
             return;
         }
 
-        print_source_braced(
-            os, elroot,
-            [&os](const size_t, const elem& e) -> void { e.source_to(os); });
+        print_source_braced(os, el, [&os](const size_t, const elem& e) -> void {
+            e.source_to(os);
+        });
     }
 
     static auto print_source_type(std::ostream& os, const type& tp,
-                                  const elem& elroot) -> void {
+                                  const elem& el) -> void {
 
-        if (not elroot.is_array) {
+        if (not el.is_array) {
             print_source_braced(
-                os, elroot, [&os, &tp](const size_t i, const elem& e) -> void {
+                os, el, [&os, &tp](const size_t i, const elem& e) -> void {
                     const type_field& tf{tp.fields().at(i)};
                     print_source_elem(os, tf.type(), e);
                 });
@@ -772,7 +768,7 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        print_source_braced(os, elroot,
+        print_source_braced(os, el,
                             [&os, &tp](const size_t, const elem& e) -> void {
                                 print_source_elem(os, tp, e);
                             });
