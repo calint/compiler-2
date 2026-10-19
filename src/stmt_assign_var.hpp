@@ -56,7 +56,8 @@ class stmt_assign_var final : public statement {
     }
 
     // the initializer of a declaration, parsed before the variable was
-    // declared, which is writable until then
+    // declared; a new variable is writable, so the read-only check of an
+    // assignment does not apply
     stmt_assign_var(const toc& tc, stmt_identifier si, const token equals_tk,
                     expr_any value)
         : statement{si.tok()}, stmt_ident_{std::move(si)},

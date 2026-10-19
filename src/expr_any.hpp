@@ -108,8 +108,11 @@ class expr_any final : public statement {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
-            elements_.emplace_back(expr_type{tc, tz, tp, true});
+            elements_.emplace_back(expr_type{
+                tc, tz, tp, expr_type::destination_kind::whole_array});
+
             is_identifier_ = true;
+
             return;
         }
 
@@ -778,7 +781,7 @@ class expr_any final : public statement {
 
         // an instance value, e.g. 'point{1, 2}' or 'p'
         if (not tp.is_builtin()) {
-            return expr_type{tc, tz, tp, false};
+            return expr_type{tc, tz, tp, expr_type::destination_kind::instance};
         }
 
         if (tp.is_bool()) {

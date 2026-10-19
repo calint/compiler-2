@@ -1290,7 +1290,7 @@ class expr_bool final : public statement {
 
     // a comparison or a parenthesized list, either may follow 'not'
     auto parse_element(toc& tc, tokenizer& tz) -> void {
-        // a comparison reads its 'not's itself, from here
+        // a comparison is parsed from before the 'not's, it reads them itself
         const token rewind_pos_tk{tz.cur_position_token()};
 
         // the 'not's before a parenthesis, e.g. 'not not (a == b)'

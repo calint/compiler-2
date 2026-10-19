@@ -180,6 +180,7 @@ class stmt_def_var final : public statement {
         token bracket_tk;
 
         trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
+            // an unsized array, the initializer gives the count
             const expr_any initializer{tc, tz, get_type(), 0};
 
             array_count_ = initializer.array_count();

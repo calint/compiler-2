@@ -796,8 +796,8 @@ func checks() {
     # error and 'i8(a + b)' still wraps
 
     # 'division': division or remainder by zero and 'MIN / -1'
-    # 'shift': a shift count below zero or not below the width of the type, a
-    # constant count is a compile error
+    # 'shift': a shift count below zero or not below the width of the type; a
+    # constant count outside the width is a compile error also without it
 
     # 'overlap': 'array_copy' whose destination starts inside the source, a
     # copy down the array is allowed

@@ -271,8 +271,9 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 //
 
 inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
-                            const bool is_array_destination)
-    : statement{tz.next_token()}, is_array_destination_{is_array_destination} {
+                            const destination_kind kind)
+    : statement{tz.next_token()},
+      is_array_destination_{kind == destination_kind::whole_array} {
 
     const tokenizer::nesting_scope nesting{tz};
 
@@ -285,7 +286,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     const bool is_typed_literal{is_record_literal(tc, tok(), tz) or is_bare};
 
     // an array is copied from an array, a value of its element type is not one
-    if (is_array_destination and is_typed_literal) {
+    if (is_array_destination_ and is_typed_literal) {
         throw compiler_exception{
             tok(), std::format("expected an array, got an instance of '{}'",
                                tok().text())};

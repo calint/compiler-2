@@ -35,6 +35,10 @@ class expr_type final : public statement {
     bool is_array_destination_{};
 
   public:
+    // what the destination of the value holds, a whole array is filled only
+    // by a copy of an array, e.g. 'var b = a'
+    enum class destination_kind : uint8_t { instance, whole_array };
+
     // bytes of the variable an instance value is written into
     struct constructor_target {
         std::string_view root;
@@ -48,7 +52,7 @@ class expr_type final : public statement {
     // 'stmt_identifier'; the type name alone is its zero value, e.g.
     // 'var p = point' is 'point{}'
     expr_type(toc& tc, tokenizer& tz, const type& tp,
-              const bool is_array_destination);
+              const destination_kind kind);
 
     // a method receiver that has already been parsed
     explicit expr_type(std::unique_ptr<stmt_identifier> receiver);

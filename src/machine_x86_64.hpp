@@ -1216,7 +1216,9 @@ class machine_x86_64 final : public machine {
 
         if (count.is_immediate()) {
             // note: the front end rejects a constant count outside the width
-            assert(immediate_bits(count) < dst.type_ref().size_bits());
+            assert(
+                count.immediate() >= 0 and
+                std::cmp_less(count.immediate(), dst.type_ref().size_bits()));
 
             emit_op(src_loc_tk, indent, code, dst, count);
 
