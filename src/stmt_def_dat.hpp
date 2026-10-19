@@ -14,8 +14,10 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
+#include "constant_arith.hpp"
+#include "ident_info.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "statement.hpp"
 #include "stmt_builtin_convert.hpp"
 #include "stmt_const.hpp"
@@ -106,7 +108,7 @@ class stmt_def_dat final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -326,10 +328,8 @@ class stmt_def_dat final : public statement {
         if (not elroot.is_array) {
             x.comment(elroot.src_loc_tk, 0, "{}", tp.name());
 
-            x.emit_data(tp.size_bytes(), {
-                                             .value{elroot.value},
-                                             .uops{elroot.uops.to_string()},
-                                         });
+            x.emit_data(tp.size_bytes(),
+                        elroot.uops.evaluate_constant(elroot.value));
 
             return;
         }
@@ -402,13 +402,9 @@ class stmt_def_dat final : public statement {
 
         const auto values{
             elroot.elems |
-                std::views::transform(
-                    [](const elem& element) -> machine::data_initializer {
-                        return {
-                            .value{element.value},
-                            .uops{element.uops.to_string()},
-                        };
-                    }),
+                std::views::transform([](const elem& element) -> int64_t {
+                    return element.uops.evaluate_constant(element.value);
+                }),
         };
 
         x.emit_data_array(tp.size_bytes(), values);
@@ -416,7 +412,7 @@ class stmt_def_dat final : public statement {
         // pad remaining array with 0
         if (elroot.array_count != elroot.elems.size()) {
             x.emit_repeated_data(tp.size_bytes(),
-                                 elroot.array_count - elroot.elems.size(), {});
+                                 elroot.array_count - elroot.elems.size(), 0);
         }
     }
 
@@ -479,7 +475,7 @@ class stmt_def_dat final : public statement {
             x.comment(elroot.src_loc_tk, 0, "zero remaining array");
 
             x.emit_repeated_data(tp.size_bytes(),
-                                 elroot.array_count - size_bytes, {});
+                                 elroot.array_count - size_bytes, 0);
         }
     }
 
@@ -608,7 +604,7 @@ class stmt_def_dat final : public statement {
         // the assembler would truncate the value or warn about it
         const int64_t value{el.uops.evaluate_constant(el.value)};
 
-        if (fits_size_bytes(value, tp.size_bytes())) {
+        if (constant_arith::fits_size_bytes(value, tp.size_bytes())) {
             return el;
         }
 

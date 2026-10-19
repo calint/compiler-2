@@ -17,9 +17,11 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
+#include "constant_arith.hpp"
 #include "expr_any.hpp"
+#include "ident_info.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -144,7 +146,7 @@ class stmt_identifier final : public statement {
         path_source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -154,7 +156,7 @@ class stmt_identifier final : public statement {
         const ident_info src_info{tc.make_scalar_ident_info(*this)};
 
         if (src_info.is_const()) {
-            x.copy_value(tok(), indent, dst_info.operand,
+            x.copy_value(tok(), indent, dst.operand(),
                          make_constant_operand(src_info));
 
             return;
@@ -166,9 +168,10 @@ class stmt_identifier final : public statement {
             tc.get_lea_operand(indent, *this, src_info, allocated_registers),
         };
 
-        x.copy_value(tok(), indent, dst_info.operand, op);
+        x.copy_value(tok(), indent, dst.operand(), op);
 
-        get_unary_ops().compile(tc, indent, tok(), dst_info.operand);
+        get_unary_ops().compile(x, indent, tok(), dst.operand(),
+                                tc.checks().overflow_options());
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
@@ -235,13 +238,13 @@ class stmt_identifier final : public statement {
                                    const lea_request& request) const
         -> operand override {
 
-        // view the last n elements of lea_path
-        const std::span<const operand> known_addresses{
-            request.lea_path.last(elems_.size()),
-        };
-
         // start at the deepest known address, or the root if none exists
-        const size_t start_index{find_start_element(known_addresses)};
+        const known_address* const known{known_in_path(request.known)};
+
+        const size_t start_index{
+            known == nullptr ? 0 : elems_.size() - 1 - known->trailing_count,
+        };
+        // note: -1 is the index of the last element
 
         std::string path{elems_.at(start_index).name_tk.text()};
 
@@ -249,7 +252,7 @@ class stmt_identifier final : public statement {
 
         operand address{
             start_address(tc, indent, src_loc_tk, registers,
-                          known_addresses.at(start_index),
+                          known == nullptr ? operand{} : known->address,
                           tc.make_ident_info(src_loc_tk, path)),
         };
 
@@ -426,7 +429,7 @@ class stmt_identifier final : public statement {
             get_unary_ops().evaluate_constant(info.const_value),
         };
 
-        if (fits_size_bytes(value, dst_type.size_bytes())) {
+        if (constant_arith::fits_size_bytes(value, dst_type.size_bytes())) {
             return;
         }
 
@@ -562,6 +565,20 @@ class stmt_identifier final : public statement {
 
         // without a field 'lst.clear = 1' reports the missing arguments
         return not path_type.has_field(name_tk.text());
+    }
+
+    // the known address when it is of an element of this path, null when
+    // none is known or it is before the path, e.g. in the argument that a
+    // parameter names
+    [[nodiscard]] auto
+    known_in_path(const std::optional<known_address>& known) const
+        -> const known_address* {
+
+        if (not known or known->trailing_count >= elems_.size()) {
+            return nullptr;
+        }
+
+        return &*known;
     }
 
     // the path names a function, unless a variable, an alias or a constant of
@@ -805,7 +822,7 @@ class stmt_identifier final : public statement {
         machine& x{tc.machine()};
 
         x.check_bounds(src_loc_tk, indent, index_or_count, array_length,
-                       allow_end, range_count, tc.bounds_check_options());
+                       allow_end, range_count, tc.checks().bounds_options());
     }
 
     // the range of an unindexed array is checked once, at the last element
@@ -839,11 +856,13 @@ class stmt_identifier final : public statement {
 
         x.comment(index_expr.tok(), indent, "set array index");
 
-        const ident_info index_info{
-            toc::make_ident_info_from_register(index_register),
+        const destination index_info{
+            destination::of_register(index_register),
         };
 
-        const machine::bounds_check_options checks{tc.bounds_check_options()};
+        const machine::bounds_check_options checks{
+            tc.checks().bounds_options(),
+        };
 
         if (not checks.upper and not checks.lower) {
             const std::optional<int64_t> addend{
@@ -908,22 +927,6 @@ class stmt_identifier final : public statement {
 
         return add_index(tc, cur_elem.array_index_expr->tok(), indent,
                          registers, cur_elem, cur_info, range_count, base);
-    }
-
-    [[nodiscard]] static auto
-    find_start_element(const std::span<const operand> known_addresses)
-        -> size_t {
-
-        size_t index{known_addresses.size()};
-        while (index != 0) {
-            --index;
-
-            if (not known_addresses.at(index).is_empty()) {
-                return index;
-            }
-        }
-
-        return 0;
     }
 
     // computes 'address' into a register so another index can be added

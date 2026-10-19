@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "operand.hpp"
 #include "token.hpp"
 

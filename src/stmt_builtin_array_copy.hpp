@@ -10,11 +10,12 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expr_any.hpp"
+#include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
+#include "toc.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
@@ -80,7 +81,7 @@ class stmt_builtin_array_copy final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -104,7 +105,7 @@ class stmt_builtin_array_copy final : public statement {
         // a negative count keeps the loop so '--checks=lower' rejects it at
         // run time
         // the overlap check compares the addresses of the runtime copy
-        if (count and *count >= 0 and not tc.is_overlap_check()) {
+        if (count and *count >= 0 and not tc.checks().overlap) {
             compile_constant_count(tc, indent, array_src_info, array_dst_info,
                                    static_cast<size_t>(*count));
 
@@ -129,7 +130,7 @@ class stmt_builtin_array_copy final : public statement {
                             .alignment{array_src_info.type_ref().alignment()},
                             .src{emit_src},
                             .dst{emit_dst},
-                            .overlap{tc.overlap_check_options()},
+                            .overlap{tc.checks().overlap_options()},
                         });
     }
 
@@ -157,7 +158,7 @@ class stmt_builtin_array_copy final : public statement {
         // the range checks compare 'start + count' in registers
         operand count_register;
 
-        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
+        if (tc.checks().is_bounds()) {
             count_register =
                 x.alloc_scratch_register(tok(), indent, tc.get_type_default());
 
@@ -166,7 +167,7 @@ class stmt_builtin_array_copy final : public statement {
             x.comment(count_.tok(), indent, statement::trimmed_source(count_));
 
             count_.compile(tc, indent,
-                           toc::make_ident_info_from_register(count_register));
+                           destination::of_register(count_register));
         }
 
         x.comment(src_.tok(), indent, statement::trimmed_source(src_));
@@ -176,7 +177,7 @@ class stmt_builtin_array_copy final : public statement {
                              allocated_scratch_registers,
                              {
                                  .reg_count{count_register},
-                                 .lea_path{array_src_info.lea_path},
+                                 .known{array_src_info.known},
                                  .address_register{},
                              }),
         };
@@ -188,7 +189,7 @@ class stmt_builtin_array_copy final : public statement {
                              allocated_scratch_registers,
                              {
                                  .reg_count{count_register},
-                                 .lea_path{array_dst_info.lea_path},
+                                 .known{array_dst_info.known},
                                  .address_register{},
                              }),
         };

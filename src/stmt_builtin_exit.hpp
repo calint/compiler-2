@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "stmt_call.hpp"
@@ -27,7 +27,7 @@ class stmt_builtin_exit final : public stmt_call {
     //
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};

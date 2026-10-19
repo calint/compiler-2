@@ -11,9 +11,11 @@
 #include <utility>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
+#include "constant_arith.hpp"
+#include "constant_parser.hpp"
 #include "expr_arith.hpp"
 #include "expression.hpp"
+#include "ident_info.hpp"
 #include "operand.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -89,7 +91,7 @@ class stmt_builtin_convert final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -101,16 +103,16 @@ class stmt_builtin_convert final : public expression {
 
         // an out-of-range immediate makes nasm warn, so fold it here
         if (value) {
-            x.copy_value(tok(), indent, dst_info.operand,
-                         operand::imm(std::format("{}", *value), get_type()));
+            x.copy_value(tok(), indent, dst.operand(),
+                         operand::imm(*value, get_type()));
 
             return;
         }
 
         // a wider destination would compute the argument at its own width and
         // keep the bits that the conversion drops
-        if (dst_info.type_ref().size_bytes() > get_type().size_bytes()) {
-            compile_narrowed(tc, indent, dst_info);
+        if (dst.type_ref().size_bytes() > get_type().size_bytes()) {
+            compile_narrowed(tc, indent, dst);
             return;
         }
 
@@ -118,7 +120,7 @@ class stmt_builtin_convert final : public expression {
         // of the same width computes the same either way unless the
         // destination is narrower than the type
         const bool is_stored_whole{
-            dst_info.type_ref().size_bytes() >= get_type().size_bytes(),
+            dst.type_ref().size_bytes() >= get_type().size_bytes(),
         };
 
         if (arg_.keeps_low_bits_when_narrowed() or
@@ -127,11 +129,10 @@ class stmt_builtin_convert final : public expression {
 
             // a narrower argument wraps at the width of the destination, a
             // register of the argument's width would wrap earlier
-            if (dst_info.is_register() or
-                arg_.get_type().size_bytes() <
-                    dst_info.type_ref().size_bytes()) {
+            if (dst.is_register() or
+                arg_.get_type().size_bytes() < dst.type_ref().size_bytes()) {
 
-                compile_in_destination(tc, indent, dst_info);
+                compile_in_destination(tc, indent, dst);
                 return;
             }
 
@@ -139,15 +140,15 @@ class stmt_builtin_convert final : public expression {
             // load and a store each time, a wide register needs one store
             x.emit_most_efficient(
                 tok(), indent,
-                [&] -> void { compile_in_destination(tc, indent, dst_info); },
-                [&] -> void { compile_wide(tc, indent, dst_info); });
+                [&] -> void { compile_in_destination(tc, indent, dst); },
+                [&] -> void { compile_wide(tc, indent, dst); });
 
             return;
         }
 
         // '/', '%', '>>' and calls are computed at the argument's width, a
         // call's result must also have its declared type
-        compile_wide(tc, indent, dst_info);
+        compile_wide(tc, indent, dst);
     }
 
     // only the builtin's own type counts, its argument is narrowed on purpose
@@ -212,16 +213,20 @@ class stmt_builtin_convert final : public expression {
 
   private:
     auto compile_in_destination(toc& tc, const size_t indent,
-                                const ident_info& dst_info) const -> void {
+                                const destination& dst) const -> void {
 
-        arg_.compile(tc, indent, dst_info);
-        get_unary_ops().compile(tc, indent, tok(), dst_info.operand);
+        arg_.compile(tc, indent, dst);
+
+        machine& x{tc.machine()};
+
+        get_unary_ops().compile(x, indent, tok(), dst.operand(),
+                                tc.checks().overflow_options());
     }
 
     // the value is made at the width of the type, then widens into the
     // destination
     auto compile_narrowed(toc& tc, const size_t indent,
-                          const ident_info& dst_info) const -> void {
+                          const destination& dst) const -> void {
 
         machine& x{tc.machine()};
 
@@ -229,15 +234,15 @@ class stmt_builtin_convert final : public expression {
             x.alloc_scratch_register(tok(), indent, get_type()),
         };
 
-        compile(tc, indent, toc::make_ident_info_from_register(narrow));
+        compile(tc, indent, destination::of_register(narrow));
 
-        x.copy_value(tok(), indent, dst_info.operand, narrow);
+        x.copy_value(tok(), indent, dst.operand(), narrow);
         x.free_scratch_register(tok(), indent, narrow);
     }
 
     // the argument is computed at its own width and stored narrowed
     auto compile_wide(toc& tc, const size_t indent,
-                      const ident_info& dst_info) const -> void {
+                      const destination& dst) const -> void {
 
         machine& x{tc.machine()};
 
@@ -245,13 +250,14 @@ class stmt_builtin_convert final : public expression {
             x.alloc_scratch_register(tok(), indent, arg_.get_type()),
         };
 
-        arg_.compile(tc, indent + 1, toc::make_ident_info_from_register(wide));
+        arg_.compile(tc, indent + 1, destination::of_register(wide));
 
         // '-' and '~' give the same low bits at any width, so the one store
         // also narrows their result
-        get_unary_ops().compile(tc, indent, tok(), wide);
+        get_unary_ops().compile(x, indent, tok(), wide,
+                                tc.checks().overflow_options());
 
-        x.copy_value(tok(), indent, dst_info.operand, wide);
+        x.copy_value(tok(), indent, dst.operand(), wide);
         x.free_scratch_register(tok(), indent, wide);
     }
 
@@ -283,18 +289,23 @@ class stmt_builtin_convert final : public expression {
         -> int64_t {
 
         const int64_t converted{
-            to_width(arg_.get_unary_ops().evaluate_constant(value)),
+            constant_arith::wrap_to_width(
+                arg_.get_unary_ops().evaluate_constant(value), get_type()),
         };
 
         const int64_t result{
             expression::get_unary_ops().evaluate_constant(converted),
         };
 
-        const int64_t narrowed{to_width(result)};
+        const int64_t narrowed{
+            constant_arith::wrap_to_width(result, get_type()),
+        };
 
-        const int64_t minimum{signed_minimum(get_type().size_bits())};
+        const int64_t minimum{
+            constant_arith::signed_minimum(get_type().size_bits()),
+        };
 
-        if (tc.is_overflow_check() and
+        if (tc.checks().overflow and
             expression::get_unary_ops().negation_overflows(converted,
                                                            minimum)) {
 
@@ -303,21 +314,5 @@ class stmt_builtin_convert final : public expression {
         }
 
         return narrowed;
-    }
-
-    [[nodiscard]] auto to_width(const int64_t value) const -> int64_t {
-        switch (get_type().size_bytes()) {
-        case sizeof(int8_t):
-            return static_cast<int8_t>(value);
-
-        case sizeof(int16_t):
-            return static_cast<int16_t>(value);
-
-        case sizeof(int32_t):
-            return static_cast<int32_t>(value);
-
-        default:
-            return value;
-        }
     }
 };

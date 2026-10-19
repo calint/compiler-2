@@ -80,6 +80,8 @@ the binary image itself.
   with syntax highlighting and lsp (symbols, go to definition, rename,
   references)
 * example application [`roome/src/main.baz`](roome/src/main.baz)
+* how the compiler works in
+  [`etc/docs/architecture.txt`](etc/docs/architecture.txt)
 * todo list of planned fixes and features in [`etc/todo.txt`](etc/todo.txt)
 
 ## Usage

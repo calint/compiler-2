@@ -10,8 +10,8 @@
 #include <utility>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expression.hpp"
+#include "ident_info.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
@@ -54,19 +54,16 @@ class stmt_builtin_array_length final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // note: assigning to a constant is rejected before the value is built
-        assert(not dst_info.is_const());
-
-        if (not dst_info.type_ref().is_same(tc.get_type_default())) {
+        if (not dst.type_ref().is_same(tc.get_type_default())) {
             throw compiler_exception{
-                dst_info.error_token(tok()),
+                dst.error_token(tok()),
                 std::format("destination must be an '{}'",
                             tc.get_type_default().name()),
             };

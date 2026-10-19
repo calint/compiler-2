@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <ostream>
 
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "statement.hpp"
 #include "token.hpp"
 
@@ -28,6 +28,6 @@ class stmt_include final : public statement {
     }
 
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {}
 };

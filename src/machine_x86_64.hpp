@@ -22,12 +22,32 @@
 
 #include "assembler.hpp"
 #include "assembler_x86_64.hpp"
-#include "decouple.hpp"
+#include "constant_arith.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "register_pool.hpp"
+#include "register_report.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
+// the x86_64 linux backend, written as nasm text through 'assembler_x86_64';
+// the formatter sorts the functions by name, so by topic they are:
+//
+//   registers    'alloc_scratch_register', 'alloc_named_register',
+//                'reserve_named_register', 'push_allocation', the frame base
+//                'rbx' and the variables base 'rbp'
+//   operations   'emit_op' and 'emit_binary' choose the form of an
+//                instruction, 'with_lowered_addresses' fits an operand into
+//                one, 'multiply_by_constant', 'emit_signed_divide', 'shift'
+//   memory       'copy', 'copy_bytes', 'zero' unrolled or with 'rep', the
+//                bulk operations with 'rsi', 'rdi' and 'rcx'
+//   comparisons  'compare_and_branch', 'store_comparison', 'memory_equal'
+//   checks       'check_bounds', 'check_divisor', 'check_shift_count',
+//                'check_copy_overlap', 'check_frame_capacity', each jumps to
+//                its handler, with a stub per line for '--checks=line'
+//   handlers     'emit_*_failure_handler', 'emit_line_panic_handler'
+//   calls        'call_function', the system calls 'io_syscall' and 'exit',
+//                the sector routines 'emit_sector_routines'
 class machine_x86_64 final : public machine {
     using op = assembler_x86_64::op;
 
@@ -494,7 +514,7 @@ class machine_x86_64 final : public machine {
         }
 
         assert(frame_address.is_memory());
-        assert(frame_size_bytes.is_immediate());
+        assert(frame_size_bytes.is_symbol());
 
         comment(src_loc_tk, indent, "frame capacity check begin");
 
@@ -767,32 +787,22 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::text);
     }
 
-    auto emit_data(const size_t element_size_bytes,
-                   const data_initializer& value) -> void override {
+    auto emit_data(const size_t element_size_bytes, const int64_t value)
+        -> void override {
 
-        const std::array<assembler_x86_64::data_value, 1> values{
-            {
-                {
-                    .value{value.value},
-                    .unary_operations{value.uops},
-                },
-            },
-        };
+        const std::array<int64_t, 1> values{value};
 
         assembler_.data(element_size_bytes, values);
     }
 
     auto emit_data_array(const size_t element_size_bytes,
-                         const std::function_ref<bool(data_initializer&)> next)
+                         const std::function_ref<bool(int64_t&)> next)
         -> void override {
 
-        std::vector<assembler_x86_64::data_value> values;
-        data_initializer value;
+        std::vector<int64_t> values;
+        int64_t value{};
         while (next(value)) {
-            values.push_back({
-                .value{value.value},
-                .unary_operations{value.uops},
-            });
+            values.push_back(value);
         }
 
         assembler_.data(element_size_bytes, values);
@@ -863,10 +873,9 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
-                            const data_initializer& value) -> void override {
+                            const int64_t value) -> void override {
 
-        assembler_.repeated_data(element_size_bytes, count, value.uops,
-                                 value.value);
+        assembler_.repeated_data(element_size_bytes, count, value);
     }
 
     auto emit_shift_failure_handler(const bool with_line) -> void override {
@@ -899,7 +908,7 @@ class machine_x86_64 final : public machine {
 
     auto emit_zero_data(const size_t size_bytes) -> void override {
         const size_t count{size_bytes / size_byte};
-        emit_repeated_data(size_byte, count, {});
+        emit_repeated_data(size_byte, count, 0);
     }
 
     auto end_main() -> void override {
@@ -1760,7 +1769,7 @@ class machine_x86_64 final : public machine {
                        const bool with_line) -> void {
 
         const int64_t minimum{
-            signed_minimum(dividend_size_bytes * bits_per_byte),
+            constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
         };
 
         const std::string not_minimum{
@@ -2161,23 +2170,9 @@ class machine_x86_64 final : public machine {
         constexpr int sector_shift{std::countr_zero(sector_size_bytes_)};
 
         // the descriptor is -1 until the file is opened
-        constexpr std::array<assembler_x86_64::data_value, 1> not_opened{
-            {
-                {
-                    .value{-1},
-                    .unary_operations{},
-                },
-            },
-        };
+        constexpr std::array<int64_t, 1> not_opened{-1};
 
-        constexpr std::array<assembler_x86_64::data_value, 1> zero_value{
-            {
-                {
-                    .value{0},
-                    .unary_operations{},
-                },
-            },
-        };
+        constexpr std::array<int64_t, 1> zero_value{0};
 
         // every failure jumps here and exits with a panic message
         constexpr std::string_view handler_label{"baz_sd_card_panic"};
@@ -2407,7 +2402,7 @@ class machine_x86_64 final : public machine {
 
     template <std::integral value_t>
     [[nodiscard]] auto immediate(const value_t value) const -> operand {
-        return operand::imm(std::format("{}", value), default_type());
+        return operand::imm(value, default_type());
     }
 
     auto imul(const token& src_loc_tk, const size_t indent,
@@ -2990,7 +2985,6 @@ class machine_x86_64 final : public machine {
 
         const std::optional<uint64_t> bits{immediate_bits(src)};
 
-        // symbolic immediates such as frame sizes do not reach here
         assert(bits);
 
         return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
@@ -3084,7 +3078,7 @@ class machine_x86_64 final : public machine {
 
         const uint8_t low_byte{static_cast<uint8_t>(*bits)};
 
-        return operand::imm(std::format("{}", low_byte), count.type_ref());
+        return operand::imm(low_byte, count.type_ref());
     }
 
     [[nodiscard]] static auto sized_register_name(const std::string_view name,
@@ -3162,8 +3156,11 @@ class machine_x86_64 final : public machine {
         -> assembler_x86_64::argument {
 
         if (value.is_immediate()) {
-            return assembler_x86_64::immediate::of_expression(
-                value.immediate());
+            return assembler_x86_64::immediate{value.immediate()};
+        }
+
+        if (value.is_symbol()) {
+            return assembler_x86_64::immediate::of_expression(value.symbol());
         }
 
         if (value.is_register()) {

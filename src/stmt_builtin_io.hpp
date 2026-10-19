@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "stmt_call.hpp"
@@ -85,7 +85,7 @@ class stmt_builtin_io final : public stmt_call {
     // overridden methods
     //
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -120,10 +120,11 @@ class stmt_builtin_io final : public stmt_call {
 
         emit_call(x, indent, result, args);
 
-        get_unary_ops().compile(tc, indent, tok(), result);
+        get_unary_ops().compile(x, indent, tok(), result,
+                                tc.checks().overflow_options());
 
-        if (not dst_info.is_empty()) {
-            x.copy_value(tok(), indent, dst_info.operand, result);
+        if (not dst.is_empty()) {
+            x.copy_value(tok(), indent, dst.operand(), result);
         }
 
         if (not result_is_argument) {
@@ -229,8 +230,7 @@ class stmt_builtin_io final : public stmt_call {
         const operand& buffer_reg{args.at(1)};
         const operand& count{args.at(2)};
 
-        argument(0).compile(tc, indent,
-                            toc::make_ident_info_from_register(descriptor));
+        argument(0).compile(tc, indent, destination::of_register(descriptor));
 
         const ident_info buffer_info{tc.make_ident_info(argument(1))};
 
@@ -248,8 +248,7 @@ class stmt_builtin_io final : public stmt_call {
                                                                : operand{});
 
         const operand element_size_bytes{
-            operand::imm(std::format("{}", buffer_info.type_ref().size_bytes()),
-                         type_default),
+            operand::imm(buffer_info.type_ref().size_bytes(), type_default),
         };
 
         convert_to_bytes(tc, indent, buffer_reg, count, start,
@@ -275,7 +274,7 @@ class stmt_builtin_io final : public stmt_call {
             buffer.compile_lea(tc, indent, buffer.tok(), lea_registers,
                                {
                                    .reg_count{range},
-                                   .lea_path{buffer_info.lea_path},
+                                   .known{buffer_info.known},
                                    .address_register{},
                                }),
         };
@@ -291,9 +290,7 @@ class stmt_builtin_io final : public stmt_call {
                        const ident_info& buffer_info) const -> void {
 
         if (has_count()) {
-            argument(2).compile(tc, indent,
-                                toc::make_ident_info_from_register(count));
-
+            argument(2).compile(tc, indent, destination::of_register(count));
             return;
         }
 
@@ -309,8 +306,7 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         x.copy_value(tok(), indent, count,
-                     operand::imm(std::format("{}", element_count),
-                                  tc.get_type_default()));
+                     operand::imm(element_count, tc.get_type_default()));
     }
 
     // the start register stays allocated for the caller
@@ -328,11 +324,10 @@ class stmt_builtin_io final : public stmt_call {
                                      tc.get_type_default()),
         };
 
-        start_arg.compile(tc, indent,
-                          toc::make_ident_info_from_register(start));
+        start_arg.compile(tc, indent, destination::of_register(start));
 
         x.check_bounds(start_arg.tok(), indent, start, buffer_info.array_len,
-                       true, count, tc.bounds_check_options());
+                       true, count, tc.checks().bounds_options());
 
         return start;
     }

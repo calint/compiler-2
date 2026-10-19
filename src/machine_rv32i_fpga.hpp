@@ -235,8 +235,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
         label(0, handler_label);
 
-        exit(token{}, 1,
-             operand::imm(std::format("{}", exit_code), default_type()));
+        exit(token{}, 1, operand::imm(exit_code, default_type()));
     }
 
     //

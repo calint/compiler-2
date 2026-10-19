@@ -774,20 +774,16 @@ class assembler_rv32i final : public assembler {
                         });
     }
 
-    // 'unary_operations' such as '-~' apply to 'value' from right to left
     auto repeated_data(const size_t element_size_bytes, const size_t count,
-                       const std::string_view unary_operations,
                        const int64_t value) -> void {
 
         add_text(std::format(".rept {}", count));
 
         add_record(
-            std::format("{} {}{}", data_directive(element_size_bytes),
-                        unary_operations, value),
-            0,
+            std::format("{} {}", data_directive(element_size_bytes), value), 0,
             data_values{
                 .element_size_bytes{element_size_bytes},
-                .values{evaluate_unary_operations(unary_operations, value)},
+                .values{value},
                 .repeat_count{count},
             });
 
@@ -1847,26 +1843,6 @@ class assembler_rv32i final : public assembler {
         }
 
         return one_instruction_bytes;
-    }
-
-    // applies the innermost operation first, wrapping like the assembler
-    [[nodiscard]] static auto
-    evaluate_unary_operations(const std::string_view operations,
-                              const int64_t value) -> int64_t {
-
-        uint64_t bits{static_cast<uint64_t>(value)};
-        for (const char operation : operations | std::views::reverse) {
-            if (operation == '-') {
-                bits = uint64_t{} - bits;
-                continue;
-            }
-
-            assert(operation == '~');
-
-            bits = ~bits;
-        }
-
-        return static_cast<int64_t>(bits);
     }
 
     [[nodiscard]] static auto find_op(const std::string_view mnemonic) -> op {

@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expr_any.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "stmt_identifier.hpp"
@@ -75,7 +75,7 @@ class stmt_assign_var final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -88,25 +88,24 @@ class stmt_assign_var final : public statement {
             .is_exact{stmt_ident_.is_exact_access()},
         });
 
-        // get information about the destination of the compilation
-        ident_info var_dst_info{tc.make_ident_info(stmt_ident_)};
+        // what the destination resolves to
+        const ident_info var_info{tc.make_ident_info(stmt_ident_)};
 
-        var_dst_info.accessed_path = stmt_ident_.accessed_path();
-        var_dst_info.is_reference = is_reference_destination(tc, var_dst_info);
+        const bool is_reference{is_reference_destination(tc, var_info)};
 
-        assert_reference_not_read(tc, var_dst_info);
+        assert_reference_not_read(tc, is_reference);
 
-        if (var_dst_info.is_const()) {
+        if (var_info.is_const()) {
             throw compiler_exception{
                 tok(), std::format("cannot assign to constant '{}'",
-                                   var_dst_info.const_value)};
+                                   var_info.const_value)};
         }
 
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
 
                 src_info.is_array and
-                src_info.array_len != var_dst_info.array_len) {
+                src_info.array_len != var_info.array_len) {
 
                 throw compiler_exception{
                     expr_.tok(),
@@ -116,16 +115,28 @@ class stmt_assign_var final : public statement {
 
         std::vector<operand> lea_registers;
 
-        var_dst_info.use_operand = array_count_ > 0 or
-                                   stmt_ident_.is_indexed() or
-                                   var_dst_info.is_pointer;
+        const operand address{
+            tc.get_lea_operand(indent, stmt_ident_, var_info, lea_registers),
+        };
 
-        var_dst_info.operand = tc.get_lea_operand(indent, stmt_ident_,
-                                                  var_dst_info, lea_registers);
+        // an array, an indexed element or a loaded pointer is written at the
+        // address computed here
+        const bool is_address_known{
+            array_count_ > 0 or stmt_ident_.is_indexed() or var_info.is_pointer,
+        };
 
-        var_dst_info.is_pointer = false;
+        const destination var_dst{
+            destination::of_name(
+                var_info,
+                {
+                    .address{address},
+                    .is_address_known{is_address_known},
+                    .accessed_path{stmt_ident_.accessed_path()},
+                    .is_reference{is_reference},
+                }),
+        };
 
-        expr_.compile(tc, indent, var_dst_info);
+        expr_.compile(tc, indent, var_dst);
         x.free_scratch_registers(tok(), indent, lea_registers);
     }
 
@@ -152,10 +163,10 @@ class stmt_assign_var final : public statement {
     // a destination that names storage under another name, e.g. a parameter or
     // the element of a 'foo', may be read by the value under that name, only
     // for '--checks=alias'
-    auto assert_reference_not_read(const toc& tc,
-                                   const ident_info& dst_info) const -> void {
+    auto assert_reference_not_read(const toc& tc, const bool is_reference) const
+        -> void {
 
-        if (not tc.is_alias_check() or not dst_info.is_reference) {
+        if (not tc.checks().alias or not is_reference) {
             return;
         }
 
@@ -182,12 +193,12 @@ class stmt_assign_var final : public statement {
 
     // a pointer, a parameter that names its argument or an element of a 'foo'
     [[nodiscard]] auto
-    is_reference_destination(const toc& tc, const ident_info& dst_info) const
+    is_reference_destination(const toc& tc, const ident_info& var_info) const
         -> bool {
 
         const std::string_view root{stmt_ident_.first_token().text()};
 
-        return dst_info.is_pointer or tc.is_alias(root) or
+        return var_info.is_pointer or tc.is_alias(root) or
                not tc.foo_array(root).root.empty();
     }
 

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string_view>
 
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
@@ -25,7 +25,7 @@ class stmt_return final : public statement {
     //
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -41,7 +41,7 @@ class stmt_return final : public statement {
 
         if (return_label.empty()) {
             // note: return from 'main' is exiting
-            x.exit(tok(), indent, operand::imm("0", tc.get_type_default()));
+            x.exit(tok(), indent, operand::imm(0, tc.get_type_default()));
             return;
         }
 

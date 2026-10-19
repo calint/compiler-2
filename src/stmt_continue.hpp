@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <string_view>
 
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
@@ -26,7 +26,7 @@ class stmt_continue final : public statement {
     //
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};

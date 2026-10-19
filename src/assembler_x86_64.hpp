@@ -147,12 +147,6 @@ class assembler_x86_64 final : public assembler {
     // a register by name, memory or an immediate
     using argument = std::variant<std::string_view, memory, immediate>;
 
-    // numbers with unary operations such as '-~' applied from right to left
-    struct data_value {
-        int64_t value{};
-        std::string_view unary_operations;
-    };
-
   private:
     struct op_info {
         std::string_view mnemonic;
@@ -212,16 +206,15 @@ class assembler_x86_64 final : public assembler {
     }
 
     auto data(const size_t element_size_bytes,
-              const std::span<const data_value> values) -> void {
+              const std::span<const int64_t> values) -> void {
 
         std::string text{
             std::format("{} ", data_directive(element_size_bytes)),
         };
 
         std::string_view separator;
-        for (const data_value& value : values) {
-            text += std::format("{}{}{}", separator, value.unary_operations,
-                                value.value);
+        for (const int64_t value : values) {
+            text += std::format("{}{}", separator, value);
 
             separator = ", ";
         }
@@ -294,7 +287,6 @@ class assembler_x86_64 final : public assembler {
     }
 
     auto repeated_data(const size_t element_size_bytes, const size_t count,
-                       const std::string_view unary_operations,
                        const int64_t value) -> void {
 
         // nasm rejects a count above the signed 32-bit range
@@ -302,16 +294,14 @@ class assembler_x86_64 final : public assembler {
 
         size_t remaining{count};
         while (remaining > max_chunk) {
-            add_text(std::format("times {} {} {}{}", max_chunk,
-                                 data_directive(element_size_bytes),
-                                 unary_operations, value));
+            add_text(std::format("times {} {} {}", max_chunk,
+                                 data_directive(element_size_bytes), value));
 
             remaining -= max_chunk;
         }
 
-        add_text(std::format("times {} {} {}{}", remaining,
-                             data_directive(element_size_bytes),
-                             unary_operations, value));
+        add_text(std::format("times {} {} {}", remaining,
+                             data_directive(element_size_bytes), value));
     }
 
     // nasm rejects a single reservation above the signed 32-bit range

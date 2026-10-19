@@ -6,7 +6,7 @@
 #include <ostream>
 #include <string>
 
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "statement.hpp"
 #include "stmt_block.hpp"
 #include "token.hpp"
@@ -39,7 +39,7 @@ class stmt_loop final : public statement {
         code_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -49,7 +49,7 @@ class stmt_loop final : public statement {
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(indent, label);
         tc.enter_loop(label);
-        code_.compile(tc, indent, dst_info);
+        code_.compile(tc, indent, dst);
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
         tc.exit_loop(label);

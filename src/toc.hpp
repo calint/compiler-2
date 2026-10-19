@@ -19,17 +19,45 @@
 #include <system_error>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
+#include "constant_parser.hpp"
 #include "generics.hpp"
+#include "ident_info.hpp"
 #include "lut.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
 #include "token.hpp"
 #include "type.hpp"
+
+//
+// the table of contents: what the names of the program are while it is parsed
+// and compiled, see 'etc/docs/architecture.txt'. the classes below, in reading
+// order:
+//
+//   records         'func_info', 'noninline_body', 'storage_target',
+//                   'alias_info' (what a parameter of an inlined call stands
+//                   for), 'const_info'
+//   'frame'         one scope: its constants, variables and aliases
+//   'ident_path'    a name as its path of elements, e.g. 'p.x'
+//   'ident_builder' the 'ident_info' of a variable and of a path below a known
+//                   address
+//   tables          'type_table', 'function_table', 'data_table'
+//   options         'check_options', 'usage_statistics'
+//   'scope_stack'   the frames from the globals to the innermost scope
+//   'storage_layout' where variables are placed and how much storage is used
+//   'builtin_types' the types the front end needs by role
+//   'ident_resolver' resolves a name by walking the frames, following aliases
+//   'definition_checks' the errors of a name defined twice
+//   'variable_comments' the comment of where a variable is stored
+//   'toc'           the facade the statements use, owns all of the above
+//   generics        'resolve_generic_args' and 'generic_scope', the names of
+//                   the parameters of a generic instance
+//   'make_count_emitter' compiles the count of a bulk operation
+//
 
 class stmt_def_func;
 
@@ -87,37 +115,119 @@ struct storage_target {
     }
 };
 
-struct alias_info {
-    std::string from;
-    std::string to;
+// a parameter that is a constant, e.g. 'x' of 'f(3)' or of 'f(2 * n)' when
+// 'n' is a constant, the body is decided at compile time
+struct bound_constant {
+    int64_t value{};
+};
+
+// a parameter whose value is in a register, e.g. 'x' of 'f(a + 1)'
+struct bound_register {
+    operand reg;
+    // how the comments show it, the register or the name that held it
+    std::string name;
+};
+
+// a parameter that names storage of the caller, e.g. 'p' of
+// 'f(world.rooms[i])', or the result that names the destination
+struct bound_storage {
+    // e.g. 'world.rooms', resolved in the frames of the caller
+    std::string path;
+    // the address computed at the call, empty when the path finds it, e.g.
+    // '[rbp + r15 * 8 + 16]' for a run-time index
     operand lea;
-    const type* type_ptr{};
-    operand register_operand;
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
     // the root variable and the path that the alias names, found where
     // the call is made because the callee does not see the caller's names,
     // e.g. the element 'e' of a 'foo'; empty for a temporary
     storage_target bound;
+};
+
+// what the name of a parameter or of the result of an inlined call stands
+// for in its body
+struct alias_info {
+    std::string from;
+    // the type of the parameter or the result
+    const type* type_ptr{};
+    std::variant<bound_constant, bound_register, bound_storage> binding;
+
+    // what the alias stands for, as the comments show it
+    [[nodiscard]] auto target_text() const -> std::string {
+        if (const bound_constant* const constant{
+                std::get_if<bound_constant>(&binding),
+            }) {
+
+            return std::format("{}", constant->value);
+        }
+
+        if (const bound_register* const reg{
+                std::get_if<bound_register>(&binding),
+            }) {
+
+            return reg->name;
+        }
+
+        return std::get<bound_storage>(binding).path;
+    }
 
     //
     // statics
     //
 
-    [[nodiscard]] static auto make_register(const std::string_view name,
+    [[nodiscard]] static auto make_constant(const std::string_view name,
                                             const type& alias_type,
-                                            const operand& reg) -> alias_info {
+                                            const int64_t value) -> alias_info {
+
+        // note: only a built-in parameter takes a constant
+        assert(alias_type.is_builtin());
+
+        return {
+            .from{std::string{name}},
+            .type_ptr{&alias_type},
+            .binding{
+                bound_constant{
+                    .value{value},
+                },
+            },
+        };
+    }
+
+    [[nodiscard]] static auto
+    make_register(const std::string_view name, const type& alias_type,
+                  const operand& reg, const std::string_view reg_name)
+        -> alias_info {
 
         assert(reg.is_register());
 
         return {
             .from{std::string{name}},
-            .to{reg.base_register()},
-            .lea{},
             .type_ptr{&alias_type},
-            .register_operand{reg},
-            .is_element{},
-            .bound{storage_target{}},
+            .binding{
+                bound_register{
+                    .reg{reg},
+                    .name{std::string{reg_name}},
+                },
+            },
+        };
+    }
+
+    [[nodiscard]] static auto make_register(const std::string_view name,
+                                            const type& alias_type,
+                                            const operand& reg) -> alias_info {
+
+        return make_register(name, alias_type, reg, reg.base_register());
+    }
+
+    [[nodiscard]] static auto make_storage(const std::string_view name,
+                                           const type& alias_type,
+                                           bound_storage storage)
+        -> alias_info {
+
+        return {
+            .from{std::string{name}},
+            .type_ptr{&alias_type},
+            .binding{std::move(storage)},
         };
     }
 };
@@ -431,43 +541,21 @@ class ident_builder final {
                                     });
     }
 
-    // makes room in 'lea_path' for the elements 'target_count' adds
-    //
-    // 'lea_path' has one entry per element of the identifier, an empty entry
-    // where no address is known; the entries are built while walking the
-    // frames outwards, so a target with several elements needs entries
-    // between the alias address just added and the next base
-    static auto pad_lea_path(std::vector<operand>& lea_path,
-                             const size_t target_count) -> void {
-
-        const size_t lea_count{lea_path.size()};
-
-        if (target_count > lea_count and target_count - lea_count > 1) {
-            // -2 because the last element is the alias address and the
-            // first is added when its own frame is walked
-            lea_path.resize(lea_count + target_count - 2);
-        }
-    }
-
     // a built-in identifier below a run-time indexed element is addressed from
     // the last address held, e.g. 'wld.rooms[ix].description.data'
     static auto place_operand_from_lea(const token& src_loc_tk,
                                        ident_info& info) -> void {
 
-        // find the first element from the top that has a 'lea' and get
-        // accessor relative to that
-        operand lea;
-        size_t lea_index{info.elem_path.size()};
-        while (lea_index--) {
-            if (not info.lea_path.at(lea_index).is_empty()) {
-                lea = info.lea_path.at(lea_index);
-                break;
-            }
-        }
-
-        if (lea.is_empty()) {
+        if (not info.known) {
             return;
         }
+
+        const operand& lea{info.known->address};
+
+        const size_t lea_index{
+            info.elem_path.size() - 1 - info.known->trailing_count,
+        };
+        // note: -1 is the index of the last element
 
         // identifier has lea, construct operand
 
@@ -511,14 +599,11 @@ class ident_builder final {
     //   res -> pt.x becomes pt.x
     //   pt.x -> p becomes p.x
     //   lnk.count -> world.room.link becomes world.room.link.count
-    [[nodiscard]] static auto replace_alias_base(const alias_info& alias,
-                                                 const ident_path& id,
-                                                 std::vector<operand>& lea_path)
+    [[nodiscard]] static auto replace_alias_base(const bound_storage& alias,
+                                                 const ident_path& id)
         -> ident_path {
 
-        ident_path target{std::string{alias.to}};
-
-        pad_lea_path(lea_path, target.path().size());
+        ident_path target{alias.path};
 
         for (const std::string& s : id.path() | std::views::drop(1)) {
             target.append(s);
@@ -602,120 +687,6 @@ class type_table final {
 
     [[nodiscard]] auto is_param(const std::string_view name) const -> bool {
         return not params_.empty() and params_.back().has(name);
-    }
-};
-
-// the value of a number or character literal as the tokenizer keeps its text
-class constant_parser final {
-  public:
-    //
-    // statics
-    //
-
-    // e.g. '0x1f' and '0b101', after the optional sign of a number
-    [[nodiscard]] static auto has_base_prefix(const std::string_view str)
-        -> bool {
-
-        return str.starts_with("0x") or str.starts_with("0X") or
-               str.starts_with("0b") or str.starts_with("0B");
-    }
-
-    // the tokenizer keeps the quotes in the text of a character literal
-    [[nodiscard]] static auto is_character_literal(const std::string_view str)
-        -> bool {
-
-        return str.size() >= 2 and str.starts_with('\'') and
-               str.ends_with('\'');
-    }
-
-    // the value is the byte, e.g. 'a' is 97 and '\\xff' is 255
-    [[nodiscard]] static auto parse_character(const token& src_loc_tk,
-                                              const std::string_view str)
-        -> int64_t {
-
-        assert(is_character_literal(str));
-
-        const std::string_view body{str.substr(1, str.size() - 2)};
-        // note: 1 and -2 because the literal is between the quotes
-
-        if (body.size() == 1 and body.at(0) != '\\') {
-            return static_cast<unsigned char>(body.at(0));
-        }
-
-        if (not body.starts_with('\\')) {
-            throw compiler_exception{
-                src_loc_tk,
-                std::format("character literal {} must contain one character",
-                            str)};
-        }
-
-        const std::optional<char> decoded{token::decode_escape(body.substr(1))};
-        // note: +1 because the escape starts after the backslash
-
-        if (not decoded) {
-            const size_t backslash_index{src_loc_tk.start_index() + 1};
-
-            // note: +1 because the backslash follows the opening quote
-            const token escape_tk{
-                src_loc_tk.is_text(str)
-                    ? token::position(src_loc_tk.file_index(), backslash_index,
-                                      src_loc_tk.at_line())
-                    : src_loc_tk,
-            };
-
-            throw compiler_exception{
-                escape_tk,
-                std::format("unsupported escape in character literal {}", str)};
-        }
-
-        return static_cast<unsigned char>(*decoded);
-    }
-
-    // e.g. '12', '0x1f', '0b101' and ''a'' have a value, 'x' has none
-    [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
-                                             const std::string_view str)
-        -> std::optional<int64_t> {
-
-        if (is_character_literal(str)) {
-            return parse_character(src_loc_tk, str);
-        }
-
-        constexpr int base_decimal{10};
-        constexpr int base_hex{16};
-        constexpr int base_binary{2};
-
-        int base{base_decimal};
-        std::string_view digits{str};
-
-        if (str.starts_with("0x") or str.starts_with("0X")) {
-            base = base_hex;
-            digits.remove_prefix(2);
-            // note: 2 for the '0x' prefix
-        } else if (str.starts_with("0b") or str.starts_with("0B")) {
-            base = base_binary;
-            digits.remove_prefix(2);
-            // note: 2 for the '0b' prefix
-        }
-
-        int64_t value{};
-
-        const char* const begin{std::to_address(digits.begin())};
-        const char* const end{std::to_address(digits.end())};
-
-        const std::from_chars_result result{
-            std::from_chars(begin, end, value, base),
-        };
-
-        if (result.ec == std::errc::result_out_of_range) {
-            throw compiler_exception{
-                src_loc_tk, std::format("constant '{}' is out of range", str)};
-        }
-
-        if (result.ec == std::errc{} and result.ptr == end) {
-            return value;
-        }
-
-        return std::nullopt;
     }
 };
 
@@ -889,6 +860,54 @@ struct check_options {
     bool overlap{};
     bool stack{};
     bool overflow{};
+
+    [[nodiscard]] auto bounds_options() const -> machine::bounds_check_options {
+
+        return {
+            .upper{bounds_upper},
+            .lower{bounds_lower},
+            .with_line{with_line},
+        };
+    }
+
+    [[nodiscard]] auto division_options() const
+        -> machine::division_check_options {
+
+        return {
+            .enabled{division},
+            .with_line{with_line},
+        };
+    }
+
+    // either bound
+    [[nodiscard]] auto is_bounds() const -> bool {
+        return bounds_upper or bounds_lower;
+    }
+
+    [[nodiscard]] auto overflow_options() const
+        -> machine::overflow_check_options {
+
+        return {
+            .enabled{overflow},
+            .with_line{with_line},
+        };
+    }
+
+    [[nodiscard]] auto overlap_options() const
+        -> machine::overlap_check_options {
+
+        return {
+            .enabled{overlap},
+            .with_line{with_line},
+        };
+    }
+
+    [[nodiscard]] auto shift_options() const -> machine::shift_check_options {
+        return {
+            .enabled{shift},
+            .with_line{with_line},
+        };
+    }
 };
 
 // what the compile used, for the report
@@ -929,7 +948,16 @@ class scope_stack final {
                 return {};
             }
 
-            return frm.get_alias(name).bound.root;
+            const bound_storage* const storage{
+                std::get_if<bound_storage>(&frm.get_alias(name).binding),
+            };
+
+            // note: a constant or a register names no variable
+            if (storage == nullptr) {
+                return {};
+            }
+
+            return storage->bound.root;
         }
 
         std::unreachable();
@@ -1150,9 +1178,15 @@ class scope_stack final {
                 return path;
             }
 
-            const std::optional<access_path>& bound{
-                frm.get_alias(name).bound.path,
+            const bound_storage* const storage{
+                std::get_if<bound_storage>(&frm.get_alias(name).binding),
             };
+
+            if (storage == nullptr) {
+                return std::nullopt;
+            }
+
+            const std::optional<access_path>& bound{storage->bound.path};
 
             if (not bound or not path) {
                 return std::nullopt;
@@ -1207,8 +1241,10 @@ class storage_layout final {
     size_t max_vars_size_bytes_{};
     bool entry_gap_applied_{};
 
-    // the locals of a dry run live in the callee's own frame
-    bool capacity_unchecked_{};
+    // the parse declares names without checking the capacity, the compile
+    // checks it where the declaration is compiled; the locals of a dry run
+    // live in the callee's own frame
+    bool capacity_unchecked_{true};
 
   public:
     // what a dry run changes and 'end_dry_run' puts back
@@ -1283,6 +1319,9 @@ class storage_layout final {
     }
 
     auto assert_released() const -> void { assert(vars_size_bytes_ == 0); }
+
+    // the declarations from here on are checked against the capacity
+    auto begin_compile() -> void { capacity_unchecked_ = false; }
 
     auto begin_dry_run() -> dry_run_state {
         frame* const storage_frame{
@@ -1588,29 +1627,14 @@ class ident_resolver final {
 
     // where the walk through the frames has got to
     struct walk {
-        explicit walk(ident_path identifier)
-            : id{std::move(identifier)},
-              lea_path(id.path().size() - 1, operand{}) {
-
-            assert(not id.path().empty());
-
-            // ignore the elements after the first element:
-            //  e.g.: lnks[1].pos.y
-            //   ignore pos.y since those cannot have a lea
-            //   add empty leas for those
-            //   note: 'lea_path' will be reversed when complete so that
-            //          'ident_path' elements have corresponding lea
-            // note: -1 to exclude the first element
-        }
+        explicit walk(ident_path identifier) : id{std::move(identifier)} {}
 
         // the identifier, an alias rewrites it to what the alias stands for
         ident_path id;
 
-        // note: 'lea' describes the effective address of an identifier's data
-        //       'lea_path' associates address operands with identifier
-        //       components; it is built while walking frames from the
-        //       innermost outwards and reversed before use
-        std::vector<operand> lea_path;
+        // the first address met is the deepest, outer aliases only rewrite
+        // the base of the path
+        std::optional<known_address> known;
 
         // an alias of an element names the element, not the array holding it
         bool is_element{};
@@ -1714,34 +1738,31 @@ class ident_resolver final {
         // this is an alias, continue resolving until it is a variable,
         // register or constant
         if (cur_frame.has_alias(step.id.base())) {
-            return follow_alias(cur_frame.get_alias(step.id.base()), src_loc_tk,
-                                ident, step);
+            return follow_alias(cur_frame.get_alias(step.id.base()), ident,
+                                step);
         }
 
         // neither: a global, a constant or empty
-        step.lea_path.emplace_back();
-
         return resolve_var_in(cur_frame, src_loc_tk, ident, step);
     }
 
     [[nodiscard]] auto
     resolve_in_frame(const frame& frm, const token& src_loc_tk,
                      const std::string_view ident, const ident_path& id,
-                     std::vector<operand> lea_path) const -> ident_info {
+                     const std::optional<known_address>& known) const
+        -> ident_info {
 
         // try function scope
         if (frm.has_var(id.base())) {
             return resolve_var(src_loc_tk, ident, id,
-                               frm.get_var_const_ref(id.base()),
-                               std::move(lea_path));
+                               frm.get_var_const_ref(id.base()), known);
         }
 
         // try global scope
         if (scopes_.get().front().has_var(id.base())) {
             return resolve_var(
                 src_loc_tk, ident, id,
-                scopes_.get().front().get_var_const_ref(id.base()),
-                std::move(lea_path));
+                scopes_.get().front().get_var_const_ref(id.base()), known);
         }
 
         // try constant
@@ -1775,11 +1796,10 @@ class ident_resolver final {
         return resolve_constant_or_empty(src_loc_tk, ident, step.id);
     }
 
-    [[nodiscard]] auto resolve_var(const token& src_loc_tk,
-                                   const std::string_view ident,
-                                   const ident_path& id, const var_info& var,
-                                   std::vector<operand> lea_path) const
-        -> ident_info {
+    [[nodiscard]] auto
+    resolve_var(const token& src_loc_tk, const std::string_view ident,
+                const ident_path& id, const var_info& var,
+                const std::optional<known_address>& known) const -> ident_info {
 
         if (var.value_register.is_register() and id.path().size() == 1) {
             return ident_info::make_register(ident, var.value_register);
@@ -1793,15 +1813,7 @@ class ident_resolver final {
 
         info.read_only_why = var.read_only_why;
 
-        lea_path.resize(id.path().size());
-        // note: pad with empty for the remaining elements in the id path
-
-        std::ranges::reverse(lea_path);
-        // note: reverse it since it was constructed while traversing
-        //       upwards in the frame stack but 'elem_path' and 'type_path'
-        //       are ordered from the top down
-
-        info.lea_path = std::move(lea_path);
+        info.known = known;
 
         if (not info.type_ref().is_builtin()) {
             return info;
@@ -1818,8 +1830,7 @@ class ident_resolver final {
                                       walk& step) const -> ident_info {
 
         ident_info info{
-            resolve_in_frame(cur_frame, src_loc_tk, ident, step.id,
-                             std::move(step.lea_path)),
+            resolve_in_frame(cur_frame, src_loc_tk, ident, step.id, step.known),
         };
 
         return ident_builder::as_element_if(step.is_element, std::move(info));
@@ -1829,42 +1840,54 @@ class ident_resolver final {
     // statics
     //
 
-    // the register an alias stands for, else the walk goes on with the
-    // identifier rewritten to the variable that the alias refers to
-    [[nodiscard]] static auto
-    follow_alias(const alias_info& alias, const token& src_loc_tk,
-                 const std::string_view ident, walk& step)
+    // the constant or the register an alias stands for, else the walk goes on
+    // with the identifier rewritten to the variable that the alias refers to
+    [[nodiscard]] static auto follow_alias(const alias_info& alias,
+                                           const std::string_view ident,
+                                           walk& step)
         -> std::optional<ident_info> {
 
         const bool is_single{step.id.path().size() == 1};
 
-        if (alias.register_operand.is_register() and is_single) {
-            return ident_info::make_register(ident, alias.register_operand);
-        }
-
         // the value of an argument keeps the type of its parameter
-        if (is_single and alias.type_ptr != nullptr and
-            alias.type_ptr->is_builtin()) {
+        if (const bound_constant* const constant{
+                std::get_if<bound_constant>(&alias.binding),
+            }) {
 
-            if (const std::optional<int64_t> value{
-                    constant_parser::parse_constant(src_loc_tk, alias.to),
-                };
-                value) {
+            // note: a built-in has no fields and no elements
+            assert(is_single);
 
-                return ident_info::make_const(ident, alias.to, *alias.type_ptr,
-                                              *value, true);
-            }
+            return ident_info::make_const(ident, alias.target_text(),
+                                          *alias.type_ptr, constant->value,
+                                          true);
         }
+
+        if (const bound_register* const reg{
+                std::get_if<bound_register>(&alias.binding),
+            }) {
+
+            // note: a built-in has no fields and no elements
+            assert(is_single);
+
+            return ident_info::make_register(ident, reg->reg);
+        }
+
+        const bound_storage& storage{std::get<bound_storage>(alias.binding)};
 
         // a field path such as 'p.x' gets its array-ness from the field
-        if (alias.is_element and is_single) {
+        if (storage.is_element and is_single) {
             step.is_element = true;
         }
 
-        step.lea_path.emplace_back(alias.lea);
+        if (not step.known and not storage.lea.is_empty()) {
+            step.known = known_address{
+                .address{storage.lea},
+                .trailing_count{step.id.path().size() - 1},
+            };
+            // note: -1 because the alias names the first element of the path
+        }
 
-        step.id =
-            ident_builder::replace_alias_base(alias, step.id, step.lea_path);
+        step.id = ident_builder::replace_alias_base(storage, step.id);
 
         return std::nullopt;
     }
@@ -2089,6 +2112,41 @@ class toc final {
     check_options checks_;
     // above zero while the code is compiled only to be measured or checked
     size_t dry_run_depth_{};
+    // false while the program is parsed: the names are declared without
+    // comments and without the capacity check of the storage
+    bool is_compiling_{};
+
+    // what a dry run changes in 'toc' is put back when it ends, also when an
+    // error unwinds: the deepest frame count, the string constants and the
+    // use of storage; while it lives a noinline body that a call asks for is
+    // not added, the call is compiled again for real
+    class dry_run_scope final {
+        toc& tc_;
+        size_t kept_max_frame_count_;
+        size_t kept_string_constant_count_;
+        storage_layout::dry_run_state kept_storage_;
+
+      public:
+        explicit dry_run_scope(toc& tc)
+            : tc_{tc}, kept_max_frame_count_{tc.scopes_.max_depth()},
+              kept_string_constant_count_{tc.data_.constant_count()},
+              kept_storage_{tc.storage_.begin_dry_run()} {
+
+            ++tc_.dry_run_depth_;
+        }
+
+        dry_run_scope(const dry_run_scope&) = delete;
+        dry_run_scope(dry_run_scope&&) = delete;
+        auto operator=(const dry_run_scope&) -> dry_run_scope& = delete;
+        auto operator=(dry_run_scope&&) -> dry_run_scope& = delete;
+
+        ~dry_run_scope() {
+            --tc_.dry_run_depth_;
+            tc_.storage_.end_dry_run(kept_storage_);
+            tc_.scopes_.set_max_depth(kept_max_frame_count_);
+            tc_.data_.resize_constants(kept_string_constant_count_);
+        }
+    };
 
   public:
     // an explicit conversion wraps the arithmetic of its argument, the
@@ -2148,9 +2206,11 @@ class toc final {
 
         definitions_.assert_const_not_defined(src_loc_tk, name);
 
-        ::machine& x{machine()};
+        if (is_compiling_) {
+            ::machine& x{machine()};
 
-        x.comment(src_loc_tk, indent, "const {} = {}", name, value);
+            x.comment(src_loc_tk, indent, "const {} = {}", name, value);
+        }
 
         scopes_.back().add_const(name, {
                                            .src_loc_tk{src_loc_tk},
@@ -2262,7 +2322,9 @@ class toc final {
 
         scopes_.back().add_var(var, allocated_size_bytes, kind);
 
-        var_comments_.comment(src_loc_tk, indent, var);
+        if (is_compiling_) {
+            var_comments_.comment(src_loc_tk, indent, var);
+        }
     }
 
     auto assert_generic_param_free(const token& src_loc_tk,
@@ -2271,20 +2333,25 @@ class toc final {
         definitions_.assert_generic_param_free(src_loc_tk, name);
     }
 
-    [[nodiscard]] auto bounds_check_options() const
-        -> machine::bounds_check_options {
+    // the parse is over: declarations comment where they are stored and the
+    // storage capacity is checked, e.g. a parameter 'self' of a type larger
+    // than the vars section is a pointer once the body is compiled
+    auto begin_compile() -> void {
+        assert(not is_compiling_);
 
-        return {
-            .upper{checks_.bounds_upper},
-            .lower{checks_.bounds_lower},
-            .with_line{checks_.with_line},
-        };
+        is_compiling_ = true;
+        storage_.begin_compile();
     }
 
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace
     auto check_only(const std::function_ref<void()> compile) -> void {
         std::ignore = measure_only(compile);
+    }
+
+    // what '--checks' turned on
+    [[nodiscard]] auto checks() const -> const check_options& {
+        return checks_;
     }
 
     // a number or a constant
@@ -2323,15 +2390,6 @@ class toc final {
         return std::format("{}.{}{}", prefix, src_loc,
                            call_path.empty() ? std::string{}
                                              : std::format(".{}", call_path));
-    }
-
-    [[nodiscard]] auto division_check_options() const
-        -> machine::division_check_options {
-
-        return {
-            .enabled{checks_.division},
-            .with_line{checks_.with_line},
-        };
     }
 
     auto enter_block() -> void { scopes_.enter_block(); }
@@ -2476,7 +2534,7 @@ class toc final {
         return src.compile_lea(*this, indent, src.tok(), lea_registers,
                                {
                                    .reg_count{},
-                                   .lea_path{src_info.lea_path},
+                                   .known{src_info.known},
                                    .address_register{},
                                });
     }
@@ -2573,17 +2631,20 @@ class toc final {
                 return false;
             }
 
-            const alias_info& alias{frm.get_alias(id_base)};
+            const bound_storage* const storage{
+                std::get_if<bound_storage>(&frm.get_alias(id_base).binding),
+            };
 
-            if (not alias.lea.is_empty()) {
-                return true;
-            }
-
-            if (alias.register_operand.is_register()) {
+            // note: a constant or a register has no address
+            if (storage == nullptr) {
                 return false;
             }
 
-            id_base = ident_info::root_of(alias.to);
+            if (not storage->lea.is_empty()) {
+                return true;
+            }
+
+            id_base = ident_info::root_of(storage->path);
         }
 
         // a constant is declared by no frame, e.g. in the initializer of a
@@ -2611,26 +2672,6 @@ class toc final {
     [[nodiscard]] auto is_alias(const std::string_view name) const -> bool {
         return scopes_.is_alias(name);
     }
-
-    [[nodiscard]] auto is_alias_check() const -> bool { return checks_.alias; }
-
-    [[nodiscard]] auto is_bounds_check_lower() const -> bool {
-        return checks_.bounds_lower;
-    }
-
-    [[nodiscard]] auto is_bounds_check_upper() const -> bool {
-        return checks_.bounds_upper;
-    }
-
-    [[nodiscard]] auto is_check_with_line() const -> bool {
-        return checks_.with_line;
-    }
-
-    [[nodiscard]] auto is_division_check() const -> bool {
-        return checks_.division;
-    }
-
-    [[nodiscard]] auto is_frame_check() const -> bool { return checks_.frame; }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name) or generics_.has_func(name);
@@ -2670,18 +2711,6 @@ class toc final {
 
         return builtins_.is_integer_name(name);
     }
-
-    [[nodiscard]] auto is_overflow_check() const -> bool {
-        return checks_.overflow;
-    }
-
-    [[nodiscard]] auto is_overlap_check() const -> bool {
-        return checks_.overlap;
-    }
-
-    [[nodiscard]] auto is_shift_check() const -> bool { return checks_.shift; }
-
-    [[nodiscard]] auto is_stack_check() const -> bool { return checks_.stack; }
 
     [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
         -> bool {
@@ -2732,25 +2761,15 @@ class toc final {
     }
 
     // like 'check_only', returns the size of the code, in the unit of the
-    // target; an error is not caught here, it ends the compilation, so the
-    // state saved below is not restored
+    // target
     [[nodiscard]] auto measure_only(const std::function_ref<void()> compile)
         -> size_t {
 
-        const size_t max_frame_count{scopes_.max_depth()};
-        const size_t string_constant_count{data_.constant_count()};
+        const dry_run_scope dry_run{*this};
 
-        const storage_layout::dry_run_state saved{storage_.begin_dry_run()};
+        ::machine& x{machine()};
 
-        ++dry_run_depth_;
-        const size_t size{machine_.get().measure_code_size(compile)};
-        --dry_run_depth_;
-
-        storage_.end_dry_run(saved);
-        scopes_.set_max_depth(max_frame_count);
-        data_.resize_constants(string_constant_count);
-
-        return size;
+        return x.measure_code_size(compile);
     }
 
     // a callee frame starts aligned for any variable it holds
@@ -2767,35 +2786,6 @@ class toc final {
 
     [[nodiscard]] auto noninline_body_count() const -> size_t {
         return funcs_.noninline_body_count();
-    }
-
-    [[nodiscard]] auto overflow_check_options() const
-        -> machine::overflow_check_options {
-
-        return {
-            .enabled{checks_.overflow},
-            .with_line{checks_.with_line},
-        };
-    }
-
-    [[nodiscard]] auto overlap_check_options() const
-        -> machine::overlap_check_options {
-
-        return {
-            .enabled{checks_.overlap},
-            .with_line{checks_.with_line},
-        };
-    }
-
-    // runs 'parse' with the storage capacity unchecked and its use of storage
-    // not recorded, a parse emits no code, e.g. a parameter 'self' of a type
-    // larger than the vars section is a pointer once the body is compiled
-    auto parse_storage_unchecked(const std::function_ref<void()> parse)
-        -> void {
-
-        const storage_layout::dry_run_state saved{storage_.begin_dry_run()};
-        parse();
-        storage_.end_dry_run(saved);
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
@@ -2851,15 +2841,6 @@ class toc final {
     auto set_type_bool(const type& tpe) -> void { builtins_.set_boolean(tpe); }
 
     auto set_type_void(const type& tpe) -> void { builtins_.set_void(tpe); }
-
-    [[nodiscard]] auto shift_check_options() const
-        -> machine::shift_check_options {
-
-        return {
-            .enabled{checks_.shift},
-            .with_line{checks_.with_line},
-        };
-    }
 
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const
@@ -3032,12 +3013,6 @@ class toc final {
                std::ranges::all_of(text, [&](const char ch) -> bool {
                    return is_letter(ch) or (ch >= '0' and ch <= '9');
                });
-    }
-
-    [[nodiscard]] static auto make_ident_info_from_register(const operand& reg)
-        -> ident_info {
-
-        return ident_info::make_register(reg.base_register(), reg);
     }
 
     // the name of a variable the compiler adds, e.g. 'call-arg-12-0', it has a
@@ -3222,3 +3197,18 @@ class generic_scope final {
         tc_.types().add_param(src_loc_tk, name, tpe);
     }
 };
+
+// compiles the element count of a bulk operation into the register the machine
+// asks for, the statement must outlive the emitter
+[[nodiscard]] inline auto make_count_emitter(toc& tc, const size_t indent,
+                                             const statement& count)
+    -> std::function<void(const operand&)> {
+
+    return [&tc, indent, &count](const operand& count_register) -> void {
+        machine& x{tc.machine()};
+
+        x.comment(count.tok(), indent, statement::trimmed_source(count));
+
+        count.compile(tc, indent, destination::of_register(count_register));
+    };
+}

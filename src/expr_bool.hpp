@@ -15,8 +15,9 @@
 #include <variant>
 #include <vector>
 
-#include "decouple.hpp"
+#include "constant_arith.hpp"
 #include "expr_arith.hpp"
+#include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
 #include "token.hpp"
@@ -232,7 +233,8 @@ class expr_bool_op final : public statement {
             return std::nullopt;
         }
 
-        return eval_constant(*lhs_value, op_, *rhs_value) != is_not_;
+        return constant_arith::eval_constant(*lhs_value, op_, *rhs_value) !=
+               is_not_;
     }
 
   private:
@@ -268,7 +270,7 @@ class expr_bool_op final : public statement {
         branch_action.inverted = false;
 
         x.compare_and_branch(tok(), indent, action.destination,
-                             operand::imm("0", tc.get_type_default()),
+                             operand::imm(0, tc.get_type_default()),
                              branch_action, {});
     }
 
@@ -466,7 +468,7 @@ class expr_bool_op final : public statement {
         machine& x{tc.machine()};
 
         x.compare_and_branch(tok(), indent, dst,
-                             operand::imm("0", tc.get_type_default()), action,
+                             operand::imm(0, tc.get_type_default()), action,
                              allocated_registers);
     }
 
@@ -531,7 +533,7 @@ class expr_bool_op final : public statement {
         const std::vector<operand> allocated_registers{result};
 
         x.compare_and_branch(tok(), indent, result,
-                             operand::imm("0", tc.get_type_default()),
+                             operand::imm(0, tc.get_type_default()),
                              branch_action, allocated_registers);
     }
 
@@ -602,7 +604,7 @@ class expr_bool_op final : public statement {
 
         const int64_t value{*constant};
 
-        if (fits_size_bytes(value, lhs_type.size_bytes())) {
+        if (constant_arith::fits_size_bytes(value, lhs_type.size_bytes())) {
             return;
         }
 
@@ -696,38 +698,9 @@ class expr_bool_op final : public statement {
         };
 
         allocated_registers.emplace_back(reg);
-        expr.compile(tc, indent + 1, toc::make_ident_info_from_register(reg));
+        expr.compile(tc, indent + 1, destination::of_register(reg));
 
         return reg;
-    }
-
-    [[nodiscard]] static auto
-    eval_constant(const int64_t lhs, const machine::comparison_operator op,
-                  const int64_t rhs) -> bool {
-
-        if (op == machine::comparison_operator::equal) {
-            return lhs == rhs;
-        }
-
-        if (op == machine::comparison_operator::not_equal) {
-            return lhs != rhs;
-        }
-
-        if (op == machine::comparison_operator::less) {
-            return lhs < rhs;
-        }
-
-        if (op == machine::comparison_operator::less_equal) {
-            return lhs <= rhs;
-        }
-
-        if (op == machine::comparison_operator::greater) {
-            return lhs > rhs;
-        }
-
-        assert(op == machine::comparison_operator::greater_equal);
-
-        return lhs >= rhs;
     }
 
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
@@ -849,8 +822,7 @@ class expr_bool_op final : public statement {
             x.comment(expr.tok(), indent, "src: folded constant '{}'",
                       statement::trimmed_source(expr));
 
-            return operand::imm(std::format("{}", *value),
-                                tc.get_type_default());
+            return operand::imm(*value, tc.get_type_default());
         }
 
         const ident_info expr_info{tc.make_scalar_ident_info(expr)};
@@ -859,7 +831,7 @@ class expr_bool_op final : public statement {
             return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
                                     {
                                         .reg_count{},
-                                        .lea_path{expr_info.lea_path},
+                                        .known{expr_info.known},
                                         .address_register{},
                                     });
         }
@@ -950,7 +922,7 @@ class expr_bool_op final : public statement {
             lhs.assert_not_narrowed(tc, lhs.get_type());
 
             lhs.compile(tc, indent + 1,
-                        toc::make_ident_info_from_register(action.destination));
+                        destination::of_register(action.destination));
 
             return action.destination;
         }
@@ -1037,7 +1009,7 @@ class expr_bool final : public statement {
 
     [[noreturn]] auto compile([[maybe_unused]] toc& tc,
                               [[maybe_unused]] const size_t indent,
-                              [[maybe_unused]] const ident_info& dst_info) const
+                              [[maybe_unused]] const destination& dst) const
         -> void override {
 
         std::unreachable();

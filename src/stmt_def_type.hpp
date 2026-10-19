@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include "decouple.hpp"
 #include "generics.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "statement.hpp"
 #include "stmt_def_func.hpp"
@@ -227,7 +227,7 @@ class stmt_def_type final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         comment_type_layout(tc, tok(), indent, name_tk_);
@@ -264,7 +264,7 @@ class stmt_def_type_generic final : public statement {
 
     // only its aliases are types
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {}
 
   private:
@@ -369,7 +369,7 @@ class stmt_def_type_alias final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         comment_type_layout(tc, tok(), indent, name_tk_);

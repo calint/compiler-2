@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -221,6 +221,24 @@ class one_line_source final {
     }
 };
 
+// a node of the program: it parses itself in its constructor, writes its
+// source back ('source_to') and compiles; the virtuals in groups, with the
+// classes that override them, the default is 'std::unreachable()' where no
+// other class reaches it
+//
+//   every node     'compile', 'source_to', 'tok', 'trace_assignment'
+//                  (control flow), 'visit_reads' (the expressions)
+//   a value        'folded_constant', 'assert_not_narrowed',
+//                  'keeps_low_bits_when_narrowed', 'get_unary_ops',
+//                  'is_expression', 'produces_boolean', 'compile_boolean':
+//                  'expr_arith', 'expr_any', 'stmt_builtin_convert',
+//                  'stmt_builtin_array_length', 'stmt_builtin_arrays_equal',
+//                  'stmt_call'
+//   a place        'identifier', 'is_identifier', 'accessed_path',
+//                  'compile_lea', 'compile_address', 'is_indexed',
+//                  'is_array_element', 'name_token': 'stmt_identifier', and
+//                  'expr_arith', 'expr_any' and 'expr_type' that hold one
+//   a 'dat'        'compile_data', 'dat_size_bytes': 'stmt_def_dat'
 class statement {
     token token_;
     unary_ops uops_;
@@ -257,7 +275,7 @@ class statement {
 
     virtual auto compile([[maybe_unused]] toc& tc,
                          [[maybe_unused]] const size_t indent,
-                         [[maybe_unused]] const ident_info& dst_info) const
+                         [[maybe_unused]] const destination& dst) const
         -> void {
 
         std::unreachable();
@@ -391,7 +409,7 @@ class statement {
             compile_address(tc, indent, src_loc_tk,
                             {
                                 .reg_count{reg_count},
-                                .lea_path{info.lea_path},
+                                .known{info.known},
                                 .address_register{address_register},
                             },
                             use);
@@ -429,9 +447,8 @@ class statement {
 
         assert(info.is_const());
 
-        return operand::imm(
-            std::format("{}{}", get_unary_ops().to_string(), info.const_value),
-            info.type_ref());
+        return operand::imm(get_unary_ops().evaluate_constant(info.const_value),
+                            info.type_ref());
     }
 
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
@@ -518,24 +535,6 @@ class statement {
         throw compiler_exception{
             src_loc_tk, std::format("cannot {} read-only '{}'{}", action, name,
                                     read_only_hint(info))};
-    }
-
-    [[nodiscard]] static auto fits_size_bytes(const int64_t value,
-                                              const size_t size_bytes) -> bool {
-
-        switch (size_bytes) {
-        case sizeof(int8_t):
-            return std::in_range<int8_t>(value);
-
-        case sizeof(int16_t):
-            return std::in_range<int16_t>(value);
-
-        case sizeof(int32_t):
-            return std::in_range<int32_t>(value);
-
-        default:
-            return true;
-        }
     }
 
     // shared by 'dat' and 'var', 'keyword' names the declaration in the

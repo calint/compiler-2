@@ -19,8 +19,10 @@
 #include <utility>
 #include <vector>
 
+#include "constant_arith.hpp"
 #include "decouple.hpp"
 #include "expression.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "toc.hpp"
@@ -222,17 +224,17 @@ class expr_arith final : public expression {
         }
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         // a single constant is compiled as an identifier with its comments
         if (is_expression()) {
             const std::optional<int64_t> value{
-                folded_constant(tc, dst_info.type_ref()),
+                folded_constant(tc, dst.type_ref()),
             };
 
             if (value) {
-                compile_constant(tc, indent, dst_info, *value,
+                compile_constant(tc, indent, dst, *value,
                                  statement::trimmed_source(*this));
 
                 return;
@@ -242,34 +244,33 @@ class expr_arith final : public expression {
         // a register that the expression reads is the result of an inlined
         // function, writing it early would change what later elements read
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
-        if (dst_info.is_register() and
-            destination_is_clobbered_before_read(dst_info)) {
+        if (dst.is_register() and destination_is_clobbered_before_read(dst)) {
 
-            compile_through_scratch_register(tc, indent, dst_info);
+            compile_through_scratch_register(tc, indent, dst);
             return;
         }
 
         // a register or a single plain element is compiled directly, without
         // trying with and without a scratch register
-        if (dst_info.is_register() or is_single_plain_element()) {
-            do_compile(tc, indent, dst_info);
+        if (dst.is_register() or is_single_plain_element()) {
+            do_compile(tc, indent, dst);
             return;
         }
 
         machine& x{tc.machine()};
 
         // writing the destination early would change what later elements read
-        if (destination_is_clobbered_before_read(dst_info)) {
+        if (destination_is_clobbered_before_read(dst)) {
 
-            compile_through_scratch(tc, indent, dst_info);
+            compile_through_scratch(tc, indent, dst);
             return;
         }
 
         // compile with and without the scratch register to find the best
         // compilation
         x.emit_most_efficient(
-            tok(), indent, [&] -> void { do_compile(tc, indent, dst_info); },
-            [&] -> void { compile_through_scratch(tc, indent, dst_info); });
+            tok(), indent, [&] -> void { do_compile(tc, indent, dst); },
+            [&] -> void { compile_through_scratch(tc, indent, dst); });
     }
 
     [[nodiscard]] auto accessed_path() const
@@ -332,14 +333,15 @@ class expr_arith final : public expression {
                 return std::nullopt;
             }
 
-            if (tc.is_overflow_check() and
-                overflows_width(*value, o, *rhs, width_type)) {
+            if (tc.checks().overflow and
+                constant_arith::overflows_width(*value, o, *rhs, width_type)) {
 
                 throw compiler_exception{
                     e->tok(), "constant expression overflows the type"};
             }
 
-            value = apply_operation(*value, o, *rhs, width_type);
+            value =
+                constant_arith::apply_operation(*value, o, *rhs, width_type);
         }
 
         if (not value) {
@@ -348,15 +350,15 @@ class expr_arith final : public expression {
 
         const int64_t result{uops_.evaluate_constant(*value)};
 
-        if (tc.is_overflow_check() and
-            uops_.negation_overflows(*value,
-                                     signed_minimum(width_type.size_bits()))) {
+        if (tc.checks().overflow and
+            uops_.negation_overflows(*value, constant_arith::signed_minimum(
+                                                 width_type.size_bits()))) {
 
             throw compiler_exception{tok(),
                                      "constant expression overflows the type"};
         }
 
-        return wrap_to_width(result, width_type);
+        return constant_arith::wrap_to_width(result, width_type);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
@@ -448,13 +450,13 @@ class expr_arith final : public expression {
     //   'ix - 2'  =>  compiles 'ix', returns -2
     [[nodiscard]] auto
     compile_without_trailing_addend(toc& tc, const size_t indent,
-                                    const ident_info& dst_info) const
+                                    const destination& dst) const
         -> std::optional<int64_t> {
 
         // note: only an index expression asks, it has no unary ops of its own
         assert(uops_.is_empty());
 
-        const type& width_type{dst_info.type_ref()};
+        const type& width_type{dst.type_ref()};
 
         const std::vector<step> steps{plan_steps(tc, width_type)};
 
@@ -468,7 +470,7 @@ class expr_arith final : public expression {
 
         // note: 2 steps are the least with something to add the constant to
 
-        compile_first_step(tc, indent, dst_info, steps.front());
+        compile_first_step(tc, indent, dst, steps.front());
 
         const std::span<const step> middle_steps{
             std::span{steps}.subspan(1, steps.size() - 2),
@@ -477,7 +479,7 @@ class expr_arith final : public expression {
         //       leaves out the trailing constant
 
         for (const step& s : middle_steps) {
-            compile_step(tc, indent, dst_info, s);
+            compile_step(tc, indent, dst, s);
         }
 
         return last.value;
@@ -524,7 +526,9 @@ class expr_arith final : public expression {
         };
 
         x.copy_value(src.tok(), indent, reg, src_operand);
-        src.get_unary_ops().compile(tc, indent, src.tok(), reg);
+
+        src.get_unary_ops().compile(x, indent, src.tok(), reg,
+                                    tc.checks().overflow_options());
 
         return reg;
     }
@@ -533,7 +537,7 @@ class expr_arith final : public expression {
     // e.g. 'b + 1 - 1' or 'b / 1 / 1' apply nothing
     auto apply_merged_constant(toc& tc, const size_t indent,
                                const arithmetic_operator op,
-                               const ident_info& dst_info, const int64_t value,
+                               const destination& dst, const int64_t value,
                                const std::string_view folded_source) const
         -> void {
 
@@ -552,20 +556,21 @@ class expr_arith final : public expression {
             return;
         }
 
-        asm_op_constant(tc, indent, op, dst_info, value, folded_source);
+        asm_op_constant(tc, indent, op, dst, value, folded_source);
     }
 
     auto asm_op_constant(toc& tc, const size_t indent,
-                         const arithmetic_operator op,
-                         const ident_info& dst_info, const int64_t value,
+                         const arithmetic_operator op, const destination& dst,
+                         const int64_t value,
                          const std::string_view folded_source) const -> void {
 
         // 'b - 3' rather than 'b + -3', the most negative value has no
         // positive counterpart in the width
         if (op == arithmetic_operator::add and value < 0 and
-            value != signed_minimum(dst_info.type_ref().size_bits())) {
+            value !=
+                constant_arith::signed_minimum(dst.type_ref().size_bits())) {
 
-            asm_op_constant(tc, indent, arithmetic_operator::subtract, dst_info,
+            asm_op_constant(tc, indent, arithmetic_operator::subtract, dst,
                             -value, folded_source);
 
             return;
@@ -573,7 +578,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, "{} {} {}", dst_info.id,
+        x.comment(tok(), indent, "{} {} {}", dst.name(),
                   machine::source_text(op), value);
 
         x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
@@ -583,122 +588,119 @@ class expr_arith final : public expression {
         if (op == arithmetic_operator::add or
             op == arithmetic_operator::subtract) {
 
-            x.add_subtract(tok(), indent, op, dst_info.operand, constant,
-                           tc.overflow_check_options());
+            x.add_subtract(tok(), indent, op, dst.operand(), constant,
+                           tc.checks().overflow_options());
 
             return;
         }
 
         if (op == arithmetic_operator::multiply) {
-            x.multiply(tok(), indent, dst_info.operand, constant, false,
-                       tc.overflow_check_options());
+            x.multiply(tok(), indent, dst.operand(), constant, false,
+                       tc.checks().overflow_options());
 
             return;
         }
 
         if (op == arithmetic_operator::divide) {
-            x.divide(tok(), indent, op, dst_info.operand, constant,
-                     tc.division_check_options());
+            x.divide(tok(), indent, op, dst.operand(), constant,
+                     tc.checks().division_options());
 
             return;
         }
 
-        x.bitwise(tok(), indent, op, dst_info.operand, constant);
+        x.bitwise(tok(), indent, op, dst.operand(), constant);
     }
 
     // a narrow memory destination truncates when stored, which gives the same
     // value when the low bits do not depend on the high bits
     [[nodiscard]] auto can_compute_wide(const toc& tc,
-                                        const ident_info& dst_info) const
-        -> bool {
+                                        const destination& dst) const -> bool {
 
         // note: a register destination is compiled directly by 'compile'
-        assert(dst_info.operand.is_memory());
+        assert(dst.operand().is_memory());
 
-        if (dst_info.type_ref().size_bytes() >=
-            tc.get_type_default().size_bytes()) {
+        if (dst.type_ref().size_bytes() >= tc.get_type_default().size_bytes()) {
 
             return false;
         }
 
         // the wide result must be checked against the narrow type
-        if (tc.is_overflow_check()) {
+        if (tc.checks().overflow) {
             return false;
         }
 
         return keeps_low_bits_when_narrowed();
     }
 
-    auto compile_constant(toc& tc, const size_t indent,
-                          const ident_info& dst_info, const int64_t value,
+    auto compile_constant(toc& tc, const size_t indent, const destination& dst,
+                          const int64_t value,
                           const std::string_view folded_source) const -> void {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, "{} = {}", dst_info.id, value);
+        x.comment(tok(), indent, "{} = {}", dst.name(), value);
         x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
 
-        x.copy_value(tok(), indent, dst_info.operand,
-                     constant_operand(tc, value));
+        x.copy_value(tok(), indent, dst.operand(), constant_operand(tc, value));
     }
 
     // a nested list is folded when it is compiled as an element:
     //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
     auto compile_elements(toc& tc, const size_t indent,
-                          const ident_info& dst_info) const -> void {
+                          const destination& dst) const -> void {
 
-        const type& width_type{dst_info.type_ref()};
+        const type& width_type{dst.type_ref()};
 
         const std::vector<step> steps{plan_steps(tc, width_type)};
 
-        compile_first_step(tc, indent, dst_info, steps.front());
+        compile_first_step(tc, indent, dst, steps.front());
 
         for (const step& s : std::span{steps}.subspan(1)) {
             // note: 1 because the first step is compiled above
 
-            compile_step(tc, indent, dst_info, s);
+            compile_step(tc, indent, dst, s);
         }
     }
 
     auto compile_first_step(toc& tc, const size_t indent,
-                            const ident_info& dst_info, const step& first) const
+                            const destination& dst, const step& first) const
         -> void {
 
         // e.g. '2 * 3 / b' or '3 - b'
         // under the overflow check the constants stay elements, a first
         // constant is copied
         const bool is_checked_constant{
-            tc.is_overflow_check() and first.value.has_value() and
+            tc.checks().overflow and first.value.has_value() and
                 first.op == arithmetic_operator::add,
         };
 
         if (first.element == nullptr or is_checked_constant) {
             assert(first.value);
 
-            compile_constant(tc, indent, dst_info, *first.value,
+            compile_constant(tc, indent, dst, *first.value,
                              first.folded_source);
 
             return;
         }
 
-        compile_first_element(tc, indent, dst_info, *first.element);
+        compile_first_element(tc, indent, dst, *first.element);
 
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
         if (first.op == arithmetic_operator::subtract) {
             machine& x{tc.machine()};
 
             x.unary(tok(), indent, machine::arithmetic_operator::negate,
-                    dst_info.operand, tc.overflow_check_options());
+                    dst.operand(), tc.checks().overflow_options());
         }
     }
 
-    auto compile_step(toc& tc, const size_t indent, const ident_info& dst_info,
+    auto compile_step(toc& tc, const size_t indent, const destination& dst,
                       const step& s) const -> void {
 
         // the merging passes are off under the overflow check, a constant
         // that changes nothing must still not reach the backend
         const bool is_checked_constant{
-            tc.is_overflow_check() and s.value.has_value() and
+            tc.checks().overflow and s.value.has_value() and
                 (s.op == arithmetic_operator::add or
                  s.op == arithmetic_operator::subtract or
                  s.op == arithmetic_operator::multiply or
@@ -708,23 +710,23 @@ class expr_arith final : public expression {
         };
 
         if (s.value and (s.element == nullptr or is_checked_constant)) {
-            apply_merged_constant(tc, indent, s.op, dst_info, *s.value,
+            apply_merged_constant(tc, indent, s.op, dst, *s.value,
                                   s.folded_source);
 
             return;
         }
 
-        asm_op(tc, indent, s.op, dst_info, *s.element);
+        asm_op(tc, indent, s.op, dst, *s.element);
     }
 
     // the destination keeps its value until the whole expression is computed
     auto compile_through_scratch(toc& tc, const size_t indent,
-                                 const ident_info& dst_info) const -> void {
+                                 const destination& dst) const -> void {
 
-        const type& dst_type{dst_info.type_ref()};
+        const type& dst_type{dst.type_ref()};
 
-        if (not can_compute_wide(tc, dst_info)) {
-            compile_through_scratch_as(tc, indent, dst_info, dst_type);
+        if (not can_compute_wide(tc, dst)) {
+            compile_through_scratch_as(tc, indent, dst, dst_type);
             return;
         }
 
@@ -735,16 +737,16 @@ class expr_arith final : public expression {
         x.emit_most_efficient(
             tok(), indent,
             [&] -> void {
-                compile_through_scratch_as(tc, indent, dst_info, dst_type);
+                compile_through_scratch_as(tc, indent, dst, dst_type);
             },
             [&] -> void {
-                compile_through_scratch_as(tc, indent, dst_info,
+                compile_through_scratch_as(tc, indent, dst,
                                            tc.get_type_default());
             });
     }
 
     auto compile_through_scratch_as(toc& tc, const size_t indent,
-                                    const ident_info& dst_info,
+                                    const destination& dst,
                                     const type& scratch_type) const -> void {
 
         machine& x{tc.machine()};
@@ -753,9 +755,9 @@ class expr_arith final : public expression {
             x.alloc_scratch_register(tok(), indent, scratch_type),
         };
 
-        do_compile(tc, indent, toc::make_ident_info_from_register(reg));
+        do_compile(tc, indent, destination::of_register(reg));
 
-        x.copy_value(tok(), indent, dst_info.operand, reg);
+        x.copy_value(tok(), indent, dst.operand(), reg);
 
         x.free_scratch_register(tok(), indent, reg);
     }
@@ -763,28 +765,27 @@ class expr_arith final : public expression {
     // the register destination keeps its value until the whole expression is
     // computed in another register
     auto compile_through_scratch_register(toc& tc, const size_t indent,
-                                          const ident_info& dst_info) const
+                                          const destination& dst) const
         -> void {
 
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(tok(), indent, dst_info.type_ref()),
+            x.alloc_scratch_register(tok(), indent, dst.type_ref()),
         };
 
-        do_compile(tc, indent, toc::make_ident_info_from_register(reg));
+        do_compile(tc, indent, destination::of_register(reg));
 
-        x.copy_value(tok(), indent, dst_info.operand, reg);
+        x.copy_value(tok(), indent, dst.operand(), reg);
         x.free_scratch_register(tok(), indent, reg);
     }
 
     // a plain first element is copied before anything writes the destination
     // a negated one may move behind a leading constant: 'n = -n + 1'
     [[nodiscard]] auto
-    destination_is_clobbered_before_read(const ident_info& dst_info) const
-        -> bool {
+    destination_is_clobbered_before_read(const destination& dst) const -> bool {
 
-        const std::string_view root{dst_info.root_id()};
+        const std::string_view root{dst.root_id()};
 
         const statement& first{*exprs_.front()};
 
@@ -804,13 +805,16 @@ class expr_arith final : public expression {
             });
     }
 
-    auto do_compile(toc& tc, const size_t indent,
-                    const ident_info& dst_info) const -> void {
+    auto do_compile(toc& tc, const size_t indent, const destination& dst) const
+        -> void {
 
-        compile_elements(tc, indent, dst_info);
+        compile_elements(tc, indent, dst);
+
+        machine& x{tc.machine()};
 
         // apply unary expressions on destination
-        uops_.compile(tc, indent, tok(), dst_info.operand);
+        uops_.compile(x, indent, tok(), dst.operand(),
+                      tc.checks().overflow_options());
     }
 
     // 'ws_before_op_tk' belongs to what follows the list
@@ -952,7 +956,7 @@ class expr_arith final : public expression {
 
         // moving or combining constants changes which partial results
         // overflow
-        if (tc.is_overflow_check()) {
+        if (tc.checks().overflow) {
             return steps;
         }
 
@@ -1014,68 +1018,15 @@ class expr_arith final : public expression {
         merged.folded_source += s.folded_source;
     }
 
-    // none when the division traps, e.g. 'x / 0' or the minimum divided by -1
-    [[nodiscard]] static auto
-    apply_division(const int64_t lhs, const arithmetic_operator op,
-                   const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
-
-        if (rhs == 0 or
-            (rhs == -1 and lhs == signed_minimum(width_type.size_bits()))) {
-
-            return std::nullopt;
-        }
-
-        return wrap_to_width(op == arithmetic_operator::divide ? lhs / rhs
-                                                               : lhs % rhs,
-                             width_type);
-    }
-
-    // empty when the targets differ at run time: a zero divisor traps, the
-    // most negative value divided by -1 traps or wraps and shift counts
-    // outside the width are masked differently
-    [[nodiscard]] static auto
-    apply_operation(const int64_t lhs, const arithmetic_operator op,
-                    const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
-
-        if (op == arithmetic_operator::divide or
-            op == arithmetic_operator::remainder) {
-
-            return apply_division(lhs, op, rhs, width_type);
-        }
-
-        if (op == arithmetic_operator::shift_left or
-            op == arithmetic_operator::shift_right) {
-
-            return apply_shift(lhs, op, rhs, width_type);
-        }
-
-        return combine(lhs, op, rhs, width_type);
-    }
-
-    // none when the count is not below the width, e.g. 'x << 64' of an 'i64'
-    [[nodiscard]] static auto
-    apply_shift(const int64_t lhs, const arithmetic_operator op,
-                const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
-
-        if (rhs < 0 or std::cmp_greater_equal(rhs, width_type.size_bits())) {
-            return std::nullopt;
-        }
-
-        return shift_constant(lhs, op, static_cast<uint64_t>(rhs), width_type);
-    }
-
     static auto asm_op(toc& tc, const size_t indent,
-                       const arithmetic_operator op, const ident_info& dst,
+                       const arithmetic_operator op, const destination& dst,
                        const statement& src) -> void {
 
         machine& x{tc.machine()};
 
-        x.comment(
-            src.tok(), indent,
-            statement::trimmed_source(src, dst.id, machine::source_text(op)));
+        x.comment(src.tok(), indent,
+                  statement::trimmed_source(src, dst.name(),
+                                            machine::source_text(op)));
 
         if (op == arithmetic_operator::assign) {
             asm_op_mov(tc, indent, dst, src);
@@ -1113,14 +1064,14 @@ class expr_arith final : public expression {
 
     static auto asm_op_add_sub(toc& tc, const size_t indent,
                                const arithmetic_operator op,
-                               const ident_info& dst_info, const statement& src)
+                               const destination& dst, const statement& src)
         -> void {
 
         machine& x{tc.machine()};
 
         // note: the rewrite hides an overflow of the negation, the check
         //       computes it
-        if (not tc.is_overflow_check() and is_negated_operand(tc, src)) {
+        if (not tc.checks().overflow and is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
             const ident_info src_info{tc.make_scalar_ident_info(src)};
@@ -1134,7 +1085,7 @@ class expr_arith final : public expression {
                 src.tok(), indent,
                 op == arithmetic_operator::add ? arithmetic_operator::subtract
                                                : arithmetic_operator::add,
-                dst_info.operand, src_operand, tc.overflow_check_options());
+                dst.operand(), src_operand, tc.checks().overflow_options());
 
             x.free_scratch_registers(src.tok(), indent, lea_registers);
 
@@ -1143,49 +1094,46 @@ class expr_arith final : public expression {
 
         // a negated operand is computed at the width of the destination so
         // the overflow check sees it
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
-            [&](const operand& term, const bool) -> void {
-                x.add_subtract(src.tok(), indent, op, dst_info.operand, term,
-                               tc.overflow_check_options());
-            });
+        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
+                         [&](const operand& term, const bool) -> void {
+                             x.add_subtract(src.tok(), indent, op,
+                                            dst.operand(), term,
+                                            tc.checks().overflow_options());
+                         });
     }
 
     static auto asm_op_bitwise(toc& tc, const size_t indent,
                                const arithmetic_operator op,
-                               const ident_info& dst_info, const statement& src)
+                               const destination& dst, const statement& src)
         -> void {
 
         machine& x{tc.machine()};
 
         // a negated operand is computed at the width of the destination so
         // the overflow check sees it
-        emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
-            [&](const operand& value, const bool) -> void {
-                x.bitwise(src.tok(), indent, op, dst_info.operand, value);
-            });
+        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
+                         [&](const operand& value, const bool) -> void {
+                             x.bitwise(src.tok(), indent, op, dst.operand(),
+                                       value);
+                         });
     }
 
     static auto asm_op_div(toc& tc, const size_t indent,
-                           const arithmetic_operator op,
-                           const ident_info& dst_info, const statement& src)
-        -> void {
+                           const arithmetic_operator op, const destination& dst,
+                           const statement& src) -> void {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst_info.type_ref(),
-                         dst_info.type_ref(),
+        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
                          [&](const operand& divisor, const bool) -> void {
-                             x.divide(src.tok(), indent, op, dst_info.operand,
-                                      divisor, tc.division_check_options());
+                             x.divide(src.tok(), indent, op, dst.operand(),
+                                      divisor, tc.checks().division_options());
                          });
     }
 
     // 'compile_first_element' copies identifiers itself
-    static auto asm_op_mov(toc& tc, const size_t indent,
-                           const ident_info& dst_info, const statement& src)
-        -> void {
+    static auto asm_op_mov(toc& tc, const size_t indent, const destination& dst,
+                           const statement& src) -> void {
 
         assert(src.is_expression());
 
@@ -1193,88 +1141,48 @@ class expr_arith final : public expression {
 
         x.comment(src.tok(), indent, "= expression");
 
-        src.compile(tc, indent, dst_info);
+        src.compile(tc, indent, dst);
     }
 
-    static auto asm_op_mul(toc& tc, const size_t indent,
-                           const ident_info& dst_info, const statement& src)
-        -> void {
+    static auto asm_op_mul(toc& tc, const size_t indent, const destination& dst,
+                           const statement& src) -> void {
 
         machine& x{tc.machine()};
 
         // a scratch register factor can be overwritten by the backend
         emit_with_source(
-            tc, indent, src, dst_info.type_ref(), dst_info.type_ref(),
+            tc, indent, src, dst.type_ref(), dst.type_ref(),
             [&](const operand& factor, const bool is_scratch) -> void {
-                x.multiply(src.tok(), indent, dst_info.operand, factor,
-                           is_scratch, tc.overflow_check_options());
+                x.multiply(src.tok(), indent, dst.operand(), factor, is_scratch,
+                           tc.checks().overflow_options());
             });
     }
 
     static auto asm_op_shift(toc& tc, const size_t indent,
                              const arithmetic_operator op,
-                             const ident_info& dst_info, const statement& src)
+                             const destination& dst, const statement& src)
         -> void {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst_info.type_ref(),
-                         dst_info.type_ref(),
+        emit_with_source(tc, indent, src, dst.type_ref(), dst.type_ref(),
                          [&](const operand& count, const bool) -> void {
-                             x.shift(src.tok(), indent, op, dst_info.operand,
-                                     count, tc.shift_check_options());
+                             x.shift(src.tok(), indent, op, dst.operand(),
+                                     count, tc.checks().shift_options());
                          });
-    }
-
-    // operations whose low bits do not depend on higher bits
-    [[nodiscard]] static auto combine(const int64_t lhs,
-                                      const arithmetic_operator op,
-                                      const int64_t rhs, const type& width_type)
-        -> int64_t {
-
-        // unsigned arithmetic wraps like the registers
-        const uint64_t lhs_bits{static_cast<uint64_t>(lhs)};
-        const uint64_t rhs_bits{static_cast<uint64_t>(rhs)};
-
-        if (op == arithmetic_operator::add) {
-            return wrap_to_width(static_cast<int64_t>(lhs_bits + rhs_bits),
-                                 width_type);
-        }
-
-        if (op == arithmetic_operator::subtract) {
-            return wrap_to_width(static_cast<int64_t>(lhs_bits - rhs_bits),
-                                 width_type);
-        }
-
-        if (op == arithmetic_operator::multiply) {
-            return wrap_to_width(static_cast<int64_t>(lhs_bits * rhs_bits),
-                                 width_type);
-        }
-
-        if (op == arithmetic_operator::bit_and) {
-            return static_cast<int64_t>(lhs_bits & rhs_bits);
-        }
-
-        if (op == arithmetic_operator::bit_or) {
-            return static_cast<int64_t>(lhs_bits | rhs_bits);
-        }
-
-        assert(op == arithmetic_operator::bit_xor);
-
-        return static_cast<int64_t>(lhs_bits ^ rhs_bits);
     }
 
     // an identifier copies itself, anything else is assigned with '='
     static auto compile_first_element(toc& tc, const size_t indent,
-                                      const ident_info& dst_info,
+                                      const destination& dst,
                                       const statement& first) -> void {
 
         if (first.is_identifier()) {
-            first.compile(tc, indent, dst_info);
+            first.compile(tc, indent, dst);
             return;
         }
 
-        asm_op(tc, indent, arithmetic_operator::assign, dst_info, first);
+        asm_op(tc, indent, arithmetic_operator::assign, dst, first);
     }
 
     [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
@@ -1288,7 +1196,7 @@ class expr_arith final : public expression {
             x.alloc_scratch_register(src.tok(), indent, register_type),
         };
 
-        src.compile(tc, indent, toc::make_ident_info_from_register(reg));
+        src.compile(tc, indent, destination::of_register(reg));
 
         return reg;
     }
@@ -1297,7 +1205,7 @@ class expr_arith final : public expression {
     [[nodiscard]] static auto constant_operand(const toc& tc,
                                                const int64_t value) -> operand {
 
-        return operand::imm(std::format("{}", value), tc.get_type_default());
+        return operand::imm(value, tc.get_type_default());
     }
 
     static auto consume_peeked_operator(tokenizer& tz) -> void {
@@ -1326,7 +1234,7 @@ class expr_arith final : public expression {
             return std::nullopt;
         }
 
-        return wrap_to_width(
+        return constant_arith::wrap_to_width(
             e.get_unary_ops().evaluate_constant(info.const_value), width_type);
     }
 
@@ -1575,8 +1483,8 @@ class expr_arith final : public expression {
                 continue;
             }
 
-            constant.value =
-                combine(*constant.value, s.op, *s.value, width_type);
+            constant.value = constant_arith::combine(*constant.value, s.op,
+                                                     *s.value, width_type);
 
             append_source(constant, s);
             has_constant = true;
@@ -1617,8 +1525,9 @@ class expr_arith final : public expression {
         }
 
         const int64_t product{
-            combine(*current_divisor, arithmetic_operator::multiply,
-                    *next_divisor, width_type),
+            constant_arith::combine(*current_divisor,
+                                    arithmetic_operator::multiply,
+                                    *next_divisor, width_type),
         };
 
         // a wrapped product divided back differs from the divisor
@@ -1627,29 +1536,6 @@ class expr_arith final : public expression {
         }
 
         return product;
-    }
-
-    // true when the sum, difference or product is outside the width, e.g.
-    // '100 + 100' of an 'i8'
-    [[nodiscard]] static auto overflows_width(const int64_t lhs,
-                                              const arithmetic_operator op,
-                                              const int64_t rhs,
-                                              const type& width_type) -> bool {
-
-        int64_t result{};
-        bool wide_overflow{};
-
-        if (op == arithmetic_operator::add) {
-            wide_overflow = __builtin_add_overflow(lhs, rhs, &result);
-        } else if (op == arithmetic_operator::subtract) {
-            wide_overflow = __builtin_sub_overflow(lhs, rhs, &result);
-        } else if (op == arithmetic_operator::multiply) {
-            wide_overflow = __builtin_mul_overflow(lhs, rhs, &result);
-        } else {
-            return false;
-        }
-
-        return wide_overflow or result != wrap_to_width(result, width_type);
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
@@ -1763,46 +1649,5 @@ class expr_arith final : public expression {
                op == arithmetic_operator::shift_right);
 
         return precedence_shift;
-    }
-
-    // a count within the width shifts the same on both targets
-    [[nodiscard]] static auto
-    shift_constant(const int64_t lhs, const arithmetic_operator op,
-                   const uint64_t count, const type& width_type) -> int64_t {
-
-        const uint64_t bits{static_cast<uint64_t>(lhs)};
-
-        if (op == arithmetic_operator::shift_left) {
-            return wrap_to_width(static_cast<int64_t>(bits << count),
-                                 width_type);
-        }
-
-        // 'lhs' is sign extended so shifting in its sign bit keeps the width
-        if (lhs < 0) {
-            return static_cast<int64_t>(~(~bits >> count));
-        }
-
-        return static_cast<int64_t>(bits >> count);
-    }
-
-    // the value a register of 'width_type' holds, sign extended
-    [[nodiscard]] static auto wrap_to_width(const int64_t value,
-                                            const type& width_type) -> int64_t {
-
-        const size_t bits{width_type.size_bits()};
-
-        if (bits >= std::numeric_limits<uint64_t>::digits) {
-            return value;
-        }
-
-        const uint64_t sign_bit{uint64_t{1} << (bits - 1)};
-        // note: -1 because the sign bit is the highest bit
-
-        const uint64_t low{
-            static_cast<uint64_t>(value) & ((sign_bit << 1U) - 1U),
-        };
-
-        // flipping and subtracting the sign bit extends it
-        return static_cast<int64_t>((low ^ sign_bit) - sign_bit);
     }
 };

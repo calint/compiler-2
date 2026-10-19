@@ -18,8 +18,8 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "generics.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "stmt_block.hpp"
 #include "stmt_def_func_param.hpp"
@@ -314,7 +314,7 @@ class stmt_def_func final : public statement {
     // the body is compiled by its calls: in place when inlined, else once per
     // kind of call ('compile_body')
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {}
 
     //
@@ -402,7 +402,7 @@ class stmt_def_func final : public statement {
 
         add_signature_vars(tc, indent + 1, true, array_lengths, slot_register);
 
-        code_.compile(tc, indent, ident_info::make_empty());
+        code_.compile(tc, indent, destination{});
         x.return_function(indent + 1);
         const size_t frame_size_bytes{tc.peak_frame_size_bytes()};
         tc.exit_func(name());
@@ -651,11 +651,9 @@ class stmt_def_func final : public statement {
         // note: 'parse_returns' only creates a return with a name
         assert(not returns_ or not returns_->ident_tk.text().empty());
 
-        tc.parse_storage_unchecked([&] -> void {
-            add_signature_vars(tc, 0, false, {}, {});
+        add_signature_vars(tc, 0, false, {}, {});
 
-            code_ = {tc, tz, true};
-        });
+        code_ = {tc, tz, true};
 
         tc.exit_func(name());
     }
@@ -1174,7 +1172,7 @@ class stmt_def_func_generic final : public statement {
 
     // only its instances are functions
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {}
 };
 

@@ -622,18 +622,18 @@ auto check_equal_size_choice() -> void {
 
         const operand result{operand::reg("a0", integer)};
 
-        const auto load = [&](const std::string_view value) -> void {
+        const auto load = [&](const int64_t value) -> void {
             backend.copy_value(token{}, 0, result,
-                               operand::imm(std::string{value}, integer));
+                               operand::imm(value, integer));
         };
 
         const auto copy = [&] {
             backend.copy_value(token{}, 0, result, operand::reg("a1", integer));
         };
 
-        backend.emit_most_efficient(token{}, 0, [&] { load("2047"); }, copy);
+        backend.emit_most_efficient(token{}, 0, [&] { load(2047); }, copy);
 
-        backend.emit_most_efficient(token{}, 0, [&] { load("2048"); }, copy);
+        backend.emit_most_efficient(token{}, 0, [&] { load(2048); }, copy);
 
         backend.finish();
         backend.write_assembly(output);
@@ -744,7 +744,7 @@ auto check_comments_with_source_positions() -> void {
     comments.str({});
     located.add_subtract(location, 1, op_of('+'),
                          operand::mem("a0", {}, 1, 0, integer),
-                         operand::imm("1", integer));
+                         operand::imm(1, integer));
     assert(comments.str() ==
            "    # [test.baz:2:5] allocate scratch register -> t0\n"
            "    lw t0, 0(a0)\n    addi t0, t0, 1\n    sw t0, 0(a0)\n"
@@ -762,7 +762,7 @@ auto check_comments_with_source_positions() -> void {
     located.copy_elements(location, 1, 4,
                           [&](const operand& count) -> void {
                               located.copy_value(location, 1, count,
-                                                 operand::imm("2", integer));
+                                                 operand::imm(2, integer));
                           },
                           {
                               .alignment{4},
@@ -1133,7 +1133,7 @@ auto check_memory_comparison_tail() -> void {
                 token{}, 0, 1,
                 [&](const operand& count) -> void {
                     backend.copy_value(token{}, 0, count,
-                                       operand::imm("7", integer));
+                                       operand::imm(7, integer));
                     std::println(output, "la {}, buffer",
                                  held.back().base_register());
                 },
@@ -1290,20 +1290,20 @@ auto check_shifts() -> void {
             output.str({});
             backend.shift(token{}, 0, op_of(operation),
                           operand::reg("a0", integer),
-                          operand::imm(std::format("{}", count), integer), machine::shift_check_options{});
+                          operand::imm(count, integer), machine::shift_check_options{});
             assert(output.str() ==
                    (count == 0 ? std::string{}
                                : std::format("{} a0, a0, {}\n",
                                              operation == '<' ? "slli" : "srai",
                                              count)));
         }
-        for (const std::string_view count : {"-1", "32", "35", "64"}) {
+        for (const int64_t count : {-1, 32, 35, 64}) {
             output.str({});
             assert(rejected_with(
                 [&] {
                     backend.shift(source_tk, 0, op_of(operation),
                                   operand::reg("a0", integer),
-                                  operand::imm(std::string{count}, integer), machine::shift_check_options{});
+                                  operand::imm(count, integer), machine::shift_check_options{});
                 },
                 "RV32I shift count must be 0 to 31 for 32-bit values"));
             assert(output.str().empty());
@@ -1341,11 +1341,10 @@ auto check_add_subtract_bitwise() -> void {
                             operand::reg("a1", integer));
         }
         assert(output.str() == std::format("{} a0, a0, a1\n", instruction));
-        for (const std::string_view constant :
-             {"7", "-7", "~-8", "--7", "2047", "-2047"}) {
+        for (const int64_t constant : {7, -7, 2047, -2047}) {
             output.str({});
 
-            const operand source{operand::imm(std::string{constant}, integer)};
+            const operand source{operand::imm(constant, integer)};
 
             if (operation == '+' or operation == '-') {
                 backend.add_subtract(token{}, 0, op_of(operation),
@@ -1354,14 +1353,7 @@ auto check_add_subtract_bitwise() -> void {
                 backend.bitwise(token{}, 0, op_of(operation),
                                 operand::reg("a0", integer), source);
             }
-            int expected{7};
-            if (constant == "-7") {
-                expected = -7;
-            } else if (constant == "2047") {
-                expected = 2047;
-            } else if (constant == "-2047") {
-                expected = -2047;
-            }
+            int64_t expected{constant};
             if (operation == '-') {
                 expected = -expected;
             }
@@ -1393,13 +1385,13 @@ auto check_zero_operations_and_zero_shifts() -> void {
 
             output.str({});
             backend.shift(token{}, 0, op_of('<'), destination,
-                          operand::imm("0", integer), machine::shift_check_options{});
+                          operand::imm(0, integer), machine::shift_check_options{});
             backend.shift(token{}, 0, op_of('>'), destination,
-                          operand::imm("0", integer), machine::shift_check_options{});
+                          operand::imm(0, integer), machine::shift_check_options{});
             assert(output.str().empty());
             output.str({});
             backend.bitwise(token{}, 0, op_of('&'), destination,
-                            operand::imm("0", integer));
+                            operand::imm(0, integer));
 
             const std::string_view store{value_type == &integer ? "sw"
                                          : value_type == &half  ? "sh"
@@ -1432,11 +1424,11 @@ auto check_narrow_values_and_large_constants() -> void {
     std::vector<operand> shift_registers{
         hold_scratch_registers(backend, 30, integer)};
     backend.bitwise(token{}, 0, op_of('|'), operand::reg("a0", byte),
-                    operand::imm("255", integer));
+                    operand::imm(255, integer));
     assert(output.str() == "li a0, -1\n");
     output.str({});
     backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
-                  operand::imm("7", integer), machine::shift_check_options{});
+                  operand::imm(7, integer), machine::shift_check_options{});
     assert(output.str() == "slli a0, a0, 31\nsrai a0, a0, 24\n");
     output.str({});
     for (const type* narrow : {&byte, &half, &boolean}) {
@@ -1445,22 +1437,22 @@ auto check_narrow_values_and_large_constants() -> void {
             [&] {
                 backend.shift(source_tk, 0, op_of('<'),
                               operand::reg("a0", *narrow),
-                              operand::imm(std::format("{}", bits), integer), machine::shift_check_options{});
+                              operand::imm(bits, integer), machine::shift_check_options{});
             },
             std::format("RV32I shift count must be 0 to {} for {}-bit values",
                         bits - 1, bits)));
         assert(output.str().empty());
     }
     backend.shift(token{}, 0, op_of('<'), operand::reg("a0", byte),
-                  operand::imm("1", integer), machine::shift_check_options{});
+                  operand::imm(1, integer), machine::shift_check_options{});
     assert(output.str() == "slli a0, a0, 25\nsrai a0, a0, 24\n");
     output.str({});
     backend.add_subtract(token{}, 0, op_of('+'), operand::reg("a0", integer),
-                         operand::imm("2048", integer));
+                         operand::imm(2048, integer));
     assert(output.str() == "addi a0, a0, 2047\naddi a0, a0, 1\n");
     output.str({});
     backend.add_subtract(token{}, 0, op_of('-'), operand::reg("a0", integer),
-                         operand::imm("2049", integer));
+                         operand::imm(2049, integer));
     assert(output.str() == "addi a0, a0, -2048\naddi a0, a0, -1\n");
     backend.free_scratch_registers(token{}, 0, shift_registers);
     backend.finish();
@@ -1673,12 +1665,12 @@ auto check_constant_stores_and_small_zeroing() -> void {
         hold_scratch_registers(backend, 30, integer)};
 
     backend.copy_value(token{}, 0, operand::mem("a2", {}, 1, 0, integer),
-                       operand::imm("0", integer));
+                       operand::imm(0, integer));
 
     assert(output.str() == "sw zero, 0(a2)\n");
     output.str({});
     backend.copy_value(token{}, 0, operand::reg("a1", byte),
-                       operand::imm("255", integer));
+                       operand::imm(255, integer));
     assert(output.str() == "li a1, -1\n");
     output.str({});
     backend.zero(token{}, 0, operand::mem("a2", {}, 1, 0, byte), 1, 4);
@@ -1765,7 +1757,7 @@ auto check_comparison_selection() -> void {
 
         backend.compare_and_branch(
             token{}, 0, operand::reg("a0", integer),
-            operand::imm(operation == comparison::less ? "7" : "0", integer),
+            operand::imm(operation == comparison::less ? 7 : 0, integer),
             {
                 .operation{operation},
                 .destination{operand::reg("a0", boolean)},
@@ -1783,7 +1775,7 @@ auto check_comparison_selection() -> void {
     output.str({});
 
     backend.compare_and_branch(
-        token{}, 0, operand::reg("a0", byte), operand::imm("255", integer),
+        token{}, 0, operand::reg("a0", byte), operand::imm(255, integer),
         {
             .operation{machine::comparison_operator::less},
             .destination{operand::reg("a1", boolean)},
@@ -1806,18 +1798,18 @@ auto check_multiply_by_constants() -> void {
         hold_scratch_registers(backend, 30, integer)};
 
     backend.multiply(token{}, 0, operand::reg("a1", integer),
-                     operand::imm("1", integer));
+                     operand::imm(1, integer));
     assert(output.str().empty());
     backend.multiply(token{}, 0, operand::reg("a1", integer),
-                     operand::imm("8", integer));
+                     operand::imm(8, integer));
     assert(output.str() == "slli a1, a1, 3\n");
     output.str({});
     backend.multiply(token{}, 0, operand::reg("a1", integer),
-                     operand::imm("-1", integer));
+                     operand::imm(-1, integer));
     assert(output.str() == "sub a1, zero, a1\n");
     output.str({});
     backend.multiply(token{}, 0, operand::mem("a2", {}, 1, 0, integer),
-                     operand::imm("0", integer));
+                     operand::imm(0, integer));
     assert(output.str() == "sw zero, 0(a2)\n");
     backend.free_scratch_registers(token{}, 0, address_registers);
     backend.finish();
@@ -2023,7 +2015,7 @@ auto check_multiply_divide_routines() -> void {
             if (operation == '*' or operation == '+') {
                 helper_backend.multiply(token{}, 0, operand::reg("a0", integer),
                                         operation == '+'
-                                            ? operand::imm("3", integer)
+                                            ? operand::imm(3, integer)
                                             : operand::reg("a1", integer));
             } else {
                 helper_backend.divide(token{}, 0, op_of(operation),
@@ -2142,7 +2134,7 @@ auto generate_noninline() -> void {
     }
     backend.end_main();
     backend.label(0, "call_failure");
-    backend.exit(token{}, 1, operand::imm("1", integer));
+    backend.exit(token{}, 1, operand::imm(1, integer));
     backend.label(0, "outer");
     backend.reserve_frame_base();
     hand_written(
@@ -2202,7 +2194,7 @@ auto generate_frame_checks() -> void {
                                 offset, case_index));
                 backend.check_frame_capacity(
                     token{}, 1, operand::mem("a0", {}, 1, 0, integer),
-                    operand::imm(size_label, integer), enabled);
+                    operand::symbol(size_label, integer), enabled);
                 hand_written(
                     backend,
                     std::format(
@@ -2224,7 +2216,7 @@ auto generate_frame_checks() -> void {
             operand::mem("a0", {}, 1,
                          positive ? int64_t{UINT32_MAX} : -int64_t{UINT32_MAX},
                          integer),
-            operand::imm("0", integer), true);
+            operand::symbol("0", integer), true);
         hand_written(
             backend,
             std::format("    li a3, 0\nframe_result_{}:\n    li a4, 1\n"
@@ -2237,7 +2229,7 @@ auto generate_frame_checks() -> void {
     backend.label(0, machine::frame_overflow_handler_label);
     hand_written(backend, "    li a3, 1\n    jr s3");
     backend.label(0, "frame_failure");
-    backend.exit(token{}, 1, operand::imm("1", integer));
+    backend.exit(token{}, 1, operand::imm(1, integer));
     backend.finish();
     write_with_hand_written(backend);
     std::println(".data\ndat:\nvars:\n    .zero 256\nvars.end:");
@@ -2260,7 +2252,7 @@ auto generate_long_loop() -> void {
                 "    .rept 2048\n    nop\n    .endr\n    addi s2, s2, 1"));
         backend.foo_advance_iteration(token{}, 1, operand::reg("s2", integer),
                                       operand::mem("sp", {}, 1, 0, integer),
-                                      stride, operand::imm("3", integer),
+                                      stride, operand::imm(3, integer),
                                       loop_label);
         hand_written(
             backend,
@@ -2273,7 +2265,7 @@ auto generate_long_loop() -> void {
     hand_written(backend, std::format("    addi sp, sp, 16"));
     backend.end_main();
     backend.label(0, "long_loop_failure");
-    backend.exit(token{}, 1, operand::imm("1", integer));
+    backend.exit(token{}, 1, operand::imm(1, integer));
     backend.finish();
     write_with_hand_written(backend);
     std::println(".data\ndat:\nvars:\n    .word 0");
@@ -2302,24 +2294,24 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
 
     // 8 KiB needs 'j' and 1.08 MiB needs 'jump' in every direction
     backend.add_subtract(token{}, 1, op_of('-'), stack,
-                         operand::imm("16", integer));
+                         operand::imm(16, integer));
 
     for (const size_t count : {2048U, 270000U}) {
         const std::string loop_label{std::format("far_loop_{}", count)};
-        backend.copy_value(token{}, 1, counter, operand::imm("0", integer));
-        backend.copy_value(token{}, 1, iterator, operand::imm("0", integer));
+        backend.copy_value(token{}, 1, counter, operand::imm(0, integer));
+        backend.copy_value(token{}, 1, iterator, operand::imm(0, integer));
 
         backend.label(0, loop_label);
         padding(count);
         backend.add_subtract(token{}, 1, op_of('+'), iterator,
-                             operand::imm("1", integer));
+                             operand::imm(1, integer));
 
         backend.foo_advance_iteration(token{}, 1, iterator, counter, 4,
-                                      operand::imm("3", integer), loop_label);
+                                      operand::imm(3, integer), loop_label);
 
         backend.compare_and_branch(
             token{}, 1, operand::reg("s2", integer),
-            operand::imm("15", integer),
+            operand::imm(15, integer),
             {
                 .operation{machine::comparison_operator::not_equal},
                 .target{"far_failure"},
@@ -2331,7 +2323,7 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
 
         backend.compare_and_branch(
             token{}, 1, operand::reg("s2", integer),
-            operand::imm("15", integer),
+            operand::imm(15, integer),
             {
                 .operation{machine::comparison_operator::equal},
                 .target{taken_label},
@@ -2340,21 +2332,21 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
             {});
 
         padding(count);
-        backend.exit(token{}, 1, operand::imm("2", integer));
+        backend.exit(token{}, 1, operand::imm(2, integer));
         backend.label(0, taken_label);
         const std::string skipped_label{std::format("far_skipped_{}", count)};
         backend.branch(1, skipped_label);
         padding(count);
-        backend.exit(token{}, 1, operand::imm("3", integer));
+        backend.exit(token{}, 1, operand::imm(3, integer));
         backend.label(0, skipped_label);
     }
     backend.add_subtract(token{}, 1, op_of('+'), stack,
-                         operand::imm("16", integer));
+                         operand::imm(16, integer));
 
     backend.end_main();
     padding(270000);
     backend.label(0, "far_failure");
-    backend.exit(token{}, 1, operand::imm("1", integer));
+    backend.exit(token{}, 1, operand::imm(1, integer));
     backend.finish();
     backend.write_assembly(std::cout);
     std::println(".data\ndat:\nvars:\n    .word 0");
@@ -2583,7 +2575,7 @@ auto generate_bounds(const bool silent) -> void {
         bounds_backend.end_main();
         std::println(
             "baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
-        bounds_backend.exit(token{}, 1, operand::imm("1", integer));
+        bounds_backend.exit(token{}, 1, operand::imm(1, integer));
     }
     bounds_backend.finish();
 }
@@ -2629,7 +2621,7 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                         [&](const operand& count) -> void {
                             backend.copy_value(
                                 token{}, 1, count,
-                                operand::imm(std::format("{}", size_bytes),
+                                operand::imm(size_bytes,
                                              integer));
                         },
                         {
@@ -2708,12 +2700,11 @@ auto emit_division_tests(machine_rv32i& backend) -> void {
                             if (source_kind == 1) {
                                 source = operand::mem("a2", {}, 1, 4, integer);
                             } else if (source_kind == 2) {
-                                source = operand::imm(
-                                    std::format("{}", divisor), integer);
+                                source = operand::imm(divisor, integer);
                             }
                             backend.copy_value(
                                 token{}, 1, destination,
-                                operand::imm(std::format("{}", initial),
+                                operand::imm(initial,
                                              integer));
                             backend.divide(token{}, 1, op_of(operation),
                                            destination, source, machine::division_check_options{});
@@ -2805,12 +2796,12 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
                         if (source_kind == 1) {
                             factor = operand::mem("a2", {}, 1, 4, integer);
                         } else if (source_kind == 2) {
-                            factor = operand::imm(std::format("{}", multiplier),
+                            factor = operand::imm(multiplier,
                                                   integer);
                         }
                         backend.copy_value(
                             token{}, 1, product,
-                            operand::imm(std::format("{}", initial), integer));
+                            operand::imm(initial, integer));
                         backend.multiply(token{}, 1, product, factor,
                                          source_kind == 3);
                         backend.copy_value(
@@ -2949,7 +2940,7 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                         if (mode == 5) {
                             rhs = operand::mem("a2", {}, 1, 4, integer);
                         } else if (mode >= 6) {
-                            rhs = operand::imm(std::format("{}", right_value),
+                            rhs = operand::imm(right_value,
                                                integer);
                         }
 
@@ -3033,7 +3024,7 @@ auto emit_unary_tests(machine_rv32i& backend) -> void {
 
                     backend.copy_value(
                         token{}, 1, destination,
-                        operand::imm(std::format("{}", initial), integer));
+                        operand::imm(initial, integer));
                     backend.unary(token{}, 1, unary_of(operation), destination);
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
                                        destination);
@@ -3091,11 +3082,10 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
                         if (source_kind == 1) {
                             source = operand::mem("a2", {}, 1, 4, integer);
                         } else if (source_kind == 2) {
-                            source = operand::imm(
-                                std::format("{}", source_value), integer);
+                            source = operand::imm(source_value, integer);
                         }
                         backend.copy_value(token{}, 1, destination,
-                                           operand::imm("127", integer));
+                                           operand::imm(127, integer));
                         uint32_t expected{127};
                         const uint32_t rhs{static_cast<uint32_t>(source_value)};
                         if (operation == '+' or operation == '-') {
@@ -3152,11 +3142,11 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
                     if (count_kind == 1) {
                         count = operand::mem("a2", {}, 1, 4, byte);
                     } else if (count_kind == 2) {
-                        count = operand::imm("3", integer);
+                        count = operand::imm(3, integer);
                     }
 
                     backend.copy_value(token{}, 1, destination,
-                                       operand::imm("-16", integer));
+                                       operand::imm(-16, integer));
                     backend.shift(token{}, 1, op_of(operation), destination,
                                   count, machine::shift_check_options{});
                     backend.copy_value(token{}, 1, operand::reg("a0", integer),
@@ -3191,7 +3181,7 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
         std::println("    la t6, buffer\n    li a3, {}\n    sub t6, t6, a3",
                      static_cast<uint32_t>(offset));
         const operand direct{operand::mem("t6", {}, 1, offset, integer)};
-        backend.copy_value(token{}, 1, direct, operand::imm("42", integer));
+        backend.copy_value(token{}, 1, direct, operand::imm(42, integer));
         backend.copy_value(token{}, 1, operand::reg("a0", integer), direct);
         std::println("    li a3, 42\n    bne a0, a3, failure");
         backend.address_of(token{}, 1, operand::reg("t6", integer), direct);
@@ -3276,7 +3266,7 @@ auto emit_narrow_memory_tests(machine_rv32i& backend) -> void {
         std::println("    la a2, buffer");
         backend.copy_value(token{}, 1,
                            operand::mem("a2", {}, 1, 0, *value_type),
-                           operand::imm("-1", integer));
+                           operand::imm(-1, integer));
         backend.copy_value(token{}, 1, operand::reg("a0", integer),
                            operand::mem("a2", {}, 1, 0, *value_type));
         std::println("    li a1, {}\n    bne a0, a1, failure",
@@ -3362,8 +3352,8 @@ auto generate_runtime_program() -> void {
     backend.end_main();
     std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, op_of('/'), operand::reg("a0", integer),
-                   operand::imm("0", integer), machine::division_check_options{});
-    backend.exit(token{}, 1, operand::imm("0", integer));
+                   operand::imm(0, integer), machine::division_check_options{});
+    backend.exit(token{}, 1, operand::imm(0, integer));
     for (const uint32_t line : {0U, 9U, 123U, UINT32_MAX}) {
         std::println(".globl bounds_line_{}\nbounds_line_{}:\n    li a0, -1",
                      line, line);
@@ -3371,7 +3361,7 @@ auto generate_runtime_program() -> void {
         backend.check_bounds(location, 1, operand::reg("a0", integer), 4, false,
                              {},
                              {.upper{true}, .lower{true}, .with_line{true}});
-        backend.exit(token{}, 1, operand::imm("0", integer));
+        backend.exit(token{}, 1, operand::imm(0, integer));
     }
     backend.emit_bounds_failure_handler(true);
     std::println("failure:\n    li a0, 1\n    li a7, 93\n    ecall");
@@ -3384,8 +3374,8 @@ auto generate_runtime_program() -> void {
 // 12. host checks: the front end tables (scopes and storage)
 // ============================================================================
 
-// a 'toc' over an x86_64 backend with the builtin types, the global frame is
-// entered
+// a 'toc' over an x86_64 backend with the builtin types, compiling, the global
+// frame is entered
 struct front_end {
     std::ostringstream output;
     source_files files;
@@ -3403,6 +3393,7 @@ struct front_end {
         tc.set_builtin_types(integer64, integer, half, byte);
         tc.set_type_bool(boolean);
         tc.set_type_void(integer);
+        tc.begin_compile();
         tc.enter_block();
     }
 

@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: 'lea_path' may be unnecessary, only the most recent lea is
+    relevant (also the index where in the elems path it was found)
+    => done (2026-10-19): 'known_address' (the address and the elements of
+       the path after it) in 'ident_info' and 'lea_request'; the first
+       address the resolver meets while walking outwards is the deepest,
+       checked by an assert against the old vector on every test before it
+       was removed; 'pad_lea_path' and the reverse went; output unchanged
 [x] easy: 'instance' names two things: an instance of a generic definition
     ('func_instance', 'generic_type_instance') and a non-inline body for
     one kind of call ('noninline_instance', 'add_noninline_instance' in

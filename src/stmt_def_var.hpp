@@ -12,11 +12,12 @@
 #include <utility>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_builtin_convert.hpp"
 #include "stmt_identifier.hpp"
@@ -106,7 +107,7 @@ class stmt_def_var final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -121,11 +122,8 @@ class stmt_def_var final : public statement {
         // an unsized array has its size from the initializer by now
         tc.add_var(name_tk_, indent, make_var_info(), var_kind::var);
 
-        const ident_info& var_dst_info{
-            tc.make_ident_info(name_tk_, name_tk_.text()),
-        };
-
-        assign_var_.compile(tc, indent, var_dst_info);
+        // the assignment names its destination itself
+        assign_var_.compile(tc, indent, destination{});
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const

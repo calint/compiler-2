@@ -11,12 +11,10 @@
 #include <utility>
 #include <vector>
 
+#include "machine.hpp"
+#include "operand.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-
-class toc;
-class machine;
-class operand;
 
 class unary_ops final {
     token ws_pre_;          // whitespace before the ops
@@ -37,10 +35,18 @@ class unary_ops final {
 
     unary_ops() = default;
 
-    // implemented in 'decouple_impl.hpp'
-    // solves circular reference: unary_ops -> toc -> statement -> unary_ops
-    auto compile(toc& tc, const size_t indent, const token& src_loc_tk,
-                 const operand& dst) const -> void;
+    // applies the ops to 'dst', the innermost first
+    auto compile(machine& x, const size_t indent, const token& src_loc_tk,
+                 const operand& dst,
+                 const machine::overflow_check_options& check) const -> void {
+
+        for (const char o : ops_ | std::views::reverse) {
+            x.unary(src_loc_tk, indent,
+                    o == '-' ? machine::arithmetic_operator::negate
+                             : machine::arithmetic_operator::complement,
+                    dst, check);
+        }
+    }
 
     [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {
         for (const char op : ops_ | std::views::reverse) {

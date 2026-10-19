@@ -25,12 +25,41 @@
 #include "assembler.hpp"
 #include "assembler_rv32i.hpp"
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
+#include "constant_arith.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "register_pool.hpp"
+#include "register_report.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
+// the rv32i backend, written as llvm assembler text and a binary image
+// through 'assembler_rv32i'; on linux in qemu user mode, the bare-metal targets
+// derive from it ('machine_rv32i_bare_metal'). the formatter sorts the
+// functions by name, so by topic they are:
+//
+//   registers    'alloc_scratch_register', 'alloc_named_register',
+//                'address_scope' (registers of a lowered operation), the
+//                frame base 's1' and the variables base 's0'
+//   addresses    'lower_address', 'lower_address_offset': an operand into a
+//                base register and a 12-bit offset
+//   operations   'binary_operation', 'emit_binary_instruction',
+//                'multiply_by_constant' (signed digits), 'shift_by_constant',
+//                'shift_by_register'
+//   helpers      '.Lbaz_multiply' and '.Lbaz_divide' for 'mul' and 'div',
+//                'call_arithmetic_helper', 'emit_arithmetic_helpers'
+//   memory       'zero_known_size', 'copy_known_size', 'compare_known_size'
+//                for a known size, 'walk_runtime_count' for a run-time count
+//                (see the note before 'local_label')
+//   comparisons  'compare_and_branch', 'emit_comparison', 'compare_memory'
+//   checks       'check_bounds', 'check_divisor', 'check_fits_width',
+//                'check_shift_count', 'check_copy_overlap',
+//                'check_frame_capacity', 'check_stack_capacity'
+//   handlers     'emit_*_failure_handler', 'emit_named_failure_handler',
+//                'emit_line_failure'
+//   calls        'call_function', the system calls 'emit_read_call',
+//                'emit_write_call' and 'exit', the sector routines
+//   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
     using op = assembler_rv32i::op;
 
@@ -740,7 +769,7 @@ class machine_rv32i : public machine {
 
         assert(frame_address.is_memory());
         assert(frame_address.index_register().empty());
-        assert(frame_size_bytes.is_immediate());
+        assert(frame_size_bytes.is_symbol());
 
         const address_scope scope{*this, frame_address, frame_size_bytes};
 
@@ -796,12 +825,12 @@ class machine_rv32i : public machine {
 
         assembler_.lui(indent, start.base_register(),
                        assembler_rv32i::immediate::of_symbol(
-                           frame_size_bytes.immediate(),
+                           frame_size_bytes.symbol(),
                            assembler_rv32i::immediate::part::high));
 
         assembler_.addi(indent, start.base_register(), start.base_register(),
                         assembler_rv32i::immediate::of_symbol(
-                            frame_size_bytes.immediate(),
+                            frame_size_bytes.symbol(),
                             assembler_rv32i::immediate::part::low));
 
         assembler_.bgeu(indent, remaining.base_register(),
@@ -1125,21 +1154,20 @@ class machine_rv32i : public machine {
             emit_line_failure(".Lbaz_bounds_message", "panic: bounds at line ");
         }
 
-        exit(token{}, 1,
-             operand::imm(std::format("{}", panic_exit_code), default_type()));
+        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
     }
 
-    auto emit_data(const size_t element_size_bytes,
-                   const data_initializer& value) -> void override {
+    auto emit_data(const size_t element_size_bytes, const int64_t value)
+        -> void override {
 
         emit_repeated_data(element_size_bytes, 1, value);
     }
 
     auto emit_data_array(const size_t element_size_bytes,
-                         const std::function_ref<bool(data_initializer&)> next)
+                         const std::function_ref<bool(int64_t&)> next)
         -> void override {
 
-        data_initializer value;
+        int64_t value{};
         while (next(value)) {
             emit_data(element_size_bytes, value);
         }
@@ -1161,8 +1189,7 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a2", message.size() + 1);
         emit_write_call(1);
 
-        exit(token{}, 1,
-             operand::imm(std::format("{}", panic_exit_code), default_type()));
+        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, ".Lbaz_frame_message");
@@ -1197,15 +1224,14 @@ class machine_rv32i : public machine {
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
-                            const data_initializer& value) -> void override {
+                            const int64_t value) -> void override {
 
         // 'data_element_size_error' rejects other sizes
         assert(element_size_bytes == byte_size_bytes_ or
                element_size_bytes == half_size_bytes_ or
                element_size_bytes == word_size_bytes_);
 
-        assembler_.repeated_data(element_size_bytes, count, value.uops,
-                                 value.value);
+        assembler_.repeated_data(element_size_bytes, count, value);
     }
 
     auto emit_shift_failure_handler(const bool with_line) -> void override {
@@ -1247,7 +1273,7 @@ class machine_rv32i : public machine {
     }
 
     auto end_main() -> void override {
-        exit(token{}, 1, operand::imm("0", default_type()));
+        exit(token{}, 1, operand::imm(0, default_type()));
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,
@@ -1299,11 +1325,10 @@ class machine_rv32i : public machine {
         const address_scope scope{*this, iterator, counter};
 
         add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
-                     operand::imm(std::format("{}", element_size_bytes),
-                                  default_type()));
+                     operand::imm(element_size_bytes, default_type()));
 
         add_subtract(src_loc_tk, indent, arithmetic_operator::add, counter,
-                     operand::imm("1", default_type()));
+                     operand::imm(1, default_type()));
 
         emit_comparison(src_loc_tk, indent, counter, limit,
                         {
@@ -1543,8 +1568,7 @@ class machine_rv32i : public machine {
         assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
 
         multiply(src_loc_tk, indent, index,
-                 operand::imm(std::format("{}", element_size_bytes),
-                              default_type()));
+                 operand::imm(element_size_bytes, default_type()));
     }
 
     [[nodiscard]] auto scratch_register_total() const -> size_t override {
@@ -1664,7 +1688,7 @@ class machine_rv32i : public machine {
                        const operand& dst, const bool value) -> void override {
 
         copy_value(src_loc_tk, indent, dst,
-                   operand::imm(value ? "1" : "0", default_type()));
+                   operand::imm(value ? 1 : 0, default_type()));
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
@@ -2105,7 +2129,7 @@ class machine_rv32i : public machine {
         -> void {
 
         const int64_t minimum{
-            signed_minimum(dividend_size_bytes * bits_per_byte),
+            constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
         };
 
         constexpr local_label fail{
@@ -2251,7 +2275,7 @@ class machine_rv32i : public machine {
         };
 
         const int64_t minimum_value{
-            signed_minimum(width_bytes * bits_per_byte),
+            constant_arith::signed_minimum(width_bytes * bits_per_byte),
         };
 
         assembler_.li(indent, minimum.base_register(), minimum_value);
@@ -3623,9 +3647,7 @@ class machine_rv32i : public machine {
             assembler_.li(1, "a0", stderr_descriptor);
             emit_write_call(1);
 
-            exit(token{}, 1,
-                 operand::imm(std::format("{}", panic_exit_code),
-                              default_type()));
+            exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
 
             constexpr std::array<int64_t, 10> decimal_places{
                 1000000000, 100000000, 10000000, 1000000, 100000,
@@ -3695,8 +3717,7 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a2", message.size() + 1);
         emit_write_call(1);
 
-        exit(token{}, 1,
-             operand::imm(std::format("{}", panic_exit_code), default_type()));
+        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
@@ -4194,8 +4215,7 @@ class machine_rv32i : public machine {
 
         if (factor_info.kind == factor_kind::power_of_two) {
             shift(src_loc_tk, indent, arithmetic_operator::shift_left, product,
-                  operand::imm(std::format("{}", factor_info.shift),
-                               default_type()),
+                  operand::imm(factor_info.shift, default_type()),
                   shift_check_options{});
 
             return;

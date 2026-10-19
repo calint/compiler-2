@@ -8,11 +8,12 @@
 #include <utility>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expression.hpp"
+#include "ident_info.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
+#include "toc.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
@@ -78,14 +79,13 @@ class stmt_builtin_arrays_equal final : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         // the destination is named in the source, the error is at its name
-        assert_destination_type(dst_info.type_ref(),
-                                dst_info.error_token(tok()));
+        assert_destination_type(dst.type_ref(), dst.error_token(tok()));
 
-        compile_boolean(tc, indent, dst_info.operand, false);
+        compile_boolean(tc, indent, dst.operand(), false);
     }
 
     auto compile_boolean(toc& tc, const size_t indent, const operand& dst,

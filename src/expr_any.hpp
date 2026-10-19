@@ -16,12 +16,13 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "expr_type.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "stmt_builtin_convert.hpp"
 #include "stmt_const.hpp"
 #include "token.hpp"
@@ -158,7 +159,7 @@ class expr_any final : public statement {
         close_brace_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         if (is_array_identifier()) {
@@ -171,18 +172,18 @@ class expr_any final : public statement {
 
         // the base case
         if (is_identifier_ or not is_array_) {
-            compile_variant(tc, indent, dst_info, tok(), vars_.at(0));
+            compile_variant(tc, indent, dst, tok(), vars_.at(0));
             return;
         }
 
         if (is_string()) {
-            compile_string(tc, indent, dst_info);
+            compile_string(tc, indent, dst);
             return;
         }
 
         // assign array elements
 
-        const size_t array_count{destination_array_count(dst_info)};
+        const size_t array_count{destination_array_count(dst)};
 
         // the parser could not check the size of an unsized destination
         if (vars_.size() > array_count) {
@@ -195,19 +196,15 @@ class expr_any final : public statement {
                             array_count)};
         }
 
-        ident_info cur_dst_info{dst_info};
-
         // a call element writes at the element, not at the array start the
         // identifier names, and an element is not an array
-        cur_dst_info.use_operand = true;
-        cur_dst_info.is_array = false;
-        cur_dst_info.array_len = 0;
+        const destination first{dst.as_element(dst.operand())};
 
-        compile_elements(tc, indent, cur_dst_info);
+        const operand after_elements{compile_elements(tc, indent, first)};
 
-        expr_type::zero_remaining_elements(
-            tc, indent, tok(), cur_dst_info.operand, cur_dst_info.type_ref(),
-            array_count - vars_.size());
+        expr_type::zero_remaining_elements(tc, indent, tok(), after_elements,
+                                           first.type_ref(),
+                                           array_count - vars_.size());
     }
 
     [[nodiscard]] auto accessed_path() const
@@ -355,7 +352,7 @@ class expr_any final : public statement {
     // returns 1, empty when nothing was compiled
     [[nodiscard]] auto
     compile_without_trailing_addend(toc& tc, const size_t indent,
-                                    const ident_info& dst_info) const
+                                    const destination& dst) const
         -> std::optional<int64_t> {
 
         // note: only an index expression asks, it is never an array and has
@@ -364,9 +361,9 @@ class expr_any final : public statement {
 
         const expr_arith& arith{std::get<expr_arith>(vars_.front())};
 
-        arith.assert_not_narrowed(tc, dst_info.type_ref());
+        arith.assert_not_narrowed(tc, dst.type_ref());
 
-        return arith.compile_without_trailing_addend(tc, indent, dst_info);
+        return arith.compile_without_trailing_addend(tc, indent, dst);
     }
 
     // e.g. '-2' or a named constant, empty when computed at run time
@@ -435,27 +432,30 @@ class expr_any final : public statement {
     }
 
     // constant elements are stored like a string so the backend can pack them
-    // into wider immediates or copy them from read-only data, 'dst_info'
-    // advances past the listed elements
-    auto compile_elements(toc& tc, const size_t indent,
-                          ident_info& dst_info) const -> void {
+    // into wider immediates or copy them from read-only data, 'first' is the
+    // first element, returns the operand after the listed elements
+    [[nodiscard]] auto compile_elements(toc& tc, const size_t indent,
+                                        const destination& first) const
+        -> operand {
 
         machine& x{tc.machine()};
 
+        operand cursor{first.operand()};
+
         const std::optional<std::string> bytes{
-            constant_bytes(tc, dst_info.type_ref()),
+            constant_bytes(tc, first.type_ref()),
         };
 
         if (bytes) {
-            x.copy_bytes(open_brace_tk_, indent, *bytes, dst_info.operand,
-                         dst_info.type_ref().alignment(), [&] -> std::string {
+            x.copy_bytes(open_brace_tk_, indent, *bytes, cursor,
+                         first.type_ref().alignment(), [&] -> std::string {
                              return tc.add_bytes_constant(open_brace_tk_,
                                                           *bytes);
                          });
 
-            dst_info.operand.increment_offset(address_offset(bytes->size()));
+            cursor.increment_offset(address_offset(bytes->size()));
 
-            return;
+            return cursor;
         }
 
         for (const auto [i, e] : std::views::enumerate(vars_)) {
@@ -470,17 +470,20 @@ class expr_any final : public statement {
                     e),
             };
 
-            compile_variant(tc, indent, dst_info, element_tk, e);
+            compile_variant(tc, indent, first.with_operand(cursor), element_tk,
+                            e);
 
-            dst_info.operand.increment_offset(
-                address_offset(dst_info.type_ref().size_bytes()));
+            cursor.increment_offset(
+                address_offset(first.type_ref().size_bytes()));
         }
+
+        return cursor;
     }
 
     // the string is stored and the rest of the array is zeroed like unlisted
     // elements
     auto compile_string(toc& tc, const size_t indent,
-                        const ident_info& dst_info) const -> void {
+                        const destination& dst) const -> void {
 
         machine& x{tc.machine()};
 
@@ -488,7 +491,7 @@ class expr_any final : public statement {
 
         const size_t size_bytes{bytes.size()};
 
-        const size_t array_count{destination_array_count(dst_info)};
+        const size_t array_count{destination_array_count(dst)};
 
         if (size_bytes > array_count) {
             throw compiler_exception{
@@ -497,16 +500,16 @@ class expr_any final : public statement {
                             size_bytes, array_count)};
         }
 
-        operand dst{dst_info.operand};
+        operand cursor{dst.operand()};
 
         // an empty string has nothing to store
         if (size_bytes != 0) {
-            x.copy_bytes(string_tk_, indent, bytes, dst,
-                         dst_info.type_ref().alignment(), [&] -> std::string {
+            x.copy_bytes(string_tk_, indent, bytes, cursor,
+                         dst.type_ref().alignment(), [&] -> std::string {
                              return tc.add_string_constant(string_tk_);
                          });
 
-            dst.increment_offset(address_offset(size_bytes));
+            cursor.increment_offset(address_offset(size_bytes));
         }
 
         const size_t remaining_size_bytes{array_count - size_bytes};
@@ -518,8 +521,8 @@ class expr_any final : public statement {
         x.comment(string_tk_, indent, "zero remaining elements: {} B",
                   remaining_size_bytes);
 
-        x.zero(string_tk_, indent, dst, remaining_size_bytes,
-               dst_info.type_ref().alignment());
+        x.zero(string_tk_, indent, cursor, remaining_size_bytes,
+               dst.type_ref().alignment());
     }
 
     // the little endian bytes of the elements, empty when an element is not a
@@ -557,11 +560,11 @@ class expr_any final : public statement {
 
     // an unsized destination e.g. a parameter 's[]' has the size of the
     // argument which is known only at compile
-    [[nodiscard]] auto destination_array_count(const ident_info& dst_info) const
+    [[nodiscard]] auto destination_array_count(const destination& dst) const
         -> size_t {
 
         if (is_unsized_destination_) {
-            return dst_info.array_len;
+            return dst.array_len();
         }
 
         return array_count_;
@@ -668,8 +671,7 @@ class expr_any final : public statement {
     //
 
     static auto compile_bool(toc& tc, const size_t indent,
-                             const ident_info& dst_info,
-                             const token& src_loc_tk,
+                             const destination& dst, const token& src_loc_tk,
                              const expr_bool& condition) -> void {
 
         machine& x{tc.machine()};
@@ -680,29 +682,26 @@ class expr_any final : public statement {
 
             assert(src_info.is_const());
 
-            x.copy_value(src_loc_tk, indent, dst_info.operand,
-                         operand::imm(std::format("{}", src_info.const_value),
-                                      src_info.type_ref()));
+            x.copy_value(
+                src_loc_tk, indent, dst.operand(),
+                operand::imm(src_info.const_value, src_info.type_ref()));
 
             return;
         }
 
         // stored comparisons would change what later elements read
-        if (dst_info.is_register() or
-            not condition.reads_var(dst_info.root_id())) {
+        if (dst.is_register() or not condition.reads_var(dst.root_id())) {
 
-            compile_bool_list(tc, indent, src_loc_tk, condition,
-                              dst_info.operand);
-
+            compile_bool_list(tc, indent, src_loc_tk, condition, dst.operand());
             return;
         }
 
         const operand reg{
-            x.alloc_scratch_register(src_loc_tk, indent, dst_info.type_ref()),
+            x.alloc_scratch_register(src_loc_tk, indent, dst.type_ref()),
         };
 
         compile_bool_list(tc, indent, src_loc_tk, condition, reg);
-        x.copy_value(src_loc_tk, indent, dst_info.operand, reg);
+        x.copy_value(src_loc_tk, indent, dst.operand(), reg);
         x.free_scratch_register(src_loc_tk, indent, reg);
     }
 
@@ -733,22 +732,19 @@ class expr_any final : public statement {
     }
 
     static auto compile_variant(toc& tc, const size_t indent,
-                                const ident_info& dst_info,
-                                const token src_loc_tk, const expr_variant& exp)
-        -> void {
+                                const destination& dst, const token src_loc_tk,
+                                const expr_variant& exp) -> void {
 
         exp.visit(overloaded{
             [&](const expr_arith& e) -> void {
                 // the value boundary is where a wider source
                 // loses bits
-                e.assert_not_narrowed(tc, dst_info.type_ref());
-                e.compile(tc, indent, dst_info);
+                e.assert_not_narrowed(tc, dst.type_ref());
+                e.compile(tc, indent, dst);
             },
-            [&](const expr_type& e) -> void {
-                e.compile(tc, indent, dst_info);
-            },
+            [&](const expr_type& e) -> void { e.compile(tc, indent, dst); },
             [&](const expr_bool& e) -> void {
-                compile_bool(tc, indent, dst_info, src_loc_tk, e);
+                compile_bool(tc, indent, dst, src_loc_tk, e);
             },
         });
     }

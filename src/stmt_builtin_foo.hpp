@@ -11,8 +11,8 @@
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expr_any.hpp"
+#include "ident_info.hpp"
 #include "statement.hpp"
 #include "stmt_block.hpp"
 #include "stmt_identifier.hpp"
@@ -78,7 +78,7 @@ class stmt_builtin_foo final : public statement {
     }
 
     auto compile(toc& tc, const size_t indent,
-                 [[maybe_unused]] const ident_info& dst_info) const
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -118,12 +118,12 @@ class stmt_builtin_foo final : public statement {
         x.comment(tok(), indent, "initiate counter i");
 
         x.copy_value(tok(), indent, counter,
-                     operand::imm("0", tc.get_type_default()));
+                     operand::imm(0, tc.get_type_default()));
 
         skip_empty_loop(x, tc, indent, limit, end_label);
 
         x.label(indent, loop_label);
-        code_.compile(tc, indent, ident_info::make_empty());
+        code_.compile(tc, indent, destination{});
         x.label(indent + 1, toc::continue_label(loop_label));
 
         x.foo_advance_iteration(tok(), indent + 2, reg_iter, counter,
@@ -168,8 +168,7 @@ class stmt_builtin_foo final : public statement {
                   std::vector<operand>& allocated_registers) const -> operand {
 
         if (not has_count()) {
-            return operand::imm(std::format("{}", array_len),
-                                tc.get_type_default());
+            return operand::imm(array_len, tc.get_type_default());
         }
 
         machine& x{tc.machine()};
@@ -184,11 +183,10 @@ class stmt_builtin_foo final : public statement {
         x.comment(count_.tok(), indent, "count {}",
                   statement::trimmed_source(count_));
 
-        count_.compile(tc, indent,
-                       toc::make_ident_info_from_register(reg_count));
+        count_.compile(tc, indent, destination::of_register(reg_count));
 
         x.check_bounds(count_.tok(), indent, reg_count, array_len, true, {},
-                       tc.bounds_check_options());
+                       tc.checks().bounds_options());
 
         return reg_count;
     }
@@ -257,7 +255,7 @@ class stmt_builtin_foo final : public statement {
             ident_.compile_lea(tc, indent, tok(), allocated_registers,
                                {
                                    .reg_count{},
-                                   .lea_path{array_info.lea_path},
+                                   .known{array_info.known},
                                    .address_register{},
                                }),
         };
@@ -277,8 +275,7 @@ class stmt_builtin_foo final : public statement {
         }
 
         x.compare_and_branch(
-            count_.tok(), indent, limit,
-            operand::imm("0", tc.get_type_default()),
+            count_.tok(), indent, limit, operand::imm(0, tc.get_type_default()),
             {
                 .operation{machine::comparison_operator::less_equal},
                 .inverted{},

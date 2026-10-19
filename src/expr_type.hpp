@@ -12,6 +12,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
@@ -72,7 +73,7 @@ class expr_type final : public statement {
     auto source_to(std::ostream& os) const -> void override;
 
     // out-of-line: calls 'stmt_call'
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override;
 
     // out-of-line: calls 'stmt_identifier'
@@ -175,22 +176,21 @@ class expr_type final : public statement {
 
     // out-of-line: calls 'expr_any'
     auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
-                        const ident_info& dst_info, operand& dst_op) const
-        -> void;
+                        const destination& dst, operand& dst_op) const -> void;
 
     // out-of-line: calls 'stmt_call'
     auto compile_call_field(toc& tc, const size_t indent, const type& dst_type,
-                            const ident_info& dst_info, operand& dst_op) const
+                            const destination& dst, operand& dst_op) const
         -> void;
 
     // out-of-line: calls 'expr_any'
     auto compile_field(toc& tc, const size_t indent, const expr_any& src,
-                       const type_field& field, ident_info& dst_info,
+                       const type_field& field, const destination& dst,
                        operand& dst_op) const -> void;
 
     // out-of-line: calls 'expr_any'
     auto compile_field_list(toc& tc, const size_t indent, const type& dst_type,
-                            const ident_info& dst_info, operand& dst_op) const
+                            const destination& dst, operand& dst_op) const
         -> void;
 
     // out-of-line: calls 'stmt_identifier'
@@ -221,7 +221,7 @@ class expr_type final : public statement {
 
     // out-of-line: calls 'expr_any'
     auto write_builtin_field(toc& tc, const size_t indent, const expr_any& src,
-                             const type_field& field, ident_info& dst_info,
+                             const type_field& field, const destination& dst,
                              const operand& dst_op) const -> void;
 
     // a call writes the fields only, so the padding is zeroed before it and
@@ -330,8 +330,8 @@ class expr_type final : public statement {
     static auto compile_record_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,
-                                     const ident_info& dst_info,
-                                     operand& dst_op) -> void;
+                                     const destination& dst, operand& dst_op)
+        -> void;
 
     static auto validate_array_assignment(const token& src_loc_tk,
                                           const type_field& fld,

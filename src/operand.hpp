@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -28,17 +29,6 @@ inline constexpr size_t max_size_bytes{
 // note: -16 leaves room for the alignment padding
 
 } // namespace storage_limits
-
-// the most negative value of a signed integer of 'size_bits', e.g. -128 for 8,
-// which has no positive counterpart; setting all bits above the sign bit of the
-// width gives it
-[[nodiscard]] inline auto signed_minimum(const size_t size_bits) -> int64_t {
-    assert(size_bits != 0 and
-           size_bits <= std::numeric_limits<uint64_t>::digits);
-
-    return static_cast<int64_t>(~uint64_t{} << (size_bits - 1));
-    // note: -1 because the sign bit is the highest bit
-}
 
 [[nodiscard]] inline auto add_storage_size(const token& src_loc_tk,
                                            const size_t base,
@@ -156,14 +146,17 @@ inline constexpr size_t max_size_bytes{
 }
 
 class operand final {
-    enum class kind : uint8_t { empty, reg, memory, immediate };
+    // a symbol is the value of a label or a constant of the assembler, known
+    // when the program is assembled
+    enum class kind : uint8_t { empty, reg, memory, immediate, symbol };
 
     kind kind_{kind::empty};
     const type* type_ptr_{};
     std::string allocation_register_;
     std::string base_register_;
     std::string index_register_;
-    std::string immediate_;
+    int64_t immediate_{};
+    std::string symbol_;
     int64_t displacement_{};
     uint64_t scale_{1};
 
@@ -180,7 +173,9 @@ class operand final {
 
     [[nodiscard]] auto displacement() const -> int64_t { return displacement_; }
 
-    [[nodiscard]] auto immediate() const -> const std::string& {
+    [[nodiscard]] auto immediate() const -> int64_t {
+        assert(is_immediate());
+
         return immediate_;
     }
 
@@ -199,8 +194,7 @@ class operand final {
         -> bool {
 
         return is_memory() and base_register_ == name and
-               index_register_.empty() and displacement_ == 0 and
-               immediate_.empty();
+               index_register_.empty() and displacement_ == 0;
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::empty; }
@@ -217,12 +211,22 @@ class operand final {
         return kind_ == kind::reg;
     }
 
+    [[nodiscard]] auto is_symbol() const -> bool {
+        return kind_ == kind::symbol;
+    }
+
     [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
 
     auto set_allocation_register(const std::string_view name) -> void {
         assert(is_register());
 
         allocation_register_ = name;
+    }
+
+    [[nodiscard]] auto symbol() const -> const std::string& {
+        assert(is_symbol());
+
+        return symbol_;
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
@@ -235,15 +239,17 @@ class operand final {
     // statics
     //
 
-    [[nodiscard]] static auto imm(std::string value, const type& value_type)
-        -> operand {
+    // numbers of any integer type keep call sites free of conversions
+    template <std::integral integral_t>
+    [[nodiscard]] static auto imm(const integral_t value,
+                                  const type& value_type) -> operand {
 
-        assert(not value.empty());
+        assert(std::in_range<int64_t>(value));
 
         operand result;
         result.kind_ = kind::immediate;
         result.type_ptr_ = &value_type;
-        result.immediate_ = std::move(value);
+        result.immediate_ = static_cast<int64_t>(value);
 
         return result;
     }
@@ -286,6 +292,20 @@ class operand final {
         result.kind_ = kind::reg;
         result.type_ptr_ = &value_type;
         result.base_register_ = name;
+
+        return result;
+    }
+
+    // e.g. the frame size of a noinline body, defined after the body
+    [[nodiscard]] static auto symbol(const std::string_view name,
+                                     const type& value_type) -> operand {
+
+        assert(not name.empty());
+
+        operand result;
+        result.kind_ = kind::symbol;
+        result.type_ptr_ = &value_type;
+        result.symbol_ = name;
 
         return result;
     }

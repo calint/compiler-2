@@ -7,8 +7,8 @@
 #include <string>
 #include <string_view>
 
-#include "decouple.hpp"
 #include "expr_bool.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "stmt_block.hpp"
 #include "ub_assigned.hpp"
@@ -85,7 +85,7 @@ class stmt_if_branch final : public statement {
         // the label where to jump if evaluation of the condition is true
         x.label(indent, jmp_to_if_true_label);
         // the code of the branch
-        code_.compile(tc, indent, ident_info::make_empty());
+        code_.compile(tc, indent, destination{});
 
         if (const_eval == condition_result::always_true) {
             return const_eval;

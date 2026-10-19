@@ -10,6 +10,7 @@
 
 #include "compiler_exception.hpp"
 #include "decouple.hpp"
+#include "ident_info.hpp"
 #include "stmt_break.hpp"
 #include "stmt_builtin_array_copy.hpp"
 #include "stmt_continue.hpp"
@@ -74,12 +75,12 @@ class stmt_block final : public statement {
         }
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         tc.enter_block();
         for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc, indent + 1, dst_info);
+            s->compile(tc, indent + 1, dst);
         }
 
         tc.exit_block();

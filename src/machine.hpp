@@ -9,7 +9,6 @@
 #include <format>
 #include <functional>
 #include <limits>
-#include <map>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -23,474 +22,12 @@
 
 #include "assembler.hpp"
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "operand.hpp"
+#include "register_pool.hpp"
 #include "source_files.hpp"
 #include "token.hpp"
 
 class type;
-
-// the registers of a machine that hold a value: named ones are fixed by an
-// instruction or the calling convention, scratch ones are picked by the
-// machine, all are freed in the reverse order of allocation. a register is
-// 'unavailable' while it is allocated and while an operation protects the
-// registers of its operands. the machine names the registers, the pool counts
-// them by their index in the names of the machine and by masks of 1 << index
-class register_pool final {
-  public:
-    struct allocation {
-        size_t index{};
-        // where it was allocated, 'indent' is the indent of that code
-        token src_loc_tk;
-        size_t indent{};
-        const type* type_ptr{};
-        bool named{};
-        // the index of the inlined call that allocated it, see 'call_frame'
-        size_t frame{};
-    };
-
-  private:
-    uint32_t unavailable_{};
-    // registers a lower bounds check found non-negative, allocating a register
-    // forgets it since the new owner writes its own value
-    uint32_t lower_checked_{};
-    std::vector<allocation> allocations_;
-
-  public:
-    [[nodiscard]] auto allocations() const -> std::span<const allocation> {
-        return allocations_;
-    }
-
-    [[nodiscard]] auto is_empty() const -> bool { return allocations_.empty(); }
-
-    [[nodiscard]] auto is_lower_checked(const uint32_t mask) const -> bool {
-        return (lower_checked_ & mask) != 0;
-    }
-
-    // 'mask' has a register that is allocated or protected
-    [[nodiscard]] auto is_unavailable(const uint32_t mask) const -> bool {
-        return (unavailable_ & mask) != 0;
-    }
-
-    auto mark_lower_checked(const uint32_t mask) -> void {
-        lower_checked_ |= mask;
-    }
-
-    // the register of the last allocation, freeing is in reverse order
-    auto pop(const size_t index) -> allocation {
-        assert(top().index == index);
-
-        const allocation entry{allocations_.back()};
-
-        allocations_.pop_back();
-        unavailable_ &= ~(uint32_t{1} << index);
-
-        return entry;
-    }
-
-    auto protect(const uint32_t mask) -> void { unavailable_ |= mask; }
-
-    auto push(const allocation& entry) -> void {
-        const uint32_t mask{uint32_t{1} << entry.index};
-
-        assert(not is_unavailable(mask));
-
-        allocations_.push_back(entry);
-        unavailable_ |= mask;
-        lower_checked_ &= ~mask;
-    }
-
-    // forgets what 'protect' added since 'saved' was read by 'unavailable_mask'
-    auto restore_unavailable(const uint32_t saved) -> void {
-        unavailable_ = saved;
-    }
-
-    [[nodiscard]] auto scratch_count() const -> size_t {
-        return static_cast<size_t>(
-            std::ranges::count(allocations_, false, &allocation::named));
-    }
-
-    [[nodiscard]] auto top() const -> const allocation& {
-        assert(not allocations_.empty());
-
-        return allocations_.back();
-    }
-
-    // the registers that are allocated or protected, none when all is freed
-    [[nodiscard]] auto unavailable_mask() const -> uint32_t {
-        return unavailable_;
-    }
-};
-
-// the inlined calls being compiled and the busiest use of registers so far,
-// collected for the report of the use of registers
-class register_trace final {
-  public:
-    // an inlined call, the first frame is the function being compiled
-    struct frame {
-        std::string name;
-        token call_site_tk;
-        bool is_noinline_body{};
-    };
-
-    // what the calls of a callee hold themselves
-    struct callee_use {
-        size_t own_peak{};
-        size_t calls{};
-    };
-
-    // what the calls of a function with a body of its own save
-    struct noinline_use {
-        size_t calls{};
-        size_t saved_peak{};
-        token peak_site_tk;
-    };
-
-    // the registers held when the most were
-    struct peak_use {
-        size_t held{};
-        std::vector<register_pool::allocation> allocations;
-        std::vector<frame> frames;
-    };
-
-  private:
-    // the name of the frame of a function with a body of its own ends with this
-    static constexpr std::string_view noinline_body_suffix{" (noinline body)"};
-
-    bool enabled_{};
-    std::vector<frame> frames_;
-    peak_use peak_;
-    std::map<std::string, callee_use> callees_;
-    std::map<std::string, noinline_use> noinline_uses_;
-
-  public:
-    // the registers allocated until 'end_frame' belong to the call of
-    // 'name' made at 'call_site_tk'
-    auto begin_frame(const token& call_site_tk, std::string name,
-                     const bool is_noinline_body) -> void {
-
-        if (is_noinline_body) {
-            name += noinline_body_suffix;
-        }
-
-        if (enabled_) {
-            ++callees_[name].calls;
-        }
-
-        frames_.push_back({
-            .name{std::move(name)},
-            .call_site_tk{call_site_tk},
-            .is_noinline_body{is_noinline_body},
-        });
-    }
-
-    [[nodiscard]] auto callees() const
-        -> const std::map<std::string, callee_use>& {
-
-        return callees_;
-    }
-
-    // the frame that allocations belong to
-    [[nodiscard]] auto current_frame() const -> size_t {
-        return frames_.empty() ? 0 : frames_.size() - 1;
-        // note: -1 is the index of the last frame
-    }
-
-    auto enable() -> void { enabled_ = true; }
-
-    auto end_frame() -> void { frames_.pop_back(); }
-
-    [[nodiscard]] auto frames() const -> const std::vector<frame>& {
-        return frames_;
-    }
-
-    [[nodiscard]] auto is_enabled() const -> bool { return enabled_; }
-
-    [[nodiscard]] auto noinline_uses() const
-        -> const std::map<std::string, noinline_use>& {
-
-        return noinline_uses_;
-    }
-
-    [[nodiscard]] auto peak() const -> const peak_use& { return peak_; }
-
-    // 'pool' has just got a register
-    auto record_allocation(const register_pool& pool) -> void {
-        if (not enabled_) {
-            return;
-        }
-
-        record_own_use(pool);
-        record_peak(pool);
-    }
-
-    // a call of the function with the body 'label' saves 'saved' registers
-    auto record_noinline_call(const token& call_site_tk,
-                              const std::string_view label, const size_t saved)
-        -> void {
-
-        if (not enabled_) {
-            return;
-        }
-
-        noinline_use& use{noinline_uses_[std::string{label}]};
-
-        ++use.calls;
-
-        if (saved > use.saved_peak or use.calls == 1) {
-            use.saved_peak = saved;
-            use.peak_site_tk = call_site_tk;
-        }
-    }
-
-    //
-    // statics
-    //
-
-    // the registers of a backend that no source location asked for are left
-    // out of the report
-    [[nodiscard]] static auto
-    is_listed(const register_pool::allocation& allocated) -> bool {
-
-        const bool held_by_backend{
-            allocated.named and allocated.src_loc_tk.at_line() == 0,
-        };
-
-        return not held_by_backend;
-    }
-
-  private:
-    // what the frame being compiled holds itself
-    auto record_own_use(const register_pool& pool) -> void {
-        // the registers a backend allocates before the first frame are nobody's
-        if (frames_.empty()) {
-            return;
-        }
-
-        const size_t frame_index{current_frame()};
-
-        size_t own{};
-
-        for (const register_pool::allocation& allocated : pool.allocations()) {
-            if (allocated.frame == frame_index and is_listed(allocated)) {
-                ++own;
-            }
-        }
-
-        callee_use& use{callees_[frames_.back().name]};
-
-        use.own_peak = std::max(use.own_peak, own);
-    }
-
-    auto record_peak(const register_pool& pool) -> void {
-        const std::span<const register_pool::allocation> live{
-            pool.allocations(),
-        };
-
-        const size_t held{
-            static_cast<size_t>(std::ranges::count_if(live, is_listed)),
-        };
-
-        if (held <= peak_.held) {
-            return;
-        }
-
-        peak_.held = held;
-        peak_.allocations.assign(live.begin(), live.end());
-        peak_.frames = frames_;
-    }
-};
-
-// the registers each frame holds, as the text of the report of the use of
-// registers: who holds what and what a 'noinline' frame would give
-class register_use_report final {
-  public:
-    // a frame and the registers it holds, each as 'name location'
-    struct frame_use {
-        // the name of the function
-        std::string callee;
-
-        // the function and where it was called
-        std::string label;
-
-        std::vector<std::string> registers;
-    };
-
-  private:
-    // a frame that the registers held above it make worth making 'noinline'
-    struct candidate {
-        std::string name;
-        size_t inside{};
-        size_t saved{};
-    };
-
-    // the column of the registers held by a frame, its number is right aligned
-    // under the heading
-    static constexpr std::string_view held_heading{"held"};
-    static constexpr size_t held_width{held_heading.size() + 2};
-    // note: +2 because the heading is indented by two
-
-    std::string heading_;
-    size_t register_total_;
-    size_t named_count_;
-    std::vector<frame_use> frames_;
-
-  public:
-    register_use_report(std::string heading, const size_t register_total,
-                        const size_t named_count, std::vector<frame_use> frames)
-        : heading_{std::move(heading)}, register_total_{register_total},
-          named_count_{named_count}, frames_{std::move(frames)} {}
-
-    [[nodiscard]] auto text() const -> std::string {
-        return heading_text() + frames_text() + noinline_text();
-    }
-
-  private:
-    // the frames below the first with registers held above them: what they
-    // and what is below them hold, and what the call of them would save
-    [[nodiscard]] auto candidates() const -> std::vector<candidate> {
-        std::vector<candidate> found;
-        size_t saved{};
-        size_t inside{live_count()};
-
-        for (const auto [frame, use] : std::views::enumerate(frames_)) {
-            if (frame > 0 and saved > 0) {
-                found.push_back({
-                    .name{use.callee},
-                    .inside{inside},
-                    .saved{saved},
-                });
-            }
-
-            saved += use.registers.size();
-            inside -= use.registers.size();
-        }
-
-        return found;
-    }
-
-    [[nodiscard]] auto
-    candidates_text(const std::vector<candidate>& found) const -> std::string {
-
-        constexpr size_t min_name_width{15};
-
-        size_t name_width{min_name_width};
-
-        for (const candidate& entry : found) {
-            name_width = std::max(name_width, entry.name.size());
-        }
-
-        // the numbers are right aligned under their headings
-        constexpr std::string_view inside_heading{"held inside"};
-        constexpr std::string_view saved_heading{"saved at the call"};
-        constexpr size_t column_gap{2};
-        constexpr size_t inside_width{inside_heading.size() + column_gap};
-        constexpr size_t saved_width{saved_heading.size() + column_gap};
-
-        std::string text{
-            std::format(
-                "\n\nthese frames are not noinline, making one noinline "
-                "starts its body with all {} registers free and "
-                "saves the registers held above it around the "
-                "call:\n\n  {}  {}  {}",
-                register_total_, padded("candidate frame", name_width),
-                inside_heading, saved_heading),
-        };
-
-        for (const candidate& entry : found) {
-            text += std::format("\n  {}{}{}", padded(entry.name, name_width),
-                                right_aligned(entry.inside, inside_width),
-                                right_aligned(entry.saved, saved_width));
-        }
-
-        return text;
-    }
-
-    [[nodiscard]] auto frames_text() const -> std::string {
-        // the label of a frame follows the number and two spaces, its
-        // registers are indented two more
-        const std::string register_indent(held_width + 4, ' ');
-        // note: +4 for the two spaces before the label and the two of the
-        // indent
-
-        std::string text;
-
-        for (const frame_use& use : frames_) {
-            text += std::format("\n{}  {}",
-                                right_aligned(use.registers.size(), held_width),
-                                use.label);
-
-            for (const std::string& held : use.registers) {
-                // the registers are indented under the label of the frame
-                text += std::format("\n{}{}", register_indent, held);
-            }
-        }
-
-        return text;
-    }
-
-    [[nodiscard]] auto heading_text() const -> std::string {
-        const std::string named_note{
-            named_count_ == 0
-                ? std::string{}
-                : std::format(", {} named by instructions", named_count_),
-        };
-
-        return std::format("{}: {} of {} registers live{}\n\n{}  frame, "
-                           "registers (allocated at)",
-                           heading_, live_count(), register_total_, named_note,
-                           right_aligned(held_heading, held_width));
-    }
-
-    [[nodiscard]] auto live_count() const -> size_t {
-        size_t live{};
-
-        for (const frame_use& use : frames_) {
-            live += use.registers.size();
-        }
-
-        return live;
-    }
-
-    [[nodiscard]] auto noinline_text() const -> std::string {
-        if (frames_.size() < 2) {
-            return {};
-        }
-
-        const std::vector<candidate> found{candidates()};
-
-        if (found.empty()) {
-            return "\n\nno noinline frame helps, the registers are held by "
-                   "the innermost frame, simplify its expression";
-        }
-
-        return candidates_text(found);
-    }
-
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto padded(const std::string& name,
-                                     const size_t width) -> std::string {
-
-        return name + std::string(width - name.size(), ' ');
-    }
-
-    // 'std::format' takes a dynamic width of 'int' but not of 'size_t'
-    [[nodiscard]] static auto right_aligned(const std::string_view text,
-                                            const size_t width) -> std::string {
-
-        const size_t padding{width > text.size() ? width - text.size() : 0};
-        return std::string(padding, ' ') + std::string{text};
-    }
-
-    [[nodiscard]] static auto right_aligned(const size_t number,
-                                            const size_t width) -> std::string {
-
-        return right_aligned(std::format("{}", number), width);
-    }
-};
 
 // an enabled check makes a signed result that does not fit the width of the
 // destination jump to the overflow failure handler
@@ -515,6 +52,37 @@ class machine {
 
     // the inlined calls being compiled and what the registers held
     register_trace trace_;
+
+    // what measuring code changes in the machine is put back when it ends,
+    // also when an error unwinds: the registers held, the trace of the calls
+    // and the most scratch registers in use; it starts with no register held
+    class measure_scope final {
+        machine& machine_;
+        size_t kept_max_scratch_regs_;
+        register_trace kept_trace_;
+        register_pool kept_pool_;
+
+      public:
+        explicit measure_scope(machine& backend)
+            : machine_{backend},
+              kept_max_scratch_regs_{backend.usage_max_scratch_regs_},
+              kept_trace_{backend.trace_},
+              kept_pool_{backend.register_pool_ref()} {
+
+            backend.register_pool_ref() = register_pool{};
+        }
+
+        measure_scope(const measure_scope&) = delete;
+        measure_scope(measure_scope&&) = delete;
+        auto operator=(const measure_scope&) -> measure_scope& = delete;
+        auto operator=(measure_scope&&) -> measure_scope& = delete;
+
+        ~measure_scope() {
+            machine_.register_pool_ref() = std::move(kept_pool_);
+            machine_.usage_max_scratch_regs_ = kept_max_scratch_regs_;
+            machine_.trace_ = std::move(kept_trace_);
+        }
+    };
 
   public:
     enum class builtin_function : uint8_t {
@@ -628,11 +196,6 @@ class machine {
     struct overlap_check_options {
         bool enabled{};
         bool with_line{};
-    };
-
-    struct data_initializer {
-        int64_t value{};
-        std::string_view uops; // unary operations
     };
 
     // read-only bytes at 'label', 'text' keeps its escapes such as '\n'
@@ -882,12 +445,12 @@ class machine {
 
     virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
 
-    virtual auto emit_data(const size_t element_size_bytes,
-                           const data_initializer& value) -> void = 0;
+    virtual auto emit_data(const size_t element_size_bytes, const int64_t value)
+        -> void = 0;
 
-    virtual auto
-    emit_data_array(const size_t element_size_bytes,
-                    const std::function_ref<bool(data_initializer&)> next)
+    // 'next' gives the values one by one, false after the last
+    virtual auto emit_data_array(const size_t element_size_bytes,
+                                 const std::function_ref<bool(int64_t&)> next)
         -> void = 0;
 
     // prints 'panic: division' to stderr, with the line when 'with_line', and
@@ -915,8 +478,8 @@ class machine {
     virtual auto emit_overlap_failure_handler(const bool with_line) -> void = 0;
 
     virtual auto emit_repeated_data(const size_t element_size_bytes,
-                                    const size_t count,
-                                    const data_initializer& value) -> void = 0;
+                                    const size_t count, const int64_t value)
+        -> void = 0;
 
     // prints 'panic: shift' to stderr, with the line when 'with_line', and
     // exits with 255
@@ -1137,7 +700,7 @@ class machine {
         const auto end{std::ranges::end(range)};
 
         auto next{
-            [&](data_initializer& value) -> bool {
+            [&](int64_t& value) -> bool {
                 if (current == end) {
                     return false;
                 }
@@ -1150,7 +713,7 @@ class machine {
         };
 
         emit_data_array(element_size_bytes,
-                        std::function_ref<bool(data_initializer&)>{next});
+                        std::function_ref<bool(int64_t&)>{next});
     }
 
     // the report of the use of registers is kept for 'register_peak_report'
@@ -1196,13 +759,7 @@ class machine {
     [[nodiscard]] auto measure_code_size(const std::function_ref<void()> emit)
         -> size_t {
 
-        const size_t max_scratch_regs{usage_max_scratch_regs_};
-        const register_trace kept_trace{trace_};
-
-        register_pool& pool{register_pool_ref()};
-        const register_pool kept_pool{pool};
-
-        pool = register_pool{};
+        const measure_scope measure{*this};
 
         size_t size{};
 
@@ -1210,10 +767,6 @@ class machine {
         target_assembler().emit_buffered([&] -> void {
             size = assembler::code_size_of(target_assembler().capture(emit));
         });
-
-        pool = kept_pool;
-        usage_max_scratch_regs_ = max_scratch_regs;
-        trace_ = kept_trace;
 
         return size;
     }
@@ -1545,9 +1098,8 @@ class machine {
     auto start_output() -> void {
         assembler& output{target_assembler()};
 
-        // what the parse stage emitted, e.g. the comments of constants, is
-        // not part of the program
-        output.discard_lines();
+        // note: the parse declares names without emitting
+        assert(output.is_empty());
 
         output.set_direct_output(nullptr);
 
@@ -1616,9 +1168,8 @@ class machine {
         }
     }
 
-    // immediates are decimal numbers prefixed by unary '-' and '~' operators
-    // returns two's complement bits or empty for an operand that is not an
-    // immediate
+    // the two's complement bits of an immediate, empty for an operand that is
+    // not one
     [[nodiscard]] static auto immediate_bits(const operand& value)
         -> std::optional<uint64_t> {
 
@@ -1626,34 +1177,7 @@ class machine {
             return std::nullopt;
         }
 
-        const std::string_view text{value.immediate()};
-        const size_t digits{text.find_first_not_of("-~")};
-
-        assert(digits != std::string_view::npos);
-
-        const std::string_view number{text.substr(digits)};
-        const char* const end{std::to_address(number.end())};
-        uint64_t bits{};
-
-        const std::from_chars_result parsed{
-            std::from_chars(std::to_address(number.begin()), end, bits),
-        };
-
-        assert(parsed.ec == std::errc{} and parsed.ptr == end);
-
-        for (const char operation :
-             text.substr(0, digits) | std::views::reverse) {
-
-            // unsigned negation wraps instead of overflowing
-            if (operation == '-') {
-                bits = uint64_t{} - bits;
-                continue;
-            }
-
-            bits = ~bits;
-        }
-
-        return bits;
+        return static_cast<uint64_t>(value.immediate());
     }
 
     // a word or double word is sign extended so a value that fits a signed
@@ -1701,319 +1225,3 @@ class machine {
         };
     }
 };
-
-// the texts of the report of the use of registers, from what the trace of a
-// machine recorded and how the machine names its registers
-class register_reporter final {
-    std::reference_wrapper<const machine> machine_;
-    std::reference_wrapper<const register_trace> trace_;
-
-  public:
-    register_reporter(const machine& backend, const register_trace& trace)
-        : machine_{backend}, trace_{trace} {}
-
-    // an error that the registers ran out or are held by a value, with how the
-    // registers are used by each frame and what a 'noinline' frame would give
-    [[nodiscard]] auto make_error(const token& src_loc_tk, std::string message,
-                                  const register_pool& pool) const
-        -> compiler_exception {
-
-        compiler_exception error{src_loc_tk, std::move(message)};
-
-        // the lines of the message of an error are not longer than this
-        constexpr size_t max_detail_width{80};
-
-        const std::string text{
-            make_register_report("register use at the failure",
-                                 pool.allocations(), trace_.get().frames())
-                .text(),
-        };
-
-        for (const std::string& line : split_lines(text)) {
-            for (const std::string& part : wrapped(line, max_detail_width)) {
-                error.detail += error.detail.empty() ? "" : "\n";
-                error.detail += part;
-            }
-        }
-
-        return error;
-    }
-
-    // the use of registers at the busiest point of the build, as lines after
-    // the code when asked for, else none
-    [[nodiscard]] auto peak_report() const -> std::vector<std::string> {
-        // room for the comment marker and a space of the assembly output
-        constexpr size_t max_line_width{78};
-
-        std::vector<std::string> lines;
-
-        for (const std::string& line : register_peak_lines()) {
-            for (std::string& part : wrapped(line, max_line_width)) {
-                lines.push_back(std::move(part));
-            }
-        }
-
-        return lines;
-    }
-
-  private:
-    // e.g. 'top called at 36:33'
-    [[nodiscard]] auto called_at(const register_trace::frame& frame) const
-        -> std::string {
-
-        return std::format("{} called at {}", frame.name,
-                           machine_.get().location_text(frame.call_site_tk));
-    }
-
-    // the most registers one call of each callee holds itself
-    [[nodiscard]] auto callee_lines() const -> std::vector<std::string> {
-        std::vector<std::string> lines{
-            "",
-            "per callee, the most registers one call holds itself",
-            "",
-            "  own  calls  callee",
-        };
-
-        for (const auto& [name, use] :
-             descending(trace_.get().callees(),
-                        &register_trace::callee_use::own_peak)) {
-
-            lines.push_back(
-                std::format("{:>5}{:>7}  {}", use.own_peak, use.calls, name));
-        }
-
-        return lines;
-    }
-
-    // the frames without registers: the first is the function being compiled,
-    // the others are the calls inlined in it
-    [[nodiscard]] auto
-    frame_uses(const std::vector<register_trace::frame>& frames) const
-        -> std::vector<register_use_report::frame_use> {
-
-        if (frames.empty()) {
-            return {
-                {
-                    .callee{"code"},
-                    .label{"code"},
-                    .registers{},
-                },
-            };
-        }
-
-        std::vector<register_use_report::frame_use> uses;
-
-        for (const auto [index, frame] : std::views::enumerate(frames)) {
-            uses.push_back({
-                .callee{frame.name},
-                .label{index == 0 ? frame.name : called_at(frame)},
-                .registers{},
-            });
-        }
-
-        return uses;
-    }
-
-    // what each frame of 'frames' holds of the 'allocations'
-    [[nodiscard]] auto make_register_report(
-        const std::string_view heading,
-        const std::span<const register_pool::allocation> allocations,
-        const std::vector<register_trace::frame>& frames) const
-        -> register_use_report {
-
-        std::vector<register_use_report::frame_use> uses{frame_uses(frames)};
-        size_t named{};
-
-        for (const register_pool::allocation& allocated : allocations) {
-            if (not register_trace::is_listed(allocated)) {
-                continue;
-            }
-
-            const size_t frame{std::min(allocated.frame, uses.size() - 1)};
-            // note: -1 is the index of the last frame
-
-            uses.at(frame).registers.push_back(register_text(allocated));
-
-            if (allocated.named) {
-                ++named;
-            }
-        }
-
-        return {std::string{heading}, machine_.get().scratch_register_total(),
-                named, std::move(uses)};
-    }
-
-    // the registers that the calls of each function with a body of its own save
-    [[nodiscard]] auto noinline_call_lines() const -> std::vector<std::string> {
-        if (trace_.get().noinline_uses().empty()) {
-            return {};
-        }
-
-        std::vector<std::string> lines{
-            "",
-            "calls of functions with a body of their own save the registers "
-            "held at the call",
-            "",
-            "  saved  calls  callee, most saved at",
-        };
-
-        for (const auto& [label, use] :
-             descending(trace_.get().noinline_uses(),
-                        &register_trace::noinline_use::saved_peak)) {
-
-            lines.push_back(
-                std::format("{:>7}{:>7}  {} {}", use.saved_peak, use.calls,
-                            without_prefix(label, "func."),
-                            machine_.get().location_text(use.peak_site_tk)));
-        }
-
-        return lines;
-    }
-
-    [[nodiscard]] auto register_peak_lines() const -> std::vector<std::string> {
-        if (not trace_.get().is_enabled()) {
-            return {};
-        }
-
-        const register_trace::peak_use& peak{trace_.get().peak()};
-
-        const std::string text{
-            make_register_report("register use at the peak", peak.allocations,
-                                 peak.frames)
-                .text(),
-        };
-
-        std::vector<std::string> lines{split_lines(text)};
-
-        append_lines(lines, peak_note_lines(peak.frames));
-        append_lines(lines, callee_lines());
-        append_lines(lines, noinline_call_lines());
-
-        return lines;
-    }
-
-    // e.g. 'r15 153:13' or 'rax 153:31 (named)'
-    [[nodiscard]] auto
-    register_text(const register_pool::allocation& allocated) const
-        -> std::string {
-
-        return std::format(
-            "{} {}{}", machine_.get().register_display_name(allocated.index),
-            machine_.get().location_text(allocated.src_loc_tk),
-            allocated.named ? " (named)" : "");
-    }
-
-    //
-    // statics
-    //
-
-    static auto append_lines(std::vector<std::string>& lines,
-                             const std::vector<std::string>& more) -> void {
-
-        lines.insert(lines.end(), more.begin(), more.end());
-    }
-
-    // the entries ordered by the member 'peak', the highest first
-    template <typename use_t>
-    [[nodiscard]] static auto
-    descending(const std::map<std::string, use_t>& entries,
-               size_t use_t::* const peak)
-        -> std::vector<std::pair<std::string, use_t>> {
-
-        std::vector<std::pair<std::string, use_t>> ordered{
-            entries.begin(),
-            entries.end(),
-        };
-
-        std::ranges::stable_sort(
-            ordered, [peak](const auto& lhs, const auto& rhs) -> bool {
-                return lhs.second.*peak > rhs.second.*peak;
-            });
-
-        return ordered;
-    }
-
-    // what to know when the peak is in a function with a body of its own
-    [[nodiscard]] static auto
-    peak_note_lines(const std::vector<register_trace::frame>& frames)
-        -> std::vector<std::string> {
-
-        if (frames.empty() or not frames.front().is_noinline_body) {
-            return {};
-        }
-
-        return {
-            "",
-            "the peak is in a function with a body of its own, compiled with "
-            "all registers free, its callers are not on this stack",
-        };
-    }
-
-    [[nodiscard]] static auto split_lines(const std::string_view text)
-        -> std::vector<std::string> {
-
-        std::vector<std::string> lines;
-
-        for (const auto line : std::views::split(text, '\n')) {
-            lines.emplace_back(std::string_view{line});
-        }
-
-        return lines;
-    }
-
-    [[nodiscard]] static auto without_prefix(const std::string_view text,
-                                             const std::string_view prefix)
-        -> std::string_view {
-
-        return text.starts_with(prefix) ? text.substr(prefix.size()) : text;
-    }
-
-    // breaks a line that is too long at spaces, the parts keep its indentation
-    [[nodiscard]] static auto wrapped(const std::string& line,
-                                      const size_t width)
-        -> std::vector<std::string> {
-
-        std::vector<std::string> parts;
-
-        const std::string indentation(
-            std::min(line.find_first_not_of(' '), line.size()), ' ');
-
-        std::string rest{line};
-
-        while (rest.size() > width) {
-            const size_t space{rest.rfind(' ', width)};
-
-            // note: a word longer than the width is left as it is
-            if (space == std::string::npos or space <= indentation.size()) {
-                break;
-            }
-
-            parts.push_back(rest.substr(0, space));
-
-            std::string next{indentation};
-            next += rest.substr(space + 1);
-            // note: +1 because the space that the line broke at is dropped
-
-            rest = std::move(next);
-        }
-
-        parts.push_back(std::move(rest));
-
-        return parts;
-    }
-};
-
-// declared in 'machine'
-inline auto machine::register_error(const token& src_loc_tk,
-                                    std::string message,
-                                    const register_pool& pool) const
-    -> compiler_exception {
-
-    return register_reporter{*this, trace_}.make_error(
-        src_loc_tk, std::move(message), pool);
-}
-
-// declared in 'machine'
-inline auto machine::register_peak_report() const -> std::vector<std::string> {
-    return register_reporter{*this, trace_}.peak_report();
-}

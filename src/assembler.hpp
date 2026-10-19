@@ -181,14 +181,6 @@ class assembler {
         return captured;
     }
 
-    // drops the lines added so far
-    auto discard_lines() -> void {
-        assert(captures_.empty());
-        assert(bodies_.empty());
-
-        lines_.clear();
-    }
-
     // 'emit' is buffered even when lines are otherwise written as added, so
     // versions it captures can be compared before one is written
     auto emit_buffered(const std::function_ref<void()> emit) -> void {
@@ -214,6 +206,9 @@ class assembler {
     [[nodiscard]] auto is_buffering() const -> bool {
         return direct_output_ == nullptr;
     }
+
+    // nothing is buffered
+    [[nodiscard]] auto is_empty() const -> bool { return lines_.empty(); }
 
     // the bodies of each noinline function with their calls and size, in
     // the order of definition

@@ -20,8 +20,10 @@
 
 #include "assembler.hpp"
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
+#include "ident_info.hpp"
+#include "machine.hpp"
 #include "operand.hpp"
+#include "register_report.hpp"
 #include "statement.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_func.hpp"
@@ -70,57 +72,6 @@ struct report_section {
         if (not title.empty()) {
             x.comment(token{}, 0, "");
         }
-    }
-};
-
-// definite assignment: every path through a function with a return variable
-// sets it, and the paths that reach the end of a body
-class assignment_analysis final {
-  public:
-    //
-    // statics
-    //
-
-    static auto assert_functions_set_return_value(
-        const std::span<const stmt_def_func* const>& funcs) -> void {
-
-        for (const stmt_def_func* f : funcs) {
-            const std::optional<func_return_info> ret_info{f->returns()};
-
-            if (not ret_info) {
-                continue;
-            }
-
-            assignment_flow flow{
-                .var{ret_info->ident_tk.text()},
-                .src_loc_tk{ret_info->ident_tk},
-                .assigned{assigned_bytes{ret_info->type_ptr->size_bytes()}},
-                .at_breaks{},
-                .is_reachable{true},
-            };
-
-            f->code().trace_assignment(flow);
-
-            // the end of the body returns like a 'return' statement
-            flow.assert_set_at_return();
-        }
-    }
-
-    // uses the definite-assignment walk for its reachability only
-    [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
-        -> bool {
-
-        assignment_flow flow{
-            .var{},
-            .src_loc_tk{func.tok()},
-            .assigned{assigned_bytes{0}},
-            .at_breaks{},
-            .is_reachable{true},
-        };
-
-        func.code().trace_assignment(flow);
-
-        return flow.is_reachable;
     }
 };
 
@@ -279,6 +230,57 @@ class report_renderer final {
     }
 };
 
+// definite assignment: every path through a function with a return variable
+// sets it, and the paths that reach the end of a body
+class assignment_analysis final {
+  public:
+    //
+    // statics
+    //
+
+    static auto assert_functions_set_return_value(
+        const std::span<const stmt_def_func* const>& funcs) -> void {
+
+        for (const stmt_def_func* f : funcs) {
+            const std::optional<func_return_info> ret_info{f->returns()};
+
+            if (not ret_info) {
+                continue;
+            }
+
+            assignment_flow flow{
+                .var{ret_info->ident_tk.text()},
+                .src_loc_tk{ret_info->ident_tk},
+                .assigned{assigned_bytes{ret_info->type_ptr->size_bytes()}},
+                .at_breaks{},
+                .is_reachable{true},
+            };
+
+            f->code().trace_assignment(flow);
+
+            // the end of the body returns like a 'return' statement
+            flow.assert_set_at_return();
+        }
+    }
+
+    // uses the definite-assignment walk for its reachability only
+    [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
+        -> bool {
+
+        assignment_flow flow{
+            .var{},
+            .src_loc_tk{func.tok()},
+            .assigned{assigned_bytes{0}},
+            .at_breaks{},
+            .is_reachable{true},
+        };
+
+        func.code().trace_assignment(flow);
+
+        return flow.is_reachable;
+    }
+};
+
 class program final {
     // built-in types
     type type_void_{"void", 0, type_kind::builtin};
@@ -358,6 +360,8 @@ class program final {
     }
 
     auto build(std::ostream& os) -> void {
+        tc_.begin_compile();
+
         machine& x{tc_.machine()};
 
         x.start();
@@ -427,7 +431,7 @@ class program final {
         tc_.enter_block();
 
         for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc_, indent, ident_info::make_empty());
+            s->compile(tc_, indent, destination{});
         }
 
         compile_main(tc_, indent);
@@ -578,7 +582,7 @@ class program final {
 
         x.label(0, reserved_names::main);
         tc.enter_func(reserved_names::main);
-        func_main.code().compile(tc, indent, ident_info::make_empty());
+        func_main.code().compile(tc, indent, destination{});
         tc.exit_func(reserved_names::main);
 
         // code after an 'exit' or 'return' on every path would never run
@@ -638,44 +642,46 @@ class program final {
 
     // only the checks the user asked for have a handler
     static auto emit_failure_handlers(toc& tc) -> void {
+        const check_options& checks{tc.checks()};
+
         machine& x{tc.machine()};
 
-        if (tc.is_frame_check()) {
+        if (checks.frame) {
             x.comment({}, 0, "frame overflow handler (--checks=frame)");
             x.emit_frame_overflow_handler();
         }
 
-        if (tc.is_division_check()) {
+        if (checks.division) {
             x.comment({}, 0, "division failure handler (--checks=division)");
-            x.emit_division_failure_handler(tc.is_check_with_line());
+            x.emit_division_failure_handler(checks.with_line);
         }
 
-        if (tc.is_overlap_check()) {
+        if (checks.overlap) {
             x.comment({}, 0, "overlap failure handler (--checks=overlap)");
-            x.emit_overlap_failure_handler(tc.is_check_with_line());
+            x.emit_overlap_failure_handler(checks.with_line);
         }
 
-        if (tc.is_overflow_check()) {
+        if (checks.overflow) {
             x.comment({}, 0, "overflow failure handler (--checks=overflow)");
-            x.emit_overflow_failure_handler(tc.is_check_with_line());
+            x.emit_overflow_failure_handler(checks.with_line);
         }
 
-        if (tc.is_stack_check()) {
+        if (checks.stack) {
             x.comment({}, 0, "stack overflow handler (--checks=stack)");
             x.emit_stack_overflow_handler();
         }
 
-        if (tc.is_shift_check()) {
+        if (checks.shift) {
             x.comment({}, 0, "shift failure handler (--checks=shift)");
-            x.emit_shift_failure_handler(tc.is_check_with_line());
+            x.emit_shift_failure_handler(checks.with_line);
         }
 
-        if (tc.is_bounds_check_upper() or tc.is_bounds_check_lower()) {
+        if (checks.is_bounds()) {
             x.comment({}, 0,
                       "bounds failure handler (--checks=upper or "
                       "--checks=lower)");
 
-            x.emit_bounds_failure_handler(tc.is_check_with_line());
+            x.emit_bounds_failure_handler(checks.with_line);
         }
     }
 

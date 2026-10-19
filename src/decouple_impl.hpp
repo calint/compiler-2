@@ -1,12 +1,11 @@
 #pragma once
 // out-of-line definitions that need classes whose headers include the
-// declaring header:
-//   - statement factories declared in 'decouple.hpp' create every statement
-//     class, and every statement header includes 'decouple.hpp'
+// declaring header, see 'decouple.hpp':
+//   - the statement factories create every statement class, and
+//     'stmt_block' and 'expr_arith', which call them, are included by those
+//     classes
 //   - 'expr_type' members use 'expr_any', 'stmt_identifier' and 'stmt_call',
 //     whose headers include 'expr_type.hpp' through 'expr_any.hpp'
-//   - 'unary_ops::compile' uses 'toc', which includes 'unary_ops.hpp' through
-//     'statement.hpp'
 
 #include <cassert>
 #include <cstddef>
@@ -28,7 +27,9 @@
 #include "expr_any.hpp"
 #include "expr_type.hpp"
 #include "generics.hpp"
+#include "ident_info.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
@@ -99,90 +100,6 @@ static auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
         tk, std::format("function '{}' is not generic, it takes no type "
                         "arguments",
                         tk.text())};
-}
-
-// declared in 'decouple.hpp'
-auto is_generic_call(const toc& tc, const std::string_view name, tokenizer& tz)
-    -> bool {
-
-    return tc.generics().has_func(name) and
-           tz.peek_char_after_whitespace() == '<';
-}
-
-// a type name hidden by a var or alias is an identifier instead
-static auto is_type_name_followed_by(const toc& tc, const token& tk,
-                                     tokenizer& tz, const char next) -> bool {
-
-    return tc.has_type(tk.text()) and not tc.is_var_or_alias(tk.text()) and
-           tz.peek_char_after_whitespace() == next;
-}
-
-// declared in 'decouple.hpp'
-// e.g. 'i8[]{1, 2}' or 'point[]{{1, 2}}', a type name followed by '[' has no
-// other meaning
-auto is_array_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
-    return is_type_name_followed_by(tc, tk, tz, '[');
-}
-
-// declared in 'decouple.hpp'
-// e.g. '[]{1, 2}' has the default type, no expression starts with '['
-auto is_default_array_literal(tokenizer& tz) -> bool {
-    return tz.peek_char_after_whitespace() == '[';
-}
-
-// e.g. 'point.at(1, 2)', a type name followed by '.' has no other meaning
-static auto is_constructor_call(const toc& tc, const token& tk, tokenizer& tz)
-    -> bool {
-
-    return is_type_name_followed_by(tc, tk, tz, '.');
-}
-
-// declared in 'decouple.hpp'
-// e.g. 'point{1, 2}', a user type name followed by '{' has no other meaning
-auto is_record_literal(const toc& tc, const token& tk, tokenizer& tz) -> bool {
-    if (not is_type_name_followed_by(tc, tk, tz, '{')) {
-        return false;
-    }
-
-    return not tc.get_type_or_throw(tk, tk.text()).is_builtin();
-}
-
-// declared in 'decouple.hpp'
-// e.g. 'point' in 'var p = point' is 'point{}', a user type name not followed
-// by '{', '[' or '.' has no other meaning
-auto is_bare_record_type(const toc& tc, const token& tk, tokenizer& tz)
-    -> bool {
-
-    if (not tc.has_type(tk.text()) or tc.is_var_or_alias(tk.text())) {
-        return false;
-    }
-
-    if (tc.get_type_or_throw(tk, tk.text()).is_builtin()) {
-        return false;
-    }
-
-    const char next{tz.peek_char_after_whitespace()};
-
-    return next != '{' and next != '[' and next != '.';
-}
-
-// declared in 'decouple.hpp'
-// e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
-// a builtin type name not followed by '(' or '[' has no other meaning
-auto is_bare_builtin_type(const toc& tc, const token& tk, tokenizer& tz)
-    -> bool {
-
-    if (not(tc.is_integer_type_name(tk.text()) or tk.is_text("bool")) or
-        tc.is_var_or_alias(tk.text()) or tc.has_const(tk.text())) {
-
-        return false;
-    }
-
-    const char next{tz.peek_char_after_whitespace()};
-
-    // an arithmetic operator would continue the expression, e.g. 'i8 + 1'
-    return next != '(' and next != '[' and
-           not std::string_view{"+-*/%&|^<>"}.contains(next);
 }
 
 // a call in an expression is a value, a function without a result has none
@@ -540,17 +457,17 @@ auto expr_type::is_array_element() const -> bool {
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::compile(toc& tc, const size_t indent,
-                        const ident_info& dst_info) const -> void {
+                        const destination& dst) const -> void {
 
     if (stmt_call_) {
-        zero_padding(tc, indent, dst_info.type_ref(), dst_info.operand);
-        stmt_call_->compile(tc, indent, dst_info);
+        zero_padding(tc, indent, dst.type_ref(), dst.operand());
+        stmt_call_->compile(tc, indent, dst);
         return;
     }
 
-    const type& tp{dst_info.type_ref()};
-    operand op{dst_info.operand};
-    compile_assign(tc, indent, tp, dst_info, op);
+    const type& tp{dst.type_ref()};
+    operand op{dst.operand()};
+    compile_assign(tc, indent, tp, dst, op);
 }
 
 // declared in 'expr_type.hpp'
@@ -609,11 +526,11 @@ auto expr_type::assert_record_field_not_reading(const expr_any& src,
 // declared in 'expr_type.hpp'
 // solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::compile_assign(toc& tc, const size_t indent,
-                               const type& dst_type, const ident_info& dst_info,
+                               const type& dst_type, const destination& dst,
                                operand& dst_op) const -> void {
 
     if (stmt_call_) {
-        compile_call_field(tc, indent, dst_type, dst_info, dst_op);
+        compile_call_field(tc, indent, dst_type, dst, dst_op);
         return;
     }
 
@@ -622,19 +539,18 @@ auto expr_type::compile_assign(toc& tc, const size_t indent,
         return;
     }
 
-    compile_field_list(tc, indent, dst_type, dst_info, dst_op);
+    compile_field_list(tc, indent, dst_type, dst, dst_op);
 }
 
 // declared in 'expr_type.hpp'
 // e.g. 'f()' in '{f(), 3}' writes the field in place
 auto expr_type::compile_call_field(toc& tc, const size_t indent,
-                                   const type& dst_type,
-                                   const ident_info& dst_info,
+                                   const type& dst_type, const destination& dst,
                                    operand& dst_op) const -> void {
 
-    ident_info call_dst_info{dst_info};
-    call_dst_info.operand = operand::mem(dst_op, dst_type);
-    call_dst_info.use_operand = true;
+    const destination call_dst_info{
+        dst.at_address(operand::mem(dst_op, dst_type)),
+    };
 
     zero_padding(tc, indent, dst_type, dst_op);
     stmt_call_->compile(tc, indent, call_dst_info);
@@ -645,15 +561,15 @@ auto expr_type::compile_call_field(toc& tc, const size_t indent,
 // declared in 'expr_type.hpp'
 // advances 'dst_op' past the field, an instance field does it in the recursion
 auto expr_type::compile_field(toc& tc, const size_t indent, const expr_any& src,
-                              const type_field& field, ident_info& dst_info,
+                              const type_field& field, const destination& dst,
                               operand& dst_op) const -> void {
 
     if (not field.type().is_builtin()) {
-        compile_record_field(tc, indent, src, field, dst_info, dst_op);
+        compile_record_field(tc, indent, src, field, dst, dst_op);
         return;
     }
 
-    write_builtin_field(tc, indent, src, field, dst_info, dst_op);
+    write_builtin_field(tc, indent, src, field, dst, dst_op);
 
     dst_op.increment_offset(address_offset(field.size_bytes));
 }
@@ -662,16 +578,11 @@ auto expr_type::compile_field(toc& tc, const size_t indent, const expr_any& src,
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
 // and the padding
 auto expr_type::compile_field_list(toc& tc, const size_t indent,
-                                   const type& dst_type,
-                                   const ident_info& dst_info,
+                                   const type& dst_type, const destination& dst,
                                    operand& dst_op) const -> void {
 
-    ident_info cur_dst_info{dst_info};
-    cur_dst_info.operand = dst_op;
-    cur_dst_info.use_operand = true;
-
-    // note: keeping a current 'dst_info' accurate by adjusting 'cur_dst_info'
-    // is not necessary but it looks nicer
+    // each field is written at 'dst_op', which advances past it
+    const destination record{dst.at_address(dst_op)};
 
     const std::span<const type_field> flds{dst_type.fields()};
 
@@ -687,17 +598,12 @@ auto expr_type::compile_field_list(toc& tc, const size_t indent,
                        offset_alignment(written_bytes, dst_type.alignment()),
                        dst_op);
 
-        cur_dst_info.increment_offset(address_offset(padding_bytes));
         written_bytes = field.offset + field.size_bytes;
 
         x.comment(expr->tok(), indent, "copy field '{}'", field.name);
 
-        cur_dst_info.push(field.name, field.type_ptr, {});
-
-        compile_field(tc, indent, *expr, field, cur_dst_info, dst_op);
-
-        cur_dst_info.increment_offset(address_offset(field.size_bytes));
-        cur_dst_info.pop();
+        compile_field(tc, indent, *expr, field,
+                      record.field(field.name, field.type()), dst_op);
     }
 
     // zero out the remaining fields and the padding after the written ones
@@ -757,7 +663,7 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 auto expr_type::write_builtin_field(toc& tc, const size_t indent,
                                     const expr_any& src,
                                     const type_field& field,
-                                    ident_info& dst_info,
+                                    const destination& dst,
                                     const operand& dst_op) const -> void {
 
     machine& x{tc.machine()};
@@ -784,8 +690,7 @@ auto expr_type::write_builtin_field(toc& tc, const size_t indent,
     src.assert_not_narrowed(tc, field.type());
 
     if (src.is_expression() or (src.is_identifier() and tc.has_lea(src))) {
-        dst_info.operand = dst_operand;
-        src.compile(tc, indent, dst_info);
+        src.compile(tc, indent, dst.with_operand(dst_operand));
         return;
     }
 
@@ -824,7 +729,9 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
     const auto compile_in_field{
         [&] -> void {
             x.copy_value(src.tok(), indent, dst, src_op);
-            uops.compile(tc, indent, src.tok(), dst);
+
+            uops.compile(x, indent, src.tok(), dst,
+                         tc.checks().overflow_options());
         },
     };
 
@@ -834,7 +741,7 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
         };
 
         x.copy_value(src.tok(), indent, reg, src_op);
-        uops.compile(tc, indent, src.tok(), reg);
+        uops.compile(x, indent, src.tok(), reg, tc.checks().overflow_options());
         x.copy_value(src.tok(), indent, dst, reg);
         x.free_scratch_register(src.tok(), indent, reg);
     });
@@ -845,8 +752,8 @@ auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
 auto expr_type::compile_record_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,
-                                     const ident_info& dst_info,
-                                     operand& dst_op) -> void {
+                                     const destination& dst, operand& dst_op)
+    -> void {
 
     // the copy size comes from the source so it must match the field
     if (field.is_array and src.is_array_identifier()) {
@@ -855,14 +762,14 @@ auto expr_type::compile_record_field(toc& tc, const size_t indent,
 
     // one assignment fills an instance or copies a whole array identifier
     if (not field.is_array or src.is_array_identifier()) {
-        src.as_expr_type().compile_assign(tc, indent, field.type(), dst_info,
+        src.as_expr_type().compile_assign(tc, indent, field.type(), dst,
                                           dst_op);
 
         return;
     }
 
     for (size_t i{}; i < src.element_count(); ++i) {
-        src.as_expr_type(i).compile_assign(tc, indent, field.type(), dst_info,
+        src.as_expr_type(i).compile_assign(tc, indent, field.type(), dst,
                                            dst_op);
     }
 
@@ -926,36 +833,6 @@ auto expr_type::accessed_path() const -> std::optional<access_path> {
 // solves circular reference: expr_type -> expr_any -> expr_type
 auto expr_type::is_indexed() const -> bool {
     return stmt_ident_ and stmt_ident_->is_indexed();
-}
-
-// declared in 'unary_ops.hpp'
-// solves circular reference: unary_ops -> toc -> statement -> unary_ops
-auto unary_ops::compile(toc& tc, const size_t indent, const token& src_loc_tk,
-                        const operand& dst) const -> void {
-
-    machine& x{tc.machine()};
-
-    for (const char o : ops_ | std::views::reverse) {
-        x.unary(src_loc_tk, indent,
-                o == '-' ? machine::arithmetic_operator::negate
-                         : machine::arithmetic_operator::complement,
-                dst, tc.overflow_check_options());
-    }
-}
-
-// declared in 'decouple.hpp'
-// called from 'stmt_builtin_array_copy' and 'stmt_builtin_arrays_equal'
-auto make_count_emitter(toc& tc, const size_t indent, const statement& count)
-    -> std::function<void(const operand&)> {
-
-    return [&tc, indent, &count](const operand& count_register) -> void {
-        machine& x{tc.machine()};
-
-        x.comment(count.tok(), indent, statement::trimmed_source(count));
-
-        count.compile(tc, indent,
-                      toc::make_ident_info_from_register(count_register));
-    };
 }
 
 // NOLINTEND(misc-definitions-in-headers)

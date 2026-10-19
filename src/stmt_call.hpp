@@ -18,13 +18,14 @@
 #include <string_view>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expression.hpp"
 #include "generics.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "stmt_def_func.hpp"
@@ -335,41 +336,40 @@ struct call_site {
         return tc.make_ident_info(tk, name);
     }
 
-    auto assert_result_type(const ident_info& dst_info,
+    auto assert_result_type(const destination& dst,
                             const stmt_def_func& func) const -> void {
 
-        if (dst_info.type_ref().is_same(func.get_type())) {
+        if (dst.type_ref().is_same(func.get_type())) {
             return;
         }
 
         const std::string message{
             std::format("result type mismatch: function returns '{}', "
                         "destination is '{}'",
-                        func.get_type().name(), dst_info.type_ref().name()),
+                        func.get_type().name(), dst.type_ref().name()),
         };
 
         // a non-inline result needs a memory destination, not the register
         // the conversion computes into
         if (not func.is_inlined()) {
-            throw compiler_exception{dst_info.error_token(tk), message};
+            throw compiler_exception{dst.error_token(tk), message};
         }
 
         throw compiler_exception{
-            dst_info.error_token(tk),
-            std::format("{}, use '{}(...)'", message,
-                        dst_info.type_ref().name()),
+            dst.error_token(tk),
+            std::format("{}, use '{}(...)'", message, dst.type_ref().name()),
         };
     }
 
     // a result must be stored and a call without one cannot provide it
-    auto assert_result_use(const ident_info& dst_info,
+    auto assert_result_use(const destination& dst,
                            const stmt_def_func& func) const -> void {
 
-        if (func.returns() and dst_info.is_empty()) {
+        if (func.returns() and dst.is_empty()) {
             throw compiler_exception{tk, "return value is discarded"};
         }
 
-        if (not func.returns() and not dst_info.is_empty()) {
+        if (not func.returns() and not dst.is_empty()) {
             throw compiler_exception{tk, "function does not return a value"};
         }
     }
@@ -408,18 +408,17 @@ struct call_site {
     // the root variable and the bytes of it that the destination names
     [[nodiscard]] static auto result_target(const toc& tc,
                                             const token& src_loc_tk,
-                                            const ident_info& dst_info)
+                                            const destination& dst)
         -> storage_target {
 
         // note: a register destination, its id is a register name, has no
         //       variable
-        if (dst_info.is_register()) {
+        if (dst.is_register()) {
             return {};
         }
 
-        return tc.storage_target_of(src_loc_tk,
-                                    ident_info::root_of(dst_info.id),
-                                    dst_info.accessed_path);
+        return tc.storage_target_of(src_loc_tk, ident_info::root_of(dst.name()),
+                                    dst.accessed_path());
     }
 
     [[noreturn]] static auto
@@ -471,7 +470,7 @@ class inline_call {
     // an instance literal or a call result is made in a variable of the
     // parameter's type that the body reaches through the alias of its
     // parameter
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info,
+    auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
 
         const bool has_instance_temporary{
@@ -484,7 +483,7 @@ class inline_call {
         };
 
         if (not has_instance_temporary) {
-            compile_to_destination(tc, indent, dst_info, func);
+            compile_to_destination(tc, indent, dst, func);
             return;
         }
 
@@ -504,10 +503,10 @@ class inline_call {
                                     param.get_type()),
             };
 
-            arg.compile(tc, indent, temporary_info);
+            arg.compile(tc, indent, destination::of_name(temporary_info));
         }
 
-        compile_to_destination(tc, indent, dst_info, func);
+        compile_to_destination(tc, indent, dst, func);
 
         tc.exit_block();
     }
@@ -516,7 +515,7 @@ class inline_call {
     // the body sees an argument that went through a temporary as that
     // temporary
     auto compile_with_aliases(
-        toc& tc, const size_t indent, const ident_info& dst_info,
+        toc& tc, const size_t indent, const destination& dst,
         const stmt_def_func& func,
         const std::span<const noninline_arg> call_arguments = {}) const
         -> void {
@@ -525,7 +524,7 @@ class inline_call {
         std::vector<operand> allocated_registers;
 
         const std::vector<alias_info> aliases{
-            make_aliases(tc, indent, dst_info, func, call_arguments,
+            make_aliases(tc, indent, dst, func, call_arguments,
                          allocated_registers),
         };
 
@@ -569,25 +568,28 @@ class inline_call {
             tc.make_ident_info(call_.tk, return_info.ident_tk.text()),
         };
 
-        call_.uops.compile(tc, indent, call_.tk, ret_info.operand);
+        machine& x{tc.machine()};
+
+        call_.uops.compile(x, indent, call_.tk, ret_info.operand,
+                           tc.checks().overflow_options());
     }
 
     // the id has no indexes, so an id naming an array means the result is
     // one of its elements
     auto comment_result_address(toc& tc, const size_t indent,
-                                const ident_info& dst_info) const -> void {
+                                const destination& dst) const -> void {
 
         machine& x{tc.machine()};
 
-        if (tc.make_ident_info(call_.tk, dst_info.id).is_array) {
+        if (tc.make_ident_info(call_.tk, dst.name()).is_array) {
             x.comment(call_.tk, indent,
-                      "address of result element in array '{}'", dst_info.id);
+                      "address of result element in array '{}'", dst.name());
 
             return;
         }
 
         x.comment(call_.tk, indent, "address of indexed result '{}'",
-                  dst_info.id);
+                  dst.name());
     }
 
     // the registers are freed before the exit label
@@ -634,13 +636,19 @@ class inline_call {
 
         // add aliases
         for (const alias_info& e : aliases_to_add) {
-            x.comment_alias(call_.tk, indent + 1, e.from, e.to, e.lea);
+            const bound_storage* const storage{
+                std::get_if<bound_storage>(&e.binding),
+            };
+
+            x.comment_alias(call_.tk, indent + 1, e.from, e.target_text(),
+                            storage == nullptr ? operand{} : storage->lea);
+
             tc.add_alias(e);
         }
 
         // the result reaches the destination through the 'res' alias, so the
         // statements of the body have no destination
-        func.code().compile(tc, indent, ident_info::make_empty());
+        func.code().compile(tc, indent, destination{});
 
         x.free_scratch_registers(call_.tk, indent + 1, registers_to_free);
 
@@ -674,6 +682,8 @@ class inline_call {
                 continue;
             }
 
+            bound_storage& storage{std::get<bound_storage>(alias.binding)};
+
             const operand address{
                 x.alloc_scratch_register(call_.tk, indent,
                                          tc.get_type_address()),
@@ -684,19 +694,19 @@ class inline_call {
             x.comment(call_.tk, indent, "address of parameter '{}'",
                       alias.from);
 
-            alias.lea = load_indexed_address(x, indent, address, alias.lea,
-                                             keeps_displacement);
+            storage.lea = load_indexed_address(x, indent, address, storage.lea,
+                                               keeps_displacement);
         }
 
         compile_body(tc, indent, func, aliases_to_add, address_registers);
     }
 
     auto compile_to_destination(toc& tc, const size_t indent,
-                                const ident_info& dst_info,
+                                const destination& dst,
                                 const stmt_def_func& func) const -> void {
 
-        if (not dst_info.operand.is_memory()) {
-            compile_with_aliases(tc, indent, dst_info, func);
+        if (not dst.operand().is_memory()) {
+            compile_with_aliases(tc, indent, dst, func);
             return;
         }
 
@@ -706,7 +716,7 @@ class inline_call {
         const bool has_unary_ops{not call_.uops.is_empty()};
 
         const bool has_indexed_result{
-            not dst_info.operand.index_register().empty(),
+            not dst.operand().index_register().empty(),
         };
 
         // without base + index addressing each result access adds base and
@@ -716,14 +726,12 @@ class inline_call {
 
             x.emit_most_efficient(
                 call_.tk, indent,
-                [&] -> void {
-                    compile_with_aliases(tc, indent, dst_info, func);
-                },
+                [&] -> void { compile_with_aliases(tc, indent, dst, func); },
                 [&] -> void {
                     emit_most_efficient_address(
                         x, indent, [&](const bool keeps) -> void {
                             compile_with_result_address_register(
-                                tc, indent, dst_info, func, keeps);
+                                tc, indent, dst, func, keeps);
                         });
                 });
 
@@ -731,7 +739,7 @@ class inline_call {
         }
 
         if (not has_unary_ops) {
-            compile_with_aliases(tc, indent, dst_info, func);
+            compile_with_aliases(tc, indent, dst, func);
             return;
         }
 
@@ -739,17 +747,16 @@ class inline_call {
         // load/store machine, a scratch register can be shorter
         x.emit_most_efficient(
             call_.tk, indent,
-            [&] -> void { compile_with_aliases(tc, indent, dst_info, func); },
+            [&] -> void { compile_with_aliases(tc, indent, dst, func); },
             [&] -> void {
                 const operand reg{
-                    x.alloc_scratch_register(call_.tk, indent,
-                                             dst_info.type_ref()),
+                    x.alloc_scratch_register(call_.tk, indent, dst.type_ref()),
                 };
 
-                compile_with_aliases(
-                    tc, indent, toc::make_ident_info_from_register(reg), func);
+                compile_with_aliases(tc, indent, destination::of_register(reg),
+                                     func);
 
-                x.copy_value(call_.tk, indent, dst_info.operand, reg);
+                x.copy_value(call_.tk, indent, dst.operand(), reg);
                 x.free_scratch_register(call_.tk, indent, reg);
             });
     }
@@ -800,7 +807,7 @@ class inline_call {
     // a new register because the index register may belong to an enclosing
     // alias that is used after the call
     auto compile_with_result_address_register(
-        toc& tc, const size_t indent, const ident_info& dst_info,
+        toc& tc, const size_t indent, const destination& dst,
         const stmt_def_func& func, const bool keeps_displacement) const
         -> void {
 
@@ -810,12 +817,12 @@ class inline_call {
             x.alloc_scratch_register(call_.tk, indent, tc.get_type_address()),
         };
 
-        comment_result_address(tc, indent, dst_info);
+        comment_result_address(tc, indent, dst);
 
-        ident_info address_info{dst_info};
-
-        address_info.operand = load_indexed_address(
-            x, indent, address, dst_info.operand, keeps_displacement);
+        const destination address_info{
+            dst.with_operand(load_indexed_address(
+                x, indent, address, dst.operand(), keeps_displacement)),
+        };
 
         compile_with_aliases(tc, indent, address_info, func);
 
@@ -860,7 +867,7 @@ class inline_call {
 
     // the aliases of the result and of the arguments of the inlined body
     [[nodiscard]] auto
-    make_aliases(toc& tc, const size_t indent, const ident_info& dst_info,
+    make_aliases(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func,
                  const std::span<const noninline_arg> call_arguments,
                  std::vector<operand>& allocated_registers) const
@@ -870,16 +877,16 @@ class inline_call {
                call_arguments.size() == call_.args.size());
         // note: 'call_arguments.at(i)' below needs one entry per argument
 
-        call_.assert_result_use(dst_info, func);
+        call_.assert_result_use(dst, func);
 
         // buffer the aliases of arguments and function return
         std::vector<alias_info> aliases;
 
         // the result names the destination, so the widths must agree
         if (const std::optional<func_return_info> ret{func.returns()}; ret) {
-            call_.assert_result_type(dst_info, func);
+            call_.assert_result_type(dst, func);
 
-            aliases.push_back(make_result_alias(tc, dst_info, *ret));
+            aliases.push_back(make_result_alias(tc, dst, *ret));
         }
 
         for (const auto [i, arg, param] : std::views::zip(
@@ -896,8 +903,8 @@ class inline_call {
             if (is_call_temporary or
                 call_site::is_instance_temporary(arg, param)) {
 
-                aliases.push_back(
-                    make_value_alias(param, call_.temporary_argument_name(i)));
+                aliases.push_back(make_storage_alias(
+                    param, call_.temporary_argument_name(i)));
 
                 continue;
             }
@@ -934,7 +941,12 @@ class inline_call {
     [[nodiscard]] static auto is_indexed_reference(const alias_info& alias)
         -> bool {
 
-        return alias.lea.is_memory() and not alias.lea.index_register().empty();
+        const bound_storage* const storage{
+            std::get_if<bound_storage>(&alias.binding),
+        };
+
+        return storage != nullptr and storage->lea.is_memory() and
+               not storage->lea.index_register().empty();
     }
 
     // the inlined body reaches an argument through its storage, its constant
@@ -986,7 +998,8 @@ class inline_call {
         };
 
         if (value) {
-            return make_value_alias(param, std::format("{}", *value));
+            return alias_info::make_constant(param.identifier(),
+                                             param.get_type(), *value);
         }
 
         machine& x{tc.machine()};
@@ -996,7 +1009,7 @@ class inline_call {
         };
 
         allocated_registers.push_back(reg);
-        arg.compile(tc, indent, toc::make_ident_info_from_register(reg));
+        arg.compile(tc, indent, destination::of_register(reg));
 
         return alias_info::make_register(param.identifier(), param.get_type(),
                                          reg);
@@ -1019,14 +1032,14 @@ class inline_call {
         // shadow the caller's, and the alias target must be a plain integer,
         // e.g. '~1' is not
         if (arg_info.is_const()) {
-            return make_value_alias(
-                param, std::format("{}", arg.get_unary_ops().evaluate_constant(
-                                             arg_info.const_value)));
+            return alias_info::make_constant(
+                param.identifier(), param.get_type(),
+                arg.get_unary_ops().evaluate_constant(arg_info.const_value));
         }
 
         if (arg.get_unary_ops().is_empty()) {
-            return make_value_alias(param, arg.identifier(),
-                                    call_site::argument_target(tc, arg));
+            return make_storage_alias(param, arg.identifier(),
+                                      call_site::argument_target(tc, arg));
         }
 
         machine& x{tc.machine()};
@@ -1037,7 +1050,9 @@ class inline_call {
 
         allocated_registers.push_back(reg);
         x.copy_value(param.tok(), indent, reg, arg_info.operand);
-        arg.get_unary_ops().compile(tc, indent, arg.tok(), reg);
+
+        arg.get_unary_ops().compile(x, indent, arg.tok(), reg,
+                                    tc.checks().overflow_options());
 
         return alias_info::make_register(param.identifier(), param.get_type(),
                                          reg);
@@ -1059,7 +1074,7 @@ class inline_call {
             arg.compile_lea(tc, indent, arg.tok(), regs_lea,
                             {
                                 .reg_count{},
-                                .lea_path{arg_info.lea_path},
+                                .known{arg_info.known},
                                 .address_register{},
                             }),
         };
@@ -1068,56 +1083,60 @@ class inline_call {
         // compiled
         allocated_registers.append_range(regs_lea);
 
-        return {
-            .from{std::string{param.identifier()}},
-            .to{std::string{arg.identifier()}},
-            .lea{lea},
-            .type_ptr{&param.get_type()},
-            .register_operand{},
-            .is_element{arg.is_array_element()},
-            .bound{call_site::argument_target(tc, arg)},
-        };
+        return alias_info::make_storage(
+            param.identifier(), param.get_type(),
+            {
+                .path{std::string{arg.identifier()}},
+                .lea{lea},
+                .is_element{arg.is_array_element()},
+                .bound{call_site::argument_target(tc, arg)},
+            });
     }
 
     // the result name of the function refers to the destination
     [[nodiscard]] static auto make_result_alias(const toc& tc,
-                                                const ident_info& dst_info,
+                                                const destination& dst,
                                                 const func_return_info& ret)
         -> alias_info {
 
+        // e.g. the scratch register of an expression, or a parameter that
+        // stands for one
+        if (dst.is_register()) {
+            // note: a register has no address to keep
+            assert(not dst.is_address_known());
+
+            return alias_info::make_register(ret.ident_tk.text(), *ret.type_ptr,
+                                             dst.operand(), dst.name());
+        }
+
         operand dst_lea{
-            dst_info.use_operand or dst_info.has_lea() ? dst_info.operand
-                                                       : operand{},
+            dst.is_address_known() ? dst.operand() : operand{},
         };
 
         // a destination such as 'arr[1]' is not an array
-        return {
-            .from{std::string{ret.ident_tk.text()}},
-            .to{dst_info.id},
-            .lea{std::move(dst_lea)},
-            .type_ptr{ret.type_ptr},
-            .register_operand{
-                dst_info.is_register() ? dst_info.operand : operand{},
-            },
-            .is_element{not dst_info.is_array},
-            .bound{call_site::result_target(tc, ret.ident_tk, dst_info)},
-        };
+        return alias_info::make_storage(
+            ret.ident_tk.text(), *ret.type_ptr,
+            {
+                .path{dst.name()},
+                .lea{std::move(dst_lea)},
+                .is_element{not dst.is_array()},
+                .bound{call_site::result_target(tc, ret.ident_tk, dst)},
+            });
     }
 
-    [[nodiscard]] static auto make_value_alias(const stmt_def_func_param& param,
-                                               const std::string_view to,
-                                               const storage_target& bound = {})
-        -> alias_info {
+    // a variable of the caller or a temporary of the call, named by 'path'
+    [[nodiscard]] static auto
+    make_storage_alias(const stmt_def_func_param& param,
+                       const std::string_view path,
+                       const storage_target& bound = {}) -> alias_info {
 
-        return {
-            .from{std::string{param.identifier()}},
-            .to{std::string{to}},
-            .lea{},
-            .type_ptr{&param.get_type()},
-            .register_operand{},
-            .is_element{},
-            .bound{bound},
-        };
+        return alias_info::make_storage(param.identifier(), param.get_type(),
+                                        {
+                                            .path{std::string{path}},
+                                            .lea{},
+                                            .is_element{},
+                                            .bound{bound},
+                                        });
     }
 };
 
@@ -1136,6 +1155,15 @@ class inline_call {
 //      the callee frame ('frame_slot_addresses', 'write_frame_slots') and the
 //      function is called
 class noninline_call {
+    // what the aliasing signature reads of the result or of an argument
+    struct signature_item {
+        // the variable, e.g. 'v' of 'v.x'
+        std::string_view root;
+        bool is_pointer{};
+        bool is_array{};
+        size_t array_len{};
+    };
+
     call_site call_;
 
   public:
@@ -1144,13 +1172,13 @@ class noninline_call {
     // the callee reaches the result and the arguments through their addresses,
     // a result destination or an argument that is not a variable in memory,
     // e.g. a register or an expression, goes through a temporary
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info,
+    auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
 
-        call_.assert_result_use(dst_info, func);
+        call_.assert_result_use(dst, func);
 
         const bool has_result_temporary{
-            func.returns() and not dst_info.operand.is_memory(),
+            func.returns() and not dst.operand().is_memory(),
         };
 
         const bool has_argument_temporary{
@@ -1163,10 +1191,10 @@ class noninline_call {
         };
 
         if (not has_result_temporary and not has_argument_temporary) {
-            compile_with_arguments(tc, indent, dst_info, func,
+            compile_with_arguments(tc, indent, dst, func,
                                    variable_arguments(tc));
 
-            apply_unary_ops_to_destination(tc, indent, dst_info);
+            apply_unary_ops_to_destination(tc, indent, dst);
 
             return;
         }
@@ -1197,7 +1225,8 @@ class noninline_call {
                 .is_temporary{true},
             });
 
-            arg.compile(tc, indent, arguments.back().info);
+            arg.compile(tc, indent,
+                        destination::of_name(arguments.back().info));
         }
 
         if (has_result_temporary) {
@@ -1207,17 +1236,17 @@ class noninline_call {
                     func.get_type()),
             };
 
-            compile_with_arguments(tc, indent, result_info, func, arguments);
+            compile_with_arguments(
+                tc, indent, destination::of_name(result_info), func, arguments);
 
             machine& x{tc.machine()};
 
-            x.copy_value(call_.tk, indent, dst_info.operand,
-                         result_info.operand);
+            x.copy_value(call_.tk, indent, dst.operand(), result_info.operand);
         } else {
-            compile_with_arguments(tc, indent, dst_info, func, arguments);
+            compile_with_arguments(tc, indent, dst, func, arguments);
         }
 
-        apply_unary_ops_to_destination(tc, indent, dst_info);
+        apply_unary_ops_to_destination(tc, indent, dst);
 
         tc.exit_block();
     }
@@ -1225,26 +1254,28 @@ class noninline_call {
   private:
     // the callee has written the result, the operators of the call follow
     auto apply_unary_ops_to_destination(toc& tc, const size_t indent,
-                                        const ident_info& dst_info) const
-        -> void {
+                                        const destination& dst) const -> void {
 
-        call_.uops.compile(tc, indent, call_.tk, dst_info.operand);
+        machine& x{tc.machine()};
+
+        call_.uops.compile(x, indent, call_.tk, dst.operand(),
+                           tc.checks().overflow_options());
     }
 
     // the callee reaches the result and arguments through their addresses
-    auto assert_call(const ident_info& dst_info, const stmt_def_func& func,
+    auto assert_call(const destination& dst, const stmt_def_func& func,
                      const std::span<const noninline_arg> arguments) const
         -> void {
 
         // 'compile' checked the result use before the temporaries
         if (func.returns()) {
             // note: a result that is not in memory goes through a temporary
-            assert(dst_info.operand.is_memory());
+            assert(dst.operand().is_memory());
 
             // an array literal gives its call elements an element destination
-            assert(not dst_info.is_array);
+            assert(not dst.is_array());
 
-            call_.assert_result_type(dst_info, func);
+            call_.assert_result_type(dst, func);
         }
 
         for (const auto [arg, argument, param] :
@@ -1256,13 +1287,13 @@ class noninline_call {
 
     // the body is compiled once for all callers, so this call's aliasing is
     // checked by compiling the body as an inline call and dropping the code
-    auto check_aliasing(toc& tc, const size_t indent,
-                        const ident_info& dst_info, const stmt_def_func& func,
+    auto check_aliasing(toc& tc, const size_t indent, const destination& dst,
+                        const stmt_def_func& func,
                         const std::span<const noninline_arg> arguments) const
         -> void {
 
         const std::optional<std::string> signature{
-            aliasing_signature(tc, dst_info, func, arguments),
+            aliasing_signature(tc, dst, func, arguments),
         };
 
         // note: what the body can reject depends only on which arguments are
@@ -1283,8 +1314,7 @@ class noninline_call {
 
         try {
             tc.check_only([&] -> void {
-                dry_run.compile_with_aliases(tc, indent, dst_info, func,
-                                             arguments);
+                dry_run.compile_with_aliases(tc, indent, dst, func, arguments);
             });
         } catch (compiler_exception& e) {
             call_.add_call_frame(e);
@@ -1310,13 +1340,14 @@ class noninline_call {
                   func.params().at(arg_idx).name());
     }
 
-    auto compile_with_arguments(
-        toc& tc, const size_t indent, const ident_info& dst_info,
-        const stmt_def_func& func,
-        const std::span<const noninline_arg> arguments) const -> void {
+    auto
+    compile_with_arguments(toc& tc, const size_t indent, const destination& dst,
+                           const stmt_def_func& func,
+                           const std::span<const noninline_arg> arguments) const
+        -> void {
 
-        assert_call(dst_info, func, arguments);
-        check_aliasing(tc, indent, dst_info, func, arguments);
+        assert_call(dst, func, arguments);
+        check_aliasing(tc, indent, dst, func, arguments);
 
         machine& x{tc.machine()};
 
@@ -1332,7 +1363,7 @@ class noninline_call {
         std::vector<operand> address_registers;
 
         const std::vector<operand> addresses{
-            frame_slot_addresses(tc, indent, dst_info, func, arguments,
+            frame_slot_addresses(tc, indent, dst, func, arguments,
                                  address_registers),
         };
 
@@ -1358,14 +1389,14 @@ class noninline_call {
 
         x.check_frame_capacity(
             call_.tk, indent, frame_address,
-            operand::imm(func.frame_size_label(array_lengths),
-                         tc.get_type_address()),
-            tc.is_frame_check());
+            operand::symbol(func.frame_size_label(array_lengths),
+                            tc.get_type_address()),
+            tc.checks().frame);
 
         // the registers holding the addresses of the arguments are still
         // allocated, the check must not change a register that is free but
         // used by the call
-        x.check_stack_capacity(call_.tk, indent, tc.is_stack_check());
+        x.check_stack_capacity(call_.tk, indent, tc.checks().stack);
 
         // the address of that slot is loaded after the registers are saved, a
         // register that holds a value of the caller is not lost
@@ -1386,8 +1417,8 @@ class noninline_call {
 
     // the result address precedes the argument addresses
     [[nodiscard]] auto
-    frame_slot_addresses(toc& tc, const size_t indent,
-                         const ident_info& dst_info, const stmt_def_func& func,
+    frame_slot_addresses(toc& tc, const size_t indent, const destination& dst,
+                         const stmt_def_func& func,
                          const std::span<const noninline_arg> arguments,
                          std::vector<operand>& address_registers) const
         -> std::vector<operand> {
@@ -1395,10 +1426,7 @@ class noninline_call {
         std::vector<operand> addresses;
 
         if (func.returns()) {
-            // note: 'stmt_assign_var' resolves a pointer slot before the call
-            assert(not dst_info.is_pointer or dst_info.use_operand);
-
-            addresses.push_back(dst_info.operand);
+            addresses.push_back(dst.operand());
         }
 
         for (const auto [arg, argument] :
@@ -1467,27 +1495,41 @@ class noninline_call {
     // is a parameter of the enclosing non-inline function, the calls of that
     // function are checked with their own arguments
     [[nodiscard]] static auto
-    aliasing_signature(const toc& tc, const ident_info& dst_info,
+    aliasing_signature(const toc& tc, const destination& dst,
                        const stmt_def_func& func,
                        const std::span<const noninline_arg> arguments)
         -> std::optional<std::string> {
 
-        std::vector<ident_info> infos;
+        std::vector<signature_item> items;
 
+        // note: a pointer destination is resolved to its address before
         if (func.returns()) {
-            infos.push_back(dst_info);
+            items.push_back({
+                .root{dst.root_id()},
+                .is_pointer{},
+                .is_array{dst.is_array()},
+                .array_len{dst.array_len()},
+            });
         }
 
         for (const noninline_arg& argument : arguments) {
-            infos.push_back(argument.info);
+            // note: a temporary is a local of the call
+            assert(not argument.info.elem_path.empty());
+
+            items.push_back({
+                .root{argument.info.elem_path.front()},
+                .is_pointer{argument.info.is_pointer},
+                .is_array{argument.info.is_array},
+                .array_len{argument.info.array_len},
+            });
         }
 
         std::string signature{func.name()};
         std::vector<std::string_view> locals;
 
-        for (const ident_info& info : infos) {
+        for (const signature_item& item : items) {
             const std::optional<std::string> part{
-                signature_part(tc, info, locals),
+                signature_part(tc, item, locals),
             };
 
             if (not part) {
@@ -1568,25 +1610,22 @@ class noninline_call {
     // none for a pointer, which the signature cannot tell. 'locals' are the
     // variables met so far
     [[nodiscard]] static auto
-    signature_part(const toc& tc, const ident_info& info,
+    signature_part(const toc& tc, const signature_item& item,
                    std::vector<std::string_view>& locals)
         -> std::optional<std::string> {
 
-        if (info.is_pointer) {
+        if (item.is_pointer) {
             return std::nullopt;
         }
 
         std::string part;
 
         // the body can reject an index by the length of its array
-        if (info.is_array) {
-            part += std::format(" array {}", info.array_len);
+        if (item.is_array) {
+            part += std::format(" array {}", item.array_len);
         }
 
-        // note: a temporary is a local of the call
-        assert(not info.elem_path.empty());
-
-        const std::string_view root{info.elem_path.front()};
+        const std::string_view root{item.root};
 
         if (tc.is_global_var(root)) {
             return part + std::format(" global {}", root);
@@ -1728,7 +1767,7 @@ class stmt_call : public expression {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         if (not tc.is_in_func()) {
@@ -1748,10 +1787,10 @@ class stmt_call : public expression {
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
-        assert_no_shared_storage(tc, dst_info, func);
+        assert_no_shared_storage(tc, dst, func);
 
         if (not func.is_inlined()) {
-            noninline_call{call}.compile(tc, indent, dst_info, func);
+            noninline_call{call}.compile(tc, indent, dst, func);
             return;
         }
 
@@ -1759,7 +1798,7 @@ class stmt_call : public expression {
 
         // an error found in the inlined body reports where it was called from
         try {
-            inline_call{call}.compile(tc, indent, dst_info, func);
+            inline_call{call}.compile(tc, indent, dst, func);
         } catch (compiler_exception& e) {
             call.add_call_frame(e);
             throw;
@@ -1806,8 +1845,8 @@ class stmt_call : public expression {
             args.push_back(x.alloc_named_register(
                 tok(), indent, registers.at(index), tc.get_type_default()));
 
-            argument(index).compile(
-                tc, indent, toc::make_ident_info_from_register(args.back()));
+            argument(index).compile(tc, indent,
+                                    destination::of_register(args.back()));
         }
 
         return args;
@@ -1957,16 +1996,18 @@ class stmt_call : public expression {
     // another argument could be read after it changed, unless both
     // parameters are read-only. the result destination is only compared with
     // '--checks=alias'
-    auto assert_no_shared_storage(const toc& tc, const ident_info& dst_info,
+    auto assert_no_shared_storage(const toc& tc, const destination& dst,
                                   const stmt_def_func& func) const -> void {
 
-        const bool is_result_checked{tc.is_alias_check() and dst_info.is_var()};
+        const bool is_result_checked{
+            tc.checks().alias and dst.is_storage(),
+        };
 
         // note: an empty target, the result is not compared, names no variable
         storage_target result;
 
         if (is_result_checked) {
-            result = call_site::result_target(tc, tok(), dst_info);
+            result = call_site::result_target(tc, tok(), dst);
         }
 
         std::vector<reference> references;

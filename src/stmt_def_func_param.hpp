@@ -5,7 +5,6 @@
 #include <string_view>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"

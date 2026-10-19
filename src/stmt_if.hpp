@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "decouple.hpp"
+#include "ident_info.hpp"
 #include "machine.hpp"
 #include "stmt_block.hpp"
 #include "stmt_if_branch.hpp"
@@ -73,7 +73,7 @@ class stmt_if final : public statement {
         }
     }
 
-    auto compile(toc& tc, const size_t indent, const ident_info& dst_info) const
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
         // the 'if' keyword locates the labels shared by all branches
@@ -101,7 +101,7 @@ class stmt_if final : public statement {
         // a branch that is constant true leaves no way to the 'else' code
         if (not branch_evaluated_to_true and not else_code_.is_empty()) {
             x.label(indent, label_else_branch);
-            else_code_.compile(tc, indent, dst_info);
+            else_code_.compile(tc, indent, dst);
         }
 
         x.label(indent, label_after_if);

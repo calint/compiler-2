@@ -6,7 +6,6 @@
 #include <string_view>
 
 #include "compiler_exception.hpp"
-#include "decouple.hpp"
 #include "statement.hpp"
 #include "stmt_const.hpp"
 #include "toc.hpp"
