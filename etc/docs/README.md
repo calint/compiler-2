@@ -3,6 +3,22 @@
 The design documents of the compiler, in reading order: each chapter
 assumes the ones before it.
 
+For a reviewer:
+
+1. the language: 'README.md', then 'etc/tutorial.baz'
+2. the code: the reading order in 1.1, the choices in chapter 7
+3. build: './make.sh build' (clang++ with c++26), one translation unit
+4. test: 'qa/coverage/test-coverage.sh --target=x86_64 run' and
+   '--target=rv32i-fpga run' run the about 1100 cases of 'cases.sh' on the
+   two main targets; 'qa/coverage/test-all.sh' runs them on all four
+   targets with the other suites and a coverage report in
+   'qa/coverage/report/' (needs nasm, ld, llvm-mc, ld.lld, qemu-riscv32 and
+   qemu-system-riscv32)
+5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/format-source.sh'
+6. fuzzing: 'qa/fuzz/fuzz-all.sh', see 'qa/fuzz/README.md'
+7. known limitations and planned work: 'etc/todo.txt', the reasons of past
+   decisions: 'etc/todo-resolved.txt'
+
 ## Contents
 
 - [1. Architecture: from source to assembly and binary image](#1-architecture-from-source-to-assembly-and-binary-image)
@@ -48,6 +64,15 @@ assumes the ones before it.
     - [6.6 The bases](#66-the-bases)
     - [6.7 Registers](#67-registers)
     - [6.8 Where in the code](#68-where-in-the-code)
+- [7. Design decisions](#7-design-decisions)
+    - [7.1 No intermediate representation](#71-no-intermediate-representation)
+    - [7.2 A node parses itself and keeps every token](#72-a-node-parses-itself-and-keeps-every-token)
+    - [7.3 One base class for every node](#73-one-base-class-for-every-node)
+    - [7.4 Generic definitions are text parsed again](#74-generic-definitions-are-text-parsed-again)
+    - [7.5 Calls are inlined, parameters are aliases](#75-calls-are-inlined-parameters-are-aliases)
+    - [7.6 'toc' is one facade over the tables](#76-toc-is-one-facade-over-the-tables)
+    - [7.7 One translation unit](#77-one-translation-unit)
+    - [7.8 The first error ends the compile](#78-the-first-error-ends-the-compile)
 
 ## 1. Architecture: from source to assembly and binary image
 
@@ -960,3 +985,98 @@ ident_builder::place_operand_from_lea a built-in reached below a known
 machine_x86_64::with_lowered_addresses, machine_rv32i::lower_address
                                       what the target encodes
 ```
+
+## 7. Design decisions
+
+The choices a reader may question first, why they were made and what was
+rejected. The open costs of each are items of 'etc/todo.txt'.
+
+### 7.1 No intermediate representation
+
+A statement compiles itself by calling the operations of 'machine' with
+operands, the backend writes the instructions. There is one level to read,
+the output reads like hand-written code and every statement is quoted above
+its instructions.
+
+Rejected: a lower-level representation and passes over it, another layer to
+learn for optimizations that are local here; where the shorter of two forms
+depends on code not compiled yet, both are compiled and measured (chapter 5).
+
+Cost: no optimization across statements, e.g. a value stored and loaded again
+by the next statement ('etc/todo.txt' section 2).
+
+### 7.2 A node parses itself and keeps every token
+
+The grammar needs to know the names while it parses: 'point{' is a record
+literal only when 'point' is a type, 'f<' a generic call only when 'f' is a
+generic function, 'T.at' a constructor only when 'T' names a type (1.2). So a
+statement parses in its constructor and declares names in 'toc' as it goes.
+It keeps every token with its whitespace and comments: the source is
+reproduced exactly ('--reproduce-source' checks it in every test) and quoted
+in the comments of the output.
+
+Rejected: a tree built before the names are known, the grammar cannot be
+parsed without them.
+
+### 7.3 One base class for every node
+
+'statement' has 20 virtual methods, each node overrides the ones it needs and
+the rest are 'std::unreachable()' (the groups are listed above the class).
+Every node parses, writes its source back, compiles and takes part in the
+definite assignment walk, and no code switches on the kind of a node.
+
+Rejected: the nodes as a 'std::variant', a closed set gains nothing when
+nothing switches on the kind, and every child would be boxed and every node
+kind would change the visitors; one tree per concern, each node would become
+four classes kept in step.
+
+### 7.4 Generic definitions are text parsed again
+
+An instance of a generic type or function is its definition parsed again with
+each parameter naming its argument (chapter 2). An instance is then exactly
+an ordinary definition: one code path, the same checks and the same errors,
+with the instances that led to an error listed as frames.
+
+Rejected: substituting arguments in a parsed tree, every node class would
+need a copy, and the parser could not tell 'T{' or 'T.at' apart without
+knowing what 'T' names.
+
+Cost: an error in a generic definition shows at its first instance; the
+generic functions nothing instantiates are listed in the report after the
+code.
+
+### 7.5 Calls are inlined, parameters are aliases
+
+The programs are super loops, so a call is compiled in place by default and a
+parameter names its argument instead of copying it: no call overhead, and a
+constant argument folds through the body. 'noinline' gives a function a body
+of its own for recursion and size.
+
+Cost: a parameter and another name may reach the same bytes, so aliasing is
+checked at compile time (chapters 3 and 4).
+
+### 7.6 'toc' is one facade over the tables
+
+Every statement receives 'toc', which owns the scopes, the types, the
+functions, the generics, the data and the storage layout. A method of 'toc'
+changes state or combines tables, a question to one table goes through its
+const accessor, e.g. 'tc.scopes().is_alias(name)'.
+
+Rejected: passing the tables one by one, every signature would carry the
+ones its callees need.
+
+### 7.7 One translation unit
+
+'main.cpp' includes the headers, there is no build system and the compiler
+sees the whole program. The include cycles between the statement classes are
+broken in 'decouple.hpp' and 'decouple_impl.hpp' only.
+
+Cost: every change rebuilds everything.
+
+### 7.8 The first error ends the compile
+
+An error is a 'compiler_exception' at the token that caused it, with the
+inlined calls and generic instances that led there. No code recovers from an
+error, so no error leads to a second, wrong one.
+
+Cost: one error per run.
