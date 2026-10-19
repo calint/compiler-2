@@ -111,16 +111,18 @@ go roome\n\
 en me\n"
 
 # runs the lines of the script as the bare entity, a line ends with '\n'
-func run_creation_script(tz mut tokenizer) {
+func run_creation_script() {
+    var tz = tokenizer
     var line_start = 0
-    var eid = 0
+    out.set_silenced(true)
     foo str_creation_script {
         if e == '\n' {
             tz.set_line(str_creation_script, line_start, i - line_start)
-            parse_input(eid, tz)
+            parse_input(0, tz)
             line_start = i + 1
         }
     }
+    out.set_silenced(false)
 }
 
 dat    str_hello = "\nwelcome to adventure #7\n    type 'help'\n"
@@ -130,13 +132,9 @@ dat str_turn_end = "--\n"
 dat flag = "\n\nFLAG\n\n"
 
 func main() {
-    var tz = tokenizer
+    run_creation_script()
 
-    out.set_silenced(true)
-    run_creation_script(tz)
-    out.set_silenced(false)
-
-    # messages made by the script are not for the players
+    # clear messages to entities 
     foo entities.array, entities.len {
         e.messages.len = 0
     }
@@ -144,6 +142,7 @@ func main() {
     out.print_all(str_ascii_art)
     out.print_all(str_hello)
 
+    var tz = tokenizer
     var eid = 0
     loop {
         if eid == entities.len {
