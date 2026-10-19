@@ -570,7 +570,7 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        call_.uops.compile(x, indent, call_.tk, ret_info.operand,
+        call_.uops.compile(x, indent, call_.tk, ret_info.operand(),
                            tc.checks().overflow_options());
     }
 
@@ -581,7 +581,7 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        if (tc.make_ident_info(call_.tk, dst.name()).is_array) {
+        if (tc.make_ident_info(call_.tk, dst.name()).is_array()) {
             x.comment(call_.tk, indent,
                       "address of result element in array '{}'", dst.name());
 
@@ -1034,7 +1034,7 @@ class inline_call {
         if (arg_info.is_const()) {
             return alias_info::make_constant(
                 param.identifier(), param.get_type(),
-                arg.get_unary_ops().evaluate_constant(arg_info.const_value));
+                arg.get_unary_ops().evaluate_constant(arg_info.const_value()));
         }
 
         if (arg.get_unary_ops().is_empty()) {
@@ -1049,7 +1049,7 @@ class inline_call {
         };
 
         allocated_registers.push_back(reg);
-        x.copy_value(param.tok(), indent, reg, arg_info.operand);
+        x.copy_value(param.tok(), indent, reg, arg_info.operand());
 
         arg.get_unary_ops().compile(x, indent, arg.tok(), reg,
                                     tc.checks().overflow_options());
@@ -1074,7 +1074,7 @@ class inline_call {
             arg.compile_lea(tc, indent, arg.tok(), regs_lea,
                             {
                                 .reg_count{},
-                                .known{arg_info.known},
+                                .known{arg_info.known()},
                                 .address_register{},
                             }),
         };
@@ -1241,7 +1241,8 @@ class noninline_call {
 
             machine& x{tc.machine()};
 
-            x.copy_value(call_.tk, indent, dst.operand(), result_info.operand);
+            x.copy_value(call_.tk, indent, dst.operand(),
+                         result_info.operand());
         } else {
             compile_with_arguments(tc, indent, dst, func, arguments);
         }
@@ -1434,7 +1435,7 @@ class noninline_call {
 
             // a temporary is a plain variable, not indexed like its argument
             if (argument.is_temporary) {
-                addresses.push_back(argument.info.operand);
+                addresses.push_back(argument.info.operand());
                 continue;
             }
 
@@ -1514,13 +1515,13 @@ class noninline_call {
 
         for (const noninline_arg& argument : arguments) {
             // note: a temporary is a local of the call
-            assert(not argument.info.elem_path.empty());
+            assert(not argument.info.elem_path().empty());
 
             items.push_back({
-                .root{argument.info.elem_path.front()},
-                .is_pointer{argument.info.is_pointer},
-                .is_array{argument.info.is_array},
-                .array_len{argument.info.array_len},
+                .root{argument.info.elem_path().front()},
+                .is_pointer{argument.info.is_pointer()},
+                .is_array{argument.info.is_array()},
+                .array_len{argument.info.array_len()},
             });
         }
 
@@ -1560,7 +1561,7 @@ class noninline_call {
              std::views::zip(arguments, func.params())) {
 
             if (param.is_array()) {
-                lengths.push_back(argument.info.array_len);
+                lengths.push_back(argument.info.array_len());
             }
         }
 
@@ -1577,7 +1578,7 @@ class noninline_call {
 
         // note: parsing the call rejects an array argument for a non-array
         //       parameter and the reverse
-        assert(info.is_array == param.is_array());
+        assert(info.is_array() == param.is_array());
 
         if (not info.type_ref().is_same(param.get_type())) {
             call_site::throw_parameter_type_mismatch(arg, param, info);
@@ -1879,7 +1880,7 @@ class stmt_call : public expression {
             // an expression is not an array
             const bool is_array_arg{
                 arg.is_identifier() and not arg.is_expression() and
-                    tc.make_ident_info(arg).is_array,
+                    tc.make_ident_info(arg).is_array(),
             };
 
             // an element would give the parameter the whole array's

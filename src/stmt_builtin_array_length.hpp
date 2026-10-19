@@ -78,7 +78,7 @@ class stmt_builtin_array_length final : public expression {
 
         // note: 'folded_constant' folds an array argument, so only a
         //       non-array reaches here
-        assert(not src_info.is_array);
+        assert(not src_info.is_array());
 
         throw compiler_exception{stmt_ident_.first_token(),
                                  "argument must refer to an array"};
@@ -97,12 +97,12 @@ class stmt_builtin_array_length final : public expression {
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};
 
         // 'compile' reports an argument that is not an array
-        if (not src_info.is_var() or not src_info.is_array) {
+        if (not src_info.is_var() or not src_info.is_array()) {
             return std::nullopt;
         }
 
         return get_unary_ops().evaluate_constant(
-            static_cast<int64_t>(src_info.array_len));
+            static_cast<int64_t>(src_info.array_len()));
     }
 
     // the length is known at compile time so the value is not read

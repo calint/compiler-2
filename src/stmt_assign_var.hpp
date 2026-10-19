@@ -98,14 +98,14 @@ class stmt_assign_var final : public statement {
         if (var_info.is_const()) {
             throw compiler_exception{
                 tok(), std::format("cannot assign to constant '{}'",
-                                   var_info.const_value)};
+                                   var_info.const_value())};
         }
 
         if (expr_.is_array_identifier()) {
             if (const ident_info src_info{tc.make_ident_info(expr_)};
 
-                src_info.is_array and
-                src_info.array_len != var_info.array_len) {
+                src_info.is_array() and
+                src_info.array_len() != var_info.array_len()) {
 
                 throw compiler_exception{
                     expr_.tok(),
@@ -122,7 +122,8 @@ class stmt_assign_var final : public statement {
         // an array, an indexed element or a loaded pointer is written at the
         // address computed here
         const bool is_address_known{
-            array_count_ > 0 or stmt_ident_.is_indexed() or var_info.is_pointer,
+            array_count_ > 0 or stmt_ident_.is_indexed() or
+                var_info.is_pointer(),
         };
 
         const destination var_dst{
@@ -198,7 +199,7 @@ class stmt_assign_var final : public statement {
 
         const std::string_view root{stmt_ident_.first_token().text()};
 
-        return var_info.is_pointer or tc.is_alias(root) or
+        return var_info.is_pointer() or tc.is_alias(root) or
                not tc.foo_array(root).root.empty();
     }
 

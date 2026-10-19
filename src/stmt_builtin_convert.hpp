@@ -279,7 +279,7 @@ class stmt_builtin_convert final : public expression {
             return std::nullopt;
         }
 
-        return narrow(tc, info.const_value);
+        return narrow(tc, info.const_value());
     }
 
     // the unary ops of the argument apply at its width, the value is narrowed

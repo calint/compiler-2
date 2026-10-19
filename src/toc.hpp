@@ -469,12 +469,13 @@ class ident_builder final {
     [[nodiscard]] static auto as_element_if(const bool is_element,
                                             ident_info info) -> ident_info {
 
-        if (not is_element) {
+        if (not is_element or not info.is_var()) {
             return info;
         }
 
-        info.is_array = false;
-        info.array_len = 0;
+        ident_info::storage_part& storage{info.storage()};
+        storage.is_array = false;
+        storage.array_len = 0;
 
         return info;
     }
@@ -532,12 +533,14 @@ class ident_builder final {
         };
 
         return ident_info::make_var(std::string{ident}, path,
-                                    std::move(type_path), op,
+                                    std::move(type_path),
                                     {
-                                        .offset{idx},
+                                        .operand{op},
+                                        .known{},
                                         .array_len{array_count},
                                         .is_array{is_array},
                                         .is_pointer{var.is_pointer},
+                                        .read_only_why{var.read_only_why},
                                     });
     }
 
@@ -546,14 +549,16 @@ class ident_builder final {
     static auto place_operand_from_lea(const token& src_loc_tk,
                                        ident_info& info) -> void {
 
-        if (not info.known) {
+        const std::optional<known_address>& known{info.storage().known};
+
+        if (not known) {
             return;
         }
 
-        const operand& lea{info.known->address};
+        const operand& lea{known->address};
 
         const size_t lea_index{
-            info.elem_path.size() - 1 - info.known->trailing_count,
+            info.elem_path().size() - 1 - known->trailing_count,
         };
         // note: -1 is the index of the last element
 
@@ -578,20 +583,21 @@ class ident_builder final {
         // identifiers
 
         // start from the lea address and calculate offset to referred field
-        const std::span<std::string> elem_path_from_lea{
-            std::span{info.elem_path}.subspan(lea_index),
+        const std::span<const std::string> elem_path_from_lea{
+            std::span{info.elem_path()}.subspan(lea_index),
         };
 
         // navigate to referred element and get offset
         const size_t offset{
-            info.type_path.at(lea_index)->field_offset(src_loc_tk,
-                                                       elem_path_from_lea),
+            info.type_path().at(lea_index)->field_offset(src_loc_tk,
+                                                         elem_path_from_lea),
         };
 
-        info.operand = operand::mem(lea, info.type_ref());
+        ::operand& element{info.storage().operand};
+        element = operand::mem(lea, info.type_ref());
 
         if (offset != 0) {
-            info.operand.increment_offset(address_offset(offset));
+            element.increment_offset(address_offset(offset));
         }
     }
 
@@ -1811,9 +1817,7 @@ class ident_resolver final {
                 machine_.get().variables_base_register()),
         };
 
-        info.read_only_why = var.read_only_why;
-
-        info.known = known;
+        info.storage().known = known;
 
         if (not info.type_ref().is_builtin()) {
             return info;
@@ -2091,8 +2095,9 @@ class variable_comments final {
         x.comment_variable(
             src_loc_tk, indent, text,
             multiply_storage_size(src_loc_tk, name_info.type_ref().size_bytes(),
-                                  name_info.is_array ? name_info.array_len : 1),
-            name_info.operand);
+                                  name_info.is_array() ? name_info.array_len()
+                                                       : 1),
+            name_info.operand());
     }
 };
 
@@ -2526,15 +2531,15 @@ class toc final {
         -> operand {
 
         if (not src.is_indexed() and not src_info.has_lea() and
-            not src_info.is_pointer) {
+            not src_info.is_pointer()) {
 
-            return src_info.operand;
+            return src_info.operand();
         }
 
         return src.compile_lea(*this, indent, src.tok(), lea_registers,
                                {
                                    .reg_count{},
-                                   .known{src_info.known},
+                                   .known{src_info.known()},
                                    .address_register{},
                                });
     }
@@ -2731,7 +2736,7 @@ class toc final {
         const bool is_element{st.is_array_element()};
         ident_info info{ident_builder::as_element_if(is_element, declared)};
 
-        info.src_loc_tk = st.name_token();
+        info.set_src_loc_tk(st.name_token());
 
         return info;
     }
@@ -2823,13 +2828,13 @@ class toc final {
         // a value in a register is no variable, not even one that is named
         // like the register, e.g. 't1' of rv32i or 'r14' of x86_64
         if (info.is_register()) {
-            return std::format("{}{}register", info.operand.base_register(),
+            return std::format("{}{}register", info.operand().base_register(),
                                storage_target::frame_mark);
         }
 
-        return std::format("{}{}{}", info.elem_path.front(),
+        return std::format("{}{}{}", info.elem_path().front(),
                            storage_target::frame_mark,
-                           scopes_.var_frame_index(info.elem_path.front()));
+                           scopes_.var_frame_index(info.elem_path().front()));
     }
 
     auto set_builtin_types(const type& t_i64, const type& t_i32,
@@ -2914,7 +2919,7 @@ class toc final {
     static auto assert_not_whole_array(const statement& st,
                                        const ident_info& info) -> void {
 
-        if (not info.is_array) {
+        if (not info.is_array()) {
             return;
         }
 

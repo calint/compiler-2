@@ -337,7 +337,7 @@ class expr_type final : public statement {
                                           const type_field& fld,
                                           const ident_info& src_info) -> void {
 
-        if (not src_info.is_array) {
+        if (not src_info.is_array()) {
             throw compiler_exception{src_loc_tk, "source must be an array"};
         }
 
@@ -345,12 +345,12 @@ class expr_type final : public statement {
 
         assert(fld.type().is_same(src_info.type_ref()));
 
-        if (fld.array_count != src_info.array_len) {
+        if (fld.array_count != src_info.array_len()) {
             throw compiler_exception{
                 src_loc_tk,
                 std::format("destination array size {} does not match source "
                             "size {}",
-                            fld.array_count, src_info.array_len)};
+                            fld.array_count, src_info.array_len())};
         }
     }
 };

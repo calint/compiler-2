@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "operand.hpp"
@@ -69,85 +70,173 @@ struct known_address {
     size_t trailing_count{};
 };
 
-struct ident_info {
-  private:
-    // a typed constant is the value of an argument of an inlined call, it has
-    // the type of its parameter and the rules of a variable of that type
-    enum class kind : uint8_t { empty, constant, typed_constant, var, reg };
-
-    // where a variable is and what it holds, besides its operand
-    struct var_layout {
-        int64_t offset;
-        size_t array_len;
-        bool is_array;
-        bool is_pointer;
+// what a name resolves to: nothing, a constant, a register or storage; the
+// path has one entry per element from the root with its type, e.g. 'p' and
+// 'x' for 'p.x'; what else is known depends on the kind and is in its part,
+// the accessors give what a kind does not have as empty, e.g. 'is_array' of a
+// constant is false
+class ident_info final {
+  public:
+    // a variable or the storage that an argument names
+    struct storage_part {
+        ::operand operand;
+        // the deepest address known from the calls, empty when none is
+        std::optional<known_address> known;
+        size_t array_len{};
+        bool is_array{};
+        bool is_pointer{};
+        read_only_cause read_only_why{};
     };
 
-  public:
-    std::string id;
-    // where the name is in the source, empty for a register
-    token src_loc_tk;
-    std::vector<std::string> elem_path;
-    std::vector<const type*> type_path;
-    // the deepest address known from the calls, empty when none is
-    std::optional<known_address> known;
-    operand operand;
-    int64_t offset{}; // location offset from base register
-    int64_t const_value{};
-    size_t array_len{};
-    bool is_array{};
-    bool is_pointer{};
-    read_only_cause read_only_why{};
-    kind kind{};
+  private:
+    // a literal, a named constant or, typed, the value of an argument of an
+    // inlined call: it has the type of its parameter and the rules of a
+    // variable of that type
+    struct constant_part {
+        int64_t value{};
+        bool is_typed{};
+    };
 
-    [[nodiscard]] auto has_lea() const -> bool { return known.has_value(); }
+    // a variable or an argument whose value is held in a register
+    struct register_part {
+        ::operand reg;
+    };
+
+    std::string id_;
+    // where the name is in the source, empty for a register
+    token src_loc_tk_;
+    std::vector<std::string> elem_path_;
+    std::vector<const type*> type_path_;
+    std::variant<std::monostate, constant_part, register_part, storage_part>
+        part_;
+
+  public:
+    [[nodiscard]] auto array_len() const -> size_t {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+        return storage == nullptr ? 0 : storage->array_len;
+    }
+
+    [[nodiscard]] auto const_value() const -> int64_t {
+        return std::get<constant_part>(part_).value;
+    }
+
+    // e.g. 'p', 'x' for 'p.x'
+    [[nodiscard]] auto elem_path() const -> const std::vector<std::string>& {
+        return elem_path_;
+    }
+
+    [[nodiscard]] auto has_lea() const -> bool { return known().has_value(); }
+
+    // e.g. 'p.x', the name as resolved
+    [[nodiscard]] auto id() const -> const std::string& { return id_; }
+
+    [[nodiscard]] auto is_array() const -> bool {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+        return storage != nullptr and storage->is_array;
+    }
 
     [[nodiscard]] auto is_const() const -> bool {
-        return kind == kind::constant or kind == kind::typed_constant;
+        return std::holds_alternative<constant_part>(part_);
     }
 
-    [[nodiscard]] auto is_empty() const -> bool { return kind == kind::empty; }
+    [[nodiscard]] auto is_empty() const -> bool {
+        return std::holds_alternative<std::monostate>(part_);
+    }
+
+    [[nodiscard]] auto is_pointer() const -> bool {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+        return storage != nullptr and storage->is_pointer;
+    }
 
     [[nodiscard]] auto is_read_only() const -> bool {
-        return read_only_why != read_only_cause::none;
+        return read_only_why() != read_only_cause::none;
     }
 
-    [[nodiscard]] auto is_register() const -> bool { return kind == kind::reg; }
+    [[nodiscard]] auto is_register() const -> bool {
+        return std::holds_alternative<register_part>(part_);
+    }
 
     [[nodiscard]] auto is_typed_const() const -> bool {
-        return kind == kind::typed_constant;
+        const constant_part* const constant{
+            std::get_if<constant_part>(&part_),
+        };
+
+        return constant != nullptr and constant->is_typed;
     }
 
-    [[nodiscard]] auto is_var() const -> bool { return kind == kind::var; }
+    [[nodiscard]] auto is_var() const -> bool {
+        return std::holds_alternative<storage_part>(part_);
+    }
+
+    [[nodiscard]] auto known() const -> std::optional<known_address> {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+        return storage == nullptr ? std::nullopt : storage->known;
+    }
+
+    // the register of a register, the element of storage
+    [[nodiscard]] auto operand() const -> const ::operand& {
+        if (const register_part* const reg{
+                std::get_if<register_part>(&part_),
+            }) {
+
+            return reg->reg;
+        }
+
+        return std::get<storage_part>(part_).operand;
+    }
+
+    [[nodiscard]] auto read_only_why() const -> read_only_cause {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+
+        return storage == nullptr ? read_only_cause::none
+                                  : storage->read_only_why;
+    }
 
     // variable name without the field path
     [[nodiscard]] auto root_id() const -> std::string_view {
-        return root_of(id);
+        return root_of(id_);
+    }
+
+    auto set_src_loc_tk(const token& tk) -> void { src_loc_tk_ = tk; }
+
+    // where the name is in the source, empty for a register
+    [[nodiscard]] auto src_loc_tk() const -> const token& {
+        return src_loc_tk_;
+    }
+
+    // the part of storage, for the resolver that completes it
+    [[nodiscard]] auto storage() -> storage_part& {
+        return std::get<storage_part>(part_);
+    }
+
+    // the type of each element of 'elem_path'
+    [[nodiscard]] auto type_path() const -> const std::vector<const type*>& {
+        return type_path_;
     }
 
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(validate_invariants());
 
-        return *type_path.back();
+        return *type_path_.back();
     }
 
     // an empty info has no type, every path has one entry per element
     [[nodiscard]] auto validate_invariants() const -> bool {
         const bool paths_match{
-            not id.empty() and not elem_path.empty() and
-                elem_path.size() == type_path.size(),
+            not id_.empty() and not elem_path_.empty() and
+                elem_path_.size() == type_path_.size(),
         };
 
         if (is_const()) {
-            return paths_match and elem_path.size() == 1 and operand.is_empty();
+            return paths_match and elem_path_.size() == 1;
         }
 
         if (is_register()) {
-            return paths_match and elem_path.size() == 1 and
-                   operand.is_register() and
-                   not operand.base_register().empty() and
-                   operand.index_register().empty() and
-                   operand.displacement() == 0;
+            const ::operand& reg{std::get<register_part>(part_).reg};
+
+            return paths_match and elem_path_.size() == 1 and
+                   reg.is_register() and not reg.base_register().empty() and
+                   reg.index_register().empty() and reg.displacement() == 0;
         }
 
         return paths_match and is_var();
@@ -165,28 +254,20 @@ struct ident_info {
         assert(not ident.empty());
         assert(not elem.empty());
 
-        return {
-            .id{ident},
-            .src_loc_tk{},
-            .elem_path{std::string{elem}},
-            .type_path{&tp},
-            .known{},
-            .operand{},
-            .const_value{value},
-            .kind{is_typed ? kind::typed_constant : kind::constant},
+        ident_info info;
+        info.id_ = ident;
+        info.elem_path_ = {std::string{elem}};
+        info.type_path_ = {&tp};
+
+        info.part_ = constant_part{
+            .value{value},
+            .is_typed{is_typed},
         };
+
+        return info;
     }
 
-    [[nodiscard]] static auto make_empty() -> ident_info {
-        return {
-            .id{},
-            .src_loc_tk{},
-            .elem_path{},
-            .type_path{},
-            .known{},
-            .operand{},
-        };
-    }
+    [[nodiscard]] static auto make_empty() -> ident_info { return {}; }
 
     [[nodiscard]] static auto make_register(const std::string_view ident,
                                             const ::operand& reg)
@@ -195,40 +276,34 @@ struct ident_info {
         assert(not ident.empty());
         assert(reg.is_register());
 
-        return {
-            .id{ident},
-            .src_loc_tk{},
-            .elem_path{reg.base_register()},
-            .type_path{&reg.type_ref()},
-            .known{},
-            .operand{reg},
-            .kind{kind::reg},
+        ident_info info;
+        info.id_ = ident;
+        info.elem_path_ = {std::string{reg.base_register()}};
+        info.type_path_ = {&reg.type_ref()};
+
+        info.part_ = register_part{
+            .reg{reg},
         };
+
+        return info;
     }
 
     [[nodiscard]] static auto make_var(std::string ident,
                                        std::vector<std::string> elem_path,
                                        std::vector<const type*> type_path,
-                                       const ::operand& op,
-                                       const var_layout& layout) -> ident_info {
+                                       storage_part storage) -> ident_info {
 
         assert(not ident.empty());
         assert(not elem_path.empty());
         assert(elem_path.size() == type_path.size());
 
-        return {
-            .id{std::move(ident)},
-            .src_loc_tk{},
-            .elem_path{std::move(elem_path)},
-            .type_path{std::move(type_path)},
-            .known{},
-            .operand{op},
-            .offset{layout.offset},
-            .array_len{layout.array_len},
-            .is_array{layout.is_array},
-            .is_pointer{layout.is_pointer},
-            .kind{kind::var},
-        };
+        ident_info info;
+        info.id_ = std::move(ident);
+        info.elem_path_ = std::move(elem_path);
+        info.type_path_ = std::move(type_path);
+        info.part_ = std::move(storage);
+
+        return info;
     }
 
     // 'p' of 'p.x.y', the variable name without the field path
@@ -366,7 +441,7 @@ class destination final {
     // a name resolved as 'info', at the operand of 'info'
     [[nodiscard]] static auto of_name(const ident_info& info) -> destination {
         return of_name(info, {
-                                 .address{info.operand},
+                                 .address{info.operand()},
                                  .is_address_known{},
                                  .accessed_path{},
                                  .is_reference{},
@@ -384,11 +459,11 @@ class destination final {
         result.kind_ = info.is_register() ? kind::reg : kind::storage;
         result.operand_ = std::move(parts.address);
         result.type_ptr_ = &info.type_ref();
-        result.name_ = info.id;
-        result.src_loc_tk_ = info.src_loc_tk;
+        result.name_ = info.id();
+        result.src_loc_tk_ = info.src_loc_tk();
         result.is_address_known_ = parts.is_address_known or info.has_lea();
-        result.is_array_ = info.is_array;
-        result.array_len_ = info.array_len;
+        result.is_array_ = info.is_array();
+        result.array_len_ = info.array_len();
         result.is_reference_ = parts.is_reference;
         result.accessed_path_ = std::move(parts.accessed_path);
 

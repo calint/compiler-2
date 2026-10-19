@@ -110,6 +110,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           'ident_info' ('use_operand', 'is_reference', 'accessed_path',
           'push', 'pop', 'increment_offset'), the parts per kind are not done;
           output unchanged
+       => 8.3 done (2026-10-19): 'ident_info' is a class with a
+          'std::variant' of 'constant_part', 'register_part' and
+          'storage_part' (empty is 'std::monostate'), read through
+          accessors that give a kind without the field as empty, e.g.
+          'is_array()' of a constant is false; the name, the paths and the
+          token are private too; the resolver writes through 'storage()'
+          and 'set_src_loc_tk'; the unused 'offset' went (the test reads the
+          displacement of the operand); output unchanged
     => 9. medium, behavior preserving: 'operand::imm' holds a number or a
        symbol instead of text; the front end folds the unary ops of a
        constant ('make_constant_operand') instead of prefixing '-' and '~'

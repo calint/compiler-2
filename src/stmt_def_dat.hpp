@@ -599,7 +599,7 @@ class stmt_def_dat final : public statement {
                 std::format("'{}' must be a constant", el.src_loc_tk.text())};
         }
 
-        el.value = info.const_value;
+        el.value = info.const_value();
 
         // the assembler would truncate the value or warn about it
         const int64_t value{el.uops.evaluate_constant(el.value)};

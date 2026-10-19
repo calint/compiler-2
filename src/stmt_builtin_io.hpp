@@ -152,7 +152,7 @@ class stmt_builtin_io final : public stmt_call {
         if (buffer.is_identifier()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
-            if (info.is_var() and info.is_array) {
+            if (info.is_var() and info.is_array()) {
                 return;
             }
         }
@@ -179,7 +179,7 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         const size_t buffer_size_bytes{
-            buffer_info.array_len * element_size_bytes,
+            buffer_info.array_len() * element_size_bytes,
         };
 
         if (buffer_size_bytes < sector_size_bytes) {
@@ -274,7 +274,7 @@ class stmt_builtin_io final : public stmt_call {
             buffer.compile_lea(tc, indent, buffer.tok(), lea_registers,
                                {
                                    .reg_count{range},
-                                   .known{buffer_info.known},
+                                   .known{buffer_info.known()},
                                    .address_register{},
                                }),
         };
@@ -296,7 +296,7 @@ class stmt_builtin_io final : public stmt_call {
 
         machine& x{tc.machine()};
 
-        size_t element_count{buffer_info.array_len};
+        size_t element_count{buffer_info.array_len()};
 
         if (is_sector_function()) {
             assert_sector_buffer(tc, buffer_info);
@@ -326,7 +326,7 @@ class stmt_builtin_io final : public stmt_call {
 
         start_arg.compile(tc, indent, destination::of_register(start));
 
-        x.check_bounds(start_arg.tok(), indent, start, buffer_info.array_len,
+        x.check_bounds(start_arg.tok(), indent, start, buffer_info.array_len(),
                        true, count, tc.checks().bounds_options());
 
         return start;

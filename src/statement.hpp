@@ -409,7 +409,7 @@ class statement {
             compile_address(tc, indent, src_loc_tk,
                             {
                                 .reg_count{reg_count},
-                                .known{info.known},
+                                .known{info.known()},
                                 .address_register{address_register},
                             },
                             use);
@@ -447,8 +447,9 @@ class statement {
 
         assert(info.is_const());
 
-        return operand::imm(get_unary_ops().evaluate_constant(info.const_value),
-                            info.type_ref());
+        return operand::imm(
+            get_unary_ops().evaluate_constant(info.const_value()),
+            info.type_ref());
     }
 
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
@@ -559,11 +560,11 @@ class statement {
 
         const std::string_view root{info.root_id()};
 
-        if (info.read_only_why == read_only_cause::let) {
+        if (info.read_only_why() == read_only_cause::let) {
             return std::format(", '{}' is declared with 'let'", root);
         }
 
-        if (info.read_only_why == read_only_cause::param) {
+        if (info.read_only_why() == read_only_cause::param) {
             if (root == reserved_names::self) {
                 return ", the method is not declared 'mut'";
             }
@@ -571,12 +572,12 @@ class statement {
             return std::format(", parameter '{}' is not declared 'mut'", root);
         }
 
-        if (info.read_only_why == read_only_cause::foo_element) {
+        if (info.read_only_why() == read_only_cause::foo_element) {
             return std::format(", '{}' is an element of a read-only array",
                                root);
         }
 
-        assert(info.read_only_why == read_only_cause::foo_counter);
+        assert(info.read_only_why() == read_only_cause::foo_counter);
 
         return std::format(", '{}' is the counter of 'foo'", root);
     }

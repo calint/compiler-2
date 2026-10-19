@@ -631,28 +631,28 @@ class expr_bool_op final : public statement {
         }
 
         // a whole array is not compared as its first element
-        if (lhs_info.is_array != rhs_info.is_array) {
+        if (lhs_info.is_array() != rhs_info.is_array()) {
             toc::assert_not_whole_array(lhs, lhs_info);
             toc::assert_not_whole_array(rhs, rhs_info);
         }
 
         const size_t element_size_bytes{lhs_info.type_ref().size_bytes()};
 
-        if (not lhs_info.is_array) {
+        if (not lhs_info.is_array()) {
             return element_size_bytes;
         }
 
         // check comparing 2 arrays of the same size without indexing
         // note: a whole array on one side only was rejected above
 
-        if (lhs_info.array_len != rhs_info.array_len) {
+        if (lhs_info.array_len() != rhs_info.array_len()) {
             throw compiler_exception{lhs.tok(),
                                      "cannot compare arrays of different "
                                      "sizes"};
         }
 
         return multiply_storage_size(lhs.tok(), element_size_bytes,
-                                     lhs_info.array_len);
+                                     lhs_info.array_len());
     }
 
     // compares the bytes of two user type instances or of two whole arrays,
@@ -731,7 +731,7 @@ class expr_bool_op final : public statement {
         const ident_info info{tc.make_ident_info(side.identifier_statement())};
 
         return not info.is_const() and
-               (info.is_array or not info.type_ref().is_builtin());
+               (info.is_array() or not info.type_ref().is_builtin());
     }
 
     // the value of an argument of an inlined call, it has the rules of a
@@ -831,7 +831,7 @@ class expr_bool_op final : public statement {
             return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
                                     {
                                         .reg_count{},
-                                        .known{expr_info.known},
+                                        .known{expr_info.known()},
                                         .address_register{},
                                     });
         }
@@ -861,12 +861,12 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.get_unary_ops().is_empty()) {
-            return expr_info.operand;
+            return expr_info.operand();
         }
 
         const operand reg{
             expr_arith::compile_unary_to_scratch(
-                tc, indent, expr, expr_info.operand, expr_info.type_ref()),
+                tc, indent, expr, expr_info.operand(), expr_info.type_ref()),
         };
 
         allocated_registers.emplace_back(reg);
@@ -890,7 +890,7 @@ class expr_bool_op final : public statement {
             return std::nullopt;
         }
 
-        return side.get_unary_ops().evaluate_constant(info.const_value);
+        return side.get_unary_ops().evaluate_constant(info.const_value());
     }
 
     [[noreturn]] static auto

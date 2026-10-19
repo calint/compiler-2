@@ -165,7 +165,7 @@ class expr_any final : public statement {
         if (is_array_identifier()) {
             const ident_info src_info{tc.make_ident_info(*this)};
 
-            if (not src_info.is_array) {
+            if (not src_info.is_array()) {
                 throw compiler_exception{tok(), "source must be an array"};
             }
         }
@@ -684,7 +684,7 @@ class expr_any final : public statement {
 
             x.copy_value(
                 src_loc_tk, indent, dst.operand(),
-                operand::imm(src_info.const_value, src_info.type_ref()));
+                operand::imm(src_info.const_value(), src_info.type_ref()));
 
             return;
         }
@@ -772,7 +772,7 @@ class expr_any final : public statement {
             return std::nullopt;
         }
 
-        return arith->get_unary_ops().evaluate_constant(info.const_value);
+        return arith->get_unary_ops().evaluate_constant(info.const_value());
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,

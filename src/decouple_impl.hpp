@@ -630,11 +630,11 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     assert(dst_type.is_same(src_info.type_ref()));
 
     // the copy size comes from the source, a whole array would overflow
-    if (src_info.is_array and not is_array_destination_) {
+    if (src_info.is_array() and not is_array_destination_) {
         throw compiler_exception{tok(), "source must not be an array"};
     }
 
-    if (is_array_destination_ and not src_info.is_array) {
+    if (is_array_destination_ and not src_info.is_array()) {
         throw compiler_exception{tok(), "source must be an array"};
     }
 
@@ -646,7 +646,7 @@ auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     const size_t size_bytes{
         multiply_storage_size(tok(), dst_type.size_bytes(),
-                              src_info.is_array ? src_info.array_len : 1),
+                              src_info.is_array() ? src_info.array_len() : 1),
     };
 
     machine& x{tc.machine()};
@@ -706,7 +706,7 @@ auto expr_type::write_builtin_field(toc& tc, const size_t indent,
         return;
     }
 
-    compile_builtin_field(tc, indent, src, src_info.operand, dst_operand);
+    compile_builtin_field(tc, indent, src, src_info.operand(), dst_operand);
 }
 
 // declared in 'expr_type.hpp'

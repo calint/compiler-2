@@ -104,7 +104,7 @@ class stmt_builtin_foo final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand limit{
-            compile_limit(tc, indent, array_info.array_len,
+            compile_limit(tc, indent, array_info.array_len(),
                           allocated_registers),
         };
 
@@ -214,7 +214,7 @@ class stmt_builtin_foo final : public statement {
         add_loop_names(tc, indent, ident_.tok(), tok(), array_info, reg_iter,
                        reg_counter, foo_array(tc));
 
-        return counter_in_memory ? tc.make_ident_info(tok(), "i").operand
+        return counter_in_memory ? tc.make_ident_info(tok(), "i").operand()
                                  : reg_counter;
     }
 
@@ -242,10 +242,10 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        if (not array_info.has_lea() and not array_info.is_pointer and
+        if (not array_info.has_lea() and not array_info.is_pointer() and
             not ident_.is_indexed()) {
 
-            x.address_of(tok(), indent, reg_iter, array_info.operand);
+            x.address_of(tok(), indent, reg_iter, array_info.operand());
             return;
         }
 
@@ -255,7 +255,7 @@ class stmt_builtin_foo final : public statement {
             ident_.compile_lea(tc, indent, tok(), allocated_registers,
                                {
                                    .reg_count{},
-                                   .known{array_info.known},
+                                   .known{array_info.known()},
                                    .address_register{},
                                }),
         };
@@ -330,6 +330,6 @@ class stmt_builtin_foo final : public statement {
                    var_kind::var);
 
         tc.add_const(src_loc_tk, indent, "n",
-                     static_cast<int64_t>(array_info.array_len));
+                     static_cast<int64_t>(array_info.array_len()));
     }
 };

@@ -177,7 +177,7 @@ class stmt_builtin_array_copy final : public statement {
                              allocated_scratch_registers,
                              {
                                  .reg_count{count_register},
-                                 .known{array_src_info.known},
+                                 .known{array_src_info.known()},
                                  .address_register{},
                              }),
         };
@@ -189,7 +189,7 @@ class stmt_builtin_array_copy final : public statement {
                              allocated_scratch_registers,
                              {
                                  .reg_count{count_register},
-                                 .known{array_dst_info.known},
+                                 .known{array_dst_info.known()},
                                  .address_register{},
                              }),
         };

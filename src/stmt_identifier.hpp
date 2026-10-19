@@ -426,7 +426,7 @@ class stmt_identifier final : public statement {
                               const type& dst_type) const -> void {
 
         const int64_t value{
-            get_unary_ops().evaluate_constant(info.const_value),
+            get_unary_ops().evaluate_constant(info.const_value()),
         };
 
         if (constant_arith::fits_size_bytes(value, dst_type.size_bytes())) {
@@ -448,7 +448,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        if (not tc.make_ident_info(src_loc_tk, path_as_string_).is_array) {
+        if (not tc.make_ident_info(src_loc_tk, path_as_string_).is_array()) {
             return;
         }
 
@@ -470,7 +470,7 @@ class stmt_identifier final : public statement {
         };
 
         if (tz.peek_char_after_whitespace() == '[' and
-            not cur_ident_info.is_array) {
+            not cur_ident_info.is_array()) {
 
             throw compiler_exception{
                 src_loc_tk,
@@ -624,7 +624,7 @@ class stmt_identifier final : public statement {
         const size_t element_offset{*index * element_size_bytes};
 
         // the last element keeps the padding after the array
-        const bool is_last_element{*index == array_info.array_len - 1};
+        const bool is_last_element{*index == array_info.array_len() - 1};
         // note: -1 is the index of the last element
 
         access_path_.add_fixed_index(*index);
@@ -718,8 +718,8 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        is_array_ = info.is_array;
-        array_count_ = info.array_len;
+        is_array_ = info.is_array();
+        array_count_ = info.array_len();
     }
 
     // the variable keeps the offset and covers its whole storage
@@ -759,7 +759,7 @@ class stmt_identifier final : public statement {
 
         const int64_t addend_elements{
             compile_checked_index(tc, indent, *cur_elem.array_index_expr,
-                                  index_register, cur_info.array_len,
+                                  index_register, cur_info.array_len(),
                                   reg_count),
         };
 
@@ -799,8 +799,8 @@ class stmt_identifier final : public statement {
                                        const bool allow_end) -> void {
 
         const bool is_past_end{
-            allow_end ? std::cmp_greater(index, array_info.array_len)
-                      : std::cmp_greater_equal(index, array_info.array_len),
+            allow_end ? std::cmp_greater(index, array_info.array_len())
+                      : std::cmp_greater_equal(index, array_info.array_len()),
         };
 
         if (index >= 0 and not is_past_end) {
@@ -810,7 +810,7 @@ class stmt_identifier final : public statement {
         throw compiler_exception{
             elem.array_index_expr->tok(),
             std::format("index {} is out of bounds for array '{}' of size {}",
-                        index, elem.name_tk.text(), array_info.array_len)};
+                        index, elem.name_tk.text(), array_info.array_len())};
     }
 
     static auto
@@ -832,7 +832,7 @@ class stmt_identifier final : public statement {
                                       const bool is_last_elem,
                                       const operand& reg_count) -> void {
 
-        if (not cur_info.is_array or reg_count.is_empty()) {
+        if (not cur_info.is_array() or reg_count.is_empty()) {
             return;
         }
 
@@ -840,7 +840,7 @@ class stmt_identifier final : public statement {
         assert(is_last_elem);
 
         check_array_bounds(tc, indent, src_loc_tk, reg_count,
-                           cur_info.array_len, true);
+                           cur_info.array_len(), true);
     }
 
     // the index goes into 'index_register', returns the constant a trailing
@@ -999,7 +999,7 @@ class stmt_identifier final : public statement {
         const std::optional<int64_t> index{index_expr.constant_value(tc)};
 
         if (not index or *index < 0 or
-            std::cmp_greater_equal(*index, array_info.array_len)) {
+            std::cmp_greater_equal(*index, array_info.array_len())) {
 
             return std::nullopt;
         }
@@ -1036,23 +1036,23 @@ class stmt_identifier final : public statement {
             return known_address;
         }
 
-        if (storage.is_pointer) {
+        if (storage.is_pointer()) {
             return load_pointer(tc, indent, src_loc_tk, registers,
-                                storage.operand);
+                                storage.operand());
         }
 
-        return storage.operand;
+        return storage.operand();
     }
 
     [[nodiscard]] static auto storage_size_bytes(const token& src_loc_tk,
                                                  const ident_info& info)
         -> size_t {
 
-        if (not info.is_array) {
+        if (not info.is_array()) {
             return info.type_ref().size_bytes();
         }
 
         return multiply_storage_size(src_loc_tk, info.type_ref().size_bytes(),
-                                     info.array_len);
+                                     info.array_len());
     }
 };

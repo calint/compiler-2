@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <format>
 #include <functional>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -245,7 +244,6 @@ class expr_arith final : public expression {
         // function, writing it early would change what later elements read
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (dst.is_register() and destination_is_clobbered_before_read(dst)) {
-
             compile_through_scratch_register(tc, indent, dst);
             return;
         }
@@ -261,7 +259,6 @@ class expr_arith final : public expression {
 
         // writing the destination early would change what later elements read
         if (destination_is_clobbered_before_read(dst)) {
-
             compile_through_scratch(tc, indent, dst);
             return;
         }
@@ -1235,7 +1232,8 @@ class expr_arith final : public expression {
         }
 
         return constant_arith::wrap_to_width(
-            e.get_unary_ops().evaluate_constant(info.const_value), width_type);
+            e.get_unary_ops().evaluate_constant(info.const_value()),
+            width_type);
     }
 
     // compiles 'src' into an operand the operation accepts, emits the
