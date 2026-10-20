@@ -7,7 +7,6 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -31,11 +30,6 @@
 
 class expr_any final : public statement {
     using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;
-
-    // helper template for nicer handling of variants using overloaded lambdas
-    template <class... Ts> struct overloaded : Ts... {
-        using Ts::operator()...;
-    };
 
     std::vector<expr_variant> elements_;
     std::vector<token> element_delims_tk_;
@@ -149,18 +143,12 @@ class expr_any final : public statement {
         open_brace_tk_.source_to(os);
 
         if (not elements_.empty()) {
-            elements_.front().visit([&os](const auto& expression) -> void {
-                expression.source_to(os);
-            });
+            element(0).source_to(os);
+            for (size_t i{1}; i < elements_.size(); ++i) {
+                element_delims_tk_.at(i - 1).source_to(os);
+                // note: -1 because there is one delimiter fewer than elements
 
-            for (const auto [d, e] : std::views::zip(
-                     element_delims_tk_, elements_ | std::views::drop(1))) {
-
-                d.source_to(os);
-
-                e.visit([&os](const auto& expression) -> void {
-                    expression.source_to(os);
-                });
+                element(i).source_to(os);
             }
         }
 
@@ -180,7 +168,7 @@ class expr_any final : public statement {
 
         // the base case
         if (is_identifier_ or not is_array_) {
-            compile_variant(tc, indent, dst, tok(), elements_.at(0));
+            compile_element(tc, indent, element(0), dst);
             return;
         }
 
@@ -194,10 +182,7 @@ class expr_any final : public statement {
         // the parser could not check the size of an unsized destination
         if (elements_.size() > array_count) {
             throw compiler_exception{
-                elements_.at(array_count)
-                    .visit([](const auto& expression) -> const token& {
-                        return expression.tok();
-                    }),
+                element(array_count).tok(),
                 std::format("too many elements for array of size {}",
                             array_count)};
         }
@@ -219,9 +204,7 @@ class expr_any final : public statement {
         assert(not is_array_);
         assert(elements_.size() == 1);
 
-        return elements_.at(0).visit([](const auto& expression) -> access_path {
-            return expression.accessed_path();
-        });
+        return element(0).accessed_path();
     }
 
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
@@ -231,9 +214,7 @@ class expr_any final : public statement {
             return;
         }
 
-        elements_.at(0).visit([&](const auto& expression) -> void {
-            expression.assert_not_narrowed(tc, dst_type);
-        });
+        element(0).assert_not_narrowed(tc, dst_type);
     }
 
     [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
@@ -242,20 +223,15 @@ class expr_any final : public statement {
                                    const lea_request& request) const
         -> operand override {
 
-        return elements_.at(0).visit([&](const auto& expression) -> operand {
-            return expression.compile_lea(tc, indent, src_loc_tk,
-                                          allocated_registers, request);
-        });
+        return element(0).compile_lea(tc, indent, src_loc_tk,
+                                      allocated_registers, request);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         assert(not is_array_);
 
         // note: an 'expr_type' parses no unary ops, its 'unary_ops' are empty
-        return elements_.at(0).visit(
-            [](const auto& expression) -> const unary_ops& {
-                return expression.get_unary_ops();
-            });
+        return element(0).get_unary_ops();
     }
 
     [[nodiscard]] auto is_array_element() const -> bool override {
@@ -263,9 +239,7 @@ class expr_any final : public statement {
             return false;
         }
 
-        return elements_.at(0).visit([](const auto& expression) -> bool {
-            return expression.is_array_element();
-        });
+        return element(0).is_array_element();
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
@@ -273,23 +247,17 @@ class expr_any final : public statement {
             return true;
         }
 
-        return elements_.at(0).visit([](const auto& expression) -> bool {
-            return expression.is_expression();
-        });
+        return element(0).is_expression();
     }
 
     [[nodiscard]] auto is_indexed() const -> bool override {
         assert(not is_array_);
 
-        return elements_.at(0).visit([](const auto& expression) -> bool {
-            return expression.is_indexed();
-        });
+        return element(0).is_indexed();
     }
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return elements_.at(0).visit([](const auto& expression) -> bool {
-            return expression.is_name_or_literal();
-        });
+        return element(0).is_name_or_literal();
     }
 
     // only string and '{}' initializers leave 'elements_' empty, callers ask
@@ -297,10 +265,7 @@ class expr_any final : public statement {
     [[nodiscard]] auto name_or_literal() const -> std::string_view override {
         assert(not elements_.empty());
 
-        return elements_.at(0).visit(
-            [](const auto& expression) -> std::string_view {
-                return expression.name_or_literal();
-            });
+        return element(0).name_or_literal();
     }
 
     [[nodiscard]] auto tok() const -> const token& override {
@@ -312,20 +277,15 @@ class expr_any final : public statement {
             return statement::tok();
         }
 
-        return elements_.at(0).visit(
-            [](const auto& expression) -> const token& {
-                return expression.tok();
-            });
+        return element(0).tok();
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
         // a non-array expression is the single element
-        for (const expr_variant& e : elements_) {
-            e.visit([&var, &reader](const auto& expression) -> void {
-                expression.visit_reads(var, reader);
-            });
+        for (size_t i{}; i < elements_.size(); ++i) {
+            element(i).visit_reads(var, reader);
         }
     }
 
@@ -466,19 +426,10 @@ class expr_any final : public statement {
             return cursor;
         }
 
-        for (const auto [i, e] : std::views::enumerate(elements_)) {
+        for (size_t i{}; i < elements_.size(); ++i) {
             x.comment(tok(), indent, "[{}]", i);
 
-            // note: labels of the element are named after its own token, two
-            //       elements that are conditions would share the label of
-            //       the array
-            const token element_tk{
-                e.visit(
-                    [](const auto& element) -> token { return element.tok(); }),
-            };
-
-            compile_variant(tc, indent, first.with_operand(cursor), element_tk,
-                            e);
+            compile_element(tc, indent, element(i), first.with_operand(cursor));
 
             cursor.increment_offset(
                 address_offset(first.type_ref().size_bytes()));
@@ -575,6 +526,17 @@ class expr_any final : public statement {
         }
 
         return array_count_;
+    }
+
+    // every kind of element is a 'statement', the forwarding methods call its
+    // virtuals; the only 'visit' of the variant
+    [[nodiscard]] auto element(const size_t index) const -> const statement& {
+        const statement* const kind{
+            elements_.at(index).visit(
+                [](const statement& e) -> const statement* { return &e; }),
+        };
+
+        return *kind;
     }
 
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
@@ -709,80 +671,14 @@ class expr_any final : public statement {
         };
     }
 
-    static auto compile_bool(toc& tc, const size_t indent,
-                             const destination& dst, const token& src_loc_tk,
-                             const expr_bool& condition) -> void {
+    // the value boundary is where a wider source loses bits, an instance or a
+    // 'bool' has none to lose
+    static auto compile_element(toc& tc, const size_t indent,
+                                const statement& value, const destination& dst)
+        -> void {
 
-        machine& x{tc.machine()};
-
-        // e.g. 'true' or a named constant
-        if (not condition.is_expression()) {
-            const ident_info src_info{tc.make_ident_info(condition)};
-
-            assert(src_info.is_const());
-
-            x.copy_value(
-                src_loc_tk, indent, dst.operand(),
-                operand::imm(src_info.const_value(), src_info.type_ref()));
-
-            return;
-        }
-
-        // stored comparisons would change what later elements read
-        if (dst.is_register() or not condition.reads_var(dst.root_id())) {
-            compile_bool_list(tc, indent, src_loc_tk, condition, dst.operand());
-            return;
-        }
-
-        const operand reg{
-            x.alloc_scratch_register(src_loc_tk, indent, dst.type_ref()),
-        };
-
-        compile_bool_list(tc, indent, src_loc_tk, condition, reg);
-        x.copy_value(src_loc_tk, indent, dst.operand(), reg);
-        x.free_scratch_register(src_loc_tk, indent, reg);
-    }
-
-    static auto compile_bool_list(toc& tc, const size_t indent,
-                                  const token& src_loc_tk,
-                                  const expr_bool& condition,
-                                  const operand& dst) -> void {
-
-        // the condition stores its value in 'dst', so both outcomes continue
-        // at the same label
-        const std::string jmp_to_end{
-            toc::end_label(tc.create_unique_label(src_loc_tk, "bool")),
-        };
-
-        const condition_result const_eval{
-            condition.compile(tc, indent, jmp_to_end, jmp_to_end, dst),
-        };
-
-        machine& x{tc.machine()};
-
-        x.label(indent, jmp_to_end);
-
-        // a constant evaluation stores its value
-        if (is_known(const_eval)) {
-            x.store_boolean(src_loc_tk, indent, dst, result_value(const_eval));
-        }
-    }
-
-    static auto compile_variant(toc& tc, const size_t indent,
-                                const destination& dst, const token src_loc_tk,
-                                const expr_variant& exp) -> void {
-
-        exp.visit(overloaded{
-            [&](const expr_arith& e) -> void {
-                // the value boundary is where a wider source loses bits
-                e.assert_not_narrowed(tc, dst.type_ref());
-                e.compile(tc, indent, dst);
-            },
-            [&](const expr_type& e) -> void { e.compile(tc, indent, dst); },
-            [&](const expr_bool& e) -> void {
-                compile_bool(tc, indent, dst, src_loc_tk, e);
-            },
-        });
+        value.assert_not_narrowed(tc, dst.type_ref());
+        value.compile(tc, indent, dst);
     }
 
     [[nodiscard]] static auto constant_arith_value(const toc& tc,

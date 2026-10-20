@@ -53,8 +53,7 @@ class stmt_builtin_foo final : public statement {
         const std::string label{tc.create_unique_label(tok(), "foo")};
         tc.enter_foo(label);
 
-        add_loop_names(tc, 0, src_loc_tk, src_loc_tk, array_info, operand{},
-                       operand{}, foo_array(tc));
+        add_loop_names(tc, 0, src_loc_tk, array_info, operand{}, operand{});
 
         code_ = {tc, tz};
 
@@ -152,6 +151,51 @@ class stmt_builtin_foo final : public statement {
     }
 
   private:
+    // 'e' is the element at the iterator, 'i' the counter and 'n' the array
+    // size, declared at the 'foo'; parsing registers them without iterator
+    // and counter registers
+    auto add_loop_names(toc& tc, const size_t indent, const token& src_loc_tk,
+                        const ident_info& array_info, const operand& iterator,
+                        const operand& counter) const -> void {
+
+        // note: before 'e' is added, see 'foo_array'
+        const foo_array_info array{foo_array(tc)};
+
+        tc.add_var(
+            src_loc_tk, indent,
+            {
+                .name{"e"},
+                .type_ptr{&array_info.type_ref()},
+                .src_loc_tk{tok()},
+                .read_only_why{
+                    array_info.is_read_only() ? read_only_cause::foo_element
+                                              : read_only_cause::none,
+                },
+                .pointer_register{iterator},
+                .base_register{},
+                .value_register{},
+                .foo_array{array},
+            },
+            var_kind::var);
+
+        // an empty counter is a variable in memory
+        tc.add_var(src_loc_tk, indent,
+                   {
+                       .name{"i"},
+                       .type_ptr{&tc.builtins().default_type()},
+                       .src_loc_tk{tok()},
+                       .read_only_why{read_only_cause::foo_counter},
+                       .pointer_register{},
+                       .base_register{},
+                       .value_register{counter},
+                       .foo_array{},
+                   },
+                   var_kind::var);
+
+        tc.add_const(src_loc_tk, indent, "n",
+                     static_cast<int64_t>(array_info.array_len()));
+    }
+
     // a one-line comment for the definition
     auto comment_header(machine& x, const size_t indent) const -> void {
         std::string header{statement::trimmed_source(ident_)};
@@ -191,7 +235,8 @@ class stmt_builtin_foo final : public statement {
 
         count_.compile(tc, indent, destination::of_register(reg_count));
 
-        x.check_bounds(count_.tok(), indent, reg_count, array_len, true, {},
+        x.check_bounds(count_.tok(), indent,
+                       machine::bounds_range::count_alone(reg_count, array_len),
                        tc.checks().bounds_options());
 
         return reg_count;
@@ -217,8 +262,8 @@ class stmt_builtin_foo final : public statement {
             allocated_registers.push_back(reg_counter);
         }
 
-        add_loop_names(tc, indent, ident_.tok(), tok(), array_info, reg_iter,
-                       reg_counter, foo_array(tc));
+        add_loop_names(tc, indent, ident_.tok(), array_info, reg_iter,
+                       reg_counter);
 
         return counter_in_memory ? tc.make_ident_info(tok(), "i").operand()
                                  : reg_counter;
@@ -291,52 +336,5 @@ class stmt_builtin_foo final : public statement {
                 .branch_on_true{true},
             },
             {});
-    }
-
-    //
-    // statics
-    //
-
-    // 'e' is the element at the iterator, 'i' the counter and 'n' the array
-    // size, parsing registers them without iterator and counter registers
-    static auto add_loop_names(toc& tc, const size_t indent,
-                               const token& src_loc_tk, const token& decl_tk,
-                               const ident_info& array_info,
-                               const operand& iterator, const operand& counter,
-                               const foo_array_info& array) -> void {
-
-        tc.add_var(
-            src_loc_tk, indent,
-            {
-                .name{"e"},
-                .type_ptr{&array_info.type_ref()},
-                .src_loc_tk{decl_tk},
-                .read_only_why{
-                    array_info.is_read_only() ? read_only_cause::foo_element
-                                              : read_only_cause::none,
-                },
-                .pointer_register{iterator},
-                .base_register{},
-                .value_register{},
-                .foo_array{array},
-            },
-            var_kind::var);
-
-        // an empty counter is a variable in memory
-        tc.add_var(src_loc_tk, indent,
-                   {
-                       .name{"i"},
-                       .type_ptr{&tc.builtins().default_type()},
-                       .src_loc_tk{decl_tk},
-                       .read_only_why{read_only_cause::foo_counter},
-                       .pointer_register{},
-                       .base_register{},
-                       .value_register{counter},
-                       .foo_array{},
-                   },
-                   var_kind::var);
-
-        tc.add_const(src_loc_tk, indent, "n",
-                     static_cast<int64_t>(array_info.array_len()));
     }
 };

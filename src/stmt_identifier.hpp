@@ -870,16 +870,13 @@ class stmt_identifier final : public statement {
                         index, elem.name_tk.text(), array_info.array_len())};
     }
 
-    static auto
-    check_array_bounds(toc& tc, const size_t indent, const token& src_loc_tk,
-                       const operand& index_or_count, const size_t array_length,
-                       const bool allow_end, const operand& range_count = {})
-        -> void {
+    static auto check_array_bounds(toc& tc, const size_t indent,
+                                   const token& src_loc_tk,
+                                   const machine::bounds_range& range) -> void {
 
         machine& x{tc.machine()};
 
-        x.check_bounds(src_loc_tk, indent, index_or_count, array_length,
-                       allow_end, range_count, tc.checks().bounds_options());
+        x.check_bounds(src_loc_tk, indent, range, tc.checks().bounds_options());
     }
 
     // the range of an unindexed array is checked once, at the last element
@@ -896,8 +893,9 @@ class stmt_identifier final : public statement {
         // note: an array before the last element is indexed
         assert(is_last_elem);
 
-        check_array_bounds(tc, indent, src_loc_tk, reg_count,
-                           cur_info.array_len(), true);
+        check_array_bounds(tc, indent, src_loc_tk,
+                           machine::bounds_range::count_alone(
+                               reg_count, cur_info.array_len()));
     }
 
     // the index goes into 'index_register', returns the constant a trailing
@@ -938,9 +936,12 @@ class stmt_identifier final : public statement {
 
         index_expr.compile(tc, indent, index_info);
 
-        check_array_bounds(tc, indent, index_expr.tok(), index_register,
-                           array_length, not range_count.is_empty(),
-                           range_count);
+        check_array_bounds(
+            tc, indent, index_expr.tok(),
+            range_count.is_empty()
+                ? machine::bounds_range::index(index_register, array_length)
+                : machine::bounds_range::range(index_register, range_count,
+                                               array_length));
 
         return 0;
     }

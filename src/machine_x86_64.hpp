@@ -453,8 +453,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto check_bounds(const token& src_loc_tk, const size_t indent,
-                      const operand& reg_to_check, const size_t array_count,
-                      const bool allow_end, const operand& reg_count,
+                      const bounds_range& range,
                       const bounds_check_options& options) -> void override {
 
         if (not options.upper and not options.lower) {
@@ -462,10 +461,9 @@ class machine_x86_64 final : public machine {
         }
 
         const bounds_plan plan{
-            plan_bounds_check(options, reg_count, array_count,
-                              signed_maximum(reg_to_check),
+            plan_bounds_check(options, range, signed_maximum(range.checked),
                               registers_.is_lower_checked(
-                                  register_bit(reg_count.base_register()))),
+                                  register_bit(range.count.base_register()))),
         };
 
         const std::optional<size_t> reported_line{
@@ -476,15 +474,13 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "bounds check begin");
 
         if (options.lower) {
-            check_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan,
-                              reported_line);
+            check_lower_bound(src_loc_tk, indent, range, plan, reported_line);
         }
 
         if (options.upper) {
             comment(src_loc_tk, indent, "upper bound");
 
-            compare_upper_bound(src_loc_tk, indent, reg_to_check, array_count,
-                                reg_count);
+            compare_upper_bound(src_loc_tk, indent, range);
 
             // the end of a range is 'start + count', neither is negative
             // here but the sum can pass the signed maximum and then looks
@@ -493,11 +489,12 @@ class machine_x86_64 final : public machine {
             // ends at 0x8000000000000000, signed it is below 4 and passes
             const bool is_unsigned_compare{
                 plan.upper_covers_lower or
-                    (options.lower and not reg_count.is_empty()),
+                    (options.lower and not range.count.is_empty()),
             };
 
             branch_to_bounds_panic(
-                indent, out_of_bounds_condition(allow_end, is_unsigned_compare),
+                indent,
+                out_of_bounds_condition(range.allow_end, is_unsigned_compare),
                 reported_line);
         }
 
@@ -1628,24 +1625,23 @@ class machine_x86_64 final : public machine {
     }
 
     auto check_lower_bound(const token& src_loc_tk, const size_t indent,
-                           const operand& reg_to_check,
-                           const operand& reg_count, const bounds_plan& plan,
+                           const bounds_range& range, const bounds_plan& plan,
                            const std::optional<size_t> reported_line) -> void {
 
-        comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan);
+        comment_lower_bound(src_loc_tk, indent, range, plan);
 
         if (not plan.upper_covers_lower) {
-            test_sign(src_loc_tk, indent, reg_to_check, reported_line);
+            test_sign(src_loc_tk, indent, range.checked, reported_line);
 
             // a negative count passes 'start + count' but spans the address
             // space
             if (not plan.count_known) {
-                test_sign(src_loc_tk, indent, reg_count, reported_line);
+                test_sign(src_loc_tk, indent, range.count, reported_line);
             }
         }
 
         registers_.mark_lower_checked(
-            register_bit(lower_checked_register(reg_to_check, reg_count)));
+            register_bit(lower_checked_register(range)));
     }
 
     // a count in 'rcx' below zero or not below the width jumps to the failure
@@ -1684,13 +1680,11 @@ class machine_x86_64 final : public machine {
 
     // a range 'index + count' may end at the array count
     auto compare_upper_bound(const token& src_loc_tk, const size_t indent,
-                             const operand& reg_to_check,
-                             const size_t array_count, const operand& reg_count)
-        -> void {
+                             const bounds_range& range) -> void {
 
-        if (reg_count.is_empty()) {
-            cmp_lowered(src_loc_tk, indent, reg_to_check,
-                        immediate(array_count));
+        if (range.count.is_empty()) {
+            cmp_lowered(src_loc_tk, indent, range.checked,
+                        immediate(range.array_count));
 
             return;
         }
@@ -1700,15 +1694,17 @@ class machine_x86_64 final : public machine {
         };
 
         // index and count registers have the default type
-        assert(reg_count.type_ref().size_bytes() == size_qword and
-               reg_to_check.type_ref().size_bytes() == size_qword);
+        assert(range.count.type_ref().size_bytes() == size_qword and
+               range.checked.type_ref().size_bytes() == size_qword);
 
         lea(src_loc_tk, indent, reg_top_idx,
-            operand::mem(reg_count.base_register(),
-                         reg_to_check.base_register(), 1, 0,
+            operand::mem(range.count.base_register(),
+                         range.checked.base_register(), 1, 0,
                          builtin_type_i64()));
 
-        cmp_lowered(src_loc_tk, indent, reg_top_idx, immediate(array_count));
+        cmp_lowered(src_loc_tk, indent, reg_top_idx,
+                    immediate(range.array_count));
+
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
     }
 

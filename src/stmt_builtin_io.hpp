@@ -330,8 +330,10 @@ class stmt_builtin_io final : public stmt_call {
 
         start_arg.compile(tc, indent, destination::of_register(start));
 
-        x.check_bounds(start_arg.tok(), indent, start, buffer_info.array_len(),
-                       true, count, tc.checks().bounds_options());
+        x.check_bounds(
+            start_arg.tok(), indent,
+            machine::bounds_range::range(start, count, buffer_info.array_len()),
+            tc.checks().bounds_options());
 
         return start;
     }

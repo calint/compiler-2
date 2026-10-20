@@ -2815,10 +2815,15 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
         backend.alloc_named_register(token{}, 0, "a1", integer),
     };
 
+    // the matrix also checks combinations the front end does not make
     backend.check_bounds(
-        token{}, 1, operand::reg("a0", integer), parameters.size,
-        parameters.allow_end,
-        parameters.slice ? operand::reg("a1", integer) : operand{},
+        token{}, 1,
+        {
+            .checked{operand::reg("a0", integer)},
+            .count{parameters.slice ? operand::reg("a1", integer) : operand{}},
+            .array_count{parameters.size},
+            .allow_end{parameters.allow_end},
+        },
         {.upper{parameters.upper}, .lower{parameters.lower}, .with_line{}});
 
     backend.free_named_register(token{}, 0, count_register);
@@ -3877,9 +3882,10 @@ auto generate_runtime_program() -> void {
 
         const token location{0, {}, 0, {}, 0, {}, line, false};
 
-        backend.check_bounds(location, 1, operand::reg("a0", integer), 4, false,
-                             {},
-                             {.upper{true}, .lower{true}, .with_line{true}});
+        backend.check_bounds(
+            location, 1,
+            machine::bounds_range::index(operand::reg("a0", integer), 4),
+            {.upper{true}, .lower{true}, .with_line{true}});
         backend.exit(token{}, 1, operand::imm(0, integer));
     }
 

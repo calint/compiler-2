@@ -757,8 +757,7 @@ class machine_rv32i : public machine {
     }
 
     auto check_bounds(const token& src_loc_tk, const size_t indent,
-                      const operand& reg_to_check, const size_t array_count,
-                      const bool allow_end, const operand& reg_count,
+                      const bounds_range& range,
                       const bounds_check_options& options) -> void override {
 
         if (not options.upper and not options.lower) {
@@ -766,13 +765,12 @@ class machine_rv32i : public machine {
         }
 
         // array lengths are limited by the variables that hold the arrays
-        assert(array_count <= std::numeric_limits<uint32_t>::max() and
+        assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
                src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
 
         comment(src_loc_tk, indent, "bounds check begin");
 
-        emit_bounds_check(src_loc_tk, indent, reg_to_check, array_count,
-                          allow_end, reg_count, options);
+        emit_bounds_check(src_loc_tk, indent, range, options);
 
         comment(src_loc_tk, indent, "bounds check end");
     }
@@ -2301,9 +2299,7 @@ class machine_rv32i : public machine {
     }
 
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
-                           const std::string_view index,
-                           const size_t array_count, const bool allow_end,
-                           const operand& reg_count, const bool lower_checked)
+                           const bounds_range& range, const bool lower_checked)
         -> void {
 
         const operand limit{
@@ -2311,13 +2307,12 @@ class machine_rv32i : public machine {
         };
 
         const std::string top{
-            upper_bound_top(src_loc_tk, indent, index, reg_count, limit,
-                            lower_checked),
+            upper_bound_top(src_loc_tk, indent, range, limit, lower_checked),
         };
 
-        assembler_.li(indent, limit.base_register(), array_count);
+        assembler_.li(indent, limit.base_register(), range.array_count);
 
-        if (allow_end) {
+        if (range.allow_end) {
             assembler_.bgeu(indent, limit.base_register(), top,
                             bounds_pass.reference);
 
@@ -3175,32 +3170,27 @@ class machine_rv32i : public machine {
 
     // the address scope frees its temporaries before the end comment
     auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
-                           const operand& reg_to_check,
-                           const size_t array_count, const bool allow_end,
-                           const operand& reg_count,
+                           const bounds_range& range,
                            const bounds_check_options& options) -> void {
 
-        const address_scope scope{*this, reg_to_check, reg_count};
-
-        const std::string_view index{reg_to_check.base_register()};
+        const address_scope scope{*this, range.checked, range.count};
 
         const bounds_plan plan{
-            plan_bounds_check(options, reg_count, array_count,
+            plan_bounds_check(options, range,
                               std::numeric_limits<int32_t>::max(),
                               registers_.is_lower_checked(
-                                  register_mask(reg_count.base_register()))),
+                                  register_mask(range.count.base_register()))),
         };
 
         if (options.lower) {
-            emit_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan,
+            emit_lower_bound(src_loc_tk, indent, range, plan,
                              not options.upper);
         }
 
         if (options.upper) {
             comment(src_loc_tk, indent, "upper bound");
 
-            check_upper_bound(src_loc_tk, indent, index, array_count, allow_end,
-                              reg_count, options.lower);
+            check_upper_bound(src_loc_tk, indent, range, options.lower);
         }
 
         assembler_.label(indent, bounds_fail.name);
@@ -3637,19 +3627,19 @@ class machine_rv32i : public machine {
     // the lower bound, the last check of the bounds check branches past the
     // handler, see 'check_lower_bounds'
     auto emit_lower_bound(const token& src_loc_tk, const size_t indent,
-                          const operand& reg_to_check, const operand& reg_count,
-                          const bounds_plan& plan, const bool is_last) -> void {
+                          const bounds_range& range, const bounds_plan& plan,
+                          const bool is_last) -> void {
 
-        comment_lower_bound(src_loc_tk, indent, reg_to_check, reg_count, plan);
+        comment_lower_bound(src_loc_tk, indent, range, plan);
 
         if (not plan.upper_covers_lower) {
-            check_lower_bounds(indent, reg_to_check.base_register(),
-                               plan.count_known ? operand{} : reg_count,
+            check_lower_bounds(indent, range.checked.base_register(),
+                               plan.count_known ? operand{} : range.count,
                                is_last);
         }
 
         registers_.mark_lower_checked(
-            register_mask(lower_checked_register(reg_to_check, reg_count)));
+            register_mask(lower_checked_register(range)));
     }
 
     // the handler of a check that prints 'panic: NAME', with the line number
@@ -4604,9 +4594,11 @@ class machine_rv32i : public machine {
     // the value compared with the limit, the index or the end 'index + count'
     [[nodiscard]] auto
     upper_bound_top(const token& src_loc_tk, const size_t indent,
-                    const std::string_view index, const operand& reg_count,
-                    const operand& limit, const bool lower_checked)
-        -> std::string {
+                    const bounds_range& range, const operand& limit,
+                    const bool lower_checked) -> std::string {
+
+        const std::string_view index{range.checked.base_register()};
+        const operand& reg_count{range.count};
 
         // a negative index is left to the lower check, which has already
         // failed it when enabled

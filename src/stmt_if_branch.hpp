@@ -73,8 +73,12 @@ class stmt_if_branch final : public statement {
         x.label(indent, if_label);
 
         const condition_result const_eval{
-            condition_.compile(tc, indent, jmp_to_if_false_label,
-                               jmp_to_if_true_label, {}),
+            condition_.compile(tc, indent,
+                               {
+                                   .if_false{jmp_to_if_false_label},
+                                   .if_true{jmp_to_if_true_label},
+                               },
+                               {}),
         };
 
         if (const_eval == condition_result::always_false) {

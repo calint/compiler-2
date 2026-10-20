@@ -186,6 +186,59 @@ class machine {
         bool with_line{};
     };
 
+    // what a bounds check compares with 'array_count' elements: an index, a
+    // count alone, or a range 'start + count'; a count and a range may end at
+    // the end of the array, an index may not
+    struct bounds_range {
+        // the index, the count alone or the start of the range
+        operand checked;
+        // the count of a range, empty otherwise
+        operand count;
+        size_t array_count{};
+        bool allow_end{};
+
+        //
+        // statics
+        //
+
+        [[nodiscard]] static auto count_alone(const operand& count,
+                                              const size_t array_count)
+            -> bounds_range {
+
+            return {
+                .checked{count},
+                .count{},
+                .array_count{array_count},
+                .allow_end{true},
+            };
+        }
+
+        [[nodiscard]] static auto index(const operand& index,
+                                        const size_t array_count)
+            -> bounds_range {
+
+            return {
+                .checked{index},
+                .count{},
+                .array_count{array_count},
+                .allow_end{},
+            };
+        }
+
+        [[nodiscard]] static auto range(const operand& start,
+                                        const operand& count,
+                                        const size_t array_count)
+            -> bounds_range {
+
+            return {
+                .checked{start},
+                .count{count},
+                .array_count{array_count},
+                .allow_end{true},
+            };
+        }
+    };
+
     // read-only bytes at 'label', 'text' keeps its escapes such as '\n'
     struct string_constant {
         std::string label;
@@ -353,9 +406,7 @@ class machine {
     can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
 
     virtual auto check_bounds(const token& src_loc_tk, const size_t indent,
-                              const operand& reg_to_check,
-                              const size_t array_count, const bool allow_end,
-                              const operand& reg_count,
+                              const bounds_range& range,
                               const bounds_check_options& options) -> void = 0;
 
     virtual auto check_frame_capacity(const token& src_loc_tk,
@@ -1028,8 +1079,7 @@ class machine {
     // what the lower bound check is about, a bounds check that has none says
     // nothing
     auto comment_lower_bound(const token& src_loc_tk, const size_t indent,
-                             const operand& reg_to_check,
-                             const operand& reg_count, const bounds_plan& plan)
+                             const bounds_range& range, const bounds_plan& plan)
         -> void {
 
         comment(src_loc_tk, indent, "lower bound");
@@ -1037,14 +1087,14 @@ class machine {
         if (plan.upper_covers_lower) {
             comment(src_loc_tk, indent,
                     "{} lower bound covered by the unsigned upper bound",
-                    reg_to_check.base_register());
+                    range.checked.base_register());
 
             return;
         }
 
         if (plan.count_known) {
             comment(src_loc_tk, indent, "count {} lower bound already checked",
-                    reg_count.base_register());
+                    range.count.base_register());
         }
     }
 
@@ -1201,28 +1251,26 @@ class machine {
 
     // the register whose lower bound a check settles, a count alone is checked
     // as the index of its own range
-    [[nodiscard]] static auto
-    lower_checked_register(const operand& reg_to_check,
-                           const operand& reg_count) -> std::string_view {
+    [[nodiscard]] static auto lower_checked_register(const bounds_range& range)
+        -> std::string_view {
 
-        return reg_count.is_empty() ? reg_to_check.base_register()
-                                    : reg_count.base_register();
+        return range.count.is_empty() ? range.checked.base_register()
+                                      : range.count.base_register();
     }
 
     // 'signed_max' is the largest value of the signed type of the compare,
-    // 'count_known' tells that the lower bound of 'reg_count' was checked
+    // 'count_known' tells that the lower bound of the count was checked
     [[nodiscard]] static auto
     plan_bounds_check(const bounds_check_options& options,
-                      const operand& reg_count, const size_t array_count,
-                      const uint64_t signed_max, const bool count_known)
-        -> bounds_plan {
+                      const bounds_range& range, const uint64_t signed_max,
+                      const bool count_known) -> bounds_plan {
 
         return {
             .upper_covers_lower{
-                options.lower and options.upper and reg_count.is_empty() and
-                    array_count <= signed_max,
+                options.lower and options.upper and range.count.is_empty() and
+                    range.array_count <= signed_max,
             },
-            .count_known{not reg_count.is_empty() and count_known},
+            .count_known{not range.count.is_empty() and count_known},
         };
     }
 };

@@ -1,6 +1,63 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: long parameter lists: without the '(tc, src_loc_tk, indent)' that
+    every compile function takes no function has more than 6 parameters of
+    its own; only values that travel together are grouped
+    => plan (2026-10-20), each step checked on its own:
+       1. 'stmt_builtin_foo::add_loop_names' becomes a member, computes
+          'foo_array(tc)' and uses 'tok()' for the declaration (8 -> 6)
+       2. 'expr_bool': 'branch_targets { if_false, if_true }' for the two
+          labels passed in that order through 'compile', 'compile_rec',
+          'compile_with_label', 'compile_inner_element' and
+          'compile_last_element', a swap no longer compiles
+       3. 'machine.hpp': 'bounds_range' with the makers 'index', 'count' and
+          'range' for 'reg_to_check, array_count, allow_end, reg_count' of
+          'check_bounds' and its helpers in both backends (7 -> 4), callers
+          'stmt_builtin_foo', 'stmt_builtin_io', 'stmt_identifier' and
+          'test-rv32i-address.cpp'
+    => rejected: a context struct of '(tc, src_loc_tk, indent)' touches every
+       compile function and hides which of the three each uses; the operands
+       of the rv32i checked add and subtract are one instruction with one
+       caller; 'foo_advance_iteration', 'add_index' and
+       'compile_indexed_element' have distinct roles that do not travel
+       together
+    => check: the 4492 compiles of the test cases byte-identical, both
+       suites, 'test-rv32i.sh'
+    => done (2026-10-20): the three steps as planned, the maker of a count
+       alone is 'count_alone' since 'count' is the field; the matrix of
+       'test-rv32i-address.cpp' builds 'bounds_range' with its fields since
+       it also checks combinations the front end does not make; the 4492
+       compiles byte-identical, 'test-rv32i.sh' passes
+[-] medium: low priority: reading order of the large classes: the formatter
+    sorts the functions of a class by name, so one operation of
+    'machine_rv32i.hpp', 'toc.hpp' or 'stmt_call.hpp' is read by jumping
+    => e.g. split the largest classes along the topics their header comments
+       list (rv32i bulk copy/compare/zero, the helper classes of 'toc'), a
+       split for reading order, not for size
+    => discarded (2026-10-20): a reading order would be hard to keep while
+       the formatter sorts by name, and a reviewer jumps with an ide
+[x] medium: drop the visitor pattern in 'expr_any', lcov does not handle it
+    and a reader skims 16 forwarding lambdas
+    => plan (2026-10-20): the 'std::variant' stays for typed access
+       ('std::get', no casts, no heap); one accessor 'element(i)' is the only
+       'visit' and returns the alternative as a 'statement&', each forwarding
+       method is one virtual call; 'compile_variant' becomes
+       'assert_not_narrowed' then 'compile' for every kind, 'compile_bool'
+       and 'compile_bool_list' move into 'expr_bool::compile(dst)', which is
+       'std::unreachable()' now; the labels stay named after the token of
+       the 'expr_bool', which is the element token 'compile_variant' passes
+    => rejected: 'std::vector<std::unique_ptr<statement>>' with the kind told
+       by the type and 'static_cast' ('-fno-rtti'): a heap allocation per
+       element, an exception to check ('var b = a' is an 'expr_type' of a
+       built-in) and casts where the variant gives typed access
+    => check: the assembly of every test case byte-identical on x86_64 and
+       rv32i-fpga, with and without 'noub'
+    => done (2026-10-20): 'expr_any::element(i)' is the only 'visit',
+       'compile_element' compiles every kind, 'expr_bool::compile(dst)'
+       stores the value ('compile_value' for the condition); the 4492
+       compiles of the test cases (x86_64 and rv32i-fpga, with and without
+       'noub') give byte-identical output
 [x] easy: a malformed number read like a misspelled name: 'var a = 0x',
     '0b102' or '12_000' reported 'cannot resolve identifier'
     => done (2026-10-20): a token that starts with a digit and resolves to

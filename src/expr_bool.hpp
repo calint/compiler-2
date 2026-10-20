@@ -25,6 +25,13 @@
 // what compiling a condition found out about its value without running it
 enum class condition_result : uint8_t { unknown, always_false, always_true };
 
+// where a condition continues, e.g. the code of an 'if' when it holds and the
+// next branch when it does not; one label for both stores the value only
+struct branch_targets {
+    std::string_view if_false;
+    std::string_view if_true;
+};
+
 [[nodiscard]] inline auto known_result(const bool value) -> condition_result {
     return value ? condition_result::always_true
                  : condition_result::always_false;
@@ -993,21 +1000,45 @@ class expr_bool final : public statement {
         close_paren_tk_.source_to(os);
     }
 
-    [[noreturn]] auto compile([[maybe_unused]] toc& tc,
-                              [[maybe_unused]] const size_t indent,
-                              [[maybe_unused]] const destination& dst) const
+    // the value of the list stored in 'dst', e.g. 'b = x < 3 and y'
+    auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        std::unreachable();
+        machine& x{tc.machine()};
+
+        // e.g. 'true' or a named constant
+        if (not is_expression()) {
+            const ident_info src_info{tc.make_ident_info(*this)};
+
+            assert(src_info.is_const());
+
+            x.copy_value(
+                tok(), indent, dst.operand(),
+                operand::imm(src_info.const_value(), src_info.type_ref()));
+
+            return;
+        }
+
+        // stored comparisons would change what later elements read
+        if (dst.is_register() or not reads_var(dst.root_id())) {
+            compile_value(tc, indent, dst.operand());
+            return;
+        }
+
+        const operand reg{
+            x.alloc_scratch_register(tok(), indent, dst.type_ref()),
+        };
+
+        compile_value(tc, indent, reg);
+        x.copy_value(tok(), indent, dst.operand(), reg);
+        x.free_scratch_register(tok(), indent, reg);
     }
 
     [[nodiscard]] auto compile(toc& tc, const size_t indent,
-                               const std::string_view jmp_to_if_false,
-                               const std::string_view jmp_to_if_true,
+                               const branch_targets& targets,
                                const operand& dst) const -> condition_result {
 
-        return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true, false,
-                           dst);
+        return compile_rec(tc, indent, targets, false, dst);
     }
 
     // assumes callers only query this when expression status is relevant
@@ -1111,10 +1142,8 @@ class expr_bool final : public statement {
     // an element that does not decide the list continues at the next element
     [[nodiscard]] auto
     compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
-                          const std::string_view jmp_to_if_false,
-                          const std::string_view jmp_to_if_true,
-                          const bool invert, const operand& dst) const
-        -> condition_result {
+                          const branch_targets& targets, const bool invert,
+                          const operand& dst) const -> condition_result {
 
         const bool is_or{is_effective_or(expr_index, invert)};
 
@@ -1131,39 +1160,39 @@ class expr_bool final : public statement {
             };
 
             // an 'or' continues when false and an 'and' continues when true
-            const std::string_view jmp_false{
-                is_or ? std::string_view{next_label} : jmp_to_if_false,
+            const branch_targets nested_targets{
+                .if_false{
+                    is_or ? std::string_view{next_label} : targets.if_false,
+                },
+                .if_true{
+                    is_or ? targets.if_true : std::string_view{next_label},
+                },
             };
 
-            const std::string_view jmp_true{
-                is_or ? jmp_to_if_true : std::string_view{next_label},
-            };
-
-            return nested_expr.compile_with_label(tc, indent, jmp_false,
-                                                  jmp_true, invert, dst);
+            return nested_expr.compile_with_label(tc, indent, nested_targets,
+                                                  invert, dst);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.at(expr_index))};
 
         if (is_or) {
-            return expr.compile_or(tc, indent, jmp_to_if_true, invert, dst);
+            return expr.compile_or(tc, indent, targets.if_true, invert, dst);
         }
 
-        return expr.compile_and(tc, indent, jmp_to_if_false, invert, dst);
+        return expr.compile_and(tc, indent, targets.if_false, invert, dst);
     }
 
     [[nodiscard]] auto compile_last_element(
-        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
-        const std::string_view jmp_to_if_true, const bool invert,
-        const operand& dst, const bool has_runtime_element) const
-        -> condition_result {
+        toc& tc, const size_t indent, const branch_targets& targets,
+        const bool invert, const operand& dst,
+        const bool has_runtime_element) const -> condition_result {
 
         if (std::holds_alternative<expr_bool>(bools_.back())) {
             const expr_bool& nested_expr{std::get<expr_bool>(bools_.back())};
 
             const condition_result const_eval{
-                nested_expr.compile_with_label(tc, indent, jmp_to_if_false,
-                                               jmp_to_if_true, invert, dst),
+                nested_expr.compile_with_label(tc, indent, targets, invert,
+                                               dst),
             };
 
             // the nested list already emitted its final branch
@@ -1172,36 +1201,34 @@ class expr_bool final : public statement {
             }
 
             return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         jmp_to_if_true, invert,
+                                         targets.if_true, invert,
                                          has_runtime_element);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
 
         const condition_result const_eval{
-            expr.compile_and(tc, indent, jmp_to_if_false, invert, dst,
-                             jmp_to_if_false != jmp_to_if_true),
+            expr.compile_and(tc, indent, targets.if_false, invert, dst,
+                             targets.if_false != targets.if_true),
         };
 
         if (is_known(const_eval)) {
             return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         jmp_to_if_true, invert,
+                                         targets.if_true, invert,
                                          has_runtime_element);
         }
 
         machine& x{tc.machine()};
 
         // every element that failed has branched to false
-        x.branch(indent, jmp_to_if_true);
+        x.branch(indent, targets.if_true);
 
         return condition_result::unknown;
     }
 
-    [[nodiscard]] auto compile_rec(toc& tc, const size_t indent,
-                                   const std::string_view jmp_to_if_false,
-                                   const std::string_view jmp_to_if_true,
-                                   const bool inverted,
-                                   const operand& dst) const
+    [[nodiscard]] auto
+    compile_rec(toc& tc, const size_t indent, const branch_targets& targets,
+                const bool inverted, const operand& dst) const
         -> condition_result {
 
         // the element of a list that is only that element comments the same
@@ -1227,8 +1254,8 @@ class expr_bool final : public statement {
 
         for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
             const condition_result const_eval{
-                compile_inner_element(tc, indent, expr_index, jmp_to_if_false,
-                                      jmp_to_if_true, invert, dst),
+                compile_inner_element(tc, indent, expr_index, targets, invert,
+                                      dst),
             };
 
             if (not is_known(const_eval)) {
@@ -1243,22 +1270,52 @@ class expr_bool final : public statement {
             }
         }
 
-        return compile_last_element(tc, indent, jmp_to_if_false, jmp_to_if_true,
-                                    invert, dst, has_runtime_element);
+        return compile_last_element(tc, indent, targets, invert, dst,
+                                    has_runtime_element);
+    }
+
+    // the condition stores its value in 'dst', so both outcomes continue at
+    // the same label
+    // note: the label is named after the token of this list, two elements of
+    //       an array that are conditions would share the label of the array
+    auto compile_value(toc& tc, const size_t indent, const operand& dst) const
+        -> void {
+
+        const std::string jmp_to_end{
+            toc::end_label(tc.create_unique_label(tok(), "bool")),
+        };
+
+        const condition_result const_eval{
+            compile(tc, indent,
+                    {
+                        .if_false{jmp_to_end},
+                        .if_true{jmp_to_end},
+                    },
+                    dst),
+        };
+
+        machine& x{tc.machine()};
+
+        x.label(indent, jmp_to_end);
+
+        // a constant evaluation stores its value
+        if (is_known(const_eval)) {
+            x.store_boolean(tok(), indent, dst, result_value(const_eval));
+        }
     }
 
     // earlier elements jump to the label that begins a nested list
-    [[nodiscard]] auto compile_with_label(
-        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
-        const std::string_view jmp_to_if_true, const bool inverted,
-        const operand& dst) const -> condition_result {
+    [[nodiscard]] auto compile_with_label(toc& tc, const size_t indent,
+                                          const branch_targets& targets,
+                                          const bool inverted,
+                                          const operand& dst) const
+        -> condition_result {
 
         machine& x{tc.machine()};
 
         x.label(indent, tc.create_cmp_label(tok()));
 
-        return compile_rec(tc, indent, jmp_to_if_false, jmp_to_if_true,
-                           inverted, dst);
+        return compile_rec(tc, indent, targets, inverted, dst);
     }
 
     // true when a 'not' leads the list

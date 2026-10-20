@@ -13,12 +13,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'array_copy(a, b, count)', test 1108)
     => e.g. name the 'let' in the message when the held register is one
        of the bulk registers
-[p] medium: low priority: reading order of the large classes: the formatter
-    sorts the functions of a class by name, so one operation of
-    'machine_rv32i.hpp', 'toc.hpp' or 'stmt_call.hpp' is read by jumping
-    => e.g. split the largest classes along the topics their header comments
-       list (rv32i bulk copy/compare/zero, the helper classes of 'toc'), a
-       split for reading order, not for size
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,
@@ -60,24 +54,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => state 2026-10-06 'test-all.sh': 96 missed lines of 21272 (99.55%),
        1049 missed branches of 7653 (86.29%), 3296 missed regions of 15320
     => then branches and regions
-[p] medium: low priority: drop the visitor pattern in 'expr_any', lcov does
-    not handle it and a reader skims 16 forwarding lambdas
-    => plan: 'elements_' becomes 'std::vector<std::unique_ptr<statement>>'
-       ('expr_arith', 'expr_bool' and 'expr_type' derive from 'statement');
-       each forwarding method is one virtual call; 'compile_variant' becomes
-       'assert_not_narrowed' then 'compile' for every kind, 'compile_bool'
-       and 'compile_bool_list' move into 'expr_bool::compile(dst)', which is
-       'std::unreachable()' now
-    => typed access without rtti ('-fno-rtti'): the type tells the kind, an
-       instance type is an 'expr_type', 'bool' an 'expr_bool', other
-       built-ins an 'expr_arith'; 'as_arith', 'as_bool' and 'as_expr_type'
-       assert it and 'static_cast'; a whole array copy 'var b = a' is an
-       'expr_type' of a possibly built-in element type, so 'as_expr_type'
-       also accepts 'is_identifier_'
-    => no 'clone': 'expr_any' is move-only already ('expr_arith' owns
-       'unique_ptr's)
-    => check: 'expr_any.hpp' about -100 lines, 'expr_bool.hpp' about +40, no
-       other file; the code of every test the same byte for byte
 [p] hard: low priority: 'stmt_call' has three modes (function, method,
     constructor) told apart by empty tokens and three constructors that
     repeat the same steps
@@ -86,11 +62,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        an enum would be a second source of truth for what they already say
     => left: a class per mode, only if the compile paths differ enough
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
-[ ] medium: low priority: long parameter lists: 'stmt_identifier::
-    compile_indexed_element' (11), 'machine::compare_memory' and its rv32i
-    chain (8-9), 'fold_indexed_address' (8), 'add_generic_func' (8): group
-    what travels together into a struct (several files, plan and go-ahead
-    first)
 [p] hard: low priority: questionable: 'statement' has 20 virtuals whose
     defaults are 'std::unreachable()' plus 'is_*' tests; a closed set of node
     kinds as 'std::variant' with visitors would drop the defaults but costs
