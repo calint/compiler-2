@@ -108,9 +108,14 @@ class stmt_builtin_array_copy final : public statement {
             dst_.assert_count_in_bounds(tc, count_.tok(), *count);
         }
 
-        // a negative count keeps the loop so '--checks=lower' rejects it at
-        // run time, and the overlap check compares the addresses of that loop
-        if (count and *count >= 0 and not tc.checks().overlap) {
+        // nothing is copied, so a start at the end of the array, which only a
+        // range may have, is not addressed
+        if (count == 0) {
+            return;
+        }
+
+        // the overlap check compares the addresses of the loop at run time
+        if (count and not tc.checks().overlap) {
             compile_constant_count(tc, indent, array_src_info, array_dst_info,
                                    static_cast<size_t>(*count));
 

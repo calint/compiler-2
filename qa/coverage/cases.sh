@@ -2147,8 +2147,8 @@ SRC=0693 && COMPERR
 # read requires an array to fill
 SRC=0694 && COMPERR
 
-# a negative constant count is rejected at run time by the lower check
-SRC=0695 && EXP=255 && RUN_ERR
+# a negative constant 'array_copy' count is rejected
+SRC=0695 && COMPERR
 
 # 'noinline' is a function name when parentheses follow
 SRC=0696 && EXP=3 && RUN
@@ -3482,3 +3482,14 @@ SRC=1118 && COMPERR
 
 # a constant divisor that folds to zero is rejected
 SRC=1119 && COMPERR
+
+# a negative constant 'arrays_equal' count is rejected
+SRC=1120 && COMPERR
+
+# a constant count of zero at the end of the array copies nothing, with and
+# without the checks
+SRC=1121 && EXP=0 && RUN
+SRC=1121 && EXP=0 && RUN_NO_CHECKS
+
+# a negative constant 'foo' count is rejected
+SRC=1122 && COMPERR

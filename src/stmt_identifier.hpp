@@ -354,11 +354,16 @@ class stmt_identifier final : public statement {
     }
 
     // a constant count of a bulk operation that starts at this path is known
-    // to pass the end of the array like a constant index, e.g. 5 in
-    // 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time start index and a
-    // negative count are left to the bounds check at run time
+    // to be negative or to pass the end of the array like a constant index,
+    // e.g. 5 in 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time start index
+    // is left to the bounds check at run time
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,
                                 const int64_t count) const -> void {
+
+        if (count < 0) {
+            throw compiler_exception{
+                count_tk, std::format("count {} is negative", count)};
+        }
 
         const std::optional<int64_t> start{constant_start_index(tc)};
 
@@ -379,7 +384,7 @@ class stmt_identifier final : public statement {
 
         const size_t remaining{array_len - static_cast<size_t>(*start)};
 
-        if (count < 0 or std::cmp_less_equal(count, remaining)) {
+        if (std::cmp_less_equal(count, remaining)) {
             return;
         }
 

@@ -1,0 +1,10 @@
+# a negative constant 'foo' count is rejected
+
+func main() {
+    var a = i8[4]{}
+    var s = 0
+    foo a, -1 {
+        s = s + 1
+    }
+    exit(s)
+}

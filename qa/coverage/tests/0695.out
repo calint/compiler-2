@@ -1,1 +1,4 @@
-panic: bounds at line 6
+
+0695.baz:6:22: count -1 is negative
+    array_copy(a, b, -1)
+                     ^

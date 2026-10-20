@@ -1,0 +1,8 @@
+# a negative constant 'arrays_equal' count is rejected
+
+func main() {
+    var a = i8[4]{}
+    var b = i8[4]{}
+    var e = arrays_equal(a, b, -2)
+    exit(0)
+}

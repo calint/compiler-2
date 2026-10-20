@@ -1,0 +1,4 @@
+
+1120.baz:6:32: count -2 is negative
+    var e = arrays_equal(a, b, -2)
+                               ^

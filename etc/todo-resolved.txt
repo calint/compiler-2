@@ -6,9 +6,11 @@
     always failed with them, while a constant index past the end is a
     compile error
     => done (2026-10-20): 'stmt_identifier::assert_count_in_bounds' rejects
-       a constant count of 'array_copy', 'arrays_equal' and 'foo' that passes
-       the end from the whole array or a constant index; a run-time start and
-       a negative count stay with the run-time check (tests 1113-1117)
+       a constant count of 'array_copy', 'arrays_equal' and 'foo' that is
+       negative or passes the end from the whole array or a constant index, a
+       run-time start stays with the run-time check (tests 1113-1117,
+       1120-1122, 0695 was a run-time panic); a zero count copies nothing, so
+       a start at the end compiles also without the checks
 [x] easy: a constant zero divisor was left to run time where it traps, while
     a constant shift count outside the width is a compile error
     => done (2026-10-20): 'divisor must not be zero', also in code that does

@@ -1409,7 +1409,8 @@ def matches(expected, got):
             and got[0] == "compile" and "divisor must not be zero" in got[1]):
         return True
     if (expected[0] == "panic" and "bounds" in expected[1]
-            and got[0] == "compile" and "is past the end of array" in got[1]):
+            and got[0] == "compile" and ("is past the end of array" in got[1]
+                                         or "is negative" in got[1])):
         return True
     if expected[0] == "panic":
         return got[0] == "panic" and got[1] in expected[1]

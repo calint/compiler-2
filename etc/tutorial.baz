@@ -798,8 +798,8 @@ func checks() {
     # catches negative indexes
     # '--checks=upper,lower,line' also reports the source line of the failure
     # a constant index out of bounds is always a compile error, so is a
-    # constant count of 'array_copy', 'arrays_equal' or 'foo' that passes the
-    # end of the array from the whole array or a constant index
+    # constant count of 'array_copy', 'arrays_equal' or 'foo' that is negative
+    # or passes the end of the array from the whole array or a constant index
 
     # 'overflow': signed overflow of '+', '-', '*' and unary '-' at the width
     # of the destination, a constant expression that overflows is a compile

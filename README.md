@@ -27,8 +27,9 @@ the binary image itself.
   * `noub` turns on all of them, `line` adds the line number to the report of
     a failed bounds, division, shift, overlap or overflow check, `-NAME` turns
     a check off after the others are applied, e.g. `--checks=noub,-division`
-  * `upper`, `lower`: array bounds at runtime; a constant index or a constant
-    count past the end of the array is a compile error also without the checks
+  * `upper`, `lower`: array bounds at runtime; a constant index outside the
+    array or a constant count that is negative or passes the end of the array
+    is a compile error also without the checks
   * `frame`: non-inlined function frame capacity at runtime
   * `division`: division by zero and `MIN / -1` at runtime; a constant zero
     divisor is a compile error also without the check
