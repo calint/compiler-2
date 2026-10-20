@@ -970,6 +970,20 @@ class assembler_rv32i final : public assembler {
         return two_instructions_bytes;
     }
 
+    // labels, directives and comments occupy no space, instructions are added
+    // as records except for jumps, which start as one instruction
+    [[nodiscard]] static auto line_size_bytes(const std::string_view text)
+        -> size_t {
+
+        const std::string_view code{code_part(text)};
+
+        if (code.empty() or code.back() == ':' or is_sizeless_directive(code)) {
+            return 0;
+        }
+
+        return one_instruction_bytes;
+    }
+
     [[nodiscard]] static auto lower_part(const int64_t value) -> int32_t {
         constexpr int32_t low_range{4096};
 
@@ -2066,20 +2080,6 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto is_zero_fill(const data_values& data) -> bool {
         return std::ranges::all_of(
             data.values, [](const int64_t v) -> bool { return v == 0; });
-    }
-
-    // labels, directives and comments occupy no space, instructions are added
-    // as records except for jumps, which start as one instruction
-    [[nodiscard]] static auto line_size_bytes(const std::string_view text)
-        -> size_t {
-
-        const std::string_view code{code_part(text)};
-
-        if (code.empty() or code.back() == ':' or is_sizeless_directive(code)) {
-            return 0;
-        }
-
-        return one_instruction_bytes;
     }
 
     // the sequence 'li' expands to

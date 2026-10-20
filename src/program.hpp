@@ -678,7 +678,7 @@ class program final {
         }
 
         if (tk.is_text("var") or tk.is_text("let")) {
-            return std::make_unique<stmt_def_var>(tc, tk, tz);
+            return make_stmt_def_var(tc, tk, tz);
         }
 
         if (tk.is_text("dat")) {

@@ -47,7 +47,7 @@ class stmt_def_dat final : public statement {
 
         toc::assert_valid_unqualified_name(name_tk_);
 
-        equals_tk_ = parse_initializer_equals(tz, "dat");
+        equals_tk_ = initializer_declaration::parse_equals(tz, "dat");
 
         const initializer_declaration declaration{
             tc,

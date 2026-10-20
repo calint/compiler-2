@@ -160,6 +160,10 @@ class machine {
         greater_equal,
     };
 
+    // whether an operation may overwrite a register operand, e.g. a scratch
+    // register that holds a factor and is freed after the operation
+    enum class factor_use : uint8_t { read_only, may_overwrite };
+
     // note: at namespace scope because a default argument '= {}' of a
     //       member function cannot use a nested class with default member
     //       initializers
@@ -639,8 +643,8 @@ class machine {
 
     virtual auto multiply(const token& src_loc_tk, const size_t indent,
                           const operand& product, const operand& factor,
-                          const bool reuse_source = {},
-                          const runtime_check& check = {}) -> void = 0;
+                          const factor_use use, const runtime_check& check = {})
+        -> void = 0;
 
     virtual auto read(const token& src_loc_tk, const size_t indent,
                       const operand& dst, const operand& descriptor,
@@ -920,6 +924,15 @@ class machine {
         frame_base_reserved_ = false;
     }
 
+    // held from 'start' to 'finish'
+    auto release_variables_base() -> void {
+        assert(variables_base_reserved_);
+
+        release_named_register(token{}, 0, variables_base_register());
+
+        variables_base_reserved_ = false;
+    }
+
     auto reserve_frame_base() -> void {
         assert(not frame_base_reserved_);
         assert(registers_.scratch_count() == 0);
@@ -930,6 +943,15 @@ class machine {
         frame_base_reserved_ = true;
 
         emit_frame_entry();
+    }
+
+    auto reserve_variables_base() -> void {
+        assert(not variables_base_reserved_);
+
+        reserve_named_register(token{}, 0, variables_base_register(),
+                               default_type());
+
+        variables_base_reserved_ = true;
     }
 
     // how many scratch registers the backend can hand out
@@ -1396,15 +1418,6 @@ class machine {
         pop_allocation(register_name);
     }
 
-    // held from 'start' to 'finish'
-    auto release_variables_base() -> void {
-        assert(variables_base_reserved_);
-
-        release_named_register(token{}, 0, variables_base_register());
-
-        variables_base_reserved_ = false;
-    }
-
     // 'alloc_named_register' without an operand, for a register that the
     // backend uses by name
     auto reserve_named_register(const token& src_loc_tk, const size_t indent,
@@ -1421,15 +1434,6 @@ class machine {
         }
 
         push_allocation(src_loc_tk, indent, register_name, type_ref, true);
-    }
-
-    auto reserve_variables_base() -> void {
-        assert(not variables_base_reserved_);
-
-        reserve_named_register(token{}, 0, variables_base_register(),
-                               default_type());
-
-        variables_base_reserved_ = true;
     }
 
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {

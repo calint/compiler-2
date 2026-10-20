@@ -628,7 +628,8 @@ class expr_arith final : public expression {
         }
 
         if (op == arithmetic_operator::multiply) {
-            x.multiply(tok(), indent, dst.operand(), constant, false,
+            x.multiply(tok(), indent, dst.operand(), constant,
+                       machine::factor_use::read_only,
                        tc.checks().overflow_options());
 
             return;
@@ -1166,7 +1167,12 @@ class expr_arith final : public expression {
         emit_with_source(
             tc, indent, src, dst.type_ref(),
             [&](const operand& factor, const bool is_scratch) -> void {
-                x.multiply(src.tok(), indent, dst.operand(), factor, is_scratch,
+                const machine::factor_use use{
+                    is_scratch ? machine::factor_use::may_overwrite
+                               : machine::factor_use::read_only,
+                };
+
+                x.multiply(src.tok(), indent, dst.operand(), factor, use,
                            tc.checks().overflow_options());
             });
     }

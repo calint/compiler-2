@@ -1058,7 +1058,7 @@ func main() {
     assert(not assembly.contains("allocate scratch register -> t6\n"));
 
     for (const std::string_view text :
-         {"t1: source, t2: destination, t3: count",
+         {"t1: lhs, t2: rhs, t3: count",
           "t3: elements to bytes (4 bytes/element)",
           "t0: left value/result, t4: right value",
           "t5: end of words, t3: tail bytes", "stop at first mismatch",
@@ -2090,7 +2090,8 @@ auto check_multiply_by_constants() -> void {
     const auto multiplied = [&](const operand& product,
                                 const int64_t factor) -> std::string {
         return rv32i.emitted([&] {
-            backend.multiply(token{}, 0, product, operand::imm(factor, integer));
+            backend.multiply(token{}, 0, product, operand::imm(factor, integer),
+                             machine::factor_use::read_only);
         });
     };
 
@@ -2297,7 +2298,8 @@ auto check_multiply_divide_routines() -> void {
 
         const auto computed = [&](const operand& dst, const operand& src) {
             if (operation == '*') {
-                backend.multiply(token{}, 0, dst, src);
+                backend.multiply(token{}, 0, dst, src,
+                                 machine::factor_use::read_only);
             } else {
                 backend.divide(token{}, 0, op_of(operation), dst, src,
                                machine::runtime_check{});
@@ -2332,7 +2334,8 @@ auto check_multiply_divide_routines() -> void {
         for (size_t count{}; count < 2; ++count) {
             if (operation == '+') {
                 backend.multiply(token{}, 0, operand::reg("a0", integer),
-                                 operand::imm(3, integer));
+                                 operand::imm(3, integer),
+                                 machine::factor_use::read_only);
             } else {
                 computed(operand::reg("a0", integer),
                          operand::reg("a1", integer));
@@ -3100,7 +3103,8 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
         const operand src{operand::mem("s2", {}, 1, 4, integer)};
 
         if (operation == '*') {
-            backend.multiply(token{}, 1, dst, src);
+            backend.multiply(token{}, 1, dst, src,
+                             machine::factor_use::read_only);
         } else {
             backend.divide(token{}, 1, op_of(operation), dst, src,
                            machine::runtime_check{});
@@ -3139,20 +3143,32 @@ auto emit_division_same_address(machine_rv32i& backend) -> void {
 }
 
 // a factor of a runtime case: where it is, and whether the multiplication
-// may reuse its register
+// may overwrite its register
 struct factor_form {
     source_place place;
-    bool reuse;
+    machine::factor_use use;
 };
 
 // '*' on every value width, product in a register or memory, and factor in
 // a register, memory, constant or a register the multiplication may reuse
 auto emit_multiplication_tests(machine_rv32i& backend) -> void {
     constexpr std::array factors{
-        factor_form{.place{source_place::reg}, .reuse{}},
-        factor_form{.place{source_place::memory}, .reuse{}},
-        factor_form{.place{source_place::constant}, .reuse{}},
-        factor_form{.place{source_place::reg}, .reuse{true}},
+        factor_form{
+            .place{source_place::reg},
+            .use{machine::factor_use::read_only},
+        },
+        factor_form{
+            .place{source_place::memory},
+            .use{machine::factor_use::read_only},
+        },
+        factor_form{
+            .place{source_place::constant},
+            .use{machine::factor_use::read_only},
+        },
+        factor_form{
+            .place{source_place::reg},
+            .use{machine::factor_use::may_overwrite},
+        },
     };
 
     for (const type* value_type : {&integer, &half, &byte}) {
@@ -3175,7 +3191,7 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
                         backend.multiply(
                             token{}, 1, product,
                             source_at(factor.place, multiplier, integer),
-                            factor.reuse);
+                            factor.use);
                         backend.copy_value(token{}, 1,
                                            operand::reg("a0", integer),
                                            product);
@@ -3188,7 +3204,7 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
                         emit_expect("a0", wrapped(expected, *value_type));
 
                         if (factor.place == source_place::reg and
-                            not factor.reuse) {
+                            factor.use == machine::factor_use::read_only) {
                             emit_expect("a1", multiplier);
                         }
 
@@ -3200,15 +3216,16 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
     }
 }
 
-// '*' of a value by itself at the same address, with and without the 'reuse'
-// of the operand
+// '*' of a value by itself at the same address, with and without the
+// permission to overwrite the operand
 auto emit_multiplication_aliased_operands(machine_rv32i& backend) -> void {
-    for (const bool reuse : {false, true}) {
+    for (const machine::factor_use use :
+         {machine::factor_use::read_only, machine::factor_use::may_overwrite}) {
         std::println("    la a2, buffer\n    li a0, -7\n    sw a0, 0(a2)");
 
         const operand address{operand::mem("a2", {}, 1, 0, integer)};
 
-        backend.multiply(token{}, 1, address, address, reuse);
+        backend.multiply(token{}, 1, address, address, use);
         std::println("    lw a0, 0(a2)");
         emit_expect("a0", 49);
         backend.finish();

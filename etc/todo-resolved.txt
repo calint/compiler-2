@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: left from the review round of 2026-10-20: the modes of
+    'expr_any' and 'stmt_def_var', the reason of rv32i
+    'leaf_stack_bytes{64}' (its comment adds up to 48), rv32i frame overflow
+    handler not on 'emit_named_failure_handler' (renames a label),
+    'multiply' with a bare 'bool' default on a virtual
+    => done (2026-10-20):
+       1. a 'let' that folds is 'stmt_def_const', 'make_stmt_def_var' makes
+          it or a 'stmt_def_var', which always has its assignment; the '='
+          of an initializer is 'initializer_declaration::parse_equals'
+       2. 'expr_any' has a header comment that names its five forms; split
+          into a scalar and an array class discarded: every caller would ask
+          which one it holds, the test moves from one class to about ten
+          callers
+       3. the stack a callee reaches without a check of its own is derived:
+          the save area of '.Lbaz_divide' and the line digits of a failure,
+          48 B, it was 64 with 16 B unexplained
+       4. the rv32i frame overflow handler is 'emit_named_failure_handler',
+          its message label is '.Lbaz_frame_overflow_message'
+       5. 'machine::multiply' takes a 'factor_use', no defaulted 'bool'
+       6. 'test-rv32i.sh' builds again: the backend driver uses
+          'invoke_syscall', 'line_size_bytes' and the variables base
+          methods, they are public again; 'test-arena.py' expected a message
+          that changed in an earlier round
 [x] hard: second review round of 2026-10-20, seven reviews of 'src/' line by
     line and one of the architecture
     => done (2026-10-20):

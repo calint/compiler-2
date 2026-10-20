@@ -96,6 +96,9 @@ class machine_rv32i : public machine {
     // sp stays 16-byte aligned, the return address slot of a frame is one unit
     static constexpr size_t stack_alignment_{16};
     static constexpr int64_t frame_save_bytes_{stack_alignment_};
+    // the line report of a failure writes the ten digits of a 32-bit line
+    // number and a newline on the stack
+    static constexpr int64_t line_digits_bytes_{16};
     static constexpr size_t byte_size_bytes_{1};
     static constexpr size_t half_size_bytes_{2};
     static constexpr size_t word_size_bytes_{4};
@@ -764,9 +767,10 @@ class machine_rv32i : public machine {
     }
 
     // a call saves the registers allocated now, the registers of the arguments
-    // included, so the bound is not below what the call pushes; the callee and
-    // the helpers it calls push more, a helper call saves up to 8 registers
-    // and the line report of a failure takes 16 bytes of digits
+    // included, so the bound is not below what the call pushes; the callee
+    // pushes more without a check of its own: a helper call saves the
+    // registers the helper changes, and a failed check of the helper, made
+    // while they are saved, writes the digits of its line
     auto check_stack_capacity(const token& src_loc_tk, const size_t indent)
         -> void override {
 
@@ -774,7 +778,14 @@ class machine_rv32i : public machine {
             return;
         }
 
-        constexpr size_t leaf_stack_bytes{64};
+        // note: '.Lbaz_divide' changes the most registers
+        const size_t helper_save_bytes{
+            align_storage_size(helper_clobbers(true, false).size() *
+                                   word_size_bytes_,
+                               stack_alignment_),
+        };
+
+        const size_t leaf_stack_bytes{helper_save_bytes + line_digits_bytes_};
 
         const size_t saved_count{registers_saved_by_call().size()};
 
@@ -1088,23 +1099,8 @@ class machine_rv32i : public machine {
     }
 
     auto emit_frame_overflow_handler() -> void override {
-        constexpr std::string_view message{"panic: frame overflow"};
-        constexpr std::array<int64_t, 1> newline{'\n'};
-
-        label(0, frame_overflow_handler_label);
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", ".Lbaz_frame_message");
-        // the newline follows the message text
-        assembler_.li(1, "a2", message.size() + 1);
-        emit_write_call(1);
-
-        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, ".Lbaz_frame_message");
-        assembler_.ascii(message);
-        assembler_.data(1, newline);
-        assembler_.switch_section(section::text);
+        emit_named_failure_handler(frame_overflow_handler_label,
+                                   "frame overflow", false);
     }
 
     auto emit_overflow_failure_handler(const bool with_line) -> void override {
@@ -1286,7 +1282,7 @@ class machine_rv32i : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  [[maybe_unused]] const bool reuse_source = {},
+                  [[maybe_unused]] const factor_use use,
                   const runtime_check& check = {}) -> void override {
 
         validate_scalar(src_loc_tk, product.type_ref());
@@ -1410,7 +1406,8 @@ class machine_rv32i : public machine {
         assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
 
         multiply(src_loc_tk, indent, index,
-                 operand::imm(element_size_bytes, default_type()));
+                 operand::imm(element_size_bytes, default_type()),
+                 factor_use::read_only);
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -3327,8 +3324,6 @@ class machine_rv32i : public machine {
     auto emit_line_failure(const std::string_view message_label,
                            const std::string_view message) -> void {
 
-        // room for the ten digits of a 32-bit line number and a newline
-        constexpr int64_t digits_bytes{16};
         constexpr int digit_zero{'0'};
         constexpr int newline{'\n'};
 
@@ -3349,7 +3344,7 @@ class machine_rv32i : public machine {
             // leading zeros are skipped and the last place always writes its
             // digit
             assembler_.label(0, ".Lbaz_report_line");
-            assembler_.addi(1, "sp", "sp", -digits_bytes);
+            assembler_.addi(1, "sp", "sp", -line_digits_bytes_);
             assembler_.mv(1, "a1", "sp");
             assembler_.li(1, "a2", 0);
             assembler_.la(1, "t0", ".Lbaz_decimal_places");

@@ -555,22 +555,6 @@ class statement {
                                         name, read_only_hint(info))};
     }
 
-    // shared by 'dat' and 'var', 'keyword' names the declaration in the
-    // example
-    [[nodiscard]] static auto
-    parse_initializer_equals(tokenizer& tz, const std::string_view keyword)
-        -> token {
-
-        const token equals_tk{
-            tz.expect_char_token(
-                '=', std::format("expected '=' followed by an initializer, "
-                                 "e.g. '{} x = i32(0)'",
-                                 keyword)),
-        };
-
-        return equals_tk;
-    }
-
     // why the name cannot be written, e.g. ", 'x' is declared with 'let'"
     [[nodiscard]] static auto read_only_hint(const ident_info& info)
         -> std::string {

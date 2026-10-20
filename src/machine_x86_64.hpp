@@ -903,7 +903,7 @@ class machine_x86_64 final : public machine {
 
     auto multiply(const token& src_loc_tk, const size_t indent,
                   const operand& product, const operand& factor,
-                  const bool reuse_source = {}, const runtime_check& check = {})
+                  const factor_use use, const runtime_check& check = {})
         -> void override {
 
         if (multiply_by_constant(src_loc_tk, indent, product, factor, check)) {
@@ -944,7 +944,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        if (reuse_source) {
+        if (use == factor_use::may_overwrite) {
             imul(src_loc_tk, indent, factor, product);
 
             // the move keeps the flags
@@ -1194,6 +1194,21 @@ class machine_x86_64 final : public machine {
                 mov(src_loc_tk, indent,
                     memory_part(dst, part_size_bytes, offset), immediate(0));
             });
+    }
+
+    //
+    // class methods
+    //
+
+    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
+    auto invoke_syscall(const size_t indent) -> void {
+        static constexpr std::array<std::string_view, 2> clobbered{
+            "rcx",
+            "r11",
+        };
+
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { syscall(indent); });
     }
 
   protected:
@@ -2106,17 +2121,6 @@ class machine_x86_64 final : public machine {
         -> void {
 
         emit_unary(src_loc_tk, indent, op::inc, dst);
-    }
-
-    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
-    auto invoke_syscall(const size_t indent) -> void {
-        static constexpr std::array<std::string_view, 2> clobbered{
-            "rcx",
-            "r11",
-        };
-
-        with_saved_registers(indent, clobbered,
-                             [&] -> void { syscall(indent); });
     }
 
     auto io_syscall(const token& src_loc_tk, const size_t indent,

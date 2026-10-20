@@ -5,12 +5,14 @@
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <ostream>
 #include <string_view>
 #include <utility>
 
 #include "compile_error.hpp"
+#include "expr_any.hpp"
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "ident_info.hpp"
@@ -71,6 +73,26 @@ class initializer_declaration final {
     }
 
     [[nodiscard]] auto type_ref() const -> const type& { return *type_; }
+
+    //
+    // statics
+    //
+
+    // the '=' before the initializer, 'keyword' names the definition in the
+    // example
+    [[nodiscard]] static auto parse_equals(tokenizer& tz,
+                                           const std::string_view keyword)
+        -> token {
+
+        const token equals_tk{
+            tz.expect_char_token(
+                '=', std::format("expected '=' followed by an initializer, "
+                                 "e.g. '{} x = i32(0)'",
+                                 keyword)),
+        };
+
+        return equals_tk;
+    }
 
   private:
     // e.g. 'var c = a' copies the whole array 'a'
@@ -262,51 +284,77 @@ class initializer_declaration final {
     }
 };
 
-// e.g. 'var x = i32(0)', the initializer gives the type; 'let' with a
-// non-constant initializer is a 'var' that is read-only once initialized
+// a 'let' whose initializer folds to a constant of the default type, e.g.
+// 'let n = 2 * 3': nothing is stored, the name stands for the value
+class stmt_def_const final : public statement {
+    token name_tk_;
+    token equals_tk_;
+    expr_any initializer_;
+    int64_t value_{};
+
+  public:
+    // the constant is declared during the parse so later statements can name
+    // it, e.g. as an array size
+    stmt_def_const(toc& tc, const token tk, const token name_tk,
+                   const token equals_tk, expr_any initializer,
+                   const int64_t value)
+        : statement{tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
+          initializer_{std::move(initializer)}, value_{value} {
+
+        set_type(tc.builtins().default_type());
+
+        tc.add_const(name_tk_, 0, name_tk_.text(), value_);
+    }
+
+    stmt_def_const() = default;
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        name_tk_.source_to(os);
+        equals_tk_.source_to(os);
+        initializer_.source_to(os);
+    }
+
+    auto compile(toc& tc, const size_t indent,
+                 [[maybe_unused]] const destination& dst) const
+        -> void override {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, statement::trimmed_source(*this));
+
+        tc.add_const(name_tk_, indent, name_tk_.text(), value_);
+    }
+
+    // the value is folded, nothing is read at run time
+    auto visit_reads([[maybe_unused]] const read_filter var,
+                     [[maybe_unused]] const read_visitor reader) const
+        -> void override {}
+};
+
+// e.g. 'var x = i32(0)', the initializer gives the type; a 'let' that does not
+// fold is a 'var' that is read-only once initialized
 class stmt_def_var final : public statement {
     token name_tk_;
     // none when not an array
     std::optional<size_t> array_count_;
     token equals_tk_;
     stmt_assign_var assign_var_;
-    bool is_let_{};
-    // a 'let' of an expression that folds is a constant, e.g. 'let x = 2 * 3'
-    expr_any constant_expr_;
-    std::optional<int64_t> constant_value_;
 
   public:
-    stmt_def_var(toc& tc, const token tk, tokenizer& tz)
-        : statement{tk}, name_tk_{tz.next_token()}, is_let_{tk.is_text("let")} {
-
-        toc::assert_valid_unqualified_name(name_tk_);
-
-        // the destination is read where it ends at '=', past it the '[2]' in
-        // 'var a = [2]{}' would read as an index
-        tokenizer at_name{tz};
-
-        equals_tk_ = parse_initializer_equals(tz, tk.text());
-
-        const initializer_declaration declaration{
-            tc,
-            tz,
-            name_tk_,
-            name_in_initializer::visible,
-        };
+    // 'at_name' is the tokenizer at the name, the destination of the
+    // assignment is read from there
+    stmt_def_var(toc& tc, const token tk, const token name_tk,
+                 tokenizer at_name, const token equals_tk,
+                 const initializer_declaration& declaration, expr_any value)
+        : statement{tk}, name_tk_{name_tk},
+          array_count_{declaration.array_count()}, equals_tk_{equals_tk} {
 
         set_type(declaration.type_ref());
-        array_count_ = declaration.array_count();
-
-        expr_any value{declaration.parse_value(tc, tz)};
-
-        constant_value_ = folded_let(tc, value);
-
-        // nothing is stored for a constant
-        if (constant_value_.has_value()) {
-            constant_expr_ = std::move(value);
-            tc.add_const(name_tk_, 0, name_tk_.text(), *constant_value_);
-            return;
-        }
 
         // the variable is declared during the parse so later statements can
         // name it
@@ -327,7 +375,7 @@ class stmt_def_var final : public statement {
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it
-        if (is_let_) {
+        if (tk.is_text("let")) {
             tc.make_var_read_only(name_tk_.text(), read_only_cause::let);
         }
     }
@@ -342,12 +390,6 @@ class stmt_def_var final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         equals_tk_.source_to(os);
-
-        if (constant_value_.has_value()) {
-            constant_expr_.source_to(os);
-            return;
-        }
-
         assign_var_.expression().source_to(os);
     }
 
@@ -359,11 +401,6 @@ class stmt_def_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        if (constant_value_.has_value()) {
-            tc.add_const(name_tk_, indent, name_tk_.text(), *constant_value_);
-            return;
-        }
-
         // an unsized array has its size from the initializer by now
         tc.add_var(name_tk_, indent, make_var_info(), var_kind::var);
 
@@ -374,28 +411,10 @@ class stmt_def_var final : public statement {
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
-        if (constant_value_.has_value()) {
-            return;
-        }
-
         assign_var_.visit_reads(var, reader);
     }
 
   private:
-    // the value of the initializer of a 'let' of the default type when it folds
-    // to a constant, e.g. '2 * 3 + k', otherwise none
-    [[nodiscard]] auto folded_let(const toc& tc, const expr_any& value) const
-        -> std::optional<int64_t> {
-
-        if (not is_let_ or array_count_.has_value() or
-            not get_type().is_same(tc.builtins().default_type())) {
-
-            return std::nullopt;
-        }
-
-        return value.constant_value(tc);
-    }
-
     [[nodiscard]] auto make_var_info() const -> var_info {
         return {
             .name{name_tk_.text()},
@@ -410,3 +429,47 @@ class stmt_def_var final : public statement {
         };
     }
 };
+
+// reads the name and the initializer and makes the statement of the kind they
+// give: a constant for a 'let' that folds, e.g. 'let n = 2 * 3', else a
+// variable
+inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
+    -> std::unique_ptr<statement> {
+
+    const token name_tk{tz.next_token()};
+
+    toc::assert_valid_unqualified_name(name_tk);
+
+    // the destination is read where it ends at '=', past it the '[2]' in
+    // 'var a = [2]{}' would read as an index
+    const tokenizer at_name{tz};
+
+    const token equals_tk{initializer_declaration::parse_equals(tz, tk.text())};
+
+    const initializer_declaration declaration{
+        tc,
+        tz,
+        name_tk,
+        name_in_initializer::visible,
+    };
+
+    expr_any value{declaration.parse_value(tc, tz)};
+
+    // a constant has the default type and is not an array
+    const bool may_fold{
+        tk.is_text("let") and not declaration.array_count().has_value() and
+            declaration.type_ref().is_same(tc.builtins().default_type()),
+    };
+
+    const std::optional<int64_t> constant{
+        may_fold ? value.constant_value(tc) : std::nullopt,
+    };
+
+    if (constant) {
+        return std::make_unique<stmt_def_const>(tc, tk, name_tk, equals_tk,
+                                                std::move(value), *constant);
+    }
+
+    return std::make_unique<stmt_def_var>(tc, tk, name_tk, at_name, equals_tk,
+                                          declaration, std::move(value));
+}

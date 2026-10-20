@@ -28,6 +28,15 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+// the value of an initializer, an argument or a field, parsed at the type of
+// its destination; one of five forms:
+//   a single value       'x + 1', 'a < b' or 'point{1, 2}', one element
+//   a string             '"hi"' fills the start of an 'i8' array
+//   braced elements      'i8[]{1, 2}' or '{{1, 2}, {3, 4}}' of an array
+//   a copy of an array   'a' of 'var b = a', one 'expr_type' element
+//   a bare sized array   'i8[4]', no elements, every element is zero
+// the form is told by 'is_array', 'is_string', 'is_array_identifier' and
+// 'is_empty'
 class expr_any final : public statement {
     using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;
 

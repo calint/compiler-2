@@ -199,7 +199,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         result = compile_source(directory, source, 16, [])
         assert result.returncode == (0 if count == 16 else 1), result.stderr
         if count == 17:
-            assert "variable 'buffer' would overflow allocated vars section" in result.stderr, result.stderr
+            assert "variable 'buffer' does not fit in the variable storage" in result.stderr, result.stderr
         print(f"arena capacity {count}: ok", flush=True)
 
     # 2. Assemble, link, and execute programs, then inspect their ELF layout.

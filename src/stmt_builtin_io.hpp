@@ -481,7 +481,8 @@ class stmt_builtin_io final : public stmt_call {
         machine& x{tc.machine()};
 
         if (has_start()) {
-            x.multiply(tok(), indent, start, element_size_bytes);
+            x.multiply(tok(), indent, start, element_size_bytes,
+                       machine::factor_use::read_only);
 
             x.add_subtract(tok(), indent, machine::arithmetic_operator::add,
                            buffer_reg, start);
@@ -489,7 +490,8 @@ class stmt_builtin_io final : public stmt_call {
             x.free_scratch_register(tok(), indent, start);
         }
 
-        x.multiply(tok(), indent, count, element_size_bytes);
+        x.multiply(tok(), indent, count, element_size_bytes,
+                   machine::factor_use::read_only);
     }
 
     auto emit_call(machine& x, const size_t indent, const operand& result,
