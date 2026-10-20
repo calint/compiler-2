@@ -1096,6 +1096,11 @@ class expr_arith final : public expression {
 
         emit_with_source(tc, indent, src, dst.type_ref(),
                          [&](const operand& divisor, const bool) -> void {
+                             if (divisor.is_immediate()) {
+                                 assert_divisor_not_zero(src.tok(),
+                                                         divisor.immediate());
+                             }
+
                              x.divide(src.tok(), indent, op, dst.operand(),
                                       divisor, tc.checks().division_options());
                          });
@@ -1146,6 +1151,18 @@ class expr_arith final : public expression {
                              x.shift(src.tok(), indent, op, dst.operand(),
                                      count, tc.checks().shift_options());
                          });
+    }
+
+    // a zero divisor traps on every target, so a constant one is an error like
+    // a constant index out of bounds, e.g. 'x / 0' or 'x % (2 - 2)'
+    static auto assert_divisor_not_zero(const token& src_loc_tk,
+                                        const int64_t divisor) -> void {
+
+        if (divisor != 0) {
+            return;
+        }
+
+        throw compiler_exception{src_loc_tk, "divisor must not be zero"};
     }
 
     // a stored 'bool' is 0 or 1, arithmetic would make other values

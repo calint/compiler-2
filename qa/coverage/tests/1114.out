@@ -1,0 +1,4 @@
+
+1114.baz:6:25: count 3 from index 2 is past the end of array 'b' of size 4
+    array_copy(a, b[2], 3)
+                        ^

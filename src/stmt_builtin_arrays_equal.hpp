@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <functional>
+#include <optional>
 #include <ostream>
 #include <string_view>
 #include <utility>
@@ -108,6 +110,11 @@ class stmt_builtin_arrays_equal final : public expression {
         }
 
         assert_destination_type(dst.type_ref(), tok());
+
+        if (const std::optional<int64_t> count{count_.constant_value(tc)}) {
+            lhs_.assert_count_in_bounds(tc, count_.tok(), *count);
+            rhs_.assert_count_in_bounds(tc, count_.tok(), *count);
+        }
 
         const std::function<void(const operand&)> emit_count{
             make_count_emitter(tc, indent, count_),

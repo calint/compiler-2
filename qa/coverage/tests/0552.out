@@ -1,5 +1,5 @@
 
-0552.baz:5:18: too many elements specified for array of size 2
+0552.baz:5:18: too many elements for array of size 2
     dst = {1, 2, 3}
                  ^
 0552.baz:10:5: called from

@@ -1,0 +1,7 @@
+# a constant divisor of zero is rejected
+
+func main() {
+    var n = 5
+    var x = n / 0
+    exit(x)
+}

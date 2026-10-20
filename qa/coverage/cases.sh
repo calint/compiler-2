@@ -2134,7 +2134,8 @@ SRC=0689 && COMPERR
 # a constructor call requires parentheses
 SRC=0690 && COMPERR
 
-# constant operands that trap or wrap at run time are not folded
+# constant operands that trap or wrap at run time are not folded, a constant
+# zero divisor is rejected instead
 SRC=0691 && EXP=7 && RUN
 
 # a function name has no fields
@@ -2258,7 +2259,8 @@ if [[ $MACHINE != x86_64 ]]; then SRC=0729 && COMPERR; fi
 # rv32i: nested loops hold every scratch register
 if [[ $MACHINE != x86_64 ]]; then SRC=0730 && COMPERR; fi
 
-# rv32i: a constant copy size beyond the 32-bit address range
+# rv32i: a constant count whose bytes exceed the 32-bit address range is past
+# the end of the array
 if [[ $MACHINE != x86_64 ]]; then SRC=0731 && OPTS="--vars=0x10000" COMPERR; fi
 
 # rv32i: data elements must be 1, 2 or 4 bytes
@@ -2289,7 +2291,8 @@ SRC=0739 && COMPERR
 # rejects the first one as beyond its address range
 if [[ $MACHINE == x86_64 ]]; then SRC=0740 && COMPERR; fi
 
-# x86: a copy whose byte count exceeds the signed 64-bit range
+# x86: a constant count at the signed 64-bit maximum is past the end of the
+# array
 if [[ $MACHINE == x86_64 ]]; then SRC=0741 && COMPERR; fi
 
 # an unsupported escape after a line continuation is located on its own line
@@ -3458,3 +3461,24 @@ SRC=1111 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=upper,lower"
 
 # a unary operator before a character literal inside parentheses
 SRC=1112 && EXP=34 && RUN
+
+# a constant 'array_copy' count past the end of the array is rejected
+SRC=1113 && COMPERR
+
+# a constant 'array_copy' count past the end from a constant index is rejected
+SRC=1114 && COMPERR
+
+# a constant 'arrays_equal' count past the end of the array is rejected
+SRC=1115 && COMPERR
+
+# a constant 'foo' count past the end of the array is rejected
+SRC=1116 && COMPERR
+
+# constant counts up to the end of the array are accepted
+SRC=1117 && EXP=0 && RUN
+
+# a constant divisor of zero is rejected
+SRC=1118 && COMPERR
+
+# a constant divisor that folds to zero is rejected
+SRC=1119 && COMPERR

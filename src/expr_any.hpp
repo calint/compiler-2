@@ -198,7 +198,7 @@ class expr_any final : public statement {
                     .visit([](const auto& expression) -> const token& {
                         return expression.tok();
                     }),
-                std::format("too many elements specified for array of size {}",
+                std::format("too many elements for array of size {}",
                             array_count)};
         }
 
@@ -251,8 +251,7 @@ class expr_any final : public statement {
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         assert(not is_array_);
 
-        // note: 'expr_type' does not have 'unary_ops' and cannot be
-        //       an argument in call
+        // note: an 'expr_type' parses no unary ops, its 'unary_ops' are empty
         return elements_.at(0).visit(
             [](const auto& expression) -> const unary_ops& {
                 return expression.get_unary_ops();
@@ -434,10 +433,10 @@ class expr_any final : public statement {
             return;
         }
 
-        throw compiler_exception{
-            tz, std::format("too many elements specified for array of "
-                            "size {}",
-                            array_count_)};
+        throw compiler_exception{tz,
+                                 std::format("too many elements for array of "
+                                             "size {}",
+                                             array_count_)};
     }
 
     // constant elements are stored like a string so the backend can pack them

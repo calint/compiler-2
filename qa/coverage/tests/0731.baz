@@ -1,5 +1,5 @@
-# rv32i: a constant copy size beyond the 32-bit address range, the count fits
-# 'i32' but its bytes do not
+# rv32i: a constant count whose bytes exceed the 32-bit address range is past
+# the end of the array
 
 func main() {
     var a = i32[8]

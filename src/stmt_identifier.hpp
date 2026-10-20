@@ -353,6 +353,42 @@ class stmt_identifier final : public statement {
                                  std::format("{} must be an array", what)};
     }
 
+    // a constant count of a bulk operation that starts at this path is known
+    // to pass the end of the array like a constant index, e.g. 5 in
+    // 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time start index and a
+    // negative count are left to the bounds check at run time
+    auto assert_count_in_bounds(const toc& tc, const token& count_tk,
+                                const int64_t count) const -> void {
+
+        const std::optional<int64_t> start{constant_start_index(tc)};
+
+        const size_t array_len{
+            tc.make_ident_info(first_token(), path_as_string_).array_len(),
+        };
+
+        // note: a start outside the array is reported as an index
+        if (not start or *start < 0 or std::cmp_greater(*start, array_len)) {
+            return;
+        }
+
+        const size_t remaining{array_len - static_cast<size_t>(*start)};
+
+        if (count < 0 or std::cmp_less_equal(count, remaining)) {
+            return;
+        }
+
+        const std::string from_index{
+            not is_array_element() ? std::string{}
+                                   : std::format(" from index {}", *start),
+        };
+
+        throw compiler_exception{
+            count_tk,
+            std::format("count {}{} is past the end of array '{}' of "
+                        "size {}",
+                        count, from_index, path_as_string_, array_len)};
+    }
+
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_.at(0).name_tk;
     }
@@ -496,6 +532,18 @@ class stmt_identifier final : public statement {
         throw compiler_exception{
             name_tk, std::format("method '{}' not found in type '{}'",
                                  name_tk.text(), info.type_ref().name())};
+    }
+
+    // the index where a bulk operation starts, 0 for a whole array, empty when
+    // computed at run time
+    [[nodiscard]] auto constant_start_index(const toc& tc) const
+        -> std::optional<int64_t> {
+
+        if (not is_array_element()) {
+            return 0;
+        }
+
+        return elems_.back().array_index_expr->constant_value(tc);
     }
 
     // a '.' followed by a field continues the path with that field, a method

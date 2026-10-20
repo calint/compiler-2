@@ -103,6 +103,11 @@ class stmt_builtin_array_copy final : public statement {
 
         const std::optional<int64_t> count{count_.constant_value(tc)};
 
+        if (count) {
+            src_.assert_count_in_bounds(tc, count_.tok(), *count);
+            dst_.assert_count_in_bounds(tc, count_.tok(), *count);
+        }
+
         // a negative count keeps the loop so '--checks=lower' rejects it at
         // run time, and the overlap check compares the addresses of that loop
         if (count and *count >= 0 and not tc.checks().overlap) {

@@ -1,4 +1,4 @@
 
-0741.baz:6:5: storage size exceeds signed 64-bit range
+0741.baz:7:22: count 9223372036854775807 is past the end of array 'a' of size 8
     array_copy(a, b, 9223372036854775807)
-    ^~~~~~~~~~
+                     ^

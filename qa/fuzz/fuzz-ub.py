@@ -1405,6 +1405,12 @@ def matches(expected, got):
     if (expected[0] == "panic" and "shift" in expected[1]
             and got[0] == "compile" and "shift count must be" in got[1]):
         return True
+    if (expected[0] == "panic" and "division" in expected[1]
+            and got[0] == "compile" and "divisor must not be zero" in got[1]):
+        return True
+    if (expected[0] == "panic" and "bounds" in expected[1]
+            and got[0] == "compile" and "is past the end of array" in got[1]):
+        return True
     if expected[0] == "panic":
         return got[0] == "panic" and got[1] in expected[1]
     if expected[0] == "compile":

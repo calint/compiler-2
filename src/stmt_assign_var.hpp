@@ -114,7 +114,9 @@ class stmt_assign_var final : public statement {
 
                 throw compiler_exception{
                     expr_.tok(),
-                    "source and destination array sizes do not match"};
+                    std::format("destination array size {} does not match "
+                                "source size {}",
+                                var_info.array_len(), src_info.array_len())};
             }
         }
 

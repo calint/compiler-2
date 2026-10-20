@@ -1,4 +1,5 @@
-# x86: a copy whose byte count exceeds the signed 64-bit range
+# x86: a constant count at the signed 64-bit maximum is past the end of the
+# array
 
 func main() {
     var a = i64[8]{}

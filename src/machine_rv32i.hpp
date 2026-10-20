@@ -959,10 +959,9 @@ class machine_rv32i : public machine {
             return;
         }
 
-        if (size_bytes > std::numeric_limits<uint32_t>::max()) {
-            throw compiler_exception{src_loc_tk,
-                                     "copy size exceeds RV32I address range"};
-        }
+        // note: a constant count is within its array, and an array is within
+        //       the 32-bit address range
+        assert(size_bytes <= std::numeric_limits<uint32_t>::max());
 
         // the pointers of a loop advance together, unrolled accesses can
         // follow where each address is within its word

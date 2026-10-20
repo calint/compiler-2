@@ -379,7 +379,11 @@ class Program:
                 count = self.value(e[3], {}).value
                 if count is None or not 0 <= count < BITS[self.t]:
                     raise Reject("constant shift count")
-        # a division by zero panics when the program runs
+            # a constant zero divisor is rejected, a run-time one panics
+            if e[1] in ("/", "%") and self.is_const(e[3]) and \
+                    not self.lenient:
+                if self.value(e[3], {}).value == 0:
+                    raise Reject("constant zero divisor")
         if e[0] == "neg" and self.is_const(e) and not self.lenient:
             self.value(e, {})
         if e[0] == "bin" and e[1] in "+-*" and self.is_const(e) and \

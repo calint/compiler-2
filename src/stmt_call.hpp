@@ -41,7 +41,7 @@
 //   'generic_call'    the instance of a generic function that the call names
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place
-//   'noinline_call'  passes addresses to the body that is emitted once
+//   'noinline_call'   passes addresses to the body that is emitted once
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run

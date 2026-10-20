@@ -312,7 +312,7 @@ class machine_x86_64 final : public machine {
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_name);
 
-            push_allocation(src_loc_tk, register_name, type_ref, false);
+            push_allocation(src_loc_tk, indent, register_name, type_ref, false);
 
             record_scratch_registers(registers_);
 
@@ -1147,7 +1147,8 @@ class machine_x86_64 final : public machine {
         assert(not frame_base_reserved_);
         assert(registers_.scratch_count() == 0);
 
-        push_allocation(token{}, frame_base_register(), default_type(), true);
+        push_allocation(token{}, 0, frame_base_register(), default_type(),
+                        true);
 
         frame_base_reserved_ = true;
     }
@@ -1946,7 +1947,7 @@ class machine_x86_64 final : public machine {
 
         assembler_.label(0, report_label);
 
-        constexpr int newline{10};
+        constexpr int newline{'\n'};
         constexpr int decimal_base{10};
         // the 20 digits of a 64-bit number and a newline, the digits are
         // written backwards before the newline at the end of the buffer
@@ -2440,13 +2441,14 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(indent, op::push, to_argument(src));
     }
 
-    auto push_allocation(const token& src_loc_tk, const std::string_view reg,
-                         const type& type_ref, const bool named) -> void {
+    auto push_allocation(const token& src_loc_tk, const size_t indent,
+                         const std::string_view reg, const type& type_ref,
+                         const bool named) -> void {
 
         registers_.push({
             .index{register_index(reg)},
             .src_loc_tk{src_loc_tk},
-            .indent{},
+            .indent{indent},
             .type_ptr{&type_ref},
             .named{named},
             .frame{current_call_frame()},
@@ -2495,7 +2497,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "allocate named register {}", reg);
 
         if (not registers_.is_unavailable(register_bit(reg))) {
-            push_allocation(src_loc_tk, reg, type_ref, true);
+            push_allocation(src_loc_tk, indent, reg, type_ref, true);
             return;
         }
 

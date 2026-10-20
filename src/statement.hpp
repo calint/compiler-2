@@ -384,8 +384,8 @@ class statement {
     // class methods
     //
 
-    // emits the address of this statement for a bulk operation, 'info' is what
-    // 'toc' resolved it to
+    // the emitter of the address of this statement for a bulk operation,
+    // 'info' is what 'toc' resolved it to
     // nothing is emitted here, the backend calls the returned emitter when it
     // needs the address: the emitter builds it with 'compile_address', which
     // passes it to the backend's 'use' while the scratch registers that built

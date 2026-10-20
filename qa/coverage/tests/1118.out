@@ -1,0 +1,4 @@
+
+1118.baz:5:17: divisor must not be zero
+    var x = n / 0
+                ^

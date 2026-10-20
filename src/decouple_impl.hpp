@@ -339,8 +339,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
             std::ignore = tz.is_next_char_token(',');
 
             throw compiler_exception{
-                tz, std::format("too many fields specified for type '{}'",
-                                tp.name())};
+                tz, std::format("too many fields for type '{}'", tp.name())};
         }
 
         const type_field& tf{flds.at(index)};

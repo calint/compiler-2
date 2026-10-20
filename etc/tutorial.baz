@@ -797,13 +797,16 @@ func checks() {
     # 'upper' and 'lower': run-time indexes inside the array, 'lower' also
     # catches negative indexes
     # '--checks=upper,lower,line' also reports the source line of the failure
-    # a constant index out of bounds is always a compile error
+    # a constant index out of bounds is always a compile error, so is a
+    # constant count of 'array_copy', 'arrays_equal' or 'foo' that passes the
+    # end of the array from the whole array or a constant index
 
     # 'overflow': signed overflow of '+', '-', '*' and unary '-' at the width
     # of the destination, a constant expression that overflows is a compile
     # error and 'i8(a + b)' still wraps
 
-    # 'division': division or remainder by zero and 'MIN / -1'
+    # 'division': division or remainder by zero and 'MIN / -1'; a constant
+    # zero divisor is a compile error also without it
     # 'shift': a shift count below zero or not below the width of the type; a
     # constant count outside the width is a compile error also without it
 

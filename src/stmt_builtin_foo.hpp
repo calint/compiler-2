@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -170,6 +171,10 @@ class stmt_builtin_foo final : public statement {
 
         if (not has_count()) {
             return operand::imm(array_len, tc.builtins().default_type());
+        }
+
+        if (const std::optional<int64_t> count{count_.constant_value(tc)}) {
+            ident_.assert_count_in_bounds(tc, count_.tok(), *count);
         }
 
         machine& x{tc.machine()};

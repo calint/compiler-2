@@ -1,4 +1,4 @@
 
-0731.baz:7:5: copy size exceeds RV32I address range
+0731.baz:7:22: count 2000000000 is past the end of array 'a' of size 8
     array_copy(a, b, 2000000000)
-    ^~~~~~~~~~
+                     ^

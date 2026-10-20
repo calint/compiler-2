@@ -1,0 +1,4 @@
+
+1116.baz:6:12: count 5 is past the end of array 'a' of size 4
+    foo a, 5 {
+           ^

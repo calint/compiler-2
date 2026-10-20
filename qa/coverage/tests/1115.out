@@ -1,0 +1,4 @@
+
+1115.baz:6:35: count 4 from index 1 is past the end of array 'a' of size 4
+    var e = arrays_equal(a[1], b, 4)
+                                  ^

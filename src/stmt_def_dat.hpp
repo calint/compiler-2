@@ -555,12 +555,11 @@ class stmt_def_dat final : public statement {
 
             const size_t count{el.elems.size()};
 
+            // the error is at the element that is too much
             if (el.array_count != 0 and count == el.array_count) {
                 throw compiler_exception{
-                    delim_tk,
-                    std::format("expected '}}' after {} element{} in array of "
-                                "size {}",
-                                count, count == 1 ? "" : "s", el.array_count)};
+                    tz, std::format("too many elements for array of size {}",
+                                    el.array_count)};
             }
 
             el.elem_delims_tk.emplace_back(delim_tk);
@@ -718,8 +717,8 @@ class stmt_def_dat final : public statement {
                 std::ignore = tz.is_next_char_token(',');
 
                 throw compiler_exception{
-                    tz, std::format("too many initializers for type '{}'",
-                                    tp.name())};
+                    tz,
+                    std::format("too many fields for type '{}'", tp.name())};
             }
 
             const type_field& tf{flds.at(index)};
