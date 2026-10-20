@@ -1,7 +1,7 @@
 
-0705.baz:11:5: cannot assign to constant 'k'
-    k = 3
-    ^
+0705.baz:11:9: 'g.y' may share storage with the destination 'v' (both name 'g'), compute the value in a temporary variable first
+    v = g.y + self.x
+        ^
 0705.baz:16:5: called from
-    p.bad()
+    p.bad(g.y)
     ^

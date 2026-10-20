@@ -5,13 +5,13 @@ type point {
     y
 }
 
-let k = 1
+var g = point{1, 2}
 
-func point.bad() {
-    k = 3
+func point.bad(v mut) {
+    v = g.y + self.x
 }
 
 func main() {
     var p = point{1, 2}
-    p.bad()
+    p.bad(g.y)
 }

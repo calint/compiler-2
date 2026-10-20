@@ -1,7 +1,2 @@
-Tue Oct 20 02:19:09 PM +07 2026
-/home/c/w/compiler-2/qa/lint/../../src/machine_rv32i.hpp:387:24: error: visibility of function 'is_stack_bounded' is changed from public in class 'machine' to protected [misc-override-with-different-visibility,-warnings-as-errors]
-  387 |     [[nodiscard]] auto is_stack_bounded() const -> bool override {
-      |                        ^
-/home/c/w/compiler-2/qa/lint/../../src/machine.hpp:622:32: note: function declared here as public
-  622 |     [[nodiscard]] virtual auto is_stack_bounded() const -> bool = 0;
-      |                                ^
+Tue Oct 20 02:23:34 PM +07 2026
+Tue Oct 20 02:24:01 PM +07 2026

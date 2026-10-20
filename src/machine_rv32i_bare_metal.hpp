@@ -83,6 +83,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         exit_used_ = true;
     }
 
+    // no operating system stops a program that overflows the stack
+    [[nodiscard]] auto is_stack_bounded() const -> bool override {
+        return true;
+    }
+
     auto start() -> void override {
         read_used_ = false;
         write_used_ = false;
@@ -129,11 +134,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     auto emit_write_call(const size_t indent) -> void override {
         call_io_routine(indent, write_label_, write_clobbered_);
         write_used_ = true;
-    }
-
-    // no operating system stops a program that overflows the stack
-    [[nodiscard]] auto is_stack_bounded() const -> bool override {
-        return true;
     }
 
     //

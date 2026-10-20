@@ -383,11 +383,6 @@ class machine_rv32i : public machine {
         emit_sector_system_call_routines(read_used, write_used);
     }
 
-    // linux stops a program that overflows the stack
-    [[nodiscard]] auto is_stack_bounded() const -> bool override {
-        return false;
-    }
-
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
 
@@ -1242,6 +1237,11 @@ class machine_rv32i : public machine {
 
     // a load or store adds only an immediate to its base register
     [[nodiscard]] auto has_indexed_addressing() const -> bool override {
+        return false;
+    }
+
+    // linux stops a program that overflows the stack
+    [[nodiscard]] auto is_stack_bounded() const -> bool override {
         return false;
     }
 
