@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "decouple.hpp"
 #include "ident_info.hpp"
 #include "stmt_break.hpp"
@@ -38,7 +38,7 @@ class stmt_block final : public statement {
         set_type(tc.builtins().void_type());
 
         if (is_one_statement() and braces_required) {
-            throw compiler_exception{tz, "expected '{' to begin block"};
+            throw compile_error{tz, "expected '{' to begin block"};
         }
 
         tc.enter_block();
@@ -135,8 +135,8 @@ class stmt_block final : public statement {
         close_brace_tk_ = tz.is_next_char_token('}');
 
         if (not close_brace_tk_.is_empty()) {
-            throw compiler_exception{
-                close_brace_tk_, "unexpected '}' in single statement block"};
+            throw compile_error{close_brace_tk_,
+                                "unexpected '}' in single statement block"};
         }
 
         const token tk{tz.next_token()};
@@ -175,7 +175,7 @@ class stmt_block final : public statement {
             if (tk.text().empty() and not tk.is_string()) {
                 tz.assert_not_at_delimiter();
 
-                throw compiler_exception{tz, "expected '}' to close block"};
+                throw compile_error{tz, "expected '}' to close block"};
             }
 
             statements_.emplace_back(parse_statement(tc, tz, tk));
@@ -192,7 +192,7 @@ class stmt_block final : public statement {
         -> std::unique_ptr<statement> {
 
         if (tk.is_string()) {
-            throw compiler_exception{tk, "expected a statement"};
+            throw compile_error{tk, "expected a statement"};
         }
 
         if (tk.is_text("var") or tk.is_text("let")) {

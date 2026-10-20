@@ -1,9 +1,11 @@
-# x86: the count of an 'array_copy' is computed while 'rcx' is reserved
+# the count of an 'array_copy' is a shift computed before the copy claims its
+# registers, on x86_64 the shift needs 'rcx' which the copy holds
 
 func main() {
-    var a = i8[8]{}
+    var a = i8[]{1, 2, 3, 4, 5, 6, 7, 8}
     var b = i8[8]{}
     var count = 2
     var shift = 1
     array_copy(a, b, count << shift)
+    exit(b[3] + b[4])
 }

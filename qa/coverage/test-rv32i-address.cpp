@@ -149,7 +149,7 @@ auto rejected_with(const action_t& action, const std::string_view text = {})
     -> bool {
     try {
         action();
-    } catch (const compiler_exception& error) {
+    } catch (const compile_error& error) {
         return std::string_view{error.msg}.contains(text);
     }
 
@@ -1290,14 +1290,15 @@ auto check_x86_write_in_program() -> void {
     assert(not main_body.contains("allocate scratch register"));
 }
 
-// a system call inside the arguments of another needs 'rdi' twice, which is
-// rejected instead of overwriting it
-auto check_x86_nested_syscalls_rejected() -> void {
+// a system call inside the arguments of another needs 'rdi' too, so its
+// result is staged in a scratch register before the outer call claims 'rdi'
+auto check_x86_nested_syscalls_staged() -> void {
     for (const std::string_view source :
          {"func main() { var b = i8[1]{} write(1, b, write(1, b, 0)) }",
           "func main() { var b = i8[1]{} exit(write(1, b, 0)) }"}) {
-        assert(rejected_with([&] { std::ignore = compiled_x86_64(source); },
-                             "cannot allocate register rdi"));
+        const std::string assembly{compiled_x86_64(source)};
+
+        assert(assembly.contains("allocate scratch register -> r15"));
     }
 }
 
@@ -4060,7 +4061,7 @@ auto run_host_checks() -> void {
     check_x86_scratch_registers();
     check_x86_syscall_register_saving();
     check_x86_write_in_program();
-    check_x86_nested_syscalls_rejected();
+    check_x86_nested_syscalls_staged();
 
     // 5. instruction shapes
     check_index_scale_support();

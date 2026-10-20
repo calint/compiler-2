@@ -18,7 +18,7 @@
 #include <variant>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "expression.hpp"
 #include "generics.hpp"
@@ -176,10 +176,10 @@ struct generic_call {
         tokenizer scan{tz};
 
         if (scan.is_next_char_token('(').is_empty()) {
-            throw compiler_exception{
-                name_tk, std::format("generic function '{}' needs type "
-                                     "arguments, e.g. '{}<...>'",
-                                     generic_name, name_tk.text())};
+            throw compile_error{name_tk,
+                                std::format("generic function '{}' needs type "
+                                            "arguments, e.g. '{}<...>'",
+                                            generic_name, name_tk.text())};
         }
 
         deduction deduced;
@@ -202,7 +202,7 @@ struct generic_call {
             }
 
             if (arg_type == nullptr) {
-                throw compiler_exception{
+                throw compile_error{
                     name_tk,
                     std::format("cannot deduce '{}' of generic function '{}', "
                                 "write '{}<...>'",
@@ -284,7 +284,7 @@ struct generic_call {
         };
 
         if (arg_tks.size() != param_tks.size()) {
-            throw compiler_exception{
+            throw compile_error{
                 name_tk,
                 std::format("generic function '{}' takes {} type argument(s), "
                             "got {}",
@@ -328,7 +328,7 @@ struct call_site {
 
     // the error was found inside the inlined body, unless it is in the call
     // itself where the call is already the error location
-    auto add_call_frame(compiler_exception& e) const -> void {
+    auto add_call_frame(compile_error& e) const -> void {
         if (is_inside_call(e)) {
             return;
         }
@@ -371,10 +371,10 @@ struct call_site {
         // a noinline result needs a memory destination, not the register
         // the conversion computes into
         if (not func.is_inlined()) {
-            throw compiler_exception{dst.error_token(tk), message};
+            throw compile_error{dst.error_token(tk), message};
         }
 
-        throw compiler_exception{
+        throw compile_error{
             dst.error_token(tk),
             std::format("{}, use '{}(...)'", message, dst.type_ref().name()),
         };
@@ -385,11 +385,11 @@ struct call_site {
                            const stmt_def_func& func) const -> void {
 
         if (func.returns() and dst.is_empty()) {
-            throw compiler_exception{tk, "return value is discarded"};
+            throw compile_error{tk, "return value is discarded"};
         }
 
         if (not func.returns() and not dst.is_empty()) {
-            throw compiler_exception{tk, "function does not return a value"};
+            throw compile_error{tk, "function does not return a value"};
         }
     }
 
@@ -446,15 +446,14 @@ struct call_site {
                                   const stmt_def_func_param& param,
                                   const ident_info& info) -> void {
 
-        throw compiler_exception{
+        throw compile_error{
             arg.tok(),
             std::format("parameter '{}': required '{}', got '{}'", param.name(),
                         param.get_type().name(), info.type_ref().name())};
     }
 
   private:
-    [[nodiscard]] auto is_inside_call(const compiler_exception& e) const
-        -> bool {
+    [[nodiscard]] auto is_inside_call(const compile_error& e) const -> bool {
 
         // note: a recursive call is checked inside its own body, so an error
         //       can be located after the call
@@ -981,7 +980,7 @@ class inline_call {
         };
 
         if (is_reference and not arg.get_unary_ops().is_empty()) {
-            throw compiler_exception{
+            throw compile_error{
                 arg.tok(),
                 "unary operators on reference arguments are unsupported"};
         }
@@ -1337,7 +1336,7 @@ class noinline_call {
             tc.check_only([&] -> void {
                 dry_run.compile_with_aliases(tc, indent, dst, func, arguments);
             });
-        } catch (compiler_exception& e) {
+        } catch (compile_error& e) {
             call_.add_call_frame(e);
             throw;
         }
@@ -1799,7 +1798,7 @@ class stmt_call : public expression {
         -> void override {
 
         if (not tc.scopes().is_in_func()) {
-            throw compiler_exception{
+            throw compile_error{
                 tok(), "a global variable cannot be initialized with a call"};
         }
 
@@ -1827,7 +1826,7 @@ class stmt_call : public expression {
         // an error found in the inlined body reports where it was called from
         try {
             inline_call{call}.compile(tc, indent, dst, func);
-        } catch (compiler_exception& e) {
+        } catch (compile_error& e) {
             call.add_call_frame(e);
             throw;
         }
@@ -1890,7 +1889,7 @@ class stmt_call : public expression {
             // an element would give the parameter the whole array's
             // length, pass the array and a start index instead
             if (not is_array_arg) {
-                throw compiler_exception{
+                throw compile_error{
                     arg.tok(), std::format("parameter {} requires an array",
                                            index + 1 - first_argument_index())};
                 // note: +1 because parameters are numbered from 1
@@ -1933,7 +1932,7 @@ class stmt_call : public expression {
         }
 
         if (is_method() and index == 0) {
-            throw compiler_exception{
+            throw compile_error{
                 arg.tok(),
                 std::format("read-only '{}' cannot be the receiver of 'mut' "
                             "method '{}'{}",
@@ -1941,11 +1940,11 @@ class stmt_call : public expression {
                             read_only_hint(info))};
         }
 
-        throw compiler_exception{
-            arg.tok(),
-            std::format("read-only '{}' cannot be passed to a "
-                        "'mut' parameter{}",
-                        arg.name_or_literal(), read_only_hint(info))};
+        throw compile_error{arg.tok(),
+                            std::format("read-only '{}' cannot be passed to a "
+                                        "'mut' parameter{}",
+                                        arg.name_or_literal(),
+                                        read_only_hint(info))};
     }
 
     // an inlined call compiles its body in place, so nesting is limited
@@ -1957,7 +1956,7 @@ class stmt_call : public expression {
         constexpr size_t max_inlined_nesting{64};
 
         if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
-            throw compiler_exception{
+            throw compile_error{
                 tok(), std::format("recursion of inlined function '{}' does "
                                    "not end at compile time, declare it "
                                    "'noinline'",
@@ -1968,7 +1967,7 @@ class stmt_call : public expression {
         constexpr size_t max_frame_count{256};
 
         if (tc.scopes().frames().size() >= max_frame_count) {
-            throw compiler_exception{
+            throw compile_error{
                 tok(), std::format("inlined calls are nested too deep, the "
                                    "limit is {} levels, declare a function "
                                    "'noinline'",
@@ -1982,16 +1981,16 @@ class stmt_call : public expression {
 
         // a constructor has no receiver, it builds its value
         if (func.is_constructor()) {
-            throw compiler_exception{
-                tok(), std::format("'{}' is a constructor, call it as "
-                                   "'{}(...)'",
-                                   func_name_, func_name_)};
+            throw compile_error{tok(),
+                                std::format("'{}' is a constructor, call it as "
+                                            "'{}(...)'",
+                                            func_name_, func_name_)};
         }
 
         // only an element of an array can be the receiver, 'a[1].f()' but not
         // 'a.f()'
         if (receiver.is_array()) {
-            throw compiler_exception{
+            throw compile_error{
                 receiver.first_token(),
                 std::format("receiver of method '{}' cannot be an array",
                             func_name_)};
@@ -2063,9 +2062,9 @@ class stmt_call : public expression {
             return;
         }
 
-        throw compiler_exception{tz, std::format("'{}' takes {} argument{}",
-                                                 func_name_, param_count,
-                                                 param_count == 1 ? "" : "s")};
+        throw compile_error{tz, std::format("'{}' takes {} argument{}",
+                                            func_name_, param_count,
+                                            param_count == 1 ? "" : "s")};
     }
 
     // an argument that names the storage of an earlier one, unless both
@@ -2085,7 +2084,7 @@ class stmt_call : public expression {
                 continue;
             }
 
-            throw compiler_exception{
+            throw compile_error{
                 arg.tok(),
                 std::format("{} '{}' may share storage with {} '{}' "
                             "(both name '{}'), {}",
@@ -2106,7 +2105,7 @@ class stmt_call : public expression {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             args_.at(index).tok(),
             std::format("{} '{}' may share storage with the "
                         "result destination '{}' (both name '{}'), {}",
@@ -2124,8 +2123,7 @@ class stmt_call : public expression {
             return;
         }
 
-        throw compiler_exception{tz,
-                                 std::format("expected '(' after {}", what)};
+        throw compile_error{tz, std::format("expected '(' after {}", what)};
     }
 
     // the receiver of a method is written before the name
@@ -2140,15 +2138,14 @@ class stmt_call : public expression {
         -> const stmt_def_func& {
 
         if (constructor_name_tk_.text().empty()) {
-            throw compiler_exception{tz, "expected constructor name after '.'"};
+            throw compile_error{tz, "expected constructor name after '.'"};
         }
 
         if (not tc.is_func(func_name_)) {
-            throw compiler_exception{
-                constructor_name_tk_,
-                std::format("type '{}' has no constructor '{}'",
-                            type_description(tc, tok()),
-                            constructor_name_tk_.text())};
+            throw compile_error{constructor_name_tk_,
+                                std::format("type '{}' has no constructor '{}'",
+                                            type_description(tc, tok()),
+                                            constructor_name_tk_.text())};
         }
 
         const stmt_def_func& func{
@@ -2156,7 +2153,7 @@ class stmt_call : public expression {
         };
 
         if (not func.is_constructor()) {
-            throw compiler_exception{
+            throw compile_error{
                 constructor_name_tk_,
                 std::format("'{}' is a method, call it on a value of type '{}'",
                             func_name_, tok().text())};
@@ -2250,8 +2247,8 @@ class stmt_call : public expression {
 
             if (not close_paren_tk_.is_empty()) {
                 if (expect_arg) {
-                    throw compiler_exception{close_paren_tk_,
-                                             "expected argument after ','"};
+                    throw compile_error{close_paren_tk_,
+                                        "expected argument after ','"};
                 }
 
                 return;
@@ -2351,9 +2348,9 @@ class stmt_call : public expression {
                                              const stmt_def_func_param& param,
                                              const size_t index) const -> void {
 
-        throw compiler_exception{tz, std::format("expected {} ('{}')",
-                                                 describe_argument(index),
-                                                 param.name())};
+        throw compile_error{tz, std::format("expected {} ('{}')",
+                                            describe_argument(index),
+                                            param.name())};
     }
 
     //

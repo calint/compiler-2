@@ -65,7 +65,7 @@ class stmt_builtin_io final : public stmt_call {
             assert_sector_function_call(tc);
             set_type(tc.builtins().void_type());
         } else if (argument_count() < 2 or argument_count() > 4) {
-            throw compiler_exception{tok(), "expected 2 to 4 arguments"};
+            throw compile_error{tok(), "expected 2 to 4 arguments"};
         }
 
         // 'read' and 'sector_read' fill the buffer, the second argument
@@ -96,13 +96,17 @@ class stmt_builtin_io final : public stmt_call {
             x.registers_for_builtin_function(builtin_function()),
         };
 
+        std::vector<operand> staged_registers;
+
         const std::vector<operand> args{
-            compile_array_arguments(tc, indent, registers.arguments),
+            compile_array_arguments(tc, indent, registers.arguments,
+                                    staged_registers),
         };
 
         if (is_sector_function()) {
             emit_sector_call(x, indent, args);
             x.free_named_registers(tok(), indent, args);
+            x.free_scratch_registers(tok(), indent, staged_registers);
             return;
         }
 
@@ -132,6 +136,7 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         x.free_named_registers(tok(), indent, args);
+        x.free_scratch_registers(tok(), indent, staged_registers);
     }
 
   private:
@@ -141,7 +146,7 @@ class stmt_builtin_io final : public stmt_call {
 
         // the start has one spelling, the last argument
         if (buffer.is_array_element()) {
-            throw compiler_exception{
+            throw compile_error{
                 buffer.tok(),
                 std::format("pass the array and the start as {} argument, "
                             "e.g. '{}'",
@@ -157,7 +162,7 @@ class stmt_builtin_io final : public stmt_call {
             }
         }
 
-        throw compiler_exception{buffer.tok(), "argument 2 must be an array"};
+        throw compile_error{buffer.tok(), "argument 2 must be an array"};
     }
 
     // a sector is a whole number of elements and fits in the array
@@ -173,7 +178,7 @@ class stmt_builtin_io final : public stmt_call {
         const statement& buffer{argument(1)};
 
         if (sector_size_bytes % element_size_bytes != 0) {
-            throw compiler_exception{
+            throw compile_error{
                 buffer.tok(),
                 std::format("the element size {} B does not divide the "
                             "sector size {} B",
@@ -185,7 +190,7 @@ class stmt_builtin_io final : public stmt_call {
         };
 
         if (buffer_size_bytes < sector_size_bytes) {
-            throw compiler_exception{
+            throw compile_error{
                 buffer.tok(),
                 std::format("the array of {} B is smaller than a sector of "
                             "{} B",
@@ -198,11 +203,11 @@ class stmt_builtin_io final : public stmt_call {
         const machine& x{tc.machine()};
 
         if (x.sector_size_bytes() == 0) {
-            throw compiler_exception{tok(), "the target has no sd card"};
+            throw compile_error{tok(), "the target has no sd card"};
         }
 
         if (argument_count() < 2 or argument_count() > 3) {
-            throw compiler_exception{tok(), "expected 2 or 3 arguments"};
+            throw compile_error{tok(), "expected 2 or 3 arguments"};
         }
     }
 
@@ -210,13 +215,32 @@ class stmt_builtin_io final : public stmt_call {
         return function_info().function;
     }
 
-    // the count and start are in elements, the byte count is computed last
-    [[nodiscard]] auto compile_array_arguments(
-        toc& tc, const size_t indent,
-        const std::span<const std::string_view> registers) const
+    // the count and start are in elements, the byte count is computed last;
+    // the computed arguments are staged before the fixed registers are
+    // claimed, see 'staged_value'
+    [[nodiscard]] auto
+    compile_array_arguments(toc& tc, const size_t indent,
+                            const std::span<const std::string_view> registers,
+                            std::vector<operand>& staged_registers) const
         -> std::vector<operand> {
 
         assert_array_buffer(tc);
+
+        const staged_value staged_descriptor{tc, indent, argument(0),
+                                             staged_registers};
+
+        std::optional<staged_value> staged_count;
+
+        if (has_count()) {
+            staged_count.emplace(tc, indent, argument(2), staged_registers);
+        }
+
+        std::optional<staged_value> staged_start;
+
+        if (has_start()) {
+            staged_start.emplace(tc, indent, argument(argument_count() - 1),
+                                 staged_registers);
+        }
 
         machine& x{tc.machine()};
 
@@ -234,16 +258,17 @@ class stmt_builtin_io final : public stmt_call {
         const operand& buffer_reg{args.at(1)};
         const operand& count{args.at(2)};
 
-        argument(0).compile(tc, indent, destination::of_register(descriptor));
+        staged_descriptor.load(tc, indent, descriptor);
 
         const ident_info buffer_info{tc.make_ident_info(argument(1))};
 
-        compile_count(tc, indent, count, buffer_info);
+        compile_count(tc, indent, count, buffer_info, staged_count);
 
         operand start;
 
-        if (has_start()) {
-            start = compile_start(tc, indent, count, buffer_info);
+        if (staged_start) {
+            start =
+                compile_start(tc, indent, count, buffer_info, *staged_start);
         }
 
         // a start is checked with the start, a bare count by 'compile_lea'
@@ -291,10 +316,12 @@ class stmt_builtin_io final : public stmt_call {
     // without a count the whole array is transferred, a sector function
     // transfers the elements of one sector
     auto compile_count(toc& tc, const size_t indent, const operand& count,
-                       const ident_info& buffer_info) const -> void {
+                       const ident_info& buffer_info,
+                       const std::optional<staged_value>& staged_count) const
+        -> void {
 
-        if (has_count()) {
-            argument(2).compile(tc, indent, destination::of_register(count));
+        if (staged_count) {
+            staged_count->load(tc, indent, count);
             return;
         }
 
@@ -313,10 +340,12 @@ class stmt_builtin_io final : public stmt_call {
                      operand::imm(element_count, tc.builtins().default_type()));
     }
 
-    // the start register stays allocated for the caller
+    // the start register stays allocated for the caller, a staged start is
+    // copied into it since the staged register is freed last
     [[nodiscard]] auto compile_start(toc& tc, const size_t indent,
                                      const operand& count,
-                                     const ident_info& buffer_info) const
+                                     const ident_info& buffer_info,
+                                     const staged_value& staged_start) const
         -> operand {
 
         machine& x{tc.machine()};
@@ -328,7 +357,7 @@ class stmt_builtin_io final : public stmt_call {
                                      tc.builtins().default_type()),
         };
 
-        start_arg.compile(tc, indent, destination::of_register(start));
+        staged_start.load(tc, indent, start);
 
         x.check_bounds(
             start_arg.tok(), indent,

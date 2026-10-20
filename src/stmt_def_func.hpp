@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "generics.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -133,7 +133,7 @@ struct func_head {
         };
 
         if (receiver_type.is_builtin()) {
-            throw compiler_exception{
+            throw compile_error{
                 name_tk, std::format("methods on built-in type '{}' are not "
                                      "supported",
                                      receiver_type.name())};
@@ -142,7 +142,7 @@ struct func_head {
         method_name_tk = tz.next_token();
 
         if (method_name_tk.text().empty()) {
-            throw compiler_exception{tz, "expected method name after '.'"};
+            throw compile_error{tz, "expected method name after '.'"};
         }
 
         toc::assert_valid_name(method_name_tk);
@@ -197,7 +197,7 @@ struct func_head {
 
         for (const generic_param& param : generic_param::parse(tz)) {
             if (not param.is_type) {
-                throw compiler_exception{
+                throw compile_error{
                     param.name_tk,
                     std::format("generic parameter '{}' of a function must "
                                 "have the kind 'type', e.g. '{} type'",
@@ -625,13 +625,13 @@ class stmt_def_func final : public statement {
         }
 
         if (is_constructor()) {
-            throw compiler_exception{
+            throw compile_error{
                 head_.mut_tk,
                 "a constructor builds 'self', 'mut' is not needed"};
         }
 
-        throw compiler_exception{head_.mut_tk,
-                                 "'mut' requires a method 'type.name'"};
+        throw compile_error{head_.mut_tk,
+                            "'mut' requires a method 'type.name'"};
     }
 
     // the function scope is established before the body is parsed, its
@@ -713,7 +713,7 @@ class stmt_def_func final : public statement {
     // '(parameters) [result]', then the calls after it know the function
     auto parse_signature(toc& tc, tokenizer& tz) -> void {
         if (head_.open_paren_tk.is_empty()) {
-            throw compiler_exception{tz, "expected '(' after function name"};
+            throw compile_error{tz, "expected '(' after function name"};
         }
 
         parse_params(tc, tz);
@@ -742,13 +742,13 @@ class stmt_def_func final : public statement {
                                 const token& type_tk) -> void {
 
         if (head_.method_dot_tk.is_empty()) {
-            throw compiler_exception{
+            throw compile_error{
                 self_tk, "result 'self' requires a constructor 'type.name'"};
         }
 
         // one spelling, the type is already named before the '.'
         if (not type_tk.is_empty()) {
-            throw compiler_exception{
+            throw compile_error{
                 type_tk, "result 'self' has the type of the constructor"};
         }
 
@@ -867,7 +867,7 @@ class func_instantiator final {
         // a constructor is called as 'point.at(...)', there is no place for
         // type arguments
         if (types.result.is_self()) {
-            throw compiler_exception{
+            throw compile_error{
                 types.result.name_tk,
                 std::format("constructor '{}' cannot have type parameters",
                             report_name)};
@@ -934,7 +934,7 @@ class func_instantiator final {
         // an error in the instance reports the call that needed it
         try {
             parse_func_instance(tc, generic, name, type_args);
-        } catch (compiler_exception& e) {
+        } catch (compile_error& e) {
             e.add_call_frame(call_tk, name);
             throw;
         }
@@ -1003,7 +1003,7 @@ class func_instantiator final {
 
         try {
             parse_method_instance(tc, method, receiver);
-        } catch (compiler_exception& e) {
+        } catch (compile_error& e) {
             receiver.add_frames_to(e);
             throw;
         }

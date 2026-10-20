@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "constant_arith.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
@@ -113,7 +113,7 @@ class stmt_identifier final : public statement {
         : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
 
         if (tk.text().empty() or tk.is_string()) {
-            throw compiler_exception{tz, "expected an identifier"};
+            throw compile_error{tz, "expected an identifier"};
         }
 
         token src_loc_tk{tk};
@@ -349,8 +349,8 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compiler_exception{first_token(),
-                                 std::format("{} must be an array", what)};
+        throw compile_error{first_token(),
+                            std::format("{} must be an array", what)};
     }
 
     // a constant count of a bulk operation that starts at this path is known
@@ -361,8 +361,8 @@ class stmt_identifier final : public statement {
                                 const int64_t count) const -> void {
 
         if (count < 0) {
-            throw compiler_exception{
-                count_tk, std::format("count {} is negative", count)};
+            throw compile_error{count_tk,
+                                std::format("count {} is negative", count)};
         }
 
         const std::optional<int64_t> start{constant_start_index(tc)};
@@ -393,7 +393,7 @@ class stmt_identifier final : public statement {
                                : std::string{},
         };
 
-        throw compiler_exception{
+        throw compile_error{
             count_tk,
             std::format("count {}{} is past the end of array '{}' of "
                         "size {}",
@@ -479,7 +479,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             first_token(),
             std::format("constant '{}' does not fit '{}', use '{}(...)'",
                         statement::trimmed_source(*this), dst_type.name(),
@@ -498,7 +498,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("array '{}' must be indexed", path_as_string_)};
     }
@@ -518,7 +518,7 @@ class stmt_identifier final : public statement {
         if (tz.peek_char_after_whitespace() == '[' and
             not cur_ident_info.is_array()) {
 
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("cannot index non-array '{}'", path_as_string_)};
         }
@@ -540,7 +540,7 @@ class stmt_identifier final : public statement {
 
         const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
 
-        throw compiler_exception{
+        throw compile_error{
             name_tk, std::format("method '{}' not found in type '{}'",
                                  name_tk.text(), info.type_ref().name())};
     }
@@ -826,7 +826,7 @@ class stmt_identifier final : public statement {
         if (not fits_address_offset(address.displacement(), addend_elements,
                                     type_size)) {
 
-            throw compiler_exception{
+            throw compile_error{
                 cur_elem.array_index_expr->tok(),
                 "index offset is out of the range of addresses"};
         }
@@ -864,7 +864,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             elem.array_index_expr->tok(),
             std::format("index {} is out of bounds for array '{}' of size {}",
                         index, elem.name_tk.text(), array_info.array_len())};

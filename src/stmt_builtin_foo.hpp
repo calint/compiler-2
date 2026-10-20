@@ -10,7 +10,7 @@
 #include <tuple>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "statement.hpp"
@@ -36,7 +36,7 @@ class stmt_builtin_foo final : public statement {
         ident_ = {tc, {}, tz.next_token(), tz};
 
         if (not ident_.is_array()) {
-            throw compiler_exception{ident_.tok(), "expected an array"};
+            throw compile_error{ident_.tok(), "expected an array"};
         }
 
         // e.g. 'foo arr, len' visits the first 'len' elements

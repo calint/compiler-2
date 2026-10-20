@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "token.hpp"
@@ -526,9 +526,9 @@ class statement {
             return;
         }
 
-        throw compiler_exception{
-            src_loc_tk, std::format("cannot {} read-only '{}'{}", action, name,
-                                    read_only_hint(info))};
+        throw compile_error{src_loc_tk,
+                            std::format("cannot {} read-only '{}'{}", action,
+                                        name, read_only_hint(info))};
     }
 
     // shared by 'dat' and 'var', 'keyword' names the declaration in the
@@ -586,21 +586,20 @@ class statement {
 
         // arrays of zero length are not allowed
         if (size_bytes == 0 and array_count == 0) {
-            throw compiler_exception{
+            throw compile_error{
                 string_tk, "an empty string is not valid for an array with "
                            "unspecified size"};
         }
 
         if (array_count != 0 and size_bytes > array_count) {
-            throw compiler_exception{
+            throw compile_error{
                 string_tk, std::format("string size {} overflows array size {}",
                                        size_bytes, array_count)};
         }
 
         if (not element_type.is_same(string_element_type)) {
-            throw compiler_exception{string_tk,
-                                     "only arrays of type 'i8' can be "
-                                     "initialized with strings"};
+            throw compile_error{string_tk, "only arrays of type 'i8' can be "
+                                           "initialized with strings"};
         }
 
         if (array_count == 0) {
@@ -615,7 +614,7 @@ class statement {
                                             const type& src_type,
                                             const type& dst_type) -> void {
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("'{}' of type '{}' is narrowed to '{}', use '{}(...)'",
                         source, src_type.name(), dst_type.name(),
@@ -626,7 +625,7 @@ class statement {
                                                  const std::string_view var)
         -> void {
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk, std::format("use of uninitialized variable '{}'", var)};
     }
 };

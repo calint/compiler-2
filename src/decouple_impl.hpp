@@ -22,7 +22,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expr_type.hpp"
@@ -92,7 +92,7 @@ inline auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
         return;
     }
 
-    throw compiler_exception{
+    throw compile_error{
         tk, std::format("function '{}' is not generic, it takes no type "
                         "arguments",
                         tk.text())};
@@ -103,8 +103,7 @@ inline auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
     -> std::unique_ptr<statement> {
 
     if (call->get_type().is_same(tc.builtins().void_type())) {
-        throw compiler_exception{call->tok(),
-                                 "function does not return a value"};
+        throw compile_error{call->tok(), "function does not return a value"};
     }
 
     return call;
@@ -196,7 +195,7 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
             tc, tz, std::move(*parsed.identifier), equals_tk);
     }
 
-    throw compiler_exception{
+    throw compile_error{
         tz, "unexpected character; expected '=' for assignment or '(' "
             "for function call"};
 }
@@ -211,13 +210,13 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
 
     // array destinations parse strings in 'expr_any'
     if (tk.is_string()) {
-        throw compiler_exception{
+        throw compile_error{
             tk, "a string can only be assigned to an array of type 'i8'"};
     }
 
     if (tk.text().empty()) {
-        throw compiler_exception{
-            tk, "expected constant, identifier, or function call"};
+        throw compile_error{tk,
+                            "expected constant, identifier, or function call"};
     }
 
     if (tk.is_text("read") or tk.is_text("write")) {
@@ -230,7 +229,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
          tk.is_text("sector_write")) and
         tz.peek_char_after_whitespace() == '(') {
 
-        throw compiler_exception{tk, "function does not return a value"};
+        throw compile_error{tk, "function does not return a value"};
     }
 
     if (tk.is_text("array_length")) {
@@ -286,7 +285,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // an array is copied from an array, a value of its element type is not one
     if (is_array_destination_ and is_typed_literal) {
-        throw compiler_exception{
+        throw compile_error{
             tok(), std::format("expected an array, got an instance of '{}'",
                                tok().text())};
     }
@@ -295,9 +294,8 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     if (is_typed_literal and
         not tc.get_type_or_throw(tok(), tok().text()).is_same(tp)) {
 
-        throw compiler_exception{tok(),
-                                 std::format("expected type '{}', got '{}'",
-                                             tp.name(), tok().text())};
+        throw compile_error{tok(), std::format("expected type '{}', got '{}'",
+                                               tp.name(), tok().text())};
     }
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
@@ -338,7 +336,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
             // e.g. the 'z' of '{x, y, z}' for a type with two fields
             std::ignore = tz.is_next_char_token(',');
 
-            throw compiler_exception{
+            throw compile_error{
                 tz, std::format("too many fields for type '{}'", tp.name())};
         }
 
@@ -393,7 +391,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
 
     if (not tp.is_same(src_info.type_ref())) {
-        throw compiler_exception{
+        throw compile_error{
             stmt_ident_->last_token(),
             std::format("expected type '{}', got '{}'", tp.name(),
                         src_info.type_ref().name()),
@@ -404,17 +402,17 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
 inline auto expr_type::assert_call_type(const type& tp) const -> void {
     // a function returns one value, not an array
     if (is_array_destination_) {
-        throw compiler_exception{
-            tok(), "an array cannot be assigned the result of a call"};
+        throw compile_error{tok(),
+                            "an array cannot be assigned the result of a call"};
     }
 
     if (tp.is_same(stmt_call_->get_type())) {
         return;
     }
 
-    throw compiler_exception{
-        tok(), std::format("expected return type '{}', got '{}'", tp.name(),
-                           stmt_call_->get_type().name())};
+    throw compile_error{tok(),
+                        std::format("expected return type '{}', got '{}'",
+                                    tp.name(), stmt_call_->get_type().name())};
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {
@@ -617,11 +615,11 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     // the copy size comes from the source, a whole array would overflow
     if (src_info.is_array() and not is_array_destination_) {
-        throw compiler_exception{tok(), "source must not be an array"};
+        throw compile_error{tok(), "source must not be an array"};
     }
 
     if (is_array_destination_ and not src_info.is_array()) {
-        throw compiler_exception{tok(), "source must be an array"};
+        throw compile_error{tok(), "source must be an array"};
     }
 
     std::vector<operand> allocated_registers;

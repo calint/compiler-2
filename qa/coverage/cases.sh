@@ -2247,8 +2247,9 @@ SRC=0725 && COMPERR
 # x86: a division needs 'rdx' while the iterator of a loop holds it
 if [[ $MACHINE == x86_64 ]]; then SRC=0726 && COMPERR; fi
 
-# x86: the count of an 'array_copy' is computed while 'rcx' is reserved
-if [[ $MACHINE == x86_64 ]]; then SRC=0727 && COMPERR; fi
+# the count of an 'array_copy' is a shift computed before the copy claims its
+# registers, on x86_64 the shift needs 'rcx' which the copy holds
+SRC=0727 && EXP=4 && RUN
 
 # a system call inside nested loops keeps the loop register 'r11' of x86
 SRC=0728 && DIFF
@@ -3496,3 +3497,14 @@ SRC=1122 && COMPERR
 
 # a hexadecimal prefix without digits is a malformed number
 SRC=1123 && COMPERR
+
+# a computed count or start of 'write' is computed before the registers of the
+# call are claimed, e.g. a division on x86_64 needs 'rdx'
+SRC=1124 && DIFF
+
+# a call that writes is an argument of 'write' and of 'exit'
+SRC=1125 && DIFF
+
+# a count from a call that copies arrays, with the overlap check the copy is a
+# loop at run time
+SRC=1126 && OPTS="--vars=0x40000 --checks=noub --reproduce-source" EXP=0 RUN

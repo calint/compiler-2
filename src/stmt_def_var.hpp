@@ -9,7 +9,7 @@
 #include <string_view>
 #include <utility>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "ident_info.hpp"
@@ -149,9 +149,9 @@ class stmt_def_var final : public statement {
 
         // e.g. an unsized array parameter
         if (info.array_len() == 0) {
-            throw compiler_exception{
-                tk, std::format("size of array '{}' is not known",
-                                arith.name_or_literal())};
+            throw compile_error{tk,
+                                std::format("size of array '{}' is not known",
+                                            arith.name_or_literal())};
         }
 
         is_array_ = true;
@@ -190,7 +190,7 @@ class stmt_def_var final : public statement {
 
         if (array_count_ == 0) {
             // e.g. the '[' of 'var a = i8[]{}', a string has no bracket
-            throw compiler_exception{
+            throw compile_error{
                 bracket_tk.is_empty() ? name_tk_ : bracket_tk,
                 "an empty array needs a size",
             };

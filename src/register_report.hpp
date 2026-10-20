@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "machine.hpp"
 #include "register_pool.hpp"
 #include "token.hpp"
@@ -224,9 +224,9 @@ class register_reporter final {
     // registers are used by each frame and what a 'noinline' frame would give
     [[nodiscard]] auto make_error(const token& src_loc_tk, std::string message,
                                   const register_pool& pool) const
-        -> compiler_exception {
+        -> compile_error {
 
-        compiler_exception error{src_loc_tk, std::move(message)};
+        compile_error error{src_loc_tk, std::move(message)};
 
         // the lines of the message of an error are not longer than this
         constexpr size_t max_detail_width{80};
@@ -508,7 +508,7 @@ class register_reporter final {
 inline auto machine::register_error(const token& src_loc_tk,
                                     std::string message,
                                     const register_pool& pool) const
-    -> compiler_exception {
+    -> compile_error {
 
     return register_reporter{*this, trace_}.make_error(
         src_loc_tk, std::move(message), pool);

@@ -1075,7 +1075,7 @@ Cost: every change rebuilds everything.
 
 ### 7.8 The first error ends the compile
 
-An error is a 'compiler_exception' at the token that caused it, with the
+An error is a 'compile_error' at the token that caused it, with the
 inlined calls and generic instances that led there. No code recovers from an
 error, so no error leads to a second, wrong one.
 

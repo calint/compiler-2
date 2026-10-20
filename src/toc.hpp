@@ -21,7 +21,7 @@
 #include <variant>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "constant_parser.hpp"
 #include "generics.hpp"
 #include "ident_info.hpp"
@@ -58,7 +58,9 @@
 //                   'tc.scopes().is_alias(name)'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
-//   'make_count_emitter' compiles the count of a bulk operation
+//   'staged_value'  an argument of a built-in computed before the built-in
+//                   claims its fixed registers
+//   'make_count_emitter' loads the count of a bulk operation
 //
 
 class stmt_def_dat;
@@ -1236,7 +1238,7 @@ class scope_stack final {
             }
 
             if (frm.is_func()) {
-                throw compiler_exception{src_loc_tk, "not in a loop"};
+                throw compile_error{src_loc_tk, "not in a loop"};
             }
         }
 
@@ -1555,7 +1557,7 @@ class storage_layout final {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("data and variables of {} B exceed the {} B that the "
                         "target addresses",
@@ -1573,7 +1575,7 @@ class storage_layout final {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("variable '{}' would overflow allocated vars section",
                         name)};
@@ -1742,7 +1744,7 @@ class ident_resolver final {
         }
 
         if (generics_.get().has_type(ident)) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("generic type '{}' is not a value, name an "
                             "instance first, e.g. 'type str = {}<...>'",
@@ -1750,7 +1752,7 @@ class ident_resolver final {
         }
 
         if (generics_.get().has_func(ident)) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("generic function '{}' needs type arguments, "
                             "e.g. '{}<...>'",
@@ -1760,11 +1762,11 @@ class ident_resolver final {
         // a name starts with a letter or '_', so a digit starts a broken
         // number, e.g. '0x' or '12_000'
         if (ident.front() >= '0' and ident.front() <= '9') {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk, std::format("cannot parse constant '{}'", ident)};
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
     }
 
@@ -2001,7 +2003,7 @@ class definition_checks final {
 
         const const_info& c{scopes_.get().back().get_const(name)};
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("constant '{}' already defined in this block at {}",
                         name, where(c.src_loc_tk))};
@@ -2021,7 +2023,7 @@ class definition_checks final {
         if (generics_.get().has_func(name)) {
             const generic_func_info& fn{generics_.get().get_func(name)};
 
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk, std::format("function '{}' already defined at {}",
                                         name, where(fn.src_loc_tk))};
         }
@@ -2036,7 +2038,7 @@ class definition_checks final {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("generic parameter '{}' hides the type '{}' defined "
                         "at {}, use another name",
@@ -2053,9 +2055,9 @@ class definition_checks final {
 
         const var_info& decl_var{scopes_.get().back().get_var_const_ref(name)};
 
-        throw compiler_exception{
-            src_loc_tk, std::format("variable '{}' already declared at {}",
-                                    name, where(decl_var.src_loc_tk))};
+        throw compile_error{src_loc_tk,
+                            std::format("variable '{}' already declared at {}",
+                                        name, where(decl_var.src_loc_tk))};
     }
 
     // a generic type and a type share the namespace of types
@@ -2063,14 +2065,14 @@ class definition_checks final {
                                  const std::string_view name) const -> void {
 
         if (types_.get().has(name)) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("type '{}' already defined at {}", name,
                             where(types_.get().src_loc_tk_of(name)))};
         }
 
         if (generics_.get().has_type(name)) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("type '{}' already defined as a generic type at {}",
                             name,
@@ -2088,7 +2090,7 @@ class definition_checks final {
 
         // a built-in function has no source location
         if (fn.src_loc_tk.at_line() == 0) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("function '{}' is a built-in function", name)};
         }
@@ -2101,7 +2103,7 @@ class definition_checks final {
         if (is_generic and is_existing_generic and
             generic_method != fn.generic_method) {
 
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("generic method '{}' clashes with the generic "
                             "method '{}' defined at {}",
@@ -2110,14 +2112,14 @@ class definition_checks final {
         }
 
         if (is_generic and is_existing_generic) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("generic method '{}' already defined at {}",
                             generic_method, where(fn.src_loc_tk))};
         }
 
         if (is_generic) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("generic method '{}' clashes with the method "
                             "'{}' defined at {}",
@@ -2125,16 +2127,16 @@ class definition_checks final {
         }
 
         if (is_existing_generic) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("method '{}' clashes with the generic method "
                             "'{}' defined at {}",
                             name, fn.generic_method, where(fn.src_loc_tk))};
         }
 
-        throw compiler_exception{
-            src_loc_tk, std::format("function '{}' already defined at {}", name,
-                                    where(fn.src_loc_tk))};
+        throw compile_error{src_loc_tk,
+                            std::format("function '{}' already defined at {}",
+                                        name, where(fn.src_loc_tk))};
     }
 
     [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
@@ -2316,13 +2318,13 @@ class toc final {
 
     auto add_dat(const stmt_def_dat& dat, const dat_extent& extent) -> void {
         if (scopes_.frames().size() != 1) {
-            throw compiler_exception{extent.src_loc_tk,
-                                     "'dat' can only be added in global scope"};
+            throw compile_error{extent.src_loc_tk,
+                                "'dat' can only be added in global scope"};
         }
 
         if (scopes_.front().has_non_dat_var_been_added()) {
-            throw compiler_exception{
-                extent.src_loc_tk, "'dat' can only be added before any 'var'"};
+            throw compile_error{extent.src_loc_tk,
+                                "'dat' can only be added before any 'var'"};
         }
 
         data_.add_dat(dat, extent, machine_.get().data_alignment());
@@ -2333,9 +2335,9 @@ class toc final {
                   std::string generic_method) -> void {
 
         if (name == reserved_names::foo) {
-            throw compiler_exception{src_loc_tk,
-                                     "cannot name function 'foo' because it is "
-                                     "a builtin iterator function"};
+            throw compile_error{src_loc_tk,
+                                "cannot name function 'foo' because it is "
+                                "a builtin iterator function"};
         }
 
         definitions_.assert_function_not_defined(src_loc_tk, name,
@@ -2612,7 +2614,7 @@ class toc final {
     // no token names a missing 'main'
     [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
         if (not funcs_.has(reserved_names::main)) {
-            throw compiler_exception::file_level("function 'main' not found");
+            throw compile_error::file_level("function 'main' not found");
         }
 
         return *funcs_.get(reserved_names::main).def;
@@ -2624,20 +2626,20 @@ class toc final {
 
         if (not types_.has(name)) {
             if (generics_.has_type(name)) {
-                throw compiler_exception{
+                throw compile_error{
                     src_loc_tk,
                     std::format("generic type '{}' is not a type, name an "
                                 "instance first, e.g. 'type str = {}<...>'",
                                 name, name)};
             }
 
-            throw compiler_exception{src_loc_tk,
-                                     std::format("type '{}' not found", name)};
+            throw compile_error{src_loc_tk,
+                                std::format("type '{}' not found", name)};
         }
 
         // note: 'void' is the type of what has no value, it has no size
         if (types_.get(name).is_same(builtins_.void_type())) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk, std::format("'{}' is not a type of a value", name)};
         }
 
@@ -2826,9 +2828,8 @@ class toc final {
             return;
         }
 
-        throw compiler_exception{
-            st.tok(),
-            std::format("array '{}' must be indexed", st.name_or_literal())};
+        throw compile_error{st.tok(), std::format("array '{}' must be indexed",
+                                                  st.name_or_literal())};
     }
 
     // a function named 'not' is read as the operator in every expression,
@@ -2837,7 +2838,7 @@ class toc final {
         assert_valid_name(name_tk);
 
         if (name_tk.is_text("not")) {
-            throw compiler_exception{name_tk, "'not' is reserved"};
+            throw compile_error{name_tk, "'not' is reserved"};
         }
     }
 
@@ -2845,11 +2846,11 @@ class toc final {
     // receiver of a method and the value built by a constructor
     static auto assert_valid_name(const token& name_tk) -> void {
         if (name_tk.text().empty()) {
-            throw compiler_exception{name_tk, "expected a name"};
+            throw compile_error{name_tk, "expected a name"};
         }
 
         if (not is_identifier(name_tk)) {
-            throw compiler_exception{
+            throw compile_error{
                 name_tk,
                 std::format("'{}' is not a valid name, a name starts with a "
                             "letter or '_' and has only letters, digits and "
@@ -2858,16 +2859,15 @@ class toc final {
         }
 
         if (name_tk.is_text(reserved_names::self)) {
-            throw compiler_exception{name_tk, "'self' is reserved"};
+            throw compile_error{name_tk, "'self' is reserved"};
         }
 
         // the value of a name that is a boolean value would be the function
         if (name_tk.is_text(reserved_names::true_value) or
             name_tk.is_text(reserved_names::false_value)) {
 
-            throw compiler_exception{
-                name_tk,
-                std::format("'{}' is a boolean value", name_tk.text())};
+            throw compile_error{name_tk, std::format("'{}' is a boolean value",
+                                                     name_tk.text())};
         }
     }
 
@@ -2886,8 +2886,8 @@ class toc final {
 
         for (const std::string_view word : reserved_words) {
             if (name_tk.is_text(word)) {
-                throw compiler_exception{name_tk,
-                                         std::format("'{}' is reserved", word)};
+                throw compile_error{name_tk,
+                                    std::format("'{}' is reserved", word)};
             }
         }
     }
@@ -2950,8 +2950,8 @@ class toc final {
         -> const func_info& {
 
         if (not funcs_.has(name)) {
-            throw compiler_exception{
-                src_loc_tk, std::format("function '{}' not found", name)};
+            throw compile_error{src_loc_tk,
+                                std::format("function '{}' not found", name)};
         }
 
         return funcs_.get(name);
@@ -2975,7 +2975,7 @@ class toc final {
                                            const token& arg_tk) -> const type& {
 
     if (tc.constant_value_of(arg_tk)) {
-        throw compiler_exception{
+        throw compile_error{
             arg_tk, std::format("generic parameter '{}' of '{}' needs a "
                                 "type, got the constant '{}'",
                                 param_name, generic_name, arg_tk.text())};
@@ -2993,7 +2993,7 @@ class toc final {
     const std::optional<int64_t> value{tc.constant_value_of(arg_tk)};
 
     if (not value) {
-        throw compiler_exception{
+        throw compile_error{
             arg_tk,
             std::format("generic parameter '{}' of '{}' needs a "
                         "constant, got {}'{}'",
@@ -3107,17 +3107,61 @@ class generic_scope final {
     }
 };
 
-// compiles the element count of a bulk operation into the register the machine
-// asks for, the statement must outlive the emitter
+// an argument of a built-in that claims fixed registers, e.g. the count of
+// 'write' in 'rdx' on x86_64: computing a value may need those registers
+// itself, e.g. a division or a call that writes, so a computed value goes to
+// a scratch register before they are claimed; a name or a constant is read
+// into the fixed register directly
+// note: the scratch registers stay allocated in 'staged_registers' until the
+//       caller has freed the fixed registers
+class staged_value final {
+    std::reference_wrapper<const statement> value_;
+    // empty when the value is read where it is
+    operand scratch_;
+
+  public:
+    // the arguments of the built-ins have the default type
+    staged_value(toc& tc, const size_t indent, const statement& value,
+                 std::vector<operand>& staged_registers)
+        : value_{value} {
+
+        if (not value.is_expression()) {
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        scratch_ = x.alloc_scratch_register(value.tok(), indent,
+                                            tc.builtins().default_type());
+
+        staged_registers.push_back(scratch_);
+
+        value.compile(tc, indent, destination::of_register(scratch_));
+    }
+
+    // into the fixed register 'reg'
+    auto load(toc& tc, const size_t indent, const operand& reg) const -> void {
+        const statement& value{value_.get()};
+
+        if (not scratch_.is_empty()) {
+            machine& x{tc.machine()};
+
+            x.copy_value(value.tok(), indent, reg, scratch_);
+
+            return;
+        }
+
+        value.compile(tc, indent, destination::of_register(reg));
+    }
+};
+
+// loads the element count of a bulk operation into the register the machine
+// asks for, the count must outlive the emitter
 [[nodiscard]] inline auto make_count_emitter(toc& tc, const size_t indent,
-                                             const statement& count)
+                                             const staged_value& count)
     -> std::function<void(const operand&)> {
 
     return [&tc, indent, &count](const operand& count_register) -> void {
-        machine& x{tc.machine()};
-
-        x.comment(count.tok(), indent, statement::trimmed_source(count));
-
-        count.compile(tc, indent, destination::of_register(count_register));
+        count.load(tc, indent, count_register);
     };
 }

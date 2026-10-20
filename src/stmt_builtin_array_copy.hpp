@@ -9,7 +9,7 @@
 #include <string_view>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
@@ -34,8 +34,8 @@ class stmt_builtin_array_copy final : public statement {
         : statement{src_loc_tk}, open_paren_tk_{tz.is_next_char_token('(')} {
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{
-                tz, "expected '(', 'from', 'to', 'count', and ')'"};
+            throw compile_error{tz,
+                                "expected '(', 'from', 'to', 'count', and ')'"};
         }
 
         set_type(tc.builtins().void_type());
@@ -93,7 +93,7 @@ class stmt_builtin_array_copy final : public statement {
         const ident_info array_dst_info{tc.make_ident_info(dst_)};
 
         if (not array_src_info.type_ref().is_same(array_dst_info.type_ref())) {
-            throw compiler_exception{
+            throw compile_error{
                 dst_.tok(),
                 std::format("source type '{}' does not match destination "
                             "type '{}'",
@@ -122,8 +122,12 @@ class stmt_builtin_array_copy final : public statement {
             return;
         }
 
+        std::vector<operand> staged_registers;
+
+        const staged_value staged_count{tc, indent, count_, staged_registers};
+
         const std::function<void(const operand&)> emit_count{
-            make_count_emitter(tc, indent, count_),
+            make_count_emitter(tc, indent, staged_count),
         };
 
         const machine::address_emitter emit_src{
@@ -142,6 +146,8 @@ class stmt_builtin_array_copy final : public statement {
                             .dst{emit_dst},
                             .overlap{tc.checks().overlap_options()},
                         });
+
+        x.free_scratch_registers(tok(), indent, staged_registers);
     }
 
     // the copied elements are not tracked, so the destination stays unassigned

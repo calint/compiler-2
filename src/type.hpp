@@ -12,7 +12,7 @@
 #include <string_view>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "operand.hpp"
 #include "token.hpp"
 
@@ -219,7 +219,7 @@ class type final {
             }
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("field '{}' not found in type '{}'", name, name_)};
     }

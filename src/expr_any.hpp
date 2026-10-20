@@ -13,7 +13,7 @@
 #include <variant>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expr_arith.hpp"
 #include "expr_bool.hpp"
 #include "expr_type.hpp"
@@ -91,7 +91,7 @@ class expr_any final : public statement {
         if (open_brace_tk_.is_empty() and not open_bracket_tk_.is_empty()) {
             // e.g. 'var a = i8[4]' is 'i8[4]{}'
             if (not literal_count_const_.has_value()) {
-                throw compiler_exception{
+                throw compile_error{
                     close_bracket_tk_,
                     std::format("an array needs a constant size, e.g. "
                                 "'{}[4]'",
@@ -162,7 +162,7 @@ class expr_any final : public statement {
             const ident_info src_info{tc.make_ident_info(*this)};
 
             if (not src_info.is_array()) {
-                throw compiler_exception{tok(), "source must be an array"};
+                throw compile_error{tok(), "source must be an array"};
             }
         }
 
@@ -181,7 +181,7 @@ class expr_any final : public statement {
 
         // the parser could not check the size of an unsized destination
         if (elements_.size() > array_count) {
-            throw compiler_exception{
+            throw compile_error{
                 element(array_count).tok(),
                 std::format("too many elements for array of size {}",
                             array_count)};
@@ -393,10 +393,9 @@ class expr_any final : public statement {
             return;
         }
 
-        throw compiler_exception{tz,
-                                 std::format("too many elements for array of "
-                                             "size {}",
-                                             array_count_)};
+        throw compile_error{tz, std::format("too many elements for array of "
+                                            "size {}",
+                                            array_count_)};
     }
 
     // constant elements are stored like a string so the backend can pack them
@@ -452,7 +451,7 @@ class expr_any final : public statement {
         const size_t array_count{destination_array_count(dst)};
 
         if (size_bytes > array_count) {
-            throw compiler_exception{
+            throw compile_error{
                 string_tk_,
                 std::format("string size {} overflows array size {}",
                             size_bytes, array_count)};
@@ -599,10 +598,9 @@ class expr_any final : public statement {
         };
 
         if (not literal_type.is_same(tp)) {
-            throw compiler_exception{is_typed ? tk : open_bracket_tk_,
-                                     std::format("expected type '{}', got '{}'",
-                                                 tp.name(),
-                                                 literal_type.name())};
+            throw compile_error{is_typed ? tk : open_bracket_tk_,
+                                std::format("expected type '{}', got '{}'",
+                                            tp.name(), literal_type.name())};
         }
 
         if (is_typed) {
@@ -629,7 +627,7 @@ class expr_any final : public statement {
         }
 
         if (literal_count_const_.value() <= 0) {
-            throw compiler_exception{
+            throw compile_error{
                 literal_count_const_.tok(),
                 "expected a constant array size greater than 0"};
         }

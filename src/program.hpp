@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "assembler.hpp"
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
@@ -309,7 +309,7 @@ class program final {
           tc_{backend, files, builtin_set(), vars_size_bytes, checks} {
 
         if (vars_size_bytes > backend.max_storage_bytes()) {
-            throw compiler_exception::file_level(
+            throw compile_error::file_level(
                 std::format("variable storage of {} B exceeds the {} B that "
                             "the target addresses",
                             vars_size_bytes, backend.max_storage_bytes()));
@@ -410,12 +410,12 @@ class program final {
         }
 
         if (tk.is_text("include")) {
-            throw compiler_exception{
+            throw compile_error{
                 tk, "'include' must be before the definitions of the file"};
         }
 
-        throw compiler_exception{
-            tk, std::format("unexpected keyword '{}'", tk.text())};
+        throw compile_error{tk,
+                            std::format("unexpected keyword '{}'", tk.text())};
     }
 
   private:
@@ -486,7 +486,7 @@ class program final {
         try {
             text = source_files::read_file(path.string());
         } catch (const std::runtime_error& e) {
-            throw compiler_exception{path_tk, e.what()};
+            throw compile_error{path_tk, e.what()};
         }
 
         const size_t file_ix{files_.get().add(path.string(), std::move(text))};
@@ -540,7 +540,7 @@ class program final {
         const token path_tk{tz.next_token()};
 
         if (not path_tk.is_string()) {
-            throw compiler_exception{
+            throw compile_error{
                 path_tk, "expected the file name in quotes after 'include'"};
         }
 
@@ -572,8 +572,8 @@ class program final {
         const stmt_def_func& func_main{tc.get_main_or_throw()};
 
         if (not func_main.is_inlined()) {
-            throw compiler_exception{func_main.noinline_token(),
-                                     "main cannot be declared noinline"};
+            throw compile_error{func_main.noinline_token(),
+                                "main cannot be declared noinline"};
         }
 
         machine& x{tc.machine()};

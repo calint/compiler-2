@@ -10,7 +10,7 @@
 #include <string_view>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "decouple.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
@@ -31,7 +31,7 @@ enum class literal_typing : uint8_t { written, from_destination };
                                           const std::string_view value)
     -> void {
 
-    throw compiler_exception{
+    throw compile_error{
         type_tk, std::format("the destination gives the type '{}', write '{}'",
                              type_name, value)};
 }
@@ -300,7 +300,7 @@ class expr_type final : public statement {
 
                 // a run-time index may or may not refer to the written element
                 if (not dst.is_exact) {
-                    throw compiler_exception{
+                    throw compile_error{
                         src_loc_tk,
                         std::format(
                             "'{}' may have been overwritten in the same "
@@ -308,7 +308,7 @@ class expr_type final : public statement {
                             read_text)};
                 }
 
-                throw compiler_exception{
+                throw compile_error{
                     src_loc_tk,
                     std::format("'{}' is read but has been overwritten in the "
                                 "same statement",
@@ -338,14 +338,14 @@ class expr_type final : public statement {
                                           const ident_info& src_info) -> void {
 
         if (not src_info.is_array()) {
-            throw compiler_exception{src_loc_tk, "source must be an array"};
+            throw compile_error{src_loc_tk, "source must be an array"};
         }
 
         // 'expr_any' validates the source element type before entering here
         assert(fld.type().is_same(src_info.type_ref()));
 
         if (fld.array_count != src_info.array_len()) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("destination array size {} does not match source "
                             "size {}",

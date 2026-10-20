@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "assembler.hpp"
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "operand.hpp"
 #include "register_pool.hpp"
 #include "source_files.hpp"
@@ -838,7 +838,7 @@ class machine {
     [[nodiscard]] auto register_error(const token& src_loc_tk,
                                       std::string message,
                                       const register_pool& pool) const
-        -> compiler_exception;
+        -> compile_error;
 
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none

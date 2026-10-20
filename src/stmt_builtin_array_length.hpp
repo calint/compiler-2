@@ -9,7 +9,7 @@
 #include <string_view>
 #include <utility>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expression.hpp"
 #include "ident_info.hpp"
 #include "stmt_identifier.hpp"
@@ -31,8 +31,7 @@ class stmt_builtin_array_length final : public expression {
         set_type(tc.builtins().default_type());
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{tz,
-                                     "expected '(' followed by an identifier"};
+            throw compile_error{tz, "expected '(' followed by an identifier"};
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
@@ -62,7 +61,7 @@ class stmt_builtin_array_length final : public expression {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         if (not dst.type_ref().is_same(tc.builtins().default_type())) {
-            throw compiler_exception{
+            throw compile_error{
                 dst.error_token(tok()),
                 std::format("destination must be an '{}'",
                             tc.builtins().default_type().name()),
@@ -72,16 +71,16 @@ class stmt_builtin_array_length final : public expression {
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};
 
         if (not src_info.is_var()) {
-            throw compiler_exception{stmt_ident_.first_token(),
-                                     "argument must be a variable"};
+            throw compile_error{stmt_ident_.first_token(),
+                                "argument must be a variable"};
         }
 
         // note: 'folded_constant' folds an array argument, so only a
         //       non-array reaches here
         assert(not src_info.is_array());
 
-        throw compiler_exception{stmt_ident_.first_token(),
-                                 "argument must refer to an array"};
+        throw compile_error{stmt_ident_.first_token(),
+                            "argument must refer to an array"};
     }
 
     // a narrower width stays unfolded so 'compile' rejects the destination

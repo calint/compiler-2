@@ -9,7 +9,7 @@
 #include <string_view>
 #include <utility>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "expression.hpp"
 #include "ident_info.hpp"
@@ -40,7 +40,7 @@ class stmt_builtin_arrays_equal final : public expression {
         set_type(tc.builtins().boolean());
 
         if (open_paren_tk_.is_empty()) {
-            throw compiler_exception{
+            throw compile_error{
                 tz, "expected '(', 'source', 'compare', 'count', and ')'"};
         }
 
@@ -102,7 +102,7 @@ class stmt_builtin_arrays_equal final : public expression {
         const ident_info rhs_info{tc.make_ident_info(rhs_)};
 
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
-            throw compiler_exception{
+            throw compile_error{
                 rhs_.tok(),
                 std::format("source type '{}' does not match compare type '{}'",
                             lhs_info.type_ref().name(),
@@ -116,8 +116,12 @@ class stmt_builtin_arrays_equal final : public expression {
             rhs_.assert_count_in_bounds(tc, count_.tok(), *count);
         }
 
+        std::vector<operand> staged_registers;
+
+        const staged_value staged_count{tc, indent, count_, staged_registers};
+
         const std::function<void(const operand&)> emit_count{
-            make_count_emitter(tc, indent, count_),
+            make_count_emitter(tc, indent, staged_count),
         };
 
         x.arrays_equal(
@@ -129,6 +133,8 @@ class stmt_builtin_arrays_equal final : public expression {
                 .dst{dst},
                 .inverted{inverted},
             });
+
+        x.free_scratch_registers(tok(), indent, staged_registers);
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {
@@ -151,7 +157,7 @@ class stmt_builtin_arrays_equal final : public expression {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("destination type must be '{}', not '{}'",
                         get_type().name(), dst_type.name()),
@@ -164,7 +170,7 @@ class stmt_builtin_arrays_equal final : public expression {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             tok(), "this built-in function does not accept unary operations"};
     }
 };

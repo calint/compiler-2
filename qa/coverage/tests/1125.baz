@@ -1,0 +1,11 @@
+# a call that writes is an argument of 'write' and of 'exit'
+
+func say(text i8[]) res {
+    res = write(1, text)
+}
+
+func main() {
+    var text = "hi\n"
+    var k = write(say(text) - 2, text)
+    exit(say(text) - k)
+}

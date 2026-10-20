@@ -39,7 +39,7 @@ class type_fields final {
             toc::assert_valid_name(fld.tok());
 
             if (tp.has_field(fld.name())) {
-                throw compiler_exception{
+                throw compile_error{
                     fld.tok(),
                     std::format("field '{}' is declared twice in type '{}'",
                                 fld.name(), name_tk.text())};
@@ -151,7 +151,7 @@ inline auto assert_arg_count(const token& generic_tk,
         return;
     }
 
-    throw compiler_exception{
+    throw compile_error{
         generic_tk,
         std::format("generic type '{}' takes {} argument(s), got {}",
                     generic_tk.text(), generic.params.size(), arg_tks.size())};
@@ -163,13 +163,13 @@ inline auto assert_generic_type(const toc& tc, const token& generic_tk,
                                 const std::string_view user) -> void {
 
     if (tc.types().has(generic_tk.text())) {
-        throw compiler_exception{
-            generic_tk, std::format("'{}' is a type, not a generic type",
-                                    generic_tk.text())};
+        throw compile_error{generic_tk,
+                            std::format("'{}' is a type, not a generic type",
+                                        generic_tk.text())};
     }
 
     if (not tc.generics().has_type(generic_tk.text())) {
-        throw compiler_exception{
+        throw compile_error{
             generic_tk,
             std::format("'{}' is not a generic type, a generic type is "
                         "defined before {}",
@@ -185,7 +185,7 @@ inline auto assert_generic_type(const toc& tc, const token& generic_tk,
     const token open_tk{tz.is_next_char_token('<')};
 
     if (open_tk.is_empty()) {
-        throw compiler_exception{
+        throw compile_error{
             generic_tk,
             std::format("generic type '{}' needs arguments, e.g. '{}<...>'",
                         generic_tk.text(), generic_tk.text())};
@@ -278,8 +278,7 @@ class stmt_def_type_generic final : public statement {
         const token base_tk{tz.next_token()};
 
         if (base_tk.text().empty()) {
-            throw compiler_exception{equals_tk,
-                                     "expected a generic type after '='"};
+            throw compile_error{equals_tk, "expected a generic type after '='"};
         }
 
         assert_generic_type(tc, base_tk, "the type based on it");
@@ -321,8 +320,8 @@ class stmt_def_type_generic final : public statement {
 
         // the fields follow the parameters
         if (tz.peek_char_after_whitespace() != '{') {
-            throw compiler_exception{
-                tz, "expected '{' to begin declaration of type"};
+            throw compile_error{tz,
+                                "expected '{' to begin declaration of type"};
         }
 
         tc.add_generic_type(name_tk_.text(), {
@@ -436,7 +435,7 @@ class stmt_def_type_alias final : public statement {
 
             // step 3
             parse_root_fields(tc, instances.back());
-        } catch (compiler_exception& e) {
+        } catch (compile_error& e) {
             // the frames name the instances that led to the error, the alias
             // last
             instances.back().add_frames_to(e);
@@ -584,5 +583,5 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
         return std::make_unique<stmt_def_type_alias>(tc, tk, name_tk, tz);
     }
 
-    throw compiler_exception{tz, "expected '{' to begin declaration of type"};
+    throw compile_error{tz, "expected '{' to begin declaration of type"};
 }

@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
@@ -142,7 +142,7 @@ struct assignment_flow {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk, "function may return without setting its return value"};
     }
 

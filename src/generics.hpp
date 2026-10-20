@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "lut.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -85,10 +85,10 @@ struct generic_param {
         }
 
         if (tz.is_next_char_token(',').is_empty()) {
-            throw compiler_exception{
-                tz, std::format("expected ',' or '>' after generic "
-                                "parameter '{}'",
-                                param.name_tk.text())};
+            throw compile_error{tz,
+                                std::format("expected ',' or '>' after generic "
+                                            "parameter '{}'",
+                                            param.name_tk.text())};
         }
 
         return false;
@@ -103,13 +103,13 @@ struct generic_param {
         const token name_tk{tz.next_token()};
 
         if (name_tk.text().empty()) {
-            throw compiler_exception{
-                tz, "expected a name for the generic parameter"};
+            throw compile_error{tz,
+                                "expected a name for the generic parameter"};
         }
 
         for (const generic_param& param : declared) {
             if (param.name_tk.text() == name_tk.text()) {
-                throw compiler_exception{
+                throw compile_error{
                     name_tk, std::format("generic parameter '{}' is declared "
                                          "twice",
                                          name_tk.text())};
@@ -136,7 +136,7 @@ struct generic_param {
         const token kind_tk{tz.next_token()};
 
         if (not kind_tk.is_text("type")) {
-            throw compiler_exception{
+            throw compile_error{
                 kind_tk,
                 std::format("expected 'type' after generic parameter '{}'",
                             name_tk.text())};
@@ -167,7 +167,7 @@ struct generic_arg_tokens {
             const token arg_tk{tz.next_token()};
 
             if (arg_tk.text().empty()) {
-                throw compiler_exception{tz, "expected a generic argument"};
+                throw compile_error{tz, "expected a generic argument"};
             }
 
             args.arg_tks.emplace_back(arg_tk);
@@ -288,7 +288,7 @@ struct generic_type_instance {
     // alias last
     std::vector<generic_frame> frames;
 
-    auto add_frames_to(compiler_exception& e) const -> void {
+    auto add_frames_to(compile_error& e) const -> void {
         for (const generic_frame& frame : frames) {
             e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
         }

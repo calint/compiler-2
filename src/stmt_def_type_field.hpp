@@ -4,7 +4,7 @@
 #include <ostream>
 #include <string_view>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "statement.hpp"
 #include "stmt_const.hpp"
 #include "toc.hpp"
@@ -24,7 +24,7 @@ class stmt_def_type_field final : public statement {
         set_type(tc.builtins().void_type());
 
         if (tk.text().empty()) {
-            throw compiler_exception{tk, "expected field name"};
+            throw compile_error{tk, "expected field name"};
         }
 
         // e.g. 'tags[4]' has the default type
@@ -43,7 +43,7 @@ class stmt_def_type_field final : public statement {
         if (not array_count_const_.has_value() or
             array_count_const_.value() < 1) {
 
-            throw compiler_exception{
+            throw compile_error{
                 array_count_const_.tok(),
                 "expected a constant array size greater than 0"};
         }

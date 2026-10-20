@@ -1,0 +1,10 @@
+# a computed count or start of 'write' is computed before the registers of the
+# call are claimed, e.g. a division on x86_64 needs 'rdx'
+
+func main() {
+    var text = "hello\n"
+    var n = 12
+    var k = write(1, text, n / 2)
+    k = k + write(1, text, n / 6, n / 3)
+    exit(k - 8)
+}

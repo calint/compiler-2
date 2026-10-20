@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -101,9 +101,9 @@ class stmt_assign_var final : public statement {
         assert_reference_not_read(tc, var_info);
 
         if (var_info.is_const()) {
-            throw compiler_exception{
-                tok(), std::format("cannot assign to constant '{}'",
-                                   var_info.const_value())};
+            throw compile_error{tok(),
+                                std::format("cannot assign to constant '{}'",
+                                            var_info.const_value())};
         }
 
         if (expr_.is_array_identifier()) {
@@ -112,7 +112,7 @@ class stmt_assign_var final : public statement {
                 src_info.is_array() and
                 src_info.array_len() != var_info.array_len()) {
 
-                throw compiler_exception{
+                throw compile_error{
                     expr_.tok(),
                     std::format("destination array size {} does not match "
                                 "source size {}",
@@ -189,7 +189,7 @@ class stmt_assign_var final : public statement {
                 continue;
             }
 
-            throw compiler_exception{
+            throw compile_error{
                 read.tk,
                 std::format("'{}' may share storage with the destination '{}' "
                             "(both name '{}'), compute the value in a "

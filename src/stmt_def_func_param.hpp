@@ -3,7 +3,7 @@
 #include <ostream>
 #include <string_view>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -42,7 +42,7 @@ class stmt_def_func_param final : public statement {
             const token name_tk{tz.next_token()};
 
             if (name_tk.text().empty()) {
-                throw compiler_exception{tz, "expected a parameter name"};
+                throw compile_error{tz, "expected a parameter name"};
             }
 
             const token mut_tk{read_mut(tz)};
@@ -63,7 +63,7 @@ class stmt_def_func_param final : public statement {
             if (not open_bracket_tk.is_empty() and
                 close_bracket_tk.is_empty()) {
 
-                throw compiler_exception{tz, "expected ']'"};
+                throw compile_error{tz, "expected ']'"};
             }
 
             return {

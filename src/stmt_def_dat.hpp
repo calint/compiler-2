@@ -12,7 +12,7 @@
 #include <tuple>
 #include <vector>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "constant_arith.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
@@ -67,7 +67,7 @@ class stmt_def_dat final : public statement {
         : statement{src_loc_tk}, name_tk_{tz.next_token()} {
 
         if (name_tk_.text().empty()) {
-            throw compiler_exception{name_tk_, "expected name of data"};
+            throw compile_error{name_tk_, "expected name of data"};
         }
 
         toc::assert_valid_variable_name(name_tk_);
@@ -179,8 +179,8 @@ class stmt_def_dat final : public statement {
         };
 
         if (el.array_count == 0) {
-            throw compiler_exception{open_bracket_tk_,
-                                     "an empty array needs a size"};
+            throw compile_error{open_bracket_tk_,
+                                "an empty array needs a size"};
         }
 
         return el;
@@ -193,7 +193,7 @@ class stmt_def_dat final : public statement {
         if (array_count_const_.has_value() and
             array_count_const_.value() <= 0) {
 
-            throw compiler_exception{
+            throw compile_error{
                 array_count_const_.tok(),
                 "expected a constant array size greater than 0"};
         }
@@ -246,7 +246,7 @@ class stmt_def_dat final : public statement {
         if (const token brace_tk{tz.is_next_char_token('{')};
             not brace_tk.is_empty()) {
 
-            throw compiler_exception{
+            throw compile_error{
                 brace_tk, "expected type name before '{', e.g. 'point{1, 2}'"};
         }
 
@@ -327,8 +327,8 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        throw compiler_exception{
-            el.src_loc_tk, "boolean values cannot be arithmetic operands"};
+        throw compile_error{el.src_loc_tk,
+                            "boolean values cannot be arithmetic operands"};
     }
 
     // the '}' that ends the initializer, when it is the next character, e.g.
@@ -350,7 +350,7 @@ class stmt_def_dat final : public statement {
         };
 
         if (size_error) {
-            throw compiler_exception{el.src_loc_tk, *size_error};
+            throw compile_error{el.src_loc_tk, *size_error};
         }
 
         if (not el.is_array) {
@@ -526,7 +526,7 @@ class stmt_def_dat final : public statement {
         }
 
         if (el.close_brace_tk.is_empty()) {
-            throw compiler_exception{
+            throw compile_error{
                 tz,
                 std::format("expected '}}' to close array initializer for '{}'",
                             tp.name())};
@@ -557,7 +557,7 @@ class stmt_def_dat final : public statement {
 
             // the error is at the element that is too much
             if (el.array_count != 0 and count == el.array_count) {
-                throw compiler_exception{
+                throw compile_error{
                     tz, std::format("too many elements for array of size {}",
                                     el.array_count)};
             }
@@ -576,7 +576,7 @@ class stmt_def_dat final : public statement {
             return 0;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             tk, std::format("'{}' is not a 'bool', use 'true' or 'false'",
                             tk.text())};
     }
@@ -603,7 +603,7 @@ class stmt_def_dat final : public statement {
 
         // e.g. '{ 1 }' or a trailing ',' where a single value is expected
         if (el.src_loc_tk.text().empty() or el.src_loc_tk.is_string()) {
-            throw compiler_exception{
+            throw compile_error{
                 el.src_loc_tk,
                 std::format("expected a constant for '{}'", tp.name())};
         }
@@ -621,7 +621,7 @@ class stmt_def_dat final : public statement {
         assert_unary_ops_on_number(el, info.type_ref());
 
         if (not info.is_const()) {
-            throw compiler_exception{
+            throw compile_error{
                 el.src_loc_tk,
                 std::format("'{}' must be a constant", el.src_loc_tk.text())};
         }
@@ -635,10 +635,10 @@ class stmt_def_dat final : public statement {
             return el;
         }
 
-        throw compiler_exception{
-            el.src_loc_tk,
-            std::format("constant '{}{}' does not fit '{}'",
-                        el.uops.to_string(), el.src_loc_tk.text(), tp.name())};
+        throw compile_error{el.src_loc_tk,
+                            std::format("constant '{}{}' does not fit '{}'",
+                                        el.uops.to_string(),
+                                        el.src_loc_tk.text(), tp.name())};
     }
 
     [[nodiscard]] static auto parse_elem(const toc& tc, tokenizer& tz,
@@ -716,7 +716,7 @@ class stmt_def_dat final : public statement {
                 // the error is at the initializer that is too much
                 std::ignore = tz.is_next_char_token(',');
 
-                throw compiler_exception{
+                throw compile_error{
                     tz,
                     std::format("too many fields for type '{}'", tp.name())};
             }

@@ -13,7 +13,7 @@
 #include <string_view>
 #include <utility>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "token.hpp"
 
 class type;
@@ -36,8 +36,8 @@ inline constexpr size_t max_size_bytes{
     if (size_bytes > storage_limits::max_size_bytes or
         base > storage_limits::max_size_bytes - size_bytes) {
 
-        throw compiler_exception{src_loc_tk,
-                                 "storage size exceeds signed 64-bit range"};
+        throw compile_error{src_loc_tk,
+                            "storage size exceeds signed 64-bit range"};
     }
 
     return base + size_bytes;
@@ -48,8 +48,8 @@ inline constexpr size_t max_size_bytes{
                                                 const size_t count) -> size_t {
 
     if (count != 0 and size_bytes > storage_limits::max_size_bytes / count) {
-        throw compiler_exception{src_loc_tk,
-                                 "storage size exceeds signed 64-bit range"};
+        throw compile_error{src_loc_tk,
+                            "storage size exceeds signed 64-bit range"};
     }
 
     return size_bytes * count;

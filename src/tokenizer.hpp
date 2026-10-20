@@ -9,7 +9,7 @@
 #include <tuple>
 #include <utility>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "token.hpp"
 
 class tokenizer final {
@@ -30,7 +30,7 @@ class tokenizer final {
       public:
         explicit nesting_scope(tokenizer& tz) : tz_{tz} {
             if (tz_.nesting_ >= max_nesting) {
-                throw compiler_exception{
+                throw compile_error{
                     tz_, std::format("nesting is too deep, the limit is {} "
                                      "levels",
                                      max_nesting)};
@@ -71,8 +71,7 @@ class tokenizer final {
             return;
         }
 
-        throw compiler_exception{*this,
-                                 std::format("unexpected '{}'", peek_char())};
+        throw compile_error{*this, std::format("unexpected '{}'", peek_char())};
     }
 
     [[nodiscard]] auto cur_char_index_in_source() const -> size_t {
@@ -96,7 +95,7 @@ class tokenizer final {
         const token tk{is_next_char_token(ch)};
 
         if (tk.is_empty()) {
-            throw compiler_exception{*this, std::string{message}};
+            throw compile_error{*this, std::string{message}};
         }
 
         return tk;
@@ -243,8 +242,7 @@ class tokenizer final {
 
             if (close_tk.is_empty()) {
                 if (is_eos()) {
-                    throw compiler_exception{*this,
-                                             "expected '}' to end block"};
+                    throw compile_error{*this, "expected '}' to end block"};
                 }
 
                 skip_token();
@@ -252,8 +250,7 @@ class tokenizer final {
             }
 
             if (depth == 0) {
-                throw compiler_exception{close_tk,
-                                         "expected '{' to begin block"};
+                throw compile_error{close_tk, "expected '{' to begin block"};
             }
 
             if (--depth == 0) {
@@ -302,9 +299,8 @@ class tokenizer final {
             // points at the opening quote since the end of the line is
             // reported as column 0
             if (is_eos() or is_peek_char('\n')) {
-                throw compiler_exception{
-                    token::position(file_ix_, bgn_ix, at_line),
-                    "unterminated character literal"};
+                throw compile_error{token::position(file_ix_, bgn_ix, at_line),
+                                    "unterminated character literal"};
             }
 
             const char ch{next_char()};
@@ -340,8 +336,7 @@ class tokenizer final {
             if (is_next_char('\\')) {
                 // a backslash at the end of the source escapes nothing
                 if (is_eos()) {
-                    throw compiler_exception{open_quote_tk,
-                                             "unterminated string"};
+                    throw compile_error{open_quote_tk, "unterminated string"};
                 }
 
                 const bool is_carriage_return{is_peek_char('\r')};
@@ -361,7 +356,7 @@ class tokenizer final {
 
             // a string cannot span lines, the source is echoed in comments
             if (is_eos() or is_peek_char('\n')) {
-                throw compiler_exception{open_quote_tk, "unterminated string"};
+                throw compile_error{open_quote_tk, "unterminated string"};
             }
 
             skip_char();
@@ -380,7 +375,7 @@ class tokenizer final {
                 string_tk.unsupported_escape_position(),
             }) {
 
-            throw compiler_exception{
+            throw compile_error{
                 *escape_tk, std::format("unsupported escape in string \"{}\"",
                                         string_tk.text())};
         }
@@ -524,9 +519,8 @@ class tokenizer final {
     }
 };
 
-// declared in 'compiler_exception.hpp'
-inline compiler_exception::compiler_exception(const tokenizer& tz,
-                                              std::string message)
+// declared in 'compile_error.hpp'
+inline compile_error::compile_error(const tokenizer& tz, std::string message)
     : msg{std::move(message)}, file_ix{tz.file_index()}, line{tz.cur_line()},
       start_index{tz.cur_char_index_in_source()},
       end_index{tz.cur_char_index_in_source()} {}

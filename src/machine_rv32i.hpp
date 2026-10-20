@@ -24,7 +24,7 @@
 
 #include "assembler.hpp"
 #include "assembler_rv32i.hpp"
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "constant_arith.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
@@ -5749,8 +5749,8 @@ class machine_rv32i : public machine {
         constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
 
         if (address.displacement() < -limit or address.displacement() > limit) {
-            throw compiler_exception{
-                src_loc_tk, "address offset exceeds RV32I address range"};
+            throw compile_error{src_loc_tk,
+                                "address offset exceeds RV32I address range"};
         }
     }
 
@@ -5782,8 +5782,8 @@ class machine_rv32i : public machine {
         -> void {
 
         if (not is_scalar(value_type)) {
-            throw compiler_exception{
-                src_loc_tk, "RV32I requires an 8-, 16-, or 32-bit scalar"};
+            throw compile_error{src_loc_tk,
+                                "RV32I requires an 8-, 16-, or 32-bit scalar"};
         }
     }
 

@@ -6,7 +6,7 @@
 #include <ostream>
 #include <string>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "constant_parser.hpp"
 #include "statement.hpp"
 #include "toc.hpp"
@@ -28,7 +28,7 @@ class stmt_const final : public statement {
         set_type(tc.builtins().default_type());
 
         if (literal_tk_.has_whitespace_before()) {
-            throw compiler_exception{
+            throw compile_error{
                 tok(), "expected a constant value or a constant identifier"};
         }
 
@@ -70,10 +70,10 @@ class stmt_const final : public statement {
         };
 
         if (not num.has_value()) {
-            throw compiler_exception{literal_tk_,
-                                     std::format("cannot parse constant '{}{}'",
-                                                 uops_.to_string(),
-                                                 literal_tk_.text())};
+            throw compile_error{literal_tk_,
+                                std::format("cannot parse constant '{}{}'",
+                                            uops_.to_string(),
+                                            literal_tk_.text())};
         }
 
         value_ = is_text_prefixed ? *num : uops_.evaluate_constant(*num);

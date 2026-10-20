@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "assembler.hpp"
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "decouple_impl.hpp" // IWYU pragma: keep
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
@@ -113,8 +113,8 @@ auto print_help(const char* const program_name) -> void;
 
 [[nodiscard]] auto compile_file(const options& opts) -> int;
 
-auto print_compiler_error(const source_files& files,
-                          const compiler_exception& e) -> void;
+auto print_compiler_error(const source_files& files, const compile_error& e)
+    -> void;
 
 auto check_reproduced_source(const program& prg, const source_files& files)
     -> void;
@@ -151,7 +151,7 @@ make_backend(const target machine_target, const source_files* const files,
 auto print_usage_error(const std::string_view message) -> void;
 
 auto print_call_frames(const source_files& files,
-                       std::span<const compiler_exception::call_frame> frames)
+                       std::span<const compile_error::call_frame> frames)
     -> void;
 
 // a line of the source, 'begin' is the index of its first character
@@ -512,7 +512,7 @@ examples:
 
         prg.build(std::cout);
 
-    } catch (const compiler_exception& e) {
+    } catch (const compile_error& e) {
         print_compiler_error(files, e);
         return 1;
     } catch (const std::runtime_error& e) {
@@ -529,8 +529,8 @@ examples:
 
 // the message of the error at its source line, the inlined calls it was found
 // in and what else is known about it
-auto print_compiler_error(const source_files& files,
-                          const compiler_exception& e) -> void {
+auto print_compiler_error(const source_files& files, const compile_error& e)
+    -> void {
 
     print_source_error(files, e.file_ix, e.line, e.start_index, e.end_index,
                        e.msg);
@@ -803,11 +803,11 @@ auto print_usage_error(const std::string_view message) -> void {
 }
 
 // the inlined calls the error was found in, innermost first
-auto print_call_frames(
-    const source_files& files,
-    const std::span<const compiler_exception::call_frame> frames) -> void {
+auto print_call_frames(const source_files& files,
+                       const std::span<const compile_error::call_frame> frames)
+    -> void {
 
-    for (const compiler_exception::call_frame& frame : frames) {
+    for (const compile_error::call_frame& frame : frames) {
         const std::string_view src_file_name{files.name(frame.file_ix)};
         const std::string_view src{files.text(frame.file_ix)};
 

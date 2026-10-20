@@ -10,7 +10,7 @@
 #include <string_view>
 #include <system_error>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "token.hpp"
 
 // the value of a number or character literal as the tokenizer keeps its text
@@ -51,7 +51,7 @@ class constant_parser final {
         }
 
         if (not body.starts_with('\\')) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk,
                 std::format("character literal {} must contain one character",
                             str)};
@@ -71,7 +71,7 @@ class constant_parser final {
                     : src_loc_tk,
             };
 
-            throw compiler_exception{
+            throw compile_error{
                 escape_tk,
                 std::format("unsupported escape in character literal {}", str)};
         }
@@ -115,7 +115,7 @@ class constant_parser final {
         };
 
         if (result.ec == std::errc::result_out_of_range) {
-            throw compiler_exception{
+            throw compile_error{
                 src_loc_tk, std::format("constant '{}' is out of range", str)};
         }
 

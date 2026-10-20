@@ -340,8 +340,8 @@ class expr_arith final : public expression {
             if (tc.checks().overflow and
                 constant_arith::overflows_width(*value, o, *rhs, width_type)) {
 
-                throw compiler_exception{
-                    e->tok(), "constant expression overflows the type"};
+                throw compile_error{e->tok(),
+                                    "constant expression overflows the type"};
             }
 
             value =
@@ -358,8 +358,8 @@ class expr_arith final : public expression {
             uops_.negation_overflows(*value, constant_arith::signed_minimum(
                                                  width_type.size_bits()))) {
 
-            throw compiler_exception{tok(),
-                                     "constant expression overflows the type"};
+            throw compile_error{tok(),
+                                "constant expression overflows the type"};
         }
 
         return constant_arith::wrap_to_width(result, width_type);
@@ -804,8 +804,8 @@ class expr_arith final : public expression {
         // an enclosed list ends with its ')'
         // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
         if (enclosed_) {
-            throw compiler_exception{tz.next_token(),
-                                     "expected ')' to close expression"};
+            throw compile_error{tz.next_token(),
+                                "expected ')' to close expression"};
         }
 
         validate_arithmetic_operands(tc);
@@ -1162,7 +1162,7 @@ class expr_arith final : public expression {
             return;
         }
 
-        throw compiler_exception{src_loc_tk, "divisor must not be zero"};
+        throw compile_error{src_loc_tk, "divisor must not be zero"};
     }
 
     // a stored 'bool' is 0 or 1, arithmetic would make other values
@@ -1179,8 +1179,8 @@ class expr_arith final : public expression {
             return;
         }
 
-        throw compiler_exception{
-            operand.tok(), "boolean values cannot be arithmetic operands"};
+        throw compile_error{operand.tok(),
+                            "boolean values cannot be arithmetic operands"};
     }
 
     // the targets shift differently by a count outside the width, so a
@@ -1195,7 +1195,7 @@ class expr_arith final : public expression {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             src_loc_tk,
             std::format("shift count must be 0 to {} for {}-bit values",
                         width_bits - 1, width_bits)};

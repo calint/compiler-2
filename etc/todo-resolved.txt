@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: rename 'compiler_exception'
+    => done (2026-10-20): 'compile_error' in 'compile_error.hpp', it is an
+       error in the program being compiled, not a failure of the compiler;
+       the output of every test case is unchanged
+[x] easy: x86_64: the error of 'array_copy' or 'arrays_equal'
+    whose count calls a function that copies or compares arrays itself is
+    'cannot allocate register rsi' with a register report that suggests
+    'noinline'; the fix is a 'let' for the count ('let count = f()' then
+    'array_copy(a, b, count)', test 1108)
+    => e.g. name the 'let' in the message when the held register is one
+       of the bulk registers
+    => done (2026-10-20): not only the message, the built-ins claimed their
+       fixed registers before computing their arguments, so valid programs
+       were rejected on both targets: 'write(1, text, n / 2)' on x86_64
+       ('rdx'), 'exit(f())' and 'write(f(), text)' with an 'f' that writes,
+       a count from a call that copies under 'noub'; 'staged_value' in
+       'toc.hpp' computes such an argument into a scratch register first,
+       a name or a constant is still read into the fixed register; reverses
+       the discarded item of 2026-10-19 ('let' as the fix); tests
+       1124-1126, 0727 is now a run, the rv32i driver checks the staging;
+       'fuzz-io.py' writes computed descriptors, counts and starts and finds
+       the defect in the old compiler
 [x] medium: long parameter lists: without the '(tc, src_loc_tk, indent)' that
     every compile function takes no function has more than 6 parameters of
     its own; only values that travel together are grouped

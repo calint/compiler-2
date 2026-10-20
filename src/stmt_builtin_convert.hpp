@@ -10,7 +10,7 @@
 #include <string_view>
 #include <utility>
 
-#include "compiler_exception.hpp"
+#include "compile_error.hpp"
 #include "constant_arith.hpp"
 #include "constant_parser.hpp"
 #include "expr_arith.hpp"
@@ -40,7 +40,7 @@ class stmt_builtin_convert final : public expression {
         arg_ = {tc, tz};
 
         if (not arg_.get_type().is_builtin()) {
-            throw compiler_exception{
+            throw compile_error{
                 arg_.tok(),
                 std::format("cannot convert a value of type '{}'",
                             arg_.get_type().name()),
@@ -308,8 +308,8 @@ class stmt_builtin_convert final : public expression {
             expression::get_unary_ops().negation_overflows(converted,
                                                            minimum)) {
 
-            throw compiler_exception{tok(),
-                                     "constant expression overflows the type"};
+            throw compile_error{tok(),
+                                "constant expression overflows the type"};
         }
 
         return narrowed;

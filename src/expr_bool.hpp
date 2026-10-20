@@ -177,7 +177,7 @@ class expr_bool_op final : public statement {
 
         const std::string source{statement::trimmed_source(lhs_)};
 
-        throw compiler_exception{
+        throw compile_error{
             lhs_.tok(),
             std::format("'{}' of type '{}' is not a 'bool', compare it, e.g. "
                         "'{} != 0'",
@@ -550,7 +550,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             side.tok(), std::format("an instance of '{}' is not a condition",
                                     side.get_type().name())};
     }
@@ -566,14 +566,14 @@ class expr_bool_op final : public statement {
         const std::string_view type_name{side.get_type().name()};
 
         if (is_equality) {
-            throw compiler_exception{
+            throw compile_error{
                 side.tok(),
                 std::format("an instance of '{}' is compared only with an "
                             "instance of the same type",
                             type_name)};
         }
 
-        throw compiler_exception{
+        throw compile_error{
             side.tok(),
             std::format("an instance of '{}' is not a number", type_name)};
     }
@@ -609,7 +609,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        throw compiler_exception{
+        throw compile_error{
             rhs.tok(),
             std::format("constant '{}' does not fit '{}' of type '{}'", value,
                         statement::trimmed_source(lhs), lhs_type.name())};
@@ -623,7 +623,7 @@ class expr_bool_op final : public statement {
         -> size_t {
 
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
-            throw compiler_exception{
+            throw compile_error{
                 rhs.tok(),
                 std::format("source type '{}' does not match compare type '{}'",
                             lhs_info.type_ref().name(),
@@ -645,9 +645,8 @@ class expr_bool_op final : public statement {
         // arrays are compared element by element, so their lengths must agree
         // note: a whole array on one side only was rejected above
         if (lhs_info.array_len() != rhs_info.array_len()) {
-            throw compiler_exception{lhs.tok(),
-                                     "cannot compare arrays of different "
-                                     "sizes"};
+            throw compile_error{lhs.tok(), "cannot compare arrays of different "
+                                           "sizes"};
         }
 
         return multiply_storage_size(lhs.tok(), element_size_bytes,
@@ -767,7 +766,7 @@ class expr_bool_op final : public statement {
                 // the error is at the '=' that is alone
                 tz.put_back_char('=');
 
-                throw compiler_exception{tz, "expected '=='"};
+                throw compile_error{tz, "expected '=='"};
             }
 
             return machine::comparison_operator::equal;
@@ -778,7 +777,7 @@ class expr_bool_op final : public statement {
                 // the error is at the '!' that is alone
                 tz.put_back_char('!');
 
-                throw compiler_exception{tz, "expected '!='"};
+                throw compile_error{tz, "expected '!='"};
             }
 
             return machine::comparison_operator::not_equal;
@@ -902,7 +901,7 @@ class expr_bool_op final : public statement {
                     const machine::comparison_operator op, const type& lhs_type,
                     const type& rhs_type) -> void {
 
-        throw compiler_exception{
+        throw compile_error{
             rhs.tok(),
             std::format("'{}' of type '{}' is wider than '{}' of type '{}', "
                         "swap the operands: '{} {} {}'",
@@ -1136,8 +1135,7 @@ class expr_bool final : public statement {
             return;
         }
 
-        throw compiler_exception{op_tk,
-                                 "mixing 'and' and 'or' without parentheses"};
+        throw compile_error{op_tk, "mixing 'and' and 'or' without parentheses"};
     }
 
     // an element that does not decide the list continues at the next element
@@ -1443,7 +1441,7 @@ class expr_bool final : public statement {
         // e.g. the 'exit' of 'if a == 1 exit(1)', or of '(a == 1 exit(1)'
         // which lacks its ')'
         if (is_enclosed()) {
-            throw compiler_exception{op_tk, "expected ')' to close expression"};
+            throw compile_error{op_tk, "expected ')' to close expression"};
         }
 
         // note: rewound by position, a string token cannot be put back
