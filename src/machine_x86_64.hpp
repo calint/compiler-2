@@ -323,9 +323,7 @@ class machine_x86_64 final : public machine {
             return result;
         }
 
-        throw register_error(
-            src_loc_tk, "out of scratch registers, simplify the expression",
-            registers_);
+        throw out_of_registers_error(src_loc_tk, registers_);
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -2497,7 +2495,8 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        throw_register_in_use(src_loc_tk, reg);
+        throw register_in_use_error(src_loc_tk, reg, register_index(reg),
+                                    registers_);
     }
 
     auto reserve_variables_base() -> void {
@@ -2642,48 +2641,6 @@ class machine_x86_64 final : public machine {
 
         test(src_loc_tk, indent, value, value);
         branch_to_bounds_panic(indent, condition::s, reported_line);
-    }
-
-    [[noreturn]] auto throw_register_in_use(const token& src_loc_tk,
-                                            const std::string_view reg) const
-        -> void {
-
-        const std::span<const register_pool::allocation> allocations{
-            registers_.allocations(),
-        };
-
-        const auto holder{
-            std::ranges::find(allocations, register_index(reg),
-                              &register_pool::allocation::index),
-        };
-
-        // operands are protected only while lowering a single instruction
-        assert(holder != allocations.end());
-
-        // a register named by the backend itself has no place in the source
-        const std::string holder_location{
-            holder->src_loc_tk.at_line() == 0
-                ? std::string{}
-                : location_text(holder->src_loc_tk),
-        };
-
-        // the last resort scratch registers are also needed by instructions
-        if (not holder->named) {
-            throw register_error(
-                src_loc_tk,
-                std::format("cannot allocate register {} because it holds a "
-                            "scratch value allocated at {}, simplify the "
-                            "expression",
-                            reg, holder_location),
-                registers_);
-        }
-
-        throw register_error(
-            src_loc_tk,
-            std::format("cannot allocate register {} because it was allocated "
-                        "at {}",
-                        reg, holder_location),
-            registers_);
     }
 
     auto with_lowered_addresses(

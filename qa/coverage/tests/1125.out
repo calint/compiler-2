@@ -1,3 +1,22 @@
-hi
-hi
-hi
+
+1125.baz:5:11: register rdi is always used by the operation at 10:13 and is needed here too, compute the operand that needs it with 'let' before that operation
+    res = write(1, text)
+          ^~~~~
+1125.baz:10:19: called from 'say(text)'
+    var k = write(say(text) - 2, text)
+                  ^~~
+
+register use at the failure: 3 of 14 registers live, 3 named by instructions
+
+  held  frame, registers (allocated at)
+     3  main
+          rdi 10:13 (named)
+          rsi 10:13 (named)
+          rdx 10:13 (named)
+     0  say called at 10:19
+
+these frames are not noinline, making one noinline starts its body with all 14
+registers free and saves the registers held above it around the call:
+
+  candidate frame  held inside  saved at the call
+  say                        0                  3

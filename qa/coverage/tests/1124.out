@@ -1,2 +1,13 @@
-hello
-o
+
+1124.baz:6:32: register rdx is always used by the operation at 6:13 and is needed here too, compute the operand that needs it with 'let' before that operation
+    var k = write(1, text, n / 2)
+                               ^
+
+register use at the failure: 4 of 14 registers live, 4 named by instructions
+
+  held  frame, registers (allocated at)
+     4  main
+          rdi 6:13 (named)
+          rsi 6:13 (named)
+          rdx 6:13 (named)
+          rax 6:32 (named)

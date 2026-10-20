@@ -47,6 +47,21 @@ class register_pool final {
         return allocations_;
     }
 
+    // the allocation of the register 'index', which is allocated
+    [[nodiscard]] auto holder_of(const size_t index) const
+        -> const allocation& {
+
+        const auto holder{
+            std::ranges::find(allocations_, index, &allocation::index),
+        };
+
+        // note: a register is protected without being allocated only while
+        //       one instruction is lowered, which allocates no register
+        assert(holder != allocations_.end());
+
+        return *holder;
+    }
+
     [[nodiscard]] auto is_empty() const -> bool { return allocations_.empty(); }
 
     [[nodiscard]] auto is_lower_checked(const uint32_t mask) const -> bool {

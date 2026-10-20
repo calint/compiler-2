@@ -1,4 +1,5 @@
-# a call that writes is an argument of 'write' and of 'exit'
+# a call that writes is an argument of 'write', the inner call needs the
+# registers that the outer call holds
 
 func say(text i8[]) res {
     res = write(1, text)
@@ -7,5 +8,5 @@ func say(text i8[]) res {
 func main() {
     var text = "hi\n"
     var k = write(say(text) - 2, text)
-    exit(say(text) - k)
+    exit(k)
 }

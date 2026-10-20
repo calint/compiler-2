@@ -12,17 +12,14 @@
     'array_copy(a, b, count)', test 1108)
     => e.g. name the 'let' in the message when the held register is one
        of the bulk registers
-    => done (2026-10-20): not only the message, the built-ins claimed their
-       fixed registers before computing their arguments, so valid programs
-       were rejected on both targets: 'write(1, text, n / 2)' on x86_64
-       ('rdx'), 'exit(f())' and 'write(f(), text)' with an 'f' that writes,
-       a count from a call that copies under 'noub'; 'staged_value' in
-       'toc.hpp' computes such an argument into a scratch register first,
-       a name or a constant is still read into the fixed register; reverses
-       the discarded item of 2026-10-19 ('let' as the fix); tests
-       1124-1126, 0727 is now a run, the rv32i driver checks the staging;
-       'fuzz-io.py' writes computed descriptors, counts and starts and finds
-       the defect in the old compiler
+    => done (2026-10-20): the message; a staging of computed arguments in
+       scratch registers was tried and reverted, it spends registers where
+       a hand-written program would not; a register held by a built-in, a
+       bulk operation or a division is now 'register rdx is always used by
+       the operation at 7:13 and is needed here too, compute the operand
+       that needs it with 'let' before that operation' on both targets
+       ('machine::register_in_use_error'); tests 0727, 1124, 1125, the
+       driver check of nested system calls
 [x] medium: long parameter lists: without the '(tc, src_loc_tk, indent)' that
     every compile function takes no function has more than 6 parameters of
     its own; only values that travel together are grouped

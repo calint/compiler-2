@@ -825,6 +825,15 @@ class machine {
         return size;
     }
 
+    [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk,
+                                              const register_pool& pool) const
+        -> compile_error {
+
+        return register_error(
+            src_loc_tk, "out of scratch registers, simplify the expression",
+            pool);
+    }
+
     // a call of the function with the body 'label' saves the registers 'saved'
     auto record_noinline_call(const token& call_site_tk,
                               const std::string_view label, const size_t saved)
@@ -839,6 +848,42 @@ class machine {
                                       std::string message,
                                       const register_pool& pool) const
         -> compile_error;
+
+    // an error that the register 'name' at 'index', which an instruction or
+    // a built-in needs, is held: by a scratch value of the expression, or by
+    // an operation whose operands are being computed, which a value computed
+    // with 'let' before the operation does not clash with
+    [[nodiscard]] auto
+    register_in_use_error(const token& src_loc_tk, const std::string_view name,
+                          const size_t index, const register_pool& pool) const
+        -> compile_error {
+
+        const register_pool::allocation& holder{pool.holder_of(index)};
+
+        // note: the registers that the backend holds without a place in the
+        //       source, e.g. the variables base, are needed by no instruction
+        assert(holder.src_loc_tk.at_line() != 0);
+
+        const std::string holder_location{location_text(holder.src_loc_tk)};
+
+        if (not holder.named) {
+            return register_error(
+                src_loc_tk,
+                std::format("cannot allocate register {} because it holds a "
+                            "scratch value allocated at {}, simplify the "
+                            "expression",
+                            name, holder_location),
+                pool);
+        }
+
+        return register_error(
+            src_loc_tk,
+            std::format("register {} is always used by the operation at {} and "
+                        "is needed here too, compute the operand that needs "
+                        "it with 'let' before that operation",
+                        name, holder_location),
+            pool);
+    }
 
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none

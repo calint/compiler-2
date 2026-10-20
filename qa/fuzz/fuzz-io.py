@@ -4,10 +4,7 @@
 #
 # builds programs that write a whole array, a count of elements and a count
 # from a start index of strings, 'dat', variables and array fields, and that
-# read lines of the input into an array at a start index with a count. the
-# descriptor, the count and the start are numbers or values computed with a
-# division or a call that writes itself, which need the registers of the
-# call on x86_64 and rv32i. a read
+# read lines of the input into an array at a start index with a count. a read
 # returns the number of elements it read and 0 at the end of the input. python
 # runs the same operations: the program must write the bytes of the model and
 # end with the checksum of the numbers the reads returned. the input is one
@@ -44,15 +41,6 @@ class Generator:
     def emit(self, text):
         self.lines.append("    " + text)
 
-    # 'n' as written or computed, see the description of the fuzzer
-    def value(self, n):
-        kind = self.rnd.random()
-        if kind < 0.6:
-            return str(n)
-        if kind < 0.8:
-            return f"(six * {n}) / six"
-        return f"quiet({n})"
-
     def text(self, low=0, high=12):
         return "".join(self.rnd.choice(LETTERS)
                        for _ in range(self.rnd.randint(low, high)))
@@ -62,17 +50,16 @@ class Generator:
         rnd = self.rnd
         kind = rnd.choice(["all", "count", "range"])
         if kind == "all":
-            self.emit(f"write({self.value(1)}, {name})")
+            self.emit(f"write(1, {name})")
             self.out += bytes(data)
         elif kind == "count":
             n = rnd.randint(0, size)
-            self.emit(f"write(1, {name}, {self.value(n)})")
+            self.emit(f"write(1, {name}, {n})")
             self.out += bytes(data[:n])
         else:
             n = rnd.randint(0, size)
             start = rnd.randint(0, size - n)
-            self.emit(f"write(1, {name}, {self.value(n)}, "
-                      f"{self.value(start)})")
+            self.emit(f"write(1, {name}, {n}, {start})")
             self.out += bytes(data[start:start + n])
 
     def program(self):
@@ -86,9 +73,6 @@ class Generator:
             head.append(f"dat d{i} = {string_literal(text)}")
             arrays.append((f"d{i}", bytearray(text.encode()), len(text)))
         head.append("type holder { n, data i8[24] }")
-        # writes nothing and returns 'x'
-        head.append("func quiet(x) res {\n    var none = i8[1]\n"
-                    "    res = x + write(1, none, 0)\n}")
 
         for i in range(rnd.randint(1, 3)):
             text = self.text(1, 14)
@@ -119,8 +103,7 @@ class Generator:
                 name, data, size = b
                 count = rnd.randint(12, size)
                 start = rnd.randint(0, size - count)
-                call = (f"read({self.value(0)}, {name}, {self.value(count)}, "
-                        f"{self.value(start)})")
+                call = f"read(0, {name}, {count}, {start})"
                 if start == 0 and rnd.random() < 0.3 and count == size:
                     call = f"read(0, {name})"
                     count = size
@@ -140,7 +123,6 @@ class Generator:
                 self.write_slice(name, data, size)
         self.code = code
         self.lines.insert(0, "    var acc = 0")
-        self.lines.insert(1, "    var six = 6")
         self.emit("exit(acc & 127)")
         source = "\n".join(head) + "\nfunc main() {\n" + \
             "\n".join(self.lines) + "\n}\n"

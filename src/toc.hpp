@@ -58,9 +58,7 @@
 //                   'tc.scopes().is_alias(name)'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
-//   'staged_value'  an argument of a built-in computed before the built-in
-//                   claims its fixed registers
-//   'make_count_emitter' loads the count of a bulk operation
+//   'make_count_emitter' compiles the count of a bulk operation
 //
 
 class stmt_def_dat;
@@ -3107,61 +3105,17 @@ class generic_scope final {
     }
 };
 
-// an argument of a built-in that claims fixed registers, e.g. the count of
-// 'write' in 'rdx' on x86_64: computing a value may need those registers
-// itself, e.g. a division or a call that writes, so a computed value goes to
-// a scratch register before they are claimed; a name or a constant is read
-// into the fixed register directly
-// note: the scratch registers stay allocated in 'staged_registers' until the
-//       caller has freed the fixed registers
-class staged_value final {
-    std::reference_wrapper<const statement> value_;
-    // empty when the value is read where it is
-    operand scratch_;
-
-  public:
-    // the arguments of the built-ins have the default type
-    staged_value(toc& tc, const size_t indent, const statement& value,
-                 std::vector<operand>& staged_registers)
-        : value_{value} {
-
-        if (not value.is_expression()) {
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        scratch_ = x.alloc_scratch_register(value.tok(), indent,
-                                            tc.builtins().default_type());
-
-        staged_registers.push_back(scratch_);
-
-        value.compile(tc, indent, destination::of_register(scratch_));
-    }
-
-    // into the fixed register 'reg'
-    auto load(toc& tc, const size_t indent, const operand& reg) const -> void {
-        const statement& value{value_.get()};
-
-        if (not scratch_.is_empty()) {
-            machine& x{tc.machine()};
-
-            x.copy_value(value.tok(), indent, reg, scratch_);
-
-            return;
-        }
-
-        value.compile(tc, indent, destination::of_register(reg));
-    }
-};
-
-// loads the element count of a bulk operation into the register the machine
-// asks for, the count must outlive the emitter
+// compiles the element count of a bulk operation into the register the machine
+// asks for, the statement must outlive the emitter
 [[nodiscard]] inline auto make_count_emitter(toc& tc, const size_t indent,
-                                             const staged_value& count)
+                                             const statement& count)
     -> std::function<void(const operand&)> {
 
     return [&tc, indent, &count](const operand& count_register) -> void {
-        count.load(tc, indent, count_register);
+        machine& x{tc.machine()};
+
+        x.comment(count.tok(), indent, statement::trimmed_source(count));
+
+        count.compile(tc, indent, destination::of_register(count_register));
     };
 }

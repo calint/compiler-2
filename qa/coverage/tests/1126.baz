@@ -1,5 +1,5 @@
 # a count from a call that copies arrays, with the overlap check the copy is a
-# loop at run time
+# loop at run time; x86: the inner copy needs 'rsi', which the outer copy holds
 
 func nested(source i8[], destination mut i8[]) count {
     array_copy(source, destination, 1)

@@ -41,22 +41,16 @@ class stmt_builtin_exit final : public stmt_call {
         // note: the exit code is the only argument
         assert(registers.arguments.size() == 1);
 
-        std::vector<operand> staged_registers;
-
-        const staged_value staged_code{tc, indent, argument(0),
-                                       staged_registers};
-
         const operand exit_code{
             x.alloc_named_register(tok(), indent, registers.arguments.front(),
                                    tc.builtins().default_type()),
         };
 
-        staged_code.load(tc, indent, exit_code);
+        argument(0).compile(tc, indent, destination::of_register(exit_code));
 
         x.exit(tok(), indent, exit_code);
 
         x.free_named_register(tok(), indent, exit_code);
-        x.free_scratch_registers(tok(), indent, staged_registers);
     }
 
     // the program ends here, so this path never returns and cannot leave the

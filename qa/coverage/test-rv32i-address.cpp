@@ -1142,7 +1142,7 @@ auto check_x86_scratch_registers() -> void {
         std::vector<operand> registers;
         for (const std::string_view expected : order) {
             registers.push_back(
-                backend.alloc_scratch_register(token{}, 0, integer64));
+                backend.alloc_scratch_register(source_tk, 0, integer64));
             assert(registers.back().base_register() == expected);
         }
 
@@ -1290,15 +1290,14 @@ auto check_x86_write_in_program() -> void {
     assert(not main_body.contains("allocate scratch register"));
 }
 
-// a system call inside the arguments of another needs 'rdi' too, so its
-// result is staged in a scratch register before the outer call claims 'rdi'
-auto check_x86_nested_syscalls_staged() -> void {
+// a system call inside the arguments of another needs 'rdi' twice, which is
+// rejected instead of overwriting it
+auto check_x86_nested_syscalls_rejected() -> void {
     for (const std::string_view source :
          {"func main() { var b = i8[1]{} write(1, b, write(1, b, 0)) }",
           "func main() { var b = i8[1]{} exit(write(1, b, 0)) }"}) {
-        const std::string assembly{compiled_x86_64(source)};
-
-        assert(assembly.contains("allocate scratch register -> r15"));
+        assert(rejected_with([&] { std::ignore = compiled_x86_64(source); },
+                             "register rdi is always used by the operation"));
     }
 }
 
@@ -2209,8 +2208,7 @@ auto check_invalid_addresses_rejected() -> void {
 }
 
 // the scratch register pool: which registers it hands out, in which order,
-// with 0, 1 and 2 registers reserved for the variables and frame bases, and
-// which named registers can never be allocated
+// with 0, 1 and 2 registers reserved for the variables and frame bases
 auto check_scratch_register_pool() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
@@ -2265,13 +2263,6 @@ auto check_scratch_register_pool() -> void {
         assert(rejected_with([&] {
             std::ignore = backend.alloc_scratch_register(source_tk, 0, integer);
         }));
-
-        for (const std::string_view name : {"zero", "sp", "s0", "s1"}) {
-            assert(rejected_with([&] {
-                std::ignore =
-                    backend.alloc_named_register(source_tk, 0, name, integer);
-            }));
-        }
 
         backend.free_scratch_registers(token{}, 0, held);
         if (reserved_count == 2) {
@@ -3828,7 +3819,7 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 
     // 'a7' selects the system call, it cannot be held by the caller
     const operand held_syscall_register{
-        backend.alloc_named_register(token{}, 0, "a7", integer),
+        backend.alloc_named_register(source_tk, 0, "a7", integer),
     };
 
     assert(rejected_with([&] {
@@ -4061,7 +4052,7 @@ auto run_host_checks() -> void {
     check_x86_scratch_registers();
     check_x86_syscall_register_saving();
     check_x86_write_in_program();
-    check_x86_nested_syscalls_staged();
+    check_x86_nested_syscalls_rejected();
 
     // 5. instruction shapes
     check_index_scale_support();

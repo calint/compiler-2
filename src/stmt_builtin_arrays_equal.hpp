@@ -116,12 +116,8 @@ class stmt_builtin_arrays_equal final : public expression {
             rhs_.assert_count_in_bounds(tc, count_.tok(), *count);
         }
 
-        std::vector<operand> staged_registers;
-
-        const staged_value staged_count{tc, indent, count_, staged_registers};
-
         const std::function<void(const operand&)> emit_count{
-            make_count_emitter(tc, indent, staged_count),
+            make_count_emitter(tc, indent, count_),
         };
 
         x.arrays_equal(
@@ -133,8 +129,6 @@ class stmt_builtin_arrays_equal final : public expression {
                 .dst{dst},
                 .inverted{inverted},
             });
-
-        x.free_scratch_registers(tok(), indent, staged_registers);
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {

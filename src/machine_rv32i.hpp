@@ -562,16 +562,15 @@ class machine_rv32i : public machine {
         const size_t index{register_index(register_name)};
         const uint32_t mask{register_mask(register_name)};
 
-        // the zero register and the stack pointer are never allocated
-        const bool is_fixed{
-            index == register_index("zero") or index == register_index("sp"),
-        };
+        // note: the backend names the registers, never the zero register or
+        //       the stack pointer
+        assert(mask != 0);
+        assert(index != register_index("zero"));
+        assert(index != register_index("sp"));
 
-        if (mask == 0 or is_fixed or registers_.is_unavailable(mask)) {
-            throw register_error(
-                src_loc_tk,
-                std::format("cannot allocate register {}", register_name),
-                registers_);
+        if (registers_.is_unavailable(mask)) {
+            throw register_in_use_error(src_loc_tk, register_name, index,
+                                        registers_);
         }
 
         operand result{make_register_operand(register_name, type_ref)};
@@ -611,9 +610,7 @@ class machine_rv32i : public machine {
             return result;
         }
 
-        throw register_error(
-            src_loc_tk, "out of scratch registers, simplify the expression",
-            registers_);
+        throw out_of_registers_error(src_loc_tk, registers_);
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,

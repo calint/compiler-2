@@ -122,12 +122,8 @@ class stmt_builtin_array_copy final : public statement {
             return;
         }
 
-        std::vector<operand> staged_registers;
-
-        const staged_value staged_count{tc, indent, count_, staged_registers};
-
         const std::function<void(const operand&)> emit_count{
-            make_count_emitter(tc, indent, staged_count),
+            make_count_emitter(tc, indent, count_),
         };
 
         const machine::address_emitter emit_src{
@@ -146,8 +142,6 @@ class stmt_builtin_array_copy final : public statement {
                             .dst{emit_dst},
                             .overlap{tc.checks().overlap_options()},
                         });
-
-        x.free_scratch_registers(tok(), indent, staged_registers);
     }
 
     // the copied elements are not tracked, so the destination stays unassigned

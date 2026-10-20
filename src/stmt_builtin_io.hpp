@@ -96,17 +96,13 @@ class stmt_builtin_io final : public stmt_call {
             x.registers_for_builtin_function(builtin_function()),
         };
 
-        std::vector<operand> staged_registers;
-
         const std::vector<operand> args{
-            compile_array_arguments(tc, indent, registers.arguments,
-                                    staged_registers),
+            compile_array_arguments(tc, indent, registers.arguments),
         };
 
         if (is_sector_function()) {
             emit_sector_call(x, indent, args);
             x.free_named_registers(tok(), indent, args);
-            x.free_scratch_registers(tok(), indent, staged_registers);
             return;
         }
 
@@ -136,7 +132,6 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         x.free_named_registers(tok(), indent, args);
-        x.free_scratch_registers(tok(), indent, staged_registers);
     }
 
   private:
@@ -215,32 +210,13 @@ class stmt_builtin_io final : public stmt_call {
         return function_info().function;
     }
 
-    // the count and start are in elements, the byte count is computed last;
-    // the computed arguments are staged before the fixed registers are
-    // claimed, see 'staged_value'
-    [[nodiscard]] auto
-    compile_array_arguments(toc& tc, const size_t indent,
-                            const std::span<const std::string_view> registers,
-                            std::vector<operand>& staged_registers) const
+    // the count and start are in elements, the byte count is computed last
+    [[nodiscard]] auto compile_array_arguments(
+        toc& tc, const size_t indent,
+        const std::span<const std::string_view> registers) const
         -> std::vector<operand> {
 
         assert_array_buffer(tc);
-
-        const staged_value staged_descriptor{tc, indent, argument(0),
-                                             staged_registers};
-
-        std::optional<staged_value> staged_count;
-
-        if (has_count()) {
-            staged_count.emplace(tc, indent, argument(2), staged_registers);
-        }
-
-        std::optional<staged_value> staged_start;
-
-        if (has_start()) {
-            staged_start.emplace(tc, indent, argument(argument_count() - 1),
-                                 staged_registers);
-        }
 
         machine& x{tc.machine()};
 
@@ -258,17 +234,16 @@ class stmt_builtin_io final : public stmt_call {
         const operand& buffer_reg{args.at(1)};
         const operand& count{args.at(2)};
 
-        staged_descriptor.load(tc, indent, descriptor);
+        argument(0).compile(tc, indent, destination::of_register(descriptor));
 
         const ident_info buffer_info{tc.make_ident_info(argument(1))};
 
-        compile_count(tc, indent, count, buffer_info, staged_count);
+        compile_count(tc, indent, count, buffer_info);
 
         operand start;
 
-        if (staged_start) {
-            start =
-                compile_start(tc, indent, count, buffer_info, *staged_start);
+        if (has_start()) {
+            start = compile_start(tc, indent, count, buffer_info);
         }
 
         // a start is checked with the start, a bare count by 'compile_lea'
@@ -316,12 +291,10 @@ class stmt_builtin_io final : public stmt_call {
     // without a count the whole array is transferred, a sector function
     // transfers the elements of one sector
     auto compile_count(toc& tc, const size_t indent, const operand& count,
-                       const ident_info& buffer_info,
-                       const std::optional<staged_value>& staged_count) const
-        -> void {
+                       const ident_info& buffer_info) const -> void {
 
-        if (staged_count) {
-            staged_count->load(tc, indent, count);
+        if (has_count()) {
+            argument(2).compile(tc, indent, destination::of_register(count));
             return;
         }
 
@@ -340,12 +313,10 @@ class stmt_builtin_io final : public stmt_call {
                      operand::imm(element_count, tc.builtins().default_type()));
     }
 
-    // the start register stays allocated for the caller, a staged start is
-    // copied into it since the staged register is freed last
+    // the start register stays allocated for the caller
     [[nodiscard]] auto compile_start(toc& tc, const size_t indent,
                                      const operand& count,
-                                     const ident_info& buffer_info,
-                                     const staged_value& staged_start) const
+                                     const ident_info& buffer_info) const
         -> operand {
 
         machine& x{tc.machine()};
@@ -357,7 +328,7 @@ class stmt_builtin_io final : public stmt_call {
                                      tc.builtins().default_type()),
         };
 
-        staged_start.load(tc, indent, start);
+        start_arg.compile(tc, indent, destination::of_register(start));
 
         x.check_bounds(
             start_arg.tok(), indent,
