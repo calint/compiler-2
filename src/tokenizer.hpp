@@ -20,7 +20,7 @@ class tokenizer final {
     size_t nesting_{};
 
     static constexpr std::string_view delimiters_{
-        " \t\r\n(){}[]=,.:+-*/%&|^<>!#"};
+        " \t\r\n(){}[]=,.:+-*/%&|^<>!~#"};
 
   public:
     // one level of nesting while it lives

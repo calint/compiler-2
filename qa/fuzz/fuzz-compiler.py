@@ -352,16 +352,16 @@ def fuzz_one(args):
             if noub and x86.finished() and rv.finished():
                 stats["compared"] += 1
                 same = x86.code == rv.code and (
-                    x86.stdout == rv.stdout or FOREIGN_WRITE.search(text)
+                    x86.stdout == rv.stdout
                     or is_default_width_output(x86.stdout, rv.stdout))
                 # the default integer is 32 bits on rv32i, 64 on x86_64: a
                 # value or a shift count that fits 64 bits panics on rv32i
                 # only, x86_64 goes on and may panic later on another check
                 width = rv.kind == "panic" and x86.code != rv.code and \
                     rv.code in (fl.PANIC_CODE["overflow"], fl.PANIC_CODE["shift"])
-                foreign_read = FOREIGN_READ.search(text)
+                foreign = FOREIGN_WRITE.search(text) or FOREIGN_READ.search(text)
                 if not same and not stack_difference(x86, rv) and not width \
-                        and not foreign_read:
+                        and not foreign:
                     findings.append(("diff-target",
                                      f"{bucket(x86)} vs {bucket(rv)} "
                                      f"output {x86.stdout == rv.stdout}",
@@ -414,8 +414,8 @@ def bucket(outcome):
         f"{outcome.kind}"
 
 
-# the uart of rv32i-fpga takes every file descriptor, a write to another one
-# than 1 shows only there
+# the uart of rv32i-fpga takes every file descriptor: a write to another one
+# than 1 shows only there and fails on x86_64, which may change the exit too
 FOREIGN_WRITE = re.compile(r"write\(\s*(?!1\s*,)")
 # and a read from another one than 0 fails on x86_64 and reads the uart there
 FOREIGN_READ = re.compile(r"read\(\s*(?!0\s*,)")

@@ -11,7 +11,8 @@
 #   option-message    a rejection without a message
 #   option-wrong      an accepted combination whose program does not end with
 #                     the expected exit code
-#   option-cpu        an accepted rv32i-fpga image stops the emulator
+#   option-cpu        an accepted rv32i-fpga image stops the emulator, unless
+#                     '--memory' is larger than the memory of the emulator
 #
 # usage: fuzz-options.py [count] [seed] [jobs]
 import concurrent.futures
@@ -77,6 +78,9 @@ def checks_value(rnd):
 
 VALID_SIZES = ["16", "4096", "65536", "0x10000", "0x20000", "0x40000",
                "1048576", "0x100000", "0x1000"]
+# the memory of the emulator, 'memory_end' in
+# 'fpga-emulator/src/main_config.hpp'
+EMULATOR_MEMORY_BYTES = 0x800000
 VALID_MEMORY = ["4096", "65536", "0x100000", "0x200000", "8388608",
                 "0x800000"]
 
@@ -189,9 +193,20 @@ def run_accepted(work, path, options, target, fpga, expected, name, description,
         r = fl.run([fl.EMULATOR, image, os.devnull], fl.RUN_TIMEOUT)
         o = fl.outcome_fpga(r)
         if o.kind == "cpu-error":
-            found.append(("option-cpu", description[:100], str(o)))
+            if not beyond_emulator_memory(options):
+                found.append(("option-cpu", description[:100], str(o)))
         else:
             judge(o, expected, name, options, description, found)
+
+
+def beyond_emulator_memory(options):
+    # the stack starts at the end of '--memory', past the end of the emulator
+    # memory the first store faults
+    for o in options:
+        name, _, value = o.partition("=")
+        if name == "--memory" and int(value, 0) > EMULATOR_MEMORY_BYTES:
+            return True
+    return False
 
 
 def small_memory(options):

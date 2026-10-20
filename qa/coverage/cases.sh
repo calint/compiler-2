@@ -3455,3 +3455,6 @@ if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1110 && EXP=0 && RUN;
 # a negative index fails the bounds check with both bounds enabled, the
 # handler without a line prints only its message
 SRC=1111 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=upper,lower"
+
+# a unary operator before a character literal inside parentheses
+SRC=1112 && EXP=34 && RUN

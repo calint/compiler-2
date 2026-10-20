@@ -1,0 +1,6 @@
+# a unary operator before a character literal inside parentheses, the
+# look-ahead that tells a condition from an operand skips it as one token
+let C = (~'.' << 1)
+func main() {
+    exit(C & 127)
+}
