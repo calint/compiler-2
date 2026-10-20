@@ -389,8 +389,8 @@ class stmt_identifier final : public statement {
         }
 
         const std::string from_index{
-            not is_array_element() ? std::string{}
-                                   : std::format(" from index {}", *start),
+            is_array_element() ? std::format(" from index {}", *start)
+                               : std::string{},
         };
 
         throw compiler_exception{
@@ -936,12 +936,14 @@ class stmt_identifier final : public statement {
 
         index_expr.compile(tc, indent, index_info);
 
-        check_array_bounds(
-            tc, indent, index_expr.tok(),
+        const machine::bounds_range checked{
             range_count.is_empty()
                 ? machine::bounds_range::index(index_register, array_length)
                 : machine::bounds_range::range(index_register, range_count,
-                                               array_length));
+                                               array_length),
+        };
+
+        check_array_bounds(tc, indent, index_expr.tok(), checked);
 
         return 0;
     }

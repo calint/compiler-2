@@ -26,7 +26,8 @@
 enum class condition_result : uint8_t { unknown, always_false, always_true };
 
 // where a condition continues, e.g. the code of an 'if' when it holds and the
-// next branch when it does not; one label for both stores the value only
+// next branch when it does not; the same label for both when the value is
+// only stored, e.g. 'b = x < 3'
 struct branch_targets {
     std::string_view if_false;
     std::string_view if_true;
