@@ -1,0 +1,22 @@
+# a local that hides a global is not the global in the aliasing check of a
+# noinline call, a call with the local checked before does not stand for one
+# with the global
+
+type pair {a, b}
+
+var total = pair{3, 4}
+
+func noinline bump(value mut) {
+    value = total.b + 1
+}
+
+func bump_global() {
+    bump(total.b)
+}
+
+func main() {
+    var total = pair{7, 8}
+    bump(total.b)
+    bump_global()
+    exit(total.b)
+}

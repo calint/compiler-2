@@ -18,7 +18,8 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr int carriage_return_{'\r'};
     // ctrl-d
     static constexpr int end_of_transmission_{0x04};
-    // late in the allocation order so the call rarely has to save them
+    // after 'a1' and 'a2' in the allocation order, so they are free at the
+    // call, see 'call_io_routine'
     static constexpr std::array<std::string_view, 4> read_clobbered_{
         "a3",
         "a4",
@@ -98,6 +99,26 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // overridden methods
     //
 
+    // the stack may not reach past the end of memory or into the variables,
+    // how much of it is used at run time is checked only by
+    // '--checks=stack'
+    auto check_memory_end(const size_t memory_end_address) const
+        -> void override {
+
+        const size_t memory_bytes{memory_size_bytes()};
+
+        if (stack_size_bytes() <= memory_bytes and
+            memory_end_address <= memory_bytes - stack_size_bytes()) {
+
+            return;
+        }
+
+        throw std::runtime_error{
+            std::format("code, data and variables use {} B and the stack {} B, "
+                        "which exceeds the {} B of device memory",
+                        memory_end_address, stack_size_bytes(), memory_bytes)};
+    }
+
     // the routines return through a7 so the call costs no more registers
     // than the system call
     auto emit_read_call(const size_t indent) -> void override {
@@ -142,6 +163,9 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     // prepares a3 for 'emit_receive_byte' and 'emit_transmit_byte'
     virtual auto emit_uart_setup(assembler_rv32i& a) const -> void = 0;
+
+    // the memory of the device, the image is loaded at its start
+    [[nodiscard]] virtual auto memory_size_bytes() const -> size_t = 0;
 
     //
     // class methods

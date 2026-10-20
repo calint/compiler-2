@@ -1,0 +1,4 @@
+
+1150.baz:5:17: count -1 is negative
+    write(1, a, -1)
+                ^

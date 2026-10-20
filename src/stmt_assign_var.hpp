@@ -54,6 +54,9 @@ class stmt_assign_var final : public statement {
 
         expr_ = {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
                  array_count};
+
+        // also in code that is never compiled, e.g. a function never called
+        assert_assignable(tc, dst_info);
     }
 
     // the initializer of a declaration, parsed before the variable was
@@ -95,30 +98,12 @@ class stmt_assign_var final : public statement {
             .is_exact{stmt_ident_.is_exact_access()},
         });
 
-        // what the destination resolves to
         const ident_info var_info{tc.make_ident_info(stmt_ident_)};
 
         assert_reference_not_read(tc, var_info);
 
-        if (var_info.is_const()) {
-            throw compile_error{tok(),
-                                std::format("cannot assign to constant '{}'",
-                                            stmt_ident_.name_or_literal())};
-        }
-
-        if (expr_.is_array_identifier()) {
-            if (const ident_info src_info{tc.make_ident_info(expr_)};
-
-                src_info.is_array() and
-                src_info.array_len() != var_info.array_len()) {
-
-                throw compile_error{
-                    expr_.tok(),
-                    std::format("destination array size {} does not match "
-                                "source size {}",
-                                var_info.array_len(), src_info.array_len())};
-            }
-        }
+        // a parameter names its argument only here, e.g. a constant
+        assert_assignable(tc, var_info);
 
         std::vector<operand> lea_registers;
 
@@ -166,6 +151,38 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
   private:
+    // the destination is not a constant and an array copy has the size of
+    // the destination; an unsized array parameter, of size 0, is checked when
+    // its call gives it a size
+    auto assert_assignable(const toc& tc, const ident_info& dst_info) const
+        -> void {
+
+        if (dst_info.is_const()) {
+            throw compile_error{tok(),
+                                std::format("cannot assign to constant '{}'",
+                                            stmt_ident_.name_or_literal())};
+        }
+
+        if (not expr_.is_array_identifier()) {
+            return;
+        }
+
+        const ident_info src_info{tc.make_ident_info(expr_)};
+
+        if (not src_info.is_array() or src_info.array_len() == 0 or
+            dst_info.array_len() == 0 or
+            src_info.array_len() == dst_info.array_len()) {
+
+            return;
+        }
+
+        throw compile_error{
+            expr_.tok(),
+            std::format("destination array size {} does not match source "
+                        "size {}",
+                        dst_info.array_len(), src_info.array_len())};
+    }
+
     // a destination that names storage under another name, e.g. a parameter or
     // the element of a 'foo', may be read by the value under that name, only
     // for '--checks=alias'

@@ -264,6 +264,13 @@ struct func_result_syntax {
     }
 };
 
+// the result of a function, e.g. 'res i8': its name and its type
+struct func_return_info {
+    token type_tk;
+    token ident_tk;
+    const type* type_ptr{};
+};
+
 class stmt_def_func final : public statement {
     func_head head_;
     std::vector<stmt_def_func_param> params_;
@@ -338,36 +345,14 @@ class stmt_def_func final : public statement {
         }
     }
 
-    [[nodiscard]] auto array_param_count() const -> size_t {
-        return static_cast<size_t>(
-            std::ranges::count_if(params_, &stmt_def_func_param::is_array));
-    }
-
-    // keeps the labels of the body unique: the instances of one generic
-    // definition have the same source locations, and a noinline body is
-    // compiled once per array lengths
-    [[nodiscard]] auto
-    body_call_path(const std::span<const size_t> array_lengths) const
-        -> std::string {
-
-        if (instance_) {
-            return name_with_lengths(array_lengths);
-        }
-
-        if (array_lengths.empty()) {
-            return {};
-        }
-
-        return array_lengths_path(array_lengths);
-    }
-
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum.len.4.8' for array lengths 4 and 8
     [[nodiscard]] auto
     body_label(const std::span<const size_t> array_lengths = {}) const
         -> std::string {
 
-        return std::format("func.{}", name_with_lengths(array_lengths));
+        return std::format("{}{}", machine::body_label_prefix,
+                           name_with_lengths(array_lengths));
     }
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
@@ -612,6 +597,11 @@ class stmt_def_func final : public statement {
         }
     }
 
+    [[nodiscard]] auto array_param_count() const -> size_t {
+        return static_cast<size_t>(
+            std::ranges::count_if(params_, &stmt_def_func_param::is_array));
+    }
+
     // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
     auto assert_mut_has_receiver() const -> void {
         if (head_.mut_tk.is_empty() or is_method()) {
@@ -626,6 +616,24 @@ class stmt_def_func final : public statement {
 
         throw compile_error{head_.mut_tk,
                             "'mut' requires a method 'type.name'"};
+    }
+
+    // keeps the labels of the body unique: the instances of one generic
+    // definition have the same source locations, and a noinline body is
+    // compiled once per array lengths
+    [[nodiscard]] auto
+    body_call_path(const std::span<const size_t> array_lengths) const
+        -> std::string {
+
+        if (instance_) {
+            return name_with_lengths(array_lengths);
+        }
+
+        if (array_lengths.empty()) {
+            return {};
+        }
+
+        return array_lengths_path(array_lengths);
     }
 
     // e.g. 'sum.len.4.8' for array lengths 4 and 8, 'sum' without lengths

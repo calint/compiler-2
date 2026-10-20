@@ -383,6 +383,11 @@ class machine_rv32i : public machine {
         emit_sector_system_call_routines(read_used, write_used);
     }
 
+    // linux stops a program that overflows the stack
+    [[nodiscard]] auto is_stack_bounded() const -> bool override {
+        return false;
+    }
+
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
 
@@ -438,12 +443,6 @@ class machine_rv32i : public machine {
     virtual auto emit_write_call(const size_t indent) -> void {
         assembler_.li(indent, "a7", syscall_write_);
         assembler_.ecall(indent);
-    }
-
-    // true where no operating system stops a program that overflows the
-    // stack, calls then check that the stack has room
-    [[nodiscard]] virtual auto is_stack_bounded() const -> bool {
-        return false;
     }
 
     //
@@ -540,7 +539,9 @@ class machine_rv32i : public machine {
                       const std::function_ref<void(const operand&)> emit_count,
                       const equality_request& request) -> void override {
 
-        const operand count{begin_array_operation(src_loc_tk, indent)};
+        const operand count{
+            begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
+        };
 
         emit_count(count);
 
@@ -926,7 +927,9 @@ class machine_rv32i : public machine {
                        const std::function_ref<void(const operand&)> emit_count,
                        const copy_request& request) -> void override {
 
-        const operand count{begin_array_operation(src_loc_tk, indent)};
+        const operand count{
+            begin_array_operation(src_loc_tk, indent, "source", "destination"),
+        };
 
         emit_count(count);
 
@@ -1136,10 +1139,7 @@ class machine_rv32i : public machine {
     }
 
     auto emit_stack_overflow_handler() -> void override {
-        // an operating system stops a program that overflows the stack
-        if (not is_stack_bounded()) {
-            return;
-        }
+        assert(is_stack_bounded());
 
         emit_named_failure_handler(stack_overflow_handler_label,
                                    "stack overflow", false);
@@ -1667,17 +1667,20 @@ class machine_rv32i : public machine {
         };
     }
 
-    // the bulk registers of an array copy or comparison
-    auto begin_array_operation(const token& src_loc_tk, const size_t indent)
-        -> operand {
+    // the bulk registers of an array copy or comparison, the roles of the
+    // pointers name them in the comment, e.g. 'source' and 'destination'
+    auto begin_array_operation(const token& src_loc_tk, const size_t indent,
+                               const std::string_view first_role,
+                               const std::string_view second_role) -> operand {
 
         const operand count{begin_bulk(src_loc_tk, indent)};
 
         const bulk_operation& bulk{bulk_operations_.back()};
 
-        comment(src_loc_tk, indent, "{}: source, {}: destination, {}: count",
-                bulk.pointer(0).base_register(),
-                bulk.pointer(1).base_register(), count.base_register());
+        comment(src_loc_tk, indent, "{}: {}, {}: {}, {}: count",
+                bulk.pointer(0).base_register(), first_role,
+                bulk.pointer(1).base_register(), second_role,
+                count.base_register());
 
         return count;
     }
@@ -1759,7 +1762,7 @@ class machine_rv32i : public machine {
         const bool is_division{result_kind != helper_result::product};
 
         const std::span<const std::string_view> clobbered{
-            helper_clobbers(is_division),
+            helper_clobbers(is_division, overflow_check.enabled),
         };
 
         const std::vector<std::string_view> saved{
@@ -4336,14 +4339,7 @@ class machine_rv32i : public machine {
             assembler_.store(indent, store_op(width), value.base_register(),
                              address.displacement(), address.base_register());
         } else if (width < word_size_bytes_ and normalize) {
-            const size_t shift{register_bits_ - (width * bits_per_byte)};
-
-            assembler_.slli(indent, value.base_register(),
-                            value.base_register(), shift);
-
-            assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
-                                    value.base_register(),
-                                    value.base_register(), shift);
+            extend_register(indent, dst.type_ref(), value);
         }
     }
 
@@ -5020,7 +5016,8 @@ class machine_rv32i : public machine {
     }
 
     // the registers that a call of the helper changes
-    [[nodiscard]] static auto helper_clobbers(const bool is_division)
+    [[nodiscard]] static auto helper_clobbers(const bool is_division,
+                                              const bool is_checked)
         -> std::span<const std::string_view> {
 
         // argument registers are allocated last, so the helpers rarely
@@ -5029,11 +5026,18 @@ class machine_rv32i : public machine {
             "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
         };
 
-        // the multiply helper changes the first five, the divide helper all
+        // '.Lbaz_multiply' changes the first five, '.Lbaz_multiply_checked'
+        // also 'a4' for the sign of the product, '.Lbaz_divide' all
         constexpr size_t multiply_clobber_count{5};
+        constexpr size_t checked_multiply_clobber_count{6};
 
-        return std::span{clobbers}.first(is_division ? clobbers.size()
-                                                     : multiply_clobber_count);
+        if (is_division) {
+            return clobbers;
+        }
+
+        return std::span{clobbers}.first(is_checked
+                                             ? checked_multiply_clobber_count
+                                             : multiply_clobber_count);
     }
 
     // the register-immediate form of 'add', 'and', 'or' and 'xor', 'sub' adds

@@ -108,24 +108,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
-    // the stack below the end of memory may not reach into the variables,
-    // how much of it is used at run time is checked only by
-    // '--checks=stack'
-    auto check_memory_end(const size_t memory_end_address) const
-        -> void override {
-
-        if (stack_size_bytes() <= memory_size_bytes_ and
-            memory_end_address <= memory_size_bytes_ - stack_size_bytes()) {
-
-            return;
-        }
-
-        throw std::runtime_error{std::format(
-            "code, data and variables use {} B and the stack {} B, "
-            "which exceeds the {} B of device memory",
-            memory_end_address, stack_size_bytes(), memory_size_bytes_)};
-    }
-
     // the card has a buffer of one sector: a read fills it from the sector,
     // a write sends it to the sector, the bytes pass one at a time through
     // the next byte address; its index wraps, so every transfer moves the
@@ -224,6 +206,11 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     auto emit_uart_setup(assembler_rv32i& a) const -> void override {
         a.li(1, "a3", uart_idle_);
+    }
+
+    // from '--memory'
+    [[nodiscard]] auto memory_size_bytes() const -> size_t override {
+        return memory_size_bytes_;
     }
 
     //

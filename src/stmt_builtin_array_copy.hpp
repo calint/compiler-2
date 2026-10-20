@@ -15,7 +15,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
-#include "unary_ops.hpp"
 
 class stmt_builtin_array_copy final : public statement {
     bulk_operands operands_;

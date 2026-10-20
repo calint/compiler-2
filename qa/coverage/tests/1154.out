@@ -1,0 +1,4 @@
+
+1154.baz:5:9: 'a[0]' is not an array
+    foo a[0] {
+        ^

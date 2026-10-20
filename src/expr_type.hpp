@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -37,7 +38,7 @@ enum class literal_typing : uint8_t { written, from_destination };
 }
 
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
-//       implemented in 'decouple_impl.hpp', those headers include this one
+//       implemented in 'expr_type_impl.hpp', those headers include this one
 //       through 'expr_any.hpp', so their definitions are incomplete here
 class expr_type final : public statement {
     std::unique_ptr<stmt_identifier> stmt_ident_;
@@ -134,6 +135,19 @@ class expr_type final : public statement {
         }
 
         assert_items_not_reading(dst, 0);
+    }
+
+    // the values of the listed fields of a literal, e.g. '1' and '2' of
+    // 'point{1, 2}'
+    [[nodiscard]] auto field_values() const
+        -> std::span<const std::unique_ptr<expr_any>> {
+
+        return exprs_;
+    }
+
+    // e.g. 'point{1, 2}' or 'point', not a copy of 'p' or of a call result
+    [[nodiscard]] auto is_literal() const -> bool {
+        return stmt_ident_ == nullptr and stmt_call_ == nullptr;
     }
 
     auto operator=(expr_type&&) noexcept -> expr_type&;

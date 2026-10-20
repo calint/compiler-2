@@ -102,7 +102,8 @@ class assembler_x86_64 final : public assembler {
             };
         }
 
-        [[nodiscard]] static auto of_symbol(const std::string_view name)
+        [[nodiscard]] static auto of_symbol(const std::string_view name,
+                                            const size_t size_bytes = {})
             -> memory {
 
             return {
@@ -111,7 +112,7 @@ class assembler_x86_64 final : public assembler {
                 .index{},
                 .scale{},
                 .displacement{},
-                .size_bytes{},
+                .size_bytes{size_bytes},
                 .explicit_displacement{},
             };
         }
@@ -184,10 +185,6 @@ class assembler_x86_64 final : public assembler {
 
         add_text(
             std::format("{}[{}] {}", comment_start(indent), location, text));
-    }
-
-    [[nodiscard]] auto instruction_count() const -> size_t override {
-        return code_size();
     }
 
     //
@@ -279,11 +276,6 @@ class assembler_x86_64 final : public assembler {
     auto jmp(const size_t indent, const std::string_view target) -> void {
         add_jump(std::format("{}jmp {}", indentation(indent), target), "jmp",
                  {}, target, {});
-    }
-
-    auto label(const size_t indent, const std::string_view name) -> void {
-        add_label(std::string{name},
-                  std::format("{}{}:", indentation(indent), name));
     }
 
     auto repeated_data(const size_t element_size_bytes, const size_t count,

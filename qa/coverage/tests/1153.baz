@@ -1,0 +1,12 @@
+# an array assigned an array of another size is rejected also in a function
+# that is never called
+
+func copy() {
+    var a = i8[2]
+    var b = i8[3]
+    a = b
+}
+
+func main() {
+    exit(0)
+}

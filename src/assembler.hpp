@@ -150,10 +150,6 @@ class assembler {
     virtual auto comment(const size_t indent, const std::string_view location,
                          const std::string_view text) -> void = 0;
 
-    // machine instructions, so pseudo instructions count as the ones they
-    // expand to, valid once jumps are resolved
-    [[nodiscard]] virtual auto instruction_count() const -> size_t = 0;
-
     //
     // class methods
     //
@@ -233,12 +229,23 @@ class assembler {
         bodies_.back().end_line = lines_.size();
     }
 
+    // machine instructions, so pseudo instructions count as the ones they
+    // expand to, valid once jumps are resolved
+    [[nodiscard]] auto instruction_count() const -> size_t {
+        return instructions_in(code_size());
+    }
+
     [[nodiscard]] auto is_buffering() const -> bool {
         return direct_output_ == nullptr;
     }
 
     // nothing is buffered
     [[nodiscard]] auto is_empty() const -> bool { return lines_.empty(); }
+
+    auto label(const size_t indent, const std::string_view name) -> void {
+        add_label(std::string{name},
+                  std::format("{}{}:", indentation(indent), name));
+    }
 
     // the bodies of each noinline function with their calls and size, in
     // the order of definition

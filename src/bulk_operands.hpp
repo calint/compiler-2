@@ -134,7 +134,8 @@ class bulk_operands final {
         close_paren_tk_.source_to(os);
     }
 
-    // both arrays are read
+    // for 'arrays_equal', which reads both arrays; 'array_copy' writes the
+    // second
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void {
 

@@ -1731,8 +1731,9 @@ SRC=0569 && COMPERR
 # an instance data field is checked after its unary operations
 SRC=0570 && COMPERR
 
-# a scalar data value outside the signed range of its type is rejected
-SRC=0571 && COMPERR
+# a scalar data value converted to its type wraps like the conversion in a
+# 'var': 2147483648 is -2147483648 as an 'i32'
+SRC=0571 && EXP=0 && RUN
 
 # constant multiplication by shifts and adds, e.g. the element size of an
 # array index, keeps the original value until the last add or sub
@@ -3528,3 +3529,85 @@ SRC=1130 && EXP=0 && RUN
 
 # a 'dat' after a function, whose variables the parse places before it
 SRC=1131 && EXP=3 && RUN
+
+# a constant element of an 'i8' array is folded at the width of the element,
+# as an assignment of the same expression is: '(127 + 1) >> 1' is -64
+SRC=1132 && EXP=0 && RUN
+
+# 'array_length' as the left side of a multiplication by a run-time value
+SRC=1133 && EXP=6 && OPTS="--vars=0x40000 --checks=noub,line --reproduce-source" RUN
+
+# the checked multiply on rv32i changes 'a4', which the deep sum holds; x86_64
+# has too few registers for the sum
+if [[ $MACHINE != x86_64 ]]; then
+    SRC=1134 && EXP=11 && OPTS="--vars=0x40000 --checks=overflow --reproduce-source" RUN
+fi
+
+# a token made only of utf-8 continuation bytes is reported with a caret
+SRC=1135 && COMPERR
+
+# a local that hides a global does not share storage with the global that an
+# inlined body reads
+SRC=1136 && EXP=4 && RUN
+
+# the innermost declaration of a name wins, a constant or a variable
+SRC=1137 && EXP=0 && RUN
+
+# a variable hides a global constant, also where a constant is expected
+SRC=1138 && COMPERR
+
+# a 'dat' initializer is parsed like the one of a 'var' and folded to
+# constants: expressions, named constants, conversions and nested literals
+SRC=1139 && EXP=0 && RUN
+
+# a 'dat' holds constants, a copy of another array is made at run time
+SRC=1140 && COMPERR
+
+# a 'dat' holds constants, a field of another 'dat' is read at run time
+SRC=1141 && COMPERR
+
+# a 'dat' holds constants, a call is made at run time
+SRC=1142 && COMPERR
+
+# the aliasing of a noinline call is checked for each field it passes, a call
+# with another field checked before does not stand for it
+SRC=1143 && COMPERR
+
+# a local that hides a global is not the global in the aliasing check of a
+# noinline call, a call with the local checked before does not stand for one
+# with the global
+SRC=1144 && COMPERR
+
+# an included file of comments only is reproduced by '--reproduce-source'
+SRC=1145 && EXP=0 && RUN
+
+# '-noub' turns off every check that 'noub' turns on, here the aliasing check
+# that would reject the call
+SRC=1146 && EXP=3 && OPTS="--vars=0x40000 --checks=noub,-noub --reproduce-source" RUN
+
+# a constant count past the end of the buffer of 'write' is rejected
+SRC=1147 && COMPERR
+
+# a constant start and count past the end of the buffer of 'read' are rejected
+SRC=1148 && COMPERR
+
+# a constant start that leaves less than a sector of the buffer of
+# 'sector_read' is rejected
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1149 && COMPERR; fi
+
+# a negative constant count of 'write' is rejected
+SRC=1150 && COMPERR
+
+# a negative constant start of 'read' is rejected
+SRC=1151 && COMPERR
+
+# an assignment to a constant is rejected also in a function that is never
+# called
+SRC=1152 && COMPERR
+
+# an array assigned an array of another size is rejected also in a function
+# that is never called
+SRC=1153 && COMPERR
+
+# 'foo' over an element of an array that is not an array names the element
+SRC=1154 && COMPERR

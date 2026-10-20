@@ -76,9 +76,7 @@ struct generic_call {
     // statics
     //
 
-    // the instance of a generic function, e.g. '<name>' in 'tz.to<name>()'
-    // without '<' the types are taken from the arguments. 'tz' is after the
-    // name and before the '<' or the '('
+    // 'tz' is after the name and before the '<' or the '('
     // note: 'name_tk' is the name as written, e.g. 'to', and 'generic_name'
     //       the generic function, e.g. 'tokenizer.to'
     [[nodiscard]] static auto
@@ -309,6 +307,8 @@ struct generic_call {
 // a temporary that holds its value
 struct noinline_arg {
     ident_info info;
+    // the variable and the bytes of it that the callee reaches
+    storage_target target;
     bool is_temporary;
 };
 
@@ -1190,8 +1190,9 @@ class inline_call {
 class noinline_call {
     // what the aliasing signature reads of the result or of an argument
     struct signature_item {
-        // the variable, e.g. 'v' of 'v.x'
-        std::string_view root;
+        // the variable and the bytes of it, e.g. 'v@2' and the field 'x' of
+        // 'v.x'
+        storage_target target;
         bool is_pointer{};
         bool is_array{};
         size_t array_len{};
@@ -1279,13 +1280,14 @@ class noinline_call {
         -> void {
 
         const std::optional<std::string> signature{
-            aliasing_signature(tc, dst, func, arguments),
+            aliasing_signature(tc, call_.tk, dst, func, arguments),
         };
 
         // note: what the body can reject depends only on which arguments are
         //       the same variable, e.g. 'f(v, v, n)' but not 'f(v, w, n)',
-        //       and on which are a global, since the body may name that
-        //       global too, e.g. 'f(v, g, n)'; so 'f(v, w, n)' and
+        //       on which are a global, since the body may name that global
+        //       too, e.g. 'f(v, g, n)', and on the bytes of each that are
+        //       passed, e.g. 'f(g.a)' and 'f(g.b)'; so 'f(v, w, n)' and
         //       'f(x, y, z)' give the same result and are checked once
         //
         //       the call is added before its dry run, so the same kind of
@@ -1340,17 +1342,24 @@ class noinline_call {
             if (not needs_temporary(tc, arg, param)) {
                 arguments.push_back({
                     .info{tc.make_ident_info(arg)},
+                    .target{call_site::argument_target(tc, arg)},
                     .is_temporary{},
                 });
 
                 continue;
             }
 
+            const ident_info temporary{
+                call_.add_temporary(tc, indent,
+                                    call_.temporary_argument_name(i),
+                                    param.get_type()),
+            };
+
             arguments.push_back({
-                .info{
-                    call_.add_temporary(tc, indent,
-                                        call_.temporary_argument_name(i),
-                                        param.get_type()),
+                .info{temporary},
+                .target{
+                    tc.storage_target_of(call_.tk, temporary.root_id(),
+                                         std::nullopt),
                 },
                 .is_temporary{true},
             });
@@ -1488,7 +1497,6 @@ class noinline_call {
         return addresses;
     }
 
-    // write pointers into the callee frame: result (if any), then arguments
     // each slot holds an address, not the value stored at that address
     auto write_frame_slots(machine& x, const size_t indent,
                            const stmt_def_func& func,
@@ -1522,8 +1530,8 @@ class noinline_call {
     // is a parameter of the enclosing noinline function, the calls of that
     // function are checked with their own arguments
     [[nodiscard]] static auto
-    aliasing_signature(const toc& tc, const destination& dst,
-                       const stmt_def_func& func,
+    aliasing_signature(const toc& tc, const token& src_loc_tk,
+                       const destination& dst, const stmt_def_func& func,
                        const std::span<const noinline_arg> arguments)
         -> std::optional<std::string> {
 
@@ -1532,7 +1540,7 @@ class noinline_call {
         // note: a pointer destination is resolved to its address before
         if (func.returns()) {
             items.push_back({
-                .root{dst.root_id()},
+                .target{call_site::result_target(tc, src_loc_tk, dst)},
                 .is_pointer{},
                 .is_array{dst.is_array()},
                 .array_len{dst.array_len()},
@@ -1540,11 +1548,8 @@ class noinline_call {
         }
 
         for (const noinline_arg& argument : arguments) {
-            // note: a temporary is a local of the call
-            assert(not argument.info.elem_path().empty());
-
             items.push_back({
-                .root{argument.info.elem_path().front()},
+                .target{argument.target},
                 .is_pointer{argument.info.is_pointer()},
                 .is_array{argument.info.is_array()},
                 .array_len{argument.info.array_len()},
@@ -1556,7 +1561,7 @@ class noinline_call {
 
         for (const signature_item& item : items) {
             const std::optional<std::string> part{
-                signature_part(tc, item, locals),
+                signature_part(item, locals),
             };
 
             if (not part) {
@@ -1641,11 +1646,11 @@ class noinline_call {
         return not tc.make_ident_info(arg).is_var();
     }
 
-    // what an argument adds to the signature, e.g. ' local 0' or ' global g',
-    // none for a pointer, which the signature cannot tell. 'locals' are the
-    // variables met so far
+    // what an argument adds to the signature, e.g. ' local 0.8' or
+    // ' global g[?]', none for a pointer, which the signature cannot tell.
+    // 'locals' are the variables met so far
     [[nodiscard]] static auto
-    signature_part(const toc& tc, const signature_item& item,
+    signature_part(const signature_item& item,
                    std::vector<std::string_view>& locals)
         -> std::optional<std::string> {
 
@@ -1660,19 +1665,25 @@ class noinline_call {
             part += std::format(" array {}", item.array_len);
         }
 
-        const std::string_view root{item.root};
+        const storage_target& target{item.target};
 
-        // note: also true when a local of the same name shadows the global
-        if (tc.scopes().front().has_var(root)) {
-            return part + std::format(" global {}", root);
+        // note: an unknown path is the whole variable
+        const std::string path{target.path ? target.path->text() : "*"};
+
+        if (target.is_global()) {
+            return part +
+                   std::format(" global {}{}", target.display_root(), path);
         }
+
+        const std::string_view root{target.root};
 
         if (std::ranges::find(locals, root) == locals.end()) {
             locals.push_back(root);
         }
 
-        return part + std::format(" local {}", std::ranges::find(locals, root) -
-                                                   locals.begin());
+        const auto local{std::ranges::find(locals, root)};
+
+        return part + std::format(" local {}{}", local - locals.begin(), path);
     }
 };
 
@@ -1864,6 +1875,14 @@ class stmt_call : public expression {
         -> const statement& {
 
         return args_.at(arg_index);
+    }
+
+    // e.g. '5' or 'n - 1' of a constant 'n', empty when computed at run time
+    [[nodiscard]] auto argument_constant(const toc& tc,
+                                         const size_t arg_index) const
+        -> std::optional<int64_t> {
+
+        return args_.at(arg_index).constant_value(tc);
     }
 
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
@@ -2171,16 +2190,12 @@ class stmt_call : public expression {
             // otherwise the missing argument is reported as a parse error of
             // the parameter's type
             // e.g. 'f()' of 'func f(x)'
-            if (i == first and tz.peek_char_after_whitespace() == ')') {
+            if (tz.peek_char_after_whitespace() == ')') {
                 throw_missing_argument(tz, params.at(i), i);
             }
 
             // e.g. the ',' of 'f(a, b)'
             if (i != first) {
-                if (tz.peek_char_after_whitespace() == ')') {
-                    throw_missing_argument(tz, params.at(i), i);
-                }
-
                 const std::string message{
                     std::format("expected ',' before {} ('{}')",
                                 describe_argument(i), params.at(i).name()),

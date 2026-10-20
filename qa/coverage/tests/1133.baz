@@ -1,0 +1,8 @@
+# 'array_length' as the left side of a multiplication by a run-time value
+
+func main() {
+    var a = i8[2]
+    var i = 3
+    var n = array_length(a) * i
+    exit(n)
+}

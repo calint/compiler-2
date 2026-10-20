@@ -1,0 +1,7 @@
+# a constant start and count past the end of the buffer of 'read' are rejected
+
+func main() {
+    var a = i8[4]
+    var n = read(0, a, 2, 3)
+    exit(n)
+}

@@ -6,13 +6,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: left from the review round of 2026-10-20: a second 'dat'
-    initializer parser in 'stmt_def_dat' (shares nothing with 'expr_any'),
-    the modes of 'expr_any' and 'stmt_def_var', '{}' not folded (an
-    optimization), the reason of rv32i 'leaf_stack_bytes{64}' (its comment
-    adds up to 48), rv32i frame overflow handler not on
-    'emit_named_failure_handler' (renames a label), 'multiply' with a bare
-    'bool' default on a virtual
+[ ] medium: left from the review round of 2026-10-20: the modes of
+    'expr_any' and 'stmt_def_var', the reason of rv32i
+    'leaf_stack_bytes{64}' (its comment adds up to 48), rv32i frame overflow
+    handler not on 'emit_named_failure_handler' (renames a label),
+    'multiply' with a bare 'bool' default on a virtual
+[ ] medium: a conversion of an expression, e.g. 'i8(2 + 3)', does not fold:
+    computed at run time in a 'var' and rejected in a 'dat'; the fold of the
+    argument must pause the overflow check as its compile does, and the fold
+    takes a 'const toc'; changes the code of a 'var' (an optimization)
 [ ] medium: the return check ignores constant conditions: 'if 1 == 1 {
     res = 2 }' as the only assignment of 'res' is rejected ("function may
     return without setting its return value") although 'compile' emits no

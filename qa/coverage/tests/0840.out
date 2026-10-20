@@ -37,7 +37,7 @@ register use at the failure: 14 of 14 registers live
 these frames are not noinline, making one noinline starts its body with all 14
 registers free and saves the registers held above it around the call:
 
-  candidate frame  held inside  saved at the call
-  top                       10                  4
-  middle                     6                  8
-  leaf                       1                 13
+  held inside  saved at the call  candidate frame
+           10                  4  top
+            6                  8  middle
+            1                 13  leaf

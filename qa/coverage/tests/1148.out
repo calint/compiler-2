@@ -1,0 +1,4 @@
+
+1148.baz:5:27: count 2 from index 3 is past the end of array 'a' of size 4
+    var n = read(0, a, 2, 3)
+                          ^

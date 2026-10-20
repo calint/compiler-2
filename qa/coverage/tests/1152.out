@@ -1,0 +1,4 @@
+
+1152.baz:7:5: cannot assign to constant 'k'
+    k = 2
+    ^

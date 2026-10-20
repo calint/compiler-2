@@ -1,0 +1,7 @@
+# 'foo' over an element of an array that is not an array names the element
+
+func main() {
+    var a = i8[4]
+    foo a[0] {
+    }
+}

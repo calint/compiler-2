@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -21,23 +20,15 @@
 
 #include "compile_error.hpp"
 #include "decouple.hpp"
+#include "decouple_impl.hpp"
 #include "expr_any.hpp"
 #include "expr_type.hpp"
-#include "generics.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
-#include "stmt_assign_var.hpp"
-#include "stmt_builtin_array_length.hpp"
-#include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_convert.hpp"
-#include "stmt_builtin_exit.hpp"
-#include "stmt_builtin_foo.hpp"
-#include "stmt_builtin_io.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
-#include "stmt_if.hpp"
-#include "stmt_loop.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"

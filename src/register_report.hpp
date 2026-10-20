@@ -90,14 +90,7 @@ class register_use_report final {
     [[nodiscard]] auto
     candidates_text(const std::vector<candidate>& found) const -> std::string {
 
-        constexpr size_t min_name_width{15};
-
-        size_t name_width{min_name_width};
-
-        for (const candidate& entry : found) {
-            name_width = std::max(name_width, entry.name.size());
-        }
-
+        // the name is last so that a long one does not push the numbers apart,
         // the numbers are right aligned under their headings
         constexpr std::string_view inside_heading{"held inside"};
         constexpr std::string_view saved_heading{"saved at the call"};
@@ -110,15 +103,14 @@ class register_use_report final {
                 "\n\nthese frames are not noinline, making one noinline "
                 "starts its body with all {} registers free and "
                 "saves the registers held above it around the "
-                "call:\n\n  {}  {}  {}",
-                register_total_, padded("candidate frame", name_width),
-                inside_heading, saved_heading),
+                "call:\n\n  {}  {}  candidate frame",
+                register_total_, inside_heading, saved_heading),
         };
 
         for (const candidate& entry : found) {
-            text += std::format("\n  {}{}{}", padded(entry.name, name_width),
-                                right_aligned(entry.inside, inside_width),
-                                right_aligned(entry.saved, saved_width));
+            text += std::format(
+                "\n{}{}  {}", right_aligned(entry.inside, inside_width),
+                right_aligned(entry.saved, saved_width), entry.name);
         }
 
         return text;
@@ -188,12 +180,6 @@ class register_use_report final {
     //
     // statics
     //
-
-    [[nodiscard]] static auto padded(const std::string& name,
-                                     const size_t width) -> std::string {
-
-        return name + std::string(width - name.size(), ' ');
-    }
 
     // 'std::format' takes a dynamic width of 'int' but not of 'size_t'
     [[nodiscard]] static auto right_aligned(const std::string_view text,
@@ -370,7 +356,7 @@ class register_reporter final {
 
             lines.push_back(
                 std::format("{:>7}{:>7}  {} {}", use.saved_peak, use.calls,
-                            without_prefix(label, "func."),
+                            without_prefix(label, machine::body_label_prefix),
                             machine_.get().location_text(use.peak_site_tk)));
         }
 
@@ -489,7 +475,9 @@ class register_reporter final {
                 break;
             }
 
-            parts.push_back(rest.substr(0, space));
+            // the spaces before the break are dropped with it
+            parts.push_back(
+                rest.substr(0, rest.find_last_not_of(' ', space) + 1));
 
             std::string next{indentation};
             next += rest.substr(space + 1);

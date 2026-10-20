@@ -107,6 +107,4 @@ class stmt_const final : public statement {
     [[nodiscard]] auto has_value() const -> bool {
         return not literal_tk_.text().empty();
     }
-
-    [[nodiscard]] auto value() const -> int64_t { return value_; }
 };

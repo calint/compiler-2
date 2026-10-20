@@ -1,0 +1,7 @@
+# a constant start that leaves less than a sector of the buffer of
+# 'sector_read' is rejected
+
+func main() {
+    var a = i8[1024]
+    sector_read(0, a, 600)
+}

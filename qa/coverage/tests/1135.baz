@@ -1,0 +1,5 @@
+# a token made only of utf-8 continuation bytes is reported with a caret
+
+func main() {
+    exit(©)
+}

@@ -36,9 +36,9 @@ class stmt_builtin_foo final : public statement {
         ident_ = {tc, {}, tz.next_token(), tz};
 
         if (not ident_.is_array()) {
-            throw compile_error{
-                ident_.tok(),
-                std::format("'{}' is not an array", ident_.name_or_literal())};
+            throw compile_error{ident_.tok(),
+                                std::format("'{}' is not an array",
+                                            statement::trimmed_source(ident_))};
         }
 
         // e.g. 'foo arr, len' visits the first 'len' elements

@@ -1,0 +1,4 @@
+
+1151.baz:5:27: start -1 is negative
+    var n = read(0, a, 1, -1)
+                          ^

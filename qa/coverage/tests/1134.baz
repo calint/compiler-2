@@ -1,0 +1,11 @@
+# the checked multiply on rv32i changes 'a4', which the deep sum holds; x86_64
+# has too few registers for the sum
+
+func main() {
+    var a = 1
+    var x = -3
+    var y = 5
+    exit((a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a +
+        (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a +
+        x * y)))))))))))))))))))))))))))
+}

@@ -25,6 +25,8 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // the finisher takes the exit code in the upper 16 bits
     static constexpr int finisher_code_shift_{16};
     static constexpr int finisher_pass_{0x5555};
+    // note: 128 MiB, the memory of the 'virt' machine without '-m'
+    static constexpr size_t ram_size_bytes_{0x800'0000};
 
   public:
     machine_rv32i_qemu(std::ostream* const direct_output,
@@ -92,5 +94,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
     auto emit_uart_setup(assembler_rv32i& a) const -> void override {
         a.lui(1, "a3", uart_upper_);
+    }
+
+    [[nodiscard]] auto memory_size_bytes() const -> size_t override {
+        return ram_size_bytes_;
     }
 };

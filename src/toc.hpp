@@ -73,12 +73,6 @@ struct func_info {
     std::string generic_method;
 };
 
-struct func_return_info {
-    token type_tk;
-    token ident_tk;
-    const type* type_ptr{};
-};
-
 // a noinline body compiled for the array lengths of one kind of call
 struct noinline_body {
     const stmt_def_func* func{};
@@ -100,6 +94,11 @@ struct storage_target {
     // variables of the same name
     [[nodiscard]] auto display_root() const -> std::string_view {
         return std::string_view{root}.substr(0, root.find(frame_mark));
+    }
+
+    // a variable of the root frame, e.g. 'g@0'
+    [[nodiscard]] auto is_global() const -> bool {
+        return root.ends_with(std::format("{}0", frame_mark));
     }
 
     // true when both may name the same bytes, a read of other bytes or of
@@ -1103,16 +1102,25 @@ class scope_stack final {
     }
 
     // constants of the current function, then the global ones, not those of
-    // the calling functions
+    // the calling functions; a variable or a parameter declared in a frame
+    // nearer hides the constant
     [[nodiscard]] auto find_const(const std::string_view name) const
         -> const const_info* {
 
         for (const frame& f : frames_ | std::views::reverse) {
+            if (f.has_var(name)) {
+                return nullptr;
+            }
+
             if (f.has_const(name)) {
                 return &f.get_const(name);
             }
 
             if (f.is_func()) {
+                if (f.has_alias(name)) {
+                    return nullptr;
+                }
+
                 break;
             }
         }
@@ -1309,8 +1317,9 @@ class scope_stack final {
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
-    // the index of the frame that declares the variable 'name', empty when it
-    // is not declared
+    // the index of the frame that declares the variable 'name' as the
+    // innermost function sees it, its own frames then the globals, empty when
+    // it is not declared
     [[nodiscard]] auto var_frame_index(const std::string_view name) const
         -> std::optional<size_t> {
 
@@ -1320,6 +1329,14 @@ class scope_stack final {
             if (frames_.at(index).has_var(name)) {
                 return index;
             }
+
+            if (frames_.at(index).is_func()) {
+                break;
+            }
+        }
+
+        if (frames_.front().has_var(name)) {
+            return 0;
         }
 
         return std::nullopt;
@@ -1871,6 +1888,13 @@ class ident_resolver final {
             return resolve_var_in(cur_frame, src_loc_tk, ident, step);
         }
 
+        // a constant hides what the frames outside declare
+        if (cur_frame.has_const(step.id.str())) {
+            return ident_info::make_const(
+                ident, step.id.str(), builtins_.get().default_type(),
+                cur_frame.get_const(step.id.str()).value);
+        }
+
         // from the root frame of a function aliases are followed to the
         // actual variable referred to
         if (not cur_frame.is_func()) {
@@ -2254,7 +2278,7 @@ class toc final {
     variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_;
-    // above zero while the code is compiled only to be measured or checked
+    // above zero while the code is compiled only to be checked
     size_t dry_run_depth_{};
     // false while the program is parsed: the names are declared without
     // comments and without the capacity check of the storage
@@ -2530,7 +2554,11 @@ class toc final {
     // runs 'compile' for its errors only: its output, string constants and
     // use of storage leave no trace
     auto check_only(const std::function_ref<void()> compile) -> void {
-        std::ignore = measure_only(compile);
+        const dry_run_scope dry_run{*this};
+
+        ::machine& x{machine()};
+
+        x.emit_discarded(compile);
     }
 
     // what '--checks' turned on
@@ -2784,18 +2812,6 @@ class toc final {
 
     auto mark_generic_func_instantiated(const std::string_view name) -> void {
         generics_.mark_func_instantiated(name);
-    }
-
-    // like 'check_only', returns the size of the code, in the unit of the
-    // target
-    [[nodiscard]] auto measure_only(const std::function_ref<void()> compile)
-        -> size_t {
-
-        const dry_run_scope dry_run{*this};
-
-        ::machine& x{machine()};
-
-        return x.measure_code_size(compile);
     }
 
     // a callee frame starts aligned for any variable it holds

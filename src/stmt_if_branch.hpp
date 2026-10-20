@@ -66,8 +66,6 @@ class stmt_if_branch final : public statement {
             std::format("{}.code", if_label),
         };
 
-        // the beginning of this branch
-
         machine& x{tc.machine()};
 
         x.label(indent, if_label);

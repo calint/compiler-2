@@ -468,6 +468,7 @@ class machine_x86_64 final : public machine {
         cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
+        // note: 'start' is free here and holds the frame size
         mov(src_loc_tk, indent, start, frame_size_bytes);
         cmp_lowered(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
@@ -742,8 +743,8 @@ class machine_x86_64 final : public machine {
                                 shift_failure_handler_label);
     }
 
-    // the operating system stops a program that overflows the stack
-    auto emit_stack_overflow_handler() -> void override {}
+    // note: the stack is not bounded, see 'is_stack_bounded'
+    auto emit_stack_overflow_handler() -> void override { std::unreachable(); }
 
     auto emit_string_constants(const std::span<const string_constant> strings)
         -> void override {
@@ -821,6 +822,11 @@ class machine_x86_64 final : public machine {
     // e.g. '[rbx + rcx * 8 + 16]'
     [[nodiscard]] auto has_indexed_addressing() const -> bool override {
         return true;
+    }
+
+    // the operating system stops a program that overflows the stack
+    [[nodiscard]] auto is_stack_bounded() const -> bool override {
+        return false;
     }
 
     auto label(const size_t indent, const std::string_view label)
@@ -1163,10 +1169,8 @@ class machine_x86_64 final : public machine {
             reserve_named_register(src_loc_tk, indent, "rdi", default_type());
             reserve_named_register(src_loc_tk, indent, "rcx", default_type());
 
-            xor_op(
-                src_loc_tk, indent,
-                machine_x86_64::make_register_operand("al", builtin_type_i8()),
-                machine_x86_64::make_register_operand("al", builtin_type_i8()));
+            const operand al{sized_register("rax", size_byte_)};
+            xor_op(src_loc_tk, indent, al, al);
 
             lea(src_loc_tk, indent, qword_register("rdi"), dst);
 
@@ -1190,21 +1194,6 @@ class machine_x86_64 final : public machine {
                 mov(src_loc_tk, indent,
                     memory_part(dst, part_size_bytes, offset), immediate(0));
             });
-    }
-
-    //
-    // class methods
-    //
-
-    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
-    auto invoke_syscall(const size_t indent) -> void {
-        static constexpr std::array<std::string_view, 2> clobbered{
-            "rcx",
-            "r11",
-        };
-
-        with_saved_registers(indent, clobbered,
-                             [&] -> void { syscall(indent); });
     }
 
   protected:
@@ -1266,18 +1255,16 @@ class machine_x86_64 final : public machine {
         constexpr std::string_view handler_label{"baz_sd_card_panic"};
 
         // the open file descriptor, a qword in '.data'
-        assembler_x86_64::memory descriptor{
-            assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor"),
+        const assembler_x86_64::memory descriptor{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor",
+                                                size_qword_),
         };
-
-        descriptor.size_bytes = size_qword_;
 
         // the file size in whole sectors, set once at open
-        assembler_x86_64::memory sector_count{
-            assembler_x86_64::memory::of_symbol("baz_sd_card_sectors"),
+        const assembler_x86_64::memory sector_count{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_sectors",
+                                                size_qword_),
         };
-
-        sector_count.size_bytes = size_qword_;
 
         assembler_.add_separator_newline();
 
@@ -1294,7 +1281,6 @@ class machine_x86_64 final : public machine {
             assembler_.instruction(1, op::mov, "eax", syscall_pwrite_);
         }
 
-        // the shared body of read and write
         assembler_.label(0, "baz_sector_transfer");
         assembler_.comment(1, "the system call is kept on the stack");
         // 'rax' is reused by 'open' and 'lseek', so the number is saved
@@ -1333,7 +1319,6 @@ class machine_x86_64 final : public machine {
         // bytes to whole sectors, a partial last sector is not counted
         assembler_.instruction(1, op::sar, "rax", sector_shift);
         assembler_.instruction(1, op::mov, sector_count, "rax");
-        // restore the arguments in reverse order of the pushes
         assembler_.instruction(1, op::pop, "rdx");
         assembler_.instruction(1, op::pop, "rsi");
         assembler_.instruction(1, op::pop, "rdi");
@@ -1366,18 +1351,15 @@ class machine_x86_64 final : public machine {
         emit_panic_message("msg_sd_card");
         emit_panic_exit();
 
-        // the panic message and its length symbol
         assembler_.switch_section(section::rodata);
         assembler_.label(0, "msg_sd_card");
         assembler_.string_data("panic: sd card\\n");
         assembler_.define_length("msg_sd_card_len", "msg_sd_card");
         assembler_.comment(0, "the file name ends with a zero byte");
-        // the image file name passed to 'open'
         assembler_.label(0, "baz_sd_card_name");
 
         assembler_.string_data(token::encode_string(sd_card_file_name()));
 
-        // the terminator 'open' expects
         assembler_.data(size_byte_, zero_value);
 
         // writable state, qword aligned for the 64 bit accesses
@@ -1387,7 +1369,6 @@ class machine_x86_64 final : public machine {
         assembler_.data(size_qword_, not_opened);
         assembler_.label(0, "baz_sd_card_sectors");
         assembler_.data(size_qword_, zero_value);
-        // later code is emitted into '.text' again
         assembler_.switch_section(section::text);
     }
 
@@ -1728,9 +1709,7 @@ class machine_x86_64 final : public machine {
         const std::function_ref<void(const operand&)> load_source_address)
         -> void {
 
-        reserve_named_register(src_loc_tk, indent, "rsi", default_type());
-        reserve_named_register(src_loc_tk, indent, "rdi", default_type());
-        reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+        std::ignore = alloc_bulk_registers(src_loc_tk, indent);
 
         load_source_address(qword_register("rsi"));
         lea(src_loc_tk, indent, qword_register("rdi"), dst);
@@ -2127,6 +2106,17 @@ class machine_x86_64 final : public machine {
         -> void {
 
         emit_unary(src_loc_tk, indent, op::inc, dst);
+    }
+
+    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
+    auto invoke_syscall(const size_t indent) -> void {
+        static constexpr std::array<std::string_view, 2> clobbered{
+            "rcx",
+            "r11",
+        };
+
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { syscall(indent); });
     }
 
     auto io_syscall(const token& src_loc_tk, const size_t indent,

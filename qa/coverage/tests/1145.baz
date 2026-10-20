@@ -1,0 +1,7 @@
+# an included file of comments only is reproduced by '--reproduce-source'
+
+include "include/comments.baz"
+
+func main() {
+    exit(0)
+}

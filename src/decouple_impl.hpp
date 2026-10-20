@@ -4,28 +4,12 @@
 // statement class, and 'stmt_block' and 'expr_arith', which call them, are
 // included by those classes
 
-#include <cassert>
-#include <cstddef>
 #include <format>
-#include <functional>
 #include <memory>
-#include <optional>
-#include <ostream>
-#include <ranges>
-#include <span>
-#include <string>
-#include <string_view>
-#include <tuple>
 #include <utility>
-#include <vector>
 
 #include "compile_error.hpp"
 #include "decouple.hpp"
-#include "expr_any.hpp"
-#include "expr_type.hpp"
-#include "generics.hpp"
-#include "ident_info.hpp"
-#include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
 #include "stmt_builtin_array_length.hpp"
@@ -41,8 +25,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "type.hpp"
-#include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
 // called from 'stmt_block' to solve circular dependencies with 'loop', 'if',

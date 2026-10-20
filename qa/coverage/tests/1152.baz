@@ -1,0 +1,12 @@
+# an assignment to a constant is rejected also in a function that is never
+# called
+
+let k = 1
+
+func set() {
+    k = 2
+}
+
+func main() {
+    exit(k)
+}

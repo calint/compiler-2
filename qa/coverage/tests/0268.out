@@ -1,2 +1,2 @@
 
-0268.baz:4:0: expected '}' to close array initializer for 'p'
+0268.baz:4:0: expected ',' followed by initializer for type 'p'

@@ -946,8 +946,8 @@ class expr_bool final : public statement {
     using element = std::variant<expr_bool_op, expr_bool>;
 
     std::vector<element> bools_;
-    std::vector<token>
-        ops_; // the 'and' or 'or' between the elements of 'bools_'
+    // the 'and' or 'or' between the elements of 'bools_'
+    std::vector<token> ops_;
     // the 'not's before the '(' of a parenthesized list, e.g. both of
     // 'not not (a == b and c == d)'
     std::vector<token> nots_;
@@ -1145,10 +1145,10 @@ class expr_bool final : public statement {
             return std::nullopt;
         }
 
-        const expr_arith* const operand{op->arithmetic()};
+        const expr_arith* const arith{op->arithmetic()};
 
-        if (operand == nullptr or not operand->is_name_or_literal() or
-            operand->is_expression()) {
+        if (arith == nullptr or not arith->is_name_or_literal() or
+            arith->is_expression()) {
 
             return std::nullopt;
         }

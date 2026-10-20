@@ -47,15 +47,18 @@ class foo_array_info final {
 struct var_info {
     std::string name;
     const type* type_ptr{};
-    token src_loc_tk; // token for position in the source
-    int64_t offset{}; // location offset from base register
+    token src_loc_tk;
+    // location offset from base register
+    int64_t offset{};
     bool is_array{};
     bool is_pointer{};
     read_only_cause read_only_why{};
     size_t array_len{};
-    operand pointer_register; // variable location is in register
+    // variable location is in register
+    operand pointer_register;
     std::string_view base_register;
-    operand value_register; // variable value is in register, no storage
+    // variable value is in register, no storage
+    operand value_register;
 
     // empty unless this is the element 'e' of a 'foo'
     foo_array_info foo_array;

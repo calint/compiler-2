@@ -1,0 +1,15 @@
+# '-noub' turns off every check that 'noub' turns on, here the aliasing check
+# that would reject the call
+
+type pair {a, b}
+
+var g = pair{1, 2}
+
+func noinline set(v mut) {
+    v = g.b + 1
+}
+
+func main() {
+    set(g.b)
+    exit(g.b)
+}

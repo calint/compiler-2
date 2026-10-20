@@ -189,15 +189,14 @@ nowhere for a statement, a register, or the storage a resolved name is at.
 
 Some code is compiled only to be checked or measured, then dropped:
 
-1. 'toc::check_only': the body of a noinline function compiled as if inlined
-   with the arguments of a call, for the aliasing errors of that call, see
-   [chapter 4](#4-noinline-calls-aliasing-validated-by-a-dry-run-of-the-body)
-2. 'toc::measure_only' and 'machine::measure_code_size': the size of code,
-   see [chapter 5](#5-versions-of-the-same-code-compiled-measured-the-shorter-kept);
-   'toc::dry_run_scope' and 'machine::measure_scope' put back what it
+1. 'toc::check_only' and 'machine::emit_discarded': the body of a noinline
+   function compiled as if inlined with the arguments of a call, for the
+   aliasing errors of that call, see
+   [chapter 4](#4-noinline-calls-aliasing-validated-by-a-dry-run-of-the-body);
+   'toc::dry_run_scope' and 'machine::discard_scope' put back what it
    changed: the registers, the frame depth, the string constants and the use
    of storage
-3. 'machine::emit_most_efficient': two versions are compiled and the one with
+2. 'machine::emit_most_efficient': two versions are compiled and the one with
    fewer instructions is kept, e.g. with and without a scratch register
 
 So a statement can be compiled more than once. What its compile adds to 'toc'

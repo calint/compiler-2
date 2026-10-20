@@ -203,7 +203,7 @@ class expr_arith final : public expression {
     expr_arith() = default;
 
     // higher than the highest precedence
-    static constexpr uint8_t initial_precedence{7};
+    static constexpr uint8_t initial_precedence{precedence_shift_ + 1};
 
     //
     // overridden methods
@@ -871,15 +871,15 @@ class expr_arith final : public expression {
         return not close_paren_tk_.is_empty();
     }
 
-    // a sub-expression ends when the operator has a lower precedence than its
-    // own list
-    //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
-    //   if not returning then becomes: a - [b * c + 3]
     // e.g. '(a + b)' vs 'a + b'
     [[nodiscard]] auto is_enclosed() const -> bool {
         return not open_paren_tk_.is_empty();
     }
 
+    // a sub-expression ends when the operator has a lower precedence than its
+    // own list
+    //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
+    //   if not returning then becomes: a - [b * c + 3]
     [[nodiscard]] auto is_end_of_implied_subexpression(
         const uint8_t precedence, const uint8_t next_precedence) const -> bool {
 
@@ -1204,20 +1204,19 @@ class expr_arith final : public expression {
     }
 
     // a stored 'bool' is 0 or 1, arithmetic would make other values
-    static auto assert_not_boolean(const toc& tc, const statement& operand)
+    static auto assert_not_boolean(const toc& tc, const statement& term)
         -> void {
 
         const type& operand_type{
-            operand.is_name_or_literal()
-                ? tc.make_ident_info(operand).type_ref()
-                : operand.get_type(),
+            term.is_name_or_literal() ? tc.make_ident_info(term).type_ref()
+                                      : term.get_type(),
         };
 
         if (not operand_type.is_bool()) {
             return;
         }
 
-        throw compile_error{operand.tok(),
+        throw compile_error{term.tok(),
                             "boolean values cannot be arithmetic operands"};
     }
 

@@ -1,0 +1,40 @@
+# a 'dat' initializer is parsed like the one of a 'var' and folded to
+# constants: expressions, named constants, conversions and nested literals
+
+type point {x i8, y}
+type line {a point, b point, tag i8[4]}
+
+let N = 4
+
+dat n = N * 2 + 1
+dat w = i8[1]{(127 + 1) >> 1}
+dat p = point{1, 2 + 3}
+dat q = point{i8(300), -N}
+dat bytes = i8[N]{1, 2 * 3}
+dat flags = bool[2]{true, 1 < 2}
+dat lines = line[2]{{{1, 2}, {}, "ab"}, {}}
+
+func main() {
+    if n != 9 {
+        exit(1)
+    }
+    if w[0] != -64 {
+        exit(2)
+    }
+    if p.x != 1 or p.y != 5 {
+        exit(3)
+    }
+    if q.x != 44 or q.y != -4 {
+        exit(4)
+    }
+    if bytes[1] != 6 or bytes[3] != 0 or array_length(bytes) != 4 {
+        exit(5)
+    }
+    if not flags[0] or not flags[1] {
+        exit(6)
+    }
+    if lines[0].a.y != 2 or lines[0].tag[1] != 'b' or lines[1].a.x != 0 {
+        exit(7)
+    }
+    exit(0)
+}

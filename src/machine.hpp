@@ -66,17 +66,17 @@ class machine {
     bool sector_read_used_{};
     bool sector_write_used_{};
 
-    // what measuring code changes in the machine is put back when it ends,
+    // what discarded code changes in the machine is put back when it ends,
     // also when an error unwinds: the registers held, the trace of the calls
     // and the most scratch registers in use; it starts with no register held
-    class measure_scope final {
+    class discard_scope final {
         machine& machine_;
         size_t kept_max_scratch_regs_;
         register_trace kept_trace_;
         register_pool kept_pool_;
 
       public:
-        explicit measure_scope(machine& backend)
+        explicit discard_scope(machine& backend)
             : machine_{backend},
               kept_max_scratch_regs_{backend.usage_max_scratch_regs_},
               kept_trace_{backend.trace_}, kept_pool_{backend.registers_} {
@@ -84,12 +84,12 @@ class machine {
             backend.registers_ = register_pool{};
         }
 
-        measure_scope(const measure_scope&) = delete;
-        measure_scope(measure_scope&&) = delete;
-        auto operator=(const measure_scope&) -> measure_scope& = delete;
-        auto operator=(measure_scope&&) -> measure_scope& = delete;
+        discard_scope(const discard_scope&) = delete;
+        discard_scope(discard_scope&&) = delete;
+        auto operator=(const discard_scope&) -> discard_scope& = delete;
+        auto operator=(discard_scope&&) -> discard_scope& = delete;
 
-        ~measure_scope() {
+        ~discard_scope() {
             machine_.registers_ = std::move(kept_pool_);
             machine_.usage_max_scratch_regs_ = kept_max_scratch_regs_;
             machine_.trace_ = std::move(kept_trace_);
@@ -395,6 +395,9 @@ class machine {
     static constexpr std::string_view variables_label{"vars"};
     static constexpr std::string_view variables_end_label{"vars.end"};
 
+    // the start of the label of a noinline body, the report drops it
+    static constexpr std::string_view body_label_prefix{"func."};
+
     // the labels of the code that a failed check jumps to, every backend
     // emits it
     static constexpr std::string_view bounds_failure_handler_label{
@@ -576,8 +579,7 @@ class machine {
     // prints 'panic: shift', with the line when 'with_line'
     virtual auto emit_shift_failure_handler(const bool with_line) -> void = 0;
 
-    // prints 'panic: stack overflow', emits nothing on a target where an
-    // operating system stops the overflow
+    // prints 'panic: stack overflow', only where 'is_stack_bounded'
     virtual auto emit_stack_overflow_handler() -> void = 0;
 
     // leaves the code section current
@@ -614,6 +616,10 @@ class machine {
     // whether an access can add an index register to a base register, else an
     // indexed address is computed into a register by separate instructions
     [[nodiscard]] virtual auto has_indexed_addressing() const -> bool = 0;
+
+    // true where no operating system stops a program that overflows the
+    // stack: calls check that the stack has room and a failure has a handler
+    [[nodiscard]] virtual auto is_stack_bounded() const -> bool = 0;
 
     virtual auto label(const size_t indent, const std::string_view label)
         -> void = 0;
@@ -746,15 +752,6 @@ class machine {
             src_loc_tk, "out of scratch registers, simplify the expression");
     }
 
-    // the registers allocated until 'end_call_frame' belong to the inlined call
-    // of 'name' made at 'call_site_tk', the first frame is the function being
-    // compiled and has no call site
-    auto begin_call_frame(const token& call_site_tk, std::string name,
-                          const bool is_noinline_body) -> void {
-
-        trace_.begin_frame(call_site_tk, std::move(name), is_noinline_body);
-    }
-
     // the code emitted up to 'end_noinline_body' is a body of 'function'
     auto begin_noinline_body(std::string function, std::string label) -> void {
         target_assembler().begin_body(std::move(function), std::move(label));
@@ -786,11 +783,6 @@ class machine {
         comment(src_loc_tk, indent, std::string_view{text});
     }
 
-    // the call frame that allocations are made in
-    [[nodiscard]] auto current_call_frame() const -> size_t {
-        return trace_.current_frame();
-    }
-
     template <std::ranges::input_range values_t>
     auto emit_data_array(const size_t element_size_bytes, values_t&& values)
         -> void {
@@ -814,6 +806,18 @@ class machine {
 
         emit_data_array(element_size_bytes,
                         std::function_ref<bool(int64_t&)>{next});
+    }
+
+    // runs 'emit' for its checks, nothing it emits is kept and the registers
+    // it used are not counted. it starts with no register held, like the body
+    // of a 'noinline' function it stands for, so the registers that the caller
+    // holds do not make it run out
+    auto emit_discarded(const std::function_ref<void()> emit) -> void {
+        const discard_scope discard{*this};
+
+        // buffered because comments are otherwise written as emitted
+        target_assembler().emit_buffered(
+            [&] -> void { std::ignore = target_assembler().capture(emit); });
     }
 
     // emits both versions and keeps the one with less code, the first on ties;
@@ -842,8 +846,6 @@ class machine {
 
     // the report of the use of registers is kept for 'register_peak_report'
     auto enable_register_report() -> void { trace_.enable(); }
-
-    auto end_call_frame() -> void { trace_.end_frame(); }
 
     auto end_noinline_body() -> void { target_assembler().end_body(); }
 
@@ -896,73 +898,11 @@ class machine {
         return locations_.human_readable(src_loc_tk);
     }
 
-    // runs 'emit' for its checks and returns the size of the code it made, in
-    // the unit of the target, nothing it emits is kept and the registers it
-    // used are not counted. it starts with no register held, like the body of
-    // a 'noinline' function it stands for, so the registers that the caller
-    // holds do not make it run out
-    [[nodiscard]] auto measure_code_size(const std::function_ref<void()> emit)
-        -> size_t {
-
-        const measure_scope measure{*this};
-
-        size_t size{};
-
-        // buffered because comments are otherwise written as emitted
-        target_assembler().emit_buffered([&] -> void {
-            size = assembler::code_size_of(target_assembler().capture(emit));
-        });
-
-        return size;
-    }
-
-    // a call of the function with the body 'label' saves the registers 'saved'
-    auto record_noinline_call(const token& call_site_tk,
-                              const std::string_view label, const size_t saved)
-        -> void {
-
-        trace_.record_noinline_call(call_site_tk, label, saved);
-    }
-
     // an error that the registers ran out or are held by a value, with how the
     // registers are used by each frame and what a 'noinline' frame would give
     [[nodiscard]] auto register_error(const token& src_loc_tk,
                                       std::string message) const
         -> compile_error;
-
-    // an error that the register 'name' at 'index', which an instruction or
-    // a built-in needs, is held: by a scratch value of the expression, or by
-    // an operation whose operands are being computed, which a value computed
-    // with 'let' before the operation does not clash with
-    [[nodiscard]] auto register_in_use_error(const token& src_loc_tk,
-                                             const std::string_view name,
-                                             const size_t index) const
-        -> compile_error {
-
-        const register_pool::allocation& holder{registers_.holder_of(index)};
-
-        // note: the registers that the backend holds without a place in the
-        //       source, e.g. the variables base, are needed by no instruction
-        assert(holder.src_loc_tk.at_line() != 0);
-
-        const std::string holder_location{location_text(holder.src_loc_tk)};
-
-        if (not holder.named) {
-            return register_error(
-                src_loc_tk,
-                std::format("cannot allocate register {} because it holds a "
-                            "scratch value allocated at {}, simplify the "
-                            "expression",
-                            name, holder_location));
-        }
-
-        return register_error(
-            src_loc_tk,
-            std::format("register {} is always used by the operation at {} and "
-                        "is needed here too, compute the operand that needs "
-                        "it with 'let' before that operation",
-                        name, holder_location));
-    }
 
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none
@@ -980,15 +920,6 @@ class machine {
         frame_base_reserved_ = false;
     }
 
-    // held from 'start' to 'finish'
-    auto release_variables_base() -> void {
-        assert(variables_base_reserved_);
-
-        release_named_register(token{}, 0, variables_base_register());
-
-        variables_base_reserved_ = false;
-    }
-
     auto reserve_frame_base() -> void {
         assert(not frame_base_reserved_);
         assert(registers_.scratch_count() == 0);
@@ -999,15 +930,6 @@ class machine {
         frame_base_reserved_ = true;
 
         emit_frame_entry();
-    }
-
-    auto reserve_variables_base() -> void {
-        assert(not variables_base_reserved_);
-
-        reserve_named_register(token{}, 0, variables_base_register(),
-                               default_type());
-
-        variables_base_reserved_ = true;
     }
 
     // how many scratch registers the backend can hand out
@@ -1424,6 +1346,14 @@ class machine {
         registers_.protect(register_mask(name));
     }
 
+    // a call of the function with the body 'label' saves the registers 'saved'
+    auto record_noinline_call(const token& call_site_tk,
+                              const std::string_view label, const size_t saved)
+        -> void {
+
+        trace_.record_noinline_call(call_site_tk, label, saved);
+    }
+
     // the mask of the register 'name' in the pool, 0 for text that names no
     // register
     [[nodiscard]] auto register_mask(const std::string_view name) const
@@ -1466,6 +1396,15 @@ class machine {
         pop_allocation(register_name);
     }
 
+    // held from 'start' to 'finish'
+    auto release_variables_base() -> void {
+        assert(variables_base_reserved_);
+
+        release_named_register(token{}, 0, variables_base_register());
+
+        variables_base_reserved_ = false;
+    }
+
     // 'alloc_named_register' without an operand, for a register that the
     // backend uses by name
     auto reserve_named_register(const token& src_loc_tk, const size_t indent,
@@ -1478,11 +1417,19 @@ class machine {
                 register_name);
 
         if (registers_.is_unavailable(register_mask(register_name))) {
-            throw register_in_use_error(src_loc_tk, register_name,
-                                        pool_index(register_name));
+            throw register_in_use_error(src_loc_tk, register_name);
         }
 
         push_allocation(src_loc_tk, indent, register_name, type_ref, true);
+    }
+
+    auto reserve_variables_base() -> void {
+        assert(not variables_base_reserved_);
+
+        reserve_named_register(token{}, 0, variables_base_register(),
+                               default_type());
+
+        variables_base_reserved_ = true;
     }
 
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
@@ -1617,6 +1564,22 @@ class machine {
         return result;
     }
 
+    // the registers allocated until 'end_call_frame' belong to the inlined call
+    // of 'name' made at 'call_site_tk', the first frame is the function being
+    // compiled and has no call site
+    auto begin_call_frame(const token& call_site_tk, std::string name,
+                          const bool is_noinline_body) -> void {
+
+        trace_.begin_frame(call_site_tk, std::move(name), is_noinline_body);
+    }
+
+    // the call frame that allocations are made in
+    [[nodiscard]] auto current_call_frame() const -> size_t {
+        return trace_.current_frame();
+    }
+
+    auto end_call_frame() -> void { trace_.end_frame(); }
+
     // the index of 'register_name', which names a register
     [[nodiscard]] auto pool_index(const std::string_view register_name) const
         -> size_t {
@@ -1649,5 +1612,40 @@ class machine {
         });
 
         trace_.record_allocation(registers_);
+    }
+
+    // an error that the register 'name', which an instruction or
+    // a built-in needs, is held: by a scratch value of the expression, or by
+    // an operation whose operands are being computed, which a value computed
+    // with 'let' before the operation does not clash with
+    [[nodiscard]] auto register_in_use_error(const token& src_loc_tk,
+                                             const std::string_view name) const
+        -> compile_error {
+
+        const register_pool::allocation& holder{
+            registers_.holder_of(pool_index(name)),
+        };
+
+        // note: the registers that the backend holds without a place in the
+        //       source, e.g. the variables base, are needed by no instruction
+        assert(holder.src_loc_tk.at_line() != 0);
+
+        const std::string holder_location{location_text(holder.src_loc_tk)};
+
+        if (not holder.named) {
+            return register_error(
+                src_loc_tk,
+                std::format("cannot allocate register {} because it holds a "
+                            "scratch value allocated at {}, simplify the "
+                            "expression",
+                            name, holder_location));
+        }
+
+        return register_error(
+            src_loc_tk,
+            std::format("register {} is always used by the operation at {} and "
+                        "is needed here too, compute the operand that needs "
+                        "it with 'let' before that operation",
+                        name, holder_location));
     }
 };

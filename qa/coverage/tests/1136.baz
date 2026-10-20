@@ -1,0 +1,14 @@
+# a local that hides a global does not share storage with the global that an
+# inlined body reads
+
+var total = 3
+
+func bump(value mut) {
+    value = total + 1
+}
+
+func main() {
+    var total = 7
+    bump(total)
+    exit(total)
+}

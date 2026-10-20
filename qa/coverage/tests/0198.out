@@ -1,4 +1,4 @@
 
-0198.baz:3:30: '2' is not a 'bool', use 'true' or 'false'
+0198.baz:3:30: '2' of type 'i64' is not a 'bool', compare it, e.g. '2 != 0'
 func main() { dat x = bool[]{2} }
                              ^

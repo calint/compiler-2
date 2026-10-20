@@ -1,7 +1,11 @@
-# a scalar data value outside the signed range of its type is rejected
+# a scalar data value converted to its type wraps like the conversion in a
+# 'var': 2147483648 is -2147483648 as an 'i32'
 
 dat count = i32(2147483648)
 
 func main() {
-    exit(count)
+    if count != -2147483648 {
+        exit(1)
+    }
+    exit(0)
 }

@@ -1,0 +1,6 @@
+# a constant count past the end of the buffer of 'write' is rejected
+
+func main() {
+    var a = i8[4]
+    write(1, a, 5)
+}

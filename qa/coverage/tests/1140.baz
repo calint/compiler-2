@@ -1,0 +1,8 @@
+# a 'dat' holds constants, a copy of another array is made at run time
+
+dat a = i8[2]{1, 2}
+dat b = a
+
+func main() {
+    exit(b[0])
+}

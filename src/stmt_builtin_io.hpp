@@ -113,14 +113,14 @@ class stmt_builtin_io final : public stmt_call {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         const machine::builtin_function_registers registers{
-            x.registers_for_builtin_function(builtin_function()),
+            x.registers_for_builtin_function(io_.function),
         };
 
         const std::vector<operand> args{
             compile_array_arguments(tc, indent, registers.arguments),
         };
 
-        if (is_sector_function()) {
+        if (io_.is_sector) {
             emit_sector_call(x, indent, args);
             x.free_named_registers(tok(), indent, args);
             return;
@@ -212,8 +212,7 @@ class stmt_builtin_io final : public stmt_call {
                 buffer.tok(),
                 std::format("pass the array and the start as {} argument, "
                             "e.g. '{}'",
-                            is_sector_function() ? "3rd" : "4th",
-                            usage_text())};
+                            io_.is_sector ? "3rd" : "4th", usage_text())};
         }
 
         if (buffer.is_name_or_literal()) {
@@ -229,6 +228,59 @@ class stmt_builtin_io final : public stmt_call {
     }
 
     // a sector is a whole number of elements and fits in the array
+    // a constant range past the end of the buffer is rejected like the count
+    // of 'array_copy', e.g. 'write(1, a, 5)' of 'a = i8[4]', a run-time one is
+    // left to the bounds check at run time
+    auto assert_constant_range_in_bounds(toc& tc,
+                                         const ident_info& buffer_info) const
+        -> void {
+
+        const std::optional<int64_t> count{constant_count(tc, buffer_info)};
+
+        const size_t start_index{argument_count() - 1};
+
+        const std::optional<int64_t> start{
+            has_start() ? argument_constant(tc, start_index) : int64_t{},
+        };
+
+        if (not count or not start) {
+            return;
+        }
+
+        if (*count < 0) {
+            throw compile_error{argument(2).tok(),
+                                std::format("count {} is negative", *count)};
+        }
+
+        if (*start < 0) {
+            throw compile_error{argument(start_index).tok(),
+                                std::format("start {} is negative", *start)};
+        }
+
+        if (std::cmp_less_equal(*start + *count, buffer_info.array_len())) {
+            return;
+        }
+
+        const std::string what{
+            has_count() ? std::format("count {}", *count)
+                        : std::format("a sector of {} elements", *count),
+        };
+
+        const std::string from_index{
+            has_start() ? std::format(" from index {}", *start) : std::string{},
+        };
+
+        const token& error_tk{
+            has_start() ? argument(start_index).tok() : argument(2).tok(),
+        };
+
+        throw compile_error{
+            error_tk,
+            std::format("{}{} is past the end of array '{}' of size {}", what,
+                        from_index, argument(1).name_or_literal(),
+                        buffer_info.array_len())};
+    }
+
     auto assert_sector_buffer(toc& tc, const ident_info& buffer_info) const
         -> void {
 
@@ -270,10 +322,6 @@ class stmt_builtin_io final : public stmt_call {
         }
     }
 
-    [[nodiscard]] auto builtin_function() const -> machine::builtin_function {
-        return io_.function;
-    }
-
     // the count and start are in elements, the byte count is computed last
     [[nodiscard]] auto compile_array_arguments(
         toc& tc, const size_t indent,
@@ -309,6 +357,8 @@ class stmt_builtin_io final : public stmt_call {
         if (has_start()) {
             start = compile_start(tc, indent, count, buffer_info);
         }
+
+        assert_constant_range_in_bounds(tc, buffer_info);
 
         // a start is checked with the start, a bare count by 'compile_lea'
         compile_buffer_address(tc, indent, buffer_reg, buffer_info,
@@ -366,7 +416,7 @@ class stmt_builtin_io final : public stmt_call {
 
         size_t element_count{buffer_info.array_len()};
 
-        if (is_sector_function()) {
+        if (io_.is_sector) {
             assert_sector_buffer(tc, buffer_info);
 
             element_count =
@@ -402,6 +452,26 @@ class stmt_builtin_io final : public stmt_call {
         return start;
     }
 
+    // the count argument, else the elements of the array or of one sector,
+    // empty when the count is computed at run time
+    [[nodiscard]] auto constant_count(toc& tc,
+                                      const ident_info& buffer_info) const
+        -> std::optional<int64_t> {
+
+        if (has_count()) {
+            return argument_constant(tc, 2);
+        }
+
+        if (not io_.is_sector) {
+            return static_cast<int64_t>(buffer_info.array_len());
+        }
+
+        const machine& x{tc.machine()};
+
+        return static_cast<int64_t>(x.sector_size_bytes() /
+                                    buffer_info.type_ref().size_bytes());
+    }
+
     // the start moves the buffer address and the count becomes the byte count
     auto convert_to_bytes(toc& tc, const size_t indent,
                           const operand& buffer_reg, const operand& count,
@@ -425,7 +495,7 @@ class stmt_builtin_io final : public stmt_call {
     auto emit_call(machine& x, const size_t indent, const operand& result,
                    const std::vector<operand>& args) const -> void {
 
-        if (builtin_function() == machine::builtin_function::read) {
+        if (io_.function == machine::builtin_function::read) {
             x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
             return;
         }
@@ -436,7 +506,7 @@ class stmt_builtin_io final : public stmt_call {
     auto emit_sector_call(machine& x, const size_t indent,
                           const std::vector<operand>& args) const -> void {
 
-        if (builtin_function() == machine::builtin_function::sector_read) {
+        if (io_.function == machine::builtin_function::sector_read) {
             x.sector_read(tok(), indent, args.at(0), args.at(1), args.at(2));
             return;
         }
@@ -447,27 +517,19 @@ class stmt_builtin_io final : public stmt_call {
     // 'read(fd, buf, count, start)': the count and the start are optional,
     // a sector function has no count
     [[nodiscard]] auto has_count() const -> bool {
-        return not is_sector_function() and argument_count() >= 3;
+        return not io_.is_sector and argument_count() >= 3;
     }
 
     [[nodiscard]] auto has_start() const -> bool {
         return argument_count() == io_.max_arg_count;
     }
 
-    [[nodiscard]] auto is_sector_function() const -> bool {
-        return io_.is_sector;
-    }
-
     // the call with all its arguments
     [[nodiscard]] auto usage_text() const -> std::string {
-        if (is_sector_function()) {
+        if (io_.is_sector) {
             return std::format("{}(sector, buf, start)", tok().text());
         }
 
         return std::format("{}(fd, buf, count, start)", tok().text());
     }
-
-    //
-    // statics
-    //
 };

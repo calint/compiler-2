@@ -4,7 +4,9 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <span>
+#include <string>
 #include <vector>
 
 // aliasing: two accesses to a variable that cannot be the same bytes because
@@ -67,6 +69,24 @@ struct access_path {
     // false only when the bytes cannot be the same
     [[nodiscard]] auto overlaps(const access_path& other) const -> bool {
         return not are_disjoint(steps, other.steps);
+    }
+
+    // equal for the same path, e.g. '.8[2][?]' is the field at offset 8, its
+    // element 2 and an element at a run-time index
+    [[nodiscard]] auto text() const -> std::string {
+        std::string result;
+
+        for (const path_step& step : steps) {
+            if (step.kind == path_step::kind_type::field) {
+                result += std::format(".{}", step.number);
+            } else if (step.kind == path_step::kind_type::fixed_index) {
+                result += std::format("[{}]", step.number);
+            } else {
+                result += "[?]";
+            }
+        }
+
+        return result;
     }
 
     //

@@ -246,7 +246,9 @@ class assembler_rv32i final : public assembler {
     using record = std::variant<instruction, jump_registers, data_values,
                                 alignment, section_start, constant>;
 
-    static constexpr size_t section_count_{4};
+    static constexpr size_t section_count_{
+        std::to_underlying(section::bss) + 1,
+    };
 
     struct line_position {
         section which{};
@@ -311,12 +313,6 @@ class assembler_rv32i final : public assembler {
 
         add_text(
             std::format("{}# [{}] {}", indentation(indent), location, text));
-    }
-
-    // machine instructions, so pseudo instructions count as the ones they
-    // expand to, valid once jumps are resolved
-    [[nodiscard]] auto instruction_count() const -> size_t override {
-        return code_size() / one_instruction_bytes;
     }
 
     //
@@ -617,11 +613,6 @@ class assembler_rv32i final : public assembler {
                             .rs1{},
                             .rs2{},
                         });
-    }
-
-    auto label(const size_t indent, const std::string_view name) -> void {
-        add_label(std::string{name},
-                  std::format("{}{}:", indentation(indent), name));
     }
 
     auto lbu(const size_t indent, const std::string_view rd, immediate offset,
@@ -963,25 +954,6 @@ class assembler_rv32i final : public assembler {
     // statics
     //
 
-    [[nodiscard]] static auto inverse(const std::string_view mnemonic)
-        -> std::string_view {
-
-        constexpr std::array<mnemonic_pair, 8> pairs{
-            {
-                {"beq", "bne"},
-                {"blt", "bge"},
-                {"bltu", "bgeu"},
-                {"bgt", "ble"},
-                {"bgtu", "bleu"},
-                {"beqz", "bnez"},
-                {"bltz", "bgez"},
-                {"bgtz", "blez"},
-            },
-        };
-
-        return paired_mnemonic(pairs, mnemonic);
-    }
-
     // an 'li' constant that fits 'addi' or has no low part is one instruction
     [[nodiscard]] static auto li_value_size_bytes(const int64_t value)
         -> size_t {
@@ -996,20 +968,6 @@ class assembler_rv32i final : public assembler {
         }
 
         return two_instructions_bytes;
-    }
-
-    // labels, directives and comments occupy no space, instructions are added
-    // as records except for jumps, which start as one instruction
-    [[nodiscard]] static auto line_size_bytes(const std::string_view text)
-        -> size_t {
-
-        const std::string_view code{code_part(text)};
-
-        if (code.empty() or code.back() == ':' or is_sizeless_directive(code)) {
-            return 0;
-        }
-
-        return one_instruction_bytes;
     }
 
     [[nodiscard]] static auto lower_part(const int64_t value) -> int32_t {
@@ -1128,14 +1086,8 @@ class assembler_rv32i final : public assembler {
                 std::get_if<data_values>(record_of(l)),
             };
 
-            const bool is_zero_fill{
-                data != nullptr and
-                    std::ranges::all_of(
-                        data->values,
-                        [](const int64_t v) -> bool { return v == 0; }),
-            };
-
-            assert(l.code_size == 0 and (data == nullptr or is_zero_fill));
+            assert(l.code_size == 0 and
+                   (data == nullptr or is_zero_fill(*data)));
         }
     }
 
@@ -2077,6 +2029,25 @@ class assembler_rv32i final : public assembler {
         return std::string{mnemonic};
     }
 
+    [[nodiscard]] static auto inverse(const std::string_view mnemonic)
+        -> std::string_view {
+
+        constexpr std::array<mnemonic_pair, 8> pairs{
+            {
+                {"beq", "bne"},
+                {"blt", "bge"},
+                {"bltu", "bgeu"},
+                {"bgt", "ble"},
+                {"bgtu", "bleu"},
+                {"beqz", "bnez"},
+                {"bltz", "bgez"},
+                {"bgtz", "blez"},
+            },
+        };
+
+        return paired_mnemonic(pairs, mnemonic);
+    }
+
     [[nodiscard]] static auto is_local_label(const std::string_view name)
         -> bool {
 
@@ -2090,6 +2061,25 @@ class assembler_rv32i final : public assembler {
 
         const std::string_view name{code.substr(0, code.find_first_of(" \t"))};
         return name == ".option" or name == ".globl" or name == ".equ";
+    }
+
+    [[nodiscard]] static auto is_zero_fill(const data_values& data) -> bool {
+        return std::ranges::all_of(
+            data.values, [](const int64_t v) -> bool { return v == 0; });
+    }
+
+    // labels, directives and comments occupy no space, instructions are added
+    // as records except for jumps, which start as one instruction
+    [[nodiscard]] static auto line_size_bytes(const std::string_view text)
+        -> size_t {
+
+        const std::string_view code{code_part(text)};
+
+        if (code.empty() or code.back() == ':' or is_sizeless_directive(code)) {
+            return 0;
+        }
+
+        return one_instruction_bytes;
     }
 
     // the sequence 'li' expands to
@@ -2198,12 +2188,14 @@ class assembler_rv32i final : public assembler {
             return found->second;
         }
 
+        assert(name.size() >= 2);
+
         const auto locals{
             symbols.local_labels.find(name.substr(0, name.size() - 1)),
         };
         // note: -1 because the reference ends with 'f' or 'b'
 
-        assert(name.size() >= 2 and locals != symbols.local_labels.end());
+        assert(locals != symbols.local_labels.end());
 
         const std::vector<std::pair<size_t, int64_t>>& definitions{
             locals->second,
@@ -2237,8 +2229,7 @@ class assembler_rv32i final : public assembler {
 
     static auto write_data(std::ostream& os, const data_values& data) -> void {
         // zero fills such as the variables area can be large
-        if (std::ranges::all_of(
-                data.values, [](const int64_t v) -> bool { return v == 0; })) {
+        if (is_zero_fill(data)) {
 
             write_zeros(os, data_size_bytes(data));
             return;

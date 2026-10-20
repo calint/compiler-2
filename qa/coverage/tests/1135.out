@@ -1,0 +1,4 @@
+
+1135.baz:4:10: cannot resolve identifier '©'
+    exit(©)
+         ^

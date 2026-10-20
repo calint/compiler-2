@@ -1,0 +1,6 @@
+# a negative constant count of 'write' is rejected
+
+func main() {
+    var a = i8[4]
+    write(1, a, -1)
+}

@@ -232,8 +232,9 @@ class one_line_source final {
 //   a value        'folded_constant', 'assert_not_narrowed',
 //                  'keeps_low_bits_when_narrowed', 'get_unary_ops',
 //                  'is_expression', 'produces_boolean', 'compile_boolean':
-//                  'expr_arith', 'expr_any', 'stmt_builtin_convert',
-//                  'stmt_builtin_array_length', 'stmt_builtin_arrays_equal',
+//                  'expr_arith', 'expr_any', 'expr_bool', 'expr_zero',
+//                  'stmt_builtin_convert', 'stmt_builtin_array_length',
+//                  'stmt_builtin_arrays_equal', 'stmt_builtin_io',
 //                  'stmt_call'
 //   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
 //                  'compile_lea', 'compile_address', 'is_indexed',

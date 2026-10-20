@@ -1,0 +1,4 @@
+
+1142.baz:7:9: 'f()' is not a constant, a 'dat' holds constants
+dat x = f()
+        ^

@@ -1,0 +1,12 @@
+# a constant element of an 'i8' array is folded at the width of the element,
+# as an assignment of the same expression is: '(127 + 1) >> 1' is -64
+
+func main() {
+    var c = i8[]{(127 + 1) >> 1, 1}
+    var d = i8(0)
+    d = (127 + 1) >> 1
+    if c[0] != d {
+        exit(1)
+    }
+    exit(c[0] + 64)
+}

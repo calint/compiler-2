@@ -4,77 +4,62 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <functional>
+#include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
 #include <string_view>
-#include <tuple>
 #include <vector>
 
 #include "compile_error.hpp"
-#include "constant_arith.hpp"
+#include "expr_any.hpp"
+#include "expr_type.hpp"
 #include "ident_info.hpp"
-#include "operand.hpp"
-#include "parse_lookahead.hpp"
 #include "statement.hpp"
-#include "stmt_builtin_convert.hpp"
-#include "stmt_const.hpp"
+#include "stmt_def_var.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
-#include "unary_ops.hpp"
 
+// e.g. 'dat x = i32(0)': the initializer is parsed like the one of a 'var' and
+// folded to the constants of the data section, a value that is not constant is
+// rejected
 class stmt_def_dat final : public statement {
+    // the folded initializer: a built-in value, the elements of an array, the
+    // fields of an instance or a string
     struct elem {
-        unary_ops uops;
         token src_loc_tk;
         int64_t value{};
-        token open_brace_tk;
-        token close_brace_tk;
         bool is_array{};
         size_t array_count{};
         std::vector<elem> elems;
-        std::vector<token> elem_delims_tk;
-
-        // a built-in value, '{}' is its zero value
-        auto source_to(std::ostream& os) const -> void {
-            if (not open_brace_tk.is_empty()) {
-                open_brace_tk.source_to(os);
-                close_brace_tk.source_to(os);
-                return;
-            }
-
-            uops.source_to(os);
-            src_loc_tk.source_to(os);
-        }
     };
 
     token name_tk_;
     token equals_tk_;
-    token type_tk_;
-    token open_bracket_tk_;
-    stmt_const array_count_const_;
-    token close_bracket_tk_;
-    token open_paren_tk_;
-    token close_paren_tk_;
+    expr_any initializer_;
     elem root_elem_;
 
   public:
-    // e.g. 'dat x = i32(0)', the initializer gives the type
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, name_tk_{tz.next_token()} {
-
-        if (name_tk_.text().empty()) {
-            throw compile_error{name_tk_, "expected name of data"};
-        }
 
         toc::assert_valid_unqualified_name(name_tk_);
 
         equals_tk_ = parse_initializer_equals(tz, "dat");
 
-        root_elem_ = parse_initializer(tc, tz);
+        const initializer_declaration declaration{
+            tc,
+            tz,
+            name_tk_,
+            name_in_initializer::hidden,
+        };
+
+        set_type(declaration.type_ref());
+
+        initializer_ = declaration.parse_value(tc, tz);
+        root_elem_ = fold(tc, get_type(), initializer_);
 
         // register the data without emitting output so it is available
         // during subsequent parsing
@@ -98,17 +83,7 @@ class stmt_def_dat final : public statement {
         statement::source_to(os);
         name_tk_.source_to(os);
         equals_tk_.source_to(os);
-        type_tk_.source_to(os);
-
-        if (not open_bracket_tk_.is_empty()) {
-            open_bracket_tk_.source_to(os);
-            array_count_const_.source_to(os);
-            close_bracket_tk_.source_to(os);
-        }
-
-        open_paren_tk_.source_to(os);
-        print_source_elem(os, get_type(), root_elem_);
-        close_paren_tk_.source_to(os);
+        initializer_.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent,
@@ -149,181 +124,9 @@ class stmt_def_dat final : public statement {
         };
     }
 
-    // e.g. 'i8[4]{1, 2}', '[]{1, 2}' or 'point[2]{{1, 2}}'
-    [[nodiscard]] auto parse_array_literal(toc& tc, tokenizer& tz) -> elem {
-        open_bracket_tk_ = tz.is_next_char_token('[');
-        const size_t array_count{parse_array_size(tc, tz)};
-
-        // the default type has no type token to locate the data comments
-        const token src_loc_tk{type_tk_.is_empty() ? open_bracket_tk_
-                                                   : type_tk_};
-
-        // e.g. 'dat a = i8[4]' is 'i8[4]{}'
-        const bool is_bare{tz.peek_char_after_whitespace() != '{'};
-
-        elem el{
-            is_bare ? make_empty_array(src_loc_tk, array_count)
-                    : parse_array(tc, tz, src_loc_tk, get_type(), array_count),
-        };
-
-        if (el.array_count == 0) {
-            throw compile_error{open_bracket_tk_,
-                                "an empty array needs a size"};
-        }
-
-        return el;
-    }
-
-    // e.g. '[4]', or '[]' when the initializer gives the size, which is 0
-    [[nodiscard]] auto parse_array_size(toc& tc, tokenizer& tz) -> size_t {
-        array_count_const_ = {tc, tz};
-
-        const size_t array_count{
-            array_count_const_.has_value() ? array_count_const_.array_size()
-                                           : 0,
-        };
-
-        close_bracket_tk_ =
-            tz.expect_char_token(']', "expected ']' after array size");
-
-        return array_count;
-    }
-
-    // e.g. 'i8(3)' or 'int(3)'
-    [[nodiscard]] auto parse_conversion(const toc& tc, tokenizer& tz) -> elem {
-        open_paren_tk_ = tz.is_next_char_token('(');
-
-        elem el{parse_builtin(tc, tz, get_type())};
-
-        close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after the argument");
-
-        return el;
-    }
-
-    // e.g. 'dat s = "hi"' is an 'i8' array of 2, 'dat a = i8[4]{1, 2}' an 'i8'
-    // array of 4, 'dat a = [4]{1, 2}' a default type array of 4,
-    // 'dat p = point{1, 2}' a 'point', 'dat x = i8(3)' an 'i8',
-    // 'dat b = true' a 'bool' and 'dat n = 3' has the default type
-    [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) -> elem {
-        // e.g. 'dat greeting = "hello"'
-        if (tz.peek_char_after_whitespace() == '"') {
-            const token string_tk{tz.next_token()};
-            set_type(tc.builtins().i8());
-
-            elem el;
-            el.is_array = true;
-            el.src_loc_tk = string_tk;
-
-            el.array_count = string_array_count(tc.builtins().i8(), string_tk,
-                                                get_type(), 0);
-
-            return el;
-        }
-
-        // e.g. 'dat primes = []{2, 3, 5}'
-        if (is_default_array_literal(tz)) {
-            set_type(tc.builtins().default_type());
-            return parse_array_literal(tc, tz);
-        }
-
-        // an instance initializer cannot deduce its type, e.g. 'dat p = {1, 2}'
-        if (const token brace_tk{tz.is_next_char_token('{')};
-            not brace_tk.is_empty()) {
-
-            throw compile_error{
-                brace_tk, "expected type name before '{', e.g. 'point{1, 2}'"};
-        }
-
-        const token tk{tz.next_token()};
-
-        // e.g. 'dat bytes = i8[]{1, 2}' or
-        // 'dat points = point[2]{{1, 2}, {3, 4}}'
-        if (is_array_literal(tc, tk, tz)) {
-            set_named_type(tc, tk);
-            return parse_array_literal(tc, tz);
-        }
-
-        if (is_bare_record_type(tc, tk, tz)) {
-            set_named_type(tc, tk);
-
-            // e.g. 'dat p = point' is 'point{}'
-            elem el;
-            el.src_loc_tk = tk;
-
-            return el;
-        }
-
-        // e.g. 'dat p = point{1, 2}'
-        if (is_record_literal(tc, tk, tz)) {
-            set_named_type(tc, tk);
-            return parse_type(tc, tz, get_type());
-        }
-
-        // e.g. 'dat x = i8' is 'i8(0)', the token is printed as the value
-        if (is_bare_builtin_type(tc, tk, tz)) {
-            set_type(stmt_builtin_convert::conversion_type(tc, tk));
-
-            elem el;
-            el.src_loc_tk = tk;
-
-            return el;
-        }
-
-        // e.g. 'dat x = i8(3)'
-        if (tc.builtins().is_integer_name(tk.text()) and
-            tz.peek_char_after_whitespace() == '(') {
-
-            type_tk_ = tk;
-            set_type(stmt_builtin_convert::conversion_type(tc, tk));
-            return parse_conversion(tc, tz);
-        }
-
-        // e.g. 'dat limit = 10' or 'dat enabled = true'
-        const bool is_bool{
-            tk.is_text(reserved_names::true_value) or
-                tk.is_text(reserved_names::false_value),
-        };
-
-        set_type(is_bool ? tc.builtins().boolean()
-                         : tc.builtins().default_type());
-
-        // the constant may start with unary operations, e.g. '-1'
-        tz.put_back_token(tk);
-
-        return parse_builtin(tc, tz, get_type());
-    }
-
-    // the type 'tk' names, printed from 'tk' when the statement is reproduced
-    auto set_named_type(const toc& tc, const token& tk) -> void {
-        type_tk_ = tk;
-        set_type(tc.get_type_or_throw(tk, tk.text()));
-    }
-
     //
     // statics
     //
-
-    // a stored 'bool' is 0 or 1, '-' and '~' would make other values
-    static auto assert_unary_ops_on_number(const elem& el,
-                                           const type& value_type) -> void {
-
-        if (el.uops.is_empty() or not value_type.is_bool()) {
-            return;
-        }
-
-        throw compile_error{el.src_loc_tk,
-                            "boolean values cannot be arithmetic operands"};
-    }
-
-    // the '}' that ends the initializer, when it is the next character, e.g.
-    // the '}' of '{1, 2}'
-    [[nodiscard]] static auto at_closing_brace(tokenizer& tz, elem& el)
-        -> bool {
-
-        el.close_brace_tk = tz.is_next_char_token('}');
-        return not el.close_brace_tk.is_empty();
-    }
 
     static auto compile_data_builtin(toc& tc, const type& tp, const elem& el)
         -> void {
@@ -341,7 +144,7 @@ class stmt_def_dat final : public statement {
         if (not el.is_array) {
             x.comment(el.src_loc_tk, 0, "{}", tp.name());
 
-            x.emit_data(tp.size_bytes(), el.uops.evaluate_constant(el.value));
+            x.emit_data(tp.size_bytes(), el.value);
 
             return;
         }
@@ -406,7 +209,7 @@ class stmt_def_dat final : public statement {
         const auto values{
             el.elems |
                 std::views::transform([](const elem& element) -> int64_t {
-                    return element.uops.evaluate_constant(element.value);
+                    return element.value;
                 }),
         };
 
@@ -477,307 +280,99 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    // an array without elements, the elements are parsed into it
-    [[nodiscard]] static auto make_empty_array(const token src_loc_tk,
-                                               const size_t array_count)
-        -> elem {
+    // the constants of 'value' at the type 'tp', e.g. '{1, 2 * 3}' of 'point'
+    [[nodiscard]] static auto fold(const toc& tc, const type& tp,
+                                   const expr_any& value) -> elem {
 
-        elem el;
-        el.is_array = true;
-        el.array_count = array_count;
-
-        el.src_loc_tk = src_loc_tk;
-
-        return el;
-    }
-
-    // '{' elements '}', empty zeroes a sized array
-    [[nodiscard]] static auto parse_array(const toc& tc, tokenizer& tz,
-                                          const token src_loc_tk,
-                                          const type& tp,
-                                          const size_t array_count) -> elem {
-
-        elem el{make_empty_array(src_loc_tk, array_count)};
-
-        el.open_brace_tk = tz.expect_char_token(
-            '{', std::format("expected '{{' to open array initializer for '{}'",
-                             tp.name()));
-
-        el.close_brace_tk = tz.is_next_char_token('}');
-
-        if (el.close_brace_tk.is_empty()) {
-            parse_array_elements(tc, tz, tp, el);
-            el.close_brace_tk = tz.is_next_char_token('}');
+        if (not value.is_array()) {
+            return fold_element(tc, tp, value, 0);
         }
 
-        if (el.close_brace_tk.is_empty()) {
-            throw compile_error{
-                tz,
-                std::format("expected '}}' to close array initializer for '{}'",
-                            tp.name())};
-        }
+        // e.g. 'dat b = a' copies the array 'a' at run time
+        if (value.is_array_identifier()) {
+            const ident_info source{tc.make_ident_info(value.element(0))};
 
-        if (el.array_count == 0) {
-            el.array_count = el.elems.size();
-        }
-
-        return el;
-    }
-
-    // a sized array rejects elements past its size
-    static auto parse_array_elements(const toc& tc, tokenizer& tz,
-                                     const type& tp, elem& el) -> void {
-
-        while (true) {
-            el.elems.emplace_back(tp.is_builtin() ? parse_builtin(tc, tz, tp)
-                                                  : parse_type(tc, tz, tp));
-
-            const token delim_tk{tz.is_next_char_token(',')};
-
-            if (delim_tk.is_empty()) {
-                return;
+            // e.g. the '5' of 't{5, 1}' for an array field, where 'i32' is the
+            // default type
+            if (not source.is_array()) {
+                throw compile_error{value.tok(), "source must be an array"};
             }
 
-            const size_t count{el.elems.size()};
-
-            // the error is at the element that is too much
-            if (el.array_count != 0 and count == el.array_count) {
-                throw compile_error{
-                    tz, std::format("too many elements for array of size {}",
-                                    el.array_count)};
-            }
-
-            el.elem_delims_tk.emplace_back(delim_tk);
-        }
-    }
-
-    // a 'bool' holds 'true' or 'false', not an integer
-    [[nodiscard]] static auto parse_bool_value(const token& tk) -> int64_t {
-        if (tk.is_text(reserved_names::true_value)) {
-            return 1;
+            throw_not_constant(value);
         }
 
-        if (tk.is_text(reserved_names::false_value)) {
-            return 0;
-        }
-
-        throw compile_error{
-            tk, std::format("'{}' is not a 'bool', use 'true' or 'false'",
-                            tk.text())};
-    }
-
-    [[nodiscard]] static auto parse_builtin(const toc& tc, tokenizer& tz,
-                                            const type& tp) -> elem {
-
-        elem el;
-
-        // e.g. the '{}' of 'point{{}, 2}' is 0, or 'false' for a 'bool'
-        el.open_brace_tk = tz.is_next_char_token('{');
-
-        if (not el.open_brace_tk.is_empty()) {
-            el.close_brace_tk = tz.expect_char_token(
-                '}', "expected '}', the zero value of a built-in is '{}'");
-
-            el.src_loc_tk = el.open_brace_tk;
-
-            return el;
-        }
-
-        el.uops = unary_ops{tz};
-        el.src_loc_tk = tz.next_token();
-
-        // e.g. '{ 1 }' or a trailing ',' where a single value is expected
-        if (el.src_loc_tk.text().empty() or el.src_loc_tk.is_string()) {
-            throw compile_error{
-                el.src_loc_tk,
-                std::format("expected a constant for '{}'", tp.name())};
-        }
-
-        if (tp.is_same(tc.builtins().boolean())) {
-            assert_unary_ops_on_number(el, tp);
-            el.value = parse_bool_value(el.src_loc_tk);
-            return el;
-        }
-
-        const ident_info info{
-            tc.make_ident_info(el.src_loc_tk, el.src_loc_tk.text()),
+        elem el{
+            .src_loc_tk{value.array_token()},
+            .value{},
+            .is_array{true},
+            .array_count{value.array_count()},
+            .elems{},
         };
 
-        assert_unary_ops_on_number(el, info.type_ref());
-
-        if (not info.is_const()) {
-            throw compile_error{
-                el.src_loc_tk,
-                std::format("'{}' must be a constant", el.src_loc_tk.text())};
-        }
-
-        el.value = info.const_value();
-
-        // the assembler would truncate the value or warn about it
-        const int64_t value{el.uops.evaluate_constant(el.value)};
-
-        if (constant_arith::fits_size_bytes(value, tp.size_bytes())) {
+        // a string is emitted as it is written
+        if (value.is_string()) {
             return el;
         }
 
-        throw compile_error{el.src_loc_tk,
-                            std::format("constant '{}{}' does not fit '{}'",
-                                        el.uops.to_string(),
-                                        el.src_loc_tk.text(), tp.name())};
-    }
-
-    [[nodiscard]] static auto parse_elem(const toc& tc, tokenizer& tz,
-                                         const token src_loc_tk, const type& tp,
-                                         const bool is_array,
-                                         const size_t array_count) -> elem {
-
-        if (not is_array and tp.is_builtin()) {
-            return parse_builtin(tc, tz, tp);
+        for (size_t i{}; i < value.element_count(); ++i) {
+            el.elems.emplace_back(fold_element(tc, tp, value, i));
         }
-
-        if (not is_array) {
-            return parse_type(tc, tz, tp);
-        }
-
-        // array, a string is the special case
-        if (not tp.is_builtin()) {
-            return parse_array(tc, tz, src_loc_tk, tp, array_count);
-        }
-
-        const token tk{tz.next_token()};
-
-        if (not tk.is_string()) {
-            tz.put_back_token(tk);
-            return parse_array(tc, tz, src_loc_tk, tp, array_count);
-        }
-
-        elem el;
-        el.is_array = true;
-        el.src_loc_tk = tk;
-
-        el.array_count =
-            string_array_count(tc.builtins().i8(), tk, tp, array_count);
 
         return el;
     }
 
-    // the ',' before the initializer of the field 'next', e.g. the ',' of
-    // '{1, 2}' before the '2'
-    static auto parse_field_delimiter(tokenizer& tz, const type& tp,
-                                      const type_field& next, elem& el)
-        -> void {
+    [[nodiscard]] static auto fold_element(const toc& tc, const type& tp,
+                                           const expr_any& value,
+                                           const size_t index) -> elem {
 
-        const token tk{
-            tz.expect_char_token(
-                ',', std::format("expected ',' followed by an initializer "
-                                 "for field '{}' of type '{}{}' in type '{}'",
-                                 next.name, next.type().name(),
-                                 next.is_array() ? "[]" : "", tp.name())),
+        const statement& element{value.element(index)};
+
+        elem el{
+            .src_loc_tk{element.tok()},
+            .value{},
+            .is_array{},
+            .array_count{},
+            .elems{},
         };
 
-        el.elem_delims_tk.emplace_back(tk);
-    }
+        if (tp.is_builtin()) {
+            const std::optional<int64_t> constant{
+                value.element_constant(tc, index, tp),
+            };
 
-    [[nodiscard]] static auto parse_type(const toc& tc, tokenizer& tz,
-                                         const type& tp) -> elem {
+            if (not constant) {
+                throw_not_constant(element);
+            }
 
-        const tokenizer::nesting_scope nesting{tz};
+            el.value = *constant;
 
-        elem el;
-        el.src_loc_tk = tz.cur_position_token();
+            return el;
+        }
 
-        // e.g. the '{1, 2}' of 'dat p = point{1, 2}'
-        el.open_brace_tk = tz.expect_char_token(
-            '{', std::format("expected '{{' to open type initializer for '{}'",
-                             tp.name()));
+        // e.g. 'dat p = q' copies the instance 'q' at run time
+        const expr_type& record{value.as_expr_type(index)};
+
+        if (not record.is_literal()) {
+            throw_not_constant(record);
+        }
 
         const std::span<const type_field> flds{tp.fields()};
 
-        while (not at_closing_brace(tz, el)) {
-            // each field adds one element, e.g. the '1' and the '2' of '{1, 2}'
-            const size_t index{el.elems.size()};
+        for (const auto [f, field_value] :
+             std::views::zip(flds, record.field_values())) {
 
-            if (index == flds.size()) {
-                // the error is at the initializer that is too much
-                std::ignore = tz.is_next_char_token(',');
-
-                throw compile_error{
-                    tz,
-                    std::format("too many fields for type '{}'", tp.name())};
-            }
-
-            const type_field& tf{flds.at(index)};
-
-            if (index > 0) {
-                parse_field_delimiter(tz, tp, tf, el);
-            }
-
-            el.elems.emplace_back(parse_elem(tc, tz, tz.cur_position_token(),
-                                             tf.type(), tf.is_array(),
-                                             tf.array_count));
+            el.elems.emplace_back(fold(tc, f.type(), *field_value));
         }
 
         return el;
     }
 
-    // '{' items separated by their delimiters '}'
-    static auto print_source_braced(
-        std::ostream& os, const elem& el,
-        const std::function_ref<void(size_t, const elem&)> print_item) -> void {
+    [[noreturn]] static auto throw_not_constant(const statement& value)
+        -> void {
 
-        el.open_brace_tk.source_to(os);
-        for (size_t i{}; i < el.elems.size(); ++i) {
-            if (i != 0) {
-                el.elem_delims_tk.at(i - 1).source_to(os);
-                // note: -1 because there is one delimiter fewer than elements
-            }
-
-            print_item(i, el.elems.at(i));
-        }
-
-        el.close_brace_tk.source_to(os);
-    }
-
-    static auto print_source_elem(std::ostream& os, const type& tp,
-                                  const elem& el) -> void {
-
-        if (not tp.is_builtin()) {
-            print_source_type(os, tp, el);
-            return;
-        }
-
-        if (not el.is_array) {
-            el.source_to(os);
-            return;
-        }
-
-        // a string initializes an array but is written as one token
-        if (el.src_loc_tk.is_string()) {
-            el.src_loc_tk.source_to(os);
-            return;
-        }
-
-        print_source_braced(os, el, [&os](const size_t, const elem& e) -> void {
-            e.source_to(os);
-        });
-    }
-
-    static auto print_source_type(std::ostream& os, const type& tp,
-                                  const elem& el) -> void {
-
-        if (not el.is_array) {
-            print_source_braced(
-                os, el, [&os, &tp](const size_t i, const elem& e) -> void {
-                    const type_field& tf{tp.fields().at(i)};
-                    print_source_elem(os, tf.type(), e);
-                });
-
-            return;
-        }
-
-        print_source_braced(os, el,
-                            [&os, &tp](const size_t, const elem& e) -> void {
-                                print_source_elem(os, tp, e);
-                            });
+        throw compile_error{
+            value.tok(),
+            std::format("'{}' is not a constant, a 'dat' holds constants",
+                        statement::trimmed_source(value))};
     }
 };

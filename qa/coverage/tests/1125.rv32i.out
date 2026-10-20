@@ -18,5 +18,5 @@ register use at the failure: 3 of 30 registers live, 3 named by instructions
 these frames are not noinline, making one noinline starts its body with all 30
 registers free and saves the registers held above it around the call:
 
-  candidate frame  held inside  saved at the call
-  say                        0                  3
+  held inside  saved at the call  candidate frame
+            0                  3  say

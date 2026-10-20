@@ -1,6 +1,49 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: second review round of 2026-10-20, seven reviews of 'src/' line by
+    line and one of the architecture
+    => done (2026-10-20):
+       1. 'dat' parses its initializer like 'var' ('initializer_declaration'
+          in 'stmt_def_var.hpp') and folds it to constants, the second
+          parser is gone; constant expressions are accepted ('dat n = N * 2',
+          'point{1, 2 + 3}'), a value that is not constant is rejected
+          (1139 to 1142), the messages of rejected initializers are those
+          of 'var', 'dat x = i32(2147483648)' wraps like a 'var' conversion
+          (0571); '{}' folds ('expr_zero::folded_constant')
+       2. defects, each with a test: an 'i8' array element folded at the
+          default width (1132), 'array_length' left of a run-time operand
+          asserted (1133), rv32i checked multiply clobbered 'a4' (1134), a
+          token of utf-8 continuation bytes crashed the caret (1135), a local
+          that hides a global was taken for the global in the alias check
+          (1136), a constant did not hide a variable and a variable did not
+          hide a constant (1137, 1138)
+       3. the register report puts the frame name last, wrapped lines have
+          no trailing spaces (0840, 0852, 1125, 1126)
+       4. 'machine::emit_discarded' replaces 'measure_code_size' and
+          'toc::measure_only', whose size nobody read; 'machine' keeps the
+          call frame, base and 'register_in_use_error' methods out of its
+          public interface; 'func_return_info' moved to
+          'stmt_def_func.hpp'; 'machine::body_label_prefix' for 'func.';
+          'instruction_count' and 'label' in 'assembler'
+       5. single-file clean ups: dead code, stale includes, narrating
+          comments, visibility, names that hid 'operand'
+       6. the open findings of the round, each with a test: a noinline
+          call's aliasing signature keeps the access path and the frame of
+          each argument, its verdict depended on the order of the calls
+          (1143, 1144); a file of comments only is reproduced (1145);
+          '-noub' disables what 'noub' enables (1146); rv32i-qemu rejects an
+          image and stack past its 128 MiB, the check is in
+          'machine_rv32i_bare_metal' for both targets ('test-cli.sh'); a
+          constant count or start past the buffer of 'read', 'write' and the
+          sector functions is rejected (1147 to 1151); the constant and the
+          array size checks of an assignment run at parse time too, also for
+          code never compiled (1152, 1153); 'array_length' and 'foo' name an
+          indexed argument with its index (0578, 1154); a too large '--vars'
+          is a usage error; '--report' ignores empty parts like '--checks';
+          '--checks=stack' writes no handler comment where the stack is not
+          bounded ('machine::is_stack_bounded', 'test-cli.sh'); rv32i
+          'arrays_equal' names its registers 'lhs' and 'rhs'
 [x] hard: review round 2026-10-20, five independent reviews of 'src/': the
     design findings, ranked by what a reviewer notices first; each step on
     its own with byte-identical output unless it says otherwise

@@ -499,6 +499,16 @@ examples:
                          opts.stack_size_bytes, opts.memory_size_bytes, binary),
         };
 
+        // the option is wrong, not the source
+        if (opts.vars_size_bytes > backend->max_storage_bytes()) {
+            print_usage_error(std::format(
+                "invalid --vars: {} B exceeds the {} B that the target "
+                "addresses",
+                opts.vars_size_bytes, backend->max_storage_bytes()));
+
+            return 1;
+        }
+
         if (opts.reports.registers) {
             backend->enable_register_report();
         }
@@ -608,26 +618,22 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     return parsed_size_bytes;
 }
 
-// each '--report' replaces the earlier ones, an empty name is an error
+// each '--report' replaces the earlier ones, empty parts are ignored like
+// those of '--checks', so '--report=' turns the reports off
 [[nodiscard]] auto parse_reports(const std::string_view reports)
     -> std::optional<report_options> {
-
-    // note: splitting an empty text gives no parts
-    if (reports.empty()) {
-        print_usage_error("invalid --report: empty report name");
-        return std::nullopt;
-    }
 
     report_options parsed;
 
     for (const auto part : reports | std::views::split(',')) {
         const std::string_view report{part};
 
+        if (report.empty()) {
+            continue;
+        }
+
         if (report == "registers") {
             parsed.registers = true;
-        } else if (report.empty()) {
-            print_usage_error("invalid --report: empty report name");
-            return std::nullopt;
         } else {
             print_usage_error(
                 std::format("invalid --report option: '{}', supported "
@@ -693,9 +699,16 @@ constexpr std::array<check_name, 10> check_names{
             option.remove_prefix(1);
         }
 
-        if (option == "noub" and not is_disable) {
+        // e.g. '-noub' disables every check that 'noub' enables
+        if (option == "noub") {
             for (const check_name& name : check_names) {
-                if (name.is_ub) {
+                if (not name.is_ub) {
+                    continue;
+                }
+
+                if (is_disable) {
+                    disabled.push_back(name.member);
+                } else {
                     parsed.*name.member = true;
                 }
             }
@@ -933,15 +946,19 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     const size_t mark_end{std::min(end_index, line_bgn + line.size())};
 
     // a character counts once, like in the padding
-    const size_t mark_size{
+    const size_t marked_count{
         mark_end > start_index
             ? static_cast<size_t>(std::ranges::count_if(
                   src.substr(start_index, mark_end - start_index),
                   [](const char ch) -> bool {
                       return not is_utf8_continuation(ch);
                   }))
-            : 1,
+            : 0,
     };
+
+    // a token of only continuation bytes is not a character, the caret still
+    // marks it
+    const size_t mark_size{std::max(marked_count, size_t{1})};
 
     std::println(stderr, "{}\n{}^{}", line, padding,
                  std::string(mark_size - 1, '~'));

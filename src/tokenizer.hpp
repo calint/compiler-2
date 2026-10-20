@@ -74,12 +74,6 @@ class tokenizer final {
         throw compile_error{*this, std::format("unexpected '{}'", peek_char())};
     }
 
-    [[nodiscard]] auto cur_char_index_in_source() const -> size_t {
-        return char_ix_;
-    }
-
-    [[nodiscard]] auto cur_line() const -> size_t { return at_line_; }
-
     // returns a token, which is a marker at the current position with empty
     // name and whitespace
     [[nodiscard]] auto cur_position_token() const -> token {

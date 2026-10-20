@@ -137,6 +137,10 @@ CLI_CHECKS_NOUB() {
     "$BIN" --checks=+division 0015.baz >gen.s 2>err
     "$BIN" --checks=division 0015.baz >out 2>err
     cmp -s gen.s out
+    # '-noub' turns off what 'noub' turns on, also the 'alias' that is on
+    "$BIN" --checks=noub,line,-noub 0015.baz >gen.s 2>err
+    "$BIN" --checks=line,-alias 0015.baz >out 2>err
+    cmp -s gen.s out
     echo ok
 }
 
@@ -251,8 +255,9 @@ CLI_ADDRESS_RANGE() {
         "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
         local exit_code=$?
         set -e
-        # fpga rejects it for its device memory, the others accept it
-        if [[ $target == rv32i-fpga ]]; then
+        # the bare-metal targets reject it for their device memory, linux
+        # accepts it
+        if [[ $target != rv32i ]]; then
             [[ $exit_code -eq 1 ]]
             grep -Fq "of device memory" err
         else
@@ -348,6 +353,34 @@ CLI_NOINLINE_REPORT() {
     echo ok
 }
 
+CLI_STACK_HANDLER() {
+    echo -n "cli --checks=stack handler: "
+    # an operating system stops a stack overflow, no handler is written
+    local target
+    for target in x86_64 rv32i; do
+        "$BIN" --target=$target --checks=stack 0992.baz >gen.s 2>err
+        [[ ! -s err ]]
+        ! grep -Fq "stack overflow handler" gen.s
+    done
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack 0992.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Fq "stack overflow handler (--checks=stack)" gen.s
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
+CLI_VARS_RANGE() {
+    echo -n "cli --vars past the target addresses: "
+    set +e
+    "$BIN" --vars=0x100000010 --target=rv32i 0426.baz >gen.s 2>err
+    local exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "invalid --vars: 4294967312 B exceeds the 4294967296 B that the target addresses" err
+    grep -Fq "use --help for usage information" err
+    echo ok
+}
+
 CLI_QEMU_STACK() {
     echo -n "cli rv32i-qemu stack size: "
     set +e
@@ -356,6 +389,16 @@ CLI_QEMU_STACK() {
     set -e
     [[ $exit_code -eq 1 ]]
     grep -Fq "stack size exceeds RV32I address range" err
+    # the 'virt' machine has 128 MiB
+    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7f00000 0426.baz >gen.s 2>err
+    [[ ! -s err ]]
+    set +e
+    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x8000000 0426.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "the stack 134217728 B, which exceeds the 134217728 B of device memory" err
+    rm -f gen-rv32i.bin
     echo ok
 }
 
@@ -388,7 +431,7 @@ CLI --checks=upper,-alias 0 0941.baz
 CLI --checks=-alias,noub 0 0941.baz
 CLI --checks=+division 0 0015.baz
 CLI --checks=noub,-division 0 0015.baz
-CLI --checks=-noub 1 0015.baz
+CLI --checks=-noub 0 0015.baz
 CLI --checks=+ 1 0015.baz
 CLI --checks=upper 1 0941.baz
 CLI --checks=noub 1 0941.baz
@@ -405,8 +448,8 @@ CLI --sdcard=other.img 0 --help
 CLI --report=registers 0 0015.baz
 CLI --report=unknown 1 --help
 CLI --report=registers,unknown 1 --help
-CLI --report= 1 --help
-CLI --report=registers, 1 --help
+CLI --report= 0 0015.baz
+CLI --report=registers, 0 0015.baz
 CLI --report=registers,registers 0 0015.baz
 CLI -x 1 --help
 CLI 0015.baz 1 0426.baz
@@ -420,6 +463,8 @@ CLI_CHECKS_LIST
 CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 CLI_QEMU_STACK
+CLI_VARS_RANGE
+CLI_STACK_HANDLER
 CLI_NOINLINE_REPORT
 CLI_REGISTER_REPORT
 CLI_ADDRESS_RANGE

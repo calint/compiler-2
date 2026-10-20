@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <ostream>
 #include <string_view>
 
@@ -43,6 +45,14 @@ class expr_zero final : public expression {
         machine& x{tc.machine()};
 
         x.copy_value(tok(), indent, dst.operand(), operand::imm(0, get_type()));
+    }
+
+    [[nodiscard]] auto
+    folded_constant([[maybe_unused]] const toc& tc,
+                    [[maybe_unused]] const type& width_type) const
+        -> std::optional<int64_t> override {
+
+        return 0;
     }
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {

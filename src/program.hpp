@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -293,6 +294,9 @@ class program final {
         size_t file_ix{};
         size_t begin{};
         size_t end{};
+        // the end of the file, its whitespace holds the comments of a file
+        // without statements, the last token of a statement holds them else
+        token end_tk;
     };
 
     std::reference_wrapper<source_files> files_;
@@ -308,12 +312,8 @@ class program final {
         : files_{files},
           tc_{backend, files, builtin_set(), vars_size_bytes, checks} {
 
-        if (vars_size_bytes > backend.max_storage_bytes()) {
-            throw compile_error::file_level(
-                std::format("variable storage of {} B exceeds the {} B that "
-                            "the target addresses",
-                            vars_size_bytes, backend.max_storage_bytes()));
-        }
+        // note: 'main' rejects a larger '--vars' as a usage error
+        assert(vars_size_bytes <= backend.max_storage_bytes());
 
         // a built-in has no place in the source
         const token src_loc_tk;
@@ -381,43 +381,9 @@ class program final {
             for (size_t i{parsed.begin}; i < parsed.end; ++i) {
                 statements_.at(i)->source_to(os);
             }
+
+            parsed.end_tk.source_to(os);
         }
-    }
-
-    //
-    // statics
-    //
-
-    // only definitions are allowed at the top level
-    [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
-                                               const token tk)
-        -> std::unique_ptr<statement> {
-
-        if (tk.is_text("func")) {
-            return make_stmt_def_func(tc, tk, tz);
-        }
-
-        if (tk.is_text("type")) {
-            return make_stmt_def_type(tc, tk, tz);
-        }
-
-        if (tk.is_text("var") or tk.is_text("let")) {
-            return std::make_unique<stmt_def_var>(tc, tk, tz);
-        }
-
-        if (tk.is_text("dat")) {
-            return std::make_unique<stmt_def_dat>(tc, tk, tz);
-        }
-
-        if (tk.is_text("include")) {
-            throw compile_error{
-                tk, "'include' must be before the definitions of the file"};
-        }
-
-        throw compile_error{
-            tk, std::format("expected a definition ('func', 'type', 'var', "
-                            "'let' or 'dat'), got '{}'",
-                            tk.text())};
     }
 
   private:
@@ -521,6 +487,7 @@ class program final {
             .file_ix{file_ix},
             .begin{begin},
             .end{statements_.size()},
+            .end_tk{tk},
         });
     }
 
@@ -666,7 +633,7 @@ class program final {
             x.emit_overflow_failure_handler(checks.with_line);
         }
 
-        if (checks.stack) {
+        if (checks.stack and x.is_stack_bounded()) {
             x.comment({}, 0, "stack overflow handler (--checks=stack)");
             x.emit_stack_overflow_handler();
         }
@@ -695,5 +662,37 @@ class program final {
 
         x.comment({}, 0, "");
         x.emit_string_constants(tc.data().constants());
+    }
+
+    // only definitions are allowed at the top level
+    [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
+                                               const token tk)
+        -> std::unique_ptr<statement> {
+
+        if (tk.is_text("func")) {
+            return make_stmt_def_func(tc, tk, tz);
+        }
+
+        if (tk.is_text("type")) {
+            return make_stmt_def_type(tc, tk, tz);
+        }
+
+        if (tk.is_text("var") or tk.is_text("let")) {
+            return std::make_unique<stmt_def_var>(tc, tk, tz);
+        }
+
+        if (tk.is_text("dat")) {
+            return std::make_unique<stmt_def_dat>(tc, tk, tz);
+        }
+
+        if (tk.is_text("include")) {
+            throw compile_error{
+                tk, "'include' must be before the definitions of the file"};
+        }
+
+        throw compile_error{
+            tk, std::format("expected a definition ('func', 'type', 'var', "
+                            "'let' or 'dat'), got '{}'",
+                            tk.text())};
     }
 };

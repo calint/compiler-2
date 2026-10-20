@@ -12,6 +12,7 @@
 #include "compile_error.hpp"
 #include "expression.hpp"
 #include "ident_info.hpp"
+#include "operand.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
@@ -75,13 +76,26 @@ class stmt_builtin_array_length final : public expression {
                                 "argument must be a variable"};
         }
 
-        // note: 'folded_constant' folds an array argument, so only a
-        //       non-array reaches here
-        assert(not src_info.is_array());
+        // e.g. the left side of 'array_length(a) * i', which an operation
+        // with a run-time right side compiles without folding
+        if (src_info.is_array()) {
+            const std::optional<int64_t> length{
+                folded_constant(tc, dst.type_ref()),
+            };
+
+            // note: the destination has the default type, so the length folds
+            assert(length);
+
+            x.copy_value(tok(), indent, dst.operand(),
+                         operand::imm(*length, dst.type_ref()));
+
+            return;
+        }
 
         throw compile_error{
             stmt_ident_.first_token(),
-            std::format("'{}' is not an array", stmt_ident_.name_or_literal())};
+            std::format("'{}' is not an array",
+                        statement::trimmed_source(stmt_ident_))};
     }
 
     auto assert_not_narrowed([[maybe_unused]] const toc& tc,

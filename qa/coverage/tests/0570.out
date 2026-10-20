@@ -1,4 +1,4 @@
 
-0570.baz:8:29: constant '~32768' does not fit 'i16'
+0570.baz:8:29: constant '~32768' does not fit 'i16', use 'i16(...)'
 dat words = limits{-32768, ~32768}
                             ^~~~~

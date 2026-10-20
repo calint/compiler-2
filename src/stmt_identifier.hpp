@@ -8,7 +8,6 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <ranges>
 #include <span>
 #include <sstream>
 #include <string>
@@ -177,7 +176,6 @@ class stmt_identifier final : public statement {
     }
 
     [[nodiscard]] auto accessed_path() const -> access_path override {
-
         return access_path_;
     }
 

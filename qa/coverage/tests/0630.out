@@ -1,4 +1,4 @@
 
-0630.baz:5:9: expected type name before '{', e.g. 'point{1, 2}'
+0630.baz:5:9: expected constant, identifier, or function call
 dat p = { 1, 2 }
         ^

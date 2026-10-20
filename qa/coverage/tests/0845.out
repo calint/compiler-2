@@ -1,4 +1,4 @@
 
-0845.baz:3:12: expected '{' to open array initializer for 'i32'
+0845.baz:3:12: expected type 'i32', got 'i64'
 dat x = t{ 5, 1 }
            ^

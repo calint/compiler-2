@@ -295,6 +295,25 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
+    // where an array is written: its element type, e.g. 'i8' of 'i8[]{1}', its
+    // '[' when the type is the default one, its '{' when the destination gives
+    // the type, else its value, e.g. a string
+    [[nodiscard]] auto array_token() const -> const token& {
+        if (not element_type_tk_.is_empty()) {
+            return element_type_tk_;
+        }
+
+        if (not open_bracket_tk_.is_empty()) {
+            return open_bracket_tk_;
+        }
+
+        if (not open_brace_tk_.is_empty()) {
+            return open_brace_tk_;
+        }
+
+        return tok();
+    }
+
     [[nodiscard]] auto as_expr_type(const size_t index = 0) const
         -> const expr_type& {
 
@@ -346,13 +365,33 @@ class expr_any final : public statement {
 
         assert(not is_array_);
 
-        const expr_variant& e{elements_.front()};
+        return element_constant(tc, 0, width_type);
+    }
+
+    // every kind of element is a 'statement', the forwarding methods call its
+    // virtuals; the only 'visit' of the variant
+    [[nodiscard]] auto element(const size_t index) const -> const statement& {
+        const statement* const value{
+            elements_.at(index).visit(
+                [](const statement& e) -> const statement* { return &e; }),
+        };
+
+        return *value;
+    }
+
+    // the element 'index' folded at the width of 'width_type', empty when it
+    // is computed at run time
+    [[nodiscard]] auto element_constant(const toc& tc, const size_t index,
+                                        const type& width_type) const
+        -> std::optional<int64_t> {
+
+        const expr_variant& e{elements_.at(index)};
 
         // e.g. 'maybe == 33' with 'maybe' a constant
-        const expr_bool* const bol{std::get_if<expr_bool>(&e)};
+        const expr_bool* const boolean{std::get_if<expr_bool>(&e)};
 
-        if (bol != nullptr) {
-            const std::optional<bool> value{bol->constant_value(tc)};
+        if (boolean != nullptr) {
+            const std::optional<bool> value{boolean->constant_value(tc)};
 
             if (not value) {
                 return std::nullopt;
@@ -494,16 +533,14 @@ class expr_any final : public statement {
 
         std::string bytes;
         for (const expr_variant& e : elements_) {
+            // e.g. '{300}' for 'i8' is rejected as when stored alone
             const std::optional<int64_t> value{
-                constant_element_value(tc, e, tc.builtins().default_type()),
+                constant_element_value(tc, e, element_type),
             };
 
             if (not value) {
                 return std::nullopt;
             }
-
-            // e.g. '{300}' for 'i8' is rejected as when stored alone
-            std::get<expr_arith>(e).assert_not_narrowed(tc, element_type);
 
             const uint64_t bits{static_cast<uint64_t>(*value)};
             for (size_t i{}; i < element_type.size_bytes(); ++i) {
@@ -525,17 +562,6 @@ class expr_any final : public statement {
         }
 
         return array_count_;
-    }
-
-    // every kind of element is a 'statement', the forwarding methods call its
-    // virtuals; the only 'visit' of the variant
-    [[nodiscard]] auto element(const size_t index) const -> const statement& {
-        const statement* const kind{
-            elements_.at(index).visit(
-                [](const statement& e) -> const statement* { return &e; }),
-        };
-
-        return *kind;
     }
 
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
@@ -753,10 +779,10 @@ class expr_any final : public statement {
 
         // a name is read and passed where it is stored like a name of another
         // type, e.g. the 'x' of 'f(x)' that a 'mut bool' parameter writes
-        if (std::optional<expr_arith> operand{value.release_name_or_literal()};
-            operand) {
+        if (std::optional<expr_arith> name{value.release_name_or_literal()};
+            name) {
 
-            return std::move(*operand);
+            return std::move(*name);
         }
 
         return value;

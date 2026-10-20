@@ -1,4 +1,4 @@
 
-0888.baz:4:1: expected a constant for 'i32'
+0888.baz:4:1: expected constant, identifier, or function call
 )
 ^

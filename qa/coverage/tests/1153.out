@@ -1,0 +1,4 @@
+
+1153.baz:7:9: destination array size 2 does not match source size 3
+    a = b
+        ^

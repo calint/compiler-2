@@ -1,0 +1,11 @@
+# a 'dat' holds constants, a call is made at run time
+
+func f() res {
+    res = 1
+}
+
+dat x = f()
+
+func main() {
+    exit(x)
+}

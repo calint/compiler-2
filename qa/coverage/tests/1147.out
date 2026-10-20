@@ -1,0 +1,4 @@
+
+1147.baz:5:17: count 5 is past the end of array 'a' of size 4
+    write(1, a, 5)
+                ^

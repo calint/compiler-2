@@ -1,0 +1,4 @@
+
+1138.baz:7:16: cannot parse constant 'm'
+    var a = i8[m]
+               ^

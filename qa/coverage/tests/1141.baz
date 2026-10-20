@@ -1,0 +1,10 @@
+# a 'dat' holds constants, a field of another 'dat' is read at run time
+
+type point {x, y}
+
+dat p = point{1, 2}
+dat q = point{3, p.x}
+
+func main() {
+    exit(q.y)
+}

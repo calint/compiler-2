@@ -1,0 +1,9 @@
+# a variable hides a global constant, also where a constant is expected
+
+let m = 3
+
+func main() {
+    var m = 5
+    var a = i8[m]
+    exit(array_length(a))
+}
