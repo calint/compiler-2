@@ -196,7 +196,7 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
     }
 
     throw compile_error{
-        tz, "unexpected character; expected '=' for assignment or '(' "
+        tz, "unexpected character, expected '=' for assignment or '(' "
             "for function call"};
 }
 

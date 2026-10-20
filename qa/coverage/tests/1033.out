@@ -1,4 +1,4 @@
 
-1033.baz:4:9: 'not' is reserved
+1033.baz:4:9: 'not' is a keyword
     var not = 1
         ^~~

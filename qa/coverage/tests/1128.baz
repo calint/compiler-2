@@ -1,0 +1,10 @@
+# a built-in function name is not a function name, every call would be of the
+# built-in
+
+func array_length(a i8) res i8 {
+    res = a
+}
+
+func main() {
+    exit(0)
+}

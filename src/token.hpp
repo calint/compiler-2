@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <charconv>
 #include <cstddef>
@@ -28,6 +29,20 @@ inline constexpr std::string_view main{"main"};
 // the boolean values
 inline constexpr std::string_view true_value{"true"};
 inline constexpr std::string_view false_value{"false"};
+
+// a name that is a keyword would be read as the keyword
+inline constexpr std::array<std::string_view, 21> keywords{
+    "func", "noinline", "mut", "type", "dat",      "var",   "let",
+    "foo",  "loop",     "if",  "else", "continue", "break", "return",
+    "self", "and",      "or",  "not",  "true",     "false", "include",
+};
+
+// a variable or function with the name of a built-in function would be read
+// as a call of the built-in
+inline constexpr std::array<std::string_view, 8> builtin_functions{
+    "array_copy", "array_length", "arrays_equal", "read",
+    "write",      "sector_read",  "sector_write", "exit",
+};
 
 } // namespace reserved_names
 

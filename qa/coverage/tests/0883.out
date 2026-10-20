@@ -1,4 +1,4 @@
 
-0883.baz:6:24: compare must be an array
+0883.baz:6:24: '1' is not an array
     if arrays_equal(a, 1, 2) {
                        ^

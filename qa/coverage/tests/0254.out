@@ -1,4 +1,4 @@
 
-0254.baz:4:17: parameter 1 requires an array
+0254.baz:4:17: '{}' is not an array, parameter 'x' takes one
 func main() { f({}) }
                 ^

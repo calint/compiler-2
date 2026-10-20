@@ -90,7 +90,7 @@ struct func_head {
 
         head.read_modifiers(tz);
 
-        toc::assert_valid_function_name(head.name_tk);
+        toc::assert_valid_unqualified_name(head.name_tk);
 
         // e.g. 'func text.print()': each instance of 'text' reads the head
         // again from 'start_tk', where 'text' names a type, e.g. 'str', and
@@ -563,7 +563,7 @@ class stmt_def_func final : public statement {
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
 
-        size_t next_array_length{};
+        size_t next_array_index{};
 
         if (returns_) {
             tc.add_var(returns_->ident_tk, indent,
@@ -583,7 +583,7 @@ class stmt_def_func final : public statement {
         for (const auto [param_index, param] : std::views::enumerate(params_)) {
             const size_t array_len{
                 param.is_array() and not array_lengths.empty()
-                    ? array_lengths.at(next_array_length++)
+                    ? array_lengths.at(next_array_index++)
                     : size_t{},
             };
 
@@ -692,7 +692,7 @@ class stmt_def_func final : public statement {
         // a name before the body is the result, 'self' names the value a
         // constructor builds
         if (tz.peek_char_after_whitespace() == '{' and not result.is_self()) {
-            toc::assert_valid_variable_name(result.name_tk);
+            toc::assert_valid_unqualified_name(result.name_tk);
         }
 
         if (result.is_self()) {

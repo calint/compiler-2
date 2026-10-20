@@ -42,14 +42,14 @@ class stmt_builtin_array_copy final : public statement {
 
         src_ = {tc, {}, tz.next_token(), tz};
 
-        src_.assert_array_or_element("source");
+        src_.assert_array_or_element();
 
         src_delim_tk_ = tz.expect_char_token(
             ',', "expected ',' followed by 'to' and 'count'");
 
         dst_ = {tc, {}, tz.next_token(), tz};
 
-        dst_.assert_array_or_element("destination");
+        dst_.assert_array_or_element();
 
         assert_not_read_only(dst_.tok(), "copy into", dst_.name_or_literal(),
                              tc.make_ident_info(dst_));

@@ -229,14 +229,14 @@ class stmt_builtin_convert final : public expression {
 
         machine& x{tc.machine()};
 
-        const operand narrow{
+        const operand narrowed{
             x.alloc_scratch_register(tok(), indent, get_type()),
         };
 
-        compile(tc, indent, destination::of_register(narrow));
+        compile(tc, indent, destination::of_register(narrowed));
 
-        x.copy_value(tok(), indent, dst.operand(), narrow);
-        x.free_scratch_register(tok(), indent, narrow);
+        x.copy_value(tok(), indent, dst.operand(), narrowed);
+        x.free_scratch_register(tok(), indent, narrowed);
     }
 
     // the argument is computed at its own width and stored narrowed

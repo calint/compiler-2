@@ -103,7 +103,7 @@ class stmt_assign_var final : public statement {
         if (var_info.is_const()) {
             throw compile_error{tok(),
                                 std::format("cannot assign to constant '{}'",
-                                            var_info.const_value())};
+                                            stmt_ident_.name_or_literal())};
         }
 
         if (expr_.is_array_identifier()) {

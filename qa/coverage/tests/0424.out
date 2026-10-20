@@ -1,4 +1,4 @@
 
-0424.baz:4:41: parameter 'parameter': required 'i16', got 'i32'
+0424.baz:4:41: expected type 'i16' for parameter 'parameter', got 'i32'
 func main() { var value = i32(1) target(value) }
                                         ^

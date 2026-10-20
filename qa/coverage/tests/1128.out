@@ -1,0 +1,4 @@
+
+1128.baz:4:6: 'array_length' is a built-in function
+func array_length(a i8) res i8 {
+     ^~~~~~~~~~~~

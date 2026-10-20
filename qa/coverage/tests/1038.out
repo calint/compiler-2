@@ -1,4 +1,4 @@
 
-1038.baz:3:10: 'true' is a boolean value
+1038.baz:3:10: 'true' is a keyword
 func f() true int {
          ^~~~

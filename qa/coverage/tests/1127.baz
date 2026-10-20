@@ -1,0 +1,7 @@
+# a keyword is not a variable name, 'else = 7' after an 'if' would be read as
+# its 'else'
+
+func main() {
+    var else = 5
+    exit(else)
+}

@@ -1,4 +1,4 @@
 
-0885.baz:9:19: parameter 1 requires an array
+0885.baz:9:19: 'a + 1' is not an array, parameter 'arr' takes one
     var x = first(a + 1)
                   ^

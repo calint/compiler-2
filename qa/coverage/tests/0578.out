@@ -1,4 +1,4 @@
 
-0578.baz:5:26: argument must refer to an array
+0578.baz:5:26: 'ps' is not an array
     var n = array_length(ps[1])
                          ^~

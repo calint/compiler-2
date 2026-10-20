@@ -1,4 +1,4 @@
 
-1056.baz:4:9: 'sector_write' is reserved
+1056.baz:4:9: 'sector_write' is a built-in function
     var sector_write = 3
         ^~~~~~~~~~~~

@@ -1,2 +1,4 @@
 
-0619.baz:4:0: expected ')' after the argument
+0619.baz:5:1: expected ')' after the argument
+func main() {}
+^

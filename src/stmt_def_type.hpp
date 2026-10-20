@@ -151,10 +151,11 @@ inline auto assert_arg_count(const token& generic_tk,
         return;
     }
 
-    throw compile_error{
-        generic_tk,
-        std::format("generic type '{}' takes {} argument(s), got {}",
-                    generic_tk.text(), generic.params.size(), arg_tks.size())};
+    throw compile_error{generic_tk,
+                        std::format("generic type '{}' takes {}, got {}",
+                                    generic_tk.text(),
+                                    counted(generic.params.size(), "argument"),
+                                    arg_tks.size())};
 }
 
 // e.g. 'text' of 'type str = text<8>', 'user' is what must come after the

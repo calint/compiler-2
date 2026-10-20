@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: review round 2026-10-20, defects and messages
+    => done (2026-10-20):
+       1. every keyword of the README is reserved for every name and the
+          built-in functions for functions and variables, one table each in
+          'reserved_names'; 'var else = 5' was accepted and 'else = 7' after
+          an 'if' read as its 'else', 'func array_length' was accepted and
+          never called; reverses 0668 and 0696, which named functions 'mut'
+          and 'noinline' (tests 1127, 1128)
+       2. an error at the tokenizer points at the next token, it was at the
+          start of the line or at column 0 (0619, 0783)
+       3. 'cannot assign to constant' names the constant, it printed the
+          value
+       4. one wording for an argument that is not an array, for comparisons,
+          for type mismatches of calls, 'counted' for plurals, a missing ','
+          is reported as one, 'array_length' reports narrowing like the
+          other built-ins
+       5. comments and names: restating comments, 'lut' header, 'initialize'
+          in the assembly comments, 'declare_loop_names', 'index_dst',
+          'next_array_index', 's0_register_index' derived
+    => discarded: the text of a generic between its signature and its '{'
+       is checked only when an instance is parsed, which the class comment
+       of 'stmt_def_func_generic' states
+[x] medium: qa/lint/format-source.py crashes on a digit separator
+    ('0xffff'f000' reads as a character literal)
+    => done (2026-10-20): 'is_digit_separator', a quote in a word that starts
+       with a digit; a prefixed character literal ('u8'x'') stays a literal;
+       checked on a copy of 'src/' with '0xffff'f000' in a function
 [x] easy: rename 'compiler_exception'
     => done (2026-10-20): 'compile_error' in 'compile_error.hpp', it is an
        error in the program being compiled, not a failure of the compiler;

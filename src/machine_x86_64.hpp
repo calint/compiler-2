@@ -258,7 +258,7 @@ class machine_x86_64 final : public machine {
         assert(operation == arithmetic_operator::add or
                operation == arithmetic_operator::subtract);
 
-        // no instruction is emitted that sets the overflow flag
+        // adding or subtracting 0 cannot overflow
         if (check.enabled and src.is_immediate() and
             immediate_bits(src) == std::optional<uint64_t>{0}) {
 
@@ -1473,7 +1473,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(indent, failed, line_panic_label("bounds", *line));
     }
 
-    // returns the cached built-in type (i64/i32/i16/i8) matching 'size'
+    // the built-in integer type of 'size_bytes'
     [[nodiscard]] auto
     builtin_type_for_size_bytes(const size_t size_bytes) const -> const type& {
 

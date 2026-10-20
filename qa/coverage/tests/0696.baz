@@ -1,9 +1,8 @@
-# 'noinline' is a function name when parentheses follow
+# 'noinline' is a keyword, not a function name
 
 func noinline() {
 }
 
 func main() {
-    noinline()
     exit(3)
 }

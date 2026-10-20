@@ -342,15 +342,14 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
 
-    // an array or an element of one, where a bulk operation starts, 'what'
-    // names the operand in the error
-    auto assert_array_or_element(const std::string_view what) const -> void {
+    // an array or an element of one, where a bulk operation starts
+    auto assert_array_or_element() const -> void {
         if (is_array_ or is_array_element()) {
             return;
         }
 
-        throw compile_error{first_token(),
-                            std::format("{} must be an array", what)};
+        throw compile_error{first_token(), std::format("'{}' is not an array",
+                                                       name_or_literal())};
     }
 
     // a constant count of a bulk operation that starts at this path is known
@@ -911,7 +910,7 @@ class stmt_identifier final : public statement {
 
         x.comment(index_expr.tok(), indent, "set array index");
 
-        const destination index_info{
+        const destination index_dst{
             destination::of_register(index_register),
         };
 
@@ -922,7 +921,7 @@ class stmt_identifier final : public statement {
         if (not checks.upper and not checks.lower) {
             const std::optional<int64_t> addend{
                 index_expr.compile_without_trailing_addend(tc, indent,
-                                                           index_info),
+                                                           index_dst),
             };
 
             if (addend) {
@@ -934,7 +933,7 @@ class stmt_identifier final : public statement {
             }
         }
 
-        index_expr.compile(tc, indent, index_info);
+        index_expr.compile(tc, indent, index_dst);
 
         const machine::bounds_range checked{
             range_count.is_empty()

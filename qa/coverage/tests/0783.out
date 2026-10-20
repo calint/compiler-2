@@ -1,2 +1,4 @@
 
-0783.baz:9:0: expected ',' or '>' after generic argument
+0783.baz:10:1: expected ',' or '>' after generic argument
+func main() {
+^

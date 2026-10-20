@@ -107,8 +107,6 @@ class machine {
     virtual ~machine() = default;
 
   protected:
-    // output is held from 'start' to 'finish' so jumps can be optimized and
-    // grown to reach their targets
     using jump_mode = assembler::jump_mode;
 
   public:
@@ -591,7 +589,8 @@ class machine {
     [[nodiscard]] virtual auto register_display_name(size_t index) const
         -> std::string = 0;
 
-    // the pool of the scratch registers, a dry run swaps it for an empty one
+    // the pool of the registers, 'measure_code_size' swaps it for an empty
+    // one
     [[nodiscard]] virtual auto register_pool_ref() -> register_pool& = 0;
 
     [[nodiscard]] virtual auto

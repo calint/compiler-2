@@ -3969,7 +3969,7 @@ auto check_dry_run_leaves_no_trace() -> void {
 
     // note: 16 elements of 8 bytes are twice the capacity
     assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
-                         "would overflow allocated vars section"));
+                         "does not fit in the variable storage"));
 
     fe.tc.check_only([&] -> void {
         fe.tc.enter_block();
@@ -3987,7 +3987,7 @@ auto check_dry_run_leaves_no_trace() -> void {
 
     // the capacity is enforced again after the dry run
     assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
-                         "would overflow allocated vars section"));
+                         "does not fit in the variable storage"));
 
     fe.tc.exit_block();
     fe.tc.exit_block();

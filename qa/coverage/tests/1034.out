@@ -1,4 +1,4 @@
 
-1034.baz:3:5: 'if' is reserved
+1034.baz:3:5: 'if' is a keyword
 let if = 1
     ^~

@@ -65,7 +65,6 @@ class machine_rv32i : public machine {
 
     using section = assembler_rv32i::section;
 
-    static constexpr size_t s0_register_index{8};
     static constexpr std::string_view variables_base_register_{"s0"};
     static constexpr size_t variables_base_past_vars_bytes_{2032};
 
@@ -3924,7 +3923,8 @@ class machine_rv32i : public machine {
         const size_t base{register_index(address.base_register())};
 
         const bool is_variables_base{
-            variables_base_reserved_ and base == s0_register_index,
+            variables_base_reserved_ and
+                base == register_index(variables_base_register_),
         };
 
         const bool is_frame_base{

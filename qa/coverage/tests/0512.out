@@ -1,4 +1,4 @@
 
-0512.baz:7:17: parameter 1 requires an array
+0512.baz:7:17: 'buf[i]' is not an array, parameter 's' takes one
     var r = put(buf[i], 5)
                 ^

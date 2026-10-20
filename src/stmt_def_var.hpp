@@ -42,7 +42,7 @@ class stmt_def_var final : public statement {
     stmt_def_var(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, name_tk_{tz.next_token()}, is_let_{tk.is_text("let")} {
 
-        toc::assert_valid_variable_name(name_tk_);
+        toc::assert_valid_unqualified_name(name_tk_);
 
         // the destination is read where it ends at '=', past it the '[2]' in
         // 'var a = [2]{}' would read as an index

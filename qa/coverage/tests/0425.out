@@ -1,4 +1,4 @@
 
-0425.baz:4:40: parameter 1 requires an array
+0425.baz:4:40: 'items[0]' is not an array, parameter 'parameter' takes one
 func main() { var items = [2]{} target(items[0]) }
                                        ^

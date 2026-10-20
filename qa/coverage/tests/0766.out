@@ -1,4 +1,4 @@
 
-0766.baz:9:19: parameter 'v': required 'i32', got 'i16'
+0766.baz:9:19: expected type 'i32' for parameter 'v', got 'i16'
     var r = first(a)
                   ^

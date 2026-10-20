@@ -112,7 +112,9 @@ class tokenizer final {
             return false;
         }
 
-        return next_char();
+        skip_char();
+
+        return true;
     }
 
     [[nodiscard]] auto is_next_char_token(const char ch) -> token {
@@ -176,6 +178,15 @@ class tokenizer final {
 
         return {file_ix_, ws_before, bgn_ix,  txt,
                 end_ix,   ws_after,  at_line, false};
+    }
+
+    // the position of the next token, past the whitespace and comments
+    [[nodiscard]] auto next_token_position() const -> token {
+        tokenizer probe{*this};
+
+        std::ignore = probe.next_whitespace();
+
+        return probe.cur_position_token();
     }
 
     [[nodiscard]] auto next_whitespace_token() -> token {
@@ -521,6 +532,4 @@ class tokenizer final {
 
 // declared in 'compile_error.hpp'
 inline compile_error::compile_error(const tokenizer& tz, std::string message)
-    : msg{std::move(message)}, file_ix{tz.file_index()}, line{tz.cur_line()},
-      start_index{tz.cur_char_index_in_source()},
-      end_index{tz.cur_char_index_in_source()} {}
+    : compile_error{tz.next_token_position(), std::move(message)} {}

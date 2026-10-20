@@ -36,7 +36,9 @@ class stmt_builtin_foo final : public statement {
         ident_ = {tc, {}, tz.next_token(), tz};
 
         if (not ident_.is_array()) {
-            throw compile_error{ident_.tok(), "expected an array"};
+            throw compile_error{
+                ident_.tok(),
+                std::format("'{}' is not an array", ident_.name_or_literal())};
         }
 
         // e.g. 'foo arr, len' visits the first 'len' elements
@@ -98,7 +100,7 @@ class stmt_builtin_foo final : public statement {
                                      tc.builtins().default_type()),
         };
 
-        x.comment(ident_.tok(), indent, "initiate iterator e");
+        x.comment(ident_.tok(), indent, "initialize iterator e");
 
         load_array_address(tc, indent, array_info, reg_iter);
 
@@ -112,11 +114,11 @@ class stmt_builtin_foo final : public statement {
         tc.enter_foo(loop_label);
 
         const operand counter{
-            declare_counter(tc, indent, array_info, reg_iter,
-                            allocated_registers),
+            declare_loop_names(tc, indent, array_info, reg_iter,
+                               allocated_registers),
         };
 
-        x.comment(tok(), indent, "initiate counter i");
+        x.comment(tok(), indent, "initialize counter i");
 
         x.copy_value(tok(), indent, counter,
                      operand::imm(0, tc.builtins().default_type()));
@@ -244,9 +246,10 @@ class stmt_builtin_foo final : public statement {
 
     // 'e', 'i' and 'n' are declared, the counter is a register or a variable in
     // memory, as the machine prefers
-    auto declare_counter(toc& tc, const size_t indent,
-                         const ident_info& array_info, const operand& reg_iter,
-                         std::vector<operand>& allocated_registers) const
+    auto declare_loop_names(toc& tc, const size_t indent,
+                            const ident_info& array_info,
+                            const operand& reg_iter,
+                            std::vector<operand>& allocated_registers) const
         -> operand {
 
         machine& x{tc.machine()};

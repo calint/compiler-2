@@ -1,4 +1,4 @@
 
-1042.baz:4:9: 'read' is reserved
+1042.baz:4:9: 'read' is a built-in function
     var read = 3
         ^~~~

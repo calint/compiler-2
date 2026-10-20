@@ -285,10 +285,10 @@ struct generic_call {
 
         if (arg_tks.size() != param_tks.size()) {
             throw compile_error{
-                name_tk,
-                std::format("generic function '{}' takes {} type argument(s), "
-                            "got {}",
-                            generic_name, param_tks.size(), arg_tks.size())};
+                name_tk, std::format("generic function '{}' takes {}, got {}",
+                                     generic_name,
+                                     counted(param_tks.size(), "type argument"),
+                                     arg_tks.size())};
         }
 
         std::vector<const type*> type_args;
@@ -363,9 +363,9 @@ struct call_site {
         }
 
         const std::string message{
-            std::format("result type mismatch: function returns '{}', "
-                        "destination is '{}'",
-                        func.get_type().name(), dst.type_ref().name()),
+            std::format("expected type '{}', got '{}' from '{}'",
+                        dst.type_ref().name(), func.get_type().name(),
+                        func.name()),
         };
 
         // a noinline result needs a memory destination, not the register
@@ -448,8 +448,9 @@ struct call_site {
 
         throw compile_error{
             arg.tok(),
-            std::format("parameter '{}': required '{}', got '{}'", param.name(),
-                        param.get_type().name(), info.type_ref().name())};
+            std::format("expected type '{}' for parameter '{}', got '{}'",
+                        param.get_type().name(), param.name(),
+                        info.type_ref().name())};
     }
 
   private:
@@ -890,11 +891,9 @@ class inline_call {
 
         assert(call_arguments.empty() or
                call_arguments.size() == call_.args.size());
-        // note: 'call_arguments.at(i)' below needs one entry per argument
 
         call_.assert_result_use(dst, func);
 
-        // buffer the aliases of arguments and function return
         std::vector<alias_info> aliases;
 
         // the result names the destination, so the widths must agree
@@ -907,9 +906,9 @@ class inline_call {
         for (const auto [i, arg, param] : std::views::zip(
                  std::views::iota(size_t{}), call_.args, func.params())) {
 
-            // note: 'compile' made its temporary
-            // a 'noinline' call made its own, the dry run must not name the
-            // register of the caller that the body does not see
+            // 'compile' of a 'noinline' call made the temporary, the dry run
+            // must not name the register of the caller that the body does not
+            // see
             const bool is_call_temporary{
                 not call_arguments.empty() and
                     call_arguments.at(i).is_temporary,
@@ -1872,38 +1871,6 @@ class stmt_call : public expression {
             expr_type{std::make_unique<stmt_identifier>(std::move(receiver))});
     }
 
-    // an argument reaches its parameter by reference, so a value that has no
-    // storage or an array of the wrong shape cannot be passed
-    auto assert_argument_usable(const toc& tc, const size_t index,
-                                const expr_any& arg,
-                                const stmt_def_func_param& param) const
-        -> void {
-
-        if (param.is_array()) {
-            // an expression is not an array
-            const bool is_array_arg{
-                arg.is_name_or_literal() and not arg.is_expression() and
-                    tc.make_ident_info(arg).is_array(),
-            };
-
-            // an element would give the parameter the whole array's
-            // length, pass the array and a start index instead
-            if (not is_array_arg) {
-                throw compile_error{
-                    arg.tok(), std::format("parameter {} requires an array",
-                                           index + 1 - first_argument_index())};
-                // note: +1 because parameters are numbered from 1
-            }
-
-            return;
-        }
-
-        // the alias would make the parameter name the whole array
-        if (arg.is_name_or_literal()) {
-            toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
-        }
-    }
-
     // a callee that writes its parameter writes the variable of the caller:
     // a read-only argument is rejected here, also in a function that is never
     // called
@@ -2062,9 +2029,8 @@ class stmt_call : public expression {
             return;
         }
 
-        throw compile_error{tz, std::format("'{}' takes {} argument{}",
-                                            func_name_, param_count,
-                                            param_count == 1 ? "" : "s")};
+        throw compile_error{tz, std::format("'{}' takes {}", func_name_,
+                                            counted(param_count, "argument"))};
     }
 
     // an argument that names the storage of an earlier one, unless both
@@ -2206,11 +2172,16 @@ class stmt_call : public expression {
 
             // e.g. the ',' of 'f(a, b)'
             if (i != first) {
-                const token delimiter_tk{tz.is_next_char_token(',')};
-
-                if (delimiter_tk.is_empty()) {
+                if (tz.peek_char_after_whitespace() == ')') {
                     throw_missing_argument(tz, params.at(i), i);
                 }
+
+                const std::string message{
+                    std::format("expected ',' before {} ('{}')",
+                                describe_argument(i), params.at(i).name()),
+                };
+
+                const token delimiter_tk{tz.expect_char_token(',', message)};
 
                 arg_delims_tk_.emplace_back(delimiter_tk);
             }
@@ -2233,7 +2204,7 @@ class stmt_call : public expression {
             tz.expect_char_token(')', "expected ')' after arguments");
 
         for (size_t i{}; i < args_.size(); ++i) {
-            assert_argument_usable(tc, i, args_.at(i), params.at(i));
+            assert_argument_usable(tc, args_.at(i), params.at(i));
             assert_argument_writable(tc, i, func);
         }
     }
@@ -2316,7 +2287,7 @@ class stmt_call : public expression {
         };
     }
 
-    // e.g. 'foo', 'lst.add' or 'point.at'
+    // e.g. 'f', 'lst.add' or 'point.at'
     auto source_callee_to(std::ostream& os) const -> void {
         if (is_constructor()) {
             expression::source_to(os);
@@ -2356,6 +2327,38 @@ class stmt_call : public expression {
     //
     // statics
     //
+
+    // an argument reaches its parameter by reference, so a value that has no
+    // storage or an array of the wrong shape cannot be passed
+    static auto assert_argument_usable(const toc& tc, const expr_any& arg,
+                                       const stmt_def_func_param& param)
+        -> void {
+
+        if (param.is_array()) {
+            // an expression is not an array
+            const bool is_array_arg{
+                arg.is_name_or_literal() and not arg.is_expression() and
+                    tc.make_ident_info(arg).is_array(),
+            };
+
+            // an element would give the parameter the whole array's
+            // length, pass the array and a start index instead
+            if (not is_array_arg) {
+                throw compile_error{
+                    arg.tok(),
+                    std::format("'{}' is not an array, parameter '{}' takes "
+                                "one",
+                                trimmed_source(arg), param.name())};
+            }
+
+            return;
+        }
+
+        // the alias would make the parameter name the whole array
+        if (arg.is_name_or_literal()) {
+            toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
+        }
+    }
 
     // 'point.at' for the type named as written, e.g. an alias with constructors
     // of its own; else the name of the type that a type parameter is bound to,

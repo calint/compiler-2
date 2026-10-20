@@ -49,7 +49,7 @@ class expr_arith final : public expression {
     // operators between elements in the vector
     std::vector<arithmetic_operator> ops_;
     std::vector<token> ws_before_ops_; // whitespace before each of 'ops_'
-    unary_ops uops_;                   // unary ops for all result e.g. ~(a+b)
+    unary_ops uops_;                   // of the whole list, e.g. '~(a + b)'
     token open_paren_tk_;              // when 'enclosed' the '(' token
     token close_paren_tk_;             // when 'enclosed' the ')' token
     bool enclosed_{};                  // (a + b)  vs  a + b
@@ -1079,8 +1079,6 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        // a negated operand is computed at the width of the destination so
-        // the overflow check sees it
         emit_with_source(tc, indent, src, dst.type_ref(),
                          [&](const operand& value, const bool) -> void {
                              x.bitwise(src.tok(), indent, op, dst.operand(),

@@ -1,4 +1,4 @@
 
-0644.baz:3:12: type 'x' not found
+0644.baz:3:8: 'mut' is a keyword
 func f(mut x) {
-           ^
+       ^~~

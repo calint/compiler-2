@@ -1,4 +1,4 @@
 
-1051.baz:5:20: argument 2 must be an array
+1051.baz:5:20: 'n' is not an array
     sector_read(0, n)
                    ^

@@ -1,4 +1,4 @@
 
-0489.baz:5:22: parameter 'value': required 'i8', got 'i32'
+0489.baz:5:22: expected type 'i8' for parameter 'value', got 'i32'
     var small = take(big)
                      ^

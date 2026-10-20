@@ -150,7 +150,7 @@ class stmt_def_func_param final : public statement {
           close_bracket_tk_{tokens.close_bracket_tk},
           is_read_only_{tokens.mut_tk.is_empty()} {
 
-        toc::assert_valid_variable_name(tok());
+        toc::assert_valid_unqualified_name(tok());
 
         set_type(type_tk_.is_empty()
                      ? tc.builtins().default_type()

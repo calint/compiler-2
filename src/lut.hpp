@@ -6,6 +6,9 @@
 #include <utility>
 #include <vector>
 
+// a table of values by name in the order they were put, looked up by a linear
+// search, which is fast for the few names of a scope; a name is put once and
+// looked up only when it is in the table
 template <class T> class lut final {
     struct elem {
         std::string key;

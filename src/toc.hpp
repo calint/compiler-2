@@ -65,7 +65,7 @@ class stmt_def_dat;
 class stmt_def_func;
 
 struct func_info {
-    token src_loc_tk;           // token for position in the source
+    token src_loc_tk;           // the definition, empty for a built-in
     const stmt_def_func* def{}; // null if built-in function
     const type* type_ptr{};     // return type or void
     // e.g. 'text.size' for the instance 'str.size', empty if not an instance
@@ -74,9 +74,9 @@ struct func_info {
 };
 
 struct func_return_info {
-    token type_tk;          // type token
-    token ident_tk;         // identifier token
-    const type* type_ptr{}; // type
+    token type_tk;
+    token ident_tk;
+    const type* type_ptr{};
 };
 
 // a noinline body compiled for the array lengths of one kind of call
@@ -236,7 +236,7 @@ struct alias_info {
 };
 
 struct const_info {
-    token src_loc_tk; // token for position in the source
+    token src_loc_tk; // the definition
     int64_t value;
 };
 
@@ -259,7 +259,6 @@ class frame final {
     // stack padding assigned to this frame
     size_t stack_padding_size_bytes_{};
 
-    // constants
     lut<const_info> consts_;
 
     // variables declared in this frame
@@ -274,7 +273,7 @@ class frame final {
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
-    frame_type type_{frame_type::func}; // frame type
+    frame_type type_{frame_type::func};
     bool is_inlined_{true};
     std::string_view storage_base_register_;
     size_t peak_storage_size_bytes_{};
@@ -1575,7 +1574,8 @@ class storage_layout final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("variable '{}' would overflow allocated vars section",
+            std::format("variable '{}' does not fit in the variable storage, "
+                        "see '--vars'",
                         name)};
     }
 
@@ -1774,7 +1774,7 @@ class ident_resolver final {
                                                  const ident_path& id) const
         -> ident_info {
 
-        // an integer constant
+        // a number, e.g. '0x10'
         if (const std::optional<int64_t> value{
                 constant_parser::parse_constant(src_loc_tk, id.str()),
             };
@@ -1784,7 +1784,6 @@ class ident_resolver final {
                 ident, id.str(), builtins_.get().default_type(), *value);
         }
 
-        // a boolean constant
         if (id.base() == reserved_names::true_value) {
             return ident_info::make_const(ident, id.str(),
                                           builtins_.get().boolean(), 1);
@@ -1795,7 +1794,7 @@ class ident_resolver final {
                                           builtins_.get().boolean(), 0);
         }
 
-        // is 'id' a constant?
+        // a 'let' constant
         const const_info* const named{scopes_.get().find_const(id.str())};
 
         if (named != nullptr) {
@@ -2086,12 +2085,9 @@ class definition_checks final {
                            const std::string_view generic_method,
                            const func_info& fn) const -> void {
 
-        // a built-in function has no source location
-        if (fn.src_loc_tk.at_line() == 0) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("function '{}' is a built-in function", name)};
-        }
+        // note: the name of a built-in function is rejected by
+        //       'assert_valid_unqualified_name'
+        assert(fn.src_loc_tk.at_line() != 0);
 
         const bool is_generic{not generic_method.empty()};
         const bool is_existing_generic{not fn.generic_method.empty()};
@@ -2317,12 +2313,12 @@ class toc final {
     auto add_dat(const stmt_def_dat& dat, const dat_extent& extent) -> void {
         if (scopes_.frames().size() != 1) {
             throw compile_error{extent.src_loc_tk,
-                                "'dat' can only be added in global scope"};
+                                "'dat' can only be declared in global scope"};
         }
 
         if (scopes_.front().has_non_dat_var_been_added()) {
             throw compile_error{extent.src_loc_tk,
-                                "'dat' can only be added before any 'var'"};
+                                "'dat' can only be declared before any 'var'"};
         }
 
         data_.add_dat(dat, extent, machine_.get().data_alignment());
@@ -2331,12 +2327,6 @@ class toc final {
     auto add_func(const token& src_loc_tk, std::string name,
                   const type& return_type, const stmt_def_func* const func_def,
                   std::string generic_method) -> void {
-
-        if (name == reserved_names::foo) {
-            throw compile_error{src_loc_tk,
-                                "cannot name function 'foo' because it is "
-                                "a builtin iterator function"};
-        }
 
         definitions_.assert_function_not_defined(src_loc_tk, name,
                                                  generic_method);
@@ -2830,18 +2820,7 @@ class toc final {
                                                   st.name_or_literal())};
     }
 
-    // a function named 'not' is read as the operator in every expression,
-    // the other keywords are read as the function where a call is assigned
-    static auto assert_valid_function_name(const token& name_tk) -> void {
-        assert_valid_name(name_tk);
-
-        if (name_tk.is_text("not")) {
-            throw compile_error{name_tk, "'not' is reserved"};
-        }
-    }
-
-    // a name is an identifier, 'self' is declared only by the compiler: the
-    // receiver of a method and the value built by a constructor
+    // a name is an identifier that is not a keyword
     static auto assert_valid_name(const token& name_tk) -> void {
         if (name_tk.text().empty()) {
             throw compile_error{name_tk, "expected a name"};
@@ -2856,37 +2835,23 @@ class toc final {
                             name_tk.text())};
         }
 
-        if (name_tk.is_text(reserved_names::self)) {
-            throw compile_error{name_tk, "'self' is reserved"};
-        }
-
-        // the value of a name that is a boolean value would be the function
-        if (name_tk.is_text(reserved_names::true_value) or
-            name_tk.is_text(reserved_names::false_value)) {
-
-            throw compile_error{name_tk, std::format("'{}' is a boolean value",
-                                                     name_tk.text())};
+        if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {
+            throw compile_error{
+                name_tk, std::format("'{}' is a keyword", name_tk.text())};
         }
     }
 
-    // a name of a variable, constant, data or parameter, the keywords are
-    // reserved because their use would be read as the keyword and the
-    // built-in functions because their use would be read as a call
-    static auto assert_valid_variable_name(const token& name_tk) -> void {
+    // a name of a function, variable, constant, data or parameter, which is
+    // used without a qualifier
+    static auto assert_valid_unqualified_name(const token& name_tk) -> void {
         assert_valid_name(name_tk);
 
-        static constexpr std::array<std::string_view, 20> reserved_words{
-            "and",      "array_copy",  "array_length", "arrays_equal", "break",
-            "continue", "dat",         "exit",         "foo",          "if",
-            "let",      "loop",        "not",          "or",           "read",
-            "return",   "sector_read", "sector_write", "var",          "write",
-        };
+        if (std::ranges::contains(reserved_names::builtin_functions,
+                                  name_tk.text())) {
 
-        for (const std::string_view word : reserved_words) {
-            if (name_tk.is_text(word)) {
-                throw compile_error{name_tk,
-                                    std::format("'{}' is reserved", word)};
-            }
+            throw compile_error{
+                name_tk,
+                std::format("'{}' is a built-in function", name_tk.text())};
         }
     }
 

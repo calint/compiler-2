@@ -1,4 +1,4 @@
 
-0210.baz:6:5: destination must be an 'i64'
+0210.baz:6:9: 'array_length(a)' of type 'i64' is narrowed to 'i8', use 'i8(...)'
     n = array_length(a)
-    ^
+        ^~~~~~~~~~~~

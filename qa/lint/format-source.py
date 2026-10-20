@@ -1204,6 +1204,16 @@ DESIGNATOR = re.compile(r"\s*\.[A-Za-z_]\w*\s*[{=]")
 TABLE_ROW = re.compile(r"^(\w[\w:<>]*)?\{\..*\},?$")
 
 
+# a quote inside a number, e.g. '0xffff'f000', not the start of a character
+# literal, which may have a prefix of letters, e.g. 'u8'x''
+def is_digit_separator(text, i):
+    start = i
+    while start > 0 and (text[start - 1].isalnum() or text[start - 1] in "_'"):
+        start -= 1
+
+    return start < i and text[start].isdigit()
+
+
 def designated_commas(text):
     # the positions after the last token of each designated initializer that
     # has no trailing comma, comments and literals are skipped
@@ -1221,6 +1231,11 @@ def designated_commas(text):
 
         if text.startswith("/*", i):
             i = text.index("*/", i) + 2
+            continue
+
+        if c == "'" and is_digit_separator(text, i):
+            last = i
+            i += 1
             continue
 
         if c in "\"'":

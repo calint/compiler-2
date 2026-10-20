@@ -1,4 +1,4 @@
 
-0716.baz:4:9: variable 'a' would overflow allocated vars section
+0716.baz:4:9: variable 'a' does not fit in the variable storage, see '--vars'
     var a = [32]{}
         ^

@@ -1,4 +1,4 @@
 
-0717.baz:3:1: unexpected keyword 'exit'
+0717.baz:3:1: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got 'exit'
 exit(0)
 ^~~~

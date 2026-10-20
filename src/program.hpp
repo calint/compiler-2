@@ -414,8 +414,10 @@ class program final {
                 tk, "'include' must be before the definitions of the file"};
         }
 
-        throw compile_error{tk,
-                            std::format("unexpected keyword '{}'", tk.text())};
+        throw compile_error{
+            tk, std::format("expected a definition ('func', 'type', 'var', "
+                            "'let' or 'dat'), got '{}'",
+                            tk.text())};
     }
 
   private:
@@ -573,7 +575,7 @@ class program final {
 
         if (not func_main.is_inlined()) {
             throw compile_error{func_main.noinline_token(),
-                                "main cannot be declared noinline"};
+                                "'main' cannot be declared 'noinline'"};
         }
 
         machine& x{tc.machine()};

@@ -2053,7 +2053,7 @@ SRC=0666 && COMPERR
 SRC=0667 && COMPERR
 
 # 'mut' before the receiver type lets a method write 'self', other methods
-# work on read-only receivers, a function can still be named 'mut'
+# work on read-only receivers
 SRC=0668 && EXP=0 && RUN
 
 # '==' compares the bytes of the fields, the padding of an instance is not
@@ -2150,8 +2150,8 @@ SRC=0694 && COMPERR
 # a negative constant 'array_copy' count is rejected
 SRC=0695 && COMPERR
 
-# 'noinline' is a function name when parentheses follow
-SRC=0696 && EXP=3 && RUN
+# 'noinline' is a keyword, not a function name
+SRC=0696 && COMPERR
 
 # a field array size is required
 SRC=0697 && COMPERR
@@ -3511,3 +3511,11 @@ if [[ $MACHINE == x86_64 ]]; then
 else
     SRC=1126 && OPTS="--vars=0x40000 --checks=noub --reproduce-source" EXP=0 RUN
 fi
+
+# a keyword is not a variable name, 'else = 7' after an 'if' would be read as
+# its 'else'
+SRC=1127 && COMPERR
+
+# a built-in function name is not a function name, every call would be of the
+# built-in
+SRC=1128 && COMPERR

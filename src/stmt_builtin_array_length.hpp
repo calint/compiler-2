@@ -79,12 +79,18 @@ class stmt_builtin_array_length final : public expression {
         //       non-array reaches here
         assert(not src_info.is_array());
 
-        throw compile_error{stmt_ident_.first_token(),
-                            "argument must refer to an array"};
+        throw compile_error{
+            stmt_ident_.first_token(),
+            std::format("'{}' is not an array", stmt_ident_.name_or_literal())};
     }
 
-    // a narrower width stays unfolded so 'compile' rejects the destination
-    // type
+    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
+                             const type& dst_type) const -> void override {
+
+        assert_own_type_not_narrowed(dst_type);
+    }
+
+    // a narrower width stays unfolded, 'assert_not_narrowed' rejects it
     [[nodiscard]] auto folded_constant(const toc& tc,
                                        const type& width_type) const
         -> std::optional<int64_t> override {

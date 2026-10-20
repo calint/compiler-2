@@ -8,7 +8,7 @@ func noinline qword() res { res = 2 }
 func noinline byte() res { res = 3 }
 func noinline rel() res { res = 4 }
 func noinline sp() res { res = 5 }
-func noinline dat() res { res = 6 }
+func noinline data() res { res = 6 }
 func noinline vars() res { res = 7 }
 func noinline _start() res { res = 8 }
 func noinline baz_bounds_panic() res { res = 9 }
@@ -24,7 +24,7 @@ func main() {
     assert(4, r == 4)
     r = sp()
     assert(5, r == 5)
-    r = dat()
+    r = data()
     assert(6, r == 6)
     r = vars()
     assert(7, r == 7)

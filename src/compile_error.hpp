@@ -2,7 +2,9 @@
 
 #include <cstddef>
 #include <exception>
+#include <format>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -31,9 +33,9 @@ class compile_error final : public std::exception {
           line{src_loc_tk.at_line()}, start_index{src_loc_tk.start_index()},
           end_index{src_loc_tk.end_index()} {}
 
-    // defined in 'tokenizer.hpp', the error is at the cursor: the start of the
-    // token that was found instead of the expected one, after the whitespace
-    // that follows the last token read
+    // defined in 'tokenizer.hpp', the error is at the start of the token that
+    // was found instead of the expected one, past the whitespace and comments
+    // after the last token read
     compile_error(const tokenizer& tz, std::string message);
 
     std::string msg;
@@ -75,3 +77,10 @@ class compile_error final : public std::exception {
   private:
     explicit compile_error(std::string message) : msg{std::move(message)} {}
 };
+
+// a count with its noun for a message, e.g. '1 argument' or '2 arguments'
+[[nodiscard]] inline auto counted(const size_t count,
+                                  const std::string_view noun) -> std::string {
+
+    return std::format("{} {}{}", count, noun, count == 1 ? "" : "s");
+}

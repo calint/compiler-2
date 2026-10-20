@@ -62,8 +62,8 @@ class constant_parser final {
 
         if (not decoded) {
             const size_t backslash_index{src_loc_tk.start_index() + 1};
-
             // note: +1 because the backslash follows the opening quote
+
             const token escape_tk{
                 src_loc_tk.is_text(str)
                     ? token::position(src_loc_tk.file_index(), backslash_index,

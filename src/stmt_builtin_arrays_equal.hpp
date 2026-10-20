@@ -46,14 +46,14 @@ class stmt_builtin_arrays_equal final : public expression {
 
         lhs_ = {tc, {}, tz.next_token(), tz};
 
-        lhs_.assert_array_or_element("source");
+        lhs_.assert_array_or_element();
 
         lhs_delim_tk_ = tz.expect_char_token(
             ',', "expected ',' then 'compare' and 'count'");
 
         rhs_ = {tc, {}, tz.next_token(), tz};
 
-        rhs_.assert_array_or_element("compare");
+        rhs_.assert_array_or_element();
 
         rhs_delim_tk_ =
             tz.expect_char_token(',', "expected ',' followed by 'count'");

@@ -625,7 +625,7 @@ class expr_bool_op final : public statement {
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compile_error{
                 rhs.tok(),
-                std::format("source type '{}' does not match compare type '{}'",
+                std::format("cannot compare type '{}' with type '{}'",
                             lhs_info.type_ref().name(),
                             rhs_info.type_ref().name())};
         }
@@ -645,8 +645,10 @@ class expr_bool_op final : public statement {
         // arrays are compared element by element, so their lengths must agree
         // note: a whole array on one side only was rejected above
         if (lhs_info.array_len() != rhs_info.array_len()) {
-            throw compile_error{lhs.tok(), "cannot compare arrays of different "
-                                           "sizes"};
+            throw compile_error{
+                rhs.tok(),
+                std::format("cannot compare arrays of sizes {} and {}",
+                            lhs_info.array_len(), rhs_info.array_len())};
         }
 
         return multiply_storage_size(lhs.tok(), element_size_bytes,
@@ -942,7 +944,8 @@ class expr_bool final : public statement {
     using element = std::variant<expr_bool_op, expr_bool>;
 
     std::vector<element> bools_;
-    std::vector<token> ops_; // 'and' or 'or' ops between element in 'bools_'
+    std::vector<token>
+        ops_; // the 'and' or 'or' between the elements of 'bools_'
     // the 'not's before the '(' of a parenthesized list, e.g. both of
     // 'not not (a == b and c == d)'
     std::vector<token> nots_;
@@ -1041,7 +1044,6 @@ class expr_bool final : public statement {
         return compile_rec(tc, indent, targets, false, dst);
     }
 
-    // assumes callers only query this when expression status is relevant
     [[nodiscard]] auto is_expression() const -> bool override {
         if (bools_.size() > 1) {
             return true;
@@ -1417,7 +1419,6 @@ class expr_bool final : public statement {
     // the 'and' or 'or' after an operand, none when the expression ends: an
     // enclosed expression ends with its ')'
     [[nodiscard]] auto read_connective(tokenizer& tz) -> std::optional<token> {
-        // the ')' ends an enclosed expression
         // e.g. '(a == 1 or b == 2)'
         if (is_enclosed()) {
             close_paren_tk_ = tz.is_next_char_token(')');

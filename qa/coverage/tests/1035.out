@@ -1,4 +1,4 @@
 
-1035.baz:3:8: 'loop' is reserved
+1035.baz:3:8: 'loop' is a keyword
 func f(loop) {
        ^~~~

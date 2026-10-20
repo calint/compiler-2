@@ -1,5 +1,5 @@
 # 'mut' before the receiver type lets a method write 'self', other methods
-# work on read-only receivers, a function can still be named 'mut'
+# work on read-only receivers
 
 func assert(err, ok bool) { if not ok exit(err) }
 
@@ -26,10 +26,6 @@ func noinline point.product() res {
     res = self.x * self.y
 }
 
-func mut(v) res {
-    res = v + 1
-}
-
 func read_only_sum(p point) res {
     var product = p.product()
     res = p.sum() + product
@@ -48,5 +44,4 @@ func main() {
 
     p.reset()
     assert(5, p.x == 0 and p.y == 0)
-    assert(6, mut(1) == 2)
 }

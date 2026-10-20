@@ -1,4 +1,4 @@
 
-1077.baz:9:13: generic function 'same' takes 1 type argument(s), got 2
+1077.baz:9:13: generic function 'same' takes 1 type argument, got 2
     var b = same<i8, 3>(1, 2)
             ^~~~

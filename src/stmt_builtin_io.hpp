@@ -157,7 +157,8 @@ class stmt_builtin_io final : public stmt_call {
             }
         }
 
-        throw compile_error{buffer.tok(), "argument 2 must be an array"};
+        throw compile_error{buffer.tok(), std::format("'{}' is not an array",
+                                                      trimmed_source(buffer))};
     }
 
     // a sector is a whole number of elements and fits in the array

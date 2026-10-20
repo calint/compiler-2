@@ -1,5 +1,5 @@
 
-0493.baz:6:5: result type mismatch: function returns 'i8', destination is 'i32', use 'i32(...)'
+0493.baz:6:5: expected type 'i32', got 'i8' from 'narrow', use 'i32(...)'
     x = narrow(big)
     ^
 0493.baz:6:9: called from 'narrow(big)'
