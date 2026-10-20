@@ -1,18 +1,14 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <format>
 #include <functional>
-#include <optional>
 #include <ostream>
-#include <string_view>
 #include <utility>
 
+#include "bulk_operands.hpp"
 #include "compile_error.hpp"
-#include "expr_any.hpp"
 #include "expression.hpp"
-#include "ident_info.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
@@ -21,48 +17,20 @@
 #include "unary_ops.hpp"
 
 class stmt_builtin_arrays_equal final : public expression {
-    token open_paren_tk_;
-    stmt_identifier lhs_;
-    token lhs_delim_tk_;
-    stmt_identifier rhs_;
-    token rhs_delim_tk_;
-    expr_any count_;
-    token close_paren_tk_;
+    bulk_operands operands_;
 
   public:
     stmt_builtin_arrays_equal(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
-        : expression{src_loc_tk, std::move(uops)},
-          open_paren_tk_{tz.is_next_char_token('(')} {
+        : expression{src_loc_tk, std::move(uops)} {
 
         assert_no_unary_ops();
 
         set_type(tc.builtins().boolean());
 
-        if (open_paren_tk_.is_empty()) {
-            throw compile_error{
-                tz, "expected '(', 'source', 'compare', 'count', and ')'"};
-        }
-
-        lhs_ = {tc, {}, tz.next_token(), tz};
-
-        lhs_.assert_array_or_element();
-
-        lhs_delim_tk_ = tz.expect_char_token(
-            ',', "expected ',' then 'compare' and 'count'");
-
-        rhs_ = {tc, {}, tz.next_token(), tz};
-
-        rhs_.assert_array_or_element();
-
-        rhs_delim_tk_ =
-            tz.expect_char_token(',', "expected ',' followed by 'count'");
-
-        count_ = {tc, tz, tc.builtins().default_type(),
-                  literal_typing::from_destination};
-
-        close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after the arguments");
+        // note: parsed after the check so that a unary operation is reported
+        //       before an error in the arguments
+        operands_ = {tc, tz, "compare"};
     }
 
     stmt_builtin_arrays_equal() = default;
@@ -73,13 +41,7 @@ class stmt_builtin_arrays_equal final : public expression {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        open_paren_tk_.source_to(os);
-        lhs_.source_to(os);
-        lhs_delim_tk_.source_to(os);
-        rhs_.source_to(os);
-        rhs_delim_tk_.source_to(os);
-        count_.source_to(os);
-        close_paren_tk_.source_to(os);
+        operands_.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -98,37 +60,35 @@ class stmt_builtin_arrays_equal final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info lhs_info{tc.make_ident_info(lhs_)};
-        const ident_info rhs_info{tc.make_ident_info(rhs_)};
-
-        if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
-            throw compile_error{
-                rhs_.tok(),
-                std::format("source type '{}' does not match compare type '{}'",
-                            lhs_info.type_ref().name(),
-                            rhs_info.type_ref().name())};
-        }
+        const bulk_operands::arrays_info arrays{operands_.resolve_arrays(tc)};
 
         assert_destination_type(dst.type_ref(), tok());
 
-        if (const std::optional<int64_t> count{count_.constant_value(tc)}) {
-            lhs_.assert_count_in_bounds(tc, count_.tok(), *count);
-            rhs_.assert_count_in_bounds(tc, count_.tok(), *count);
-        }
+        operands_.assert_constant_count_in_bounds(tc);
 
         const std::function<void(const operand&)> emit_count{
-            make_count_emitter(tc, indent, count_),
+            operands_.count_emitter(tc, indent),
         };
 
-        x.arrays_equal(
-            tok(), indent, lhs_info.type_ref().size_bytes(), emit_count,
-            {
-                .alignment{lhs_info.type_ref().alignment()},
-                .lhs{lhs_.address_emitter_of(tc, indent, tok(), lhs_info)},
-                .rhs{rhs_.address_emitter_of(tc, indent, tok(), rhs_info)},
-                .dst{dst},
-                .inverted{inverted},
-            });
+        const machine::address_emitter emit_lhs{
+            operands_.first().address_emitter_of(tc, indent, tok(),
+                                                 arrays.first),
+        };
+
+        const machine::address_emitter emit_rhs{
+            operands_.second().address_emitter_of(tc, indent, tok(),
+                                                  arrays.second),
+        };
+
+        x.arrays_equal(tok(), indent, arrays.first.type_ref().size_bytes(),
+                       emit_count,
+                       {
+                           .alignment{arrays.first.type_ref().alignment()},
+                           .lhs{emit_lhs},
+                           .rhs{emit_rhs},
+                           .dst{dst},
+                           .inverted{inverted},
+                       });
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {
@@ -138,9 +98,7 @@ class stmt_builtin_arrays_equal final : public expression {
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
-        lhs_.visit_reads(var, reader);
-        rhs_.visit_reads(var, reader);
-        count_.visit_reads(var, reader);
+        operands_.visit_reads(var, reader);
     }
 
   private:

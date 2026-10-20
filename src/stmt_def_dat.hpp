@@ -78,13 +78,7 @@ class stmt_def_dat final : public statement {
 
         // register the data without emitting output so it is available
         // during subsequent parsing
-        tc.add_var(name_tk_, 0, make_var_info(), var_kind::dat);
-
-        tc.add_dat(*this, {
-                              .src_loc_tk{tok()},
-                              .alignment{get_type().alignment()},
-                              .size_bytes{size_bytes()},
-                          });
+        tc.add_dat(*this, tok(), make_var_info());
     }
 
     stmt_def_dat() = default;
@@ -140,12 +134,6 @@ class stmt_def_dat final : public statement {
         compile_data_rec(tc, get_type(), root_elem_);
     }
 
-    [[nodiscard]] auto size_bytes() const -> size_t {
-        return multiply_storage_size(
-            name_tk_, get_type().size_bytes(),
-            root_elem_.is_array ? root_elem_.array_count : 1);
-    }
-
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
         return {
@@ -188,20 +176,17 @@ class stmt_def_dat final : public statement {
 
     // e.g. '[4]', or '[]' when the initializer gives the size, which is 0
     [[nodiscard]] auto parse_array_size(toc& tc, tokenizer& tz) -> size_t {
-        array_count_const_ = {tc, tz, 0};
+        array_count_const_ = {tc, tz};
 
-        if (array_count_const_.has_value() and
-            array_count_const_.value() <= 0) {
-
-            throw compile_error{
-                array_count_const_.tok(),
-                "expected a constant array size greater than 0"};
-        }
+        const size_t array_count{
+            array_count_const_.has_value() ? array_count_const_.array_size()
+                                           : 0,
+        };
 
         close_bracket_tk_ =
             tz.expect_char_token(']', "expected ']' after array size");
 
-        return static_cast<size_t>(array_count_const_.value());
+        return array_count;
     }
 
     // e.g. 'i8(3)' or 'int(3)'
@@ -687,7 +672,7 @@ class stmt_def_dat final : public statement {
                 ',', std::format("expected ',' followed by an initializer "
                                  "for field '{}' of type '{}{}' in type '{}'",
                                  next.name, next.type().name(),
-                                 next.is_array ? "[]" : "", tp.name())),
+                                 next.is_array() ? "[]" : "", tp.name())),
         };
 
         el.elem_delims_tk.emplace_back(tk);
@@ -728,7 +713,7 @@ class stmt_def_dat final : public statement {
             }
 
             el.elems.emplace_back(parse_elem(tc, tz, tz.cur_position_token(),
-                                             tf.type(), tf.is_array,
+                                             tf.type(), tf.is_array(),
                                              tf.array_count));
         }
 

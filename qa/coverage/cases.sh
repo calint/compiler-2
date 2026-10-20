@@ -3519,3 +3519,12 @@ SRC=1127 && COMPERR
 # a built-in function name is not a function name, every call would be of the
 # built-in
 SRC=1128 && COMPERR
+
+# a 'mut' parameter takes a variable, also when the callee is 'noinline'
+SRC=1129 && COMPERR
+
+# a 'mut bool' parameter writes the variable of the caller, inlined or not
+SRC=1130 && EXP=0 && RUN
+
+# a 'dat' after a function, whose variables the parse places before it
+SRC=1131 && EXP=3 && RUN

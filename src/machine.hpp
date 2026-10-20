@@ -36,6 +36,10 @@ struct runtime_check {
     bool with_line{};
 };
 
+// what the front end emits through, and what every target shares: the
+// registers with the variables and frame bases, the trace of their use and
+// the sd card routines in use; a backend supplies the instructions, the names
+// of its registers and the order it picks scratch registers in
 class machine {
     // receives the lines emitted before 'start' as they are emitted, which
     // backend tests use, null for a build
@@ -53,6 +57,15 @@ class machine {
     // the inlined calls being compiled and what the registers held
     register_trace trace_;
 
+    // the indexes are those of the names of the backend, see
+    // 'register_index_of'
+    register_pool registers_;
+    bool variables_base_reserved_{};
+    bool frame_base_reserved_{};
+    // the sector routines that 'emit_used_sector_routines' emits
+    bool sector_read_used_{};
+    bool sector_write_used_{};
+
     // what measuring code changes in the machine is put back when it ends,
     // also when an error unwinds: the registers held, the trace of the calls
     // and the most scratch registers in use; it starts with no register held
@@ -66,10 +79,9 @@ class machine {
         explicit measure_scope(machine& backend)
             : machine_{backend},
               kept_max_scratch_regs_{backend.usage_max_scratch_regs_},
-              kept_trace_{backend.trace_},
-              kept_pool_{backend.register_pool_ref()} {
+              kept_trace_{backend.trace_}, kept_pool_{backend.registers_} {
 
-            backend.register_pool_ref() = register_pool{};
+            backend.registers_ = register_pool{};
         }
 
         measure_scope(const measure_scope&) = delete;
@@ -78,7 +90,7 @@ class machine {
         auto operator=(measure_scope&&) -> measure_scope& = delete;
 
         ~measure_scope() {
-            machine_.register_pool_ref() = std::move(kept_pool_);
+            machine_.registers_ = std::move(kept_pool_);
             machine_.usage_max_scratch_regs_ = kept_max_scratch_regs_;
             machine_.trace_ = std::move(kept_trace_);
         }
@@ -273,6 +285,63 @@ class machine {
     };
 
   protected:
+    // keeps the registers of its operands, and the base and index registers
+    // of memory operands, from being picked for scratch while an operation is
+    // lowered. on exit, also while an exception unwinds, it frees the
+    // registers allocated within the scope and restores what was protected.
+    // it restores allocator bookkeeping only, not register values, and what
+    // was allocated before the scope must not be freed within it
+    class address_scope final {
+        machine& machine_;
+        uint32_t saved_mask_;
+        size_t saved_count_;
+
+      public:
+        address_scope(machine& backend, const operand& dst, const operand& src)
+            : machine_{backend},
+              saved_mask_{backend.registers_.unavailable_mask()},
+              saved_count_{backend.registers_.allocations().size()} {
+
+            for (const operand* value : {&dst, &src}) {
+                if (value->is_register() or value->is_memory()) {
+                    backend.protect_register(value->base_register());
+                }
+
+                if (value->is_memory()) {
+                    backend.protect_register(value->index_register());
+                }
+            }
+        }
+
+        // protects nothing, only frees what is allocated while it lives
+        explicit address_scope(machine& backend)
+            : address_scope{backend, operand{}, operand{}} {}
+
+        address_scope(const address_scope&) = delete;
+        address_scope(address_scope&&) = delete;
+        auto operator=(const address_scope&) -> address_scope& = delete;
+        auto operator=(address_scope&&) -> address_scope& = delete;
+
+        ~address_scope() {
+            register_pool& pool{machine_.registers_};
+
+            while (pool.allocations().size() > saved_count_) {
+                // implicit releases need the allocation context for a balanced
+                // trace
+                const register_pool::allocation entry{pool.top()};
+
+                machine_.comment(entry.src_loc_tk, entry.indent,
+                                 "free {} register {}",
+                                 entry.named ? "named" : "scratch",
+                                 machine_.register_display_name(entry.index));
+
+                pool.pop(entry.index);
+            }
+
+            pool.restore_unavailable(saved_mask_);
+        }
+    };
+
     // the addresses and the result of a comparison of two arrays, 'alignment'
     // is the alignment known for both
     struct equality_request {
@@ -311,6 +380,9 @@ class machine {
     // this descriptor and exits with this code
     static constexpr int stderr_descriptor{2};
     static constexpr int panic_exit_code{255};
+
+    // the sector size of the sd card of every target that has one
+    static constexpr size_t card_sector_size_bytes{512};
 
     // the unit of the shifts that take a byte out of a value
     static constexpr size_t bits_per_byte{
@@ -365,16 +437,6 @@ class machine {
 
     [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
 
-    [[nodiscard]] virtual auto
-    alloc_named_register(const token& src_loc_tk, const size_t indent,
-                         const std::string_view register_name,
-                         const type& type_ref) -> operand = 0;
-
-    [[nodiscard]] virtual auto alloc_scratch_register(const token& src_loc_tk,
-                                                      const size_t indent,
-                                                      const type& type_ref)
-        -> operand = 0;
-
     // 'emit_count' compiles the element count into the register it is given,
     // the elements of both arrays are compared at the width 'alignment' allows
     // and the result, 1 when they are equal, goes to 'dst'
@@ -407,18 +469,19 @@ class machine {
                               const bounds_range& range,
                               const bounds_check_options& options) -> void = 0;
 
+    // jumps to the frame overflow handler when the callee frame at
+    // 'frame_address' of 'frame_size_bytes' does not fit in the variables
     virtual auto check_frame_capacity(const token& src_loc_tk,
                                       const size_t indent,
                                       const operand& frame_address,
-                                      const operand& frame_size_bytes,
-                                      const bool enabled = {}) -> void = 0;
+                                      const operand& frame_size_bytes)
+        -> void = 0;
 
     // a target without an operating system jumps to the stack overflow handler
     // when a noinline call, made with the registers allocated now, does not
     // fit in the stack
     virtual auto check_stack_capacity(const token& src_loc_tk,
-                                      const size_t indent,
-                                      const bool enabled = {}) -> void = 0;
+                                      const size_t indent) -> void = 0;
 
     virtual auto comment_alias(const token& src_loc_tk, const size_t indent,
                                const std::string_view from,
@@ -437,7 +500,7 @@ class machine {
 
     // 'alignment' is the alignment known for both addresses
     virtual auto copy(const token& src_loc_tk, const size_t indent,
-                      const operand& src, const operand& dst,
+                      const operand& dst, const operand& src,
                       const size_t size_bytes, const size_t alignment)
         -> void = 0;
 
@@ -548,14 +611,6 @@ class machine {
     [[nodiscard]] virtual auto frame_base_register() const
         -> std::string_view = 0;
 
-    virtual auto free_named_register(const token& src_loc_tk,
-                                     const size_t indent, const operand& reg)
-        -> void = 0;
-
-    virtual auto free_scratch_register(const token& src_loc_tk,
-                                       const size_t indent, const operand& reg)
-        -> void = 0;
-
     // whether an access can add an index register to a base register, else an
     // indexed address is computed into a register by separate instructions
     [[nodiscard]] virtual auto has_indexed_addressing() const -> bool = 0;
@@ -589,17 +644,9 @@ class machine {
     [[nodiscard]] virtual auto register_display_name(size_t index) const
         -> std::string = 0;
 
-    // the pool of the registers, 'measure_code_size' swaps it for an empty
-    // one
-    [[nodiscard]] virtual auto register_pool_ref() -> register_pool& = 0;
-
     [[nodiscard]] virtual auto
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers = 0;
-
-    virtual auto release_frame_base() -> void = 0;
-
-    virtual auto reserve_frame_base() -> void = 0;
 
     virtual auto reserve_variables(const size_t alignment,
                                    const size_t size_bytes) -> void = 0;
@@ -610,24 +657,10 @@ class machine {
                              const operand& index,
                              const size_t element_size_bytes) -> void = 0;
 
-    // how many scratch registers the backend can hand out
-    [[nodiscard]] virtual auto scratch_register_total() const -> size_t = 0;
-
-    // reads the sd card sector, an unsigned 32 bit number, into the 'size'
-    // bytes at 'address', 'size' holds 'sector_size_bytes'; a sector past the
-    // end of the card panics where the target can tell
-    virtual auto sector_read(const token& src_loc_tk, const size_t indent,
-                             const operand& sector, const operand& address,
-                             const operand& size) -> void = 0;
-
     // the size of a sector of the sd card, 0 when the target has no card
-    [[nodiscard]] virtual auto sector_size_bytes() const -> size_t = 0;
-
-    // writes the 'size' bytes at 'address' to the sd card sector, like
-    // 'sector_read'
-    virtual auto sector_write(const token& src_loc_tk, const size_t indent,
-                              const operand& sector, const operand& address,
-                              const operand& size) -> void = 0;
+    [[nodiscard]] virtual auto sector_size_bytes() const -> size_t {
+        return card_sector_size_bytes;
+    }
 
     // an enabled check makes a count below zero or not below the width of the
     // type of 'dst' jump to the shift failure handler
@@ -674,6 +707,44 @@ class machine {
     //
     // class methods
     //
+
+    // a register that an instruction or the calling convention fixes, held
+    // until 'free_named_register'
+    [[nodiscard]] auto
+    alloc_named_register(const token& src_loc_tk, const size_t indent,
+                         const std::string_view register_name,
+                         const type& type_ref) -> operand {
+
+        reserve_named_register(src_loc_tk, indent, register_name, type_ref);
+        return allocated_operand(register_name, type_ref);
+    }
+
+    // the first free register in the scratch order of the backend
+    [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
+                                              const size_t indent,
+                                              const type& type_ref) -> operand {
+
+        validate_register_type(src_loc_tk, type_ref);
+
+        for (const std::string_view register_name : scratch_registers()) {
+            if (registers_.is_unavailable(register_mask(register_name))) {
+                continue;
+            }
+
+            comment(src_loc_tk, indent, "allocate scratch register -> {}",
+                    register_name);
+
+            push_allocation(src_loc_tk, indent, register_name, type_ref, false);
+
+            usage_max_scratch_regs_ =
+                std::max(usage_max_scratch_regs_, registers_.scratch_count());
+
+            return allocated_operand(register_name, type_ref);
+        }
+
+        throw register_error(
+            src_loc_tk, "out of scratch registers, simplify the expression");
+    }
 
     // the registers allocated until 'end_call_frame' belong to the inlined call
     // of 'name' made at 'call_site_tk', the first frame is the function being
@@ -776,6 +847,14 @@ class machine {
 
     auto end_noinline_body() -> void { target_assembler().end_body(); }
 
+    auto free_named_register(const token& src_loc_tk, const size_t indent,
+                             const operand& reg) -> void {
+
+        assert(reg.is_register() and not reg.allocation_register().empty());
+
+        release_named_register(src_loc_tk, indent, reg.allocation_register());
+    }
+
     auto free_named_registers(const token& src_loc_tk, const size_t indent,
                               const std::span<const operand> registers)
         -> void {
@@ -783,6 +862,19 @@ class machine {
         for (const operand& reg : registers | std::views::reverse) {
             free_named_register(src_loc_tk, indent, reg);
         }
+    }
+
+    auto free_scratch_register(const token& src_loc_tk, const size_t indent,
+                               const operand& reg) -> void {
+
+        assert(reg.is_register() and not reg.allocation_register().empty());
+
+        comment(src_loc_tk, indent, "free scratch register {}",
+                reg.allocation_register());
+
+        assert(not registers_.top().named);
+
+        pop_allocation(reg.allocation_register());
     }
 
     auto free_scratch_registers(const token& src_loc_tk, const size_t indent,
@@ -824,15 +916,6 @@ class machine {
         return size;
     }
 
-    [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk,
-                                              const register_pool& pool) const
-        -> compile_error {
-
-        return register_error(
-            src_loc_tk, "out of scratch registers, simplify the expression",
-            pool);
-    }
-
     // a call of the function with the body 'label' saves the registers 'saved'
     auto record_noinline_call(const token& call_site_tk,
                               const std::string_view label, const size_t saved)
@@ -844,20 +927,19 @@ class machine {
     // an error that the registers ran out or are held by a value, with how the
     // registers are used by each frame and what a 'noinline' frame would give
     [[nodiscard]] auto register_error(const token& src_loc_tk,
-                                      std::string message,
-                                      const register_pool& pool) const
+                                      std::string message) const
         -> compile_error;
 
     // an error that the register 'name' at 'index', which an instruction or
     // a built-in needs, is held: by a scratch value of the expression, or by
     // an operation whose operands are being computed, which a value computed
     // with 'let' before the operation does not clash with
-    [[nodiscard]] auto
-    register_in_use_error(const token& src_loc_tk, const std::string_view name,
-                          const size_t index, const register_pool& pool) const
+    [[nodiscard]] auto register_in_use_error(const token& src_loc_tk,
+                                             const std::string_view name,
+                                             const size_t index) const
         -> compile_error {
 
-        const register_pool::allocation& holder{pool.holder_of(index)};
+        const register_pool::allocation& holder{registers_.holder_of(index)};
 
         // note: the registers that the backend holds without a place in the
         //       source, e.g. the variables base, are needed by no instruction
@@ -871,8 +953,7 @@ class machine {
                 std::format("cannot allocate register {} because it holds a "
                             "scratch value allocated at {}, simplify the "
                             "expression",
-                            name, holder_location),
-                pool);
+                            name, holder_location));
         }
 
         return register_error(
@@ -880,13 +961,84 @@ class machine {
             std::format("register {} is always used by the operation at {} and "
                         "is needed here too, compute the operand that needs "
                         "it with 'let' before that operation",
-                        name, holder_location),
-            pool);
+                        name, holder_location));
     }
 
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none
     [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
+
+    // the frame base is held while a 'noinline' body is compiled, which starts
+    // and ends with no scratch register held
+    auto release_frame_base() -> void {
+        assert(frame_base_reserved_);
+        assert(registers_.scratch_count() == 0);
+
+        emit_frame_exit();
+        pop_allocation(frame_base_register());
+
+        frame_base_reserved_ = false;
+    }
+
+    // held from 'start' to 'finish'
+    auto release_variables_base() -> void {
+        assert(variables_base_reserved_);
+
+        release_named_register(token{}, 0, variables_base_register());
+
+        variables_base_reserved_ = false;
+    }
+
+    auto reserve_frame_base() -> void {
+        assert(not frame_base_reserved_);
+        assert(registers_.scratch_count() == 0);
+
+        push_allocation(token{}, 0, frame_base_register(), default_type(),
+                        true);
+
+        frame_base_reserved_ = true;
+
+        emit_frame_entry();
+    }
+
+    auto reserve_variables_base() -> void {
+        assert(not variables_base_reserved_);
+
+        reserve_named_register(token{}, 0, variables_base_register(),
+                               default_type());
+
+        variables_base_reserved_ = true;
+    }
+
+    // how many scratch registers the backend can hand out
+    [[nodiscard]] auto scratch_register_total() const -> size_t {
+        return scratch_registers().size();
+    }
+
+    // reads the sd card sector, an unsigned 32 bit number, into the 'size'
+    // bytes at 'address', 'size' holds 'sector_size_bytes'; a sector past the
+    // end of the card panics where the target can tell
+    auto sector_read(const token& src_loc_tk, const size_t indent,
+                     const operand& sector, const operand& address,
+                     const operand& size) -> void {
+
+        call_sector_routine(src_loc_tk, indent, sector, address, size,
+                            builtin_function::sector_read);
+
+        sector_read_used_ = true;
+    }
+
+    // writes the 'size' bytes at 'address' to the sd card sector, like
+    // 'sector_read'
+    auto sector_write(const token& src_loc_tk, const size_t indent,
+                      const operand& sector, const operand& address,
+                      const operand& size) -> void {
+
+        call_sector_routine(src_loc_tk, indent, sector, address, size,
+                            builtin_function::sector_write);
+
+        sector_write_used_ = true;
+    }
 
     // a blank line that separates the code from the report
     auto separate_report() -> void {
@@ -1087,10 +1239,48 @@ class machine {
     // virtual methods
     //
 
+    // calls the routine of 'function', 'sector_read' or 'sector_write', with
+    // the arguments in the registers of 'registers_for_builtin_function'
+    virtual auto
+    call_sector_routine(const token& src_loc_tk, const size_t indent,
+                        const operand& sector, const operand& address,
+                        const operand& size, const builtin_function function)
+        -> void = 0;
+
+    // the code at the start of a 'noinline' body after the frame base is
+    // reserved, none by default
+    virtual auto emit_frame_entry() -> void {}
+
+    // the code before the frame base is released, none by default
+    virtual auto emit_frame_exit() -> void {}
+
+    // the routines that the calls of 'sector_read' and 'sector_write' jump
+    // to, each only when it is used
+    virtual auto emit_sector_routines(const bool read_used,
+                                      const bool write_used) -> void = 0;
+
+    // the index of the register 'name' in any of its sizes, empty for text
+    // that names no register, e.g. a label
+    [[nodiscard]] virtual auto
+    register_index_of(const std::string_view name) const
+        -> std::optional<size_t> = 0;
+
+    // the registers 'alloc_scratch_register' picks from, in the order it tries
+    // them
+    [[nodiscard]] virtual auto scratch_registers() const
+        -> std::span<const std::string_view> = 0;
+
     // the assembler the target writes its output with
     [[nodiscard]] virtual auto target_assembler() -> assembler& = 0;
 
     [[nodiscard]] virtual auto target_assembler() const -> const assembler& = 0;
+
+    // throws when a register of the target cannot hold a value of 'type_ref',
+    // any type fits by default
+    virtual auto
+    validate_register_type([[maybe_unused]] const token& src_loc_tk,
+                           [[maybe_unused]] const type& type_ref) const
+        -> void {}
 
     //
     // class methods
@@ -1146,6 +1336,13 @@ class machine {
         return direct_output_;
     }
 
+    // unused routines contribute no code
+    auto emit_used_sector_routines() -> void {
+        if (sector_read_used_ or sector_write_used_) {
+            emit_sector_routines(sector_read_used_, sector_write_used_);
+        }
+    }
+
     // the optional jump optimization of buffered output
     auto finish_output() -> void {
         assembler& output{target_assembler()};
@@ -1153,6 +1350,26 @@ class machine {
         if (output.is_buffering() and jump_mode_ == jump_mode::optimized) {
             output.optimize_jumps();
         }
+    }
+
+    // releases the variables base that 'start' reserved, backend tests that
+    // do not start hold none, and asserts that every register is free
+    auto finish_registers() -> void {
+        if (variables_base_reserved_) {
+            release_variables_base();
+        }
+
+        assert(registers_.is_empty());
+        assert(registers_.unavailable_mask() == 0);
+        assert(not frame_base_reserved_);
+    }
+
+    [[nodiscard]] auto is_frame_base_reserved() const -> bool {
+        return frame_base_reserved_;
+    }
+
+    [[nodiscard]] auto is_variables_base_reserved() const -> bool {
+        return variables_base_reserved_;
     }
 
     // before the frame base, the address may be relative to it; the receiver of
@@ -1173,17 +1390,99 @@ class machine {
                    slot_address);
     }
 
-    // 'pool' has just got a register, for the report of the use of registers:
-    // what the frame being compiled holds itself and the busiest point
-    auto record_register_use(const register_pool& pool) -> void {
-        trace_.record_allocation(pool);
+    // a passed lower bounds check leaves the checked register non-negative
+    // until it is allocated again
+    auto mark_lower_checked(const bounds_range& range) -> void {
+        registers_.mark_lower_checked(
+            register_mask(lower_checked_register(range)));
     }
 
-    // 'pool' has just got a scratch register, keeps the greatest count of
-    // scratch registers in use at once
-    auto record_scratch_registers(const register_pool& pool) -> void {
-        usage_max_scratch_regs_ =
-            std::max(usage_max_scratch_regs_, pool.scratch_count());
+    // 'signed_max' is the largest value of the signed type of the compare
+    [[nodiscard]] auto plan_bounds_check(const bounds_check_options& options,
+                                         const bounds_range& range,
+                                         const uint64_t signed_max) const
+        -> bounds_plan {
+
+        const bool count_known{
+            not range.count.is_empty() and
+                registers_.is_lower_checked(
+                    register_mask(range.count.base_register())),
+        };
+
+        return {
+            .upper_covers_lower{
+                options.lower and options.upper and range.count.is_empty() and
+                    range.array_count <= signed_max,
+            },
+            .count_known{count_known},
+        };
+    }
+
+    // keeps the register 'name' from being picked for scratch until the
+    // enclosing 'address_scope' ends
+    auto protect_register(const std::string_view name) -> void {
+        registers_.protect(register_mask(name));
+    }
+
+    // the mask of the register 'name' in the pool, 0 for text that names no
+    // register
+    [[nodiscard]] auto register_mask(const std::string_view name) const
+        -> uint32_t {
+
+        const std::optional<size_t> index{register_index_of(name)};
+        return index ? uint32_t{1} << *index : 0;
+    }
+
+    [[nodiscard]] auto registers() const -> const register_pool& {
+        return registers_;
+    }
+
+    // the registers a 'noinline' call saves: the allocated ones but the
+    // variables base, which the callee uses too
+    [[nodiscard]] auto registers_saved_by_call() const -> std::vector<size_t> {
+        const std::optional<size_t> variables_base{
+            register_index_of(variables_base_register()),
+        };
+
+        std::vector<size_t> saved;
+        for (const register_pool::allocation& allocated :
+             registers_.allocations()) {
+
+            if (allocated.index != variables_base) {
+                saved.push_back(allocated.index);
+            }
+        }
+
+        return saved;
+    }
+
+    auto release_named_register(const token& src_loc_tk, const size_t indent,
+                                const std::string_view register_name) -> void {
+
+        comment(src_loc_tk, indent, "free named register {}", register_name);
+
+        assert(registers_.top().named);
+
+        pop_allocation(register_name);
+    }
+
+    // 'alloc_named_register' without an operand, for a register that the
+    // backend uses by name
+    auto reserve_named_register(const token& src_loc_tk, const size_t indent,
+                                const std::string_view register_name,
+                                const type& type_ref) -> void {
+
+        validate_register_type(src_loc_tk, type_ref);
+
+        comment(src_loc_tk, indent, "allocate named register {}",
+                register_name);
+
+        if (registers_.is_unavailable(register_mask(register_name))) {
+            throw register_in_use_error(src_loc_tk, register_name,
+                                        pool_index(register_name));
+        }
+
+        push_allocation(src_loc_tk, indent, register_name, type_ref, true);
     }
 
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
@@ -1200,6 +1499,8 @@ class machine {
         output.set_direct_output(nullptr);
 
         usage_max_scratch_regs_ = 0;
+        sector_read_used_ = false;
+        sector_write_used_ = false;
 
         output.comment(0, "");
         output.comment(0, "generated by baz");
@@ -1302,19 +1603,51 @@ class machine {
                                       : range.count.base_register();
     }
 
-    // 'signed_max' is the largest value of the signed type of the compare,
-    // 'count_known' tells that the lower bound of the count was checked
-    [[nodiscard]] static auto
-    plan_bounds_check(const bounds_check_options& options,
-                      const bounds_range& range, const uint64_t signed_max,
-                      const bool count_known) -> bounds_plan {
+  private:
+    // the operand of a register handed out by 'alloc_named_register' or
+    // 'alloc_scratch_register', which frees it by its allocation name
+    [[nodiscard]] auto allocated_operand(const std::string_view register_name,
+                                         const type& type_ref) const
+        -> operand {
 
-        return {
-            .upper_covers_lower{
-                options.lower and options.upper and range.count.is_empty() and
-                    range.array_count <= signed_max,
-            },
-            .count_known{not range.count.is_empty() and count_known},
-        };
+        operand result{make_register_operand(register_name, type_ref)};
+
+        result.set_allocation_register(register_name);
+
+        return result;
+    }
+
+    // the index of 'register_name', which names a register
+    [[nodiscard]] auto pool_index(const std::string_view register_name) const
+        -> size_t {
+
+        const std::optional<size_t> index{register_index_of(register_name)};
+
+        assert(index.has_value());
+
+        return *index;
+    }
+
+    // registers are released in reverse order of allocation
+    auto pop_allocation(const std::string_view register_name) -> void {
+        registers_.pop(pool_index(register_name));
+    }
+
+    // named and scratch allocations share one stack, each is recorded for
+    // the report of the use of registers
+    auto push_allocation(const token& src_loc_tk, const size_t indent,
+                         const std::string_view register_name,
+                         const type& type_ref, const bool named) -> void {
+
+        registers_.push({
+            .index{pool_index(register_name)},
+            .src_loc_tk{src_loc_tk},
+            .indent{indent},
+            .type_ptr{&type_ref},
+            .named{named},
+            .frame{current_call_frame()},
+        });
+
+        trace_.record_allocation(registers_);
     }
 };

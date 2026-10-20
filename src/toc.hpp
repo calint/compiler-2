@@ -256,8 +256,8 @@ class frame final {
     // number of bytes used on the stack by this frame
     size_t allocated_stack_size_bytes_{};
 
-    // stack padding assigned to this frame
-    size_t stack_padding_size_bytes_{};
+    // the root frame: the padding between the dats and its variables
+    size_t dat_var_padding_bytes_{};
 
     lut<const_info> consts_;
 
@@ -302,7 +302,7 @@ class frame final {
 
     [[nodiscard]] auto allocated_stack_size_bytes() const -> size_t {
         return sum_storage_size(allocated_stack_size_bytes_,
-                                stack_padding_size_bytes_);
+                                dat_var_padding_bytes_);
     }
 
     [[nodiscard]] auto call_path() const -> std::string_view {
@@ -400,10 +400,10 @@ class frame final {
         peak_storage_size_bytes_ = size_bytes;
     }
 
-    auto set_padding_between_dats_and_vars(const size_t size_bytes) -> void {
-        assert(stack_padding_size_bytes_ == 0);
+    auto set_dat_var_padding_bytes(const size_t size_bytes) -> void {
+        assert(dat_var_padding_bytes_ == 0);
 
-        stack_padding_size_bytes_ = size_bytes;
+        dat_var_padding_bytes_ = size_bytes;
     }
 
     [[nodiscard]] auto storage_base_register() const -> std::string_view {
@@ -549,7 +549,7 @@ class ident_builder final {
             const type_field& tf{tp->field(src_loc_tk, field_name)};
             offset = sum_storage_size(offset, tf.offset);
             tp = tf.type_ptr;
-            is_array = tf.is_array;
+            is_array = tf.is_array();
             array_count = tf.array_count;
             type_path.emplace_back(tp);
         }
@@ -827,20 +827,35 @@ class function_table final {
 
 // what the data of a 'dat' takes, from its declaration
 struct dat_extent {
-    token src_loc_tk;
+    token name_tk;
     size_t alignment{};
     size_t size_bytes{};
 };
 
-// the 'dat' declarations and the read-only constants of the program
+// a 'dat' at its place in the data section: 'padding_bytes' of zeros after the
+// dat before it align it at 'offset_bytes' from the start of the section
+struct placed_dat {
+    const stmt_def_dat* def{};
+    std::string name;
+    size_t padding_bytes{};
+    size_t offset_bytes{};
+};
+
+// the 'dat' declarations and the read-only constants of the program; the dats
+// are placed here once, in declaration order, the storage and the data section
+// read their offsets
 class data_table final {
-    std::vector<const stmt_def_dat*> dats_;
+    std::vector<placed_dat> dats_;
     std::vector<machine::string_constant> constants_;
     size_t total_size_bytes_{};
-    // padding after the dats so that the variables are aligned
-    size_t entry_gap_{};
+    // the alignment of the data section of the machine and of the variables
+    // after the dats
+    size_t data_alignment_;
 
   public:
+    explicit data_table(const size_t data_alignment)
+        : data_alignment_{data_alignment} {}
+
     // identical text shares the label of the first constant added
     [[nodiscard]] auto add_constant(std::string label, std::string text)
         -> std::string {
@@ -859,20 +874,23 @@ class data_table final {
         return constants_.back().label;
     }
 
-    // 'data_alignment' is the alignment of the data section of the machine
-    auto add_dat(const stmt_def_dat& dat, const dat_extent& extent,
-                 const size_t data_alignment) -> void {
-
-        dats_.emplace_back(&dat);
-
-        // same padding as 'add_var' places before the dat
-        total_size_bytes_ = add_storage_size(
-            extent.src_loc_tk,
+    // the size errors are located at the name of the dat
+    auto add_dat(const stmt_def_dat& dat, const dat_extent& extent) -> void {
+        const size_t offset_bytes{
             align_storage_size(total_size_bytes_, extent.alignment),
-            extent.size_bytes);
+        };
 
-        entry_gap_ = (data_alignment - (total_size_bytes_ % data_alignment)) %
-                     data_alignment;
+        const size_t padding_bytes{offset_bytes - total_size_bytes_};
+
+        total_size_bytes_ =
+            add_storage_size(extent.name_tk, offset_bytes, extent.size_bytes);
+
+        dats_.push_back({
+            .def{&dat},
+            .name{extent.name_tk.text()},
+            .padding_bytes{padding_bytes},
+            .offset_bytes{offset_bytes},
+        });
     }
 
     [[nodiscard]] auto constant_count() const -> size_t {
@@ -885,11 +903,28 @@ class data_table final {
         return constants_;
     }
 
-    [[nodiscard]] auto dats() const -> const std::vector<const stmt_def_dat*>& {
+    // the padding after the dats that aligns the variables
+    [[nodiscard]] auto dat_var_padding_bytes() const -> size_t {
+        return align_storage_size(total_size_bytes_, data_alignment_) -
+               total_size_bytes_;
+    }
+
+    [[nodiscard]] auto dats() const -> std::span<const placed_dat> {
         return dats_;
     }
 
-    [[nodiscard]] auto entry_gap() const -> size_t { return entry_gap_; }
+    // the name is a dat
+    [[nodiscard]] auto get_dat(const std::string_view name) const
+        -> const placed_dat& {
+
+        for (const placed_dat& dat : dats_) {
+            if (dat.name == name) {
+                return dat;
+            }
+        }
+
+        std::unreachable();
+    }
 
     // drops the constants added after the first 'count'
     auto resize_constants(const size_t count) -> void {
@@ -964,6 +999,12 @@ struct usage_statistics {
     size_t dat_size_bytes{};
     size_t dat_var_padding_bytes{};
     std::vector<std::string> uninstantiated_generics;
+};
+
+// a 'loop' or a 'foo' named by its label
+struct loop_target {
+    std::string_view label;
+    bool is_foo{};
 };
 
 // the frames of the scopes being compiled, from the root frame that holds the
@@ -1181,6 +1222,27 @@ class scope_stack final {
         return count;
     }
 
+    // the innermost 'loop' or 'foo' of the function, the target of a 'break'
+    // or a 'continue'
+    [[nodiscard]] auto innermost_loop_or_throw(const token& src_loc_tk) const
+        -> loop_target {
+
+        for (const frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_loop() or frm.is_foo()) {
+                return {
+                    .label{frm.name()},
+                    .is_foo{frm.is_foo()},
+                };
+            }
+
+            if (frm.is_func()) {
+                throw compile_error{src_loc_tk, "not in a loop"};
+            }
+        }
+
+        std::unreachable();
+    }
+
     // true when 'name' is a parameter that names its argument
     [[nodiscard]] auto is_alias(const std::string_view name) const -> bool {
         return find_alias(name) != nullptr;
@@ -1192,20 +1254,6 @@ class scope_stack final {
     [[nodiscard]] auto is_in_func() const -> bool {
         return std::ranges::any_of(
             frames_, [](const frame& frm) -> bool { return frm.is_func(); });
-    }
-
-    [[nodiscard]] auto is_in_loop_block() const -> bool {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_foo()) {
-                return false;
-            }
-
-            if (frm.is_loop()) {
-                return true;
-            }
-        }
-
-        std::unreachable();
     }
 
     // same scoping as the identifier resolution, e.g. a variable 'limits'
@@ -1224,22 +1272,6 @@ class scope_stack final {
         }
 
         return false;
-    }
-
-    [[nodiscard]] auto looping_label_or_throw(const token& src_loc_tk) const
-        -> std::string_view {
-
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_loop() or frm.is_foo()) {
-                return frm.name();
-            }
-
-            if (frm.is_func()) {
-                throw compile_error{src_loc_tk, "not in a loop"};
-            }
-        }
-
-        std::unreachable();
     }
 
     [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
@@ -1277,10 +1309,10 @@ class scope_stack final {
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
-    // the index of the frame that declares the variable 'name', zero when it
+    // the index of the frame that declares the variable 'name', empty when it
     // is not declared
     [[nodiscard]] auto var_frame_index(const std::string_view name) const
-        -> size_t {
+        -> std::optional<size_t> {
 
         for (const size_t index :
              std::views::iota(size_t{}, frames_.size()) | std::views::reverse) {
@@ -1290,7 +1322,7 @@ class scope_stack final {
             }
         }
 
-        return 0;
+        return std::nullopt;
     }
 
   private:
@@ -1318,9 +1350,9 @@ class scope_stack final {
     }
 };
 
-// where the variables and the dats are placed: the running size of the
-// variables section, the frames that have a storage base of their own, the
-// capacity of the section and the target limits
+// where the variables are placed, after the dats that 'data_table' placed: the
+// running size of the variables section, the frames that have a storage base
+// of their own, the capacity of the section and the target limits
 class storage_layout final {
     // where a variable is placed, 'storage_frame' is null at the variables base
     struct storage_location {
@@ -1334,7 +1366,7 @@ class storage_layout final {
     size_t vars_size_bytes_{};
     size_t vars_capacity_bytes_;
     size_t max_vars_size_bytes_{};
-    bool entry_gap_applied_{};
+    bool dat_var_padding_applied_{};
 
     // the parse declares names without checking the capacity, the compile
     // checks it where the declaration is compiled; the locals of a dry run
@@ -1356,21 +1388,47 @@ class storage_layout final {
         : machine_{backend}, scopes_{scopes}, data_{data},
           vars_capacity_bytes_{vars_capacity_bytes} {}
 
+    // the storage of the dat 'var' is where the data table placed it, after
+    // the dats before it; returns the bytes it takes with the padding before
+    // it, 'var.offset' is set
+    [[nodiscard]] auto allocate_dat(const token& src_loc_tk, var_info& var)
+        -> size_t {
+
+        const placed_dat& dat{data_.get().get_dat(var.name)};
+
+        // note: the compile pass places the dats in order and before the
+        //       variables; the parse also places the variables of the
+        //       function bodies it reads, whose offsets are not used
+        assert(capacity_unchecked_ or
+               sum_storage_size(vars_size_bytes_, dat.padding_bytes) ==
+                   dat.offset_bytes);
+
+        const size_t allocated_size_bytes{
+            sum_storage_size(dat.padding_bytes,
+                             var_storage_size_bytes(src_loc_tk, var)),
+        };
+
+        var.offset = add_address_offset(address_offset(dat.offset_bytes),
+                                        -variables_base_shift_bytes());
+
+        add_allocated_size_bytes(src_loc_tk, allocated_size_bytes);
+
+        return allocated_size_bytes;
+    }
+
     // places 'var' in the innermost storage that has room and returns the
     // bytes it takes with the alignment padding, 'var.offset' is set
-    [[nodiscard]] auto allocate(const token& src_loc_tk, var_info& var,
-                                const var_kind kind) -> size_t {
+    [[nodiscard]] auto allocate_var(const token& src_loc_tk, var_info& var)
+        -> size_t {
 
         const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
         const size_t var_alignment{var_storage_alignment(var)};
 
-        if (kind != var_kind::dat) {
-            apply_entry_gap(src_loc_tk);
-        }
+        apply_dat_var_padding(src_loc_tk);
 
         // offsets are relative to the variables base or to the nearest frame
         // with its own storage base, both are aligned
-        const storage_location location{find_storage_location(kind)};
+        const storage_location location{find_storage_location()};
 
         frame* const storage_frame{location.storage_frame};
         const size_t base_offset{location.base_offset};
@@ -1383,9 +1441,7 @@ class storage_layout final {
             add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
         };
 
-        if (kind != var_kind::dat) {
-            assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
-        }
+        assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
 
         var.offset = address_offset(base_offset + padding_bytes);
 
@@ -1399,16 +1455,10 @@ class storage_layout final {
                 add_address_offset(var.offset, -variables_base_shift_bytes());
         }
 
-        // the total accepts the size before a frame sums it
-        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
-                                            allocated_size_bytes);
+        add_allocated_size_bytes(src_loc_tk, allocated_size_bytes);
 
-        assert_storage_fits_target(src_loc_tk);
-
-        if (kind != var_kind::dat) {
-            max_vars_size_bytes_ =
-                std::max(used_vars_size_bytes(), max_vars_size_bytes_);
-        }
+        max_vars_size_bytes_ =
+            std::max(used_vars_size_bytes(), max_vars_size_bytes_);
 
         return allocated_size_bytes;
     }
@@ -1420,7 +1470,7 @@ class storage_layout final {
 
     auto begin_dry_run() -> dry_run_state {
         frame* const storage_frame{
-            find_storage_location(var_kind::var).storage_frame,
+            find_storage_location().storage_frame,
         };
 
         const dry_run_state saved{
@@ -1464,7 +1514,7 @@ class storage_layout final {
 
         const size_t frame_alignment{machine_.get().address_size_bytes()};
 
-        const storage_location location{find_storage_location(var_kind::var)};
+        const storage_location location{find_storage_location()};
 
         if (location.storage_frame) {
             return operand::mem(location.storage_frame->storage_base_register(),
@@ -1476,7 +1526,9 @@ class storage_layout final {
 
         const size_t root_size_bytes{
             sum_storage_size(location.base_offset,
-                             entry_gap_applied_ ? 0 : data_.get().entry_gap()),
+                             dat_var_padding_applied_
+                                 ? 0
+                                 : data_.get().dat_var_padding_bytes()),
         };
 
         const size_t aligned_size_bytes{
@@ -1495,7 +1547,7 @@ class storage_layout final {
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
         const frame* const storage_frame{
-            find_storage_location(var_kind::var).storage_frame,
+            find_storage_location().storage_frame,
         };
 
         // note: asked inside a noinline body, which has a storage base
@@ -1504,7 +1556,7 @@ class storage_layout final {
         return storage_frame->peak_storage_size_bytes();
     }
 
-    // the root frame applies the dat var gap again when it is entered anew
+    // the root frame applies the dat var padding again when it is entered anew
     auto pop_scope() -> void {
         vars_size_bytes_ -= scopes_.get().back().allocated_stack_size_bytes();
         scopes_.get().pop();
@@ -1515,7 +1567,7 @@ class storage_layout final {
 
         assert(vars_size_bytes_ == 0);
 
-        entry_gap_applied_ = false;
+        dat_var_padding_applied_ = false;
     }
 
     // all frames are popped and the usage of the last build is forgotten
@@ -1525,24 +1577,57 @@ class storage_layout final {
         max_vars_size_bytes_ = 0;
     }
 
+    [[nodiscard]] auto var_storage_alignment(const var_info& var) const
+        -> size_t {
+
+        if (var.is_pointer) {
+            return machine_.get().address_size_bytes();
+        }
+
+        return var.type_ptr->alignment();
+    }
+
+    [[nodiscard]] auto var_storage_size_bytes(const token& src_loc_tk,
+                                              const var_info& var) const
+        -> size_t {
+
+        if (var.is_pointer) {
+            return machine_.get().address_size_bytes();
+        }
+
+        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
+                                     var.is_array ? var.array_len : 1);
+    }
+
     [[nodiscard]] auto vars_capacity_bytes() const -> size_t {
         return vars_capacity_bytes_;
     }
 
   private:
-    // the first variable after the dats starts past the entry gap
-    auto apply_entry_gap(const token& src_loc_tk) -> void {
-        if (entry_gap_applied_) {
+    // the total accepts the size before a frame sums it
+    auto add_allocated_size_bytes(const token& src_loc_tk,
+                                  const size_t allocated_size_bytes) -> void {
+
+        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
+                                            allocated_size_bytes);
+
+        assert_storage_fits_target(src_loc_tk);
+    }
+
+    // the first variable after the dats starts past the padding that aligns it
+    auto apply_dat_var_padding(const token& src_loc_tk) -> void {
+        if (dat_var_padding_applied_) {
             return;
         }
 
-        scopes_.get().front().set_padding_between_dats_and_vars(
-            data_.get().entry_gap());
+        const size_t padding_bytes{data_.get().dat_var_padding_bytes()};
 
-        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
-                                            data_.get().entry_gap());
+        scopes_.get().front().set_dat_var_padding_bytes(padding_bytes);
 
-        entry_gap_applied_ = true;
+        vars_size_bytes_ =
+            add_storage_size(src_loc_tk, vars_size_bytes_, padding_bytes);
+
+        dat_var_padding_applied_ = true;
     }
 
     // the declaration that takes the data and variables past what the target
@@ -1580,18 +1665,9 @@ class storage_layout final {
     }
 
     // a local starts after the storage in use of the nearest frame with its own
-    // storage base and of the frames inside it, other variables and dats start
-    // at the variables base
-    [[nodiscard]] auto find_storage_location(const var_kind kind) const
-        -> storage_location {
-
-        if (kind == var_kind::dat) {
-            return {
-                .storage_frame{},
-                .base_offset{vars_size_bytes_},
-            };
-        }
-
+    // storage base and of the frames inside it, other variables start at the
+    // variables base
+    [[nodiscard]] auto find_storage_location() const -> storage_location {
         size_t local_size_bytes{};
 
         for (frame& frm : scopes_.get().frames() | std::views::reverse) {
@@ -1612,32 +1688,10 @@ class storage_layout final {
         };
     }
 
-    // bytes of variables, without the dats and the gap after them
+    // bytes of variables, without the dats and the padding after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
         return vars_size_bytes_ - data_.get().total_size_bytes() -
-               data_.get().entry_gap();
-    }
-
-    [[nodiscard]] auto var_storage_alignment(const var_info& var) const
-        -> size_t {
-
-        if (var.is_pointer) {
-            return machine_.get().address_size_bytes();
-        }
-
-        return var.type_ptr->alignment();
-    }
-
-    [[nodiscard]] auto var_storage_size_bytes(const token& src_loc_tk,
-                                              const var_info& var) const
-        -> size_t {
-
-        if (var.is_pointer) {
-            return machine_.get().address_size_bytes();
-        }
-
-        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
-                                     var.is_array ? var.array_len : 1);
+               data_.get().dat_var_padding_bytes();
     }
 
     // offsets count from 'dat', a base register past 'vars' makes the dats
@@ -1653,7 +1707,7 @@ class storage_layout final {
 
         const size_t dats_bytes{
             sum_storage_size(data_.get().total_size_bytes(),
-                             data_.get().entry_gap()),
+                             data_.get().dat_var_padding_bytes()),
         };
 
         return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
@@ -2266,6 +2320,7 @@ class toc final {
         const builtin_type_set& builtin_set, const size_t vars_capacity_bytes,
         const check_options& checks)
         : machine_{backend}, locations_{&files},
+          data_{backend.data_alignment()},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
           builtins_{backend, builtin_set},
           resolver_{scopes_, backend, generics_, builtins_},
@@ -2310,18 +2365,36 @@ class toc final {
                                        });
     }
 
-    auto add_dat(const stmt_def_dat& dat, const dat_extent& extent) -> void {
+    // the parse places the data of 'dat' after the dats before it and
+    // declares the variable 'var' that names it, the compile declares it again
+    // with 'add_var'; 'dat_tk' locates the errors of where it is declared
+    auto add_dat(const stmt_def_dat& dat, const token& dat_tk,
+                 const var_info& var) -> void {
+
+        // note: a name declared twice is reported before where it is declared
+        definitions_.assert_not_declared_in_scope(var.src_loc_tk, var.name);
+
         if (scopes_.frames().size() != 1) {
-            throw compile_error{extent.src_loc_tk,
+            throw compile_error{dat_tk,
                                 "'dat' can only be declared in global scope"};
         }
 
         if (scopes_.front().has_non_dat_var_been_added()) {
-            throw compile_error{extent.src_loc_tk,
+            throw compile_error{dat_tk,
                                 "'dat' can only be declared before any 'var'"};
         }
 
-        data_.add_dat(dat, extent, machine_.get().data_alignment());
+        const size_t size_bytes{
+            storage_.var_storage_size_bytes(var.src_loc_tk, var),
+        };
+
+        data_.add_dat(dat, {
+                               .name_tk{var.src_loc_tk},
+                               .alignment{storage_.var_storage_alignment(var)},
+                               .size_bytes{size_bytes},
+                           });
+
+        add_var(var.src_loc_tk, 0, var, var_kind::dat);
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
@@ -2348,12 +2421,20 @@ class toc final {
         generics_.add_func(std::move(name), std::move(info));
     }
 
+    auto add_generic_method(const generic_method_info& method) -> void {
+        generics_.add_method(method);
+    }
+
     auto add_generic_type(const std::string_view name, generic_type_info info)
         -> void {
 
         definitions_.assert_type_not_defined(info.src_loc_tk, name);
 
         generics_.add_type(name, std::move(info));
+    }
+
+    auto add_generic_type_instance(generic_type_instance instance) -> void {
+        generics_.add_type_instance(std::move(instance));
     }
 
     // a body is emitted once per kind of call, for a call that is
@@ -2389,6 +2470,15 @@ class toc final {
         types_.add_alias(src_loc_tk, name, tpe);
     }
 
+    // e.g. 'T' names 'i8' in an instance of 'func f<T type>()', until
+    // 'exit_type_params'
+    auto add_type_param(const token& src_loc_tk, const std::string_view name,
+                        const type& tpe) -> void {
+
+        definitions_.assert_generic_param_free(src_loc_tk, name);
+        types_.add_param(src_loc_tk, name, tpe);
+    }
+
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  const var_kind kind) -> void {
 
@@ -2402,8 +2492,10 @@ class toc final {
 
         size_t allocated_size_bytes{};
 
-        if (not is_value_register and not is_pointer_register) {
-            allocated_size_bytes = storage_.allocate(src_loc_tk, var, kind);
+        if (kind == var_kind::dat) {
+            allocated_size_bytes = storage_.allocate_dat(src_loc_tk, var);
+        } else if (not is_value_register and not is_pointer_register) {
+            allocated_size_bytes = storage_.allocate_var(src_loc_tk, var);
         }
 
         scopes_.back().add_var(var, allocated_size_bytes, kind);
@@ -2514,6 +2606,10 @@ class toc final {
         scopes_.enter_noinline_func(name, call_path, storage_base_register);
     }
 
+    // the type parameters of an enclosing instance are hidden until
+    // 'exit_type_params'
+    auto enter_type_params() -> void { types_.enter_params(); }
+
     auto exit_block() -> void {
         assert(scopes_.back().is_block());
 
@@ -2538,6 +2634,8 @@ class toc final {
         storage_.pop_scope();
     }
 
+    auto exit_type_params() -> void { types_.exit_params(); }
+
     // the report is written, the frame usage is forgotten
     auto finish() -> void {
         assert(scopes_.is_empty());
@@ -2548,8 +2646,6 @@ class toc final {
     }
 
     [[nodiscard]] auto funcs() const -> const function_table& { return funcs_; }
-
-    [[nodiscard]] auto generics() -> generic_registry& { return generics_; }
 
     [[nodiscard]] auto generics() const -> const generic_registry& {
         return generics_;
@@ -2686,6 +2782,10 @@ class toc final {
         scopes_.back().make_var_read_only(name, cause);
     }
 
+    auto mark_generic_func_instantiated(const std::string_view name) -> void {
+        generics_.mark_func_instantiated(name);
+    }
+
     // like 'check_only', returns the size of the code, in the unit of the
     // target
     [[nodiscard]] auto measure_only(const std::function_ref<void()> compile)
@@ -2731,9 +2831,18 @@ class toc final {
                                storage_target::frame_mark);
         }
 
-        return std::format("{}{}{}", info.elem_path().front(),
-                           storage_target::frame_mark,
-                           scopes_.var_frame_index(info.elem_path().front()));
+        const std::string_view root{info.elem_path().front()};
+
+        const std::optional<size_t> frame_index{scopes_.var_frame_index(root)};
+
+        // a constant is no variable, e.g. the '1' of 'f(1)'
+        if (not frame_index) {
+            return std::format("{}{}constant", root,
+                               storage_target::frame_mark);
+        }
+
+        return std::format("{}{}{}", root, storage_target::frame_mark,
+                           *frame_index);
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
@@ -2793,14 +2902,12 @@ class toc final {
 
     [[nodiscard]] auto types() const -> const type_table& { return types_; }
 
-    [[nodiscard]] auto types() -> type_table& { return types_; }
-
     [[nodiscard]] auto usage() const -> usage_statistics {
         return {
             .max_frame_count{scopes_.max_depth()},
             .max_vars_size_bytes{storage_.max_vars_size_bytes()},
             .dat_size_bytes{data_.total_size_bytes()},
-            .dat_var_padding_bytes{data_.entry_gap()},
+            .dat_var_padding_bytes{data_.dat_var_padding_bytes()},
             .uninstantiated_generics{generics_.uninstantiated_func_names()},
         };
     }
@@ -3012,7 +3119,7 @@ class generic_scope final {
     bool is_block_entered_{};
 
   public:
-    explicit generic_scope(toc& tc) : tc_{tc} { tc_.types().enter_params(); }
+    explicit generic_scope(toc& tc) : tc_{tc} { tc_.enter_type_params(); }
 
     generic_scope(const generic_scope&) = delete;
     generic_scope(generic_scope&&) = delete;
@@ -3024,7 +3131,7 @@ class generic_scope final {
             tc_.exit_block();
         }
 
-        tc_.types().exit_params();
+        tc_.exit_type_params();
     }
 
     // a type is located at its parameter, a constant at its argument
@@ -3065,8 +3172,7 @@ class generic_scope final {
     auto add_type(const token& src_loc_tk, const std::string_view name,
                   const type& tpe) -> void {
 
-        tc_.assert_generic_param_free(src_loc_tk, name);
-        tc_.types().add_param(src_loc_tk, name, tpe);
+        tc_.add_type_param(src_loc_tk, name, tpe);
     }
 };
 

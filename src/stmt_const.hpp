@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -18,12 +19,12 @@ class stmt_const final : public statement {
     unary_ops uops_;
     token literal_tk_;
     int64_t value_{};
-    bool has_value_{};
 
   public:
-    stmt_const(const toc& tc, tokenizer& tz, const int64_t default_value)
+    // an empty literal has no value, e.g. the size in 'i8[]'
+    stmt_const(const toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()}, uops_{tz},
-          literal_tk_{tz.next_token()}, value_{default_value} {
+          literal_tk_{tz.next_token()} {
 
         set_type(tc.builtins().default_type());
 
@@ -32,11 +33,9 @@ class stmt_const final : public statement {
                 tok(), "expected a constant value or a constant identifier"};
         }
 
-        if (literal_tk_.text().empty()) {
+        if (not has_value()) {
             return;
         }
-
-        has_value_ = true;
 
         if (tc.scopes().has_const(literal_tk_.text())) {
             value_ = uops_.evaluate_constant(
@@ -95,7 +94,19 @@ class stmt_const final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto has_value() const -> bool { return has_value_; }
+    // a written size of at least 1, e.g. the '4' of 'i8[4]'
+    [[nodiscard]] auto array_size() const -> size_t {
+        if (not has_value() or value_ < 1) {
+            throw compile_error{
+                tok(), "expected a constant array size greater than 0"};
+        }
+
+        return static_cast<size_t>(value_);
+    }
+
+    [[nodiscard]] auto has_value() const -> bool {
+        return not literal_tk_.text().empty();
+    }
 
     [[nodiscard]] auto value() const -> int64_t { return value_; }
 };

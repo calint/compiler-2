@@ -32,17 +32,15 @@ class stmt_continue final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const std::string_view loop_label{
-            tc.scopes().looping_label_or_throw(tok()),
-        };
+        const loop_target loop{tc.scopes().innermost_loop_or_throw(tok())};
 
-        if (tc.scopes().is_in_loop_block()) {
-            x.branch(indent, loop_label);
+        if (not loop.is_foo) {
+            x.branch(indent, loop.label);
             return;
         }
 
         // a 'foo' advances its counter before the next iteration
-        x.branch(indent, toc::continue_label(loop_label));
+        x.branch(indent, toc::continue_label(loop.label));
     }
 
     // the next iteration starts with at least the loop entry coverage

@@ -6,56 +6,38 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[p] hard: review round 2026-10-20, five independent reviews of 'src/': the
-    design findings, ranked by what a reviewer notices first; each step on
-    its own with byte-identical output unless it says otherwise
-    1. backends: 'machine' owns the register pool, the reservation of the
-       variables and frame bases, scratch allocation, freeing with the
-       named/scratch asserts of x86_64 and the protect scope (x86_64
-       'with_lowered_addresses', rv32i 'address_scope'); the backends give
-       the register names and the scratch order; then the sector
-       read/write dispatch and flags, and one failure handler routine per
-       backend for frame overflow (rv32i copies 'emit_named_failure_handler',
-       x86_64 copies 'emit_line_panic_handler') and 'failure_label' for the
-       bounds panic of x86_64
-    2. 'array_copy' and 'arrays_equal': one class for the two arrays and
-       the count (parse, 'source_to', 'visit_reads', type and count checks,
-       emitters), the built-ins keep what differs
-    3. 'stmt_builtin_io': one table of the io built-ins with their argument
-       limits, used by the parser in 'decouple_impl.hpp' instead of three
-       name lists
-    4. derived flags: 'element_count()' for 'is_array ? array_count : 1'
-       (six places), drop 'stmt_def_var::is_array_' and
-       'type_field::is_array', 'stmt_const' without the always-0
-       'default_value' and with one array-size check, 'expr_arith::enclosed_'
-       from its paren token
-    5. one constant-value helper for 'element_constant', 'side_constant'
-       and 'constant_arith_value', with the width as a parameter
-    6. 'stmt_call': one 'is_passed_by_value' for the four copies of the
-       test, one 'source_delimited_to' for the four first-then-zip printers,
-       one argument loop in both 'compile' fast paths
-    7. 'dat' layout: each offset recorded once in 'data_table' and read by
-       'program::emit_data_section' and 'storage_layout', which splits into
-       'allocate_dat' and 'allocate_var'; one name for the dat/var padding
-    8. 'toc': changes through 'toc' methods, no non-const 'generics()' and
-       'types()'
-    9. 'machine::copy(dst, src, ...)' like every other operation
-    10. run-time checks: one 'runtime_check' shape, no bare 'bool enabled'
-        defaults on virtual functions
-    11. private static constants with the trailing '_' (all sources)
-    12. 'decouple_impl.hpp' keeps the factories, the 'expr_type' members
-        move to 'expr_type_impl.hpp' (a move only)
-    => decisions first:
-       a. a constant passed to a 'mut' parameter: rejected inline, accepted
-          'noinline' and as an expression ('f(a + 1)'); proposal: an
-          argument of a 'mut' parameter is writable storage, everything
-          else is rejected at the call on both paths
-       b. 'if 1 == 1 { res = 2 }' as the only assignment of 'res' is
-          rejected although the 'else' path is not compiled; proposal: the
-          return check follows the constant conditions like the code does
-    => left out: a second 'dat' initializer parser (big), 'expr_any' and
-       'stmt_def_var' modes, '{}' not folded (an optimization), the reason
-       of rv32i 'leaf_stack_bytes{64}' (the comment adds up to 48)
+[ ] medium: left from the review round of 2026-10-20: a second 'dat'
+    initializer parser in 'stmt_def_dat' (shares nothing with 'expr_any'),
+    the modes of 'expr_any' and 'stmt_def_var', '{}' not folded (an
+    optimization), the reason of rv32i 'leaf_stack_bytes{64}' (its comment
+    adds up to 48), rv32i frame overflow handler not on
+    'emit_named_failure_handler' (renames a label), 'multiply' with a bare
+    'bool' default on a virtual
+[ ] medium: the return check ignores constant conditions: 'if 1 == 1 {
+    res = 2 }' as the only assignment of 'res' is rejected ("function may
+    return without setting its return value") although 'compile' emits no
+    path past an always-true branch
+    => evaluated (2026-10-20), about 100 to 150 lines in 'expr_bool.hpp',
+       'stmt_if_branch.hpp' and 'stmt_if.hpp', medium risk:
+       1. 'trace_assignment' runs once per definition after the parse and
+          has no 'toc'; 'expr_bool' finds constness only while it compiles
+          ('compile_branch'), there is no pure query
+       2. an inlined body is compiled per call, 'if x == 1' is constant in
+          'f(1)' only, so the check can use only what is constant in the
+          definition: literals and 'let' constants
+       3. design: a pure 'expr_bool::constant_result(const toc&)' from the
+          existing folding ('side_constant', negations, 'and'/'or' with known
+          sides); 'stmt_if_branch' evaluates it at parse time and keeps it;
+          'stmt_if::trace_assignment' skips a branch known false and every
+          path after a branch known true
+       4. soundness: 'compile' asserts that a result known at parse time is
+          the one it finds, else the check could skip a path the code has
+          and accept an unset result
+       5. rejected: 'compile' using the pure fold too, one evaluator but a
+          rewiring of the most intricate part of 'expr_bool'
+       6. tests: always true as the only assignment, an always-false branch
+          that assigns, an 'else' after an always-true branch, a condition
+          on a parameter of an inlined function stays rejected
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,

@@ -125,6 +125,11 @@ class ident_info final {
         return elem_path_;
     }
 
+    // 1 for a name that is not an array
+    [[nodiscard]] auto element_count() const -> size_t {
+        return is_array() ? array_len() : 1;
+    }
+
     [[nodiscard]] auto has_known_address() const -> bool {
         return known().has_value();
     }

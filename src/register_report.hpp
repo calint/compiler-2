@@ -44,8 +44,8 @@ class register_use_report final {
 
     // the column of the registers held by a frame, its number is right aligned
     // under the heading
-    static constexpr std::string_view held_heading{"held"};
-    static constexpr size_t held_width{held_heading.size() + 2};
+    static constexpr std::string_view held_heading_{"held"};
+    static constexpr size_t held_width_{held_heading_.size() + 2};
     // note: +2 because the heading is indented by two
 
     std::string heading_;
@@ -127,16 +127,16 @@ class register_use_report final {
     [[nodiscard]] auto frames_text() const -> std::string {
         // the label of a frame follows the number and two spaces, its
         // registers are indented two more
-        const std::string register_indent(held_width + 4, ' ');
+        const std::string register_indent(held_width_ + 4, ' ');
         // note: +4 for the two spaces before the label and the two of the
         // indent
 
         std::string text;
 
         for (const frame_use& use : frames_) {
-            text += std::format("\n{}  {}",
-                                right_aligned(use.registers.size(), held_width),
-                                use.label);
+            text += std::format(
+                "\n{}  {}", right_aligned(use.registers.size(), held_width_),
+                use.label);
 
             for (const std::string& held : use.registers) {
                 // the registers are indented under the label of the frame
@@ -157,7 +157,7 @@ class register_use_report final {
         return std::format("{}: {} of {} registers live{}\n\n{}  frame, "
                            "registers (allocated at)",
                            heading_, live_count(), register_total_, named_note,
-                           right_aligned(held_heading, held_width));
+                           right_aligned(held_heading_, held_width_));
     }
 
     [[nodiscard]] auto live_count() const -> size_t {
@@ -506,12 +506,11 @@ class register_reporter final {
 
 // declared in 'machine'
 inline auto machine::register_error(const token& src_loc_tk,
-                                    std::string message,
-                                    const register_pool& pool) const
+                                    std::string message) const
     -> compile_error {
 
     return register_reporter{*this, trace_}.make_error(
-        src_loc_tk, std::move(message), pool);
+        src_loc_tk, std::move(message), registers_);
 }
 
 // declared in 'machine'

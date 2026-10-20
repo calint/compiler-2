@@ -1069,7 +1069,7 @@ ones its callees need.
 
 'main.cpp' includes the headers, there is no build system and the compiler
 sees the whole program. The include cycles between the statement classes are
-broken in 'decouple.hpp' and 'decouple_impl.hpp' only.
+broken in 'decouple.hpp', 'decouple_impl.hpp' and 'expr_type_impl.hpp' only.
 
 Cost: every change rebuilds everything.
 

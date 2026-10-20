@@ -53,8 +53,10 @@ class type_fields final {
                     : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
             };
 
-            tp.add_field(fld.tok(), fld.name(), fld_tp, fld.is_array(),
-                         fld.array_count());
+            // note: 'stmt_def_type_field' rejects an array size below 1
+            assert(fld.is_array() == (fld.array_count() != 0));
+
+            tp.add_field(fld.tok(), fld.name(), fld_tp, fld.array_count());
         }
     }
 
@@ -97,13 +99,7 @@ class type_fields final {
         // note: a type has at least one field
         assert(not fields_.empty());
 
-        fields_.front().source_to(os);
-        for (const auto [d, e] :
-             std::views::zip(field_delims_tk_, fields_ | std::views::drop(1))) {
-
-            d.source_to(os);
-            e.source_to(os);
-        }
+        statement::source_delimited_to(os, fields_, field_delims_tk_);
 
         if (field_delims_tk_.size() == fields_.size()) {
             field_delims_tk_.back().source_to(os);
@@ -136,8 +132,8 @@ inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
 
     for (const type_field& f : tp.fields()) {
         x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
-                  f.offset, f.size_bytes, f.is_array ? "yes" : "no",
-                  f.is_array ? std::format("{}", f.array_count) : "");
+                  f.offset, f.size_bytes, f.is_array() ? "yes" : "no",
+                  f.is_array() ? std::format("{}", f.array_count) : "");
     }
 
     x.comment({}, 0, "");
@@ -450,7 +446,7 @@ class stmt_def_type_alias final : public statement {
         for (const generic_type_instance& instance :
              instances | std::views::reverse) {
 
-            tc.generics().add_type_instance(instance);
+            tc.add_generic_type_instance(instance);
 
             func_instantiator::instantiate_methods(tc, instance);
         }

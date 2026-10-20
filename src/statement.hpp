@@ -8,6 +8,8 @@
 #include <optional>
 #include <ostream>
 #include <print>
+#include <ranges>
+#include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -468,6 +470,27 @@ class statement {
     //
     // statics
     //
+
+    // 'items' with the delimiter tokens between them, e.g. 'x, y' of
+    // 'f(x, y)'; a delimiter after the last item is the caller's
+    template <std::ranges::forward_range Items>
+    static auto source_delimited_to(std::ostream& os, const Items& items,
+                                    const std::span<const token> delims)
+        -> void {
+
+        if (std::ranges::empty(items)) {
+            return;
+        }
+
+        items.front().source_to(os);
+
+        for (const auto [d, e] :
+             std::views::zip(delims, items | std::views::drop(1))) {
+
+            d.source_to(os);
+            e.source_to(os);
+        }
+    }
 
     // one-line, whitespace-collapsed rendering of source text, suitable for
     // an assembler comment

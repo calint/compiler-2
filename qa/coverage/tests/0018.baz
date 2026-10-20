@@ -31,5 +31,6 @@ func main(){
     var a=2
     foozi(world)
     var b=3
-    bar(a+f(a),b,hello)
+    var n=a+f(a)
+    bar(n,b,hello)
 }

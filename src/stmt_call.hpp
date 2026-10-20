@@ -416,6 +416,18 @@ struct call_site {
                                     arg.accessed_path());
     }
 
+    // computed from the argument, e.g. 'x + 1' or '-x', so it has no storage
+    // the callee could reach
+    [[nodiscard]] static auto is_computed_value(const expr_any& arg) -> bool {
+        return arg.is_expression() or not arg.get_unary_ops().is_empty();
+    }
+
+    // the callee gets a copy, not the storage of a variable: an expression,
+    // an instance literal or call, or a name with unary operators
+    [[nodiscard]] static auto is_copied_value(const expr_any& arg) -> bool {
+        return not arg.is_name_or_literal() or is_computed_value(arg);
+    }
+
     // an instance literal or a call result, e.g. 'point{1, 2}' or 'mk(1, 2)'
     [[nodiscard]] static auto
     is_instance_temporary(const expr_any& arg, const stmt_def_func_param& param)
@@ -502,6 +514,9 @@ class inline_call {
                                 }),
         };
 
+        // note: a block is a frame, which counts toward the nesting limit and
+        //       the 'max frames in use' report, so a call without temporaries
+        //       enters none
         if (not has_instance_temporary) {
             compile_to_destination(tc, indent, dst, func);
             return;
@@ -985,7 +1000,7 @@ class inline_call {
         }
 
         // an alias uses the argument's storage so its type must match
-        if (not arg.is_expression() and arg.get_unary_ops().is_empty()) {
+        if (not call_site::is_computed_value(arg)) {
             assert_alias_type(tc, arg, param);
         }
 
@@ -1195,10 +1210,6 @@ class noinline_call {
 
         call_.assert_result_use(dst, func);
 
-        const bool has_result_temporary{
-            func.returns() and not dst.operand().is_memory(),
-        };
-
         const bool has_argument_temporary{
             std::ranges::any_of(std::views::zip(call_.args, func.params()),
                                 [&](const auto& arg_and_param) -> bool {
@@ -1208,64 +1219,20 @@ class noinline_call {
                                 }),
         };
 
-        if (not has_result_temporary and not has_argument_temporary) {
-            compile_with_arguments(tc, indent, dst, func,
-                                   variable_arguments(tc));
+        // note: a block is a frame, which counts toward the nesting limit and
+        //       the 'max frames in use' report, so a call without temporaries
+        //       enters none
+        if (not has_result_temporary(dst, func) and
+            not has_argument_temporary) {
 
-            apply_unary_ops_to_destination(tc, indent, dst);
-
+            compile_arguments_and_call(tc, indent, dst, func);
             return;
         }
 
         // the block frees the temporaries after the call
         tc.enter_block();
 
-        std::vector<noinline_arg> arguments;
-
-        for (const auto [i, arg, param] : std::views::zip(
-                 std::views::iota(size_t{}), call_.args, func.params())) {
-
-            if (not needs_temporary(tc, arg, param)) {
-                arguments.push_back({
-                    .info{tc.make_ident_info(arg)},
-                    .is_temporary{},
-                });
-
-                continue;
-            }
-
-            arguments.push_back({
-                .info{
-                    call_.add_temporary(tc, indent,
-                                        call_.temporary_argument_name(i),
-                                        param.get_type()),
-                },
-                .is_temporary{true},
-            });
-
-            arg.compile(tc, indent,
-                        destination::of_name(arguments.back().info));
-        }
-
-        if (has_result_temporary) {
-            const ident_info result_info{
-                call_.add_temporary(
-                    tc, indent, toc::temporary_name(call_.tk, "call-result", 0),
-                    func.get_type()),
-            };
-
-            compile_with_arguments(
-                tc, indent, destination::of_name(result_info), func, arguments);
-
-            machine& x{tc.machine()};
-
-            x.copy_value(call_.tk, indent, dst.operand(),
-                         result_info.operand());
-        } else {
-            compile_with_arguments(tc, indent, dst, func, arguments);
-        }
-
-        apply_unary_ops_to_destination(tc, indent, dst);
+        compile_arguments_and_call(tc, indent, dst, func);
 
         tc.exit_block();
     }
@@ -1359,6 +1326,60 @@ class noinline_call {
                   func.params().at(arg_idx).name());
     }
 
+    // an argument or a result that needs one goes through a temporary of the
+    // current block
+    auto compile_arguments_and_call(toc& tc, const size_t indent,
+                                    const destination& dst,
+                                    const stmt_def_func& func) const -> void {
+
+        std::vector<noinline_arg> arguments;
+
+        for (const auto [i, arg, param] : std::views::zip(
+                 std::views::iota(size_t{}), call_.args, func.params())) {
+
+            if (not needs_temporary(tc, arg, param)) {
+                arguments.push_back({
+                    .info{tc.make_ident_info(arg)},
+                    .is_temporary{},
+                });
+
+                continue;
+            }
+
+            arguments.push_back({
+                .info{
+                    call_.add_temporary(tc, indent,
+                                        call_.temporary_argument_name(i),
+                                        param.get_type()),
+                },
+                .is_temporary{true},
+            });
+
+            arg.compile(tc, indent,
+                        destination::of_name(arguments.back().info));
+        }
+
+        if (has_result_temporary(dst, func)) {
+            const ident_info result_info{
+                call_.add_temporary(
+                    tc, indent, toc::temporary_name(call_.tk, "call-result", 0),
+                    func.get_type()),
+            };
+
+            compile_with_arguments(
+                tc, indent, destination::of_name(result_info), func, arguments);
+
+            machine& x{tc.machine()};
+
+            x.copy_value(call_.tk, indent, dst.operand(),
+                         result_info.operand());
+        } else {
+            compile_with_arguments(tc, indent, dst, func, arguments);
+        }
+
+        apply_unary_ops_to_destination(tc, indent, dst);
+    }
+
     auto
     compile_with_arguments(toc& tc, const size_t indent, const destination& dst,
                            const stmt_def_func& func,
@@ -1406,16 +1427,19 @@ class noinline_call {
         // rv32i 's0'
         const operand frame_address{tc.next_frame_address()};
 
-        x.check_frame_capacity(
-            call_.tk, indent, frame_address,
-            operand::symbol(func.frame_size_label(array_lengths),
-                            tc.builtins().address()),
-            tc.checks().frame);
+        if (tc.checks().frame) {
+            x.check_frame_capacity(
+                call_.tk, indent, frame_address,
+                operand::symbol(func.frame_size_label(array_lengths),
+                                tc.builtins().address()));
+        }
 
         // the registers holding the addresses of the arguments are still
         // allocated, the check must not change a register that is free but
         // used by the call
-        x.check_stack_capacity(call_.tk, indent, tc.checks().stack);
+        if (tc.checks().stack) {
+            x.check_stack_capacity(call_.tk, indent);
+        }
 
         // the address of that slot is loaded after the registers are saved, a
         // register that holds a value of the caller is not lost
@@ -1462,22 +1486,6 @@ class noinline_call {
         }
 
         return addresses;
-    }
-
-    [[nodiscard]] auto variable_arguments(const toc& tc) const
-        -> std::vector<noinline_arg> {
-
-        std::vector<noinline_arg> arguments;
-        arguments.reserve(call_.args.size());
-
-        for (const expr_any& arg : call_.args) {
-            arguments.push_back({
-                .info{tc.make_ident_info(arg)},
-                .is_temporary{},
-            });
-        }
-
-        return arguments;
     }
 
     // write pointers into the callee frame: result (if any), then arguments
@@ -1603,6 +1611,14 @@ class noinline_call {
         }
     }
 
+    // the callee writes the result through its address
+    [[nodiscard]] static auto has_result_temporary(const destination& dst,
+                                                   const stmt_def_func& func)
+        -> bool {
+
+        return func.returns() and not dst.operand().is_memory();
+    }
+
     // a value without storage, e.g. a literal or an expression, an array is
     // only passed by name
     [[nodiscard]] static auto needs_temporary(const toc& tc,
@@ -1618,7 +1634,7 @@ class noinline_call {
             return true;
         }
 
-        if (arg.is_expression() or not arg.get_unary_ops().is_empty()) {
+        if (call_site::is_computed_value(arg)) {
             return true;
         }
 
@@ -1688,7 +1704,7 @@ class stmt_call : public expression {
     std::vector<token> arg_delims_tk_;
     token close_paren_tk_;
 
-    static constexpr std::string_view use_temporary_fix{
+    static constexpr std::string_view use_temporary_fix_{
         "use a temporary variable for one of them",
     };
 
@@ -1708,8 +1724,10 @@ class stmt_call : public expression {
         : expression{tk, std::move(uops)}, func_name_{tk.text()} {
 
         const std::vector<size_t> deducing_args{
-            read_callee(tc, tz, expected_type, "function name"),
+            read_generic_callee(tc, tz, expected_type),
         };
+
+        read_open_paren(tc, tz, "function name");
 
         if (not tc.funcs().is_builtin(func_name_)) {
             parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_),
@@ -1732,8 +1750,10 @@ class stmt_call : public expression {
           } {
 
         const std::vector<size_t> deducing_args{
-            read_callee(tc, tz, expected_type, "method name"),
+            read_generic_callee(tc, tz, expected_type),
         };
+
+        read_open_paren(tc, tz, "method name");
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
@@ -1757,11 +1777,12 @@ class stmt_call : public expression {
 
         assert(not constructor_dot_tk_.is_empty());
 
-        // note: a constructor is never generic ('func_instantiator::
-        //       define_func' rejects it), so it is found before 'read_callee'
         const stmt_def_func& func{constructor_func(tc, tz)};
 
-        std::ignore = read_callee(tc, tz, nullptr, "constructor name");
+        // note: 'func_instantiator::define_func' rejects a generic constructor
+        assert(not tc.generics().has_func(func_name_));
+
+        read_open_paren(tc, tz, "constructor name");
 
         parse_arguments(tc, tz, func, {});
     }
@@ -1779,16 +1800,8 @@ class stmt_call : public expression {
         // the receiver is written before the name
         const size_t first{first_argument_index()};
 
-        if (args_.size() > first) {
-            args_.at(first).source_to(os);
-            for (const auto [d, e] : std::views::zip(
-                     arg_delims_tk_, args_ | std::views::drop(first + 1))) {
-                // note: +1 because the first argument is printed above
-
-                d.source_to(os);
-                e.source_to(os);
-            }
-        }
+        source_delimited_to(os, args_ | std::views::drop(first),
+                            arg_delims_tk_);
 
         close_paren_tk_.source_to(os);
     }
@@ -1872,46 +1885,42 @@ class stmt_call : public expression {
     }
 
     // a callee that writes its parameter writes the variable of the caller:
-    // a read-only argument is rejected here, also in a function that is never
-    // called
+    // an argument that is not a writable variable is rejected here, also in
+    // a function that is never called, so inlining does not change what is
+    // accepted
     auto assert_argument_writable(const toc& tc, const size_t index,
                                   const stmt_def_func& func) const -> void {
-
-        const expr_any& arg{args_.at(index)};
-
-        // expressions and unary operators pass a copied value
-        if (not arg.is_name_or_literal() or arg.is_expression() or
-            not arg.get_unary_ops().is_empty()) {
-
-            return;
-        }
 
         // a parameter without 'mut' takes any argument
         if (func.param(index).is_read_only()) {
             return;
         }
 
+        const expr_any& arg{args_.at(index)};
+
+        // e.g. 'a + 1', '-a' or 'point{1, 2}'
+        if (call_site::is_copied_value(arg)) {
+            throw_not_writable(index, arg,
+                               std::format("'{}', which is not a variable,",
+                                           trimmed_source(arg)),
+                               "");
+        }
+
         const ident_info info{tc.make_ident_info(arg)};
 
-        // constants pass their value
-        if (not info.is_var() or not info.is_read_only()) {
-            return;
+        // e.g. '2' or a 'let' constant
+        if (not info.is_var()) {
+            throw_not_writable(
+                index, arg, std::format("constant '{}'", arg.name_or_literal()),
+                "");
         }
 
-        if (is_method() and index == 0) {
-            throw compile_error{
-                arg.tok(),
-                std::format("read-only '{}' cannot be the receiver of 'mut' "
-                            "method '{}'{}",
-                            arg.name_or_literal(), func_name_,
-                            read_only_hint(info))};
+        if (info.is_read_only()) {
+            throw_not_writable(
+                index, arg,
+                std::format("read-only '{}'", arg.name_or_literal()),
+                read_only_hint(info));
         }
-
-        throw compile_error{arg.tok(),
-                            std::format("read-only '{}' cannot be passed to a "
-                                        "'mut' parameter{}",
-                                        arg.name_or_literal(),
-                                        read_only_hint(info))};
     }
 
     // an inlined call compiles its body in place, so nesting is limited
@@ -1987,11 +1996,7 @@ class stmt_call : public expression {
         for (size_t i{}; i < args_.size(); ++i) {
             const expr_any& arg{args_.at(i)};
 
-            // expressions, instance literals and calls, and unary operators
-            // pass a copied value
-            if (arg.is_expression() or not arg.is_name_or_literal() or
-                not arg.get_unary_ops().is_empty()) {
-
+            if (call_site::is_copied_value(arg)) {
                 continue;
             }
 
@@ -2057,7 +2062,7 @@ class stmt_call : public expression {
                             describe_argument(index), arg.name_or_literal(),
                             describe_argument(other.index),
                             args_.at(other.index).name_or_literal(),
-                            target.display_root(), use_temporary_fix)};
+                            target.display_root(), use_temporary_fix_)};
         }
     }
 
@@ -2078,7 +2083,7 @@ class stmt_call : public expression {
                         describe_argument(index),
                         args_.at(index).name_or_literal(),
                         result.display_root(), target.display_root(),
-                        use_temporary_fix)};
+                        use_temporary_fix_)};
     }
 
     // 'what' names what precedes the '(' in the error
@@ -2245,34 +2250,37 @@ class stmt_call : public expression {
     }
 
     // the name is read, a generic function has its type arguments before the
-    // '(', e.g. 'convert<i8>(x)'
-    // note: 'func_name_' becomes the name of the instance and the type is its
-    //       return type, 'what' names the callee in the error of a missing '(';
-    //       returns 'generic_call::deducing_args'
-    [[nodiscard]] auto read_callee(toc& tc, tokenizer& tz,
-                                   const type* const expected_type,
-                                   const std::string_view what)
+    // '(', e.g. 'convert<i8>(x)', and 'func_name_' becomes the name of its
+    // instance; returns 'generic_call::deducing_args'
+    [[nodiscard]] auto read_generic_callee(toc& tc, tokenizer& tz,
+                                           const type* const expected_type)
         -> std::vector<size_t> {
 
-        std::vector<size_t> deducing_args;
-
-        if (tc.generics().has_func(func_name_)) {
-            generic_call generic{
-                generic_call::parse(tc, tz, tok(), func_name_, expected_type),
-            };
-
-            func_name_ = std::move(generic.func_name);
-            generic_tks_ = std::move(generic.generic_tks);
-            deducing_args = std::move(generic.deducing_args);
+        if (not tc.generics().has_func(func_name_)) {
+            return {};
         }
+
+        generic_call generic{
+            generic_call::parse(tc, tz, tok(), func_name_, expected_type),
+        };
+
+        func_name_ = std::move(generic.func_name);
+        generic_tks_ = std::move(generic.generic_tks);
+
+        return std::move(generic.deducing_args);
+    }
+
+    // the type is the return type of the callee, 'what' names the callee in
+    // the error of a missing '('
+    // note: an unknown callee is reported before a missing '('
+    auto read_open_paren(const toc& tc, tokenizer& tz,
+                         const std::string_view what) -> void {
 
         open_paren_tk_ = tz.is_next_char_token('(');
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
         assert_open_paren_found(tz, what);
-
-        return deducing_args;
     }
 
     // what 'inline_call' and 'noinline_call' need of this call
@@ -2322,6 +2330,25 @@ class stmt_call : public expression {
         throw compile_error{tz, std::format("expected {} ('{}')",
                                             describe_argument(index),
                                             param.name())};
+    }
+
+    // 'what' names the argument, 'hint' says how to make it writable
+    [[noreturn]] auto throw_not_writable(const size_t index,
+                                         const expr_any& arg,
+                                         const std::string_view what,
+                                         const std::string_view hint) const
+        -> void {
+
+        if (is_method() and index == 0) {
+            throw compile_error{
+                arg.tok(),
+                std::format("{} cannot be the receiver of 'mut' method '{}'{}",
+                            what, func_name_, hint)};
+        }
+
+        throw compile_error{
+            arg.tok(), std::format("{} cannot be passed to a 'mut' parameter{}",
+                                   what, hint)};
     }
 
     //

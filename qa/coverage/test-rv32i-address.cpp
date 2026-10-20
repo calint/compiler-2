@@ -4,6 +4,7 @@
 
 #include "../../src/assembler_rv32i.hpp"
 #include "../../src/decouple_impl.hpp" // IWYU pragma: keep
+#include "../../src/expr_type_impl.hpp" // IWYU pragma: keep
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86_64.hpp"
 #include "../../src/program.hpp"
@@ -1420,8 +1421,8 @@ auto check_known_size_copy() -> void {
     for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
         const std::string assembly{
             rv32i.emitted([&] {
-                backend.copy(token{}, 0, operand::mem("a0", {}, 1, 0, byte),
-                             operand::mem("a1", {}, 1, 0, byte), size_bytes,
+                backend.copy(token{}, 0, operand::mem("a1", {}, 1, 0, byte),
+                             operand::mem("a0", {}, 1, 0, byte), size_bytes,
                              4);
             }),
         };
@@ -2114,8 +2115,8 @@ auto check_copy_temporaries() -> void {
     const auto copied = [&](const int64_t src_offset, const int64_t dst_offset,
                             const size_t size_bytes) -> std::string {
         return rv32i.emitted([&] {
-            backend.copy(token{}, 0, operand::mem("a1", {}, 1, src_offset, byte),
-                         operand::mem("a2", {}, 1, dst_offset, byte),
+            backend.copy(token{}, 0, operand::mem("a2", {}, 1, dst_offset, byte),
+                         operand::mem("a1", {}, 1, src_offset, byte),
                          size_bytes, 4);
         });
     };
@@ -2562,9 +2563,11 @@ auto generate_frame_checks() -> void {
                                          "    la s3, frame_result_{}",
                                          offset, case_index));
 
-                backend.check_frame_capacity(
-                    token{}, 1, operand::mem("a0", {}, 1, 0, integer),
-                    operand::symbol(size_label, integer), enabled);
+                if (enabled) {
+                    backend.check_frame_capacity(
+                        token{}, 1, operand::mem("a0", {}, 1, 0, integer),
+                        operand::symbol(size_label, integer));
+                }
 
                 expect_failed(case_index++, failed);
                 backend.define_constant(size_label, size);
@@ -2584,7 +2587,7 @@ auto generate_frame_checks() -> void {
 
         backend.check_frame_capacity(
             token{}, 1, operand::mem("a0", {}, 1, displacement, integer),
-            operand::symbol("0", integer), true);
+            operand::symbol("0", integer));
 
         expect_failed(case_index++, true);
     }
@@ -2985,8 +2988,8 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                         "    li a2, {}\n    sub a0, a0, a2\n    sub a1, a1, a2",
                         displacement);
                     backend.copy(token{}, 1,
-                                 operand::mem("a0", {}, 1, displacement, byte),
                                  operand::mem("a1", {}, 1, displacement, byte),
+                                 operand::mem("a0", {}, 1, displacement, byte),
                                  size_bytes, known_alignment);
                     std::println(
                         "    li a2, {}\n    add a0, a0, a2\n    add a1, a1, a2",

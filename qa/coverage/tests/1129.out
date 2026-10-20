@@ -1,0 +1,4 @@
+
+1129.baz:10:10: 'a + 1', which is not a variable, cannot be passed to a 'mut' parameter
+    bump(a + 1)
+         ^

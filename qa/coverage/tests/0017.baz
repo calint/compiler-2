@@ -25,6 +25,7 @@ func bar(n mut, hello i8[]){
 func main(){
     var a=2
     foozi(world)
-    bar(a+2,hello)
+    var n=a+2
+    bar(n,hello)
     exit(0)
 }

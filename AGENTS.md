@@ -147,6 +147,8 @@
   go-ahead.
 - Do not split large headers for size.
 - Put helper classes near the class that uses them in the same file.
+- New source files: only when the code cannot be placed near its use in an
+  existing file, and ask first.
 - One consistency topic at a time across all sources.
 - Todo items one by one, each with a focused check. Resolved or discarded
   `etc/todo.txt` items move to the top of `etc/todo-resolved.txt`, below its

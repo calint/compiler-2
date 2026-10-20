@@ -291,7 +291,7 @@ func arrays() {
 
     array_copy(primes[1], copy, 3)
     assert(copy[0] == 5 and copy[2] == 7 and copy[3] == 7)
-    # built-in 'array_copy' copies from, to and number of elements, an
+    # built-in 'array_copy' takes a source, a destination and a count, an
     # indexed array starts at that element
 
     assert(arrays_equal(primes[1], copy, 3))

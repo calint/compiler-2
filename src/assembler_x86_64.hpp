@@ -154,7 +154,7 @@ class assembler_x86_64 final : public assembler {
         size_t operand_count{};
     };
 
-    static constexpr size_t op_count{std::to_underlying(op::cmpsq) + 1};
+    static constexpr size_t op_count_{std::to_underlying(op::cmpsq) + 1};
 
   public:
     // the widths of the operands
@@ -599,7 +599,7 @@ class assembler_x86_64 final : public assembler {
             }),
         };
 
-        static_assert(infos.size() == op_count);
+        static_assert(infos.size() == op_count_);
 
         return infos.at(std::to_underlying(code));
     }

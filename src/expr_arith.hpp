@@ -50,9 +50,8 @@ class expr_arith final : public expression {
     std::vector<arithmetic_operator> ops_;
     std::vector<token> ws_before_ops_; // whitespace before each of 'ops_'
     unary_ops uops_;                   // of the whole list, e.g. '~(a + b)'
-    token open_paren_tk_;              // when 'enclosed' the '(' token
-    token close_paren_tk_;             // when 'enclosed' the ')' token
-    bool enclosed_{};                  // (a + b)  vs  a + b
+    token open_paren_tk_;              // of '(a + b)', empty when not enclosed
+    token close_paren_tk_;             // of '(a + b)', empty when not enclosed
 
     // true when this list was created because of a higher-precedence operation
     //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
@@ -78,21 +77,25 @@ class expr_arith final : public expression {
         bool is_enclosed{};
     };
 
-    static constexpr uint8_t precedence_additive{1};
-    static constexpr uint8_t precedence_multiplicative{2};
-    static constexpr uint8_t precedence_bitwise_or{3};
-    static constexpr uint8_t precedence_bitwise_and{4};
-    static constexpr uint8_t precedence_bitwise_xor{5};
-    static constexpr uint8_t precedence_shift{6};
+    static constexpr uint8_t precedence_additive_{1};
+    static constexpr uint8_t precedence_multiplicative_{2};
+    static constexpr uint8_t precedence_bitwise_or_{3};
+    static constexpr uint8_t precedence_bitwise_and_{4};
+    static constexpr uint8_t precedence_bitwise_xor_{5};
+    static constexpr uint8_t precedence_shift_{6};
 
   public:
+    // whether 'constant_value_of' wraps a named constant to the width
+    enum class constant_wrap : uint8_t { as_written, to_width };
+
     // how a list is parsed when it is not a plain one
     struct options {
         // the unary ops of an enclosed list apply to all of it
         unary_ops uops;
 
-        // the '(' of an enclosed list, which ends with its ')'
-        std::optional<token> open_paren_tk;
+        // the '(' of an enclosed list, which ends with its ')', empty when not
+        // enclosed
+        token open_paren_tk;
 
         // a list that was created for an operation of a higher precedence
         bool is_implied_subexpression{};
@@ -118,9 +121,7 @@ class expr_arith final : public expression {
     expr_arith(toc& tc, tokenizer& tz, options opts)
         : expression{opts.first_expression ? position_of(*opts.first_expression)
                                            : tz.cur_position_token()},
-          uops_{std::move(opts.uops)},
-          open_paren_tk_{opts.open_paren_tk.value_or(token{})},
-          enclosed_{opts.open_paren_tk.has_value()},
+          uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{opts.is_implied_subexpression} {
 
         const tokenizer::nesting_scope nesting{tz};
@@ -211,7 +212,7 @@ class expr_arith final : public expression {
     auto source_to(std::ostream& os) const -> void override {
         uops_.source_to(os);
 
-        if (enclosed_) {
+        if (is_enclosed()) {
             open_paren_tk_.source_to(os);
         }
 
@@ -226,7 +227,7 @@ class expr_arith final : public expression {
             e->source_to(os);
         }
 
-        if (enclosed_) {
+        if (is_enclosed()) {
             close_paren_tk_.source_to(os);
         }
     }
@@ -319,7 +320,8 @@ class expr_arith final : public expression {
         -> std::optional<int64_t> override {
 
         std::optional<int64_t> value{
-            element_constant(tc, *exprs_.front(), width_type),
+            constant_value_of(tc, *exprs_.front(), width_type,
+                              constant_wrap::to_width),
         };
 
         for (const auto [o, e] :
@@ -330,7 +332,7 @@ class expr_arith final : public expression {
             }
 
             const std::optional<int64_t> rhs{
-                element_constant(tc, *e, width_type),
+                constant_value_of(tc, *e, width_type, constant_wrap::to_width),
             };
 
             if (not rhs) {
@@ -532,6 +534,36 @@ class expr_arith final : public expression {
                                     tc.checks().overflow_options());
 
         return reg;
+    }
+
+    // the value of an operand that is a constant, e.g. 'k', '-k', '(1 + 2)'
+    // or 'array_length(a)', otherwise none; a list folds at 'width_type'
+    // note: an element of a list wraps a named constant to the width as its
+    //       register holds it, a comparison side and an initializer element
+    //       keep the written value for the range checks of their callers
+    [[nodiscard]] static auto
+    constant_value_of(const toc& tc, const statement& e, const type& width_type,
+                      const constant_wrap wrap) -> std::optional<int64_t> {
+
+        if (e.is_expression()) {
+            return e.folded_constant(tc, width_type);
+        }
+
+        const ident_info info{tc.make_ident_info(e)};
+
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        const int64_t value{
+            e.get_unary_ops().evaluate_constant(info.const_value()),
+        };
+
+        if (wrap == constant_wrap::as_written) {
+            return value;
+        }
+
+        return constant_arith::wrap_to_width(value, width_type);
     }
 
   private:
@@ -803,7 +835,7 @@ class expr_arith final : public expression {
 
         // an enclosed list ends with its ')'
         // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
-        if (enclosed_) {
+        if (is_enclosed()) {
             throw compile_error{tz.next_token(),
                                 "expected ')' to close expression"};
         }
@@ -830,7 +862,7 @@ class expr_arith final : public expression {
 
     // a sub-expression is enclosed in parentheses
     [[nodiscard]] auto is_closed(tokenizer& tz) -> bool {
-        if (not enclosed_) {
+        if (not is_enclosed()) {
             return false;
         }
 
@@ -843,6 +875,11 @@ class expr_arith final : public expression {
     // own list
     //   want:  a - b * c + 3  ->  [a] - [b * c] + [3]
     //   if not returning then becomes: a - [b * c + 3]
+    // e.g. '(a + b)' vs 'a + b'
+    [[nodiscard]] auto is_enclosed() const -> bool {
+        return not open_paren_tk_.is_empty();
+    }
+
     [[nodiscard]] auto is_end_of_implied_subexpression(
         const uint8_t precedence, const uint8_t next_precedence) const -> bool {
 
@@ -886,7 +923,10 @@ class expr_arith final : public expression {
             steps.push_back({
                 .op{op},
                 .element{&e},
-                .value{element_constant(tc, e, width_type)},
+                .value{
+                    constant_value_of(tc, e, width_type,
+                                      constant_wrap::to_width),
+                },
                 .folded_source{
                     std::format("{} {}", machine::source_text(op),
                                 statement::trimmed_source(e)),
@@ -1243,26 +1283,6 @@ class expr_arith final : public expression {
         if (ch == '<' or ch == '>') {
             tz.skip_char();
         }
-    }
-
-    // a constant identifier or a list of constants
-    [[nodiscard]] static auto
-    element_constant(const toc& tc, const statement& e, const type& width_type)
-        -> std::optional<int64_t> {
-
-        if (e.is_expression()) {
-            return e.folded_constant(tc, width_type);
-        }
-
-        const ident_info info{tc.make_ident_info(e)};
-
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        return constant_arith::wrap_to_width(
-            e.get_unary_ops().evaluate_constant(info.const_value()),
-            width_type);
     }
 
     // compiles 'src' into an operand the operation accepts, emits the
@@ -1676,31 +1696,31 @@ class expr_arith final : public expression {
         if (op == arithmetic_operator::add or
             op == arithmetic_operator::subtract) {
 
-            return precedence_additive;
+            return precedence_additive_;
         }
 
         if (op == arithmetic_operator::multiply or
             op == arithmetic_operator::divide or
             op == arithmetic_operator::remainder) {
 
-            return precedence_multiplicative;
+            return precedence_multiplicative_;
         }
 
         if (op == arithmetic_operator::bit_or) {
-            return precedence_bitwise_or;
+            return precedence_bitwise_or_;
         }
 
         if (op == arithmetic_operator::bit_and) {
-            return precedence_bitwise_and;
+            return precedence_bitwise_and_;
         }
 
         if (op == arithmetic_operator::bit_xor) {
-            return precedence_bitwise_xor;
+            return precedence_bitwise_xor_;
         }
 
         assert(op == arithmetic_operator::shift_left or
                op == arithmetic_operator::shift_right);
 
-        return precedence_shift;
+        return precedence_shift_;
     }
 };

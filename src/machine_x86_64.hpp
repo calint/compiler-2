@@ -33,9 +33,9 @@
 // the x86_64 linux backend, written as nasm text through 'assembler_x86_64';
 // the formatter sorts the functions by name, so by topic they are:
 //
-//   registers    'alloc_scratch_register', 'alloc_named_register',
-//                'reserve_named_register', 'push_allocation', the frame base
-//                'rbx' and the variables base 'rbp'
+//   registers    'machine' allocates them, here the names
+//                'register_names_', the order 'scratch_registers_', the frame
+//                base 'rbx' and the variables base 'rbp'
 //   operations   'emit_op' and 'emit_binary' choose the form of an
 //                instruction, 'with_lowered_addresses' fits an operand into
 //                one, 'multiply_by_constant', 'emit_signed_divide', 'shift'
@@ -55,10 +55,10 @@ class machine_x86_64 final : public machine {
 
     using section = assembler_x86_64::section;
 
-    static constexpr size_t size_qword{assembler_x86_64::size_qword};
-    static constexpr size_t size_dword{assembler_x86_64::size_dword};
-    static constexpr size_t size_word{assembler_x86_64::size_word};
-    static constexpr size_t size_byte{assembler_x86_64::size_byte};
+    static constexpr size_t size_qword_{assembler_x86_64::size_qword};
+    static constexpr size_t size_dword_{assembler_x86_64::size_dword};
+    static constexpr size_t size_word_{assembler_x86_64::size_word};
+    static constexpr size_t size_byte_{assembler_x86_64::size_byte};
 
     static constexpr size_t data_alignment_{16};
 
@@ -67,20 +67,19 @@ class machine_x86_64 final : public machine {
 
     static constexpr std::string_view variables_base_register_{"rbp"};
 
-    static constexpr std::array<size_t, 4> index_register_scalings{1, 2, 4, 8};
+    static constexpr std::array<size_t, 4> index_register_scalings_{1, 2, 4, 8};
 
-    static constexpr size_t threshold_for_rep_stos_size_bytes{32};
-    static constexpr size_t threshold_for_rep_movs_size_bytes{16};
+    static constexpr size_t threshold_for_rep_stos_size_bytes_{32};
+    static constexpr size_t threshold_for_rep_movs_size_bytes_{16};
     // up to this many qwords single compares cost less than loading 'rcx'
-    static constexpr size_t threshold_for_repe_cmpsq_count{2};
-    static constexpr int syscall_read{0};
-    static constexpr int syscall_write{1};
-    static constexpr int syscall_exit{60};
-    static constexpr int syscall_open{2};
-    static constexpr int syscall_lseek{8};
-    static constexpr int syscall_pread{17};
-    static constexpr int syscall_pwrite{18};
-    static constexpr size_t sector_size_bytes_{512};
+    static constexpr size_t threshold_for_repe_cmpsq_count_{2};
+    static constexpr int syscall_read_{0};
+    static constexpr int syscall_write_{1};
+    static constexpr int syscall_exit_{60};
+    static constexpr int syscall_open_{2};
+    static constexpr int syscall_lseek_{8};
+    static constexpr int syscall_pread_{17};
+    static constexpr int syscall_pwrite_{18};
     static constexpr std::string_view sector_read_label_{"baz_sector_read"};
     static constexpr std::string_view sector_write_label_{"baz_sector_write"};
 
@@ -205,12 +204,8 @@ class machine_x86_64 final : public machine {
     static constexpr std::string_view slot_register_{"r11"};
 
     // scratch values live from which an array loop counts in memory
-    static constexpr size_t memory_counter_pressure_count{6};
+    static constexpr size_t memory_counter_pressure_count_{6};
 
-    // the indexes are those of 'register_names_'
-    register_pool registers_;
-    bool variables_base_reserved_{};
-    bool frame_base_reserved_{};
     // numbers the labels after the parts of a memory compare
     size_t equal_label_count_{};
     // numbers the labels of the checks of divisions
@@ -219,8 +214,6 @@ class machine_x86_64 final : public machine {
     size_t overlap_label_count_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
-    bool sector_read_used_{};
-    bool sector_write_used_{};
     // the lines that have a stub of the division failure handler
     std::set<size_t> division_panic_lines_;
     // the lines that have a stub of the overflow failure handler
@@ -282,48 +275,7 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] auto address_size_bytes() const -> size_t override {
-        return size_qword;
-    }
-
-    [[nodiscard]] auto
-    alloc_named_register(const token& src_loc_tk, const size_t indent,
-                         const std::string_view register_name,
-                         const type& type_ref) -> operand override {
-
-        reserve_named_register(src_loc_tk, indent, register_name, type_ref);
-
-        operand result{make_register_operand(register_name, type_ref)};
-
-        result.set_allocation_register(register_name);
-
-        return result;
-    }
-
-    [[nodiscard]] auto alloc_scratch_register(const token& src_loc_tk,
-                                              const size_t indent,
-                                              const type& type_ref)
-        -> operand override {
-
-        for (const std::string_view register_name : scratch_registers_) {
-            if (registers_.is_unavailable(register_bit(register_name))) {
-                continue;
-            }
-
-            comment(src_loc_tk, indent, "allocate scratch register -> {}",
-                    register_name);
-
-            push_allocation(src_loc_tk, indent, register_name, type_ref, false);
-
-            record_scratch_registers(registers_);
-
-            operand result{make_register_operand(register_name, type_ref)};
-
-            result.set_allocation_register(register_name);
-
-            return result;
-        }
-
-        throw out_of_registers_error(src_loc_tk, registers_);
+        return size_qword_;
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -353,10 +305,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto begin_data(const size_t alignment) -> void override {
-        // unused routines contribute no code
-        if (sector_read_used_ or sector_write_used_) {
-            emit_sector_routines();
-        }
+        emit_used_sector_routines();
 
         assembler_.add_separator_newline();
         assembler_.switch_section(section::data);
@@ -401,17 +350,8 @@ class machine_x86_64 final : public machine {
         // the callee may use every register but the variables base, so only
         // values live at the call need saving
         std::vector<operand> saved;
-        for (const register_pool::allocation& allocated :
-             registers_.allocations()) {
-
-            const std::string_view name{
-                register_names_.at(allocated.index).qword};
-
-            if (name == variables_base_register_) {
-                continue;
-            }
-
-            saved.push_back(qword_register(name));
+        for (const size_t index : registers_saved_by_call()) {
+            saved.push_back(qword_register(register_names_.at(index).qword));
         }
 
         record_noinline_call(src_loc_tk, label, saved.size());
@@ -447,7 +387,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
 
-        return std::ranges::contains(index_register_scalings, size_bytes);
+        return std::ranges::contains(index_register_scalings_, size_bytes);
     }
 
     auto check_bounds(const token& src_loc_tk, const size_t indent,
@@ -459,20 +399,14 @@ class machine_x86_64 final : public machine {
         }
 
         const bounds_plan plan{
-            plan_bounds_check(options, range, signed_maximum(range.checked),
-                              registers_.is_lower_checked(
-                                  register_bit(range.count.base_register()))),
-        };
-
-        const std::optional<size_t> reported_line{
-            options.with_line ? std::optional<size_t>{src_loc_tk.at_line()}
-                              : std::nullopt,
+            plan_bounds_check(options, range, signed_maximum(range.checked)),
         };
 
         comment(src_loc_tk, indent, "bounds check begin");
 
         if (options.lower) {
-            check_lower_bound(src_loc_tk, indent, range, plan, reported_line);
+            check_lower_bound(src_loc_tk, indent, range, plan,
+                              options.with_line);
         }
 
         if (options.upper) {
@@ -491,9 +425,9 @@ class machine_x86_64 final : public machine {
             };
 
             branch_to_bounds_panic(
-                indent,
+                src_loc_tk, indent,
                 out_of_bounds_condition(range.allow_end, is_unsigned_compare),
-                reported_line);
+                options.with_line);
         }
 
         comment(src_loc_tk, indent, "bounds check end");
@@ -501,12 +435,8 @@ class machine_x86_64 final : public machine {
 
     auto check_frame_capacity(const token& src_loc_tk, const size_t indent,
                               const operand& frame_address,
-                              const operand& frame_size_bytes,
-                              const bool enabled = {}) -> void override {
-
-        if (not enabled) {
-            return;
-        }
+                              const operand& frame_size_bytes)
+        -> void override {
 
         assert(frame_address.is_memory());
         assert(frame_size_bytes.is_symbol());
@@ -548,8 +478,7 @@ class machine_x86_64 final : public machine {
 
     // the operating system stops a program that overflows the stack
     auto check_stack_capacity([[maybe_unused]] const token& src_loc_tk,
-                              [[maybe_unused]] const size_t indent,
-                              [[maybe_unused]] const bool enabled)
+                              [[maybe_unused]] const size_t indent)
         -> void override {}
 
     auto comment_alias(const token& src_loc_tk, const size_t indent,
@@ -598,11 +527,11 @@ class machine_x86_64 final : public machine {
     }
 
     // x86 accesses unaligned memory so the alignment is not needed
-    auto copy(const token& src_loc_tk, const size_t indent, const operand& src,
-              const operand& dst, const size_t size_bytes,
+    auto copy(const token& src_loc_tk, const size_t indent, const operand& dst,
+              const operand& src, const size_t size_bytes,
               [[maybe_unused]] const size_t alignment) -> void override {
 
-        if (size_bytes > threshold_for_rep_movs_size_bytes) {
+        if (size_bytes > threshold_for_rep_movs_size_bytes_) {
             copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
                                 [&](const operand& pointer) -> void {
                                     lea(src_loc_tk, indent, pointer, src);
@@ -612,12 +541,12 @@ class machine_x86_64 final : public machine {
         }
 
         comment(src_loc_tk, indent, "size <= {} B, use mov",
-                threshold_for_rep_movs_size_bytes);
+                threshold_for_rep_movs_size_bytes_);
 
         reserve_named_register(src_loc_tk, indent, "rax", default_type());
 
         for_each_part(
-            size_bytes, size_qword,
+            size_bytes, size_qword_,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const operand reg{sized_register("rax", part_size_bytes)};
 
@@ -639,7 +568,7 @@ class machine_x86_64 final : public machine {
                     const std::function_ref<std::string()> add_constant)
         -> void override {
 
-        if (bytes.size() > threshold_for_rep_movs_size_bytes) {
+        if (bytes.size() > threshold_for_rep_movs_size_bytes_) {
             const std::string label{add_constant()};
 
             // rip-relative label addresses need no address register
@@ -655,24 +584,24 @@ class machine_x86_64 final : public machine {
         }
 
         comment(src_loc_tk, indent, "size <= {} B, use immediates",
-                threshold_for_rep_movs_size_bytes);
+                threshold_for_rep_movs_size_bytes_);
 
         for_each_part(
-            bytes.size(), size_qword,
+            bytes.size(), size_qword_,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 const int64_t value{
                     little_endian_value(bytes.substr(offset, part_size_bytes)),
                 };
 
                 // a qword store takes only a sign-extended 32-bit immediate
-                if (part_size_bytes == size_qword and
+                if (part_size_bytes == size_qword_ and
                     not std::in_range<int32_t>(value)) {
 
                     store_immediate_part(src_loc_tk, indent, bytes, dst,
-                                         size_dword, offset);
+                                         size_dword_, offset);
 
                     store_immediate_part(src_loc_tk, indent, bytes, dst,
-                                         size_dword, offset + size_dword);
+                                         size_dword_, offset + size_dword_);
 
                     return;
                 }
@@ -788,17 +717,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_frame_overflow_handler() -> void override {
-        assembler_.label(0, frame_overflow_handler_label);
-        emit_panic_message("msg_frame_overflow");
-        emit_panic_exit();
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, "msg_frame_overflow");
-        assembler_.string_data("panic: frame overflow\\n");
-
-        assembler_.define_length("msg_frame_overflow_len",
-                                 "msg_frame_overflow");
-
-        assembler_.switch_section(section::text);
+        emit_line_panic_handler(false, "frame overflow", {},
+                                frame_overflow_handler_label);
     }
 
     auto emit_overflow_failure_handler(const bool with_line) -> void override {
@@ -846,8 +766,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {
-        const size_t count{size_bytes / size_byte};
-        emit_repeated_data(size_byte, count, 0);
+        const size_t count{size_bytes / size_byte_};
+        emit_repeated_data(size_byte_, count, 0);
     }
 
     auto end_main() -> void override {
@@ -860,7 +780,8 @@ class machine_x86_64 final : public machine {
 
         copy_value(src_loc_tk, indent, qword_register("rdi"), exit_code);
 
-        mov(src_loc_tk, indent, qword_register("rax"), immediate(syscall_exit));
+        mov(src_loc_tk, indent, qword_register("rax"),
+            immediate(syscall_exit_));
 
         syscall(indent);
     }
@@ -868,16 +789,8 @@ class machine_x86_64 final : public machine {
     // releases the variables base, optimizes the jumps and asserts that the
     // registers are balanced; called once at the end of the compile pass
     auto finish() -> void override {
-        // reserved by 'start', not set in backend testing mode
-        if (variables_base_reserved_) {
-            release_variables_base();
-        }
-
+        finish_registers();
         finish_output();
-
-        assert(registers_.is_empty());
-        assert(registers_.unavailable_mask() == 0);
-        assert(not frame_base_reserved_);
     }
 
     auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
@@ -896,34 +809,13 @@ class machine_x86_64 final : public machine {
     // 'inc' and 'cmp' work on memory, so a loop counter leaves its register to
     // the values that need one once many are live
     [[nodiscard]] auto foo_counter_in_memory() const -> bool override {
-        return registers_.scratch_count() >= memory_counter_pressure_count;
+        return registers().scratch_count() >= memory_counter_pressure_count_;
     }
 
     [[nodiscard]] auto frame_base_register() const
         -> std::string_view override {
 
         return "rbx";
-    }
-
-    auto free_named_register(const token& src_loc_tk, const size_t indent,
-                             const operand& reg) -> void override {
-
-        assert(reg.is_register() and not reg.allocation_register().empty());
-
-        release_named_register(src_loc_tk, indent, reg.allocation_register());
-    }
-
-    auto free_scratch_register(const token& src_loc_tk, const size_t indent,
-                               const operand& reg) -> void override {
-
-        assert(reg.is_register() and not reg.allocation_register().empty());
-
-        comment(src_loc_tk, indent, "free scratch register {}",
-                reg.allocation_register());
-
-        assert(not registers_.top().named);
-
-        pop_allocation(reg.allocation_register());
     }
 
     // e.g. '[rbx + rcx * 8 + 16]'
@@ -977,7 +869,7 @@ class machine_x86_64 final : public machine {
 
         if (compares.front() == op::repe_cmpsq) {
             mov(src_loc_tk, indent, qword_register("rcx"),
-                immediate(size_bytes / size_qword));
+                immediate(size_bytes / size_qword_));
         }
 
         // a part that differs decides the result, so the rest is skipped
@@ -1012,7 +904,7 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        if (product.type_ref().size_bytes() == size_byte) {
+        if (product.type_ref().size_bytes() == size_byte_) {
             const operand left{
                 alloc_scratch_register(src_loc_tk, indent, default_type()),
             };
@@ -1081,17 +973,13 @@ class machine_x86_64 final : public machine {
               const operand& count) -> void override {
 
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_read);
+                   syscall_read_);
     }
 
     [[nodiscard]] auto register_display_name(const size_t index) const
         -> std::string override {
 
         return std::string{register_names_.at(index).qword};
-    }
-
-    [[nodiscard]] auto register_pool_ref() -> register_pool& override {
-        return registers_;
     }
 
     [[nodiscard]] auto
@@ -1129,25 +1017,6 @@ class machine_x86_64 final : public machine {
         };
     }
 
-    auto release_frame_base() -> void override {
-        assert(frame_base_reserved_);
-        assert(registers_.scratch_count() == 0);
-
-        pop_allocation(frame_base_register());
-
-        frame_base_reserved_ = false;
-    }
-
-    auto reserve_frame_base() -> void override {
-        assert(not frame_base_reserved_);
-        assert(registers_.scratch_count() == 0);
-
-        push_allocation(token{}, 0, frame_base_register(), default_type(),
-                        true);
-
-        frame_base_reserved_ = true;
-    }
-
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
 
@@ -1170,34 +1039,6 @@ class machine_x86_64 final : public machine {
 
         scale_by_element_size_bytes(src_loc_tk, indent, index,
                                     element_size_bytes);
-    }
-
-    [[nodiscard]] auto scratch_register_total() const -> size_t override {
-        return scratch_registers_.size();
-    }
-
-    auto sector_read(const token& src_loc_tk, const size_t indent,
-                     const operand& sector, const operand& address,
-                     const operand& size) -> void override {
-
-        call_sector_routine(src_loc_tk, indent, sector, address, size,
-                            sector_read_label_);
-
-        sector_read_used_ = true;
-    }
-
-    [[nodiscard]] auto sector_size_bytes() const -> size_t override {
-        return sector_size_bytes_;
-    }
-
-    auto sector_write(const token& src_loc_tk, const size_t indent,
-                      const operand& sector, const operand& address,
-                      const operand& size) -> void override {
-
-        call_sector_routine(src_loc_tk, indent, sector, address, size,
-                            sector_write_label_);
-
-        sector_write_used_ = true;
     }
 
     auto shift(const token& src_loc_tk, const size_t indent,
@@ -1236,7 +1077,7 @@ class machine_x86_64 final : public machine {
         }
 
         emit_op(src_loc_tk, indent, code, dst,
-                sized_register("rcx", size_byte));
+                sized_register("rcx", size_byte_));
 
         release_named_register(src_loc_tk, indent, "rcx");
     }
@@ -1305,7 +1146,7 @@ class machine_x86_64 final : public machine {
                const operand& count) -> void override {
 
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_write);
+                   syscall_write_);
     }
 
     auto write_assembly(std::ostream& os) -> void override {
@@ -1317,7 +1158,7 @@ class machine_x86_64 final : public machine {
               const size_t size_bytes, [[maybe_unused]] const size_t alignment)
         -> void override {
 
-        if (size_bytes > threshold_for_rep_stos_size_bytes) {
+        if (size_bytes > threshold_for_rep_stos_size_bytes_) {
             reserve_named_register(src_loc_tk, indent, "rax", default_type());
             reserve_named_register(src_loc_tk, indent, "rdi", default_type());
             reserve_named_register(src_loc_tk, indent, "rcx", default_type());
@@ -1341,10 +1182,10 @@ class machine_x86_64 final : public machine {
         }
 
         comment(src_loc_tk, indent, "size <= {} B, use mov",
-                threshold_for_rep_stos_size_bytes);
+                threshold_for_rep_stos_size_bytes_);
 
         for_each_part(
-            size_bytes, size_qword,
+            size_bytes, size_qword_,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
                 mov(src_loc_tk, indent,
                     memory_part(dst, part_size_bytes, offset), immediate(0));
@@ -1370,6 +1211,212 @@ class machine_x86_64 final : public machine {
     //
     // overridden methods
     //
+
+    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
+    // arguments, the allocated ones are saved around the call
+    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
+                             const operand& sector, const operand& address,
+                             const operand& size,
+                             const builtin_function function) -> void override {
+
+        for (const operand* value : {&sector, &address, &size}) {
+            assert(value->is_register() and
+                   value->type_ref().size_bytes() == size_qword_);
+        }
+
+        assert(sector.base_register() == "rdi");
+        assert(address.base_register() == "rsi");
+        assert(size.base_register() == "rdx");
+
+        static constexpr std::array<std::string_view, 4> clobbered{
+            "rax",
+            "rcx",
+            "r10",
+            "r11",
+        };
+
+        const std::string_view label{
+            function == builtin_function::sector_read ? sector_read_label_
+                                                      : sector_write_label_,
+        };
+
+        comment(src_loc_tk, indent, "sector of the sd card");
+
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { assembler_.call(indent, label); });
+    }
+
+    // the routines take the sector in 'rdi', the address in 'rsi' and the size
+    // in 'rdx'; the image file is opened at the first transfer, a sector past
+    // its end or outside 32 bits, a failed open or a short transfer panics
+    auto emit_sector_routines(const bool read_used, const bool write_used)
+        -> void override {
+
+        // 'O_RDWR' and 'SEEK_END' of linux
+        constexpr int read_write{2};
+        constexpr int seek_end{2};
+        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes)};
+
+        // the descriptor is -1 until the file is opened
+        constexpr std::array<int64_t, 1> not_opened{-1};
+
+        constexpr std::array<int64_t, 1> zero_value{0};
+
+        // every failure jumps here and exits with a panic message
+        constexpr std::string_view handler_label{"baz_sd_card_panic"};
+
+        // the open file descriptor, a qword in '.data'
+        assembler_x86_64::memory descriptor{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor"),
+        };
+
+        descriptor.size_bytes = size_qword_;
+
+        // the file size in whole sectors, set once at open
+        assembler_x86_64::memory sector_count{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_sectors"),
+        };
+
+        sector_count.size_bytes = size_qword_;
+
+        assembler_.add_separator_newline();
+
+        // the read entry selects 'pread64' and joins the shared body
+        if (read_used) {
+            assembler_.label(0, sector_read_label_);
+            assembler_.instruction(1, op::mov, "eax", syscall_pread_);
+            assembler_.jmp(1, "baz_sector_transfer");
+        }
+
+        // the write entry selects 'pwrite64' and falls through into the body
+        if (write_used) {
+            assembler_.label(0, sector_write_label_);
+            assembler_.instruction(1, op::mov, "eax", syscall_pwrite_);
+        }
+
+        // the shared body of read and write
+        assembler_.label(0, "baz_sector_transfer");
+        assembler_.comment(1, "the system call is kept on the stack");
+        // 'rax' is reused by 'open' and 'lseek', so the number is saved
+        assembler_.instruction(1, op::push, "rax");
+        // a descriptor of 0 or more means the file is already open
+        assembler_.instruction(1, op::cmp, descriptor, 0);
+        assembler_.jcc(1, condition::ge, "baz_sector_opened");
+        // first transfer: save the arguments, 'open' and 'lseek' clobber them
+        assembler_.instruction(1, op::push, "rdi");
+        assembler_.instruction(1, op::push, "rsi");
+        assembler_.instruction(1, op::push, "rdx");
+        // open(name, 'O_RDWR')
+        assembler_.instruction(1, op::mov, "eax", syscall_open_);
+
+        assembler_.instruction(
+            1, op::lea, "rdi",
+            assembler_x86_64::memory::of_symbol("baz_sd_card_name"));
+
+        assembler_.instruction(1, op::mov, "esi", read_write);
+        assembler_.instruction(1, op::syscall);
+        // a negative result is '-errno', the open failed
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::s, handler_label);
+        // keep the descriptor for later transfers
+        assembler_.instruction(1, op::mov, descriptor, "rax");
+        assembler_.comment(1, "the size of the file in sectors");
+        // lseek(descriptor, 0, 'SEEK_END') returns the file size in bytes
+        assembler_.instruction(1, op::mov, "rdi", "rax");
+        assembler_.instruction(1, op::xor_op, "esi", "esi");
+        assembler_.instruction(1, op::mov, "edx", seek_end);
+        assembler_.instruction(1, op::mov, "eax", syscall_lseek_);
+        assembler_.instruction(1, op::syscall);
+        // a negative result is '-errno', the seek failed
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::s, handler_label);
+        // bytes to whole sectors, a partial last sector is not counted
+        assembler_.instruction(1, op::sar, "rax", sector_shift);
+        assembler_.instruction(1, op::mov, sector_count, "rax");
+        // restore the arguments in reverse order of the pushes
+        assembler_.instruction(1, op::pop, "rdx");
+        assembler_.instruction(1, op::pop, "rsi");
+        assembler_.instruction(1, op::pop, "rdi");
+        // here the file is open and only the system call is on the stack
+        assembler_.label(0, "baz_sector_opened");
+        assembler_.comment(1, "the sector is an unsigned 32 bit number");
+        // zero extending 'edi' differs from 'rdi' when the upper half is set
+        assembler_.instruction(1, op::mov, "eax", "edi");
+        assembler_.instruction(1, op::cmp, "rax", "rdi");
+        assembler_.jcc(1, condition::ne, handler_label);
+        // a sector at or past the end of the file panics
+        assembler_.instruction(1, op::cmp, "rdi", sector_count);
+        assembler_.jcc(1, condition::ae, handler_label);
+        // the byte offset, the fourth system call argument, goes in 'r10'
+        assembler_.instruction(1, op::mov, "r10", "rdi");
+        assembler_.instruction(1, op::shl, "r10", sector_shift);
+        // the descriptor replaces the sector as the first argument
+        assembler_.instruction(1, op::mov, "rdi", descriptor);
+        // the saved system call number, which also balances the stack
+        assembler_.instruction(1, op::pop, "rax");
+        // pread64 or pwrite64(descriptor, address 'rsi', size 'rdx', offset)
+        assembler_.instruction(1, op::syscall);
+        // anything but the full size, an error or a short transfer, panics
+        assembler_.instruction(1, op::cmp, "rax", "rdx");
+        assembler_.jcc(1, condition::ne, handler_label);
+        assembler_.instruction(1, op::ret);
+
+        // the stack is not unwound because the program exits
+        assembler_.label(0, handler_label);
+        emit_panic_message("msg_sd_card");
+        emit_panic_exit();
+
+        // the panic message and its length symbol
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, "msg_sd_card");
+        assembler_.string_data("panic: sd card\\n");
+        assembler_.define_length("msg_sd_card_len", "msg_sd_card");
+        assembler_.comment(0, "the file name ends with a zero byte");
+        // the image file name passed to 'open'
+        assembler_.label(0, "baz_sd_card_name");
+
+        assembler_.string_data(token::encode_string(sd_card_file_name()));
+
+        // the terminator 'open' expects
+        assembler_.data(size_byte_, zero_value);
+
+        // writable state, qword aligned for the 64 bit accesses
+        assembler_.switch_section(section::data);
+        assembler_.align(size_qword_);
+        assembler_.label(0, "baz_sd_card_descriptor");
+        assembler_.data(size_qword_, not_opened);
+        assembler_.label(0, "baz_sd_card_sectors");
+        assembler_.data(size_qword_, zero_value);
+        // later code is emitted into '.text' again
+        assembler_.switch_section(section::text);
+    }
+
+    // the index in 'register_names_' of a register of any size
+    [[nodiscard]] auto register_index_of(const std::string_view name) const
+        -> std::optional<size_t> override {
+
+        if (register_size_bytes(name) == 0) {
+            return std::nullopt;
+        }
+
+        const std::string qword{sized_register_name(name, size_qword_)};
+
+        for (const auto [index, names] :
+             std::views::enumerate(register_names_)) {
+
+            if (names.qword == qword) {
+                return static_cast<size_t>(index);
+            }
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto scratch_registers() const
+        -> std::span<const std::string_view> override {
+
+        return scratch_registers_;
+    }
 
     [[nodiscard]] auto target_assembler() -> assembler& override {
         return assembler_;
@@ -1424,10 +1471,10 @@ class machine_x86_64 final : public machine {
 
         assert(size_bytes != 0);
 
-        const size_t index{register_index(name)};
+        const std::optional<size_t> index{register_index_of(name)};
 
         for (const register_pool::allocation& allocated :
-             registers_.allocations()) {
+             registers().allocations()) {
 
             if (allocated.index == index) {
                 return allocated.type_ptr->size_bytes() == size_bytes
@@ -1461,16 +1508,14 @@ class machine_x86_64 final : public machine {
 
     // a reported line goes through the stub of its line, which sets rbp for
     // the handler, so a passing check keeps rbp and loads nothing
-    auto branch_to_bounds_panic(const size_t indent, const condition failed,
-                                const std::optional<size_t> line) -> void {
+    auto branch_to_bounds_panic(const token& src_loc_tk, const size_t indent,
+                                const condition failed, const bool with_line)
+        -> void {
 
-        if (not line.has_value()) {
-            assembler_.jcc(indent, failed, bounds_failure_handler_label);
-            return;
-        }
-
-        bounds_panic_lines_.insert(*line);
-        assembler_.jcc(indent, failed, line_panic_label("bounds", *line));
+        assembler_.jcc(indent, failed,
+                       failure_label("bounds", bounds_panic_lines_,
+                                     bounds_failure_handler_label, src_loc_tk,
+                                     with_line));
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1478,50 +1523,21 @@ class machine_x86_64 final : public machine {
     builtin_type_for_size_bytes(const size_t size_bytes) const -> const type& {
 
         switch (size_bytes) {
-        case size_qword:
+        case size_qword_:
             return builtin_type_i64();
 
-        case size_dword:
+        case size_dword_:
             return builtin_type_i32();
 
-        case size_word:
+        case size_word_:
             return builtin_type_i16();
 
-        case size_byte:
+        case size_byte_:
             return builtin_type_i8();
 
         default:
             std::unreachable();
         }
-    }
-
-    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
-    // arguments, the allocated ones are saved around the call
-    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
-                             const operand& sector, const operand& address,
-                             const operand& size, const std::string_view label)
-        -> void {
-
-        for (const operand* value : {&sector, &address, &size}) {
-            assert(value->is_register() and
-                   value->type_ref().size_bytes() == size_qword);
-        }
-
-        assert(sector.base_register() == "rdi");
-        assert(address.base_register() == "rsi");
-        assert(size.base_register() == "rdx");
-
-        static constexpr std::array<std::string_view, 4> clobbered{
-            "rax",
-            "rcx",
-            "r10",
-            "r11",
-        };
-
-        comment(src_loc_tk, indent, "sector of the sd card");
-
-        with_saved_registers(indent, clobbered,
-                             [&] -> void { assembler_.call(indent, label); });
     }
 
     // 'left' holds the product of two bytes in a register of the default
@@ -1624,22 +1640,21 @@ class machine_x86_64 final : public machine {
 
     auto check_lower_bound(const token& src_loc_tk, const size_t indent,
                            const bounds_range& range, const bounds_plan& plan,
-                           const std::optional<size_t> reported_line) -> void {
+                           const bool with_line) -> void {
 
         comment_lower_bound(src_loc_tk, indent, range, plan);
 
         if (not plan.upper_covers_lower) {
-            test_sign(src_loc_tk, indent, range.checked, reported_line);
+            test_sign(src_loc_tk, indent, range.checked, with_line);
 
             // a negative count passes 'start + count' but spans the address
             // space
             if (not plan.count_known) {
-                test_sign(src_loc_tk, indent, range.count, reported_line);
+                test_sign(src_loc_tk, indent, range.count, with_line);
             }
         }
 
-        registers_.mark_lower_checked(
-            register_bit(lower_checked_register(range)));
+        mark_lower_checked(range);
     }
 
     // a count in 'rcx' below zero or not below the width jumps to the failure
@@ -1692,8 +1707,8 @@ class machine_x86_64 final : public machine {
         };
 
         // index and count registers have the default type
-        assert(range.count.type_ref().size_bytes() == size_qword and
-               range.checked.type_ref().size_bytes() == size_qword);
+        assert(range.count.type_ref().size_bytes() == size_qword_ and
+               range.checked.type_ref().size_bytes() == size_qword_);
 
         lea(src_loc_tk, indent, reg_top_idx,
             operand::mem(range.count.base_register(),
@@ -1779,7 +1794,11 @@ class machine_x86_64 final : public machine {
                                  const std::set<size_t>& panic_lines,
                                  const std::string_view handler_label) -> void {
 
-        const std::string message_label{std::format("msg_{}", name)};
+        // a label has no space, 'frame overflow' is 'msg_frame_overflow'
+        std::string label_name{name};
+        std::ranges::replace(label_name, ' ', '_');
+
+        const std::string message_label{std::format("msg_{}", label_name)};
 
         if (with_line) {
             for (const size_t line : panic_lines) {
@@ -1905,7 +1924,7 @@ class machine_x86_64 final : public machine {
 
     auto emit_panic_exit() -> void {
         assembler_.comment(1, "exit with error code 255");
-        assembler_.instruction(1, op::mov, "rax", syscall_exit);
+        assembler_.instruction(1, op::mov, "rax", syscall_exit_);
         assembler_.instruction(1, op::mov, "rdi", panic_exit_code);
         assembler_.instruction(1, op::syscall);
     }
@@ -1913,7 +1932,7 @@ class machine_x86_64 final : public machine {
     // shared by the panic handlers, which run after all allocations
     auto emit_panic_message(const std::string_view message_label) -> void {
         assembler_.comment(1, "print message to stderr");
-        assembler_.instruction(1, op::mov, "rax", syscall_write);
+        assembler_.instruction(1, op::mov, "rax", syscall_write_);
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
 
         assembler_.instruction(
@@ -1978,7 +1997,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(1, condition::nz, ".convert_loop");
         assembler_.instruction(1, op::inc, "rdi");
         assembler_.comment(1, "print line number to stderr");
-        assembler_.instruction(1, op::mov, "rax", syscall_write);
+        assembler_.instruction(1, op::mov, "rax", syscall_write_);
         assembler_.instruction(1, op::mov, "rsi", "rdi");
 
         // the length is the end of the buffer minus the first digit
@@ -1997,149 +2016,6 @@ class machine_x86_64 final : public machine {
         assembler_.reserve(number_buffer_size_bytes);
     }
 
-    // the routines take the sector in 'rdi', the address in 'rsi' and the size
-    // in 'rdx'; the image file is opened at the first transfer, a sector past
-    // its end or outside 32 bits, a failed open or a short transfer panics
-    auto emit_sector_routines() -> void {
-        // 'O_RDWR' and 'SEEK_END' of linux
-        constexpr int read_write{2};
-        constexpr int seek_end{2};
-        constexpr int sector_shift{std::countr_zero(sector_size_bytes_)};
-
-        // the descriptor is -1 until the file is opened
-        constexpr std::array<int64_t, 1> not_opened{-1};
-
-        constexpr std::array<int64_t, 1> zero_value{0};
-
-        // every failure jumps here and exits with a panic message
-        constexpr std::string_view handler_label{"baz_sd_card_panic"};
-
-        // the open file descriptor, a qword in '.data'
-        assembler_x86_64::memory descriptor{
-            assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor"),
-        };
-
-        descriptor.size_bytes = size_qword;
-
-        // the file size in whole sectors, set once at open
-        assembler_x86_64::memory sector_count{
-            assembler_x86_64::memory::of_symbol("baz_sd_card_sectors"),
-        };
-
-        sector_count.size_bytes = size_qword;
-
-        assembler_.add_separator_newline();
-
-        // the read entry selects 'pread64' and joins the shared body
-        if (sector_read_used_) {
-            assembler_.label(0, sector_read_label_);
-            assembler_.instruction(1, op::mov, "eax", syscall_pread);
-            assembler_.jmp(1, "baz_sector_transfer");
-        }
-
-        // the write entry selects 'pwrite64' and falls through into the body
-        if (sector_write_used_) {
-            assembler_.label(0, sector_write_label_);
-            assembler_.instruction(1, op::mov, "eax", syscall_pwrite);
-        }
-
-        // the shared body of read and write
-        assembler_.label(0, "baz_sector_transfer");
-        assembler_.comment(1, "the system call is kept on the stack");
-        // 'rax' is reused by 'open' and 'lseek', so the number is saved
-        assembler_.instruction(1, op::push, "rax");
-        // a descriptor of 0 or more means the file is already open
-        assembler_.instruction(1, op::cmp, descriptor, 0);
-        assembler_.jcc(1, condition::ge, "baz_sector_opened");
-        // first transfer: save the arguments, 'open' and 'lseek' clobber them
-        assembler_.instruction(1, op::push, "rdi");
-        assembler_.instruction(1, op::push, "rsi");
-        assembler_.instruction(1, op::push, "rdx");
-        // open(name, 'O_RDWR')
-        assembler_.instruction(1, op::mov, "eax", syscall_open);
-
-        assembler_.instruction(
-            1, op::lea, "rdi",
-            assembler_x86_64::memory::of_symbol("baz_sd_card_name"));
-
-        assembler_.instruction(1, op::mov, "esi", read_write);
-        assembler_.instruction(1, op::syscall);
-        // a negative result is '-errno', the open failed
-        assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, handler_label);
-        // keep the descriptor for later transfers
-        assembler_.instruction(1, op::mov, descriptor, "rax");
-        assembler_.comment(1, "the size of the file in sectors");
-        // lseek(descriptor, 0, 'SEEK_END') returns the file size in bytes
-        assembler_.instruction(1, op::mov, "rdi", "rax");
-        assembler_.instruction(1, op::xor_op, "esi", "esi");
-        assembler_.instruction(1, op::mov, "edx", seek_end);
-        assembler_.instruction(1, op::mov, "eax", syscall_lseek);
-        assembler_.instruction(1, op::syscall);
-        // a negative result is '-errno', the seek failed
-        assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, handler_label);
-        // bytes to whole sectors, a partial last sector is not counted
-        assembler_.instruction(1, op::sar, "rax", sector_shift);
-        assembler_.instruction(1, op::mov, sector_count, "rax");
-        // restore the arguments in reverse order of the pushes
-        assembler_.instruction(1, op::pop, "rdx");
-        assembler_.instruction(1, op::pop, "rsi");
-        assembler_.instruction(1, op::pop, "rdi");
-        // here the file is open and only the system call is on the stack
-        assembler_.label(0, "baz_sector_opened");
-        assembler_.comment(1, "the sector is an unsigned 32 bit number");
-        // zero extending 'edi' differs from 'rdi' when the upper half is set
-        assembler_.instruction(1, op::mov, "eax", "edi");
-        assembler_.instruction(1, op::cmp, "rax", "rdi");
-        assembler_.jcc(1, condition::ne, handler_label);
-        // a sector at or past the end of the file panics
-        assembler_.instruction(1, op::cmp, "rdi", sector_count);
-        assembler_.jcc(1, condition::ae, handler_label);
-        // the byte offset, the fourth system call argument, goes in 'r10'
-        assembler_.instruction(1, op::mov, "r10", "rdi");
-        assembler_.instruction(1, op::shl, "r10", sector_shift);
-        // the descriptor replaces the sector as the first argument
-        assembler_.instruction(1, op::mov, "rdi", descriptor);
-        // the saved system call number, which also balances the stack
-        assembler_.instruction(1, op::pop, "rax");
-        // pread64 or pwrite64(descriptor, address 'rsi', size 'rdx', offset)
-        assembler_.instruction(1, op::syscall);
-        // anything but the full size, an error or a short transfer, panics
-        assembler_.instruction(1, op::cmp, "rax", "rdx");
-        assembler_.jcc(1, condition::ne, handler_label);
-        assembler_.instruction(1, op::ret);
-
-        // the stack is not unwound because the program exits
-        assembler_.label(0, handler_label);
-        emit_panic_message("msg_sd_card");
-        emit_panic_exit();
-
-        // the panic message and its length symbol
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, "msg_sd_card");
-        assembler_.string_data("panic: sd card\\n");
-        assembler_.define_length("msg_sd_card_len", "msg_sd_card");
-        assembler_.comment(0, "the file name ends with a zero byte");
-        // the image file name passed to 'open'
-        assembler_.label(0, "baz_sd_card_name");
-
-        assembler_.string_data(token::encode_string(sd_card_file_name()));
-
-        // the terminator 'open' expects
-        assembler_.data(size_byte, zero_value);
-
-        // writable state, qword aligned for the 64 bit accesses
-        assembler_.switch_section(section::data);
-        assembler_.align(size_qword);
-        assembler_.label(0, "baz_sd_card_descriptor");
-        assembler_.data(size_qword, not_opened);
-        assembler_.label(0, "baz_sd_card_sectors");
-        assembler_.data(size_qword, zero_value);
-        // later code is emitted into '.text' again
-        assembler_.switch_section(section::text);
-    }
-
     // idiv takes the divisor as a qword register or memory operand, 'rax'
     // holds the dividend, 'rdx' is free until it is extended
     auto emit_signed_divide(const token& src_loc_tk, const size_t indent,
@@ -2147,7 +2023,7 @@ class machine_x86_64 final : public machine {
                             const size_t dividend_size_bytes) -> void {
 
         if (not divisor.is_immediate() and
-            divisor.type_ref().size_bytes() == size_qword) {
+            divisor.type_ref().size_bytes() == size_qword_) {
 
             if (check.enabled) {
                 check_divisor(src_loc_tk, indent, divisor, dividend_size_bytes,
@@ -2260,7 +2136,7 @@ class machine_x86_64 final : public machine {
 
         for (const operand* value : {&dst, &descriptor, &address, &count}) {
             assert(value->is_register() and
-                   value->type_ref().size_bytes() == size_qword);
+                   value->type_ref().size_bytes() == size_qword_);
         }
 
         assert(dst.base_register() == "rax");
@@ -2306,9 +2182,10 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
+    // the register it allocates is freed by the 'address_scope' of the
+    // caller
     [[nodiscard]] auto lower_address(const token& src_loc_tk,
-                                     const size_t indent, const operand& value,
-                                     std::vector<operand>& registers)
+                                     const size_t indent, const operand& value)
         -> operand {
 
         if (address_is_encodable(value)) {
@@ -2319,7 +2196,6 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
         };
 
-        registers.push_back(address);
         const std::string_view sum{address.base_register()};
         assembler_.instruction(indent, op::mov, sum, value.displacement());
 
@@ -2419,36 +2295,17 @@ class machine_x86_64 final : public machine {
     }
 
     auto pop(const size_t indent, const operand& dst) -> void {
-        assert(dst.is_register() and dst.type_ref().size_bytes() == size_qword);
+        assert(dst.is_register() and
+               dst.type_ref().size_bytes() == size_qword_);
 
         assembler_.instruction(indent, op::pop, to_argument(dst));
     }
 
-    // registers are released in reverse order of allocation
-    auto pop_allocation(const std::string_view reg) -> void {
-        registers_.pop(register_index(reg));
-    }
-
     auto push(const size_t indent, const operand& src) -> void {
-        assert(src.is_register() and src.type_ref().size_bytes() == size_qword);
+        assert(src.is_register() and
+               src.type_ref().size_bytes() == size_qword_);
 
         assembler_.instruction(indent, op::push, to_argument(src));
-    }
-
-    auto push_allocation(const token& src_loc_tk, const size_t indent,
-                         const std::string_view reg, const type& type_ref,
-                         const bool named) -> void {
-
-        registers_.push({
-            .index{register_index(reg)},
-            .src_loc_tk{src_loc_tk},
-            .indent{indent},
-            .type_ptr{&type_ref},
-            .named{named},
-            .frame{current_call_frame()},
-        });
-
-        record_register_use(registers_);
     }
 
     // e.g. the fixed registers of 'rep movsb' and syscalls
@@ -2464,48 +2321,6 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rcx");
         release_named_register(src_loc_tk, indent, "rdi");
         release_named_register(src_loc_tk, indent, "rsi");
-    }
-
-    auto release_named_register(const token& src_loc_tk, const size_t indent,
-                                const std::string_view reg) -> void {
-
-        comment(src_loc_tk, indent, "free named register {}", reg);
-
-        assert(registers_.top().named);
-
-        pop_allocation(reg);
-    }
-
-    auto release_variables_base() -> void {
-        assert(variables_base_reserved_);
-
-        release_named_register(token{}, 0, variables_base_register_);
-
-        variables_base_reserved_ = false;
-    }
-
-    auto reserve_named_register(const token& src_loc_tk, const size_t indent,
-                                const std::string_view reg,
-                                const type& type_ref) -> void {
-
-        comment(src_loc_tk, indent, "allocate named register {}", reg);
-
-        if (not registers_.is_unavailable(register_bit(reg))) {
-            push_allocation(src_loc_tk, indent, reg, type_ref, true);
-            return;
-        }
-
-        throw register_in_use_error(src_loc_tk, reg, register_index(reg),
-                                    registers_);
-    }
-
-    auto reserve_variables_base() -> void {
-        assert(not variables_base_reserved_);
-
-        reserve_named_register(token{}, 0, variables_base_register_,
-                               default_type());
-
-        variables_base_reserved_ = true;
     }
 
     auto scale_by_element_size_bytes(const token& src_loc_tk,
@@ -2588,7 +2403,7 @@ class machine_x86_64 final : public machine {
         if (dst.is_memory()) {
             setcc(src_loc_tk, indent,
                   condition_for_comparison(comparison, inverted),
-                  sized_memory(dst, size_byte));
+                  sized_memory(dst, size_byte_));
 
             return;
         }
@@ -2603,11 +2418,11 @@ class machine_x86_64 final : public machine {
         const condition cc{inverted ? condition::ne : condition::e};
 
         if (dst.is_register()) {
-            setcc(src_loc_tk, indent, cc, sized_register(dst, size_byte));
+            setcc(src_loc_tk, indent, cc, sized_register(dst, size_byte_));
             return;
         }
 
-        setcc(src_loc_tk, indent, cc, sized_memory(dst, size_byte));
+        setcc(src_loc_tk, indent, cc, sized_memory(dst, size_byte_));
     }
 
     auto store_immediate_part(const token& src_loc_tk, const size_t indent,
@@ -2632,15 +2447,14 @@ class machine_x86_64 final : public machine {
 
     // a negative value is out of bounds, an empty operand has none to test
     auto test_sign(const token& src_loc_tk, const size_t indent,
-                   const operand& value,
-                   const std::optional<size_t> reported_line) -> void {
+                   const operand& value, const bool with_line) -> void {
 
         if (value.is_empty()) {
             return;
         }
 
         test(src_loc_tk, indent, value, value);
-        branch_to_bounds_panic(indent, condition::s, reported_line);
+        branch_to_bounds_panic(src_loc_tk, indent, condition::s, with_line);
     }
 
     auto with_lowered_addresses(
@@ -2654,32 +2468,13 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        const uint32_t saved_unavailable{registers_.unavailable_mask()};
-
         // registers the operands refer to must not be picked for lowering
-        for (const operand* value : {&dst, &src}) {
-            if (value->is_register() or value->is_memory()) {
-                registers_.protect(register_bit(value->base_register()));
-            }
+        const address_scope scope{*this, dst, src};
 
-            if (value->is_memory()) {
-                registers_.protect(register_bit(value->index_register()));
-            }
-        }
-
-        std::vector<operand> registers;
-
-        const operand lowered_dst{
-            lower_address(src_loc_tk, indent, dst, registers),
-        };
-
-        const operand lowered_src{
-            lower_address(src_loc_tk, indent, src, registers),
-        };
+        const operand lowered_dst{lower_address(src_loc_tk, indent, dst)};
+        const operand lowered_src{lower_address(src_loc_tk, indent, src)};
 
         emit(lowered_dst, lowered_src);
-        free_scratch_registers(src_loc_tk, indent, registers);
-        registers_.restore_unavailable(saved_unavailable);
     }
 
     // 'emit' changes the registers 'clobbered', the allocated ones are pushed
@@ -2776,12 +2571,12 @@ class machine_x86_64 final : public machine {
         std::vector<op> compares;
         size_t remaining_bytes{size_bytes};
 
-        if (size_bytes / size_qword > threshold_for_repe_cmpsq_count) {
+        if (size_bytes / size_qword_ > threshold_for_repe_cmpsq_count_) {
             compares.push_back(op::repe_cmpsq);
-            remaining_bytes %= size_qword;
+            remaining_bytes %= size_qword_;
         }
 
-        for_each_part(remaining_bytes, size_qword,
+        for_each_part(remaining_bytes, size_qword_,
                       [&](const size_t part_size_bytes,
                           [[maybe_unused]] const size_t offset) -> void {
                           compares.push_back(string_compare(part_size_bytes));
@@ -2797,7 +2592,7 @@ class machine_x86_64 final : public machine {
                                                        const operand& src)
         -> bool {
 
-        if (dst.type_ref().size_bytes() != size_qword) {
+        if (dst.type_ref().size_bytes() != size_qword_) {
             return false;
         }
 
@@ -2825,58 +2620,25 @@ class machine_x86_64 final : public machine {
         return allow_end ? condition::g : condition::ge;
     }
 
-    // bit in the mask of 'registers_' for any size alias of a register, 0 for
-    // other text such as labels
-    [[nodiscard]] static auto register_bit(const std::string_view name)
-        -> uint16_t {
-
-        if (register_size_bytes(name) == 0) {
-            return 0;
-        }
-
-        const std::string qword{sized_register_name(name, size_qword)};
-
-        for (const auto [index, names] :
-             std::views::enumerate(register_names_)) {
-
-            if (names.qword == qword) {
-                return static_cast<uint16_t>(1U << static_cast<size_t>(index));
-            }
-        }
-
-        std::unreachable();
-    }
-
-    // the index in 'register_names_' of a register of any size
-    [[nodiscard]] static auto register_index(const std::string_view name)
-        -> size_t {
-
-        const uint16_t bit{register_bit(name)};
-
-        assert(bit != 0);
-
-        return static_cast<size_t>(std::countr_zero(bit));
-    }
-
     // returns 0 if name is not a register
     [[nodiscard]] static auto register_size_bytes(const std::string_view name)
         -> size_t {
 
         for (const register_names& names : register_names_) {
             if (name == names.qword) {
-                return size_qword;
+                return size_qword_;
             }
 
             if (name == names.dword) {
-                return size_dword;
+                return size_dword_;
             }
 
             if (name == names.word) {
-                return size_word;
+                return size_word_;
             }
 
             if (name == names.byte) {
-                return size_byte;
+                return size_byte_;
             }
         }
 
@@ -2945,16 +2707,16 @@ class machine_x86_64 final : public machine {
             }
 
             switch (size_bytes) {
-            case size_qword:
+            case size_qword_:
                 return std::string{names.qword};
 
-            case size_dword:
+            case size_dword_:
                 return std::string{names.dword};
 
-            case size_word:
+            case size_word_:
                 return std::string{names.word};
 
-            case size_byte:
+            case size_byte_:
                 return std::string{names.byte};
 
             default:
@@ -2968,16 +2730,16 @@ class machine_x86_64 final : public machine {
 
     [[nodiscard]] static auto string_compare(const size_t size_bytes) -> op {
         switch (size_bytes) {
-        case size_qword:
+        case size_qword_:
             return op::cmpsq;
 
-        case size_dword:
+        case size_dword_:
             return op::cmpsd;
 
-        case size_word:
+        case size_word_:
             return op::cmpsw;
 
-        case size_byte:
+        case size_byte_:
             return op::cmpsb;
 
         default:

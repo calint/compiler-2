@@ -429,13 +429,7 @@ class stmt_identifier final : public statement {
     auto path_source_to(std::ostream& os) const -> void {
         assert(not elems_.empty());
 
-        elems_.front().source_to(os);
-        for (const auto [d, e] :
-             std::views::zip(elem_delims_tk_, elems_ | std::views::drop(1))) {
-
-            d.source_to(os);
-            e.source_to(os);
-        }
+        source_delimited_to(os, elems_, elem_delims_tk_);
     }
 
     // the path as written, with indexes but without unary operators
@@ -1108,11 +1102,7 @@ class stmt_identifier final : public statement {
                                                  const ident_info& info)
         -> size_t {
 
-        if (not info.is_array()) {
-            return info.type_ref().size_bytes();
-        }
-
         return multiply_storage_size(src_loc_tk, info.type_ref().size_bytes(),
-                                     info.array_len());
+                                     info.element_count());
     }
 };

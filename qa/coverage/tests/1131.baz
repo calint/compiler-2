@@ -1,0 +1,21 @@
+# a 'dat' after a function: the parse places the variables of the body before
+# it, the compile pass places the dats first
+
+dat text = "ab"
+
+func twice(n) res {
+    var doubled = n * 2
+    res = doubled
+}
+
+type printer { silenced bool }
+
+dat out = printer{true}
+
+func main() {
+    if not out.silenced {
+        exit(1)
+    }
+    var b = int(text[1])
+    exit(twice(b) - 196 + 3)
+}

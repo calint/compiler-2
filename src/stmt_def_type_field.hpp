@@ -38,17 +38,8 @@ class stmt_def_type_field final : public statement {
             return;
         }
 
-        array_count_const_ = {tc, tz, 0};
-
-        if (not array_count_const_.has_value() or
-            array_count_const_.value() < 1) {
-
-            throw compile_error{
-                array_count_const_.tok(),
-                "expected a constant array size greater than 0"};
-        }
-
-        array_count_ = static_cast<size_t>(array_count_const_.value());
+        array_count_const_ = {tc, tz};
+        array_count_ = array_count_const_.array_size();
 
         close_bracket_tk_ =
             tz.expect_char_token(']', "expected ']' after array size");

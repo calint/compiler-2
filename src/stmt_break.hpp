@@ -31,7 +31,7 @@ class stmt_break final : public statement {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         const std::string_view loop_label{
-            tc.scopes().looping_label_or_throw(tok()),
+            tc.scopes().innermost_loop_or_throw(tok()).label,
         };
 
         x.branch(indent, toc::end_label(loop_label));

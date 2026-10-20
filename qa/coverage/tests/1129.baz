@@ -1,0 +1,12 @@
+# a 'mut' parameter takes a variable, also when the callee is 'noinline',
+# which would otherwise write a temporary
+
+func noinline bump(x mut) {
+    x = x + 1
+}
+
+func main() {
+    var a = 1
+    bump(a + 1)
+    exit(a)
+}

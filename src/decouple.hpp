@@ -1,6 +1,7 @@
 #pragma once
 
-// the declarations that break include cycles, defined in 'decouple_impl.hpp':
+// the declarations that break include cycles, defined in 'decouple_impl.hpp'
+// and 'expr_type_impl.hpp':
 //   - the statement factories create every statement class, and the
 //     statement headers that need them ('stmt_block', 'expr_arith') are
 //     included by those classes

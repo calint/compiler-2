@@ -2,16 +2,13 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <format>
 #include <functional>
 #include <optional>
 #include <ostream>
-#include <string_view>
 #include <vector>
 
-#include "compile_error.hpp"
+#include "bulk_operands.hpp"
 #include "expr_any.hpp"
-#include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
@@ -21,47 +18,18 @@
 #include "unary_ops.hpp"
 
 class stmt_builtin_array_copy final : public statement {
-    token open_paren_tk_;
-    stmt_identifier src_;
-    token src_delim_tk_;
-    stmt_identifier dst_;
-    token dst_delim_tk_;
-    expr_any count_;
-    token close_paren_tk_;
+    bulk_operands operands_;
 
   public:
     stmt_builtin_array_copy(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, open_paren_tk_{tz.is_next_char_token('(')} {
-
-        if (open_paren_tk_.is_empty()) {
-            throw compile_error{tz,
-                                "expected '(', 'from', 'to', 'count', and ')'"};
-        }
+        : statement{src_loc_tk}, operands_{tc, tz, "destination"} {
 
         set_type(tc.builtins().void_type());
 
-        src_ = {tc, {}, tz.next_token(), tz};
+        const stmt_identifier& dst{operands_.second()};
 
-        src_.assert_array_or_element();
-
-        src_delim_tk_ = tz.expect_char_token(
-            ',', "expected ',' followed by 'to' and 'count'");
-
-        dst_ = {tc, {}, tz.next_token(), tz};
-
-        dst_.assert_array_or_element();
-
-        assert_not_read_only(dst_.tok(), "copy into", dst_.name_or_literal(),
-                             tc.make_ident_info(dst_));
-
-        dst_delim_tk_ =
-            tz.expect_char_token(',', "expected ',' followed by 'count'");
-
-        count_ = {tc, tz, tc.builtins().default_type(),
-                  literal_typing::from_destination};
-
-        close_paren_tk_ =
-            tz.expect_char_token(')', "expected ')' after the arguments");
+        assert_not_read_only(dst.tok(), "copy into", dst.name_or_literal(),
+                             tc.make_ident_info(dst));
     }
 
     stmt_builtin_array_copy() = default;
@@ -72,13 +40,7 @@ class stmt_builtin_array_copy final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        open_paren_tk_.source_to(os);
-        src_.source_to(os);
-        src_delim_tk_.source_to(os);
-        dst_.source_to(os);
-        dst_delim_tk_.source_to(os);
-        count_.source_to(os);
-        close_paren_tk_.source_to(os);
+        operands_.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent,
@@ -89,24 +51,13 @@ class stmt_builtin_array_copy final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info array_src_info{tc.make_ident_info(src_)};
-        const ident_info array_dst_info{tc.make_ident_info(dst_)};
+        const bulk_operands::arrays_info arrays{operands_.resolve_arrays(tc)};
 
-        if (not array_src_info.type_ref().is_same(array_dst_info.type_ref())) {
-            throw compile_error{
-                dst_.tok(),
-                std::format("source type '{}' does not match destination "
-                            "type '{}'",
-                            array_src_info.type_ref().name(),
-                            array_dst_info.type_ref().name())};
-        }
+        operands_.assert_constant_count_in_bounds(tc);
 
-        const std::optional<int64_t> count{count_.constant_value(tc)};
-
-        if (count) {
-            src_.assert_count_in_bounds(tc, count_.tok(), *count);
-            dst_.assert_count_in_bounds(tc, count_.tok(), *count);
-        }
+        const std::optional<int64_t> count{
+            operands_.count().constant_value(tc),
+        };
 
         // nothing is copied, so a start at the end of the array, which only a
         // range may have, is not addressed
@@ -116,28 +67,30 @@ class stmt_builtin_array_copy final : public statement {
 
         // the overlap check compares the addresses of the loop at run time
         if (count and not tc.checks().overlap) {
-            compile_constant_count(tc, indent, array_src_info, array_dst_info,
+            compile_constant_count(tc, indent, arrays,
                                    static_cast<size_t>(*count));
 
             return;
         }
 
         const std::function<void(const operand&)> emit_count{
-            make_count_emitter(tc, indent, count_),
+            operands_.count_emitter(tc, indent),
         };
 
         const machine::address_emitter emit_src{
-            src_.address_emitter_of(tc, indent, tok(), array_src_info),
+            operands_.first().address_emitter_of(tc, indent, tok(),
+                                                 arrays.first),
         };
 
         const machine::address_emitter emit_dst{
-            dst_.address_emitter_of(tc, indent, tok(), array_dst_info),
+            operands_.second().address_emitter_of(tc, indent, tok(),
+                                                  arrays.second),
         };
 
-        x.copy_elements(tok(), indent, array_src_info.type_ref().size_bytes(),
+        x.copy_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
                         emit_count,
                         {
-                            .alignment{array_src_info.type_ref().alignment()},
+                            .alignment{arrays.first.type_ref().alignment()},
                             .src{emit_src},
                             .dst{emit_dst},
                             .overlap{tc.checks().overlap_options()},
@@ -148,18 +101,21 @@ class stmt_builtin_array_copy final : public statement {
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
-        src_.visit_reads(var, reader);
-        dst_.visit_index_reads(var, reader);
-        count_.visit_reads(var, reader);
+        operands_.first().visit_reads(var, reader);
+        operands_.second().visit_index_reads(var, reader);
+        operands_.count().visit_reads(var, reader);
     }
 
   private:
     // the size is known so the copy is unrolled when small and the width
     // follows the alignment of both addresses
     auto compile_constant_count(toc& tc, const size_t indent,
-                                const ident_info& array_src_info,
-                                const ident_info& array_dst_info,
+                                const bulk_operands::arrays_info& arrays,
                                 const size_t count) const -> void {
+
+        const stmt_identifier& src{operands_.first()};
+        const stmt_identifier& dst{operands_.second()};
+        const expr_any& count_expr{operands_.count()};
 
         machine& x{tc.machine()};
 
@@ -174,40 +130,41 @@ class stmt_builtin_array_copy final : public statement {
 
             allocated_scratch_registers.push_back(count_register);
 
-            x.comment(count_.tok(), indent, statement::trimmed_source(count_));
+            x.comment(count_expr.tok(), indent,
+                      statement::trimmed_source(count_expr));
 
-            count_.compile(tc, indent,
-                           destination::of_register(count_register));
+            count_expr.compile(tc, indent,
+                               destination::of_register(count_register));
         }
 
-        x.comment(src_.tok(), indent, statement::trimmed_source(src_));
+        x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
-            src_.compile_lea(tc, indent, src_.first_token(),
-                             allocated_scratch_registers,
-                             {
-                                 .reg_count{count_register},
-                                 .known{array_src_info.known()},
-                                 .address_register{},
-                             }),
+            src.compile_lea(tc, indent, src.first_token(),
+                            allocated_scratch_registers,
+                            {
+                                .reg_count{count_register},
+                                .known{arrays.first.known()},
+                                .address_register{},
+                            }),
         };
 
-        x.comment(dst_.tok(), indent, statement::trimmed_source(dst_));
+        x.comment(dst.tok(), indent, statement::trimmed_source(dst));
 
         const operand dst_operand{
-            dst_.compile_lea(tc, indent, dst_.first_token(),
-                             allocated_scratch_registers,
-                             {
-                                 .reg_count{count_register},
-                                 .known{array_dst_info.known()},
-                                 .address_register{},
-                             }),
+            dst.compile_lea(tc, indent, dst.first_token(),
+                            allocated_scratch_registers,
+                            {
+                                .reg_count{count_register},
+                                .known{arrays.second.known()},
+                                .address_register{},
+                            }),
         };
 
-        x.copy(tok(), indent, src_operand, dst_operand,
+        x.copy(tok(), indent, dst_operand, src_operand,
                multiply_storage_size(
-                   tok(), array_src_info.type_ref().size_bytes(), count),
-               array_src_info.type_ref().alignment());
+                   tok(), arrays.first.type_ref().size_bytes(), count),
+               arrays.first.type_ref().alignment());
 
         x.free_scratch_registers(tok(), indent, allocated_scratch_registers);
     }

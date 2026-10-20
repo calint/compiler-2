@@ -178,28 +178,28 @@ class assembler_rv32i final : public assembler {
         bool swapped{};
     };
 
-    static constexpr size_t op_count{std::to_underlying(op::ret) + 1};
+    static constexpr size_t op_count_{std::to_underlying(op::ret) + 1};
 
-    static constexpr uint32_t addi_encoding{0x00000013};
-    static constexpr uint32_t lui_encoding{0x00000037};
-    static constexpr uint32_t auipc_encoding{0x00000017};
-    static constexpr uint32_t jal_encoding{0x0000006f};
-    static constexpr uint32_t jalr_encoding{0x00000067};
+    static constexpr uint32_t addi_encoding_{0x00000013};
+    static constexpr uint32_t lui_encoding_{0x00000037};
+    static constexpr uint32_t auipc_encoding_{0x00000017};
+    static constexpr uint32_t jal_encoding_{0x0000006f};
+    static constexpr uint32_t jalr_encoding_{0x00000067};
 
-    static constexpr uint8_t zero_register{};
-    static constexpr uint8_t return_address_register{1};
+    static constexpr uint8_t zero_register_{};
+    static constexpr uint8_t return_address_register_{1};
 
-    static constexpr int64_t immediate_min{-2048};
-    static constexpr int64_t immediate_max{2047};
-    static constexpr int64_t shift_max{31};
-    static constexpr int64_t upper_max{0xfffff};
-    static constexpr uint32_t upper_mask{0xfffff};
-    static constexpr uint32_t low_mask{0xfff};
-    static constexpr int64_t branch_min{-4096};
-    static constexpr int64_t branch_max{4094};
-    static constexpr int64_t jal_min{-1048576};
-    static constexpr int64_t jal_max{1048574};
-    static constexpr int64_t address_space_bytes{0x100000000};
+    static constexpr int64_t immediate_min_{-2048};
+    static constexpr int64_t immediate_max_{2047};
+    static constexpr int64_t shift_max_{31};
+    static constexpr int64_t upper_max_{0xfffff};
+    static constexpr uint32_t upper_mask_{0xfffff};
+    static constexpr uint32_t low_mask_{0xfff};
+    static constexpr int64_t branch_min_{-4096};
+    static constexpr int64_t branch_max_{4094};
+    static constexpr int64_t jal_min_{-1048576};
+    static constexpr int64_t jal_max_{1048574};
+    static constexpr int64_t address_space_bytes_{0x100000000};
 
     struct instruction {
         op code{};
@@ -246,7 +246,7 @@ class assembler_rv32i final : public assembler {
     using record = std::variant<instruction, jump_registers, data_values,
                                 alignment, section_start, constant>;
 
-    static constexpr size_t section_count{4};
+    static constexpr size_t section_count_{4};
 
     struct line_position {
         section which{};
@@ -255,9 +255,9 @@ class assembler_rv32i final : public assembler {
 
     struct image_layout {
         std::vector<line_position> positions;
-        std::array<size_t, section_count> sizes{};
-        std::array<size_t, section_count> alignments{};
-        std::array<size_t, section_count> bases{};
+        std::array<size_t, section_count_> sizes{};
+        std::array<size_t, section_count_> alignments{};
+        std::array<size_t, section_count_> bases{};
     };
 
     struct symbol_table {
@@ -455,7 +455,7 @@ class assembler_rv32i final : public assembler {
                             .code{code},
                             .rd{},
                             .rs1{number_of(rs)},
-                            .rs2{zero_register},
+                            .rs2{zero_register_},
                             .value{},
                             .target{std::string{target}},
                         },
@@ -989,8 +989,8 @@ class assembler_rv32i final : public assembler {
         const uint32_t bits{static_cast<uint32_t>(value)};
         const int32_t number{std::bit_cast<int32_t>(bits)};
 
-        if ((number >= immediate_min and number <= immediate_max) or
-            (bits & low_mask) == 0) {
+        if ((number >= immediate_min_ and number <= immediate_max_) or
+            (bits & low_mask_) == 0) {
 
             return one_instruction_bytes;
         }
@@ -1016,10 +1016,10 @@ class assembler_rv32i final : public assembler {
         constexpr int32_t low_range{4096};
 
         const int32_t low{
-            static_cast<int32_t>(static_cast<uint32_t>(value) & low_mask),
+            static_cast<int32_t>(static_cast<uint32_t>(value) & low_mask_),
         };
 
-        if (low > immediate_max) {
+        if (low > immediate_max_) {
             return low - low_range;
         }
 
@@ -1045,7 +1045,7 @@ class assembler_rv32i final : public assembler {
         constexpr unsigned low_bits{12};
 
         return ((static_cast<uint32_t>(value) + rounding) >> low_bits) &
-               upper_mask;
+               upper_mask_;
     }
 
   private:
@@ -1405,11 +1405,11 @@ class assembler_rv32i final : public assembler {
         const jump_reach form{reach(l)};
 
         if (form == jump_reach::branch) {
-            return distance >= branch_min and distance <= branch_max;
+            return distance >= branch_min_ and distance <= branch_max_;
         }
 
         if (form == jump_reach::jal) {
-            return distance >= jal_min and distance <= jal_max;
+            return distance >= jal_min_ and distance <= jal_max_;
         }
 
         // the assembler reports distances beyond the 2 GiB of 'auipc' and
@@ -1678,7 +1678,7 @@ class assembler_rv32i final : public assembler {
                                             const uint8_t rs2,
                                             const int64_t offset) -> uint32_t {
 
-        assert(fits(offset, branch_min, branch_max) and offset % 2 == 0);
+        assert(fits(offset, branch_min_, branch_max_) and offset % 2 == 0);
 
         const uint32_t bits{static_cast<uint32_t>(offset)};
         const uint32_t imm_12{((bits >> 12U) & 1U) << 31U};
@@ -1687,7 +1687,7 @@ class assembler_rv32i final : public assembler {
         const uint32_t imm_11{((bits >> 11U) & 1U) << 7U};
 
         return encoding | imm_12 | imm_10_5 | imm_4_1 | imm_11 |
-               register_fields(zero_register, rs1, rs2);
+               register_fields(zero_register_, rs1, rs2);
     }
 
     [[nodiscard]] static auto
@@ -1695,10 +1695,10 @@ class assembler_rv32i final : public assembler {
                      const uint8_t rs1, const int64_t value) -> uint32_t {
 
         const uint32_t imm_11_0{
-            (static_cast<uint32_t>(value) & low_mask) << 20U,
+            (static_cast<uint32_t>(value) & low_mask_) << 20U,
         };
 
-        return encoding | imm_11_0 | register_fields(rd, rs1, zero_register);
+        return encoding | imm_11_0 | register_fields(rd, rs1, zero_register_);
     }
 
     [[nodiscard]] static auto
@@ -1742,16 +1742,16 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::load_address) {
-            return pc_relative(addi_encoding, ins.rd, ins.rd, value - address);
+            return pc_relative(addi_encoding_, ins.rd, ins.rd, value - address);
         }
 
         if (operands == form::move) {
-            return {encode_immediate(addi_encoding, ins.rd, ins.rs1, 0)};
+            return {encode_immediate(addi_encoding_, ins.rd, ins.rs1, 0)};
         }
 
         if (operands == form::jump_register) {
             return {
-                encode_immediate(details.encoding, zero_register, ins.rs1, 0),
+                encode_immediate(details.encoding, zero_register_, ins.rs1, 0),
             };
         }
 
@@ -1761,11 +1761,11 @@ class assembler_rv32i final : public assembler {
         };
 
         if (operands == form::jump) {
-            return {encode_jal(zero_register, distance)};
+            return {encode_jal(zero_register_, distance)};
         }
 
         if (operands == form::call) {
-            return pc_relative(jalr_encoding, ins.rd, ins.rd, distance);
+            return pc_relative(jalr_encoding_, ins.rd, ins.rd, distance);
         }
 
         return {branch_word(ins.code, ins.rs1, ins.rs2, distance)};
@@ -1774,7 +1774,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto encode_jal(const uint8_t rd, const int64_t offset)
         -> uint32_t {
 
-        assert(fits(offset, jal_min, jal_max) and offset % 2 == 0);
+        assert(fits(offset, jal_min_, jal_max_) and offset % 2 == 0);
 
         const uint32_t bits{static_cast<uint32_t>(offset)};
         const uint32_t imm_20{((bits >> 20U) & 1U) << 31U};
@@ -1782,8 +1782,8 @@ class assembler_rv32i final : public assembler {
         const uint32_t imm_11{((bits >> 11U) & 1U) << 20U};
         const uint32_t imm_19_12{((bits >> 12U) & 0xffU) << 12U};
 
-        return jal_encoding | imm_20 | imm_10_1 | imm_11 | imm_19_12 |
-               register_fields(rd, zero_register, zero_register);
+        return jal_encoding_ | imm_20 | imm_10_1 | imm_11 | imm_19_12 |
+               register_fields(rd, zero_register_, zero_register_);
     }
 
     [[nodiscard]] static auto encode_store(const uint32_t encoding,
@@ -1796,17 +1796,17 @@ class assembler_rv32i final : public assembler {
         const uint32_t imm_4_0{(bits & 0x1fU) << 7U};
 
         return encoding | imm_11_5 | imm_4_0 |
-               register_fields(zero_register, base, src);
+               register_fields(zero_register_, base, src);
     }
 
     [[nodiscard]] static auto encode_upper(const uint32_t encoding,
                                            const uint8_t rd,
                                            const uint32_t upper) -> uint32_t {
 
-        const uint32_t imm_31_12{(upper & upper_mask) << 12U};
+        const uint32_t imm_31_12{(upper & upper_mask_) << 12U};
 
         return encoding | imm_31_12 |
-               register_fields(rd, zero_register, zero_register);
+               register_fields(rd, zero_register_, zero_register_);
     }
 
     // sizes under '.option norvc' and '.option norelax', matching the text
@@ -1830,7 +1830,7 @@ class assembler_rv32i final : public assembler {
     }
 
     [[nodiscard]] static auto find_op(const std::string_view mnemonic) -> op {
-        for (size_t index{}; index < op_count; ++index) {
+        for (size_t index{}; index < op_count_; ++index) {
             const op code{static_cast<op>(index)};
 
             if (info(code).mnemonic == mnemonic) {
@@ -1860,11 +1860,11 @@ class assembler_rv32i final : public assembler {
                 return value.symbol_part == immediate::part::low;
             }
 
-            return fits(value.number, immediate_min, immediate_max);
+            return fits(value.number, immediate_min_, immediate_max_);
         }
 
         if (operands == form::shift) {
-            return not symbolic and fits(value.number, 0, shift_max);
+            return not symbolic and fits(value.number, 0, shift_max_);
         }
 
         if (operands == form::upper) {
@@ -1872,12 +1872,12 @@ class assembler_rv32i final : public assembler {
                 return value.symbol_part == immediate::part::high;
             }
 
-            return fits(value.number, 0, upper_max);
+            return fits(value.number, 0, upper_max_);
         }
 
         if (operands == form::load or operands == form::store) {
             return not symbolic and
-                   fits(value.number, immediate_min, immediate_max);
+                   fits(value.number, immediate_min_, immediate_max_);
         }
 
         if (operands == form::load_immediate) {
@@ -2008,7 +2008,7 @@ class assembler_rv32i final : public assembler {
             }),
         };
 
-        static_assert(infos.size() == op_count);
+        static_assert(infos.size() == op_count_);
 
         return infos.at(std::to_underlying(code));
     }
@@ -2065,7 +2065,7 @@ class assembler_rv32i final : public assembler {
         }
 
         // 'ra' is the implied link register
-        if (operands == form::call and ins.rd != return_address_register) {
+        if (operands == form::call and ins.rd != return_address_register_) {
             return std::format("{} {}, {}", mnemonic, names.rd, ins.target);
         }
 
@@ -2101,18 +2101,23 @@ class assembler_rv32i final : public assembler {
             std::bit_cast<int32_t>(static_cast<uint32_t>(value)),
         };
 
-        if (fits(number, immediate_min, immediate_max)) {
-            return {encode_immediate(addi_encoding, rd, zero_register, number)};
+        if (fits(number, immediate_min_, immediate_max_)) {
+            return {
+                encode_immediate(addi_encoding_, rd, zero_register_, number),
+            };
         }
 
-        const uint32_t upper{encode_upper(lui_encoding, rd, upper_part(value))};
+        const uint32_t upper{
+            encode_upper(lui_encoding_, rd, upper_part(value)),
+        };
+
         const int32_t lower{lower_part(value)};
 
         if (lower == 0) {
             return {upper};
         }
 
-        return {upper, encode_immediate(addi_encoding, rd, rd, lower)};
+        return {upper, encode_immediate(addi_encoding_, rd, rd, lower)};
     }
 
     [[nodiscard]] static auto long_jump(const jump_reach reach_form,
@@ -2121,11 +2126,11 @@ class assembler_rv32i final : public assembler {
         -> std::vector<uint32_t> {
 
         if (reach_form == jump_reach::far) {
-            return pc_relative(jalr_encoding, zero_register,
+            return pc_relative(jalr_encoding_, zero_register_,
                                number_of(jump.scratch), distance);
         }
 
-        return {encode_jal(zero_register, distance)};
+        return {encode_jal(zero_register_, distance)};
     }
 
     [[nodiscard]] static auto number_of(const std::string_view name)
@@ -2145,11 +2150,11 @@ class assembler_rv32i final : public assembler {
         -> std::vector<uint32_t> {
 
         // addresses are 32 bit, so the distance wraps around the address space
-        assert(distance > -address_space_bytes and
-               distance < address_space_bytes);
+        assert(distance > -address_space_bytes_ and
+               distance < address_space_bytes_);
 
         return {
-            encode_upper(auipc_encoding, base, upper_part(distance)),
+            encode_upper(auipc_encoding_, base, upper_part(distance)),
             encode_immediate(second_encoding, rd, base, lower_part(distance)),
         };
     }
@@ -2167,7 +2172,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto section_directive(const section which)
         -> std::string_view {
 
-        constexpr std::array<std::string_view, section_count> directives{
+        constexpr std::array<std::string_view, section_count_> directives{
             ".text",
             ".section .rodata",
             ".data",

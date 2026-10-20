@@ -23,6 +23,9 @@ func main() {
     
     # Nested function calls with mutations
     var c = 1
-    var d = mutate_and_return(mutate_and_return(c))
+    # a 'mut' parameter takes a variable, so the inner result is named
+    var e = mutate_and_return(c)
+    var d = mutate_and_return(e)
+    assert(e == 6)
     assert(d == 7)
 }

@@ -93,6 +93,10 @@ class expr_bool_op final : public statement {
 
         // without an operator the operand is the condition, e.g. 'if a {...}'
         if (not comparison) {
+            // note: the whitespace stays with what follows, so the operand
+            //       alone reproduces its source, see 'release_name_or_literal'
+            tz.put_back_token(ws_pre_op_);
+            ws_pre_op_ = {};
             is_shorthand_ = true;
             resolve_if_op_is_expression();
             return;
@@ -241,6 +245,13 @@ class expr_bool_op final : public statement {
 
         return constant_arith::eval_constant(*lhs_value, op_, *rhs_value) !=
                is_negated();
+    }
+
+    // takes the operand that 'arithmetic' points to
+    [[nodiscard]] auto release_arithmetic() -> expr_arith {
+        assert(arithmetic() != nullptr);
+
+        return std::move(lhs_);
     }
 
   private:
@@ -885,17 +896,8 @@ class expr_bool_op final : public statement {
                                             const expr_arith& side)
         -> std::optional<int64_t> {
 
-        if (side.is_expression()) {
-            return side.folded_constant(tc, side.get_type());
-        }
-
-        const ident_info info{tc.make_ident_info(side)};
-
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        return side.get_unary_ops().evaluate_constant(info.const_value());
+        return expr_arith::constant_value_of(
+            tc, side, side.get_type(), expr_arith::constant_wrap::as_written);
     }
 
     [[noreturn]] static auto
@@ -1128,6 +1130,30 @@ class expr_bool final : public statement {
         }
 
         return (not is_or) != invert;
+    }
+
+    // the operand when the whole expression is a name or a literal, e.g. 'x'
+    // but not '(x)' or 'not x', else none and the expression is unchanged
+    [[nodiscard]] auto release_name_or_literal() -> std::optional<expr_arith> {
+        if (bools_.size() != 1 or has_not()) {
+            return std::nullopt;
+        }
+
+        expr_bool_op* const op{std::get_if<expr_bool_op>(&bools_.front())};
+
+        if (op == nullptr) {
+            return std::nullopt;
+        }
+
+        const expr_arith* const operand{op->arithmetic()};
+
+        if (operand == nullptr or not operand->is_name_or_literal() or
+            operand->is_expression()) {
+
+            return std::nullopt;
+        }
+
+        return op->release_arithmetic();
     }
 
   private:

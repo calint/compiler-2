@@ -10,6 +10,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -23,8 +24,14 @@ struct type_field {
     const type* type_ptr{}; // element type
     size_t offset{};        // offset relative to instance address
     size_t size_bytes{};    // total size in bytes of all elements
-    size_t array_count{};   // array size in elements
-    bool is_array{};
+    size_t array_count{};   // array size in elements, 0 when not an array
+
+    // 1 for a field that is not an array
+    [[nodiscard]] auto element_count() const -> size_t {
+        return is_array() ? array_count : 1;
+    }
+
+    [[nodiscard]] auto is_array() const -> bool { return array_count != 0; }
 
     [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
 };
@@ -73,25 +80,26 @@ class type final {
     type() = default;
 
     // fields are placed at offsets aligned to their type and the size is
-    // rounded up so that array elements stay aligned
+    // rounded up so that array elements stay aligned; 'array_count' is 0 for
+    // a field that is not an array
     auto add_field(const token& src_loc_tk, const std::string_view name,
-                   const type& tp, const bool is_array,
-                   const size_t array_count) -> void {
+                   const type& tp, const size_t array_count) -> void {
 
-        const size_t total_size_bytes{
-            multiply_storage_size(src_loc_tk, tp.size_bytes_,
-                                  is_array ? array_count : 1),
+        type_field field{
+            .name{name},
+            .type_ptr{&tp},
+            .offset{align_storage_size(fields_end_bytes_, tp.alignment_)},
+            .size_bytes{},
+            .array_count{array_count},
         };
 
-        const size_t offset{
-            align_storage_size(fields_end_bytes_, tp.alignment_),
-        };
-
-        fields_.emplace_back(std::string{name}, &tp, offset, total_size_bytes,
-                             array_count, is_array);
+        field.size_bytes = multiply_storage_size(src_loc_tk, tp.size_bytes_,
+                                                 field.element_count());
 
         fields_end_bytes_ =
-            add_storage_size(src_loc_tk, offset, total_size_bytes);
+            add_storage_size(src_loc_tk, field.offset, field.size_bytes);
+
+        fields_.emplace_back(std::move(field));
 
         alignment_ = std::max(alignment_, tp.alignment_);
         size_bytes_ = align_storage_size(fields_end_bytes_, alignment_);
@@ -113,9 +121,7 @@ class type final {
                 f.type().data_ranges(),
             };
 
-            const size_t element_count{f.is_array ? f.array_count : 1};
-
-            for (size_t i{}; i < element_count; ++i) {
+            for (size_t i{}; i < f.element_count(); ++i) {
                 const size_t element_offset{
                     f.offset + (i * f.type().size_bytes_),
                 };

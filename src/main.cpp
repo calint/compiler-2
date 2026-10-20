@@ -23,7 +23,8 @@
 
 #include "assembler.hpp"
 #include "compile_error.hpp"
-#include "decouple_impl.hpp" // IWYU pragma: keep
+#include "decouple_impl.hpp"  // IWYU pragma: keep
+#include "expr_type_impl.hpp" // IWYU pragma: keep
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
 #include "machine_rv32i_fpga.hpp"

@@ -1,7 +1,4 @@
 
-0704.baz:6:5: cannot assign to constant 'x'
-    x = x + 1
-    ^
-0704.baz:10:5: called from
+0704.baz:10:10: constant 'c' cannot be passed to a 'mut' parameter
     bump(c)
-    ^~~~
+         ^

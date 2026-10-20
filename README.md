@@ -429,7 +429,7 @@ func main() {
 
     array_copy(arr[2], arr, 2)
     assert(arr[0] == 2)
-    # `array_copy` is a built-in function: copy from, to, number of elements
+    # `array_copy` is a built-in function: takes source, destination, count
 
     var arr1 = i32[8]
     array_copy(arr, arr1, 4)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -29,10 +30,11 @@
 // non-constant initializer is a 'var' that is read-only once initialized
 class stmt_def_var final : public statement {
     token name_tk_;
-    size_t array_count_{};
+    // none when not an array, 0 only while the initializer that gives the
+    // size is parsed
+    std::optional<size_t> array_count_;
     token equals_tk_;
     stmt_assign_var assign_var_;
-    bool is_array_{};
     bool is_let_{};
     // a 'let' of an expression that folds is a constant, e.g. 'let x = 2 * 3'
     expr_any constant_expr_;
@@ -51,6 +53,9 @@ class stmt_def_var final : public statement {
         equals_tk_ = parse_initializer_equals(tz, tk.text());
 
         deduce_declaration(tc, tz);
+
+        // note: both deductions reject an array whose size is not known
+        assert(array_count_ != 0);
 
         expr_any value{parse_initializer(tc, tz)};
 
@@ -75,10 +80,10 @@ class stmt_def_var final : public statement {
         };
 
         // the newly defined variable is not yet assigned in its initialization
-        assert_var_not_used(name_tk_.text(),
-                            assigned_bytes{multiply_storage_size(
-                                name_tk_, get_type().size_bytes(),
-                                is_array_ ? array_count_ : 1)});
+        assert_var_not_used(
+            name_tk_.text(),
+            assigned_bytes{multiply_storage_size(
+                name_tk_, get_type().size_bytes(), array_count_.value_or(1))});
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it
@@ -154,7 +159,6 @@ class stmt_def_var final : public statement {
                                             arith.name_or_literal())};
         }
 
-        is_array_ = true;
         array_count_ = info.array_len();
     }
 
@@ -173,7 +177,7 @@ class stmt_def_var final : public statement {
             return;
         }
 
-        is_array_ = true;
+        array_count_ = 0;
         set_type(is_string ? tc.builtins().i8() : array_element_type(tc, tz));
 
         // later statements read the size while parsing, e.g. 'var b = a'
@@ -249,7 +253,7 @@ class stmt_def_var final : public statement {
     [[nodiscard]] auto folded_let(const toc& tc, const expr_any& value) const
         -> std::optional<int64_t> {
 
-        if (not is_let_ or is_array_ or
+        if (not is_let_ or array_count_.has_value() or
             not get_type().is_same(tc.builtins().default_type())) {
 
             return std::nullopt;
@@ -263,8 +267,8 @@ class stmt_def_var final : public statement {
             .name{name_tk_.text()},
             .type_ptr{&get_type()},
             .src_loc_tk{name_tk_},
-            .is_array{is_array_},
-            .array_len{array_count_},
+            .is_array{array_count_.has_value()},
+            .array_len{array_count_.value_or(0)},
             .pointer_register{},
             .base_register{},
             .value_register{},
@@ -276,14 +280,10 @@ class stmt_def_var final : public statement {
     [[nodiscard]] auto parse_initializer(toc& tc, tokenizer& tz) const
         -> expr_any {
 
-        const std::optional<size_t> array_count{
-            is_array_ ? std::optional{array_count_} : std::nullopt,
-        };
-
         expr_any value;
 
         with_placeholder(tc, [&] -> void {
-            value = {tc, tz, get_type(), literal_typing::written, array_count};
+            value = {tc, tz, get_type(), literal_typing::written, array_count_};
         });
 
         return value;

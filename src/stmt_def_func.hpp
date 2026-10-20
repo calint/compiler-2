@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <memory>
 #include <optional>
@@ -273,6 +274,10 @@ class stmt_def_func final : public statement {
     // the definition parsed again with the parameters naming the arguments
     std::optional<func_instance> instance_;
 
+    // how the body reaches the result and the parameters: a parsed body only
+    // names them, a compiled noinline body has pointers to them in its frame
+    enum class var_access : uint8_t { direct, through_pointer };
+
   public:
     // a function of the user code, or an instance of a generic definition,
     // e.g. 'tokenizer.to<name>' or 'str.print', see 'func_instantiator'.
@@ -345,16 +350,15 @@ class stmt_def_func final : public statement {
     body_call_path(const std::span<const size_t> array_lengths) const
         -> std::string {
 
+        if (instance_) {
+            return name_with_lengths(array_lengths);
+        }
+
         if (array_lengths.empty()) {
-            return instance_ ? label_name(name()) : std::string{};
+            return {};
         }
 
-        if (not instance_) {
-            return array_lengths_path(array_lengths);
-        }
-
-        return std::format("{}.{}", label_name(name()),
-                           array_lengths_path(array_lengths));
+        return array_lengths_path(array_lengths);
     }
 
     // 'func' is a keyword so no user name or internal label starts with 'func.'
@@ -363,12 +367,7 @@ class stmt_def_func final : public statement {
     body_label(const std::span<const size_t> array_lengths = {}) const
         -> std::string {
 
-        if (array_lengths.empty()) {
-            return std::format("func.{}", label_name(name()));
-        }
-
-        return std::format("func.{}.{}", label_name(name()),
-                           array_lengths_path(array_lengths));
+        return std::format("func.{}", name_with_lengths(array_lengths));
     }
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
@@ -398,7 +397,8 @@ class stmt_def_func final : public statement {
 
         add_constants(tc, indent + 1);
 
-        add_signature_vars(tc, indent + 1, true, array_lengths, slot_register);
+        add_signature_vars(tc, indent + 1, var_access::through_pointer,
+                           array_lengths, slot_register);
 
         code_.compile(tc, indent, destination{});
         x.return_function(indent + 1);
@@ -510,17 +510,8 @@ class stmt_def_func final : public statement {
         // the implicit 'self' has no source and no delimiter after it
         const size_t first_param{is_method() ? size_t{1} : size_t{0}};
 
-        if (params_.size() > first_param) {
-            params_.at(first_param).source_to(os);
-            for (const auto [d, e] :
-                 std::views::zip(param_delims_tk_,
-                                 params_ | std::views::drop(first_param + 1))) {
-                // note: +1 because the first parameter is printed above
-
-                d.source_to(os);
-                e.source_to(os);
-            }
-        }
+        source_delimited_to(os, params_ | std::views::drop(first_param),
+                            param_delims_tk_);
 
         close_paren_tk_.source_to(os);
 
@@ -556,12 +547,15 @@ class stmt_def_func final : public statement {
     // empty where the body is only parsed. the parameter of the slot at
     // 'register_slot_index' is at 'address_register' instead of the frame,
     // when given
-    auto add_signature_vars(toc& tc, const size_t indent, const bool is_pointer,
+    auto add_signature_vars(toc& tc, const size_t indent,
+                            const var_access access,
                             const std::span<const size_t> array_lengths,
                             const operand& address_register) const -> void {
 
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
+
+        const bool is_pointer{access == var_access::through_pointer};
 
         size_t next_array_index{};
 
@@ -634,6 +628,19 @@ class stmt_def_func final : public statement {
                             "'mut' requires a method 'type.name'"};
     }
 
+    // e.g. 'sum.len.4.8' for array lengths 4 and 8, 'sum' without lengths
+    [[nodiscard]] auto
+    name_with_lengths(const std::span<const size_t> array_lengths) const
+        -> std::string {
+
+        if (array_lengths.empty()) {
+            return label_name(name());
+        }
+
+        return std::format("{}.{}", label_name(name()),
+                           array_lengths_path(array_lengths));
+    }
+
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
@@ -648,7 +655,7 @@ class stmt_def_func final : public statement {
         // note: 'parse_returns' only creates a return with a name
         assert(not returns_ or not returns_->ident_tk.text().empty());
 
-        add_signature_vars(tc, 0, false, {}, {});
+        add_signature_vars(tc, 0, var_access::direct, {}, {});
 
         code_ = {tc, tz, true};
 
@@ -895,7 +902,7 @@ class func_instantiator final {
             .start_tk{head.start_tk},
         };
 
-        tc.generics().add_method(method);
+        tc.add_generic_method(method);
 
         for (const generic_type_instance& instance :
              tc.generics().get_type_instances(head.name_tk.text())) {
@@ -921,7 +928,7 @@ class func_instantiator final {
 
         // the generic functions that no call instantiates are listed in the
         // usage report
-        tc.generics().mark_func_instantiated(generic_name);
+        tc.mark_generic_func_instantiated(generic_name);
 
         std::string name{
             generic_func_instance_name(generic_name, type_args),

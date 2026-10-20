@@ -21,57 +21,77 @@
 // sd card functions 'sector_read(sector, buf, start)' and
 // 'sector_write(sector, buf, start)' that transfer one sector
 class stmt_builtin_io final : public stmt_call {
+  public:
     // what tells the functions apart, a sector function takes a sector in
     // place of the descriptor and has no count and no result
     struct io_function {
         std::string_view name;
         machine::builtin_function function{};
+        size_t min_arg_count{};
+        size_t max_arg_count{};
         bool fills_buffer{};
         bool is_sector{};
+
+        [[nodiscard]] constexpr auto has_result() const -> bool {
+            return not is_sector;
+        }
     };
 
+  private:
     static constexpr std::array<io_function, 4> functions_{
         io_function{
             .name{"read"},
             .function{machine::builtin_function::read},
+            .min_arg_count{2},
+            .max_arg_count{4},
             .fills_buffer{true},
             .is_sector{false},
         },
         io_function{
             .name{"write"},
             .function{machine::builtin_function::write},
+            .min_arg_count{2},
+            .max_arg_count{4},
             .fills_buffer{false},
             .is_sector{false},
         },
         io_function{
             .name{"sector_read"},
             .function{machine::builtin_function::sector_read},
+            .min_arg_count{2},
+            .max_arg_count{3},
             .fills_buffer{true},
             .is_sector{true},
         },
         io_function{
             .name{"sector_write"},
             .function{machine::builtin_function::sector_write},
+            .min_arg_count{2},
+            .max_arg_count{3},
             .fills_buffer{false},
             .is_sector{true},
         },
     };
 
-  public:
-    stmt_builtin_io(toc& tc, unary_ops uops, const token tk, tokenizer& tz)
-        : stmt_call{tc, std::move(uops), tk, tz, nullptr} {
+    // the entry of 'functions_' that the call names
+    io_function io_;
 
-        if (is_sector_function()) {
-            assert_sector_function_call(tc);
+  public:
+    stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
+                    const token tk, tokenizer& tz)
+        : stmt_call{tc, std::move(uops), tk, tz, nullptr}, io_{io} {
+
+        if (io_.is_sector) {
+            assert_target_has_sd_card(tc);
             set_type(tc.builtins().void_type());
-        } else if (argument_count() < 2 or argument_count() > 4) {
-            throw compile_error{tok(), "expected 2 to 4 arguments"};
         }
+
+        assert_argument_count();
 
         // 'read' and 'sector_read' fill the buffer, the second argument
         const statement& buffer{argument(1)};
 
-        if (fills_buffer() and buffer.is_name_or_literal()) {
+        if (io_.fills_buffer and buffer.is_name_or_literal()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
             if (info.is_var()) {
@@ -134,7 +154,54 @@ class stmt_builtin_io final : public stmt_call {
         x.free_named_registers(tok(), indent, args);
     }
 
+    //
+    // statics
+    //
+
+    // the io function named 'name', null for any other name
+    [[nodiscard]] static auto find(const std::string_view name)
+        -> const io_function* {
+
+        // note: a user definition with the name of an io function is
+        //       rejected because the name is in the language-level list
+        constexpr auto is_reserved{
+            [](const std::string_view fn) -> bool {
+                return std::ranges::contains(reserved_names::builtin_functions,
+                                             fn);
+            },
+        };
+
+        static_assert(
+            std::ranges::all_of(functions_, is_reserved, &io_function::name));
+
+        for (const io_function& info : functions_) {
+            if (info.name == name) {
+                return &info;
+            }
+        }
+
+        return nullptr;
+    }
+
   private:
+    // e.g. "expected 2 to 4 arguments" or "expected 2 or 3 arguments"
+    auto assert_argument_count() const -> void {
+        const size_t min_count{io_.min_arg_count};
+        const size_t max_count{io_.max_arg_count};
+
+        if (argument_count() >= min_count and argument_count() <= max_count) {
+            return;
+        }
+
+        const std::string_view conjunction{
+            max_count == min_count + 1 ? "or" : "to",
+        };
+
+        throw compile_error{tok(),
+                            std::format("expected {} {} {} arguments",
+                                        min_count, conjunction, max_count)};
+    }
+
     // an address would bypass the bounds check, so only arrays are accepted
     auto assert_array_buffer(const toc& tc) const -> void {
         const statement& buffer{argument(1)};
@@ -194,21 +261,17 @@ class stmt_builtin_io final : public stmt_call {
         }
     }
 
-    // the target must have a card, the buffer is checked when it is compiled
-    auto assert_sector_function_call(toc& tc) const -> void {
+    // the buffer is checked when it is compiled
+    auto assert_target_has_sd_card(toc& tc) const -> void {
         const machine& x{tc.machine()};
 
         if (x.sector_size_bytes() == 0) {
             throw compile_error{tok(), "the target has no sd card"};
         }
-
-        if (argument_count() < 2 or argument_count() > 3) {
-            throw compile_error{tok(), "expected 2 or 3 arguments"};
-        }
     }
 
     [[nodiscard]] auto builtin_function() const -> machine::builtin_function {
-        return function_info().function;
+        return io_.function;
     }
 
     // the count and start are in elements, the byte count is computed last
@@ -381,21 +444,6 @@ class stmt_builtin_io final : public stmt_call {
         x.sector_write(tok(), indent, args.at(0), args.at(1), args.at(2));
     }
 
-    [[nodiscard]] auto fills_buffer() const -> bool {
-        return function_info().fills_buffer;
-    }
-
-    // the parser creates the statement only for the names of 'functions_'
-    [[nodiscard]] auto function_info() const -> const io_function& {
-        for (const io_function& info : functions_) {
-            if (tok().is_text(info.name)) {
-                return info;
-            }
-        }
-
-        std::unreachable();
-    }
-
     // 'read(fd, buf, count, start)': the count and the start are optional,
     // a sector function has no count
     [[nodiscard]] auto has_count() const -> bool {
@@ -403,11 +451,11 @@ class stmt_builtin_io final : public stmt_call {
     }
 
     [[nodiscard]] auto has_start() const -> bool {
-        return argument_count() == (is_sector_function() ? 3 : 4);
+        return argument_count() == io_.max_arg_count;
     }
 
     [[nodiscard]] auto is_sector_function() const -> bool {
-        return function_info().is_sector;
+        return io_.is_sector;
     }
 
     // the call with all its arguments
@@ -418,4 +466,8 @@ class stmt_builtin_io final : public stmt_call {
 
         return std::format("{}(fd, buf, count, start)", tok().text());
     }
+
+    //
+    // statics
+    //
 };

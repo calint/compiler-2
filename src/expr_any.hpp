@@ -608,7 +608,7 @@ class expr_any final : public statement {
         }
 
         // e.g. the '4' of 'i8[4]', none for 'i8[]'
-        literal_count_const_ = {tc, tz, 0};
+        literal_count_const_ = {tc, tz};
 
         close_bracket_tk_ =
             tz.expect_char_token(']', "expected ']' after array size");
@@ -626,13 +626,7 @@ class expr_any final : public statement {
             return;
         }
 
-        if (literal_count_const_.value() <= 0) {
-            throw compile_error{
-                literal_count_const_.tok(),
-                "expected a constant array size greater than 0"};
-        }
-
-        const size_t count{static_cast<size_t>(literal_count_const_.value())};
+        const size_t count{literal_count_const_.array_size()};
 
         // note: only a declaration names the array type, its size is the one
         //       of this literal
@@ -679,25 +673,6 @@ class expr_any final : public statement {
         value.compile(tc, indent, dst);
     }
 
-    [[nodiscard]] static auto constant_arith_value(const toc& tc,
-                                                   const expr_arith& arith,
-                                                   const type& width_type)
-        -> std::optional<int64_t> {
-
-        // e.g. 'array_length(a)'
-        if (arith.is_expression()) {
-            return arith.folded_constant(tc, width_type);
-        }
-
-        const ident_info info{tc.make_ident_info(arith)};
-
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        return arith.get_unary_ops().evaluate_constant(info.const_value());
-    }
-
     // 'bool' and instance elements are not packed
     [[nodiscard]] static auto constant_element_value(const toc& tc,
                                                      const expr_variant& e,
@@ -711,7 +686,8 @@ class expr_any final : public statement {
         }
 
         const std::optional<int64_t> value{
-            constant_arith_value(tc, *arith, width_type),
+            expr_arith::constant_value_of(
+                tc, *arith, width_type, expr_arith::constant_wrap::as_written),
         };
 
         // the fold keeps the low bits of an operand that does not fit, which
@@ -774,6 +750,14 @@ class expr_any final : public statement {
         expr_bool value{tc, tz.next_whitespace_token(), tz};
 
         value.assert_boolean_operands();
+
+        // a name is read and passed where it is stored like a name of another
+        // type, e.g. the 'x' of 'f(x)' that a 'mut bool' parameter writes
+        if (std::optional<expr_arith> operand{value.release_name_or_literal()};
+            operand) {
+
+            return std::move(*operand);
+        }
 
         return value;
     }

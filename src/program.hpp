@@ -458,23 +458,14 @@ class program final {
         const size_t alignment{x.data_alignment()};
         x.begin_data(alignment);
 
-        // zero padding places each dat at the offset 'toc::add_var' gave it
-        size_t dat_offset{};
-        for (const stmt_def_dat* s : tc_.data().dats()) {
-            const size_t padding_bytes{
-                align_storage_size(dat_offset, s->get_type().alignment()) -
-                    dat_offset,
-            };
-
-            if (padding_bytes != 0) {
-                x.comment({}, 0, "padding {} B", padding_bytes);
-                x.emit_zero_data(padding_bytes);
+        // the zero padding places each dat at the offset the data table gave it
+        for (const placed_dat& dat : tc_.data().dats()) {
+            if (dat.padding_bytes != 0) {
+                x.comment({}, 0, "padding {} B", dat.padding_bytes);
+                x.emit_zero_data(dat.padding_bytes);
             }
 
-            s->compile_data(tc_);
-
-            dat_offset = add_storage_size(s->tok(), dat_offset + padding_bytes,
-                                          s->size_bytes());
+            dat.def->compile_data(tc_);
         }
 
         x.reserve_variables(alignment, tc_.storage().vars_capacity_bytes());

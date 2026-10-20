@@ -1,6 +1,69 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: review round 2026-10-20, five independent reviews of 'src/': the
+    design findings, ranked by what a reviewer notices first; each step on
+    its own with byte-identical output unless it says otherwise
+    1. backends: 'machine' owns the register pool, the reservation of the
+       variables and frame bases, scratch allocation, freeing with the
+       named/scratch asserts of x86_64 and the protect scope (x86_64
+       'with_lowered_addresses', rv32i 'address_scope'); the backends give
+       the register names and the scratch order; then the sector
+       read/write dispatch and flags, and one failure handler routine per
+       backend for frame overflow (rv32i copies 'emit_named_failure_handler',
+       x86_64 copies 'emit_line_panic_handler') and 'failure_label' for the
+       bounds panic of x86_64
+    2. 'array_copy' and 'arrays_equal': one class for the two arrays and
+       the count (parse, 'source_to', 'visit_reads', type and count checks,
+       emitters), the built-ins keep what differs
+    3. 'stmt_builtin_io': one table of the io built-ins with their argument
+       limits, used by the parser in 'decouple_impl.hpp' instead of three
+       name lists
+    4. derived flags: 'element_count()' for 'is_array ? array_count : 1'
+       (six places), drop 'stmt_def_var::is_array_' and
+       'type_field::is_array', 'stmt_const' without the always-0
+       'default_value' and with one array-size check, 'expr_arith::enclosed_'
+       from its paren token
+    5. one constant-value helper for 'element_constant', 'side_constant'
+       and 'constant_arith_value', with the width as a parameter
+    6. 'stmt_call': one 'is_passed_by_value' for the four copies of the
+       test, one 'source_delimited_to' for the four first-then-zip printers,
+       one argument loop in both 'compile' fast paths
+    7. 'dat' layout: each offset recorded once in 'data_table' and read by
+       'program::emit_data_section' and 'storage_layout', which splits into
+       'allocate_dat' and 'allocate_var'; one name for the dat/var padding
+    8. 'toc': changes through 'toc' methods, no non-const 'generics()' and
+       'types()'
+    9. 'machine::copy(dst, src, ...)' like every other operation
+    10. run-time checks: one 'runtime_check' shape, no bare 'bool enabled'
+        defaults on virtual functions
+    11. private static constants with the trailing '_' (all sources)
+    12. 'decouple_impl.hpp' keeps the factories, the 'expr_type' members
+        move to 'expr_type_impl.hpp' (a move only)
+    => decision a (2026-10-20, do it): a constant passed to a 'mut'
+       parameter is rejected inline, accepted 'noinline' and as an
+       expression ('f(a + 1)'); an argument of a 'mut' parameter is
+       writable storage, everything else is rejected at the call on both
+       paths; also a read-only 'bool' passed to a 'mut bool' parameter is
+       accepted because 'expr_bool' is never 'is_name_or_literal' (see the
+       'todo:' on 'call_site::is_copied_value')
+    => decision b: its own item below
+    => left out: a second 'dat' initializer parser (big), 'expr_any' and
+       'stmt_def_var' modes, '{}' not folded (an optimization), the reason
+       of rv32i 'leaf_stack_bytes{64}' (the comment adds up to 48)
+    => done (2026-10-20): steps 1 to 12, each with byte-identical output
+       except where noted; 'bulk_operands.hpp' and 'expr_type_impl.hpp' are
+       new; the 'array_copy'/'arrays_equal' parse hints name 'source' and
+       'destination' (0182, 0211, 0212); the 'dat' placement assert holds in
+       the compile pass only (1131, a 'dat' after a function, found by
+       roome)
+    => decision a done: a 'mut' parameter takes a variable, a constant or a
+       computed value is rejected at the call inline and 'noinline' (0704,
+       1129; 0017, 0018, 0114, 0115 name the value first); a 'bool' that is
+       a name is parsed as its operand, 'expr_bool::release_name_or_literal',
+       so a 'mut bool' parameter writes the caller's variable, it wrote a
+       copy (1130); 45 programs shorter, 101 x86_64 and 7 rv32i
+       instructions fewer
 [x] medium: review round 2026-10-20, defects and messages
     => done (2026-10-20):
        1. every keyword of the README is reserved for every name and the
