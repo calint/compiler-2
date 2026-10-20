@@ -64,8 +64,7 @@ class stmt_builtin_convert final : public expression {
         }
     }
 
-    // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is
-    // 'false'
+    // e.g. 'i8' in 'var x = i8' is 'i8(0)'
     stmt_builtin_convert(const toc& tc, const token tk)
         : expression{tk, {}}, folded_{tk.is_text("bool") ? "false" : "0"} {
 
@@ -124,7 +123,21 @@ class stmt_builtin_convert final : public expression {
                 arg_.get_type().size_bytes() == get_type().size_bytes(),
         };
 
-        if (arg_.keeps_low_bits_when_narrowed() or is_same_width) {
+        // computed in the destination, the argument is at its width
+        const bool is_narrowed{
+            dst.type_ref().size_bytes() < arg_.get_type().size_bytes(),
+        };
+
+        const bool keeps_low_bits{
+            is_narrowed ? arg_.keeps_low_bits_when_narrowed()
+                        : arg_.keeps_low_bits_when_widened(),
+        };
+
+        // a shift count is checked against the width the shift is computed
+        // at, which a narrower destination would lower
+        const bool narrows_checked_shift{tc.checks().shift and is_narrowed};
+
+        if ((keeps_low_bits or is_same_width) and not narrows_checked_shift) {
 
             // a narrower argument wraps at the width of the destination, a
             // register of the argument's width would wrap earlier
@@ -137,7 +150,7 @@ class stmt_builtin_convert final : public expression {
 
             // a load/store machine operates on the memory destination with a
             // load and a store each time, a wide register needs one store
-            x.emit_most_efficient(
+            tc.emit_most_efficient(
                 tok(), indent,
                 [&] -> void { compile_in_destination(tc, indent, dst); },
                 [&] -> void { compile_wide(tc, indent, dst); });
@@ -155,6 +168,18 @@ class stmt_builtin_convert final : public expression {
                              const type& dst_type) const -> void override {
 
         assert_own_type_not_narrowed(dst_type);
+    }
+
+    // a narrower width stays unfolded, 'assert_not_narrowed' rejects it
+    [[nodiscard]] auto folded_constant(const toc& tc,
+                                       const type& width_type) const
+        -> std::optional<int64_t> override {
+
+        if (width_type.size_bytes() < get_type().size_bytes()) {
+            return std::nullopt;
+        }
+
+        return constant_value(tc);
     }
 
     // the unary ops are part of 'folded_'
@@ -179,6 +204,10 @@ class stmt_builtin_convert final : public expression {
 
     // the builtin computes its own width before the destination narrows it
     [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
+        return true;
+    }
+
+    [[nodiscard]] auto keeps_low_bits_when_widened() const -> bool override {
         return true;
     }
 

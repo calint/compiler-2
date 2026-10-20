@@ -1,0 +1,8 @@
+# a global constant named like a 'dat' is rejected
+
+dat x = 4
+let x = 3
+
+func main() {
+    exit(x)
+}

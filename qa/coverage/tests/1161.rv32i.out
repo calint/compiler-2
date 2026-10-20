@@ -1,0 +1,4 @@
+
+1161.baz:3:14: shift count must be 0 to 31 for 32-bit values
+dat a = 1 << 64
+             ^~

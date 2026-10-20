@@ -1,0 +1,4 @@
+
+1173.baz:4:10: expected a generic type after '='
+type str =
+         ^

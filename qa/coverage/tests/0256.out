@@ -1,4 +1,4 @@
 
-0256.baz:4:27: expected ',' followed by a value for field 'y' in type 'p'
-func main() { dat x = p{1 2} }
-                          ^
+0256.baz:4:13: expected ',' followed by a value for field 'y' in type 'p'
+dat x = p{1 2}
+            ^

@@ -11,6 +11,7 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
+// e.g. 'loop { x = x + 1 if x == 9 break }'
 class stmt_loop final : public statement {
     stmt_block code_;
 
@@ -20,7 +21,6 @@ class stmt_loop final : public statement {
 
         set_type(tc.builtins().void_type());
 
-        // e.g. 'loop { x = x + 1 if x == 9 break }'
         const std::string label{tc.create_unique_label(tok(), "loop")};
         tc.enter_loop(label);
         code_ = {tc, tz};
@@ -38,7 +38,8 @@ class stmt_loop final : public statement {
         code_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
+    auto compile(toc& tc, const size_t indent,
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -48,7 +49,7 @@ class stmt_loop final : public statement {
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(indent, label);
         tc.enter_loop(label);
-        code_.compile(tc, indent, dst);
+        code_.compile(tc, indent, destination{});
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
         tc.exit_loop(label);

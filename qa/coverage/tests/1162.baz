@@ -1,0 +1,7 @@
+# a 'dat' shifted by a negative constant count is rejected like a 'var'
+
+dat a = 1 << -1
+
+func main() {
+    exit(0)
+}

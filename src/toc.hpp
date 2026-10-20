@@ -1,9 +1,7 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <cassert>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -15,8 +13,6 @@
 #include <span>
 #include <string>
 #include <string_view>
-#include <system_error>
-#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -46,7 +42,8 @@
 //                   address
 //   tables          'type_table', 'function_table', 'data_table'
 //   options         'check_options', 'usage_statistics'
-//   'scope_stack'   the frames from the globals to the innermost scope
+//   'scope_stack'   the frames from the globals to the innermost scope and
+//                   'lookup', the one rule of what a name means
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_types' the types the front end needs by role
 //   'ident_resolver' resolves a name by walking the frames, following aliases
@@ -58,7 +55,6 @@
 //                   'tc.scopes().is_alias(name)'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
-//   'make_count_emitter' compiles the count of a bulk operation
 //
 
 class stmt_def_dat;
@@ -239,8 +235,9 @@ struct const_info {
     int64_t value;
 };
 
-// what a variable is declared by: 'var' or 'dat'
-enum class var_kind : uint8_t { var, dat };
+// what a variable is declared by: 'var', 'dat' or the signature of a function,
+// a parameter or the result
+enum class var_kind : uint8_t { var, dat, param };
 
 // one scope; the static functions make each kind, e.g. 'frame::block()'
 class frame final {
@@ -287,7 +284,7 @@ class frame final {
     }
 
     auto add_var(const var_info& var, const size_t allocated_size_bytes,
-                 const var_kind kind = var_kind::var) -> void {
+                 const var_kind kind) -> void {
 
         allocated_stack_size_bytes_ =
             sum_storage_size(allocated_stack_size_bytes_, allocated_size_bytes);
@@ -735,13 +732,16 @@ class type_table final {
 };
 
 // the functions of the program: the built-in ones, the defined ones and the
-// instances of generic ones, and the bodies of noinline functions to compile
+// instances of generic ones, the bodies of noinline functions to compile and
+// the definitions a compile reached
 class function_table final {
     lut<func_info> funcs_;
     std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
     std::vector<noinline_body> noinline_bodies_;
     std::set<std::string> checked_calls_;
+    // the definitions whose body a compile reached
+    std::set<const stmt_def_func*> reached_;
 
   public:
     // the name has been checked, a built-in function has no definition
@@ -790,7 +790,10 @@ class function_table final {
         });
     }
 
-    auto clear_noinline_bodies() -> void { noinline_bodies_.clear(); }
+    auto clear_compile_records() -> void {
+        noinline_bodies_.clear();
+        reached_.clear();
+    }
 
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
         return defs_;
@@ -810,6 +813,14 @@ class function_table final {
     // declared without a definition, e.g. 'exit'
     [[nodiscard]] auto is_builtin(const std::string_view name) const -> bool {
         return get(name).def == nullptr;
+    }
+
+    [[nodiscard]] auto is_reached(const stmt_def_func& func) const -> bool {
+        return reached_.contains(&func);
+    }
+
+    auto mark_reached(const stmt_def_func& func) -> void {
+        reached_.insert(&func);
     }
 
     // a copy, the list grows while the bodies compile
@@ -1006,6 +1017,32 @@ struct loop_target {
     bool is_foo{};
 };
 
+// what a name means where it is used, see 'scope_stack::lookup'
+struct name_meaning {
+    enum class kind : uint8_t { none, variable, alias, constant };
+
+    kind what{kind::none};
+    // the frame that declares the name
+    size_t frame_index{};
+
+    [[nodiscard]] auto is_alias() const -> bool { return what == kind::alias; }
+
+    [[nodiscard]] auto is_constant() const -> bool {
+        return what == kind::constant;
+    }
+
+    // a name that has a value hides a type or a function of that name
+    [[nodiscard]] auto is_value() const -> bool { return what != kind::none; }
+
+    [[nodiscard]] auto is_var_or_alias() const -> bool {
+        return is_variable() or is_alias();
+    }
+
+    [[nodiscard]] auto is_variable() const -> bool {
+        return what == kind::variable;
+    }
+};
+
 // the frames of the scopes being compiled, from the root frame that holds the
 // globals to the innermost one
 class scope_stack final {
@@ -1040,15 +1077,17 @@ class scope_stack final {
         return storage->bound.root;
     }
 
-    // the value of the constant 'name', which is declared
+    // the value of 'name' when it means a constant
     [[nodiscard]] auto const_value(const std::string_view name) const
-        -> int64_t {
+        -> std::optional<int64_t> {
 
-        const const_info* const c{find_const(name)};
+        const name_meaning meaning{lookup(name)};
 
-        assert(c != nullptr);
+        if (not meaning.is_constant()) {
+            return std::nullopt;
+        }
 
-        return c->value;
+        return frames_.at(meaning.frame_index).get_const(name).value;
     }
 
     // blocks and loops belong to the function frame below them
@@ -1101,53 +1140,20 @@ class scope_stack final {
         track_depth();
     }
 
-    // constants of the current function, then the global ones, not those of
-    // the calling functions; a variable or a parameter declared in a frame
-    // nearer hides the constant
-    [[nodiscard]] auto find_const(const std::string_view name) const
-        -> const const_info* {
-
-        for (const frame& f : frames_ | std::views::reverse) {
-            if (f.has_var(name)) {
-                return nullptr;
-            }
-
-            if (f.has_const(name)) {
-                return &f.get_const(name);
-            }
-
-            if (f.is_func()) {
-                if (f.has_alias(name)) {
-                    return nullptr;
-                }
-
-                break;
-            }
-        }
-
-        if (frames_.front().has_const(name)) {
-            return &frames_.front().get_const(name);
-        }
-
-        return nullptr;
-    }
-
     // the array that variable 'name' is an element of, empty when it is not the
     // element of a 'foo'
     [[nodiscard]] auto foo_array(const std::string_view name) const
         -> foo_array_info {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.has_var(name)) {
-                return frm.get_var_const_ref(name).foo_array;
-            }
+        const name_meaning meaning{lookup(name)};
 
-            if (frm.is_func()) {
-                break;
-            }
+        if (not meaning.is_variable()) {
+            return {};
         }
 
-        return {};
+        return frames_.at(meaning.frame_index)
+            .get_var_const_ref(name)
+            .foo_array;
     }
 
     [[nodiscard]] auto frames() -> std::vector<frame>& { return frames_; }
@@ -1166,19 +1172,20 @@ class scope_stack final {
         -> bool {
 
         std::string_view id_base{ident_info::root_of(path)};
+        size_t end{frames_.size()};
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.has_var(id_base)) {
-                return frm.get_var_const_ref(id_base).is_pointer;
-            }
+        while (true) {
+            const name_meaning meaning{lookup_below(id_base, end)};
 
-            // aliases are declared at the root frame of a function
-            if (not frm.is_func()) {
-                continue;
-            }
-
-            if (not frm.has_alias(id_base)) {
+            // note: a constant has no address
+            if (not meaning.is_var_or_alias()) {
                 return false;
+            }
+
+            const frame& frm{frames_.at(meaning.frame_index)};
+
+            if (meaning.is_variable()) {
+                return frm.get_var_const_ref(id_base).is_pointer;
             }
 
             const bound_storage* const storage{
@@ -1194,16 +1201,10 @@ class scope_stack final {
                 return true;
             }
 
+            // the argument is named in the frames of the caller
             id_base = ident_info::root_of(storage->path);
+            end = meaning.frame_index;
         }
-
-        // a constant is declared by no frame, e.g. in the initializer of a
-        // global variable
-        return false;
-    }
-
-    [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
-        return find_const(name) != nullptr;
     }
 
     // how many times the inlined function 'name' is being compiled in place
@@ -1264,22 +1265,69 @@ class scope_stack final {
             frames_, [](const frame& frm) -> bool { return frm.is_func(); });
     }
 
-    // same scoping as the identifier resolution, e.g. a variable 'limits'
-    // hides the type 'limits'
-    [[nodiscard]] auto is_var_or_alias(const std::string_view name) const
-        -> bool {
+    // what 'name' means in the innermost scope
+    [[nodiscard]] auto lookup(const std::string_view name) const
+        -> name_meaning {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
+        return lookup_below(name, frames_.size());
+    }
+
+    // what 'name' means to the frames below the index 'end', the one rule of
+    // what a name means: the frames of the innermost function from the
+    // innermost out, then the root frame. a frame declares a variable or a
+    // constant of a name, not both; in a function frame a parameter hides a
+    // constant of the generic instance, which is the context of the definition
+    [[nodiscard]] auto lookup_below(const std::string_view name,
+                                    const size_t end) const -> name_meaning {
+
+        for (const size_t index :
+             std::views::iota(size_t{}, end) | std::views::reverse) {
+
+            const frame& frm{frames_.at(index)};
+
             if (frm.has_var(name)) {
-                return true;
+                return {
+                    .what{name_meaning::kind::variable},
+                    .frame_index{index},
+                };
+            }
+
+            if (frm.is_func() and frm.has_alias(name)) {
+                return {
+                    .what{name_meaning::kind::alias},
+                    .frame_index{index},
+                };
+            }
+
+            if (frm.has_const(name)) {
+                return {
+                    .what{name_meaning::kind::constant},
+                    .frame_index{index},
+                };
             }
 
             if (frm.is_func()) {
-                return frm.has_alias(name) or frames_.front().has_var(name);
+                break;
             }
         }
 
-        return false;
+        const frame& root{frames_.front()};
+
+        if (root.has_var(name)) {
+            return {
+                .what{name_meaning::kind::variable},
+                .frame_index{},
+            };
+        }
+
+        if (root.has_const(name)) {
+            return {
+                .what{name_meaning::kind::constant},
+                .frame_index{},
+            };
+        }
+
+        return {};
     }
 
     [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
@@ -1317,49 +1365,19 @@ class scope_stack final {
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
-    // the index of the frame that declares the variable 'name' as the
-    // innermost function sees it, its own frames then the globals, empty when
-    // it is not declared
-    [[nodiscard]] auto var_frame_index(const std::string_view name) const
-        -> std::optional<size_t> {
-
-        for (const size_t index :
-             std::views::iota(size_t{}, frames_.size()) | std::views::reverse) {
-
-            if (frames_.at(index).has_var(name)) {
-                return index;
-            }
-
-            if (frames_.at(index).is_func()) {
-                break;
-            }
-        }
-
-        if (frames_.front().has_var(name)) {
-            return 0;
-        }
-
-        return std::nullopt;
-    }
-
   private:
-    // the alias 'name' of the innermost function, null when a variable of
-    // that function or of a block inside it hides it or there is none
+    // the alias 'name' of the innermost function, null when 'name' means
+    // something else
     [[nodiscard]] auto find_alias(const std::string_view name) const
         -> const alias_info* {
 
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.has_var(name)) {
-                return nullptr;
-            }
+        const name_meaning meaning{lookup(name)};
 
-            if (frm.is_func()) {
-                return frm.has_alias(name) ? &frm.get_alias(name) : nullptr;
-            }
+        if (not meaning.is_alias()) {
+            return nullptr;
         }
 
-        // statements are compiled inside a function
-        std::unreachable();
+        return &frames_.at(meaning.frame_index).get_alias(name);
     }
 
     auto track_depth() -> void {
@@ -1377,7 +1395,7 @@ class storage_layout final {
         size_t base_offset;
     };
 
-    std::reference_wrapper<::machine> machine_;
+    std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<scope_stack> scopes_;
     std::reference_wrapper<const data_table> data_;
     size_t vars_size_bytes_{};
@@ -1400,7 +1418,7 @@ class storage_layout final {
         size_t peak_storage_size_bytes;
     };
 
-    storage_layout(::machine& backend, scope_stack& scopes,
+    storage_layout(const ::machine& backend, scope_stack& scopes,
                    const data_table& data, const size_t vars_capacity_bytes)
         : machine_{backend}, scopes_{scopes}, data_{data},
           vars_capacity_bytes_{vars_capacity_bytes} {}
@@ -1771,8 +1789,9 @@ class builtin_types final {
     }
 };
 
-// resolves a name to a variable, a register or a constant by walking the
-// frames from the innermost outwards and following aliases
+// resolves a name to a variable, a register or a constant by
+// 'scope_stack::lookup_below', an alias is followed into the frames of the
+// caller
 class ident_resolver final {
     std::reference_wrapper<const scope_stack> scopes_;
     std::reference_wrapper<const ::machine> machine_;
@@ -1840,12 +1859,14 @@ class ident_resolver final {
     }
 
   private:
-    [[nodiscard]] auto resolve_constant_or_empty(const token& src_loc_tk,
-                                                 const std::string_view ident,
-                                                 const ident_path& id) const
+    // a number, 'true' or 'false', else empty: the caller reports an unknown
+    // name with its own wording
+    [[nodiscard]] auto resolve_literal_or_empty(const token& src_loc_tk,
+                                                const std::string_view ident,
+                                                const ident_path& id) const
         -> ident_info {
 
-        // a number, e.g. '0x10'
+        // e.g. '0x10'
         if (const std::optional<int64_t> value{
                 constant_parser::parse_constant(src_loc_tk, id.str()),
             };
@@ -1865,98 +1886,65 @@ class ident_resolver final {
                                           builtins_.get().boolean(), 0);
         }
 
-        // a 'let' constant
-        const const_info* const named{scopes_.get().find_const(id.str())};
-
-        if (named != nullptr) {
-            return ident_info::make_const(
-                ident, id.str(), builtins_.get().default_type(), named->value);
-        }
-
-        // the caller reports an unknown name with its own wording
         return ident_info::make_empty();
     }
 
-    // what 'cur_frame' resolves the identifier to, nothing when the walk goes
-    // on to the frame outside it
-    [[nodiscard]] auto
-    resolve_in(const frame& cur_frame, const token& src_loc_tk,
-               const std::string_view ident, walk& step) const
-        -> std::optional<ident_info> {
-
-        if (cur_frame.has_var(step.id.base())) {
-            return resolve_var_in(cur_frame, src_loc_tk, ident, step);
-        }
-
-        // a constant hides what the frames outside declare
-        if (cur_frame.has_const(step.id.str())) {
-            return ident_info::make_const(
-                ident, step.id.str(), builtins_.get().default_type(),
-                cur_frame.get_const(step.id.str()).value);
-        }
-
-        // from the root frame of a function aliases are followed to the
-        // actual variable referred to
-        if (not cur_frame.is_func()) {
-            return std::nullopt;
-        }
-
-        // an alias names something of the caller, so the walk continues in
-        // the frames outside
-        if (cur_frame.has_alias(step.id.base())) {
-            return follow_alias(cur_frame.get_alias(step.id.base()), ident,
-                                step);
-        }
-
-        // neither: a global, a constant or empty
-        return resolve_var_in(cur_frame, src_loc_tk, ident, step);
-    }
-
-    [[nodiscard]] auto
-    resolve_in_frame(const frame& frm, const token& src_loc_tk,
-                     const std::string_view ident, const ident_path& id,
-                     const std::optional<known_address>& known) const
-        -> ident_info {
-
-        // a local hides a global of the same name
-        if (frm.has_var(id.base())) {
-            return resolve_var(src_loc_tk, ident, id,
-                               frm.get_var_const_ref(id.base()), known);
-        }
-
-        if (scopes_.get().front().has_var(id.base())) {
-            return resolve_var(
-                src_loc_tk, ident, id,
-                scopes_.get().front().get_var_const_ref(id.base()), known);
-        }
-
-        // a constant is found after the variables, a variable may hide it
-        return resolve_constant_or_empty(src_loc_tk, ident, id);
-    }
-
+    // the root name of the identifier is looked up in the frames below 'end',
+    // an alias rewrites the identifier and the lookup goes on in the frames of
+    // the caller
     [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
                                         const std::string_view ident) const
         -> ident_info {
 
         assert(not ident.empty());
 
-        // the innermost frame that knows the root name decides, e.g. 'lnks' of
-        // 'lnks[1].pos.y'
+        // e.g. 'lnks' of 'lnks[1].pos.y'
         walk step{ident_path{std::string{ident}}};
+        size_t end{scopes_.get().frames().size()};
 
-        for (const frame& cur_frame :
-             scopes_.get().frames() | std::views::reverse) {
+        while (true) {
+            const name_meaning meaning{
+                scopes_.get().lookup_below(step.id.base(), end),
+            };
+
+            if (not meaning.is_value()) {
+                return resolve_literal_or_empty(src_loc_tk, ident, step.id);
+            }
+
+            const frame& frm{scopes_.get().frames().at(meaning.frame_index)};
+
+            if (meaning.is_variable()) {
+                ident_info info{
+                    resolve_var(src_loc_tk, ident, step.id,
+                                frm.get_var_const_ref(step.id.base()),
+                                step.known),
+                };
+
+                return ident_builder::as_element_if(step.is_element,
+                                                    std::move(info));
+            }
+
+            // note: a constant has no fields and no elements
+            if (meaning.is_constant()) {
+                if (step.id.path().size() != 1) {
+                    return ident_info::make_empty();
+                }
+
+                return ident_info::make_const(
+                    ident, step.id.str(), builtins_.get().default_type(),
+                    frm.get_const(step.id.base()).value);
+            }
 
             if (std::optional<ident_info> found{
-                    resolve_in(cur_frame, src_loc_tk, ident, step),
+                    follow_alias(frm.get_alias(step.id.base()), ident, step),
                 };
                 found) {
 
                 return *std::move(found);
             }
-        }
 
-        return resolve_constant_or_empty(src_loc_tk, ident, step.id);
+            end = meaning.frame_index;
+        }
     }
 
     [[nodiscard]] auto
@@ -1983,18 +1971,6 @@ class ident_resolver final {
         ident_builder::place_operand_from_lea(src_loc_tk, info);
 
         return info;
-    }
-
-    [[nodiscard]] auto resolve_var_in(const frame& cur_frame,
-                                      const token& src_loc_tk,
-                                      const std::string_view ident,
-                                      walk& step) const -> ident_info {
-
-        ident_info info{
-            resolve_in_frame(cur_frame, src_loc_tk, ident, step.id, step.known),
-        };
-
-        return ident_builder::as_element_if(step.is_element, std::move(info));
     }
 
     //
@@ -2069,21 +2045,6 @@ class definition_checks final {
         : scopes_{scopes}, funcs_{funcs}, types_{types}, generics_{generics},
           locations_{locations} {}
 
-    auto assert_const_not_defined(const token& src_loc_tk,
-                                  const std::string_view name) const -> void {
-
-        if (not scopes_.get().back().has_const(name)) {
-            return;
-        }
-
-        const const_info& c{scopes_.get().back().get_const(name)};
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("constant '{}' already defined in this block at {}",
-                        name, where(c.src_loc_tk))};
-    }
-
     // 'generic_method' is the generic method that the function is an instance
     // of, empty if it is not
     auto assert_function_not_defined(
@@ -2120,6 +2081,26 @@ class definition_checks final {
                         name, name, where(types_.get().src_loc_tk_of(name)))};
     }
 
+    // a frame declares a variable or a constant of a name, not both
+    auto assert_name_free(const token& src_loc_tk,
+                          const std::string_view name) const -> void {
+
+        assert_not_declared_in_scope(src_loc_tk, name);
+
+        if (not scopes_.get().back().has_const(name)) {
+            return;
+        }
+
+        const const_info& c{scopes_.get().back().get_const(name)};
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("constant '{}' already defined in this block at {}",
+                        name, where(c.src_loc_tk))};
+    }
+
+    // note: a parameter may hide a constant of the generic instance in the
+    //       same function frame
     auto assert_not_declared_in_scope(const token& src_loc_tk,
                                       const std::string_view name) const
         -> void {
@@ -2258,8 +2239,7 @@ class variable_comments final {
         x.comment_variable(
             src_loc_tk, indent, text,
             multiply_storage_size(src_loc_tk, name_info.type_ref().size_bytes(),
-                                  name_info.is_array() ? name_info.array_len()
-                                                       : 1),
+                                  name_info.element_count()),
             name_info.operand());
     }
 };
@@ -2313,6 +2293,29 @@ class toc final {
             tc_.storage_.end_dry_run(kept_storage_);
             tc_.scopes_.set_max_depth(kept_max_frame_count_);
             tc_.data_.resize_constants(kept_string_constant_count_);
+        }
+    };
+
+    // a version of code that fails leaves the frames it entered, so the other
+    // version is compiled in the frames of the caller, see
+    // 'emit_most_efficient'
+    class frame_depth_scope final {
+        toc& tc_;
+        size_t depth_;
+
+      public:
+        explicit frame_depth_scope(toc& tc)
+            : tc_{tc}, depth_{tc.scopes_.frames().size()} {}
+
+        frame_depth_scope(const frame_depth_scope&) = delete;
+        frame_depth_scope(frame_depth_scope&&) = delete;
+        auto operator=(const frame_depth_scope&) -> frame_depth_scope& = delete;
+        auto operator=(frame_depth_scope&&) -> frame_depth_scope& = delete;
+
+        ~frame_depth_scope() {
+            while (tc_.scopes_.frames().size() > depth_) {
+                tc_.storage_.pop_scope();
+            }
         }
     };
 
@@ -2375,7 +2378,7 @@ class toc final {
     auto add_const(const token& src_loc_tk, const size_t indent,
                    const std::string_view name, const int64_t value) -> void {
 
-        definitions_.assert_const_not_defined(src_loc_tk, name);
+        definitions_.assert_name_free(src_loc_tk, name);
 
         if (is_compiling_) {
             ::machine& x{machine()};
@@ -2396,12 +2399,10 @@ class toc final {
                  const var_info& var) -> void {
 
         // note: a name declared twice is reported before where it is declared
-        definitions_.assert_not_declared_in_scope(var.src_loc_tk, var.name);
+        definitions_.assert_name_free(var.src_loc_tk, var.name);
 
-        if (scopes_.frames().size() != 1) {
-            throw compile_error{dat_tk,
-                                "'dat' can only be declared in global scope"};
-        }
+        // note: a 'dat' in a block is rejected when it is parsed
+        assert(scopes_.frames().size() == 1);
 
         if (scopes_.front().has_non_dat_var_been_added()) {
             throw compile_error{dat_tk,
@@ -2506,7 +2507,11 @@ class toc final {
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  const var_kind kind) -> void {
 
-        definitions_.assert_not_declared_in_scope(src_loc_tk, var.name);
+        if (kind == var_kind::param) {
+            definitions_.assert_not_declared_in_scope(src_loc_tk, var.name);
+        } else {
+            definitions_.assert_name_free(src_loc_tk, var.name);
+        }
 
         // the value lives in its register for the whole scope
         const bool is_value_register{not var.value_register.is_empty()};
@@ -2578,11 +2583,7 @@ class toc final {
             return value;
         }
 
-        if (scopes_.has_const(tk.text())) {
-            return scopes_.const_value(tk.text());
-        }
-
-        return std::nullopt;
+        return scopes_.const_value(tk.text());
     }
 
     // the label of the start of a comparison or of a list of comparisons
@@ -2605,6 +2606,26 @@ class toc final {
     }
 
     [[nodiscard]] auto data() const -> const data_table& { return data_; }
+
+    // 'machine::emit_most_efficient' of versions that compile statements
+    auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
+                             const std::function_ref<void()> emit_first,
+                             const std::function_ref<void()> emit_second)
+        -> void {
+
+        ::machine& x{machine()};
+
+        x.emit_most_efficient(
+            src_loc_tk, indent,
+            [&] -> void {
+                const frame_depth_scope frames{*this};
+                emit_first();
+            },
+            [&] -> void {
+                const frame_depth_scope frames{*this};
+                emit_second();
+            });
+    }
 
     auto enter_block() -> void { scopes_.enter_block(); }
 
@@ -2664,13 +2685,11 @@ class toc final {
 
     auto exit_type_params() -> void { types_.exit_params(); }
 
-    // the report is written, the frame usage is forgotten
+    // the report is written
     auto finish() -> void {
         assert(scopes_.is_empty());
 
         storage_.assert_released();
-
-        scopes_.set_max_depth(0);
     }
 
     [[nodiscard]] auto funcs() const -> const function_table& { return funcs_; }
@@ -2701,26 +2720,6 @@ class toc final {
         -> const type& {
 
         return *get_func_info_or_throw(src_loc_tk, name).type_ptr;
-    }
-
-    [[nodiscard]] auto get_lea_operand(const size_t indent,
-                                       const statement& src,
-                                       const ident_info& src_info,
-                                       std::vector<operand>& lea_registers)
-        -> operand {
-
-        if (not src.is_indexed() and not src_info.has_known_address() and
-            not src_info.is_pointer()) {
-
-            return src_info.operand();
-        }
-
-        return src.compile_lea(*this, indent, src.tok(), lea_registers,
-                               {
-                                   .reg_count{},
-                                   .known{src_info.known()},
-                                   .address_register{},
-                               });
     }
 
     // no token names a missing 'main'
@@ -2810,6 +2809,11 @@ class toc final {
         scopes_.back().make_var_read_only(name, cause);
     }
 
+    // also in a dry run, the errors of the body were checked
+    auto mark_func_reached(const stmt_def_func& func) -> void {
+        funcs_.mark_reached(func);
+    }
+
     auto mark_generic_func_instantiated(const std::string_view name) -> void {
         generics_.mark_func_instantiated(name);
     }
@@ -2824,41 +2828,7 @@ class toc final {
 
         storage_.reset_usage();
         scopes_.set_max_depth(0);
-        funcs_.clear_noinline_bodies();
-    }
-
-    // the variable that 'name' names, a parameter is followed to its argument
-    [[nodiscard]] auto root_variable_of(const token& src_loc_tk,
-                                        const std::string_view name) const
-        -> std::string {
-
-        const std::string_view bound_root{scopes_.bound_root(name)};
-
-        if (not bound_root.empty()) {
-            return std::string{bound_root};
-        }
-
-        const ident_info info{make_ident_info(src_loc_tk, name)};
-
-        // a value in a register is no variable, not even one that is named
-        // like the register, e.g. 't1' of rv32i or 'r14' of x86_64
-        if (info.is_register()) {
-            return std::format("{}{}register", info.operand().base_register(),
-                               storage_target::frame_mark);
-        }
-
-        const std::string_view root{info.elem_path().front()};
-
-        const std::optional<size_t> frame_index{scopes_.var_frame_index(root)};
-
-        // a constant is no variable, e.g. the '1' of 'f(1)'
-        if (not frame_index) {
-            return std::format("{}{}constant", root,
-                               storage_target::frame_mark);
-        }
-
-        return std::format("{}{}{}", root, storage_target::frame_mark,
-                           *frame_index);
+        funcs_.clear_compile_records();
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
@@ -3042,6 +3012,40 @@ class toc final {
 
         return funcs_.get(name);
     }
+
+    // the variable that 'name' names, a parameter is followed to its argument
+    [[nodiscard]] auto root_variable_of(const token& src_loc_tk,
+                                        const std::string_view name) const
+        -> std::string {
+
+        const std::string_view bound_root{scopes_.bound_root(name)};
+
+        if (not bound_root.empty()) {
+            return std::string{bound_root};
+        }
+
+        const ident_info info{make_ident_info(src_loc_tk, name)};
+
+        // a value in a register is no variable, not even one that is named
+        // like the register, e.g. 't1' of rv32i or 'r14' of x86_64
+        if (info.is_register()) {
+            return std::format("{}{}register", info.operand().base_register(),
+                               storage_target::frame_mark);
+        }
+
+        const std::string_view root{info.elem_path().front()};
+
+        const name_meaning meaning{scopes_.lookup(root)};
+
+        // a constant is no variable, e.g. the '1' of 'f(1)'
+        if (not meaning.is_variable()) {
+            return std::format("{}{}constant", root,
+                               storage_target::frame_mark);
+        }
+
+        return std::format("{}{}{}", root, storage_target::frame_mark,
+                           meaning.frame_index);
+    }
 };
 
 //
@@ -3191,18 +3195,3 @@ class generic_scope final {
         tc_.add_type_param(src_loc_tk, name, tpe);
     }
 };
-
-// compiles the element count of a bulk operation into the register the machine
-// asks for, the statement must outlive the emitter
-[[nodiscard]] inline auto make_count_emitter(toc& tc, const size_t indent,
-                                             const statement& count)
-    -> std::function<void(const operand&)> {
-
-    return [&tc, indent, &count](const operand& count_register) -> void {
-        machine& x{tc.machine()};
-
-        x.comment(count.tok(), indent, statement::trimmed_source(count));
-
-        count.compile(tc, indent, destination::of_register(count_register));
-    };
-}

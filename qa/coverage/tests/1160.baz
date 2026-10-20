@@ -1,0 +1,9 @@
+# a 'dat' field divided by a constant zero is rejected like a 'var'
+
+type point {x, y}
+
+dat p = point{1 / 0}
+
+func main() {
+    exit(0)
+}

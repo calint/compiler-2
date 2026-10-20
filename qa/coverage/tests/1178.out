@@ -1,0 +1,4 @@
+
+1178.baz:5:14: cannot index non-array 'i8'
+    var i8 = i8[3]{}
+             ^~

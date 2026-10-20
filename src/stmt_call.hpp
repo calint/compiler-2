@@ -140,8 +140,15 @@ struct generic_call {
         }
 
         const token tk{tz.next_token()};
+        const name_meaning meaning{tc.scopes().lookup(tk.text())};
 
-        if (not tc.scopes().is_var_or_alias(tk.text())) {
+        // note: a constant does not tell its type, like a literal
+        if (meaning.is_constant()) {
+            return nullptr;
+        }
+
+        // e.g. 'point{1, 2}', a variable or a parameter hides the type
+        if (not meaning.is_var_or_alias()) {
             return value_type(tc, tz, tk);
         }
 
@@ -362,21 +369,11 @@ struct call_site {
             return;
         }
 
-        const std::string message{
-            std::format("expected type '{}', got '{}' from '{}'",
-                        dst.type_ref().name(), func.get_type().name(),
-                        func.name()),
-        };
-
-        // a noinline result needs a memory destination, not the register
-        // the conversion computes into
-        if (not func.is_inlined()) {
-            throw compile_error{dst.error_token(tk), message};
-        }
-
         throw compile_error{
             dst.error_token(tk),
-            std::format("{}, use '{}(...)'", message, dst.type_ref().name()),
+            std::format("expected type '{}', got '{}' from '{}', use '{}(...)'",
+                        dst.type_ref().name(), func.get_type().name(),
+                        func.name(), dst.type_ref().name()),
         };
     }
 
@@ -682,7 +679,7 @@ class inline_call {
 
         // the result reaches the destination through the 'res' alias, so the
         // statements of the body have no destination
-        func.code().compile(tc, indent, destination{});
+        func.compile_statements(tc, indent);
 
         x.free_scratch_registers(call_.tk, indent + 1, registers_to_free);
 
@@ -755,12 +752,12 @@ class inline_call {
         if (not has_unary_ops and has_indexed_result and
             not x.has_indexed_addressing()) {
 
-            x.emit_most_efficient(
+            tc.emit_most_efficient(
                 call_.tk, indent,
                 [&] -> void { compile_with_aliases(tc, indent, dst, func); },
                 [&] -> void {
                     emit_most_efficient_address(
-                        x, indent, [&](const bool keeps) -> void {
+                        tc, indent, [&](const bool keeps) -> void {
                             compile_with_result_address_register(
                                 tc, indent, dst, func, keeps);
                         });
@@ -776,7 +773,7 @@ class inline_call {
 
         // unary ops on a memory result are a load, modify and store on a
         // load/store machine, a scratch register can be shorter
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             call_.tk, indent,
             [&] -> void { compile_with_aliases(tc, indent, dst, func); },
             [&] -> void {
@@ -819,19 +816,18 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             call_.tk, indent,
             [&] -> void { compile_body(tc, indent, func, aliases, {}); },
             [&] -> void {
                 emit_most_efficient_address(
-                    x, indent, [&](const bool keeps) -> void {
+                    tc, indent, [&](const bool keeps) -> void {
                         compile_body_with_address_registers(
                             tc, indent, func, aliases, first_argument_alias,
                             keeps);
                     });
             });
 
-        // freed after both versions since both use the argument registers
         x.free_scratch_registers(call_.tk, indent + 1, allocated_registers);
     }
 
@@ -864,11 +860,11 @@ class inline_call {
     // displacement, the first is shorter when the accesses exceed the load
     // and store immediate range
     auto emit_most_efficient_address(
-        machine& x, const size_t indent,
+        toc& tc, const size_t indent,
         const std::function_ref<void(bool keeps_displacement)> emit) const
         -> void {
 
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             call_.tk, indent, [&] -> void { emit(false); },
             [&] -> void { emit(true); });
     }
@@ -907,13 +903,15 @@ class inline_call {
         assert(call_arguments.empty() or
                call_arguments.size() == call_.args.size());
 
-        call_.assert_result_use(dst, func);
+        // note: the call checked the use and the type of the result before
+        //       the body was entered
+        assert(func.returns().has_value() != dst.is_empty());
 
         std::vector<alias_info> aliases;
 
         // the result names the destination, so the widths must agree
         if (const std::optional<func_return_info> ret{func.returns()}; ret) {
-            call_.assert_result_type(dst, func);
+            assert(dst.type_ref().is_same(func.get_type()));
 
             aliases.push_back(make_result_alias(tc, dst, *ret));
         }
@@ -1424,9 +1422,9 @@ class noinline_call {
         // base      +------------------------+
         //           | caller's storage       | 24 bytes
         // base + 24 +------------------------+ <- frame_address; callee's base
-        //           | result address         | 8 bytes
+        //           | result address         | 1 address
         //           +------------------------+
-        //           | argument address       | 8 bytes
+        //           | argument address       | 1 address
         //           +------------------------+
         //           | callee's locals        |
         //           +------------------------+
@@ -1446,7 +1444,7 @@ class noinline_call {
         // the registers holding the addresses of the arguments are still
         // allocated, the check must not change a register that is free but
         // used by the call
-        if (tc.checks().stack) {
+        if (tc.checks().stack and x.is_stack_bounded()) {
             x.check_stack_capacity(call_.tk, indent);
         }
 
@@ -1490,8 +1488,8 @@ class noinline_call {
                 continue;
             }
 
-            addresses.push_back(tc.get_lea_operand(indent, arg, argument.info,
-                                                   address_registers));
+            addresses.push_back(arg.get_lea_operand(tc, indent, argument.info,
+                                                    address_registers));
         }
 
         return addresses;
@@ -1525,10 +1523,12 @@ class noinline_call {
     // statics
     //
 
-    // the callee and which arguments are globals or the same local, the only
-    // facts the aliasing checks of the body depend on. empty when an argument
-    // is a parameter of the enclosing noinline function, the calls of that
-    // function are checked with their own arguments
+    // what the checks of the body depend on: the callee, the bytes each
+    // argument passes (a global or which local, and the access path), the
+    // array lengths and whether each argument is a temporary or a variable.
+    // empty when an argument is a parameter of the enclosing noinline
+    // function, the calls of that function are checked with their own
+    // arguments
     [[nodiscard]] static auto
     aliasing_signature(const toc& tc, const token& src_loc_tk,
                        const destination& dst, const stmt_def_func& func,
@@ -1846,6 +1846,13 @@ class stmt_call : public expression {
 
         assert_inline_nesting(tc, func);
 
+        // the result is the call's own, an error in it has no call frame
+        call.assert_result_use(dst, func);
+
+        if (func.returns()) {
+            call.assert_result_type(dst, func);
+        }
+
         // an error found in the inlined body reports where it was called from
         try {
             inline_call{call}.compile(tc, indent, dst, func);
@@ -2027,7 +2034,7 @@ class stmt_call : public expression {
             storage_target target{call_site::argument_target(tc, arg)};
 
             if (is_result_checked) {
-                assert_not_shared_with_result(i, target, result);
+                assert_not_shared_with_result(i, target, dst, result);
             }
 
             const bool is_read_only{func.param(i).is_read_only()};
@@ -2088,6 +2095,7 @@ class stmt_call : public expression {
     // an argument that names the result destination, only for '--checks=alias'
     auto assert_not_shared_with_result(const size_t index,
                                        const storage_target& target,
+                                       const destination& dst,
                                        const storage_target& result) const
         -> void {
 
@@ -2100,9 +2108,8 @@ class stmt_call : public expression {
             std::format("{} '{}' may share storage with the "
                         "result destination '{}' (both name '{}'), {}",
                         describe_argument(index),
-                        args_.at(index).name_or_literal(),
-                        result.display_root(), target.display_root(),
-                        use_temporary_fix_)};
+                        args_.at(index).name_or_literal(), dst.name(),
+                        target.display_root(), use_temporary_fix_)};
     }
 
     // 'what' names what precedes the '(' in the error
@@ -2205,6 +2212,8 @@ class stmt_call : public expression {
 
                 arg_delims_tk_.emplace_back(delimiter_tk);
             }
+
+            assert_not_string_argument(tz);
 
             const bool is_deducing{
                 std::ranges::contains(deducing_args,
@@ -2370,8 +2379,7 @@ class stmt_call : public expression {
     // statics
     //
 
-    // an argument reaches its parameter by reference, so a value that has no
-    // storage or an array of the wrong shape cannot be passed
+    // an array parameter takes a whole array, a scalar parameter does not
     static auto assert_argument_usable(const toc& tc, const expr_any& arg,
                                        const stmt_def_func_param& param)
         -> void {
@@ -2400,6 +2408,16 @@ class stmt_call : public expression {
         if (arg.is_name_or_literal()) {
             toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
         }
+    }
+
+    // a string is in read-only data that a parameter would refer to
+    static auto assert_not_string_argument(tokenizer& tz) -> void {
+        if (tz.peek_char_after_whitespace() != '"') {
+            return;
+        }
+
+        throw compile_error{tz.next_token(), "a string is not an argument, it "
+                                             "would refer to read-only data"};
     }
 
     // 'point.at' for the type named as written, e.g. an alias with constructors

@@ -1,0 +1,7 @@
+# the literal 'true' is not assigned to an integer variable
+
+func main() {
+    var r = 0
+    r = true
+    exit(r)
+}

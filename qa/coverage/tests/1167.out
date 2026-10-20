@@ -1,0 +1,29 @@
+
+1167.baz:6:83: out of scratch registers, simplify the expression
+    var b = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a))))))))))))))))))))))))))))))
+                                                                                  ^
+1167.baz:11:5: called from
+    f()
+    ^
+
+register use at the failure: 13 of 13 registers live
+
+  held  frame, registers (allocated at)
+     0  main
+    13  f called at 11:5
+          r15 6:18
+          r14 6:23
+          r13 6:28
+          r12 6:33
+          r10 6:38
+          r9 6:43
+          r8 6:48
+          r11 6:53
+          rdx 6:58
+          rax 6:63
+          rsi 6:68
+          rdi 6:73
+          rcx 6:78
+
+no noinline frame helps, the registers are held by the innermost frame, simplify
+its expression

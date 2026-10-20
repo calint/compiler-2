@@ -1,0 +1,8 @@
+# a 'bool' is not assigned to a variable initialized with a conversion
+
+func main() {
+    var b = true
+    var r = i32(0)
+    r = b
+    exit(r)
+}

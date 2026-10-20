@@ -1,0 +1,4 @@
+
+1181.baz:7:17: cannot index non-array 'point'
+    var point = point[2]{{1, 2}}
+                ^~~~~

@@ -1,0 +1,11 @@
+# a constant that does not fit the variable is rejected also in a function
+# that is never called
+
+func g() {
+    var b = i8(1)
+    b = 300
+}
+
+func main() {
+    exit(0)
+}

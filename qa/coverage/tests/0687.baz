@@ -1,4 +1,6 @@
 # an array field gets its initializer after a delimiter
 
 type p { x, y[2] }
-func main() { dat x = p{1 2} }
+dat x = p{1 2}
+
+func main() {}

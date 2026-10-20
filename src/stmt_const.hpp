@@ -37,10 +37,12 @@ class stmt_const final : public statement {
             return;
         }
 
-        if (tc.scopes().has_const(literal_tk_.text())) {
-            value_ = uops_.evaluate_constant(
-                tc.scopes().const_value(literal_tk_.text()));
+        if (const std::optional<int64_t> named{
+                tc.scopes().const_value(literal_tk_.text()),
+            };
+            named) {
 
+            value_ = uops_.evaluate_constant(*named);
             return;
         }
 

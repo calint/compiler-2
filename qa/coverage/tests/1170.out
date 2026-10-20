@@ -1,0 +1,4 @@
+
+1170.baz:7:9: expected type 'point', got 'i8'
+    p = i8(1)
+        ^~

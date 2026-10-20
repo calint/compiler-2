@@ -1,0 +1,7 @@
+# a 'dat' array element divided by a constant zero is rejected like a 'var'
+
+dat a = i8[2]{1 / 0}
+
+func main() {
+    exit(0)
+}

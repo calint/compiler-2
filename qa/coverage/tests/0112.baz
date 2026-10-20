@@ -21,7 +21,7 @@ func pn(num) {
     var i = 20
     loop {
         i = i - 1
-        buf[i] = 48 + (n % 10)
+        buf[i] = i8(48 + (n % 10))
         n = n / 10
         if n == 0 break
     }

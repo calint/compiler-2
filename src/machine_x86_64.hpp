@@ -36,9 +36,9 @@
 //   registers    'machine' allocates them, here the names
 //                'register_names_', the order 'scratch_registers_', the frame
 //                base 'rbx' and the variables base 'rbp'
-//   operations   'emit_op' and 'emit_binary' choose the form of an
-//                instruction, 'with_lowered_addresses' fits an operand into
-//                one, 'multiply_by_constant', 'emit_signed_divide', 'shift'
+//   operations   'emit_op' chooses the form of an instruction,
+//                'with_lowered_addresses' fits an operand into one,
+//                'multiply_by_constant', 'emit_signed_divide', 'shift'
 //   memory       'copy', 'copy_bytes', 'zero' unrolled or with 'rep', the
 //                bulk operations with 'rsi', 'rdi' and 'rcx'
 //   comparisons  'compare_and_branch', 'store_comparison', 'memory_equal'
@@ -195,10 +195,12 @@ class machine_x86_64 final : public machine {
         "r15", "r14", "r13", "r12", "r10", "r9",  "r8",
         "r11", "rbx", "rdx", "rax", "rsi", "rdi", "rcx",
     };
+
     // note: in order of likelihood they are not used by name, 'rsi', 'rdi'
     //       and 'rcx' last since every copy and compare of memory needs all
     //       three
-    //       'r11' and 'rcx' are saved around syscalls if they are allocated
+
+    // note: 'r11' and 'rcx' are saved around syscalls if they are allocated
     //       because 'syscall' clobbers them
 
     static constexpr std::string_view slot_register_{"r11"};
@@ -371,7 +373,7 @@ class machine_x86_64 final : public machine {
 
         lea(src_loc_tk, indent,
             make_register_operand(frame_base_register(), default_type()),
-            frame_address, true);
+            frame_address);
 
         assembler_.call(indent, label);
 
@@ -451,13 +453,13 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        lea(src_loc_tk, indent, start, frame_address, true);
+        lea(src_loc_tk, indent, start, frame_address);
 
         assembler_.instruction(
             indent, op::lea, to_argument(remaining),
             assembler_x86_64::memory::of_symbol(variables_label));
 
-        cmp_lowered(src_loc_tk, indent, start, remaining);
+        cmp(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::b, frame_overflow_handler_label);
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
@@ -465,22 +467,26 @@ class machine_x86_64 final : public machine {
                                assembler_x86_64::immediate::of_expression(
                                    variables_end_label, true));
 
-        cmp_lowered(src_loc_tk, indent, start, remaining);
+        cmp(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
-        // note: 'start' is free here and holds the frame size
+        // note: the value of 'start' is no longer needed, its register is
+        //       reused
         mov(src_loc_tk, indent, start, frame_size_bytes);
-        cmp_lowered(src_loc_tk, indent, start, remaining);
+        cmp(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
-    // the operating system stops a program that overflows the stack
+    // note: the stack is not bounded, see 'is_stack_bounded'
     auto check_stack_capacity([[maybe_unused]] const token& src_loc_tk,
                               [[maybe_unused]] const size_t indent)
-        -> void override {}
+        -> void override {
+
+        std::unreachable();
+    }
 
     auto comment_alias(const token& src_loc_tk, const size_t indent,
                        const std::string_view from, const std::string_view to,
@@ -598,17 +604,28 @@ class machine_x86_64 final : public machine {
                 if (part_size_bytes == size_qword_ and
                     not std::in_range<int32_t>(value)) {
 
-                    store_immediate_part(src_loc_tk, indent, bytes, dst,
-                                         size_dword_, offset);
+                    const size_t high_offset{offset + size_dword_};
 
-                    store_immediate_part(src_loc_tk, indent, bytes, dst,
-                                         size_dword_, offset + size_dword_);
+                    const int64_t low{
+                        little_endian_value(bytes.substr(offset, size_dword_)),
+                    };
+
+                    const int64_t high{
+                        little_endian_value(
+                            bytes.substr(high_offset, size_dword_)),
+                    };
+
+                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
+                                         offset, low);
+
+                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
+                                         high_offset, high);
 
                     return;
                 }
 
-                store_immediate_part(src_loc_tk, indent, bytes, dst,
-                                     part_size_bytes, offset);
+                store_immediate_part(src_loc_tk, indent, dst, part_size_bytes,
+                                     offset, value);
             });
     }
 
@@ -803,7 +820,7 @@ class machine_x86_64 final : public machine {
 
         add(src_loc_tk, indent, iterator, immediate(element_size_bytes));
         inc(src_loc_tk, indent, counter);
-        cmp_lowered(src_loc_tk, indent, counter, limit);
+        cmp(src_loc_tk, indent, counter, limit);
         assembler_.jcc(indent, condition::ne, loop_label);
     }
 
@@ -1072,7 +1089,7 @@ class machine_x86_64 final : public machine {
 
         reserve_named_register(src_loc_tk, indent, "rcx", default_type());
 
-        // a count wider than the value is rejected as narrowed
+        // note: a count wider than the value is rejected as narrowed
         assert(count.type_ref().size_bytes() <= dst.type_ref().size_bytes());
 
         mov(src_loc_tk, indent,
@@ -1266,9 +1283,6 @@ class machine_x86_64 final : public machine {
 
         constexpr std::array<int64_t, 1> zero_value{0};
 
-        // every failure jumps here and exits with a panic message
-        constexpr std::string_view handler_label{"baz_sd_card_panic"};
-
         // the open file descriptor, a qword in '.data'
         const assembler_x86_64::memory descriptor{
             assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor",
@@ -1318,7 +1332,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // a negative result is '-errno', the open failed
         assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, handler_label);
+        assembler_.jcc(1, condition::s, sd_card_handler_label);
         // keep the descriptor for later transfers
         assembler_.instruction(1, op::mov, descriptor, "rax");
         assembler_.comment(1, "the size of the file in sectors");
@@ -1330,7 +1344,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // a negative result is '-errno', the seek failed
         assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, handler_label);
+        assembler_.jcc(1, condition::s, sd_card_handler_label);
         // bytes to whole sectors, a partial last sector is not counted
         assembler_.instruction(1, op::sar, "rax", sector_shift);
         assembler_.instruction(1, op::mov, sector_count, "rax");
@@ -1343,10 +1357,10 @@ class machine_x86_64 final : public machine {
         // zero extending 'edi' differs from 'rdi' when the upper half is set
         assembler_.instruction(1, op::mov, "eax", "edi");
         assembler_.instruction(1, op::cmp, "rax", "rdi");
-        assembler_.jcc(1, condition::ne, handler_label);
+        assembler_.jcc(1, condition::ne, sd_card_handler_label);
         // a sector at or past the end of the file panics
         assembler_.instruction(1, op::cmp, "rdi", sector_count);
-        assembler_.jcc(1, condition::ae, handler_label);
+        assembler_.jcc(1, condition::ae, sd_card_handler_label);
         // the byte offset, the fourth system call argument, goes in 'r10'
         assembler_.instruction(1, op::mov, "r10", "rdi");
         assembler_.instruction(1, op::shl, "r10", sector_shift);
@@ -1358,11 +1372,11 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // anything but the full size, an error or a short transfer, panics
         assembler_.instruction(1, op::cmp, "rax", "rdx");
-        assembler_.jcc(1, condition::ne, handler_label);
+        assembler_.jcc(1, condition::ne, sd_card_handler_label);
         assembler_.instruction(1, op::ret);
 
         // the stack is not unwound because the program exits
-        assembler_.label(0, handler_label);
+        assembler_.label(0, sd_card_handler_label);
         emit_panic_message("msg_sd_card");
         emit_panic_exit();
 
@@ -1426,7 +1440,7 @@ class machine_x86_64 final : public machine {
     auto add(const token& src_loc_tk, const size_t indent, const operand& dst,
              const operand& src) -> void {
 
-        emit_binary(src_loc_tk, indent, op::add, dst, src);
+        emit_op(src_loc_tk, indent, op::add, dst, src);
     }
 
     // adds 'index * scale' of 'value' to the register 'sum'
@@ -1458,28 +1472,6 @@ class machine_x86_64 final : public machine {
         reserve_named_register(src_loc_tk, indent, "rsi", default_type());
         reserve_named_register(src_loc_tk, indent, "rdi", default_type());
         return alloc_named_register(src_loc_tk, indent, "rcx", default_type());
-    }
-
-    [[nodiscard]] auto
-    allocated_register_type(const std::string_view name) const -> const type* {
-
-        const size_t size_bytes{register_size_bytes(name)};
-
-        assert(size_bytes != 0);
-
-        const std::optional<size_t> index{register_index_of(name)};
-
-        for (const register_pool::allocation& allocated :
-             registers().allocations()) {
-
-            if (allocated.index == index) {
-                return allocated.type_ptr->size_bytes() == size_bytes
-                           ? allocated.type_ptr
-                           : &builtin_type_for_size_bytes(size_bytes);
-            }
-        }
-
-        return nullptr;
     }
 
     auto branch_comparison(const size_t indent,
@@ -1681,19 +1673,13 @@ class machine_x86_64 final : public machine {
         emit_op(src_loc_tk, indent, op::cmp, dst_op, src_op);
     }
 
-    auto cmp_lowered(const token& src_loc_tk, const size_t indent,
-                     const operand& dst, const operand& src) -> void {
-
-        emit_binary(src_loc_tk, indent, op::cmp, dst, src);
-    }
-
     // a range 'index + count' may end at the array count
     auto compare_upper_bound(const token& src_loc_tk, const size_t indent,
                              const bounds_range& range) -> void {
 
         if (range.count.is_empty()) {
-            cmp_lowered(src_loc_tk, indent, range.checked,
-                        immediate(range.array_count));
+            cmp(src_loc_tk, indent, range.checked,
+                immediate(range.array_count));
 
             return;
         }
@@ -1711,8 +1697,7 @@ class machine_x86_64 final : public machine {
                          range.checked.base_register(), 1, 0,
                          builtin_type_i64()));
 
-        cmp_lowered(src_loc_tk, indent, reg_top_idx,
-                    immediate(range.array_count));
+        cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
 
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
     }
@@ -1741,25 +1726,6 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(indent, code, to_argument(dst),
                                to_argument(src));
-    }
-
-    auto emit_binary(const token& src_loc_tk, const size_t indent,
-                     const op code, const operand& dst, const operand& src)
-        -> void {
-
-        with_lowered_addresses(src_loc_tk, indent, dst, src,
-                               [&](const operand& lowered_dst,
-                                   const operand& lowered_src) -> void {
-                                   if (lowered_src.is_immediate()) {
-                                       emit_immediate_op(src_loc_tk, indent,
-                                                         code, lowered_dst,
-                                                         lowered_src);
-
-                                       return;
-                                   }
-
-                                   emit(indent, code, lowered_dst, lowered_src);
-                               });
     }
 
     // an immediate that does not fit the instruction goes through a register
@@ -2100,6 +2066,25 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg_sx);
     }
 
+    // the handler 'handler_label' to jump to, or with the line the stub of
+    // the line, which 'panic_lines' records so the handler emits it
+    [[nodiscard]] auto failure_label(const std::string_view name,
+                                     std::set<size_t>& panic_lines,
+                                     const std::string_view handler_label,
+                                     const token& src_loc_tk,
+                                     const bool with_line) -> std::string {
+
+        if (not with_line) {
+            return std::string{handler_label};
+        }
+
+        const size_t line{src_loc_tk.at_line()};
+
+        mark_used([&panic_lines, line] -> void { panic_lines.insert(line); });
+
+        return line_panic_label(name, line);
+    }
+
     auto idiv(const token& src_loc_tk, const size_t indent,
               const operand& value) -> void {
 
@@ -2142,18 +2127,27 @@ class machine_x86_64 final : public machine {
         invoke_syscall(indent);
     }
 
-    auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
-             const operand& address, const bool explicit_displacement = {})
-        -> void {
+    [[nodiscard]] auto is_allocated(const std::string_view name) const -> bool {
 
-        with_lowered_addresses(
-            src_loc_tk, indent, dst, address,
-            [&](const operand& lowered_dst,
-                const operand& lowered_address) -> void {
-                assembler_.instruction(
-                    indent, op::lea, to_argument(lowered_dst),
-                    to_address(lowered_address, explicit_displacement));
-            });
+        assert(register_size_bytes(name) != 0);
+
+        const std::optional<size_t> index{register_index_of(name)};
+
+        return std::ranges::contains(registers().allocations(), index,
+                                     &register_pool::allocation::index);
+    }
+
+    auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
+             const operand& address) -> void {
+
+        with_lowered_addresses(src_loc_tk, indent, dst, address,
+                               [&](const operand& lowered_dst,
+                                   const operand& lowered_address) -> void {
+                                   assembler_.instruction(
+                                       indent, op::lea,
+                                       to_argument(lowered_dst),
+                                       to_address(lowered_address));
+                               });
     }
 
     // 'lea' writes only registers so a memory destination takes the address
@@ -2349,7 +2343,7 @@ class machine_x86_64 final : public machine {
     auto shl(const token& src_loc_tk, const size_t indent, const operand& dst,
              const operand& src) -> void {
 
-        emit_binary(src_loc_tk, indent, op::shl, dst, src);
+        emit_op(src_loc_tk, indent, op::shl, dst, src);
     }
 
     [[nodiscard]] auto sized_memory(const operand& value,
@@ -2420,13 +2414,12 @@ class machine_x86_64 final : public machine {
     }
 
     auto store_immediate_part(const token& src_loc_tk, const size_t indent,
-                              const std::string_view bytes, const operand& dst,
-                              const size_t part_size_bytes, const size_t offset)
+                              const operand& dst, const size_t part_size_bytes,
+                              const size_t offset, const int64_t value)
         -> void {
 
         mov(src_loc_tk, indent, memory_part(dst, part_size_bytes, offset),
-            immediate(
-                little_endian_value(bytes.substr(offset, part_size_bytes))));
+            immediate(value));
     }
 
     auto syscall(const size_t indent) -> void {
@@ -2436,7 +2429,7 @@ class machine_x86_64 final : public machine {
     auto test(const token& src_loc_tk, const size_t indent, const operand& dst,
               const operand& src) -> void {
 
-        emit_binary(src_loc_tk, indent, op::test, dst, src);
+        emit_op(src_loc_tk, indent, op::test, dst, src);
     }
 
     // a negative value is out of bounds, an empty operand has none to test
@@ -2479,7 +2472,7 @@ class machine_x86_64 final : public machine {
 
         std::vector<operand> saved;
         for (const std::string_view name : clobbered) {
-            if (allocated_register_type(name) != nullptr) {
+            if (is_allocated(name)) {
                 saved.push_back(qword_register(name));
                 push(indent, saved.back());
             }
@@ -2495,7 +2488,7 @@ class machine_x86_64 final : public machine {
     auto xor_op(const token& src_loc_tk, const size_t indent,
                 const operand& dst, const operand& src) -> void {
 
-        emit_binary(src_loc_tk, indent, op::xor_op, dst, src);
+        emit_op(src_loc_tk, indent, op::xor_op, dst, src);
     }
 
     //
@@ -2533,22 +2526,6 @@ class machine_x86_64 final : public machine {
         assert(holds == comparison_operator::greater_equal);
 
         return condition::ge;
-    }
-
-    // the handler 'handler_label' to jump to, or with the line the stub of
-    // the line, which 'panic_lines' records so the handler emits it
-    [[nodiscard]] static auto
-    failure_label(const std::string_view name, std::set<size_t>& panic_lines,
-                  const std::string_view handler_label, const token& src_loc_tk,
-                  const bool with_line) -> std::string {
-
-        if (not with_line) {
-            return std::string{handler_label};
-        }
-
-        panic_lines.insert(src_loc_tk.at_line());
-
-        return line_panic_label(name, src_loc_tk.at_line());
     }
 
     [[nodiscard]] static auto line_panic_label(const std::string_view name,
@@ -2651,7 +2628,6 @@ class machine_x86_64 final : public machine {
             .scale{scale},
             .displacement{},
             .size_bytes{},
-            .explicit_displacement{},
         };
     }
 
@@ -2742,8 +2718,7 @@ class machine_x86_64 final : public machine {
     }
 
     // the address without a width, as 'lea' and comments take it
-    [[nodiscard]] static auto to_address(const operand& value,
-                                         const bool explicit_displacement = {})
+    [[nodiscard]] static auto to_address(const operand& value)
         -> assembler_x86_64::memory {
 
         assert(not value.is_immediate());
@@ -2755,7 +2730,6 @@ class machine_x86_64 final : public machine {
             .scale{value.scale()},
             .displacement{value.displacement()},
             .size_bytes{},
-            .explicit_displacement{explicit_displacement},
         };
     }
 

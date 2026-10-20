@@ -1,4 +1,6 @@
 # a string cannot exceed the size of its data field
 
 type p { s i8[2] }
-func main() { dat x = p{"abc"} }
+dat x = p{"abc"}
+
+func main() {}

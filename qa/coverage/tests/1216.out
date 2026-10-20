@@ -1,0 +1,4 @@
+
+1216.baz:7:14: constant '200' does not fit 'i8', use 'i8(...)'
+    self.y = 200
+             ^~~

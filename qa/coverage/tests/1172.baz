@@ -1,0 +1,10 @@
+# 'arrays_equal' assigned to an instance is rejected for its type
+
+type point {x, y}
+
+func main() {
+    var a = i8[2]
+    var p = point
+    p = arrays_equal(a, a)
+    exit(p.x)
+}

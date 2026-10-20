@@ -1,4 +1,4 @@
 
-0196.baz:3:31: expected ',' followed by initializer for type 'i8'
-func main() { dat x = i8[2]{1 2} }
-                              ^
+0196.baz:3:17: expected ',' followed by initializer for type 'i8'
+dat x = i8[2]{1 2}
+                ^

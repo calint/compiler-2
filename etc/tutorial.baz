@@ -176,6 +176,11 @@ func booleans() {
     assert(not (no or x > 2))
     # 'and', 'or' and 'not' combine booleans, evaluation stops as soon as the
     # result is known
+
+    var n = int(yes)
+    assert(n == 1)
+    # a 'bool' is not an integer: 'n = yes' is an error, 'int(yes)' converts
+    # it to 1 or 0
 }
 
 #

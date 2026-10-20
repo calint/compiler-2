@@ -1,0 +1,7 @@
+# a lone utf-8 continuation byte before the token is one column of the
+# padding of the caret
+
+dat s = "©" x
+
+func main() {
+}

@@ -1,0 +1,7 @@
+# a constant start of 'write' far past the end of the buffer is rejected, the
+# start and the count are not added
+
+func main() {
+    var a = i8[4]
+    write(1, a, 1, 9223372036854775807)
+}

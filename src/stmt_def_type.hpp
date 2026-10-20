@@ -69,7 +69,7 @@ class type_fields final {
 
         while (true) {
             // a field starts with its name
-            // e.g. 'x', 'x i32' or 'items point[4]'
+            // e.g. 'items point[4]'
             fields_.emplace_back(tc, tz.next_token(), tz);
 
             if (is_next_close_brace(tz)) {
@@ -231,7 +231,6 @@ class stmt_def_type final : public statement {
     }
 };
 
-// e.g. 'type text<capacity> {...}'
 // e.g. 'type text<size> = list<i8, size>'
 class stmt_def_type_generic final : public statement {
     // where the definition continues after 'type', an alias parses it again
@@ -383,10 +382,15 @@ class stmt_def_type_alias final : public statement {
     //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>'
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
         // 'alias_tks_' keeps the tokens after the name for 'source_to'
-        alias_tks_.emplace_back(tz.is_next_char_token('='));
+        const token equals_tk{tz.is_next_char_token('=')};
+        alias_tks_.emplace_back(equals_tk);
 
         const token generic_tk{tz.next_token()};
         alias_tks_.emplace_back(generic_tk);
+
+        if (generic_tk.text().empty()) {
+            throw compile_error{equals_tk, "expected a generic type after '='"};
+        }
 
         assert_generic_type(tc, generic_tk, "the alias that names it");
 
@@ -568,7 +572,6 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
         return std::make_unique<stmt_def_type>(tc, tk, name_tk, tz);
     }
 
-    // e.g. 'type text<capacity> {...}'
     // e.g. 'type text<size> = list<i8, size>'
     if (next == '<') {
         return std::make_unique<stmt_def_type_generic>(tc, tk, start_tk,

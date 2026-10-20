@@ -1,4 +1,4 @@
 
-0242.baz:4:28: expected type 'p', got 'i64'
-func main() { dat x = p[2]{1,2} }
-                           ^
+0242.baz:5:14: expected type 'p', got 'i64'
+dat x = p[2]{1,2}
+             ^

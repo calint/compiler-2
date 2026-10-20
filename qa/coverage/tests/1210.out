@@ -1,0 +1,4 @@
+
+1210.baz:6:9: constant '300' does not fit 'i8', use 'i8(...)'
+    b = 300
+        ^~~

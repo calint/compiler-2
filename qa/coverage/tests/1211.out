@@ -1,0 +1,4 @@
+
+1211.baz:7:22: count 3 is past the end of array 'd' of size 2
+    array_copy(a, d, 3)
+                     ^

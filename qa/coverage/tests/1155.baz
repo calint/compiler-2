@@ -1,0 +1,18 @@
+# a 'let' of the 'array_length' of an unsized array parameter is the length
+# of the argument of each call, inline and noinline
+
+func f(s i8[]) res {
+    let n = array_length(s)
+    res = n
+}
+
+func noinline g(s i8[]) res {
+    let n = array_length(s)
+    res = n
+}
+
+func main() {
+    var a = i8[5]
+    var b = i8[7]
+    exit(f(a) + f(b) + g(a) + g(b))
+}

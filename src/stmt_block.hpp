@@ -13,7 +13,6 @@
 #include "stmt_break.hpp"
 #include "stmt_builtin_array_copy.hpp"
 #include "stmt_continue.hpp"
-#include "stmt_def_dat.hpp"
 #include "stmt_def_var.hpp"
 #include "stmt_return.hpp"
 #include "token.hpp"
@@ -28,7 +27,7 @@ class stmt_block final : public statement {
   public:
     // note: without '{', a single statement is allowed unless braces are
     // required
-    // e.g. '{ a = 1 b = 2 }', or the 'exit(1)' of 'if a == 1 exit(1)'
+    // e.g. the 'exit(1)' of 'if a == 1 exit(1)'
     stmt_block(toc& tc, tokenizer& tz, const bool braces_required = {})
         : statement{tz.cur_position_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
@@ -130,7 +129,6 @@ class stmt_block final : public statement {
     }
 
     // a block without braces is one statement, none at the end of the source
-    // e.g. 'exit(1)' of 'if a == 1 exit(1)'
     auto parse_single_statement(toc& tc, tokenizer& tz) -> void {
         close_brace_tk_ = tz.is_next_char_token('}');
 
@@ -199,8 +197,10 @@ class stmt_block final : public statement {
             return make_stmt_def_var(tc, tk, tz);
         }
 
+        // rejected before its initializer, whose errors would hide this one
         if (tk.is_text("dat")) {
-            return std::make_unique<stmt_def_dat>(tc, tk, tz);
+            throw compile_error{tk,
+                                "'dat' can only be declared in global scope"};
         }
 
         if (tk.is_text("break")) {
@@ -228,7 +228,7 @@ class stmt_block final : public statement {
             return built;
         }
 
-        // e.g. 'lst.add(1)', 'p1 = p2' or 'show<name>(x)'
+        // e.g. 'lst.add(1)'
         return create_statement_of_identifier(tc, tz, tk);
     }
 };

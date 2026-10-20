@@ -64,9 +64,9 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
 inline auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
                                                tokenizer& tz) -> void {
 
-    // a variable of that name is an operand of '<'
+    // a variable or a constant of that name is an operand of '<'
     if (not tc.is_func(tk.text()) or tc.generics().has_func(tk.text()) or
-        tc.scopes().is_var_or_alias(tk.text()) or
+        is_hidden_by_value(tc, tk.text()) or
         tz.peek_char_after_whitespace() != '<') {
 
         return;
@@ -129,7 +129,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
         };
     }
 
-    // e.g. 0x80, rax, identifiers, constants
+    // e.g. 'x', 'p.x', 'a[i]' or the literal '0x80'
     stmt_identifier si{tc, {}, tk, tz};
 
     // e.g. '-lst.size()' negates the result, not the receiver
@@ -157,8 +157,8 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
                                            const token tk)
     -> std::unique_ptr<statement> {
 
-    // a call statement has no destination to deduce a type argument from
-    // the discarded result is rejected at compile time like any other call
+    // no destination: no type argument is deduced, and a discarded result is
+    // rejected at compile time like any other call
     call_or_identifier parsed{
         parse_call_or_identifier(tc, tz, tk, unary_ops{}, nullptr),
     };

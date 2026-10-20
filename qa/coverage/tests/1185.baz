@@ -1,0 +1,8 @@
+# a global variable named like a global constant is rejected
+
+let x = 3
+var x = 4
+
+func main() {
+    exit(x)
+}

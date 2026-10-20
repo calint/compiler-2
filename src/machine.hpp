@@ -3,20 +3,19 @@
 #include <algorithm>
 #include <bit>
 #include <cassert>
-#include <charconv>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
+#include <expected>
 #include <format>
 #include <functional>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <ostream>
 #include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -41,62 +40,11 @@ struct runtime_check {
 // the sd card routines in use; a backend supplies the instructions, the names
 // of its registers and the order it picks scratch registers in
 class machine {
-    // receives the lines emitted before 'start' as they are emitted, which
-    // backend tests use, null for a build
-    std::ostream* direct_output_;
-    source_locations locations_;
-    assembler::jump_mode jump_mode_;
-    const type* type_i64_{};
-    const type* type_i32_{};
-    const type* type_i16_{};
-    const type* type_i8_{};
-    size_t usage_max_scratch_regs_{};
-    // the image of the sd card on targets with an operating system
-    std::string sd_card_file_name_;
-
-    // the inlined calls being compiled and what the registers held
-    register_trace trace_;
-
-    // the indexes are those of the names of the backend, see
-    // 'register_index_of'
-    register_pool registers_;
-    bool variables_base_reserved_{};
-    bool frame_base_reserved_{};
-    // the sector routines that 'emit_used_sector_routines' emits
-    bool sector_read_used_{};
-    bool sector_write_used_{};
-
-    // what discarded code changes in the machine is put back when it ends,
-    // also when an error unwinds: the registers held, the trace of the calls
-    // and the most scratch registers in use; it starts with no register held
-    class discard_scope final {
-        machine& machine_;
-        size_t kept_max_scratch_regs_;
-        register_trace kept_trace_;
-        register_pool kept_pool_;
-
-      public:
-        explicit discard_scope(machine& backend)
-            : machine_{backend},
-              kept_max_scratch_regs_{backend.usage_max_scratch_regs_},
-              kept_trace_{backend.trace_}, kept_pool_{backend.registers_} {
-
-            backend.registers_ = register_pool{};
-        }
-
-        discard_scope(const discard_scope&) = delete;
-        discard_scope(discard_scope&&) = delete;
-        auto operator=(const discard_scope&) -> discard_scope& = delete;
-        auto operator=(discard_scope&&) -> discard_scope& = delete;
-
-        ~discard_scope() {
-            machine_.registers_ = std::move(kept_pool_);
-            machine_.usage_max_scratch_regs_ = kept_max_scratch_regs_;
-            machine_.trace_ = std::move(kept_trace_);
-        }
-    };
-
   public:
+    // which of two versions of the same code 'emit_most_efficient' keeps: the
+    // smaller, or to test the other version too, the first or the last
+    enum class kept_version : uint8_t { smaller, first, last };
+
     enum class builtin_function : uint8_t {
         read,
         write,
@@ -105,23 +53,6 @@ class machine {
         sector_write,
     };
 
-    // 'files' locate the tokens of comments, backend tests may leave it null
-    // and give a stream that receives the lines as they are emitted
-    machine(std::ostream* const direct_output, const source_files* const files,
-            const assembler::jump_mode jumps)
-        : direct_output_{direct_output}, locations_{files}, jump_mode_{jumps} {}
-
-    machine(const machine&) = delete;
-    machine(machine&&) = delete;
-    auto operator=(const machine&) -> machine& = delete;
-    auto operator=(machine&&) -> machine& = delete;
-
-    virtual ~machine() = default;
-
-  protected:
-    using jump_mode = assembler::jump_mode;
-
-  public:
     // receives an address while the registers that built it are allocated
     using address_use = std::function_ref<void(const operand& address)>;
 
@@ -288,7 +219,105 @@ class machine {
         ~call_frame_scope() { machine_.get().end_call_frame(); }
     };
 
+  private:
+    // receives the lines emitted before 'start' as they are emitted, which
+    // backend tests use, null for a build
+    std::ostream* direct_output_;
+    source_locations locations_;
+    assembler::jump_mode jump_mode_;
+    const type* type_i64_{};
+    const type* type_i32_{};
+    const type* type_i16_{};
+    const type* type_i8_{};
+    size_t usage_max_scratch_regs_{};
+    // the image of the sd card on targets with an operating system
+    std::string sd_card_file_name_;
+
+    // the inlined calls being compiled and what the registers held
+    register_trace trace_;
+
+    // the indexes are those of the names of the backend, see
+    // 'register_index_of'
+    register_pool registers_;
+    bool variables_base_reserved_{};
+    bool frame_base_reserved_{};
+    // the sector routines that 'emit_used_sector_routines' emits
+    bool sector_read_used_{};
+    bool sector_write_used_{};
+    // above zero while versions of code are compiled, see 'version_scope'
+    size_t version_depth_{};
+    kept_version kept_version_{kept_version::smaller};
+
+    // applied when the code that uses a routine, helper or failure stub is
+    // kept, see 'mark_used'
+    using use_mark = std::function<void()>;
+
+    // the marks of the code compiled in versions, applied when the outermost
+    // version is kept
+    std::vector<use_mark> pending_marks_;
+
+    // what compiling a version of code changes in the machine: the registers
+    // held, the trace of the calls, the most scratch registers in use and the
+    // marks it made
+    struct version_state {
+        register_pool registers;
+        register_trace trace;
+        size_t max_scratch_regs{};
+        std::vector<use_mark> pending_marks;
+    };
+
+    // the state before a version, put back when the scope ends, also when an
+    // error unwinds; a version that is kept is given its end state again
+    // ('emit_most_efficient'), discarded code is not ('emit_discarded')
+    class version_scope final {
+        machine& machine_;
+        version_state start_;
+
+      public:
+        explicit version_scope(machine& backend)
+            : machine_{backend}, start_{backend.version_state_now()} {
+
+            ++backend.version_depth_;
+        }
+
+        version_scope(const version_scope&) = delete;
+        version_scope(version_scope&&) = delete;
+        auto operator=(const version_scope&) -> version_scope& = delete;
+        auto operator=(version_scope&&) -> version_scope& = delete;
+
+        ~version_scope() {
+            --machine_.version_depth_;
+            machine_.restore_version_state(std::move(start_));
+        }
+    };
+
+    // the lines of a compiled version with the state it ended in
+    struct compiled_version {
+        assembler::captured_lines lines;
+        version_state end_state;
+    };
+
+    // a version that runs out of registers is not available, its error is
+    // kept to be thrown when the other version runs out too
+    using version_result = std::expected<compiled_version, std::exception_ptr>;
+
+  public:
+    // 'files' locate the tokens of comments, backend tests may leave it null
+    // and give a stream that receives the lines as they are emitted
+    machine(std::ostream* const direct_output, const source_files* const files,
+            const assembler::jump_mode jumps)
+        : direct_output_{direct_output}, locations_{files}, jump_mode_{jumps} {}
+
+    machine(const machine&) = delete;
+    machine(machine&&) = delete;
+    auto operator=(const machine&) -> machine& = delete;
+    auto operator=(machine&&) -> machine& = delete;
+
+    virtual ~machine() = default;
+
   protected:
+    using jump_mode = assembler::jump_mode;
+
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
     // lowered. on exit, also while an exception unwinds, it frees the
@@ -426,6 +455,11 @@ class machine {
         "baz_frame_overflow",
     };
 
+    // a failed sector read or write jumps to it and exits with a panic message
+    static constexpr std::string_view sd_card_handler_label{
+        "baz_sd_card_panic",
+    };
+
     //
     // virtual methods
     //
@@ -484,9 +518,9 @@ class machine {
                                       const operand& frame_size_bytes)
         -> void = 0;
 
-    // a target without an operating system jumps to the stack overflow handler
-    // when a noinline call, made with the registers allocated now, does not
-    // fit in the stack
+    // jumps to the stack overflow handler when a noinline call, made with the
+    // registers allocated now, does not fit in the stack; only where
+    // 'is_stack_bounded'
     virtual auto check_stack_capacity(const token& src_loc_tk,
                                       const size_t indent) -> void = 0;
 
@@ -752,8 +786,7 @@ class machine {
             return allocated_operand(register_name, type_ref);
         }
 
-        throw register_error(
-            src_loc_tk, "out of scratch registers, simplify the expression");
+        throw out_of_registers_error(src_loc_tk);
     }
 
     // the code emitted up to 'end_noinline_body' is a body of 'function'
@@ -813,20 +846,33 @@ class machine {
     }
 
     // runs 'emit' for its checks, nothing it emits is kept and the registers
-    // it used are not counted. it starts with no register held, like the body
-    // of a 'noinline' function it stands for, so the registers that the caller
-    // holds do not make it run out
+    // it used are not counted. it starts with the registers that the body of
+    // a 'noinline' function holds, the body it stands for, so the registers
+    // that the caller holds do not make it run out
     auto emit_discarded(const std::function_ref<void()> emit) -> void {
-        const discard_scope discard{*this};
+        const version_scope discarded{*this};
 
-        // buffered because comments are otherwise written as emitted
-        target_assembler().emit_buffered(
-            [&] -> void { std::ignore = target_assembler().capture(emit); });
+        registers_ = noinline_body_pool();
+
+        try {
+            // buffered because comments are otherwise written as emitted
+            target_assembler().emit_buffered([&] -> void {
+                std::ignore = target_assembler().capture(emit);
+            });
+        } catch (compile_error& e) {
+            // note: the registers it starts with do not depend on the code
+            //       around it, so the error is not one of a version there
+            e.kind = compile_error::error_kind::source;
+            throw;
+        }
     }
 
-    // emits both versions and keeps the one with less code, the first on ties;
-    // both are buffered to be compared, even when output is otherwise written
-    // as emitted
+    // emits both versions and keeps the one with less code, the first on ties,
+    // or the one that '--versions' names; a version that runs out of
+    // registers is not kept, when both do the error of the first is thrown.
+    // each version starts from the state before it, the state of the kept
+    // one remains. both are buffered to be compared, even when output is
+    // otherwise written as emitted
     auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
                              const std::function_ref<void()> emit_first,
                              const std::function_ref<void()> emit_second)
@@ -835,16 +881,26 @@ class machine {
         assembler& output{target_assembler()};
 
         output.emit_buffered([&] -> void {
-            assembler::version_choice choice{
-                output.choose_smaller(emit_first, emit_second),
-            };
+            version_result first{compile_version(emit_first)};
+            version_result second{compile_version(emit_second)};
 
-            comment(src_loc_tk, indent,
-                    "smaller of two versions of {} and {} instructions",
-                    choice.first_instruction_count,
-                    choice.second_instruction_count);
+            if (not first and not second) {
+                std::rethrow_exception(first.error());
+            }
 
-            output.append(std::move(choice.kept));
+            const bool keeps_first{keeps_first_version(first, second)};
+
+            comment(src_loc_tk, indent, version_comment(first, second));
+
+            compiled_version& kept{keeps_first ? *first : *second};
+
+            restore_version_state(std::move(kept.end_state));
+
+            if (version_depth_ == 0) {
+                apply_pending_marks();
+            }
+
+            output.append(std::move(kept.lines));
         });
     }
 
@@ -902,11 +958,21 @@ class machine {
         return locations_.human_readable(src_loc_tk);
     }
 
-    // an error that the registers ran out or are held by a value, with how the
-    // registers are used by each frame and what a 'noinline' frame would give
-    [[nodiscard]] auto register_error(const token& src_loc_tk,
-                                      std::string message) const
-        -> compile_error;
+    // a 'noinline' body holds the variables base and the frame base from its
+    // start
+    [[nodiscard]] auto noinline_body_register_count() const -> size_t {
+        size_t count{};
+
+        for (const std::string_view name : scratch_registers()) {
+            if (name != variables_base_register() and
+                name != frame_base_register()) {
+
+                ++count;
+            }
+        }
+
+        return count;
+    }
 
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none
@@ -954,9 +1020,23 @@ class machine {
         variables_base_reserved_ = true;
     }
 
-    // how many scratch registers the backend can hand out
-    [[nodiscard]] auto scratch_register_total() const -> size_t {
-        return scratch_registers().size();
+    // the scratch registers that can hold values beside the ones the backend
+    // holds itself in 'allocations', e.g. the variables base 's0' on rv32i
+    [[nodiscard]] auto scratch_register_count(
+        const std::span<const register_pool::allocation> allocations) const
+        -> size_t {
+
+        size_t count{scratch_registers().size()};
+
+        for (const register_pool::allocation& allocated : allocations) {
+            if (not register_trace::is_listed(allocated) and
+                is_scratch_register(allocated.index)) {
+
+                --count;
+            }
+        }
+
+        return count;
     }
 
     // reads the sd card sector, an unsigned 32 bit number, into the 'size'
@@ -969,7 +1049,7 @@ class machine {
         call_sector_routine(src_loc_tk, indent, sector, address, size,
                             builtin_function::sector_read);
 
-        sector_read_used_ = true;
+        mark_used(sector_read_used_);
     }
 
     // writes the 'size' bytes at 'address' to the sd card sector, like
@@ -981,7 +1061,7 @@ class machine {
         call_sector_routine(src_loc_tk, indent, sector, address, size,
                             builtin_function::sector_write);
 
-        sector_write_used_ = true;
+        mark_used(sector_write_used_);
     }
 
     // a blank line that separates the code from the report
@@ -995,6 +1075,10 @@ class machine {
         type_i32_ = types.i32;
         type_i16_ = types.i16;
         type_i8_ = types.i8;
+    }
+
+    auto set_kept_version(const kept_version kept) -> void {
+        kept_version_ = kept;
     }
 
     // the image file that the sector functions read and write on targets with
@@ -1046,35 +1130,6 @@ class machine {
         }
 
         return op;
-    }
-
-    // the operator that is true when 'op' is false
-    [[nodiscard]] static auto negated(const comparison_operator op)
-        -> comparison_operator {
-
-        if (op == comparison_operator::equal) {
-            return comparison_operator::not_equal;
-        }
-
-        if (op == comparison_operator::not_equal) {
-            return comparison_operator::equal;
-        }
-
-        if (op == comparison_operator::less) {
-            return comparison_operator::greater_equal;
-        }
-
-        if (op == comparison_operator::less_equal) {
-            return comparison_operator::greater;
-        }
-
-        if (op == comparison_operator::greater) {
-            return comparison_operator::less_equal;
-        }
-
-        assert(op == comparison_operator::greater_equal);
-
-        return comparison_operator::less;
     }
 
     // the operator as written in the source, 'assign' as the '=' of a copy
@@ -1341,6 +1396,23 @@ class machine {
             register_mask(lower_checked_register(range)));
     }
 
+    // the routine, helper or stub of 'used' is emitted after the code
+    auto mark_used(bool& used) -> void {
+        mark_used([&used] -> void { used = true; });
+    }
+
+    // code compiled in a version is not known to be kept, so its marks wait
+    // until the outermost version is kept, a version that is not kept or
+    // discarded code needs no routine, helper or failure stub
+    auto mark_used(use_mark mark) -> void {
+        if (version_depth_ == 0) {
+            mark();
+            return;
+        }
+
+        pending_marks_.push_back(std::move(mark));
+    }
+
     // 'signed_max' is the largest value of the signed type of the compare
     [[nodiscard]] auto plan_bounds_check(const bounds_check_options& options,
                                          const bounds_range& range,
@@ -1554,6 +1626,35 @@ class machine {
                                       : range.count.base_register();
     }
 
+    // the operator that is true when 'op' is false
+    [[nodiscard]] static auto negated(const comparison_operator op)
+        -> comparison_operator {
+
+        if (op == comparison_operator::equal) {
+            return comparison_operator::not_equal;
+        }
+
+        if (op == comparison_operator::not_equal) {
+            return comparison_operator::equal;
+        }
+
+        if (op == comparison_operator::less) {
+            return comparison_operator::greater_equal;
+        }
+
+        if (op == comparison_operator::less_equal) {
+            return comparison_operator::greater;
+        }
+
+        if (op == comparison_operator::greater) {
+            return comparison_operator::less_equal;
+        }
+
+        assert(op == comparison_operator::greater_equal);
+
+        return comparison_operator::less;
+    }
+
   private:
     // the operand of a register handed out by 'alloc_named_register' or
     // 'alloc_scratch_register', which frees it by its allocation name
@@ -1568,6 +1669,15 @@ class machine {
         return result;
     }
 
+    // the marks of the kept outermost version
+    auto apply_pending_marks() -> void {
+        for (const use_mark& mark : pending_marks_) {
+            mark();
+        }
+
+        pending_marks_.clear();
+    }
+
     // the registers allocated until 'end_call_frame' belong to the inlined call
     // of 'name' made at 'call_site_tk', the first frame is the function being
     // compiled and has no call site
@@ -1577,12 +1687,110 @@ class machine {
         trace_.begin_frame(call_site_tk, std::move(name), is_noinline_body);
     }
 
+    // the lines of 'emit' with the state they end in, compiled from the
+    // current state, which is put back
+    [[nodiscard]] auto compile_version(const std::function_ref<void()> emit)
+        -> version_result {
+
+        const version_scope version{*this};
+
+        try {
+            assembler::captured_lines lines{target_assembler().capture(emit)};
+
+            return compiled_version{
+                .lines{std::move(lines)},
+                .end_state{version_state_now()},
+            };
+        } catch (const compile_error& e) {
+            if (e.kind != compile_error::error_kind::out_of_registers) {
+                throw;
+            }
+
+            return std::unexpected{std::current_exception()};
+        }
+    }
+
     // the call frame that allocations are made in
     [[nodiscard]] auto current_call_frame() const -> size_t {
         return trace_.current_frame();
     }
 
     auto end_call_frame() -> void { trace_.end_frame(); }
+
+    [[nodiscard]] auto is_scratch_register(const size_t index) const -> bool {
+        return std::ranges::any_of(scratch_registers(),
+                                   [&](const std::string_view name) -> bool {
+                                       return register_index_of(name) == index;
+                                   });
+    }
+
+    // of two versions, at least one available, the one to keep
+    [[nodiscard]] auto keeps_first_version(const version_result& first,
+                                           const version_result& second) const
+        -> bool {
+
+        if (not first or not second) {
+            return first.has_value();
+        }
+
+        if (kept_version_ == kept_version::first) {
+            return true;
+        }
+
+        if (kept_version_ == kept_version::last) {
+            return false;
+        }
+
+        const assembler& output{target_assembler()};
+
+        return output.instruction_count_of(first->lines) <=
+               output.instruction_count_of(second->lines);
+    }
+
+    // the backend's own registers, e.g. the variables base, and the frame
+    // base that a 'noinline' body holds from its start
+    [[nodiscard]] auto noinline_body_pool() const -> register_pool {
+        register_pool pool;
+
+        for (const register_pool::allocation& allocated :
+             registers_.allocations()) {
+
+            if (not register_trace::is_listed(allocated)) {
+                pool.push(allocated);
+            }
+        }
+
+        const size_t frame_base_index{pool_index(frame_base_register())};
+
+        if (pool.is_unavailable(uint32_t{1} << frame_base_index)) {
+            return pool;
+        }
+
+        pool.push({
+            .index{frame_base_index},
+            .src_loc_tk{},
+            .indent{},
+            .type_ptr{&default_type()},
+            .named{true},
+            .frame{current_call_frame()},
+        });
+
+        return pool;
+    }
+
+    // another version of the code may not run out
+    [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
+        -> compile_error {
+
+        compile_error error{
+            register_error(src_loc_tk,
+                           "out of scratch registers, simplify the expression"),
+        };
+
+        error.kind = compile_error::error_kind::out_of_registers;
+
+        return error;
+    }
 
     // the index of 'register_name', which names a register
     [[nodiscard]] auto pool_index(const std::string_view register_name) const
@@ -1618,10 +1826,16 @@ class machine {
         trace_.record_allocation(registers_);
     }
 
-    // an error that the register 'name', which an instruction or
-    // a built-in needs, is held: by a scratch value of the expression, or by
-    // an operation whose operands are being computed, which a value computed
-    // with 'let' before the operation does not clash with
+    // an error that the registers ran out or are held by a value, with how the
+    // registers are used by each frame and what a 'noinline' frame would give
+    [[nodiscard]] auto register_error(const token& src_loc_tk,
+                                      std::string message) const
+        -> compile_error;
+
+    // an error that the register 'name', which an instruction or a built-in
+    // needs, is held: by a scratch value of the expression, or by an operation
+    // whose operands are being computed, which a value computed with 'let'
+    // before the operation does not clash with
     [[nodiscard]] auto register_in_use_error(const token& src_loc_tk,
                                              const std::string_view name) const
         -> compile_error {
@@ -1651,5 +1865,50 @@ class machine {
                         "is needed here too, compute the operand that needs "
                         "it with 'let' before that operation",
                         name, holder_location));
+    }
+
+    auto restore_version_state(version_state state) -> void {
+        registers_ = std::move(state.registers);
+        trace_ = std::move(state.trace);
+        usage_max_scratch_regs_ = state.max_scratch_regs;
+        pending_marks_ = std::move(state.pending_marks);
+    }
+
+    // the choice between two versions, at least one available, e.g. 'smaller
+    // of two versions of 3 and 4 instructions'
+    [[nodiscard]] auto version_comment(const version_result& first,
+                                       const version_result& second) const
+        -> std::string {
+
+        if (not second) {
+            return "first of two versions, the second runs out of registers";
+        }
+
+        if (not first) {
+            return "second of two versions, the first runs out of registers";
+        }
+
+        std::string_view kept{"smaller"};
+
+        if (kept_version_ == kept_version::first) {
+            kept = "first";
+        } else if (kept_version_ == kept_version::last) {
+            kept = "last";
+        }
+
+        const assembler& output{target_assembler()};
+
+        return std::format("{} of two versions of {} and {} instructions", kept,
+                           output.instruction_count_of(first->lines),
+                           output.instruction_count_of(second->lines));
+    }
+
+    [[nodiscard]] auto version_state_now() const -> version_state {
+        return {
+            .registers{registers_},
+            .trace{trace_},
+            .max_scratch_regs{usage_max_scratch_regs_},
+            .pending_marks{pending_marks_},
+        };
     }
 };

@@ -1,0 +1,4 @@
+
+1195.baz:5:9: 't' is not a constant, a 'dat' holds constants
+dat u = t
+        ^

@@ -1,4 +1,4 @@
 
-1151.baz:5:27: start -1 is negative
+1151.baz:5:27: index -1 is out of bounds for array 'a' of size 4
     var n = read(0, a, 1, -1)
                           ^

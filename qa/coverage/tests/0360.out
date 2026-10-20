@@ -1,4 +1,4 @@
 
-0360.baz:4:36: too many elements for array of size 2
-func main() { dat x = p[2]{{1},{2},{3}} }
-                                   ^
+0360.baz:4:22: too many elements for array of size 2
+dat x = p[2]{{1},{2},{3}}
+                     ^

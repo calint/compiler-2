@@ -1,0 +1,21 @@
+# a variable or a constant named like a function is an operand of '<'
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+func show<T type>(x T) res T { res = x }
+
+func f() res { res = 9 }
+
+func main() {
+    var show = 1
+    var b = show < 2
+    assert(1, b)
+    if b {
+        let show = 3
+        var c = show < 4
+        assert(2, c)
+    }
+    let f = 1
+    var d = f < 2
+    assert(3, d)
+}

@@ -414,13 +414,10 @@ main:
         repe cmpsb
         sete byte [rbp + 480]
     bool.254.14.end:
-    cmp.257.12:
-    mov r15b, byte [rbp + 480]
-    bool.257.12.end:
     func.assert.257.5:
         if.38.27.257.5:
         cmp.38.27.257.5:
-        cmp r15b, 0
+        cmp byte [rbp + 480], 0
         jne if.38.24.257.5.end
         if.38.27.257.5.code:
             mov rdi, 1
@@ -465,7 +462,6 @@ main:
         cmpsq
         .Lbaz_equal.0:
         sete r15b
-    cmp r15b, 0
     bool.263.12.end:
     func.assert.263.5:
         if.38.27.263.5:
@@ -624,7 +620,6 @@ main:
         cmpsq
         .Lbaz_equal.1:
         sete r15b
-    cmp r15b, 0
     bool.300.12.end:
     func.assert.300.5:
         if.38.27.300.5:
@@ -646,7 +641,6 @@ main:
         cmpsq
         .Lbaz_equal.2:
         setne r15b
-    cmp r15b, 0
     bool.305.12.end:
     func.assert.305.5:
         if.38.27.305.5:
@@ -1286,9 +1280,9 @@ main:
             mov rax, 0
             syscall
             mov qword [rbp + 1416], rax
-            mov r15b, byte [rbp + 1416]
+                mov r15, qword [rbp + 1416]
+                sub r15, 1
             mov byte [rbp + 1288], r15b
-            sub byte [rbp + 1288], 1
         func.str.input.410.12.end:
         if.412.12:
         cmp.412.12:

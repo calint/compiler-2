@@ -1,0 +1,4 @@
+
+1159.baz:3:19: divisor must not be zero
+dat a = i8[2]{1 / 0}
+                  ^

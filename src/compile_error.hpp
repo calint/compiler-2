@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <format>
 #include <string>
@@ -15,6 +16,10 @@ class tokenizer;
 
 class compile_error final : public std::exception {
   public:
+    // running out of scratch registers depends on the code compiled, another
+    // version of the same code may not run out ('machine::emit_most_efficient')
+    enum class error_kind : uint8_t { source, out_of_registers };
+
     // a place the error was found through: an inlined call or the instance of
     // a generic definition
     struct call_frame {
@@ -49,6 +54,8 @@ class compile_error final : public std::exception {
 
     // more text for the user after the call frames, e.g. the use of registers
     std::string detail;
+
+    error_kind kind{error_kind::source};
 
     auto add_call_frame(const token& call_tk, std::string text,
                         std::string reason = "called from") -> void {

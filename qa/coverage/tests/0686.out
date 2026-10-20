@@ -1,4 +1,4 @@
 
-0686.baz:5:16: 'y' is not a constant, a 'dat' holds constants
-    dat x = []{y}
-               ^
+0686.baz:5:12: 'y' is not a constant, a 'dat' holds constants
+dat x = []{y}
+           ^

@@ -1,0 +1,11 @@
+# a shift in the argument of a conversion to a narrower type is computed at
+# the width of the argument, in a register and in memory
+func main() {
+    var n = 9
+    var a = 3
+    var b = i8(0)
+    b = i8(a << n)
+    var c = i16(0)
+    c = i16(a << n)
+    exit(i8(a << n) + b + i8(c >> 8))
+}

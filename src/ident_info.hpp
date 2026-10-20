@@ -153,6 +153,13 @@ class ident_info final {
         return std::holds_alternative<std::monostate>(part_);
     }
 
+    // an unsized array parameter where no call gave it a length: in the parse
+    // and in the check of a function that nothing calls
+    // note: a declared array has at least one element
+    [[nodiscard]] auto is_length_unknown() const -> bool {
+        return is_array() and array_len() == 0;
+    }
+
     [[nodiscard]] auto is_pointer() const -> bool {
         const storage_part* const storage{std::get_if<storage_part>(&part_)};
         return storage != nullptr and storage->is_pointer;
@@ -406,6 +413,11 @@ class destination final {
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
     [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::none; }
+
+    // see 'ident_info::is_length_unknown'
+    [[nodiscard]] auto is_length_unknown() const -> bool {
+        return is_array_ and array_len_ == 0;
+    }
 
     [[nodiscard]] auto is_register() const -> bool {
         return kind_ == kind::reg;

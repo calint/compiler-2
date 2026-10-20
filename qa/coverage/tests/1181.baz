@@ -1,0 +1,8 @@
+# a variable named like a record type hides the type in its own array
+# initializer
+
+type point {x, y}
+
+func main() {
+    var point = point[2]{{1, 2}}
+}

@@ -67,6 +67,164 @@
           '--checks=stack' writes no handler comment where the stack is not
           bounded ('machine::is_stack_bounded', 'test-cli.sh'); rv32i
           'arrays_equal' names its registers 'lhs' and 'rhs'
+       7. defects of the second pass, each with a test: 'array_length' of
+          an unsized array parameter folded to 0 in a 'let' (1155); a
+          conversion of a named constant folds, also in a 'dat' (1156, 0866
+          folds); a constant zero divisor or shift count out of range in a
+          'dat' has the message of a 'var', a quotient of the minimum by -1
+          below 64 bits folds wrapped unless the division check is on (1157
+          to 1163, 0691); the constant range of 'read' and 'write' cannot
+          overflow, its start is an index out of bounds and a count past
+          the end is reported at the count (1148, 1151, 1164); a constant
+          compared with a typed constant of a narrower type is rejected on
+          either side (1165, 1166); the dry run of a 'noinline' call holds
+          the frame and variables bases like the body (1167); a stack below
+          what 'main' uses without a check is rejected on the bare-metal
+          targets ('test-cli.sh'); the result checks of an inlined call give
+          no call frame and the conversion hint on both paths (0419, 0493);
+          the result destination is named as written (0923); a 'dat' in a
+          block is rejected at the 'dat' (1168, 0198, 0242, 0686 at the top
+          level); an include path the system rejects is an error at the path
+          (1169); '--reproduce-source' compares in memory, writes 'diff.baz'
+          only when the source differs and reports that as an internal
+          error; a built-in assigned to an instance or an array reports the
+          type (1170 to 1172); 'type str =' at the end reports the missing
+          generic type at the '=' (1173); a string argument says why it is
+          rejected (0548); usage errors name their option ('test-cli.sh')
+       8. clean ups of the backends, the driver and the options: the stack
+          capacity check is guarded at the call like its handler
+          ('is_stack_bounded'); rv32i 'helper_routine' picks the clobbers
+          and the label of an arithmetic helper; 'assembler::code_size_of',
+          'trim', 'machine::register_error' private, 'negated' protected;
+          stale and missing includes; x86_64 'emit_binary' and
+          'cmp_lowered' are 'emit_op' and 'cmp', 'is_allocated',
+          'jcc' inversions for every condition, 'lea rbx, [rbp]' without
+          the forced '+ 0'; rv32i assembler formats from 'register_names'
+          and inverts only the branches it grows; an rv32i address offset
+          out of range is an 'assert', 'machine::sd_card_handler_label';
+          a '--stack' past the address range is a usage error on every
+          target ('test-cli.sh'); '--help' says rv32i-qemu fails past its
+          128 MiB and rv32i-fpga ignores 'line'; 'parse_checks' applies
+          the members of an option in one place; the caret counts a lone
+          continuation byte as a column (1174); the register report does
+          not break before a word that does not fit on a line of its own
+          (0852); 'test-cli.sh' leaves no images behind
+       9. clean ups of the front end and the docs: wrong and stale comments
+          ('aliasing_signature', 'assert_argument_usable', the noinline frame
+          diagram, 'branch_on_stored_result', 'compile_memory_equality',
+          'expr_arith::compile', the groups of 'statement'), one example per
+          comment; 'statement::get_lea_operand' replaces the one of 'toc' and
+          'bulk_operands::count_emitter' compiles the count, so 'toc'
+          compiles no statement; 'root_variable_of', 'apply_division',
+          'apply_shift', 'shift_constant' and 'source_to_without_whitespace'
+          private, 'storage_layout' holds a const machine; 'known_in_path'
+          takes the root only; 'compile_data_rec' dispatches a built-in, a
+          record ('compile_data_record') and an array of records; one
+          'initializer_declaration::make_var_info'; 'parse_not_tokens' and
+          'is_negated_by' shared by 'expr_bool_op' and 'expr_bool'; dead
+          code: the 'array_length' destination check is an 'assert', the
+          repeated 'arrays_equal' check, unused defaults, the frame depth
+          reset in 'toc::finish', the 'expr_any' copy of "source must be an
+          array"; 'if' and 'loop' blocks get no destination; a built-in type
+          followed by '==' or '!=' is a name, not a bare type (1176, 1177,
+          'var b = bool != true' compiled); the whitespace after a unary
+          operator of an array size has a test (1175); docs 1.4, 4.2, 4.3
+          (the path in the signature), 7.2, 7.3, 7.6, 7.7, and a todo item
+          for a two-phase top level
+      10. one name lookup: 'scope_stack::lookup' gives a 'name_meaning'
+          (none, variable, alias, constant and its frame) by one rule, the
+          frames of the innermost function from the innermost out, then the
+          root frame, in a function frame a parameter before a constant of
+          the generic instance; the resolver, the aliasing check, the
+          lookaheads ('is_hidden_by_value'), 'names_function', the type
+          deduction of a call argument and 'root_variable_of' ask it,
+          'find_const', 'is_var_or_alias', 'var_frame_index' and the
+          resolver's own walk are gone; a frame declares a variable or a
+          constant of a name, not both ('assert_name_free', a parameter is
+          'var_kind::param'); 'initializer_declaration' decides a string or
+          an array literal with the name visible like the parse. defects,
+          each with a test: an array initializer of a 'var' named like its
+          type crashed (1178 to 1181, 1182 valid); 'var' and 'let' or 'let'
+          and 'dat' of one name in one frame were accepted (1183 to 1187); a
+          parameter named like a constant of the generic type of an inlined
+          method read the constant (1188); a constant did not hide a type
+          or a function in the lookaheads (1189, 1190); a constant that
+          hides a variable was the variable in the aliasing check (1192,
+          1193); 'f(2)' calls the function also when a value 'f' is in
+          scope, no value is called (1191, 0062 relies on it); a 'dat' named
+          like a type hides it in later initializers (1194, 1195); the
+          hiding directions (1196); docs 1.3
+      11. a 'bool' is not an integer: a 'bool' name or literal parsed at an
+          integer destination is rejected at parse time with "expected type
+          'i32', got 'bool'", the message of a record of another type; this
+          covers an assignment to a variable, a result, a field and an
+          element, also in code never compiled (1197 to 1203), and an
+          argument, a field or element of a literal and an exit code (1204
+          to 1206, 1208); 'int(b)' converts it (1207); 0149, 0863, 0864,
+          0867 and 1022 relied on the old acceptance; tutorial and readme
+          tell the rule
+      12. every function is checked, also when nothing calls it: the
+          rules checked while compiling held only where a compile reached,
+          e.g. a constant index past the end, a constant that does not fit,
+          an 'array_copy' count past the end, 'break' or 'continue' outside
+          a loop were accepted in a function nothing calls (1209 to 1213,
+          a noinline function 1215, a method 1216); 'function_table'
+          records the functions a compile reached
+          ('stmt_def_func::compile_statements'), 'program' then checks each
+          other one like a noinline body under 'toc::check_only'
+          ('stmt_def_func::check_body'), an instance of a generic
+          definition is checked where a use makes it; the check emits
+          nothing, discarded code marks no routine, helper or failure stub
+          used ('machine::mark_used', 1217 compares the output with the
+          source without the functions); an unsized array parameter has no
+          length there ('ident_info::is_length_unknown'), the rules that
+          need it are left to the calls, a negative constant index or start
+          is rejected (1214, 1218 to 1220); the parse-time copy of
+          'stmt_assign_var::assert_assignable' is gone (1152, 1153 keep
+          their output); 0111 and 0112 narrowed in a function nothing
+          calls; a 'bool' index was already rejected by the check of 11,
+          the index is parsed by 'expr_any' (1221); docs 1.2, 1.4, 1.5
+      13. versions of the same code ('machine::emit_most_efficient') start
+          from the same machine: 'machine::version_scope' (replaces
+          'discard_scope') saves the registers held, the trace, the most
+          scratch registers in use and the marks of routines, helpers and
+          failure stubs, which wait while a version is compiled; each
+          version starts from the saved state and the state of the kept
+          version remains, so the footer and '--report=registers' describe
+          the output (1224 and 'test-cli.sh': 15 instead of the 29 of the
+          dropped version; the footers and reports of about 200 cases
+          change, no code) and a helper that only a dropped version calls is
+          not emitted ('test-rv32i-address.cpp'); a version that runs out of
+          scratch registers is not kept ('compile_error::error_kind'), valid
+          programs were rejected (1222, 1223, 1227; 0537 gets one more term
+          so both versions run out); a failed version leaves the lines it
+          captured, the frames that 'toc::emit_most_efficient' guards and
+          the rv32i bulk registers (1227); '--versions=first|last' for
+          testing and 'test-versions.sh' run the cases that run the program
+          with the version that the default drops; defects found, each with
+          a test: a shift count was checked against the wrong width in a
+          narrow expression computed in a wide register (1225, also the
+          default version on rv32i) and in the argument of a conversion
+          computed in a narrower destination (1226); docs 1.4, 5.1, 5.3,
+          5.4, 7.8
+      14. changes of the generated code: a conversion to a narrower type of
+          an argument with '<<' computes it at the argument's width and
+          narrows it, x86_64 asserted on an 'i64' count without
+          '--checks=shift' (1228, and 1229 with a count not below 32 into
+          an 'i32'); 'keeps_low_bits_when_narrowed' is false for '<<',
+          'keeps_low_bits_when_widened' keeps it for the narrow expression
+          computed in a wide register (0589 one copy more, the optimization
+          stays in 'todo.txt'); a stored memory comparison
+          ('var b = p == q') has no branch to the next label, the dead
+          'cmp' after it goes (0144, 0358, 0594 and ten more, up to 59
+          instructions less); the rv32i frame capacity check has no wrap
+          branch, the start cannot wrap (one instruction less per checked
+          call, the backend driver's wrap cases go); the register report
+          counts the scratch registers that can be live, the bases held are
+          not ("29 of 29" on rv32i), and a 'noinline' body starts with all
+          13 registers free on x86_64 and 28 on rv32i
+          ('machine::noinline_body_register_count'; 0729, 0730, 0840, 0852,
+          1125, 1126)
 [x] hard: review round 2026-10-20, five independent reviews of 'src/': the
     design findings, ranked by what a reviewer notices first; each step on
     its own with byte-identical output unless it says otherwise

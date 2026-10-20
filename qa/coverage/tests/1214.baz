@@ -1,0 +1,28 @@
+# an unsized array parameter has no length in a function that is never
+# called, so the checks that need its length are left to the calls
+
+type pair { a i8[2] }
+
+func uses(s i8[], t mut i8[]) res i8 {
+    res = s[7]
+    t[5] = s[3]
+    var d = i8[2]
+    array_copy(s, d, 2)
+    array_copy(s[3], t[5], 2)
+    if arrays_equal(s, t, 2) {
+        res = 1
+    }
+    if s == d {
+        res = 2
+    }
+    var p = pair{s}
+    t = {1, 2, 3}
+    t = "abc"
+    var n = array_length(s)
+    write(1, s, 3, 2)
+    var got = read(0, t, 4, 2)
+}
+
+func main() {
+    exit(0)
+}

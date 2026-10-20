@@ -1,0 +1,13 @@
+# a constant compared with an inlined constant argument of a narrower
+# parameter on its right is rejected like with a variable of that type
+
+func g(v i8) {
+    if 1000 < v {
+        exit(3)
+    }
+    exit(4)
+}
+
+func main() {
+    g(5)
+}

@@ -1,0 +1,10 @@
+# a 'bool' converted to an integer is 1 for 'true' and 0 for 'false'
+
+func main() {
+    var b = true
+    var c = false
+    var r = i32(0)
+    r = i32(b)
+    var s = i8(c)
+    exit(r * 2 + s)
+}

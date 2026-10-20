@@ -2,7 +2,9 @@
 
 #include <array>
 #include <cstddef>
+#include <format>
 #include <ostream>
+#include <stdexcept>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
@@ -80,7 +82,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                    exit_code);
 
         branch(indent, exit_label_);
-        exit_used_ = true;
+        mark_used(exit_used_);
     }
 
     // no operating system stops a program that overflows the stack
@@ -106,9 +108,16 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     // the stack may not reach past the end of memory or into the variables,
     // how much of it is used at run time is checked only by
-    // '--checks=stack'
+    // '--checks=stack', which checks no stack for 'main' itself
     auto check_memory_end(const size_t memory_end_address) const
         -> void override {
+
+        if (stack_size_bytes() < leaf_stack_bytes()) {
+            throw std::runtime_error{
+                std::format("the stack {} B is smaller than the {} B that "
+                            "'main' uses without a stack check",
+                            stack_size_bytes(), leaf_stack_bytes())};
+        }
 
         const size_t memory_bytes{memory_size_bytes()};
 
@@ -124,16 +133,14 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                         memory_end_address, stack_size_bytes(), memory_bytes)};
     }
 
-    // the routines return through a7 so the call costs no more registers
-    // than the system call
     auto emit_read_call(const size_t indent) -> void override {
         call_io_routine(indent, read_label_, read_clobbered_);
-        read_used_ = true;
+        mark_used(read_used_);
     }
 
     auto emit_write_call(const size_t indent) -> void override {
         call_io_routine(indent, write_label_, write_clobbered_);
-        write_used_ = true;
+        mark_used(write_used_);
     }
 
     //

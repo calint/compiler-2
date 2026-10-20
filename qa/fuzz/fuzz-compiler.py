@@ -393,16 +393,9 @@ def fuzz_one(args):
                             cwd=work)
         if r.timed_out or r.signal in (signal.SIGKILL, signal.SIGXCPU):
             pass
+        # the compiler compares the reproduced source itself
         elif r.returncode:
             findings.append(("reproduce", f"exit {r.returncode}", r.stderr[-1500:]))
-        else:
-            diff = os.path.join(work, "diff.baz")
-            if not os.path.exists(diff):
-                findings.append(("reproduce", "no diff.baz", ""))
-            else:
-                with open(diff, "rb") as a, open(path, "rb") as b:
-                    if a.read() != b.read():
-                        findings.append(("reproduce", "different source", ""))
     finally:
         shutil.rmtree(work, ignore_errors=True)
     return text, findings, stats

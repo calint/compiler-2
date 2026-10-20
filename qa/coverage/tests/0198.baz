@@ -1,3 +1,5 @@
 # boolean data requires a boolean initializer
 
-func main() { dat x = bool[]{2} }
+dat x = bool[]{2}
+
+func main() {}

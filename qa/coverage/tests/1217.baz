@@ -1,0 +1,31 @@
+# functions that nothing calls are checked without a trace: the output is the
+# output of the source without them
+func noinline twice(x) res {
+    res = x * 2
+}
+
+func main() {
+    var a = int[4]
+    a[1] = 3
+    exit(twice(a[1]))
+}
+
+type point { x, y }
+
+# not called, the script compiles the source without the functions below
+func point.sum() res {
+    res = self.x + self.y
+}
+
+func scaled(s i8[], d mut i8[]) res {
+    res = s[2] / 3 + array_length(s)
+    array_copy(s, d, 2)
+    write(1, s)
+}
+
+func noinline reported(x) res {
+    var b = i8[8]
+    res = twice(x) * b[x]
+    var q = "not called"
+    write(1, q)
+}

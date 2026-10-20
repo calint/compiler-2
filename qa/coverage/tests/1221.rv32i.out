@@ -1,0 +1,4 @@
+
+1221.baz:6:7: expected type 'i32', got 'bool'
+    a[b] = 1
+      ^

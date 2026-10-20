@@ -1,0 +1,7 @@
+# a 'dat' divided by a constant zero is rejected like a 'var'
+
+dat a = 1 / 0
+
+func main() {
+    exit(0)
+}

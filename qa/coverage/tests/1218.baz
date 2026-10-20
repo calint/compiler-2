@@ -1,0 +1,10 @@
+# the buffer of a sector function that is an unsized array parameter is
+# checked by its calls, not in a function that is never called
+
+func load(t mut i8[]) {
+    sector_read(1, t)
+}
+
+func main() {
+    exit(0)
+}

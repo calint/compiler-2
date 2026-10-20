@@ -62,8 +62,6 @@ class stmt_builtin_arrays_equal final : public expression {
 
         const bulk_operands::arrays_info arrays{operands_.resolve_arrays(tc)};
 
-        assert_destination_type(dst.type_ref(), tok());
-
         operands_.assert_constant_count_in_bounds(tc);
 
         const std::function<void(const operand&)> emit_count{

@@ -1,3 +1,5 @@
 # data array initializer requires commas
 
-func main() { dat x = i8[2]{1 2} }
+dat x = i8[2]{1 2}
+
+func main() {}

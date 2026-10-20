@@ -46,7 +46,7 @@ class stmt_assign_var final : public statement {
         set_type(dst_info.type_ref());
 
         // the value is parsed as the type of the destination, which gives the
-        // type of a literal, e.g. 'p1 = p2' or 'a = {1, 2}' or 'x = y + 1'
+        // type of a literal, e.g. 'a = {1, 2}'
         const std::optional<size_t> array_count{
             stmt_ident_.is_array() ? std::optional{stmt_ident_.array_count()}
                                    : std::nullopt,
@@ -54,9 +54,6 @@ class stmt_assign_var final : public statement {
 
         expr_ = {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
                  array_count};
-
-        // also in code that is never compiled, e.g. a function never called
-        assert_assignable(tc, dst_info);
     }
 
     // the initializer of a declaration, parsed before the variable was
@@ -108,7 +105,7 @@ class stmt_assign_var final : public statement {
         std::vector<operand> lea_registers;
 
         const operand address{
-            tc.get_lea_operand(indent, stmt_ident_, var_info, lea_registers),
+            stmt_ident_.get_lea_operand(tc, indent, var_info, lea_registers),
         };
 
         // an indexed element or a loaded pointer is written at the address
@@ -241,13 +238,12 @@ class stmt_assign_var final : public statement {
             return false;
         }
 
-        if (not tc.scopes().is_var_or_alias(read_name)) {
+        if (not tc.scopes().lookup(read_name).is_var_or_alias()) {
             return false;
         }
 
         const storage_target source{
-            tc.storage_target_of(stmt_ident_.first_token(), read_name,
-                                 read.path),
+            tc.storage_target_of(read.tk, read_name, read.path),
         };
 
         return source.may_overlap(dst);

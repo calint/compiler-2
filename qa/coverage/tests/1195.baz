@@ -1,0 +1,9 @@
+# a 'dat' named like a record type hides the type in a later initializer
+
+type t {x}
+dat t = t{4}
+dat u = t
+
+func main() {
+    exit(u.x)
+}

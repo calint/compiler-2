@@ -91,11 +91,19 @@ class bulk_operands final {
 
     [[nodiscard]] auto count() const -> const expr_any& { return count_; }
 
-    // the statement must outlive the emitter
+    // compiles the count into the register the machine asks for, this must
+    // outlive the emitter
     [[nodiscard]] auto count_emitter(toc& tc, const size_t indent) const
         -> std::function<void(const operand&)> {
 
-        return make_count_emitter(tc, indent, count_);
+        return [&tc, indent, this](const operand& count_register) -> void {
+            machine& x{tc.machine()};
+
+            x.comment(count_.tok(), indent, statement::trimmed_source(count_));
+
+            count_.compile(tc, indent,
+                           destination::of_register(count_register));
+        };
     }
 
     [[nodiscard]] auto first() const -> const stmt_identifier& {

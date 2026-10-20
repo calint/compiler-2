@@ -8,6 +8,7 @@
 #include <optional>
 #include <ostream>
 #include <print>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -49,6 +50,31 @@ struct branch_targets {
     return result == condition_result::always_true;
 }
 
+// the 'not's that lead a condition, e.g. both of 'not not a == b'
+[[nodiscard]] inline auto parse_not_tokens(tokenizer& tz)
+    -> std::vector<token> {
+
+    std::vector<token> nots;
+
+    while (true) {
+        const token tk{tz.next_token()};
+
+        if (not tk.is_text("not")) {
+            tz.put_back_token(tk);
+            return nots;
+        }
+
+        nots.emplace_back(tk);
+    }
+}
+
+// true when the 'not's make an odd count
+[[nodiscard]] inline auto is_negated_by(const std::span<const token> nots)
+    -> bool {
+
+    return nots.size() % 2 == 1;
+}
+
 class expr_bool_op final : public statement {
     // e.g. the 'not' of 'if not a == b ...'
     std::vector<token> nots_;
@@ -73,7 +99,7 @@ class expr_bool_op final : public statement {
         set_type(tc.builtins().boolean());
 
         if (not first_expression) {
-            parse_nots(tz);
+            nots_ = parse_not_tokens(tz);
         }
 
         lhs_ = {tc, tz,
@@ -191,7 +217,7 @@ class expr_bool_op final : public statement {
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
                                    const std::string_view jmp_to_if_false,
                                    const bool inverted, const operand& dst,
-                                   const bool branch_required = true) const
+                                   const bool branch_required) const
         -> condition_result {
 
         return compile_element(tc, indent, "and", inverted,
@@ -257,7 +283,24 @@ class expr_bool_op final : public statement {
   private:
     // a comparison that folds is checked like one that is compiled
     auto assert_typed_constant_fits_lhs(const toc& tc) const -> void {
-        if (is_shorthand_ or not is_typed_constant(tc, rhs_)) {
+        if (is_shorthand_) {
+            return;
+        }
+
+        const bool is_lhs_typed{is_typed_constant(tc, lhs_)};
+        const bool is_rhs_typed{is_typed_constant(tc, rhs_)};
+
+        if (is_lhs_typed and not is_rhs_typed) {
+            assert_constant_fits(tc, lhs_, lhs_.get_type(), rhs_);
+            return;
+        }
+
+        if (is_rhs_typed and not is_lhs_typed) {
+            assert_constant_fits(tc, rhs_, rhs_.get_type(), lhs_);
+            return;
+        }
+
+        if (not is_rhs_typed) {
             return;
         }
 
@@ -271,15 +314,15 @@ class expr_bool_op final : public statement {
         throw_rhs_wider(lhs_, rhs_, op_, lhs_type, rhs_type);
     }
 
-    // the result 'compile_boolean' stored in 'action.destination' is branched
-    // on using 'action.branch_on_true'
+    // the result that 'compile_boolean' or 'resolve_memory_cmp' stored in
+    // 'action.destination' is branched on using 'action.branch_on_true'
     auto branch_on_stored_result(toc& tc, const size_t indent,
                                  const machine::comparison_action& action) const
         -> void {
 
         machine::comparison_action branch_action{action};
 
-        // 'compile_boolean' already stored the result and applied inversion
+        // the stored result has the inversion applied
         branch_action.destination = {};
         branch_action.inverted = false;
 
@@ -379,48 +422,35 @@ class expr_bool_op final : public statement {
             return condition_result::unknown;
         }
 
-        if (is_memory_comparison_) {
-            resolve_memory_cmp(tc, indent, action);
+        if (not is_shorthand_ and not is_memory_comparison_) {
+            resolve_cmp(tc, indent, lhs_, rhs_, action);
             return condition_result::unknown;
         }
 
-        if (not is_shorthand_) {
-            resolve_cmp(tc, indent, lhs_, rhs_, action);
+        // a stored result needs no branch to the label that follows it
+        machine::comparison_action stored_action{action};
+
+        if (not branch_required) {
+            stored_action.target = {};
+        }
+
+        if (is_memory_comparison_) {
+            resolve_memory_cmp(tc, indent, stored_action);
             return condition_result::unknown;
         }
 
         assert_not_instance_condition(lhs_);
 
-        machine::comparison_action shorthand_action{action};
+        machine::comparison_action shorthand_action{stored_action};
         shorthand_action.operation = machine::comparison_operator::not_equal;
-
-        // only a shorthand omits its branch, a comparison keeps it
-        if (not branch_required) {
-            shorthand_action.target = {};
-        }
 
         resolve_cmp_shorthand(tc, indent, lhs_, shorthand_action);
 
         return condition_result::unknown;
     }
 
-    // true when the 'not's make an odd count
     [[nodiscard]] auto is_negated() const -> bool {
-        return nots_.size() % 2 == 1;
-    }
-
-    // e.g. if not a == 3 ...
-    auto parse_nots(tokenizer& tz) -> void {
-        while (true) {
-            const token not_tk{tz.next_token()};
-
-            if (not not_tk.is_text("not")) {
-                tz.put_back_token(not_tk);
-                return;
-            }
-
-            nots_.emplace_back(not_tk);
-        }
+        return is_negated_by(nots_);
     }
 
     auto resolve_cmp(toc& tc, const size_t indent, const expr_arith& lhs,
@@ -553,6 +583,25 @@ class expr_bool_op final : public statement {
     // statics
     //
 
+    // 'constant' is compared at the width of 'typed', e.g. 1000 with an 'i8'
+    static auto assert_constant_fits(const toc& tc, const expr_arith& typed,
+                                     const type& typed_type,
+                                     const expr_arith& constant) -> void {
+
+        const std::optional<int64_t> value{side_constant(tc, constant)};
+
+        assert(value);
+
+        if (constant_arith::fits_size_bytes(*value, typed_type.size_bytes())) {
+            return;
+        }
+
+        throw compile_error{
+            constant.tok(),
+            std::format("constant '{}' does not fit '{}' of type '{}'", *value,
+                        statement::trimmed_source(typed), typed_type.name())};
+    }
+
     // a condition tests a number, an instance would be tested as its first
     // field; checked when compiling since the initializer of a 'var' parses
     // its expression to learn the type, e.g. 'var b = a' copies the instance
@@ -610,20 +659,7 @@ class expr_bool_op final : public statement {
             throw_rhs_wider(lhs, rhs, op, lhs_type, rhs_type);
         }
 
-        const std::optional<int64_t> constant{side_constant(tc, rhs)};
-
-        assert(constant);
-
-        const int64_t value{*constant};
-
-        if (constant_arith::fits_size_bytes(value, lhs_type.size_bytes())) {
-            return;
-        }
-
-        throw compile_error{
-            rhs.tok(),
-            std::format("constant '{}' does not fit '{}' of type '{}'", value,
-                        statement::trimmed_source(lhs), lhs_type.name())};
+        assert_constant_fits(tc, lhs, lhs_type, rhs);
     }
 
     // the bytes that both sides hold, they hold the same type and, as arrays,
@@ -653,9 +689,15 @@ class expr_bool_op final : public statement {
             return element_size_bytes;
         }
 
+        const bool is_length_unknown{
+            lhs_info.is_length_unknown() or rhs_info.is_length_unknown(),
+        };
+
         // arrays are compared element by element, so their lengths must agree
         // note: a whole array on one side only was rejected above
-        if (lhs_info.array_len() != rhs_info.array_len()) {
+        if (not is_length_unknown and
+            lhs_info.array_len() != rhs_info.array_len()) {
+
             throw compile_error{
                 rhs.tok(),
                 std::format("cannot compare arrays of sizes {} and {}",
@@ -667,7 +709,7 @@ class expr_bool_op final : public statement {
     }
 
     // compares the bytes of two user type instances or of two whole arrays,
-    // 1 is put into 'dst' when they are equal, 0 when 'inverted'
+    // 'dst' is 1 when they are equal, negated when 'inverted'
     static auto compile_memory_equality(toc& tc, const size_t indent,
                                         const token& src_loc_tk,
                                         const statement& lhs,
@@ -681,6 +723,12 @@ class expr_bool_op final : public statement {
         const size_t size_bytes{
             compared_size_bytes(lhs, rhs, lhs_info, rhs_info),
         };
+
+        // nothing to compare, the code of a function checked without a call
+        // is discarded
+        if (lhs_info.is_length_unknown() or rhs_info.is_length_unknown()) {
+            return;
+        }
 
         machine& x{tc.machine()};
 
@@ -1206,7 +1254,8 @@ class expr_bool final : public statement {
             return expr.compile_or(tc, indent, targets.if_true, invert, dst);
         }
 
-        return expr.compile_and(tc, indent, targets.if_false, invert, dst);
+        return expr.compile_and(tc, indent, targets.if_false, invert, dst,
+                                true);
     }
 
     [[nodiscard]] auto compile_last_element(
@@ -1303,8 +1352,8 @@ class expr_bool final : public statement {
 
     // the condition stores its value in 'dst', so both outcomes continue at
     // the same label
-    // note: the label is named after the token of this list, two elements of
-    //       an array that are conditions would share the label of the array
+    // note: the label is named after the token of this list so that two
+    //       conditions of one initializer get distinct labels
     auto compile_value(toc& tc, const size_t indent, const operand& dst) const
         -> void {
 
@@ -1359,9 +1408,8 @@ class expr_bool final : public statement {
         return not open_paren_tk_.is_empty();
     }
 
-    // true when the 'not's of the list make an odd count
     [[nodiscard]] auto is_negated() const -> bool {
-        return nots_.size() % 2 == 1;
+        return is_negated_by(nots_);
     }
 
     // a constant false ends an 'and' list and a constant true ends an 'or' list
@@ -1378,18 +1426,7 @@ class expr_bool final : public statement {
         const token rewind_pos_tk{tz.cur_position_token()};
 
         // the 'not's before a parenthesis, e.g. 'not not (a == b)'
-        std::vector<token> not_tks;
-
-        while (true) {
-            const token tk{tz.next_token()};
-
-            if (not tk.is_text("not")) {
-                tz.put_back_token(tk);
-                break;
-            }
-
-            not_tks.emplace_back(tk);
-        }
+        std::vector<token> not_tks{parse_not_tokens(tz)};
 
         // the list is located at its '(', which keeps the whitespace before it
         const token ws_tk{tz.next_whitespace_token()};

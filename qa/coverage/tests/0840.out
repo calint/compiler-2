@@ -34,7 +34,7 @@ register use at the failure: 14 of 14 registers live
      1  leaf called at 19:36
           rcx 10:16
 
-these frames are not noinline, making one noinline starts its body with all 14
+these frames are not noinline, making one noinline starts its body with all 13
 registers free and saves the registers held above it around the call:
 
   held inside  saved at the call  candidate frame

@@ -6,7 +6,7 @@
     var k = write(say(text) - 2, text)
                   ^~~
 
-register use at the failure: 3 of 30 registers live, 3 named by instructions
+register use at the failure: 3 of 29 registers live, 3 named by instructions
 
   held  frame, registers (allocated at)
      3  main
@@ -15,7 +15,7 @@ register use at the failure: 3 of 30 registers live, 3 named by instructions
           a2 10:13 (named)
      0  say called at 10:19
 
-these frames are not noinline, making one noinline starts its body with all 30
+these frames are not noinline, making one noinline starts its body with all 28
 registers free and saves the registers held above it around the call:
 
   held inside  saved at the call  candidate frame

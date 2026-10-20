@@ -1,7 +1,7 @@
 #!/bin/bash
 # checks the command line of the compiler: option values that are accepted or
 # rejected (the exit code is the expectation), the target selection, the
-# binary name, and the '--nopt' and '--reproduce-source' behavior
+# binary name, and the '--nopt', '--reproduce-source' and '--versions' behavior
 #
 # usage: test-cli.sh
 set -e
@@ -35,12 +35,19 @@ CLI_REPRODUCE_SOURCE() {
     cp 0001.baz diff.baz
     LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-default-nopt.profraw" "$BIN" 0015.baz --nopt >out 2>err
     cmp -s diff.baz 0001.baz
+    # 'diff.baz' is written only when the reproduced source differs
     LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-reproduce.profraw" "$BIN" 0015.baz --reproduce-source >out 2>err
-    cmp -s diff.baz 0015.baz
+    cmp -s diff.baz 0001.baz
     cmp -s gen.s out
     rm -f diff.baz
     LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-reproduce-nopt.profraw" "$BIN" --reproduce-source 0015.baz --nopt >out 2>err
+    [[ ! -e diff.baz ]]
+    # a source named 'diff.baz' is not overwritten
+    cp 0015.baz diff.baz
+    "$BIN" --reproduce-source diff.baz >out 2>err
+    [[ ! -s err ]]
     cmp -s diff.baz 0015.baz
+    rm -f diff.baz
     echo ok
 }
 
@@ -339,7 +346,7 @@ CLI_NOINLINE_REPORT() {
     for target in x86_64 rv32i; do
         # 0761.baz: 'sum' has an instance per array length, 'length_of' a body
         # for each of its two calls
-        "$BIN" --target=$target 0761.baz >gen.s 2>err
+        "$BIN" --target=$target --bin=gen-rv32i.bin 0761.baz >gen.s 2>err
         [[ ! -s err ]]
         grep -Eq '^[;#] +sum: 2 bodies, 3 calls, [0-9]+ instructions$' gen.s
         grep -Eq '^[;#] +length_of: 2 bodies, 2 calls, [0-9]+ instructions, no reuse$' gen.s
@@ -350,6 +357,7 @@ CLI_NOINLINE_REPORT() {
     # 0763.baz: one call of 'box.total'
     "$BIN" 0763.baz >gen.s 2>err
     grep -Eq '^; +box.total: 1 body, 1 call, [0-9]+ instructions, no reuse$' gen.s
+    rm -f gen-rv32i.bin
     echo ok
 }
 
@@ -358,7 +366,7 @@ CLI_STACK_HANDLER() {
     # an operating system stops a stack overflow, no handler is written
     local target
     for target in x86_64 rv32i; do
-        "$BIN" --target=$target --checks=stack 0992.baz >gen.s 2>err
+        "$BIN" --target=$target --bin=gen-rv32i.bin --checks=stack 0992.baz >gen.s 2>err
         [[ ! -s err ]]
         ! grep -Fq "stack overflow handler" gen.s
     done
@@ -384,11 +392,12 @@ CLI_VARS_RANGE() {
 CLI_QEMU_STACK() {
     echo -n "cli rv32i-qemu stack size: "
     set +e
-    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000000 0426.baz >gen.s 2>err
+    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000010 0426.baz >gen.s 2>err
     local exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    grep -Fq "stack size exceeds RV32I address range" err
+    grep -Fq "invalid --stack: 4294967312 B exceeds the 4294967296 B that the target addresses" err
+    grep -Fq "use --help for usage information" err
     # the 'virt' machine has 128 MiB
     "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7f00000 0426.baz >gen.s 2>err
     [[ ! -s err ]]
@@ -399,6 +408,49 @@ CLI_QEMU_STACK() {
     [[ $exit_code -eq 1 ]]
     grep -Fq "the stack 134217728 B, which exceeds the 134217728 B of device memory" err
     rm -f gen-rv32i.bin
+    echo ok
+}
+
+CLI_SMALL_STACK() {
+    echo -n "cli bare-metal stack below what 'main' uses: "
+    # 'main' has no stack check, a helper call and a failure use 48 B
+    local target exit_code
+    for target in rv32i-qemu rv32i-fpga; do
+        set +e
+        "$BIN" --target=$target --bin=gen-rv32i.bin --stack=32 0426.baz >gen.s 2>err
+        exit_code=$?
+        set -e
+        [[ $exit_code -eq 1 ]]
+        grep -Fq "the stack 32 B is smaller than the 48 B that 'main' uses without a stack check" err
+        "$BIN" --target=$target --bin=gen-rv32i.bin --stack=48 0426.baz >gen.s 2>err
+        [[ ! -s err ]]
+    done
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
+# the footer counts the scratch registers of the kept version: 1224.baz keeps
+# the version that holds fewer by default and the other one with 'last'
+CLI_VERSIONS() {
+    echo -n "cli --versions: "
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 1224.baz >gen.s 2>err
+    grep -Fxq "# max scratch registers in use: 15" gen.s
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=last 1224.baz >gen.s 2>err
+    grep -Fxq "# max scratch registers in use: 29" gen.s
+    echo ok
+}
+
+CLI_USAGE_MESSAGES() {
+    echo -n "cli usage errors name their option: "
+    local arg exit_code
+    for arg in --vars=0 --stack=x --memory=100 --memory=0x100000000 --target=x --checks=x --report=x --versions=x; do
+        set +e
+        "$BIN" "$arg" 0015.baz >/dev/null 2>err
+        exit_code=$?
+        set -e
+        [[ $exit_code -eq 1 ]]
+        grep -Fq "invalid ${arg%%=*}: " err
+    done
     echo ok
 }
 
@@ -451,6 +503,11 @@ CLI --report=registers,unknown 1 --help
 CLI --report= 0 0015.baz
 CLI --report=registers, 0 0015.baz
 CLI --report=registers,registers 0 0015.baz
+CLI --versions=smaller 0 0015.baz
+CLI --versions=first 0 0015.baz
+CLI --versions=last 0 0015.baz
+CLI --versions= 1 --help
+CLI --versions=unknown 1 --help
 CLI -x 1 --help
 CLI 0015.baz 1 0426.baz
 CLI 0015.baz 0 --nopt
@@ -463,6 +520,8 @@ CLI_CHECKS_LIST
 CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 CLI_QEMU_STACK
+CLI_SMALL_STACK
+CLI_USAGE_MESSAGES
 CLI_VARS_RANGE
 CLI_STACK_HANDLER
 CLI_NOINLINE_REPORT
@@ -471,5 +530,6 @@ CLI_ADDRESS_RANGE
 CLI_SOURCE_LINE_ENDS
 CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS
+CLI_VERSIONS
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

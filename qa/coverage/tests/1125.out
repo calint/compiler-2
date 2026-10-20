@@ -15,7 +15,7 @@ register use at the failure: 3 of 14 registers live, 3 named by instructions
           rdx 10:13 (named)
      0  say called at 10:19
 
-these frames are not noinline, making one noinline starts its body with all 14
+these frames are not noinline, making one noinline starts its body with all 13
 registers free and saves the registers held above it around the call:
 
   held inside  saved at the call  candidate frame

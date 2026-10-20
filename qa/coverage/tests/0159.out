@@ -1,4 +1,4 @@
 
-0159.baz:3:23: unterminated string
-func main() { dat x = "abc\
-                      ^
+0159.baz:3:9: unterminated string
+dat x = "abc\
+        ^

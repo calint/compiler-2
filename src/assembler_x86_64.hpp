@@ -80,8 +80,6 @@ class assembler_x86_64 final : public assembler {
         uint64_t scale{};
         int64_t displacement{};
         size_t size_bytes{};
-        // writes a zero displacement such as 'rbp + 0'
-        bool explicit_displacement{};
 
         //
         // statics
@@ -98,7 +96,6 @@ class assembler_x86_64 final : public assembler {
                 .scale{},
                 .displacement{},
                 .size_bytes{size_bytes},
-                .explicit_displacement{},
             };
         }
 
@@ -113,7 +110,6 @@ class assembler_x86_64 final : public assembler {
                 .scale{},
                 .displacement{},
                 .size_bytes{size_bytes},
-                .explicit_displacement{},
             };
         }
     };
@@ -355,11 +351,6 @@ class assembler_x86_64 final : public assembler {
             }
         }
 
-        if (address.explicit_displacement) {
-            memory_text += std::format(" + {}", address.displacement);
-            return memory_text;
-        }
-
         if (address.displacement == 0) {
             return memory_text;
         }
@@ -405,12 +396,16 @@ class assembler_x86_64 final : public assembler {
     inverse_branch_mnemonic(const std::string_view mnemonic) const
         -> std::string_view override {
 
-        constexpr std::array<mnemonic_pair, 4> pairs{
+        constexpr std::array<mnemonic_pair, 8> pairs{
             {
                 {"je", "jne"},
                 {"jg", "jle"},
                 {"jge", "jl"},
                 {"jo", "jno"},
+                {"ja", "jbe"},
+                {"jb", "jae"},
+                {"js", "jns"},
+                {"jnz", "jz"},
             },
         };
 

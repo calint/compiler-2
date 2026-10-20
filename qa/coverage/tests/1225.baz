@@ -1,0 +1,10 @@
+# --checks=shift: the count of a shift in an 'i8' expression is compared with
+# the width of 'i8' also when the expression is computed in a wider register
+func main() {
+    var n = i8(9)
+    var a = i8(1)
+    var b = i8(0)
+    var c = i8(2)
+    b = c + (a << n)
+    exit(b)
+}

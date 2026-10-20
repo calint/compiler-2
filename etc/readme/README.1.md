@@ -17,7 +17,8 @@ the binary image itself.
 
 ## Supports
 
-* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean
+* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean,
+  a boolean is not an integer, `int(b)` converts it to 1 or 0
 * user defined types with methods and constructors
 * data, constants, arrays and array iteration
 * variables with the type deduced from the initializer
@@ -27,9 +28,12 @@ the binary image itself.
   * `noub` turns on all of them, `line` adds the line number to the report of
     a failed bounds, division, shift, overlap or overflow check, `-NAME` turns
     a check off after the others are applied, e.g. `--checks=noub,-division`
-  * `upper`, `lower`: array bounds at runtime
+  * `upper`, `lower`: array bounds at runtime; a constant index outside the
+    array or a constant count that is negative or passes the end of the array
+    is a compile error also without the checks
   * `frame`: non-inlined function frame capacity at runtime
-  * `division`: division by zero and `MIN / -1` at runtime
+  * `division`: division by zero and `MIN / -1` at runtime; a constant zero
+    divisor is a compile error also without the check
   * `shift`: shift count outside the type width at runtime, bits shifted out
     by `<<` are discarded; a constant count outside the width is a compile
     error also without the check

@@ -4,5 +4,5 @@ func main() {
     var small = i8(5)
     var wide = i16(256)
     var yes = small + wide > 100
-    exit(yes)
+    exit(int(yes))
 }

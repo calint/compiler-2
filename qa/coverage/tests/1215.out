@@ -1,0 +1,4 @@
+
+1215.baz:6:13: index 4 is out of bounds for array 'a' of size 4
+    res = a[4]
+            ^

@@ -1,0 +1,4 @@
+
+1198.baz:5:9: expected type 'i32', got 'bool'
+    r = true
+        ^

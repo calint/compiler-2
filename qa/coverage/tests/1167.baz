@@ -1,0 +1,12 @@
+# the dry run of a call of a 'noinline' function has the registers of its
+# body, the variables base and the frame base are not handed out
+
+func noinline f() {
+    var a = 1
+    var b = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a))))))))))))))))))))))))))))))
+    exit(b)
+}
+
+func main() {
+    f()
+}

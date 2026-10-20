@@ -227,8 +227,7 @@ class stmt_builtin_io final : public stmt_call {
                                                       trimmed_source(buffer))};
     }
 
-    // a sector is a whole number of elements and fits in the array
-    // a constant range past the end of the buffer is rejected like the count
+    // a constant range past the end of the buffer is rejected like the range
     // of 'array_copy', e.g. 'write(1, a, 5)' of 'a = i8[4]', a run-time one is
     // left to the bounds check at run time
     auto assert_constant_range_in_bounds(toc& tc,
@@ -252,12 +251,31 @@ class stmt_builtin_io final : public stmt_call {
                                 std::format("count {} is negative", *count)};
         }
 
-        if (*start < 0) {
-            throw compile_error{argument(start_index).tok(),
-                                std::format("start {} is negative", *start)};
+        // without a length only a negative start is known to be out of
+        // bounds
+        if (buffer_info.is_length_unknown() and *start >= 0) {
+            return;
         }
 
-        if (std::cmp_less_equal(*start + *count, buffer_info.array_len())) {
+        if (buffer_info.is_length_unknown()) {
+            throw compile_error{argument(start_index).tok(),
+                                std::format("index {} is negative", *start)};
+        }
+
+        const size_t array_len{buffer_info.array_len()};
+
+        // a start at the end is the empty range of a zero count
+        if (*start < 0 or std::cmp_greater(*start, array_len)) {
+            throw compile_error{
+                argument(start_index).tok(),
+                std::format("index {} is out of bounds for array '{}' of "
+                            "size {}",
+                            *start, argument(1).name_or_literal(), array_len)};
+        }
+
+        const size_t remaining{array_len - static_cast<size_t>(*start)};
+
+        if (std::cmp_less_equal(*count, remaining)) {
             return;
         }
 
@@ -270,17 +288,18 @@ class stmt_builtin_io final : public stmt_call {
             has_start() ? std::format(" from index {}", *start) : std::string{},
         };
 
+        // note: a sector function has no count, its start passes the end
         const token& error_tk{
-            has_start() ? argument(start_index).tok() : argument(2).tok(),
+            has_count() ? argument(2).tok() : argument(start_index).tok(),
         };
 
         throw compile_error{
             error_tk,
             std::format("{}{} is past the end of array '{}' of size {}", what,
-                        from_index, argument(1).name_or_literal(),
-                        buffer_info.array_len())};
+                        from_index, argument(1).name_or_literal(), array_len)};
     }
 
+    // a sector is a whole number of elements and fits in the array
     auto assert_sector_buffer(toc& tc, const ident_info& buffer_info) const
         -> void {
 
@@ -304,7 +323,9 @@ class stmt_builtin_io final : public stmt_call {
             buffer_info.array_len() * element_size_bytes,
         };
 
-        if (buffer_size_bytes < sector_size_bytes) {
+        if (not buffer_info.is_length_unknown() and
+            buffer_size_bytes < sector_size_bytes) {
+
             throw compile_error{
                 buffer.tok(),
                 std::format("the array of {} B is smaller than a sector of "
@@ -412,16 +433,12 @@ class stmt_builtin_io final : public stmt_call {
             return;
         }
 
+        const size_t element_count{
+            io_.is_sector ? sector_element_count(tc, buffer_info)
+                          : buffer_info.array_len(),
+        };
+
         machine& x{tc.machine()};
-
-        size_t element_count{buffer_info.array_len()};
-
-        if (io_.is_sector) {
-            assert_sector_buffer(tc, buffer_info);
-
-            element_count =
-                x.sector_size_bytes() / buffer_info.type_ref().size_bytes();
-        }
 
         x.copy_value(tok(), indent, count,
                      operand::imm(element_count, tc.builtins().default_type()));
@@ -466,10 +483,7 @@ class stmt_builtin_io final : public stmt_call {
             return static_cast<int64_t>(buffer_info.array_len());
         }
 
-        const machine& x{tc.machine()};
-
-        return static_cast<int64_t>(x.sector_size_bytes() /
-                                    buffer_info.type_ref().size_bytes());
+        return static_cast<int64_t>(sector_element_count(tc, buffer_info));
     }
 
     // the start moves the buffer address and the count becomes the byte count
@@ -524,6 +538,17 @@ class stmt_builtin_io final : public stmt_call {
 
     [[nodiscard]] auto has_start() const -> bool {
         return argument_count() == io_.max_arg_count;
+    }
+
+    [[nodiscard]] auto sector_element_count(toc& tc,
+                                            const ident_info& buffer_info) const
+        -> size_t {
+
+        assert_sector_buffer(tc, buffer_info);
+
+        const machine& x{tc.machine()};
+
+        return x.sector_size_bytes() / buffer_info.type_ref().size_bytes();
     }
 
     // the call with all its arguments

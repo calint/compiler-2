@@ -1,10 +1,7 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
-#include <limits>
 #include <ostream>
-#include <stdexcept>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
@@ -34,12 +31,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
                        const std::string_view binary_file_name,
                        const size_t stack_size_bytes)
         : machine_rv32i_bare_metal{direct_output, files, jumps,
-                                   binary_file_name, stack_size_bytes} {
-
-        if (stack_size_bytes > std::numeric_limits<uint32_t>::max()) {
-            throw std::runtime_error{"stack size exceeds RV32I address range"};
-        }
-    }
+                                   binary_file_name, stack_size_bytes} {}
 
     //
     // overridden methods

@@ -1,0 +1,9 @@
+# a conversion assigned to an instance is rejected for its type
+
+type point {x, y}
+
+func main() {
+    var p = point
+    p = i8(1)
+    exit(p.x)
+}

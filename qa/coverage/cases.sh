@@ -2135,8 +2135,8 @@ SRC=0689 && COMPERR
 # a constructor call requires parentheses
 SRC=0690 && COMPERR
 
-# constant operands that trap or wrap at run time are not folded, a constant
-# zero divisor is rejected instead
+# a constant quotient that wraps folds to the wrapped value unless the
+# division check reports it at run time, a constant zero divisor is rejected
 SRC=0691 && EXP=7 && RUN
 
 # a function name has no fields
@@ -3611,3 +3611,272 @@ SRC=1153 && COMPERR
 
 # 'foo' over an element of an array that is not an array names the element
 SRC=1154 && COMPERR
+
+# a 'let' of the 'array_length' of an unsized array parameter is the length
+# of the argument of each call, inline and noinline
+SRC=1155 && EXP=24 && RUN
+
+# a conversion of a named constant folds: a 'dat' takes it, also negated and
+# as an array element, and a 'var' adds to it at compile time
+SRC=1156 && EXP=17 && RUN
+
+# a 'dat' divided by a constant zero is rejected like a 'var'
+SRC=1157 && COMPERR
+
+# a 'dat' remainder by a constant zero is rejected like a 'var'
+SRC=1158 && COMPERR
+
+# a 'dat' array element divided by a constant zero is rejected like a 'var'
+SRC=1159 && COMPERR
+
+# a 'dat' field divided by a constant zero is rejected like a 'var'
+SRC=1160 && COMPERR
+
+# a 'dat' shifted by a constant count past the width is rejected like a 'var'
+SRC=1161 && COMPERR
+
+# a 'dat' shifted by a negative constant count is rejected like a 'var'
+SRC=1162 && COMPERR
+
+# the minimum of a 'dat' element divided by -1 wraps like the run-time code
+# without the division check
+SRC=1163 && EXP=1 && RUN
+
+# a constant start of 'write' far past the end of the buffer is rejected, the
+# start and the count are not added
+SRC=1164 && COMPERR
+
+# a constant compared with an inlined constant argument of a narrower
+# parameter is rejected like with a variable of that type
+SRC=1165 && COMPERR
+
+# a constant compared with an inlined constant argument of a narrower
+# parameter on its right is rejected like with a variable of that type
+SRC=1166 && COMPERR
+
+# the dry run of a call of a 'noinline' function has the registers of its
+# body, the variables base and the frame base are not handed out
+SRC=1167 && COMPERR
+
+# a 'dat' in a block is rejected at the 'dat' before its initializer is
+# checked
+SRC=1168 && COMPERR
+
+# an include of a path longer than the system allows is rejected at the path
+SRC=1169 && COMPERR
+
+# a conversion assigned to an instance is rejected for its type
+SRC=1170 && COMPERR
+
+# 'array_length' assigned to an array is rejected, the source must be an
+# array
+SRC=1171 && COMPERR
+
+# 'arrays_equal' assigned to an instance is rejected for its type
+SRC=1172 && COMPERR
+
+# a type alias without a generic type after '=' at the end of the file is
+# rejected at the '='
+SRC=1173 && COMPERR
+
+# a lone utf-8 continuation byte before the token is one column of the
+# padding of the caret
+SRC=1174 && COMPERR
+
+# an array size with whitespace after its unary operator is rejected at the
+# operator
+SRC=1175 && COMPERR
+
+# a built-in type name followed by '==' is not a bare type, it is read as a
+# name
+SRC=1176 && COMPERR
+
+# a built-in type name followed by '!=' is not a bare type, it is read as a
+# name
+SRC=1177 && COMPERR
+
+# a variable named like a built-in type hides the type in its own array
+# initializer
+SRC=1178 && COMPERR
+
+# a variable named 'int' hides the type in its own array initializer
+SRC=1179 && COMPERR
+
+# a global variable named like a built-in type hides the type in its own array
+# initializer
+SRC=1180 && COMPERR
+
+# a variable named like a record type hides the type in its own array
+# initializer
+SRC=1181 && COMPERR
+
+# a variable named like a built-in type is initialized with a string
+SRC=1182 && EXP=98 && RUN
+
+# a constant named like a variable of the same block is rejected
+SRC=1183 && COMPERR
+
+# a global constant named like a global variable is rejected
+SRC=1184 && COMPERR
+
+# a global variable named like a global constant is rejected
+SRC=1185 && COMPERR
+
+# a 'dat' named like a global constant is rejected
+SRC=1186 && COMPERR
+
+# a global constant named like a 'dat' is rejected
+SRC=1187 && COMPERR
+
+# a parameter hides a constant of the generic type of its method, inlined or
+# not
+SRC=1188 && EXP=0 && RUN
+
+# a constant hides a type of its name
+SRC=1189 && EXP=0 && RUN
+
+# a variable or a constant named like a function is an operand of '<'
+SRC=1190 && EXP=0 && RUN
+
+# a name followed by '(' calls the function, no value is called, so a
+# constant or a variable of that name does not hide it
+SRC=1191 && EXP=10 && RUN
+
+# a constant that hides a global does not share storage with the global that
+# the argument names
+SRC=1192 && EXP=4 && RUN
+
+# a constant that hides the array of a 'foo' does not share storage with its
+# element
+SRC=1193 && EXP=4 && RUN
+
+# a 'dat' named like a type hides the type in a later initializer
+SRC=1194 && COMPERR
+
+# a 'dat' named like a record type hides the type in a later initializer
+SRC=1195 && COMPERR
+
+# the innermost declaration of a name hides the others: a constant hides a
+# variable, a variable a constant, a parameter a constant of the generic
+# type and a constant a type
+SRC=1196 && EXP=0 && RUN
+
+# a 'bool' is not assigned to an integer variable, 'int(b)' converts it
+SRC=1197 && COMPERR
+
+# the literal 'true' is not assigned to an integer variable
+SRC=1198 && COMPERR
+
+# a 'bool' is not assigned to an 'i8' variable, though it has the same size
+SRC=1199 && COMPERR
+
+# a 'bool' is not assigned to an integer result, also in a function never
+# called
+SRC=1200 && COMPERR
+
+# a 'bool' is not assigned to an integer field of a record
+SRC=1201 && COMPERR
+
+# a 'bool' is not assigned to an element of an integer array
+SRC=1202 && COMPERR
+
+# a 'bool' is not assigned to a variable initialized with a conversion
+SRC=1203 && COMPERR
+
+# a 'bool' literal is not an argument for an integer parameter
+SRC=1204 && COMPERR
+
+# a 'bool' is not a value for an integer field of a record literal
+SRC=1205 && COMPERR
+
+# a 'bool' is not an element of an integer array literal
+SRC=1206 && COMPERR
+
+# a 'bool' converted to an integer is 1 for 'true' and 0 for 'false'
+SRC=1207 && EXP=2 && RUN
+
+# a 'bool' is not an exit code, 'int(b)' converts it
+SRC=1208 && COMPERR
+
+# a constant index out of bounds is rejected also in a function that is never
+# called
+SRC=1209 && COMPERR
+
+# a constant that does not fit the variable is rejected also in a function
+# that is never called
+SRC=1210 && COMPERR
+
+# a constant 'array_copy' count past the end is rejected also in a function
+# that is never called
+SRC=1211 && COMPERR
+
+# 'break' outside a loop is rejected also in a function that is never called
+SRC=1212 && COMPERR
+
+# 'continue' outside a loop is rejected also in a function that is never
+# called
+SRC=1213 && COMPERR
+
+# an unsized array parameter has no length in a function that is never
+# called, so the checks that need its length are left to the calls
+SRC=1214 && EXP=0 && RUN
+
+# a noinline function that is never called is checked like a called one
+SRC=1215 && COMPERR
+
+# a method that is never called is checked like a called one
+SRC=1216 && COMPERR
+
+# functions that nothing calls are checked without a trace: the output is the
+# output of the source without them
+SRC=1217 && DIFFPY
+
+# the buffer of a sector function that is an unsized array parameter is
+# checked by its calls, not in a function that is never called
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=1218 && EXP=0 && RUN; fi
+
+# a negative constant index is rejected also for an unsized array parameter in
+# a function that is never called
+SRC=1219 && COMPERR
+
+# a negative constant start of 'write' is rejected also for an unsized array
+# parameter in a function that is never called
+SRC=1220 && COMPERR
+
+# a 'bool' is not an array index, 'int(b)' converts it
+SRC=1221 && COMPERR
+
+# a nested expression that fits the fourteen x86 scratch registers only when
+# computed in its memory destination: the version through a scratch register
+# runs out and the other is kept
+SRC=1222 && EXP=136 && RUN
+
+# fifteen indexed arguments of an inlined call on rv32i: the version that
+# folds each address into a register runs out of registers and the version
+# that keeps the indexed addresses is kept
+if [[ $MACHINE == rv32i* ]]; then SRC=1223 && EXP=5 && RUN; fi
+
+# fourteen indexed arguments of an inlined call on rv32i: both versions fit,
+# the footer counts the scratch registers of the kept version only
+if [[ $MACHINE == rv32i* ]]; then SRC=1224 && EXP=3 && RUN; fi
+
+# --checks=shift: the count of a shift in an 'i8' expression is compared with
+# the width of 'i8' also when the expression is computed in a wider register
+SRC=1225 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+
+# --checks=shift: a shift in the argument of a conversion to a narrower type
+# is checked against the width of the argument, in a register and in memory
+SRC=1226 && EXP=5 && OPTS="--vars=0x40000 --checks=shift --reproduce-source" RUN
+
+# an array copy in an inlined body on rv32i: the version that folds the
+# indexed arguments into registers runs out of registers inside the copy and
+# leaves no bulk registers behind
+if [[ $MACHINE == rv32i* ]]; then SRC=1227 && EXP=7 && RUN; fi
+
+# a shift in the argument of a conversion to a narrower type is computed at
+# the width of the argument, in a register and in memory
+SRC=1228 && EXP=6 && RUN
+
+# a shift by a count not below 32 in the argument of a conversion to 'i32'
+# is computed at 64 bits, where the low bits of the result are zero
+if [[ $MACHINE == x86_64 ]]; then SRC=1229 && EXP=7 && RUN; fi

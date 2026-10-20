@@ -1,0 +1,11 @@
+# a constant that hides the array of a 'foo' does not share storage with its
+# element
+
+func main() {
+    var a = int[2]
+    foo a {
+        let a = 3
+        e = a + 1
+    }
+    exit(a[1])
+}

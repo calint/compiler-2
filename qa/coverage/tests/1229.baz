@@ -1,0 +1,9 @@
+# a shift by a count not below 32 in the argument of a conversion to 'i32'
+# is computed at 64 bits, where the low bits of the result are zero
+func main() {
+    var n = 33
+    var a = 3
+    var d = i32(0)
+    d = i32(a << n)
+    exit(i32(a << n) + d + 7)
+}

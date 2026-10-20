@@ -1,0 +1,13 @@
+# a method that is never called is checked like a called one
+
+type point { x i8, y i8 }
+
+func mut point.move(d i8) {
+    self.x = self.x + d
+    self.y = 200
+}
+
+func main() {
+    var p = point{1, 2}
+    exit(p.x)
+}

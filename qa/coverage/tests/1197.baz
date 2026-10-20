@@ -1,0 +1,8 @@
+# a 'bool' is not assigned to an integer variable, 'int(b)' converts it
+
+func main() {
+    var b = true
+    var r = 0
+    r = b
+    exit(r)
+}

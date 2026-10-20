@@ -1,0 +1,4 @@
+
+1219.baz:5:13: index -1 is negative
+    res = s[-1]
+            ^

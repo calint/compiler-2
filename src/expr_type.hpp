@@ -336,6 +336,11 @@ class expr_type final : public statement {
                                                 const size_t field_offset)
         -> void;
 
+    // the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)',
+    // none when 'tk' names no built-in with a value
+    [[nodiscard]] static auto builtin_value_type(const toc& tc, const token& tk,
+                                                 tokenizer& tz) -> const type*;
+
     static auto compile_builtin_field(toc& tc, const size_t indent,
                                       const expr_any& src,
                                       const operand& src_op, const operand& dst)
@@ -358,7 +363,9 @@ class expr_type final : public statement {
         // 'expr_any' validates the source element type before entering here
         assert(fld.type().is_same(src_info.type_ref()));
 
-        if (fld.array_count != src_info.array_len()) {
+        if (not src_info.is_length_unknown() and
+            fld.array_count != src_info.array_len()) {
+
             throw compile_error{
                 src_loc_tk,
                 std::format("destination array size {} does not match source "

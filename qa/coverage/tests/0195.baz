@@ -1,3 +1,5 @@
 # data array type requires a closing bracket
 
-func main() { dat x = [2 = {1,2} }
+dat x = [2 = {1,2}
+
+func main() {}

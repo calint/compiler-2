@@ -1,0 +1,8 @@
+# a 'bool' is not assigned to an 'i8' variable, though it has the same size
+
+func main() {
+    var b = false
+    var r = i8(0)
+    r = b
+    exit(r)
+}

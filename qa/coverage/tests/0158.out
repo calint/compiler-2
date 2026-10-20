@@ -1,4 +1,4 @@
 
-0158.baz:4:33: too many fields for type 'point'
-func main() { dat p = point{ 1, 2 } }
-                                ^
+0158.baz:4:19: too many fields for type 'point'
+dat p = point{ 1, 2 }
+                  ^

@@ -4,8 +4,10 @@
 // '--report=registers' and in the error of registers that ran out
 
 #include <algorithm>
+#include <cassert>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <map>
 #include <ranges>
 #include <span>
@@ -49,14 +51,19 @@ class register_use_report final {
     // note: +2 because the heading is indented by two
 
     std::string heading_;
+    // the scratch registers that can be live, the bases held are not
     size_t register_total_;
+    // the scratch registers that a 'noinline' body starts with
+    size_t noinline_register_total_;
     size_t named_count_;
     std::vector<frame_use> frames_;
 
   public:
     register_use_report(std::string heading, const size_t register_total,
+                        const size_t noinline_register_total,
                         const size_t named_count, std::vector<frame_use> frames)
         : heading_{std::move(heading)}, register_total_{register_total},
+          noinline_register_total_{noinline_register_total},
           named_count_{named_count}, frames_{std::move(frames)} {}
 
     [[nodiscard]] auto text() const -> std::string {
@@ -104,7 +111,7 @@ class register_use_report final {
                 "starts its body with all {} registers free and "
                 "saves the registers held above it around the "
                 "call:\n\n  {}  {}  candidate frame",
-                register_total_, inside_heading, saved_heading),
+                noinline_register_total_, inside_heading, saved_heading),
         };
 
         for (const candidate& entry : found) {
@@ -323,17 +330,25 @@ class register_reporter final {
                 continue;
             }
 
-            const size_t frame{std::min(allocated.frame, uses.size() - 1)};
+            assert(allocated.frame < uses.size());
 
-            uses.at(frame).registers.push_back(register_text(allocated));
+            uses.at(allocated.frame)
+                .registers.push_back(register_text(allocated));
 
             if (allocated.named) {
                 ++named;
             }
         }
 
-        return {std::string{heading}, machine_.get().scratch_register_total(),
-                named, std::move(uses)};
+        const machine& backend{machine_.get()};
+
+        return {
+            std::string{heading},
+            backend.scratch_register_count(allocations),
+            backend.noinline_body_register_count(),
+            named,
+            std::move(uses),
+        };
     }
 
     // the registers that the calls of each function with a body of its own save
@@ -361,6 +376,24 @@ class register_reporter final {
         }
 
         return lines;
+    }
+
+    // what to know when the peak is in a function with a body of its own
+    [[nodiscard]] auto
+    peak_note_lines(const std::vector<register_trace::frame>& frames) const
+        -> std::vector<std::string> {
+
+        if (frames.empty() or not frames.front().is_noinline_body) {
+            return {};
+        }
+
+        return {
+            "",
+            std::format("the peak is in a function with a body of its own, "
+                        "compiled with all {} registers free, its callers are "
+                        "not on this stack",
+                        machine_.get().noinline_body_register_count()),
+        };
     }
 
     [[nodiscard]] auto register_peak_lines() const -> std::vector<std::string> {
@@ -420,22 +453,6 @@ class register_reporter final {
         return ordered;
     }
 
-    // what to know when the peak is in a function with a body of its own
-    [[nodiscard]] static auto
-    peak_note_lines(const std::vector<register_trace::frame>& frames)
-        -> std::vector<std::string> {
-
-        if (frames.empty() or not frames.front().is_noinline_body) {
-            return {};
-        }
-
-        return {
-            "",
-            "the peak is in a function with a body of its own, compiled with "
-            "all registers free, its callers are not on this stack",
-        };
-    }
-
     [[nodiscard]] static auto split_lines(const std::string_view text)
         -> std::vector<std::string> {
 
@@ -472,6 +489,16 @@ class register_reporter final {
 
             // note: a word longer than the width is left as it is
             if (space == std::string::npos or space <= indentation.size()) {
+                break;
+            }
+
+            const size_t word_end{
+                std::min(rest.find(' ', space + 1), rest.size()),
+            };
+
+            // a word that does not fit on a line of its own stays after the
+            // words before it
+            if (indentation.size() + word_end - (space + 1) > width) {
                 break;
             }
 

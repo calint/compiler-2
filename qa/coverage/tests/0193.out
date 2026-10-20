@@ -1,4 +1,4 @@
 
-0193.baz:3:19: expected a name
-func main() { dat = 1 }
-                  ^
+0193.baz:3:5: expected a name
+dat = 1
+    ^

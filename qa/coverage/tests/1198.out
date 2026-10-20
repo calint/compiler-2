@@ -1,0 +1,4 @@
+
+1198.baz:5:9: expected type 'i64', got 'bool'
+    r = true
+        ^

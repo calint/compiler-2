@@ -1,0 +1,10 @@
+# a negative constant index is rejected also for an unsized array parameter in
+# a function that is never called
+
+func last(s i8[]) res i8 {
+    res = s[-1]
+}
+
+func main() {
+    exit(0)
+}

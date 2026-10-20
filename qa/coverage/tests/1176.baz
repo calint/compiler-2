@@ -1,0 +1,7 @@
+# a built-in type name followed by '==' is not a bare type, it is read as a
+# name
+
+func main() {
+    var b = i8 == 1
+    exit(0)
+}

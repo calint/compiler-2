@@ -14,6 +14,7 @@
 #include <print>
 #include <ranges>
 #include <span>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -63,6 +64,18 @@ constexpr std::array<target_name, 4> target_names{
     target_name{.kind{target::rv32i_fpga}, .text{"rv32i-fpga"}},
 };
 
+struct kept_version_name {
+    machine::kept_version kind;
+    std::string_view text;
+};
+
+// the values of '--versions', in the order of the usage text
+constexpr std::array<kept_version_name, 3> kept_version_names{
+    kept_version_name{.kind{machine::kept_version::smaller}, .text{"smaller"}},
+    kept_version_name{.kind{machine::kept_version::first}, .text{"first"}},
+    kept_version_name{.kind{machine::kept_version::last}, .text{"last"}},
+};
+
 // what the compiler reports after the code, besides the usual statistics
 struct report_options {
     bool registers{};
@@ -79,6 +92,7 @@ struct options {
     bool optimize_jumps{true};
     bool reproduce_source{};
     report_options reports;
+    machine::kept_version kept_version{machine::kept_version::smaller};
     // empty until given, the default depends on the source and target
     std::string_view binary_file_name;
     // read and written by the sector functions on x86_64 and rv32i
@@ -109,6 +123,8 @@ struct value_option {
 [[nodiscard]] auto apply_report(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_bin(std::string_view value, options& opts) -> bool;
 [[nodiscard]] auto apply_sdcard(std::string_view value, options& opts) -> bool;
+[[nodiscard]] auto apply_versions(std::string_view value, options& opts)
+    -> bool;
 
 auto print_help(const char* const program_name) -> void;
 
@@ -121,7 +137,7 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     -> void;
 
 [[nodiscard]] auto parse_size_bytes(const std::string_view text,
-                                    const std::string_view name,
+                                    const std::string_view option,
                                     const size_t alignment)
     -> std::optional<size_t>;
 
@@ -174,6 +190,8 @@ auto print_source_line(std::string_view src, size_t start_index,
                        size_t end_index) -> void;
 
 [[nodiscard]] auto is_utf8_continuation(char ch) -> bool;
+
+[[nodiscard]] auto display_columns(std::string_view text) -> size_t;
 } // namespace
 
 auto main(const int argc, const char** const argv) -> int {
@@ -265,6 +283,7 @@ template <typename Name, size_t count>
         value_option{.name{"--report="}, .apply{apply_report}},
         value_option{.name{"--bin="}, .apply{apply_bin}},
         value_option{.name{"--sdcard="}, .apply{apply_sdcard}},
+        value_option{.name{"--versions="}, .apply{apply_versions}},
     };
 
     const std::string_view arg{argument};
@@ -310,15 +329,14 @@ template <typename Name, size_t count>
 [[nodiscard]] auto apply_vars(const std::string_view value, options& opts)
     -> bool {
 
-    return store_parsed(
-        parse_size_bytes(value, "variable storage size", vars_alignment),
-        opts.vars_size_bytes);
+    return store_parsed(parse_size_bytes(value, "--vars", vars_alignment),
+                        opts.vars_size_bytes);
 }
 
 [[nodiscard]] auto apply_stack(const std::string_view value, options& opts)
     -> bool {
 
-    return store_parsed(parse_size_bytes(value, "stack size", stack_alignment),
+    return store_parsed(parse_size_bytes(value, "--stack", stack_alignment),
                         opts.stack_size_bytes);
 }
 
@@ -326,7 +344,7 @@ template <typename Name, size_t count>
     -> bool {
 
     const std::optional<size_t> parsed{
-        parse_size_bytes(value, "memory size", memory_alignment),
+        parse_size_bytes(value, "--memory", memory_alignment),
     };
 
     if (not parsed) {
@@ -334,9 +352,9 @@ template <typename Name, size_t count>
     }
 
     if (*parsed > max_memory_size_bytes) {
-        print_usage_error(std::format(
-            "invalid memory size: '{}', must be from {} to {} bytes", value,
-            memory_alignment, max_memory_size_bytes));
+        print_usage_error(
+            std::format("invalid --memory: '{}', must be from {} to {} bytes",
+                        value, memory_alignment, max_memory_size_bytes));
 
         return false;
     }
@@ -353,7 +371,7 @@ template <typename Name, size_t count>
 
     if (not found) {
         print_usage_error(
-            std::format("invalid target: '{}', supported targets are: {}",
+            std::format("invalid --target: '{}', supported targets are: {}",
                         value, supported_target_texts()));
 
         return false;
@@ -402,6 +420,23 @@ template <typename Name, size_t count>
     return true;
 }
 
+[[nodiscard]] auto apply_versions(const std::string_view value, options& opts)
+    -> bool {
+
+    for (const kept_version_name& name : kept_version_names) {
+        if (name.text == value) {
+            opts.kept_version = name.kind;
+            return true;
+        }
+    }
+
+    print_usage_error(
+        std::format("invalid --versions: '{}', supported values are: {}", value,
+                    joined_texts(kept_version_names)));
+
+    return false;
+}
+
 // same layout as the readme usage section which pastes this output
 auto print_help(const char* const program_name) -> void {
     std::print(R"(usage: {0} [options] [file]
@@ -411,7 +446,9 @@ write a binary image
 options:
   --target=MACHINE    x86_64 (default): linux, nasm
                       rv32i: linux, llvm assembler, qemu user mode
-                      rv32i-qemu: bare-metal image for the qemu virt machine
+                      rv32i-qemu: bare-metal image for the qemu virt machine,
+                        fails when code, data, variables and stack exceed its
+                        128 MiB
                       rv32i-fpga: bare-metal image for the fpga soft core,
                         stack grows down from the end of the memory (see
                         --memory), fails when code, data, variables and stack
@@ -432,8 +469,10 @@ options:
                       'sector_write' open at run time, relative to the working
                       directory of the program (default: sdcard.img)
   --nopt              no jump optimizations
-  --reproduce-source  write reproduced source to diff.baz and check that it
-                      matches the input
+  --versions=KEPT     of two versions of the same code keep the smaller
+                      (default), or for testing the first or the last
+  --reproduce-source  check that the source written back from the parse
+                      matches the input, else write it to diff.baz
   --help, -h          this help
 
 reports:
@@ -445,7 +484,7 @@ checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
   line     report line number on failed bounds, division, shift, overlap or
-           overflow check
+           overflow check, rv32i-fpga ignores it
   frame    runtime non-inlined function frame capacity
   alias    compile time rejection of calls where a result may share storage
            with an argument, on by default
@@ -467,7 +506,7 @@ examples:
   {0} --vars=0x40000 --checks=upper prog.baz > prog.s
   {0} --checks=upper,lower,line,frame prog.baz > prog.s
   {0} --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
-  {0} --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+  {0} --target=rv32i-fpga --checks=upper,lower prog.baz > prog.s
   {0} --target=rv32i-fpga --memory=0x100000 prog.baz > prog.s
   {0} --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
 )",
@@ -509,11 +548,21 @@ examples:
             return 1;
         }
 
+        if (opts.stack_size_bytes > backend->max_storage_bytes()) {
+            print_usage_error(std::format(
+                "invalid --stack: {} B exceeds the {} B that the target "
+                "addresses",
+                opts.stack_size_bytes, backend->max_storage_bytes()));
+
+            return 1;
+        }
+
         if (opts.reports.registers) {
             backend->enable_register_report();
         }
 
         backend->set_sd_card_file_name(opts.sd_card_file_name);
+        backend->set_kept_version(opts.kept_version);
 
         program prg{*backend, files, opts.vars_size_bytes, opts.checks};
 
@@ -554,26 +603,29 @@ auto print_compiler_error(const source_files& files, const compile_error& e)
 }
 
 // the source written back from the parsed program equals the input, file by
-// file
+// file; a difference is a defect of the compiler, written to 'diff.baz'
 auto check_reproduced_source(const program& prg, const source_files& files)
     -> void {
 
     for (size_t file_ix{}; file_ix < files.count(); ++file_ix) {
-        std::ofstream reproduced_source{"diff.baz"};
+        std::ostringstream reproduced_source;
         prg.source_to(file_ix, reproduced_source);
-        reproduced_source.close();
 
-        if (files.text(file_ix) != source_files::read_file("diff.baz")) {
-            throw std::runtime_error{
-                std::format("generated source differs. diff {} diff.baz",
-                            files.name(file_ix))};
+        if (files.text(file_ix) == reproduced_source.view()) {
+            continue;
         }
+
+        std::ofstream diff_file{"diff.baz"};
+        diff_file << reproduced_source.view();
+
+        throw std::logic_error{std::format(
+            "generated source differs. diff {} diff.baz", files.name(file_ix))};
     }
 }
 
-// decimal or 0x hexadecimal, 'name' describes the size in error messages
+// decimal or 0x hexadecimal, 'option' is named in the error messages
 [[nodiscard]] auto parse_size_bytes(const std::string_view text,
-                                    const std::string_view name,
+                                    const std::string_view option,
                                     const size_t alignment)
     -> std::optional<size_t> {
 
@@ -598,19 +650,22 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 
     if (parsed.ec != std::errc{} or parsed.ptr != digits_end) {
         print_usage_error(
-            std::format("invalid {}: '{}' is not a number", name, text));
+            std::format("invalid {}: '{}' is not a number", option, text));
 
         return std::nullopt;
     }
 
     if (parsed_size_bytes == 0) {
-        print_usage_error(std::format("invalid {}: '{}' is zero", name, text));
+        print_usage_error(
+            std::format("invalid {}: '{}' is zero", option, text));
+
         return std::nullopt;
     }
 
     if (parsed_size_bytes % alignment != 0) {
-        print_usage_error(std::format(
-            "invalid {}: '{}' is not a multiple of {}", name, text, alignment));
+        print_usage_error(
+            std::format("invalid {}: '{}' is not a multiple of {}", option,
+                        text, alignment));
 
         return std::nullopt;
     }
@@ -635,10 +690,9 @@ auto check_reproduced_source(const program& prg, const source_files& files)
         if (report == "registers") {
             parsed.registers = true;
         } else {
-            print_usage_error(
-                std::format("invalid --report option: '{}', supported "
-                            "reports are: registers",
-                            report));
+            print_usage_error(std::format("invalid --report: '{}', supported "
+                                          "reports are: registers",
+                                          report));
 
             return std::nullopt;
         }
@@ -699,40 +753,39 @@ constexpr std::array<check_name, 10> check_names{
             option.remove_prefix(1);
         }
 
-        // e.g. '-noub' disables every check that 'noub' enables
+        // the checks the option names, e.g. '-noub' disables every check
+        // that 'noub' enables
+        std::vector<bool check_options::*> members;
+
         if (option == "noub") {
             for (const check_name& name : check_names) {
-                if (not name.is_ub) {
-                    continue;
-                }
-
-                if (is_disable) {
-                    disabled.push_back(name.member);
-                } else {
-                    parsed.*name.member = true;
+                if (name.is_ub) {
+                    members.push_back(name.member);
                 }
             }
+        } else {
+            const auto* const found{
+                std::ranges::find(check_names, option, &check_name::text),
+            };
 
-            continue;
-        }
+            if (found == check_names.end()) {
+                print_usage_error(std::format(
+                    "invalid --checks: '{}', supported options are: {}, "
+                    "noub, each with a '+' or '-' prefix",
+                    written, check_texts()));
 
-        const auto* const found{
-            std::ranges::find(check_names, option, &check_name::text),
-        };
+                return std::nullopt;
+            }
 
-        if (found == check_names.end()) {
-            print_usage_error(std::format(
-                "invalid --checks option: '{}', supported options are: {}, "
-                "noub, each with a '+' or '-' prefix",
-                written, check_texts()));
-
-            return std::nullopt;
+            members.push_back(found->member);
         }
 
         if (is_disable) {
-            disabled.push_back(found->member);
+            disabled.append_range(members);
         } else {
-            parsed.*found->member = true;
+            for (bool check_options::* const member : members) {
+                parsed.*member = true;
+            }
         }
     }
 
@@ -910,6 +963,26 @@ auto is_utf8_continuation(const char ch) -> bool {
     return byte >= first and byte <= last;
 }
 
+// the columns a terminal shows: a continuation byte after a lead or
+// continuation byte is part of that character, a lone one is shown as a
+// replacement character
+auto display_columns(const std::string_view text) -> size_t {
+    constexpr unsigned char first_non_ascii{0x80};
+
+    size_t columns{};
+    bool after_non_ascii{};
+
+    for (const char ch : text) {
+        if (not after_non_ascii or not is_utf8_continuation(ch)) {
+            ++columns;
+        }
+
+        after_non_ascii = static_cast<unsigned char>(ch) >= first_non_ascii;
+    }
+
+    return columns;
+}
+
 // the source line of the error with a '^' under its first character and a '~'
 // under the rest of the token, a position without a token has only the '^'
 auto print_source_line(const std::string_view src, const size_t start_index,
@@ -933,31 +1006,29 @@ auto print_source_line(const std::string_view src, const size_t start_index,
         return;
     }
 
-    // a tab stays a tab so that the mark lines up, a character counts once
+    // a tab stays a tab so that the mark lines up
     std::string padding;
-    for (const char ch : src.substr(line_bgn, start_index - line_bgn)) {
-        if (ch == '\t') {
-            padding += '\t';
-        } else if (not is_utf8_continuation(ch)) {
-            padding += ' ';
-        }
+    std::string_view rest{src.substr(line_bgn, start_index - line_bgn)};
+
+    for (size_t tab{rest.find('\t')}; tab != std::string_view::npos;
+         tab = rest.find('\t')) {
+
+        padding.append(display_columns(rest.substr(0, tab)), ' ');
+        padding += '\t';
+        rest.remove_prefix(tab + 1);
     }
+
+    padding.append(display_columns(rest), ' ');
 
     const size_t mark_end{std::min(end_index, line_bgn + line.size())};
 
-    // a character counts once, like in the padding
     const size_t marked_count{
         mark_end > start_index
-            ? static_cast<size_t>(std::ranges::count_if(
-                  src.substr(start_index, mark_end - start_index),
-                  [](const char ch) -> bool {
-                      return not is_utf8_continuation(ch);
-                  }))
+            ? display_columns(src.substr(start_index, mark_end - start_index))
             : 0,
     };
 
-    // a token of only continuation bytes is not a character, the caret still
-    // marks it
+    // a position without a token still has the caret
     const size_t mark_size{std::max(marked_count, size_t{1})};
 
     std::println(stderr, "{}\n{}^{}", line, padding,

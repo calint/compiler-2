@@ -167,14 +167,6 @@ class expr_any final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        if (is_array_identifier()) {
-            const ident_info src_info{tc.make_ident_info(*this)};
-
-            if (not src_info.is_array()) {
-                throw compile_error{tok(), "source must be an array"};
-            }
-        }
-
         // the base case
         if (is_identifier_ or not is_array_) {
             compile_element(tc, indent, element(0), dst);
@@ -188,8 +180,10 @@ class expr_any final : public statement {
 
         const size_t array_count{destination_array_count(dst)};
 
+        const bool is_length_unknown{dst.is_length_unknown()};
+
         // the parser could not check the size of an unsized destination
-        if (elements_.size() > array_count) {
+        if (not is_length_unknown and elements_.size() > array_count) {
             throw compile_error{
                 element(array_count).tok(),
                 std::format("too many elements for array of size {}",
@@ -201,6 +195,11 @@ class expr_any final : public statement {
         const destination first{dst.as_element(dst.operand())};
 
         const operand after_elements{compile_elements(tc, indent, first)};
+
+        // the elements after the literal are not known
+        if (is_length_unknown) {
+            return;
+        }
 
         expr_type::zero_remaining_elements(tc, indent, tok(), after_elements,
                                            first.type_ref(),
@@ -409,7 +408,7 @@ class expr_any final : public statement {
             return *value ? 1 : 0;
         }
 
-        return constant_element_value(tc, e, width_type);
+        return arith_constant(tc, e, width_type);
     }
 
     [[nodiscard]] auto element_count() const -> size_t {
@@ -498,7 +497,9 @@ class expr_any final : public statement {
 
         const size_t array_count{destination_array_count(dst)};
 
-        if (size_bytes > array_count) {
+        const bool is_length_unknown{dst.is_length_unknown()};
+
+        if (not is_length_unknown and size_bytes > array_count) {
             throw compile_error{
                 string_tk_,
                 std::format("string size {} overflows array size {}",
@@ -515,6 +516,11 @@ class expr_any final : public statement {
                          });
 
             cursor.increment_offset(address_offset(size_bytes));
+        }
+
+        // the bytes after the string are not known
+        if (is_length_unknown) {
+            return;
         }
 
         const size_t remaining_size_bytes{array_count - size_bytes};
@@ -544,7 +550,7 @@ class expr_any final : public statement {
         for (const expr_variant& e : elements_) {
             // e.g. '{300}' for 'i8' is rejected as when stored alone
             const std::optional<int64_t> value{
-                constant_element_value(tc, e, element_type),
+                arith_constant(tc, e, element_type),
             };
 
             if (not value) {
@@ -674,6 +680,47 @@ class expr_any final : public statement {
     // statics
     //
 
+    // folds an 'expr_arith' element, empty for any other
+    // note: so 'constant_bytes' does not pack a 'bool' or an instance element,
+    //       not even a constant one
+    [[nodiscard]] static auto
+    arith_constant(const toc& tc, const expr_variant& e, const type& width_type)
+        -> std::optional<int64_t> {
+
+        const expr_arith* const arith{std::get_if<expr_arith>(&e)};
+
+        if (arith == nullptr) {
+            return std::nullopt;
+        }
+
+        const std::optional<int64_t> value{
+            expr_arith::constant_value_of(
+                tc, *arith, width_type, expr_arith::constant_wrap::as_written),
+        };
+
+        // the fold keeps the low bits of an operand that does not fit, which
+        // only a conversion asks for
+        if (value) {
+            arith->assert_not_narrowed(tc, width_type);
+        }
+
+        return value;
+    }
+
+    // a 'bool' is not an integer, 'int(b)' converts it; an arithmetic operand
+    // and a call result are checked by rules of their own
+    static auto assert_not_boolean_name(const expr_arith& value, const type& tp)
+        -> void {
+
+        if (not value.is_name_or_literal() or not value.get_type().is_bool()) {
+            return;
+        }
+
+        throw compile_error{value.tok(),
+                            std::format("expected type '{}', got '{}'",
+                                        tp.name(), value.get_type().name())};
+    }
+
     // a built-in value whose first element is parsed, e.g. the zero value of
     // 'i8' or '{}', 'pos_tk' is where the value starts
     [[nodiscard]] static auto builtin_value(toc& tc, tokenizer& tz,
@@ -706,32 +753,6 @@ class expr_any final : public statement {
 
         value.assert_not_narrowed(tc, dst.type_ref());
         value.compile(tc, indent, dst);
-    }
-
-    // 'bool' and instance elements are not packed
-    [[nodiscard]] static auto constant_element_value(const toc& tc,
-                                                     const expr_variant& e,
-                                                     const type& width_type)
-        -> std::optional<int64_t> {
-
-        const expr_arith* const arith{std::get_if<expr_arith>(&e)};
-
-        if (arith == nullptr) {
-            return std::nullopt;
-        }
-
-        const std::optional<int64_t> value{
-            expr_arith::constant_value_of(
-                tc, *arith, width_type, expr_arith::constant_wrap::as_written),
-        };
-
-        // the fold keeps the low bits of an operand that does not fit, which
-        // only a conversion asks for
-        if (value) {
-            arith->assert_not_narrowed(tc, width_type);
-        }
-
-        return value;
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
@@ -779,7 +800,9 @@ class expr_any final : public statement {
         tz.rewind_to_position(pos_tk);
 
         if (not tp.is_bool()) {
-            return expr_arith{tc, tz};
+            expr_arith value{tc, tz};
+            assert_not_boolean_name(value, tp);
+            return value;
         }
 
         expr_bool value{tc, tz.next_whitespace_token(), tz};

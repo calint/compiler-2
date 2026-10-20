@@ -1,0 +1,8 @@
+# a 'bool' is not assigned to an element of an integer array
+
+func main() {
+    var b = true
+    var a = i32[4]
+    a[1] = b
+    exit(a[1])
+}

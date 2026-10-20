@@ -1,0 +1,4 @@
+
+1194.baz:4:9: cannot index non-array 'int'
+dat b = int[2]{3}
+        ^~~

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -32,6 +31,7 @@ class stmt_def_dat final : public statement {
         token src_loc_tk;
         int64_t value{};
         bool is_array{};
+        bool is_string{};
         size_t array_count{};
         std::vector<elem> elems;
     };
@@ -111,17 +111,13 @@ class stmt_def_dat final : public statement {
 
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
-        return {
-            .name{name_tk_.text()},
-            .type_ptr{&get_type()},
-            .src_loc_tk{name_tk_},
-            .is_array{root_elem_.is_array},
-            .array_len{root_elem_.array_count},
-            .pointer_register{},
-            .base_register{},
-            .value_register{},
-            .foo_array{},
+        const std::optional<size_t> array_count{
+            root_elem_.is_array ? std::optional{root_elem_.array_count}
+                                : std::nullopt,
         };
+
+        return initializer_declaration::make_var_info(name_tk_, get_type(),
+                                                      array_count);
     }
 
     //
@@ -151,8 +147,8 @@ class stmt_def_dat final : public statement {
 
         x.comment(el.src_loc_tk, 0, "{}[{}]", tp.name(), el.array_count);
 
-        // only 'i8[]' can be initialized with a string token
-        if (el.src_loc_tk.is_string()) {
+        // only 'i8[]' can be initialized with a string
+        if (el.is_string) {
             compile_data_string(x, tp, el);
             return;
         }
@@ -160,13 +156,68 @@ class stmt_def_dat final : public statement {
         compile_data_elements(x, tp, el);
     }
 
-    static auto compile_data_elem(toc& tc, const type& tp, const elem& el)
+    // e.g. 'dat primes = []{2, 3, 5}'
+    static auto compile_data_elements(machine& x, const type& tp,
+                                      const elem& el) -> void {
+
+        const auto values{
+            el.elems |
+                std::views::transform([](const elem& element) -> int64_t {
+                    return element.value;
+                }),
+        };
+
+        // e.g. 'dat a = i8[4]' lists no element
+        if (not el.elems.empty()) {
+            x.emit_data_array(tp.size_bytes(), values);
+        }
+
+        // the elements not listed are zero, as in a 'var'
+        if (el.array_count != el.elems.size()) {
+            x.emit_repeated_data(tp.size_bytes(),
+                                 el.array_count - el.elems.size(), 0);
+        }
+    }
+
+    static auto compile_data_rec(toc& tc, const type& tp, const elem& el)
         -> void {
 
+        // a built-in value, or the values of a built-in array
         if (tp.is_builtin()) {
             compile_data_builtin(tc, tp, el);
             return;
         }
+
+        if (not el.is_array) {
+            compile_data_record(tc, tp, el);
+            return;
+        }
+
+        machine& x{tc.machine()};
+
+        x.comment(el.src_loc_tk, 0, "{}[{}]", tp.name(), el.array_count);
+
+        for (const auto [i, e] : std::views::enumerate(el.elems)) {
+            x.comment(e.src_loc_tk, 0, "[{}]", i);
+            compile_data_record(tc, tp, e);
+        }
+
+        // zero out the remaining array elements
+        const size_t remaining_count{el.array_count - el.elems.size()};
+
+        if (remaining_count == 0) {
+            return;
+        }
+
+        x.comment(el.src_loc_tk, 0, "pad {} '{}' of size {}", remaining_count,
+                  tp.name(), tp.size_bytes());
+
+        x.emit_zero_data(multiply_storage_size(el.src_loc_tk, tp.size_bytes(),
+                                               remaining_count));
+    }
+
+    static auto compile_data_record(toc& tc, const type& tp, const elem& el)
+        -> void {
 
         machine& x{tc.machine()};
 
@@ -202,66 +253,6 @@ class stmt_def_dat final : public statement {
         x.emit_zero_data(size_bytes);
     }
 
-    // e.g. 'dat primes = []{2, 3, 5}'
-    static auto compile_data_elements(machine& x, const type& tp,
-                                      const elem& el) -> void {
-
-        const auto values{
-            el.elems |
-                std::views::transform([](const elem& element) -> int64_t {
-                    return element.value;
-                }),
-        };
-
-        // e.g. 'dat a = i8[4]' lists no element
-        if (not el.elems.empty()) {
-            x.emit_data_array(tp.size_bytes(), values);
-        }
-
-        // the elements not listed are zero, as in a 'var'
-        if (el.array_count != el.elems.size()) {
-            x.emit_repeated_data(tp.size_bytes(),
-                                 el.array_count - el.elems.size(), 0);
-        }
-    }
-
-    static auto compile_data_rec(toc& tc, const type& tp, const elem& el)
-        -> void {
-
-        if (not el.is_array) {
-            compile_data_elem(tc, tp, el);
-            return;
-        }
-
-        // the values of a built-in array, also a string, are one directive
-        if (tp.is_builtin()) {
-            compile_data_builtin(tc, tp, el);
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        x.comment(el.src_loc_tk, 0, "{}[{}]", tp.name(), el.array_count);
-
-        for (const auto [i, e] : std::views::enumerate(el.elems)) {
-            x.comment(e.src_loc_tk, 0, "[{}]", i);
-            compile_data_elem(tc, tp, e);
-        }
-
-        // zero out the remaining array elements
-        const size_t remaining_count{el.array_count - el.elems.size()};
-
-        if (remaining_count == 0) {
-            return;
-        }
-
-        x.comment(el.src_loc_tk, 0, "pad {} '{}' of size {}", remaining_count,
-                  tp.name(), tp.size_bytes());
-
-        x.emit_zero_data(multiply_storage_size(el.src_loc_tk, tp.size_bytes(),
-                                               remaining_count));
-    }
-
     // e.g. 'dat greeting = "hello"'
     static auto compile_data_string(machine& x, const type& tp, const elem& el)
         -> void {
@@ -270,8 +261,6 @@ class stmt_def_dat final : public statement {
         const size_t size_bytes{el.src_loc_tk.string_size_bytes()};
 
         // the bytes after the text are zero, as in a 'var'
-        assert(el.array_count != 0);
-
         if (size_bytes < el.array_count) {
             x.comment(el.src_loc_tk, 0, "zero remaining array");
 
@@ -292,8 +281,7 @@ class stmt_def_dat final : public statement {
         if (value.is_array_identifier()) {
             const ident_info source{tc.make_ident_info(value.element(0))};
 
-            // e.g. the '5' of 't{5, 1}' for an array field, where 'i32' is the
-            // default type
+            // e.g. the '5' of 't{5, 1}' for an array field
             if (not source.is_array()) {
                 throw compile_error{value.tok(), "source must be an array"};
             }
@@ -305,12 +293,13 @@ class stmt_def_dat final : public statement {
             .src_loc_tk{value.array_token()},
             .value{},
             .is_array{true},
+            .is_string{value.is_string()},
             .array_count{value.array_count()},
             .elems{},
         };
 
         // a string is emitted as it is written
-        if (value.is_string()) {
+        if (el.is_string) {
             return el;
         }
 
@@ -331,6 +320,7 @@ class stmt_def_dat final : public statement {
             .src_loc_tk{element.tok()},
             .value{},
             .is_array{},
+            .is_string{},
             .array_count{},
             .elems{},
         };

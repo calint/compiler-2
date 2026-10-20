@@ -1,0 +1,12 @@
+# a constant 'array_copy' count past the end is rejected also in a function
+# that is never called
+
+func g() {
+    var a = i8[4]
+    var d = i8[2]
+    array_copy(a, d, 3)
+}
+
+func main() {
+    exit(0)
+}

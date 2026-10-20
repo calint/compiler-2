@@ -61,13 +61,9 @@ class stmt_builtin_array_length final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        if (not dst.type_ref().is_same(tc.builtins().default_type())) {
-            throw compile_error{
-                dst.error_token(tok()),
-                std::format("destination must be an '{}'",
-                            tc.builtins().default_type().name()),
-            };
-        }
+        // note: a narrower destination is rejected by 'assert_not_narrowed',
+        //       a 'bool' by its boolean check, and no type is wider
+        assert(dst.type_ref().is_same(tc.builtins().default_type()));
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};
 
@@ -78,6 +74,11 @@ class stmt_builtin_array_length final : public expression {
 
         // e.g. the left side of 'array_length(a) * i', which an operation
         // with a run-time right side compiles without folding
+        // the code of a function checked without a call is discarded
+        if (src_info.is_length_unknown()) {
+            return;
+        }
+
         if (src_info.is_array()) {
             const std::optional<int64_t> length{
                 folded_constant(tc, dst.type_ref()),
@@ -117,6 +118,11 @@ class stmt_builtin_array_length final : public expression {
 
         // 'compile' reports an argument that is not an array
         if (not src_info.is_var() or not src_info.is_array()) {
+            return std::nullopt;
+        }
+
+        // an unsized array parameter has no length before its call
+        if (src_info.array_len() == 0) {
             return std::nullopt;
         }
 

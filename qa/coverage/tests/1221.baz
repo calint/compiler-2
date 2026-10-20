@@ -1,0 +1,8 @@
+# a 'bool' is not an array index, 'int(b)' converts it
+
+func main() {
+    var a = i8[4]
+    var b = true
+    a[b] = 1
+    exit(a[1])
+}

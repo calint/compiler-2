@@ -23,26 +23,9 @@ class constant_arith final {
     // statics
     //
 
-    // none when the division traps, e.g. 'x / 0' or the minimum divided by -1
-    [[nodiscard]] static auto
-    apply_division(const int64_t lhs, const arithmetic_operator op,
-                   const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
-
-        if (rhs == 0 or
-            (rhs == -1 and lhs == signed_minimum(width_type.size_bits()))) {
-
-            return std::nullopt;
-        }
-
-        return wrap_to_width(op == arithmetic_operator::divide ? lhs / rhs
-                                                               : lhs % rhs,
-                             width_type);
-    }
-
     // empty when the targets differ at run time: a zero divisor traps, the
-    // most negative value divided by -1 traps or wraps and shift counts
-    // outside the width are masked differently
+    // 64-bit minimum divided by -1 traps on x86_64 and shift counts outside
+    // the width are masked differently
     [[nodiscard]] static auto
     apply_operation(const int64_t lhs, const arithmetic_operator op,
                     const int64_t rhs, const type& width_type)
@@ -61,19 +44,6 @@ class constant_arith final {
         }
 
         return combine(lhs, op, rhs, width_type);
-    }
-
-    // none when the count is not below the width, e.g. 'x << 64' of an 'i64'
-    [[nodiscard]] static auto
-    apply_shift(const int64_t lhs, const arithmetic_operator op,
-                const int64_t rhs, const type& width_type)
-        -> std::optional<int64_t> {
-
-        if (rhs < 0 or std::cmp_greater_equal(rhs, width_type.size_bits())) {
-            return std::nullopt;
-        }
-
-        return shift_constant(lhs, op, static_cast<uint64_t>(rhs), width_type);
     }
 
     // operations whose low bits do not depend on higher bits
@@ -112,6 +82,15 @@ class constant_arith final {
         assert(op == arithmetic_operator::bit_xor);
 
         return static_cast<int64_t>(lhs_bits ^ rhs_bits);
+    }
+
+    // true when the quotient is outside the width, e.g. -128 / -1 of an 'i8'
+    [[nodiscard]] static auto division_overflows(const int64_t lhs,
+                                                 const int64_t rhs,
+                                                 const type& width_type)
+        -> bool {
+
+        return rhs == -1 and lhs == signed_minimum(width_type.size_bits());
     }
 
     // the comparison of two constants
@@ -186,26 +165,6 @@ class constant_arith final {
         return wide_overflow or result != wrap_to_width(result, width_type);
     }
 
-    // a count within the width shifts the same on both targets
-    [[nodiscard]] static auto
-    shift_constant(const int64_t lhs, const arithmetic_operator op,
-                   const uint64_t count, const type& width_type) -> int64_t {
-
-        const uint64_t bits{static_cast<uint64_t>(lhs)};
-
-        if (op == arithmetic_operator::shift_left) {
-            return wrap_to_width(static_cast<int64_t>(bits << count),
-                                 width_type);
-        }
-
-        // 'lhs' is sign extended so shifting in its sign bit keeps the width
-        if (lhs < 0) {
-            return static_cast<int64_t>(~(~bits >> count));
-        }
-
-        return static_cast<int64_t>(bits >> count);
-    }
-
     // the most negative value of a signed integer of 'size_bits', e.g. -128 for
     // 8, which has no positive counterpart; setting all bits above the sign bit
     // of the width gives it
@@ -236,5 +195,62 @@ class constant_arith final {
 
         // flipping and subtracting the sign bit extends it
         return static_cast<int64_t>((low ^ sign_bit) - sign_bit);
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // empty when the division traps: 'x / 0', and the 64-bit minimum divided
+    // by -1 on x86_64; a narrower minimum is divided in a wider register and
+    // wraps, e.g. -128 / -1 of an 'i8' is -128
+    [[nodiscard]] static auto
+    apply_division(const int64_t lhs, const arithmetic_operator op,
+                   const int64_t rhs, const type& width_type)
+        -> std::optional<int64_t> {
+
+        if (rhs == 0 or
+            (rhs == -1 and lhs == std::numeric_limits<int64_t>::min())) {
+
+            return std::nullopt;
+        }
+
+        return wrap_to_width(op == arithmetic_operator::divide ? lhs / rhs
+                                                               : lhs % rhs,
+                             width_type);
+    }
+
+    // empty when the count is not below the width, e.g. 'x << 64' of an 'i64'
+    [[nodiscard]] static auto
+    apply_shift(const int64_t lhs, const arithmetic_operator op,
+                const int64_t rhs, const type& width_type)
+        -> std::optional<int64_t> {
+
+        if (rhs < 0 or std::cmp_greater_equal(rhs, width_type.size_bits())) {
+            return std::nullopt;
+        }
+
+        return shift_constant(lhs, op, static_cast<uint64_t>(rhs), width_type);
+    }
+
+    // a count within the width shifts the same on both targets
+    [[nodiscard]] static auto
+    shift_constant(const int64_t lhs, const arithmetic_operator op,
+                   const uint64_t count, const type& width_type) -> int64_t {
+
+        const uint64_t bits{static_cast<uint64_t>(lhs)};
+
+        if (op == arithmetic_operator::shift_left) {
+            return wrap_to_width(static_cast<int64_t>(bits << count),
+                                 width_type);
+        }
+
+        // 'lhs' is sign extended so shifting in its sign bit keeps the width
+        if (lhs < 0) {
+            return static_cast<int64_t>(~(~bits >> count));
+        }
+
+        return static_cast<int64_t>(bits >> count);
     }
 };

@@ -164,6 +164,9 @@ class machine_rv32i : public machine {
     // '.Lbaz_divide' computes
     enum class helper_result : uint8_t { product, quotient, remainder };
 
+    // the run-time routines of 'call_arithmetic_helper'
+    enum class helper_routine : uint8_t { multiply, multiply_checked, divide };
+
     // a 32-bit multiplier can need one digit above bit 31 in non-adjacent form
     static constexpr size_t multiplier_digit_count_{33};
 
@@ -323,6 +326,24 @@ class machine_rv32i : public machine {
         std::array<access_start, 2> starts;
     };
 
+    // an error that unwinds an array operation ends it, so a version of code
+    // that fails leaves no bulk registers behind, see 'emit_most_efficient'
+    class bulk_depth_scope final {
+        std::vector<bulk_operation>& operations_;
+        size_t depth_;
+
+      public:
+        explicit bulk_depth_scope(std::vector<bulk_operation>& operations)
+            : operations_{operations}, depth_{operations.size()} {}
+
+        bulk_depth_scope(const bulk_depth_scope&) = delete;
+        bulk_depth_scope(bulk_depth_scope&&) = delete;
+        auto operator=(const bulk_depth_scope&) -> bulk_depth_scope& = delete;
+        auto operator=(bulk_depth_scope&&) -> bulk_depth_scope& = delete;
+
+        ~bulk_depth_scope() { operations_.resize(depth_); }
+    };
+
     // empty when no binary image is written
     std::string binary_file_name_;
     assembler_rv32i assembler_;
@@ -466,6 +487,24 @@ class machine_rv32i : public machine {
         assembler_.call(indent, label, "a7");
     }
 
+    //
+    // statics
+    //
+
+    // what a callee pushes without a check of its own: a helper call saves
+    // the registers the helper changes, and a failed check of the helper,
+    // made while they are saved, writes the digits of its line
+    [[nodiscard]] static auto leaf_stack_bytes() -> size_t {
+        // note: '.Lbaz_divide' changes the most registers
+        const size_t helper_save_bytes{
+            align_storage_size(helper_clobbers(helper_routine::divide).size() *
+                                   word_size_bytes_,
+                               stack_alignment_),
+        };
+
+        return helper_save_bytes + line_digits_bytes_;
+    }
+
   public:
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
@@ -536,6 +575,8 @@ class machine_rv32i : public machine {
                       const size_t element_size_bytes,
                       const std::function_ref<void(const operand&)> emit_count,
                       const equality_request& request) -> void override {
+
+        const bulk_depth_scope bulk_depth{bulk_operations_};
 
         const operand count{
             begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
@@ -723,14 +764,10 @@ class machine_rv32i : public machine {
 
         address_of(src_loc_tk, indent, start, frame_address);
 
-        if (register_mask(frame_address.base_register()) != 0 and
-            frame_address.displacement() != 0) {
-
-            assembler_.branch(
-                indent, frame_address.displacement() > 0 ? op::bltu : op::bgtu,
-                start.base_register(), frame_address.base_register(),
-                overflow.reference);
-        }
+        // note: the start cannot wrap around the address space: from 's0' it
+        //       follows the variables, which fit in 'vars' when compiled, and
+        //       from 's1' it follows the caller's frame, which passed this
+        //       check
 
         assembler_.la(indent, remaining.base_register(), variables_label);
 
@@ -768,31 +805,18 @@ class machine_rv32i : public machine {
 
     // a call saves the registers allocated now, the registers of the arguments
     // included, so the bound is not below what the call pushes; the callee
-    // pushes more without a check of its own: a helper call saves the
-    // registers the helper changes, and a failed check of the helper, made
-    // while they are saved, writes the digits of its line
+    // pushes 'leaf_stack_bytes' more without a check of its own
     auto check_stack_capacity(const token& src_loc_tk, const size_t indent)
         -> void override {
 
-        if (not is_stack_bounded()) {
-            return;
-        }
-
-        // note: '.Lbaz_divide' changes the most registers
-        const size_t helper_save_bytes{
-            align_storage_size(helper_clobbers(true, false).size() *
-                                   word_size_bytes_,
-                               stack_alignment_),
-        };
-
-        const size_t leaf_stack_bytes{helper_save_bytes + line_digits_bytes_};
+        assert(is_stack_bounded());
 
         const size_t saved_count{registers_saved_by_call().size()};
 
         const size_t call_bytes{
             align_storage_size(saved_count * word_size_bytes_,
                                stack_alignment_) +
-                frame_save_bytes_ + leaf_stack_bytes,
+                frame_save_bytes_ + leaf_stack_bytes(),
         };
 
         constexpr local_label fits{
@@ -933,6 +957,8 @@ class machine_rv32i : public machine {
                        const std::function_ref<void(const operand&)> emit_count,
                        const copy_request& request) -> void override {
 
+        const bulk_depth_scope bulk_depth{bulk_operations_};
+
         const operand count{
             begin_array_operation(src_loc_tk, indent, "source", "destination"),
         };
@@ -1063,7 +1089,7 @@ class machine_rv32i : public machine {
 
         assert(dst.is_register() or dst.is_memory());
 
-        divide_helper_used_ = true;
+        mark_used(divide_helper_used_);
 
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor,
                                operation == arithmetic_operator::remainder
@@ -1287,12 +1313,12 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, product.type_ref());
         validate_scalar(src_loc_tk, factor.type_ref());
-        validate_destination_storage(src_loc_tk, product);
+        validate_destination_storage(product);
 
         // validate memory operands even when a constant eliminates the
         // operation
         if (factor.is_memory()) {
-            validate_address(src_loc_tk, factor);
+            validate_address(factor);
         }
 
         const std::optional<int32_t> constant{immediate_value(factor)};
@@ -1307,9 +1333,9 @@ class machine_rv32i : public machine {
         // variable factors use the shared run-time helper
         if (not constant.has_value() or is_checked_constant) {
             if (check.enabled) {
-                multiply_checked_helper_used_ = true;
+                mark_used(multiply_checked_helper_used_);
             } else {
-                multiply_helper_used_ = true;
+                mark_used(multiply_helper_used_);
             }
 
             const runtime_check no_division_check;
@@ -1420,7 +1446,7 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_scalar(src_loc_tk, count.type_ref());
-        validate_destination_storage(src_loc_tk, dst);
+        validate_destination_storage(dst);
 
         const std::optional<int32_t> constant{immediate_value(count)};
 
@@ -1756,10 +1782,12 @@ class machine_rv32i : public machine {
 
         const uint32_t live{registers().unavailable_mask()};
 
-        const bool is_division{result_kind != helper_result::product};
+        const helper_routine routine{
+            arithmetic_helper_routine(result_kind, overflow_check.enabled),
+        };
 
         const std::span<const std::string_view> clobbered{
-            helper_clobbers(is_division, overflow_check.enabled),
+            helper_clobbers(routine),
         };
 
         const std::vector<std::string_view> saved{
@@ -1786,13 +1814,10 @@ class machine_rv32i : public machine {
                           division_check.with_line);
         }
 
-        if (is_division) {
-            assembler_.call(indent, ".Lbaz_divide");
-        } else if (overflow_check.enabled) {
-            assembler_.call(indent, ".Lbaz_multiply_checked");
+        assembler_.call(indent, helper_label(routine));
+
+        if (routine == helper_routine::multiply_checked) {
             check_multiply_result(src_loc_tk, indent, dst, overflow_check);
-        } else {
-            assembler_.call(indent, ".Lbaz_multiply");
         }
 
         const operand result{
@@ -2758,7 +2783,7 @@ class machine_rv32i : public machine {
     auto emit_arithmetic_helpers() -> void {
         // unused helpers contribute no code
         if (multiply_helper_used_) {
-            assembler_.label(0, ".Lbaz_multiply");
+            assembler_.label(0, helper_label(helper_routine::multiply));
             assembler_.mv(1, "a2", "a0");
             assembler_.li(1, "a0", 0);
             assembler_.beqz(1, "a1", "3f");
@@ -2782,7 +2807,7 @@ class machine_rv32i : public machine {
             // 'lui' of 2^31
             constexpr int sign_bit_upper{0x80000};
 
-            assembler_.label(0, ".Lbaz_multiply_checked");
+            assembler_.label(0, helper_label(helper_routine::multiply_checked));
             assembler_.xor_op(1, "a4", "a0", "a1");
             assembler_.srai(1, "a4", "a4", sign_shift_);
             assembler_.srai(1, "a3", "a0", sign_shift_);
@@ -2827,7 +2852,7 @@ class machine_rv32i : public machine {
             // one quotient bit per step
             constexpr int divide_steps{32};
 
-            assembler_.label(0, ".Lbaz_divide");
+            assembler_.label(0, helper_label(helper_routine::divide));
             assembler_.beqz(1, "a1", "5f");
             assembler_.srai(1, "a4", "a0", sign_shift_);
             assembler_.srai(1, "a3", "a1", sign_shift_);
@@ -3019,6 +3044,8 @@ class machine_rv32i : public machine {
                                       register_index(value.base_register()),
         };
 
+        // note: above the minimum because an add negates the constant into an
+        //       'addi'
         const bool is_small_constant{
             constant.has_value() and *constant > immediate_min_ and
                 *constant <= immediate_max_,
@@ -3481,8 +3508,6 @@ class machine_rv32i : public machine {
             static_cast<int>(register_bits_) - sector_shift,
         };
 
-        constexpr std::string_view handler_label{"baz_sd_card_panic"};
-
         assembler_rv32i& a{assembler_};
 
         if (read_used) {
@@ -3511,7 +3536,7 @@ class machine_rv32i : public machine {
         a.li(1, "a3", 0);
         a.li(1, "a7", syscall_openat_);
         a.ecall(1);
-        a.bltz(1, "a0", handler_label);
+        a.bltz(1, "a0", sd_card_handler_label);
         a.la(1, "a3", ".Lbaz_sd_card");
         a.sw(1, "a0", 0, "a3");
         // 'llseek' writes the size of the file at a3
@@ -3521,7 +3546,7 @@ class machine_rv32i : public machine {
         a.li(1, "a4", seek_end);
         a.li(1, "a7", syscall_llseek_);
         a.ecall(1);
-        a.bnez(1, "a0", handler_label);
+        a.bnez(1, "a0", sd_card_handler_label);
         a.la(1, "a3", ".Lbaz_sd_card");
         a.lw(1, "a4", size_low_offset, "a3");
         a.lw(1, "a0", size_high_offset, "a3");
@@ -3538,7 +3563,7 @@ class machine_rv32i : public machine {
         restore_saved_registers(1, saved, stack_bytes);
         a.label(0, "2");
         a.lw(1, "a4", count_offset, "a3");
-        a.bgeu(1, "a0", "a4", handler_label);
+        a.bgeu(1, "a0", "a4", sd_card_handler_label);
         // a0 the descriptor, a3 and a4 the low and high word of the offset
         a.lw(1, "a7", 0, "a3");
         a.slli(1, "a3", "a0", sector_shift);
@@ -3546,10 +3571,10 @@ class machine_rv32i : public machine {
         a.mv(1, "a0", "a7");
         a.mv(1, "a7", "a5");
         a.ecall(1);
-        a.bne(1, "a0", "a2", handler_label);
+        a.bne(1, "a0", "a2", sd_card_handler_label);
         a.jr(1, "a6");
 
-        emit_named_failure_handler(handler_label, "sd card", false);
+        emit_named_failure_handler(sd_card_handler_label, "sd card", false);
 
         a.switch_section(section::data);
         a.align(word_size_bytes_);
@@ -3833,7 +3858,7 @@ class machine_rv32i : public machine {
                                      const operand& address,
                                      const operand& dst = {}) -> operand {
 
-        validate_address(src_loc_tk, address);
+        validate_address(address);
 
         // no index: encode the offset directly or materialize base + offset
         if (address.index_register().empty()) {
@@ -4819,6 +4844,21 @@ class machine_rv32i : public machine {
         return immediates_size_bytes <= copy_size_bytes;
     }
 
+    [[nodiscard]] static auto
+    arithmetic_helper_routine(const helper_result result_kind,
+                              const bool is_checked) -> helper_routine {
+
+        if (result_kind != helper_result::product) {
+            return helper_routine::divide;
+        }
+
+        if (is_checked) {
+            return helper_routine::multiply_checked;
+        }
+
+        return helper_routine::multiply;
+    }
+
     // folding removes the operations that keep the destination, an operation
     // of a location with itself is a valid one that an aliased result reaches
     static auto
@@ -5011,8 +5051,7 @@ class machine_rv32i : public machine {
     }
 
     // the registers that a call of the helper changes
-    [[nodiscard]] static auto helper_clobbers(const bool is_division,
-                                              const bool is_checked)
+    [[nodiscard]] static auto helper_clobbers(const helper_routine routine)
         -> std::span<const std::string_view> {
 
         // argument registers are allocated last, so the helpers rarely
@@ -5026,13 +5065,29 @@ class machine_rv32i : public machine {
         constexpr size_t multiply_clobber_count{5};
         constexpr size_t checked_multiply_clobber_count{6};
 
-        if (is_division) {
+        if (routine == helper_routine::divide) {
             return clobbers;
         }
 
-        return std::span{clobbers}.first(is_checked
-                                             ? checked_multiply_clobber_count
-                                             : multiply_clobber_count);
+        if (routine == helper_routine::multiply_checked) {
+            return std::span{clobbers}.first(checked_multiply_clobber_count);
+        }
+
+        return std::span{clobbers}.first(multiply_clobber_count);
+    }
+
+    [[nodiscard]] static auto helper_label(const helper_routine routine)
+        -> std::string_view {
+
+        if (routine == helper_routine::divide) {
+            return ".Lbaz_divide";
+        }
+
+        if (routine == helper_routine::multiply_checked) {
+            return ".Lbaz_multiply_checked";
+        }
+
+        return ".Lbaz_multiply";
     }
 
     // the register-immediate form of 'add', 'and', 'or' and 'xor', 'sub' adds
@@ -5483,8 +5538,7 @@ class machine_rv32i : public machine {
                                            register_index(name)));
     }
 
-    static auto validate_address(const token& src_loc_tk,
-                                 const operand& address) -> void {
+    static auto validate_address(const operand& address) -> void {
 
         assert(address.is_memory());
         assert(is_register(address.base_register()));
@@ -5498,20 +5552,19 @@ class machine_rv32i : public machine {
 
         constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
 
-        if (address.displacement() < -limit or address.displacement() > limit) {
-            throw compile_error{src_loc_tk,
-                                "address offset exceeds RV32I address range"};
-        }
+        // note: '--vars' is bounded by 'max_storage_bytes' and a constant index
+        //       by the array size, so an offset stays in the address range
+        assert(address.displacement() >= -limit and
+               address.displacement() <= limit);
     }
 
     // the result is written in place
-    static auto validate_destination_storage(const token& src_loc_tk,
-                                             const operand& dst) -> void {
+    static auto validate_destination_storage(const operand& dst) -> void {
 
         assert(dst.is_register() or dst.is_memory());
 
         if (dst.is_memory()) {
-            validate_address(src_loc_tk, dst);
+            validate_address(dst);
         }
     }
 
@@ -5521,10 +5574,10 @@ class machine_rv32i : public machine {
 
         validate_scalar(src_loc_tk, dst.type_ref());
         validate_scalar(src_loc_tk, src.type_ref());
-        validate_destination_storage(src_loc_tk, dst);
+        validate_destination_storage(dst);
 
         if (src.is_memory()) {
-            validate_address(src_loc_tk, src);
+            validate_address(src);
         }
     }
 

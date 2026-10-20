@@ -15,7 +15,7 @@ register use at the failure: 3 of 14 registers live, 3 named by instructions
           rcx 12:5 (named)
      0  nested called at 12:37
 
-these frames are not noinline, making one noinline starts its body with all 14
+these frames are not noinline, making one noinline starts its body with all 13
 registers free and saves the registers held above it around the call:
 
   held inside  saved at the call  candidate frame

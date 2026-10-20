@@ -1,0 +1,14 @@
+# a constant that hides a global does not share storage with the global that
+# the argument names
+
+var g = 1
+
+func f(x mut) {
+    let g = 3
+    x = g + 1
+}
+
+func main() {
+    f(g)
+    exit(g)
+}

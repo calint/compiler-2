@@ -120,15 +120,9 @@ class stmt_def_func_param final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
         mut_tk_.source_to(os);
-
-        if (not type_tk_.is_empty()) {
-            type_tk_.source_to(os);
-        }
-
-        if (is_array()) {
-            open_bracket_tk_.source_to(os);
-            close_bracket_tk_.source_to(os);
-        }
+        type_tk_.source_to(os);
+        open_bracket_tk_.source_to(os);
+        close_bracket_tk_.source_to(os);
     }
 
     //

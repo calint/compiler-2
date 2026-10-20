@@ -1,4 +1,4 @@
 
-0548.baz:8:11: a string can only be assigned to an array of type 'i8'
+0548.baz:8:11: a string is not an argument, it would refer to read-only data
     print("hello")
           ^~~~~~~

@@ -1,0 +1,6 @@
+# a variable named like a built-in type is initialized with a string
+
+func main() {
+    var i8 = "ab"
+    exit(i8[1])
+}

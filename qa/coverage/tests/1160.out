@@ -1,0 +1,4 @@
+
+1160.baz:5:19: divisor must not be zero
+dat p = point{1 / 0}
+                  ^

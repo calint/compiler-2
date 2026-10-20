@@ -17,7 +17,8 @@ the binary image itself.
 
 ## Supports
 
-* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean
+* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean,
+  a boolean is not an integer, `int(b)` converts it to 1 or 0
 * user defined types with methods and constructors
 * data, constants, arrays and array iteration
 * variables with the type deduced from the initializer
@@ -97,7 +98,9 @@ write a binary image
 options:
   --target=MACHINE    x86_64 (default): linux, nasm
                       rv32i: linux, llvm assembler, qemu user mode
-                      rv32i-qemu: bare-metal image for the qemu virt machine
+                      rv32i-qemu: bare-metal image for the qemu virt machine,
+                        fails when code, data, variables and stack exceed its
+                        128 MiB
                       rv32i-fpga: bare-metal image for the fpga soft core,
                         stack grows down from the end of the memory (see
                         --memory), fails when code, data, variables and stack
@@ -118,8 +121,10 @@ options:
                       'sector_write' open at run time, relative to the working
                       directory of the program (default: sdcard.img)
   --nopt              no jump optimizations
-  --reproduce-source  write reproduced source to diff.baz and check that it
-                      matches the input
+  --versions=KEPT     of two versions of the same code keep the smaller
+                      (default), or for testing the first or the last
+  --reproduce-source  check that the source written back from the parse
+                      matches the input, else write it to diff.baz
   --help, -h          this help
 
 reports:
@@ -131,7 +136,7 @@ checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
   line     report line number on failed bounds, division, shift, overlap or
-           overflow check
+           overflow check, rv32i-fpga ignores it
   frame    runtime non-inlined function frame capacity
   alias    compile time rejection of calls where a result may share storage
            with an argument, on by default
@@ -153,7 +158,7 @@ examples:
   ./baz --vars=0x40000 --checks=upper prog.baz > prog.s
   ./baz --checks=upper,lower,line,frame prog.baz > prog.s
   ./baz --target=rv32i-qemu --stack=0x20000 prog.baz > prog.s
-  ./baz --target=rv32i-fpga --checks=upper,line prog.baz > prog.s
+  ./baz --target=rv32i-fpga --checks=upper,lower prog.baz > prog.s
   ./baz --target=rv32i-fpga --memory=0x100000 prog.baz > prog.s
   ./baz --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
 ```
@@ -170,12 +175,17 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    62           8426           4085          25308
-C++                              1            201             57            691
+C/C++ Header                    65           8641           4398          25750
+C++                              1            224             64            750
 -------------------------------------------------------------------------------
-SUM:                            63           8627           4142          25999
+SUM:                            66           8865           4462          26500
 -------------------------------------------------------------------------------
 ```
+
+## Reflection
+
+Some thoughts about the transition to AI-assisted development:
+[reflection.md](etc/readme/reflection.md)
 
 ## Sample
 
@@ -429,7 +439,7 @@ func main() {
 
     array_copy(arr[2], arr, 2)
     assert(arr[0] == 2)
-    # `array_copy` is a built-in function: takes source, destination, count
+    # `array_copy` is a built-in function: copy from, to, number of elements
 
     var arr1 = i32[8]
     array_copy(arr, arr1, 4)
@@ -1033,13 +1043,10 @@ main:
         repe cmpsb
         sete byte [rbp + 480]
     bool.254.14.end:
-    cmp.257.12:
-    mov r15b, byte [rbp + 480]
-    bool.257.12.end:
     func.assert.257.5:
         if.38.27.257.5:
         cmp.38.27.257.5:
-        cmp r15b, 0
+        cmp byte [rbp + 480], 0
         jne if.38.24.257.5.end
         if.38.27.257.5.code:
             mov rdi, 1
@@ -1084,7 +1091,6 @@ main:
         cmpsq
         .Lbaz_equal.0:
         sete r15b
-    cmp r15b, 0
     bool.263.12.end:
     func.assert.263.5:
         if.38.27.263.5:
@@ -1243,7 +1249,6 @@ main:
         cmpsq
         .Lbaz_equal.1:
         sete r15b
-    cmp r15b, 0
     bool.300.12.end:
     func.assert.300.5:
         if.38.27.300.5:
@@ -1265,7 +1270,6 @@ main:
         cmpsq
         .Lbaz_equal.2:
         setne r15b
-    cmp r15b, 0
     bool.305.12.end:
     func.assert.305.5:
         if.38.27.305.5:
@@ -1905,9 +1909,9 @@ main:
             mov rax, 0
             syscall
             mov qword [rbp + 1416], rax
-            mov r15b, byte [rbp + 1416]
+                mov r15, qword [rbp + 1416]
+                sub r15, 1
             mov byte [rbp + 1288], r15b
-            sub byte [rbp + 1288], 1
         func.str.input.410.12.end:
         if.412.12:
         cmp.412.12:
@@ -2827,9 +2831,9 @@ main:
 ;   [prog.baz:214:12] allocate scratch register -> r14
 ;       [prog.baz:214:12] a
         mov r14, qword [rbp + 392]
-;       [prog.baz:214:18] r14 + a << 1
-;       [prog.baz:214:18] src: expression
-;       [prog.baz:214:18] allocate scratch register -> r13
+;       [prog.baz:214:16] r14 + a << 1
+;       [prog.baz:214:16] src: expression
+;       [prog.baz:214:16] allocate scratch register -> r13
 ;       [prog.baz:214:16] a
         mov r13, qword [rbp + 392]
 ;       [prog.baz:214:21] r13 << 1
@@ -2837,7 +2841,7 @@ main:
         sal r13, 1
         add r14, r13
         jo baz_overflow_line_214
-;       [prog.baz:214:18] free scratch register r13
+;       [prog.baz:214:16] free scratch register r13
     cmp r14, 21
 ;   [prog.baz:214:12] free scratch register r14
     sete r15b
@@ -2947,7 +2951,6 @@ main:
 ;   [prog.baz:224:13] small = i8(small + small)
 ;   [prog.baz:224:13] = expression
 ;   [prog.baz:224:13] smaller of two versions of 3 and 3 instructions
-;   [prog.baz:224:16] smaller of two versions of 3 and 4 instructions
 ;   [prog.baz:224:16] allocate scratch register -> r15
 ;   [prog.baz:224:16] small
     mov r15b, byte [rbp + 400]
@@ -3355,18 +3358,13 @@ main:
         sete byte [rbp + 480]
     bool.254.14.end:
 ;   [prog.baz:257:5] assert(eq)
-;   [prog.baz:257:12] allocate scratch register -> r15
-;   [prog.baz:257:12] ? shorthand: eq
-    cmp.257.12:
-    mov r15b, byte [rbp + 480]
-    bool.257.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.257.5:
-;       [prog.baz:257:5] alias ok -> r15b
+;       [prog.baz:257:5] alias ok -> eq
         if.38.27.257.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.257.5:
-        cmp r15b, 0
+        cmp byte [rbp + 480], 0
         jne if.38.24.257.5.end
         if.38.27.257.5.code:
 ;           [prog.baz:38:34] exit(1)
@@ -3377,7 +3375,6 @@ main:
             syscall
 ;           [prog.baz:38:34] free named register rdi
         if.38.24.257.5.end:
-;       [prog.baz:257:5] free scratch register r15
     func.assert.257.5.end:
 ;   [prog.baz:259:5] arr1[2] = -1
 ;   [prog.baz:259:15] smaller of two versions of 1 and 2 instructions
@@ -3468,7 +3465,6 @@ main:
 ;       [prog.baz:263:12] free named register rdi
 ;       [prog.baz:263:12] free named register rsi
         sete r15b
-    cmp r15b, 0
     bool.263.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.263.5:
@@ -3627,13 +3623,13 @@ main:
     mov qword [rbp + 512], 5
 ;   [prog.baz:279:5] foo arr3
 ;   [prog.baz:279:9] allocate scratch register -> r15
-;   [prog.baz:279:9] initiate iterator e
+;   [prog.baz:279:9] initialize iterator e
     lea r15, [rbp + 504]
 ;   [prog.baz:279:5] allocate scratch register -> r14
 ;   [prog.baz:279:9] e: i64 (r15)
 ;   [prog.baz:279:9] i: i64 (r14)
 ;   [prog.baz:279:9] const n = 2
-;   [prog.baz:279:5] initiate counter i
+;   [prog.baz:279:5] initialize counter i
     mov r14, 0
     foo.279.5:
 ;       [prog.baz:280:9] e = e + i + n
@@ -3808,7 +3804,6 @@ main:
 ;       [prog.baz:300:12] free named register rdi
 ;       [prog.baz:300:12] free named register rsi
         sete r15b
-    cmp r15b, 0
     bool.300.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.300.5:
@@ -3851,7 +3846,6 @@ main:
 ;       [prog.baz:305:12] free named register rdi
 ;       [prog.baz:305:12] free named register rsi
         setne r15b
-    cmp r15b, 0
     bool.305.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.305.5:
@@ -5201,16 +5195,14 @@ main:
 ;           [prog.baz:92:5] self.len = i8(nbytes - 1)
 ;           [prog.baz:92:16] self.len = i8(nbytes - 1)
 ;           [prog.baz:92:16] = expression
-;           [prog.baz:92:16] smaller of two versions of 3 and 3 instructions
-;           [prog.baz:92:19] smaller of two versions of 3 and 3 instructions
-;           [prog.baz:92:19] nbytes
-;           [prog.baz:92:19] allocate scratch register -> r15
-            mov r15b, byte [rbp + 1416]
+;           [prog.baz:92:16] allocate scratch register -> r15
+;               [prog.baz:92:19] nbytes
+                mov r15, qword [rbp + 1416]
+;               [prog.baz:92:19] r15 - 1
+;               [prog.baz:92:19] src: folded constant '- 1'
+                sub r15, 1
             mov byte [rbp + 1288], r15b
-;           [prog.baz:92:19] free scratch register r15
-;           [prog.baz:92:19] self.len - 1
-;           [prog.baz:92:19] src: folded constant '- 1'
-            sub byte [rbp + 1288], 1
+;           [prog.baz:92:16] free scratch register r15
         func.str.input.410.12.end:
         if.412.12:
 ;       [prog.baz:412:12] ? nm.len <= 0
@@ -5613,6 +5605,7 @@ func.print_num:
 ;   [prog.baz:140:5] var is_negative = false
 ;   [prog.baz:140:9] is_negative: bool (1 B @ [rbx + 40])
 ;   [prog.baz:140:9] is_negative = false
+;   [prog.baz:140:23] false
     mov byte [rbx + 40], 0
     if.144.8:
 ;   [prog.baz:144:8] ? n < 0
@@ -5621,6 +5614,7 @@ func.print_num:
     jge if.144.5.end
     if.144.8.code:
 ;       [prog.baz:145:9] is_negative = true
+;       [prog.baz:145:23] true
         mov byte [rbx + 40], 1
     if.144.5.end:
     if.147.8:
@@ -5670,9 +5664,9 @@ func.print_num:
 ;           [prog.baz:154:21] r14 = 48
 ;           [prog.baz:154:21] src: folded constant '+ '0''
             mov r14, 48
-;           [prog.baz:154:29] r14 - n % 10
-;           [prog.baz:154:29] src: expression
-;           [prog.baz:154:29] allocate scratch register -> r13
+;           [prog.baz:154:27] r14 - n % 10
+;           [prog.baz:154:27] src: expression
+;           [prog.baz:154:27] allocate scratch register -> r13
 ;           [prog.baz:154:27] n
             mov r13, qword [rbx + 32]
 ;           [prog.baz:154:31] r13 % 10
@@ -5701,7 +5695,7 @@ func.print_num:
 ;           [prog.baz:154:31] free named register rdx
 ;           [prog.baz:154:31] free named register rax
             sub r14, r13
-;           [prog.baz:154:29] free scratch register r13
+;           [prog.baz:154:27] free scratch register r13
         mov byte [rbx + r15 + 8], r14b
 ;       [prog.baz:154:18] free scratch register r14
 ;       [prog.baz:154:9] free scratch register r15
@@ -6014,7 +6008,6 @@ msg_overflow:
 db `panic: overflow at line `
 msg_overflow_len equ $ - msg_overflow
 section .text
-; stack overflow handler (--checks=stack)
 ; shift failure handler (--checks=shift)
 baz_shift_panic:
 ;    print message to stderr
@@ -6136,7 +6129,7 @@ times 3 dq 0
 ;[prog.baz:30:8] str1
 ;[prog.baz:30:20] i8
 db 3
-;[prog.baz:30:18] zero remaining fields: 127 B
+;[prog.baz:30:15] zero remaining fields: 127 B
 times 127 db 0
 ;[prog.baz:31:8] str2
 ;[prog.baz:31:20] i8
@@ -6166,30 +6159,30 @@ vars.end:
 ;                    factorial: 1 body, 2 calls, 37 instructions
 ;                    print_num: 1 body, 2 calls, 83 instructions
 ;
-;   removed jumps to next code: 132
+;   removed jumps to next code: 131
 ;    removed unreachable jumps: 2
-; removed same target branches: 54
+; removed same target branches: 51
 ; inverted branches over jumps: 7
 ; max scratch registers in use: 4
 ;            max frames in use: 10
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;                max vars size: 1045 B
-;                 instructions: 1103
+;                 instructions: 1099
 ;
-; register use at the peak: 6 of 14 registers live, 2 named by instructions
+; register use at the peak: 6 of 13 registers live, 2 named by instructions
 ;
 ;   held  frame, registers (allocated at)
 ;      6  print_num (noinline body)
 ;           r15 154:13
 ;           r14 154:18
-;           r13 154:29
+;           r13 154:27
 ;           rax 154:31 (named)
 ;           rdx 154:31 (named)
 ;           r12 154:31
 ;
-; the peak is in a function with a body of its own, compiled with all registers
-; free, its callers are not on this stack
+; the peak is in a function with a body of its own, compiled with all 13
+; registers free, its callers are not on this stack
 ;
 ; per callee, the most registers one call holds itself
 ;
@@ -6202,10 +6195,10 @@ vars.end:
 ;     3      1  factorial (noinline body)
 ;     1     60  assert
 ;     1      3  baz
-;     1      1  greet
-;     1      2  inv
+;     1      1  inv
 ;     0      2  bar
 ;     0      1  faz
+;     0      1  greet
 ;     0      1  object.at
 ;     0      2  point.at
 ;     0      2  point.fooz

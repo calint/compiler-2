@@ -1,0 +1,29 @@
+# an array copy in an inlined body on rv32i: the version that folds the
+# indexed arguments into registers runs out of registers inside the copy and
+# leaves no bulk registers behind
+
+type row {v i32[4]}
+var rows = row[4]
+var rows2 = row[4]
+var arr = i32[8]
+func f(a row, b mut row, p0 i32, p1 i32, p2 i32, p3 i32, p4 i32, p5 i32, p6 i32, p7 i32, p8 i32, p9 i32, p10 i32) {
+    array_copy(a.v, b.v, ((p0 + 1) + (p1 + 1) + (p2 + 1) + (p3 + 1) + (p4 + 1) + (p5 + 1) + (p6 + 1) + (p7 + 1) + (p8 + 1) + (p9 + 1) + (p10 + 1)) - 11 + 1)
+}
+func main() {
+    rows[1].v[0] = 7
+    var j = 1
+    var m = 2
+    var i0 = 0
+    var i1 = 0
+    var i2 = 0
+    var i3 = 0
+    var i4 = 0
+    var i5 = 0
+    var i6 = 0
+    var i7 = 0
+    var i8 = 0
+    var i9 = 0
+    var i10 = 0
+    f(rows[j], rows2[m], arr[i0], arr[i1], arr[i2], arr[i3], arr[i4], arr[i5], arr[i6], arr[i7], arr[i8], arr[i9], arr[i10])
+    exit(rows2[2].v[0])
+}

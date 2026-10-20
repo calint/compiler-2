@@ -1,0 +1,6 @@
+# a 'dat' in a block is rejected at the 'dat' before its initializer is
+# checked
+
+func main() {
+    dat x = 1 / 0
+}

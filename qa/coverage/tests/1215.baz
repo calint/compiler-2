@@ -1,0 +1,11 @@
+# a noinline function that is never called is checked like a called one
+
+func noinline g(x) res {
+    var a = i8[4]
+    a[x] = 1
+    res = a[4]
+}
+
+func main() {
+    exit(0)
+}

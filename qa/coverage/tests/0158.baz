@@ -1,4 +1,6 @@
 # too many initializers for a user type
 
 type point { x }
-func main() { dat p = point{ 1, 2 } }
+dat p = point{ 1, 2 }
+
+func main() {}

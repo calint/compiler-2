@@ -1,0 +1,10 @@
+# a 'bool' is not assigned to an integer result, also in a function never
+# called
+
+func f(b bool) res i32 {
+    res = b
+}
+
+func main() {
+    exit(0)
+}

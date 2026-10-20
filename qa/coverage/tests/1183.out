@@ -1,0 +1,4 @@
+
+1183.baz:5:9: variable 'd' already declared at 4:9
+    let d = 7
+        ^

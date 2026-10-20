@@ -235,7 +235,7 @@ class expr_arith final : public expression {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        // a single constant is compiled as an identifier with its comments
+        // a list that folds is one copy of its value
         if (is_expression()) {
             const std::optional<int64_t> value{
                 folded_constant(tc, dst.type_ref()),
@@ -249,32 +249,37 @@ class expr_arith final : public expression {
             }
         }
 
-        // a register that the expression reads is the result of an inlined
-        // function, writing it early would change what later elements read
-        // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
-        if (dst.is_register() and destination_is_clobbered_before_read(dst)) {
-            compile_through_scratch_as(tc, indent, dst, dst.type_ref());
-            return;
-        }
-
-        // a register or a single plain element is compiled directly, without
+        // a single plain element in memory is compiled directly, without
         // trying with and without a scratch register
-        if (dst.is_register() or is_single_plain_element()) {
+        if (not dst.is_register() and is_single_plain_element()) {
             do_compile(tc, indent, dst);
             return;
         }
 
-        machine& x{tc.machine()};
-
-        // writing the destination early would change what later elements read
+        // writing the destination early would change what later elements
+        // read; a register that the expression reads is the result of an
+        // inlined function
+        // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (destination_is_clobbered_before_read(dst)) {
+            if (dst.is_register()) {
+                compile_through_scratch_as(tc, indent, dst, dst.type_ref());
+                return;
+            }
+
             compile_through_scratch(tc, indent, dst);
+
+            return;
+        }
+
+        // a register destination needs no scratch register
+        if (dst.is_register()) {
+            do_compile(tc, indent, dst);
             return;
         }
 
         // a scratch register saves loads and stores of a memory destination
         // or costs a copy, which depends on the elements, so both are measured
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             tok(), indent, [&] -> void { do_compile(tc, indent, dst); },
             [&] -> void { compile_through_scratch(tc, indent, dst); });
     }
@@ -346,8 +351,7 @@ class expr_arith final : public expression {
                                     "constant expression overflows the type"};
             }
 
-            value =
-                constant_arith::apply_operation(*value, o, *rhs, width_type);
+            value = fold_operation(tc, *value, o, *e, *rhs, width_type);
         }
 
         if (not value) {
@@ -404,8 +408,31 @@ class expr_arith final : public expression {
         return exprs_.size() == 1 and exprs_.at(0)->is_name_or_literal();
     }
 
-    // '/', '%' and '>>' read the high bits of their operands
+    // '/', '%' and '>>' read the high bits of their operands, and '<<' by a
+    // count not below the narrower width is defined only at the wider one
     [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
+        for (const arithmetic_operator o : ops_) {
+            if (o == arithmetic_operator::divide or
+                o == arithmetic_operator::remainder or
+                o == arithmetic_operator::shift_left or
+                o == arithmetic_operator::shift_right) {
+
+                return false;
+            }
+        }
+
+        for (const std::unique_ptr<statement>& e : exprs_) {
+            if (not e->keeps_low_bits_when_narrowed()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // '/', '%' and '>>' read the high bits of their operands; a '<<' count
+    // has the narrower type, so where it is defined it is below that width
+    [[nodiscard]] auto keeps_low_bits_when_widened() const -> bool override {
         for (const arithmetic_operator o : ops_) {
             if (o == arithmetic_operator::divide or
                 o == arithmetic_operator::remainder or
@@ -416,7 +443,7 @@ class expr_arith final : public expression {
         }
 
         for (const std::unique_ptr<statement>& e : exprs_) {
-            if (not e->keeps_low_bits_when_narrowed()) {
+            if (not e->keeps_low_bits_when_widened()) {
                 return false;
             }
         }
@@ -659,12 +686,13 @@ class expr_arith final : public expression {
             return false;
         }
 
-        // the wide result must be checked against the narrow type
-        if (tc.checks().overflow) {
+        // the wide result must be checked against the narrow type, and a
+        // shift count against the width of the narrow type
+        if (tc.checks().overflow or tc.checks().shift) {
             return false;
         }
 
-        return keeps_low_bits_when_narrowed();
+        return keeps_low_bits_when_widened();
     }
 
     auto compile_constant(toc& tc, const size_t indent, const destination& dst,
@@ -762,9 +790,7 @@ class expr_arith final : public expression {
 
         // a target without narrow register operations normalizes a narrow
         // register after each operation, a wide register needs only the store
-        machine& x{tc.machine()};
-
-        x.emit_most_efficient(
+        tc.emit_most_efficient(
             tok(), indent,
             [&] -> void {
                 compile_through_scratch_as(tc, indent, dst, dst_type);
@@ -1089,7 +1115,7 @@ class expr_arith final : public expression {
             std::vector<operand> lea_registers;
 
             const operand src_operand{
-                tc.get_lea_operand(indent, src, src_info, lea_registers),
+                src.get_lea_operand(tc, indent, src_info, lea_registers),
             };
 
             x.add_subtract(
@@ -1338,7 +1364,7 @@ class expr_arith final : public expression {
         std::vector<operand> lea_registers;
 
         const operand src_operand{
-            tc.get_lea_operand(indent, src, src_info, lea_registers),
+            src.get_lea_operand(tc, indent, src_info, lea_registers),
         };
 
         if (src.get_unary_ops().is_empty()) {
@@ -1358,6 +1384,35 @@ class expr_arith final : public expression {
         emit(reg, true);
         x.free_scratch_register(src.tok(), indent, reg);
         x.free_scratch_registers(src.tok(), indent, lea_registers);
+    }
+
+    // rejects a constant divisor or shift count like 'compile'; none for a
+    // quotient that the division check reports at run time
+    [[nodiscard]] static auto
+    fold_operation(const toc& tc, const int64_t lhs,
+                   const arithmetic_operator op, const statement& rhs_element,
+                   const int64_t rhs, const type& width_type)
+        -> std::optional<int64_t> {
+
+        if (op == arithmetic_operator::divide or
+            op == arithmetic_operator::remainder) {
+
+            assert_divisor_not_zero(rhs_element.tok(), rhs);
+
+            if (tc.checks().division and
+                constant_arith::division_overflows(lhs, rhs, width_type)) {
+
+                return std::nullopt;
+            }
+        }
+
+        if (op == arithmetic_operator::shift_left or
+            op == arithmetic_operator::shift_right) {
+
+            assert_shift_count_fits(rhs_element.tok(), rhs, width_type);
+        }
+
+        return constant_arith::apply_operation(lhs, op, rhs, width_type);
     }
 
     // the constant that leaves a value unchanged

@@ -10,6 +10,9 @@
 #           rv32i under qemu user mode, rv32i-qemu in a qemu system with a
 #           uart, and rv32i-fpga in the fpga emulator
 #   report  merge the profiles into 'report/'
+#
+# 'VERSIONS=first' or 'VERSIONS=last' compiles with that '--versions' and runs
+# only the cases that run the program, see 'test-versions.sh'
 
 set -e
 
@@ -19,6 +22,8 @@ cd "$SCRIPT_DIR"
 BIN="$SCRIPT_DIR/../../baz"
 MACHINE="${MACHINE:-x86_64}"
 OPTS="--vars=0x40000 --checks=upper,lower,line --reproduce-source"
+# the version of the same code that is kept, empty for the default
+VERSION_OPTS="${VERSIONS:+--versions=$VERSIONS}"
 SEP="--------------------------------------------------------------------------------"
 
 usage() {
@@ -123,6 +128,12 @@ run) ;;
     ;;
 esac
 
+# the expected outputs are those of the default version
+if [[ -n "$VERSION_OPTS" && -n "${UPDATE:-}" ]]; then
+    echo "UPDATE is not supported with VERSIONS" >&2
+    exit 1
+fi
+
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/$MACHINE-%p.profraw"
 
 if [[ $MACHINE == rv32i-fpga && ! -x ${FPGA_EMULATOR[0]} ]]; then
@@ -134,7 +145,7 @@ cd "$SCRIPT_DIR/tests"
 rm -f gen.s out err
 
 echo $SEP
-echo "running: $BIN --target=$MACHINE $OPTS"
+echo "running: $BIN --target=$MACHINE $OPTS $VERSION_OPTS"
 echo $SEP
 
 export UBSAN_OPTIONS="print_stacktrace=1"
@@ -198,7 +209,7 @@ execute_program_errors_to_out() {
 }
 
 compile_and_build() {
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $VERSION_OPTS 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -207,7 +218,7 @@ compile_and_build() {
 }
 
 compile_and_build_no_checks() {
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source $VERSION_OPTS 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -217,7 +228,7 @@ compile_and_build_no_checks() {
 
 compile_and_build_with_opts() {
     local opts="$1"
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source 2>err >gen.s
+    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source $VERSION_OPTS 2>err >gen.s
     if [ $? -ne 0 ]; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
@@ -398,6 +409,11 @@ DIFFPY() {
 # Test with exit code and the jump optimizations as a diff from --nopt
 DIFFNOPT() {
     echo -n "$SRC: "
+    # the expected difference is that of the default version
+    if [[ -n "$VERSION_OPTS" ]]; then
+        echo skipped
+        return
+    fi
     if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS --nopt 2>err >gen-nopt.s; then
         echo "compiler failed. see 'err' and 'gen-nopt.s'" >&2
         exit 1
@@ -421,6 +437,11 @@ DIFFNOPT() {
 # Test with output comparison of compiler (no input)
 COMPERR() {
     echo -n "$SRC: "
+    # the program is not run
+    if [[ -n "$VERSION_OPTS" ]]; then
+        echo skipped
+        return
+    fi
     compile_expect_error
     local expected="${SRC%.*}.$COMPILER_MACHINE.out"
     if [[ ! -f "$expected" ]]; then

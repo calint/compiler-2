@@ -1,0 +1,11 @@
+# the minimum of a 'dat' element divided by -1 wraps like the run-time code
+# without the division check
+
+dat a = i8[2]{-128 / -1, -128 % -1}
+
+func main() {
+    if a[0] == -128 and a[1] == 0 {
+        exit(1)
+    }
+    exit(2)
+}

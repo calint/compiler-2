@@ -1,0 +1,9 @@
+# a 'bool' literal is not an argument for an integer parameter
+
+func f(x i32) res i32 {
+    res = x
+}
+
+func main() {
+    exit(f(true))
+}

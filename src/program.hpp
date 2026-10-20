@@ -15,6 +15,7 @@
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -410,6 +411,7 @@ class program final {
 
         compile_main(tc_, indent);
         compile_noinline_functions(tc_, indent);
+        check_unreached_functions(tc_, indent);
 
         tc_.exit_block();
 
@@ -511,10 +513,19 @@ class program final {
                 .lexically_normal(),
         };
 
-        const bool is_new{
-            loaded_paths_.insert(std::filesystem::weakly_canonical(path))
-                .second,
+        // e.g. a directory without access or a path too long for the system
+        std::error_code error;
+
+        const std::filesystem::path canonical_path{
+            std::filesystem::weakly_canonical(path, error),
         };
+
+        if (error) {
+            throw compile_error{
+                path_tk, std::format("cannot open file '{}'", path.string())};
+        }
+
+        const bool is_new{loaded_paths_.insert(canonical_path).second};
 
         if (is_new) {
             load_file(path, path_tk);
@@ -526,6 +537,22 @@ class program final {
     //
     // statics
     //
+
+    // the rules checked while compiling, e.g. a constant index in bounds,
+    // hold in a function that no compile reached too, so whether a program is
+    // accepted does not depend on its calls; an instance of a generic
+    // definition is checked where a call compiles it
+    static auto check_unreached_functions(toc& tc, const size_t indent)
+        -> void {
+
+        for (const stmt_def_func* f : tc.funcs().defs()) {
+            if (f->is_instance() or tc.funcs().is_reached(*f)) {
+                continue;
+            }
+
+            f->check_body(tc, indent);
+        }
+    }
 
     // the main function is compiled where the program starts
     static auto compile_main(toc& tc, const size_t indent) -> void {
@@ -548,7 +575,7 @@ class program final {
 
         x.label(0, reserved_names::main);
         tc.enter_func(reserved_names::main);
-        func_main.code().compile(tc, indent, destination{});
+        func_main.compile_statements(tc, indent);
         tc.exit_func(reserved_names::main);
 
         // code after an 'exit' or 'return' on every path would never run

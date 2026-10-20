@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <format>
 #include <ostream>
-#include <stdexcept>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
@@ -62,9 +61,9 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
-    // the fpga has no console, a panic exits with the code of its failure,
-    // which lights a diode, and the exit routine loops, 'a0' holds the line of
-    // a failure under '--checks=line' and is dropped
+    // a panic prints nothing and exits with the code of its failure, which
+    // lights a diode, and the exit routine loops; under '--checks=line' the
+    // line in 'a0' is dropped
     auto emit_bounds_failure_handler([[maybe_unused]] const bool with_line)
         -> void override {
 

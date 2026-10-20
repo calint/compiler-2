@@ -1,0 +1,4 @@
+
+1171.baz:7:9: source must be an array
+    b = array_length(a)
+        ^~~~~~~~~~~~

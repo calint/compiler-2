@@ -5,5 +5,5 @@ func same(x i8, y i16) res bool { res = x == y }
 func main() {
     var b = i8[2]{}
     var r = same(b[1], 4)
-    exit(r)
+    exit(int(r))
 }

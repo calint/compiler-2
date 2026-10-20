@@ -211,13 +211,6 @@ class assembler_rv32i final : public assembler {
         std::string target;
     };
 
-    // registers as the caller named them, so text keeps names such as 'x11'
-    struct spelling {
-        std::string_view rd;
-        std::string_view rs1;
-        std::string_view rs2;
-    };
-
     // the registers a branch given to the jump resolver compares
     struct jump_registers {
         uint8_t rs1{};
@@ -417,27 +410,22 @@ class assembler_rv32i final : public assembler {
         branch_zero(indent, op::bnez, rs, target);
     }
 
-    // a branch to a numeric label such as '1f', which is never grown
+    // a branch that is never grown, to a nearby label such as '1f' or a
+    // handler
     auto branch(const size_t indent, const op code, const std::string_view rs1,
                 const std::string_view rs2, const std::string_view target)
         -> void {
 
         assert(info(code).operands == form::branch);
 
-        add_instruction(indent,
-                        {
-                            .code{code},
-                            .rd{},
-                            .rs1{number_of(rs1)},
-                            .rs2{number_of(rs2)},
-                            .value{},
-                            .target{std::string{target}},
-                        },
-                        {
-                            .rd{},
-                            .rs1{rs1},
-                            .rs2{rs2},
-                        });
+        add_instruction(indent, {
+                                    .code{code},
+                                    .rd{},
+                                    .rs1{number_of(rs1)},
+                                    .rs2{number_of(rs2)},
+                                    .value{},
+                                    .target{std::string{target}},
+                                });
     }
 
     auto branch_zero(const size_t indent, const op code,
@@ -446,40 +434,28 @@ class assembler_rv32i final : public assembler {
 
         assert(info(code).operands == form::branch_zero);
 
-        add_instruction(indent,
-                        {
-                            .code{code},
-                            .rd{},
-                            .rs1{number_of(rs)},
-                            .rs2{zero_register_},
-                            .value{},
-                            .target{std::string{target}},
-                        },
-                        {
-                            .rd{},
-                            .rs1{rs},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{code},
+                                    .rd{},
+                                    .rs1{number_of(rs)},
+                                    .rs2{zero_register_},
+                                    .value{},
+                                    .target{std::string{target}},
+                                });
     }
 
     // routines returning with 'jr' may take the return address in 'link'
     auto call(const size_t indent, const std::string_view target,
               const std::string_view link = "ra") -> void {
 
-        add_instruction(indent,
-                        {
-                            .code{op::call},
-                            .rd{number_of(link)},
-                            .rs1{},
-                            .rs2{},
-                            .value{},
-                            .target{std::string{target}},
-                        },
-                        {
-                            .rd{link},
-                            .rs1{},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{op::call},
+                                    .rd{number_of(link)},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{},
+                                    .target{std::string{target}},
+                                });
 
         mark_call(target);
     }
@@ -513,29 +489,25 @@ class assembler_rv32i final : public assembler {
     }
 
     auto ebreak(const size_t indent) -> void {
-        add_instruction(indent,
-                        {
-                            .code{op::ebreak},
-                            .rd{},
-                            .rs1{},
-                            .rs2{},
-                            .value{},
-                            .target{},
-                        },
-                        {});
+        add_instruction(indent, {
+                                    .code{op::ebreak},
+                                    .rd{},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{},
+                                    .target{},
+                                });
     }
 
     auto ecall(const size_t indent) -> void {
-        add_instruction(indent,
-                        {
-                            .code{op::ecall},
-                            .rd{},
-                            .rs1{},
-                            .rs2{},
-                            .value{},
-                            .target{},
-                        },
-                        {});
+        add_instruction(indent, {
+                                    .code{op::ecall},
+                                    .rd{},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{},
+                                    .target{},
+                                });
     }
 
     auto globl(const std::string_view name) -> void {
@@ -549,70 +521,50 @@ class assembler_rv32i final : public assembler {
         assert(info(code).operands == form::immediate or
                info(code).operands == form::shift);
 
-        add_instruction(indent,
-                        {
-                            .code{code},
-                            .rd{number_of(rd)},
-                            .rs1{number_of(rs1)},
-                            .rs2{},
-                            .value{std::move(value)},
-                            .target{},
-                        },
-                        {
-                            .rd{rd},
-                            .rs1{rs1},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{code},
+                                    .rd{number_of(rd)},
+                                    .rs1{number_of(rs1)},
+                                    .rs2{},
+                                    .value{std::move(value)},
+                                    .target{},
+                                });
     }
 
-    // a jump to a numeric label such as '1b', which is never grown
+    // a jump that is never grown, to a nearby label such as '1b' or a handler
     auto j(const size_t indent, const std::string_view target) -> void {
-        add_instruction(indent,
-                        {
-                            .code{op::j},
-                            .rd{},
-                            .rs1{},
-                            .rs2{},
-                            .value{},
-                            .target{std::string{target}},
-                        },
-                        {});
+        add_instruction(indent, {
+                                    .code{op::j},
+                                    .rd{},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{},
+                                    .target{std::string{target}},
+                                });
     }
 
     auto jr(const size_t indent, const std::string_view rs) -> void {
-        add_instruction(indent,
-                        {
-                            .code{op::jr},
-                            .rd{},
-                            .rs1{number_of(rs)},
-                            .rs2{},
-                            .value{},
-                            .target{},
-                        },
-                        {
-                            .rd{},
-                            .rs1{rs},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{op::jr},
+                                    .rd{},
+                                    .rs1{number_of(rs)},
+                                    .rs2{},
+                                    .value{},
+                                    .target{},
+                                });
     }
 
     auto la(const size_t indent, const std::string_view rd,
             const std::string_view symbol) -> void {
 
-        add_instruction(indent,
-                        {
-                            .code{op::la},
-                            .rd{number_of(rd)},
-                            .rs1{},
-                            .rs2{},
-                            .value{immediate::of_symbol(symbol)},
-                            .target{},
-                        },
-                        {
-                            .rd{rd},
-                            .rs1{},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{op::la},
+                                    .rd{number_of(rd)},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{immediate::of_symbol(symbol)},
+                                    .target{},
+                                });
     }
 
     auto lbu(const size_t indent, const std::string_view rd, immediate offset,
@@ -624,20 +576,14 @@ class assembler_rv32i final : public assembler {
     auto li(const size_t indent, const std::string_view rd, immediate value)
         -> void {
 
-        add_instruction(indent,
-                        {
-                            .code{op::li},
-                            .rd{number_of(rd)},
-                            .rs1{},
-                            .rs2{},
-                            .value{std::move(value)},
-                            .target{},
-                        },
-                        {
-                            .rd{rd},
-                            .rs1{},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{op::li},
+                                    .rd{number_of(rd)},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{std::move(value)},
+                                    .target{},
+                                });
     }
 
     auto load(const size_t indent, const op code, const std::string_view rd,
@@ -645,39 +591,27 @@ class assembler_rv32i final : public assembler {
 
         assert(info(code).operands == form::load);
 
-        add_instruction(indent,
-                        {
-                            .code{code},
-                            .rd{number_of(rd)},
-                            .rs1{number_of(base)},
-                            .rs2{},
-                            .value{std::move(offset)},
-                            .target{},
-                        },
-                        {
-                            .rd{rd},
-                            .rs1{base},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{code},
+                                    .rd{number_of(rd)},
+                                    .rs1{number_of(base)},
+                                    .rs2{},
+                                    .value{std::move(offset)},
+                                    .target{},
+                                });
     }
 
     auto lui(const size_t indent, const std::string_view rd, immediate value)
         -> void {
 
-        add_instruction(indent,
-                        {
-                            .code{op::lui},
-                            .rd{number_of(rd)},
-                            .rs1{},
-                            .rs2{},
-                            .value{std::move(value)},
-                            .target{},
-                        },
-                        {
-                            .rd{rd},
-                            .rs1{},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{op::lui},
+                                    .rd{number_of(rd)},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{std::move(value)},
+                                    .target{},
+                                });
     }
 
     auto lw(const size_t indent, const std::string_view rd, immediate offset,
@@ -696,20 +630,14 @@ class assembler_rv32i final : public assembler {
     auto mv(const size_t indent, const std::string_view rd,
             const std::string_view rs) -> void {
 
-        add_instruction(indent,
-                        {
-                            .code{op::mv},
-                            .rd{number_of(rd)},
-                            .rs1{number_of(rs)},
-                            .rs2{},
-                            .value{},
-                            .target{},
-                        },
-                        {
-                            .rd{rd},
-                            .rs1{rs},
-                            .rs2{},
-                        });
+        add_instruction(indent, {
+                                    .code{op::mv},
+                                    .rd{number_of(rd)},
+                                    .rs1{number_of(rs)},
+                                    .rs2{},
+                                    .value{},
+                                    .target{},
+                                });
     }
 
     auto option_norelax() -> void { add_text(".option norelax"); }
@@ -735,20 +663,14 @@ class assembler_rv32i final : public assembler {
 
         assert(info(code).operands == form::registers);
 
-        add_instruction(indent,
-                        {
-                            .code{code},
-                            .rd{number_of(rd)},
-                            .rs1{number_of(rs1)},
-                            .rs2{number_of(rs2)},
-                            .value{},
-                            .target{},
-                        },
-                        {
-                            .rd{rd},
-                            .rs1{rs1},
-                            .rs2{rs2},
-                        });
+        add_instruction(indent, {
+                                    .code{code},
+                                    .rd{number_of(rd)},
+                                    .rs1{number_of(rs1)},
+                                    .rs2{number_of(rs2)},
+                                    .value{},
+                                    .target{},
+                                });
     }
 
     auto repeated_data(const size_t element_size_bytes, const size_t count,
@@ -813,16 +735,14 @@ class assembler_rv32i final : public assembler {
     }
 
     auto ret(const size_t indent) -> void {
-        add_instruction(indent,
-                        {
-                            .code{op::ret},
-                            .rd{},
-                            .rs1{},
-                            .rs2{},
-                            .value{},
-                            .target{},
-                        },
-                        {});
+        add_instruction(indent, {
+                                    .code{op::ret},
+                                    .rd{},
+                                    .rs1{},
+                                    .rs2{},
+                                    .value{},
+                                    .target{},
+                                });
     }
 
     auto sb(const size_t indent, const std::string_view src, immediate offset,
@@ -878,20 +798,14 @@ class assembler_rv32i final : public assembler {
 
         assert(info(code).operands == form::store);
 
-        add_instruction(indent,
-                        {
-                            .code{code},
-                            .rd{},
-                            .rs1{number_of(base)},
-                            .rs2{number_of(src)},
-                            .value{std::move(offset)},
-                            .target{},
-                        },
-                        {
-                            .rd{},
-                            .rs1{base},
-                            .rs2{src},
-                        });
+        add_instruction(indent, {
+                                    .code{code},
+                                    .rd{},
+                                    .rs1{number_of(base)},
+                                    .rs2{number_of(src)},
+                                    .value{std::move(offset)},
+                                    .target{},
+                                });
     }
 
     auto sub(const size_t indent, const std::string_view rd,
@@ -1069,12 +983,11 @@ class assembler_rv32i final : public assembler {
     // class methods
     //
 
-    auto add_instruction(const size_t indent, instruction ins,
-                         const spelling& names) -> void {
+    auto add_instruction(const size_t indent, instruction ins) -> void {
 
         assert(has_valid_immediate(ins));
 
-        std::string text{indentation(indent) + instruction_text(ins, names)};
+        std::string text{indentation(indent) + instruction_text(ins)};
 
         const size_t size_bytes{encoded_size_bytes(ins)};
         add_record(std::move(text), size_bytes, std::move(ins));
@@ -1979,60 +1892,60 @@ class assembler_rv32i final : public assembler {
         return infos.at(std::to_underlying(code));
     }
 
-    [[nodiscard]] static auto instruction_text(const instruction& ins,
-                                               const spelling& names)
+    [[nodiscard]] static auto instruction_text(const instruction& ins)
         -> std::string {
 
         const std::string_view mnemonic{info(ins.code).mnemonic};
         const form operands{info(ins.code).operands};
+        const std::string_view rd{register_names.at(ins.rd)};
+        const std::string_view rs1{register_names.at(ins.rs1)};
+        const std::string_view rs2{register_names.at(ins.rs2)};
 
         if (operands == form::registers) {
-            return std::format("{} {}, {}, {}", mnemonic, names.rd, names.rs1,
-                               names.rs2);
+            return std::format("{} {}, {}, {}", mnemonic, rd, rs1, rs2);
         }
 
         if (operands == form::immediate or operands == form::shift) {
-            return std::format("{} {}, {}, {}", mnemonic, names.rd, names.rs1,
+            return std::format("{} {}, {}, {}", mnemonic, rd, rs1,
                                immediate_text(ins.value));
         }
 
         if (operands == form::upper or operands == form::load_immediate or
             operands == form::load_address) {
 
-            return std::format("{} {}, {}", mnemonic, names.rd,
+            return std::format("{} {}, {}", mnemonic, rd,
                                immediate_text(ins.value));
         }
 
         if (operands == form::load) {
-            return std::format("{} {}, {}({})", mnemonic, names.rd,
-                               immediate_text(ins.value), names.rs1);
+            return std::format("{} {}, {}({})", mnemonic, rd,
+                               immediate_text(ins.value), rs1);
         }
 
         if (operands == form::store) {
-            return std::format("{} {}, {}({})", mnemonic, names.rs2,
-                               immediate_text(ins.value), names.rs1);
+            return std::format("{} {}, {}({})", mnemonic, rs2,
+                               immediate_text(ins.value), rs1);
         }
 
         if (operands == form::branch) {
-            return std::format("{} {}, {}, {}", mnemonic, names.rs1, names.rs2,
-                               ins.target);
+            return std::format("{} {}, {}, {}", mnemonic, rs1, rs2, ins.target);
         }
 
         if (operands == form::branch_zero) {
-            return std::format("{} {}, {}", mnemonic, names.rs1, ins.target);
+            return std::format("{} {}, {}", mnemonic, rs1, ins.target);
         }
 
         if (operands == form::move) {
-            return std::format("{} {}, {}", mnemonic, names.rd, names.rs1);
+            return std::format("{} {}, {}", mnemonic, rd, rs1);
         }
 
         if (operands == form::jump_register) {
-            return std::format("{} {}", mnemonic, names.rs1);
+            return std::format("{} {}", mnemonic, rs1);
         }
 
         // 'ra' is the implied link register
         if (operands == form::call and ins.rd != return_address_register_) {
-            return std::format("{} {}, {}", mnemonic, names.rd, ins.target);
+            return std::format("{} {}, {}", mnemonic, rd, ins.target);
         }
 
         if (operands == form::jump or operands == form::call) {
@@ -2046,16 +1959,13 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto inverse(const std::string_view mnemonic)
         -> std::string_view {
 
-        constexpr std::array<mnemonic_pair, 8> pairs{
+        constexpr std::array<mnemonic_pair, 5> pairs{
             {
                 {"beq", "bne"},
                 {"blt", "bge"},
                 {"bltu", "bgeu"},
                 {"bgt", "ble"},
                 {"bgtu", "bleu"},
-                {"beqz", "bnez"},
-                {"bltz", "bgez"},
-                {"bgtz", "blez"},
             },
         };
 

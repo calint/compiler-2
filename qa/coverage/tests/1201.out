@@ -1,0 +1,4 @@
+
+1201.baz:8:11: expected type 'i32', got 'bool'
+    p.x = b
+          ^

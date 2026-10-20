@@ -1,3 +1,3 @@
 # unterminated escaped string is rejected
 
-func main() { dat x = "abc\
+dat x = "abc\

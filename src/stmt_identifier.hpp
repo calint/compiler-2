@@ -164,7 +164,7 @@ class stmt_identifier final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand op{
-            tc.get_lea_operand(indent, *this, src_info, allocated_registers),
+            get_lea_operand(tc, indent, src_info, allocated_registers),
         };
 
         x.copy_value(tok(), indent, dst.operand(), op);
@@ -235,14 +235,9 @@ class stmt_identifier final : public statement {
                                    const lea_request& request) const
         -> operand override {
 
-        // start at the deepest known address, or the root if none exists
         const known_address* const known{known_in_path(request.known)};
 
-        const size_t start_index{
-            known == nullptr ? 0 : elems_.size() - 1 - known->trailing_count,
-        };
-
-        std::string path{elems_.at(start_index).name_tk.text()};
+        std::string path{elems_.front().name_tk.text()};
 
         path_registers registers{allocated_registers, request.address_register};
 
@@ -254,13 +249,11 @@ class stmt_identifier final : public statement {
 
         const type* parent_type{};
 
-        for (size_t elem_index{start_index}; elem_index < elems_.size();
-             ++elem_index) {
-
+        for (size_t elem_index{}; elem_index < elems_.size(); ++elem_index) {
             const ident_elem& cur_elem{elems_.at(elem_index)};
 
             // field offsets stay in the operand, not in the base register
-            if (elem_index != start_index) {
+            if (elem_index != 0) {
                 path.push_back('.');
                 path += cur_elem.name_tk.text();
 
@@ -308,6 +301,10 @@ class stmt_identifier final : public statement {
 
     // the low bytes are at the start address of the storage
     [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
+        return true;
+    }
+
+    [[nodiscard]] auto keeps_low_bits_when_widened() const -> bool override {
         return true;
     }
 
@@ -377,6 +374,10 @@ class stmt_identifier final : public statement {
         // a start at the end is the empty range of a zero count
         if (is_array_element()) {
             assert_index_in_bounds(elems_.back(), array_info, *start, true);
+        }
+
+        if (array_info.is_length_unknown()) {
+            return;
         }
 
         const size_t remaining{array_len - static_cast<size_t>(*start)};
@@ -616,14 +617,16 @@ class stmt_identifier final : public statement {
         return not path_type.has_field(name_tk.text());
     }
 
-    // the known address when it is of an element of this path, null when
-    // none is known or it is before the path, e.g. in the argument that a
+    // the known address when it is of the root of this path, null when none
+    // is known or it is before the path, e.g. in the argument that a
     // parameter names
     [[nodiscard]] auto
     known_in_path(const std::optional<known_address>& known) const
         -> const known_address* {
 
-        if (not known or known->trailing_count >= elems_.size()) {
+        // note: the first alias met while resolving a path is its root, so a
+        //       known address is of the root or before the path
+        if (not known or known->trailing_count != elems_.size() - 1) {
             return nullptr;
         }
 
@@ -634,10 +637,7 @@ class stmt_identifier final : public statement {
     // the same root is in scope, it shadows the function
     [[nodiscard]] auto names_function(const toc& tc) const -> bool {
         const std::string_view root{ident_info::root_of(path_as_string_)};
-
-        return tc.is_func(path_as_string_) and
-               not tc.scopes().is_var_or_alias(root) and
-               not tc.scopes().has_const(root);
+        return tc.is_func(path_as_string_) and not is_hidden_by_value(tc, root);
     }
 
     // note: after a run-time index the range stays the whole array
@@ -845,6 +845,16 @@ class stmt_identifier final : public statement {
                                        const ident_info& array_info,
                                        const int64_t index,
                                        const bool allow_end) -> void {
+
+        // without a length only a negative index is known to be out of bounds
+        if (array_info.is_length_unknown() and index >= 0) {
+            return;
+        }
+
+        if (array_info.is_length_unknown()) {
+            throw compile_error{elem.array_index_expr->tok(),
+                                std::format("index {} is negative", index)};
+        }
 
         const bool is_past_end{
             allow_end ? std::cmp_greater(index, array_info.array_len())
@@ -1081,11 +1091,11 @@ class stmt_identifier final : public statement {
     // an inlined argument's known address, a loaded pointer or the storage
     [[nodiscard]] static auto
     start_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                  path_registers& registers, const operand& known_address,
+                  path_registers& registers, const operand& known_operand,
                   const ident_info& storage) -> operand {
 
-        if (not known_address.is_empty()) {
-            return known_address;
+        if (not known_operand.is_empty()) {
+            return known_operand;
         }
 
         if (storage.is_pointer()) {

@@ -3,7 +3,7 @@
                                                 write(1, a, 2)
                                                 ^~~~~
 
-register use at the failure: 23 of 30 registers live, 1 named by instructions
+register use at the failure: 23 of 29 registers live, 1 named by instructions
 
   held  frame, registers (allocated at)
     23  main

@@ -1,0 +1,4 @@
+
+1208.baz:5:10: expected type 'i32', got 'bool'
+    exit(b)
+         ^

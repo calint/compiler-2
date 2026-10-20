@@ -1,0 +1,4 @@
+
+1157.baz:3:13: divisor must not be zero
+dat a = 1 / 0
+            ^

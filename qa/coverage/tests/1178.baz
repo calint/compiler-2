@@ -1,0 +1,6 @@
+# a variable named like a built-in type hides the type in its own array
+# initializer
+
+func main() {
+    var i8 = i8[3]{}
+}

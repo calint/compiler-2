@@ -1,0 +1,5 @@
+# a variable named 'int' hides the type in its own array initializer
+
+func main() {
+    var int = int[2]{1, 2}
+}

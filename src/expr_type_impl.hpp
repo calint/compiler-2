@@ -143,6 +143,18 @@ inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
 inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
+    // a built-in is not a function, its value is a scalar of a built-in type
+    if (const type* const value_type{builtin_value_type(tc, tok(), tz)};
+        value_type != nullptr) {
+
+        if (is_array_destination_) {
+            throw compile_error{tok(), "source must be an array"};
+        }
+
+        throw compile_error{tok(), std::format("expected type '{}', got '{}'",
+                                               tp.name(), value_type->name())};
+    }
+
     call_or_identifier parsed{
         parse_call_or_identifier(tc, tz, tok(), unary_ops{}, &tp),
     };
@@ -166,6 +178,26 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
                         src_info.type_ref().name()),
         };
     }
+}
+
+inline auto expr_type::builtin_value_type(const toc& tc, const token& tk,
+                                          tokenizer& tz) -> const type* {
+
+    if (tk.is_text("array_length")) {
+        return &tc.builtins().default_type();
+    }
+
+    if (tk.is_text("arrays_equal")) {
+        return &tc.builtins().boolean();
+    }
+
+    if (tc.builtins().is_integer_name(tk.text()) and
+        tz.peek_char_after_whitespace() == '(') {
+
+        return &stmt_builtin_convert::conversion_type(tc, tk);
+    }
+
+    return nullptr;
 }
 
 inline auto expr_type::assert_call_type(const type& tp) const -> void {
@@ -391,7 +423,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     std::vector<operand> allocated_registers;
 
     const operand src_op{
-        tc.get_lea_operand(indent, *this, src_info, allocated_registers),
+        get_lea_operand(tc, indent, src_info, allocated_registers),
     };
 
     const size_t size_bytes{
@@ -484,7 +516,7 @@ inline auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
         },
     };
 
-    x.emit_most_efficient(src.tok(), indent, compile_in_field, [&] -> void {
+    tc.emit_most_efficient(src.tok(), indent, compile_in_field, [&] -> void {
         const operand reg{
             x.alloc_scratch_register(src.tok(), indent, dst.type_ref()),
         };

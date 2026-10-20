@@ -2,8 +2,8 @@
 
 // what the next tokens are, decided before they are parsed: a type name or a
 // generic function name followed by a character has one meaning only, e.g.
-// 'point{' is a record literal and 'show<' a generic call; a variable of that
-// name hides the type
+// 'point{' is a record literal and 'show<' a generic call; a variable, a
+// parameter or a constant of that name hides the type or the function
 
 #include <string_view>
 
@@ -11,24 +11,31 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
+// e.g. 'let point = 3' makes 'point' in 'point + 1' the constant, not the type
+[[nodiscard]] inline auto is_hidden_by_value(const toc& tc,
+                                             const std::string_view name)
+    -> bool {
+
+    return tc.scopes().lookup(name).is_value();
+}
+
 // e.g. 'show<name>(x)', a generic function name followed by '<' has no other
 // meaning
 [[nodiscard]] inline auto is_generic_call(const toc& tc,
                                           const std::string_view name,
                                           tokenizer& tz) -> bool {
 
-    return tc.generics().has_func(name) and
+    return tc.generics().has_func(name) and not is_hidden_by_value(tc, name) and
            tz.peek_char_after_whitespace() == '<';
 }
 
-// a type name hidden by a var or alias is an identifier instead
 [[nodiscard]] inline auto is_type_name_followed_by(const toc& tc,
                                                    const token& tk,
                                                    tokenizer& tz,
                                                    const char next) -> bool {
 
     return tc.types().has(tk.text()) and
-           not tc.scopes().is_var_or_alias(tk.text()) and
+           not is_hidden_by_value(tc, tk.text()) and
            tz.peek_char_after_whitespace() == next;
 }
 
@@ -68,9 +75,7 @@
 [[nodiscard]] inline auto is_bare_record_type(const toc& tc, const token& tk,
                                               tokenizer& tz) -> bool {
 
-    if (not tc.types().has(tk.text()) or
-        tc.scopes().is_var_or_alias(tk.text())) {
-
+    if (not tc.types().has(tk.text()) or is_hidden_by_value(tc, tk.text())) {
         return false;
     }
 
@@ -89,15 +94,14 @@
                                                tokenizer& tz) -> bool {
 
     if (not(tc.builtins().is_integer_name(tk.text()) or tk.is_text("bool")) or
-        tc.scopes().is_var_or_alias(tk.text()) or
-        tc.scopes().has_const(tk.text())) {
+        is_hidden_by_value(tc, tk.text())) {
 
         return false;
     }
 
     const char next{tz.peek_char_after_whitespace()};
 
-    // an arithmetic operator would continue the expression, e.g. 'i8 + 1'
+    // an operator would continue the expression, e.g. 'i8 + 1'
     return next != '(' and next != '[' and
-           not std::string_view{"+-*/%&|^<>"}.contains(next);
+           not std::string_view{"+-*/%&|^<>=!"}.contains(next);
 }

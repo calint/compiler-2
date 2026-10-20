@@ -59,14 +59,6 @@ class assembler {
     // inverts jumps
     enum class jump_mode : uint8_t { resolved, optimized };
 
-    // changes made by 'optimize_jumps'
-    struct optimization_counts {
-        size_t jumps_to_next{};
-        size_t unreachable_jumps{};
-        size_t same_outcome_branches{};
-        size_t inverted_branches{};
-    };
-
   protected:
     struct jump_info {
         std::string mnemonic;
@@ -93,12 +85,15 @@ class assembler {
     };
 
   public:
-    // two versions of the same code: the one with less code, the first on ties,
-    // and the size of each in instructions
-    struct version_choice {
-        std::vector<line> kept;
-        size_t first_instruction_count{};
-        size_t second_instruction_count{};
+    // lines that 'capture' kept apart, added where 'append' is called
+    using captured_lines = std::vector<line>;
+
+    // changes made by 'optimize_jumps'
+    struct optimization_counts {
+        size_t jumps_to_next{};
+        size_t unreachable_jumps{};
+        size_t same_outcome_branches{};
+        size_t inverted_branches{};
     };
 
     // the bodies of one noinline function, valid once jumps are resolved
@@ -124,7 +119,7 @@ class assembler {
 
     std::vector<line> lines_;
     // versions being emitted by 'capture', innermost last
-    std::vector<std::vector<line>> captures_;
+    std::vector<captured_lines> captures_;
     bool code_section_{true};
     optimization_counts optimizations_;
     std::vector<body> bodies_;
@@ -157,7 +152,7 @@ class assembler {
     // a blank line that separates parts of the output
     auto add_separator_newline() -> void { add_text(""); }
 
-    auto append(std::vector<line> lines) -> void {
+    auto append(captured_lines lines) -> void {
         std::ranges::move(lines, std::back_inserter(current_lines()));
     }
 
@@ -174,37 +169,24 @@ class assembler {
         });
     }
 
-    // lines added by 'emit' are kept apart so a version can be chosen
+    // lines added by 'emit' are kept apart so a version can be chosen; an
+    // error that 'emit' throws drops them
     [[nodiscard]] auto capture(const std::function_ref<void()> emit)
-        -> std::vector<line> {
+        -> captured_lines {
 
         captures_.emplace_back();
-        emit();
-        std::vector<line> captured{std::move(captures_.back())};
+
+        try {
+            emit();
+        } catch (...) {
+            captures_.pop_back();
+            throw;
+        }
+
+        captured_lines captured{std::move(captures_.back())};
         captures_.pop_back();
+
         return captured;
-    }
-
-    // emits both versions apart, nothing is added until the caller appends
-    // the kept one
-    [[nodiscard]] auto
-    choose_smaller(const std::function_ref<void()> emit_first,
-                   const std::function_ref<void()> emit_second)
-        -> version_choice {
-
-        std::vector<line> first{capture(emit_first)};
-        std::vector<line> second{capture(emit_second)};
-
-        const size_t first_size{code_size_of(first)};
-        const size_t second_size{code_size_of(second)};
-
-        std::vector<line>& kept{first_size <= second_size ? first : second};
-
-        return {
-            .kept{std::move(kept)},
-            .first_instruction_count{instructions_in(first_size)},
-            .second_instruction_count{instructions_in(second_size)},
-        };
     }
 
     // 'emit' is buffered even when lines are otherwise written as added, so
@@ -233,6 +215,13 @@ class assembler {
     // expand to, valid once jumps are resolved
     [[nodiscard]] auto instruction_count() const -> size_t {
         return instructions_in(code_size());
+    }
+
+    // the size of captured lines in machine instructions
+    [[nodiscard]] auto instruction_count_of(const captured_lines& lines) const
+        -> size_t {
+
+        return instructions_in(code_size_of(lines));
     }
 
     [[nodiscard]] auto is_buffering() const -> bool {
@@ -327,22 +316,6 @@ class assembler {
         }
 
         lines_.clear();
-    }
-
-    //
-    // statics
-    //
-
-    // in the target's unit, removed lines have no size
-    [[nodiscard]] static auto code_size_of(const std::span<const line> lines)
-        -> size_t {
-
-        size_t size{};
-        for (const line& l : lines) {
-            size += l.code_size;
-        }
-
-        return size;
     }
 
   protected:
@@ -545,18 +518,6 @@ class assembler {
 
         // the branches the optimizer inverts are all paired
         std::unreachable();
-    }
-
-    [[nodiscard]] static auto trim(const std::string_view text)
-        -> std::string_view {
-
-        const size_t first{text.find_first_not_of(" \t\r")};
-
-        if (first == std::string_view::npos) {
-            return {};
-        }
-
-        return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
     }
 
   private:
@@ -801,6 +762,18 @@ class assembler {
         }
     }
 
+    // in the target's unit, removed lines have no size
+    [[nodiscard]] static auto code_size_of(const std::span<const line> lines)
+        -> size_t {
+
+        size_t size{};
+        for (const line& l : lines) {
+            size += l.code_size;
+        }
+
+        return size;
+    }
+
     [[nodiscard]] static auto
     destination(const std::unordered_map<std::string_view, size_t>& labels,
                 const jump_info& jump) -> size_t {
@@ -857,5 +830,17 @@ class assembler {
             .call_count{},
             .instruction_count{},
         });
+    }
+
+    [[nodiscard]] static auto trim(const std::string_view text)
+        -> std::string_view {
+
+        const size_t first{text.find_first_not_of(" \t\r")};
+
+        if (first == std::string_view::npos) {
+            return {};
+        }
+
+        return text.substr(first, text.find_last_not_of(" \t\r") - first + 1);
     }
 };

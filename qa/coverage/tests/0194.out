@@ -1,4 +1,4 @@
 
-0194.baz:4:25: only arrays of type 'i8' can be initialized with strings
-func main() { dat x = p{"x"} }
-                        ^~~
+0194.baz:4:11: only arrays of type 'i8' can be initialized with strings
+dat x = p{"x"}
+          ^~~

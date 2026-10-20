@@ -14,6 +14,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -355,6 +356,24 @@ class stmt_def_func final : public statement {
                            name_with_lengths(array_lengths));
     }
 
+    // for the errors of a function that no compile reached, compiled like a
+    // noinline body and discarded; an unsized array parameter has no length
+    // ('ident_info::is_length_unknown')
+    auto check_body(toc& tc, const size_t indent) const -> void {
+        tc.check_only([&] -> void {
+            machine& x{tc.machine()};
+
+            const machine::call_frame_scope call_frame{
+                x,
+                token{},
+                std::string{name()},
+                true,
+            };
+
+            std::ignore = compile_in_frame(tc, indent, {});
+        });
+    }
+
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
     // the lengths are those of the array arguments, one per array parameter
@@ -369,34 +388,19 @@ class stmt_def_func final : public statement {
 
         x.reserve_frame_base();
 
-        tc.enter_noinline_func(name(), body_call_path(array_lengths),
-                               x.frame_base_register());
-
-        // the register is held while the body runs
-        operand slot_register;
-
-        if (has_slot_register(tc)) {
-            slot_register = x.alloc_named_register(
-                tok(), indent + 1, x.slot_register(), tc.builtins().address());
-        }
-
-        add_constants(tc, indent + 1);
-
-        add_signature_vars(tc, indent + 1, var_access::through_pointer,
-                           array_lengths, slot_register);
-
-        code_.compile(tc, indent, destination{});
-        x.return_function(indent + 1);
-        const size_t frame_size_bytes{tc.storage().peak_frame_size_bytes()};
-        tc.exit_func(name());
-
-        if (not slot_register.is_empty()) {
-            x.free_named_register(tok(), indent + 1, slot_register);
-        }
+        const size_t frame_size_bytes{
+            compile_in_frame(tc, indent, array_lengths),
+        };
 
         x.release_frame_base();
 
         return frame_size_bytes;
+    }
+
+    // in place or in a body of its own, the function is reached
+    auto compile_statements(toc& tc, const size_t indent) const -> void {
+        tc.mark_func_reached(*this);
+        code_.compile(tc, indent, destination{});
     }
 
     // the slots of a call are the result, when there is one, then the
@@ -408,7 +412,7 @@ class stmt_def_func final : public statement {
     // a suffix could collide with a method body, e.g. 'func.list.size' of
     // function 'list' and method 'list.size'
     [[nodiscard]] auto
-    frame_size_label(const std::span<const size_t> array_lengths = {}) const
+    frame_size_label(const std::span<const size_t> array_lengths) const
         -> std::string {
 
         return std::format("size.{}", body_label(array_lengths));
@@ -427,6 +431,11 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto is_inlined() const -> bool {
         return head_.noinline_tk.is_empty();
+    }
+
+    // made from a generic definition, e.g. 'str.print'
+    [[nodiscard]] auto is_instance() const -> bool {
+        return instance_.has_value();
     }
 
     // has the implicit first parameter 'self'
@@ -484,12 +493,8 @@ class stmt_def_func final : public statement {
         head_.noinline_tk.source_to(os);
         head_.mut_tk.source_to(os);
         head_.name_tk.source_to(os);
-
-        if (not head_.method_dot_tk.is_empty()) {
-            head_.method_dot_tk.source_to(os);
-            head_.method_name_tk.source_to(os);
-        }
-
+        head_.method_dot_tk.source_to(os);
+        head_.method_name_tk.source_to(os);
         head_.open_paren_tk.source_to(os);
 
         // the implicit 'self' has no source and no delimiter after it
@@ -502,10 +507,7 @@ class stmt_def_func final : public statement {
 
         if (returns_) {
             returns_->ident_tk.source_to(os);
-
-            if (not returns_->type_tk.is_empty()) {
-                returns_->type_tk.source_to(os);
-            }
+            returns_->type_tk.source_to(os);
         }
     }
 
@@ -529,9 +531,9 @@ class stmt_def_func final : public statement {
 
     // a noinline body reaches the result and the arguments through pointer
     // slots in its frame. the array lengths are those of the body instance,
-    // empty where the body is only parsed. the parameter of the slot at
-    // 'register_slot_index' is at 'address_register' instead of the frame,
-    // when given
+    // empty where no call gives them: in the parse and in 'check_body'. the
+    // parameter of the slot at 'register_slot_index' is at 'address_register'
+    // instead of the frame, when given
     auto add_signature_vars(toc& tc, const size_t indent,
                             const var_access access,
                             const std::span<const size_t> array_lengths,
@@ -556,7 +558,7 @@ class stmt_def_func final : public statement {
                            .value_register{},
                            .foo_array{},
                        },
-                       var_kind::var);
+                       var_kind::param);
         }
 
         for (const auto [param_index, param] : std::views::enumerate(params_)) {
@@ -593,7 +595,7 @@ class stmt_def_func final : public statement {
                            .value_register{},
                            .foo_array{},
                        },
-                       var_kind::var);
+                       var_kind::param);
         }
     }
 
@@ -634,6 +636,43 @@ class stmt_def_func final : public statement {
         }
 
         return array_lengths_path(array_lengths);
+    }
+
+    // the body in a frame of its own at the frame base, which the caller
+    // holds; returns the size of the frame
+    [[nodiscard]] auto
+    compile_in_frame(toc& tc, const size_t indent,
+                     const std::span<const size_t> array_lengths) const
+        -> size_t {
+
+        machine& x{tc.machine()};
+
+        tc.enter_noinline_func(name(), body_call_path(array_lengths),
+                               x.frame_base_register());
+
+        // the register is held while the body runs
+        operand slot_register;
+
+        if (has_slot_register(tc)) {
+            slot_register = x.alloc_named_register(
+                tok(), indent + 1, x.slot_register(), tc.builtins().address());
+        }
+
+        add_constants(tc, indent + 1);
+
+        add_signature_vars(tc, indent + 1, var_access::through_pointer,
+                           array_lengths, slot_register);
+
+        compile_statements(tc, indent);
+        x.return_function(indent + 1);
+        const size_t frame_size_bytes{tc.storage().peak_frame_size_bytes()};
+        tc.exit_func(name());
+
+        if (not slot_register.is_empty()) {
+            x.free_named_register(tok(), indent + 1, slot_register);
+        }
+
+        return frame_size_bytes;
     }
 
     // e.g. 'sum.len.4.8' for array lengths 4 and 8, 'sum' without lengths

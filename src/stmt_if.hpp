@@ -71,7 +71,8 @@ class stmt_if final : public statement {
         }
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
+    auto compile(toc& tc, const size_t indent,
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         // the 'if' keyword locates the labels shared by all branches
@@ -99,7 +100,7 @@ class stmt_if final : public statement {
         // a branch that is constant true leaves no way to the 'else' code
         if (not branch_evaluated_to_true and not else_code_.is_empty()) {
             x.label(indent, label_else_branch);
-            else_code_.compile(tc, indent, dst);
+            else_code_.compile(tc, indent, destination{});
         }
 
         x.label(indent, label_after_if);

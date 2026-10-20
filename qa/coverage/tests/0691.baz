@@ -1,5 +1,5 @@
-# constant operands that trap or wrap at run time are not folded, a constant
-# zero divisor is rejected instead
+# a constant quotient that wraps folds to the wrapped value unless the
+# division check reports it at run time, a constant zero divisor is rejected
 
 func main() {
     var zero = 0

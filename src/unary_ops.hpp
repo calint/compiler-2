@@ -16,7 +16,7 @@
 
 class unary_ops final {
     token ws_pre_;          // whitespace before the ops
-    std::vector<char> ops_; // the unary ops as character
+    std::vector<char> ops_; // the unary ops as characters
 
   public:
     explicit unary_ops(tokenizer& tz) : ws_pre_{tz.next_whitespace_token()} {
@@ -107,11 +107,12 @@ class unary_ops final {
         source_to_without_whitespace(os);
     }
 
-    auto source_to_without_whitespace(std::ostream& os) const -> void {
-        std::print(os, "{}", to_string());
-    }
-
     [[nodiscard]] auto to_string() const -> std::string_view {
         return {ops_.begin(), ops_.end()};
+    }
+
+  private:
+    auto source_to_without_whitespace(std::ostream& os) const -> void {
+        std::print(os, "{}", to_string());
     }
 };

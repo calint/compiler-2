@@ -25,7 +25,7 @@ namespace storage_limits {
 inline constexpr size_t max_size_bytes{
     static_cast<size_t>(std::numeric_limits<int64_t>::max()) - 16,
 };
-// note: -16 leaves room for the alignment padding
+// note: 16 is the largest alignment, the stack's
 
 } // namespace storage_limits
 

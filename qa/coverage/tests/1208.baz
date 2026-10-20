@@ -1,0 +1,6 @@
+# a 'bool' is not an exit code, 'int(b)' converts it
+
+func main() {
+    var b = true
+    exit(b)
+}

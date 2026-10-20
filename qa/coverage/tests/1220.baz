@@ -1,0 +1,10 @@
+# a negative constant start of 'write' is rejected also for an unsized array
+# parameter in a function that is never called
+
+func show(s i8[]) {
+    write(1, s, 2, -1)
+}
+
+func main() {
+    exit(0)
+}

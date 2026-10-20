@@ -1,0 +1,8 @@
+# a 'dat' named like a type hides the type in a later initializer
+
+dat int = int(5)
+dat b = int[2]{3}
+
+func main() {
+    exit(int + b[0])
+}

@@ -1,4 +1,4 @@
 
-0197.baz:3:31: too many elements for array of size 1
-func main() { dat x = i8[1]{1,2} }
-                              ^
+0197.baz:3:17: too many elements for array of size 1
+dat x = i8[1]{1,2}
+                ^

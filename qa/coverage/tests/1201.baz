@@ -1,0 +1,10 @@
+# a 'bool' is not assigned to an integer field of a record
+
+type point { x i32, y i32 }
+
+func main() {
+    var b = true
+    var p = point
+    p.x = b
+    exit(p.x)
+}

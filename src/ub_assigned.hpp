@@ -24,8 +24,6 @@ class assigned_bytes final {
     explicit assigned_bytes(const size_t size_bytes)
         : size_bytes_{size_bytes} {}
 
-    assigned_bytes() = default;
-
     auto add(const byte_range assigned) -> void {
         if (assigned.size_bytes == 0) {
             return;

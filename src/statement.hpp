@@ -109,8 +109,7 @@ class one_line_source final {
     }
 
     [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
-        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or
-               ch == '\f' or ch == '\v';
+        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r';
     }
 
     // after the closing quote of the literal starting at 'begin', an escaped
@@ -230,16 +229,18 @@ class one_line_source final {
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow), 'visit_reads' (the expressions)
 //   a value        'folded_constant', 'assert_not_narrowed',
-//                  'keeps_low_bits_when_narrowed', 'get_unary_ops',
+//                  'keeps_low_bits_when_narrowed',
+//                  'keeps_low_bits_when_widened', 'get_unary_ops',
 //                  'is_expression', 'produces_boolean', 'compile_boolean':
 //                  'expr_arith', 'expr_any', 'expr_bool', 'expr_zero',
 //                  'stmt_builtin_convert', 'stmt_builtin_array_length',
-//                  'stmt_builtin_arrays_equal', 'stmt_builtin_io',
-//                  'stmt_call'
+//                  'stmt_builtin_arrays_equal', 'stmt_call'
 //   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and
-//                  'expr_arith', 'expr_any' and 'expr_type' that hold one
+//                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
+//                  'expr_bool' ('name_or_literal') and 'expr_zero'
+//                  ('is_name_or_literal', 'name_or_literal')
 class statement {
     token token_;
     unary_ops uops_;
@@ -345,6 +346,11 @@ class statement {
         return false;
     }
 
+    // true when computing at a wider width gives the same low bits
+    [[nodiscard]] virtual auto keeps_low_bits_when_widened() const -> bool {
+        return false;
+    }
+
     // the text the resolver looks up: a name such as 'p.x', or a literal such
     // as '3', 'true' or the folded '-3' of 'i8(-3)', which resolve to constants
     [[nodiscard]] virtual auto name_or_literal() const -> std::string_view {
@@ -430,6 +436,26 @@ class statement {
 
                 throw_uninitialized(src_loc_tk, var);
             });
+    }
+
+    // the operand of what 'info' resolves this statement to; an indexed
+    // access, a pointer or a known address is computed into 'lea_registers'
+    [[nodiscard]] auto
+    get_lea_operand(toc& tc, const size_t indent, const ident_info& info,
+                    std::vector<operand>& lea_registers) const -> operand {
+
+        if (not is_indexed() and not info.has_known_address() and
+            not info.is_pointer()) {
+
+            return info.operand();
+        }
+
+        return compile_lea(tc, indent, tok(), lea_registers,
+                           {
+                               .reg_count{},
+                               .known{info.known()},
+                               .address_register{},
+                           });
     }
 
     [[nodiscard]] auto get_type() const -> const type& {

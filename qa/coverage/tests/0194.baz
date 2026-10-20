@@ -1,4 +1,6 @@
 # strings require i8 arrays
 
 type p { s i16[2] }
-func main() { dat x = p{"x"} }
+dat x = p{"x"}
+
+func main() {}

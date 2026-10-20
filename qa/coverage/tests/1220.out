@@ -1,0 +1,4 @@
+
+1220.baz:5:20: index -1 is negative
+    write(1, s, 2, -1)
+                   ^

@@ -1,0 +1,28 @@
+# fourteen indexed arguments of an inlined call on rv32i: both versions fit,
+# the footer counts the scratch registers of the kept version only
+
+func f(p0 i32, p1 i32, p2 i32, p3 i32, p4 i32, p5 i32, p6 i32, p7 i32, p8 i32, p9 i32, p10 i32, p11 i32, p12 i32, p13 i32) res i32 {
+    res = p0
+}
+
+var arr = i32[8]
+
+func main() {
+    arr[0] = 3
+    var i0 = 0
+    var i1 = 1
+    var i2 = 2
+    var i3 = 3
+    var i4 = 4
+    var i5 = 5
+    var i6 = 6
+    var i7 = 7
+    var i8 = 0
+    var i9 = 1
+    var i10 = 2
+    var i11 = 3
+    var i12 = 4
+    var i13 = 5
+    var r = f(arr[i0], arr[i1], arr[i2], arr[i3], arr[i4], arr[i5], arr[i6], arr[i7], arr[i8], arr[i9], arr[i10], arr[i11], arr[i12], arr[i13])
+    exit(r)
+}

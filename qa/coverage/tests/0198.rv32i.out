@@ -1,4 +1,4 @@
 
-0198.baz:3:30: '2' of type 'i32' is not a 'bool', compare it, e.g. '2 != 0'
-func main() { dat x = bool[]{2} }
-                             ^
+0198.baz:3:16: '2' of type 'i32' is not a 'bool', compare it, e.g. '2 != 0'
+dat x = bool[]{2}
+               ^

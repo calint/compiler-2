@@ -1,0 +1,4 @@
+
+1179.baz:4:15: cannot index non-array 'int'
+    var int = int[2]{1, 2}
+              ^~~

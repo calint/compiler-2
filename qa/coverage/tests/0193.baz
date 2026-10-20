@@ -1,3 +1,5 @@
 # dat requires a declared name
 
-func main() { dat = 1 }
+dat = 1
+
+func main() {}

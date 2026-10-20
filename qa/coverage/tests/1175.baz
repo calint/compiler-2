@@ -1,0 +1,7 @@
+# an array size with whitespace after its unary operator is rejected at the
+# operator
+
+type t { a i8[- 4] }
+
+func main() {
+}

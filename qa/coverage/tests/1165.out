@@ -1,0 +1,7 @@
+
+1165.baz:5:12: constant '1000' does not fit 'v' of type 'i8'
+    if v > 1000 {
+           ^
+1165.baz:12:5: called from
+    g(5)
+    ^

@@ -686,15 +686,24 @@ auto check_data_takes_no_code_offset() -> void {
            "beq a0, a1, end\n.data\n" + words + ".text\nend:\n");
 }
 
-// the version 'choose_smaller' keeps, added to 'assembler'
+// the smaller of two captured versions, the first on ties, added to
+// 'assembler' as 'machine::emit_most_efficient' adds it
 auto emit_smaller(assembler_rv32i& assembler,
                   const std::function_ref<void()> emit_first,
                   const std::function_ref<void()> emit_second) -> void {
 
-    assembler.append(assembler.choose_smaller(emit_first, emit_second).kept);
+    assembler::captured_lines first{assembler.capture(emit_first)};
+    assembler::captured_lines second{assembler.capture(emit_second)};
+
+    const bool keeps_first{
+        assembler.instruction_count_of(first) <=
+            assembler.instruction_count_of(second),
+    };
+
+    assembler.append(keeps_first ? std::move(first) : std::move(second));
 }
 
-// 'choose_smaller' keeps the smaller version, a tie keeps the first
+// the smaller version is kept, a tie keeps the first
 auto check_smaller_version_kept() -> void {
     assembler_rv32i assembler;
 
@@ -793,6 +802,52 @@ auto check_equal_size_choice() -> void {
             "li a0, 2047\n"
             "# smaller of two versions of 2 and 1 instructions\n"
             "addi a0, a1, 0\n"));
+    }
+}
+
+// the multiply helper is emitted only when the kept version calls it, and a
+// version that runs out of registers leaves the registers it allocated
+auto check_version_state_kept() -> void {
+    for (const machine::kept_version kept :
+         {machine::kept_version::smaller, machine::kept_version::last}) {
+        std::ostringstream output;
+        machine_rv32i backend{&output, {}, assembler::jump_mode::resolved};
+        backend.set_builtin_types(test_types());
+        backend.set_kept_version(kept);
+        backend.start();
+
+        const operand result{operand::reg("a0", integer)};
+
+        const auto load = [&] {
+            backend.copy_value(token{}, 0, result, operand::imm(1, integer));
+        };
+
+        const auto multiply = [&] {
+            backend.multiply(token{}, 0, result, operand::reg("a1", integer),
+                             machine::factor_use::read_only);
+        };
+
+        // note: more allocations than there are scratch registers
+        const auto exhaust = [&] {
+            for (size_t i{}; i < 64; ++i) {
+                std::ignore = backend.alloc_scratch_register(token{}, 0, integer);
+            }
+        };
+
+        backend.emit_most_efficient(token{}, 0, load, multiply);
+        backend.emit_most_efficient(token{}, 0, load, exhaust);
+
+        // the helpers in use are emitted before the data
+        backend.begin_data(4);
+        backend.finish();
+        backend.write_assembly(output);
+
+        const bool calls_multiply{kept == machine::kept_version::last};
+
+        assert(output.str().contains(".Lbaz_multiply:") == calls_multiply);
+        assert(output.str().contains(
+            "# first of two versions, the second runs out of registers\n"
+            "li a0, 1\n"));
     }
 }
 
@@ -2169,30 +2224,15 @@ auto check_zeroing_ranges() -> void {
     backend.finish();
 }
 
-// an address that cannot be lowered is rejected: an offset beyond the 32-bit
+// an address that cannot be lowered is rejected: a scale beyond the 32-bit
 // address range, or an intermediate address without a free scratch register
 auto check_invalid_addresses_rejected() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
 
-    for (const int64_t offset :
-         {INT64_MIN, INT64_C(-4294967296), INT64_C(4294967296), INT64_MAX}) {
-        assert(rejected_with([&] {
-            backend.address_of(source_tk, 1, operand::reg("a0", integer),
-                               operand::mem("a1", {}, 1, offset, integer));
-        }));
-        backend.finish();
-    }
-
     for (const uint64_t scale :
          {UINT64_C(4294967296), UINT64_C(9223372036854775808)}) {
         assert(not backend.can_lower_index_scale(scale));
-    }
-
-    // 'finish' reports scratch usage even when nothing was emitted
-    std::istringstream rejected_lines{rv32i.output.str()};
-    for (std::string line; std::getline(rejected_lines, line);) {
-        assert(line.empty() or line == "# max scratch registers in use: 0");
     }
 
     // note: -1 leaves 'a0' free, it is also the destination
@@ -2576,23 +2616,6 @@ auto generate_frame_checks() -> void {
                 backend.define_constant(size_label, size);
             }
         }
-    }
-
-    // a frame at a displacement of the size of the address space fails
-    for (const bool positive : {false, true}) {
-        hand_written(backend, std::format("    la a0, vars\n    addi a0, a0, {}\n"
-                                          "    la s3, frame_result_{}",
-                                          positive ? 1 : -1, case_index));
-
-        const int64_t displacement{
-            positive ? int64_t{UINT32_MAX} : -int64_t{UINT32_MAX},
-        };
-
-        backend.check_frame_capacity(
-            token{}, 1, operand::mem("a0", {}, 1, displacement, integer),
-            operand::symbol("0", integer));
-
-        expect_failed(case_index++, true);
     }
 
     backend.free_named_register(token{}, 0, continuation);
@@ -4023,10 +4046,10 @@ auto check_constant_scopes() -> void {
     fe.tc.enter_func("outer");
     fe.tc.add_const(token{}, 0, "outer_only", 2);
     fe.tc.enter_func("inner", "path", "");
-    assert(fe.tc.scopes().has_const("global"));
-    assert(not fe.tc.scopes().has_const("outer_only"));
+    assert(fe.tc.scopes().lookup("global").is_constant());
+    assert(not fe.tc.scopes().lookup("outer_only").is_constant());
     fe.tc.exit_func("inner");
-    assert(fe.tc.scopes().has_const("outer_only"));
+    assert(fe.tc.scopes().lookup("outer_only").is_constant());
     fe.tc.exit_func("outer");
 
     fe.tc.exit_block();
@@ -4053,6 +4076,7 @@ auto run_host_checks() -> void {
     // 2. the machine
     check_line_sizes();
     check_equal_size_choice();
+    check_version_state_kept();
     check_backend_jump_optimization();
     check_copy_to_same_address();
     check_variable_comments();

@@ -1,0 +1,4 @@
+
+1174.baz:4:13: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got 'x'
+dat s = "©" x
+            ^

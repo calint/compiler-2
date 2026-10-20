@@ -1,0 +1,4 @@
+
+1199.baz:6:9: expected type 'i8', got 'bool'
+    r = b
+        ^

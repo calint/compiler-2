@@ -1,0 +1,10 @@
+# 'continue' outside a loop is rejected also in a function that is never
+# called
+
+func f() {
+    continue
+}
+
+func main() {
+    exit(0)
+}

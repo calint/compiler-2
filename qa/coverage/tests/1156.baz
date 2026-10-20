@@ -1,0 +1,13 @@
+# a conversion of a named constant folds: a 'dat' takes it, also negated and
+# as an array element, and a 'var' adds to it at compile time
+
+let N = 4
+
+dat a = i8(N)
+dat b = i8(-N)
+dat c = i8[2]{i8(N)}
+
+func main() {
+    var x = i8(N) + 1
+    exit(a - b + c[0] + x)
+}

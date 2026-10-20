@@ -1,0 +1,4 @@
+
+1213.baz:5:5: not in a loop
+    continue
+    ^~~~~~~~

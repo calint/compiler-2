@@ -1,0 +1,23 @@
+# a parameter hides a constant of the generic type of its method, inlined or
+# not
+
+func assert(err, ok bool) { if not ok exit(err) }
+
+type list<T type, n> {a T[n]}
+
+func list.get(n) res { res = n }
+
+func noinline list.far(n) res { res = n }
+
+func mut list.set(n mut) { n = 5 }
+
+type l3 = list<i8, 3>
+
+func main() {
+    var x = l3
+    assert(1, x.get(6) == 6)
+    assert(2, x.far(7) == 7)
+    var k = 1
+    x.set(k)
+    assert(3, k == 5)
+}

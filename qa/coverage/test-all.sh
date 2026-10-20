@@ -13,6 +13,8 @@ cd "$(dirname "$0")"
 ./test-coverage.sh --target=rv32i run
 ./test-coverage.sh --target=rv32i-qemu run
 ./test-coverage.sh --target=rv32i-fpga run
+# the same cases with the versions that the default choice drops
+./test-versions.sh
 
 # other suites
 export LLVM_PROFILE_FILE="$PWD/extra-%p.profraw"

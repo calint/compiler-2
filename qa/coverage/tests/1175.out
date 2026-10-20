@@ -1,0 +1,4 @@
+
+1175.baz:4:15: expected a constant value or a constant identifier
+type t { a i8[- 4] }
+              ^

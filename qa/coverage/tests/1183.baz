@@ -1,0 +1,7 @@
+# a constant named like a variable of the same block is rejected
+
+func main() {
+    var d = 5
+    let d = 7
+    exit(d)
+}

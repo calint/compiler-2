@@ -55,6 +55,8 @@ For a reviewer:
 - [5. Versions of the same code: compiled, measured, the shorter kept](#5-versions-of-the-same-code-compiled-measured-the-shorter-kept)
     - [5.1 Why](#51-why)
     - [5.2 Why so many](#52-why-so-many)
+    - [5.3 State: each version starts from the same machine](#53-state-each-version-starts-from-the-same-machine)
+    - [5.4 Testing the version that is dropped](#54-testing-the-version-that-is-dropped)
 - [6. Addresses: how a path such as 'w.rooms[i].items[j].x' becomes an operand](#6-addresses-how-a-path-such-as-wroomsiitemsjx-becomes-an-operand)
     - [6.1 The operand](#61-the-operand)
     - [6.2 Walking the path](#62-walking-the-path)
@@ -156,8 +158,10 @@ Invariants the code relies on:
    'main' is compiled where the program starts. An inlined call compiles the
    body of the callee in place ([1.3](#13-names-during-compile-frames-and-aliases)). A noinline call adds a body to
    compile for the array lengths of its arguments; the bodies are compiled
-   after 'main', and compiling one can add more. Then the failure handlers of
-   the checks that are on, the read-only strings, the data and the variables.
+   after 'main', and compiling one can add more. Then each function that no
+   compile reached is checked and emits nothing ([1.5](#15-checks)). Then the
+   failure handlers of the checks that are on, the read-only strings, the data
+   and the variables.
 
 4. output ('machine::finish', 'write_assembly'): the buffered lines get their
    jumps optimized, the assembly is written, the rv32i targets also write the
@@ -165,10 +169,19 @@ Invariants the code relies on:
 
 ### 1.3 Names during compile: frames and aliases
 
-'toc' keeps a stack of frames: blocks, loops, 'foo' loops and functions. A
-name is resolved by walking the frames from the innermost outwards
-('ident_resolver'), so the same statement can resolve to another variable,
-register or constant each time it is compiled.
+'toc' keeps a stack of frames: blocks, loops, 'foo' loops and functions. What
+a name means is decided by one rule, 'scope_stack::lookup': the frames of the
+innermost function from the innermost outwards, then the root frame that
+holds the globals; the first frame that declares the name decides. A frame
+declares a variable or a constant of a name, not both, a second declaration is
+rejected. In a function frame a parameter hides a constant of the generic
+instance, which is the context of the definition. Every question about a name
+asks this lookup: the resolver ('ident_resolver'), the aliasing check, and the
+lookaheads of the parser, where a variable, a parameter or a constant hides a
+type or a generic function of its name, e.g. after 'let point = 3' the
+'point' of 'point + 1' is the constant. A name followed by '(' is a call, no
+value is called. The same statement can resolve to another variable, register
+or constant each time it is compiled.
 
 An inlined call does not copy its arguments. It enters a function frame that
 maps each parameter name to the argument ('alias_info'), e.g. 'p' to
@@ -187,17 +200,22 @@ nowhere for a statement, a register, or the storage a resolved name is at.
 
 ### 1.4 Dry runs
 
-Some code is compiled only to be checked or measured, then dropped:
+Some code is compiled and then dropped: a dry run only to be checked, and
+the longer of two versions after both are measured:
 
 1. 'toc::check_only' and 'machine::emit_discarded': the body of a noinline
    function compiled as if inlined with the arguments of a call, for the
    aliasing errors of that call, see
-   [chapter 4](#4-noinline-calls-aliasing-validated-by-a-dry-run-of-the-body);
-   'toc::dry_run_scope' and 'machine::discard_scope' put back what it
+   [chapter 4](#4-noinline-calls-aliasing-validated-by-a-dry-run-of-the-body),
+   and the body of a function that no compile reached ([1.5](#15-checks));
+   'toc::dry_run_scope' and 'machine::version_scope' put back what it
    changed: the registers, the frame depth, the string constants and the use
-   of storage
-2. 'machine::emit_most_efficient': two versions are compiled and the one with
-   fewer instructions is kept, e.g. with and without a scratch register
+   of storage, and the routines, helpers and failure stubs it marked used
+   ('machine::mark_used') are dropped
+2. 'toc::emit_most_efficient' and 'machine::emit_most_efficient': two versions
+   are compiled, each from the state before it, and the one with fewer
+   instructions is kept with the state it ended in, e.g. with and without a
+   scratch register, see [5.3](#53-state-each-version-starts-from-the-same-machine)
 
 So a statement can be compiled more than once. What its compile adds to 'toc'
 must be the same the second time: labels are named by source location and
@@ -210,6 +228,21 @@ and a checked call are added once.
 machine emits as a compare and a branch to a failure handler, and compile-time
 rejections (aliasing, narrowing, uninitialized reads). 'toc::checks' gives
 the options, they build the option records of the machine methods.
+
+The rules checked while compiling, e.g. a constant index in bounds, a
+constant that fits its variable, 'break' in a loop, hold in every function,
+also in one that nothing calls, so whether a program is accepted does not
+depend on its calls. 'function_table' records the functions whose body a
+compile reached, in place, as a noinline body or in a dry run; after the
+noinline bodies, 'program::check_unreached_functions' compiles each other
+function like a noinline body under 'toc::check_only'
+('stmt_def_func::check_body'). Its errors have no "called from" frame. An
+unsized array parameter has no length there ('ident_info::is_length_unknown'),
+so the rules that need the length are left to the calls: 's[7]' and
+'array_copy(s, d, 2)' are accepted, 's[-1]' is not. An instance of a generic
+definition is checked where a use makes it; a generic function that nothing
+instantiates is listed in the report ([1.6](#16-reports)), and a method of a
+generic type is checked for the instances whose method is called.
 
 ### 1.6 Reports
 
@@ -699,7 +732,7 @@ a body writes and reads would duplicate the check and could disagree with it.
 A dry run must leave no trace, or the program would change depending on which
 calls were checked:
 
-1. the code is measured and discarded
+1. the code is discarded
 2. string constants added meanwhile are removed
 3. the frame depth and the peak storage size are restored; the locals of the
    body live in the callee's own frame, so the caller's frame capacity is not
@@ -710,26 +743,35 @@ calls were checked:
 ### 4.3 Signature: checked once per kind of call
 
 A dry run costs a compilation of the body, so it is not repeated for calls
-that cannot differ. What the body can reject depends only on which arguments
-are the same variable and on which are globals (the body may name the global
-too). The call is reduced to a signature:
+that cannot differ. What the body can reject depends only on which bytes each
+argument passes: which arguments are in the same variable, which bytes of it
+they are, and which are globals (the body may name the global too). The call
+is reduced to a signature:
 
 ```text
 name + for the result and each argument:
     ' array N'          when an array, the body can reject an index by
                         the length
-    ' global g'         a global, by name
-    ' local K'          a local, K is the order of first appearance
+    ' global g' path    a global, by name
+    ' local K' path     a local, K is the order of first appearance
+    path                the bytes passed, the access path of chapter 3:
+                        '.8' the field at offset 8, '[2]' element 2, '[?]'
+                        an element at a run-time index, '*' when not
+                        known, nothing for the whole variable
 + ' temporary' or ' variable' per argument
 
-f(v, v, n)   "f local 0 local 0 local 1 variable variable variable"
-f(v, w, n)   "f local 0 local 1 local 2 ..."
-f(x, y, z)   same as the line above, checked once
+f(v, v, n)       "f local 0 local 0 local 1 variable variable variable"
+f(v, w, n)       "f local 0 local 1 local 2 ..."
+f(x, y, z)       same as the line above, checked once
+f(p.x, p.y, n)   "f local 0.0 local 0.8 local 1 ...", 'p' has two 'i64'
+f(g[i], w, n)    "f global g[?] local 0 local 1 ..."
 ```
 
 Locals are numbered by first appearance, not named, because which local is
-passed does not matter, only which arguments are the same one. A global is
-named, because the body may refer to it directly.
+passed does not matter, only which arguments are in the same one and which
+bytes of it they are. A global is named, because the body may refer to it
+directly. Two calls that pass different bytes of the same variable may get
+different verdicts, so the path is part of the signature.
 
 A signature already seen is not dry run again. The signature is recorded
 before the dry run starts, so a call of the same kind reached inside the body
@@ -770,9 +812,9 @@ on the offsets of the fields it reaches. Predicting this means a cost model
 that duplicates the code generator and must stay in step with every backend
 change. Compiling each version and measuring is exact and needs no model.
 
-The versions are measured in instructions on x86_64 and in bytes on rv32i.
-The shorter is kept; on ties the plain version, since it holds no extra
-register.
+The versions are measured in machine instructions, a pseudo instruction
+counts as the ones it expands to. The shorter is kept; on ties the plain
+version, since it holds no extra register.
 
 ### 5.2 Why so many
 
@@ -797,6 +839,56 @@ x86_64 has base + index addressing, so only the assignment chooses, once per
 body. rv32i grows as (n + 1) * (n + 5). The trade is compile time for code
 size: the depth 8 chain compiles in about 75 ms on rv32i against 12 ms on
 x86_64.
+
+### 5.3 State: each version starts from the same machine
+
+A version changes more than the lines it emits. 'machine::version_scope' saves
+what it changes in the machine and puts it back when the version ends, also
+when an error unwinds it:
+
+1. the registers held, with what a passed lower bounds check proved
+2. the trace of the calls, which the register report and errors print
+3. the most scratch registers in use, the footer of the output
+4. the routines, helpers and failure stubs marked used: inside a version a
+   mark waits ('machine::mark_used'), the marks of the kept version are
+   applied when the outermost version is kept, those of a dropped version or
+   of discarded code are dropped
+
+Each version starts from the saved state; after the choice the state the kept
+version ended in remains. So the footer and '--report=registers' describe the
+code that is in the output, and a routine only a dropped version calls is not
+emitted.
+
+A version that runs out of scratch registers is not available and the other
+one is kept, e.g. an inlined call with fifteen indexed arguments on rv32i
+where folding each address into a register would need more registers than
+there are. The error carries the kind 'compile_error::error_kind::
+out_of_registers', which is set where the error is made; when both versions
+run out, the error of the first is reported. Any other error is an error of
+the program and ends the compile. An error of discarded code is never one of
+a version: discarded code starts from the registers of a noinline body, which
+do not depend on the code around it.
+
+What a failed version entered must be left when its error unwinds:
+
+1. 'assembler::capture' drops the lines it captured
+2. 'toc::emit_most_efficient' pops the frames and their storage that an
+   inlined body entered back to the frames of the caller
+3. the rv32i bulk registers of an array copy or comparison are left
+   ('machine_rv32i::bulk_depth_scope')
+
+The registers that 'machine::address_scope' and the call frames that
+'machine::call_frame_scope' hold are left by their own scopes.
+
+### 5.4 Testing the version that is dropped
+
+Only the kept version runs, so a miscompile in the other one would stay
+hidden. '--versions=first' and '--versions=last', for testing, keep that
+version instead of the smaller, a version that runs out of registers is still
+not kept. 'qa/coverage/test-versions.sh' runs the cases of 'cases.sh' that
+run the program with each of them on x86_64 and rv32i-fpga
+('VERSIONS=first test-coverage.sh run') and compares the exit codes and
+outputs with the expected ones.
 
 ## 6. Addresses: how a path such as 'w.rooms[i].items[j].x' becomes an operand
 
@@ -1006,23 +1098,32 @@ by the next statement ('etc/todo.txt' section 2).
 
 ### 7.2 A node parses itself and keeps every token
 
-The grammar needs to know the names while it parses: 'point{' is a record
-literal only when 'point' is a type, 'f<' a generic call only when 'f' is a
-generic function, 'T.at' a constructor only when 'T' names a type (1.2). So a
-statement parses in its constructor and declares names in 'toc' as it goes.
-It keeps every token with its whitespace and comments: the source is
+A call is checked against its callee while it is parsed: the type arguments
+of a generic call are deduced from its arguments, and an argument of a 'mut'
+parameter must be writable. The grammar uses the names too: 'point{' is a
+record literal only when 'point' is a type, 'f<' a generic call only when 'f'
+is a generic function, 'T.at' a constructor only when 'T' names a type (1.2).
+So a statement parses in its constructor and declares names in 'toc' as it
+goes. It keeps every token with its whitespace and comments: the source is
 reproduced exactly ('--reproduce-source' checks it in every test) and quoted
 in the comments of the output.
 
-Rejected: a tree built before the names are known, the grammar cannot be
-parsed without them.
+Rejected: a tree built before the names are known, the checks of a call would
+move to a second walk over the tree; generic bodies are already kept as text
+(7.4), so the grammar alone would not need the names.
+
+Cost: a name is defined before it is used, so two functions cannot call each
+other, also not when they are 'noinline' ('etc/todo.txt' section 4).
 
 ### 7.3 One base class for every node
 
-'statement' has 20 virtual methods, each node overrides the ones it needs and
-the rest are 'std::unreachable()' (the groups are listed above the class).
-Every node parses, writes its source back, compiles and takes part in the
-definite assignment walk, and no code switches on the kind of a node.
+'statement' has 20 virtual methods, each node overrides the ones it needs
+(the groups are listed above the class). A default that no other node reaches
+is 'std::unreachable()', the others answer for a node that lacks the
+capability, e.g. 'folded_constant' is empty. Every node parses, writes its
+source back, compiles and takes part in the definite assignment walk. Code
+asks a node a few capability queries ('is_expression', 'is_name_or_literal',
+...), no code switches on the kind of a node.
 
 Rejected: the nodes as a 'std::variant', a closed set gains nothing when
 nothing switches on the kind, and every child would be boxed and every node
@@ -1061,6 +1162,13 @@ functions, the generics, the data and the storage layout. A method of 'toc'
 changes state or combines tables, a question to one table goes through its
 const accessor, e.g. 'tc.scopes().is_alias(name)'.
 
+'toc' is also the compile context: it carries the machine and whether the
+program is being parsed or compiled, and whether a dry run is active. A
+statement compiles with the names and the machine together, e.g. a variable
+resolves to an operand that the machine then uses, and the mode decides what
+a declaration does, e.g. no storage check while parsing; one parameter keeps
+them consistent.
+
 Rejected: passing the tables one by one, every signature would carry the
 ones its callees need.
 
@@ -1069,6 +1177,9 @@ ones its callees need.
 'main.cpp' includes the headers, there is no build system and the compiler
 sees the whole program. The include cycles between the statement classes are
 broken in 'decouple.hpp', 'decouple_impl.hpp' and 'expr_type_impl.hpp' only.
+A forward declaration of a class used only by reference or pointer is the
+opaque-pointer pattern and is also allowed: 'toc' in 'statement.hpp',
+'stmt_def_dat' and 'stmt_def_func' in 'toc.hpp'.
 
 Cost: every change rebuilds everything.
 
@@ -1076,6 +1187,9 @@ Cost: every change rebuilds everything.
 
 An error is a 'compile_error' at the token that caused it, with the
 inlined calls and generic instances that led there. No code recovers from an
-error, so no error leads to a second, wrong one.
+error, so no error leads to a second, wrong one. The one exception is a
+version of code that runs out of scratch registers: the other version is kept
+and the error is dropped with the state of the failed version, see
+[5.3](#53-state-each-version-starts-from-the-same-machine).
 
 Cost: one error per run.

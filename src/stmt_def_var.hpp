@@ -62,7 +62,6 @@ class initializer_declaration final {
 
     // the value at the deduced type and size
     [[nodiscard]] auto parse_value(toc& tc, tokenizer& tz) const -> expr_any {
-
         expr_any value;
 
         with_placeholder(tc, [&] -> void {
@@ -77,6 +76,24 @@ class initializer_declaration final {
     //
     // statics
     //
+
+    // a variable, a 'var' or a 'dat', named by 'name_tk'
+    [[nodiscard]] static auto
+    make_var_info(const token& name_tk, const type& tp,
+                  const std::optional<size_t> array_count) -> var_info {
+
+        return {
+            .name{name_tk.text()},
+            .type_ptr{&tp},
+            .src_loc_tk{name_tk},
+            .is_array{array_count.has_value()},
+            .array_len{array_count.value_or(0)},
+            .pointer_register{},
+            .base_register{},
+            .value_register{},
+            .foo_array{},
+        };
+    }
 
     // the '=' before the initializer, 'keyword' names the definition in the
     // example
@@ -115,14 +132,20 @@ class initializer_declaration final {
         array_count_ = info.array_len();
     }
 
-    // e.g. 'var b = x < 3' is a 'bool', 'var a = i8[]{1, 2}' an 'i8' array and
-    // 'var s = "hi"' an 'i8' array of 2
+    // e.g. 'var s = "hi"' is an 'i8' array of 2
     auto deduce_declaration(toc& tc, tokenizer& tz) -> void {
-        const bool is_string{tz.peek_char_after_whitespace() == '"'};
+        // note: the placeholder has the default type until the type is known
+        set_type(tc.builtins().default_type());
 
-        if (not is_string and not starts_array_literal(tc, tz)) {
-            set_type(tc.builtins().default_type());
+        // the name is visible like in the parse, e.g. 'i8' in 'var i8 = i8[2]'
+        // is the variable
+        const type* element_type{};
 
+        with_placeholder(tc, [&element_type, &tc, &tz] -> void {
+            element_type = literal_element_type(tc, tz);
+        });
+
+        if (element_type == nullptr) {
             trial_parse(tc, tz, [this, &tc, &tz] -> void {
                 deduce_from_initializer(tc, tz);
             });
@@ -131,9 +154,8 @@ class initializer_declaration final {
         }
 
         array_count_ = 0;
-        set_type(is_string ? tc.builtins().i8() : array_element_type(tc, tz));
+        set_type(*element_type);
 
-        // later statements read the size while parsing, e.g. 'var b = a'
         token bracket_tk;
 
         trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
@@ -141,6 +163,7 @@ class initializer_declaration final {
             const expr_any initializer{tc, tz, type_ref(),
                                        literal_typing::written, 0};
 
+            // later statements read the size while parsing, e.g. 'var b = a'
             array_count_ = initializer.array_count();
             bracket_tk = initializer.open_bracket_token();
         });
@@ -154,8 +177,7 @@ class initializer_declaration final {
         }
     }
 
-    // e.g. 'point{1, 2}', 'x < 3', 'flag', 'p', 'f(x)', 'i32(x)', 'a + 1' or
-    // the array 'a'
+    // e.g. the array 'a'
     auto deduce_from_initializer(toc& tc, tokenizer& tz) -> void {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
@@ -201,22 +223,6 @@ class initializer_declaration final {
         deduce_array_copy(tc, tk, *arith);
     }
 
-    // the definition is in scope while its initializer is parsed, see
-    // 'with_placeholder'
-    [[nodiscard]] auto placeholder_info() const -> var_info {
-        return {
-            .name{name_tk_.text()},
-            .type_ptr{type_},
-            .src_loc_tk{name_tk_},
-            .is_array{array_count_.has_value()},
-            .array_len{array_count_.value_or(0)},
-            .pointer_register{},
-            .base_register{},
-            .value_register{},
-            .foo_array{},
-        };
-    }
-
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
     // a value cannot be parsed at its type before the type is known, so the
@@ -243,7 +249,10 @@ class initializer_declaration final {
         }
 
         tc.enter_block();
-        tc.add_var(name_tk_, 0, placeholder_info(), var_kind::var);
+
+        tc.add_var(name_tk_, 0,
+                   make_var_info(name_tk_, type_ref(), array_count_),
+                   var_kind::var);
 
         parse();
 
@@ -254,33 +263,29 @@ class initializer_declaration final {
     // statics
     //
 
-    // e.g. 'i8' in 'i8[]{1, 2}' or the default type in '[]{1, 2}'
-    [[nodiscard]] static auto array_element_type(const toc& tc, tokenizer& tz)
-        -> const type& {
+    // the element type of a string or of an array literal, e.g. 'i8' of
+    // '"hi"', 'point' of 'point[]{{1, 2}}' or the default type of '[]{1, 2}',
+    // null when the initializer is neither
+    [[nodiscard]] static auto literal_element_type(const toc& tc, tokenizer& tz)
+        -> const type* {
 
-        if (is_default_array_literal(tz)) {
-            return tc.builtins().default_type();
+        if (tz.peek_char_after_whitespace() == '"') {
+            return &tc.builtins().i8();
         }
 
-        const token tk{tz.next_token()};
-        tz.put_back_token(tk);
-
-        return tc.get_type_or_throw(tk, tk.text());
-    }
-
-    // e.g. 'i8[3]{1, 2}', '[]{1, 2}' or 'point[]{{1, 2}}'
-    [[nodiscard]] static auto starts_array_literal(const toc& tc, tokenizer& tz)
-        -> bool {
-
         if (is_default_array_literal(tz)) {
-            return true;
+            return &tc.builtins().default_type();
         }
 
         const token tk{tz.next_token()};
         const bool is_literal{is_array_literal(tc, tk, tz)};
         tz.put_back_token(tk);
 
-        return is_literal;
+        if (not is_literal) {
+            return nullptr;
+        }
+
+        return &tc.get_type_or_throw(tk, tk.text());
     }
 };
 
@@ -401,7 +406,6 @@ class stmt_def_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // an unsized array has its size from the initializer by now
         tc.add_var(name_tk_, indent, make_var_info(), var_kind::var);
 
         // the assignment names its destination itself
@@ -416,17 +420,8 @@ class stmt_def_var final : public statement {
 
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
-        return {
-            .name{name_tk_.text()},
-            .type_ptr{&get_type()},
-            .src_loc_tk{name_tk_},
-            .is_array{array_count_.has_value()},
-            .array_len{array_count_.value_or(0)},
-            .pointer_register{},
-            .base_register{},
-            .value_register{},
-            .foo_array{},
-        };
+        return initializer_declaration::make_var_info(name_tk_, get_type(),
+                                                      array_count_);
     }
 };
 
