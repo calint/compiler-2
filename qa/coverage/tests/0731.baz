@@ -1,4 +1,4 @@
-# rv32i: a constant count whose bytes exceed the 32-bit address range is past
+# a constant count whose bytes would exceed the 32-bit address range is past
 # the end of the array
 
 func main() {

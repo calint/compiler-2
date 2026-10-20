@@ -362,13 +362,19 @@ class stmt_identifier final : public statement {
 
         const std::optional<int64_t> start{constant_start_index(tc)};
 
-        const size_t array_len{
-            tc.make_ident_info(first_token(), path_as_string_).array_len(),
+        if (not start) {
+            return;
+        }
+
+        const ident_info array_info{
+            tc.make_ident_info(first_token(), path_as_string_),
         };
 
-        // note: a start outside the array is reported as an index
-        if (not start or *start < 0 or std::cmp_greater(*start, array_len)) {
-            return;
+        const size_t array_len{array_info.array_len()};
+
+        // a start at the end is the empty range of a zero count
+        if (is_array_element()) {
+            assert_index_in_bounds(elems_.back(), array_info, *start, true);
         }
 
         const size_t remaining{array_len - static_cast<size_t>(*start)};

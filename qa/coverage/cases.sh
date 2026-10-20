@@ -2259,9 +2259,9 @@ if [[ $MACHINE != x86_64 ]]; then SRC=0729 && COMPERR; fi
 # rv32i: nested loops hold every scratch register
 if [[ $MACHINE != x86_64 ]]; then SRC=0730 && COMPERR; fi
 
-# rv32i: a constant count whose bytes exceed the 32-bit address range is past
+# a constant count whose bytes would exceed the 32-bit address range is past
 # the end of the array
-if [[ $MACHINE != x86_64 ]]; then SRC=0731 && OPTS="--vars=0x10000" COMPERR; fi
+SRC=0731 && OPTS="--vars=0x10000" COMPERR
 
 # rv32i: data elements must be 1, 2 or 4 bytes
 if [[ $MACHINE != x86_64 ]]; then SRC=0732 && COMPERR; fi
