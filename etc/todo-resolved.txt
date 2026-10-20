@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: a malformed number read like a misspelled name: 'var a = 0x',
+    '0b102' or '12_000' reported 'cannot resolve identifier'
+    => done (2026-10-20): a token that starts with a digit and resolves to
+       nothing is 'cannot parse constant', a name cannot start with a digit
+       (tests 0160-0162, 0679, 1123)
 [x] easy: a constant count past the end of the array was accepted:
     'array_copy(a, b, 10)' of 'a = i8[4]' wrote past 'b' without checks and
     always failed with them, while a constant index past the end is a

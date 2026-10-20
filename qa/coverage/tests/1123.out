@@ -1,0 +1,4 @@
+
+1123.baz:4:13: cannot parse constant '0x'
+    var a = 0x
+            ^~

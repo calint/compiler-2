@@ -1,4 +1,4 @@
 
-0160.baz:3:23: cannot resolve identifier '123abc'
+0160.baz:3:23: cannot parse constant '123abc'
 func main() { var x = 123abc }
                       ^~~~~~

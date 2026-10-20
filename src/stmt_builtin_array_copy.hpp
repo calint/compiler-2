@@ -110,7 +110,7 @@ class stmt_builtin_array_copy final : public statement {
 
         // nothing is copied, so a start at the end of the array, which only a
         // range may have, is not addressed
-        if (count == 0) {
+        if (count and *count == 0) {
             return;
         }
 

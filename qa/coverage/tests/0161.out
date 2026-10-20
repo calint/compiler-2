@@ -1,4 +1,4 @@
 
-0161.baz:3:23: cannot resolve identifier '0x12foo'
+0161.baz:3:23: cannot parse constant '0x12foo'
 func main() { var x = 0x12foo }
                       ^~~~~~~

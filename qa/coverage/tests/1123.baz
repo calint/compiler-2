@@ -1,0 +1,6 @@
+# a hexadecimal prefix without digits is a malformed number
+
+func main() {
+    var a = 0x
+    exit(a)
+}

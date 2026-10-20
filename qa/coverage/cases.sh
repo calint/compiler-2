@@ -3493,3 +3493,6 @@ SRC=1121 && EXP=0 && RUN_NO_CHECKS
 
 # a negative constant 'foo' count is rejected
 SRC=1122 && COMPERR
+
+# a hexadecimal prefix without digits is a malformed number
+SRC=1123 && COMPERR

@@ -1757,6 +1757,13 @@ class ident_resolver final {
                             ident, ident)};
         }
 
+        // a name starts with a letter or '_', so a digit starts a broken
+        // number, e.g. '0x' or '12_000'
+        if (ident.front() >= '0' and ident.front() <= '9') {
+            throw compiler_exception{
+                src_loc_tk, std::format("cannot parse constant '{}'", ident)};
+        }
+
         throw compiler_exception{
             src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
     }
