@@ -151,19 +151,8 @@ class stmt_builtin_convert final : public expression {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
-        const std::optional<folded_value> folded{
-            fold_at(tc, dst.type_ref()),
-        };
-
-        // e.g. 128 of '-i8(-128)' in an 'i16' destination
-        if (folded) {
-            x.copy_value(tok(), indent, dst.operand(),
-                         folded->operand_at(dst.type_ref()));
-
-            return;
-        }
+        // note: a list copies a constant itself
+        assert(not fold(tc, value_use::wrapped_at(dst.type_ref())));
 
         // the argument follows the rule of a list at the width it is computed
         // at, e.g. the 'i16' 'b' of 'i8(a + b)' is narrowed to 'i8'
@@ -196,8 +185,10 @@ class stmt_builtin_convert final : public expression {
     }
 
     // a folded literal is a constant of the type, which wraps at the width
-    // of its use; otherwise a narrower width stays unfolded,
-    // 'assert_not_narrowed' rejects it
+    // of its use; a constant argument is converted, then the conversion's
+    // own unary ops apply at the width it is used at, at least that of the
+    // type, e.g. 'i16' for '-i8(-128)' in an 'i16' list, where under the
+    // overflow check a result that does not fit is an error
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
@@ -217,11 +208,28 @@ class stmt_builtin_convert final : public expression {
             };
         }
 
-        if (width_type.size_bytes() < get_type().size_bytes()) {
+        if (arg_.is_expression()) {
             return std::nullopt;
         }
 
-        return fold_at(tc, width_type);
+        const ident_info info{tc.make_ident_info(arg_)};
+
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        const int64_t converted{converted_constant(info.constant().value)};
+        const type& result_type{*wider(get_type(), width_type)};
+
+        const int64_t value{
+            get_unary_ops().evaluate_at(converted, result_type,
+                                        tc.checks().overflow),
+        };
+
+        // a narrower width keeps the low bits, e.g. 44 of the 'i16' 300 of
+        // 'i8(i16(k))'
+        return folded_value::untyped(
+            constant_arith::wrap_to_width(value, width_type));
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
@@ -406,40 +414,6 @@ class stmt_builtin_convert final : public expression {
 
         return constant_arith::wrap_to_width(
             arg_.get_unary_ops().evaluate_constant(value), get_type());
-    }
-
-    // the value used at the width of 'width_type': the converted argument
-    // with the conversion's own unary ops applied at the width it is used
-    // at, at least that of the type, e.g. 'i16' for '-i8(-128)' in an 'i16'
-    // list; under the overflow check a result that does not fit is an error
-    [[nodiscard]] auto fold_at(const toc& tc, const type& width_type) const
-        -> std::optional<folded_value> {
-
-        // the bare form has no argument
-        if (open_paren_tk_.is_empty()) {
-            return folded_value::untyped(0);
-        }
-
-        if (arg_.is_expression()) {
-            return std::nullopt;
-        }
-
-        const ident_info info{tc.make_ident_info(arg_)};
-
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        const int64_t converted{converted_constant(info.constant().value)};
-        const type& result_type{*wider(get_type(), width_type)};
-
-        const int64_t value{
-            get_unary_ops().evaluate_at(converted, result_type,
-                                        tc.checks().overflow),
-        };
-
-        return folded_value::untyped(
-            constant_arith::wrap_to_width(value, result_type));
     }
 
     [[nodiscard]] auto ops_place_for(const toc& tc,

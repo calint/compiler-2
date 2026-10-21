@@ -83,15 +83,10 @@ class stmt_builtin_array_length final : public expression {
             return;
         }
 
-        const std::optional<folded_value> length{
-            fold(tc, value_use::wrapped_at(dst.type_ref())),
-        };
-
         // note: the destination has the default type, so the length folds
-        assert(length);
+        //       and the list copies it itself
 
-        x.copy_value(tok(), indent, dst.operand(),
-                     operand::imm(length->value, dst.type_ref()));
+        std::unreachable();
     }
 
     auto assert_not_narrowed([[maybe_unused]] const toc& tc,

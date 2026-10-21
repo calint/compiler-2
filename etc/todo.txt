@@ -42,10 +42,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           for a conversion argument); 'toc::checks()' never changes
        7. a value in a numeric position has a built-in non-record type,
           checked at parse ('assert_number')
-       8. a value enters its destination through one non-virtual
-          'statement::compile_value': fit check, 'fold', then an immediate
-          at the destination width or the virtual 'compile', which only
-          computes at run time; no node and no caller has a constant branch
+       8. a constant reaches a destination only through the list that
+          holds it ('expr_arith::compile_constant', the immediate by
+          'folded_value::operand_at'); the nodes inside a list never emit
+          a constant
        9. a constant is kept as a 'folded_value' wherever it is stored
           (aliases, 'ident_info'), typedness is not derived again; a frame
           constant ('let', 'foo n') is untyped by the language and stays a
@@ -119,8 +119,20 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           width; 'make_constant_operand' went; 'i8(i16(k))' stores 44 and
           an inlined '-p' of an 'i8' -128 stores -128 (test 1374); the gate
           is unchanged, the corpus never reached the wrong immediates
-          => B1b: 'compile_value' and the constant branches of the compile
-          overrides
+          => B1b done (2026-10-21): instead of a 'compile_value' wrapper,
+          the list is the one place that emits a constant: every scalar
+          value is an 'expr_arith', 'compile' copies any list that folds and
+          'compile_first_step' copies a constant first element; the
+          constant branches of the identifier, the conversion,
+          'array_length' and the record field went (asserts where now
+          unreachable); a conversion folds at a narrower width too, keeping
+          the low bits; a wrapper was rejected: the argument of a
+          conversion is checked at another width than its destination, so
+          one fit-fold-compile entry does not fit its callers
+          => gate: images and asm without comments identical, except
+          '--versions=last' (69 programs shorter, none longer) and the
+          caret of 9 rv32i errors at the list ('^' for '^~~', 0743.out);
+          the caller-side 'assert_not_narrowed' calls stay for B3
        B2 typedness from the fold: 'i16(K) <= e' accepted like
           'i16(300) <= e' (G6-2, ARCH-6)
        B3 the fit check inside 'fold' ('folded_value::assert_fits'),

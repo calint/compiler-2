@@ -1,23 +1,23 @@
-62,63d61
+67,68d66
 <         j loop.10.5.end
 <     j loop.10.5
-85d82
+90d87
 <     beq t0, zero, bool.15.14.end
-87d83
+92d88
 <     j bool.15.14.end
-96d91
+101d96
 <     j if.16.8.code
-124c119
+130c125
 <     bne t0, t1, cmp.19.27
 ---
 >     beq t0, t1, if.19.8.code
-127d121
+133d127
 <     j if.19.8.code
-148d141
+154d147
 <     j if.19.8.code
-166d158
+174d166
 <     j .Lbaz_exit
-182,185c174,177
+190,193c182,185
 < #   removed jumps to next code: 0
 < #    removed unreachable jumps: 0
 < # removed same target branches: 0
@@ -27,7 +27,7 @@
 > #    removed unreachable jumps: 1
 > # removed same target branches: 1
 > # inverted branches over jumps: 1
-191c183
+199c191
 < #                 instructions: 54
 ---
 > #                 instructions: 46

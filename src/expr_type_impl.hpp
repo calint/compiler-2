@@ -521,17 +521,9 @@ inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
 
     const ident_info src_info{tc.make_scalar_ident_info(src)};
 
+    // a constant is copied by its list
     if (src_info.is_const()) {
-        const std::optional<folded_value> folded{
-            src.fold(tc, value_use::wrapped_at(field.type())),
-        };
-
-        // note: a constant name or literal folds
-        assert(folded);
-
-        x.copy_value(src.tok(), indent, dst_operand,
-                     folded->operand_at(field.type()));
-
+        src.compile(tc, indent, dst.with_operand(dst_operand));
         return;
     }
 

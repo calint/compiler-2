@@ -233,17 +233,15 @@ class expr_arith final : public expression {
         -> void override {
 
         // a list that folds is one copy of its value
-        if (is_expression()) {
-            const std::optional<folded_value> folded{
-                fold(tc, value_use::wrapped_at(dst.type_ref())),
-            };
+        const std::optional<folded_value> folded{
+            fold(tc, value_use::wrapped_at(dst.type_ref())),
+        };
 
-            if (folded) {
-                compile_constant(tc, indent, dst, folded->value,
-                                 statement::trimmed_source(*this));
+        if (folded) {
+            compile_constant(tc, indent, tok(), dst, folded->value,
+                             statement::trimmed_source(*this));
 
-                return;
-            }
+            return;
         }
 
         // a single plain element in memory is compiled directly, without
@@ -656,19 +654,6 @@ class expr_arith final : public expression {
         return keeps_low_bits(width_change::widened);
     }
 
-    auto compile_constant(toc& tc, const size_t indent, const destination& dst,
-                          const int64_t value,
-                          const std::string_view folded_source) const -> void {
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, "{} = {}", dst.name(), value);
-        x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
-
-        x.copy_value(tok(), indent, dst.operand(),
-                     folded_value::untyped(value).operand_at(dst.type_ref()));
-    }
-
     // a nested list is folded when it is compiled as an element:
     //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
     auto compile_elements(toc& tc, const size_t indent,
@@ -691,18 +676,20 @@ class expr_arith final : public expression {
                             const destination& dst, const step& first) const
         -> void {
 
-        // e.g. '2 * 3 / b' or '3 - b'
-        // under the overflow check the constants stay elements, a first
-        // constant is copied
-        const bool is_checked_constant{
-            tc.checks().overflow and first.value.has_value() and
-                first.op == arithmetic_operator::add,
-        };
+        // a list copies a constant itself, an element never emits one, e.g.
+        // the merged '2 * 3' of '2 * 3 / b' or the element '3' of '3 - b'
+        // under the overflow check
+        if (first.value) {
+            // note: only a zero constant leaves a subtracted element first,
+            //       which is not a constant
 
-        if (first.element == nullptr or is_checked_constant) {
-            assert(first.value);
+            assert(first.op != arithmetic_operator::subtract);
 
-            compile_constant(tc, indent, dst, *first.value,
+            const token& src_loc_tk{
+                first.element == nullptr ? tok() : first.element->tok(),
+            };
+
+            compile_constant(tc, indent, src_loc_tk, dst, *first.value,
                              first.folded_source);
 
             return;
@@ -1258,6 +1245,22 @@ class expr_arith final : public expression {
             src_loc_tk,
             std::format("shift count must be 0 to {} for {}-bit values",
                         width_bits - 1, width_bits)};
+    }
+
+    static auto compile_constant(toc& tc, const size_t indent,
+                                 const token& src_loc_tk,
+                                 const destination& dst, const int64_t value,
+                                 const std::string_view folded_source) -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(src_loc_tk, indent, "{} = {}", dst.name(), value);
+
+        x.comment(src_loc_tk, indent, "src: folded constant '{}'",
+                  folded_source);
+
+        x.copy_value(src_loc_tk, indent, dst.operand(),
+                     folded_value::untyped(value).operand_at(dst.type_ref()));
     }
 
     // an identifier copies itself, anything else is assigned with '='
