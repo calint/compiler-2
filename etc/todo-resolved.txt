@@ -1,6 +1,57 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: findings of the fifth review round of 2026-10-21 (phase R5)
+    => done (2026-10-21):
+       1. byte-identical output of every test on both targets, seven option
+          sets: the noinline dry-run bookkeeping is one RAII scope
+          ('toc::noinline_check_scope') that keeps the signature and the
+          deepest level only when the dry run succeeds (G2-4, ARCH-3); one
+          word "level" for the noinline nesting, 'check_only_depth_'
+          (G2-3); the forwarder 'checked_noinline_call_height' and
+          'is_in_noinline_dry_run' removed (G2-2, G4-6); 'routine_uses'
+          (G2-5); 'stmt_builtin_convert': one 'compile_in_type_register' for
+          'widened' and 'checked_at_type' with the helper
+          'compile_at_type', the table in the order of 'ops_place_for',
+          'wider' (ARCH-4, G6-2 to G6-8); x86_64 'store_condition', 'test
+          rcx' note, dead arithmetic, address assert, unused include; rv32i
+          '.balign' only outside code (assert), no '.equ' text case; comments
+          and qa scripts (G1-2, G2-1, G3-3, G3-4, G3-6, G3-7, G3-9 to G3-12,
+          G4-7, G5-4 to G5-6, G6-9, G6-10, G7-6 to G7-10); then the
+          'indent + 1' of a scratch argument (asm indentation only) and
+          'op::shl' dropped for 'sal' (asm text only, images identical)
+       2. behavior fixes, each with a test that fails on the build before:
+          unsigned negate in 'negation_overflows' (1348, UBSan); a folded
+          conversion and an inlined constant argument compare as values of
+          their type (H-1, 1349, 1350); '-i8(b)' of a 'bool' on rv32i (H-2,
+          1351); the overflow pause ends at a call (H-3, 1352); a folded
+          conversion bound to an inlined parameter folds at its type (G6-1,
+          H-4, 1353, 1354); x86_64 '--checks=upper' branches on a signed
+          end overflow (G3-1, 1355); the checked signatures keep the frames
+          below them too, with their own message (G4-1, G4-3, H-5, ARCH-1,
+          ARCH-5, 1356, 1280.out); the inlined limit names scopes (G4-4,
+          G7-3, 0896); an uncalled inlined function with a result ignores
+          the errors a call avoids (G4-2, 1357); generic parameter names are
+          checked like other names, a built-in type has no place (G4-5,
+          G4-9, 1358 to 1360, 0835.out); the 'bool' operand hint (G4-8,
+          G5-3, 1361); the parenthesized comparison message (G5-2, 1362,
+          1317/1318.out); the parse nesting is counted once for includes and
+          generic instances (G7-2, 1363); field and element paths of a
+          braced literal for the call alias check (H-7, 1364); fields after a
+          run-time index (H-8, 1365, 1366); messages (H-10, 1367 to 1369);
+          x86_64 'memory_equal' takes 'rcx' only for 'repe cmpsq' (G3-2,
+          1370); 'qa/fuzz/fuzz-data.py' converts with 'int(e)' (H-9)
+       3. options: one 'invalid --stack:' option error with the hint, from
+          'machine_rv32i_bare_metal::start', for a stack larger than the
+          memory (the 2^32 qemu crash) or below what 'main' needs; fpga's
+          stack limit has no special case; x86_64 skips the '--bin' source
+          check (G1-1, G7-1, ARCH-2, G7-4, G7-5, test-cli)
+       4. docs and records: the cycle limitation in docs 1.5 and 4.3 and in
+          a code note, the round 4 entry corrected (H-6); todo items for the
+          multiline 'note:' blocks (G3-13) and the quadratic compile time
+          (G7-11)
+       5. not done: 'invoke_syscall' stays public, the backend test
+          'test-rv32i-address.cpp' calls it (G3-5)
 [x] medium: rv32i (both targets) fails the assert 'not uses_register(source,
     "a0")' in 'machine_rv32i::load_helper_arguments' when the registers run
     low in a nested product, e.g. the body of 1290 nested 14 levels deep
@@ -27,6 +78,11 @@
        measured with the sanitizer build: 100 levels with the frames used up
        need 1.5 MiB of stack (1.4 MiB crashes), the -O3 build 1.1 MiB, the
        default stack is 8 MiB; docs 1.5 and 4.3
+    => corrected (2026-10-21, review round 5): "in any order" holds for the
+       levels of a chain without a cycle; it did not hold for the frames
+       (fixed in round 5, the height keeps them too) and does not hold for a
+       chain through a cycle of noinline calls, whose height depends on where
+       the cycle was entered (H-6, documented as a limitation in docs 4.3)
 [x] hard: conversions: one computation plan for 'stmt_builtin_convert'
     (review round 4, ARCH-5 and H-1 to H-5, G6-1)
     => done (2026-10-21): first the plan and dispatch with today's choices,

@@ -1,0 +1,11 @@
+# the parameter of a generic type is a name like the others, not a keyword
+type b<var> {
+    a i8[var]
+}
+
+type c = b<2>
+
+func main() {
+    var v = c
+    exit(array_length(v.a))
+}

@@ -1,0 +1,4 @@
+
+1368.baz:6:13: an instance of 'point' is not a number
+    var q = -p
+            ^

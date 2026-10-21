@@ -233,6 +233,8 @@ class machine {
     };
 
   private:
+    using routine_uses = std::map<std::string, std::set<size_t>, std::less<>>;
+
     // receives the lines emitted before 'start' as they are emitted, which
     // backend tests use, null for a build
     std::ostream* direct_output_;
@@ -256,11 +258,10 @@ class machine {
     bool frame_base_reserved_{};
     kept_version kept_version_{kept_version::smaller};
 
-    // the routines, helpers and failure handlers that the code compiled so
-    // far uses, emitted after the code, with the lines whose failure stubs it
-    // uses, e.g. 'sector_read' or the lines of the bounds checks that report
-    // them; see 'mark_used'
-    std::map<std::string, std::set<size_t>, std::less<>> used_routines_;
+    // the routines, helpers and failure handlers the code uses, by name, e.g.
+    // 'sector_read', each with the lines its failure stubs report; emitted
+    // after the code, see 'mark_used'
+    routine_uses used_routines_;
 
     // what compiling a version of code changes in the machine: the registers
     // held, the trace of the calls, the most scratch registers in use and the
@@ -269,7 +270,7 @@ class machine {
         register_pool registers;
         register_trace trace;
         size_t max_scratch_regs{};
-        std::map<std::string, std::set<size_t>, std::less<>> used_routines;
+        routine_uses used_routines;
     };
 
     // the state before a version, put back when the scope ends, also when an
@@ -1847,7 +1848,6 @@ class machine {
         return pool;
     }
 
-    // another version of the code may not run out
     // the index of 'register_name', which names a register
     [[nodiscard]] auto pool_index(const std::string_view register_name) const
         -> size_t {

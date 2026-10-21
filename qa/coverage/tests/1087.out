@@ -1,4 +1,4 @@
 
-1087.baz:4:27: a 'bool' is not an arithmetic operand, 'int(false)' converts it
+1087.baz:4:27: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(false)'
 dat flags = bool[]{true, ~false}
                           ^~~~~

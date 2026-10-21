@@ -16,6 +16,8 @@
 #include "token.hpp"
 #include "ub_reads.hpp"
 
+// e.g. 'array_copy(a[1], b[0], n)' copies 'n' elements of 'a' into 'b'; the
+// copied elements are not tracked, so the destination stays unassigned
 class stmt_builtin_array_copy final : public statement {
     bulk_operands operands_;
 
@@ -96,7 +98,7 @@ class stmt_builtin_array_copy final : public statement {
                         });
     }
 
-    // the copied elements are not tracked, so the destination stays unassigned
+    // the destination is written, only its index is read
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 

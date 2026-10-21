@@ -158,6 +158,10 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 default_binary_file_name(const std::string_view src_file_name,
                          const target machine_target) -> std::string;
 
+// 'path' names one of the files, also through another path
+[[nodiscard]] auto is_source_file(const std::string_view path,
+                                  const source_files& files) -> bool;
+
 [[nodiscard]] auto
 make_backend(const target machine_target, const source_files* const files,
              const assembler::jump_mode jumps, const size_t stack_size_bytes,
@@ -551,15 +555,6 @@ examples:
             return 1;
         }
 
-        if (opts.stack_size_bytes > backend->max_storage_bytes()) {
-            print_option_error(std::format(
-                "invalid --stack: {} B exceeds the {} B that the target "
-                "addresses",
-                opts.stack_size_bytes, backend->max_storage_bytes()));
-
-            return 1;
-        }
-
         if (opts.reports.registers) {
             backend->enable_register_report();
         }
@@ -573,16 +568,15 @@ examples:
 
         program prg{*backend, files, opts.vars_size_bytes, checks};
 
-        // the image would replace a source file, the parse read the includes
-        for (size_t i{}; i < files.count(); ++i) {
-            std::error_code ec;
+        // the image would replace a source file, the parse read the includes;
+        // x86_64 writes no image
+        if (opts.machine_target != target::x86_64 and
+            is_source_file(binary, files)) {
 
-            if (std::filesystem::equivalent(binary, files.name(i), ec)) {
-                print_option_error(std::format(
-                    "invalid --bin: '{}' is a source file", binary));
+            print_option_error(
+                std::format("invalid --bin: '{}' is a source file", binary));
 
-                return 1;
-            }
+            return 1;
         }
 
         if (opts.reproduce_source) {
@@ -595,6 +589,9 @@ examples:
         return 1;
     } catch (const unlocated_error& e) {
         print_unlocated_error(e.what());
+        return 1;
+    } catch (const option_error& e) {
+        print_option_error(e.what());
         return 1;
     } catch (const std::exception& e) {
         // a defect of the compiler, the input is not at fault
@@ -849,6 +846,20 @@ default_binary_file_name(const std::string_view src_file_name,
     std::filesystem::path path{src_file_name};
     path.replace_extension();
     return std::format("{}-{}.bin", path.string(), target_text(machine_target));
+}
+
+auto is_source_file(const std::string_view path, const source_files& files)
+    -> bool {
+
+    for (size_t i{}; i < files.count(); ++i) {
+        std::error_code ec;
+
+        if (std::filesystem::equivalent(path, files.name(i), ec)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 [[nodiscard]] auto

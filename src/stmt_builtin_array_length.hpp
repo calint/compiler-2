@@ -126,9 +126,17 @@ class stmt_builtin_array_length final : public expression {
             static_cast<int64_t>(*array_len));
     }
 
-    // the length is known at compile time so the value is not read
+    // the length is known at compile time so the value of an array is not
+    // read; a name that is not an array, which 'compile' rejects, counts as
+    // read, so a variable named in its own initializer is uninitialized, e.g.
+    // the 'a' of 'let a = array_length(a)'
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
+
+        if (not stmt_ident_.is_array()) {
+            stmt_ident_.visit_reads(var, reader);
+            return;
+        }
 
         stmt_ident_.visit_index_reads(var, reader);
     }

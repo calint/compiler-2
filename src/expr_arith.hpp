@@ -408,6 +408,11 @@ class expr_arith final : public expression {
         return exprs_.size() == 1 and exprs_.at(0)->is_name_or_literal();
     }
 
+    [[nodiscard]] auto is_typed_literal() const -> bool override {
+        return exprs_.size() == 1 and uops_.is_empty() and
+               exprs_.at(0)->is_typed_literal();
+    }
+
     // '/', '%' and '>>' read the high bits of their operands. narrowed, a
     // '<<' by a count not below the narrower width is defined only at the
     // wider one; widened, a '<<' count has the narrower type, so where it is
@@ -555,7 +560,9 @@ class expr_arith final : public expression {
     // or 'array_length(a)', otherwise none; a list folds at 'width_type'
     // note: an element of a list wraps a named constant to the width as its
     //       register holds it, a comparison side and an initializer element
-    //       keep the written value for the range checks of their callers
+    //       keep the written value for the range checks of their callers; a
+    //       typed constant is a value of its type, so it wraps there too,
+    //       e.g. '-i8(-128)' is -128 at 'i8'
     [[nodiscard]] static auto
     constant_value_of(const toc& tc, const statement& e, const type& width_type,
                       const constant_wrap wrap) -> std::optional<int64_t> {
@@ -585,28 +592,13 @@ class expr_arith final : public expression {
 
         const int64_t value{uops.evaluate_constant(info.const_value())};
 
-        if (wrap == constant_wrap::as_written) {
+        const bool is_typed{info.is_typed_const() or e.is_typed_literal()};
+
+        if (wrap == constant_wrap::as_written and not is_typed) {
             return value;
         }
 
         return constant_arith::wrap_to_width(value, width_type);
-    }
-
-    // a comparison operator, '<' and '>' are not shifts where an arithmetic
-    // list ends
-    [[nodiscard]] static auto is_comparison_next(const tokenizer& tz) -> bool {
-        tokenizer probe{tz};
-        std::ignore = probe.next_whitespace_token();
-
-        if (probe.is_next_char('<') or probe.is_next_char('>')) {
-            return true;
-        }
-
-        if (not probe.is_next_char('=') and not probe.is_next_char('!')) {
-            return false;
-        }
-
-        return probe.is_next_char('=');
     }
 
   private:
@@ -879,12 +871,12 @@ class expr_arith final : public expression {
 
         tz.put_back_token(ws_before_op_tk);
 
-        // e.g. the '==' of '(x == 1) == b', which takes the condition for an
-        // arithmetic operand
+        // e.g. the '==' of '(x == 1) == b' or of 'x = 1 + (x < 1)', which
+        // takes the condition for an arithmetic operand
         if (is_enclosed() and is_comparison_next(tz)) {
             throw compile_error{tz.next_token(),
-                                "a condition in parentheses cannot be "
-                                "compared, store it in a 'bool' first"};
+                                "a comparison makes a condition, which is not "
+                                "an operand here, store it in a 'bool' first"};
         }
 
         // an enclosed list ends with its ')'
@@ -1280,15 +1272,22 @@ class expr_arith final : public expression {
             return;
         }
 
-        // the conversion goes inside the unary operators, e.g. '-int(t)'
-        const std::string_view converted{
-            term.is_name_or_literal() ? term.name_or_literal() : "...",
+        // the conversion goes inside the unary operators, e.g. '-int(t)'; an
+        // indexed name is not the whole operand, e.g. 'bs' of 'bs[1]'
+        const bool is_named{
+            term.is_name_or_literal() and not term.is_indexed(),
         };
 
+        const std::string_view converted{
+            is_named ? term.name_or_literal() : "...",
+        };
+
+        // note: the list may be narrower than 'int', e.g. 'y + b' of an 'i8'
+        //       'y' takes 'i8(b)'
         throw compile_error{
             term.tok(),
-            std::format("a 'bool' is not an arithmetic operand, 'int({})' "
-                        "converts it",
+            std::format("a 'bool' is not an arithmetic operand, convert it, "
+                        "e.g. 'int({})'",
                         converted)};
     }
 
@@ -1476,6 +1475,23 @@ class expr_arith final : public expression {
         assert(op == arithmetic_operator::bit_and);
 
         return -1;
+    }
+
+    // a comparison operator, '<' and '>' are not shifts where an arithmetic
+    // list ends
+    [[nodiscard]] static auto is_comparison_next(const tokenizer& tz) -> bool {
+        tokenizer probe{tz};
+        std::ignore = probe.next_whitespace_token();
+
+        if (probe.is_next_char('<') or probe.is_next_char('>')) {
+            return true;
+        }
+
+        if (not probe.is_next_char('=') and not probe.is_next_char('!')) {
+            return false;
+        }
+
+        return probe.is_next_char('=');
     }
 
     // a lone negation folds into add/sub: 'a - -b' is 'a + b'

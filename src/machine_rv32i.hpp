@@ -44,7 +44,8 @@
 //   operations   'binary_operation', 'emit_binary_instruction',
 //                'multiply_by_constant' (signed digits), 'shift_by_constant',
 //                'shift_by_register'
-//   helpers      '.Lbaz_multiply' and '.Lbaz_divide' for 'mul' and 'div',
+//   helpers      '.Lbaz_multiply', '.Lbaz_multiply_checked' and
+//                '.Lbaz_divide' for 'mul' and 'div',
 //                'call_arithmetic_helper', 'emit_arithmetic_helpers'
 //   memory       'zero_known_size', 'copy_known_size', 'compare_known_size'
 //                for a known size, 'walk_runtime_count' for a run-time count
@@ -56,7 +57,7 @@
 //                checks 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'
 //   handlers     'emit_*_failure_handler', 'emit_named_failure_handler',
-//                'emit_line_failure'
+//                'emit_line_failure', 'emit_report_line_routine'
 //   calls        'call_function', the system calls 'emit_read_call',
 //                'emit_write_call' and 'exit', the sector routines
 //   output       'write_assembly' writes the text and the image

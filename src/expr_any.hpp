@@ -178,14 +178,10 @@ class expr_any final : public statement {
             return;
         }
 
-        // a call element writes at the element, not at the array start the
-        // identifier names, and an element is not an array
-        const destination first{dst.as_element(dst.operand())};
-
         // the size is not checked and the elements after the literal are not
         // known
         if (dst.is_length_unknown()) {
-            std::ignore = compile_elements(tc, indent, first);
+            std::ignore = compile_elements(tc, indent, dst);
             return;
         }
 
@@ -199,10 +195,10 @@ class expr_any final : public statement {
                             array_count)};
         }
 
-        const operand after_elements{compile_elements(tc, indent, first)};
+        const operand after_elements{compile_elements(tc, indent, dst)};
 
         expr_type::zero_remaining_elements(tc, indent, tok(), after_elements,
-                                           first.type_ref(),
+                                           dst.type_ref(),
                                            array_count - elements_.size());
     }
 
@@ -459,23 +455,23 @@ class expr_any final : public statement {
     }
 
     // constant elements are stored like a string so the backend can pack them
-    // into wider immediates or copy them from read-only data, 'first' is the
-    // first element, returns the operand after the listed elements
+    // into wider immediates or copy them from read-only data, 'dst' is the
+    // array, returns the operand after the listed elements
     [[nodiscard]] auto compile_elements(toc& tc, const size_t indent,
-                                        const destination& first) const
+                                        const destination& dst) const
         -> operand {
 
         machine& x{tc.machine()};
 
-        operand cursor{first.operand()};
+        operand cursor{dst.operand()};
 
         const std::optional<std::string> bytes{
-            constant_bytes(tc, first.type_ref()),
+            constant_bytes(tc, dst.type_ref()),
         };
 
         if (bytes) {
             x.copy_bytes(open_brace_tk_, indent, *bytes, cursor,
-                         first.type_ref().alignment(), [&] -> std::string {
+                         dst.type_ref().alignment(), [&] -> std::string {
                              return tc.add_bytes_constant(open_brace_tk_,
                                                           *bytes);
                          });
@@ -488,10 +484,12 @@ class expr_any final : public statement {
         for (size_t i{}; i < elements_.size(); ++i) {
             x.comment(tok(), indent, "[{}]", i);
 
-            compile_element(tc, indent, element(i), first.with_operand(cursor));
+            // a call element writes at the element, not at the array start
+            // the identifier names, and an element is not an array
+            compile_element(tc, indent, element(i), dst.as_element(i, cursor));
 
             cursor.increment_offset(
-                address_offset(first.type_ref().size_bytes()));
+                address_offset(dst.type_ref().size_bytes()));
         }
 
         return cursor;

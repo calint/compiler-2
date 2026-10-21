@@ -1,0 +1,19 @@
+# a folded conversion compared is a value of its type, its unary ops apply at
+# that type like those of a variable
+func main() {
+    var e = i8(-128)
+    var c = i8(1)
+    if -i8(-128) != i8(-128) {
+        exit(1)
+    }
+    if -i8(-128) != e {
+        exit(2)
+    }
+    if e != -i8(-128) {
+        exit(3)
+    }
+    if i16(300) <= c {
+        exit(4)
+    }
+    exit(0)
+}

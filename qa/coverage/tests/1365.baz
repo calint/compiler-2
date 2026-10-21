@@ -1,0 +1,10 @@
+# a field read at a run-time index is not overwritten by the fields of a
+# literal written before it when it is another field
+type point {x, y}
+
+func main() {
+    var ps = point[2]{{1, 2}, {3, 4}}
+    var i = 1
+    ps[0] = {1, ps[i].y}
+    exit(ps[0].y)
+}

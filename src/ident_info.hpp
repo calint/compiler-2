@@ -20,6 +20,7 @@
 
 #include "operand.hpp"
 #include "token.hpp"
+#include "type.hpp"
 #include "ub_alias.hpp"
 
 class type;
@@ -208,7 +209,8 @@ class ident_info final {
         return storage == nullptr ? std::nullopt : storage->known;
     }
 
-    // the register of a register, the element of storage
+    // the register that holds the value, or the storage operand, e.g.
+    // '[rbp - 8]'
     [[nodiscard]] auto operand() const -> const ::operand& {
         if (const register_part* const reg{
                 std::get_if<register_part>(&part_),
@@ -394,14 +396,21 @@ class destination final {
         return array_len_;
     }
 
-    // the destination at 'address', e.g. an element of an array literal
-    [[nodiscard]] auto as_element(const ::operand& address) const
+    // the element 'index' of the array at 'address', e.g. of an array
+    // literal
+    [[nodiscard]] auto as_element(const size_t index,
+                                  const ::operand& address) const
         -> destination {
 
         destination element{with_operand(address)};
         element.is_address_known_ = true;
         element.is_array_ = false;
         element.array_len_ = std::nullopt;
+
+        if (element.accessed_path_) {
+            element.accessed_path_->add_fixed_index(index);
+        }
+
         return element;
     }
 
@@ -427,16 +436,19 @@ class destination final {
         return src_loc_tk_.is_empty() ? fallback : src_loc_tk_;
     }
 
-    // the field 'field_name' of type 'field_type', as the comments name it;
-    // the source names no field of a literal, so an error about it is at its
-    // value, e.g. the 't()' of 'rec{2, t()}'
-    [[nodiscard]] auto field(const std::string_view field_name,
-                             const type& field_type) const -> destination {
-
+    // the field 'fld', as the comments name it; the source names no field of
+    // a literal, so an error about it is at its value, e.g. the 't()' of
+    // 'rec{2, t()}'
+    [[nodiscard]] auto field(const type_field& fld) const -> destination {
         destination result{*this};
-        result.name_ += std::format(".{}", field_name);
-        result.type_ptr_ = &field_type;
+        result.name_ += std::format(".{}", fld.name);
+        result.type_ptr_ = &fld.type();
         result.src_loc_tk_ = {};
+
+        if (result.accessed_path_) {
+            result.accessed_path_->add_field(fld.offset);
+        }
+
         return result;
     }
 

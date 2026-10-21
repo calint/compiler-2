@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -19,6 +20,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
+#include "ub_alias.hpp"
 #include "ub_reads.hpp"
 
 // whether a literal names its type, e.g. 'point{1, 2}': only where the name
@@ -64,6 +66,14 @@ class expr_type final : public statement {
 
         // false when a run-time index leaves the element unknown
         bool is_exact{};
+
+        // from the root variable, to tell the fields apart from a read at a
+        // run-time index
+        access_path path;
+
+        // the type of one instance written field by field, null otherwise,
+        // e.g. the 'point' of 'ps[0] = {1, ps[i].y}'
+        const type* record_type{};
     };
 
     // parses 'expr_any' items and creates the 'stmt_call' or
@@ -162,7 +172,7 @@ class expr_type final : public statement {
     static auto assert_elements_not_reading(const expr_any& src,
                                             const type& element_type,
                                             const constructor_target& dst,
-                                            size_t offset) -> void;
+                                            const size_t offset) -> void;
 
     // unlisted elements are zero like unlisted fields, returns the zeroed size
     static auto zero_remaining_elements(toc& tc, const size_t indent,
@@ -317,16 +327,30 @@ class expr_type final : public statement {
 
         item.visit_reads(
             dst.root,
-            [&dst, &written](
+            [&dst, &written, written_size_bytes](
                 const token& src_loc_tk, const std::string_view read_text,
                 const byte_range& accessed_bytes,
-                [[maybe_unused]] const access_path& accessed_path) -> void {
+                const access_path& accessed_path) -> void {
                 if (not accessed_bytes.overlaps(written)) {
                     return;
                 }
 
+                // a read at a run-time index covers the whole array, its
+                // fields tell it apart, e.g. the 'ps[i].y' of
+                // 'ps[0] = {1, ps[i].y}'
+                const bool is_read_at_run_time_index{
+                    has_run_time_index(accessed_path),
+                };
+
+                if (is_read_at_run_time_index and dst.is_exact and
+                    not reads_written_field(dst, written_size_bytes,
+                                            accessed_path)) {
+
+                    return;
+                }
+
                 // a run-time index may or may not refer to the written element
-                if (not dst.is_exact) {
+                if (not dst.is_exact or is_read_at_run_time_index) {
                     throw compile_error{
                         src_loc_tk,
                         std::format(
@@ -363,6 +387,15 @@ class expr_type final : public statement {
                                      const destination& dst, operand& dst_op)
         -> void;
 
+    [[nodiscard]] static auto has_run_time_index(const access_path& path)
+        -> bool {
+
+        return std::ranges::any_of(
+            path.steps, [](const path_step& step) -> bool {
+                return step.kind == path_step::kind_type::run_time_index;
+            });
+    }
+
     // the bytes that no field covers, between the data ranges and after the
     // last one; the first of them when there are more than 'max_count'
     [[nodiscard]] static auto padding_gaps(const type& tp,
@@ -391,6 +424,33 @@ class expr_type final : public statement {
         append_gap(gaps, covered_bytes, tp.size_bytes(), tp.alignment());
 
         return gaps;
+    }
+
+    // the read may be in a field of 'dst' that its first 'written_size_bytes'
+    // cover, always when 'dst' is not one instance
+    [[nodiscard]] static auto
+    reads_written_field(const constructor_target& dst,
+                        const size_t written_size_bytes,
+                        const access_path& read_path) -> bool {
+
+        if (dst.record_type == nullptr) {
+            return true;
+        }
+
+        for (const type_field& field : dst.record_type->fields()) {
+            if (field.offset >= written_size_bytes) {
+                break;
+            }
+
+            access_path field_path{dst.path};
+            field_path.add_field(field.offset);
+
+            if (read_path.overlaps(field_path)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     static auto validate_array_assignment(const token& src_loc_tk,

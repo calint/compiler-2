@@ -1,0 +1,4 @@
+
+1358.baz:2:8: 'var' is a keyword
+type b<var> {
+       ^~~

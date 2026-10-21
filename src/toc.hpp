@@ -772,9 +772,19 @@ class type_table final {
     }
 };
 
+// what the dry run of a checked noinline call reached below it, see
+// 'noinline_call::check_aliasing'
+struct dry_run_height {
+    // the noinline dry runs nested in it
+    size_t levels{};
+    // the frames above it at the deepest check of the frame limit
+    size_t frames{};
+};
+
 // the functions of the program: the built-in ones, the defined ones and the
-// instances of generic ones, the bodies of noinline functions to compile and
-// the definitions a compile reached
+// instances of generic ones, the bodies of noinline functions to compile, the
+// definitions a compile reached and the dry-run heights of the checked
+// noinline calls
 class function_table final {
     lut<func_info> funcs_;
     std::vector<const stmt_def_func*> defs_;
@@ -782,7 +792,7 @@ class function_table final {
     std::vector<noinline_body> noinline_bodies_;
     // the dry-run levels below each checked aliasing signature, see
     // 'noinline_call::check_aliasing'
-    std::map<std::string, size_t, std::less<>> checked_call_heights_;
+    std::map<std::string, dry_run_height, std::less<>> checked_call_heights_;
     // the definitions whose body a compile reached
     std::set<const stmt_def_func*> reached_;
 
@@ -831,7 +841,7 @@ class function_table final {
     // none when the signature is not checked yet
     [[nodiscard]] auto
     checked_call_height(const std::string_view signature) const
-        -> std::optional<size_t> {
+        -> std::optional<dry_run_height> {
 
         const auto it{checked_call_heights_.find(signature)};
 
@@ -844,6 +854,10 @@ class function_table final {
 
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
         return defs_;
+    }
+
+    auto erase_checked_call_height(const std::string_view signature) -> void {
+        checked_call_heights_.erase(signature);
     }
 
     // the name is known
@@ -887,7 +901,7 @@ class function_table final {
     }
 
     auto set_checked_call_height(const std::string_view signature,
-                                 const size_t height) -> void {
+                                 const dry_run_height height) -> void {
 
         checked_call_heights_.insert_or_assign(std::string{signature}, height);
     }
@@ -1363,7 +1377,7 @@ class scope_stack final {
 
     // the dry runs of noinline calls nested here, see
     // 'frame::noinline_dry_run'
-    [[nodiscard]] auto noinline_dry_run_depth() const -> size_t {
+    [[nodiscard]] auto noinline_dry_run_level() const -> size_t {
         return static_cast<size_t>(
             std::ranges::count_if(frames_, [](const frame& frm) -> bool {
                 return frm.is_noinline_dry_run();
@@ -2127,11 +2141,22 @@ class definition_checks final {
             return;
         }
 
+        const token& type_tk{types_.get().src_loc_tk_of(name)};
+
+        // a built-in type has no place in the source
+        if (type_tk.is_empty()) {
+            throw compile_error{
+                src_loc_tk,
+                std::format("generic parameter '{}' hides the built-in type "
+                            "'{}', use another name",
+                            name, name)};
+        }
+
         throw compile_error{
             src_loc_tk,
             std::format("generic parameter '{}' hides the type '{}' defined "
                         "at {}, use another name",
-                        name, name, where(types_.get().src_loc_tk_of(name)))};
+                        name, name, where(type_tk))};
     }
 
     // a frame declares a variable or a constant of a name, not both
@@ -2206,10 +2231,17 @@ class definition_checks final {
                                  const std::string_view name) const -> void {
 
         if (types_.get().has(name)) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("type '{}' already defined at {}", name,
-                            where(types_.get().src_loc_tk_of(name)))};
+            const token& type_tk{types_.get().src_loc_tk_of(name)};
+
+            // a built-in type has no place in the source
+            if (type_tk.is_empty()) {
+                throw compile_error{
+                    src_loc_tk, std::format("'{}' is a built-in type", name)};
+            }
+
+            throw compile_error{src_loc_tk,
+                                std::format("type '{}' already defined at {}",
+                                            name, where(type_tk))};
         }
 
         if (generics_.get().has_type(name)) {
@@ -2343,11 +2375,16 @@ class toc final {
     variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_;
-    // above zero while the code is compiled only to be checked
-    size_t dry_run_depth_{};
+    // the overflow check as '--checks' asks for it, 'checks_' has it off
+    // while an 'overflow_check_pause' lives
+    bool overflow_requested_;
+    // above zero inside 'check_only', no noinline body is added there
+    size_t check_only_depth_{};
     // the deepest level of noinline dry runs reached in the dry run being
     // checked, see 'noinline_call::check_aliasing'
     size_t deepest_dry_run_level_{};
+    // the most frames at a check of the frame limit in that dry run
+    size_t deepest_frame_check_{};
     // false while the program is parsed: the names are declared without
     // comments and without the capacity check of the storage
     bool is_compiling_{};
@@ -2368,7 +2405,7 @@ class toc final {
               kept_string_constant_count_{tc.data_.constant_count()},
               kept_storage_{tc.storage_.begin_dry_run()} {
 
-            ++tc_.dry_run_depth_;
+            ++tc_.check_only_depth_;
         }
 
         dry_run_scope(const dry_run_scope&) = delete;
@@ -2377,7 +2414,7 @@ class toc final {
         auto operator=(dry_run_scope&&) -> dry_run_scope& = delete;
 
         ~dry_run_scope() {
-            --tc_.dry_run_depth_;
+            --tc_.check_only_depth_;
             tc_.storage_.end_dry_run(kept_storage_);
             tc_.scopes_.set_max_depth(kept_max_frame_count_);
             tc_.data_.resize_constants(kept_string_constant_count_);
@@ -2408,8 +2445,76 @@ class toc final {
     };
 
   public:
+    // the check of a noinline call by a dry run at 'level': while it lives
+    // the signature counts as checked with the height 0, so the same kind of
+    // call reached inside returns; 'commit' keeps the levels and frames
+    // reached below as its height, otherwise the end, also at an error,
+    // removes the signature and puts back the deepest level and frame check,
+    // so a failed check leaves no trace, see 'noinline_call::check_aliasing'
+    class noinline_check_scope final {
+        toc& tc_;
+        std::string_view signature_;
+        size_t level_;
+        size_t frame_count_;
+        size_t enclosing_deepest_;
+        size_t enclosing_frame_check_;
+        bool is_committed_{};
+
+      public:
+        noinline_check_scope(toc& tc, const std::string_view signature,
+                             const size_t level)
+            : tc_{tc}, signature_{signature}, level_{level},
+              frame_count_{tc.scopes_.frames().size()},
+              enclosing_deepest_{
+                  std::exchange(tc.deepest_dry_run_level_, level),
+              },
+              enclosing_frame_check_{
+                  std::exchange(tc.deepest_frame_check_, frame_count_),
+              } {
+
+            tc_.funcs_.set_checked_call_height(signature_, {});
+        }
+
+        noinline_check_scope(const noinline_check_scope&) = delete;
+        noinline_check_scope(noinline_check_scope&&) = delete;
+        auto operator=(const noinline_check_scope&)
+            -> noinline_check_scope& = delete;
+        auto operator=(noinline_check_scope&&)
+            -> noinline_check_scope& = delete;
+
+        ~noinline_check_scope() {
+            if (is_committed_) {
+                return;
+            }
+
+            tc_.funcs_.erase_checked_call_height(signature_);
+            tc_.deepest_dry_run_level_ = enclosing_deepest_;
+            tc_.deepest_frame_check_ = enclosing_frame_check_;
+        }
+
+        // the enclosing check reaches what was reached below too
+        auto commit() -> void {
+            const size_t deepest{tc_.deepest_dry_run_level_};
+            const size_t frame_check{tc_.deepest_frame_check_};
+
+            tc_.funcs_.set_checked_call_height(
+                signature_, {
+                                .levels{deepest - level_},
+                                .frames{frame_check - frame_count_},
+                            });
+
+            tc_.deepest_dry_run_level_ = std::max(enclosing_deepest_, deepest);
+
+            tc_.deepest_frame_check_ =
+                std::max(enclosing_frame_check_, frame_check);
+
+            is_committed_ = true;
+        }
+    };
+
     // an explicit conversion wraps the arithmetic of its argument, the
-    // overflow check is off while it is compiled
+    // overflow check is off while it is compiled, up to a call, see
+    // 'overflow_check_resume'
     class overflow_check_pause final {
         toc& tc_;
         bool was_enabled_;
@@ -2431,6 +2536,29 @@ class toc final {
         ~overflow_check_pause() { tc_.checks_.overflow = was_enabled_; }
     };
 
+    // a call in the argument of a conversion is not the conversion's own
+    // arithmetic, its arguments and body are checked as anywhere else
+    class overflow_check_resume final {
+        toc& tc_;
+        bool was_enabled_;
+
+      public:
+        explicit overflow_check_resume(toc& tc)
+            : tc_{tc}, was_enabled_{tc.checks_.overflow} {
+
+            tc_.checks_.overflow = tc_.overflow_requested_;
+        }
+
+        overflow_check_resume(const overflow_check_resume&) = delete;
+        overflow_check_resume(overflow_check_resume&&) = delete;
+        auto operator=(const overflow_check_resume&)
+            -> overflow_check_resume& = delete;
+        auto operator=(overflow_check_resume&&)
+            -> overflow_check_resume& = delete;
+
+        ~overflow_check_resume() { tc_.checks_.overflow = was_enabled_; }
+    };
+
     toc(::machine& backend, const source_files& files,
         const builtin_type_set& builtin_set, const size_t vars_capacity_bytes,
         const check_options& checks)
@@ -2441,7 +2569,7 @@ class toc final {
           resolver_{scopes_, backend, generics_, builtins_},
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
-          checks_{checks} {}
+          checks_{checks}, overflow_requested_{checks.overflow} {}
 
     auto add_alias(const alias_info& ai) -> void {
         scopes_.back().add_alias(ai);
@@ -2549,7 +2677,7 @@ class toc final {
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<size_t> array_lengths) -> void {
 
-        if (dry_run_depth_ != 0) {
+        if (check_only_depth_ != 0) {
             return;
         }
 
@@ -2619,10 +2747,10 @@ class toc final {
         }
     }
 
-    auto assert_generic_param_free(const token& src_loc_tk,
-                                   const std::string_view name) const -> void {
-
-        definitions_.assert_generic_param_free(src_loc_tk, name);
+    // a generic parameter is a name like the others, e.g. not a keyword
+    auto assert_generic_param_free(const token& name_tk) const -> void {
+        assert_valid_unqualified_name(name_tk);
+        definitions_.assert_generic_param_free(name_tk, name_tk.text());
     }
 
     auto assert_released() const -> void {
@@ -2659,15 +2787,6 @@ class toc final {
             const frame_depth_scope frames{*this};
             compile();
         });
-    }
-
-    // the dry-run levels below a checked call, none for a call not checked
-    // yet, see 'noinline_call::check_aliasing'
-    [[nodiscard]] auto
-    checked_noinline_call_height(const std::string_view signature) const
-        -> std::optional<size_t> {
-
-        return funcs_.checked_call_height(signature);
     }
 
     // what '--checks' turned on
@@ -2771,14 +2890,6 @@ class toc final {
     // the type parameters of an enclosing instance are hidden until
     // 'exit_type_params'
     auto enter_type_params() -> void { types_.enter_params(); }
-
-    // the deepest dry-run level becomes 'level' and the one before is
-    // returned, so a dry run measures the levels below it
-    [[nodiscard]] auto exchange_deepest_dry_run_level(const size_t level)
-        -> size_t {
-
-        return std::exchange(deepest_dry_run_level_, level);
-    }
 
     auto exit_block() -> void {
         assert(scopes_.back().is_block());
@@ -2941,6 +3052,12 @@ class toc final {
         deepest_dry_run_level_ = std::max(deepest_dry_run_level_, level);
     }
 
+    // a check of the frame limit with 'frame_count' frames, which a cached
+    // noinline check repeats, see 'noinline_call::check_aliasing'
+    auto reach_frame_check(const size_t frame_count) -> void {
+        deepest_frame_check_ = std::max(deepest_frame_check_, frame_count);
+    }
+
     auto reset_usage() -> void {
         assert(scopes_.is_empty());
 
@@ -2952,12 +3069,6 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
-
-    auto set_checked_noinline_call_height(const std::string_view signature,
-                                          const size_t height) -> void {
-
-        funcs_.set_checked_call_height(signature, height);
-    }
 
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const

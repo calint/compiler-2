@@ -320,6 +320,9 @@ class assembler_rv32i final : public assembler {
     }
 
     auto align(const size_t size_bytes) -> void {
+        // note: 'grow_out_of_reach' measures the code without padding
+        assert(not is_code_section());
+
         add_record(std::format(".balign {}", size_bytes), 0,
                    alignment{
                        .size_bytes{size_bytes},
@@ -1966,7 +1969,7 @@ class assembler_rv32i final : public assembler {
         -> bool {
 
         const std::string_view name{code.substr(0, code.find_first_of(" \t"))};
-        return name == ".option" or name == ".globl" or name == ".equ";
+        return name == ".option" or name == ".globl";
     }
 
     [[nodiscard]] static auto is_zero_fill(const data_values& data) -> bool {

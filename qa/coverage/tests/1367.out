@@ -1,0 +1,4 @@
+
+1367.baz:6:26: use of uninitialized variable 'a'
+    let a = array_length(a)
+                         ^

@@ -1,0 +1,11 @@
+# a unary operator applies to a number, not to an instance compared with an
+# instance
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    if -p == p {
+        exit(1)
+    }
+    exit(0)
+}

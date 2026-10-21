@@ -363,10 +363,12 @@ class stmt_def_func final : public statement {
     // arguments of a call, e.g. an inlined recursion that a constant argument
     // ends, cannot be told and ends the check; a body that takes nothing from
     // a call, a noinline one without unsized arrays or an inlined one without
-    // parameters, has no such error
+    // parameters and result, has no such error; an inlined result is the
+    // destination of the call, checked here through an address
     auto check_body(toc& tc, const size_t indent) const -> void {
         const bool takes_from_call{
-            array_param_count() != 0 or (is_inlined() and not params().empty()),
+            array_param_count() != 0 or
+                (is_inlined() and (not params().empty() or returns())),
         };
 
         tc.check_only([&] -> void {
@@ -939,7 +941,7 @@ class func_instantiator final {
         -> void {
 
         for (const token& param_tk : head.type_param_tks) {
-            tc.assert_generic_param_free(param_tk, param_tk.text());
+            tc.assert_generic_param_free(param_tk);
         }
 
         // e.g. 'text.append' for the instance 'str.append' of 'text'
@@ -1137,6 +1139,9 @@ class func_instantiator final {
 
         tokenizer tz{tc.source_of(generic.start_tk), generic.start_tk};
 
+        // note: the instance is parsed inside the parse that needs it
+        const tokenizer::nesting_scope nesting{tz};
+
         const func_head head{func_head::read(tc, tz)};
 
         func_instance instance{
@@ -1171,6 +1176,9 @@ class func_instantiator final {
         scope.add_receiver(receiver);
 
         tokenizer tz{tc.source_of(method.start_tk), method.start_tk};
+
+        // note: the instance is parsed inside the parse that needs it
+        const tokenizer::nesting_scope nesting{tz};
 
         // note: 'text' names 'str' now, so the head is the method 'str.print'
         const func_head head{func_head::read(tc, tz)};

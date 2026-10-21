@@ -1,0 +1,16 @@
+# an uncalled inlined function with a result and no parameters is checked
+# without the errors a call can avoid: its result is the destination of the
+# call, e.g. one register less for an expression
+var g = 1
+
+func f() res {
+    res = (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + g * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g)
+}
+
+func h() res {
+    res = (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + (g + g * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g) * g)
+}
+
+func main() {
+    exit(0)
+}

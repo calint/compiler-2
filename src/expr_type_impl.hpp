@@ -83,6 +83,12 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         return;
     }
 
+    // e.g. the '-' of 'q = -p'
+    if (tz.peek_char() == '-' or tz.peek_char() == '~') {
+        throw compile_error{
+            tz, std::format("an instance of '{}' is not a number", tp.name())};
+    }
+
     parse_fields(tc, tz, tp);
 }
 
@@ -422,8 +428,7 @@ inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
 
         x.comment(expr->tok(), indent, "copy field '{}'", field.name);
 
-        compile_field(tc, indent, *expr, field,
-                      record.field(field.name, field.type()), dst_op);
+        compile_field(tc, indent, *expr, field, record.field(field), dst_op);
     }
 
     // zero out the remaining fields and the padding after the written ones

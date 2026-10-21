@@ -1,0 +1,11 @@
+# --checks=overflow: the body of an inlined function called in the argument of
+# a conversion is checked, only the conversion's own arithmetic wraps
+func add8(a i8, b i8) res i8 {
+    res = a + b
+}
+
+func main() {
+    var v = i8(100)
+    var r = i16(add8(v, v))
+    exit(int(r))
+}

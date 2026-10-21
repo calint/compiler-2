@@ -21,11 +21,12 @@ class type;
 // what the storage size functions below accept
 namespace storage_limits {
 
-// alignment padding of a size at the limit stays in the signed 64-bit range
+// every sum, product and aligned size of storage is checked against it, so
+// the offsets stay in the signed 64-bit range
 inline constexpr size_t max_size_bytes{
     static_cast<size_t>(std::numeric_limits<int64_t>::max()) - 16,
 };
-// note: 16 is the largest alignment, the stack's
+// note: 16 is the largest alignment, the stack's, a margin no check needs
 
 } // namespace storage_limits
 

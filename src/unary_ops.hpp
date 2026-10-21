@@ -87,7 +87,9 @@ class unary_ops final {
                 return true;
             }
 
-            v = -v;
+            // unsigned negation wraps, a minimum wider than 'minimum' is
+            // negated too
+            v = static_cast<int64_t>(-static_cast<uint64_t>(v));
         }
 
         return false;

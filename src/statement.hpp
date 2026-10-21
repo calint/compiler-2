@@ -232,7 +232,7 @@ enum class width_change : uint8_t { narrowed, widened };
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow), 'visit_reads' (the expressions)
 //   a value        'folded_constant', 'assert_not_narrowed',
-//                  'keeps_low_bits', 'get_unary_ops',
+//                  'keeps_low_bits', 'get_unary_ops', 'is_typed_literal',
 //                  'is_expression', 'produces_boolean', 'compile_boolean':
 //                  'expr_arith', 'expr_any', 'expr_bool', 'expr_zero',
 //                  'stmt_builtin_convert', 'stmt_builtin_array_length',
@@ -346,6 +346,12 @@ class statement {
     // a name or a literal, its unary ops aside, e.g. '-x' is one too; 'x' is
     // read in place when also not 'is_expression'
     [[nodiscard]] virtual auto is_name_or_literal() const -> bool {
+        return false;
+    }
+
+    // a literal with a type of its own, a folded conversion, e.g. the
+    // 'i8(-128)' of '-i8(-128)', whose unary ops apply at that type
+    [[nodiscard]] virtual auto is_typed_literal() const -> bool {
         return false;
     }
 

@@ -91,10 +91,18 @@ class stmt_assign_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
+        const type& dst_type{stmt_ident_.get_type()};
+
+        const bool is_record{
+            not stmt_ident_.is_array() and not dst_type.is_builtin(),
+        };
+
         expr_.assert_value_not_reading({
             .root{stmt_ident_.first_token().text()},
             .range{stmt_ident_.accessed_bytes()},
             .is_exact{stmt_ident_.is_exact_access()},
+            .path{stmt_ident_.accessed_path()},
+            .record_type{is_record ? &dst_type : nullptr},
         });
 
         const ident_info var_info{tc.make_ident_info(stmt_ident_)};

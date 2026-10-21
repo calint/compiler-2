@@ -74,6 +74,7 @@ class stmt_block final : public statement {
         -> void override {
 
         tc.enter_block();
+
         for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent + 1, dst);
         }

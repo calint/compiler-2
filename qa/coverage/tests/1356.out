@@ -1,0 +1,2 @@
+1 order.baz:58:11: inlined calls and blocks are nested too deep to check the arguments of a noinline call, the limit is 256 scopes
+1 order.baz:166:11: inlined calls and blocks are nested too deep to check the arguments of a noinline call, the limit is 256 scopes

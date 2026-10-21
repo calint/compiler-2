@@ -1,0 +1,32 @@
+# a call in a braced literal is checked for shared storage with the field or
+# the element it writes, not with the whole variable
+type point {x, y}
+
+type line {a point, b point}
+
+func noinline get(v) res {
+    res = v
+}
+
+func noinline mk(v) res point {
+    res = {v, v}
+}
+
+func main() {
+    var p = point{3, 5}
+    p = {get(p.y), 1}
+    if p.x != 5 {
+        exit(1)
+    }
+    var l = line{{1, 2}, {3, 4}}
+    l = {mk(l.b.x), {5, 6}}
+    if l.a.y != 3 {
+        exit(2)
+    }
+    var a = int[2]{7, 8}
+    a = {get(a[1]), 2}
+    if a[0] != 8 {
+        exit(3)
+    }
+    exit(0)
+}

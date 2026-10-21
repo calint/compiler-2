@@ -421,6 +421,8 @@ class assembler {
         return not captures_.empty();
     }
 
+    [[nodiscard]] auto is_code_section() const -> bool { return code_section_; }
+
     [[nodiscard]] auto is_conditional(const jump_info& jump) const -> bool {
         return jump.mnemonic != unconditional_jump_mnemonic();
     }

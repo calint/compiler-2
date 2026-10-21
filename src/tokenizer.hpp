@@ -17,26 +17,28 @@ class tokenizer final {
     size_t char_ix_{}; // current char index in 'src_'
     size_t at_line_{1};
     size_t file_ix_{}; // index of the source file of 'src_'
-    size_t nesting_{};
 
     static constexpr std::string_view delimiters_{
         " \t\r\n(){}[]=,.:+-*/%&|^<>!~#"};
 
+    // the parsers of every tokenizer recurse on the one stack, e.g. an included
+    // file or a generic instance is parsed inside the parse that needs it, so
+    // the levels are counted once for all of them
+    static inline size_t nesting_{};
+
   public:
     // one level of nesting while it lives
     class nesting_scope final {
-        tokenizer& tz_;
-
       public:
-        explicit nesting_scope(tokenizer& tz) : tz_{tz} {
-            if (tz_.nesting_ >= max_nesting) {
+        explicit nesting_scope(const tokenizer& tz) {
+            if (nesting_ >= max_nesting) {
                 throw compile_error{
-                    tz_, std::format("nesting is too deep, the limit is {} "
-                                     "levels",
-                                     max_nesting)};
+                    tz, std::format("nesting is too deep, the limit is {} "
+                                    "levels",
+                                    max_nesting)};
             }
 
-            ++tz_.nesting_;
+            ++nesting_;
         }
 
         nesting_scope(const nesting_scope&) = delete;
@@ -44,7 +46,7 @@ class tokenizer final {
         auto operator=(const nesting_scope&) -> nesting_scope& = delete;
         auto operator=(nesting_scope&&) -> nesting_scope& = delete;
 
-        ~nesting_scope() { --tz_.nesting_; }
+        ~nesting_scope() { --nesting_; }
     };
 
     tokenizer(const size_t file_ix, const std::string_view src)

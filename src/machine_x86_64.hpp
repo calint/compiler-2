@@ -41,7 +41,7 @@
 //                'multiply_by_constant', 'emit_signed_divide', 'shift'
 //   memory       'copy', 'copy_bytes', 'zero' unrolled or with 'rep', the
 //                bulk operations with 'rsi', 'rdi' and 'rcx'
-//   comparisons  'compare_and_branch', 'store_comparison', 'memory_equal'
+//   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
 //   checks       'check_bounds', 'check_divisor', 'check_shift_count',
 //                'check_copy_overlap', 'check_frame_capacity', each jumps to
 //                its handler, all but the frame check with a stub per line
@@ -284,10 +284,16 @@ class machine_x86_64 final : public machine {
         load_bulk_registers(src_loc_tk, indent, element_size_bytes, emit_count,
                             request.lhs, request.rhs);
 
+        // note: a zero count compares nothing and leaves the flags of 'test',
+        //       ZF set, so it compares equal
         test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(src_loc_tk, indent, request.dst, request.inverted);
+
+        store_condition(src_loc_tk, indent,
+                        condition_for_comparison(comparison_operator::equal,
+                                                 request.inverted),
+                        request.dst);
     }
 
     auto begin_data(const size_t alignment) -> void override {
@@ -398,8 +404,6 @@ class machine_x86_64 final : public machine {
         if (options.upper) {
             comment(src_loc_tk, indent, "upper bound");
 
-            compare_upper_bound(src_loc_tk, indent, range);
-
             // the end of a range is 'start + count', neither is negative
             // here but the sum can pass the signed maximum and then looks
             // negative to a signed compare, the unsigned compare sees it large
@@ -409,6 +413,9 @@ class machine_x86_64 final : public machine {
                 plan.upper_covers_lower or
                     (options.lower and not range.count.is_empty()),
             };
+
+            compare_upper_bound(src_loc_tk, indent, range, is_unsigned_compare,
+                                options.with_line);
 
             branch_to_bounds_panic(
                 src_loc_tk, indent,
@@ -505,8 +512,10 @@ class machine_x86_64 final : public machine {
         free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
 
         if (not action.destination.is_empty()) {
-            store_comparison(src_loc_tk, indent, action.operation,
-                             action.inverted, action.destination);
+            store_condition(
+                src_loc_tk, indent,
+                condition_for_comparison(action.operation, action.inverted),
+                action.destination);
         }
 
         if (not action.target.empty()) {
@@ -756,7 +765,9 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {
-        const size_t count{size_bytes / size_byte_};
+        // note: an element is one byte, so the count is the size
+        const size_t count{size_bytes};
+
         emit_repeated_data(size_byte_, count, 0);
     }
 
@@ -854,14 +865,23 @@ class machine_x86_64 final : public machine {
                       const size_t size_bytes, const equality_request& request)
         -> void override {
 
-        std::ignore = alloc_bulk_registers(src_loc_tk, indent);
-        load_bulk_addresses(src_loc_tk, indent, {}, request.lhs, request.rhs);
-
         const std::vector<op> compares{memory_equal_compares(size_bytes)};
 
         assert(not compares.empty());
 
-        if (compares.front() == op::repe_cmpsq) {
+        // only 'repe cmpsq' counts in 'rcx'
+        const bool is_counted{compares.front() == op::repe_cmpsq};
+
+        reserve_named_register(src_loc_tk, indent, "rsi", default_type());
+        reserve_named_register(src_loc_tk, indent, "rdi", default_type());
+
+        if (is_counted) {
+            reserve_named_register(src_loc_tk, indent, "rcx", default_type());
+        }
+
+        load_bulk_addresses(src_loc_tk, indent, {}, request.lhs, request.rhs);
+
+        if (is_counted) {
             mov(src_loc_tk, indent, qword_register("rcx"),
                 immediate(size_bytes / size_qword_));
         }
@@ -885,8 +905,17 @@ class machine_x86_64 final : public machine {
             assembler_.label(indent, end_label);
         }
 
-        release_bulk_registers(src_loc_tk, indent);
-        store_equal_result(src_loc_tk, indent, request.dst, request.inverted);
+        if (is_counted) {
+            release_named_register(src_loc_tk, indent, "rcx");
+        }
+
+        release_named_register(src_loc_tk, indent, "rdi");
+        release_named_register(src_loc_tk, indent, "rsi");
+
+        store_condition(src_loc_tk, indent,
+                        condition_for_comparison(comparison_operator::equal,
+                                                 request.inverted),
+                        request.dst);
     }
 
     auto multiply(const token& src_loc_tk, const size_t indent,
@@ -1188,7 +1217,8 @@ class machine_x86_64 final : public machine {
     // class methods
     //
 
-    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved
+    // 'syscall' changes 'rcx' and 'r11', the allocated ones are saved; public
+    // for the backend tests
     auto invoke_syscall(const size_t indent) -> void {
         static constexpr std::array<std::string_view, 2> clobbered{
             "rcx",
@@ -1334,7 +1364,7 @@ class machine_x86_64 final : public machine {
         assembler_.jcc(1, condition::ae, sd_card_handler_label);
         // the byte offset, the fourth system call argument, goes in 'r10'
         assembler_.instruction(1, op::mov, "r10", "rdi");
-        assembler_.instruction(1, op::shl, "r10", sector_shift);
+        assembler_.instruction(1, op::sal, "r10", sector_shift);
         // the descriptor replaces the sector as the first argument
         assembler_.instruction(1, op::mov, "rdi", descriptor);
         // the saved system call number, which also balances the stack
@@ -1646,8 +1676,12 @@ class machine_x86_64 final : public machine {
     }
 
     // a range 'index + count' may end at the array count
+    // a signed end that passes the signed maximum is out of bounds, the
+    // unsigned compare sees it large
     auto compare_upper_bound(const token& src_loc_tk, const size_t indent,
-                             const bounds_range& range) -> void {
+                             const bounds_range& range,
+                             const bool is_unsigned_compare,
+                             const bool with_line) -> void {
 
         if (range.count.is_empty()) {
             cmp(src_loc_tk, indent, range.checked,
@@ -1664,10 +1698,16 @@ class machine_x86_64 final : public machine {
         assert(range.count.type_ref().size_bytes() == size_qword_ and
                range.checked.type_ref().size_bytes() == size_qword_);
 
-        lea(src_loc_tk, indent, reg_top_idx,
-            operand::mem(range.count.base_register(),
-                         range.checked.base_register(), 1, 0,
-                         builtin_type_i64()));
+        if (is_unsigned_compare) {
+            lea(src_loc_tk, indent, reg_top_idx,
+                operand::mem(range.count.base_register(),
+                             range.checked.base_register(), 1, 0,
+                             builtin_type_i64()));
+        } else {
+            mov(src_loc_tk, indent, reg_top_idx, range.checked);
+            add(src_loc_tk, indent, reg_top_idx, range.count);
+            branch_to_bounds_panic(src_loc_tk, indent, condition::o, with_line);
+        }
 
         cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
 
@@ -2237,7 +2277,8 @@ class machine_x86_64 final : public machine {
         };
 
         if (factor_info.kind == factor_kind::zero) {
-            // 'xor' is the shorter idiom but cannot target memory
+            // 'xor' is the shorter idiom, a memory product has no
+            // 'xor m, m' form
             if (product.is_register()) {
                 xor_op(src_loc_tk, indent, product, product);
             } else {
@@ -2322,8 +2363,8 @@ class machine_x86_64 final : public machine {
         }
 
         if (std::has_single_bit(element_size_bytes)) {
-            shl(src_loc_tk, indent, value,
-                immediate(std::countr_zero(element_size_bytes)));
+            emit_op(src_loc_tk, indent, op::sal, value,
+                    immediate(std::countr_zero(element_size_bytes)));
 
             return;
         }
@@ -2340,12 +2381,6 @@ class machine_x86_64 final : public machine {
                 [[maybe_unused]] const operand& empty) -> void {
                 assembler_.setcc(indent, cc, to_argument(lowered));
             });
-    }
-
-    auto shl(const token& src_loc_tk, const size_t indent, const operand& dst,
-             const operand& src) -> void {
-
-        emit_op(src_loc_tk, indent, op::shl, dst, src);
     }
 
     [[nodiscard]] auto sized_memory(const operand& value,
@@ -2386,26 +2421,9 @@ class machine_x86_64 final : public machine {
         return result;
     }
 
-    auto store_comparison(const token& src_loc_tk, const size_t indent,
-                          const comparison_operator comparison,
-                          const bool inverted, const operand& dst) -> void {
-
-        if (dst.is_memory()) {
-            setcc(src_loc_tk, indent,
-                  condition_for_comparison(comparison, inverted),
-                  sized_memory(dst, size_byte_));
-
-            return;
-        }
-
-        setcc(src_loc_tk, indent,
-              condition_for_comparison(comparison, inverted), dst);
-    }
-
-    auto store_equal_result(const token& src_loc_tk, const size_t indent,
-                            const operand& dst, const bool inverted) -> void {
-
-        const condition cc{inverted ? condition::ne : condition::e};
+    // 'setcc' writes one byte
+    auto store_condition(const token& src_loc_tk, const size_t indent,
+                         const condition cc, const operand& dst) -> void {
 
         if (dst.is_register()) {
             setcc(src_loc_tk, indent, cc, sized_register(dst, size_byte_));

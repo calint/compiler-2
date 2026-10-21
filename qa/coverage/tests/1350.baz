@@ -1,0 +1,13 @@
+# a constant argument of an inlined call compared is a value of the type of
+# its parameter, its unary ops apply at that type like those of a variable
+func f(p i8) res {
+    if -p != -128 {
+        res = 1
+        return
+    }
+    res = 0
+}
+
+func main() {
+    exit(f(-128))
+}

@@ -385,4 +385,4 @@ func main() {
         result = compile_source(directory, declaration + "\nfunc main() {}\n", 4096, [])
         assert result.returncode == 1, result.stderr
         assert "storage size exceeds signed 64-bit range" in result.stderr, result.stderr
-        print("arena storage arithmetic overflow: ok", flush=True)
+    print("arena storage arithmetic overflow: ok", flush=True)

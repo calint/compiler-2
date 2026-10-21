@@ -1,0 +1,9 @@
+# a generic parameter cannot hide a built-in type, which has no place in the
+# source
+func f<i8 type>(x i8) res {
+    res = x
+}
+
+func main() {
+    exit(f<i16>(1))
+}

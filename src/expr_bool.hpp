@@ -646,7 +646,12 @@ class expr_bool_op final : public statement {
 
         const std::string_view type_name{side.get_type().name()};
 
-        if (is_equality) {
+        // e.g. the '-' of '-p == p' applies to a number
+        const bool has_unary_ops{
+            side.is_name_or_literal() and not side.get_unary_ops().is_empty(),
+        };
+
+        if (is_equality and not has_unary_ops) {
             throw compile_error{
                 side.tok(),
                 std::format("an instance of '{}' is compared only with an "
@@ -822,7 +827,11 @@ class expr_bool_op final : public statement {
                                                 const expr_arith& side)
         -> bool {
 
-        return not side.is_expression() and
+        if (side.is_expression()) {
+            return false;
+        }
+
+        return side.is_typed_literal() or
                tc.make_ident_info(side).is_typed_const();
     }
 
@@ -927,24 +936,26 @@ class expr_bool_op final : public statement {
         }
 
         // a typed constant left side is a value of its type in a register
-        if (is_lhs and expr_info.is_typed_const()) {
+        if (is_lhs and is_typed_constant(tc, expr)) {
             machine& x{tc.machine()};
 
             const operand reg{
-                x.alloc_scratch_register(expr.tok(), indent,
-                                         expr_info.type_ref()),
+                x.alloc_scratch_register(expr.tok(), indent, expr.get_type()),
             };
 
             allocated_registers.emplace_back(reg);
 
-            x.copy_value(expr.tok(), indent, reg,
-                         expr.make_constant_operand(expr_info));
+            x.copy_value(expr.tok(), indent, reg, typed_constant(tc, expr));
 
             return reg;
         }
 
         // a constant left side was mirrored onto the right
         assert(not expr_info.is_const() or not is_lhs);
+
+        if (expr.is_typed_literal()) {
+            return typed_constant(tc, expr);
+        }
 
         if (expr_info.is_const()) {
             return expr.make_constant_operand(expr_info);
@@ -999,6 +1010,19 @@ class expr_bool_op final : public statement {
         }
 
         return resolve_expr(tc, indent, lhs, true, allocated_registers);
+    }
+
+    // the value at the width of its type, e.g. -128 for '-i8(-128)'
+    [[nodiscard]] static auto typed_constant(const toc& tc,
+                                             const expr_arith& side)
+        -> operand {
+
+        const std::optional<int64_t> value{side_constant(tc, side)};
+
+        // note: 'is_typed_constant' holds, a constant name or literal folds
+        assert(value);
+
+        return operand::imm(*value, side.get_type());
     }
 
     // 'value' with the unary operators of 'expr' applied, in a scratch register

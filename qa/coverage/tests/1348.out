@@ -1,0 +1,4 @@
+
+1348.baz:6:24: constant '-m' does not fit 'i32', use 'i32(...)'
+    var a = i32[2]{1, -m}
+                       ^

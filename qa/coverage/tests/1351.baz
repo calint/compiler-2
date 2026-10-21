@@ -1,0 +1,26 @@
+# the unary ops of a conversion of a 'bool' apply at the type of the
+# conversion, e.g. '-i8(b)' is -1 for a true 'b'
+func t() res bool {
+    res = true
+}
+
+func main() {
+    var b = true
+    var r = -i8(b)
+    if r != -1 {
+        exit(1)
+    }
+    var s = ~i8(b)
+    if s != -2 {
+        exit(2)
+    }
+    var w = -i16(t())
+    if w != -1 {
+        exit(3)
+    }
+    var n = int(t()) + -int(t())
+    if n != 0 {
+        exit(4)
+    }
+    exit(0)
+}

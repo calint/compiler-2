@@ -400,7 +400,7 @@ class Generator:
                 else:
                     head += f", {visited}"
             self.emit(f"{head} {{")
-            self.emit(f"    mix(acc, i32(i32(e) + {step} + i - n))")
+            self.emit(f"    mix(acc, i32(int(e) + {step} + i - n))")
             self.emit("}")
             for i, v in enumerate(value[:visited]):
                 self.acc = mix(self.acc, v + step + i - t.count)

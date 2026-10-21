@@ -368,7 +368,7 @@ struct call_site {
 
     // a level is the dry run of a noinline call nested in the dry run of the
     // call that reaches it, see 'noinline_call::check_aliasing'
-    static constexpr size_t max_noinline_dry_run_depth{100};
+    static constexpr size_t max_noinline_dry_run_level{100};
 
     // the error was found inside the inlined body, unless it is in the call
     // itself where the call is already the error location
@@ -505,6 +505,20 @@ struct call_site {
                                     dst.accessed_path());
     }
 
+    // the frames ran out in the dry run of a noinline call, see
+    // 'noinline_call::check_aliasing'
+    [[noreturn]] static auto throw_dry_run_frame_limit(const token& src_loc_tk)
+        -> void {
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("inlined calls and blocks are nested too deep to check "
+                        "the arguments of a noinline call, the limit is {} "
+                        "scopes",
+                        max_frame_count),
+        };
+    }
+
     [[noreturn]] static auto throw_noinline_nesting(const token& src_loc_tk)
         -> void {
 
@@ -512,7 +526,7 @@ struct call_site {
             src_loc_tk,
             std::format("noinline calls are nested too deep to check their "
                         "arguments, the limit is {} levels",
-                        max_noinline_dry_run_depth),
+                        max_noinline_dry_run_level),
         };
     }
 
@@ -1173,9 +1187,15 @@ class inline_call {
         // shadow the caller's, and the alias target must be a plain integer,
         // e.g. '~1' is not
         if (arg_info.is_const()) {
-            return alias_info::make_constant(
-                param.name_or_literal(), param.get_type(),
-                arg.get_unary_ops().evaluate_constant(arg_info.const_value()));
+            const std::optional<int64_t> value{
+                arg.constant_value(tc, param.get_type()),
+            };
+
+            // note: a constant name or literal folds
+            assert(value);
+
+            return alias_info::make_constant(param.name_or_literal(),
+                                             param.get_type(), *value);
         }
 
         if (arg.get_unary_ops().is_empty()) {
@@ -1406,40 +1426,41 @@ class noinline_call {
         }
 
         // e.g. 1 for a call in 'main'
-        const size_t level{tc.scopes().noinline_dry_run_depth() + 1};
+        const size_t level{tc.scopes().noinline_dry_run_level() + 1};
 
-        const std::optional<size_t> checked_height{
-            tc.checked_noinline_call_height(*signature),
+        const std::optional<dry_run_height> checked_height{
+            tc.funcs().checked_call_height(*signature),
         };
 
-        // e.g. a chain of noinline calls nests a dry run in each; a checked
-        // call counts the levels below it, so the verdict does not depend on
-        // which calls were checked first
-        if (level + checked_height.value_or(0) >
-            call_site::max_noinline_dry_run_depth) {
+        const dry_run_height below{checked_height.value_or(dry_run_height{})};
 
+        // e.g. a chain of noinline calls nests a dry run in each; a checked
+        // call counts the levels and the frames below it, so the verdict does
+        // not depend on which calls were checked first
+        if (level + below.levels > call_site::max_noinline_dry_run_level) {
             call_site::throw_noinline_nesting(call_.tk);
         }
+
+        const size_t frame_check{tc.scopes().frames().size() + below.frames};
+
+        if (frame_check >= call_site::max_frame_count) {
+            call_site::throw_dry_run_frame_limit(call_.tk);
+        }
+
+        tc.reach_frame_check(frame_check);
 
         // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
         //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
         //       dry run has until it ends, so the height of a cycle depends on
-        //       where it was entered, by at most the number of its signatures
+        //       where it was entered, by at most the number of its signatures;
+        //       a known limitation: near the limit the verdict of a chain
+        //       through a cycle depends on the order of the calls (docs 4.3)
         if (checked_height) {
-            tc.reach_dry_run_level(level + *checked_height);
+            tc.reach_dry_run_level(level + below.levels);
             return;
         }
 
-        if (tc.scopes().frames().size() >= call_site::max_frame_count) {
-            call_site::throw_noinline_nesting(call_.tk);
-        }
-
-        tc.set_checked_noinline_call_height(*signature, 0);
-
-        const size_t enclosing_deepest{
-            tc.exchange_deepest_dry_run_level(level),
-        };
-
+        toc::noinline_check_scope check{tc, *signature, level};
         const inline_call dry_run{call_};
 
         try {
@@ -1451,12 +1472,7 @@ class noinline_call {
             throw;
         }
 
-        const size_t deepest{
-            tc.exchange_deepest_dry_run_level(enclosing_deepest),
-        };
-
-        tc.set_checked_noinline_call_height(*signature, deepest - level);
-        tc.reach_dry_run_level(deepest);
+        check.commit();
     }
 
     // the result address comes first, then one address per argument
@@ -2011,6 +2027,8 @@ class stmt_call : public expression {
             call.assert_result_type(dst, func);
         }
 
+        const toc::overflow_check_resume checked{tc};
+
         if (not func.is_inlined()) {
             noinline_call{call}.compile(tc, indent, dst, func);
             return;
@@ -2115,7 +2133,7 @@ class stmt_call : public expression {
     }
 
     // an inlined call compiles its body in place, so nesting is limited
-    auto assert_inline_nesting(const toc& tc, const stmt_def_func& func) const
+    auto assert_inline_nesting(toc& tc, const stmt_def_func& func) const
         -> void {
 
         // an inlined recursion ends at compile time when a constant argument
@@ -2129,19 +2147,23 @@ class stmt_call : public expression {
                 func.name()));
         }
 
-        if (tc.scopes().frames().size() < call_site::max_frame_count) {
+        const size_t frame_count{tc.scopes().frames().size()};
+
+        tc.reach_frame_check(frame_count);
+
+        if (frame_count < call_site::max_frame_count) {
             return;
         }
 
         // note: the chain does not depend on the arguments, see
         //       'noinline_call::check_aliasing'
-        if (is_in_noinline_dry_run(tc)) {
-            call_site::throw_noinline_nesting(tok());
+        if (tc.scopes().noinline_dry_run_level() != 0) {
+            call_site::throw_dry_run_frame_limit(tok());
         }
 
         throw inlining_limit_error(
-            std::format("inlined calls are nested too deep, the limit is "
-                        "{} levels, declare a function 'noinline'",
+            std::format("inlined calls and blocks are nested too deep, the "
+                        "limit is {} scopes, declare a function 'noinline'",
                         call_site::max_frame_count));
     }
 
@@ -2618,13 +2640,6 @@ class stmt_call : public expression {
                            constructor_name_tk.text());
 
         return name;
-    }
-
-    // see 'frame::noinline_dry_run'
-    [[nodiscard]] static auto is_in_noinline_dry_run(const toc& tc) -> bool {
-        return std::ranges::any_of(
-            tc.scopes().frames(),
-            [](const frame& frm) -> bool { return frm.is_noinline_dry_run(); });
     }
 
     // the type as written, with the type it is bound to when that differs,

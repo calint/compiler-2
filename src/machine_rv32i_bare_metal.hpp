@@ -87,7 +87,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         return true;
     }
 
+    // the stack fits the memory and what 'main' may use without a stack
+    // check, which 'check_memory_end' and the stack limit rely on
     auto start() -> void override {
+        assert_stack_size();
+
         machine_rv32i::start();
 
         // no operating system sets up a stack
@@ -105,18 +109,12 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     auto check_memory_end(const size_t memory_end_address) const
         -> void override {
 
-        if (stack_size_bytes() < leaf_stack_bytes()) {
-            throw unlocated_error{
-                std::format("invalid --stack: {} B is smaller than the {} B "
-                            "that 'main' may use without a stack check",
-                            stack_size_bytes(), leaf_stack_bytes())};
-        }
-
         const size_t memory_bytes{memory_size_bytes()};
 
-        if (stack_size_bytes() <= memory_bytes and
-            memory_end_address <= memory_bytes - stack_size_bytes()) {
+        // note: 'start' rejected a stack larger than the memory
+        assert(stack_size_bytes() <= memory_bytes);
 
+        if (memory_end_address <= memory_bytes - stack_size_bytes()) {
             return;
         }
 
@@ -170,6 +168,22 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
     // class methods
     //
+
+    auto assert_stack_size() const -> void {
+        if (stack_size_bytes() > memory_size_bytes()) {
+            throw option_error{
+                std::format("invalid --stack: {} B exceeds the {} B of device "
+                            "memory",
+                            stack_size_bytes(), memory_size_bytes())};
+        }
+
+        if (stack_size_bytes() < leaf_stack_bytes()) {
+            throw option_error{
+                std::format("invalid --stack: {} B is smaller than the {} B "
+                            "that 'main' may use without a stack check",
+                            stack_size_bytes(), leaf_stack_bytes())};
+        }
+    }
 
     // reads until a newline or the count is reached, a0 receives the count
     // and ctrl-d ends the read without being stored like at a terminal

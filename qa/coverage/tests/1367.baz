@@ -1,0 +1,8 @@
+# a constant named in the 'array_length' of its own initializer is the
+# uninitialized constant, not an outer array of the same name
+var a = i8[2]
+
+func main() {
+    let a = array_length(a)
+    exit(a)
+}

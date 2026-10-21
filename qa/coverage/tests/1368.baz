@@ -1,0 +1,8 @@
+# a unary operator applies to a number, not to an instance
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    var q = -p
+    exit(q.x)
+}

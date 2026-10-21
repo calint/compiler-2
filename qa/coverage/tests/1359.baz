@@ -1,0 +1,9 @@
+# the parameter of a generic function is a name like the others, not a
+# built-in function
+func f<exit type>(x exit) res {
+    res = x
+}
+
+func main() {
+    exit(f<i8>(1))
+}

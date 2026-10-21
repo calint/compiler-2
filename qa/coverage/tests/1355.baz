@@ -1,0 +1,17 @@
+# --checks=upper: a range whose start plus count passes the signed maximum is
+# out of bounds also without the lower bound check
+func main() {
+    var s = 1
+    loop {
+        var t = s * 2 + 1
+        if t < 0 {
+            break
+        }
+        s = t
+    }
+    var x = i8[4]
+    var y = i8[4]
+    var n = 1
+    array_copy(x[s], y[0], n)
+    exit(7)
+}

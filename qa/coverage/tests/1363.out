@@ -1,0 +1,2 @@
+1 generic.baz:634:11: nesting is too deep, the limit is 128 levels
+1 i128.baz:1:9: nesting is too deep, the limit is 128 levels

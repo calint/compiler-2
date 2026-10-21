@@ -312,7 +312,7 @@ class program final {
         : files_{files},
           tc_{backend, files, builtin_set(), vars_size_bytes, checks} {
 
-        // note: 'main' rejects a larger '--vars' as a usage error
+        // note: 'main' rejects a larger '--vars' as an option error
         assert(vars_size_bytes <= backend.max_storage_bytes());
 
         // a built-in has no place in the source
@@ -497,6 +497,9 @@ class program final {
     [[nodiscard]] auto parse_include(tokenizer& tz, const token& include_tk,
                                      const size_t file_ix)
         -> std::unique_ptr<statement> {
+
+        // the included file is parsed inside the include
+        const tokenizer::nesting_scope nesting{tz};
 
         const token path_tk{tz.next_token()};
 

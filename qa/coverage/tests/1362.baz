@@ -1,0 +1,7 @@
+# a comparison in parentheses as an arithmetic operand makes a condition, which
+# is not an operand
+func main() {
+    var x = 1
+    x = 1 + (x < 1)
+    exit(x)
+}

@@ -23,6 +23,13 @@ class unlocated_error final : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+// a command line option that the target rejects, e.g. a '--stack' larger than
+// its memory; 'main' reports it like the errors of the option parse
+class option_error final : public std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+};
+
 class compile_error final : public std::exception {
   public:
     // running out of scratch registers depends on the code compiled, another

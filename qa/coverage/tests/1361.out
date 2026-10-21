@@ -1,0 +1,4 @@
+
+1361.baz:5:17: a 'bool' is not an arithmetic operand, convert it, e.g. 'int(...)'
+    var x = 1 + bs[1]
+                ^~

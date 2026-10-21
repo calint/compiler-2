@@ -111,6 +111,12 @@ CLI_BINARY_NAME() {
     grep -Fq "invalid --bin: 'gen-include.baz' is a source file" err
     grep -Fq "res = 3" gen-include.baz
     rm -f gen-include.baz gen-main.baz
+    # x86_64 writes no image, so a source named as one is left untouched
+    cp 0426.baz gen-source.baz
+    "$BIN" --target=x86_64 --bin=gen-source.baz gen-source.baz >gen.s 2>err
+    [[ ! -s err ]]
+    cmp -s 0426.baz gen-source.baz
+    rm -f gen-source.baz
     echo ok
 }
 
@@ -200,7 +206,8 @@ CLI_FILE_ERRORS() {
     local exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    # an error without a place in the source has the format of an option error
+    # an error without a place in the source starts with 'error: ' like an
+    # option error
     grep -Fq "error: cannot open file 'missing-source.baz'" err
     set +e
     "$BIN" --target=rv32i --bin=missing-directory/gen-rv32i.bin 0015.baz >gen.s 2>err
@@ -337,15 +344,16 @@ CLI_FPGA_MEMORY() {
     exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    grep -Fq "the stack $((memory_size + 16)) B" err
-    # the stack check of a 'noinline' call is generated with a stack that does
-    # not fit
+    grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
+    grep -Fq "use --help for usage information" err
+    # a stack larger than the memory is rejected before a stack check of a
+    # 'noinline' call is generated with it
     set +e
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack --stack=$((memory_size + 16)) 0992.baz >gen.s 2>err
     exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    grep -Fq "the stack $((memory_size + 16)) B" err
+    grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
     # a smaller memory moves the end of the stack and the limit of the vars
     local small_size=$((0x40000))
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size 0426.baz >gen.s 2>err
@@ -425,7 +433,15 @@ CLI_QEMU_STACK() {
     local exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    grep -Fq "invalid --stack: 4294967312 B exceeds the 4294967296 B that the target addresses" err
+    grep -Fq "error: invalid --stack: 4294967312 B exceeds the 134217728 B of device memory" err
+    grep -Fq "use --help for usage information" err
+    # the address space, one more than the largest 32-bit immediate
+    set +e
+    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000000 0426.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "error: invalid --stack: 4294967296 B exceeds the 134217728 B of device memory" err
     grep -Fq "use --help for usage information" err
     # the 'virt' machine has 128 MiB
     "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7f00000 0426.baz >gen.s 2>err
@@ -451,6 +467,7 @@ CLI_SMALL_STACK() {
         set -e
         [[ $exit_code -eq 1 ]]
         grep -Fq "error: invalid --stack: 32 B is smaller than the 48 B that 'main' may use without a stack check" err
+        grep -Fq "use --help for usage information" err
         "$BIN" --target=$target --bin=gen-rv32i.bin --stack=48 0426.baz >gen.s 2>err
         [[ ! -s err ]]
     done
@@ -498,7 +515,7 @@ CLI_PADDING_ZERO_BY_TARGET() {
     echo ok
 }
 
-CLI_USAGE_MESSAGES() {
+CLI_OPTION_MESSAGES() {
     echo -n "cli option errors name their option: "
     local arg exit_code
     for arg in --vars=0 --stack=x --memory=100 --memory=0x100000000 --target=x --checks=x --report=x --versions=x; do
@@ -578,7 +595,7 @@ CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 CLI_QEMU_STACK
 CLI_SMALL_STACK
-CLI_USAGE_MESSAGES
+CLI_OPTION_MESSAGES
 CLI_VARS_RANGE
 CLI_STACK_HANDLER
 CLI_NOINLINE_REPORT

@@ -16,7 +16,12 @@
 #   DIFFNOPT     run, and compare the difference of the output of '--nopt' and
 #                of the optimized compile with 'NNN.TARGET.diff'
 #   COMPERR      the compile fails with exit code 1 and its message is
-#                'NNN.TARGET.out' or else 'NNN.out'
+#                'NNN.TARGET.out' or else 'NNN.out', TARGET is the compiler
+#                target, x86_64 or rv32i
+#
+# A run case expects 'NNN.TARGET.out' instead of 'NNN.out' and the exit code in
+# 'NNN.TARGET.exit' instead of 'EXP' when that file exists for the target,
+# e.g. 'NNN.rv32i-fpga.exit'.
 #   SDCARD SIZE  the sd card image of the cases that follow, sparse, or no
 #                image for 'none'
 #
@@ -2773,7 +2778,8 @@ SRC=0894 && COMPERR
 # expressions nested more than 128 levels are rejected
 SRC=0895 && COMPERR
 
-# inlined calls nested more than 256 levels are rejected
+# inlined calls nested deeper than the limit of 256 scopes are rejected, each
+# call takes two: the call and the block of its body
 SRC=0896 && COMPERR
 
 # an array field is not initialized with the name of its element type
@@ -4326,3 +4332,97 @@ SRC=1346 && DIFFPY
 # rv32i: a product whose right operand is in 'a0', the last scratch register,
 # is out of scratch registers, the helper takes its arguments in 'a0' and 'a1'
 SRC=1347 && COMPERR
+
+# --checks=overflow: the negation of a named 64-bit minimum as an element of a
+# narrower array does not fit it
+if [[ $MACHINE == x86_64 ]]; then SRC=1348 && OPTS="--checks=overflow" COMPERR; fi
+
+# a folded conversion compared is a value of its type, its unary ops apply at
+# that type like those of a variable
+SRC=1349 && EXP=0 && RUN
+
+# a constant argument of an inlined call compared is a value of the type of
+# its parameter, its unary ops apply at that type like those of a variable
+SRC=1350 && EXP=0 && RUN
+
+# the unary ops of a conversion of a 'bool' apply at the type of the
+# conversion, e.g. '-i8(b)' is -1 for a true 'b'
+SRC=1351 && EXP=0 && RUN
+
+# --checks=overflow: the body of an inlined function called in the argument of
+# a conversion is checked, only the conversion's own arithmetic wraps
+SRC=1352 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# a folded conversion passed to an inlined function is a value of the type of
+# the parameter, its unary ops apply at that type
+SRC=1353 && EXP=0 && RUN
+
+# --checks=overflow: the negation of a folded conversion passed to an inlined
+# function overflows the type of the parameter
+SRC=1354 && OPTS="--checks=overflow" COMPERR
+
+# --checks=upper: a range whose start plus count passes the signed maximum is
+# out of bounds also without the lower bound check
+SRC=1355 && EXP=255 && RUN_ERR_OPTS "--checks=upper"
+
+# a noinline call checked once is rejected where its check would run out of
+# frames, whatever the order of the calls: the script compiles a generated
+# program with and without an earlier call at a shallow depth
+SRC=1356 && DIFFPY
+
+# an uncalled inlined function with a result and no parameters is checked
+# without the errors a call can avoid: its result is the destination of the
+# call, e.g. one register less for an expression
+SRC=1357 && EXP=0 && RUN
+
+# the parameter of a generic type is a name like the others, not a keyword
+SRC=1358 && COMPERR
+
+# the parameter of a generic function is a name like the others, not a
+# built-in function
+SRC=1359 && COMPERR
+
+# a generic parameter cannot hide a built-in type, which has no place in the
+# source
+SRC=1360 && COMPERR
+
+# an indexed 'bool' operand is converted as a whole, the hint does not name
+# only its array
+SRC=1361 && COMPERR
+
+# a comparison in parentheses as an arithmetic operand makes a condition, which
+# is not an operand
+SRC=1362 && COMPERR
+
+# the parse of a generic instance and of an included file nests in the parse
+# that needs it, so a long chain of them is past the nesting limit, not a
+# crash: the script compiles a generated chain of each
+SRC=1363 && DIFFPY
+
+# a call in a braced literal is checked for shared storage with the field or
+# the element it writes, not with the whole variable
+SRC=1364 && EXP=0 && RUN
+
+# a field read at a run-time index is not overwritten by the fields of a
+# literal written before it when it is another field
+SRC=1365 && EXP=4 && RUN
+
+# a field read at a run-time index may be the field of a literal written
+# before it
+SRC=1366 && COMPERR
+
+# a constant named in the 'array_length' of its own initializer is the
+# uninitialized constant, not an outer array of the same name
+SRC=1367 && COMPERR
+
+# a unary operator applies to a number, not to an instance
+SRC=1368 && COMPERR
+
+# a unary operator applies to a number, not to an instance compared with an
+# instance
+SRC=1369 && COMPERR
+
+# x86_64: '==' of 16 bytes compares with two 'cmpsq' and does not take 'rcx',
+# the count register of 'repe cmpsq': the script prints the lines of the
+# compare that name 'rcx'
+if [[ $MACHINE == x86_64 ]]; then SRC=1370 && DIFFPY; fi

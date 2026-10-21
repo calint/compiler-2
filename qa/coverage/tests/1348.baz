@@ -1,0 +1,8 @@
+# --checks=overflow: the negation of a named 64-bit minimum as an element of a
+# narrower array does not fit it
+let m = -9223372036854775807 - 1
+
+func main() {
+    var a = i32[2]{1, -m}
+    exit(a[0])
+}

@@ -95,14 +95,13 @@ class constant_parser final {
         int base{base_decimal};
         std::string_view digits{str};
 
-        if (str.starts_with("0x") or str.starts_with("0X")) {
-            base = base_hex;
+        if (has_base_prefix(str)) {
+            const bool is_hex{str.at(1) == 'x' or str.at(1) == 'X'};
+            // note: 1 is the letter after the '0' of the prefix
+
+            base = is_hex ? base_hex : base_binary;
             digits.remove_prefix(2);
-            // note: 2 for the '0x' prefix
-        } else if (str.starts_with("0b") or str.starts_with("0B")) {
-            base = base_binary;
-            digits.remove_prefix(2);
-            // note: 2 for the '0b' prefix
+            // note: 2 for the '0x' or '0b' prefix
         }
 
         int64_t value{};

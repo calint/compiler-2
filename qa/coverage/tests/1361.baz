@@ -1,0 +1,7 @@
+# an indexed 'bool' operand is converted as a whole, the hint does not name
+# only its array
+func main() {
+    var bs = bool[2]
+    var x = 1 + bs[1]
+    exit(x)
+}

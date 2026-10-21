@@ -1,0 +1,6 @@
+# the parse of a generic instance and of an included file nests in the parse
+# that needs it, so a long chain of them is past the nesting limit, not a
+# crash: the script compiles a generated chain of each
+func main() {
+    exit(0)
+}

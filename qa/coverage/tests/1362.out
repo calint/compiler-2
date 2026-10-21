@@ -1,0 +1,4 @@
+
+1362.baz:5:16: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    x = 1 + (x < 1)
+               ^

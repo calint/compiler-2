@@ -1,4 +1,5 @@
-# inlined calls nested more than 256 levels are rejected
+# inlined calls nested deeper than the limit of 256 scopes are rejected, each
+# call takes two: the call and the block of its body
 
 func f258() {
 }

@@ -15,7 +15,6 @@
 #include <string_view>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include "assembler.hpp"
 
@@ -42,7 +41,6 @@ class assembler_x86_64 final : public assembler {
         imul,
         sal,
         sar,
-        shl,
         inc,
         dec,
         neg,
@@ -332,8 +330,9 @@ class assembler_x86_64 final : public assembler {
 
         std::string memory_text{address.symbol};
 
-        // a symbol is addressed relative to rip or with an index
-        assert(address.symbol.empty() or address.base.empty());
+        // a symbol is addressed relative to 'rip', without registers
+        assert(address.symbol.empty() or
+               (address.base.empty() and address.index.empty()));
 
         if (not address.base.empty()) {
             memory_text += address.base;
@@ -559,7 +558,6 @@ class assembler_x86_64 final : public assembler {
                 {.mnemonic{"imul"}, .operand_count{2}},
                 {.mnemonic{"sal"}, .operand_count{2}},
                 {.mnemonic{"sar"}, .operand_count{2}},
-                {.mnemonic{"shl"}, .operand_count{2}},
                 {.mnemonic{"inc"}, .operand_count{1}},
                 {.mnemonic{"dec"}, .operand_count{1}},
                 {.mnemonic{"neg"}, .operand_count{1}},
