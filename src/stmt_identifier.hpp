@@ -394,6 +394,40 @@ class stmt_identifier final : public statement {
         return operand::mem(address, *parent_type);
     }
 
+    // a typed constant is a value of its type, so it wraps at the width of
+    // its use like a variable, e.g. '-p' of an 'i8' 'p' bound to -128 is -128
+    // at 'i8'
+    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
+        -> std::optional<folded_value> override {
+
+        const ident_info info{tc.make_ident_info(*this)};
+
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        const int64_t value{
+            get_unary_ops().evaluate_at(info.const_value(), use.width_ref(),
+                                        tc.checks().overflow),
+        };
+
+        const int64_t wrapped{
+            constant_arith::wrap_to_width(value, use.width_ref()),
+        };
+
+        if (info.is_typed_const()) {
+            return folded_value{
+                .value{wrapped},
+                .own_type{&info.type_ref()},
+            };
+        }
+
+        return folded_value{
+            .value{use.keeps_untyped ? value : wrapped},
+            .own_type{},
+        };
+    }
+
     [[nodiscard]] auto is_array_element() const -> bool override {
         return not elems_.empty() and elems_.back().array_index_expr != nullptr;
     }
@@ -404,11 +438,6 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
         return true;
-    }
-
-    [[nodiscard]] auto is_typed_constant(const toc& tc) const -> bool override {
-
-        return tc.make_ident_info(*this).is_typed_const();
     }
 
     // the low bytes are at the start address of the storage

@@ -47,12 +47,14 @@ class expr_zero final : public expression {
         x.copy_value(tok(), indent, dst.operand(), operand::imm(0, get_type()));
     }
 
-    [[nodiscard]] auto
-    folded_constant([[maybe_unused]] const toc& tc,
-                    [[maybe_unused]] const type& width_type) const
-        -> std::optional<int64_t> override {
+    [[nodiscard]] auto fold([[maybe_unused]] const toc& tc,
+                            [[maybe_unused]] const value_use& use) const
+        -> std::optional<folded_value> override {
 
-        return 0;
+        return folded_value{
+            .value{},
+            .own_type{},
+        };
     }
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {

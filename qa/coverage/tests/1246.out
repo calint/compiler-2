@@ -1,4 +1,4 @@
 
-1246.baz:5:14: constant expression overflows the type
+1246.baz:5:13: constant expression overflows the type
     var x = -m
-             ^
+            ^

@@ -1155,13 +1155,13 @@ class inline_call {
                           std::vector<operand>& allocated_registers)
         -> alias_info {
 
-        const std::optional<int64_t> value{
-            arg.constant_value(tc, param.get_type()),
+        const std::optional<folded_value> folded{
+            arg.fold(tc, value_use::as_written_at(param.get_type())),
         };
 
-        if (value) {
+        if (folded) {
             return alias_info::make_constant(param.name_or_literal(),
-                                             param.get_type(), *value);
+                                             param.get_type(), folded->value);
         }
 
         machine& x{tc.machine()};
@@ -1194,15 +1194,15 @@ class inline_call {
         // shadow the caller's, and the alias target must be a plain integer,
         // e.g. '~1' is not
         if (arg_info.is_const()) {
-            const std::optional<int64_t> value{
-                arg.constant_value(tc, param.get_type()),
+            const std::optional<folded_value> folded{
+                arg.fold(tc, value_use::as_written_at(param.get_type())),
             };
 
             // note: a constant name or literal folds
-            assert(value);
+            assert(folded);
 
             return alias_info::make_constant(param.name_or_literal(),
-                                             param.get_type(), *value);
+                                             param.get_type(), folded->value);
         }
 
         if (arg.get_unary_ops().is_empty()) {

@@ -9,13 +9,15 @@
 #include <utility>
 #include <vector>
 
+#include "compile_error.hpp"
+#include "constant_arith.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 
 class unary_ops final {
-    token ws_pre_;          // whitespace before the ops
+    token ws_pre_;          // whitespace before the ops, at where they start
     std::vector<char> ops_; // the unary ops as characters
 
   public:
@@ -44,6 +46,24 @@ class unary_ops final {
                              : machine::arithmetic_operator::complement,
                     dst, check);
         }
+    }
+
+    // the ops applied to a constant used at 'width', not wrapped to it; with
+    // the overflow check a negation of the minimum of 'width' is an error at
+    // the ops
+    [[nodiscard]] auto evaluate_at(const int64_t v, const type& width,
+                                   const bool checks_overflow) const
+        -> int64_t {
+
+        if (checks_overflow and
+            negation_overflows(
+                v, constant_arith::signed_minimum(width.size_bits()))) {
+
+            throw compile_error{ws_pre_,
+                                "constant expression overflows the type"};
+        }
+
+        return evaluate_constant(v);
     }
 
     [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {

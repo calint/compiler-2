@@ -198,16 +198,42 @@ class stmt_builtin_convert final : public expression {
         assert_own_type_not_narrowed(dst_type);
     }
 
-    // a narrower width stays unfolded, 'assert_not_narrowed' rejects it
-    [[nodiscard]] auto folded_constant(const toc& tc,
-                                       const type& width_type) const
-        -> std::optional<int64_t> override {
+    // a folded literal is a constant of the type, which wraps at the width
+    // of its use; otherwise a narrower width stays unfolded,
+    // 'assert_not_narrowed' rejects it
+    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
+        -> std::optional<folded_value> override {
+
+        const type& width_type{use.width_ref()};
+
+        if (not folded_.empty()) {
+            const ident_info info{tc.make_ident_info(*this)};
+
+            const int64_t value{
+                get_unary_ops().evaluate_at(info.const_value(), width_type,
+                                            tc.checks().overflow),
+            };
+
+            return folded_value{
+                .value{constant_arith::wrap_to_width(value, width_type)},
+                .own_type{&get_type()},
+            };
+        }
 
         if (width_type.size_bytes() < get_type().size_bytes()) {
             return std::nullopt;
         }
 
-        return constant_value(tc, width_type);
+        const std::optional<int64_t> value{constant_value(tc, width_type)};
+
+        if (not value) {
+            return std::nullopt;
+        }
+
+        return folded_value{
+            .value{*value},
+            .own_type{},
+        };
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
@@ -216,12 +242,6 @@ class stmt_builtin_convert final : public expression {
 
     // a folded literal is a constant, and constants are identifiers
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return not folded_.empty();
-    }
-
-    [[nodiscard]] auto is_typed_constant([[maybe_unused]] const toc& tc) const
-        -> bool override {
-
         return not folded_.empty();
     }
 
@@ -435,19 +455,10 @@ class stmt_builtin_convert final : public expression {
         // '-i8(-128)' in an 'i16' list
         const type& result_type{*wider(get_type(), width_type)};
 
-        const int64_t minimum{
-            constant_arith::signed_minimum(result_type.size_bits()),
-        };
-
-        if (tc.checks().overflow and
-            get_unary_ops().negation_overflows(converted, minimum)) {
-
-            throw compile_error{tok(),
-                                "constant expression overflows the type"};
-        }
-
         return constant_arith::wrap_to_width(
-            get_unary_ops().evaluate_constant(converted), result_type);
+            get_unary_ops().evaluate_at(converted, result_type,
+                                        tc.checks().overflow),
+            result_type);
     }
 
     [[nodiscard]] auto ops_place_for(const toc& tc,

@@ -231,6 +231,15 @@ class expr_any final : public statement {
                                       allocated_registers, request);
     }
 
+    // a scalar folds as its value
+    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
+        -> std::optional<folded_value> override {
+
+        assert(not is_array_);
+
+        return fold_element(tc, 0, use);
+    }
+
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         assert(not is_array_);
 
@@ -367,21 +376,13 @@ class expr_any final : public statement {
         return arith.compile_without_trailing_addend(tc, indent, dst);
     }
 
-    // e.g. '-2' or a named constant, empty when computed at run time
+    // e.g. '-2' or a named constant at the default type, empty when computed
+    // at run time
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<int64_t> {
 
-        return constant_value(tc, tc.builtins().default_type());
-    }
-
-    // folded at the width of 'width_type'
-    [[nodiscard]] auto constant_value(const toc& tc,
-                                      const type& width_type) const
-        -> std::optional<int64_t> {
-
-        assert(not is_array_);
-
-        return element_constant(tc, 0, width_type);
+        return folded_value::value_of(
+            fold(tc, value_use::as_written_at(tc.builtins().default_type())));
     }
 
     // every kind of element is a 'statement', the forwarding methods call its
@@ -395,11 +396,14 @@ class expr_any final : public statement {
         return *value;
     }
 
-    // the element 'index' folded at the width of 'width_type', empty when it
-    // is computed at run time
-    [[nodiscard]] auto element_constant(const toc& tc, const size_t index,
-                                        const type& width_type) const
-        -> std::optional<int64_t> {
+    [[nodiscard]] auto element_count() const -> size_t {
+        return elements_.size();
+    }
+
+    // the element 'index' folded, empty when it is computed at run time
+    [[nodiscard]] auto fold_element(const toc& tc, const size_t index,
+                                    const value_use& use) const
+        -> std::optional<folded_value> {
 
         const expr_variant& e{elements_.at(index)};
 
@@ -413,14 +417,13 @@ class expr_any final : public statement {
                 return std::nullopt;
             }
 
-            return *value ? 1 : 0;
+            return folded_value{
+                .value{*value ? 1 : 0},
+                .own_type{},
+            };
         }
 
-        return arith_constant(tc, e, width_type);
-    }
-
-    [[nodiscard]] auto element_count() const -> size_t {
-        return elements_.size();
+        return fold_arith(tc, e, use);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -565,7 +568,8 @@ class expr_any final : public statement {
         for (const expr_variant& e : elements_) {
             // e.g. '{300}' for 'i8' is rejected as when stored alone
             const std::optional<int64_t> value{
-                arith_constant(tc, e, element_type),
+                folded_value::value_of(
+                    fold_arith(tc, e, value_use::as_written_at(element_type))),
             };
 
             if (not value) {
@@ -700,34 +704,6 @@ class expr_any final : public statement {
     // statics
     //
 
-    // folds an 'expr_arith' element, empty for any other
-    // note: so 'constant_bytes' does not pack an 'expr_bool', e.g. '1 == 1',
-    //       or an instance element; a 'bool' name or literal is an
-    //       'expr_arith'
-    [[nodiscard]] static auto
-    arith_constant(const toc& tc, const expr_variant& e, const type& width_type)
-        -> std::optional<int64_t> {
-
-        const expr_arith* const arith{std::get_if<expr_arith>(&e)};
-
-        if (arith == nullptr) {
-            return std::nullopt;
-        }
-
-        const std::optional<int64_t> value{
-            expr_arith::constant_value_of(
-                tc, *arith, width_type, expr_arith::constant_wrap::as_written),
-        };
-
-        // the fold keeps the low bits of an operand that does not fit, which
-        // only a conversion asks for
-        if (value) {
-            arith->assert_not_narrowed(tc, width_type);
-        }
-
-        return value;
-    }
-
     // a 'bool' is not an integer, 'int(b)' converts it; an arithmetic operand
     // and a call result are checked by rules of their own
     static auto assert_not_boolean_name(const expr_arith& value, const type& tp)
@@ -774,6 +750,31 @@ class expr_any final : public statement {
 
         value.assert_not_narrowed(tc, dst.type_ref());
         value.compile(tc, indent, dst);
+    }
+
+    // folds an 'expr_arith' element, empty for any other
+    // note: so 'constant_bytes' does not pack an 'expr_bool', e.g. '1 == 1',
+    //       or an instance element; a 'bool' name or literal is an
+    //       'expr_arith'
+    [[nodiscard]] static auto fold_arith(const toc& tc, const expr_variant& e,
+                                         const value_use& use)
+        -> std::optional<folded_value> {
+
+        const expr_arith* const arith{std::get_if<expr_arith>(&e)};
+
+        if (arith == nullptr) {
+            return std::nullopt;
+        }
+
+        const std::optional<folded_value> folded{arith->fold(tc, use)};
+
+        // the fold keeps the low bits of an operand that does not fit, which
+        // only a conversion asks for
+        if (folded) {
+            arith->assert_not_narrowed(tc, use.width_ref());
+        }
+
+        return folded;
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,

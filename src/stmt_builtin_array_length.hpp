@@ -83,15 +83,15 @@ class stmt_builtin_array_length final : public expression {
             return;
         }
 
-        const std::optional<int64_t> length{
-            folded_constant(tc, dst.type_ref()),
+        const std::optional<folded_value> length{
+            fold(tc, value_use::wrapped_at(dst.type_ref())),
         };
 
         // note: the destination has the default type, so the length folds
         assert(length);
 
         x.copy_value(tok(), indent, dst.operand(),
-                     operand::imm(*length, dst.type_ref()));
+                     operand::imm(length->value, dst.type_ref()));
     }
 
     auto assert_not_narrowed([[maybe_unused]] const toc& tc,
@@ -101,11 +101,10 @@ class stmt_builtin_array_length final : public expression {
     }
 
     // a narrower width stays unfolded, 'assert_not_narrowed' rejects it
-    [[nodiscard]] auto folded_constant(const toc& tc,
-                                       const type& width_type) const
-        -> std::optional<int64_t> override {
+    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
+        -> std::optional<folded_value> override {
 
-        if (not width_type.is_same(tc.builtins().default_type())) {
+        if (not use.width_ref().is_same(tc.builtins().default_type())) {
             return std::nullopt;
         }
 
@@ -123,8 +122,12 @@ class stmt_builtin_array_length final : public expression {
             return std::nullopt;
         }
 
-        return get_unary_ops().evaluate_constant(
-            static_cast<int64_t>(*array_len));
+        const int64_t length{static_cast<int64_t>(*array_len)};
+
+        return folded_value{
+            .value{get_unary_ops().evaluate_constant(length)},
+            .own_type{},
+        };
     }
 
     // the length is known at compile time so the value of an array is not

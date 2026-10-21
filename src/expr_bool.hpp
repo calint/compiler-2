@@ -257,24 +257,24 @@ class expr_bool_op final : public statement {
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
-        const std::optional<int64_t> lhs_value{side_constant(tc, lhs_)};
+        const std::optional<folded_value> lhs_value{fold_side(tc, lhs_)};
 
         if (not lhs_value) {
             return std::nullopt;
         }
 
         if (is_shorthand_) {
-            return (*lhs_value != 0) != is_negated();
+            return (lhs_value->value != 0) != is_negated();
         }
 
-        const std::optional<int64_t> rhs_value{side_constant(tc, rhs_)};
+        const std::optional<folded_value> rhs_value{fold_side(tc, rhs_)};
 
         if (not rhs_value) {
             return std::nullopt;
         }
 
-        return constant_arith::eval_constant(*lhs_value, op_, *rhs_value) !=
-               is_negated();
+        return constant_arith::eval_constant(lhs_value->value, op_,
+                                             rhs_value->value) != is_negated();
     }
 
     // takes the operand that 'arithmetic' points to
@@ -291,8 +291,8 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        const bool is_lhs_typed{lhs_.is_typed_constant(tc)};
-        const bool is_rhs_typed{rhs_.is_typed_constant(tc)};
+        const bool is_lhs_typed{is_typed_constant(tc, lhs_)};
+        const bool is_rhs_typed{is_typed_constant(tc, rhs_)};
 
         if (is_lhs_typed and not is_rhs_typed) {
             assert_constant_fits(tc, lhs_, lhs_.get_type(), rhs_);
@@ -433,8 +433,8 @@ class expr_bool_op final : public statement {
 
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
-        if (not is_shorthand_ and side_constant(tc, lhs_) and
-            not lhs_.is_typed_constant(tc)) {
+        if (not is_shorthand_ and fold_side(tc, lhs_) and
+            not is_typed_constant(tc, lhs_)) {
 
             machine::comparison_action mirrored_action{action};
             mirrored_action.operation = machine::mirrored(op_);
@@ -610,17 +610,19 @@ class expr_bool_op final : public statement {
                                      const type& typed_type,
                                      const expr_arith& constant) -> void {
 
-        const std::optional<int64_t> value{side_constant(tc, constant)};
+        const std::optional<folded_value> folded{fold_side(tc, constant)};
 
-        assert(value);
+        assert(folded);
 
-        if (constant_arith::fits_size_bytes(*value, typed_type.size_bytes())) {
+        const int64_t value{folded->value};
+
+        if (constant_arith::fits_size_bytes(value, typed_type.size_bytes())) {
             return;
         }
 
         throw compile_error{
             constant.tok(),
-            std::format("constant '{}' does not fit '{}' of type '{}'", *value,
+            std::format("constant '{}' does not fit '{}' of type '{}'", value,
                         statement::trimmed_source(typed), typed_type.name())};
     }
 
@@ -676,7 +678,7 @@ class expr_bool_op final : public statement {
 
         // a typed constant, e.g. an argument of an inlined call, is compared
         // as a variable of its type
-        if (not rhs_op.is_immediate() or rhs.is_typed_constant(tc)) {
+        if (not rhs_op.is_immediate() or is_typed_constant(tc, rhs)) {
             const type& rhs_type{rhs_op.type_ref()};
 
             if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
@@ -789,6 +791,14 @@ class expr_bool_op final : public statement {
         return reg;
     }
 
+    // a side computed at run time in a register of its own type, so a
+    // constant list folds at that width
+    [[nodiscard]] static auto fold_side(const toc& tc, const expr_arith& side)
+        -> std::optional<folded_value> {
+
+        return side.fold(tc, value_use::as_written_at(side.get_type()));
+    }
+
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
     // inversion and branches keep the comparison which is shorter on x86
     [[nodiscard]] static auto
@@ -820,6 +830,15 @@ class expr_bool_op final : public statement {
 
         return not info.is_const() and
                (info.is_array() or not info.type_ref().is_builtin());
+    }
+
+    // a typed constant side is compared as a variable of its type
+    [[nodiscard]] static auto is_typed_constant(const toc& tc,
+                                                const expr_arith& side)
+        -> bool {
+
+        const std::optional<folded_value> folded{fold_side(tc, side)};
+        return folded and folded->is_typed();
     }
 
     // memory is compared, so a constant has nothing to compare
@@ -888,9 +907,9 @@ class expr_bool_op final : public statement {
         }
 
         if (expr.is_expression()) {
-            const std::optional<int64_t> value{side_constant(tc, expr)};
+            const std::optional<folded_value> folded{fold_side(tc, expr)};
 
-            if (not value) {
+            if (not folded) {
                 return compile_to_scratch(tc, indent, expr,
                                           allocated_registers);
             }
@@ -901,11 +920,11 @@ class expr_bool_op final : public statement {
                       statement::trimmed_source(expr));
 
             // e.g. 'i16(300) + 1' is a value of type 'i16'
-            if (expr.is_typed_constant(tc)) {
-                return operand::imm(*value, expr.get_type());
+            if (folded->is_typed()) {
+                return operand::imm(folded->value, *folded->own_type);
             }
 
-            return operand::imm(*value, tc.builtins().default_type());
+            return operand::imm(folded->value, tc.builtins().default_type());
         }
 
         const ident_info expr_info{tc.make_scalar_ident_info(expr)};
@@ -928,7 +947,7 @@ class expr_bool_op final : public statement {
         }
 
         // a typed constant left side is a value of its type in a register
-        if (is_lhs and expr.is_typed_constant(tc)) {
+        if (is_lhs and is_typed_constant(tc, expr)) {
             machine& x{tc.machine()};
 
             const operand reg{
@@ -945,7 +964,7 @@ class expr_bool_op final : public statement {
         // a constant left side was mirrored onto the right
         assert(not expr_info.is_const() or not is_lhs);
 
-        if (expr.is_typed_constant(tc)) {
+        if (is_typed_constant(tc, expr)) {
             return typed_constant(tc, expr);
         }
 
@@ -955,16 +974,6 @@ class expr_bool_op final : public statement {
 
         return with_unary_ops(tc, indent, expr, expr_info.operand(),
                               expr_info.type_ref(), allocated_registers);
-    }
-
-    // a side computed at run time in a register of its own type, so a
-    // constant list folds at that width
-    [[nodiscard]] static auto side_constant(const toc& tc,
-                                            const expr_arith& side)
-        -> std::optional<int64_t> {
-
-        return expr_arith::constant_value_of(
-            tc, side, side.get_type(), expr_arith::constant_wrap::as_written);
     }
 
     [[noreturn]] static auto
@@ -1009,12 +1018,12 @@ class expr_bool_op final : public statement {
                                              const expr_arith& side)
         -> operand {
 
-        const std::optional<int64_t> value{side_constant(tc, side)};
+        const std::optional<folded_value> folded{fold_side(tc, side)};
 
         // note: 'is_typed_constant' is asked of a constant, which folds
-        assert(value);
+        assert(folded and folded->is_typed());
 
-        return operand::imm(*value, side.get_type());
+        return operand::imm(folded->value, *folded->own_type);
     }
 
     // 'value' with the unary operators of 'expr' applied, in a scratch register

@@ -6,7 +6,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[p] hard: constants: one system for values known at compile time (plan
+[o] hard: constants: one system for values known at compile time (plan
     2026-10-21, waits for go-ahead; aliasing follows as its own plan)
     => problem: seven evaluators of a constant ('folded_constant' and its
        overrides, 'constant_value_of'/'constant_wrap', 'side_constant'/
@@ -68,6 +68,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        image against the build before); B: behavior change, test first
        R1 'folded_value', 'value_use' and 'fold' replace the evaluators,
           today's bugs reproduced ('as_written' kept explicit until B2)
+          => done (2026-10-21): the virtual 'fold' replaces
+          'folded_constant', 'is_typed_constant' and 'constant_value_of';
+          'unary_ops::evaluate_at' holds the negation overflow check, which
+          reports at the ops (1002, 1010, 1246 moved to the '-'); still
+          separate: the convert 'constant_value'/'narrow' (R3) and
+          'make_constant_operand' (B4)
        R2 delete 'single_operand_type' (G5-6)
        R3 'conversion_widths' under 'plan_computation'/'ops_place_for'
        B1 typedness from the fold: 'i16(K) <= e' accepted like

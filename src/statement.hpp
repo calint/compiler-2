@@ -224,6 +224,66 @@ class one_line_source final {
 // the width an expression is computed at compared with its own
 enum class width_change : uint8_t { narrowed, widened };
 
+// a value known at compile time; typed: it has the rules of a variable of
+// 'own_type', e.g. a folded conversion or a constant argument of an inlined
+// call; untyped: a literal or a 'let' name, checked by its value
+struct folded_value {
+    int64_t value{};
+    // null when untyped
+    const type* own_type{};
+
+    [[nodiscard]] auto is_typed() const -> bool { return own_type != nullptr; }
+
+    //
+    // statics
+    //
+
+    // empty when computed at run time
+    [[nodiscard]] static auto
+    value_of(const std::optional<folded_value>& folded)
+        -> std::optional<int64_t> {
+
+        if (not folded) {
+            return std::nullopt;
+        }
+
+        return folded->value;
+    }
+};
+
+// where a value is used: the width it is computed at
+struct value_use {
+    const type* width{};
+    // an untyped constant keeps its value as written for the range checks of
+    // the caller
+    // todo: removed when the fold checks the fit itself
+    bool keeps_untyped{};
+
+    [[nodiscard]] auto width_ref() const -> const type& {
+        assert(width != nullptr);
+
+        return *width;
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto as_written_at(const type& width_in) -> value_use {
+        return {
+            .width{&width_in},
+            .keeps_untyped{true},
+        };
+    }
+
+    [[nodiscard]] static auto wrapped_at(const type& width_in) -> value_use {
+        return {
+            .width{&width_in},
+            .keeps_untyped{},
+        };
+    }
+};
+
 // a node of the program: it parses itself in its constructor, writes its
 // source back ('source_to') and compiles; the virtuals in groups, with the
 // classes that override them, the default is 'std::unreachable()' where no
@@ -231,14 +291,13 @@ enum class width_change : uint8_t { narrowed, widened };
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow), 'visit_reads' (the expressions)
-//   a value        'folded_constant', 'assert_not_narrowed',
-//                  'keeps_low_bits', 'get_unary_ops', 'is_typed_constant',
-//                  'is_expression', 'produces_boolean', 'compile_boolean':
-//                  'expr_arith', 'expr_any', 'expr_bool', 'expr_zero',
-//                  'stmt_builtin_convert', 'stmt_builtin_array_length',
-//                  'stmt_builtin_arrays_equal', 'stmt_call',
-//                  'stmt_identifier' ('assert_not_narrowed', 'keeps_low_bits',
-//                  'is_typed_constant')
+//   a value        'fold', 'assert_not_narrowed', 'keeps_low_bits',
+//                  'get_unary_ops', 'is_expression', 'produces_boolean',
+//                  'compile_boolean': 'expr_arith', 'expr_any', 'expr_bool',
+//                  'expr_zero', 'stmt_builtin_convert',
+//                  'stmt_builtin_array_length', 'stmt_builtin_arrays_equal',
+//                  'stmt_call', 'stmt_identifier' ('assert_not_narrowed',
+//                  'fold', 'keeps_low_bits')
 //   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and
@@ -321,12 +380,11 @@ class statement {
         std::unreachable();
     }
 
-    // the value computed in a register of 'width_type' when known at compile
-    // time, empty when computed at run time
-    [[nodiscard]] virtual auto
-    folded_constant([[maybe_unused]] const toc& tc,
-                    [[maybe_unused]] const type& width_type) const
-        -> std::optional<int64_t> {
+    // the value known at compile time where it is used, empty when it is
+    // computed at run time
+    [[nodiscard]] virtual auto fold([[maybe_unused]] const toc& tc,
+                                    [[maybe_unused]] const value_use& use) const
+        -> std::optional<folded_value> {
 
         return std::nullopt;
     }
@@ -347,16 +405,6 @@ class statement {
     // a name or a literal, its unary ops aside, e.g. '-x' is one too; 'x' is
     // read in place when also not 'is_expression'
     [[nodiscard]] virtual auto is_name_or_literal() const -> bool {
-        return false;
-    }
-
-    // a constant with a type of its own, whose unary ops apply at that type:
-    // a folded conversion, e.g. the 'i8(-128)' of '-i8(-128)', an argument of
-    // an inlined call or a list that starts with one; a computed list answers
-    // by its first element, so it is asked only of one that folds
-    [[nodiscard]] virtual auto
-    is_typed_constant([[maybe_unused]] const toc& tc) const -> bool {
-
         return false;
     }
 

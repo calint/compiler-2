@@ -85,9 +85,6 @@ class expr_arith final : public expression {
     static constexpr uint8_t precedence_shift_{6};
 
   public:
-    // whether 'constant_value_of' wraps a named constant to the width
-    enum class constant_wrap : uint8_t { as_written, to_width };
-
     // how a list is parsed when it is not a plain one
     struct options {
         // the unary ops of an enclosed list apply to all of it
@@ -237,12 +234,12 @@ class expr_arith final : public expression {
 
         // a list that folds is one copy of its value
         if (is_expression()) {
-            const std::optional<int64_t> value{
-                folded_constant(tc, dst.type_ref()),
+            const std::optional<folded_value> folded{
+                fold(tc, value_use::wrapped_at(dst.type_ref())),
             };
 
-            if (value) {
-                compile_constant(tc, indent, dst, *value,
+            if (folded) {
+                compile_constant(tc, indent, dst, folded->value,
                                  statement::trimmed_source(*this));
 
                 return;
@@ -320,14 +317,28 @@ class expr_arith final : public expression {
                                          allocated_registers, request);
     }
 
-    [[nodiscard]] auto folded_constant(const toc& tc,
-                                       const type& width_type) const
-        -> std::optional<int64_t> override {
+    // an element wraps at the width as its register holds it; the first
+    // element gives the list its type, e.g. 'i16(300) + 1' is typed
+    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
+        -> std::optional<folded_value> override {
 
-        std::optional<int64_t> value{
-            constant_value_of(tc, *exprs_.front(), width_type,
-                              constant_wrap::to_width),
+        // e.g. 'k' or 'i8(1)'
+        if (not is_expression()) {
+            return exprs_.front()->fold(tc, use);
+        }
+
+        const type& width_type{use.width_ref()};
+        const value_use element_use{value_use::wrapped_at(width_type)};
+
+        const std::optional<folded_value> first{
+            exprs_.front()->fold(tc, element_use),
         };
+
+        if (not first) {
+            return std::nullopt;
+        }
+
+        std::optional<int64_t> value{first->value};
 
         for (const auto [o, e] :
              std::views::zip(ops_, exprs_ | std::views::drop(1))) {
@@ -337,7 +348,7 @@ class expr_arith final : public expression {
             }
 
             const std::optional<int64_t> rhs{
-                constant_value_of(tc, *e, width_type, constant_wrap::to_width),
+                folded_value::value_of(e->fold(tc, element_use)),
             };
 
             if (not rhs) {
@@ -358,17 +369,14 @@ class expr_arith final : public expression {
             return std::nullopt;
         }
 
-        const int64_t result{uops_.evaluate_constant(*value)};
+        const int64_t result{
+            uops_.evaluate_at(*value, width_type, tc.checks().overflow),
+        };
 
-        if (tc.checks().overflow and
-            uops_.negation_overflows(*value, constant_arith::signed_minimum(
-                                                 width_type.size_bits()))) {
-
-            throw compile_error{tok(),
-                                "constant expression overflows the type"};
-        }
-
-        return constant_arith::wrap_to_width(result, width_type);
+        return folded_value{
+            .value{constant_arith::wrap_to_width(result, width_type)},
+            .own_type{first->own_type},
+        };
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
@@ -407,12 +415,6 @@ class expr_arith final : public expression {
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
         return exprs_.size() == 1 and exprs_.at(0)->is_name_or_literal();
-    }
-
-    // the first element gives the list its type
-    [[nodiscard]] auto is_typed_constant(const toc& tc) const -> bool override {
-
-        return exprs_.front()->is_typed_constant(tc);
     }
 
     // '/', '%' and '>>' read the high bits of their operands. narrowed, a
@@ -557,49 +559,6 @@ class expr_arith final : public expression {
                                     tc.checks().overflow_options());
 
         return reg;
-    }
-
-    // the value of an operand that is a constant, e.g. 'k', '-k', '(1 + 2)'
-    // or 'array_length(a)', otherwise none; a list folds at 'width_type'
-    // note: an element of a list wraps a named constant to the width as its
-    //       register holds it, a comparison side and an initializer element
-    //       keep the written value for the range checks of their callers; a
-    //       typed constant is a value of its type, so it wraps there too,
-    //       e.g. '-i8(-128)' is -128 at 'i8'
-    [[nodiscard]] static auto
-    constant_value_of(const toc& tc, const statement& e, const type& width_type,
-                      const constant_wrap wrap) -> std::optional<int64_t> {
-
-        if (e.is_expression()) {
-            return e.folded_constant(tc, width_type);
-        }
-
-        const ident_info info{tc.make_ident_info(e)};
-
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        const unary_ops& uops{e.get_unary_ops()};
-
-        // e.g. '-m' of the 64-bit minimum wraps in 'int64_t', which the range
-        // checks of the callers do not see
-        if (tc.checks().overflow and
-            uops.negation_overflows(
-                info.const_value(),
-                constant_arith::signed_minimum(width_type.size_bits()))) {
-
-            throw compile_error{e.tok(),
-                                "constant expression overflows the type"};
-        }
-
-        const int64_t value{uops.evaluate_constant(info.const_value())};
-
-        if (wrap == constant_wrap::as_written and not e.is_typed_constant(tc)) {
-            return value;
-        }
-
-        return constant_arith::wrap_to_width(value, width_type);
     }
 
   private:
@@ -971,8 +930,8 @@ class expr_arith final : public expression {
                 .op{op},
                 .element{&e},
                 .value{
-                    constant_value_of(tc, e, width_type,
-                                      constant_wrap::to_width),
+                    folded_value::value_of(
+                        e.fold(tc, value_use::wrapped_at(width_type))),
                 },
                 .folded_source{
                     std::format("{} {}", machine::source_text(op),
@@ -1372,15 +1331,15 @@ class expr_arith final : public expression {
 
         if (src.is_expression()) {
             // e.g. 'a / (1 + 1)'
-            const std::optional<int64_t> value{
-                src.folded_constant(tc, operand_type),
+            const std::optional<folded_value> folded{
+                src.fold(tc, value_use::wrapped_at(operand_type)),
             };
 
-            if (value) {
+            if (folded) {
                 x.comment(src.tok(), indent, "src: folded constant '{}'",
                           statement::trimmed_source(src));
 
-                emit(constant_operand(tc, *value), false);
+                emit(constant_operand(tc, folded->value), false);
 
                 return;
             }
