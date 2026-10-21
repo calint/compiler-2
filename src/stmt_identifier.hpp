@@ -294,7 +294,7 @@ class stmt_identifier final : public statement {
 
         const ident_info info{tc.make_ident_info(*this)};
 
-        if (info.is_const() and not info.is_typed_const()) {
+        if (info.is_const() and not info.constant().is_typed()) {
             assert_constant_fits(info, dst_type);
             return;
         }
@@ -406,25 +406,23 @@ class stmt_identifier final : public statement {
             return std::nullopt;
         }
 
+        const folded_value& constant{info.constant()};
+
         const int64_t value{
-            get_unary_ops().evaluate_at(info.const_value(), use.width_ref(),
+            get_unary_ops().evaluate_at(constant.value, use.width_ref(),
                                         tc.checks().overflow),
         };
 
-        const int64_t wrapped{
-            constant_arith::wrap_to_width(value, use.width_ref()),
+        const bool is_wrapped{constant.is_typed() or not use.keeps_untyped};
+
+        const int64_t used{
+            is_wrapped ? constant_arith::wrap_to_width(value, use.width_ref())
+                       : value,
         };
 
-        if (info.is_typed_const()) {
-            return folded_value{
-                .value{wrapped},
-                .own_type{&info.type_ref()},
-            };
-        }
-
         return folded_value{
-            .value{use.keeps_untyped ? value : wrapped},
-            .own_type{},
+            .value{used},
+            .own_type{constant.own_type},
         };
     }
 
@@ -580,7 +578,7 @@ class stmt_identifier final : public statement {
                               const type& dst_type) const -> void {
 
         const int64_t value{
-            get_unary_ops().evaluate_constant(info.const_value()),
+            get_unary_ops().evaluate_constant(info.constant().value),
         };
 
         if (constant_arith::fits_size_bytes(value, dst_type.size_bytes())) {

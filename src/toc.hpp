@@ -117,7 +117,8 @@ struct storage_target {
 // a parameter that is a constant, e.g. 'x' of 'f(3)' or of 'f(2 * n)' when
 // 'n' is a constant, the body is decided at compile time
 struct bound_constant {
-    int64_t value{};
+    // typed with the type of the parameter
+    folded_value constant;
 };
 
 // a parameter whose value is in a register, e.g. 'x' of 'f(a + 1)'
@@ -153,11 +154,11 @@ struct alias_info {
 
     // what the alias stands for, as the comments show it
     [[nodiscard]] auto target_text() const -> std::string {
-        if (const bound_constant* const constant{
+        if (const bound_constant* const bound{
                 std::get_if<bound_constant>(&binding),
             }) {
 
-            return std::format("{}", constant->value);
+            return std::format("{}", bound->constant.value);
         }
 
         if (const bound_register* const reg{
@@ -186,7 +187,10 @@ struct alias_info {
             .type_ptr{&alias_type},
             .binding{
                 bound_constant{
-                    .value{value},
+                    .constant{
+                        .value{value},
+                        .own_type{&alias_type},
+                    },
                 },
             },
         };
@@ -1938,18 +1942,21 @@ class ident_resolver final {
             };
             value) {
 
-            return ident_info::make_const(
-                ident, id.str(), builtins_.get().default_type(), *value);
+            return ident_info::make_const(ident, id.str(),
+                                          builtins_.get().default_type(),
+                                          folded_value::untyped(*value));
         }
 
         if (id.base() == reserved_names::true_value) {
             return ident_info::make_const(ident, id.str(),
-                                          builtins_.get().boolean(), 1);
+                                          builtins_.get().boolean(),
+                                          folded_value::untyped(1));
         }
 
         if (id.base() == reserved_names::false_value) {
             return ident_info::make_const(ident, id.str(),
-                                          builtins_.get().boolean(), 0);
+                                          builtins_.get().boolean(),
+                                          folded_value::untyped(0));
         }
 
         return ident_info::make_empty();
@@ -2000,7 +2007,7 @@ class ident_resolver final {
 
                 return ident_info::make_const(
                     ident, step.id.str(), builtins_.get().default_type(),
-                    frm.get_const(step.id.base()).value);
+                    folded_value::untyped(frm.get_const(step.id.base()).value));
             }
 
             if (std::optional<ident_info> found{
@@ -2055,7 +2062,7 @@ class ident_resolver final {
         const bool is_single{step.id.path().size() == 1};
 
         // the value of an argument keeps the type of its parameter
-        if (const bound_constant* const constant{
+        if (const bound_constant* const bound{
                 std::get_if<bound_constant>(&alias.binding),
             }) {
 
@@ -2063,8 +2070,7 @@ class ident_resolver final {
             assert(is_single);
 
             return ident_info::make_const(ident, alias.target_text(),
-                                          *alias.type_ptr, constant->value,
-                                          true);
+                                          *alias.type_ptr, bound->constant);
         }
 
         if (const bound_register* const reg{

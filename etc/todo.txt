@@ -47,8 +47,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           at the destination width or the virtual 'compile', which only
           computes at run time; no node and no caller has a constant branch
        9. a constant is kept as a 'folded_value' wherever it is stored
-          (frame constants, aliases, 'ident_info'), typedness is not
-          derived again
+          (aliases, 'ident_info'), typedness is not derived again; a frame
+          constant ('let', 'foo n') is untyped by the language and stays a
+          number
        10. a 'let' of a typed initializer keeps the type, e.g. 'let v =
           int(5)' is checked like 'let v = i8(5)', by type
     => deleted: 'folded_constant', 'is_typed_constant' (4),
@@ -87,6 +88,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        R3 one representation (rule 9): 'constant_part', 'bound_constant'
           and the frame constants hold a 'folded_value'; 'is_typed_const'
           and the constant branch of 'type_of_first_element' go
+          => done (2026-10-21), byte-identical: 'ident_info' and
+          'bound_constant' hold a 'folded_value', 'is_typed_const' and
+          'constant_part' went; 'type_of_first_element' moves to R4
+          (G5-6), the frame constants stay numbers (rule 9)
        R4 delete 'single_operand_type' (G5-6)
        R5 'conversion_widths' under 'plan_computation'/'ops_place_for';
           the convert 'constant_value'/'narrow' become its 'fold' only

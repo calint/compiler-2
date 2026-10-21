@@ -4,8 +4,8 @@
 // ('var_info'), where 'compile' writes a value ('destination'), what a
 // caller asks of the address of an identifier ('lea_request'), why a name
 // cannot be written ('read_only_cause'), the array of the element of a 'foo'
-// ('foo_array_info') and an address computed at an inlined call
-// ('known_address')
+// ('foo_array_info'), an address computed at an inlined call
+// ('known_address') and a value known at compile time ('folded_value')
 
 #include <cassert>
 #include <cstddef>
@@ -33,6 +33,41 @@ enum class read_only_cause : uint8_t {
     foo_element,
     foo_counter,
     foo_length,
+};
+
+// a value known at compile time; typed: it has the rules of a variable of
+// 'own_type', e.g. a folded conversion or a constant argument of an inlined
+// call; untyped: a literal or a 'let' name, checked by its value
+struct folded_value {
+    int64_t value{};
+    // null when untyped
+    const type* own_type{};
+
+    [[nodiscard]] auto is_typed() const -> bool { return own_type != nullptr; }
+
+    //
+    // statics
+    //
+
+    // a literal or a 'let' name
+    [[nodiscard]] static auto untyped(const int64_t value) -> folded_value {
+        return {
+            .value{value},
+            .own_type{},
+        };
+    }
+
+    // empty when computed at run time
+    [[nodiscard]] static auto
+    value_of(const std::optional<folded_value>& folded)
+        -> std::optional<int64_t> {
+
+        if (not folded) {
+            return std::nullopt;
+        }
+
+        return folded->value;
+    }
 };
 
 // the array that the element 'e' of a 'foo' belongs to: its root variable and
@@ -106,14 +141,6 @@ class ident_info final {
     };
 
   private:
-    // a literal, a named constant or, typed, the value of an argument of an
-    // inlined call: it has the type of its parameter and the rules of a
-    // variable of that type
-    struct constant_part {
-        int64_t value{};
-        bool is_typed{};
-    };
-
     // a variable or an argument whose value is held in a register
     struct register_part {
         ::operand reg;
@@ -124,7 +151,9 @@ class ident_info final {
     token src_loc_tk_;
     std::vector<std::string> elem_path_;
     std::vector<const type*> type_path_;
-    std::variant<std::monostate, constant_part, register_part, storage_part>
+    // a constant: a literal, a named constant or, typed, the value of an
+    // argument of an inlined call, which has the type of its parameter
+    std::variant<std::monostate, folded_value, register_part, storage_part>
         part_;
 
   public:
@@ -133,8 +162,8 @@ class ident_info final {
         return storage == nullptr ? std::nullopt : storage->array_len;
     }
 
-    [[nodiscard]] auto const_value() const -> int64_t {
-        return std::get<constant_part>(part_).value;
+    [[nodiscard]] auto constant() const -> const folded_value& {
+        return std::get<folded_value>(part_);
     }
 
     // e.g. 'p', 'x' for 'p.x'
@@ -166,7 +195,7 @@ class ident_info final {
     }
 
     [[nodiscard]] auto is_const() const -> bool {
-        return std::holds_alternative<constant_part>(part_);
+        return std::holds_alternative<folded_value>(part_);
     }
 
     [[nodiscard]] auto is_empty() const -> bool {
@@ -190,14 +219,6 @@ class ident_info final {
 
     [[nodiscard]] auto is_register() const -> bool {
         return std::holds_alternative<register_part>(part_);
-    }
-
-    [[nodiscard]] auto is_typed_const() const -> bool {
-        const constant_part* const constant{
-            std::get_if<constant_part>(&part_),
-        };
-
-        return constant != nullptr and constant->is_typed;
     }
 
     [[nodiscard]] auto is_var() const -> bool {
@@ -285,21 +306,19 @@ class ident_info final {
 
     [[nodiscard]] static auto
     make_const(const std::string_view ident, const std::string_view elem,
-               const type& tp, const int64_t value, const bool is_typed = {})
-        -> ident_info {
+               const type& tp, const folded_value& constant) -> ident_info {
 
         assert(not ident.empty());
         assert(not elem.empty());
+
+        // note: a typed constant has the type of its parameter
+        assert(not constant.is_typed() or constant.own_type == &tp);
 
         ident_info info;
         info.id_ = ident;
         info.elem_path_ = {std::string{elem}};
         info.type_path_ = {&tp};
-
-        info.part_ = constant_part{
-            .value{value},
-            .is_typed{is_typed},
-        };
+        info.part_ = constant;
 
         return info;
     }

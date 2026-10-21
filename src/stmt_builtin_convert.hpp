@@ -210,7 +210,7 @@ class stmt_builtin_convert final : public expression {
             const ident_info info{tc.make_ident_info(*this)};
 
             const int64_t value{
-                get_unary_ops().evaluate_at(info.const_value(), width_type,
+                get_unary_ops().evaluate_at(info.constant().value, width_type,
                                             tc.checks().overflow),
             };
 
@@ -431,7 +431,7 @@ class stmt_builtin_convert final : public expression {
             return std::nullopt;
         }
 
-        return narrow(tc, info.const_value(), width_type);
+        return narrow(tc, info.constant().value, width_type);
     }
 
     // the unary ops of the argument apply at its width, then the value is

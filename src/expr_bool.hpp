@@ -1129,7 +1129,7 @@ class expr_bool final : public statement {
 
             x.copy_value(
                 tok(), indent, dst.operand(),
-                operand::imm(src_info.const_value(), src_info.type_ref()));
+                operand::imm(src_info.constant().value, src_info.type_ref()));
 
             return;
         }

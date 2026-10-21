@@ -1003,7 +1003,7 @@ class expr_arith final : public expression {
         const ident_info info{tc.make_ident_info(first_expr)};
 
         // a folded conversion such as 'i32(8)' keeps its type
-        if (info.is_const() and not info.is_typed_const()) {
+        if (info.is_const() and not info.constant().is_typed()) {
             return first_expr.get_type();
         }
 

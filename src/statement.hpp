@@ -224,33 +224,6 @@ class one_line_source final {
 // the width an expression is computed at compared with its own
 enum class width_change : uint8_t { narrowed, widened };
 
-// a value known at compile time; typed: it has the rules of a variable of
-// 'own_type', e.g. a folded conversion or a constant argument of an inlined
-// call; untyped: a literal or a 'let' name, checked by its value
-struct folded_value {
-    int64_t value{};
-    // null when untyped
-    const type* own_type{};
-
-    [[nodiscard]] auto is_typed() const -> bool { return own_type != nullptr; }
-
-    //
-    // statics
-    //
-
-    // empty when computed at run time
-    [[nodiscard]] static auto
-    value_of(const std::optional<folded_value>& folded)
-        -> std::optional<int64_t> {
-
-        if (not folded) {
-            return std::nullopt;
-        }
-
-        return folded->value;
-    }
-};
-
 // where a value is used: the width it is computed at
 struct value_use {
     const type* width{};
@@ -534,7 +507,7 @@ class statement {
         assert(info.is_const());
 
         return operand::imm(
-            get_unary_ops().evaluate_constant(info.const_value()),
+            get_unary_ops().evaluate_constant(info.constant().value),
             info.type_ref());
     }
 
