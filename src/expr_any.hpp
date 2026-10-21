@@ -181,7 +181,7 @@ class expr_any final : public statement {
         // the size is not checked and the elements after the literal are not
         // known
         if (dst.is_length_unknown()) {
-            std::ignore = compile_elements(tc, indent, dst);
+            compile_elements(tc, indent, dst);
             return;
         }
 
@@ -195,11 +195,14 @@ class expr_any final : public statement {
                             array_count)};
         }
 
-        const operand after_elements{compile_elements(tc, indent, dst)};
+        compile_elements(tc, indent, dst);
 
-        expr_type::zero_remaining_elements(tc, indent, tok(), after_elements,
-                                           dst.type_ref(),
-                                           array_count - elements_.size());
+        const size_t count{elements_.size()};
+
+        expr_type::zero_remaining_elements(
+            tc, indent, tok(),
+            dst.operand_at(count * dst.type_ref().size_bytes(), dst.type_ref()),
+            dst.type_ref(), array_count - count);
     }
 
     [[nodiscard]] auto accessed_path() const -> access_path override {
@@ -443,29 +446,24 @@ class expr_any final : public statement {
 
     // constant elements are stored like a string so the backend can pack them
     // into wider immediates or copy them from read-only data, 'dst' is the
-    // array, returns the operand after the listed elements
-    [[nodiscard]] auto compile_elements(toc& tc, const size_t indent,
-                                        const destination& dst) const
-        -> operand {
+    // array
+    auto compile_elements(toc& tc, const size_t indent,
+                          const destination& dst) const -> void {
 
         machine& x{tc.machine()};
-
-        operand cursor{dst.operand()};
 
         const std::optional<std::string> bytes{
             constant_bytes(tc, dst.type_ref()),
         };
 
         if (bytes) {
-            x.copy_bytes(open_brace_tk_, indent, *bytes, cursor,
+            x.copy_bytes(open_brace_tk_, indent, *bytes, dst.operand(),
                          dst.type_ref().alignment(), [&] -> std::string {
                              return tc.add_bytes_constant(open_brace_tk_,
                                                           *bytes);
                          });
 
-            cursor.increment_offset(address_offset(bytes->size()));
-
-            return cursor;
+            return;
         }
 
         for (size_t i{}; i < elements_.size(); ++i) {
@@ -473,13 +471,8 @@ class expr_any final : public statement {
 
             // a call element writes at the element, not at the array start
             // the identifier names, and an element is not an array
-            compile_element(tc, indent, element(i), dst.as_element(i, cursor));
-
-            cursor.increment_offset(
-                address_offset(dst.type_ref().size_bytes()));
+            compile_element(tc, indent, element(i), dst.element(i));
         }
-
-        return cursor;
     }
 
     // the string is stored and the rest of the array is zeroed like unlisted
@@ -507,16 +500,12 @@ class expr_any final : public statement {
                             size_bytes, *array_count)};
         }
 
-        operand cursor{dst.operand()};
-
         // an empty string has nothing to store
         if (size_bytes != 0) {
-            x.copy_bytes(string_tk_, indent, bytes, cursor,
+            x.copy_bytes(string_tk_, indent, bytes, dst.operand(),
                          dst.type_ref().alignment(), [&] -> std::string {
                              return tc.add_string_constant(string_tk_);
                          });
-
-            cursor.increment_offset(address_offset(size_bytes));
         }
 
         // the bytes after the string are not known
@@ -533,8 +522,8 @@ class expr_any final : public statement {
         x.comment(string_tk_, indent, "zero remaining elements: {} B",
                   remaining_size_bytes);
 
-        x.zero(string_tk_, indent, cursor, remaining_size_bytes,
-               dst.type_ref().alignment());
+        x.zero(string_tk_, indent, dst.operand_at(size_bytes, dst.type_ref()),
+               remaining_size_bytes, dst.type_ref().alignment());
     }
 
     // the little endian bytes of the elements, empty when an element is not a

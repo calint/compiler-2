@@ -180,11 +180,10 @@ class expr_type final : public statement {
                                         const token& src_loc_tk,
                                         const operand& dst,
                                         const type& element_type,
-                                        const size_t remaining_count)
-        -> size_t {
+                                        const size_t remaining_count) -> void {
 
         if (remaining_count == 0) {
-            return 0;
+            return;
         }
 
         machine& x{tc.machine()};
@@ -199,8 +198,6 @@ class expr_type final : public statement {
                   element_type.size_bytes(), size_bytes);
 
         x.zero(src_loc_tk, indent, dst, size_bytes, element_type.alignment());
-
-        return size_bytes;
     }
 
   private:
@@ -216,20 +213,17 @@ class expr_type final : public statement {
         return not close_brace_tk_.is_empty();
     }
 
-    auto compile_assign(toc& tc, const size_t indent, const type& dst_type,
-                        const destination& dst, operand& dst_op) const -> void;
+    auto compile_assign(toc& tc, const size_t indent,
+                        const destination& dst) const -> void;
 
-    auto compile_call_field(toc& tc, const size_t indent, const type& dst_type,
-                            const destination& dst, operand& dst_op) const
-        -> void;
+    auto compile_call_field(toc& tc, const size_t indent,
+                            const destination& dst) const -> void;
 
-    auto compile_field_list(toc& tc, const size_t indent, const type& dst_type,
-                            const destination& dst, operand& dst_op) const
-        -> void;
+    auto compile_field_list(toc& tc, const size_t indent,
+                            const destination& dst) const -> void;
 
     auto compile_identifier_copy(toc& tc, const size_t indent,
-                                 const type& dst_type, operand& dst_op) const
-        -> void;
+                                 const destination& dst) const -> void;
 
     // creates the 'stmt_call' or 'stmt_identifier'
     auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
@@ -256,7 +250,7 @@ class expr_type final : public statement {
     // '==' can compare instances byte by byte; the backend decides whether
     // gap by gap or the whole instance
     auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
-                      const operand& dst_op) const -> void {
+                      const operand& dst) const -> void {
 
         machine& x{tc.machine()};
 
@@ -268,14 +262,15 @@ class expr_type final : public statement {
             return;
         }
 
-        x.zero_padding(tok(), indent, dst_op, dst_type.size_bytes(),
+        x.zero_padding(tok(), indent, dst, dst_type.size_bytes(),
                        dst_type.alignment(), gaps);
     }
 
     // padding is zeroed too so that instances compare equal byte by byte
     auto zero_unwritten(toc& tc, const size_t indent,
                         const std::string_view what, const size_t size_bytes,
-                        const size_t alignment, operand& dst_op) const -> void {
+                        const size_t alignment, const operand& dst) const
+        -> void {
 
         if (size_bytes == 0) {
             return;
@@ -284,8 +279,7 @@ class expr_type final : public statement {
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, "zero {}: {} B", what, size_bytes);
-        x.zero(tok(), indent, dst_op, size_bytes, alignment);
-        dst_op.increment_offset(address_offset(size_bytes));
+        x.zero(tok(), indent, dst, size_bytes, alignment);
     }
 
     //
@@ -379,14 +373,13 @@ class expr_type final : public statement {
         -> void;
 
     static auto compile_field(toc& tc, const size_t indent, const expr_any& src,
-                              const type_field& field, const destination& dst,
-                              operand& dst_op) -> void;
+                              const type_field& field, const destination& dst)
+        -> void;
 
     static auto compile_record_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,
-                                     const destination& dst, operand& dst_op)
-        -> void;
+                                     const destination& dst) -> void;
 
     // the bytes that no field covers, between the data ranges and after the
     // last one; the first of them when there are more than 'max_count'
@@ -471,6 +464,5 @@ class expr_type final : public statement {
     static auto write_builtin_field(toc& tc, const size_t indent,
                                     const expr_any& src,
                                     const type_field& field,
-                                    const destination& dst,
-                                    const operand& dst_op) -> void;
+                                    const destination& dst) -> void;
 };

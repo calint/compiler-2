@@ -282,9 +282,7 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
         return;
     }
 
-    const type& tp{dst.type_ref()};
-    operand op{dst.operand()};
-    compile_assign(tc, indent, tp, dst, op);
+    compile_assign(tc, indent, dst);
 }
 
 inline auto
@@ -345,45 +343,34 @@ inline auto expr_type::assert_elements_not_reading(
 }
 
 inline auto expr_type::compile_assign(toc& tc, const size_t indent,
-                                      const type& dst_type,
-                                      const destination& dst,
-                                      operand& dst_op) const -> void {
+                                      const destination& dst) const -> void {
 
     if (stmt_call_) {
-        compile_call_field(tc, indent, dst_type, dst, dst_op);
+        compile_call_field(tc, indent, dst);
         return;
     }
 
     if (is_name_or_literal()) {
-        compile_identifier_copy(tc, indent, dst_type, dst_op);
+        compile_identifier_copy(tc, indent, dst);
         return;
     }
 
-    compile_field_list(tc, indent, dst_type, dst, dst_op);
+    compile_field_list(tc, indent, dst);
 }
 
 // e.g. 'f()' in '{f(), 3}' writes the field in place
 inline auto expr_type::compile_call_field(toc& tc, const size_t indent,
-                                          const type& dst_type,
-                                          const destination& dst,
-                                          operand& dst_op) const -> void {
+                                          const destination& dst) const
+    -> void {
 
-    const destination call_dst_info{
-        dst.at_address(operand::mem(dst_op, dst_type)),
-    };
-
-    zero_padding(tc, indent, dst_type, dst_op);
-    stmt_call_->compile(tc, indent, call_dst_info);
-
-    dst_op.increment_offset(address_offset(dst_type.size_bytes()));
+    zero_padding(tc, indent, dst.type_ref(), dst.operand());
+    stmt_call_->compile(tc, indent, dst);
 }
 
-// advances 'dst_op' past the field, an instance field does it in the recursion
 inline auto expr_type::compile_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,
-                                     const destination& dst, operand& dst_op)
-    -> void {
+                                     const destination& dst) -> void {
 
     // the copy size comes from the source so it must match the field
     if (field.is_array() and src.is_array_identifier()) {
@@ -391,24 +378,20 @@ inline auto expr_type::compile_field(toc& tc, const size_t indent,
     }
 
     if (not field.type().is_builtin()) {
-        compile_record_field(tc, indent, src, field, dst, dst_op);
+        compile_record_field(tc, indent, src, field, dst);
         return;
     }
 
-    write_builtin_field(tc, indent, src, field, dst, dst_op);
-
-    dst_op.increment_offset(address_offset(field.size_bytes));
+    write_builtin_field(tc, indent, src, field, dst);
 }
 
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
 // and the padding
 inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
-                                          const type& dst_type,
-                                          const destination& dst,
-                                          operand& dst_op) const -> void {
+                                          const destination& dst) const
+    -> void {
 
-    // each field is written at 'dst_op', which advances past it
-    const destination record{dst.at_address(dst_op)};
+    const type& dst_type{dst.type_ref()};
 
     const std::span<const type_field> flds{dst_type.fields()};
 
@@ -422,13 +405,13 @@ inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
 
         zero_unwritten(tc, indent, "padding", padding_bytes,
                        offset_alignment(written_bytes, dst_type.alignment()),
-                       dst_op);
+                       dst.operand_at(written_bytes, dst_type));
 
         written_bytes = field.offset + field.size_bytes;
 
         x.comment(expr->tok(), indent, "copy field '{}'", field.name);
 
-        compile_field(tc, indent, *expr, field, record.field(field), dst_op);
+        compile_field(tc, indent, *expr, field, dst.field(field));
     }
 
     // zero out the remaining fields and the padding after the written ones
@@ -438,13 +421,15 @@ inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
         tc, indent,
         exprs_.size() == flds.size() ? "padding" : "remaining fields",
         remaining_bytes, offset_alignment(written_bytes, dst_type.alignment()),
-        dst_op);
+        dst.operand_at(written_bytes, dst_type));
 }
 
 // e.g. 'pt1 = pt2'
 inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
-                                               const type& dst_type,
-                                               operand& dst_op) const -> void {
+                                               const destination& dst) const
+    -> void {
+
+    const type& dst_type{dst.type_ref()};
 
     const ident_info src_info{tc.make_ident_info(*this)};
 
@@ -473,19 +458,16 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     machine& x{tc.machine()};
 
-    x.copy(tok(), indent, dst_op, src_op, size_bytes, dst_type.alignment());
-
-    dst_op.increment_offset(address_offset(size_bytes));
+    x.copy(tok(), indent, dst.operand(), src_op, size_bytes,
+           dst_type.alignment());
 
     x.free_scratch_registers(tok(), indent, allocated_registers);
 }
 
-// the caller advances 'dst_op' past the field
 inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
                                            const expr_any& src,
                                            const type_field& field,
-                                           const destination& dst,
-                                           const operand& dst_op) -> void {
+                                           const destination& dst) -> void {
 
     machine& x{tc.machine()};
 
@@ -495,13 +477,11 @@ inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
                   field.array_count, field.type().size_bytes(),
                   field.size_bytes);
 
-        x.zero(src.tok(), indent, dst_op, field.size_bytes,
+        x.zero(src.tok(), indent, dst.operand(), field.size_bytes,
                field.type().alignment());
 
         return;
     }
-
-    const operand dst_operand{operand::mem(dst_op, field.type())};
 
     // the paths below that copy directly skip the check in 'expr_any'
     src.assert_not_narrowed(tc, field.type());
@@ -512,7 +492,7 @@ inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
          tc.make_ident_info(src.tok(), src.name_or_literal())
              .is_address_computed())) {
 
-        src.compile(tc, indent, dst.with_operand(dst_operand));
+        src.compile(tc, indent, dst);
         return;
     }
 
@@ -523,11 +503,11 @@ inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
 
     // a constant is copied by its list
     if (src_info.is_const()) {
-        src.compile(tc, indent, dst.with_operand(dst_operand));
+        src.compile(tc, indent, dst);
         return;
     }
 
-    compile_builtin_field(tc, indent, src, src_info.operand(), dst_operand);
+    compile_builtin_field(tc, indent, src, src_info.operand(), dst.operand());
 }
 
 // unary ops on a memory field are a load, modify and store each on a
@@ -571,30 +551,24 @@ inline auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
 inline auto expr_type::compile_record_field(toc& tc, const size_t indent,
                                             const expr_any& src,
                                             const type_field& field,
-                                            const destination& dst,
-                                            operand& dst_op) -> void {
+                                            const destination& dst) -> void {
 
     // one assignment fills an instance or copies a whole array identifier
     if (not field.is_array() or src.is_array_identifier()) {
-        src.as_expr_type().compile_assign(tc, indent, field.type(), dst,
-                                          dst_op);
-
+        src.as_expr_type().compile_assign(tc, indent, dst);
         return;
     }
 
-    // note: 'dst_op' is at the element, each assignment advances it past
+    const size_t count{src.element_count()};
 
-    for (size_t i{}; i < src.element_count(); ++i) {
-        src.as_expr_type(i).compile_assign(tc, indent, field.type(),
-                                           dst.as_element(i, dst_op), dst_op);
+    for (size_t i{}; i < count; ++i) {
+        src.as_expr_type(i).compile_assign(tc, indent, dst.element(i));
     }
 
-    const size_t zeroed_size_bytes{
-        zero_remaining_elements(tc, indent, src.tok(), dst_op, field.type(),
-                                field.array_count - src.element_count()),
-    };
-
-    dst_op.increment_offset(address_offset(zeroed_size_bytes));
+    zero_remaining_elements(
+        tc, indent, src.tok(),
+        dst.operand_at(count * field.type().size_bytes(), field.type()),
+        field.type(), field.array_count - count);
 }
 
 inline auto expr_type::visit_reads(const read_filter var,

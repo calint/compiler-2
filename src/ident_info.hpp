@@ -405,25 +405,6 @@ class destination final {
         return array_len_;
     }
 
-    // the element 'index' of the array at 'address', e.g. of an array
-    // literal
-    [[nodiscard]] auto as_element(const size_t index,
-                                  const ::operand& address) const
-        -> destination {
-
-        destination element{with_operand(address)};
-        element.is_address_known_ = true;
-        element.is_array_ = false;
-        element.array_len_ = std::nullopt;
-
-        // note: an array is in storage
-        assert(element.storage_);
-
-        element.storage_->path.add_fixed_index(index);
-
-        return element;
-    }
-
     // a call result narrower than an operand widens into it like a variable,
     // alone it has the type of its destination, e.g. 'x = g()'
     [[nodiscard]] auto as_operand() const -> destination {
@@ -441,13 +422,23 @@ class destination final {
         return result;
     }
 
-    // at 'address', e.g. a field that a call writes in place
-    [[nodiscard]] auto at_address(const ::operand& address) const
-        -> destination {
+    // the element 'index' of the array, e.g. of an array literal; the type
+    // of an array destination is its element type
+    [[nodiscard]] auto element(const size_t index) const -> destination {
+        // note: an array is in storage
+        assert(storage_);
 
-        destination located{with_operand(address)};
-        located.is_address_known_ = true;
-        return located;
+        destination result{*this};
+
+        result.operand_.increment_offset(
+            address_offset(index * type_ref().size_bytes()));
+
+        result.is_address_known_ = true;
+        result.is_array_ = false;
+        result.array_len_ = std::nullopt;
+        result.storage_->path.add_fixed_index(index);
+
+        return result;
     }
 
     // the name for an error about it, 'fallback' without a place in the source
@@ -459,14 +450,15 @@ class destination final {
     // a literal, so an error about it is at its value, e.g. the 't()' of
     // 'rec{2, t()}'
     [[nodiscard]] auto field(const type_field& fld) const -> destination {
+        // note: a record is in storage
+        assert(storage_);
+
         destination result{*this};
+        result.operand_ = operand_at(fld.offset, fld.type());
+        result.is_address_known_ = true;
         result.name_ += std::format(".{}", fld.name);
         result.type_ptr_ = &fld.type();
         result.src_loc_tk_ = {};
-
-        // note: a record is in storage
-        assert(result.storage_);
-
         result.storage_->path.add_field(fld.offset);
 
         return result;
@@ -507,6 +499,16 @@ class destination final {
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
     [[nodiscard]] auto operand() const -> const ::operand& { return operand_; }
+
+    // 'offset' bytes into the destination as 'value_type', e.g. the padding
+    // after a field, which no path names
+    [[nodiscard]] auto operand_at(const size_t offset,
+                                  const type& value_type) const -> ::operand {
+
+        ::operand result{::operand::mem(operand_, value_type)};
+        result.increment_offset(address_offset(offset));
+        return result;
+    }
 
     // the variable name without the field path
     [[nodiscard]] auto root_id() const -> std::string_view {
