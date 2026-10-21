@@ -4492,3 +4492,7 @@ SRC=1390 && EXP=0 && RUN
 # a 'let' of a typed initializer keeps the type
 SRC=1391 && COMPERR
 SRC=1392 && EXP=0 && RUN
+
+# an element of an array field of a literal is a destination of its own
+SRC=1393 && EXP=0 && RUN
+SRC=1394 && COMPERR

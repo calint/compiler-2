@@ -582,9 +582,11 @@ inline auto expr_type::compile_record_field(toc& tc, const size_t indent,
         return;
     }
 
+    // note: 'dst_op' is at the element, each assignment advances it past
+
     for (size_t i{}; i < src.element_count(); ++i) {
-        src.as_expr_type(i).compile_assign(tc, indent, field.type(), dst,
-                                           dst_op);
+        src.as_expr_type(i).compile_assign(tc, indent, field.type(),
+                                           dst.as_element(i, dst_op), dst_op);
     }
 
     const size_t zeroed_size_bytes{

@@ -1,0 +1,4 @@
+
+1394.baz:13:14: argument 1 'w.ps.x' may share storage with the result destination 'w.ps' (both name 'w'), use a temporary variable for one of them
+    w = {{mk(w.ps[0].x), {5, 6}}}
+             ^

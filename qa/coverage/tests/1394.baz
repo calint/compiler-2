@@ -1,0 +1,15 @@
+# a call that writes element 0 of an array field of a literal may not read
+# element 0
+
+type point {x, y}
+type t {ps point[2]}
+
+func mk(v) res point {
+    res = {v, v}
+}
+
+func main() {
+    var w = t{{{1, 2}, {3, 4}}}
+    w = {{mk(w.ps[0].x), {5, 6}}}
+    exit(w.ps[0].y)
+}
