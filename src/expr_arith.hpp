@@ -665,7 +665,8 @@ class expr_arith final : public expression {
         x.comment(tok(), indent, "{} = {}", dst.name(), value);
         x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
 
-        x.copy_value(tok(), indent, dst.operand(), constant_operand(tc, value));
+        x.copy_value(tok(), indent, dst.operand(),
+                     folded_value::untyped(value).operand_at(dst.type_ref()));
     }
 
     // a nested list is folded when it is compiled as an element:
@@ -1326,7 +1327,7 @@ class expr_arith final : public expression {
                 x.comment(src.tok(), indent, "src: folded constant '{}'",
                           statement::trimmed_source(src));
 
-                emit(constant_operand(tc, folded->value), false);
+                emit(folded->operand_at(operand_type), false);
 
                 return;
             }
@@ -1346,8 +1347,16 @@ class expr_arith final : public expression {
         const ident_info src_info{tc.make_scalar_ident_info(src)};
 
         if (src_info.is_const()) {
+            const std::optional<folded_value> folded{
+                src.fold(tc, value_use::wrapped_at(operand_type)),
+            };
+
+            // note: a constant name or literal folds
+            assert(folded);
+
             x.comment(src.tok(), indent, "src: constant");
-            emit(src.make_constant_operand(src_info), false);
+            emit(folded->operand_at(operand_type), false);
+
             return;
         }
 

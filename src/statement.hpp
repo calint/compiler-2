@@ -501,16 +501,6 @@ class statement {
         return *type_;
     }
 
-    [[nodiscard]] auto make_constant_operand(const ident_info& info) const
-        -> operand {
-
-        assert(info.is_const());
-
-        return operand::imm(
-            get_unary_ops().evaluate_constant(info.constant().value),
-            info.type_ref());
-    }
-
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
         bool is_read{};
 

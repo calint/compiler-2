@@ -4438,3 +4438,7 @@ SRC=1372 && COMPERR
 # a constant list whose first element is not typed is a number that must fit
 # the other side, a later typed element does not type it
 SRC=1373 && COMPERR
+
+# a constant is stored at the width of its destination: the low bits of a
+# wider typed constant and an inlined argument with its unary ops
+SRC=1374 && EXP=44 && RUN

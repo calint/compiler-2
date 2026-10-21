@@ -1,0 +1,14 @@
+# a constant is stored at the width of its destination, e.g. the 'i16' 300
+# of 'i8(i16(k))' as 44 and the inlined '-p' of an 'i8' 'p' of -128 as -128
+
+let k = 300
+
+func negated(p i8) res i8 {
+    res = -p
+}
+
+func main() {
+    var r = i8(i16(k))
+    var n = negated(-128)
+    exit(int(r) + int(n) + 128)
+}

@@ -262,8 +262,15 @@ class stmt_identifier final : public statement {
         const ident_info src_info{tc.make_scalar_ident_info(*this)};
 
         if (src_info.is_const()) {
+            const std::optional<folded_value> folded{
+                fold(tc, value_use::wrapped_at(dst.type_ref())),
+            };
+
+            // note: a constant name or literal folds
+            assert(folded);
+
             x.copy_value(tok(), indent, dst.operand(),
-                         make_constant_operand(src_info));
+                         folded->operand_at(dst.type_ref()));
 
             return;
         }

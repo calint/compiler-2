@@ -968,8 +968,15 @@ class expr_bool_op final : public statement {
             return typed_constant(tc, expr);
         }
 
+        // an untyped constant is compared as written, the caller checks that
+        // it fits the left side
         if (expr_info.is_const()) {
-            return expr.make_constant_operand(expr_info);
+            const std::optional<folded_value> folded{fold_side(tc, expr)};
+
+            // note: a constant name or literal folds
+            assert(folded);
+
+            return operand::imm(folded->value, expr_info.type_ref());
         }
 
         return with_unary_ops(tc, indent, expr, expr_info.operand(),

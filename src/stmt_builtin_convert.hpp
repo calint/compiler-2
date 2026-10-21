@@ -157,13 +157,10 @@ class stmt_builtin_convert final : public expression {
             fold_at(tc, dst.type_ref()),
         };
 
-        // an out-of-range immediate makes nasm warn, so fold it here
+        // e.g. 128 of '-i8(-128)' in an 'i16' destination
         if (folded) {
-            // e.g. 128 of '-i8(-128)' in an 'i16' destination
-            const type& value_type{*wider(get_type(), dst.type_ref())};
-
             x.copy_value(tok(), indent, dst.operand(),
-                         operand::imm(folded->value, value_type));
+                         folded->operand_at(dst.type_ref()));
 
             return;
         }

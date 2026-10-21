@@ -114,6 +114,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           'make_constant_operand' and the constant branches of the compile
           overrides: 'i8(i16(K))' emits 44, not 300 (G6-3); immediates and
           asm comments change, images only where they were wrong
+          => B1a done (2026-10-21): 'folded_value::operand_at' is the one
+          rule for the immediate a destination receives, wrapped to its
+          width; 'make_constant_operand' went; 'i8(i16(k))' stores 44 and
+          an inlined '-p' of an 'i8' -128 stores -128 (test 1374); the gate
+          is unchanged, the corpus never reached the wrong immediates
+          => B1b: 'compile_value' and the constant branches of the compile
+          overrides
        B2 typedness from the fold: 'i16(K) <= e' accepted like
           'i16(300) <= e' (G6-2, ARCH-6)
        B3 the fit check inside 'fold' ('folded_value::assert_fits'),

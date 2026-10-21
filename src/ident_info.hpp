@@ -18,6 +18,7 @@
 #include <variant>
 #include <vector>
 
+#include "constant_arith.hpp"
 #include "operand.hpp"
 #include "token.hpp"
 #include "type.hpp"
@@ -44,6 +45,11 @@ struct folded_value {
     const type* own_type{};
 
     [[nodiscard]] auto is_typed() const -> bool { return own_type != nullptr; }
+
+    // the immediate that a destination of 'width' receives, wrapped to it
+    [[nodiscard]] auto operand_at(const type& width) const -> operand {
+        return operand::imm(constant_arith::wrap_to_width(value, width), width);
+    }
 
     //
     // statics
