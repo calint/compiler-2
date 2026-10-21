@@ -1,0 +1,14 @@
+# a value read under another name of the destination while it is computed
+# goes through a scratch register: 'g' would be written before 'p' is read
+# again
+
+var g = 3
+
+func f(p) {
+    g = p * 2 + p
+}
+
+func main() {
+    f(g)
+    exit(g - 9)
+}

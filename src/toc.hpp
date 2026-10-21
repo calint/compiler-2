@@ -2942,6 +2942,39 @@ class toc final {
         deepest_frame_check_ = std::max(deepest_frame_check_, frame_count);
     }
 
+    // 'st' reads bytes of 'dst' under any name, e.g. the 'p' of 'g = p + 1'
+    // with 'p' bound to 'g'; a register only under its own name
+    [[nodiscard]] auto reads_destination(const statement& st,
+                                         const destination& dst) const -> bool {
+
+        if (st.reads_var(dst.root_id())) {
+            return true;
+        }
+
+        if (not dst.storage()) {
+            return false;
+        }
+
+        bool is_read{};
+
+        st.visit_reads(
+            std::nullopt,
+            [&]([[maybe_unused]] const token& src_loc_tk,
+                [[maybe_unused]] const std::string_view read_text,
+                [[maybe_unused]] const byte_range& accessed_bytes,
+                const access_path& read_path) -> void {
+                const std::optional<storage_path> read{
+                    storage_of(src_loc_tk, src_loc_tk.text(), read_path),
+                };
+
+                if (read and read->may_overlap(*dst.storage())) {
+                    is_read = true;
+                }
+            });
+
+        return is_read;
+    }
+
     auto reset_usage() -> void {
         assert(scopes_.is_empty());
 

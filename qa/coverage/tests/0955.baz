@@ -1,5 +1,6 @@
 # --checks=alias: two run-time indexes in a path, the read is of the same field
 # of an element that both indexes can select
+# the value is computed before the destination is written
 
 type item {
     f i32,
@@ -20,5 +21,5 @@ func main() {
     var j = 1
 
     put(es[i].items[j].f)
-    exit(es[0].items[1].f)
+    exit(es[0].items[1].f - 100)
 }

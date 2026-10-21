@@ -26,15 +26,8 @@ class stmt_assign_var final : public statement {
     expr_any expr_;
     token equals_tk_;
 
-    // a read of a variable in the value
-    struct value_read {
-        token tk;
-        std::string text;
-        access_path path;
-    };
-
-    // a part of the value written before a read: its storage and its path
-    // under the destination's name
+    // a part of the value: its storage and its path under the destination's
+    // name
     struct written_place {
         storage_path storage;
         access_path path;
@@ -99,11 +92,9 @@ class stmt_assign_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        assert_no_read_of_written_part(tc);
+        assert_parts_not_clobbered(tc);
 
         const ident_info var_info{tc.make_ident_info(stmt_ident_)};
-
-        assert_reference_not_read(tc, var_info);
 
         // a parameter names its argument only here, e.g. a constant
         assert_assignable(tc, var_info);
@@ -191,44 +182,49 @@ class stmt_assign_var final : public statement {
                         *dst_len, *src_len)};
     }
 
-    // a part of the value does not read a part written before it, under any
-    // name, e.g. the 'p.x' of 'p = {p.y, p.x}' or of 'g = {1, p.x}' with 'p'
-    // bound to 'g'
-    auto assert_no_read_of_written_part(const toc& tc) const -> void {
-        const std::optional<storage_path> dst{
-            tc.storage_of(stmt_ident_.first_token(),
-                          stmt_ident_.first_token().text(),
-                          stmt_ident_.accessed_path()),
-        };
+    // a read under another name of the part that 'item' computes, in the dry
+    // run of a noinline call: the compile protects such a read from the
+    // destination written before the value is complete
+    // ('expr_arith::destination_is_clobbered_before_read'), but the body is
+    // compiled once and does not see that its parameters name the same bytes
+    //
+    // todo: an overlap that the body sees itself is rejected too, e.g. 'g' of
+    //       a noinline body passed to an inline call that writes 'g'
+    auto assert_no_read_of_computed_part(const toc& tc, const statement& item,
+                                         const storage_path& part) const
+        -> void {
 
-        // note: a value in a register is written as one part
-        if (not dst) {
-            return;
-        }
+        item.visit_reads(
+            std::nullopt,
+            [&](const token& src_loc_tk, const std::string_view read_text,
+                [[maybe_unused]] const byte_range& accessed_bytes,
+                const access_path& read_path) -> void {
+                if (src_loc_tk.text() == stmt_ident_.first_token().text()) {
+                    return;
+                }
 
-        std::vector<written_part> parts;
-        expr_.list_written_parts(access_path::whole_variable(), parts);
+                const std::optional<storage_path> read{
+                    tc.storage_of(src_loc_tk, src_loc_tk.text(), read_path),
+                };
 
-        // the parts before the current one
-        std::vector<written_place> written;
+                if (not read or not read->may_overlap(part)) {
+                    return;
+                }
 
-        for (const written_part& part : parts) {
-            assert_not_reading(tc, *part.item, written);
-
-            written.push_back({
-                .storage{
-                    .root{dst->root},
-                    .path{dst->path.extended_by(part.suffix)},
-                },
-                .path{stmt_ident_.accessed_path().extended_by(part.suffix)},
+                throw compile_error{
+                    src_loc_tk,
+                    std::format("'{}' may share storage with the destination "
+                                "'{}' (both name '{}'), compute the value in "
+                                "a temporary variable first",
+                                read_text, stmt_ident_.path_text(),
+                                part.root.name)};
             });
-        }
     }
 
-    // 'item' reads none of the 'written' parts
-    auto assert_not_reading(const toc& tc, const statement& item,
-                            const std::span<const written_place> written) const
-        -> void {
+    // 'item' reads none of the 'written' parts, under any name
+    auto assert_no_read_of_written_part(
+        const toc& tc, const statement& item,
+        const std::span<const written_place> written) const -> void {
 
         item.visit_reads(
             std::nullopt,
@@ -268,42 +264,48 @@ class stmt_assign_var final : public statement {
             });
     }
 
-    // a destination that names storage under another name, e.g. a parameter or
-    // the element of a 'foo', may be read by the value under that name, only
-    // for '--checks=alias'
-    auto assert_reference_not_read(const toc& tc,
-                                   const ident_info& var_info) const -> void {
-
-        if (not tc.checks().alias or
-            not is_reference_destination(tc, var_info)) {
-
-            return;
-        }
-
+    // the value is written part by part, so a part must not read what is
+    // already written, e.g. the 'p.x' of 'p = {p.y, p.x}', or with
+    // '--checks=alias' in a noinline body the part it computes under another
+    // name, e.g. the 'p' of 'g = p * 2 + p' with 'p' bound to 'g'
+    auto assert_parts_not_clobbered(const toc& tc) const -> void {
         const std::optional<storage_path> dst{
             tc.storage_of(stmt_ident_.first_token(),
                           stmt_ident_.first_token().text(),
                           stmt_ident_.accessed_path()),
         };
 
-        // the result of a call in an expression is written to a register,
-        // which no other name reaches
+        // note: a value in a register is written as one part that no other
+        //       name reaches
+
         if (not dst) {
             return;
         }
 
-        for (const value_read& read : reads_of_value()) {
-            if (not may_share_storage(tc, *dst, read)) {
-                continue;
+        std::vector<written_part> parts;
+        expr_.list_written_parts(access_path::whole_variable(), parts);
+
+        // the parts before the current one
+        std::vector<written_place> written;
+
+        for (const written_part& part : parts) {
+            const written_place place{
+                .storage{
+                    .root{dst->root},
+                    .path{dst->path.extended_by(part.suffix)},
+                },
+                .path{stmt_ident_.accessed_path().extended_by(part.suffix)},
+            };
+
+            assert_no_read_of_written_part(tc, *part.item, written);
+
+            if (tc.checks().alias and
+                tc.scopes().noinline_dry_run_level() != 0) {
+
+                assert_no_read_of_computed_part(tc, *part.item, place.storage);
             }
 
-            throw compile_error{
-                read.tk,
-                std::format("'{}' may share storage with the destination '{}' "
-                            "(both name '{}'), compute the value in a "
-                            "temporary variable first",
-                            read.text, stmt_ident_.path_text(),
-                            dst->root.name)};
+            written.push_back(place);
         }
     }
 
@@ -326,60 +328,5 @@ class stmt_assign_var final : public statement {
         return read_tk.text() == stmt_ident_.first_token().text() and
                not read_path.has_run_time_index() and
                not place.path.has_run_time_index();
-    }
-
-    // a pointer, a parameter that names its argument or an element of a 'foo'
-    [[nodiscard]] auto
-    is_reference_destination(const toc& tc, const ident_info& var_info) const
-        -> bool {
-
-        const std::string_view root{stmt_ident_.first_token().text()};
-
-        return var_info.is_pointer() or tc.scopes().is_alias(root) or
-               tc.scopes().foo_array(root).has_value();
-    }
-
-    // true when the read may be of bytes of the destination under another
-    // name
-    [[nodiscard]] auto may_share_storage(const toc& tc, const storage_path& dst,
-                                         const value_read& read) const -> bool {
-
-        const std::string_view read_name{read.tk.text()};
-
-        // note: a read under the name of the destination is handled where the
-        //       value is compiled, e.g. 'x = x + 1'
-
-        if (read_name == stmt_ident_.first_token().text()) {
-            return false;
-        }
-
-        if (not tc.scopes().lookup(read_name).is_var_or_alias()) {
-            return false;
-        }
-
-        const std::optional<storage_path> source{
-            tc.storage_of(read.tk, read_name, read.path),
-        };
-
-        return source and source->may_overlap(dst);
-    }
-
-    // every read of a variable in the value, in source order
-    [[nodiscard]] auto reads_of_value() const -> std::vector<value_read> {
-        std::vector<value_read> reads;
-
-        expr_.visit_reads(
-            std::nullopt,
-            [&reads](const token& tk, const std::string_view text,
-                     [[maybe_unused]] const byte_range& accessed_bytes,
-                     const access_path& accessed_path) -> void {
-                reads.push_back({
-                    .tk{tk},
-                    .text{text},
-                    .path{accessed_path},
-                });
-            });
-
-        return reads;
     }
 };

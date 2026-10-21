@@ -1,0 +1,15 @@
+# a part of a value may read under another name a part of the destination
+# that is not written yet
+
+type point {x, y}
+
+var g = point{3, 5}
+
+func f(p mut point) {
+    p = {g.y, 1}
+}
+
+func main() {
+    f(g)
+    exit(g.x - 5)
+}

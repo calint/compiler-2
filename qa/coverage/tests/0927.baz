@@ -1,4 +1,5 @@
 # --checks=alias: the data is a record, the argument and the read are the same element
+# the value is computed before the destination is written
 
 type world {
     items[4],
@@ -14,5 +15,5 @@ func put(x mut) {
 func main() {
     w.items[2] = 3
     put(w.items[2])
-    exit(w.items[2])
+    exit(w.items[2] - 104)
 }

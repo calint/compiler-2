@@ -2850,16 +2850,17 @@ SRC=0917 && EXP=0 && RUN
 # a string cannot span lines, the source is echoed in assembly comments
 SRC=0918 && COMPERR
 
-# --checks=alias: a 'foo' element is not assigned a value that reads the array
-SRC=0919 && OPTS="$UB_ALIAS" COMPERR
+# --checks=alias: a 'foo' element assigned a value that reads the array gets
+# the value computed before it is written
+SRC=0919 && EXP=0 && OPTS="$UB_ALIAS" RUN
 
 # --checks=alias: a 'foo' element assigned from itself, another array and a
 # separate variable is accepted
 SRC=0920 && EXP=0 && OPTS="$UB_ALIAS" RUN
 
-# --checks=alias: a 'foo' element reading other fields of its variable is
-# accepted, reading its own field is not
-SRC=0921 && OPTS="$UB_ALIAS" COMPERR
+# --checks=alias: a 'foo' element reading other fields of its variable and its
+# own field
+SRC=0921 && EXP=0 && OPTS="$UB_ALIAS" RUN
 
 # --checks=alias: a result and an argument that are different fields are accepted
 SRC=0922 && EXP=0 && OPTS="$UB_ALIAS" RUN
@@ -2867,13 +2868,14 @@ SRC=0922 && EXP=0 && OPTS="$UB_ALIAS" RUN
 # --checks=alias: a result and an argument that are the same field conflict
 SRC=0923 && OPTS="$UB_ALIAS" COMPERR
 
-# --checks=alias: a function that writes a 'mut' parameter must not read the
-# data that the argument names
-SRC=0924 && OPTS="$UB_ALIAS" COMPERR
+# --checks=alias: a function that writes a 'mut' parameter and reads the data
+# that the argument names: inline it computes the value before it is written,
+# noinline it is rejected
+SRC=0924 && EXP=0 && OPTS="$UB_ALIAS" RUN
 SRC=0925 && OPTS="$UB_ALIAS" COMPERR
-SRC=0926 && OPTS="$UB_ALIAS" COMPERR
-SRC=0927 && OPTS="$UB_ALIAS" COMPERR
-SRC=0928 && OPTS="$UB_ALIAS" COMPERR
+SRC=0926 && EXP=0 && OPTS="$UB_ALIAS" RUN
+SRC=0927 && EXP=0 && OPTS="$UB_ALIAS" RUN
+SRC=0928 && EXP=0 && OPTS="$UB_ALIAS" RUN
 
 # --checks=alias: arguments that are other bytes than the data the function
 # reads are accepted
@@ -2882,11 +2884,11 @@ SRC=0930 && EXP=0 && OPTS="$UB_ALIAS" RUN
 SRC=0931 && EXP=0 && OPTS="$UB_ALIAS" RUN
 
 # --checks=alias: a call result written into data that the function reads
-SRC=0932 && OPTS="$UB_ALIAS" COMPERR
+SRC=0932 && EXP=0 && OPTS="$UB_ALIAS" RUN
 SRC=0933 && OPTS="$UB_ALIAS" COMPERR
 
 # --checks=alias: a run-time element written and read at the same field
-SRC=0934 && OPTS="$UB_ALIAS" COMPERR
+SRC=0934 && EXP=0 && OPTS="$UB_ALIAS" RUN
 
 # --checks=alias: a run-time element written and read at different fields
 SRC=0935 && EXP=0 && OPTS="$UB_ALIAS" RUN
@@ -2912,7 +2914,7 @@ SRC=0941 && COMPERR
 
 # --checks=alias: arrays of different element sizes that overlap are assumed to
 # reach the same bytes
-SRC=0942 && COMPERR
+SRC=0942 && EXP=0 && RUN
 
 # --checks=alias: the aliasing is made inside the body of the function that
 # passes a parameter and a global that name the same data
@@ -2924,14 +2926,14 @@ SRC=0944 && COMPERR
 
 # --checks=alias: the element 'e' of a 'foo' is passed to a function that reads
 # the array, which can be the element itself
-SRC=0945 && COMPERR
+SRC=0945 && EXP=0 && RUN
 
 # --checks=alias: the same for a non-inlined function
 SRC=0946 && COMPERR
 
 # --checks=alias: a call result is written into the element 'e' of a 'foo' and
 # the function reads the array, which can be the element itself
-SRC=0947 && COMPERR
+SRC=0947 && EXP=0 && RUN
 
 # --checks=alias: the element 'e' of a 'foo' is passed to a function that reads
 # another array, which is accepted
@@ -2943,7 +2945,7 @@ SRC=0949 && EXP=0 && RUN
 
 # --checks=alias: the element 'e' of a 'foo' inside the element of another 'foo'
 # reads the same field of the outer array, which can be the element itself
-SRC=0950 && COMPERR
+SRC=0950 && EXP=0 && RUN
 
 # --checks=alias: three nested 'foo' read a field outside the arrays they
 # iterate, which is accepted
@@ -2951,7 +2953,7 @@ SRC=0951 && EXP=0 && RUN
 
 # --checks=alias: three nested 'foo' read the array the second one iterates,
 # which can contain the element itself
-SRC=0952 && COMPERR
+SRC=0952 && EXP=0 && RUN
 
 # --checks=alias: three nested 'foo' read another field of the element of the
 # array the second one iterates, which is accepted
@@ -2963,7 +2965,7 @@ SRC=0954 && EXP=0 && RUN
 
 # --checks=alias: two run-time indexes in a path, the read is of the same field
 # of an element that both indexes can select
-SRC=0955 && COMPERR
+SRC=0955 && EXP=0 && RUN
 
 # --checks=alias: two run-time indexes in a path, the read is of another field
 # of the elements, which is accepted
@@ -2975,7 +2977,7 @@ SRC=0957 && EXP=0 && RUN
 
 # --checks=alias: the destination has two run-time indexes and the read one, the
 # read is of the same field that the destination can select
-SRC=0958 && COMPERR
+SRC=0958 && EXP=0 && RUN
 
 # --checks=alias: the destination has one run-time index and the read two, the
 # fields in the elements are different, which is accepted
@@ -2998,7 +3000,7 @@ SRC=0963 && EXP=0 && RUN
 
 # --checks=alias: the element of a 'foo' over a constant element field and the
 # read of the same field of an element at a run-time index
-SRC=0964 && COMPERR
+SRC=0964 && EXP=0 && RUN
 
 # --checks=division: defined divisions pass
 SRC=0965 && EXP=0 && RUN_ERR_OPTS "--checks=division"
@@ -4514,3 +4516,12 @@ SRC=1401 && COMPERR
 SRC=1402 && COMPERR
 SRC=1403 && COMPERR
 SRC=1404 && EXP=0 && RUN
+
+# a part read under another name of the destination: while it is computed,
+# inline and noinline, not written yet and already written
+SRC=1405 && EXP=0 && RUN
+SRC=1406 && EXP=0 && RUN
+SRC=1407 && EXP=0 && RUN
+SRC=1408 && COMPERR
+SRC=1409 && COMPERR
+SRC=1410 && COMPERR

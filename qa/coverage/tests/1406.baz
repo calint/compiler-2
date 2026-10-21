@@ -1,0 +1,13 @@
+# a value that reads another name of the destination once is computed in the
+# destination
+
+var g = 3
+
+func f(p) {
+    g = p + 1
+}
+
+func main() {
+    f(g)
+    exit(g - 4)
+}

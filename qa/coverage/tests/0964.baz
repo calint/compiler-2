@@ -1,5 +1,6 @@
 # --checks=alias: the element 'e' of a 'foo' over a constant element field is
 # assigned from the same field of an element at a run-time index
+# the value is computed before the destination is written
 
 type item {
     f i32,

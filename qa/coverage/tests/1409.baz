@@ -1,0 +1,13 @@
+# a noinline body is compiled once and does not see that its parameter names
+# the destination, so its dry run rejects the read
+
+var g = 3
+
+func noinline f(p) {
+    g = p * 2 + p
+}
+
+func main() {
+    f(g)
+    exit(g)
+}

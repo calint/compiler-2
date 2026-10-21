@@ -46,8 +46,9 @@ For a reviewer:
     - [3.3 Why paths and not bytes](#33-why-paths-and-not-bytes)
     - [3.4 Comparing two paths](#34-comparing-two-paths)
     - [3.5 Building paths](#35-building-paths)
-    - [3.6 The other checks on a read](#36-the-other-checks-on-a-read)
-    - [3.7 Fuzzing](#37-fuzzing)
+    - [3.6 A value written in parts](#36-a-value-written-in-parts)
+    - [3.7 The other checks on a read](#37-the-other-checks-on-a-read)
+    - [3.8 Fuzzing](#38-fuzzing)
 - [4. Noinline calls: the body dry run once per kind of call](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call)
     - [4.1 Problem](#41-problem)
     - [4.2 Dry run](#42-dry-run)
@@ -732,7 +733,40 @@ the array.
 The whole variable has the empty path, e.g. a temporary of a call, which is a
 root variable of its own.
 
-### 3.6 The other checks on a read
+### 3.6 A value written in parts
+
+A value is written part by part, in the order 'compile' writes it
+('list_written_parts'): a field list field by field, a braced array element by
+element, a call or a copy at once. Each part has its path from the
+destination. Each read of a part is resolved to its root variable
+('toc::storage_of'), so a parameter, the element 'e' of a 'foo' and the name
+itself reach the same variable:
+
+```text
+p = {p.y, p.x}                 'x' is written first, then 'p.x' reads it =>
+                               "'p.x' is read but has been overwritten in the
+                               same statement"; with a run-time index on either
+                               side "may have been overwritten"
+
+g = {1, p.x}                   the same with 'p' bound to 'g'
+
+g = p * 2 + p                  'p' bound to 'g': the compile would write 'g'
+                               before it reads 'p' again, so the value goes
+                               through a scratch register
+```
+
+The compile decides that in
+'expr_arith::destination_is_clobbered_before_read', with the reads resolved
+like above.
+
+A noinline body is compiled once and reaches its parameters through
+addresses, so it cannot see that 'p' is 'g' and cannot protect the read. The
+dry run of the call sees it and, with '--checks=alias', rejects the read of
+the part being computed under another name: "'p' may share storage with the
+destination 'g'". An overlap that the body could see itself, e.g. 'g' passed to
+an inlined call inside the body, is rejected too (etc/todo.txt).
+
+### 3.7 The other checks on a read
 
 Other checks look at the reads of a variable and do need bytes, because they
 ask whether a read is inside what has been assigned:
@@ -752,11 +786,6 @@ func point.at(x) self {        a constructor must assign every field: it
 func make() res point {        the same for the result of a function
     res.x = 1
 }
-
-p = {p.y, p.x}                 the field 'x' is written first, bytes 0..4,
-                               then the item 'p.x' reads them => "'p.x' is
-                               read but has been overwritten in the same
-                               statement"
 ```
 
 These checks share one walk over the reads, which hands out both the bytes and
@@ -768,7 +797,7 @@ stay the whole array: a write through 'arr[i]' assigns nothing, and a read
 through it needs the whole array to be assigned. Both are the safe answer when
 the element is not known.
 
-### 3.7 Fuzzing
+### 3.8 Fuzzing
 
 The aliasing check is tested against a brute force of the bytes, in which
 every value of every run-time index is tried. Two fuzzers do this:
@@ -779,7 +808,8 @@ every value of every run-time index is tried. Two fuzzers do this:
 2. one sends random programs through the compiler: the element 'e' of a 'foo'
    and 'mut' parameters, inline and noinline, against a read of the variable,
    with mixed scalar sizes; "may share storage" must be reported exactly when
-   the bytes can be the same
+   the bytes can be the same through a noinline call, inline code computes the
+   value before it writes it (3.6)
 
 A long run, one seed per core with large counts, takes about six minutes on 16
 cores and is meant for any change to the check.

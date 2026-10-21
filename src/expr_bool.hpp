@@ -1144,7 +1144,7 @@ class expr_bool final : public statement {
         }
 
         // stored comparisons would change what later elements read
-        if (dst.is_register() or not reads_var(dst.root_id())) {
+        if (dst.is_register() or not tc.reads_destination(*this, dst)) {
             compile_value(tc, indent, dst.operand());
             return;
         }

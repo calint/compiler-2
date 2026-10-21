@@ -1,5 +1,6 @@
 # --checks=alias: the value assigned to the element 'e' of a 'foo' reads the
 # array, which can be the element itself
+# the value is computed before the destination is written
 
 func main() {
     var arr = []{ i32(1), 2, 3, 4 }
@@ -7,4 +8,5 @@ func main() {
     foo arr {
         e = k + (100 - arr[3])
     }
+    exit(arr[3] - 106)
 }

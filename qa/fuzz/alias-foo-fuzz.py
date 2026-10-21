@@ -2,11 +2,14 @@
 # end to end fuzz of '--checks=alias': random programs whose destination is the
 # element 'e' of a 'foo' or a 'mut' parameter, the value reads a variable; the
 # verdict of the compiler ("may share storage" or not) against a brute force of
-# the bytes, every value of every run-time index is tried
+# the bytes, every value of every run-time index is tried. an overlap is
+# rejected only through a noinline call, whose body is compiled once and
+# cannot see it; inline code computes the value before it writes it
 #
 # usage: alias-foo-fuzz.py [programs] [seed] [compiler]
-# exits 1 on a missed overlap (accepted, bytes can be the same), on a false
-# positive (rejected, bytes never are) or on an error that is not an alias error
+# exits 1 on a missed overlap (a noinline call accepted, bytes can be the same),
+# on a false positive (rejected, bytes never are or the code is inline) or on
+# an error that is not an alias error
 #
 # note: a read under the name of the destination ('e.f = e.g') is handled where
 #       the value is compiled, not by this check, so it must be accepted
@@ -178,26 +181,19 @@ def gen_foo(rng):
     found = p.walk_to_array(root)
     if not found:
         return None
-    foo_text, foo_steps, arr = found
+    foo_text, _, arr = found
     elem = arr.elem
     if elem.kind == "scalar":
         return None  # the element of a scalar array has no path
     dst = p.walk(elem, "e")
-    dst_text, dst_steps, leaf = dst
-    # e is any element of the array
-    e_steps = foo_steps + [("run", arr.length, elem.size)]
+    dst_text, _, leaf = dst
     if rng.random() < 0.3:
         rd = p.walk_to(elem, "e", leaf.name)
-        rd_base = e_steps
     else:
         rd = p.walk_to(root, "r", leaf.name)
-        rd_base = []
     if not rd:
         return None
-    rd_text, rd_steps, _ = rd
-    truth = can_be_same_bytes(e_steps + dst_steps, rd_base + rd_steps, leaf.size)
-    if rd_text.startswith("e"):
-        truth = False
+    rd_text, _, _ = rd
     src = type_declarations(types)
     src.append(f"var r = {root.decl()}\n")
     for i in range(p.run_time_vars):
@@ -207,7 +203,9 @@ def gen_foo(rng):
     src.append(f"        {dst_text} = {rd_text}")
     src.append("    }")
     src.append("}")
-    return "\n".join(src) + "\n", truth
+    # note: the 'foo' is inline, so a value that reads the element is computed
+    #       before it is written and is accepted
+    return "\n".join(src) + "\n", False
 
 
 def gen_param(rng):
@@ -232,7 +230,7 @@ def gen_param(rng):
     src.append("func main() {")
     src.append(f"    put({dst_text})")
     src.append("}")
-    return "\n".join(src) + "\n", truth
+    return "\n".join(src) + "\n", truth and modifier != ""
 
 
 def main():

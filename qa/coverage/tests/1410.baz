@@ -1,0 +1,18 @@
+# a noinline body that binds a parameter of an inlined call to the destination
+# itself is rejected too, although its body could protect the read (a known
+# limitation)
+
+var g = 3
+
+func h(p) {
+    g = p * 2 + p
+}
+
+func noinline f() {
+    h(g)
+}
+
+func main() {
+    f()
+    exit(g)
+}

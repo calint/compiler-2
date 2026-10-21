@@ -1,0 +1,7 @@
+
+1409.baz:7:9: 'p' may share storage with the destination 'g' (both name 'g'), compute the value in a temporary variable first
+    g = p * 2 + p
+        ^
+1409.baz:11:5: called from
+    f(g)
+    ^

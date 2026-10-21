@@ -255,7 +255,7 @@ class expr_arith final : public expression {
         // read; a register that the expression reads is the result of an
         // inlined function
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
-        if (destination_is_clobbered_before_read(dst)) {
+        if (destination_is_clobbered_before_read(tc, dst)) {
             if (dst.is_register()) {
                 compile_through_scratch_as(tc, indent, dst, dst.type_ref());
                 return;
@@ -765,11 +765,12 @@ class expr_arith final : public expression {
     }
 
     // a plain first element is copied before anything writes the destination;
-    // a negated one may move behind a leading constant: 'n = -n + 1'
+    // a negated one may move behind a leading constant: 'n = -n + 1'; a read
+    // under another name counts, e.g. 'p' of 'g = p * 2 + p' with 'p' bound
+    // to 'g'
     [[nodiscard]] auto
-    destination_is_clobbered_before_read(const destination& dst) const -> bool {
-
-        const std::string_view root{dst.root_id()};
+    destination_is_clobbered_before_read(const toc& tc,
+                                         const destination& dst) const -> bool {
 
         const statement& first{*exprs_.front()};
 
@@ -777,14 +778,14 @@ class expr_arith final : public expression {
             first.is_name_or_literal() and first.get_unary_ops().is_empty(),
         };
 
-        if (not is_plain and first.reads_var(root)) {
+        if (not is_plain and tc.reads_destination(first, dst)) {
             return true;
         }
 
         return std::ranges::any_of(
             exprs_ | std::views::drop(1),
-            [root](const std::unique_ptr<statement>& e) -> bool {
-                return e->reads_var(root);
+            [&tc, &dst](const std::unique_ptr<statement>& e) -> bool {
+                return tc.reads_destination(*e, dst);
             });
     }
 

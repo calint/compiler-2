@@ -1,6 +1,6 @@
 # --checks=alias: the value assigned to the element 'e' of a 'foo' over a field
-# reads other bytes of the same variable, which is accepted, and the same
-# field, which is rejected
+# reads other bytes of the same variable and the same field
+# the value is computed before the destination is written
 
 type world {
     array[4],
@@ -10,10 +10,12 @@ type world {
 
 func main() {
     var w = world
+    w.array[2] = 5
     foo w.array {
         e = e + w.other[2] + w.count
     }
     foo w.array {
         e = e + w.array[2]
     }
+    exit(w.array[3] - 10)
 }

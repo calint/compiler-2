@@ -7,8 +7,8 @@ type point {
 
 var g = point{1, 2}
 
-func point.bad(v mut) {
-    v = g.y + self.x
+func point.bad(v) {
+    g = {v + self.x, g.x}
 }
 
 func main() {

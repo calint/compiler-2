@@ -1,5 +1,6 @@
 # --checks=alias: the element 'e' of a 'foo' is passed to a function that reads
 # the array, which can be the element itself
+# the value is computed before the destination is written
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 
@@ -11,5 +12,5 @@ func main() {
     foo g {
         put(e, 10)
     }
-    exit(g[0])
+    exit(g[3] - 106)
 }

@@ -39,9 +39,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        (argument/argument stays at the call); display text in
        'storage_path' (most users never show it); a typed call-kind key (no
        verdict changes); keeping the rollback (unreachable)
-    => decisions: 'p = g' and 'p = {g.x, 1}' with 'p' bound to 'g' stay
-       rejected; 'g = p + 1' with 'p' bound to 'g' becomes rejected (B4); a
-       call in a literal reading parts written earlier is a separate item
+    => decisions: a read under another name of the part being computed goes
+       through a scratch register inline ('g = p * 2 + p', 'g = p + 1',
+       'p = g' with 'p' bound to 'g' are accepted) and is rejected in the
+       dry run of a noinline call, whose body cannot see it (B4, revised
+       2026-10-21); a call in a literal reading parts written earlier is a
+       separate item
     => steps, one diff each; R: byte-identical gate (snapshots on both
        targets, tutorial, roome, option sets); B/M: 'UPDATE=1' on both
        targets and review; tests from 1393:
@@ -59,9 +62,19 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           '.out' files
        9. B2 rule A on paths, 4 tests
        10. B3 reads resolved by 'storage_of', 4 tests
-       11. B4 rule B per part for every destination, 4 tests, long fuzz runs
+       11. B4 the compile protects a read under another name by storage
+           ('destination_is_clobbered_before_read'), rule B per part only in
+           noinline dry runs; 16 tests of the old rule B become run tests that
+           check the value, tests 1405-1410, long fuzz runs
        12. records: resolved file, deferred items (variant destination
            '{none, reg, storage}', call in a literal)
+[ ] medium: aliasing: in the dry run of a noinline call, rule B
+    ('stmt_assign_var::assert_no_read_of_computed_part') also rejects an
+    overlap that the body sees and protects itself, e.g. 'g' of the body
+    passed to an inlined 'h(p)' that does 'g = p * 2 + p' (test 1410); a
+    precise check resolves each alias also as the innermost noinline body
+    sees it (a second binding in 'bound_storage' and 'destination') and
+    rejects only an overlap that this view does not show
 [ ] easy: messages about an argument or a destination that is read-only or a
     constant print the name without its indexes ('name_or_literal'), e.g.
     "read-only 'ps.x'" for 'ps[0].x'; the shared storage messages quote the

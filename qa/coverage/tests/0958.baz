@@ -1,5 +1,6 @@
 # --checks=alias: the destination has two run-time indexes and the read one, the
 # read is of the same field that the destination can select
+# the value is computed before the destination is written
 
 type item {
     f i32,
@@ -23,5 +24,5 @@ func main() {
     var k = i32(0)
 
     put(es[i].items[j].f, k)
-    exit(es[0].items[0].f)
+    exit(es[0].items[0].f - 100)
 }

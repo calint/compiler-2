@@ -1,5 +1,6 @@
 # --checks=alias: the method writes a field of an element chosen at run time and
 # reads the same field of another element, which can be the same one
+# the value is computed before the destination is written
 
 type entity {
     len i32,
@@ -13,6 +14,7 @@ func mut entity.bump(k i32) {
 }
 
 func main() {
-    var i = 2
+    var i = 1
     entities[i].bump(1)
+    exit(entities[1].len - 1)
 }

@@ -1,4 +1,5 @@
 # --checks=alias: the read is in a function called by the one that writes the parameter
+# the value is computed before the destination is written
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 
@@ -12,5 +13,5 @@ func outer(y mut i32) {
 
 func main() {
     outer(g[3])
-    exit(g[3])
+    exit(g[3] - 106)
 }
