@@ -1,0 +1,4 @@
+
+1260.baz:3:9: variable 'x' hides the parameter 'x' declared at 2:8
+    var x = 7
+        ^

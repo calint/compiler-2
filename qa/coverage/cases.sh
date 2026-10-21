@@ -167,7 +167,7 @@ SRC=0050 && EXP=0 && RUN
 # conjunction with explicit negation
 SRC=0051 && EXP=0 && RUN
 
-# scalar truthiness and conjunction
+# integers compared with 0, negated and in a conjunction
 SRC=0052 && EXP=0 && RUN
 
 # nested struct fields
@@ -1143,7 +1143,8 @@ SRC=0389 && EXP=0 && RUN
 # regression: nested destinations plus by-reference call semantics
 SRC=0390 && EXP=0 && RUN
 
-# regression: shorthand bool checks must compare using scalar-width regs
+# regression: a call result of each width compared with 0 uses a register of
+# its width
 SRC=0391 && EXP=0 && RUN
 
 SRC=0392 && EXP=0 && RUN
@@ -1153,7 +1154,7 @@ SRC=0393 && EXP=0 && RUN
 # == compares indexed default-type values (true and false paths)
 SRC=0394 && EXP=0 && RUN
 
-# shorthand condition truthiness with unary '~' across scalar widths
+# integers and their unary '~' compared with 0 across scalar widths
 SRC=0395 && EXP=0 && RUN
 
 # regression: stmt_call alias must pin indexed operand (is_indexed on)
@@ -3900,8 +3901,8 @@ SRC=1232 && COMPERR
 SRC=1233 && EXP=20 && RUN
 
 # a conversion to a wider type computes its argument at the width of the type,
-# where an inlined call's narrower result is rejected as elsewhere
-SRC=1234 && COMPERR
+# where an inlined call's narrower result widens like any operand
+SRC=1234 && EXP=40 && RUN
 
 # --checks=overflow: the negation of a conversion is checked at the width of
 # its type at run time
@@ -3994,3 +3995,75 @@ SRC=1258 && COMPERR
 # a widening conversion inside a narrowing one computes at its own width
 # before it is narrowed
 SRC=1259 && EXP=50 && RUN
+
+# a variable in the body of a function that repeats a parameter is rejected
+SRC=1260 && COMPERR
+
+# a variable in the body of a noinline function that repeats 'res' is
+# rejected
+SRC=1261 && COMPERR
+
+# a constant in the body of a function that repeats a named result is rejected
+SRC=1262 && COMPERR
+
+# a block inside the body of a function and the element of a 'foo' may hide
+# a parameter
+SRC=1263 && EXP=11 && RUN
+
+# an integer as the condition of an if is rejected
+SRC=1264 && COMPERR
+
+# an integer as the condition of an else if is rejected
+SRC=1265 && COMPERR
+
+# an integer as an element of an and in a condition is rejected
+SRC=1266 && COMPERR
+
+# an integer as a later element of an or in a condition is rejected
+SRC=1267 && COMPERR
+
+# a negated integer as a condition is rejected
+SRC=1268 && COMPERR
+
+# a parenthesized integer as a condition is rejected
+SRC=1269 && COMPERR
+
+# a bool compared with an integer literal is rejected
+SRC=1270 && COMPERR
+
+# an integer literal compared with a bool is rejected
+SRC=1271 && COMPERR
+
+# a bool compared with an integer in a condition is rejected
+SRC=1272 && COMPERR
+
+# a bool literal compared with an integer variable is rejected
+SRC=1273 && COMPERR
+
+# a comparison of a bool with an integer after an element that decides the
+# condition is rejected
+SRC=1274 && COMPERR
+
+# an inlined call's narrower result widens as an operand, its unary ops
+# apply at the width of the operand
+SRC=1275 && EXP=7 && RUN
+
+# a noinline call's narrower result widens as an operand, its unary ops
+# apply at the width of the operand
+SRC=1276 && EXP=7 && RUN
+
+# a noinline call's narrower result assigned alone is rejected like an
+# inlined one
+SRC=1277 && COMPERR
+
+# a noinline call's narrower result alone as the argument of 'exit' is
+# rejected like an inlined one
+SRC=1278 && COMPERR
+
+# a noinline call's narrower result alone as the argument of an inlined
+# call is rejected like a variable
+SRC=1279 && COMPERR
+
+# an inlined call past the frame limit in the dry runs of a chain of noinline
+# calls is reported as the chain: the script compiles a generated chain
+SRC=1280 && DIFFPY

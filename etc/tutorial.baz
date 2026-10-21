@@ -181,6 +181,8 @@ func booleans() {
     assert(n == 1)
     # a 'bool' is not an integer: 'n = yes' is an error, 'int(yes)' converts
     # it to 1 or 0
+    # a condition is a 'bool' and a 'bool' is compared only with a 'bool':
+    # 'if n' and 'yes == 1' are errors, 'if n != 0' compares
 }
 
 #
@@ -236,6 +238,8 @@ func scopes() {
     assert(level == 1 and x == 1)
     # a block opens a new scope, its constants and variables shadow outer ones
     # and end with the block
+    # the body of a function cannot repeat the name of a parameter or the
+    # result, a block inside it can
 }
 
 #
@@ -418,6 +422,11 @@ func functions() {
 
     var w = i32(0x1234)
     assert(low_byte(w) == 0x34)
+
+    var y = x + low_byte(w)
+    assert(y == 0x38)
+    # a narrower result widens as an operand like a variable, assigned alone
+    # it must have the type of the destination: 'y = low_byte(w)' is an error
 
     var arr = i32[]{9, 8}
     assert(first(arr) == 9)

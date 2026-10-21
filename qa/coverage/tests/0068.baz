@@ -73,7 +73,7 @@ func main(){
     var gg = (value1 == 5 and (value2 != value3 and value4 < value3)) or (value3 < value1 + value2 and flag)
     var hh = ((value1 == value2 and value3 == value3) and (value4 != value1 and flag == false)) or (value1 + 1 == 6)
     var ii = not (value1 == 5 and value2 == 5 and value3 == 10 and value4 == 2 and flag == false)
-    var jj = ((value1 + value2 == value3) or (value3 / value4 == value1)) and not (value1 < flag or value2 < flag)
+    var jj = ((value1 + value2 == value3) or (value3 / value4 == value1)) and not (value1 < int(flag) or value2 < int(flag))
     var kk = not (value1 == value2 and value3 / value4 == value1)
 
     assert(not aa)

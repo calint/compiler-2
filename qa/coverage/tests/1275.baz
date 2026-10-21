@@ -1,0 +1,37 @@
+# an inlined call's narrower result widens as an operand, its unary ops
+# apply at the width of the operand
+func g(x i8) res i8 {
+    res = x
+}
+
+func h(x i8) res i8 {
+    res = x
+}
+
+func main() {
+    var w = 10
+    var x = 0
+    x = g(-128) + 1
+    if x != -127 {
+        exit(1)
+    }
+    x = w + g(-2)
+    if x != 8 {
+        exit(2)
+    }
+    x = w + -g(-128)
+    if x != 138 {
+        exit(3)
+    }
+    x = g(-128) * g(-128)
+    if x != 16384 {
+        exit(4)
+    }
+    var a = i16(1)
+    var b = i8(2)
+    var r = a + h(b)
+    if r != 3 {
+        exit(5)
+    }
+    exit(7)
+}

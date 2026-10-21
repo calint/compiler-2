@@ -1,0 +1,6 @@
+# a comparison of a bool with an integer after an element that decides the
+# condition is rejected
+func main() {
+    var x = i32(1)
+    if true or x == true exit(1)
+}

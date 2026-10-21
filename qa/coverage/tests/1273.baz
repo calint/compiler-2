@@ -1,0 +1,5 @@
+# a bool literal compared with an integer variable is rejected
+func main() {
+    var x = i8(1)
+    if true == x exit(2)
+}

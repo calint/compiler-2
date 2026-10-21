@@ -1,0 +1,4 @@
+
+1267.baz:4:18: 'n' of type 'i32' is not a 'bool', compare it, e.g. 'n != 0'
+    if n == 2 or n exit(2)
+                 ^

@@ -3,7 +3,7 @@
 func main() {
     var a = i8(1)
     var count = i32(256)
-    if a << count {
+    if a << count != 0 {
         exit(1)
     }
     exit(0)

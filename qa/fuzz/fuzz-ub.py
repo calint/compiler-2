@@ -1075,7 +1075,7 @@ class Params(Indexes):
 
 # contexts: one expression of one type, with + - * that can overflow, used as a
 # declaration, an argument, an index, a count, a divisor, a shift count, a
-# comparison, a truth test or the result of a function
+# comparison, a comparison with 0 or the result of a function
 
 class Contexts:
     name = "contexts"
@@ -1199,7 +1199,7 @@ class Contexts:
             out.append(f"    if 3 > {e} {{ exit(11) }}")
             out.append("    exit(12)")
         else:
-            out.append(f"    if {e} {{ exit(11) }}")
+            out.append(f"    if {e} != 0 {{ exit(11) }}")
             out.append("    exit(12)")
         out.append("}")
         return "\n".join(out) + "\n"
@@ -1304,7 +1304,7 @@ class Narrowing:
             out.append(f"    if {v - 1} < {e} {{ exit(11) }}")
             out.append("    exit(12)")
         elif c == "truth":
-            out.append(f"    if {e} {{ exit(11) }}")
+            out.append(f"    if {e} != 0 {{ exit(11) }}")
             out.append("    exit(12)")
         elif c == "cond_var":
             out.append(f"    var t = {e} > {v - 1}")

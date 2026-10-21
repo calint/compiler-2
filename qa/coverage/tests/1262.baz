@@ -1,0 +1,8 @@
+# a constant in the body of a function that repeats a named result is rejected
+func f() r {
+    let r = 2
+}
+
+func main() {
+    exit(f())
+}

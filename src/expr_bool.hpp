@@ -193,15 +193,18 @@ class expr_bool_op final : public statement {
         return &lhs_;
     }
 
-    // a stored 'bool' is 0 or 1, an integer is compared first, a condition
-    // such as 'if n' tests it without storing it
+    // a stored 'bool' is 0 or 1 and a condition is a 'bool', an integer is
+    // compared first, e.g. 'n != 0', and not with a 'bool', e.g. 'b == 1'
     auto assert_boolean_operands() const -> void {
+        if (not is_shorthand_) {
+            assert_not_boolean_with_integer();
+            return;
+        }
+
         const type& lhs_type{lhs_.get_type()};
 
         // an instance is reported as a condition when it is compiled
-        if (not is_shorthand_ or lhs_type.is_bool() or
-            not lhs_type.is_builtin()) {
-
+        if (lhs_type.is_bool() or not lhs_type.is_builtin()) {
             return;
         }
 
@@ -281,6 +284,24 @@ class expr_bool_op final : public statement {
     }
 
   private:
+    // e.g. 'b == 1' or '2 == b'
+    auto assert_not_boolean_with_integer() const -> void {
+        if (is_memory_comparison_) {
+            return;
+        }
+
+        const bool is_lhs_bool{lhs_.get_type().is_bool()};
+
+        if (is_lhs_bool == rhs_.get_type().is_bool()) {
+            return;
+        }
+
+        const expr_arith& boolean{is_lhs_bool ? lhs_ : rhs_};
+
+        throw compile_error{boolean.tok(),
+                            "a 'bool' is compared only with a 'bool'"};
+    }
+
     // a comparison that folds is checked like one that is compiled
     auto assert_typed_constant_fits_lhs(const toc& tc) const -> void {
         if (is_shorthand_) {
@@ -1143,7 +1164,7 @@ class expr_bool final : public statement {
             [](const auto& e) -> const expr_arith* { return e.arithmetic(); });
     }
 
-    // every operand of a stored 'bool' is a boolean
+    // the operands of a condition or of a stored 'bool', see the elements
     auto assert_boolean_operands() const -> void {
         for (const element& e : bools_) {
             e.visit([](const auto& item) -> void {

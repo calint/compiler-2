@@ -1,0 +1,11 @@
+# a noinline call's narrower result assigned alone is rejected like an
+# inlined one
+func noinline g() res i8 {
+    res = 1
+}
+
+func main() {
+    var x = i32(0)
+    x = g()
+    exit(x)
+}

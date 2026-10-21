@@ -1,0 +1,6 @@
+# a bool compared with an integer literal is rejected
+func main() {
+    var b = true
+    var c = b == 1
+    exit(int(c))
+}

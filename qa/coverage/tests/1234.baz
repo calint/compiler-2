@@ -1,5 +1,5 @@
 # a conversion to a wider type computes its argument at the width of the type,
-# where an inlined call's narrower result is rejected as elsewhere
+# where an inlined call's narrower result widens like any operand
 func h(x i8) res i8 {
     res = x
 }

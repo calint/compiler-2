@@ -393,10 +393,18 @@ struct call_site {
         return tc.make_ident_info(tk, name);
     }
 
+    // the result has the type of the destination, an operand widens a
+    // narrower integer, see 'destination::as_operand'
     auto assert_result_type(const destination& dst,
                             const stmt_def_func& func) const -> void {
 
         if (dst.type_ref().is_same(func.get_type())) {
+            return;
+        }
+
+        if (dst.is_operand() and
+            is_widened_integer(func.get_type(), dst.type_ref())) {
+
             return;
         }
 
@@ -465,6 +473,14 @@ struct call_site {
                not arg.is_name_or_literal();
     }
 
+    [[nodiscard]] static auto is_widened_integer(const type& result_type,
+                                                 const type& dst_type) -> bool {
+
+        return result_type.is_builtin() and not result_type.is_bool() and
+               dst_type.is_builtin() and not dst_type.is_bool() and
+               result_type.size_bytes() < dst_type.size_bytes();
+    }
+
     // the root variable and the bytes of it that the destination names
     [[nodiscard]] static auto result_target(const toc& tc,
                                             const token& src_loc_tk,
@@ -479,6 +495,17 @@ struct call_site {
 
         return tc.storage_target_of(src_loc_tk, ident_info::root_of(dst.name()),
                                     dst.accessed_path());
+    }
+
+    [[noreturn]] static auto throw_noinline_nesting(const token& src_loc_tk)
+        -> void {
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("noinline calls are nested too deep to check their "
+                        "arguments, the limit is {} levels",
+                        max_frame_count),
+        };
     }
 
     [[noreturn]] static auto
@@ -532,6 +559,11 @@ class inline_call {
     // parameter
     auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
+
+        if (func.returns() and not dst.type_ref().is_same(func.get_type())) {
+            compile_widened(tc, indent, dst, func);
+            return;
+        }
 
         const bool has_instance_temporary{
             std::ranges::any_of(std::views::zip(call_.args, func.params()),
@@ -818,6 +850,31 @@ class inline_call {
                 x.copy_value(call_.tk, indent, dst.operand(), reg);
                 x.free_scratch_register(call_.tk, indent, reg);
             });
+    }
+
+    // the result is made at its type in a register that the body names, the
+    // copy into the operand widens it and the unary ops of the call apply at
+    // the width of the operand, as on a variable
+    auto compile_widened(toc& tc, const size_t indent, const destination& dst,
+                         const stmt_def_func& func) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand result{
+            x.alloc_scratch_register(call_.tk, indent, func.get_type()),
+        };
+
+        call_site narrow_call{call_};
+        narrow_call.uops = {};
+
+        inline_call{narrow_call}.compile(
+            tc, indent, destination::of_register(result), func);
+
+        x.copy_value(call_.tk, indent, dst.operand(), result);
+        x.free_scratch_register(call_.tk, indent, result);
+
+        call_.uops.compile(x, indent, call_.tk, dst.operand(),
+                           tc.checks().overflow_options());
     }
 
     // note: the body is compiled in three versions and the one with the least
@@ -1234,11 +1291,10 @@ class noinline_call {
 
     // the callee reaches the result and the arguments through their addresses,
     // a result destination or an argument that is not a variable in memory,
-    // e.g. a register or an expression, goes through a temporary
+    // e.g. a register or an expression, goes through a temporary, as does a
+    // result that widens into an operand
     auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
-
-        call_.assert_result_use(dst, func);
 
         const bool has_argument_temporary{
             std::ranges::any_of(std::views::zip(call_.args, func.params()),
@@ -1283,15 +1339,14 @@ class noinline_call {
                      const std::span<const noinline_arg> arguments) const
         -> void {
 
-        // 'compile' checked the result use before the temporaries
+        // note: 'stmt_call::compile' checked the result, a result that is
+        //       not in memory or is widened goes through a temporary
         if (func.returns()) {
-            // note: a result that is not in memory goes through a temporary
             assert(dst.operand().is_memory());
+            assert(dst.type_ref().is_same(func.get_type()));
 
             // an array literal gives its call elements an element destination
             assert(not dst.is_array());
-
-            call_.assert_result_type(dst, func);
         }
 
         for (const auto [arg, argument, param] :
@@ -1329,12 +1384,7 @@ class noinline_call {
 
         // e.g. a chain of noinline calls nests a dry run in each
         if (tc.scopes().frames().size() >= call_site::max_frame_count) {
-            throw compile_error{
-                call_.tk,
-                std::format("noinline calls are nested too deep to check "
-                            "their arguments, the limit is {} levels",
-                            call_site::max_frame_count),
-            };
+            call_site::throw_noinline_nesting(call_.tk);
         }
 
         const inline_call dry_run{call_};
@@ -1409,11 +1459,7 @@ class noinline_call {
 
         if (has_result_temporary(dst, func)) {
             // the temporary has the type of the result, the copy into the
-            // destination widens it; a 'bool' is not an integer
-            if (func.get_type().is_bool() != dst.type_ref().is_bool()) {
-                call_.assert_result_type(dst, func);
-            }
-
+            // destination widens it
             const ident_info result_info{
                 call_.add_temporary(
                     tc, indent, toc::temporary_name(call_.tk, "call-result", 0),
@@ -1663,12 +1709,14 @@ class noinline_call {
         }
     }
 
-    // the callee writes the result through its address
+    // the callee writes the result through its address at the type of the
+    // result
     [[nodiscard]] static auto has_result_temporary(const destination& dst,
                                                    const stmt_def_func& func)
         -> bool {
 
-        return func.returns() and not dst.operand().is_memory();
+        return func.returns() and (not dst.operand().is_memory() or
+                                   not dst.type_ref().is_same(func.get_type()));
     }
 
     // a value without storage, e.g. a literal or an expression, an array is
@@ -1886,19 +1934,20 @@ class stmt_call : public expression {
 
         assert_no_shared_storage(tc, dst, func);
 
+        // the result is the call's own, an error in it has no call frame;
+        // checked here so that inlining does not change what is accepted
+        call.assert_result_use(dst, func);
+
+        if (func.returns()) {
+            call.assert_result_type(dst, func);
+        }
+
         if (not func.is_inlined()) {
             noinline_call{call}.compile(tc, indent, dst, func);
             return;
         }
 
         assert_inline_nesting(tc, func);
-
-        // the result is the call's own, an error in it has no call frame
-        call.assert_result_use(dst, func);
-
-        if (func.returns()) {
-            call.assert_result_type(dst, func);
-        }
 
         // an error found in the inlined body reports where it was called from
         try {
@@ -2016,12 +2065,20 @@ class stmt_call : public expression {
                 func.name()));
         }
 
-        if (tc.scopes().frames().size() >= call_site::max_frame_count) {
-            throw inlining_limit_error(
-                std::format("inlined calls are nested too deep, the limit is "
-                            "{} levels, declare a function 'noinline'",
-                            call_site::max_frame_count));
+        if (tc.scopes().frames().size() < call_site::max_frame_count) {
+            return;
         }
+
+        // note: the chain does not depend on the arguments, see
+        //       'noinline_call::check_aliasing'
+        if (is_in_noinline_dry_run(tc)) {
+            call_site::throw_noinline_nesting(tok());
+        }
+
+        throw inlining_limit_error(
+            std::format("inlined calls are nested too deep, the limit is "
+                        "{} levels, declare a function 'noinline'",
+                        call_site::max_frame_count));
     }
 
     // the function is a method and the receiver is a value
@@ -2231,6 +2288,16 @@ class stmt_call : public expression {
 
     [[nodiscard]] auto is_constructor() const -> bool {
         return not constructor_dot_tk_.is_empty();
+    }
+
+    // a noinline function compiled in place is the dry run that checks the
+    // arguments of a call to it
+    [[nodiscard]] auto is_in_noinline_dry_run(const toc& tc) const -> bool {
+        return std::ranges::any_of(
+            tc.scopes().frames(), [&](const frame& frm) -> bool {
+                return frm.is_func() and frm.is_inlined_func() and
+                       not tc.get_func_or_throw(tok(), frm.name()).is_inlined();
+            });
     }
 
     [[nodiscard]] auto is_method() const -> bool {

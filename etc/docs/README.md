@@ -174,14 +174,17 @@ a name means is decided by one rule, 'scope_stack::lookup': the frames of the
 innermost function from the innermost outwards, then the root frame that
 holds the globals; the first frame that declares the name decides. A frame
 declares a variable or a constant of a name, not both, a second declaration is
-rejected. In a function frame a parameter hides a constant of the generic
-instance, which is the context of the definition. Every question about a name
-asks this lookup: the resolver ('ident_resolver'), the aliasing check, and the
-lookaheads of the parser, where a variable, a parameter or a constant hides a
-type or a generic function of its name, e.g. after 'let point = 3' the
-'point' of 'point + 1' is the constant. A name followed by '(' is a call, no
-value is called. The same statement can resolve to another variable, register
-or constant each time it is compiled.
+rejected. The body of a function is the block above its frame, a name declared
+there that repeats a parameter or the result is rejected, a deeper block or a
+'foo' may hide it ('definition_checks::assert_not_hiding_signature'). In a
+function frame a parameter hides a constant of the generic instance, which is
+the context of the definition. Every question about a name asks this lookup:
+the resolver ('ident_resolver'), the aliasing check, and the lookaheads of the
+parser, where a variable, a parameter or a constant hides a type or a generic
+function of its name, e.g. after 'let point = 3' the 'point' of 'point + 1' is
+the constant. A name followed by '(' is a call, no value is called. The same
+statement can resolve to another variable, register or constant each time it
+is compiled.
 
 An inlined call does not copy its arguments. It enters a function frame that
 maps each parameter name to the argument ('alias_info'), e.g. 'p' to
@@ -189,6 +192,11 @@ maps each parameter name to the argument ('alias_info'), e.g. 'p' to
 constant 3, or 'x' to a scratch register holding the value of an expression.
 The result name maps to the destination of the call. Resolving 'p.x' in the
 body follows the alias and continues the walk in the frames of the caller.
+The result has the type of the destination, except that a narrower integer
+widens into an operand of an operator, e.g. the 'g()' of 'w + g()'
+('destination::as_operand'): an inlined result is made in a register of its
+type and copied. 'stmt_call::compile' checks the result before the inlined and
+the noinline paths split, so both accept the same.
 
 A noinline function has a body of its own and a frame in memory that holds the
 addresses of its result and arguments ('stmt_call.hpp', 'noinline_call').

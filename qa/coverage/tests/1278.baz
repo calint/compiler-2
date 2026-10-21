@@ -1,0 +1,9 @@
+# a noinline call's narrower result alone as the argument of 'exit' is
+# rejected like an inlined one
+func noinline g() res i8 {
+    res = 1
+}
+
+func main() {
+    exit(g())
+}

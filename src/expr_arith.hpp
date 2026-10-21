@@ -757,7 +757,10 @@ class expr_arith final : public expression {
             return;
         }
 
-        compile_first_element(tc, indent, dst, *first.element);
+        // e.g. the 'g()' of 'g() + 1' but not of '(g())'
+        const destination first_dst{ops_.empty() ? dst : dst.as_operand()};
+
+        compile_first_element(tc, indent, first_dst, *first.element);
 
         // only a zero constant leaves a subtracted element first: '2 - b - 2'
         if (first.op == arithmetic_operator::subtract) {
@@ -1310,7 +1313,8 @@ class expr_arith final : public expression {
             x.alloc_scratch_register(src.tok(), indent, register_type),
         };
 
-        src.compile(tc, indent, destination::of_register(reg));
+        // note: the callers are the operators after the first element
+        src.compile(tc, indent, destination::of_register(reg).as_operand());
 
         return reg;
     }

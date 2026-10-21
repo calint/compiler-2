@@ -12,5 +12,5 @@ func noinline g(x i32, y i32) res i32 {
 func main() {
     var x = i32(1)
     var y = i32(1)
-    exit(g(x, y))
+    exit(int(g(x, y)))
 }

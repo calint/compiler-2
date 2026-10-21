@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: language rules of the third review round of 2026-10-21, decided
+    by the user (phase R3b)
+    => done (2026-10-21):
+       1. a 'var' or 'let' in the body of a function, the block above its
+          frame, that repeats a parameter or the result is rejected: "variable
+          'x' hides the parameter 'x' declared at ...", "... the result
+          'res' ..." (1260 to 1262); a deeper block and the 'e', 'i' and 'n'
+          of a 'foo' may hide them (1263); a 'dat' is global only
+       2. a condition is a 'bool': 'if n', 'else if n', 'if n and true',
+          'if not n', '(n)' are rejected like 'var b = not n' (1264 to 1269);
+          a 'bool' compared with an integer is "a 'bool' is compared only with
+          a 'bool'", also after an element that decides the condition (1270
+          to 1274); 'assert_boolean_operands' runs for a condition at parse;
+          tests 0052, 0068, 0391, 0395, 1019, 1032 compare with 0 or convert
+       3. a call result that is an operand of an operator widens like a
+          variable, inlined or not ('destination::as_operand'; 1275, 1276,
+          1234 is now a run); alone it has the type of its destination, also
+          for a noinline call into 'exit' or an inlined argument, which was
+          accepted (1277 to 1279; 0939, 1250 changed); 'stmt_call::compile'
+          checks the result before the inlined and noinline paths split
+       4. an inlined call past the frame limit in the dry runs of a chain of
+          noinline calls says "noinline calls are nested too deep ..." (1280)
+       5. docs: 'README.md', 'etc/tutorial.baz', 'etc/docs/README.md' 1.3,
+          'qa/fuzz/README.md'; 'fuzz-ub.py' compares with 0 where it tested
+          an integer, 'fuzz-reject.py' has the three rules
 [x] hard: third review round of 2026-10-21, seven reviews of 'src/', one of
     the architecture and an adversarial bug hunt; the defects (phase R3a)
     => done (2026-10-21):

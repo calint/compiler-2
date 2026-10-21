@@ -1,0 +1,13 @@
+# a noinline call's narrower result alone as the argument of an inlined
+# call is rejected like a variable
+func noinline g() res i8 {
+    res = 1
+}
+
+func f(x) res {
+    res = x
+}
+
+func main() {
+    exit(f(g()))
+}

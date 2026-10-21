@@ -18,7 +18,8 @@ the binary image itself.
 ## Supports
 
 * built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean,
-  a boolean is not an integer, `int(b)` converts it to 1 or 0
+  a boolean is not an integer, `int(b)` converts it to 1 or 0, a condition is a
+  boolean and a boolean is compared only with a boolean
 * user defined types with methods and constructors
 * data, constants, arrays and array iteration
 * variables with the type deduced from the initializer

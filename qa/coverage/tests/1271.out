@@ -1,0 +1,4 @@
+
+1271.baz:4:18: a 'bool' is compared only with a 'bool'
+    var c = 2 == b
+                 ^

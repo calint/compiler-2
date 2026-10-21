@@ -351,6 +351,8 @@ class destination final {
     // an indexed element or a pointer that was loaded
     bool is_address_known_{};
     bool is_array_{};
+    // an operand of an operator, e.g. the 'g()' of 'w + g()', see 'as_operand'
+    bool is_operand_{};
     // the elements of an array, an unsized one gets them from the argument
     size_t array_len_{};
     // the path of the root variable, empty when unknown or the whole variable
@@ -383,6 +385,14 @@ class destination final {
         element.is_array_ = false;
         element.array_len_ = 0;
         return element;
+    }
+
+    // a call result narrower than an operand widens into it like a variable,
+    // alone it has the type of its destination, e.g. 'x = g()'
+    [[nodiscard]] auto as_operand() const -> destination {
+        destination result{*this};
+        result.is_operand_ = true;
+        return result;
     }
 
     // at 'address', e.g. a field that a call writes in place
@@ -421,6 +431,8 @@ class destination final {
     [[nodiscard]] auto is_length_unknown() const -> bool {
         return is_array_ and array_len_ == 0;
     }
+
+    [[nodiscard]] auto is_operand() const -> bool { return is_operand_; }
 
     [[nodiscard]] auto is_register() const -> bool {
         return kind_ == kind::reg;

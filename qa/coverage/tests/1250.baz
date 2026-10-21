@@ -1,6 +1,6 @@
 # the temporary that holds the result of a call is not named in the error when
 # it does not fit in the variable storage
-func noinline f(x i32) res i32 {
+func noinline f(x i32) res {
     res = x
 }
 

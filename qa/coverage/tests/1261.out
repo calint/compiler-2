@@ -1,0 +1,4 @@
+
+1261.baz:5:9: variable 'res' hides the result 'res' declared at 3:20
+    var res = 7
+        ^~~

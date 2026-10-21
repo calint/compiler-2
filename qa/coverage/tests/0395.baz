@@ -1,31 +1,31 @@
-# shorthand condition truthiness with unary '~' across scalar widths
+# integers and their unary '~' compared with 0 across scalar widths
 
 func main() {
     var b8 = i8(-1)
-    if not b8 exit(1)
-    if ~b8 exit(2)
+    if b8 == 0 exit(1)
+    if ~b8 != 0 exit(2)
 
     var c8 = i8(1)
-    if not ~c8 exit(3)
+    if ~c8 == 0 exit(3)
 
     var b16 = i16(-1)
-    if not b16 exit(4)
-    if ~b16 exit(5)
+    if b16 == 0 exit(4)
+    if ~b16 != 0 exit(5)
 
     var c16 = i16(1)
-    if not ~c16 exit(6)
+    if ~c16 == 0 exit(6)
 
     var b32 = i32(-1)
-    if not b32 exit(7)
-    if ~b32 exit(8)
+    if b32 == 0 exit(7)
+    if ~b32 != 0 exit(8)
 
     var c32 = i32(1)
-    if not ~c32 exit(9)
+    if ~c32 == 0 exit(9)
 
     var b64 = -1
-    if not b64 exit(10)
-    if ~b64 exit(11)
+    if b64 == 0 exit(10)
+    if ~b64 != 0 exit(11)
 
     var c64 = 1
-    if not ~c64 exit(12)
+    if ~c64 == 0 exit(12)
 }

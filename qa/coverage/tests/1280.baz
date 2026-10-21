@@ -1,0 +1,5 @@
+# an inlined call past the frame limit in the dry runs of a chain of noinline
+# calls is reported as the chain: the script compiles a generated chain
+func main() {
+    exit(0)
+}

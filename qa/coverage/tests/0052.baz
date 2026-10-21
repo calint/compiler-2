@@ -1,12 +1,12 @@
-# scalar truthiness and conjunction
+# integers compared with 0, negated and in a conjunction
 
 func main(){
     var a=1
     var b=2
     var c=3
     var d=4
-    if not a exit(1)
-    if not (a and b) exit(2)
-    if a and b exit(0)
+    if not a != 0 exit(1)
+    if not (a != 0 and b != 0) exit(2)
+    if a != 0 and b != 0 exit(0)
     exit(3)
 }

@@ -1,0 +1,5 @@
+# a bool compared with an integer in a condition is rejected
+func main() {
+    var b = true
+    if b != 2 exit(2)
+}

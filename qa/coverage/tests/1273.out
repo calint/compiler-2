@@ -1,0 +1,4 @@
+
+1273.baz:4:8: a 'bool' is compared only with a 'bool'
+    if true == x exit(2)
+       ^

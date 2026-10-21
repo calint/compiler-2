@@ -1,0 +1,11 @@
+# a variable in the body of a noinline function that repeats 'res' is
+# rejected
+func noinline f(x) res {
+    res = x
+    var res = 7
+    res = 9
+}
+
+func main() {
+    exit(f(3))
+}

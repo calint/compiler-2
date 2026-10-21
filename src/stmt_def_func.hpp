@@ -566,7 +566,7 @@ class stmt_def_func final : public statement {
                            .value_register{},
                            .foo_array{},
                        },
-                       var_kind::param);
+                       var_kind::result);
         }
 
         for (const auto [param_index, param] : std::views::enumerate(params_)) {

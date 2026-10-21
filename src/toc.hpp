@@ -237,7 +237,7 @@ struct const_info {
 
 // what a variable is declared by: 'var', 'dat' or the signature of a function,
 // a parameter or the result
-enum class var_kind : uint8_t { var, dat, param };
+enum class var_kind : uint8_t { var, dat, param, result };
 
 // one scope; the static functions make each kind, e.g. 'frame::block()'
 class frame final {
@@ -266,6 +266,9 @@ class frame final {
     // the label to jump to when exiting an inlined function
     std::string func_ret_label_;
 
+    // the name of the result of a function frame, empty when it has none
+    std::string result_name_;
+
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
@@ -290,6 +293,10 @@ class frame final {
             sum_storage_size(allocated_stack_size_bytes_, allocated_size_bytes);
 
         vars_.put(var.name, var);
+
+        if (kind == var_kind::result) {
+            result_name_ = var.name;
+        }
 
         if (kind != var_kind::dat) {
             non_dat_var_has_been_added_ = true;
@@ -367,6 +374,10 @@ class frame final {
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
         return name_ == name;
+    }
+
+    [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
+        return result_name_ == name;
     }
 
     auto make_var_read_only(const std::string_view name,
@@ -2123,6 +2134,38 @@ class definition_checks final {
                                         name, where(decl_var.src_loc_tk))};
     }
 
+    // the body of a function is the block above its frame, a name declared
+    // there cannot repeat a parameter or the result; a deeper block may
+    auto assert_not_hiding_signature(const token& src_loc_tk,
+                                     const std::string_view what,
+                                     const std::string_view name) const
+        -> void {
+
+        const std::vector<frame>& frames{scopes_.get().frames()};
+
+        if (frames.size() < 2 or not frames.back().is_block()) {
+            return;
+        }
+
+        const frame& func_frm{frames.at(frames.size() - 2)};
+
+        if (not func_frm.is_func() or not func_frm.has_var(name)) {
+            return;
+        }
+
+        const var_info& decl_var{func_frm.get_var_const_ref(name)};
+
+        const std::string_view role{
+            func_frm.is_result(name) ? "result" : "parameter",
+        };
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("{} '{}' hides the {} '{}' declared at {}", what, name,
+                        role, name, where(decl_var.src_loc_tk)),
+        };
+    }
+
     // a generic type and a type share the namespace of types
     auto assert_type_not_defined(const token& src_loc_tk,
                                  const std::string_view name) const -> void {
@@ -2386,6 +2429,7 @@ class toc final {
                    const std::string_view name, const int64_t value) -> void {
 
         definitions_.assert_name_free(src_loc_tk, name);
+        definitions_.assert_not_hiding_signature(src_loc_tk, "constant", name);
 
         if (is_compiling_) {
             ::machine& x{machine()};
@@ -2514,10 +2558,13 @@ class toc final {
     auto add_var(const token& src_loc_tk, const size_t indent, var_info var,
                  const var_kind kind) -> void {
 
-        if (kind == var_kind::param) {
+        if (kind == var_kind::param or kind == var_kind::result) {
             definitions_.assert_not_declared_in_scope(src_loc_tk, var.name);
         } else {
             definitions_.assert_name_free(src_loc_tk, var.name);
+
+            definitions_.assert_not_hiding_signature(src_loc_tk, "variable",
+                                                     var.name);
         }
 
         // the value lives in its register for the whole scope

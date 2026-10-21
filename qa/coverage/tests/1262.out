@@ -1,0 +1,4 @@
+
+1262.baz:3:9: constant 'r' hides the result 'r' declared at 2:10
+    let r = 2
+        ^

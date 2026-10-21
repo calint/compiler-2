@@ -1,0 +1,9 @@
+# an integer as the condition of an else if is rejected
+func main() {
+    var n = i32(1)
+    if n == 2 {
+        exit(2)
+    } else if n {
+        exit(3)
+    }
+}

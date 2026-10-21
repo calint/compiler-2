@@ -1,0 +1,9 @@
+# a variable in the body of a function that repeats a parameter is rejected
+func f(x i64) res {
+    var x = 7
+    res = x
+}
+
+func main() {
+    exit(f(3))
+}

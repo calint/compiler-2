@@ -1,4 +1,5 @@
-# regression: shorthand bool checks must compare using scalar-width regs
+# regression: a call result of each width compared with 0 uses a register of
+# its width
 
 func one8() r i8 { r = 1 }
 func one16() r i16 { r = 1 }
@@ -11,13 +12,13 @@ func zero32() r i32 { r = 0 }
 func zero64() r { r = 0 }
 
 func main() {
-    if not one8() exit(11)
-    if not one16() exit(12)
-    if not one32() exit(13)
-    if not one64() exit(14)
+    if one8() == 0 exit(11)
+    if one16() == 0 exit(12)
+    if one32() == 0 exit(13)
+    if one64() == 0 exit(14)
 
-    if zero8() exit(21)
-    if zero16() exit(22)
-    if zero32() exit(23)
-    if zero64() exit(24)
+    if zero8() != 0 exit(21)
+    if zero16() != 0 exit(22)
+    if zero32() != 0 exit(23)
+    if zero64() != 0 exit(24)
 }

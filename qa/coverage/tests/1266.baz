@@ -1,0 +1,5 @@
+# an integer as an element of an and in a condition is rejected
+func main() {
+    var n = i32(1)
+    if n and true exit(2)
+}

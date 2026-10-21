@@ -1,0 +1,4 @@
+
+1279.baz:12:12: expected type 'i64', got 'i8' from 'g', use 'i64(...)'
+    exit(f(g()))
+           ^

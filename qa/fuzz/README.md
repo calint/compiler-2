@@ -77,8 +77,6 @@ an included file (`split_include` in `fuzzlib.py`).
   plain `ld` gives false failures of the frame check
 - a literal that does not fit inside `i32(...)` wraps, the arithmetic of an
   explicit conversion wraps
-- an integer is accepted where a `bool` is expected and a `bool` where an
-  integer is, the value is not changed
 - `read` on the uart of rv32i-fpga returns one line, on a file as many bytes as
   fit; each read at the end of the input takes one end of transmission byte
 - a very long expression compiles in more than linear time

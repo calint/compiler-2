@@ -1,0 +1,5 @@
+# an integer as a later element of an or in a condition is rejected
+func main() {
+    var n = i32(1)
+    if n == 2 or n exit(2)
+}

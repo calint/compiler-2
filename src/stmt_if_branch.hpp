@@ -21,9 +21,11 @@ class stmt_if_branch final : public statement {
     // and the block that runs when it holds
     stmt_if_branch(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()},
-          condition_{tc, tz.next_whitespace_token(), tz}, code_{tc, tz} {
+          condition_{tc, tz.next_whitespace_token(), tz} {
 
         set_type(tc.builtins().void_type());
+        condition_.assert_boolean_operands();
+        code_ = {tc, tz};
     }
 
     stmt_if_branch() = default;

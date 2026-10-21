@@ -1,0 +1,5 @@
+# an integer as the condition of an if is rejected
+func main() {
+    var n = i32(1)
+    if n exit(2)
+}

@@ -7,8 +7,9 @@
 # reads a field after it was overwritten, a constant index out of bounds, a
 # wider element, 'mut' given a read-only value, an unknown name, a wrong number
 # of arguments, a repeated name, 'break' outside a loop, 'and' mixed with 'or',
-# a shift count and an overflow that are constant, arrays of other sizes. an
-# integer is accepted where a 'bool' is expected, so that is not a rule
+# a shift count and an overflow that are constant, arrays of other sizes, an
+# integer as a condition, a 'bool' compared with an integer, a name in the body
+# of a function that repeats a parameter
 #
 # every rule makes a program that breaks it and a twin that does not. the
 # program must be rejected on every target with a position (file:line:column)
@@ -343,6 +344,39 @@ def rule_repeated_name(rnd, c):
         p.add("}")
 
 
+def rule_integer_condition(rnd, c):
+    v = rnd.randint(1, 50)
+    for p, text in ((c.bad, "if a exit(1)"), (c.good, "if a != 0 exit(1)")):
+        p.add("func main() {")
+        p.add(f"    var a = {v}")
+        p.add(f"    {text}", p is c.bad)
+        p.add("    exit(0)")
+        p.add("}")
+
+
+def rule_bool_compared(rnd, c):
+    v = rnd.randint(0, 1)
+    for p, text in ((c.bad, f"var c = b == {v}"),
+                    (c.good, f"var c = int(b) == {v}")):
+        p.add("func main() {")
+        p.add("    var b = true")
+        p.add(f"    {text}", p is c.bad)
+        p.add("    exit(0)")
+        p.add("}")
+
+
+def rule_hidden_parameter(rnd, c):
+    v = rnd.randint(1, 50)
+    for p, text in ((c.bad, f"var x = {v}"), (c.good, f"var y = {v}")):
+        p.add("func f(x) res {")
+        p.add(f"    {text}", p is c.bad)
+        p.add("    res = x")
+        p.add("}")
+        p.add("func main() {")
+        p.add("    exit(f(1))")
+        p.add("}")
+
+
 def rule_break_outside(rnd, c):
     for p in (c.bad, c.good):
         p.add("func main() {")
@@ -452,7 +486,8 @@ RULES = [
     (rule_unknown_field, ()), (rule_shift_count, ("--checks=shift",)),
     (rule_constant_overflow, ("--checks=overflow",)),
     (rule_array_sizes, ()), (rule_unknown_type, ()),
-    (rule_wrong_record_field_count, ()),
+    (rule_wrong_record_field_count, ()), (rule_integer_condition, ()),
+    (rule_bool_compared, ()), (rule_hidden_parameter, ()),
 ]
 
 POSITION = re.compile(r"^.+?:(\d+):(\d+): \S", re.M)
