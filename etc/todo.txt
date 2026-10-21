@@ -6,12 +6,69 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: aliasing plan: a typed constant argument passed to a wider
-    parameter is accepted where the variable is rejected (G4-2), e.g.
-    'f(5)' with 'f(a i8)' calling 'g(b i16)' with 'g(a)'; the spelling mode of
-    'fuzz-exprs.py' reports it as the 'argument' class
-    => 'assert_alias_type' (stmt_call.hpp) checks a typed fold like a
-       variable, with 'fold(...)->own_type'; part of the aliasing plan
+[o] hard: aliasing plan: one model for "may two accesses be the same bytes"
+    => problem: four shapes of "root variable plus path" ('storage_target',
+       'foo_array_info', 'destination::accessed_path_',
+       'expr_type::constructor_target'), the root an encoded string
+       ("name@frame"); checks decide by the name as written, not by the
+       variable it resolves to
+    => wrong today: 'g = {1, p.x}' with 'p' bound to 'g' gives 1 instead of 3
+       (inline and noinline); 'foo ps { ps[1] = {e.y, e.x} }' gives 3
+       instead of 5; 'g = p * 2 + p' gives 12 instead of 9; a nested record
+       literal 'w = {{mk(..), ..}}' is rejected (elements get the field's
+       destination); 'ps[i] = {1, ps[0].y}' is rejected; messages drop
+       indexes ("'ps.x'" for 'ps[0].x'); the rollback in
+       '~noinline_check_scope' is dead (every error through it ends the
+       compile); "aliasing" names both the noinline dry run and the argument
+       comparison
+    => design: 'storage_path {root_variable{name, frame_index}, access_path}'
+       with 'may_overlap' in 'ub_alias.hpp', empty 'optional' for no
+       storage; 'toc::storage_of' the only resolver; 'destination' carries
+       its 'storage_path' and source text, 'field'/'element' move operand,
+       path and text together ('at_address', 'as_element', 'dst_op'
+       removed); the written parts of a literal are listed with the
+       compile's steps, then rule A (always: no read of a part written
+       before), rule B ('--checks=alias': no read under another name that
+       may overlap the part computed), rule C (at the call, as today);
+       messages quote source text; 'check_aliasing' -> 'dry_run_body',
+       'aliasing_signature' -> 'call_kind', rollback removed
+    => rejected: byte ranges (a run-time index needs range sets); a summary
+       of each body's reads and writes instead of the dry run (loses
+       statement order and length-dependent index errors); checking inside
+       the compile walk (single-pass state); rule C in the parts pass
+       (argument/argument stays at the call); display text in
+       'storage_path' (most users never show it); a typed call-kind key (no
+       verdict changes); keeping the rollback (unreachable)
+    => decisions: 'p = g' and 'p = {g.x, 1}' with 'p' bound to 'g' stay
+       rejected; 'g = p + 1' with 'p' bound to 'g' becomes rejected (B4); a
+       call in a literal reading parts written earlier is a separate item
+    => steps, one diff each; R: byte-identical gate (snapshots on both
+       targets, tutorial, roome, option sets); B/M: 'UPDATE=1' on both
+       targets and review; tests from 1393:
+       1. R1 'storage_path', 'root_variable' replace 'storage_target',
+          'foo_array_info'
+       2. R2 'optional<access_path>' -> 'access_path'
+       3. R3 'is_exact_access_' derived from the path
+       4. R4 'destination' carries its 'storage_path' (no
+          'root_of(dst.name())')
+       5. B1 elements of a record field get their element destination, 2
+          tests
+       6. R5 the destination is the cursor ('field'/'element')
+       7. R6 renames, the dead rollback removed
+       8. M1 messages with source text, 2 tests, review the "share storage"
+          '.out' files
+       9. B2 rule A on paths, 4 tests
+       10. B3 reads resolved by 'storage_of', 4 tests
+       11. B4 rule B per part for every destination, 4 tests, long fuzz runs
+       12. records: resolved file, deferred items (variant destination
+           '{none, reg, storage}', call in a literal)
+[ ] medium: a typed constant argument passed to a wider parameter is accepted
+    where the variable is rejected (G4-2), e.g. 'f(5)' with 'f(a i8)' calling
+    'g(b i16)' with 'g(a)'; also 'f(v + 1)' with the parameter in a register;
+    the spelling mode of 'fuzz-exprs.py' reports it as the 'argument' class
+    => 'assert_alias_type' (stmt_call.hpp) checks every typed named argument
+       like a variable, with 'fold(...)->own_type'; only an untyped constant
+       is exempt; a separate fix after the aliasing plan, 2 tests
 [ ] medium: low priority: conversions: rows 1 and 2 of
     'stmt_builtin_convert::plan_computation' decide alike at W in one
     predicate, so a list narrower than the type is also measured and computed
