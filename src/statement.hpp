@@ -287,7 +287,6 @@ class statement {
     // the fields and indexes from the root variable to what an identifier
     // names, e.g. 'es[1].items[i]'
     [[nodiscard]] virtual auto accessed_path() const -> access_path {
-
         std::unreachable();
     }
 

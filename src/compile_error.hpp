@@ -106,7 +106,6 @@ class compile_error final : public std::exception {
     // a problem of the whole file, e.g. a missing 'main', has line 0 and no
     // position, every other exception points at the token that caused it
     [[nodiscard]] static auto file_level(std::string message) -> compile_error {
-
         return compile_error{std::move(message)};
     }
 

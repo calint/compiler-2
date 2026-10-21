@@ -156,7 +156,6 @@ class token final {
     // the first unsupported escape of a string token, as 'decode_escape'
     // rejects it, located at its backslash, e.g. '\q'
     [[nodiscard]] auto unsupported_escape() const -> std::optional<token> {
-
         size_t line{at_line_};
         for (size_t i{}; i < text_.size(); ++i) {
             if (text_.at(i) == '\n') {

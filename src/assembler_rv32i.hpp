@@ -978,7 +978,6 @@ class assembler_rv32i final : public assembler {
     //
 
     auto add_instruction(const size_t indent, instruction ins) -> void {
-
         assert(has_valid_immediate(ins));
 
         std::string text{indentation(indent) + instruction_text(ins)};

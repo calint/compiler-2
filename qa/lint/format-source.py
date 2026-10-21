@@ -1048,9 +1048,18 @@ def blocks_by_file(tu, paths, texts):
 
 def rule_signature(b, want):
     # a function whose declaration spans several lines has a blank line after
-    # its '{'
-    if b.stmts and b.has_multiline_signature():
+    # its '{', a one-line declaration none
+    if not b.stmts or b.function is None:
+        return
+
+    if b.has_multiline_signature():
         want(0, BLANK)
+        return
+
+    # a comment at the start of the body keeps the gap
+    gap = range(b.open_line + 1, b.stmts[0].first)
+    if all(is_blank(b.lines[n]) for n in gap):
+        want(0, TIGHT)
 
 
 def rule_condition(b, want):
@@ -1318,6 +1327,7 @@ def is_block_start(line):
 def note_blank_lines(lines):
     # the lines to insert a blank line before
     inserts = set()
+    previous_end = None
     n = 0
     while n < len(lines):
         m = COMMENT.match(lines[n])
@@ -1327,7 +1337,8 @@ def note_blank_lines(lines):
 
         end = note_end(lines, n)
         above = lines[n - 1] if n > 0 else ""
-        is_tail = COMMENT.match(above) is not None
+        # a note right below another note is not the tail of a comment
+        is_tail = COMMENT.match(above) is not None and n != previous_end
         if end - n > 1 and not is_tail:
             if not is_blank(above) and not is_block_start(above):
                 inserts.add(n)
@@ -1336,6 +1347,7 @@ def note_blank_lines(lines):
             if not is_blank(below) and not below.lstrip().startswith("}"):
                 inserts.add(end)
 
+        previous_end = end
         n = end
 
     return inserts

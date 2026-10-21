@@ -604,7 +604,6 @@ class expr_any final : public statement {
 
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
     auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp) -> void {
-
         close_brace_tk_ = tz.is_next_char_token('}');
 
         while (close_brace_tk_.is_empty()) {

@@ -2146,7 +2146,6 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] auto is_allocated(const std::string_view name) const -> bool {
-
         assert(register_size_bytes(name) != 0);
 
         const std::optional<size_t> index{register_index_of(name)};

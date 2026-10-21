@@ -5583,7 +5583,6 @@ class machine_rv32i : public machine {
     }
 
     static auto validate_address(const operand& address) -> void {
-
         assert(address.is_memory());
         assert(is_register(address.base_register()));
 
@@ -5605,7 +5604,6 @@ class machine_rv32i : public machine {
 
     // the result is written in place
     static auto validate_destination_storage(const operand& dst) -> void {
-
         assert(dst.is_register() or dst.is_memory());
 
         if (dst.is_memory()) {

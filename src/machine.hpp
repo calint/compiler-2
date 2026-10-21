@@ -100,10 +100,8 @@ class machine {
 
     using frame_kind = register_trace::frame_kind;
 
-    // note: at namespace scope because a default argument '= {}' of a
-    //       member function cannot use a nested class with default member
-    //       initializers
-
+    // at namespace scope because a default argument '= {}' of a member
+    // function cannot use a nested class with default member initializers
     using runtime_check = ::runtime_check;
 
     struct output_statistics {

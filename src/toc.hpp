@@ -2135,9 +2135,8 @@ class definition_checks final {
                         name, where(existing.src_loc_tk))};
     }
 
-    // note: a parameter may hide a constant of the generic instance in the
-    //       same function frame
-
+    // a parameter may hide a constant of the generic instance in the same
+    // function frame
     auto assert_not_declared_in_scope(const token& src_loc_tk,
                                       const std::string_view name) const
         -> void {

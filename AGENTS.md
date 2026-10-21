@@ -39,7 +39,8 @@
   accept what it removes.
 - Around multiline statements and declarations; an attached comment stays
   with its statement.
-- After the `{` of a multiline signature, lambda head or condition.
+- After the `{` of a multiline signature, lambda head or condition; none
+  after the `{` of a one-line signature unless a comment starts the body.
 - Before a return only if the statements before it have blank lines between
   them.
 - Between switch branches (labels sharing a body stay grouped).

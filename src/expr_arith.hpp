@@ -280,7 +280,6 @@ class expr_arith final : public expression {
     }
 
     [[nodiscard]] auto accessed_path() const -> access_path override {
-
         assert(exprs_.size() == 1);
 
         return exprs_.at(0)->accessed_path();
