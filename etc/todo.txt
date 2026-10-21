@@ -6,6 +6,99 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[p] hard: constants: one system for values known at compile time (plan
+    2026-10-21, waits for go-ahead; aliasing follows as its own plan)
+    => problem: seven evaluators of a constant ('folded_constant' and its
+       overrides, 'constant_value_of'/'constant_wrap', 'side_constant'/
+       'typed_constant', 'element_constant'/'arith_constant', the convert
+       'constant_value'/'narrow', 'make_constant_operand', the 'stmt_call'
+       alias folds), each with its own answer to typedness, fit, where unary
+       ops apply and overflow; the overflow check is toggled on 'toc'
+       (pause and resume); verdicts differ by spelling: G6-1, G6-2, G6-3,
+       G4-1, G5-1, ARCH-6, G5-2, 'array_length' typed in an assignment and
+       untyped in a comparison
+    => the system, one rule per function:
+       1. a constant is a variable whose value is known: a typed constant
+          (a conversion, a constant argument of an inlined call,
+          'array_length') gets every verdict a variable of its type gets;
+          an untyped one (a literal, a 'let') has no type and is checked by
+          value where it is used
+       2. a use is the width a value is computed at and whether its
+          arithmetic is checked for overflow: 'value_use', built only by
+          'toc::use_of(dst)' and 'toc::use_at(type)'
+       3. one fit rule for a leaf: typed by type, untyped by value; every
+          check (assignment, list element, comparison side, argument) calls
+          it, only the messages differ
+       4. one evaluator, the virtual 'fold(tc, use) ->
+          std::optional<folded_value>': 'value' wrapped to the use width,
+          'own_type' null when untyped; it checks fit before it wraps, so no
+          fold is accepted unchecked; overrides: identifier, list,
+          conversion, 'array_length', zero
+       5. unary ops apply by 'unary_ops' on a register at least as wide as
+          the use; the widths of a conversion are one struct
+          'conversion_widths{converted, argument, ops}' that its fold and
+          its compile share
+       6. the overflow policy is a field of 'destination' ('as_wrapping()'
+          for a conversion argument); 'toc::checks()' never changes
+       7. a value in a numeric position has a built-in non-record type,
+          checked at parse ('assert_number')
+       8. emitters take 'fold(...)' and emit 'operand::imm(value, width)';
+          nothing else evaluates
+    => deleted: 'folded_constant', 'is_typed_constant' (4),
+       'constant_value_of', 'constant_wrap', 'single_operand_type',
+       'side_constant', 'typed_constant', 'make_constant_operand', the
+       convert 'constant_value'/'narrow', the expr_bool
+       'assert_constant_fits', 'overflow_check_pause'/'resume',
+       'overflow_requested_'
+    => rejected:
+       1. a fix at each bug site: seven evaluators remain and drift again
+       2. pause and resume narrowed to the call body: still state toggled at
+          a distance that each new caller of a fold must know
+       3. the overflow policy as a 'compile' parameter: about 40 overrides
+          for 6 users; 'destination' already carries properties of the use
+       4. a one-node IR evaluated or emitted: touches every emitter, while
+          the rules diverge, not the evaluators
+       5. a fold without the fit check, checked by callers: the contract
+          that G5-1 broke
+    => invariant: a typed constant and a variable of the same type and
+       value give the same verdict and result; an overflow or zero divisor
+       certain at compile time equals the run-time panic
+    => steps, one diff each; R: byte-identical on the gate (all tests, the
+       tutorial and roome, both targets, 7 option sets, stdout, stderr and
+       image against the build before); B: behavior change, test first
+       R1 'folded_value', 'value_use' and 'fold' replace the evaluators,
+          today's bugs reproduced ('as_written' kept explicit until B2)
+       R2 delete 'single_operand_type' (G5-6)
+       R3 'conversion_widths' under 'plan_computation'/'ops_place_for'
+       B1 typedness from the fold: 'i16(K) <= e' accepted like
+          'i16(300) <= e' (G6-2, ARCH-6)
+       B2 a list fold checks fit: 'e < i8(1) + 300' rejected at '300'
+          (G5-1)
+       B3 ops on a register at least as wide as the use: '-i16(g(v))' with
+          v = -128 gives 128 (G6-1); 'neg' moves after 'movsx'
+       B4 emit at the use width, delete 'make_constant_operand':
+          'i8(i16(K))' emits 44, not 300 (G6-3); immediates change
+       B5 overflow policy on 'destination', delete pause and resume:
+          'i8(-m8())' under '--checks=overflow' gives 128 (G4-1); index
+          arithmetic inside a conversion argument becomes checked
+       B6 'assert_number': a record in a numeric position is rejected on
+          both targets (G5-2), "expected type 'i64', got 'p'" for a whole
+          value as for a 'bool', "an instance of 'p' is not a number" for
+          an operand
+       B7 'array_length' typed in comparisons too: one verdict called and
+          uncalled
+       B8 remove the parse-time 'folded_' of a conversion (asm comments
+          only)
+       then the aliasing plan takes G4-2 (the argument check of a typed
+       constant) with 'fold(...)->own_type'; 'i8(2 + 3)' folding stays its
+       own item below
+    => tests: per B step its programs on x86_64 and rv32i-fpga, with and
+       without '--checks=overflow'; a differential fuzz mode
+       ('fuzz-exprs.py' with 'FUZZ_SPELLING=1'): each leaf spelled as a
+       constant ('T(lit)', 'T(K)', an inlined parameter) and as a variable,
+       in assignment, list, comparison, conversion, argument, field and
+       'exit'; verdict and exit code must match; a baseline before R1
+       (expect the known bugs), no findings after B7
 [ ] medium: low priority: conversions: rows 1 and 2 of
     'stmt_builtin_convert::plan_computation' decide alike at W in one
     predicate, so a list narrower than the type is also measured and computed

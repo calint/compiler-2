@@ -146,7 +146,8 @@
 
 ## Process
 
-- Fixes: no hacks; refactor first when a clean solution needs it.
+- Fixes: within a clean design, no hacks; refactor first when needed. Tell
+  the user the intended fix (and any refactor) before changing code.
 - Mechanical refactors preserve behavior; ask before changing optimization,
   allocation or functionality.
 - Big change (several files or interfaces): plan in the todo file, wait for

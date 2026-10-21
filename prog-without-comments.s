@@ -349,7 +349,7 @@ main:
     cmp rcx, 4
     ja baz_bounds_line_248
     lea rdi, [rbp + 424]
-    shl rcx, 2
+    sal rcx, 2
     mov r15, rdi
     sub r15, rsi
     je .Lbaz_overlap.0
@@ -383,7 +383,7 @@ main:
     cmp rcx, 8
     ja baz_bounds_line_253
     lea rdi, [rbp + 448]
-    shl rcx, 2
+    sal rcx, 2
     mov r15, rdi
     sub r15, rsi
     je .Lbaz_overlap.1
@@ -409,7 +409,7 @@ main:
         cmp r14, 8
         ja baz_bounds_line_254
         lea rdi, [rbp + r15 * 4 + 448]
-        shl rcx, 2
+        sal rcx, 2
         test rcx, rcx
         repe cmpsb
         sete byte [rbp + 480]
@@ -434,7 +434,7 @@ main:
         cmp rcx, 8
         ja baz_bounds_line_260
         lea rdi, [rbp + 448]
-        shl rcx, 2
+        sal rcx, 2
         test rcx, rcx
         repe cmpsb
         setne r15b
@@ -1145,7 +1145,7 @@ main:
     cmp rcx, 8
     ja baz_bounds_line_385
     lea rdi, [rbp + 752]
-    shl rcx, 3
+    sal rcx, 3
     mov r15, rdi
     sub r15, rsi
     je .Lbaz_overlap.2
@@ -1176,7 +1176,7 @@ main:
         cmp rcx, 8
         ja baz_bounds_line_393
         lea rdi, [rbp + 816]
-        shl rcx, 3
+        sal rcx, 3
         test rcx, rcx
         repe cmpsb
         sete r15b
@@ -1280,8 +1280,8 @@ main:
             mov rax, 0
             syscall
             mov qword [rbp + 1416], rax
-                mov r15, qword [rbp + 1416]
-                sub r15, 1
+            mov r15, qword [rbp + 1416]
+            sub r15, 1
             mov byte [rbp + 1288], r15b
         func.str.input.410.12.end:
         if.412.12:
@@ -1472,22 +1472,22 @@ func.print_num:
         mov r15, qword [rbx + 48]
         cmp r15, 20
         jae baz_bounds_line_154
-            mov r14, 48
-            mov r13, qword [rbx + 32]
-            mov rax, r13
-            mov r12, 10
-            cmp r12, 0
-            je baz_division_line_154
-            cmp r12, -1
-            jne .Lbaz_division.6
-            mov rdx, -9223372036854775808
-            cmp rax, rdx
-            je baz_division_line_154
-            .Lbaz_division.6:
-            cqo
-            idiv r12
-            mov r13, rdx
-            sub r14, r13
+        mov r14, 48
+        mov r13, qword [rbx + 32]
+        mov rax, r13
+        mov r12, 10
+        cmp r12, 0
+        je baz_division_line_154
+        cmp r12, -1
+        jne .Lbaz_division.6
+        mov rdx, -9223372036854775808
+        cmp rax, rdx
+        je baz_division_line_154
+        .Lbaz_division.6:
+        cqo
+        idiv r12
+        mov r13, rdx
+        sub r14, r13
         mov byte [rbx + r15 + 8], r14b
         mov rax, qword [rbx + 32]
         mov r15, 10

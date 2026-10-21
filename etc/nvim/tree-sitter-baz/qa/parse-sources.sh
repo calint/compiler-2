@@ -27,7 +27,7 @@ git -C "$ROOT" ls-files --cached --others --exclude-standard '*.baz' | while rea
 
     out="$ROOT/${file%.baz}.out"
     name="$(basename "$file")"
-    if [ -f "$out" ] && grep -m 1 . "$out" | grep -qE "^$name:[0-9]+:[0-9]+: "; then
+    if [ -f "$out" ] && grep -a -m 1 . "$out" | grep -qE "^$name:[0-9]+:[0-9]+: "; then
         continue
     fi
 
