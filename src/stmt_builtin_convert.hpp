@@ -353,6 +353,28 @@ class stmt_builtin_convert final : public expression {
                     return;
                 }
 
+                // a narrower register widens in place first, so the ops apply
+                // at the width of the target, e.g. the '-' of '-i16(g(v))' of
+                // an 'i8' -128 gives 128
+                if (not uops.is_empty() and
+                    plan.scratch_type->size_bytes() <
+                        target.type_ref().size_bytes()) {
+
+                    const operand widened{
+                        x.register_view(wide, target.type_ref()),
+                    };
+
+                    x.copy_value(tok(), indent, widened, wide);
+
+                    uops.compile(x, indent, tok(), widened,
+                                 tc.checks().overflow_options());
+
+                    x.copy_value(tok(), indent, target.operand(), widened);
+                    x.free_scratch_register(tok(), indent, wide);
+
+                    return;
+                }
+
                 // '-' and '~' give the same low bits at any width, so the one
                 // store also narrows their result
                 uops.compile(x, indent, tok(), wide,

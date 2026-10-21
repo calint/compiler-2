@@ -4460,3 +4460,12 @@ SRC=1378 && COMPERR
 # a folded right side with an inlined parameter is checked as a computed one
 # is
 SRC=1379 && COMPERR
+
+# the unary ops of a conversion apply at the width the value is used at, a
+# narrower argument widens first, with and without the overflow check
+SRC=1380 && EXP=0 && RUN
+SRC=1380 && EXP=0 && OPTS="--checks=overflow" RUN
+
+# the '-' of a conversion overflows at the width of its use under the
+# overflow check
+SRC=1381 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"

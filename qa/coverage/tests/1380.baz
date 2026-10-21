@@ -1,0 +1,24 @@
+# the unary ops of a conversion apply at the width the value is used at: a
+# narrower argument widens first, e.g. '-i16(g(v))' of an 'i8' -128 is 128 as
+# for a variable of 'i16', in an assignment and in a comparison, with an
+# inlined and a noinline call
+
+func inlined(x i8) res i8 {
+    res = x
+}
+
+func noinline called(x i8) res i8 {
+    res = x
+}
+
+func main() {
+    var v = i8(-128)
+    var r = -i16(inlined(v))
+    if r != 128 {
+        exit(1)
+    }
+    if -int(called(v)) != 128 {
+        exit(2)
+    }
+    exit(0)
+}

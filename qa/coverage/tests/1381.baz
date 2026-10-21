@@ -1,0 +1,12 @@
+# the '-' of a conversion to the width of its use overflows there under the
+# overflow check, as for a variable of the type
+
+func noinline called(x i8) res i8 {
+    res = x
+}
+
+func main() {
+    var v = i8(-128)
+    var r = -i8(called(v))
+    exit(int(r))
+}

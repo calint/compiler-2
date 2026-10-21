@@ -160,6 +160,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           'i32' instead of the left side
        B4 ops on a register at least as wide as the use: '-i16(g(v))' with
           v = -128 gives 128 (G6-1); 'neg' moves after 'movsx'
+          => done (2026-10-21): the scratch register of a narrower argument
+          with unary ops widens in place before the ops ('movsx' then
+          'neg', no extra instruction); without ops the code is unchanged;
+          1380 (inlined and noinline, assignment and comparison, with and
+          without the overflow check), 1381 ('-i8(g(v))' panics at 'i8');
+          gate unchanged, the corpus never reached it
        B5 overflow policy on 'destination', delete pause and resume:
           'i8(-m8())' under '--checks=overflow' gives 128 (G4-1); index
           arithmetic inside a conversion argument becomes checked
