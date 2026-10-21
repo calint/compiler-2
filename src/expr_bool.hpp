@@ -1539,7 +1539,7 @@ class expr_bool final : public statement {
     auto parse_list(toc& tc, tokenizer& tz,
                     std::unique_ptr<statement> first_expression) -> void {
 
-        const tokenizer::nesting_scope nesting{tz};
+        const toc::parse_nesting_scope nesting{tc, tz};
 
         set_type(tc.builtins().boolean());
 

@@ -1143,7 +1143,7 @@ class func_instantiator final {
         tokenizer tz{tc.source_of(generic.start_tk), generic.start_tk};
 
         // note: the instance is parsed inside the parse that needs it
-        const tokenizer::nesting_scope nesting{tz};
+        const toc::parse_nesting_scope nesting{tc, tz};
 
         const func_head head{func_head::read(tc, tz)};
 
@@ -1181,7 +1181,7 @@ class func_instantiator final {
         tokenizer tz{tc.source_of(method.start_tk), method.start_tk};
 
         // note: the instance is parsed inside the parse that needs it
-        const tokenizer::nesting_scope nesting{tz};
+        const toc::parse_nesting_scope nesting{tc, tz};
 
         // note: 'text' names 'str' now, so the head is the method 'str.print'
         const func_head head{func_head::read(tc, tz)};

@@ -6,6 +6,24 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[o] medium: generic function instances: the verdict of the nesting limit
+    depends on where an instance is first used (H-2): its body is parsed
+    inside the parse of that use and inherits its depth, e.g. a body nested
+    70 levels used first inside 70 levels is rejected, used first at depth 0
+    it is accepted; the counter is the only mutable static
+    ('tokenizer::nesting_', ARCH-4)
+    => plan (2026-10-21), steps one diff each:
+       1. R the nesting counter moves into 'toc', byte-identical
+       2. B the head of a function instance is parsed at its first use, its
+          body goes on a worklist parsed after the current top-level
+          definition at depth 0; an error in it keeps the "called from"
+          frame of the first use; a chain of instances made by instances
+          gets its own limit (e.g. 64), which infinite instantiation meets
+    => rejected: restarting the count for an instance parsed in place (the
+       stack grows 128 levels per nested instance, the chain limit still
+       depends on which instances exist)
+    => tests: both orders run, a body nested beyond the limit is rejected
+       wherever it is used, infinite instantiation, "called from" kept
 [ ] easy: rv32i-fpga: the smallest '--stack' ('leaf_stack_bytes', 48 B)
     counts 16 B of line digits that fpga never prints ('reports_line' is
     false), so '--stack=32' is rejected although it is enough; count the

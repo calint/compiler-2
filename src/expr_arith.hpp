@@ -121,7 +121,7 @@ class expr_arith final : public expression {
           uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{opts.is_implied_subexpression} {
 
-        const tokenizer::nesting_scope nesting{tz};
+        const toc::parse_nesting_scope nesting{tc, tz};
 
         // a recursive call might have supplied the first element it already
         // parsed

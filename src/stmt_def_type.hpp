@@ -485,7 +485,7 @@ class stmt_def_type_alias final : public statement {
         tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
 
         // note: the instance is parsed inside the parse that needs it
-        const tokenizer::nesting_scope nesting{generic_tz};
+        const toc::parse_nesting_scope nesting{tc, generic_tz};
 
         // the name and the parameters, e.g. 'list' and '<T type, capacity>'
         std::ignore = generic_tz.next_token();

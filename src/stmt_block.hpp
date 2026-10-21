@@ -31,7 +31,7 @@ class stmt_block final : public statement {
         : statement{tz.cur_position_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
-        const tokenizer::nesting_scope nesting{tz};
+        const toc::parse_nesting_scope nesting{tc, tz};
 
         set_type(tc.builtins().void_type());
 

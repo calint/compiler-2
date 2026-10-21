@@ -42,7 +42,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     : statement{tz.next_token()},
       is_array_destination_{kind == destination_kind::whole_array} {
 
-    const tokenizer::nesting_scope nesting{tz};
+    const toc::parse_nesting_scope nesting{tc, tz};
 
     set_type(tp);
 

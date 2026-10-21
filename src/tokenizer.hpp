@@ -21,34 +21,7 @@ class tokenizer final {
     static constexpr std::string_view delimiters_{
         " \t\r\n(){}[]=,.:+-*/%&|^<>!~#"};
 
-    // the parsers of every tokenizer recurse on the one stack, e.g. an included
-    // file or a generic instance is parsed inside the parse that needs it, so
-    // the levels are counted once for all of them
-    static inline size_t nesting_{};
-
   public:
-    // one level of nesting while it lives
-    class nesting_scope final {
-      public:
-        explicit nesting_scope(const tokenizer& tz) {
-            if (nesting_ >= max_nesting) {
-                throw compile_error{
-                    tz, std::format("nesting is too deep, the limit is {} "
-                                    "levels",
-                                    max_nesting)};
-            }
-
-            ++nesting_;
-        }
-
-        nesting_scope(const nesting_scope&) = delete;
-        nesting_scope(nesting_scope&&) = delete;
-        auto operator=(const nesting_scope&) -> nesting_scope& = delete;
-        auto operator=(nesting_scope&&) -> nesting_scope& = delete;
-
-        ~nesting_scope() { --nesting_; }
-    };
-
     tokenizer(const size_t file_ix, const std::string_view src)
         : src_{src}, file_ix_{file_ix} {}
 
@@ -60,11 +33,6 @@ class tokenizer final {
 
         assert(char_ix_ <= src_.size());
     }
-
-    // the most levels of blocks and expressions inside each other, the parsers
-    // recurse for each of them so the limit keeps the source from exhausting
-    // the stack
-    static constexpr size_t max_nesting{128};
 
     // 'next_token' made no text: the source ended or a delimiter is next, which
     // no statement or definition starts with

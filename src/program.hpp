@@ -499,7 +499,7 @@ class program final {
         -> std::unique_ptr<statement> {
 
         // the included file is parsed inside the include
-        const tokenizer::nesting_scope nesting{tz};
+        const toc::parse_nesting_scope nesting{tc_, tz};
 
         const token path_tk{tz.next_token()};
 

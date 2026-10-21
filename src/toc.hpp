@@ -2328,6 +2328,10 @@ class toc final {
     // false while the program is parsed: the names are declared without
     // comments and without the capacity check of the storage
     bool is_compiling_{};
+    // the parsers recurse on the one stack, e.g. an included file or a
+    // generic instance is parsed inside the parse that needs it, so the levels
+    // are counted once for all of them, see 'parse_nesting_scope'
+    size_t parse_nesting_{};
 
     // what a dry run changes in 'toc' is put back when it ends, also when an
     // error unwinds: the deepest frame count, the string constants and the
@@ -2385,6 +2389,31 @@ class toc final {
     };
 
   public:
+    // one level of nesting while it lives
+    class parse_nesting_scope final {
+        toc& tc_;
+
+      public:
+        parse_nesting_scope(toc& tc, const tokenizer& tz) : tc_{tc} {
+            if (tc_.parse_nesting_ >= max_parse_nesting) {
+                throw compile_error{
+                    tz, std::format("nesting is too deep, the limit is {} "
+                                    "levels",
+                                    max_parse_nesting)};
+            }
+
+            ++tc_.parse_nesting_;
+        }
+
+        parse_nesting_scope(const parse_nesting_scope&) = delete;
+        parse_nesting_scope(parse_nesting_scope&&) = delete;
+        auto operator=(const parse_nesting_scope&)
+            -> parse_nesting_scope& = delete;
+        auto operator=(parse_nesting_scope&&) -> parse_nesting_scope& = delete;
+
+        ~parse_nesting_scope() { --tc_.parse_nesting_; }
+    };
+
     toc(::machine& backend, const source_files& files,
         const builtin_type_set& builtin_set, const size_t vars_capacity_bytes,
         const check_options& checks)
@@ -2396,6 +2425,11 @@ class toc final {
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
           checks_{checks} {}
+
+    // the most levels of blocks and expressions inside each other, the parsers
+    // recurse for each of them so the limit keeps the source from exhausting
+    // the stack
+    static constexpr size_t max_parse_nesting{128};
 
     auto add_alias(const alias_info& ai) -> void {
         scopes_.back().add_alias(ai);
