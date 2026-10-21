@@ -328,8 +328,8 @@ class stmt_def_dat final : public statement {
 
         if (tp.is_builtin()) {
             const std::optional<int64_t> constant{
-                folded_value::value_of(value.fold_element(
-                    tc, index, value_use::as_written_at(tp))),
+                folded_value::value_of(
+                    value.fold_element(tc, index, value_use::at(tp))),
             };
 
             if (not constant) {

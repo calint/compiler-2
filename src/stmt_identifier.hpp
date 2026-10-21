@@ -409,15 +409,8 @@ class stmt_identifier final : public statement {
                                         tc.checks().overflow),
         };
 
-        const bool is_wrapped{constant.is_typed() or not use.keeps_untyped};
-
-        const int64_t used{
-            is_wrapped ? constant_arith::wrap_to_width(value, use.width_ref())
-                       : value,
-        };
-
         return folded_value{
-            .value{used},
+            .value{constant_arith::wrap_to_width(value, use.width_ref())},
             .own_type{constant.own_type},
         };
     }

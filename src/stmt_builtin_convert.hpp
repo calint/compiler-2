@@ -152,7 +152,7 @@ class stmt_builtin_convert final : public expression {
         -> void override {
 
         // note: a list copies a constant itself
-        assert(not fold(tc, value_use::wrapped_at(dst.type_ref())));
+        assert(not fold(tc, value_use::at(dst.type_ref())));
 
         // the argument follows the rule of a list at the width it is computed
         // at, e.g. the 'i16' 'b' of 'i8(a + b)' is narrowed to 'i8'

@@ -1,0 +1,9 @@
+# a folded right side of a comparison is checked as a computed one is, its
+# elements must fit the width of its first element
+
+func main() {
+    var e = i8(1)
+    if e < i8(1) + 300 {
+        exit(1)
+    }
+}

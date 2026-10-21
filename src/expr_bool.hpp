@@ -792,11 +792,12 @@ class expr_bool_op final : public statement {
     }
 
     // a side computed at run time in a register of its own type, so a
-    // constant list folds at that width
+    // constant side folds at that width and is checked there, e.g. the '300'
+    // of 'e < i8(1) + 300' does not fit 'i8'
     [[nodiscard]] static auto fold_side(const toc& tc, const expr_arith& side)
         -> std::optional<folded_value> {
 
-        return side.fold(tc, value_use::as_written_at(side.get_type()));
+        return side.fold_checked(tc, value_use::at(side.get_type()));
     }
 
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,

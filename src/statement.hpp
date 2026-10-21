@@ -227,10 +227,6 @@ enum class width_change : uint8_t { narrowed, widened };
 // where a value is used: the width it is computed at
 struct value_use {
     const type* width{};
-    // an untyped constant keeps its value as written for the range checks of
-    // the caller
-    // todo: removed when the fold checks the fit itself
-    bool keeps_untyped{};
 
     [[nodiscard]] auto width_ref() const -> const type& {
         assert(width != nullptr);
@@ -242,17 +238,9 @@ struct value_use {
     // statics
     //
 
-    [[nodiscard]] static auto as_written_at(const type& width_in) -> value_use {
+    [[nodiscard]] static auto at(const type& width_in) -> value_use {
         return {
             .width{&width_in},
-            .keeps_untyped{true},
-        };
-    }
-
-    [[nodiscard]] static auto wrapped_at(const type& width_in) -> value_use {
-        return {
-            .width{&width_in},
-            .keeps_untyped{},
         };
     }
 };
@@ -353,8 +341,10 @@ class statement {
         std::unreachable();
     }
 
-    // the value known at compile time where it is used, empty when it is
-    // computed at run time
+    // the value known at compile time where it is used, wrapped to its
+    // width, empty when it is computed at run time; it does not check that
+    // the value fits, a conversion computes its argument at a narrower width
+    // on purpose
     [[nodiscard]] virtual auto fold([[maybe_unused]] const toc& tc,
                                     [[maybe_unused]] const value_use& use) const
         -> std::optional<folded_value> {
@@ -473,6 +463,22 @@ class statement {
 
                 throw_uninitialized(src_loc_tk, var);
             });
+    }
+
+    // the fold of a value that must fit where it is used, checked as its
+    // compile is, so a folded value is rejected where a computed one is
+    // note: the check follows the fold, which keeps the low bits of an
+    //       operand that does not fit
+    [[nodiscard]] auto fold_checked(const toc& tc, const value_use& use) const
+        -> std::optional<folded_value> {
+
+        std::optional<folded_value> folded{fold(tc, use)};
+
+        if (folded) {
+            assert_not_narrowed(tc, use.width_ref());
+        }
+
+        return folded;
     }
 
     // the operand of what 'info' resolves this statement to; an indexed

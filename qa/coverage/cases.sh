@@ -4453,3 +4453,10 @@ SRC=1376 && COMPERR
 # a conversion of an inlined parameter bound to a constant is wider than a
 # narrower left side
 SRC=1377 && COMPERR
+
+# a folded right side of a comparison is checked as a computed one is
+SRC=1378 && COMPERR
+
+# a folded right side with an inlined parameter is checked as a computed one
+# is
+SRC=1379 && COMPERR

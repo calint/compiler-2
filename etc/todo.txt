@@ -31,9 +31,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           it, only the messages differ
        4. one evaluator, the virtual 'fold(tc, use) ->
           std::optional<folded_value>': 'value' wrapped to the use width,
-          'own_type' null when untyped; it checks fit before it wraps, so no
-          fold is accepted unchecked; overrides: identifier, list,
-          conversion, 'array_length', zero
+          'own_type' null when untyped; 'fold_checked' adds the fit check
+          of rule 3 at the same width, so a folded value is rejected where a
+          computed one is; 'fold' itself does not check, a conversion
+          computes its argument at a narrower width on purpose; overrides:
+          identifier, list, conversion, 'array_length', zero, 'expr_any',
+          'expr_bool'
        5. unary ops apply by 'unary_ops' on a register at least as wide as
           the use; the widths of a conversion are one struct
           'conversion_widths{converted, argument, ops}' that its fold and
@@ -143,6 +146,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        B3 the fit check inside 'fold' ('folded_value::assert_fits'),
           'keeps_untyped' and the callers' 'assert_not_narrowed' go: 'e <
           i8(1) + 300' rejected at '300' (G5-1)
+          => done (2026-10-21), changed: 'fold_checked' (fold, then
+          'assert_not_narrowed' at the same width) for comparison sides and
+          'expr_any' elements; the check stays outside 'fold' because a
+          conversion folds its argument at a narrower target on purpose
+          ('i8(k + 1)'); every fold that kept an untyped constant as written
+          is now checked at its width, so 'keeps_untyped' went and
+          'value_use::at' is the one factory; the callers'
+          'assert_not_narrowed' stay, they check variables too; 'e < i8(1)
+          + 300' and an inlined 'e < p + 300' are rejected at '300'
+          (1378, 1379); gate unchanged; rv32i: a literal too wide for the
+          default type compared with a variable is rejected as not fitting
+          'i32' instead of the left side
        B4 ops on a register at least as wide as the use: '-i16(g(v))' with
           v = -128 gives 128 (G6-1); 'neg' moves after 'movsx'
        B5 overflow policy on 'destination', delete pause and resume:

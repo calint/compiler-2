@@ -1156,7 +1156,7 @@ class inline_call {
         -> alias_info {
 
         const std::optional<folded_value> folded{
-            arg.fold(tc, value_use::as_written_at(param.get_type())),
+            arg.fold(tc, value_use::at(param.get_type())),
         };
 
         if (folded) {
@@ -1195,7 +1195,7 @@ class inline_call {
         // e.g. '~1' is not
         if (arg_info.is_const()) {
             const std::optional<folded_value> folded{
-                arg.fold(tc, value_use::as_written_at(param.get_type())),
+                arg.fold(tc, value_use::at(param.get_type())),
             };
 
             // note: a constant name or literal folds

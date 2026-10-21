@@ -1,0 +1,14 @@
+# a folded right side of a comparison with an inlined parameter bound to a
+# constant is checked as a computed one is
+
+func compared(p i8) res i8 {
+    var e = i8(1)
+    res = 0
+    if e < p + 300 {
+        res = 1
+    }
+}
+
+func main() {
+    exit(int(compared(1)))
+}

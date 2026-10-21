@@ -234,7 +234,7 @@ class expr_arith final : public expression {
 
         // a list that folds is one copy of its value
         const std::optional<folded_value> folded{
-            fold(tc, value_use::wrapped_at(dst.type_ref())),
+            fold(tc, value_use::at(dst.type_ref())),
         };
 
         if (folded) {
@@ -326,7 +326,7 @@ class expr_arith final : public expression {
         }
 
         const type& width_type{use.width_ref()};
-        const value_use element_use{value_use::wrapped_at(width_type)};
+        const value_use element_use{value_use::at(width_type)};
 
         const std::optional<folded_value> first{
             exprs_.front()->fold(tc, element_use),
@@ -912,7 +912,7 @@ class expr_arith final : public expression {
                 .element{&e},
                 .value{
                     folded_value::value_of(
-                        e.fold(tc, value_use::wrapped_at(width_type))),
+                        e.fold(tc, value_use::at(width_type))),
                 },
                 .folded_source{
                     std::format("{} {}", machine::source_text(op),
@@ -1323,7 +1323,7 @@ class expr_arith final : public expression {
         if (src.is_expression()) {
             // e.g. 'a / (1 + 1)'
             const std::optional<folded_value> folded{
-                src.fold(tc, value_use::wrapped_at(operand_type)),
+                src.fold(tc, value_use::at(operand_type)),
             };
 
             if (folded) {
@@ -1351,7 +1351,7 @@ class expr_arith final : public expression {
 
         if (src_info.is_const()) {
             const std::optional<folded_value> folded{
-                src.fold(tc, value_use::wrapped_at(operand_type)),
+                src.fold(tc, value_use::at(operand_type)),
             };
 
             // note: a constant name or literal folds

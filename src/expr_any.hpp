@@ -382,7 +382,7 @@ class expr_any final : public statement {
         -> std::optional<int64_t> {
 
         return folded_value::value_of(
-            fold(tc, value_use::as_written_at(tc.builtins().default_type())));
+            fold(tc, value_use::at(tc.builtins().default_type())));
     }
 
     // every kind of element is a 'statement', the forwarding methods call its
@@ -400,22 +400,13 @@ class expr_any final : public statement {
         return elements_.size();
     }
 
-    // the element 'index' folded, empty when it is computed at run time,
-    // e.g. 'maybe == 33' with 'maybe' a constant folds
+    // the element 'index' folded and checked, empty when it is computed at
+    // run time, e.g. 'maybe == 33' with 'maybe' a constant folds
     [[nodiscard]] auto fold_element(const toc& tc, const size_t index,
                                     const value_use& use) const
         -> std::optional<folded_value> {
 
-        const statement& e{element(index)};
-        const std::optional<folded_value> folded{e.fold(tc, use)};
-
-        // the fold keeps the low bits of an operand that does not fit, which
-        // only a conversion asks for
-        if (folded) {
-            e.assert_not_narrowed(tc, use.width_ref());
-        }
-
-        return folded;
+        return element(index).fold_checked(tc, use);
     }
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
@@ -565,8 +556,8 @@ class expr_any final : public statement {
 
             // e.g. '{300}' for 'i8' is rejected as when stored alone
             const std::optional<int64_t> value{
-                folded_value::value_of(fold_element(
-                    tc, index, value_use::as_written_at(element_type))),
+                folded_value::value_of(
+                    fold_element(tc, index, value_use::at(element_type))),
             };
 
             if (not value) {

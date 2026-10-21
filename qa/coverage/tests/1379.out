@@ -1,0 +1,7 @@
+
+1379.baz:7:16: constant '300' does not fit 'i8', use 'i8(...)'
+    if e < p + 300 {
+               ^~~
+1379.baz:13:14: called from 'compared(1)'
+    exit(int(compared(1)))
+             ^~~~~~~~

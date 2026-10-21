@@ -1,0 +1,4 @@
+
+1378.baz:6:20: constant '300' does not fit 'i8', use 'i8(...)'
+    if e < i8(1) + 300 {
+                   ^~~
