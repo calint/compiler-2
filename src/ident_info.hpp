@@ -387,22 +387,19 @@ class destination final {
     // the elements of an array, an unsized one gets them from the argument,
     // see 'var_info::array_len'
     std::optional<size_t> array_len_;
-    // the path from the root variable, empty for the whole variable
-    access_path accessed_path_;
+    // the root variable and the path of it that this names, set exactly when
+    // the kind is storage
+    std::optional<storage_path> storage_;
 
     // what a resolved name adds when it is the destination of an assignment
     struct name_parts {
         ::operand address;
         bool is_address_known{};
-        access_path accessed_path;
+        std::optional<storage_path> storage;
     };
 
   public:
     destination() = default;
-
-    [[nodiscard]] auto accessed_path() const -> const access_path& {
-        return accessed_path_;
-    }
 
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
         return array_len_;
@@ -419,7 +416,10 @@ class destination final {
         element.is_array_ = false;
         element.array_len_ = std::nullopt;
 
-        element.accessed_path_.add_fixed_index(index);
+        // note: an array is in storage
+        assert(element.storage_);
+
+        element.storage_->path.add_fixed_index(index);
 
         return element;
     }
@@ -464,7 +464,10 @@ class destination final {
         result.type_ptr_ = &fld.type();
         result.src_loc_tk_ = {};
 
-        result.accessed_path_.add_field(fld.offset);
+        // note: a record is in storage
+        assert(result.storage_);
+
+        result.storage_->path.add_field(fld.offset);
 
         return result;
     }
@@ -510,6 +513,10 @@ class destination final {
         return ident_info::root_of(name_);
     }
 
+    [[nodiscard]] auto storage() const -> const std::optional<storage_path>& {
+        return storage_;
+    }
+
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(type_ptr_ != nullptr);
 
@@ -529,12 +536,15 @@ class destination final {
     // statics
     //
 
-    // a name resolved as 'info', at the operand of 'info'
-    [[nodiscard]] static auto of_name(const ident_info& info) -> destination {
+    // a name resolved as 'info' with its 'storage', at the operand of 'info'
+    [[nodiscard]] static auto of_name(const ident_info& info,
+                                      std::optional<storage_path> storage)
+        -> destination {
+
         return of_name(info, {
                                  .address{info.operand()},
                                  .is_address_known{},
-                                 .accessed_path{access_path::whole_variable()},
+                                 .storage{std::move(storage)},
                              });
     }
 
@@ -544,6 +554,7 @@ class destination final {
 
         // note: a constant is rejected as a destination before
         assert(info.is_var() or info.is_register());
+        assert(parts.storage.has_value() == info.is_var());
 
         destination result;
         result.kind_ = info.is_register() ? kind::reg : kind::storage;
@@ -557,7 +568,7 @@ class destination final {
 
         result.is_array_ = info.is_array();
         result.array_len_ = info.array_len();
-        result.accessed_path_ = std::move(parts.accessed_path);
+        result.storage_ = std::move(parts.storage);
 
         return result;
     }

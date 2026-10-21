@@ -130,7 +130,11 @@ class stmt_assign_var final : public statement {
                 {
                     .address{address},
                     .is_address_known{is_address_known},
-                    .accessed_path{stmt_ident_.accessed_path()},
+                    .storage{
+                        tc.storage_of(stmt_ident_.first_token(),
+                                      stmt_ident_.first_token().text(),
+                                      stmt_ident_.accessed_path()),
+                    },
                 }),
         };
 

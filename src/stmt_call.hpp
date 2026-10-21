@@ -449,6 +449,14 @@ struct call_site {
         return toc::temporary_name(tk, "call-arg", index);
     }
 
+    // a temporary of the call is a root variable of its own
+    [[nodiscard]] auto temporary_storage(const toc& tc,
+                                         const std::string_view name) const
+        -> std::optional<storage_path> {
+
+        return tc.storage_of(tk, name, access_path::whole_variable());
+    }
+
     //
     // statics
     //
@@ -491,23 +499,6 @@ struct call_site {
         return result_type.is_builtin() and not result_type.is_bool() and
                dst_type.is_builtin() and not dst_type.is_bool() and
                result_type.size_bytes() < dst_type.size_bytes();
-    }
-
-    // the root variable and the bytes of it that the destination names
-    [[nodiscard]] static auto result_target(const toc& tc,
-                                            const token& src_loc_tk,
-                                            const destination& dst)
-        -> std::optional<storage_path> {
-
-        // note: a register destination, its id is a register name, has no
-        //       variable
-
-        if (dst.is_register()) {
-            return std::nullopt;
-        }
-
-        return tc.storage_of(src_loc_tk, ident_info::root_of(dst.name()),
-                             dst.accessed_path());
     }
 
     // the frames ran out in the dry run of a noinline call, see
@@ -633,7 +624,10 @@ class inline_call {
                                     param.get_type()),
             };
 
-            arg.compile(tc, indent, destination::of_name(temporary_info));
+            arg.compile(tc, indent,
+                        destination::of_name(
+                            temporary_info, call_.temporary_storage(
+                                                tc, temporary_info.root_id())));
         }
 
         compile_to_destination(tc, indent, dst, func);
@@ -1044,7 +1038,7 @@ class inline_call {
         if (const std::optional<func_return_info> ret{func.returns()}; ret) {
             assert(dst.type_ref().is_same(func.get_type()));
 
-            aliases.push_back(make_result_alias(tc, dst, *ret));
+            aliases.push_back(make_result_alias(dst, *ret));
         }
 
         for (const auto [i, arg, param] : std::views::zip(
@@ -1064,9 +1058,7 @@ class inline_call {
                 const std::string temporary{call_.temporary_argument_name(i)};
 
                 aliases.push_back(make_storage_alias(
-                    param, temporary,
-                    tc.storage_of(call_.tk, temporary,
-                                  access_path::whole_variable())));
+                    param, temporary, call_.temporary_storage(tc, temporary)));
 
                 continue;
             }
@@ -1269,8 +1261,7 @@ class inline_call {
     }
 
     // the result name of the function refers to the destination
-    [[nodiscard]] static auto make_result_alias(const toc& tc,
-                                                const destination& dst,
+    [[nodiscard]] static auto make_result_alias(const destination& dst,
                                                 const func_return_info& ret)
         -> alias_info {
 
@@ -1289,14 +1280,13 @@ class inline_call {
         };
 
         // a destination such as 'arr[1]' is not an array
-        return alias_info::make_storage(
-            ret.ident_tk.text(), *ret.type_ptr,
-            {
-                .path{dst.name()},
-                .lea{std::move(dst_lea)},
-                .is_element{not dst.is_array()},
-                .bound{call_site::result_target(tc, ret.ident_tk, dst)},
-            });
+        return alias_info::make_storage(ret.ident_tk.text(), *ret.type_ptr,
+                                        {
+                                            .path{dst.name()},
+                                            .lea{std::move(dst_lea)},
+                                            .is_element{not dst.is_array()},
+                                            .bound{dst.storage()},
+                                        });
     }
 
     // a variable of the caller or a temporary of the call, named by 'path'
@@ -1423,7 +1413,7 @@ class noinline_call {
         -> void {
 
         const std::optional<std::string> signature{
-            aliasing_signature(tc, call_.tk, dst, func, arguments),
+            aliasing_signature(dst, func, arguments),
         };
 
         // note: what the body can reject depends only on which arguments are
@@ -1540,14 +1530,14 @@ class noinline_call {
             arguments.push_back({
                 .info{temporary},
                 .target{
-                    tc.storage_of(call_.tk, temporary.root_id(),
-                                  access_path::whole_variable()),
+                    call_.temporary_storage(tc, temporary.root_id()),
                 },
                 .is_temporary{true},
             });
 
             arg.compile(tc, indent,
-                        destination::of_name(arguments.back().info));
+                        destination::of_name(arguments.back().info,
+                                             arguments.back().target));
         }
 
         if (has_result_temporary(dst, func)) {
@@ -1560,7 +1550,11 @@ class noinline_call {
             };
 
             compile_with_arguments(
-                tc, indent, destination::of_name(result_info), func, arguments);
+                tc, indent,
+                destination::of_name(
+                    result_info,
+                    call_.temporary_storage(tc, result_info.root_id())),
+                func, arguments);
 
             machine& x{tc.machine()};
 
@@ -1715,8 +1709,7 @@ class noinline_call {
     // function, the calls of that function are checked with their own
     // arguments
     [[nodiscard]] static auto
-    aliasing_signature(const toc& tc, const token& src_loc_tk,
-                       const destination& dst, const stmt_def_func& func,
+    aliasing_signature(const destination& dst, const stmt_def_func& func,
                        const std::span<const noinline_arg> arguments)
         -> std::optional<std::string> {
 
@@ -1725,7 +1718,7 @@ class noinline_call {
         // note: a pointer destination is resolved to its address before
         if (func.returns()) {
             items.push_back({
-                .target{call_site::result_target(tc, src_loc_tk, dst)},
+                .target{dst.storage()},
                 .is_pointer{},
                 .is_array{dst.is_array()},
                 .array_len{dst.array_len()},
@@ -2231,7 +2224,7 @@ class stmt_call : public expression {
         std::optional<storage_path> result;
 
         if (is_result_checked) {
-            result = call_site::result_target(tc, tok(), dst);
+            result = dst.storage();
         }
 
         std::vector<reference> references;
