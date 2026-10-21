@@ -371,7 +371,7 @@ struct call_site {
     static constexpr size_t max_frame_count{256};
 
     // a level is the dry run of a noinline call nested in the dry run of the
-    // call that reaches it, see 'noinline_call::check_aliasing'
+    // call that reaches it, see 'noinline_call::dry_run_body'
     static constexpr size_t max_noinline_dry_run_level{100};
 
     // the error was found inside the inlined body, unless it is in the call
@@ -502,7 +502,7 @@ struct call_site {
     }
 
     // the frames ran out in the dry run of a noinline call, see
-    // 'noinline_call::check_aliasing'
+    // 'noinline_call::dry_run_body'
     [[noreturn]] static auto throw_dry_run_frame_limit(const token& src_loc_tk)
         -> void {
 
@@ -566,7 +566,7 @@ struct call_site {
 //   4. 'compile_body': the body under labels unique to the call, with the
 //      aliases added
 //
-// a 'noinline_call' runs step 3 as a dry run to check its aliasing
+// a 'noinline_call' runs step 3 as a dry run for the errors of its call
 class inline_call {
     call_site call_;
 
@@ -1315,14 +1315,14 @@ class inline_call {
 //   1. 'compile': a result or an argument that is not a variable in memory
 //      goes through a temporary
 //   2. 'compile_with_arguments': the types are checked ('assert_call'), the
-//      aliasing of this call is checked by a dry run of the body as an
-//      inlined call ('check_aliasing', see
+//      errors that depend on this call, e.g. shared storage, are found by a
+//      dry run of the body as an inlined call ('dry_run_body', see
 //      'etc/docs/README.md' chapter 4), the addresses are written to
 //      the callee frame ('frame_slot_addresses', 'write_frame_slots') and the
 //      function is called
 class noinline_call {
-    // what the aliasing signature reads of the result or of an argument
-    struct signature_item {
+    // what the call kind reads of the result or of an argument
+    struct call_kind_item {
         // the variable and the bytes of it, e.g. 'v' of the frame 2 and the
         // field 'x' of 'v.x'
         std::optional<storage_path> target;
@@ -1403,83 +1403,6 @@ class noinline_call {
 
             assert_argument(arg, argument.info, param);
         }
-    }
-
-    // the body is compiled once for all callers, so this call's aliasing is
-    // checked by compiling the body as an inline call and dropping the code
-    auto check_aliasing(toc& tc, const size_t indent, const destination& dst,
-                        const stmt_def_func& func,
-                        const std::span<const noinline_arg> arguments) const
-        -> void {
-
-        const std::optional<std::string> signature{
-            aliasing_signature(dst, func, arguments),
-        };
-
-        // note: what the body can reject depends only on which arguments are
-        //       the same variable, e.g. 'f(v, v, n)' but not 'f(v, w, n)',
-        //       on which are a global, since the body may name that global
-        //       too, e.g. 'f(v, g, n)', and on the bytes of each that are
-        //       passed, e.g. 'f(g.a)' and 'f(g.b)'; so 'f(v, w, n)' and
-        //       'f(x, y, z)' give the same result and are checked once
-        //
-        //       the call is added before its dry run, so the same kind of
-        //       call reached inside it, e.g. a recursive call, returns here;
-        //       the kinds are finitely many, so the nested dry runs end
-
-        if (not signature) {
-            return;
-        }
-
-        // e.g. 1 for a call in 'main'
-        const size_t level{tc.scopes().noinline_dry_run_level() + 1};
-
-        const std::optional<dry_run_height> checked_height{
-            tc.funcs().checked_call_height(*signature),
-        };
-
-        const dry_run_height below{checked_height.value_or(dry_run_height{})};
-
-        // e.g. a chain of noinline calls nests a dry run in each; a checked
-        // call counts the levels and the frames below it, so the verdict does
-        // not depend on which calls were checked first
-        if (level + below.levels > call_site::max_noinline_dry_run_level) {
-            call_site::throw_noinline_nesting(call_.tk);
-        }
-
-        const size_t frame_check{tc.scopes().frames().size() + below.frames};
-
-        if (frame_check >= call_site::max_frame_count) {
-            call_site::throw_dry_run_frame_limit(call_.tk);
-        }
-
-        tc.reach_frame_check(frame_check);
-
-        // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
-        //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
-        //       dry run has until it ends, so the height of a cycle depends on
-        //       where it was entered, by at most the number of its signatures;
-        //       a known limitation: near the limit the verdict of a chain
-        //       through a cycle depends on the order of the calls (docs 4.3)
-
-        if (checked_height) {
-            tc.reach_dry_run_level(level + below.levels);
-            return;
-        }
-
-        toc::noinline_check_scope check{tc, *signature, level};
-        const inline_call dry_run{call_};
-
-        try {
-            tc.check_only([&] -> void {
-                dry_run.compile_with_aliases(tc, indent, dst, func, arguments);
-            });
-        } catch (compile_error& e) {
-            call_.add_call_frame(e);
-            throw;
-        }
-
-        check.commit();
     }
 
     // the result address comes first, then one address per argument
@@ -1574,7 +1497,7 @@ class noinline_call {
         -> void {
 
         assert_call(dst, func, arguments);
-        check_aliasing(tc, indent, dst, func, arguments);
+        dry_run_body(tc, indent, dst, func, arguments);
 
         machine& x{tc.machine()};
 
@@ -1645,6 +1568,81 @@ class noinline_call {
             register_slot ? addresses.at(*register_slot) : operand{});
     }
 
+    // the body is compiled once for all callers, so the errors that depend on
+    // this call are found by compiling the body as an inline call and
+    // dropping the code
+    auto dry_run_body(toc& tc, const size_t indent, const destination& dst,
+                      const stmt_def_func& func,
+                      const std::span<const noinline_arg> arguments) const
+        -> void {
+
+        const std::optional<std::string> kind{
+            call_kind(dst, func, arguments),
+        };
+
+        // note: what the body can reject depends only on which arguments are
+        //       the same variable, e.g. 'f(v, v, n)' but not 'f(v, w, n)',
+        //       on which are a global, since the body may name that global
+        //       too, e.g. 'f(v, g, n)', and on the bytes of each that are
+        //       passed, e.g. 'f(g.a)' and 'f(g.b)'; so 'f(v, w, n)' and
+        //       'f(x, y, z)' give the same result and are checked once
+        //
+        //       the call is added before its dry run, so the same kind of
+        //       call reached inside it, e.g. a recursive call, returns here;
+        //       the kinds are finitely many, so the nested dry runs end
+
+        if (not kind) {
+            return;
+        }
+
+        // e.g. 1 for a call in 'main'
+        const size_t level{tc.scopes().noinline_dry_run_level() + 1};
+
+        const std::optional<dry_run_height> checked_height{
+            tc.funcs().dry_run_height_of(*kind),
+        };
+
+        const dry_run_height below{checked_height.value_or(dry_run_height{})};
+
+        // e.g. a chain of noinline calls nests a dry run in each; a checked
+        // call counts the levels and the frames below it, so the verdict does
+        // not depend on which calls were checked first
+        if (level + below.levels > call_site::max_noinline_dry_run_level) {
+            call_site::throw_noinline_nesting(call_.tk);
+        }
+
+        const size_t frame_check{tc.scopes().frames().size() + below.frames};
+
+        if (frame_check >= call_site::max_frame_count) {
+            call_site::throw_dry_run_frame_limit(call_.tk);
+        }
+
+        tc.reach_frame_check(frame_check);
+
+        // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
+        //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
+        //       dry run has until it ends, so the height of a cycle depends on
+        //       where it was entered, by at most the number of its kinds;
+        //       a known limitation: near the limit the verdict of a chain
+        //       through a cycle depends on the order of the calls (docs 4.3)
+
+        if (checked_height) {
+            tc.reach_dry_run_level(level + below.levels);
+            return;
+        }
+
+        const inline_call dry_run{call_};
+
+        try {
+            tc.dry_run_call_kind(*kind, level, [&] -> void {
+                dry_run.compile_with_aliases(tc, indent, dst, func, arguments);
+            });
+        } catch (compile_error& e) {
+            call_.add_call_frame(e);
+            throw;
+        }
+    }
+
     // the result address precedes the argument addresses
     [[nodiscard]] auto
     frame_slot_addresses(toc& tc, const size_t indent, const destination& dst,
@@ -1702,62 +1700,6 @@ class noinline_call {
     // statics
     //
 
-    // what the checks of the body depend on: the callee, the bytes each
-    // argument passes (a global or which local, and the access path), the
-    // array lengths and whether each argument is a temporary or a variable.
-    // empty when an argument is a parameter of the enclosing noinline
-    // function, the calls of that function are checked with their own
-    // arguments
-    [[nodiscard]] static auto
-    aliasing_signature(const destination& dst, const stmt_def_func& func,
-                       const std::span<const noinline_arg> arguments)
-        -> std::optional<std::string> {
-
-        std::vector<signature_item> items;
-
-        // note: a pointer destination is resolved to its address before
-        if (func.returns()) {
-            items.push_back({
-                .target{dst.storage()},
-                .is_pointer{},
-                .is_array{dst.is_array()},
-                .array_len{dst.array_len()},
-            });
-        }
-
-        for (const noinline_arg& argument : arguments) {
-            items.push_back({
-                .target{argument.target},
-                .is_pointer{argument.info.is_pointer()},
-                .is_array{argument.info.is_array()},
-                .array_len{argument.info.array_len()},
-            });
-        }
-
-        std::string signature{func.name()};
-        std::vector<root_variable> locals;
-
-        for (const signature_item& item : items) {
-            const std::optional<std::string> part{
-                signature_part(item, locals),
-            };
-
-            if (not part) {
-                return std::nullopt;
-            }
-
-            signature += *part;
-        }
-
-        // the body is checked with the value, e.g. a constant, of the first
-        // call of its kind
-        for (const noinline_arg& argument : arguments) {
-            signature += argument.is_temporary ? " temporary" : " variable";
-        }
-
-        return signature;
-    }
-
     // the body is compiled for the lengths of the array arguments
     [[nodiscard]] static auto
     array_argument_lengths(const stmt_def_func& func,
@@ -1793,6 +1735,99 @@ class noinline_call {
         if (not info.type_ref().is_same(param.get_type())) {
             call_site::throw_parameter_type_mismatch(arg, param, info);
         }
+    }
+
+    // what the checks of the body depend on: the callee, the bytes each
+    // argument passes (a global or which local, and the access path), the
+    // array lengths and whether each argument is a temporary or a variable.
+    // empty when an argument is a pointer, e.g. a parameter of the enclosing
+    // noinline function, whose calls are checked with their own arguments
+    [[nodiscard]] static auto
+    call_kind(const destination& dst, const stmt_def_func& func,
+              const std::span<const noinline_arg> arguments)
+        -> std::optional<std::string> {
+
+        std::vector<call_kind_item> items;
+
+        // note: a pointer destination is resolved to its address before
+        if (func.returns()) {
+            items.push_back({
+                .target{dst.storage()},
+                .is_pointer{},
+                .is_array{dst.is_array()},
+                .array_len{dst.array_len()},
+            });
+        }
+
+        for (const noinline_arg& argument : arguments) {
+            items.push_back({
+                .target{argument.target},
+                .is_pointer{argument.info.is_pointer()},
+                .is_array{argument.info.is_array()},
+                .array_len{argument.info.array_len()},
+            });
+        }
+
+        std::string kind{func.name()};
+        std::vector<root_variable> locals;
+
+        for (const call_kind_item& item : items) {
+            const std::optional<std::string> part{
+                call_kind_part(item, locals),
+            };
+
+            if (not part) {
+                return std::nullopt;
+            }
+
+            kind += *part;
+        }
+
+        // the body is checked with the value, e.g. a constant, of the first
+        // call of its kind
+        for (const noinline_arg& argument : arguments) {
+            kind += argument.is_temporary ? " temporary" : " variable";
+        }
+
+        return kind;
+    }
+
+    // what an argument adds to the call kind, e.g. ' local 0.8' or
+    // ' global g[?]', none for a pointer, which the call kind cannot tell.
+    // 'locals' are the variables met so far
+    [[nodiscard]] static auto call_kind_part(const call_kind_item& item,
+                                             std::vector<root_variable>& locals)
+        -> std::optional<std::string> {
+
+        if (item.is_pointer) {
+            return std::nullopt;
+        }
+
+        std::string part;
+
+        // the body can reject an index by the length of its array
+        if (item.is_array) {
+            // note: an unsized array without a call is a parameter of a
+            //       function checked as a noinline body, a pointer
+
+            assert(item.array_len);
+
+            part += std::format(" array {}", *item.array_len);
+        }
+
+        // note: the result and the arguments are variables in memory
+        assert(item.target);
+
+        const storage_path& target{*item.target};
+
+        const std::string path{target.path.text()};
+
+        if (target.root.is_global()) {
+            return part + std::format(" global {}{}", target.root.name, path);
+        }
+
+        return part + std::format(" local {}{}",
+                                  local_index(locals, target.root), path);
     }
 
     // the callee writes the result through its address at the type of the
@@ -1840,44 +1875,6 @@ class noinline_call {
         }
 
         return not tc.make_ident_info(arg).is_var();
-    }
-
-    // what an argument adds to the signature, e.g. ' local 0.8' or
-    // ' global g[?]', none for a pointer, which the signature cannot tell.
-    // 'locals' are the variables met so far
-    [[nodiscard]] static auto signature_part(const signature_item& item,
-                                             std::vector<root_variable>& locals)
-        -> std::optional<std::string> {
-
-        if (item.is_pointer) {
-            return std::nullopt;
-        }
-
-        std::string part;
-
-        // the body can reject an index by the length of its array
-        if (item.is_array) {
-            // note: an unsized array without a call is a parameter of a
-            //       function checked as a noinline body, a pointer
-
-            assert(item.array_len);
-
-            part += std::format(" array {}", *item.array_len);
-        }
-
-        // note: the result and the arguments are variables in memory
-        assert(item.target);
-
-        const storage_path& target{*item.target};
-
-        const std::string path{target.path.text()};
-
-        if (target.root.is_global()) {
-            return part + std::format(" global {}{}", target.root.name, path);
-        }
-
-        return part + std::format(" local {}{}",
-                                  local_index(locals, target.root), path);
     }
 };
 
@@ -2176,7 +2173,7 @@ class stmt_call : public expression {
         }
 
         // note: the chain does not depend on the arguments, see
-        //       'noinline_call::check_aliasing'
+        //       'noinline_call::dry_run_body'
 
         if (tc.scopes().noinline_dry_run_level() != 0) {
             call_site::throw_dry_run_frame_limit(tok());

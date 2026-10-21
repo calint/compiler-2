@@ -48,10 +48,10 @@ For a reviewer:
     - [3.5 Building paths](#35-building-paths)
     - [3.6 The other checks on a read](#36-the-other-checks-on-a-read)
     - [3.7 Fuzzing](#37-fuzzing)
-- [4. Noinline calls: aliasing validated by a dry run of the body](#4-noinline-calls-aliasing-validated-by-a-dry-run-of-the-body)
+- [4. Noinline calls: the body dry run once per kind of call](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call)
     - [4.1 Problem](#41-problem)
     - [4.2 Dry run](#42-dry-run)
-    - [4.3 Signature: checked once per kind of call](#43-signature-checked-once-per-kind-of-call)
+    - [4.3 Call kind: dry run once per kind of call](#43-call-kind-dry-run-once-per-kind-of-call)
     - [4.4 Temporaries](#44-temporaries)
 - [5. Versions of the same code: compiled, measured, the shorter kept](#5-versions-of-the-same-code-compiled-measured-the-shorter-kept)
     - [5.1 Why](#51-why)
@@ -228,8 +228,8 @@ the longer of two versions after both are measured:
 
 1. 'toc::check_only' and 'machine::emit_discarded': the body of a noinline
    function compiled as if inlined with the arguments of a call, for the
-   aliasing errors of that call, see
-   [chapter 4](#4-noinline-calls-aliasing-validated-by-a-dry-run-of-the-body),
+   errors that depend on that call, see
+   [chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call),
    and the body of a function that no compile reached ([1.5](#15-checks));
    'toc::dry_run_scope' and 'machine::version_scope' put back what it
    changed: the registers, the frame depth, the string constants and the use
@@ -284,7 +284,7 @@ listed in the report ([1.6](#16-reports)). The limit of nested dry runs
 counts the levels and the frames below each call, so a chain that is too deep
 is rejected at any call of it, whatever the order of the calls, except for a
 chain through a cycle of noinline calls
-([4.3](#43-signature-checked-once-per-kind-of-call)).
+([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
 
 ### 1.6 Reports
 
@@ -784,7 +784,7 @@ every value of every run-time index is tried. Two fuzzers do this:
 A long run, one seed per core with large counts, takes about six minutes on 16
 cores and is meant for any change to the check.
 
-## 4. Noinline calls: aliasing validated by a dry run of the body
+## 4. Noinline calls: the body dry run once per kind of call
 
 ### 4.1 Problem
 
@@ -799,8 +799,9 @@ storage") has to be reported at the call, not once for the body.
 
 At each noinline call, before the call is compiled for real, the body is
 compiled as if it were inlined with these arguments, and the result is
-dropped. The aliasing errors that this inline compilation raises are the
-errors of the call. An error carries the call as a frame, so it points both at
+dropped. The errors that this inline compilation raises are the errors of the
+call: shared storage, and any other error that depends on the arguments, e.g.
+an index checked against the length of an array argument or a nesting limit. An error carries the call as a frame, so it points both at
 the call and at the line in the body.
 
 This reuses the inline check as it is. A separate analysis of which parameters
@@ -817,13 +818,13 @@ calls were checked:
 4. a noinline call reached inside a dry run does not emit an instance of its
    function
 
-### 4.3 Signature: checked once per kind of call
+### 4.3 Call kind: dry run once per kind of call
 
 A dry run costs a compilation of the body, so it is not repeated for calls
 that cannot differ. What the body can reject depends only on which bytes each
 argument passes: which arguments are in the same variable, which bytes of it
 they are, and which are globals (the body may name the global too). The call
-is reduced to a signature:
+is reduced to a call kind:
 
 ```text
 name + for the result and each argument:
@@ -848,9 +849,9 @@ Locals are numbered by first appearance, not named, because which local is
 passed does not matter, only which arguments are in the same one and which
 bytes of it they are. A global is named, because the body may refer to it
 directly. Two calls that pass different bytes of the same variable may get
-different verdicts, so the path is part of the signature.
+different verdicts, so the path is part of the call kind.
 
-A signature already seen is not dry run again. The signature is recorded
+A call kind already seen is not dry run again. The call kind is recorded
 before the dry run starts, so a call of the same kind reached inside the body
 (recursion) stops at once. The kinds are finitely many, so nested dry runs
 end.
@@ -861,20 +862,20 @@ compiler recurses for each, so the levels are limited
 ('call_site::max_noinline_dry_run_level', 100), and like the other inlining
 limits the depth depends on the calls. The dry runs also share the frame limit
 of the inlined calls and blocks ('call_site::max_frame_count', 256 scopes). A
-signature keeps the number of levels its dry run reached below it and the
+call kind keeps the number of levels its dry run reached below it and the
 frames above it at its deepest check of the frame limit ('dry_run_height',
-'function_table::checked_call_height'), and a call that finds its signature
-checked counts both without running again, so the verdict does not depend on
-which calls were checked first. A cycle of
-signatures, e.g. 'f(a, b)' calling 'f(b, a)', is measured from where it was
-entered and can differ by its number of signatures. This is a known
+'function_table::dry_run_height_of'), and a call that finds its kind dry run
+counts both without running again, so the verdict does not depend on which
+calls were checked first ('toc::dry_run_call_kind'). A cycle of call kinds,
+e.g. 'f(a, b)' calling 'f(b, a)', is measured from where it was entered and
+can differ by its number of call kinds. This is a known
 limitation: a chain that reaches such a cycle near the limit can be accepted
 or rejected depending on which of its calls was checked first; storing the
-height of a cycle only once the outermost dry run of its signatures ends
+height of a cycle only once the outermost dry run of its call kinds ends
 would remove it.
 
 A pointer argument cannot tell which variable it names, so it gives no
-signature: the dry run is skipped and no aliasing is reported for it.
+call kind: the dry run is skipped and no aliasing is reported for it.
 
 ### 4.4 Temporaries
 
@@ -883,7 +884,7 @@ of the call. The dry run names it as a temporary argument, not as a register
 of the caller that the body does not see. The temporary is storage, not a
 constant of the body, so the dry run does not depend on the value, just as
 the body compiled once does not. A temporary aliases no variable, so whether
-an argument is a temporary or a variable is part of the signature.
+an argument is a temporary or a variable is part of the call kind.
 
 ## 5. Versions of the same code: compiled, measured, the shorter kept
 
@@ -1293,6 +1294,8 @@ is kept and the error is dropped with the state of the failed version, see
 [5.3](#53-state-each-version-starts-from-the-same-machine); and the check of
 a function that nothing calls, where an error that depends on the arguments
 of a call ends the check and the function is accepted, see
-[1.5](#15-checks).
+[1.5](#15-checks). An error in the dry run of a noinline call ends the compile
+like any other, so a dry run puts nothing back at an error
+('toc::dry_run_call_kind').
 
 Cost: one error per run.

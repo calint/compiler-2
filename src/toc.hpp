@@ -432,8 +432,8 @@ class frame final {
         return {name, frame_type::loop, {}, {}, {}};
     }
 
-    // a noinline function compiled in place, the dry run that checks the
-    // aliasing of a call to it, see 'noinline_call::check_aliasing'
+    // a noinline function compiled in place, the dry run for the errors of a
+    // call to it, see 'noinline_call::dry_run_body'
     [[nodiscard]] static auto noinline_dry_run(const std::string_view name,
                                                std::string call_path,
                                                std::string return_label)
@@ -741,7 +741,7 @@ class type_table final {
 };
 
 // what the dry run of a checked noinline call reached below it, see
-// 'noinline_call::check_aliasing'
+// 'noinline_call::dry_run_body'
 struct dry_run_height {
     // the noinline dry runs nested in it
     size_t levels{};
@@ -758,9 +758,9 @@ class function_table final {
     std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
     std::vector<noinline_body> noinline_bodies_;
-    // the dry-run levels below each checked aliasing signature, see
-    // 'noinline_call::check_aliasing'
-    std::map<std::string, dry_run_height, std::less<>> checked_call_heights_;
+    // the dry-run levels below each kind of call dry run, see
+    // 'noinline_call::dry_run_body'
+    std::map<std::string, dry_run_height, std::less<>> dry_run_heights_;
     // the definitions whose body a compile reached
     std::set<const stmt_def_func*> reached_;
 
@@ -806,26 +806,21 @@ class function_table final {
         });
     }
 
-    // none when the signature is not checked yet
-    [[nodiscard]] auto
-    checked_call_height(const std::string_view signature) const
-        -> std::optional<dry_run_height> {
-
-        const auto it{checked_call_heights_.find(signature)};
-
-        if (it == checked_call_heights_.end()) {
-            return std::nullopt;
-        }
-
-        return it->second;
-    }
-
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
         return defs_;
     }
 
-    auto erase_checked_call_height(const std::string_view signature) -> void {
-        checked_call_heights_.erase(signature);
+    // none when the kind of call is not dry run yet
+    [[nodiscard]] auto dry_run_height_of(const std::string_view kind) const
+        -> std::optional<dry_run_height> {
+
+        const auto it{dry_run_heights_.find(kind)};
+
+        if (it == dry_run_heights_.end()) {
+            return std::nullopt;
+        }
+
+        return it->second;
     }
 
     // the name is known
@@ -868,10 +863,10 @@ class function_table final {
         return noinline_bodies_.size();
     }
 
-    auto set_checked_call_height(const std::string_view signature,
-                                 const dry_run_height height) -> void {
+    auto set_dry_run_height(const std::string_view kind,
+                            const dry_run_height height) -> void {
 
-        checked_call_heights_.insert_or_assign(std::string{signature}, height);
+        dry_run_heights_.insert_or_assign(std::string{kind}, height);
     }
 };
 
@@ -2326,7 +2321,7 @@ class toc final {
     // above zero inside 'check_only', no noinline body is added there
     size_t check_only_depth_{};
     // the deepest level of noinline dry runs reached in the dry run being
-    // checked, see 'noinline_call::check_aliasing'
+    // checked, see 'noinline_call::dry_run_body'
     size_t deepest_dry_run_level_{};
     // the most frames at a check of the frame limit in that dry run
     size_t deepest_frame_check_{};
@@ -2390,73 +2385,6 @@ class toc final {
     };
 
   public:
-    // the check of a noinline call by a dry run at 'level': while it lives
-    // the signature counts as checked with the height 0, so the same kind of
-    // call reached inside returns; 'commit' keeps the levels and frames
-    // reached below as its height, otherwise the end, also at an error,
-    // removes the signature and puts back the deepest level and frame check,
-    // so a failed check leaves no trace, see 'noinline_call::check_aliasing'
-    class noinline_check_scope final {
-        toc& tc_;
-        std::string_view signature_;
-        size_t level_;
-        size_t frame_count_;
-        size_t enclosing_deepest_;
-        size_t enclosing_frame_check_;
-        bool is_committed_{};
-
-      public:
-        noinline_check_scope(toc& tc, const std::string_view signature,
-                             const size_t level)
-            : tc_{tc}, signature_{signature}, level_{level},
-              frame_count_{tc.scopes_.frames().size()},
-              enclosing_deepest_{
-                  std::exchange(tc.deepest_dry_run_level_, level),
-              },
-              enclosing_frame_check_{
-                  std::exchange(tc.deepest_frame_check_, frame_count_),
-              } {
-
-            tc_.funcs_.set_checked_call_height(signature_, {});
-        }
-
-        noinline_check_scope(const noinline_check_scope&) = delete;
-        noinline_check_scope(noinline_check_scope&&) = delete;
-        auto operator=(const noinline_check_scope&)
-            -> noinline_check_scope& = delete;
-        auto operator=(noinline_check_scope&&)
-            -> noinline_check_scope& = delete;
-
-        ~noinline_check_scope() {
-            if (is_committed_) {
-                return;
-            }
-
-            tc_.funcs_.erase_checked_call_height(signature_);
-            tc_.deepest_dry_run_level_ = enclosing_deepest_;
-            tc_.deepest_frame_check_ = enclosing_frame_check_;
-        }
-
-        // the enclosing check reaches what was reached below too
-        auto commit() -> void {
-            const size_t deepest{tc_.deepest_dry_run_level_};
-            const size_t frame_check{tc_.deepest_frame_check_};
-
-            tc_.funcs_.set_checked_call_height(
-                signature_, {
-                                .levels{deepest - level_},
-                                .frames{frame_check - frame_count_},
-                            });
-
-            tc_.deepest_dry_run_level_ = std::max(enclosing_deepest_, deepest);
-
-            tc_.deepest_frame_check_ =
-                std::max(enclosing_frame_check_, frame_check);
-
-            is_committed_ = true;
-        }
-    };
-
     toc(::machine& backend, const source_files& files,
         const builtin_type_set& builtin_set, const size_t vars_capacity_bytes,
         const check_options& checks)
@@ -2736,6 +2664,46 @@ class toc final {
 
     [[nodiscard]] auto data() const -> const data_table& { return data_; }
 
+    // the dry run of the kind of noinline call 'kind' at 'level': the kind
+    // counts as dry run with the height 0 while 'dry_run' runs, so the same
+    // kind reached inside returns, then the levels and frames reached below
+    // are its height and the enclosing dry run reaches them too, see
+    // 'noinline_call::dry_run_body'
+    //
+    // note: an error out of 'dry_run' ends the compile, so nothing is put
+    //       back: 'check_only' makes every error a 'source' error and only
+    //       'machine::compile_version' ('out_of_registers') and
+    //       'stmt_def_func::check_body' (not 'source') drop an error
+    auto dry_run_call_kind(const std::string_view kind, const size_t level,
+                           const std::function_ref<void()> dry_run) -> void {
+
+        const size_t frame_count{scopes_.frames().size()};
+
+        const size_t enclosing_deepest{
+            std::exchange(deepest_dry_run_level_, level),
+        };
+
+        const size_t enclosing_frame_check{
+            std::exchange(deepest_frame_check_, frame_count),
+        };
+
+        funcs_.set_dry_run_height(kind, {});
+
+        check_only(dry_run);
+
+        funcs_.set_dry_run_height(
+            kind, {
+                      .levels{deepest_dry_run_level_ - level},
+                      .frames{deepest_frame_check_ - frame_count},
+                  });
+
+        deepest_dry_run_level_ =
+            std::max(enclosing_deepest, deepest_dry_run_level_);
+
+        deepest_frame_check_ =
+            std::max(enclosing_frame_check, deepest_frame_check_);
+    }
+
     // 'machine::emit_most_efficient' of versions that compile statements
     auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
                              const std::function_ref<void()> emit_first,
@@ -2969,7 +2937,7 @@ class toc final {
     }
 
     // a check of the frame limit with 'frame_count' frames, which a cached
-    // noinline check repeats, see 'noinline_call::check_aliasing'
+    // noinline check repeats, see 'noinline_call::dry_run_body'
     auto reach_frame_check(const size_t frame_count) -> void {
         deepest_frame_check_ = std::max(deepest_frame_check_, frame_count);
     }
