@@ -50,9 +50,12 @@ As an experiment, without expecting much, I asked for a feature that would have
 taken me days to implement. The AI was done in minutes. I was thrilled.
 
 It solved a few of my problems with ease. When I asked how it knew the
-solution, it said it was a common compiler technique. I have no background in
-compiler theory, since this is an experiment. That shows in the arithmetic and
-boolean expressions, which are handled without an abstract syntax tree.
+solution, it said it was a common compiler technique. In this case how to handle
+end of line comments.
+
+I have no background in compiler theory, since this is an experiment. That shows
+in the arithmetic and boolean expressions, which are handled without an abstract
+syntax tree.
 
 I still reviewed the code, but less and less closely. First I read every line.
 Then I only skimmed. In the end, I just committed.

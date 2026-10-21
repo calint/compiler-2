@@ -1,0 +1,15 @@
+# a parameter held in a register has the rules of a variable of its type: it
+# is passed on to a wider parameter only through a conversion
+
+func g(b i16) res {
+    res = int(b)
+}
+
+func f(a i8) res {
+    res = g(a)
+}
+
+func main() {
+    var v = i8(5)
+    exit(f(v + 1))
+}

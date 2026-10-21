@@ -4525,3 +4525,8 @@ SRC=1407 && EXP=0 && RUN
 SRC=1408 && COMPERR
 SRC=1409 && COMPERR
 SRC=1410 && COMPERR
+
+# a typed constant and a parameter held in a register passed to a wider
+# parameter are rejected like a variable
+SRC=1411 && COMPERR
+SRC=1412 && COMPERR

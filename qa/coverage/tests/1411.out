@@ -1,0 +1,7 @@
+
+1411.baz:9:13: expected type 'i16' for parameter 'b', got 'i8'
+    res = g(a)
+            ^
+1411.baz:13:10: called from 'f(5)'
+    exit(f(5))
+         ^

@@ -1079,8 +1079,9 @@ class inline_call {
 
         const ident_info info{tc.make_ident_info(arg)};
 
-        // constants and registers are values, not storage
-        if (not info.is_var()) {
+        // an untyped constant, e.g. a literal, is checked by its value; a
+        // typed one has the rules of a variable of its type
+        if (info.is_const() and not info.constant().is_typed()) {
             return;
         }
 
@@ -1119,7 +1120,8 @@ class inline_call {
                       .is_address_computed())),
         };
 
-        // an alias uses the argument's storage so its type must match
+        // an alias uses the argument's storage or typed value, so its type
+        // must match
         if (not call_site::is_computed_value(arg)) {
             assert_alias_type(tc, arg, param);
         }

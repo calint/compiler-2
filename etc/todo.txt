@@ -26,13 +26,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     constant print the name without its indexes ('name_or_literal'), e.g.
     "read-only 'ps.x'" for 'ps[0].x'; the shared storage messages quote the
     source text ('statement::trimmed_source', 'destination::text')
-[ ] medium: a typed constant argument passed to a wider parameter is accepted
-    where the variable is rejected (G4-2), e.g. 'f(5)' with 'f(a i8)' calling
-    'g(b i16)' with 'g(a)'; also 'f(v + 1)' with the parameter in a register;
-    the spelling mode of 'fuzz-exprs.py' reports it as the 'argument' class
-    => 'assert_alias_type' (stmt_call.hpp) checks every typed named argument
-       like a variable, with 'fold(...)->own_type'; only an untyped constant
-       is exempt; a separate fix after the aliasing plan, 2 tests
 [ ] medium: low priority: conversions: rows 1 and 2 of
     'stmt_builtin_convert::plan_computation' decide alike at W in one
     predicate, so a list narrower than the type is also measured and computed

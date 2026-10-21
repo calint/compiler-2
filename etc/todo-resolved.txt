@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: a typed constant argument passed to a wider parameter is accepted
+    where the variable is rejected (G4-2), e.g. 'f(5)' with 'f(a i8)' calling
+    'g(b i16)' with 'g(a)'; also 'f(v + 1)' with the parameter in a register;
+    the spelling mode of 'fuzz-exprs.py' reports it as the 'argument' class
+    => 'assert_alias_type' (stmt_call.hpp) checks every typed named argument
+       like a variable, with 'fold(...)->own_type'; only an untyped constant
+       is exempt; a separate fix after the aliasing plan, 2 tests
+    => done (2026-10-21): a typed constant name (a parameter bound to a
+       constant, a 'let' of a conversion) and a parameter held in a register
+       are checked like a variable,
+       tests 1411, 1412; the spelling mode of 'fuzz-exprs.py' pairs a
+       conversion argument with the conversion of a variable, 'i8(c0)', since
+       a conversion passes a value and a name passes its storage
 [x] hard: aliasing plan: one model for "may two accesses be the same bytes"
     => problem: four shapes of "root variable plus path" ('storage_target',
        'foo_array_info', 'destination::accessed_path_',

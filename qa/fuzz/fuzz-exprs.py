@@ -489,9 +489,16 @@ class SpellingProgram:
         self.noinline = rnd.random() < 0.5
 
     def operand(self, as_constant, i):
-        if i < len(self.leaves):
-            return self.leaves[i].text(as_constant)
-        return str(self.literal)
+        if i >= len(self.leaves):
+            return str(self.literal)
+        leaf = self.leaves[i]
+        # note: an argument that is a name passes its storage and must have
+        #       the type of the parameter, a conversion passes a value, so the
+        #       twin of 'i8(5)' is 'i8(c0)', not 'c0'
+        if self.context == "argument" and not as_constant and \
+                leaf.const_spelling in ("conv", "let"):
+            return f"{leaf.uops}{leaf.t}({leaf.spelled(False)})"
+        return leaf.text(as_constant)
 
     def body(self, as_constant):
         a = self.operand(as_constant, 0)
