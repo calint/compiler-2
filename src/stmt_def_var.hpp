@@ -63,13 +63,14 @@ class initializer_declaration final {
     // the folded 'value', read with the name in scope like its parse, so
     // 'let k = k + 1' reads the uninitialized 'k', not a constant of an outer
     // block
-    [[nodiscard]] auto constant_value(toc& tc, const expr_any& value) const
-        -> std::optional<int64_t> {
+    [[nodiscard]] auto fold(toc& tc, const expr_any& value) const
+        -> std::optional<folded_value> {
 
-        std::optional<int64_t> constant;
+        std::optional<folded_value> constant;
 
-        with_placeholder(tc,
-                         [&] -> void { constant = value.constant_value(tc); });
+        with_placeholder(tc, [&] -> void {
+            constant = value.fold(tc, tc.use_at(tc.builtins().default_type()));
+        });
 
         return constant;
     }
@@ -305,20 +306,22 @@ class stmt_def_const final : public statement {
     token name_tk_;
     token equals_tk_;
     expr_any initializer_;
-    int64_t value_{};
+    // typed when the initializer is, e.g. 'let v = int(5)' is checked by type
+    // like a variable of 'int'
+    folded_value constant_;
 
   public:
     // the constant is declared during the parse so later statements can name
     // it, e.g. as an array size
     stmt_def_const(toc& tc, const token tk, const token name_tk,
                    const token equals_tk, expr_any initializer,
-                   const int64_t value)
+                   const folded_value& constant)
         : statement{tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
-          initializer_{std::move(initializer)}, value_{value} {
+          initializer_{std::move(initializer)}, constant_{constant} {
 
         set_type(tc.builtins().default_type());
 
-        tc.add_const(name_tk_, 0, name_tk_.text(), value_);
+        tc.add_const(name_tk_, 0, name_tk_.text(), constant_);
     }
 
     stmt_def_const() = default;
@@ -346,9 +349,9 @@ class stmt_def_const final : public statement {
         //       compiled, a name that is a constant only with a call is a
         //       variable in the parse, e.g. the 'n' of a 'foo'
 
-        assert(initializer_.constant_value(tc) == value_);
+        assert(initializer_.constant_value(tc) == constant_.value);
 
-        tc.add_const(name_tk_, indent, name_tk_.text(), value_);
+        tc.add_const(name_tk_, indent, name_tk_.text(), constant_);
     }
 
     // the value is folded, nothing is read at run time
@@ -472,8 +475,8 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
             declaration.type_ref().is_same(tc.builtins().default_type()),
     };
 
-    const std::optional<int64_t> constant{
-        may_fold ? declaration.constant_value(tc, value) : std::nullopt,
+    const std::optional<folded_value> constant{
+        may_fold ? declaration.fold(tc, value) : std::nullopt,
     };
 
     if (constant) {

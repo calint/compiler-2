@@ -1,0 +1,13 @@
+# a 'let' of a typed initializer is a constant of its type: converted where it
+# is narrower, a value of its type in a list and an array size
+
+func main() {
+    let v = int(5)
+    var b = i8(0)
+    b = i8(v) + 1
+    var w = v + 2
+    var a = i8[3]
+    let n = array_length(a)
+    var c = i8[n]
+    exit(int(b) + w + int(array_length(c)) - 16)
+}

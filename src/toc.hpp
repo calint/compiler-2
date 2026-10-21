@@ -237,7 +237,8 @@ struct alias_info {
 
 struct const_info {
     token src_loc_tk; // the definition
-    int64_t value;
+    // typed when the initializer of a 'let' is, e.g. 'let v = int(5)'
+    folded_value constant;
 };
 
 // what a variable is declared by: 'var', 'dat' or the signature of a function,
@@ -1163,7 +1164,7 @@ class scope_stack final {
             return std::nullopt;
         }
 
-        return frames_.at(meaning.frame_index).get_const(name).value;
+        return frames_.at(meaning.frame_index).get_const(name).constant.value;
     }
 
     // blocks and loops belong to the function frame below them
@@ -2007,7 +2008,7 @@ class ident_resolver final {
 
                 return ident_info::make_const(
                     ident, step.id.str(), builtins_.get().default_type(),
-                    folded_value::untyped(frm.get_const(step.id.base()).value));
+                    frm.get_const(step.id.base()).constant);
             }
 
             if (std::optional<ident_info> found{
@@ -2544,7 +2545,8 @@ class toc final {
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
-                   const std::string_view name, const int64_t value) -> void {
+                   const std::string_view name, const folded_value& constant)
+        -> void {
 
         definitions_.assert_name_free(src_loc_tk, name);
         definitions_.assert_not_hiding_signature(src_loc_tk, "constant", name);
@@ -2552,12 +2554,13 @@ class toc final {
         if (is_compiling_) {
             ::machine& x{machine()};
 
-            x.comment(src_loc_tk, indent, "const {} = {}", name, value);
+            x.comment(src_loc_tk, indent, "const {} = {}", name,
+                      constant.value);
         }
 
         scopes_.back().add_const(name, {
                                            .src_loc_tk{src_loc_tk},
-                                           .value{value},
+                                           .constant{constant},
                                        });
     }
 
@@ -3415,7 +3418,7 @@ class generic_scope final {
             is_block_entered_ = true;
         }
 
-        tc_.add_const(src_loc_tk, 0, name, value);
+        tc_.add_const(src_loc_tk, 0, name, folded_value::untyped(value));
     }
 
     auto add_type(const token& src_loc_tk, const std::string_view name,

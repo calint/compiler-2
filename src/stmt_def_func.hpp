@@ -344,7 +344,7 @@ class stmt_def_func final : public statement {
 
         for (const generic_arg& constant : instance_->constants) {
             tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
-                         constant.value);
+                         folded_value::untyped(constant.value));
         }
     }
 

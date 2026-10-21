@@ -4488,3 +4488,7 @@ SRC=1388 && COMPERR
 # 'array_length' is a value of the default type also when it folds
 SRC=1389 && COMPERR
 SRC=1390 && EXP=0 && RUN
+
+# a 'let' of a typed initializer keeps the type
+SRC=1391 && COMPERR
+SRC=1392 && EXP=0 && RUN

@@ -1,0 +1,9 @@
+# a 'let' of a typed initializer keeps the type, e.g. 'let v = int(5)' is
+# narrowed when stored in an 'i8' like 'let v = i8(5)' would be in an 'i8'
+
+func main() {
+    let v = int(5)
+    var b = i8(0)
+    b = v
+    exit(int(b))
+}

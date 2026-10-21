@@ -219,7 +219,8 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        tc.add_const(src_loc_tk, indent, "n", static_cast<int64_t>(*array_len));
+        tc.add_const(src_loc_tk, indent, "n",
+                     folded_value::untyped(static_cast<int64_t>(*array_len)));
     }
 
     // the 'foo' header as one comment line, e.g. 'foo a, 2'

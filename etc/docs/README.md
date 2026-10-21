@@ -28,6 +28,7 @@ For a reviewer:
     - [1.4 Dry runs](#14-dry-runs)
     - [1.5 Checks](#15-checks)
     - [1.6 Reports](#16-reports)
+    - [1.7 Values known at compile time](#17-values-known-at-compile-time)
 - [2. Generic types: how 'type' with parameters becomes real types](#2-generic-types-how-type-with-parameters-becomes-real-types)
     - [2.1 The three kinds of 'type'](#21-the-three-kinds-of-type)
     - [2.2 Plain type](#22-plain-type)
@@ -291,6 +292,41 @@ After the code, as comments: noinline bodies, uninstantiated generics, jump
 optimizations, usage ('report_renderer' in 'program.hpp'), and with
 '--report=registers' the use of registers at the busiest point
 ('register_report.hpp').
+
+### 1.7 Values known at compile time
+
+A constant follows the rules of a variable; only the code differs, an
+immediate instead of a load. One virtual, 'statement::fold', evaluates a value
+known at compile time; nothing else does. Its result, 'folded_value', is
+stored as it is wherever a constant is kept ('ident_info', the alias of an
+inlined argument, the constant of a 'let'):
+
+- typed: it has the rules of a variable of its 'own_type': a conversion
+  ('i8(300)', 'i16(k)'), a constant argument of an inlined call,
+  'array_length', a list led by one, a 'let' of one
+- untyped: a literal or a 'let' of untyped values, checked by its value where
+  it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not
+
+Where it is used is a 'value_use': the width the value is computed at and
+whether its arithmetic is checked for overflow, made by 'toc::use_of' from a
+destination or by 'toc::use_at' for a value without one (a comparison side,
+an initializer, an argument). A destination carries the overflow policy
+('destination::as_wrapping' for the argument of a conversion). The value is
+wrapped to the width of its use; the unary ops apply by
+'unary_ops::evaluate_at', which rejects a negation of the minimum under the
+overflow check.
+
+'fold' does not check that the value fits, a conversion folds its argument at
+a narrower width on purpose; 'statement::fold_checked' adds the check of
+'assert_not_narrowed' at the same width, so a folded comparison side or
+initializer is rejected where a computed one is. A constant reaches a
+destination only through the list that holds it ('expr_arith', the
+immediate by 'folded_value::operand_at'); the nodes in a list never emit one.
+
+The result: a typed constant and a variable of the same type and value get the
+same verdict and the same result; an overflow or zero divisor certain at
+compile time is an error where the variable gives the panic. The spelling mode
+of 'qa/fuzz/fuzz-exprs.py' checks it.
 
 ## 2. Generic types: how 'type' with parameters becomes real types
 
