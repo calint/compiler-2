@@ -465,6 +465,20 @@ CLI_PADDING_ZERO() {
     echo ok
 }
 
+CLI_PADDING_ZERO_BY_TARGET() {
+    echo -n "cli padding of six gaps zeroed as the target emits it smaller: "
+    # 1287.baz: x86_64 zeroes the 48 B instance, rv32i each of its 6 gaps
+    "$BIN" --target=x86_64 1287.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(grep -c "zero instance for its padding: 48 B" gen.s) -eq 1 ]]
+    [[ $(grep -c "zero padding" gen.s) -eq 0 ]]
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 1287.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(grep -c "zero instance for its padding" gen.s) -eq 0 ]]
+    [[ $(grep -c "zero padding: 3 B" gen.s) -eq 6 ]]
+    echo ok
+}
+
 CLI_USAGE_MESSAGES() {
     echo -n "cli usage errors name their option: "
     local arg exit_code
@@ -490,7 +504,6 @@ CLI --vars=16junk 1 --help
 CLI --vars=18446744073709551616 1 --help
 # more than the target addresses
 CLI --vars=0x8000000000000000 1 0426.baz
-CLI --vars=0x100000010 1 0426.baz --target=rv32i
 CLI --vars=0x800000000000 0 0426.baz
 CLI --stack=65536 0 --help
 CLI --stack=0x10000 0 --help
@@ -557,5 +570,6 @@ CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS
 CLI_VERSIONS
 CLI_PADDING_ZERO
+CLI_PADDING_ZERO_BY_TARGET
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

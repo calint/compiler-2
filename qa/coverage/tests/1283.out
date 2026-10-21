@@ -1,0 +1,4 @@
+
+1283.baz:9:12: index 5 is out of bounds for array 'v.data' of size 4
+    v.data[5] = 1
+           ^

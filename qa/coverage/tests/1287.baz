@@ -1,0 +1,22 @@
+# a call into an instance with six gaps of padding: x86_64 zeroes the whole
+# instance, rv32i each gap, and both compare equal byte by byte
+type r { a i8, b i32 }
+type six { x r[6] }
+type holder { v six, n i32 }
+
+func make() res six {
+    res = {}
+    res.x[5].b = 7
+}
+
+func main() {
+    var h = holder{make(), 1}
+    var g = holder{}
+    g.v.x[5].b = 7
+    g.n = 1
+    var ret = 0
+    if h == g {
+        ret = h.v.x[5].b + h.n
+    }
+    exit(ret)
+}

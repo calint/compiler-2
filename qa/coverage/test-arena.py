@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 # Shared Baz helpers. A failed assertion exits with its numbered error code.
-# item occupies 13 bytes: one i8 tag plus three i32 values, without field padding.
+# item occupies 16 bytes: one i8 tag, 3 bytes of padding and three i32 values.
 COMMON = """func assert(err, condition bool) { if not condition exit(err) }
 type item { tag i8, values i32[3] }
 func bump(value mut item) { value.values[2] = value.values[2] + 1 }

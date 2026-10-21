@@ -17,7 +17,6 @@
 #include <print>
 #include <ranges>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -26,6 +25,7 @@
 #include <vector>
 
 #include "assembler.hpp"
+#include "compile_error.hpp"
 
 // buffers rv32i output until every label has an offset, then grows the jumps
 // that cannot reach their targets, writes the assembly source and, from the
@@ -44,7 +44,6 @@ class assembler_rv32i final : public assembler {
         slt,
         sltu,
         xor_op,
-        srl,
         sra,
         or_op,
         and_op,
@@ -72,16 +71,11 @@ class assembler_rv32i final : public assembler {
         bge,
         bltu,
         bgeu,
-        bgt,
-        ble,
-        bgtu,
-        bleu,
         beqz,
         bnez,
         bltz,
         bgez,
         bgtz,
-        blez,
         ecall,
         ebreak,
         li,
@@ -172,9 +166,10 @@ class assembler_rv32i final : public assembler {
     struct op_info {
         std::string_view mnemonic;
         form operands{};
-        // opcode and function bits, the base instruction's for pseudos
+        // opcode and function bits, the base instruction's for pseudos; zero
+        // for 'li', 'la', 'j' and 'call', which encode from the named constants
         uint32_t encoding{};
-        // pseudo branches such as 'bgt' swap the base branch's operands
+        // pseudo branches such as 'bgtz' swap the base branch's operands
         bool swapped{};
     };
 
@@ -939,10 +934,6 @@ class assembler_rv32i final : public assembler {
     // overridden methods
     //
 
-    [[nodiscard]] auto comment_prefix() const -> std::string_view override {
-        return "#";
-    }
-
     [[nodiscard]] auto format_jump(const jump_info& jump) const
         -> std::string override {
 
@@ -1128,7 +1119,7 @@ class assembler_rv32i final : public assembler {
         };
 
         if (grown == jump_reach::far and jump.scratch.empty()) {
-            throw std::runtime_error{std::format(
+            throw usage_error{std::format(
                 "jump to '{}' exceeds 1 MiB and no scratch register is free",
                 jump.target)};
         }
@@ -1291,8 +1282,7 @@ class assembler_rv32i final : public assembler {
             return distance >= jal_min_ and distance <= jal_max_;
         }
 
-        // the assembler reports distances beyond the 2 GiB of 'auipc' and
-        // 'jalr'
+        // 'auipc' and 'jalr' reach any address of the 32-bit address space
         return true;
     }
 
@@ -1625,7 +1615,7 @@ class assembler_rv32i final : public assembler {
         }
 
         if (operands == form::move) {
-            return {encode_immediate(addi_encoding_, ins.rd, ins.rs1, 0)};
+            return {encode_immediate(details.encoding, ins.rd, ins.rs1, 0)};
         }
 
         if (operands == form::jump_register) {
@@ -1837,7 +1827,6 @@ class assembler_rv32i final : public assembler {
                 row("slt", form::registers, 0x2033),
                 row("sltu", form::registers, 0x3033),
                 row("xor", form::registers, 0x4033),
-                row("srl", form::registers, 0x5033),
                 row("sra", form::registers, 0x40005033),
                 row("or", form::registers, 0x6033),
                 row("and", form::registers, 0x7033),
@@ -1865,24 +1854,19 @@ class assembler_rv32i final : public assembler {
                 row("bge", form::branch, 0x5063),
                 row("bltu", form::branch, 0x6063),
                 row("bgeu", form::branch, 0x7063),
-                row("bgt", form::branch, 0x4063, true),
-                row("ble", form::branch, 0x5063, true),
-                row("bgtu", form::branch, 0x6063, true),
-                row("bleu", form::branch, 0x7063, true),
                 row("beqz", form::branch_zero, 0x63),
                 row("bnez", form::branch_zero, 0x1063),
                 row("bltz", form::branch_zero, 0x4063),
                 row("bgez", form::branch_zero, 0x5063),
                 row("bgtz", form::branch_zero, 0x4063, true),
-                row("blez", form::branch_zero, 0x5063, true),
                 row("ecall", form::system, 0x73),
                 row("ebreak", form::system, 0x100073),
-                row("li", form::load_immediate, 0x13),
-                row("la", form::load_address, 0x17),
+                row("li", form::load_immediate, 0),
+                row("la", form::load_address, 0),
                 row("mv", form::move, 0x13),
-                row("j", form::jump, 0x6f),
+                row("j", form::jump, 0),
                 row("jr", form::jump_register, 0x67),
-                row("call", form::call, 0x17),
+                row("call", form::call, 0),
                 row("ret", form::ret, 0x8067),
             }),
         };
@@ -1959,13 +1943,11 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto inverse(const std::string_view mnemonic)
         -> std::string_view {
 
-        constexpr std::array<mnemonic_pair, 5> pairs{
+        constexpr std::array<mnemonic_pair, 3> pairs{
             {
                 {"beq", "bne"},
                 {"blt", "bge"},
                 {"bltu", "bgeu"},
-                {"bgt", "ble"},
-                {"bgtu", "bleu"},
             },
         };
 
@@ -2111,7 +2093,7 @@ class assembler_rv32i final : public assembler {
             locals->second,
         };
 
-        const auto line_of = &std::pair<size_t, int64_t>::first;
+        const auto line_of{&std::pair<size_t, int64_t>::first};
 
         if (name.back() == 'f') {
             const auto next{

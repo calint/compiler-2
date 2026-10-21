@@ -4071,3 +4071,27 @@ SRC=1280 && DIFFPY
 # a call into an instance whose padding lies in the elements of an array
 # zeroes the whole instance before the call, the code stays small
 SRC=1281 && EXP=8 && RUN
+
+# a method of a generic type that nothing calls is checked for each instance
+# like a function that nothing calls: a constant index out of bounds
+SRC=1282 && COMPERR
+
+# a constant index out of bounds names the array by its path, like the error
+# about a count
+SRC=1283 && COMPERR
+
+# a constant start of a bulk operation out of bounds names the array by its
+# path, like the error about a count
+SRC=1284 && COMPERR
+
+# a constant negative count of 'write' with a start computed at run time is
+# rejected, like the count of 'array_copy'
+SRC=1285 && COMPERR
+
+# a constant negative count of 'read' with a start computed at run time is
+# rejected, like the count of 'array_copy'
+SRC=1286 && COMPERR
+
+# a call into an instance with six gaps of padding: x86_64 zeroes the whole
+# instance, rv32i each gap, and both compare equal byte by byte
+SRC=1287 && EXP=8 && RUN

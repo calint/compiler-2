@@ -357,8 +357,8 @@ class stmt_def_var final : public statement {
     stmt_assign_var assign_var_;
 
   public:
-    // 'at_name' is the tokenizer at the name, the destination of the
-    // assignment is read from there
+    // 'at_name' is the tokenizer after the name, where the destination
+    // continues
     stmt_def_var(toc& tc, const token tk, const token name_tk,
                  tokenizer at_name, const token equals_tk,
                  const initializer_declaration& declaration, expr_any value)

@@ -223,7 +223,7 @@ class stmt_builtin_foo final : public statement {
         tc.add_const(src_loc_tk, indent, "n", static_cast<int64_t>(*array_len));
     }
 
-    // a one-line comment for the definition
+    // the 'foo' header as one comment line, e.g. 'foo a, 2'
     auto comment_header(machine& x, const size_t indent) const -> void {
         std::string header{statement::trimmed_source(ident_)};
 

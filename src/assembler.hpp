@@ -174,6 +174,9 @@ class assembler {
     [[nodiscard]] auto capture(const std::function_ref<void()> emit)
         -> captured_lines {
 
+        // note: written directly, the lines would bypass the capture
+        assert(is_buffering());
+
         captures_.emplace_back();
 
         try {
@@ -392,25 +395,7 @@ class assembler {
             return;
         }
 
-        if (not code_section_) {
-            current_lines().push_back({
-                .text{std::move(text)},
-                .label{},
-                .call_target{},
-                .jump{},
-                .code_size{},
-                .entry{},
-                .removed{},
-                .record{},
-            });
-
-            return;
-        }
-
-        const size_t code_size{text_code_size(text)};
-
-        // text labels such as rv32i numeric labels still let execution enter
-        const bool entry{is_label_text(text)};
+        const size_t code_size{code_section_ ? text_code_size(text) : 0};
 
         current_lines().push_back({
             .text{std::move(text)},
@@ -418,7 +403,7 @@ class assembler {
             .call_target{},
             .jump{},
             .code_size{code_size},
-            .entry{entry},
+            .entry{},
             .removed{},
             .record{},
         });
@@ -525,8 +510,6 @@ class assembler {
     // virtual methods
     //
 
-    [[nodiscard]] virtual auto comment_prefix() const -> std::string_view = 0;
-
     // the jump instruction without indentation
     [[nodiscard]] virtual auto format_jump(const jump_info& jump) const
         -> std::string = 0;
@@ -595,13 +578,6 @@ class assembler {
         jump.mnemonic = inverse_branch_mnemonic(jump.mnemonic);
         jump.target = std::move(target);
         l.text = std::string{leading_whitespace(l.text)} + format_jump(jump);
-    }
-
-    [[nodiscard]] auto is_label_text(const std::string_view text) const
-        -> bool {
-
-        const std::string_view code{code_before(text, comment_prefix())};
-        return not code.empty() and code.back() == ':';
     }
 
     // labels named by lines other than jumps, e.g. calls, addresses and
@@ -785,8 +761,8 @@ class assembler {
         return found->second;
     }
 
-    // text labels and numeric labels, named by references such as '1b', are
-    // entries without a lookup
+    // numeric labels, named by references such as '1b', are entries without a
+    // lookup
     [[nodiscard]] static auto
     is_enterable(const line& l,
                  const std::unordered_set<std::string_view>& referenced)
@@ -796,7 +772,7 @@ class assembler {
             return false;
         }
 
-        if (l.label.empty() or is_numeric(l.label)) {
+        if (is_numeric(l.label)) {
             return true;
         }
 

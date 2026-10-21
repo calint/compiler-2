@@ -159,6 +159,8 @@
   legend, newest first (`[x]` with a `=> done (date): ...` note).
 - Done means: built, focused tests run, linter clean, formatter applied.
 - Never commit unless told; the message is always `.` (no body, no trailer).
+- Review loops: after each review round and each fix phase, pause for the
+  user to commit, then continue.
 - Shell scripts `cd` to their own directory and use relative paths.
 
 ## Tools

@@ -585,7 +585,7 @@ examples:
     } catch (const compile_error& e) {
         print_compiler_error(files, e);
         return 1;
-    } catch (const std::runtime_error& e) {
+    } catch (const usage_error& e) {
         std::println(stderr, "error: {}", e.what());
         return 1;
     } catch (const std::exception& e) {

@@ -127,11 +127,14 @@ class register_pool final {
 // collected for the report of the use of registers
 class register_trace final {
   public:
+    // a body compiled in place of its call, or one of its own
+    enum class frame_kind : uint8_t { inlined, noinline_body };
+
     // an inlined call, the first frame is the function being compiled
     struct frame {
         std::string name;
         token call_site_tk;
-        bool is_noinline_body{};
+        frame_kind kind{};
     };
 
     // what the calls of a callee hold themselves
@@ -168,9 +171,9 @@ class register_trace final {
     // the registers allocated until 'end_frame' belong to the call of
     // 'name' made at 'call_site_tk'
     auto begin_frame(const token& call_site_tk, std::string name,
-                     const bool is_noinline_body) -> void {
+                     const frame_kind kind) -> void {
 
-        if (is_noinline_body) {
+        if (kind == frame_kind::noinline_body) {
             name += noinline_body_suffix_;
         }
 
@@ -181,7 +184,7 @@ class register_trace final {
         frames_.push_back({
             .name{std::move(name)},
             .call_site_tk{call_site_tk},
-            .is_noinline_body{is_noinline_body},
+            .kind{kind},
         });
     }
 

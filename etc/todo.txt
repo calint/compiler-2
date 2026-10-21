@@ -88,6 +88,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        an enum would be a second source of truth for what they already say
     => left: a class per mode, only if the compile paths differ enough
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
+[ ] easy: consistency topic: lambdas are declared with '=' in some places and
+    with brace init in others, e.g. 'const auto is_letter = [](...)' in
+    'toc.hpp' against 'auto next{[&] ...}' in 'machine.hpp'; also
+    'statement.hpp', 'stmt_call.hpp', 'machine_rv32i.hpp' and
+    'assembler_rv32i.hpp' (review round 3, G2-11)
 [p] hard: low priority: questionable: 'statement' has 20 virtuals whose
     defaults are 'std::unreachable()' plus 'is_*' tests; a closed set of node
     kinds as 'std::variant' with visitors would drop the defaults but costs

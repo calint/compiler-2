@@ -221,6 +221,9 @@ class one_line_source final {
     }
 };
 
+// the width an expression is computed at compared with its own
+enum class width_change : uint8_t { narrowed, widened };
+
 // a node of the program: it parses itself in its constructor, writes its
 // source back ('source_to') and compiles; the virtuals in groups, with the
 // classes that override them, the default is 'std::unreachable()' where no
@@ -238,11 +241,9 @@ class one_line_source final {
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and
 //                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
-//                  'expr_bool' ('name_or_literal') and 'expr_zero'
-//                  ('is_name_or_literal', 'name_or_literal')
-// the width an expression is computed at compared with its own
-enum class width_change : uint8_t { narrowed, widened };
-
+//                  'expr_bool' ('name_or_literal') and 'expr_zero',
+//                  'stmt_builtin_convert' ('is_name_or_literal',
+//                  'name_or_literal')
 class statement {
     token token_;
     unary_ops uops_;
@@ -568,8 +569,8 @@ class statement {
     // statics
     //
 
-    // writes are rejected at parse, so a function that is never called is
-    // checked too; 'action' completes "cannot ...", e.g. 'assign to'
+    // read-only-ness is fixed where the name is declared, so one check at
+    // parse suffices; 'action' completes "cannot ...", e.g. 'assign to'
     static auto assert_not_read_only(const token& src_loc_tk,
                                      const std::string_view action,
                                      const std::string_view name,

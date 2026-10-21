@@ -150,6 +150,12 @@ class ident_info final {
     // e.g. 'p.x', the name as resolved
     [[nodiscard]] auto id() const -> const std::string& { return id_; }
 
+    // the root is a pointer, or an argument whose address an inlined call
+    // computed at run time
+    [[nodiscard]] auto is_address_computed() const -> bool {
+        return is_pointer() or has_known_address();
+    }
+
     [[nodiscard]] auto is_array() const -> bool {
         const storage_part* const storage{std::get_if<storage_part>(&part_)};
         return storage != nullptr and storage->is_array;

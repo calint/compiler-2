@@ -1,6 +1,46 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: clean ups of the third review round of 2026-10-21 (phase R3d)
+    => done (2026-10-21):
+       1. a method that an alias of a generic type instantiates and nothing
+          calls is checked like any function nothing calls (1282, README
+          1.5); 'stmt_def_func::is_instance' had no other use and is gone
+       2. 'usage_error' (in 'compile_error.hpp') is the user error without a
+          location, thrown by 'source_files', the rv32i assembler and
+          machines; 'main' prints only it as "error: ...", any other
+          'std::exception' is an internal error
+       3. rv32i 'unary' asserts that its operand is not a 'bool', the
+          front end rejects one; the driver no longer tests '~' on 'bool'
+       4. a constant index or bulk start out of bounds names the array by
+          its path like the count error, e.g. 'v.data' (0306, 1283, 1284);
+          'constant_range' has one 'array_name'
+       5. 'read' and 'write' with a constant negative count and a start
+          computed at run time are rejected like 'array_copy' (1285, 1286)
+       6. output byte-identical on every test of both targets:
+          'ident_info::is_address_computed' replaces
+          'scope_stack::has_computed_address'; the dead resets of 'start'
+          and 'toc::reset_usage' are asserts; 'machine::frame_kind' replaces
+          the bool of 'call_frame_scope'; 'storage_layout' finds the storage
+          frame by index, no mutable 'frame*' from a const method; the bulk
+          setup is 'load_bulk_registers' (x86_64) and 'set_bulk_addresses'
+          (rv32i), 'branch_to_overflow_panic' serves 'check_byte_product';
+          the assembler has no label text in 'add_text' ('is_label_text',
+          'comment_prefix' gone); rv32i 'srl', 'blez', 'bgt', 'ble', 'bgtu'
+          and 'bleu' had no emitter and are gone; the pseudos 'li', 'la',
+          'j' and 'call' have no encoding in 'op_info', 'mv' encodes from
+          its row; 'capture' asserts buffering; 'assert_folded_sides_fit';
+          'toc::assert_released'; comments, includes and wording of the
+          review items G1, G2, G3, G4, G5, G6 and G7
+       7. the x86_64 comment "line number is in 'rbp'" (was backquoted)
+       8. padding zeroing is decided by the backend: 'machine::zero_padding'
+          takes the gaps and zeroes gap by gap or the whole instance;
+          the gaps are counted, not the data ranges; x86_64 zeroes the whole
+          instance from 5 gaps, rv32i from 9, each measured on 2500 random
+          types (notes at 'max_padding_gaps_zeroed_one_by_one_'); 1287 and
+          'test-cli.sh' (6 gaps: x86_64 whole, rv32i per gap)
+       9. not here: lambdas with '=' against brace init is a consistency
+          topic of its own, in 'etc/todo.txt'
 [x] medium: language rules of the third review round of 2026-10-21, decided
     by the user (phase R3b)
     => done (2026-10-21):

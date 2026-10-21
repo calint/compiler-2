@@ -4,10 +4,10 @@
 #include <cstddef>
 #include <format>
 #include <ostream>
-#include <stdexcept>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
+#include "compile_error.hpp"
 #include "machine_rv32i.hpp"
 #include "operand.hpp"
 #include "token.hpp"
@@ -106,7 +106,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         -> void override {
 
         if (stack_size_bytes() < leaf_stack_bytes()) {
-            throw std::runtime_error{
+            throw usage_error{
                 std::format("the stack {} B is smaller than the {} B that "
                             "'main' may use without a stack check",
                             stack_size_bytes(), leaf_stack_bytes())};
@@ -120,7 +120,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
             return;
         }
 
-        throw std::runtime_error{
+        throw usage_error{
             std::format("code, data and variables use {} B and the stack {} B, "
                         "which exceeds the {} B of device memory",
                         memory_end_address, stack_size_bytes(), memory_bytes)};

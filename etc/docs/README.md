@@ -255,9 +255,10 @@ depends on the arguments of a call cannot be told without one
 twelve parameters that one call gives the same argument, and the limits of
 inlined calls, e.g. 'r(x - 1)' in 'r(x)' that a constant argument ends; such
 an error ends the check and the function is accepted. An instance of a generic
-definition is checked where a use makes it; a generic function that nothing
-instantiates is listed in the report ([1.6](#16-reports)), and a method of a
-generic type is checked for the instances whose method is called.
+definition is a function like the others: a use of a generic function makes
+it, an alias of a generic type makes its methods, and an instance that nothing
+calls is checked too; a generic function that nothing instantiates is listed
+in the report ([1.6](#16-reports)).
 
 ### 1.6 Reports
 

@@ -39,9 +39,11 @@
 //   'stmt_call'       parses the call, prints its source and hands it to one
 //                     of the compilers (last in the file, it uses the others)
 //   'generic_call'    the instance of a generic function that the call names
+//   'noinline_arg'    what a noinline call passes for an argument
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place
 //   'noinline_call'   passes addresses to the body that is emitted once
+//   'constructor_call_tag'  selects the constructor of 'point.at(1, 2)'
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -731,6 +733,7 @@ class inline_call {
             x,
             call_.tk,
             std::string{func.name()},
+            machine::frame_kind::inlined,
         };
 
         func.add_constants(tc, indent + 1);
@@ -810,7 +813,6 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        // the result is written to memory by the body of the function
         const bool has_unary_ops{not call_.uops.is_empty()};
 
         const bool has_indexed_result{
@@ -1083,7 +1085,8 @@ class inline_call {
             not arg.is_expression() and
                 (arg.is_indexed() or
                  (arg.is_name_or_literal() and
-                  tc.scopes().has_computed_address(arg.name_or_literal()))),
+                  tc.make_ident_info(arg.tok(), arg.name_or_literal())
+                      .is_address_computed())),
         };
 
         if (is_reference and not arg.get_unary_ops().is_empty()) {

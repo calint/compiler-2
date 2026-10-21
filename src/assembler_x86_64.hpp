@@ -375,10 +375,6 @@ class assembler_x86_64 final : public assembler {
     // overridden methods
     //
 
-    [[nodiscard]] auto comment_prefix() const -> std::string_view override {
-        return ";";
-    }
-
     [[nodiscard]] auto format_jump(const jump_info& jump) const
         -> std::string override {
 
@@ -418,7 +414,7 @@ class assembler_x86_64 final : public assembler {
 
         const std::string_view code{code_before(text, ";")};
 
-        if (code.empty() or code.back() == ':' or is_directive(code)) {
+        if (code.empty() or is_directive(code)) {
             return 0;
         }
 

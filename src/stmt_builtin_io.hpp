@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <format>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -237,15 +239,15 @@ class stmt_builtin_io final : public stmt_call {
 
         const std::optional<int64_t> count{constant_count(tc, buffer_info)};
 
+        if (not count) {
+            return;
+        }
+
         const size_t start_index{argument_count() - 1};
 
         const std::optional<int64_t> start{
             has_start() ? argument_constant(tc, start_index) : int64_t{},
         };
-
-        if (not count or not start) {
-            return;
-        }
 
         // note: a sector function has no count, its start passes the end
         assert_constant_range(
@@ -266,8 +268,7 @@ class stmt_builtin_io final : public stmt_call {
                         ? std::format("count {}", *count)
                         : std::format("a sector of {} elements", *count),
                 },
-                .start_array_name{argument(1).name_or_literal()},
-                .count_array_name{argument(1).name_or_literal()},
+                .array_name{argument(1).name_or_literal()},
             });
     }
 
@@ -310,7 +311,6 @@ class stmt_builtin_io final : public stmt_call {
         }
     }
 
-    // the buffer is checked when it is compiled
     auto assert_target_has_sd_card(toc& tc) const -> void {
         const machine& x{tc.machine()};
 

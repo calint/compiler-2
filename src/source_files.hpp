@@ -8,11 +8,11 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
 
+#include "compile_error.hpp"
 #include "token.hpp"
 
 // the column is 1-based, 0 when the index is at a line end or past the source
@@ -89,8 +89,7 @@ class source_files final {
         std::ifstream fs{std::string{file_name}};
 
         if (not fs.is_open()) {
-            throw std::runtime_error{
-                std::format("cannot open file '{}'", file_name)};
+            throw usage_error{std::format("cannot open file '{}'", file_name)};
         }
 
         std::string contents;
@@ -103,16 +102,15 @@ class source_files final {
             contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
 
             if (contents.size() > max_source_size_bytes) {
-                throw std::runtime_error{
-                    std::format("file '{}' is larger than {} B", file_name,
-                                max_source_size_bytes)};
+                throw usage_error{std::format("file '{}' is larger than {} B",
+                                              file_name,
+                                              max_source_size_bytes)};
             }
         }
 
         // a directory opens but cannot be read
         if (fs.bad()) {
-            throw std::runtime_error{
-                std::format("cannot read file '{}'", file_name)};
+            throw usage_error{std::format("cannot read file '{}'", file_name)};
         }
 
         return contents;

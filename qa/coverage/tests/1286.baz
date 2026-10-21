@@ -1,0 +1,8 @@
+# a constant negative count of 'read' with a start computed at run time is
+# rejected, like the count of 'array_copy'
+func main() {
+    var a = i8[4]
+    var i = 1
+    var n = read(0, a, -1, i)
+    exit(n)
+}

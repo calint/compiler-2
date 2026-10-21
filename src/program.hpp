@@ -13,7 +13,6 @@
 #include <ostream>
 #include <set>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -367,7 +366,7 @@ class program final {
         compile(0);
         x.finish();
         report_renderer::write(x, tc_.usage());
-        tc_.finish();
+        tc_.assert_released();
 
         x.write_assembly(os);
     }
@@ -446,7 +445,7 @@ class program final {
 
         try {
             text = source_files::read_file(path.string());
-        } catch (const std::runtime_error& e) {
+        } catch (const usage_error& e) {
             throw compile_error{path_tk, e.what()};
         }
 
@@ -540,13 +539,13 @@ class program final {
 
     // the rules checked while compiling, e.g. a constant index in bounds,
     // hold in a function that no compile reached too, so whether a program is
-    // accepted does not depend on its calls; an instance of a generic
-    // definition is checked where a call compiles it
+    // accepted does not depend on its calls; this includes the instances that
+    // an alias of a generic type makes of its methods
     static auto check_unreached_functions(toc& tc, const size_t indent)
         -> void {
 
         for (const stmt_def_func* f : tc.funcs().defs()) {
-            if (f->is_instance() or tc.funcs().is_reached(*f)) {
+            if (tc.funcs().is_reached(*f)) {
                 continue;
             }
 
@@ -569,6 +568,7 @@ class program final {
             x,
             token{},
             std::string{reserved_names::main},
+            machine::frame_kind::inlined,
         };
 
         x.comment({}, 0, "");
@@ -595,7 +595,7 @@ class program final {
             x,
             token{},
             std::string{func.name()},
-            true,
+            machine::frame_kind::noinline_body,
         };
 
         x.begin_noinline_body(std::string{func.name()},

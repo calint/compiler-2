@@ -12,7 +12,6 @@
 #include <ostream>
 #include <ranges>
 #include <span>
-#include <string>
 #include <string_view>
 #include <tuple>
 #include <utility>
@@ -483,7 +482,8 @@ inline auto expr_type::write_builtin_field(
     // an indexed name has the address of its base, 'compile' adds the index
     if (src.is_expression() or src.is_indexed() or
         (src.is_name_or_literal() and
-         tc.scopes().has_computed_address(src.name_or_literal()))) {
+         tc.make_ident_info(src.tok(), src.name_or_literal())
+             .is_address_computed())) {
 
         src.compile(tc, indent, dst.with_operand(dst_operand));
         return;

@@ -71,8 +71,8 @@ struct access_path {
         return not are_disjoint(steps, other.steps);
     }
 
-    // equal for the same path, e.g. '.8[2][?]' is the field at offset 8, its
-    // element 2 and an element at a run-time index
+    // equal for the same path, e.g. '[1].8[?]' is element 1, its field at
+    // offset 8 and an element of that at a run-time index
     [[nodiscard]] auto text() const -> std::string {
         std::string result;
 

@@ -15,7 +15,6 @@
 #include <ostream>
 #include <ranges>
 #include <span>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -53,7 +52,9 @@
 //   comparisons  'compare_and_branch', 'emit_comparison', 'compare_memory'
 //   checks       'check_bounds', 'check_divisor', 'check_fits_width',
 //                'check_shift_count', 'check_copy_overlap',
-//                'check_frame_capacity', 'check_stack_capacity'
+//                'check_frame_capacity', 'check_stack_capacity', the overflow
+//                checks 'check_negate', 'check_multiply_result',
+//                'emit_checked_add_subtract'
 //   handlers     'emit_*_failure_handler', 'emit_named_failure_handler',
 //                'emit_line_failure'
 //   calls        'call_function', the system calls 'emit_read_call',
@@ -76,6 +77,14 @@ class machine_rv32i : public machine {
     // stores run faster than the loop's 4 instructions per word, the cap only
     // bounds the code size
     static constexpr size_t zero_unroll_threshold_parts_{16};
+
+    // note: a gap takes one to three stores, the whole instance a store per
+    //       word up to 64 B and a loop of 5 instructions with its head and
+    //       tail beyond; measured on 2500 random types with padding, from 9
+    //       gaps the whole instance was larger in 1 of 533, at 7 and 8 gaps in
+    //       10 of 146
+    static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
+
     static constexpr int64_t immediate_min_{-2048};
     static constexpr int64_t immediate_max_{2047};
     static constexpr int syscall_read_{63};
@@ -278,9 +287,6 @@ class machine_rv32i : public machine {
     // what a known size needs as a loop; e.g. 24 bytes with both addresses 1 B
     // past a word boundary and an access of 4 bytes is a 3 B head, 5 chunks of
     // 4 B and a 1 B tail
-    // note: 'compare_known_walk', 'copy_known_size' and 'zero_known_size' each
-    //       walk the head, the loop and the tail themselves; one merged walk
-    //       was tried and read harder than the repetition
     struct known_loop {
         size_t head_size_bytes{};
         size_t width{};
@@ -441,7 +447,8 @@ class machine_rv32i : public machine {
         -> void {}
 
     // a0 is the descriptor and receives the byte count, a1 is the address,
-    // a2 the count and a7 is reserved, other registers keep their values
+    // a2 the count and a7 is reserved; an override may change the registers
+    // after a2 in the allocation order, see 'call_io_routine'
     virtual auto emit_read_call(const size_t indent) -> void {
         assembler_.li(indent, "a7", syscall_read_);
         assembler_.ecall(indent);
@@ -468,8 +475,8 @@ class machine_rv32i : public machine {
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
     // i/o routines replacing system calls return through a7 and change only
-    // 'clobbered' besides a0, so the call keeps just the live ones like a
-    // system call does
+    // 'clobbered' besides a0, which are free at the call, so like a system
+    // call it saves nothing
     auto call_io_routine(const size_t indent, const std::string_view label,
                          const std::span<const std::string_view> clobbered)
         -> void {
@@ -581,17 +588,7 @@ class machine_rv32i : public machine {
 
         emit_count(count);
 
-        // borrowed pointers avoid a temporary address and final move for
-        // indexing
-        request.lhs(count, bulk_operations_.back().pointer(0),
-                    [&](const operand& address) -> void {
-                        set_bulk_address(src_loc_tk, indent, 0, address);
-                    });
-
-        request.rhs(count, bulk_operations_.back().pointer(1),
-                    [&](const operand& address) -> void {
-                        set_bulk_address(src_loc_tk, indent, 1, address);
-                    });
+        set_bulk_addresses(src_loc_tk, indent, count, request.lhs, request.rhs);
 
         const bulk_operation& bulk{bulk_operations_.back()};
         {
@@ -711,7 +708,8 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // array lengths are limited by the variables that hold the arrays
+        // array lengths are limited by the variables that hold the arrays, the
+        // line is loaded with 'li' into a 32-bit register
         assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
                src_loc_tk.at_line() <= std::numeric_limits<uint32_t>::max());
 
@@ -962,17 +960,7 @@ class machine_rv32i : public machine {
 
         emit_count(count);
 
-        // borrowed pointers avoid a temporary address and final move for
-        // indexing
-        request.src(count, bulk_operations_.back().pointer(0),
-                    [&](const operand& address) -> void {
-                        set_bulk_address(src_loc_tk, indent, 0, address);
-                    });
-
-        request.dst(count, bulk_operations_.back().pointer(1),
-                    [&](const operand& address) -> void {
-                        set_bulk_address(src_loc_tk, indent, 1, address);
-                    });
+        set_bulk_addresses(src_loc_tk, indent, count, request.src, request.dst);
 
         const bulk_operation& bulk{bulk_operations_.back()};
 
@@ -1170,7 +1158,8 @@ class machine_rv32i : public machine {
             emit_string_data(s.text);
         }
 
-        // the arithmetic helpers follow and must stay in the code section
+        // the routines that 'begin_data' emits follow and must stay in the code
+        // section
         assembler_.switch_section(section::text);
     }
 
@@ -1282,6 +1271,12 @@ class machine_rv32i : public machine {
         assert(index != register_names_.size());
 
         return operand::reg(register_names_.at(index), value_type);
+    }
+
+    [[nodiscard]] auto max_padding_gaps_zeroed_one_by_one() const
+        -> size_t override {
+
+        return max_padding_gaps_zeroed_one_by_one_;
     }
 
     [[nodiscard]] auto max_storage_bytes() const -> size_t override {
@@ -1486,7 +1481,8 @@ class machine_rv32i : public machine {
     }
 
     auto start() -> void override {
-        line_report_emitted_ = false;
+        // note: the parse emits no failure
+        assert(not line_report_emitted_);
 
         start_output();
 
@@ -1520,6 +1516,9 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::negate or
                operation == arithmetic_operator::complement);
 
+        // note: the front end rejects a 'bool' as an arithmetic operand
+        assert(not dst.type_ref().is_bool());
+
         validate_scalar(src_loc_tk, dst.type_ref());
 
         assert(dst.is_register() or dst.is_memory());
@@ -1545,13 +1544,8 @@ class machine_rv32i : public machine {
             return;
         }
 
-        // 'not' of a bool flips the stored byte only
-        const int mask{
-            dst.type_ref().is_bool() ? std::numeric_limits<uint8_t>::max() : -1,
-        };
-
         assembler_.xori(indent, loaded.value.base_register(),
-                        loaded.value.base_register(), mask);
+                        loaded.value.base_register(), -1);
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
                                false);
@@ -1597,7 +1591,7 @@ class machine_rv32i : public machine {
         std::ofstream binary{binary_file_name_, std::ios::binary};
 
         if (not binary) {
-            throw std::runtime_error{
+            throw usage_error{
                 std::format("cannot write file '{}'", binary_file_name_)};
         }
 
@@ -3450,8 +3444,6 @@ class machine_rv32i : public machine {
             std::format(".Lbaz_{}_message", label_name),
         };
 
-        const std::string message{std::format("panic: {}", name)};
-
         label(0, handler_label);
 
         if (with_line) {
@@ -3460,6 +3452,8 @@ class machine_rv32i : public machine {
 
             return;
         }
+
+        const std::string message{std::format("panic: {}", name)};
 
         assembler_.li(1, "a0", stderr_descriptor);
         assembler_.la(1, "a1", message_label);
@@ -4151,6 +4145,22 @@ class machine_rv32i : public machine {
         ++bulk.address_count;
 
         address_of(src_loc_tk, indent, bulk.pointer(slot), address);
+    }
+
+    // borrowed pointers avoid a temporary address and final move for indexing
+    auto set_bulk_addresses(const token& src_loc_tk, const size_t indent,
+                            const operand& count, const address_emitter& first,
+                            const address_emitter& second) -> void {
+
+        first(count, bulk_operations_.back().pointer(0),
+              [&](const operand& address) -> void {
+                  set_bulk_address(src_loc_tk, indent, 0, address);
+              });
+
+        second(count, bulk_operations_.back().pointer(1),
+               [&](const operand& address) -> void {
+                   set_bulk_address(src_loc_tk, indent, 1, address);
+               });
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that
@@ -4934,7 +4944,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        throw std::runtime_error{std::format(
+        throw usage_error{std::format(
             "code, data and variables use {} B, which exceeds the RV32I "
             "address range",
             memory_end_address)};

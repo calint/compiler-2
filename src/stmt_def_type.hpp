@@ -537,7 +537,7 @@ class stmt_def_type_alias final : public statement {
     }
 
     // the argument tokens of a base name the parameters of 'generic', e.g.
-    // 'size' of 'list<i8, size>' is 8 for 'text<8>'. the scope ends before
+    // 'size' of 'list<i8, size>' is 8 for 'text<8>'; the scope ends before
     // the base binds its own parameters, which may have the same names
     [[nodiscard]] static auto
     resolve_base_args(toc& tc, const generic_type_info& generic,

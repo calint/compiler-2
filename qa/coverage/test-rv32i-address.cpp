@@ -273,17 +273,13 @@ auto wrapped(const uint32_t bits, const type& value_type) -> int32_t {
 // the branches that 'resolved_branch' grows
 auto branch_op(const std::string_view mnemonic) -> assembler_rv32i::op {
     using op = assembler_rv32i::op;
-    constexpr std::array<std::pair<std::string_view, op>, 10> branches{{
+    constexpr std::array<std::pair<std::string_view, op>, 6> branches{{
         {"beq", op::beq},
         {"bne", op::bne},
         {"blt", op::blt},
         {"bge", op::bge},
         {"bltu", op::bltu},
         {"bgeu", op::bgeu},
-        {"bgt", op::bgt},
-        {"ble", op::ble},
-        {"bgtu", op::bgtu},
-        {"bleu", op::bleu},
     }};
 
     for (const auto& [name, code] : branches) {
@@ -518,13 +514,11 @@ auto check_removed_and_inverted_jumps() -> void {
 // every branch kind inverts to its pair with the operands in order, also with
 // a comment between the branch and the jump, and the result is stable
 auto check_every_branch_inverts() -> void {
-    constexpr std::array<std::pair<std::string_view, std::string_view>, 5>
+    constexpr std::array<std::pair<std::string_view, std::string_view>, 3>
         inverse_pairs{{
             {"beq", "bne"},
             {"blt", "bge"},
             {"bltu", "bgeu"},
-            {"bgt", "ble"},
-            {"bgtu", "bleu"},
         }};
 
     for (const auto& [first, second] : inverse_pairs) {
@@ -3516,10 +3510,9 @@ auto emit_zeroing_tests(machine_rv32i& backend) -> void {
     }
 }
 
-// unary '-' and '~' on every value width (and 'bool'), in a register or
-// memory
+// unary '-' and '~' on every integer width, in a register or memory
 auto emit_unary_tests(machine_rv32i& backend) -> void {
-    for (const type* value_type : {&integer, &half, &byte, &boolean}) {
+    for (const type* value_type : {&integer, &half, &byte}) {
         for (const bool in_memory : {false, true}) {
             for (const int32_t initial : {0, 1, -1, -128, -32768, INT32_MIN}) {
                 for (const char operation : {'-', '~'}) {
@@ -3997,7 +3990,7 @@ auto check_storage_placement() -> void {
     assert(fe.tc.usage().max_vars_size_bytes == 8);
 
     fe.tc.exit_block();
-    fe.tc.finish();
+    fe.tc.assert_released();
 }
 
 // a variable beyond the capacity of the variables section is rejected, except
@@ -4034,7 +4027,7 @@ auto check_dry_run_leaves_no_trace() -> void {
 
     fe.tc.exit_block();
     fe.tc.exit_block();
-    fe.tc.finish();
+    fe.tc.assert_released();
 }
 
 // a constant is visible in its function and in the global frame, not in the
@@ -4053,7 +4046,7 @@ auto check_constant_scopes() -> void {
     fe.tc.exit_func("outer");
 
     fe.tc.exit_block();
-    fe.tc.finish();
+    fe.tc.assert_released();
 }
 
 // the host checks in the order of the parts

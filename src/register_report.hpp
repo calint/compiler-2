@@ -213,8 +213,7 @@ class register_reporter final {
     register_reporter(const machine& backend, const register_trace& trace)
         : machine_{backend}, trace_{trace} {}
 
-    // an error that the registers ran out or are held by a value, with how the
-    // registers are used by each frame and what a 'noinline' frame would give
+    // see 'machine::register_error'
     [[nodiscard]] auto make_error(const token& src_loc_tk, std::string message,
                                   const register_pool& pool) const
         -> compile_error {
@@ -383,7 +382,9 @@ class register_reporter final {
     peak_note_lines(const std::vector<register_trace::frame>& frames) const
         -> std::vector<std::string> {
 
-        if (frames.empty() or not frames.front().is_noinline_body) {
+        if (frames.empty() or
+            frames.front().kind != register_trace::frame_kind::noinline_body) {
+
             return {};
         }
 

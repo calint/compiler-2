@@ -35,6 +35,7 @@
 //                            the file, it uses the others)
 //   'func_head'              'func [noinline] [mut] name[.method] [<T type>] ('
 //   'func_result_syntax'     the tokens of the result 'name [type]'
+//   'func_return_info'       the result of a function, its name and type
 //   'stmt_def_func'          a function, of the user code or an instance
 //   'func_instantiator'      records the generic definitions and makes their
 //                            instances, each a 'stmt_def_func'
@@ -369,7 +370,7 @@ class stmt_def_func final : public statement {
                 x,
                 token{},
                 std::string{name()},
-                true,
+                machine::frame_kind::noinline_body,
             };
 
             try {
@@ -439,11 +440,6 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto is_inlined() const -> bool {
         return head_.noinline_tk.is_empty();
-    }
-
-    // made from a generic definition, e.g. 'str.print'
-    [[nodiscard]] auto is_instance() const -> bool {
-        return instance_.has_value();
     }
 
     // has the implicit first parameter 'self'

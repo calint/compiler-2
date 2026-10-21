@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <exception>
 #include <format>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -13,6 +14,14 @@
 
 // 'tokenizer' throws this, so it is only declared here
 class tokenizer;
+
+// an error of the user without a place in the source, e.g. a file that cannot
+// be read; 'main' reports it as the user's, any other 'std::exception' as a
+// defect of the compiler
+class usage_error final : public std::runtime_error {
+  public:
+    using std::runtime_error::runtime_error;
+};
 
 class compile_error final : public std::exception {
   public:

@@ -1,0 +1,11 @@
+# a constant index out of bounds names the array by its path, like the error
+# about a count
+type q {
+    data i8[4],
+}
+
+func main() {
+    var v = q
+    v.data[5] = 1
+    exit(v.data[0])
+}

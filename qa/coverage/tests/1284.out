@@ -1,0 +1,4 @@
+
+1284.baz:10:23: index 5 is out of bounds for array 'v.data' of size 4
+    array_copy(v.data[5], b, 0)
+                      ^

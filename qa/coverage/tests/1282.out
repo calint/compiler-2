@@ -1,0 +1,4 @@
+
+1282.baz:10:21: index 9 is out of bounds for array 'self.data' of size 4
+    res = self.data[9]
+                    ^

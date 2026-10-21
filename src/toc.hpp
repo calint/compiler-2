@@ -260,7 +260,7 @@ class frame final {
     // variables declared in this frame
     lut<var_info> vars_;
 
-    // aliases that refer to previous frame(s) alias or variable
+    // the parameters and the result of an inlined call, see 'alias_info'
     lut<alias_info> aliases_;
 
     // the label to jump to when exiting an inlined function
@@ -823,11 +823,6 @@ class function_table final {
         });
     }
 
-    auto clear_compile_records() -> void {
-        noinline_bodies_.clear();
-        reached_.clear();
-    }
-
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
         return defs_;
     }
@@ -841,6 +836,11 @@ class function_table final {
 
     [[nodiscard]] auto has(const std::string_view name) const -> bool {
         return funcs_.has(name);
+    }
+
+    // a noinline body to emit or a function reached by a call
+    [[nodiscard]] auto has_compile_records() const -> bool {
+        return not noinline_bodies_.empty() or not reached_.empty();
     }
 
     // declared without a definition, e.g. 'exit'
@@ -1211,47 +1211,6 @@ class scope_stack final {
 
     [[nodiscard]] auto front() const -> const frame& { return frames_.front(); }
 
-    // the address of what the path 'path' names is computed at run time: its
-    // root is a pointer, or a parameter whose argument has a computed address
-    [[nodiscard]] auto has_computed_address(const std::string_view path) const
-        -> bool {
-
-        std::string_view id_base{ident_info::root_of(path)};
-        size_t end{frames_.size()};
-
-        while (true) {
-            const name_meaning meaning{lookup_below(id_base, end)};
-
-            // note: a constant has no address
-            if (not meaning.is_var_or_alias()) {
-                return false;
-            }
-
-            const frame& frm{frames_.at(meaning.frame_index)};
-
-            if (meaning.is_variable()) {
-                return frm.get_var_const_ref(id_base).is_pointer;
-            }
-
-            const bound_storage* const storage{
-                std::get_if<bound_storage>(&frm.get_alias(id_base).binding),
-            };
-
-            // note: a constant or a register has no address
-            if (storage == nullptr) {
-                return false;
-            }
-
-            if (not storage->lea.is_empty()) {
-                return true;
-            }
-
-            // the argument is named in the frames of the caller
-            id_base = ident_info::root_of(storage->path);
-            end = meaning.frame_index;
-        }
-    }
-
     // how many times the inlined function 'name' is being compiled in place
     // by the current function body, inlined bodies are searched down to the
     // nearest function with a body of its own
@@ -1434,10 +1393,10 @@ class scope_stack final {
 // running size of the variables section, the frames that have a storage base
 // of their own, the capacity of the section and the target limits
 class storage_layout final {
-    // where a variable is placed, 'storage_frame' is null at the variables base
+    // where a variable is placed, 'frame_index' is empty at the variables base
     struct storage_location {
-        frame* storage_frame;
-        size_t base_offset;
+        std::optional<size_t> frame_index;
+        size_t base_offset{};
     };
 
     std::reference_wrapper<const ::machine> machine_;
@@ -1509,8 +1468,6 @@ class storage_layout final {
         // offsets are relative to the variables base or to the nearest frame
         // with its own storage base, both are aligned
         const storage_location location{find_storage_location()};
-
-        frame* const storage_frame{location.storage_frame};
         const size_t base_offset{location.base_offset};
 
         const size_t padding_bytes{
@@ -1525,10 +1482,14 @@ class storage_layout final {
 
         var.offset = address_offset(base_offset + padding_bytes);
 
-        if (storage_frame) {
-            var.base_register = storage_frame->storage_base_register();
+        if (location.frame_index) {
+            frame& storage_frame{
+                scopes_.get().frames().at(*location.frame_index),
+            };
 
-            storage_frame->record_storage_size_bytes(add_storage_size(
+            var.base_register = storage_frame.storage_base_register();
+
+            storage_frame.record_storage_size_bytes(add_storage_size(
                 src_loc_tk, base_offset, allocated_size_bytes));
         } else {
             var.offset =
@@ -1549,21 +1510,17 @@ class storage_layout final {
     auto begin_compile() -> void { capacity_unchecked_ = false; }
 
     auto begin_dry_run() -> dry_run_state {
-        frame* const storage_frame{
-            find_storage_location().storage_frame,
+        const std::optional<size_t> frame_index{
+            find_storage_location().frame_index,
         };
 
         const dry_run_state saved{
             .capacity_unchecked{capacity_unchecked_},
             .max_vars_size_bytes{max_vars_size_bytes_},
-            .storage_frame_index{
-                storage_frame == nullptr
-                    ? std::nullopt
-                    : std::optional<size_t>{static_cast<size_t>(
-                          storage_frame - scopes_.get().frames().data())},
-            },
+            .storage_frame_index{frame_index},
             .peak_storage_size_bytes{
-                storage_frame ? storage_frame->peak_storage_size_bytes() : 0,
+                frame_index ? frame_at(*frame_index).peak_storage_size_bytes()
+                            : 0,
             },
         };
 
@@ -1596,12 +1553,12 @@ class storage_layout final {
 
         const storage_location location{find_storage_location()};
 
-        if (location.storage_frame) {
-            return operand::mem(location.storage_frame->storage_base_register(),
-                                {}, 1,
-                                address_offset(align_storage_size(
-                                    location.base_offset, frame_alignment)),
-                                address_type);
+        if (location.frame_index) {
+            return operand::mem(
+                frame_at(*location.frame_index).storage_base_register(), {}, 1,
+                address_offset(
+                    align_storage_size(location.base_offset, frame_alignment)),
+                address_type);
         }
 
         const size_t root_size_bytes{
@@ -1626,14 +1583,14 @@ class storage_layout final {
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        const frame* const storage_frame{
-            find_storage_location().storage_frame,
+        const std::optional<size_t> frame_index{
+            find_storage_location().frame_index,
         };
 
         // note: asked inside a noinline body, which has a storage base
-        assert(storage_frame != nullptr);
+        assert(frame_index);
 
-        return storage_frame->peak_storage_size_bytes();
+        return frame_at(*frame_index).peak_storage_size_bytes();
     }
 
     // the root frame applies the dat var padding again when it is entered anew
@@ -1650,7 +1607,7 @@ class storage_layout final {
         dat_var_padding_applied_ = false;
     }
 
-    // all frames are popped and the usage of the last build is forgotten
+    // the frames of the parse are popped, its use of storage is forgotten
     auto reset_usage() -> void {
         assert(vars_size_bytes_ == 0);
 
@@ -1756,24 +1713,31 @@ class storage_layout final {
     // storage base and of the frames inside it, other variables start at the
     // variables base
     [[nodiscard]] auto find_storage_location() const -> storage_location {
+        const std::vector<frame>& frames{std::as_const(scopes_.get()).frames()};
         size_t local_size_bytes{};
 
-        for (frame& frm : scopes_.get().frames() | std::views::reverse) {
+        for (size_t i{frames.size()}; i != 0; --i) {
+            const frame& frm{frames.at(i - 1)};
+
             local_size_bytes = sum_storage_size(
                 local_size_bytes, frm.allocated_stack_size_bytes());
 
             if (not frm.storage_base_register().empty()) {
                 return {
-                    .storage_frame{&frm},
+                    .frame_index{i - 1},
                     .base_offset{local_size_bytes},
                 };
             }
         }
 
         return {
-            .storage_frame{},
+            .frame_index{},
             .base_offset{vars_size_bytes_},
         };
+    }
+
+    [[nodiscard]] auto frame_at(const size_t index) const -> const frame& {
+        return std::as_const(scopes_.get()).frames().at(index);
     }
 
     // bytes of variables, without the dats and the padding after them
@@ -2629,6 +2593,12 @@ class toc final {
         definitions_.assert_generic_param_free(src_loc_tk, name);
     }
 
+    auto assert_released() const -> void {
+        assert(scopes_.is_empty());
+
+        storage_.assert_released();
+    }
+
     // the parse is over: declarations comment where they are stored and the
     // storage capacity is checked, e.g. a parameter 'self' of a type larger
     // than the vars section is a pointer once the body is compiled
@@ -2787,13 +2757,6 @@ class toc final {
 
     auto exit_type_params() -> void { types_.exit_params(); }
 
-    // the report is written
-    auto finish() -> void {
-        assert(scopes_.is_empty());
-
-        storage_.assert_released();
-    }
-
     [[nodiscard]] auto funcs() const -> const function_table& { return funcs_; }
 
     [[nodiscard]] auto generics() const -> const generic_registry& {
@@ -2930,7 +2893,9 @@ class toc final {
 
         storage_.reset_usage();
         scopes_.set_max_depth(0);
-        funcs_.clear_compile_records();
+
+        // note: the parse compiles no call
+        assert(not funcs_.has_compile_records());
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }

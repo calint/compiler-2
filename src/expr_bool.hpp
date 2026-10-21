@@ -284,26 +284,8 @@ class expr_bool_op final : public statement {
     }
 
   private:
-    // e.g. 'b == 1' or '2 == b'
-    auto assert_not_boolean_with_integer() const -> void {
-        if (is_memory_comparison_) {
-            return;
-        }
-
-        const bool is_lhs_bool{lhs_.get_type().is_bool()};
-
-        if (is_lhs_bool == rhs_.get_type().is_bool()) {
-            return;
-        }
-
-        const expr_arith& boolean{is_lhs_bool ? lhs_ : rhs_};
-
-        throw compile_error{boolean.tok(),
-                            "a 'bool' is compared only with a 'bool'"};
-    }
-
     // a comparison that folds is checked like one that is compiled
-    auto assert_typed_constant_fits_lhs(const toc& tc) const -> void {
+    auto assert_folded_sides_fit(const toc& tc) const -> void {
         if (is_shorthand_) {
             return;
         }
@@ -333,6 +315,24 @@ class expr_bool_op final : public statement {
         }
 
         throw_rhs_wider(lhs_, rhs_, op_, lhs_type, rhs_type);
+    }
+
+    // e.g. 'b == 1' or '2 == b'
+    auto assert_not_boolean_with_integer() const -> void {
+        if (is_memory_comparison_) {
+            return;
+        }
+
+        const bool is_lhs_bool{lhs_.get_type().is_bool()};
+
+        if (is_lhs_bool == rhs_.get_type().is_bool()) {
+            return;
+        }
+
+        const expr_arith& boolean{is_lhs_bool ? lhs_ : rhs_};
+
+        throw compile_error{boolean.tok(),
+                            "a 'bool' is compared only with a 'bool'"};
     }
 
     // the result that 'compile_boolean' or 'resolve_memory_cmp' stored in
@@ -426,7 +426,7 @@ class expr_bool_op final : public statement {
         const std::optional<bool> constant{constant_value(tc)};
 
         if (constant) {
-            assert_typed_constant_fits_lhs(tc);
+            assert_folded_sides_fit(tc);
             return compile_constant(tc, indent, *constant != inverted, action);
         }
 
@@ -910,8 +910,7 @@ class expr_bool_op final : public statement {
         const ident_info expr_info{tc.make_scalar_ident_info(expr)};
 
         if (expr.is_indexed() or
-            (expr.is_name_or_literal() and
-             tc.scopes().has_computed_address(expr.name_or_literal()))) {
+            (expr.is_name_or_literal() and expr_info.is_address_computed())) {
 
             return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
                                     {

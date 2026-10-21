@@ -97,6 +97,8 @@ class machine {
     // register that holds a factor and is freed after the operation
     enum class factor_use : uint8_t { read_only, may_overwrite };
 
+    using frame_kind = register_trace::frame_kind;
+
     // note: at namespace scope because a default argument '= {}' of a
     //       member function cannot use a nested class with default member
     //       initializers
@@ -200,17 +202,25 @@ class machine {
         std::string_view result;
     };
 
+    // bytes of an instance that no field covers, from its start, e.g. the 3 B
+    // at offset 1 of 'type r { a i8, b i32 }'; 'alignment' is known for the
+    // first byte
+    struct padding_gap {
+        size_t offset{};
+        size_t size_bytes{};
+        size_t alignment{};
+    };
+
     // ends the call frame when it goes out of scope, an error leaves it too
     class call_frame_scope final {
         std::reference_wrapper<machine> machine_;
 
       public:
         call_frame_scope(machine& backend, const token& call_site_tk,
-                         std::string name, const bool is_noinline_body = {})
+                         std::string name, const frame_kind kind)
             : machine_{backend} {
 
-            backend.begin_call_frame(call_site_tk, std::move(name),
-                                     is_noinline_body);
+            backend.begin_call_frame(call_site_tk, std::move(name), kind);
         }
 
         call_frame_scope(const call_frame_scope&) = delete;
@@ -655,6 +665,11 @@ class machine {
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
 
+    // above this count 'zero_padding' zeroes the whole instance, which is then
+    // smaller than a zero per gap
+    [[nodiscard]] virtual auto max_padding_gaps_zeroed_one_by_one() const
+        -> size_t = 0;
+
     // the most bytes of data and variables the target can address
     [[nodiscard]] virtual auto max_storage_bytes() const -> size_t = 0;
 
@@ -1092,6 +1107,32 @@ class machine {
         return stats;
     }
 
+    // the padding of the instance of 'size_bytes' at 'dst', zeroed gap by gap
+    // or as the whole instance, whichever the target emits smaller; the fields
+    // are written over the zeroes after
+    auto zero_padding(const token& src_loc_tk, const size_t indent,
+                      const operand& dst, const size_t size_bytes,
+                      const size_t alignment,
+                      const std::span<const padding_gap> gaps) -> void {
+
+        if (gaps.size() > max_padding_gaps_zeroed_one_by_one()) {
+            comment(src_loc_tk, indent, "zero instance for its padding: {} B",
+                    size_bytes);
+
+            zero(src_loc_tk, indent, dst, size_bytes, alignment);
+
+            return;
+        }
+
+        for (const padding_gap& gap : gaps) {
+            operand gap_dst{dst};
+            gap_dst.increment_offset(address_offset(gap.offset));
+
+            comment(src_loc_tk, indent, "zero padding: {} B", gap.size_bytes);
+            zero(src_loc_tk, indent, gap_dst, gap.size_bytes, gap.alignment);
+        }
+    }
+
     //
     // statics
     //
@@ -1296,8 +1337,8 @@ class machine {
         return *type_i8_;
     }
 
-    // what the lower bound check is about, a bounds check that has none says
-    // nothing
+    // the comments of a lower bound check, which the upper comparison or an
+    // earlier check may cover
     auto comment_lower_bound(const token& src_loc_tk, const size_t indent,
                              const bounds_range& range, const bounds_plan& plan)
         -> void {
@@ -1510,9 +1551,9 @@ class machine {
 
         output.set_direct_output(nullptr);
 
-        usage_max_scratch_regs_ = 0;
-
-        // note: the parse emits no code that uses a routine
+        // note: the parse emits no code, so it allocates no register and uses
+        // no routine
+        assert(usage_max_scratch_regs_ == 0);
         assert(used_routines_.empty());
 
         output.comment(0, "");
@@ -1671,9 +1712,9 @@ class machine {
     // of 'name' made at 'call_site_tk', the first frame is the function being
     // compiled and has no call site
     auto begin_call_frame(const token& call_site_tk, std::string name,
-                          const bool is_noinline_body) -> void {
+                          const frame_kind kind) -> void {
 
-        trace_.begin_frame(call_site_tk, std::move(name), is_noinline_body);
+        trace_.begin_frame(call_site_tk, std::move(name), kind);
     }
 
     // the lines of 'emit' with the state they end in, compiled from the

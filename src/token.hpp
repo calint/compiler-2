@@ -154,7 +154,7 @@ class token final {
     [[nodiscard]] auto text() const -> std::string_view { return text_; }
 
     // the marker at the first unsupported escape of a string token, as
-    // 'decode_string' rejects it
+    // 'decode_escape' rejects it
     [[nodiscard]] auto unsupported_escape_position() const
         -> std::optional<token> {
 

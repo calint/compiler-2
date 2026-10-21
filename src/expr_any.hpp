@@ -42,7 +42,7 @@ class expr_any final : public statement {
 
     std::vector<expr_variant> elements_;
     std::vector<token> element_delims_tk_;
-    // e.g. 'i8[3]' in 'i8[3]{1, 2}'
+    // e.g. 'i8' of 'i8[3]{1, 2}', empty for '[3]{1, 2}'
     token element_type_tk_;
     token open_bracket_tk_;
     stmt_const literal_count_const_;
@@ -690,8 +690,9 @@ class expr_any final : public statement {
     //
 
     // folds an 'expr_arith' element, empty for any other
-    // note: so 'constant_bytes' does not pack a 'bool' or an instance element,
-    //       not even a constant one
+    // note: so 'constant_bytes' does not pack an 'expr_bool', e.g. '1 == 1',
+    //       or an instance element; a 'bool' name or literal is an
+    //       'expr_arith'
     [[nodiscard]] static auto
     arith_constant(const toc& tc, const expr_variant& e, const type& width_type)
         -> std::optional<int64_t> {

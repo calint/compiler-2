@@ -1,0 +1,4 @@
+
+1285.baz:6:25: count -1 is negative
+    var n = write(1, a, -1, i)
+                        ^

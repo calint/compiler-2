@@ -1,7 +1,8 @@
 #!/bin/bash
-# runs the cases of 'cases.sh' that run the program with the first and then
-# the last of two versions of the same code kept ('--versions'), so the code
-# of a version that the default choice drops is run and checked too
+# runs the cases of 'cases.sh' that run the program, except the '--nopt'
+# diffs, with the first and then the last of two versions of the same code
+# kept ('--versions'), so the code of a version that the default choice drops
+# is run and checked too
 #
 # usage: test-versions.sh
 set -e

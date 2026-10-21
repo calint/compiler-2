@@ -242,41 +242,21 @@ class expr_type final : public statement {
                              const operand& dst_op) const -> void;
 
     // a call writes the fields only, so the padding is zeroed before it and
-    // '==' can compare instances byte by byte; padding in the elements of an
-    // array is many gaps, then the whole instance is zeroed in one go
+    // '==' can compare instances byte by byte; the backend decides whether
+    // gap by gap or the whole instance
     auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
                       const operand& dst_op) const -> void {
 
-        // note: each gap takes one to three stores, the whole instance at most
-        //       a loop of 4 instructions on x86_64 and 5 on rv32i, or a store
-        //       per word when it is small
-        constexpr size_t max_gaps_zeroed_one_by_one{8};
+        const std::vector<machine::padding_gap> gaps{padding_gaps(dst_type)};
 
-        const std::vector<byte_range> ranges{dst_type.data_ranges()};
-
-        // note: a gap follows each range except, maybe, the last
-        if (ranges.size() > max_gaps_zeroed_one_by_one) {
-            zero_whole_instance(tc, indent, dst_type, dst_op);
+        if (gaps.empty()) {
             return;
         }
 
-        operand cursor{dst_op};
+        machine& x{tc.machine()};
 
-        // bytes of the instance before 'cursor', fields in order then padding
-        size_t covered_bytes{};
-
-        for (const byte_range& r : ranges) {
-            zero_unwritten(
-                tc, indent, "padding", r.offset - covered_bytes,
-                offset_alignment(covered_bytes, dst_type.alignment()), cursor);
-
-            cursor.increment_offset(address_offset(r.size_bytes));
-            covered_bytes = r.offset + r.size_bytes;
-        }
-
-        zero_unwritten(
-            tc, indent, "padding", dst_type.size_bytes() - covered_bytes,
-            offset_alignment(covered_bytes, dst_type.alignment()), cursor);
+        x.zero_padding(tok(), indent, dst_op, dst_type.size_bytes(),
+                       dst_type.alignment(), gaps);
     }
 
     // padding is zeroed too so that instances compare equal byte by byte
@@ -295,22 +275,26 @@ class expr_type final : public statement {
         dst_op.increment_offset(address_offset(size_bytes));
     }
 
-    // the call writes the fields over the zeroes
-    auto zero_whole_instance(toc& tc, const size_t indent, const type& dst_type,
-                             const operand& dst_op) const -> void {
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, "zero instance for its padding: {} B",
-                  dst_type.size_bytes());
-
-        x.zero(tok(), indent, dst_op, dst_type.size_bytes(),
-               dst_type.alignment());
-    }
-
     //
     // statics
     //
+
+    // the bytes from 'start' to 'end' are a gap unless there are none,
+    // 'alignment' is that of the instance
+    static auto append_gap(std::vector<machine::padding_gap>& gaps,
+                           const size_t start, const size_t end,
+                           const size_t alignment) -> void {
+
+        if (start == end) {
+            return;
+        }
+
+        gaps.push_back({
+            .offset{start},
+            .size_bytes{end - start},
+            .alignment{offset_alignment(start, alignment)},
+        });
+    }
 
     static auto assert_item_not_reading(const statement& item,
                                         const constructor_target& dst,
@@ -378,6 +362,24 @@ class expr_type final : public statement {
                                      const type_field& field,
                                      const destination& dst, operand& dst_op)
         -> void;
+
+    // the bytes that no field covers, between the data ranges and after the
+    // last one
+    [[nodiscard]] static auto padding_gaps(const type& tp)
+        -> std::vector<machine::padding_gap> {
+
+        std::vector<machine::padding_gap> gaps;
+        size_t covered_bytes{};
+
+        for (const byte_range& r : tp.data_ranges()) {
+            append_gap(gaps, covered_bytes, r.offset, tp.alignment());
+            covered_bytes = r.offset + r.size_bytes;
+        }
+
+        append_gap(gaps, covered_bytes, tp.size_bytes(), tp.alignment());
+
+        return gaps;
+    }
 
     static auto validate_array_assignment(const token& src_loc_tk,
                                           const type_field& fld,

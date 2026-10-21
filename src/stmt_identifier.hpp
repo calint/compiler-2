@@ -28,10 +28,9 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
-// the array size is known at compile time, also for an inlined array
-// argument, so a constant index out of bounds is always a bug; without a
-// length only a negative index is known. 'allow_end' accepts the end, where a
-// range of a zero count starts
+// a constant index out of bounds is always a bug; an unsized array parameter
+// without a length rejects only a negative index; 'allow_end' accepts the end,
+// where a range of a zero count starts
 inline auto assert_constant_index(const ident_info& array_info,
                                   const token& index_tk,
                                   const std::string_view array_name,
@@ -76,10 +75,8 @@ struct constant_range {
     token count_tk;
     // e.g. 'count 5' or 'a sector of 4 elements'
     std::string count_text;
-    // the array as an error about the start names it, e.g. 'b' of 'a.b[1]'
-    std::string_view start_array_name;
-    // the array as an error about the count names it, e.g. 'a.b'
-    std::string_view count_array_name;
+    // the path of the array, e.g. 'a.b' of 'a.b[1]'
+    std::string_view array_name;
 };
 
 // a constant range is known to be negative or to pass the end of the array,
@@ -101,8 +98,8 @@ inline auto assert_constant_range(const ident_info& array_info,
 
     // a start at the end is the empty range of a zero count
     if (has_start) {
-        assert_constant_index(array_info, *range.start_tk,
-                              range.start_array_name, *range.start, true);
+        assert_constant_index(array_info, *range.start_tk, range.array_name,
+                              *range.start, true);
     }
 
     const std::optional<size_t> array_len{array_info.array_len()};
@@ -124,7 +121,7 @@ inline auto assert_constant_range(const ident_info& array_info,
     throw compile_error{
         range.count_tk,
         std::format("{}{} is past the end of array '{}' of size {}",
-                    range.count_text, from_index, range.count_array_name,
+                    range.count_text, from_index, range.array_name,
                     *array_len)};
 }
 
@@ -386,7 +383,7 @@ class stmt_identifier final : public statement {
             }
 
             address = compile_indexed_element(
-                tc, indent, src_loc_tk, registers, cur_elem, cur_info,
+                tc, indent, src_loc_tk, registers, cur_elem, path, cur_info,
                 is_last_elem ? request.reg_count : operand{}, address);
         }
 
@@ -475,8 +472,7 @@ class stmt_identifier final : public statement {
                 },
                 .count_tk{count_tk},
                 .count_text{std::format("count {}", count)},
-                .start_array_name{elems_.back().name_tk.text()},
-                .count_array_name{path_as_string_},
+                .array_name{path_as_string_},
             });
     }
 
@@ -1006,8 +1002,8 @@ class stmt_identifier final : public statement {
     [[nodiscard]] static auto compile_indexed_element(
         toc& tc, const size_t indent, const token& src_loc_tk,
         path_registers& registers, const ident_elem& cur_elem,
-        const ident_info& cur_info, const operand& range_count,
-        const operand& address) -> operand {
+        const std::string_view path, const ident_info& cur_info,
+        const operand& range_count, const operand& address) -> operand {
 
         const std::optional<int64_t> constant_index{
             cur_elem.array_index_expr->constant_value(tc),
@@ -1015,7 +1011,7 @@ class stmt_identifier final : public statement {
 
         if (constant_index) {
             assert_constant_index(cur_info, cur_elem.array_index_expr->tok(),
-                                  cur_elem.name_tk.text(), *constant_index,
+                                  path, *constant_index,
                                   not range_count.is_empty());
         }
 
