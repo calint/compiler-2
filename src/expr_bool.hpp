@@ -1156,6 +1156,23 @@ class expr_bool final : public statement {
         return compile_rec(tc, indent, targets, false, dst);
     }
 
+    // a condition known at compile time is 1 or 0
+    [[nodiscard]] auto fold(const toc& tc,
+                            [[maybe_unused]] const value_use& use) const
+        -> std::optional<folded_value> override {
+
+        const std::optional<bool> value{constant_value(tc)};
+
+        if (not value) {
+            return std::nullopt;
+        }
+
+        return folded_value{
+            .value{*value ? 1 : 0},
+            .own_type{},
+        };
+    }
+
     [[nodiscard]] auto is_expression() const -> bool override {
         if (bools_.size() > 1) {
             return true;

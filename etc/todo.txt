@@ -42,8 +42,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           for a conversion argument); 'toc::checks()' never changes
        7. a value in a numeric position has a built-in non-record type,
           checked at parse ('assert_number')
-       8. emitters take 'fold(...)' and emit 'operand::imm(value, width)';
-          nothing else evaluates
+       8. a value enters its destination through one non-virtual
+          'statement::compile_value': fit check, 'fold', then an immediate
+          at the destination width or the virtual 'compile', which only
+          computes at run time; no node and no caller has a constant branch
+       9. a constant is kept as a 'folded_value' wherever it is stored
+          (frame constants, aliases, 'ident_info'), typedness is not
+          derived again
+       10. a 'let' of a typed initializer keeps the type, e.g. 'let v =
+          int(5)' is checked like 'let v = i8(5)', by type
     => deleted: 'folded_constant', 'is_typed_constant' (4),
        'constant_value_of', 'constant_wrap', 'single_operand_type',
        'side_constant', 'typed_constant', 'make_constant_operand', the
@@ -74,16 +81,27 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           reports at the ops (1002, 1010, 1246 moved to the '-'); still
           separate: the convert 'constant_value'/'narrow' (R3) and
           'make_constant_operand' (B4)
-       R2 delete 'single_operand_type' (G5-6)
-       R3 'conversion_widths' under 'plan_computation'/'ops_place_for'
-       B1 typedness from the fold: 'i16(K) <= e' accepted like
+       R2 'expr_bool' folds: a condition is a 'folded_value' of 0 or 1,
+          the 'expr_bool' branch of 'expr_any::fold_element' goes
+          => done (2026-10-21), byte-identical; 'fold_arith' went too
+       R3 one representation (rule 9): 'constant_part', 'bound_constant'
+          and the frame constants hold a 'folded_value'; 'is_typed_const'
+          and the constant branch of 'type_of_first_element' go
+       R4 delete 'single_operand_type' (G5-6)
+       R5 'conversion_widths' under 'plan_computation'/'ops_place_for';
+          the convert 'constant_value'/'narrow' become its 'fold' only
+       F  the differential fuzz mode (tests below), a baseline run
+       B1 'compile_value' (rule 8), emit at the use width, delete
+          'make_constant_operand' and the constant branches of the compile
+          overrides: 'i8(i16(K))' emits 44, not 300 (G6-3); immediates and
+          asm comments change, images only where they were wrong
+       B2 typedness from the fold: 'i16(K) <= e' accepted like
           'i16(300) <= e' (G6-2, ARCH-6)
-       B2 a list fold checks fit: 'e < i8(1) + 300' rejected at '300'
-          (G5-1)
-       B3 ops on a register at least as wide as the use: '-i16(g(v))' with
+       B3 the fit check inside 'fold' ('folded_value::assert_fits'),
+          'keeps_untyped' and the callers' 'assert_not_narrowed' go: 'e <
+          i8(1) + 300' rejected at '300' (G5-1)
+       B4 ops on a register at least as wide as the use: '-i16(g(v))' with
           v = -128 gives 128 (G6-1); 'neg' moves after 'movsx'
-       B4 emit at the use width, delete 'make_constant_operand':
-          'i8(i16(K))' emits 44, not 300 (G6-3); immediates change
        B5 overflow policy on 'destination', delete pause and resume:
           'i8(-m8())' under '--checks=overflow' gives 128 (G4-1); index
           arithmetic inside a conversion argument becomes checked
@@ -95,6 +113,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           uncalled
        B8 remove the parse-time 'folded_' of a conversion (asm comments
           only)
+       B9 'let' of a typed initializer keeps the type (rule 10): 'let v =
+          int(5)' then 'b = v' with an 'i8' 'b' rejected as narrowed
+       left alone: 'stmt_const', the array sizes of a type ('i8[4]'),
+       folded while parsing types
        then the aliasing plan takes G4-2 (the argument check of a typed
        constant) with 'fold(...)->own_type'; 'i8(2 + 3)' folding stays its
        own item below
@@ -104,7 +126,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        constant ('T(lit)', 'T(K)', an inlined parameter) and as a variable,
        in assignment, list, comparison, conversion, argument, field and
        'exit'; verdict and exit code must match; a baseline before R1
-       (expect the known bugs), no findings after B7
+       (expect the known bugs), no findings after B9
 [ ] medium: low priority: conversions: rows 1 and 2 of
     'stmt_builtin_convert::plan_computation' decide alike at W in one
     predicate, so a list narrower than the type is also measured and computed
