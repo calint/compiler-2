@@ -203,6 +203,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           gate unchanged
        B8 remove the parse-time 'folded_' of a conversion (asm comments
           only)
+          => done (2026-10-21): a conversion is never a literal; a literal
+          argument folds through 'fold' like a constant name, the bare form
+          'i8' folds to a typed 0; images identical, asm without comments
+          too except 1349 (indentation) and 0759 ('var f = bool' takes the
+          condition path, two labels, no code); 'name_or_literal',
+          'is_name_or_literal' and 'is_expression' of the conversion went;
+          etc/docs/README.md 7.3 names 'fold'
        B9 'let' of a typed initializer keeps the type (rule 10): 'let v =
           int(5)' then 'b = v' with an 'i8' 'b' rejected as narrowed
        left alone: 'stmt_const', the array sizes of a type ('i8[4]'),

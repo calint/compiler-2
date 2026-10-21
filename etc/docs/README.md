@@ -1184,7 +1184,7 @@ other, also not when they are 'noinline' ('etc/todo.txt' section 4).
 'statement' has 20 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
-capability, e.g. 'folded_constant' is empty. Every node parses, writes its
+capability, e.g. 'fold' is empty. Every node parses, writes its
 source back, compiles and takes part in the definite assignment walk. Code
 asks a node a few capability queries ('is_expression', 'is_name_or_literal',
 ...), no code switches on the kind of a node.

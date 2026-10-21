@@ -12,7 +12,6 @@
 
 #include "compile_error.hpp"
 #include "constant_arith.hpp"
-#include "constant_parser.hpp"
 #include "expr_arith.hpp"
 #include "expression.hpp"
 #include "ident_info.hpp"
@@ -60,9 +59,6 @@ class stmt_builtin_convert final : public expression {
     token open_paren_tk_;
     expr_arith arg_;
     token close_paren_tk_;
-    // a literal argument narrowed to the type, the conversion's own unary ops
-    // apply where the value is used
-    std::string folded_;
 
     // where the conversion's own unary ops apply, see the class comment
     enum class ops_place : uint8_t {
@@ -107,25 +103,10 @@ class stmt_builtin_convert final : public expression {
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the argument");
-
-        // a folded literal takes every constant path, e.g. inline arguments
-        if (arg_.is_expression()) {
-            return;
-        }
-
-        const std::optional<int64_t> value{
-            constant_parser::parse_constant(tk, arg_.name_or_literal()),
-        };
-
-        if (value) {
-            folded_ = std::format("{}", converted_constant(*value));
-        }
     }
 
     // e.g. 'i8' in 'var x = i8' is 'i8(0)'
-    stmt_builtin_convert(const toc& tc, const token tk)
-        : expression{tk, {}}, folded_{tk.is_text("bool") ? "false" : "0"} {
-
+    stmt_builtin_convert(const toc& tc, const token tk) : expression{tk, {}} {
         set_type(conversion_type(tc, tk));
     }
 
@@ -182,29 +163,23 @@ class stmt_builtin_convert final : public expression {
         assert_own_type_not_narrowed(dst_type);
     }
 
-    // a constant of the type, which wraps at the width of its use: a folded
-    // literal, or a constant argument converted, then the conversion's own
-    // unary ops apply at the width it is used at, at least that of the type,
-    // e.g. 'i16' for '-i8(-128)' in an 'i16' list, where under the overflow
-    // check a result that does not fit is an error
+    // a constant of the type, which wraps at the width of its use: the
+    // constant argument converted, then the conversion's own unary ops apply
+    // at the width it is used at, at least that of the type, e.g. 'i16' for
+    // '-i8(-128)' in an 'i16' list, where under the overflow check a result
+    // that does not fit is an error
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
-        const type& width_type{use.width_ref()};
-
-        if (not folded_.empty()) {
-            const ident_info info{tc.make_ident_info(*this)};
-
-            const int64_t value{
-                get_unary_ops().evaluate_at(info.constant().value, width_type,
-                                            use.checks_overflow),
-            };
-
+        // the bare form has no argument, e.g. the 'i8' of 'var x = i8'
+        if (open_paren_tk_.is_empty()) {
             return folded_value{
-                .value{constant_arith::wrap_to_width(value, width_type)},
+                .value{},
                 .own_type{&get_type()},
             };
         }
+
+        const type& width_type{use.width_ref()};
 
         if (arg_.is_expression()) {
             return std::nullopt;
@@ -232,27 +207,12 @@ class stmt_builtin_convert final : public expression {
         };
     }
 
-    [[nodiscard]] auto is_expression() const -> bool override {
-        return folded_.empty();
-    }
-
-    // a folded literal is a constant, and constants are identifiers
-    [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return not folded_.empty();
-    }
-
     // the builtin computes its own width before the destination narrows it
     [[nodiscard]] auto
     keeps_low_bits([[maybe_unused]] const width_change change) const
         -> bool override {
 
         return true;
-    }
-
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        assert(not folded_.empty());
-
-        return folded_;
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
