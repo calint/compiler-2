@@ -163,7 +163,7 @@ class stmt_builtin_foo final : public statement {
                         const operand& counter) const -> void {
 
         // note: before 'e' is added, see 'foo_array'
-        const foo_array_info array{foo_array(tc)};
+        const std::optional<storage_path> array{foo_array(tc)};
 
         tc.add_var(
             src_loc_tk, indent,
@@ -300,14 +300,11 @@ class stmt_builtin_foo final : public statement {
     // the root of the iterated array and the bytes of it that 'e' ranges over,
     // found before this 'foo' adds its own 'e' so that a name that is the 'e'
     // of an outer 'foo' is that one
-    [[nodiscard]] auto foo_array(const toc& tc) const -> foo_array_info {
-        const storage_target array{
-            tc.storage_target_of(ident_.first_token(),
-                                 ident_.first_token().text(),
-                                 ident_.accessed_path()),
-        };
+    [[nodiscard]] auto foo_array(const toc& tc) const
+        -> std::optional<storage_path> {
 
-        return {array.root, array.path};
+        return tc.storage_of(ident_.first_token(), ident_.first_token().text(),
+                             ident_.accessed_path());
     }
 
     [[nodiscard]] auto has_count() const -> bool {

@@ -345,7 +345,7 @@ struct generic_call {
 struct noinline_arg {
     ident_info info;
     // the variable and the bytes of it that the callee reaches
-    storage_target target;
+    std::optional<storage_path> target;
     bool is_temporary;
 };
 
@@ -457,11 +457,11 @@ struct call_site {
     // element of the array when it is the element of a 'foo'
     [[nodiscard]] static auto argument_target(const toc& tc,
                                               const expr_any& arg)
-        -> storage_target {
+        -> std::optional<storage_path> {
 
-        return tc.storage_target_of(arg.tok(),
-                                    ident_info::root_of(arg.name_or_literal()),
-                                    arg.accessed_path());
+        return tc.storage_of(arg.tok(),
+                             ident_info::root_of(arg.name_or_literal()),
+                             arg.accessed_path());
     }
 
     // computed from the argument, e.g. 'x + 1' or '-x', so it has no storage
@@ -497,17 +497,17 @@ struct call_site {
     [[nodiscard]] static auto result_target(const toc& tc,
                                             const token& src_loc_tk,
                                             const destination& dst)
-        -> storage_target {
+        -> std::optional<storage_path> {
 
         // note: a register destination, its id is a register name, has no
         //       variable
 
         if (dst.is_register()) {
-            return {};
+            return std::nullopt;
         }
 
-        return tc.storage_target_of(src_loc_tk, ident_info::root_of(dst.name()),
-                                    dst.accessed_path());
+        return tc.storage_of(src_loc_tk, ident_info::root_of(dst.name()),
+                             dst.accessed_path());
     }
 
     // the frames ran out in the dry run of a noinline call, see
@@ -1061,8 +1061,11 @@ class inline_call {
             if (is_call_temporary or
                 call_site::is_instance_temporary(arg, param)) {
 
+                const std::string temporary{call_.temporary_argument_name(i)};
+
                 aliases.push_back(make_storage_alias(
-                    param, call_.temporary_argument_name(i)));
+                    param, temporary,
+                    tc.storage_of(call_.tk, temporary, std::nullopt)));
 
                 continue;
             }
@@ -1299,7 +1302,7 @@ class inline_call {
     [[nodiscard]] static auto
     make_storage_alias(const stmt_def_func_param& param,
                        const std::string_view path,
-                       const storage_target& bound = {}) -> alias_info {
+                       const std::optional<storage_path>& bound) -> alias_info {
 
         return alias_info::make_storage(param.name_or_literal(),
                                         param.get_type(),
@@ -1329,9 +1332,9 @@ class inline_call {
 class noinline_call {
     // what the aliasing signature reads of the result or of an argument
     struct signature_item {
-        // the variable and the bytes of it, e.g. 'v@2' and the field 'x' of
-        // 'v.x'
-        storage_target target;
+        // the variable and the bytes of it, e.g. 'v' of the frame 2 and the
+        // field 'x' of 'v.x'
+        std::optional<storage_path> target;
         bool is_pointer{};
         bool is_array{};
         std::optional<size_t> array_len;
@@ -1536,8 +1539,7 @@ class noinline_call {
             arguments.push_back({
                 .info{temporary},
                 .target{
-                    tc.storage_target_of(call_.tk, temporary.root_id(),
-                                         std::nullopt),
+                    tc.storage_of(call_.tk, temporary.root_id(), std::nullopt),
                 },
                 .is_temporary{true},
             });
@@ -1738,7 +1740,7 @@ class noinline_call {
         }
 
         std::string signature{func.name()};
-        std::vector<std::string_view> locals;
+        std::vector<root_variable> locals;
 
         for (const signature_item& item : items) {
             const std::optional<std::string> part{
@@ -1808,6 +1810,21 @@ class noinline_call {
                                    not dst.type_ref().is_same(func.get_type()));
     }
 
+    // the index of 'root' among the locals met so far, added when it is new
+    [[nodiscard]] static auto local_index(std::vector<root_variable>& locals,
+                                          const root_variable& root) -> size_t {
+
+        for (size_t i{}; i < locals.size(); ++i) {
+            if (locals.at(i).is_same(root)) {
+                return i;
+            }
+        }
+
+        locals.push_back(root);
+
+        return locals.size() - 1;
+    }
+
     // a value without storage, e.g. a literal or an expression, an array is
     // only passed by name
     [[nodiscard]] static auto needs_temporary(const toc& tc,
@@ -1833,9 +1850,8 @@ class noinline_call {
     // what an argument adds to the signature, e.g. ' local 0.8' or
     // ' global g[?]', none for a pointer, which the signature cannot tell.
     // 'locals' are the variables met so far
-    [[nodiscard]] static auto
-    signature_part(const signature_item& item,
-                   std::vector<std::string_view>& locals)
+    [[nodiscard]] static auto signature_part(const signature_item& item,
+                                             std::vector<root_variable>& locals)
         -> std::optional<std::string> {
 
         if (item.is_pointer) {
@@ -1854,25 +1870,20 @@ class noinline_call {
             part += std::format(" array {}", *item.array_len);
         }
 
-        const storage_target& target{item.target};
+        // note: the result and the arguments are variables in memory
+        assert(item.target);
+
+        const storage_path& target{*item.target};
 
         // note: an unknown path is the whole variable
         const std::string path{target.path ? target.path->text() : "*"};
 
-        if (target.is_global()) {
-            return part +
-                   std::format(" global {}{}", target.display_root(), path);
+        if (target.root.is_global()) {
+            return part + std::format(" global {}{}", target.root.name, path);
         }
 
-        const std::string_view root{target.root};
-
-        if (std::ranges::find(locals, root) == locals.end()) {
-            locals.push_back(root);
-        }
-
-        const auto local{std::ranges::find(locals, root)};
-
-        return part + std::format(" local {}{}", local - locals.begin(), path);
+        return part + std::format(" local {}{}",
+                                  local_index(locals, target.root), path);
     }
 };
 
@@ -1911,7 +1922,7 @@ class stmt_call : public expression {
     // an argument that names a variable, kept to compare with the next ones
     struct reference {
         size_t index;
-        storage_target target;
+        storage_path target;
         bool is_read_only;
     };
 
@@ -2216,8 +2227,7 @@ class stmt_call : public expression {
             tc.checks().alias and dst.is_storage(),
         };
 
-        // note: an empty target, the result is not compared, names no variable
-        storage_target result;
+        std::optional<storage_path> result;
 
         if (is_result_checked) {
             result = call_site::result_target(tc, tok(), dst);
@@ -2237,19 +2247,25 @@ class stmt_call : public expression {
                 continue;
             }
 
-            storage_target target{call_site::argument_target(tc, arg)};
+            std::optional<storage_path> target{
+                call_site::argument_target(tc, arg),
+            };
+
+            // note: a variable has storage
+            assert(target);
 
             if (is_result_checked) {
-                assert_not_shared_with_result(i, target, dst, result);
+                assert_not_shared_with_result(i, *target, dst, result);
             }
 
             const bool is_read_only{func.param(i).is_read_only()};
 
-            assert_not_shared_with_earlier(references, i, target, is_read_only);
+            assert_not_shared_with_earlier(references, i, *target,
+                                           is_read_only);
 
             references.push_back({
                 .index{i},
-                .target{std::move(target)},
+                .target{std::move(*target)},
                 .is_read_only{is_read_only},
             });
         }
@@ -2274,7 +2290,7 @@ class stmt_call : public expression {
     // parameters are read-only or the bytes they reach are disjoint
     auto assert_not_shared_with_earlier(
         const std::span<const reference> earlier, const size_t index,
-        const storage_target& target, const bool is_read_only) const -> void {
+        const storage_path& target, const bool is_read_only) const -> void {
 
         const expr_any& arg{args_.at(index)};
 
@@ -2294,18 +2310,16 @@ class stmt_call : public expression {
                             describe_argument(index), arg.name_or_literal(),
                             describe_argument(other.index),
                             args_.at(other.index).name_or_literal(),
-                            target.display_root(), use_temporary_fix_)};
+                            target.root.name, use_temporary_fix_)};
         }
     }
 
     // an argument that names the result destination, only for '--checks=alias'
-    auto assert_not_shared_with_result(const size_t index,
-                                       const storage_target& target,
-                                       const destination& dst,
-                                       const storage_target& result) const
-        -> void {
+    auto assert_not_shared_with_result(
+        const size_t index, const storage_path& target, const destination& dst,
+        const std::optional<storage_path>& result) const -> void {
 
-        if (not target.may_overlap(result)) {
+        if (not result or not target.may_overlap(*result)) {
             return;
         }
 
@@ -2315,7 +2329,7 @@ class stmt_call : public expression {
                         "result destination '{}' (both name '{}'), {}",
                         describe_argument(index),
                         args_.at(index).name_or_literal(), dst.name(),
-                        target.display_root(), use_temporary_fix_)};
+                        target.root.name, use_temporary_fix_)};
     }
 
     // 'what' names what precedes the '(' in the error

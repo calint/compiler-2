@@ -5,12 +5,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <span>
 #include <string>
+#include <utility>
 #include <vector>
 
-// aliasing: two accesses to a variable that cannot be the same bytes because
-// their paths select different fields or different constant elements
+// aliasing: two accesses that cannot be the same bytes because they name
+// different variables or their paths select different fields or different
+// constant elements
 
 // one step of the path from a root variable to what is accessed: a field, a
 // constant index or a run-time index, e.g. 'es[1].items[i]' is a constant
@@ -129,5 +132,62 @@ struct access_path {
         }
 
         return false;
+    }
+};
+
+// a variable: its name and the frame it is declared in, a callee's local of
+// the name of a variable of the caller is another variable
+struct root_variable {
+    std::string name;
+    size_t frame_index{};
+
+    [[nodiscard]] auto is_global() const -> bool { return frame_index == 0; }
+
+    [[nodiscard]] auto is_same(const root_variable& other) const -> bool {
+        return name == other.name and frame_index == other.frame_index;
+    }
+};
+
+// storage under the name of a root variable: the root variable and the path
+// to what is accessed, empty when it is not known
+struct storage_path {
+    root_variable root;
+    std::optional<access_path> path;
+
+    // 'suffix' inside the element at a run-time index of the array this
+    // names, e.g. the element 'e' of a 'foo'
+    [[nodiscard]] auto
+    any_element(const std::optional<access_path>& suffix) const
+        -> storage_path {
+
+        std::optional<access_path> element_path{path};
+
+        if (element_path) {
+            element_path->add_run_time_index();
+
+            if (suffix) {
+                element_path = element_path->extended_by(*suffix);
+            }
+        }
+
+        return {
+            .root{root},
+            .path{std::move(element_path)},
+        };
+    }
+
+    // true when both may name the same bytes, a read of other bytes or of
+    // another variable is not
+    [[nodiscard]] auto may_overlap(const storage_path& other) const -> bool {
+        if (not root.is_same(other.root)) {
+            return false;
+        }
+
+        // note: an unknown path is the whole variable
+        if (not path or not other.path) {
+            return true;
+        }
+
+        return path->overlaps(*other.path);
     }
 };

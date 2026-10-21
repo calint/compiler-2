@@ -34,9 +34,8 @@
 // and compiled, see 'etc/docs/README.md'. the classes below, in reading
 // order:
 //
-//   records         'func_info', 'noinline_body', 'storage_target',
-//                   'alias_info' (what a parameter of an inlined call stands
-//                   for), 'const_info'
+//   records         'func_info', 'noinline_body', 'alias_info' (what a
+//                   parameter of an inlined call stands for), 'const_info'
 //   'frame'         one scope: its constants, variables and aliases
 //   'ident_path'    a name as its path of elements, e.g. 'p.x'
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
@@ -77,43 +76,6 @@ struct noinline_body {
     std::vector<size_t> array_lengths;
 };
 
-// storage under the name of a root variable: the root variable and the path
-// to what is accessed, empty when it is not known
-struct storage_target {
-    // 'acc@2' is the variable 'acc' declared in the frame 2, a callee's local
-    // of the name of a variable of the caller is another variable
-    static constexpr char frame_mark{'@'};
-
-    std::string root;
-    std::optional<access_path> path;
-
-    // the root variable as written, without the frame that tells apart
-    // variables of the same name
-    [[nodiscard]] auto display_root() const -> std::string_view {
-        return std::string_view{root}.substr(0, root.find(frame_mark));
-    }
-
-    // a variable of the root frame, e.g. 'g@0'
-    [[nodiscard]] auto is_global() const -> bool {
-        return root.ends_with(std::format("{}0", frame_mark));
-    }
-
-    // true when both may name the same bytes, a read of other bytes or of
-    // another variable is not
-    [[nodiscard]] auto may_overlap(const storage_target& other) const -> bool {
-        if (root != other.root) {
-            return false;
-        }
-
-        // note: an unknown path is the whole variable
-        if (not path or not other.path) {
-            return true;
-        }
-
-        return path->overlaps(*other.path);
-    }
-};
-
 // a parameter that is a constant, e.g. 'x' of 'f(3)' or of 'f(2 * n)' when
 // 'n' is a constant, the body is decided at compile time
 struct bound_constant {
@@ -140,8 +102,9 @@ struct bound_storage {
     bool is_element{};
     // the root variable and the path that the alias names, found where
     // the call is made because the callee does not see the caller's names,
-    // e.g. the element 'e' of a 'foo'; empty for a temporary
-    storage_target bound;
+    // e.g. the element 'e' of a 'foo'; empty when the argument holds no
+    // storage, e.g. a value in a register
+    std::optional<storage_path> bound;
 };
 
 // what the name of a parameter or of the result of an inlined call stands
@@ -1131,27 +1094,40 @@ class scope_stack final {
 
     [[nodiscard]] auto back() const -> const frame& { return frames_.back(); }
 
-    // the root variable that the parameter 'name' names, empty when it is not
-    // a parameter or the variable is not known
-    [[nodiscard]] auto bound_root(const std::string_view name) const
-        -> std::string_view {
+    // the storage that the parameter 'name' names with 'path' inside it,
+    // empty when its argument holds none, e.g. a constant or a value in a
+    // register
+    [[nodiscard]] auto
+    bound_storage_of(const std::string_view name,
+                     const std::optional<access_path>& path) const
+        -> std::optional<storage_path> {
 
         const alias_info* const alias{find_alias(name)};
 
-        if (alias == nullptr) {
-            return {};
-        }
+        assert(alias != nullptr);
 
         const bound_storage* const storage{
             std::get_if<bound_storage>(&alias->binding),
         };
 
-        // note: a constant or a register names no variable
-        if (storage == nullptr) {
-            return {};
+        if (storage == nullptr or not storage->bound) {
+            return std::nullopt;
         }
 
-        return storage->bound.root;
+        const storage_path& bound{*storage->bound};
+
+        // note: an unknown path is the whole variable
+        if (not bound.path or not path) {
+            return storage_path{
+                .root{bound.root},
+                .path{},
+            };
+        }
+
+        return storage_path{
+            .root{bound.root},
+            .path{bound.path->extended_by(*path)},
+        };
     }
 
     // the value of 'name' when it means a constant
@@ -1232,7 +1208,7 @@ class scope_stack final {
     // the array that variable 'name' is an element of, empty when it is not the
     // element of a 'foo'
     [[nodiscard]] auto foo_array(const std::string_view name) const
-        -> foo_array_info {
+        -> std::optional<storage_path> {
 
         const name_meaning meaning{lookup(name)};
 
@@ -1390,35 +1366,6 @@ class scope_stack final {
     }
 
     auto pop() -> void { frames_.pop_back(); }
-
-    // 'path' of the variable or parameter 'name' as bytes of the root
-    // variable it names, empty when that is not known
-    [[nodiscard]] auto root_path(const std::string_view name,
-                                 const std::optional<access_path>& path) const
-        -> std::optional<access_path> {
-
-        const alias_info* const alias{find_alias(name)};
-
-        if (alias == nullptr) {
-            return path;
-        }
-
-        const bound_storage* const storage{
-            std::get_if<bound_storage>(&alias->binding),
-        };
-
-        if (storage == nullptr) {
-            return std::nullopt;
-        }
-
-        const std::optional<access_path>& bound{storage->bound.path};
-
-        if (not bound or not path) {
-            return std::nullopt;
-        }
-
-        return bound->extended_by(*path);
-    }
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
@@ -3067,38 +3014,43 @@ class toc final {
     }
 
     // what 'name' names with 'path' inside it, as a root variable and bytes
-    // of it. a parameter is followed to its argument and the element 'e' of a
-    // 'foo' is any element of the array it iterates
-    [[nodiscard]] auto
-    storage_target_of(const token& src_loc_tk, const std::string_view name,
-                      const std::optional<access_path>& path) const
-        -> storage_target {
+    // of it, empty when it holds no storage, e.g. a constant. a parameter is
+    // followed to its argument and the element 'e' of a 'foo' is any element
+    // of the array it iterates
+    [[nodiscard]] auto storage_of(const token& src_loc_tk,
+                                  const std::string_view name,
+                                  const std::optional<access_path>& path) const
+        -> std::optional<storage_path> {
 
-        const foo_array_info array{scopes_.foo_array(name)};
+        const name_meaning meaning{scopes_.lookup(name)};
 
-        if (array.root.empty()) {
-            return {
-                .root{root_variable_of(src_loc_tk, name)},
-                .path{scopes_.root_path(name, path)},
-            };
+        if (meaning.is_alias()) {
+            return scopes_.bound_storage_of(name, path);
+        }
+
+        if (not meaning.is_variable()) {
+            return std::nullopt;
         }
 
         // note: the array was resolved to its root variable when the 'foo'
         //       was made, the callee of a call in the 'foo' does not see 'e'
 
-        std::optional<access_path> element_path{array.path};
+        if (const std::optional<storage_path> array{scopes_.foo_array(name)}) {
 
-        if (element_path) {
-            element_path->add_run_time_index();
-
-            if (path) {
-                element_path = element_path->extended_by(*path);
-            }
+            return array->any_element(path);
         }
 
-        return {
-            .root{array.root},
-            .path{std::move(element_path)},
+        // a value in a register has no storage, e.g. the counter 'i' of a 'foo'
+        if (make_ident_info(src_loc_tk, name).is_register()) {
+            return std::nullopt;
+        }
+
+        return storage_path{
+            .root{
+                .name{std::string{name}},
+                .frame_index{meaning.frame_index},
+            },
+            .path{path},
         };
     }
 
@@ -3243,40 +3195,6 @@ class toc final {
         }
 
         return funcs_.get(name);
-    }
-
-    // the variable that 'name' names, a parameter is followed to its argument
-    [[nodiscard]] auto root_variable_of(const token& src_loc_tk,
-                                        const std::string_view name) const
-        -> std::string {
-
-        const std::string_view bound_root{scopes_.bound_root(name)};
-
-        if (not bound_root.empty()) {
-            return std::string{bound_root};
-        }
-
-        const ident_info info{make_ident_info(src_loc_tk, name)};
-
-        // a value in a register is no variable, not even one that is named
-        // like the register, e.g. 't1' of rv32i or 'r14' of x86_64
-        if (info.is_register()) {
-            return std::format("{}{}register", info.operand().base_register(),
-                               storage_target::frame_mark);
-        }
-
-        const std::string_view root{info.elem_path().front()};
-
-        const name_meaning meaning{scopes_.lookup(root)};
-
-        // a constant is no variable, e.g. the '1' of 'f(1)'
-        if (not meaning.is_variable()) {
-            return std::format("{}{}constant", root,
-                               storage_target::frame_mark);
-        }
-
-        return std::format("{}{}{}", root, storage_target::frame_mark,
-                           meaning.frame_index);
     }
 };
 

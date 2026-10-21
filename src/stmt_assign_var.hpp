@@ -202,14 +202,20 @@ class stmt_assign_var final : public statement {
             return;
         }
 
-        const storage_target dst{
-            tc.storage_target_of(stmt_ident_.first_token(),
-                                 stmt_ident_.first_token().text(),
-                                 stmt_ident_.accessed_path()),
+        const std::optional<storage_path> dst{
+            tc.storage_of(stmt_ident_.first_token(),
+                          stmt_ident_.first_token().text(),
+                          stmt_ident_.accessed_path()),
         };
 
+        // the result of a call in an expression is written to a register,
+        // which no other name reaches
+        if (not dst) {
+            return;
+        }
+
         for (const value_read& read : reads_of_value()) {
-            if (not may_share_storage(tc, dst, read)) {
+            if (not may_share_storage(tc, *dst, read)) {
                 continue;
             }
 
@@ -219,7 +225,7 @@ class stmt_assign_var final : public statement {
                             "(both name '{}'), compute the value in a "
                             "temporary variable first",
                             read.text, stmt_ident_.name_or_literal(),
-                            dst.display_root())};
+                            dst->root.name)};
         }
     }
 
@@ -231,13 +237,12 @@ class stmt_assign_var final : public statement {
         const std::string_view root{stmt_ident_.first_token().text()};
 
         return var_info.is_pointer() or tc.scopes().is_alias(root) or
-               not tc.scopes().foo_array(root).root.empty();
+               tc.scopes().foo_array(root).has_value();
     }
 
     // true when the read may be of bytes of the destination under another
     // name
-    [[nodiscard]] auto may_share_storage(const toc& tc,
-                                         const storage_target& dst,
+    [[nodiscard]] auto may_share_storage(const toc& tc, const storage_path& dst,
                                          const value_read& read) const -> bool {
 
         const std::string_view read_name{read.tk.text()};
@@ -253,11 +258,11 @@ class stmt_assign_var final : public statement {
             return false;
         }
 
-        const storage_target source{
-            tc.storage_target_of(read.tk, read_name, read.path),
+        const std::optional<storage_path> source{
+            tc.storage_of(read.tk, read_name, read.path),
         };
 
-        return source.may_overlap(dst);
+        return source and source->may_overlap(dst);
     }
 
     // every read of a variable in the value, in source order

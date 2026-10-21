@@ -3,9 +3,8 @@
 // what a name resolves to ('ident_info'), what a variable is declared as
 // ('var_info'), where 'compile' writes a value ('destination'), what a
 // caller asks of the address of an identifier ('lea_request'), why a name
-// cannot be written ('read_only_cause'), the array of the element of a 'foo'
-// ('foo_array_info'), an address computed at an inlined call
-// ('known_address') and a value known at compile time ('folded_value')
+// cannot be written ('read_only_cause'), an address computed at an inlined
+// call ('known_address') and a value known at compile time ('folded_value')
 
 #include <cassert>
 #include <cstddef>
@@ -76,20 +75,6 @@ struct folded_value {
     }
 };
 
-// the array that the element 'e' of a 'foo' belongs to: its root variable and
-// the path to it, empty when not known
-class foo_array_info final {
-  public:
-    foo_array_info(std::string root_in,
-                   const std::optional<access_path>& path_in)
-        : root{std::move(root_in)}, path{path_in} {}
-
-    foo_array_info() = default;
-
-    std::string root;
-    std::optional<access_path> path;
-};
-
 // the length that an array of unknown length is parsed and compiled with,
 // what it gives is discarded, see 'ident_info::is_length_unknown'
 inline constexpr size_t discarded_array_len{};
@@ -114,8 +99,9 @@ struct var_info {
     // variable value is in register, no storage
     operand value_register;
 
-    // empty unless this is the element 'e' of a 'foo'
-    foo_array_info foo_array;
+    // the array that the element 'e' of a 'foo' belongs to, empty unless this
+    // is that element
+    std::optional<storage_path> foo_array;
 };
 
 // the address of an element of a path computed at an inlined call, e.g.
