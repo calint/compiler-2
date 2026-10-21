@@ -4496,3 +4496,7 @@ SRC=1392 && EXP=0 && RUN
 # an element of an array field of a literal is a destination of its own
 SRC=1393 && EXP=0 && RUN
 SRC=1394 && COMPERR
+
+# shared storage is reported with the source text, indexes included
+SRC=1395 && COMPERR
+SRC=1396 && COMPERR

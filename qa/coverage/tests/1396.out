@@ -1,0 +1,4 @@
+
+1396.baz:13:18: argument 1 'w.ps[0].x' may share storage with the result destination 'w.ps[0]' (both name 'w'), use a temporary variable for one of them
+    w.ps[0] = mk(w.ps[0].x)
+                 ^

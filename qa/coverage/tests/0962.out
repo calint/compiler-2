@@ -1,4 +1,4 @@
 
-0962.baz:14:21: argument 2 'arr' may share storage with argument 1 'arr' (both name 'arr'), use a temporary variable for one of them
+0962.baz:14:21: argument 2 'arr[1]' may share storage with argument 1 'arr[1]' (both name 'arr'), use a temporary variable for one of them
     forward(arr[1], arr[1])
                     ^

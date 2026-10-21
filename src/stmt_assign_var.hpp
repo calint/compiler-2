@@ -135,6 +135,7 @@ class stmt_assign_var final : public statement {
                                       stmt_ident_.first_token().text(),
                                       stmt_ident_.accessed_path()),
                     },
+                    .text{stmt_ident_.path_text()},
                 }),
         };
 
@@ -228,7 +229,7 @@ class stmt_assign_var final : public statement {
                 std::format("'{}' may share storage with the destination '{}' "
                             "(both name '{}'), compute the value in a "
                             "temporary variable first",
-                            read.text, stmt_ident_.name_or_literal(),
+                            read.text, stmt_ident_.path_text(),
                             dst->root.name)};
         }
     }

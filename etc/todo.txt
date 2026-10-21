@@ -62,6 +62,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        11. B4 rule B per part for every destination, 4 tests, long fuzz runs
        12. records: resolved file, deferred items (variant destination
            '{none, reg, storage}', call in a literal)
+[ ] easy: messages about an argument or a destination that is read-only or a
+    constant print the name without its indexes ('name_or_literal'), e.g.
+    "read-only 'ps.x'" for 'ps[0].x'; the shared storage messages quote the
+    source text ('statement::trimmed_source', 'destination::text')
 [ ] medium: a typed constant argument passed to a wider parameter is accepted
     where the variable is rejected (G4-2), e.g. 'f(5)' with 'f(a i8)' calling
     'g(b i16)' with 'g(a)'; also 'f(v + 1)' with the parameter in a register;

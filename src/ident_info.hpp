@@ -373,6 +373,9 @@ class destination final {
     const type* type_ptr_{};
     // e.g. 'p.x', or the register, as the comments name it
     std::string name_;
+    // the destination as written, for a diagnostic, e.g. 'w.ps[0]'; a
+    // temporary has its name
+    std::string text_;
     // where the name is in the source, empty when it is not
     token src_loc_tk_;
     // the operand is the address, the name need not be resolved again, e.g.
@@ -396,6 +399,7 @@ class destination final {
         ::operand address;
         bool is_address_known{};
         std::optional<storage_path> storage;
+        std::string text;
     };
 
   public:
@@ -437,6 +441,7 @@ class destination final {
         result.is_array_ = false;
         result.array_len_ = std::nullopt;
         result.storage_->path.add_fixed_index(index);
+        result.text_ += std::format("[{}]", index);
 
         return result;
     }
@@ -460,6 +465,7 @@ class destination final {
         result.type_ptr_ = &fld.type();
         result.src_loc_tk_ = {};
         result.storage_->path.add_field(fld.offset);
+        result.text_ += std::format(".{}", fld.name);
 
         return result;
     }
@@ -519,6 +525,8 @@ class destination final {
         return storage_;
     }
 
+    [[nodiscard]] auto text() const -> const std::string& { return text_; }
+
     [[nodiscard]] auto type_ref() const -> const type& {
         assert(type_ptr_ != nullptr);
 
@@ -547,6 +555,7 @@ class destination final {
                                  .address{info.operand()},
                                  .is_address_known{},
                                  .storage{std::move(storage)},
+                                 .text{info.id()},
                              });
     }
 
@@ -563,6 +572,7 @@ class destination final {
         result.operand_ = std::move(parts.address);
         result.type_ptr_ = &info.type_ref();
         result.name_ = info.id();
+        result.text_ = std::move(parts.text);
         result.src_loc_tk_ = info.src_loc_tk();
 
         result.is_address_known_ =

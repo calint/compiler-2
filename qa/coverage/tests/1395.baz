@@ -1,0 +1,14 @@
+# shared storage of two arguments is reported with the arguments as written,
+# indexes included
+
+type point {x, y}
+
+func noinline f(a mut, b mut) {
+    a = b + 1
+}
+
+func main() {
+    var ps = point[2]{{1, 2}, {3, 4}}
+    f(ps[0].x, ps[0].x)
+    exit(0)
+}

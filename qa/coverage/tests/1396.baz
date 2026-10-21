@@ -1,0 +1,15 @@
+# shared storage of an argument and the result destination is reported with
+# both as written, indexes included
+
+type point {x, y}
+type t {ps point[2]}
+
+func noinline mk(v) res point {
+    res = {v, v}
+}
+
+func main() {
+    var w = t{{{1, 2}, {3, 4}}}
+    w.ps[0] = mk(w.ps[0].x)
+    exit(0)
+}

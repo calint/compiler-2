@@ -2298,9 +2298,10 @@ class stmt_call : public expression {
                 arg.tok(),
                 std::format("{} '{}' may share storage with {} '{}' "
                             "(both name '{}'), {}",
-                            describe_argument(index), arg.name_or_literal(),
+                            describe_argument(index),
+                            statement::trimmed_source(arg),
                             describe_argument(other.index),
-                            args_.at(other.index).name_or_literal(),
+                            statement::trimmed_source(args_.at(other.index)),
                             target.root.name, use_temporary_fix_)};
         }
     }
@@ -2319,7 +2320,7 @@ class stmt_call : public expression {
             std::format("{} '{}' may share storage with the "
                         "result destination '{}' (both name '{}'), {}",
                         describe_argument(index),
-                        args_.at(index).name_or_literal(), dst.name(),
+                        statement::trimmed_source(args_.at(index)), dst.text(),
                         target.root.name, use_temporary_fix_)};
     }
 

@@ -1,4 +1,4 @@
 
-0941.baz:12:23: argument 1 'arr' may share storage with the result destination 'arr' (both name 'arr'), use a temporary variable for one of them
+0941.baz:12:23: argument 1 'arr[ix]' may share storage with the result destination 'arr[ix - 2]' (both name 'arr'), use a temporary variable for one of them
     arr[ix - 2] = inv(arr[ix])
                       ^
