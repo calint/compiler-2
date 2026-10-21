@@ -182,6 +182,11 @@ SUM:                            66           8951           4541          26782
 -------------------------------------------------------------------------------
 ```
 
+## Reflection
+
+Some thoughts about the transition to AI-assisted development:
+[reflection.md](etc/readme/reflection.md)
+
 ## Sample
 
 ```text
