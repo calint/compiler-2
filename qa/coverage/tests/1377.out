@@ -1,0 +1,7 @@
+
+1377.baz:7:13: 'i16(p)' of type 'i16' is wider than 'e' of type 'i8', swap the operands: 'i16(p) <= e'
+    if e >= i16(p) {
+            ^
+1377.baz:13:14: called from 'compared(300)'
+    exit(int(compared(300)))
+             ^~~~~~~~

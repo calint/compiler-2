@@ -4442,3 +4442,14 @@ SRC=1373 && COMPERR
 # a constant is stored at the width of its destination: the low bits of a
 # wider typed constant and an inlined argument with its unary ops
 SRC=1374 && EXP=44 && RUN
+
+# a conversion of a constant name is a value of its type like the
+# conversion of a literal, also of an inlined parameter
+SRC=1375 && EXP=0 && RUN
+
+# a conversion of a constant name is wider than a narrower left side
+SRC=1376 && COMPERR
+
+# a conversion of an inlined parameter bound to a constant is wider than a
+# narrower left side
+SRC=1377 && COMPERR

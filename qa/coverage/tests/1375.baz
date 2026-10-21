@@ -1,0 +1,21 @@
+# a conversion of a constant name is a value of its type like the
+# conversion of a literal, e.g. 'i16(k)' compared with a narrower variable as
+# 'i16(300)' is, also of an inlined parameter bound to a constant
+
+let k = 300
+
+func compared(p i16) res i8 {
+    var e = i8(1)
+    res = 0
+    if i16(p) <= e {
+        res = 1
+    }
+}
+
+func main() {
+    var e = i8(1)
+    if i16(k) <= e {
+        exit(1)
+    }
+    exit(int(compared(300)))
+}

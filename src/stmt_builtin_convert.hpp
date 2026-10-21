@@ -184,11 +184,11 @@ class stmt_builtin_convert final : public expression {
         assert_own_type_not_narrowed(dst_type);
     }
 
-    // a folded literal is a constant of the type, which wraps at the width
-    // of its use; a constant argument is converted, then the conversion's
-    // own unary ops apply at the width it is used at, at least that of the
-    // type, e.g. 'i16' for '-i8(-128)' in an 'i16' list, where under the
-    // overflow check a result that does not fit is an error
+    // a constant of the type, which wraps at the width of its use: a folded
+    // literal, or a constant argument converted, then the conversion's own
+    // unary ops apply at the width it is used at, at least that of the type,
+    // e.g. 'i16' for '-i8(-128)' in an 'i16' list, where under the overflow
+    // check a result that does not fit is an error
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
@@ -228,8 +228,10 @@ class stmt_builtin_convert final : public expression {
 
         // a narrower width keeps the low bits, e.g. 44 of the 'i16' 300 of
         // 'i8(i16(k))'
-        return folded_value::untyped(
-            constant_arith::wrap_to_width(value, width_type));
+        return folded_value{
+            .value{constant_arith::wrap_to_width(value, width_type)},
+            .own_type{&get_type()},
+        };
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {

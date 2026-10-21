@@ -135,6 +135,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           the caller-side 'assert_not_narrowed' calls stay for B3
        B2 typedness from the fold: 'i16(K) <= e' accepted like
           'i16(300) <= e' (G6-2, ARCH-6)
+          => done (2026-10-21): the fold of a conversion of a constant
+          argument is typed; 'i16(k) <= e' runs, 'e >= i16(k)' and an
+          inlined 'e >= i16(p)' are rejected as wider (1375-1377); gate
+          unchanged otherwise; the spelling fuzzer's 'compare' class is
+          gone, 'argument' (G4-2) remains for the aliasing plan
        B3 the fit check inside 'fold' ('folded_value::assert_fits'),
           'keeps_untyped' and the callers' 'assert_not_narrowed' go: 'e <
           i8(1) + 300' rejected at '300' (G5-1)

@@ -1,0 +1,14 @@
+# a conversion of an inlined parameter bound to a constant is wider than a
+# narrower left side like the conversion of a literal
+
+func compared(p i16) res i8 {
+    var e = i8(1)
+    res = 0
+    if e >= i16(p) {
+        res = 1
+    }
+}
+
+func main() {
+    exit(int(compared(300)))
+}
