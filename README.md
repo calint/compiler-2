@@ -46,7 +46,9 @@ the binary image itself.
   * `overflow`: signed overflow of `+`, `-`, `*` and unary `-` at the width of
     the destination at runtime, a constant expression that overflows is
     rejected at compile time, the arithmetic of an explicit conversion such as
-    `i8(a + b)` still wraps
+    `i8(a + b)` still wraps, at the wider of its type and the type of its
+    first element; the unary `-` of a conversion such as `-i8(x)` applies and
+    is checked at the width where its value is used, like `-x`
   * `alias`: on by default, compile time rejection of calls and assignments
     where the value may read the destination under another name
   * always on: compile time rejection of arguments that may share storage when

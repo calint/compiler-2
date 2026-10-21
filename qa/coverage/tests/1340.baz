@@ -1,0 +1,32 @@
+# the unary ops of a conversion apply at the width where its value is used,
+# like those of a variable of its type
+func noinline take(x i16) res i16 {
+    res = x
+}
+
+func main() {
+    var v = i8(-128)
+    var w = i16(0)
+    var a = w + -i8(v)
+    if a != 128 {
+        exit(1)
+    }
+    var y = i16(0)
+    y = -i8(v)
+    if y != 128 {
+        exit(2)
+    }
+    var b = take(-i8(v))
+    if b != 128 {
+        exit(3)
+    }
+    var c = take(w + -i8(v))
+    if c != 128 {
+        exit(4)
+    }
+    var d = i16(-i8(v) + 0)
+    if d != 128 {
+        exit(5)
+    }
+    exit(0)
+}

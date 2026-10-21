@@ -1,0 +1,29 @@
+
+1347.baz:5:113: out of scratch registers, simplify the expression
+    res = (v - (v * 2 + (v - (v * 4 + (v - (v * 6 + (v - (v * 8 + (v - (v * 10 + (v - (v * 12 + (v - (v * 14 + (v - (v * 16 + (v - (v * 18 + (v - (v * 20 + (v - (v * 22 + (v - (v * 24 + (v - (v * 26 + (v - (v * 28 + v * v) * (v + 26))) * (v + 24))) * (v + 22))) * (v + 20))) * (v + 18))) * (v + 16))) * (v + 14))) * (v + 12))) * (v + 10))) * (v + 8))) * (v + 6))) * (v + 4))) * (v + 2))) * (v + 0))
+                                                                                                                ^
+1347.baz:9:10: called from 'f()'
+    exit(f())
+         ^
+
+register use at the failure: 13 of 13 registers live
+
+  held  frame, registers (allocated at)
+     0  main
+    13  f called at 9:10
+          r15 5:17
+          r14 5:26
+          r13 5:31
+          r12 5:40
+          r10 5:45
+          r9 5:54
+          r8 5:59
+          r11 5:68
+          rdx 5:73
+          rax 5:83
+          rsi 5:88
+          rdi 5:98
+          rcx 5:103
+
+no noinline frame helps, the registers are held by the innermost frame, simplify
+its expression

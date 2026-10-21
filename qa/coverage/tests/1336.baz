@@ -1,0 +1,7 @@
+# a constant in a conversion's argument that does not fit the type of the
+# first element is rejected like outside a conversion
+func main() {
+    var a = i8(100)
+    var r = i8(a + 200)
+    exit(r)
+}

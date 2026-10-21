@@ -198,6 +198,14 @@ widens into an operand of an operator, e.g. the 'g()' of 'w + g()'
 type and copied. 'stmt_call::compile' checks the result before the inlined and
 the noinline paths split, so both accept the same.
 
+A conversion 'T(arg)' ('stmt_builtin_convert') behaves like a temporary of
+type T: its argument is a list computed at W, the wider of T and the type of
+the argument's first element ('bool' stays 'bool'), where a wider element is
+rejected as narrowed and the arithmetic wraps. The conversion's own '-' and
+'~' apply where the value is used, at the width of the destination or of the
+list it is an operand of, as for '-v' of a variable of type T. The argument is
+compiled as an operand, so a narrower call result widens into it.
+
 A noinline function has a body of its own and a frame in memory that holds the
 addresses of its result and arguments ('stmt_call.hpp', 'noinline_call').
 
@@ -263,7 +271,10 @@ check as at any call, so there such an error rejects it. An instance of a
 generic definition is a function like the others: a use of a generic function
 makes it, an alias of a generic type makes its methods, and an instance that
 nothing calls is checked too; a generic function that nothing instantiates is
-listed in the report ([1.6](#16-reports)).
+listed in the report ([1.6](#16-reports)). The limit of nested dry runs
+counts the levels below each call, so a chain that is too deep is rejected at
+any call of it, whatever the order of the calls
+([4.3](#43-signature-checked-once-per-kind-of-call)).
 
 ### 1.6 Reports
 
@@ -798,6 +809,17 @@ A signature already seen is not dry run again. The signature is recorded
 before the dry run starts, so a call of the same kind reached inside the body
 (recursion) stops at once. The kinds are finitely many, so nested dry runs
 end.
+
+A noinline call inside a dry run nests another dry run, so a chain of calls
+nests one level per call ('scope_stack::noinline_dry_run_depth'). The
+compiler recurses for each, so the levels are limited
+('call_site::max_noinline_dry_run_depth', 100), and like the other inlining
+limits the depth depends on the calls. A signature keeps the number of levels
+its dry run reached below it ('toc::checked_noinline_call_height'), and a
+call that finds its signature checked counts them without running again, so
+the verdict does not depend on which calls were checked first. A cycle of
+signatures, e.g. 'f(a, b)' calling 'f(b, a)', is measured from where it was
+entered and can differ by its number of signatures.
 
 A pointer argument cannot tell which variable it names, so it gives no
 signature: the dry run is skipped and no aliasing is reported for it.

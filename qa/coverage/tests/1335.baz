@@ -1,0 +1,8 @@
+# an 'array_length' in a conversion's argument to a wider type is rejected
+# when the first element is narrower than 'array_length'
+func main() {
+    var a = i8[4]
+    var b = i8(4)
+    var c = i16(b + array_length(a))
+    exit(i8(c))
+}

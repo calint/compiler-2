@@ -1,0 +1,35 @@
+# a conversion to a wider type applies the unary ops of a single call at the
+# width of the type
+func g(x i8) res i8 {
+    res = x
+}
+
+func noinline h(x i8) res i8 {
+    res = x
+}
+
+func g16(x i16) res i16 {
+    res = x
+}
+
+func main() {
+    var v = i8(-128)
+    var w = i16(-32768)
+    var a = i16(-g(v))
+    if a != 128 {
+        exit(1)
+    }
+    var b = i16(-h(v))
+    if b != 128 {
+        exit(2)
+    }
+    var c = i32(-g16(w))
+    if c != 32768 {
+        exit(3)
+    }
+    var d = i16(i32(-g(v)))
+    if d != 128 {
+        exit(4)
+    }
+    exit(0)
+}

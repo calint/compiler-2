@@ -3905,7 +3905,7 @@ SRC=1233 && EXP=20 && RUN
 SRC=1234 && EXP=40 && RUN
 
 # --checks=overflow: the negation of a conversion is checked at the width of
-# its type at run time
+# its destination at run time
 SRC=1235 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
 
 # the 'n' of a 'foo' over an unsized array parameter is the length of the
@@ -4064,8 +4064,9 @@ SRC=1278 && COMPERR
 # call is rejected like a variable
 SRC=1279 && COMPERR
 
-# an inlined call past the frame limit in the dry runs of a chain of noinline
-# calls is reported as the chain: the script compiles a generated chain
+# an inlined or a noinline call past the frame limit in the dry runs of a
+# chain of noinline calls is reported as the chain: the script compiles
+# generated chains
 SRC=1280 && DIFFPY
 
 # a call into an instance whose padding lies in the elements of an array
@@ -4262,3 +4263,66 @@ SRC=1330 && COMPERR
 # a 'not' on the right side of a comparison is rejected, a condition is stored
 # in a 'bool' first
 SRC=1331 && COMPERR
+
+# an element of a conversion's argument wider than the first element is
+# rejected like outside a conversion
+SRC=1332 && COMPERR
+
+# a conversion computes its argument at the wider of its type and the type of
+# the first element, where a narrower element widens
+SRC=1333 && EXP=116 && RUN
+
+# an 'array_length' in a conversion's argument narrower than its type is
+# rejected
+SRC=1334 && COMPERR
+
+# an 'array_length' in a conversion's argument to a wider type is rejected
+# when the first element is narrower than 'array_length'
+SRC=1335 && COMPERR
+
+# a constant in a conversion's argument that does not fit the type of the
+# first element is rejected like outside a conversion
+SRC=1336 && COMPERR
+
+# a conversion of a 'bool' to 'i8' computes the argument as a 'bool', also a
+# call that returns one
+SRC=1337 && EXP=3 && RUN
+
+# a call in parentheses in a conversion to a wider type widens like any operand
+SRC=1339 && EXP=0 && RUN
+
+# a conversion to a wider type applies the unary ops of a single call at the
+# width of the type
+SRC=1338 && EXP=0 && RUN
+
+# the unary ops of a conversion apply at the width where its value is used,
+# like those of a variable of its type
+SRC=1340 && EXP=0 && RUN
+
+# --checks=overflow: the negation of a conversion used at a wider width than
+# its type does not overflow
+SRC=1341 && EXP=0 && RUN_ERR_OPTS "--checks=overflow"
+
+# the unary ops of a conversion of a constant apply where its value is used,
+# like those of a constant of its type
+SRC=1342 && EXP=0 && RUN
+
+# --checks=overflow: the negation of a conversion of a constant used at a
+# wider width than its type does not overflow
+SRC=1343 && EXP=0 && RUN_ERR_OPTS "--checks=overflow"
+
+# the limit of a chain of noinline calls does not depend on the order of the
+# calls: the script compiles a generated chain called in several orders
+SRC=1344 && DIFFPY
+
+# a noinline recursion that swaps a global and a local argument is checked for
+# both kinds of call and ends
+SRC=1345 && EXP=12 && RUN
+
+# a chain of noinline calls as long as the limit with an inlined call in each
+# body is accepted: the script compiles a generated chain
+SRC=1346 && DIFFPY
+
+# rv32i: a product whose right operand is in 'a0', the last scratch register,
+# is out of scratch registers, the helper takes its arguments in 'a0' and 'a1'
+SRC=1347 && COMPERR

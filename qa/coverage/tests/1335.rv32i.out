@@ -1,0 +1,4 @@
+
+1335.baz:6:21: 'array_length(a)' of type 'i32' is narrowed to 'i16', use 'i16(...)'
+    var c = i16(b + array_length(a))
+                    ^~~~~~~~~~~~

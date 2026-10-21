@@ -61,8 +61,9 @@ class stmt_builtin_array_length final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        // note: a narrower destination is rejected by 'assert_not_narrowed',
-        //       a 'bool' by its boolean check, and no type is wider
+        // note: a narrower destination is rejected by 'assert_not_narrowed'
+        //       or the argument check of a conversion, a 'bool' by its
+        //       boolean check, and no type is wider
         assert(dst.type_ref().is_same(tc.builtins().default_type()));
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};

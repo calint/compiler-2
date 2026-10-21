@@ -1,0 +1,12 @@
+# a conversion computes its argument at the wider of its type and the type of
+# the first element, where a narrower element widens
+func main() {
+    var a = i8(100)
+    var b = i16(260)
+    var r = i8(b / 16 + a)
+    var s = i16(a + i8(b))
+    if s != 104 {
+        exit(1)
+    }
+    exit(r)
+}

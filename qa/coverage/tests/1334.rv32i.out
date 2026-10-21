@@ -1,0 +1,4 @@
+
+1334.baz:6:20: 'array_length(a)' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    var c = i8(b * array_length(a))
+                   ^~~~~~~~~~~~

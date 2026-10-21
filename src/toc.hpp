@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <format>
 #include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -779,7 +780,9 @@ class function_table final {
     std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
     std::vector<noinline_body> noinline_bodies_;
-    std::set<std::string> checked_calls_;
+    // the dry-run levels below each checked aliasing signature, see
+    // 'noinline_call::check_aliasing'
+    std::map<std::string, size_t, std::less<>> checked_call_heights_;
     // the definitions whose body a compile reached
     std::set<const stmt_def_func*> reached_;
 
@@ -800,11 +803,6 @@ class function_table final {
         if (func_def != nullptr) {
             defs_.emplace_back(func_def);
         }
-    }
-
-    // false when the signature was already added, so a call is checked once
-    [[nodiscard]] auto add_checked_call(std::string signature) -> bool {
-        return checked_calls_.insert(std::move(signature)).second;
     }
 
     // keeps the instance alive, 'funcs_' refers to it
@@ -828,6 +826,20 @@ class function_table final {
             .func{&func},
             .array_lengths{std::move(array_lengths)},
         });
+    }
+
+    // none when the signature is not checked yet
+    [[nodiscard]] auto
+    checked_call_height(const std::string_view signature) const
+        -> std::optional<size_t> {
+
+        const auto it{checked_call_heights_.find(signature)};
+
+        if (it == checked_call_heights_.end()) {
+            return std::nullopt;
+        }
+
+        return it->second;
     }
 
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
@@ -872,6 +884,12 @@ class function_table final {
 
     [[nodiscard]] auto noinline_body_count() const -> size_t {
         return noinline_bodies_.size();
+    }
+
+    auto set_checked_call_height(const std::string_view signature,
+                                 const size_t height) -> void {
+
+        checked_call_heights_.insert_or_assign(std::string{signature}, height);
     }
 };
 
@@ -1342,6 +1360,15 @@ class scope_stack final {
     }
 
     [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
+
+    // the dry runs of noinline calls nested here, see
+    // 'frame::noinline_dry_run'
+    [[nodiscard]] auto noinline_dry_run_depth() const -> size_t {
+        return static_cast<size_t>(
+            std::ranges::count_if(frames_, [](const frame& frm) -> bool {
+                return frm.is_noinline_dry_run();
+            }));
+    }
 
     auto pop() -> void { frames_.pop_back(); }
 
@@ -2318,6 +2345,9 @@ class toc final {
     check_options checks_;
     // above zero while the code is compiled only to be checked
     size_t dry_run_depth_{};
+    // the deepest level of noinline dry runs reached in the dry run being
+    // checked, see 'noinline_call::check_aliasing'
+    size_t deepest_dry_run_level_{};
     // false while the program is parsed: the names are declared without
     // comments and without the capacity check of the storage
     bool is_compiling_{};
@@ -2424,13 +2454,6 @@ class toc final {
 
         return add_read_only_constant("init", src_loc_tk,
                                       token::encode_string(bytes));
-    }
-
-    // false when the signature was already added, so a call is checked once
-    [[nodiscard]] auto add_checked_noinline_call(std::string signature)
-        -> bool {
-
-        return funcs_.add_checked_call(std::move(signature));
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
@@ -2638,6 +2661,15 @@ class toc final {
         });
     }
 
+    // the dry-run levels below a checked call, none for a call not checked
+    // yet, see 'noinline_call::check_aliasing'
+    [[nodiscard]] auto
+    checked_noinline_call_height(const std::string_view signature) const
+        -> std::optional<size_t> {
+
+        return funcs_.checked_call_height(signature);
+    }
+
     // what '--checks' turned on
     [[nodiscard]] auto checks() const -> const check_options& {
         return checks_;
@@ -2739,6 +2771,14 @@ class toc final {
     // the type parameters of an enclosing instance are hidden until
     // 'exit_type_params'
     auto enter_type_params() -> void { types_.enter_params(); }
+
+    // the deepest dry-run level becomes 'level' and the one before is
+    // returned, so a dry run measures the levels below it
+    [[nodiscard]] auto exchange_deepest_dry_run_level(const size_t level)
+        -> size_t {
+
+        return std::exchange(deepest_dry_run_level_, level);
+    }
 
     auto exit_block() -> void {
         assert(scopes_.back().is_block());
@@ -2897,6 +2937,10 @@ class toc final {
         return storage_.next_frame_address(builtins_.address());
     }
 
+    auto reach_dry_run_level(const size_t level) -> void {
+        deepest_dry_run_level_ = std::max(deepest_dry_run_level_, level);
+    }
+
     auto reset_usage() -> void {
         assert(scopes_.is_empty());
 
@@ -2908,6 +2952,12 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
+
+    auto set_checked_noinline_call_height(const std::string_view signature,
+                                          const size_t height) -> void {
+
+        funcs_.set_checked_call_height(signature, height);
+    }
 
     [[nodiscard]] auto
     source_location_for_use_in_label(const token& src_loc_tk) const

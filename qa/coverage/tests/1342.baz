@@ -1,0 +1,25 @@
+# the unary ops of a conversion of a constant apply where its value is used,
+# like those of a constant of its type
+let k = -128
+
+func main() {
+    var y = i16(0)
+    y = -i8(-128)
+    if y != 128 {
+        exit(1)
+    }
+    var w = i16(0)
+    var r = w + -i8(-128)
+    if r != 128 {
+        exit(2)
+    }
+    var s = w + -i8(k)
+    if s != 128 {
+        exit(3)
+    }
+    var t = i16(-i8(-128))
+    if t != 128 {
+        exit(4)
+    }
+    exit(0)
+}

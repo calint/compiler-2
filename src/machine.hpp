@@ -986,6 +986,20 @@ class machine {
     // the code when asked for, else none
     [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
 
+    // the register of 'reg' at the width of 'type_ref', freed by the same
+    // allocation name, e.g. 'al' of 'rax' on x86_64
+    [[nodiscard]] auto register_view(const operand& reg,
+                                     const type& type_ref) const -> operand {
+
+        assert(reg.is_register());
+
+        operand result{make_register_operand(reg.base_register(), type_ref)};
+
+        result.set_allocation_register(reg.allocation_register());
+
+        return result;
+    }
+
     // the frame base is held while a 'noinline' body is compiled, which starts
     // and ends with no scratch register held
     auto release_frame_base() -> void {
@@ -1456,6 +1470,19 @@ class machine {
         used_routines_[std::string{routine}].insert(line);
     }
 
+    [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
+        -> compile_error {
+
+        compile_error error{
+            register_error(src_loc_tk,
+                           "out of scratch registers, simplify the expression"),
+        };
+
+        error.kind = compile_error::error_kind::out_of_registers;
+
+        return error;
+    }
+
     // 'signed_max' is the largest value of the signed type of the compare
     [[nodiscard]] auto plan_bounds_check(const bounds_check_options& options,
                                          const bounds_range& range,
@@ -1821,19 +1848,6 @@ class machine {
     }
 
     // another version of the code may not run out
-    [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
-        -> compile_error {
-
-        compile_error error{
-            register_error(src_loc_tk,
-                           "out of scratch registers, simplify the expression"),
-        };
-
-        error.kind = compile_error::error_kind::out_of_registers;
-
-        return error;
-    }
-
     // the index of 'register_name', which names a register
     [[nodiscard]] auto pool_index(const std::string_view register_name) const
         -> size_t {

@@ -1,0 +1,16 @@
+# a noinline recursion that swaps a global and a local argument is checked for
+# both kinds of call and ends
+var g = 3
+
+func noinline f(a, b, n) res {
+    res = a + b
+    if n == 0 return
+    var r = 0
+    r = f(b, a, n - 1)
+    res = r + 1
+}
+
+func main() {
+    var v = 4
+    exit(f(v, g, 5))
+}

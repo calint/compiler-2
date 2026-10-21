@@ -362,9 +362,13 @@ struct call_site {
     // e.g. the '~' of '~f(x)', applied to the result
     unary_ops uops;
 
-    // each inlined call, block inside it and dry run of a noinline call
-    // recurses in the compiler
+    // a frame is a scope being compiled: a block, a loop or a function body,
+    // inlined or the dry run of a noinline call; each recurses in the compiler
     static constexpr size_t max_frame_count{256};
+
+    // a level is the dry run of a noinline call nested in the dry run of the
+    // call that reaches it, see 'noinline_call::check_aliasing'
+    static constexpr size_t max_noinline_dry_run_depth{100};
 
     // the error was found inside the inlined body, unless it is in the call
     // itself where the call is already the error location
@@ -508,7 +512,7 @@ struct call_site {
             src_loc_tk,
             std::format("noinline calls are nested too deep to check their "
                         "arguments, the limit is {} levels",
-                        max_frame_count),
+                        max_noinline_dry_run_depth),
         };
     }
 
@@ -1397,14 +1401,44 @@ class noinline_call {
         //       call reached inside it, e.g. a recursive call, returns here;
         //       the kinds are finitely many, so the nested dry runs end
 
-        if (not signature or not tc.add_checked_noinline_call(*signature)) {
+        if (not signature) {
             return;
         }
 
-        // e.g. a chain of noinline calls nests a dry run in each
+        // e.g. 1 for a call in 'main'
+        const size_t level{tc.scopes().noinline_dry_run_depth() + 1};
+
+        const std::optional<size_t> checked_height{
+            tc.checked_noinline_call_height(*signature),
+        };
+
+        // e.g. a chain of noinline calls nests a dry run in each; a checked
+        // call counts the levels below it, so the verdict does not depend on
+        // which calls were checked first
+        if (level + checked_height.value_or(0) >
+            call_site::max_noinline_dry_run_depth) {
+
+            call_site::throw_noinline_nesting(call_.tk);
+        }
+
+        // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
+        //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
+        //       dry run has until it ends, so the height of a cycle depends on
+        //       where it was entered, by at most the number of its signatures
+        if (checked_height) {
+            tc.reach_dry_run_level(level + *checked_height);
+            return;
+        }
+
         if (tc.scopes().frames().size() >= call_site::max_frame_count) {
             call_site::throw_noinline_nesting(call_.tk);
         }
+
+        tc.set_checked_noinline_call_height(*signature, 0);
+
+        const size_t enclosing_deepest{
+            tc.exchange_deepest_dry_run_level(level),
+        };
 
         const inline_call dry_run{call_};
 
@@ -1416,6 +1450,13 @@ class noinline_call {
             call_.add_call_frame(e);
             throw;
         }
+
+        const size_t deepest{
+            tc.exchange_deepest_dry_run_level(enclosing_deepest),
+        };
+
+        tc.set_checked_noinline_call_height(*signature, deepest - level);
+        tc.reach_dry_run_level(deepest);
     }
 
     // the result address comes first, then one address per argument

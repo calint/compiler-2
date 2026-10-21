@@ -1,5 +1,5 @@
 # --checks=overflow: the negation of a conversion is checked at the width of
-# its type at run time
+# its destination at run time
 func main() {
     var x = 128
     var r = -i8(x)

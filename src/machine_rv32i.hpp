@@ -1785,6 +1785,12 @@ class machine_rv32i : public machine {
                                 const runtime_check& overflow_check = {})
         -> void {
 
+        // the first argument would overwrite a source in 'a0', which is
+        // allocated last, when every other register is taken
+        if (uses_register(source, "a0")) {
+            throw out_of_registers_error(src_loc_tk);
+        }
+
         const address_scope scope{*this, dst, source};
 
         const uint32_t live{registers().unavailable_mask()};
@@ -3804,7 +3810,7 @@ class machine_rv32i : public machine {
         const operand first_argument{operand::reg("a0", default_type())};
         const operand second_argument{operand::reg("a1", default_type())};
 
-        // argument registers are allocated last, so no operand lives in a0
+        // note: 'call_arithmetic_helper' rejects a source in a0
         assert(not uses_register(source, "a0"));
 
         copy_value(src_loc_tk, indent, first_argument, first_value);

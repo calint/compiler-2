@@ -1,0 +1,10 @@
+# rv32i: a product whose right operand is in 'a0', the last scratch register,
+# is out of scratch registers, the helper takes its arguments in 'a0' and 'a1'
+func noinline f() res {
+    var v = 1
+    res = (v - (v * 2 + (v - (v * 4 + (v - (v * 6 + (v - (v * 8 + (v - (v * 10 + (v - (v * 12 + (v - (v * 14 + (v - (v * 16 + (v - (v * 18 + (v - (v * 20 + (v - (v * 22 + (v - (v * 24 + (v - (v * 26 + (v - (v * 28 + v * v) * (v + 26))) * (v + 24))) * (v + 22))) * (v + 20))) * (v + 18))) * (v + 16))) * (v + 14))) * (v + 12))) * (v + 10))) * (v + 8))) * (v + 6))) * (v + 4))) * (v + 2))) * (v + 0))
+}
+
+func main() {
+    exit(f())
+}

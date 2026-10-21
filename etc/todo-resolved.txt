@@ -1,6 +1,56 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: rv32i (both targets) fails the assert 'not uses_register(source,
+    "a0")' in 'machine_rv32i::load_helper_arguments' when the registers run
+    low in a nested product, e.g. the body of 1290 nested 14 levels deep
+    instead of 16, where x86_64 reports "out of scratch registers" (found in
+    the fourth review round, 2026-10-21)
+    => done (2026-10-21): 'a0' is the last scratch register, so a helper
+       source in it means every other register is taken and the first
+       argument would overwrite it; 'call_arithmetic_helper' reports "out of
+       scratch registers" before it emits anything (1347); depths 8 to 20 of
+       '*', '/', '%', '<<' and '>>' on both rv32i targets with and without
+       checks give no assert, the accepted ones compute the modeled values
+[x] hard: noinline calls nested in dry runs: the limit counts two frames per
+    level (127 rejected, the message says 256) and the verdict depends on the
+    order of calls (review round 4, H-7)
+    => done (2026-10-21): 'scope_stack::noinline_dry_run_depth' counts the
+       levels, 'call_site::max_noinline_dry_run_depth' is 100 with its own
+       message, checked before the frame limit; the checked signatures keep
+       the height of the dry runs below them
+       ('toc::checked_noinline_call_height'), so a cached call still counts
+       its depth and a chain is rejected at the same call in any order (1240
+       at 100, 101 and 1000, 1344); a swapping recursion (1345), a chain at
+       the limit with an inlined call in each body (1346), the frames running
+       out at an inlined and at a noinline call inside the dry runs (1280);
+       measured with the sanitizer build: 100 levels with the frames used up
+       need 1.5 MiB of stack (1.4 MiB crashes), the -O3 build 1.1 MiB, the
+       default stack is 8 MiB; docs 1.5 and 4.3
+[x] hard: conversions: one computation plan for 'stmt_builtin_convert'
+    (review round 4, ARCH-5 and H-1 to H-5, G6-1)
+    => done (2026-10-21): first the plan and dispatch with today's choices,
+       byte-identical on every test, the tutorial and roome for both targets
+       and seven option sets; then one diff per fix, each with its test:
+       1. the argument is checked at W, the wider of the type and the type
+          of its first element: a wider element, an 'array_length' or a
+          constant that does not fit is rejected (1332 to 1336); 0258 and
+          1018 had a wider element and now convert it
+       2. 'is_same' on the type: 'i8(t())' of a 'bool' call (1337)
+       3. the argument is an operand, so 'i16((g(v)))' widens (1339)
+       4. a narrower single operand with unary ops is computed at the type,
+          'i16(-g(v))' (1338)
+       5. the conversion's own unary ops apply where the value is used:
+          'after_widening' rewidens the destination register in place
+          ('machine::register_view'), 'w + -i8(v)' and 'y = -i8(v)' give
+          128 also under the overflow check (1340, 1341); 0915 negates at 32
+          bits, same register report
+       6. a folded literal keeps the conversion's unary ops, which a
+          constant applies at the width of its use (1342, 1343); 0490, 1002
+          and 1003 measure two equal versions now, only asm comments differ
+       docs: tutorial sized types, README overflow check, docs 1.3; the
+       class header comment has both tables; fuzz-exprs, fuzz-programs,
+       fuzz-reject and 1500 programs of the conversion model found nothing
 [x] medium: findings of the fourth review round of 2026-10-21 (phase R4a),
     without the conversions and the noinline chain limit (phase R4b)
     => done (2026-10-21):
@@ -66,6 +116,8 @@
            ('machine::reports_line'), so a check loads no line
        15. README 1.5 says that 's[m]' with 'let m = n' in a 'foo' is left
            to the run-time check where 's[n]' is rejected
+       16. phase R4b: the conversions, the noinline dry-run limit and the
+           rv32i helper crash, see the three items above
 [x] medium: clean ups of the third review round of 2026-10-21 (phase R3d)
     => done (2026-10-21):
        1. a method that an alias of a generic type instantiates and nothing

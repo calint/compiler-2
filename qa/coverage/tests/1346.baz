@@ -1,0 +1,5 @@
+# a chain of noinline calls as long as the limit with an inlined call in each
+# body is accepted: the script compiles a generated chain
+func main() {
+    exit(0)
+}

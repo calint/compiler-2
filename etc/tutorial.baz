@@ -119,6 +119,19 @@ func sized_types() {
     # the arithmetic of a conversion wraps at the width of the type, without
     # the conversion the sum is an overflow, see the checks below
 
+    var pair = i16(300)
+    var part = i8(pair - small)
+    assert(part == 100)
+    # the argument is computed at the wider of the type and the type of its
+    # first element, 'i16' here, where a narrower element widens
+
+    var low = i8(-128)
+    var negated = i16(0)
+    negated = -i8(low)
+    assert(negated == 128)
+    # the '-' and '~' of a conversion apply where its value is used, like
+    # those of a variable of its type, here at the width of 'negated'
+
     var bits = i8(-64)
     bits = bits << 1
     assert(bits == -128)
