@@ -86,7 +86,9 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // e.g. the '-' of 'q = -p'
     if (tz.peek_char() == '-' or tz.peek_char() == '~') {
         throw compile_error{
-            tz, std::format("an instance of '{}' is not a number", tp.name())};
+            tz, std::format("{} of '{}' is not a number",
+                            is_array_destination_ ? "an array" : "an instance",
+                            tp.name())};
     }
 
     parse_fields(tc, tz, tp);

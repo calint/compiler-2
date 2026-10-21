@@ -1,0 +1,8 @@
+# the path of an 'include' decodes its escapes like any other string, '\x2e'
+# is the '.' of 'util.baz'
+
+include "include/util\x2ebaz"
+
+func main() {
+    exit(twice(2) - 4)
+}

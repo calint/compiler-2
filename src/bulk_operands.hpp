@@ -18,8 +18,8 @@
 
 // the arguments '(first, second, count)' of a built-in function that works on
 // 'count' elements of two arrays, e.g. 'array_copy(a, b, 4)' and
-// 'arrays_equal(a[1], b, 3)'; the messages name the first array 'source' and
-// the second by the role the built-in gives it
+// 'arrays_equal(a[1], b, 3)'; the messages name the arrays by the roles the
+// built-in gives them, e.g. 'source' and 'destination'
 // invariants: after parsing, each array is an array or an element of one where
 // the operation starts; the element types match and a constant count is in the
 // bounds of both once 'resolve_arrays' and 'assert_constant_count_in_bounds'
@@ -32,7 +32,8 @@ class bulk_operands final {
     token second_delim_tk_;
     expr_any count_;
     token close_paren_tk_;
-    // how the messages name the second array, e.g. 'destination'
+    // how the messages name the arrays, e.g. 'source' and 'destination'
+    std::string_view first_role_;
     std::string_view second_role_;
 
   public:
@@ -42,15 +43,15 @@ class bulk_operands final {
         ident_info second;
     };
 
-    bulk_operands(toc& tc, tokenizer& tz, const std::string_view second_role)
-        : open_paren_tk_{tz.is_next_char_token('(')},
+    bulk_operands(toc& tc, tokenizer& tz, const std::string_view first_role,
+                  const std::string_view second_role)
+        : open_paren_tk_{tz.is_next_char_token('(')}, first_role_{first_role},
           second_role_{second_role} {
 
         if (open_paren_tk_.is_empty()) {
             throw compile_error{
-                tz,
-                std::format("expected '(', 'source', '{}', 'count', and ')'",
-                            second_role_)};
+                tz, std::format("expected '(', '{}', '{}', 'count', and ')'",
+                                first_role_, second_role_)};
         }
 
         first_ = {tc, {}, tz.next_token(), tz};
@@ -120,9 +121,9 @@ class bulk_operands final {
         if (not info.first.type_ref().is_same(info.second.type_ref())) {
             throw compile_error{
                 second_.tok(),
-                std::format("source type '{}' does not match {} type '{}'",
-                            info.first.type_ref().name(), second_role_,
-                            info.second.type_ref().name())};
+                std::format("{} type '{}' does not match {} type '{}'",
+                            first_role_, info.first.type_ref().name(),
+                            second_role_, info.second.type_ref().name())};
         }
 
         return info;

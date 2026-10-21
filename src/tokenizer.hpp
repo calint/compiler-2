@@ -347,12 +347,12 @@ class tokenizer final {
         // note: +1 and -2 because the text is between the quotes
 
         if (const std::optional<token> escape_tk{
-                string_tk.unsupported_escape_position(),
+                string_tk.unsupported_escape(),
             }) {
 
             throw compile_error{
-                *escape_tk, std::format("unsupported escape in string \"{}\"",
-                                        string_tk.text())};
+                *escape_tk,
+                std::format("unsupported escape '{}'", escape_tk->text())};
         }
 
         return string_tk;

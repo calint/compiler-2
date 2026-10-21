@@ -23,7 +23,7 @@ class stmt_builtin_array_copy final : public statement {
 
   public:
     stmt_builtin_array_copy(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, operands_{tc, tz, "destination"} {
+        : statement{src_loc_tk}, operands_{tc, tz, "source", "destination"} {
 
         set_type(tc.builtins().void_type());
 

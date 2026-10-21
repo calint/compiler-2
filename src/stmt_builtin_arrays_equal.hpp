@@ -31,7 +31,7 @@ class stmt_builtin_arrays_equal final : public expression {
         // note: parsed after the check so that a unary operation is reported
         //       before an error in the arguments
 
-        operands_ = {tc, tz, "compare"};
+        operands_ = {tc, tz, "first", "second"};
     }
 
     stmt_builtin_arrays_equal() = default;

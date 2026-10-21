@@ -510,10 +510,13 @@ class program final {
                 path_tk, "expected the file name in quotes after 'include'"};
         }
 
+        // escapes are decoded like in any other string, e.g. '\x20'
+        const std::string name{token::decode_string(path_tk.string_text())};
+
         // relative to the directory of the file with the 'include'
         const std::filesystem::path path{
             (std::filesystem::path{files_.get().name(file_ix)}.parent_path() /
-             std::string{path_tk.text()})
+             name)
                 .lexically_normal(),
         };
 

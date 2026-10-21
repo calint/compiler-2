@@ -1,0 +1,4 @@
+
+1415.baz:5:9: an array of 'i64' is not a number
+    a = -a
+        ^

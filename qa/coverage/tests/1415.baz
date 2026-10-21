@@ -1,0 +1,6 @@
+# an operator applied to a whole array names the array, not its element type
+
+func main() {
+    var a = i64[2]
+    a = -a
+}

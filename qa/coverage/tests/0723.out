@@ -1,4 +1,4 @@
 
-0723.baz:4:15: unsupported escape in string "a\xzzb"
+0723.baz:4:15: unsupported escape '\xzz'
     var s = "a\xzzb"
               ^

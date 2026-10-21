@@ -4534,3 +4534,7 @@ SRC=1412 && COMPERR
 # a generic parameter named like a generic type or like a type defined later
 SRC=1413 && COMPERR
 SRC=1414 && COMPERR
+
+# an operator on a whole array; the path of an 'include' decodes its escapes
+SRC=1415 && COMPERR
+SRC=1416 && EXP=0 && RUN

@@ -153,10 +153,9 @@ class token final {
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }
 
-    // the marker at the first unsupported escape of a string token, as
-    // 'decode_escape' rejects it
-    [[nodiscard]] auto unsupported_escape_position() const
-        -> std::optional<token> {
+    // the first unsupported escape of a string token, as 'decode_escape'
+    // rejects it, located at its backslash, e.g. '\q'
+    [[nodiscard]] auto unsupported_escape() const -> std::optional<token> {
 
         size_t line{at_line_};
         for (size_t i{}; i < text_.size(); ++i) {
@@ -183,7 +182,8 @@ class token final {
                 const size_t backslash_index{start_ix_ + 1 + i};
                 // note: +1 because the text starts after the opening quote
 
-                return position(file_ix_, backslash_index, line);
+                return synthetic(file_ix_, text_.substr(i, 1 + escape_size),
+                                 backslash_index, line);
             }
 
             i += escape_size;

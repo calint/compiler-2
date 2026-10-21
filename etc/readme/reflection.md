@@ -54,7 +54,7 @@ solution, it said it was a common compiler technique. In this case, the problem
 was how to handle end-of-line comments: make them part of the whitespace that
 belongs to the token. I thought that was clever.
 
-At times it also drifted into a bad solution and had to be corrected and steered
+At times it drifted into a bad solution and had to be corrected and steered
 onto a different line of thought.
 
 I have no background in compiler theory; this is an experiment. That shows
