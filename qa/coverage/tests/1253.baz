@@ -1,0 +1,6 @@
+# two parameters with the same name are rejected at the second one
+func f(x, x) {}
+
+func main() {
+    f(1, 2)
+}

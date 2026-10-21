@@ -1,0 +1,2 @@
+100 0
+1000 1 chain.baz:3498:11: noinline calls are nested too deep to check their arguments, the limit is 256 levels

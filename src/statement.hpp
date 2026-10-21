@@ -604,9 +604,13 @@ class statement {
                                root);
         }
 
-        assert(info.read_only_why() == read_only_cause::foo_counter);
+        if (info.read_only_why() == read_only_cause::foo_counter) {
+            return std::format(", '{}' is the counter of 'foo'", root);
+        }
 
-        return std::format(", '{}' is the counter of 'foo'", root);
+        assert(info.read_only_why() == read_only_cause::foo_length);
+
+        return std::format(", '{}' is the size of the array of 'foo'", root);
     }
 
     // shared by 'dat' and 'var' initializers, 'array_count' 0 takes the size

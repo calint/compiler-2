@@ -1,0 +1,7 @@
+# --checks=overflow: the negation of a named 64-bit minimum is an overflow
+let m = -9223372036854775807 - 1
+
+func main() {
+    var x = -m
+    exit(x)
+}

@@ -1,0 +1,13 @@
+# a 'bool' result of a noinline call is not an integer argument of an inlined
+# call
+func noinline nb() res bool {
+    res = true
+}
+
+func w(x) res {
+    res = x
+}
+
+func main() {
+    exit(w(nb()))
+}

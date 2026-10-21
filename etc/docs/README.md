@@ -239,7 +239,14 @@ function like a noinline body under 'toc::check_only'
 ('stmt_def_func::check_body'). Its errors have no "called from" frame. An
 unsized array parameter has no length there ('ident_info::is_length_unknown'),
 so the rules that need the length are left to the calls: 's[7]' and
-'array_copy(s, d, 2)' are accepted, 's[-1]' is not. An instance of a generic
+'array_copy(s, d, 2)' are accepted, 's[-1]' is not. The 'n' of a 'foo' over
+it is a read-only variable there and in the parse, not a constant, so
+'let m = n' is not folded before a call gives the length. An error that
+depends on the arguments of a call cannot be told without one
+('compile_error::depends_on_call'): running out of scratch registers, e.g.
+twelve parameters that one call gives the same argument, and the limits of
+inlined calls, e.g. 'r(x - 1)' in 'r(x)' that a constant argument ends; such
+an error ends the check and the function is accepted. An instance of a generic
 definition is checked where a use makes it; a generic function that nothing
 instantiates is listed in the report ([1.6](#16-reports)), and a method of a
 generic type is checked for the instances whose method is called.

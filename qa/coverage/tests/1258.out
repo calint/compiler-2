@@ -1,0 +1,4 @@
+
+1258.baz:3:16: cannot resolve identifier 'q'
+    var a = i8[q]
+               ^

@@ -98,8 +98,6 @@ class stmt_builtin_convert final : public expression {
         // the overflow check applies to the constant, not to the argument
         const std::optional<int64_t> value{constant_value(tc)};
 
-        const toc::overflow_check_pause pause{tc};
-
         // an out-of-range immediate makes nasm warn, so fold it here
         if (value) {
             x.copy_value(tok(), indent, dst.operand(),
@@ -115,52 +113,16 @@ class stmt_builtin_convert final : public expression {
             return;
         }
 
-        // the destination is at most as wide as the type, the store at its
-        // width does the truncation; that is right when the low bits of the
-        // argument do not depend on its high bits or nothing is narrowed
-        const bool is_same_width{
-            dst.type_ref().size_bytes() == get_type().size_bytes() and
-                arg_.get_type().size_bytes() == get_type().size_bytes(),
-        };
-
-        // computed in the destination, the argument is at its width
-        const bool is_narrowed{
-            dst.type_ref().size_bytes() < arg_.get_type().size_bytes(),
-        };
-
-        const bool keeps_low_bits{
-            is_narrowed ? arg_.keeps_low_bits_when_narrowed()
-                        : arg_.keeps_low_bits_when_widened(),
-        };
-
-        // a shift count is checked against the width the shift is computed
-        // at, which a narrower destination would lower
-        const bool narrows_checked_shift{tc.checks().shift and is_narrowed};
-
-        if ((keeps_low_bits or is_same_width) and not narrows_checked_shift) {
-
-            // a narrower argument wraps at the width of the destination, a
-            // register of the argument's width would wrap earlier
-            if (dst.is_register() or
-                arg_.get_type().size_bytes() < dst.type_ref().size_bytes()) {
-
-                compile_in_destination(tc, indent, dst);
-                return;
-            }
-
-            // a load/store machine operates on the memory destination with a
-            // load and a store each time, a wide register needs one store
-            tc.emit_most_efficient(
-                tok(), indent,
-                [&] -> void { compile_in_destination(tc, indent, dst); },
-                [&] -> void { compile_wide(tc, indent, dst); });
-
+        // the overflow check is off for the argument, not for the unary ops
+        // of the conversion, which apply to the converted value
+        if (tc.checks().overflow and not get_unary_ops().is_empty()) {
+            compile_checked_unary_ops(tc, indent, dst);
             return;
         }
 
-        // '/', '%', '>>' and calls are computed at the argument's width, a
-        // call's result must also have its declared type
-        compile_wide(tc, indent, dst);
+        const toc::overflow_check_pause pause{tc};
+
+        compile_argument(tc, indent, dst, get_unary_ops());
     }
 
     // only the builtin's own type counts, its argument is narrowed on purpose
@@ -184,10 +146,8 @@ class stmt_builtin_convert final : public expression {
 
     // the unary ops are part of 'folded_'
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        static const unary_ops none{};
-
         if (not folded_.empty()) {
-            return none;
+            return no_unary_ops();
         }
 
         return expression::get_unary_ops();
@@ -240,15 +200,112 @@ class stmt_builtin_convert final : public expression {
     }
 
   private:
+    // 'uops' apply to the converted value
+    auto compile_argument(toc& tc, const size_t indent, const destination& dst,
+                          const unary_ops& uops) const -> void {
+
+        // a narrower argument is computed at the width of the type, where its
+        // arithmetic wraps, e.g. 'i16(a * (a >> 1))' of an 'i8' 'a' of 20 is
+        // 200; a single operand keeps its own width, e.g. a call's result
+        if (not arg_.is_single_operand() and
+            arg_.get_type().size_bytes() < get_type().size_bytes()) {
+
+            // e.g. the 'i16' of 'i8(i16(a * (a >> 1)))' is narrowed after it
+            if (dst.type_ref().size_bytes() < get_type().size_bytes()) {
+                compile_wide(tc, indent, dst, uops, get_type());
+                return;
+            }
+
+            compile_in_destination(tc, indent, dst, uops);
+
+            return;
+        }
+
+        // the destination is at most as wide as the type, the store at its
+        // width does the truncation; that is right when the low bits of the
+        // argument do not depend on its high bits or nothing is narrowed
+        const bool is_same_width{
+            dst.type_ref().size_bytes() == get_type().size_bytes() and
+                arg_.get_type().size_bytes() == get_type().size_bytes(),
+        };
+
+        // computed in the destination, the argument is at its width
+        const bool is_narrowed{
+            dst.type_ref().size_bytes() < arg_.get_type().size_bytes(),
+        };
+
+        const bool keeps_low_bits{
+            is_narrowed ? arg_.keeps_low_bits_when_narrowed()
+                        : arg_.keeps_low_bits_when_widened(),
+        };
+
+        // a shift count is checked against the width the shift is computed
+        // at, which a narrower destination would lower
+        const bool narrows_checked_shift{tc.checks().shift and is_narrowed};
+
+        if ((keeps_low_bits or is_same_width) and not narrows_checked_shift) {
+
+            // a narrower argument wraps at the width of the destination, a
+            // register of the argument's width would wrap earlier
+            if (dst.is_register() or
+                arg_.get_type().size_bytes() < dst.type_ref().size_bytes()) {
+
+                compile_in_destination(tc, indent, dst, uops);
+                return;
+            }
+
+            // a load/store machine operates on the memory destination with a
+            // load and a store each time, a wide register needs one store
+            tc.emit_most_efficient(
+                tok(), indent,
+                [&] -> void { compile_in_destination(tc, indent, dst, uops); },
+                [&] -> void {
+                    compile_wide(tc, indent, dst, uops, arg_.get_type());
+                });
+
+            return;
+        }
+
+        // '/', '%', '>>' and calls are computed at the argument's width, a
+        // call's result must also have its declared type
+        compile_wide(tc, indent, dst, uops, arg_.get_type());
+    }
+
+    // e.g. '-i8(x)' of an 'x' of 128 overflows 'i8', the argument is
+    // converted in a register of the type and negated there
+    auto compile_checked_unary_ops(toc& tc, const size_t indent,
+                                   const destination& dst) const -> void {
+
+        machine& x{tc.machine()};
+
+        const operand converted{
+            x.alloc_scratch_register(tok(), indent, get_type()),
+        };
+
+        {
+            const toc::overflow_check_pause pause{tc};
+
+            compile_argument(tc, indent, destination::of_register(converted),
+                             no_unary_ops());
+        }
+
+        get_unary_ops().compile(x, indent, tok(), converted,
+                                tc.checks().overflow_options());
+
+        x.copy_value(tok(), indent, dst.operand(), converted);
+        x.free_scratch_register(tok(), indent, converted);
+    }
+
     auto compile_in_destination(toc& tc, const size_t indent,
-                                const destination& dst) const -> void {
+                                const destination& dst,
+                                const unary_ops& uops) const -> void {
 
         arg_.compile(tc, indent, dst);
 
         machine& x{tc.machine()};
 
-        get_unary_ops().compile(x, indent, tok(), dst.operand(),
-                                tc.checks().overflow_options());
+        uops.compile(x, indent, tok(), dst.operand(),
+                     tc.checks().overflow_options());
     }
 
     // the value is made at the width of the type, then widens into the
@@ -268,22 +325,23 @@ class stmt_builtin_convert final : public expression {
         x.free_scratch_register(tok(), indent, narrowed);
     }
 
-    // the argument is computed at its own width and stored narrowed
-    auto compile_wide(toc& tc, const size_t indent,
-                      const destination& dst) const -> void {
+    // the argument is computed at the width of 'width_type' and stored
+    // narrowed
+    auto compile_wide(toc& tc, const size_t indent, const destination& dst,
+                      const unary_ops& uops, const type& width_type) const
+        -> void {
 
         machine& x{tc.machine()};
 
         const operand wide{
-            x.alloc_scratch_register(tok(), indent, arg_.get_type()),
+            x.alloc_scratch_register(tok(), indent, width_type),
         };
 
         arg_.compile(tc, indent + 1, destination::of_register(wide));
 
         // '-' and '~' give the same low bits at any width, so the one store
         // also narrows their result
-        get_unary_ops().compile(x, indent, tok(), wide,
-                                tc.checks().overflow_options());
+        uops.compile(x, indent, tok(), wide, tc.checks().overflow_options());
 
         x.copy_value(tok(), indent, dst.operand(), wide);
         x.free_scratch_register(tok(), indent, wide);
@@ -342,5 +400,16 @@ class stmt_builtin_convert final : public expression {
         }
 
         return narrowed;
+    }
+
+    //
+    // statics
+    //
+
+    // the unary ops of a folded literal and of an argument that is converted
+    // before its unary ops apply
+    [[nodiscard]] static auto no_unary_ops() -> const unary_ops& {
+        static const unary_ops none{};
+        return none;
     }
 };

@@ -111,7 +111,12 @@ class stmt_identifier final : public statement {
     stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
 
-        if (tk.text().empty() or tk.is_string()) {
+        // e.g. '"abc"' in 'array_copy("abc", b, 3)'
+        if (tk.is_string()) {
+            throw compile_error{tk, "expected an identifier"};
+        }
+
+        if (tk.text().empty()) {
             throw compile_error{tz, "expected an identifier"};
         }
 

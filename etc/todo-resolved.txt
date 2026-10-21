@@ -1,6 +1,47 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: third review round of 2026-10-21, seven reviews of 'src/', one of
+    the architecture and an adversarial bug hunt; the defects (phase R3a)
+    => done (2026-10-21):
+       1. the check of a function that nothing calls accepts an error that
+          depends on the arguments of a call ('compile_error::depends_on_call',
+          kind 'inlining_limit'): out of scratch registers, the inline
+          recursion and frame limits (1230, 1231, README 1.5)
+       2. conversions: a shift count wider than the width the argument is
+          computed at is rejected like outside a conversion, x86_64 asserted
+          (1232); a widening conversion computes its argument at the width
+          of its type, it was computed at the argument's width (1233, 1259),
+          so an inlined call's narrower result in it is rejected as
+          elsewhere (1234); the unary ops of a conversion are checked under
+          '--checks=overflow' (1235)
+       3. the 'n' of a 'foo' over an unsized array parameter is a read-only
+          variable until a call gives the length, 'let m = n' folded 0
+          (1236 to 1238, README 1.5); 'stmt_def_const::compile' asserts that
+          it folds to the parse value
+       4. a built-in field of a record literal set from an indexed name read
+          element 0 (1239)
+       5. a chain of noinline calls nests the dry runs of their arguments,
+          past the frame limit it is an error, it was a stack overflow (1240)
+       6. a noinline call's 'bool' result is not an integer (1241 to 1243);
+          'bool and true' and 'bool or true' are rejected (1244, 1245)
+       7. under '--checks=overflow' the negation of a named 64-bit minimum is
+          an error (1246)
+       8. the braced elements of an array field are checked one by one for
+          reads of written bytes, a self copy is accepted (1247, 1248)
+       9. messages: a temporary of a call that does not fit '--vars' is not
+          named (1249, 1250); '--bin' naming the source is a usage error
+          (test-cli); locations name the file in a program of several files
+          (1251); a result named like a parameter is rejected at the result
+          (1252, 1253); a missing argument that would deduce a type is
+          reported as missing (0850, 1254); a string where an array is named
+          is located at the string (1255); 'main' calling itself says
+          "'main' cannot be called" (1256); "'main' may use", "cannot write
+          file"; an array size naming a value or an unknown name (1138,
+          1257, 1258); 'arrays_equal' into an integer (0345, 0348)
+      10. test scripts: the '! grep' assertions of 'test-cli.sh' were no-ops
+          under 'set -e'; the "compiler failed" path of 'test-coverage.sh'
+          was dead
 [x] medium: left from the review round of 2026-10-20: the modes of
     'expr_any' and 'stmt_def_var', the reason of rv32i
     'leaf_stack_bytes{64}' (its comment adds up to 48), rv32i frame overflow

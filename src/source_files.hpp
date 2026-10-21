@@ -168,12 +168,12 @@ class source_locations final {
         return files_ != nullptr and not files_->is_empty();
     }
 
-    // human-readable source location, with the file name unless the file is
-    // the main one
+    // human-readable source location, with the file name when the program
+    // has more than one file
     [[nodiscard]] auto human_readable(const token& src_loc_tk) const
         -> std::string {
 
-        if (src_loc_tk.file_index() == 0) {
+        if (files_->count() == 1) {
             return text(src_loc_tk, ':');
         }
 

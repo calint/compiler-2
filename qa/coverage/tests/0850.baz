@@ -1,4 +1,5 @@
-# a type parameter is not deduced from an argument that is missing
+# a missing argument that would deduce a type parameter is reported as
+# missing, not as a type that cannot be deduced
 func second<T type>(n, v T) res T {
     res = v
 }

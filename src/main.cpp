@@ -533,6 +533,16 @@ examples:
                 : std::string{opts.binary_file_name},
         };
 
+        // the image would replace the source
+        std::error_code ec;
+
+        if (std::filesystem::equivalent(binary, opts.src_file_name, ec)) {
+            print_usage_error(
+                std::format("invalid --bin: '{}' is the source file", binary));
+
+            return 1;
+        }
+
         const std::unique_ptr<machine> backend{
             make_backend(opts.machine_target, &files, jumps,
                          opts.stack_size_bytes, opts.memory_size_bytes, binary),

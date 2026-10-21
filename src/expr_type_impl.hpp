@@ -274,12 +274,24 @@ expr_type::assert_items_not_reading(const constructor_target& dst,
             continue;
         }
 
-        // array items are written element by element
-        const size_t written_size_bytes{
-            field.is_array() ? field_offset + field.size_bytes : field_offset,
-        };
+        // a copy of an array field reads the same bytes or other ones, e.g.
+        // 'v = {v.a, 4}'
+        if (not field.is_array() or expr->is_array_identifier()) {
+            assert_item_not_reading(*expr, dst, field_offset);
+            continue;
+        }
 
-        assert_item_not_reading(*expr, dst, written_size_bytes);
+        // braced elements are written one by one, each after it is read
+        const size_t element_size_bytes{field.type().size_bytes()};
+
+        for (size_t i{}; i < expr->element_count(); ++i) {
+            const size_t element_offset{
+                field_offset +
+                    multiply_storage_size(expr->tok(), element_size_bytes, i),
+            };
+
+            assert_item_not_reading(expr->element(i), dst, element_offset);
+        }
     }
 }
 
@@ -468,7 +480,8 @@ inline auto expr_type::write_builtin_field(
     // the paths below that copy directly skip the check in 'expr_any'
     src.assert_not_narrowed(tc, field.type());
 
-    if (src.is_expression() or
+    // an indexed name has the address of its base, 'compile' adds the index
+    if (src.is_expression() or src.is_indexed() or
         (src.is_name_or_literal() and
          tc.scopes().has_computed_address(src.name_or_literal()))) {
 

@@ -102,6 +102,15 @@
     const char next{tz.peek_char_after_whitespace()};
 
     // an operator would continue the expression, e.g. 'i8 + 1'
-    return next != '(' and next != '[' and
-           not std::string_view{"+-*/%&|^<>=!"}.contains(next);
+    if (next == '(' or next == '[' or
+        std::string_view{"+-*/%&|^<>=!"}.contains(next)) {
+
+        return false;
+    }
+
+    // a word operator too, e.g. 'bool and true'
+    tokenizer probe{tz};
+    const token next_tk{probe.next_token()};
+
+    return not next_tk.is_text("and") and not next_tk.is_text("or");
 }

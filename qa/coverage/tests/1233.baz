@@ -1,0 +1,27 @@
+# a conversion to a wider type computes its argument at the width of the type,
+# also where an operand reads the high bits
+func main() {
+    var a = i8(20)
+    var q = i16(a * (a >> 1))
+    if q != 200 {
+        exit(1)
+    }
+    var r = i16
+    r = i16(a * (a / 2))
+    if r != 200 {
+        exit(2)
+    }
+    var s = i32(a * (a % 100) * 2)
+    if s != 800 {
+        exit(3)
+    }
+    var t = i16(a * 7 - (a >> 2))
+    if t != 135 {
+        exit(4)
+    }
+    var w = i32(i16(a * (a >> 1)))
+    if w != 200 {
+        exit(5)
+    }
+    exit(i8(q / 10))
+}

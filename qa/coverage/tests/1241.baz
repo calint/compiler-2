@@ -1,0 +1,9 @@
+# a 'bool' result of a noinline call is not an integer, also when it is
+# given to a register
+func noinline nb() res bool {
+    res = true
+}
+
+func main() {
+    exit(nb())
+}

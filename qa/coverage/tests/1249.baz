@@ -1,0 +1,11 @@
+# the temporary that holds the argument of a call is not named in the error
+# when it does not fit in the variable storage
+func noinline f(x i32) res i32 {
+    res = x
+}
+
+func main() {
+    var b = i32[4]
+    b[0] = f(b[1] + 1)
+    exit(b[0])
+}

@@ -1,0 +1,4 @@
+
+1252.baz:2:11: result 'x' is named like a parameter
+func f(x) x {
+          ^

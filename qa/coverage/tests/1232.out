@@ -1,0 +1,4 @@
+
+1232.baz:6:22: 'n' of type 'i32' is narrowed to 'i16', use 'i16(...)'
+    var r = i16(a << n)
+                     ^

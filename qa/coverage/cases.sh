@@ -2629,7 +2629,8 @@ SRC=0848 && EXP=0 && RUN
 # a type parameter is not deduced from an expression argument
 SRC=0849 && COMPERR
 
-# a type parameter is not deduced from an argument that is missing
+# a missing argument that would deduce a type parameter is reported as
+# missing, not as a type that cannot be deduced
 SRC=0850 && COMPERR
 
 # generics that are never instantiated are listed in the footer, 'test-cli.sh'
@@ -3880,3 +3881,116 @@ SRC=1228 && EXP=6 && RUN
 # a shift by a count not below 32 in the argument of a conversion to 'i32'
 # is computed at 64 bits, where the low bits of the result are zero
 if [[ $MACHINE == x86_64 ]]; then SRC=1229 && EXP=7 && RUN; fi
+
+# a function that runs out of scratch registers only when its parameters are
+# not known is accepted when nothing calls it, the registers depend on the
+# arguments of a call
+SRC=1230 && EXP=3 && RUN
+
+# an inlined recursion that a constant argument ends is accepted when nothing
+# calls it, its depth depends on the arguments of a call
+SRC=1231 && EXP=4 && RUN
+
+# a shift count wider than the width a conversion computes its argument at is
+# rejected like outside a conversion
+SRC=1232 && COMPERR
+
+# a conversion to a wider type computes its argument at the width of the type,
+# also where an operand reads the high bits
+SRC=1233 && EXP=20 && RUN
+
+# a conversion to a wider type computes its argument at the width of the type,
+# where an inlined call's narrower result is rejected as elsewhere
+SRC=1234 && COMPERR
+
+# --checks=overflow: the negation of a conversion is checked at the width of
+# its type at run time
+SRC=1235 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# the 'n' of a 'foo' over an unsized array parameter is the length of the
+# argument, also where a 'let' reads it
+SRC=1236 && EXP=4 && RUN
+
+# the 'n' of a 'foo' over an unsized array parameter is not a constant before
+# a call gives the length, so a function that nothing calls is not rejected by
+# it
+SRC=1237 && EXP=7 && RUN
+
+# the 'n' of a 'foo' over an unsized array parameter cannot be assigned
+SRC=1238 && COMPERR
+
+# a built-in field of a record literal set from an indexed name reads the
+# indexed element
+SRC=1239 && EXP=18 && RUN
+
+# a chain of noinline calls nests the dry runs that check their arguments, a
+# chain deeper than the limit is an error, not a crash: the script compiles
+# generated chains
+SRC=1240 && DIFFPY
+
+# a 'bool' result of a noinline call is not an integer, also when it is
+# given to a register
+SRC=1241 && COMPERR
+
+# a 'bool' result of a noinline call is not an index
+SRC=1242 && COMPERR
+
+# a 'bool' result of a noinline call is not an integer argument of an inlined
+# call
+SRC=1243 && COMPERR
+
+# a bare type is not a value before a word operator: 'and'
+SRC=1244 && COMPERR
+
+# a bare type is not a value before a word operator: 'or'
+SRC=1245 && COMPERR
+
+# --checks=overflow: the negation of a named 64-bit minimum is an overflow
+if [[ $MACHINE == x86_64 ]]; then SRC=1246 && OPTS="--checks=overflow" COMPERR; fi
+
+# the braced elements of an array field are written one by one, so an element
+# is read before the writes of the elements after it, and an array field may
+# be copied from itself
+SRC=1247 && EXP=9 && RUN
+
+# the braced elements of an array field are written one by one, an element
+# written before it is read is rejected
+SRC=1248 && COMPERR
+
+# the temporary that holds the argument of a call is not named in the error
+# when it does not fit in the variable storage
+SRC=1249 && OPTS="--vars=16" COMPERR
+
+# the temporary that holds the result of a call is not named in the error when
+# it does not fit in the variable storage
+SRC=1250 && OPTS="--vars=16" COMPERR
+
+# a register error in an included file names the file of each location in
+# the message and in the register report
+SRC=1251 && COMPERR
+
+# a result named like a parameter is rejected at the result
+SRC=1252 && COMPERR
+
+# two parameters with the same name are rejected at the second one
+SRC=1253 && COMPERR
+
+# a missing argument that would deduce a type of a generic method is reported
+# as missing
+SRC=1254 && COMPERR
+
+# a string where an array is named is rejected at the string
+SRC=1255 && COMPERR
+
+# 'main' calling itself is rejected, it cannot be declared 'noinline'
+SRC=1256 && COMPERR
+
+# a parameter as an array size is not a constant
+SRC=1257 && COMPERR
+
+# an unknown name as an array size cannot be resolved
+SRC=1258 && COMPERR
+
+# a widening conversion inside a narrowing one computes at its own width
+# before it is narrowed
+SRC=1259 && EXP=50 && RUN

@@ -1,0 +1,4 @@
+# 'main' calling itself is rejected, it cannot be declared 'noinline'
+func main() {
+    main()
+}

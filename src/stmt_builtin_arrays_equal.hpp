@@ -109,8 +109,8 @@ class stmt_builtin_arrays_equal final : public expression {
 
         throw compile_error{
             src_loc_tk,
-            std::format("destination type must be '{}', not '{}'",
-                        get_type().name(), dst_type.name()),
+            std::format("expected type '{}', got '{}'", dst_type.name(),
+                        get_type().name()),
         };
     }
 

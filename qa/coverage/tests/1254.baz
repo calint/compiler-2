@@ -1,0 +1,10 @@
+# a missing argument that would deduce a type of a generic method is reported
+# as missing
+type box {v}
+
+func box.put<T type>(x T) {}
+
+func main() {
+    var b = box{1}
+    b.put()
+}

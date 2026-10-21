@@ -1,0 +1,4 @@
+
+1250.baz:10:10: a temporary of the call does not fit in the variable storage, see '--vars'
+    exit(f(b[1]))
+         ^

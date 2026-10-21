@@ -90,6 +90,16 @@ CLI_BINARY_NAME() {
     # x86_64 writes no binary
     "$BIN" --bin=gen-rv32i.bin 0426.baz >gen.s 2>err
     [[ ! -e gen-rv32i.bin ]]
+    # the image does not replace the source, also named another way
+    cp 0426.baz gen-source.baz
+    set +e
+    "$BIN" --target=rv32i --bin=./gen-source.baz gen-source.baz >gen.s 2>err
+    local exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "invalid --bin: './gen-source.baz' is the source file" err
+    cmp -s 0426.baz gen-source.baz
+    rm -f gen-source.baz
     echo ok
 }
 
@@ -186,7 +196,7 @@ CLI_FILE_ERRORS() {
     set -e
     [[ $exit_code -eq 1 ]]
     [[ ! -s gen.s ]]
-    grep -Fq "cannot write 'missing-directory/gen-rv32i.bin'" err
+    grep -Fq "cannot write file 'missing-directory/gen-rv32i.bin'" err
     echo ok
 }
 
@@ -219,7 +229,7 @@ CLI_SOURCE_LINE_ENDS() {
     sed 's/$/\r/' 0841.baz >gen-crlf.baz
     "$BIN" gen-crlf.baz >gen.s 2>err && exit 1
     grep -Fq "is not a number" err
-    ! grep -q $'\r' err
+    grep -q $'\r' err && exit 1
     # a tab stays a tab in front of the mark
     sed 's/^    /\t/' 0841.baz >gen-tab.baz
     "$BIN" gen-tab.baz >gen.s 2>err && exit 1
@@ -368,7 +378,7 @@ CLI_STACK_HANDLER() {
     for target in x86_64 rv32i; do
         "$BIN" --target=$target --bin=gen-rv32i.bin --checks=stack 0992.baz >gen.s 2>err
         [[ ! -s err ]]
-        ! grep -Fq "stack overflow handler" gen.s
+        grep -Fq "stack overflow handler" gen.s && exit 1
     done
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack 0992.baz >gen.s 2>err
     [[ ! -s err ]]
@@ -412,7 +422,7 @@ CLI_QEMU_STACK() {
 }
 
 CLI_SMALL_STACK() {
-    echo -n "cli bare-metal stack below what 'main' uses: "
+    echo -n "cli bare-metal stack below what 'main' may use: "
     # 'main' has no stack check, a helper call and a failure use 48 B
     local target exit_code
     for target in rv32i-qemu rv32i-fpga; do
@@ -421,7 +431,7 @@ CLI_SMALL_STACK() {
         exit_code=$?
         set -e
         [[ $exit_code -eq 1 ]]
-        grep -Fq "the stack 32 B is smaller than the 48 B that 'main' uses without a stack check" err
+        grep -Fq "the stack 32 B is smaller than the 48 B that 'main' may use without a stack check" err
         "$BIN" --target=$target --bin=gen-rv32i.bin --stack=48 0426.baz >gen.s 2>err
         [[ ! -s err ]]
     done

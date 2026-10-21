@@ -1,0 +1,5 @@
+# a bare type is not a value before a word operator: 'and'
+func main() {
+    var b = bool and true
+    exit(int(b))
+}

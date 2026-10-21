@@ -28,6 +28,7 @@ enum class read_only_cause : uint8_t {
     param,
     foo_element,
     foo_counter,
+    foo_length,
 };
 
 // the array that the element 'e' of a 'foo' belongs to: its root variable and
@@ -53,6 +54,8 @@ struct var_info {
     bool is_array{};
     bool is_pointer{};
     read_only_cause read_only_why{};
+    // a variable the compiler adds, see 'toc::temporary_name'
+    bool is_temporary{};
     size_t array_len{};
     // variable location is in register
     operand pointer_register;

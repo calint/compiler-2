@@ -358,7 +358,9 @@ class stmt_def_func final : public statement {
 
     // for the errors of a function that no compile reached, compiled like a
     // noinline body and discarded; an unsized array parameter has no length
-    // ('ident_info::is_length_unknown')
+    // ('ident_info::is_length_unknown'). an error that depends on the
+    // arguments of a call, e.g. an inlined recursion that a constant argument
+    // ends, cannot be told and ends the check
     auto check_body(toc& tc, const size_t indent) const -> void {
         tc.check_only([&] -> void {
             machine& x{tc.machine()};
@@ -370,7 +372,13 @@ class stmt_def_func final : public statement {
                 true,
             };
 
-            std::ignore = compile_in_frame(tc, indent, {});
+            try {
+                std::ignore = compile_in_frame(tc, indent, {});
+            } catch (const compile_error& e) {
+                if (not e.depends_on_call()) {
+                    throw;
+                }
+            }
         });
     }
 
@@ -620,6 +628,24 @@ class stmt_def_func final : public statement {
                             "'mut' requires a method 'type.name'"};
     }
 
+    // the result is declared before the parameters, slot 0 is the result,
+    // so the duplicate is found here at the result
+    auto assert_result_not_named_like_param() const -> void {
+        if (not returns_) {
+            return;
+        }
+
+        for (const stmt_def_func_param& param : params_) {
+            if (param.name() == returns_->ident_tk.text()) {
+                throw compile_error{
+                    returns_->ident_tk,
+                    std::format("result '{}' is named like a parameter",
+                                returns_->ident_tk.text()),
+                };
+            }
+        }
+    }
+
     // keeps the labels of the body unique: the instances of one generic
     // definition have the same source locations, and a noinline body is
     // compiled once per array lengths
@@ -774,6 +800,8 @@ class stmt_def_func final : public statement {
 
         parse_returns(tc, tz);
 
+        assert_result_not_named_like_param();
+
         assert_mut_has_receiver();
 
         // known only after the result: a constructor builds 'self' instead
@@ -881,9 +909,14 @@ class stmt_def_func final : public statement {
 //      once ('parse_func_instance')
 class func_instantiator final {
     // the types a signature names, as written
+    struct signature_param {
+        token name_tk;
+        // empty for an array
+        std::string type_name;
+    };
+
     struct signature_types {
-        // one per parameter, empty for an array
-        std::vector<std::string> parameters;
+        std::vector<signature_param> parameters;
 
         func_result_syntax result;
     };
@@ -1018,16 +1051,22 @@ class func_instantiator final {
                                            const signature_types& types)
         -> generic_deduction {
 
-        const auto it{std::ranges::find(types.parameters, param_name)};
+        const auto it{
+            std::ranges::find(types.parameters, param_name,
+                              &signature_param::type_name),
+        };
 
         std::optional<size_t> param_index;
+        std::string param_name_text;
 
         if (it != types.parameters.end()) {
             param_index = static_cast<size_t>(it - types.parameters.begin());
+            param_name_text = it->name_tk.text();
         }
 
         return {
             .param_index{param_index},
+            .param_name{std::move(param_name_text)},
             .is_result{types.result.type_tk.is_text(param_name)},
         };
     }
@@ -1175,8 +1214,10 @@ class func_instantiator final {
             };
 
             // an array is not the type itself
-            types.parameters.emplace_back(
-                param.is_array() ? "" : param.type_tk.text());
+            types.parameters.push_back({
+                .name_tk{param.name_tk},
+                .type_name{param.is_array() ? "" : param.type_tk.text()},
+            });
 
             is_closed = not tz.is_next_char_token(')').is_empty();
         }

@@ -1,0 +1,9 @@
+# the braced elements of an array field are written one by one, an element
+# written before it is read is rejected
+type t {b, a i8[2]}
+
+func main() {
+    var v = t{3, {1, 2}}
+    v = {v.b, {v.a[1], v.a[0]}}
+    exit(v.a[0])
+}

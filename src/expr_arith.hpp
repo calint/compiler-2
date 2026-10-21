@@ -582,9 +582,20 @@ class expr_arith final : public expression {
             return std::nullopt;
         }
 
-        const int64_t value{
-            e.get_unary_ops().evaluate_constant(info.const_value()),
-        };
+        const unary_ops& uops{e.get_unary_ops()};
+
+        // e.g. '-m' of the 64-bit minimum wraps in 'int64_t', which the range
+        // checks of the callers do not see
+        if (tc.checks().overflow and
+            uops.negation_overflows(
+                info.const_value(),
+                constant_arith::signed_minimum(width_type.size_bits()))) {
+
+            throw compile_error{e.tok(),
+                                "constant expression overflows the type"};
+        }
+
+        const int64_t value{uops.evaluate_constant(info.const_value())};
 
         if (wrap == constant_wrap::as_written) {
             return value;
@@ -1207,6 +1218,11 @@ class expr_arith final : public expression {
                              const arithmetic_operator op,
                              const destination& dst, const statement& src)
         -> void {
+
+        // note: a count wider than the value is rejected as narrowed also in
+        //       the argument of a conversion, which narrows the other elements
+        //       on purpose
+        src.assert_not_narrowed(tc, dst.type_ref());
 
         machine& x{tc.machine()};
 

@@ -165,6 +165,29 @@ struct generic_call {
         return &tc.make_ident_info(si).type_ref();
     }
 
+    // e.g. 'f(1)' of 'func f<T type>(a, x T)' lacks the argument that would
+    // tell 'T', which is the error; 'tz' is after the '(' and is a copy
+    static auto assert_argument_present(tokenizer tz, const size_t index,
+                                        const std::string_view param_name)
+        -> void {
+
+        for (size_t i{}; i < index; ++i) {
+            tz.skip_argument();
+
+            if (tz.is_next_char_token(',').is_empty()) {
+                break;
+            }
+        }
+
+        // a malformed list is reported by the parse of the arguments
+        if (tz.peek_char_after_whitespace() != ')') {
+            return;
+        }
+
+        throw compile_error{tz, std::format("expected argument {} ('{}')",
+                                            index + 1, param_name)};
+    }
+
     // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
     // is the type of the argument for a parameter declared with that type, when
     // the argument tells it ('argument_type'), or the type the call is assigned
@@ -195,6 +218,9 @@ struct generic_call {
             const type* arg_type{};
 
             if (source.param_index) {
+                assert_argument_present(scan, *source.param_index,
+                                        source.param_name);
+
                 arg_type = argument_type(tc, scan, *source.param_index);
 
                 if (arg_type != nullptr) {
@@ -333,6 +359,10 @@ struct call_site {
     // e.g. the '~' of '~f(x)', applied to the result
     unary_ops uops;
 
+    // each inlined call, block inside it and dry run of a noinline call
+    // recurses in the compiler
+    static constexpr size_t max_frame_count{256};
+
     // the error was found inside the inlined body, unless it is in the call
     // itself where the call is already the error location
     auto add_call_frame(compile_error& e) const -> void {
@@ -352,6 +382,7 @@ struct call_site {
                        .name{name},
                        .type_ptr{&tpe},
                        .src_loc_tk{tk},
+                       .is_temporary{true},
                        .pointer_register{},
                        .base_register{},
                        .value_register{},
@@ -1296,6 +1327,16 @@ class noinline_call {
             return;
         }
 
+        // e.g. a chain of noinline calls nests a dry run in each
+        if (tc.scopes().frames().size() >= call_site::max_frame_count) {
+            throw compile_error{
+                call_.tk,
+                std::format("noinline calls are nested too deep to check "
+                            "their arguments, the limit is {} levels",
+                            call_site::max_frame_count),
+            };
+        }
+
         const inline_call dry_run{call_};
 
         try {
@@ -1367,6 +1408,12 @@ class noinline_call {
         }
 
         if (has_result_temporary(dst, func)) {
+            // the temporary has the type of the result, the copy into the
+            // destination widens it; a 'bool' is not an integer
+            if (func.get_type().is_bool() != dst.type_ref().is_bool()) {
+                call_.assert_result_type(dst, func);
+            }
+
             const ident_info result_info{
                 call_.add_temporary(
                     tc, indent, toc::temporary_name(call_.tk, "call-result", 0),
@@ -1958,22 +2005,22 @@ class stmt_call : public expression {
         constexpr size_t max_inlined_nesting{64};
 
         if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
-            throw compile_error{
-                tok(), std::format("recursion of inlined function '{}' does "
-                                   "not end at compile time, declare it "
-                                   "'noinline'",
-                                   func.name())};
+            // note: 'main' cannot be declared 'noinline'
+            if (func.name() == reserved_names::main) {
+                throw compile_error{tok(), "'main' cannot be called"};
+            }
+
+            throw inlining_limit_error(std::format(
+                "recursion of inlined function '{}' does not end at compile "
+                "time, declare it 'noinline'",
+                func.name()));
         }
 
-        // each inlined call and block inside it recurses in the compiler
-        constexpr size_t max_frame_count{256};
-
-        if (tc.scopes().frames().size() >= max_frame_count) {
-            throw compile_error{
-                tok(), std::format("inlined calls are nested too deep, the "
-                                   "limit is {} levels, declare a function "
-                                   "'noinline'",
-                                   max_frame_count)};
+        if (tc.scopes().frames().size() >= call_site::max_frame_count) {
+            throw inlining_limit_error(
+                std::format("inlined calls are nested too deep, the limit is "
+                            "{} levels, declare a function 'noinline'",
+                            call_site::max_frame_count));
         }
     }
 
@@ -2172,6 +2219,14 @@ class stmt_call : public expression {
     // the receiver is not counted as an argument
     [[nodiscard]] auto first_argument_index() const -> size_t {
         return is_method() ? 1 : 0;
+    }
+
+    [[nodiscard]] auto inlining_limit_error(std::string message) const
+        -> compile_error {
+
+        compile_error error{tok(), std::move(message)};
+        error.kind = compile_error::error_kind::inlining_limit;
+        return error;
     }
 
     [[nodiscard]] auto is_constructor() const -> bool {

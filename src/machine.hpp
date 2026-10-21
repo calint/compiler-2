@@ -861,7 +861,9 @@ class machine {
             });
         } catch (compile_error& e) {
             // note: the registers it starts with do not depend on the code
-            //       around it, so the error is not one of a version there
+            //       around it, so the error is not one of a version there,
+            //       and its parameters are not known, so it does not depend on
+            //       the arguments of a call
             e.kind = compile_error::error_kind::source;
             throw;
         }

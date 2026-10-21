@@ -1,4 +1,4 @@
 
-1138.baz:7:16: cannot parse constant 'm'
+1138.baz:7:16: 'm' is not a constant
     var a = i8[m]
                ^

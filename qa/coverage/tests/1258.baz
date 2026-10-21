@@ -1,0 +1,5 @@
+# an unknown name as an array size cannot be resolved
+func main() {
+    var a = i8[q]
+    exit(a[0])
+}

@@ -1,0 +1,14 @@
+# a function that runs out of scratch registers only when its parameters are
+# not known is accepted when nothing calls it, the registers depend on the
+# arguments of a call
+func sum(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) res {
+    res = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9 + a10 + a11
+}
+
+func g(v) res {
+    res = sum(v, v, v, v, v, v, v, v, v, v, v, v)
+}
+
+func main() {
+    exit(3)
+}

@@ -1476,7 +1476,7 @@ class storage_layout final {
             add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
         };
 
-        assert_vars_capacity(src_loc_tk, var.name, allocated_size_bytes);
+        assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
 
         var.offset = address_offset(base_offset + padding_bytes);
 
@@ -1681,8 +1681,7 @@ class storage_layout final {
                         vars_size_bytes_, max_bytes)};
     }
 
-    auto assert_vars_capacity(const token& src_loc_tk,
-                              const std::string_view name,
+    auto assert_vars_capacity(const token& src_loc_tk, const var_info& var,
                               const size_t allocated_size_bytes) const -> void {
 
         if (capacity_unchecked_ or
@@ -1692,11 +1691,19 @@ class storage_layout final {
             return;
         }
 
+        // the name of a temporary is not in the source, the error is at its
+        // call
+        if (var.is_temporary) {
+            throw compile_error{src_loc_tk,
+                                "a temporary of the call does not fit in the "
+                                "variable storage, see '--vars'"};
+        }
+
         throw compile_error{
             src_loc_tk,
             std::format("variable '{}' does not fit in the variable storage, "
                         "see '--vars'",
-                        name)};
+                        var.name)};
     }
 
     // a local starts after the storage in use of the nearest frame with its own
@@ -2557,13 +2564,17 @@ class toc final {
     }
 
     // runs 'compile' for its errors only: its output, string constants and
-    // use of storage leave no trace
+    // use of storage leave no trace, also when 'compile' ends at an error it
+    // ignores, see 'stmt_def_func::check_body'
     auto check_only(const std::function_ref<void()> compile) -> void {
         const dry_run_scope dry_run{*this};
 
         ::machine& x{machine()};
 
-        x.emit_discarded(compile);
+        x.emit_discarded([&] -> void {
+            const frame_depth_scope frames{*this};
+            compile();
+        });
     }
 
     // what '--checks' turned on

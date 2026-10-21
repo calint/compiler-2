@@ -334,6 +334,8 @@ struct generic_deduction {
     // the first parameter declared with exactly that type, e.g. 's T' in
     // 'func text.append<T type>(s T)', not an array
     std::optional<size_t> param_index;
+    // the name of that parameter, e.g. 's', for a missing argument
+    std::string param_name;
     // the result is declared with exactly that type, e.g. 'res T', the
     // destination of the call tells it
     bool is_result{};

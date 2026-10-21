@@ -1,4 +1,4 @@
 
-0850.baz:7:13: cannot deduce 'T' of generic function 'second', write 'second<...>'
+0850.baz:8:21: expected argument 2 ('v')
     var b = second(1)
-            ^~~~~~
+                    ^

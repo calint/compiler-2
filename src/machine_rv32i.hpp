@@ -1604,7 +1604,7 @@ class machine_rv32i : public machine {
 
         if (not binary) {
             throw std::runtime_error{
-                std::format("cannot write '{}'", binary_file_name_)};
+                std::format("cannot write file '{}'", binary_file_name_)};
         }
 
         assembler_.write_resolved(os, binary);

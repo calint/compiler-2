@@ -1,0 +1,4 @@
+
+1257.baz:3:16: 'p' is not a constant
+    var a = i8[p]
+               ^

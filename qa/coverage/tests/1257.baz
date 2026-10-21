@@ -1,0 +1,9 @@
+# a parameter as an array size is not a constant
+func f(p) {
+    var a = i8[p]
+    a[0] = 1
+}
+
+func main() {
+    f(2)
+}

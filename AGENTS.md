@@ -134,7 +134,8 @@
   `--target=rv32i-fpga`.
 - Iterate with `./make.sh -O3 build` and `test-coverage.sh ... run` without
   `build`: its sanitizer and coverage build compiles about 66 times slower.
-  Run `build` and one `run` once before done, then `./make.sh -O3 build`.
+  The user runs the `build` and the full suite before committing; do not run
+  `build`.
 - New error test: check each `line:column` in its `.out` points at the token
   where the error is detected (print the source line with a caret).
 - `UPDATE=1 qa/coverage/test-coverage.sh --target=x86_64 run` writes expected

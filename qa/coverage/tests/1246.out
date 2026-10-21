@@ -1,0 +1,4 @@
+
+1246.baz:5:14: constant expression overflows the type
+    var x = -m
+             ^

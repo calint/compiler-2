@@ -1,0 +1,4 @@
+
+1238.baz:4:9: cannot assign to read-only 'n', 'n' is the size of the array of 'foo'
+        n = 1
+        ^

@@ -155,7 +155,9 @@ class stmt_builtin_foo final : public statement {
   private:
     // 'e' is the element at the iterator, 'i' the counter and 'n' the array
     // size, declared at the 'foo'; parsing registers them without iterator
-    // and counter registers
+    // and counter registers. 'n' is a constant when the size is known, else
+    // a read-only variable that is never read at run time, see
+    // 'ident_info::is_length_unknown'
     auto add_loop_names(toc& tc, const size_t indent, const token& src_loc_tk,
                         const ident_info& array_info, const operand& iterator,
                         const operand& counter) const -> void {
@@ -193,6 +195,24 @@ class stmt_builtin_foo final : public statement {
                        .foo_array{},
                    },
                    var_kind::var);
+
+        // note: a constant 0 would fold, e.g. 'let m = n' would keep it
+        if (array_info.is_length_unknown()) {
+            tc.add_var(src_loc_tk, indent,
+                       {
+                           .name{"n"},
+                           .type_ptr{&tc.builtins().default_type()},
+                           .src_loc_tk{tok()},
+                           .read_only_why{read_only_cause::foo_length},
+                           .pointer_register{},
+                           .base_register{},
+                           .value_register{},
+                           .foo_array{},
+                       },
+                       var_kind::var);
+
+            return;
+        }
 
         tc.add_const(src_loc_tk, indent, "n",
                      static_cast<int64_t>(array_info.array_len()));

@@ -1,0 +1,14 @@
+# the 'n' of a 'foo' over an unsized array parameter is the length of the
+# argument, also where a 'let' reads it
+func uses(s i8[]) res int {
+    res = 0
+    foo s {
+        let m = n
+        res = m
+    }
+}
+
+func main() {
+    var a = i8[4]
+    exit(uses(a))
+}

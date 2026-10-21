@@ -115,7 +115,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         if (stack_size_bytes() < leaf_stack_bytes()) {
             throw std::runtime_error{
                 std::format("the stack {} B is smaller than the {} B that "
-                            "'main' uses without a stack check",
+                            "'main' may use without a stack check",
                             stack_size_bytes(), leaf_stack_bytes())};
         }
 

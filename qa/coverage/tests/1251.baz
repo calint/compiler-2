@@ -1,0 +1,9 @@
+# a register error in an included file names the file of each location in
+# the message and in the register report
+include "include/say.baz"
+
+func main() {
+    var text = "hi\n"
+    var k = write(say(text) - 2, text)
+    exit(k)
+}

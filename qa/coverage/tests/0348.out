@@ -1,4 +1,4 @@
 
-0348.baz:9:10: destination type must be 'bool', not 'i16'
+0348.baz:9:10: expected type 'i16', got 'bool'
     take(arrays_equal(src, cmp, 2))
          ^~~~~~~~~~~~

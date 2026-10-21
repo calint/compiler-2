@@ -1,0 +1,9 @@
+# a result named like a parameter is rejected at the result
+func f(x) x {
+    x = 1
+}
+
+func main() {
+    var a = f(1)
+    exit(a)
+}

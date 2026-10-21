@@ -1,0 +1,5 @@
+# a bare type is not a value before a word operator: 'or'
+func main() {
+    var b = bool or true
+    exit(int(b))
+}

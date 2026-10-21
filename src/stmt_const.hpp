@@ -6,6 +6,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
+#include <string_view>
 
 #include "compile_error.hpp"
 #include "constant_parser.hpp"
@@ -52,6 +53,21 @@ class stmt_const final : public statement {
                 literal_tk_, literal_tk_.text()));
 
             return;
+        }
+
+        // a name starts with a letter or '_', e.g. the 'm' of 'i8[m]' where
+        // 'm' is a variable
+        const std::string_view text{literal_tk_.text()};
+
+        if (text.front() < '0' or text.front() > '9') {
+            if (tc.scopes().lookup(text).is_value()) {
+                throw compile_error{
+                    literal_tk_, std::format("'{}' is not a constant", text)};
+            }
+
+            throw compile_error{
+                literal_tk_,
+                std::format("cannot resolve identifier '{}'", text)};
         }
 
         // a lone '-' prefixes a decimal number as text so that the most

@@ -1,0 +1,4 @@
+
+1253.baz:2:11: variable 'x' already declared at 2:8
+func f(x, x) {}
+          ^

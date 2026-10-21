@@ -1,0 +1,4 @@
+
+1245.baz:3:13: cannot resolve identifier 'bool'
+    var b = bool or true
+            ^~~~

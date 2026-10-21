@@ -1,0 +1,11 @@
+# an inlined recursion that a constant argument ends is accepted when nothing
+# calls it, its depth depends on the arguments of a call
+func r(x) {
+    if x > 0 {
+        r(x - 1)
+    }
+}
+
+func main() {
+    exit(4)
+}

@@ -17,8 +17,15 @@ class tokenizer;
 class compile_error final : public std::exception {
   public:
     // running out of scratch registers depends on the code compiled, another
-    // version of the same code may not run out ('machine::emit_most_efficient')
-    enum class error_kind : uint8_t { source, out_of_registers };
+    // version of the same code may not run out
+    // ('machine::emit_most_efficient'); both it and the limit of inlined calls
+    // depend on the arguments of a call, so a function that nothing calls
+    // cannot be judged by them
+    enum class error_kind : uint8_t {
+        source,
+        out_of_registers,
+        inlining_limit,
+    };
 
     // a place the error was found through: an inlined call or the instance of
     // a generic definition
@@ -68,6 +75,12 @@ class compile_error final : public std::exception {
             .text{std::move(text)},
             .reason{std::move(reason)},
         });
+    }
+
+    // whether the error can be told only with the arguments of a call, see
+    // 'stmt_def_func::check_body'
+    [[nodiscard]] auto depends_on_call() const -> bool {
+        return kind != error_kind::source;
     }
 
     //

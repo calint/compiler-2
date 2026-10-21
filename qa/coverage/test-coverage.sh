@@ -209,8 +209,7 @@ execute_program_errors_to_out() {
 }
 
 compile_and_build() {
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $VERSION_OPTS 2>err >gen.s
-    if [ $? -ne 0 ]; then
+    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS $VERSION_OPTS 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
@@ -218,8 +217,7 @@ compile_and_build() {
 }
 
 compile_and_build_no_checks() {
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source $VERSION_OPTS 2>err >gen.s
-    if [ $? -ne 0 ]; then
+    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source $VERSION_OPTS 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
@@ -228,8 +226,7 @@ compile_and_build_no_checks() {
 
 compile_and_build_with_opts() {
     local opts="$1"
-    "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source $VERSION_OPTS 2>err >gen.s
-    if [ $? -ne 0 ]; then
+    if ! "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source $VERSION_OPTS 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi

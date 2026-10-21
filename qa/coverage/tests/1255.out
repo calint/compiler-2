@@ -1,0 +1,4 @@
+
+1255.baz:4:16: expected an identifier
+    array_copy("abc", b, 3)
+               ^~~~~

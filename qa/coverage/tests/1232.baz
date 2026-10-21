@@ -1,0 +1,8 @@
+# a shift count wider than the width a conversion computes its argument at is
+# rejected like outside a conversion
+func main() {
+    var a = i16(2)
+    var n = i32(1)
+    var r = i16(a << n)
+    exit(r)
+}

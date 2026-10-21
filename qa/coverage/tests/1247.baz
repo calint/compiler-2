@@ -1,0 +1,14 @@
+# the braced elements of an array field are written one by one, so an element
+# is read before the writes of the elements after it, and an array field may
+# be copied from itself
+type t {b, a i8[2]}
+
+type u {a i8[2], b}
+
+func main() {
+    var v = t{3, {1, 2}}
+    v = {v.b, {v.a[1], 5}}
+    var w = u{{6, 7}, 8}
+    w = {w.a, 4}
+    exit(v.a[0] + w.a[1])
+}

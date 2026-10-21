@@ -1,4 +1,4 @@
 
-0345.baz:7:5: destination type must be 'bool', not 'i16'
+0345.baz:7:5: expected type 'i16', got 'bool'
     result = arrays_equal(a, b, 1)
     ^~~~~~

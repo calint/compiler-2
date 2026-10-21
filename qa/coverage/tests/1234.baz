@@ -1,0 +1,11 @@
+# a conversion to a wider type computes its argument at the width of the type,
+# where an inlined call's narrower result is rejected as elsewhere
+func h(x i8) res i8 {
+    res = x
+}
+
+func main() {
+    var a = i8(20)
+    var q = i16(a * h(a))
+    exit(i8(q / 10))
+}
