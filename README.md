@@ -18,8 +18,7 @@ the binary image itself.
 ## Supports
 
 * built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean,
-  a boolean is not an integer, `int(b)` converts it to 1 or 0, a condition is a
-  boolean and a boolean is compared only with a boolean
+  a boolean is not an integer, `int(b)` converts it to 1 or 0
 * user defined types with methods and constructors
 * data, constants, arrays and array iteration
 * variables with the type deduced from the initializer
@@ -176,17 +175,12 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    65           8641           4398          25750
-C++                              1            224             64            750
+C/C++ Header                    65           8724           4476          26026
+C++                              1            227             65            756
 -------------------------------------------------------------------------------
-SUM:                            66           8865           4462          26500
+SUM:                            66           8951           4541          26782
 -------------------------------------------------------------------------------
 ```
-
-## Reflection
-
-Some thoughts about the transition to AI-assisted development:
-[reflection.md](etc/readme/reflection.md)
 
 ## Sample
 

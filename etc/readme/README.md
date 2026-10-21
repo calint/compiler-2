@@ -175,17 +175,12 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    65           8641           4398          25750
-C++                              1            224             64            750
+C/C++ Header                    65           8724           4476          26026
+C++                              1            227             65            756
 -------------------------------------------------------------------------------
-SUM:                            66           8865           4462          26500
+SUM:                            66           8951           4541          26782
 -------------------------------------------------------------------------------
 ```
-
-## Reflection
-
-Some thoughts about the transition to AI-assisted development:
-[reflection.md](etc/readme/reflection.md)
 
 ## Sample
 
