@@ -1,0 +1,4 @@
+
+1413.baz:7:8: generic parameter 'list' hides the generic type 'list' defined at 3:6, use another name
+func f<list type>(x list) res list {
+       ^~~~

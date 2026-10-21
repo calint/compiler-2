@@ -2100,6 +2100,23 @@ class definition_checks final {
                         name, name, where(type_tk))};
     }
 
+    // a generic parameter of a definition cannot be the name of a generic
+    // type; an instance names the generic type itself, e.g. 'text' names 'str'
+    auto assert_generic_param_not_generic_type(
+        const token& src_loc_tk, const std::string_view name) const -> void {
+
+        if (not generics_.get().has_type(name)) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("generic parameter '{}' hides the generic type '{}' "
+                        "defined at {}, use another name",
+                        name, name,
+                        where(generics_.get().get_type(name).src_loc_tk))};
+    }
+
     // a frame declares a variable or a constant of a name, not both
     auto assert_name_free(const token& src_loc_tk,
                           const std::string_view name) const -> void {
@@ -2613,6 +2630,18 @@ class toc final {
     auto assert_generic_param_free(const token& name_tk) const -> void {
         assert_valid_unqualified_name(name_tk);
         definitions_.assert_generic_param_free(name_tk, name_tk.text());
+
+        definitions_.assert_generic_param_not_generic_type(name_tk,
+                                                           name_tk.text());
+    }
+
+    // the parse is over: a type defined after a generic definition is checked
+    // against its parameters too, so the order of the definitions does not
+    // matter
+    auto assert_generic_params_free() const -> void {
+        for (const token& param_tk : generics_.param_tokens()) {
+            assert_generic_param_free(param_tk);
+        }
     }
 
     auto assert_released() const -> void {

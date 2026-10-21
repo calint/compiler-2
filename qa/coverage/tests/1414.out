@@ -1,0 +1,4 @@
+
+1414.baz:4:8: generic parameter 'point' hides the type 'point' defined at 8:6, use another name
+func f<point type>(x point) res point {
+       ^~~~~

@@ -2,7 +2,7 @@
 
 ## Why a language?
 
-It started as an experiment. It began with "hello world" in assembler on Linux,
+It started as an experiment. It began with "hello world" in assembly on Linux,
 which is still in `etc/from`. I wanted to see how hard it is to build a usable
 language for the application I experiment with. I worked on it on and off,
 returning to it from time to time.
@@ -50,10 +50,14 @@ As an experiment, without expecting much, I asked for a feature that would have
 taken me days to implement. The AI was done in minutes. I was thrilled.
 
 It solved a few of my problems with ease. When I asked how it knew the
-solution, it said it was a common compiler technique. In this case how to handle
-end of line comments.
+solution, it said it was a common compiler technique. In this case, the problem
+was how to handle end-of-line comments: make them part of the whitespace that
+belongs to the token. I thought that was clever.
 
-I have no background in compiler theory, since this is an experiment. That shows
+At times it also drifted into a bad solution and had to be corrected and steered
+onto a different line of thought.
+
+I have no background in compiler theory; this is an experiment. That shows
 in the arithmetic and boolean expressions, which are handled without an abstract
 syntax tree.
 
@@ -72,7 +76,7 @@ Every time I thought I was done, there was one more thing. Finally I stopped
 adding features and declared the project finished. Then I tried to read the
 AI-generated code. First I scrolled through it to get a sense of its size. At a
 skim, it looked manageable. Then I tried to follow it line by line. It was
-hard. The code was tangled and difficult to follow, clearly cobbled into the
+hard. The code was tangled and difficult to follow, clearly wedged into the
 existing framework.
 
 ### The realization
@@ -107,8 +111,8 @@ until a human can read it easily.
 
 The pre-AI code and structure are still visible as the skeleton of the project.
 I no longer know the source line by line, like the back of my hand. I feel more
-like a project director with coding experience, guiding AI to a finished
-product.
+like a project director with coding experience, guiding the AI toward a
+finished product.
 
 ### Conclusion
 

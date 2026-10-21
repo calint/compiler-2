@@ -1,0 +1,13 @@
+# a generic parameter cannot have the name of a generic type, it would hide it
+
+type list<T type, n> {
+    items T[n],
+}
+
+func f<list type>(x list) res list {
+    res = x
+}
+
+func main() {
+    exit(int(f<i32>(1)))
+}

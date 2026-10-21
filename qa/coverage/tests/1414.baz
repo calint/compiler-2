@@ -1,0 +1,12 @@
+# a generic parameter cannot have the name of a type defined after it, also
+# when nothing instantiates the generic function
+
+func f<point type>(x point) res point {
+    res = x
+}
+
+type point {x, y}
+
+func main() {
+    exit(0)
+}

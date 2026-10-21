@@ -4530,3 +4530,7 @@ SRC=1410 && COMPERR
 # parameter are rejected like a variable
 SRC=1411 && COMPERR
 SRC=1412 && COMPERR
+
+# a generic parameter named like a generic type or like a type defined later
+SRC=1413 && COMPERR
+SRC=1414 && COMPERR

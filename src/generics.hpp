@@ -467,6 +467,26 @@ class generic_registry final {
         instantiated_funcs_.emplace(funcs_.get_const_ref(name).report_name);
     }
 
+    // the parameters of every generic function and generic type, e.g. 'T' of
+    // 'func f<T type>()' and 'n' of 'type list<T type, n>'
+    [[nodiscard]] auto param_tokens() const -> std::vector<token> {
+        std::vector<token> tks;
+
+        for (const std::string& name : funcs_.keys()) {
+            tks.append_range(funcs_.get_const_ref(name).param_tks);
+        }
+
+        for (const std::string& name : types_.keys()) {
+            for (const generic_param& param :
+                 types_.get_const_ref(name).params) {
+
+                tks.push_back(param.name_tk);
+            }
+        }
+
+        return tks;
+    }
+
     // the names of the generic functions without an instance, in the order of
     // definition
     [[nodiscard]] auto uninstantiated_func_names() const

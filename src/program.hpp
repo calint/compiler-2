@@ -351,6 +351,8 @@ class program final {
 
         parse_file(0);
 
+        tc_.assert_generic_params_free();
+
         tc_.exit_block();
 
         assignment_analysis::assert_functions_set_return_value(
