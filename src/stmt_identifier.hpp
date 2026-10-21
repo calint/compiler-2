@@ -461,10 +461,6 @@ class stmt_identifier final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto accessed_bytes() const -> byte_range {
-        return accessed_bytes_;
-    }
-
     [[nodiscard]] auto array_count() const -> std::optional<size_t> {
         return array_count_;
     }

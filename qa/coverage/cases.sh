@@ -4500,3 +4500,10 @@ SRC=1394 && COMPERR
 # shared storage is reported with the source text, indexes included
 SRC=1395 && COMPERR
 SRC=1396 && COMPERR
+
+# a value written in parts is checked on the paths of the parts written before
+# a read: a destination at a run-time index and a nested instance
+SRC=1397 && EXP=0 && RUN
+SRC=1398 && COMPERR
+SRC=1399 && EXP=0 && RUN
+SRC=1400 && COMPERR

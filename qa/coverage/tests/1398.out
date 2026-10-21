@@ -1,0 +1,4 @@
+
+1398.baz:9:17: 'ps[0].x' may have been overwritten in the same statement
+    ps[i] = {1, ps[0].x}
+                ^~

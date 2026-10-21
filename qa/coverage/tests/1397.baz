@@ -1,0 +1,11 @@
+# a destination at a run-time index is written field by field, so a read of
+# another field of any element is not overwritten
+
+type point {x, y}
+
+func main() {
+    var ps = point[2]{{1, 2}, {3, 4}}
+    var i = 1
+    ps[i] = {1, ps[0].y}
+    exit(ps[1].y - 2)
+}

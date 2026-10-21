@@ -285,63 +285,6 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
     compile_assign(tc, indent, dst);
 }
 
-inline auto
-expr_type::assert_items_not_reading(const constructor_target& dst,
-                                    const size_t record_offset) const -> void {
-
-    for (const auto [expr, field] :
-         std::views::zip(exprs_, get_type().fields())) {
-
-        const size_t field_offset{record_offset + field.offset};
-
-        // a copy of an array field reads the same bytes or other ones, e.g.
-        // 'v = {v.a, 4}'
-        if (expr->is_array_identifier()) {
-            assert_item_not_reading(*expr, dst, field_offset);
-            continue;
-        }
-
-        // braced elements and instances are written in parts, a plain
-        // instance field is the single element
-        if (not field.type().is_builtin() or field.is_array()) {
-            assert_elements_not_reading(*expr, field.type(), dst, field_offset);
-            continue;
-        }
-
-        assert_item_not_reading(*expr, dst, field_offset);
-    }
-}
-
-// each element is an item of its own; an instance written field by field,
-// e.g. 'point{l.a.x, 0}', is checked field by field, a copy or a call as one
-// item
-inline auto expr_type::assert_elements_not_reading(
-    const expr_any& src, const type& element_type,
-    const constructor_target& dst, const size_t offset) -> void {
-
-    const size_t element_size_bytes{element_type.size_bytes()};
-
-    for (size_t i{}; i < src.element_count(); ++i) {
-        const size_t element_offset{
-            offset + multiply_storage_size(src.tok(), element_size_bytes, i),
-        };
-
-        if (element_type.is_builtin()) {
-            assert_item_not_reading(src.element(i), dst, element_offset);
-            continue;
-        }
-
-        const expr_type& element{src.as_expr_type(i)};
-
-        if (not element.is_literal()) {
-            assert_item_not_reading(element, dst, element_offset);
-            continue;
-        }
-
-        element.assert_items_not_reading(dst, element_offset);
-    }
-}
-
 inline auto expr_type::compile_assign(toc& tc, const size_t indent,
                                       const destination& dst) const -> void {
 
@@ -569,6 +512,52 @@ inline auto expr_type::compile_record_field(toc& tc, const size_t indent,
         tc, indent, src.tok(),
         dst.operand_at(count * field.type().size_bytes(), field.type()),
         field.type(), field.array_count - count);
+}
+
+inline auto
+expr_type::list_written_parts(const access_path& at,
+                              std::vector<written_part>& parts) const -> void {
+
+    // a call or a copy writes the value at once
+    if (stmt_call_ or stmt_ident_) {
+        parts.push_back({
+            .item{this},
+            .suffix{at},
+        });
+
+        return;
+    }
+
+    for (const auto [expr, field] :
+         std::views::zip(exprs_, get_type().fields())) {
+
+        access_path field_at{at};
+        field_at.add_field(field.offset);
+        list_field_parts(*expr, field, field_at, parts);
+    }
+}
+
+inline auto expr_type::list_field_parts(const expr_any& src,
+                                        const type_field& field,
+                                        const access_path& at,
+                                        std::vector<written_part>& parts)
+    -> void {
+
+    if (field.type().is_builtin()) {
+        src.list_written_parts(at, parts);
+        return;
+    }
+
+    if (not field.is_array() or src.is_array_identifier()) {
+        src.as_expr_type().list_written_parts(at, parts);
+        return;
+    }
+
+    for (size_t i{}; i < src.element_count(); ++i) {
+        access_path element_at{at};
+        element_at.add_fixed_index(i);
+        src.as_expr_type(i).list_written_parts(element_at, parts);
+    }
 }
 
 inline auto expr_type::visit_reads(const read_filter var,

@@ -39,6 +39,14 @@ enum class literal_typing : uint8_t { written, from_destination };
                              type_name, value)};
 }
 
+// a part of an assigned value and where in the destination it is written,
+// e.g. 'q.y' at the field 'y' of 'p = {1, q.y}'
+struct written_part {
+    const statement* item{};
+    // the path from the destination to the part
+    access_path suffix;
+};
+
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
 //       implemented in 'expr_type_impl.hpp', those headers include this one
 //       through 'expr_any.hpp', so their definitions are incomplete here
@@ -59,23 +67,6 @@ class expr_type final : public statement {
     // what the destination of the value holds, a whole array is filled only
     // by a copy of an array, e.g. 'var b = a'
     enum class destination_kind : uint8_t { instance, whole_array };
-
-    // bytes of the variable an instance value is written into
-    struct constructor_target {
-        std::string_view root;
-        byte_range range;
-
-        // false when a run-time index leaves the element unknown
-        bool is_exact{};
-
-        // from the root variable, to tell the fields apart from a read at a
-        // run-time index
-        access_path path;
-
-        // the type of one instance written field by field, null otherwise,
-        // e.g. the 'point' of 'ps[0] = {1, ps[i].y}'
-        const type* record_type{};
-    };
 
     // parses 'expr_any' items and creates the 'stmt_call' or
     // 'stmt_identifier'; the type name alone is its zero value, e.g.
@@ -131,23 +122,6 @@ class expr_type final : public statement {
     // class methods
     //
 
-    // the fields are written in order so later items must not read earlier
-    // fields of the destination
-    auto assert_not_reading(const constructor_target& dst) const -> void {
-        // same-type copies are either the same bytes or separate bytes
-        if (stmt_ident_) {
-            return;
-        }
-
-        // a call that writes its result into an argument is rejected by the
-        // alias check of the call
-        if (stmt_call_) {
-            return;
-        }
-
-        assert_items_not_reading(dst, 0);
-    }
-
     // the values of the listed fields of a literal, e.g. '1' and '2' of
     // 'point{1, 2}'
     [[nodiscard]] auto field_values() const
@@ -161,19 +135,16 @@ class expr_type final : public statement {
         return stmt_ident_ == nullptr and stmt_call_ == nullptr;
     }
 
+    // the parts of the value at 'at' in the destination, in the order
+    // 'compile' writes them
+    auto list_written_parts(const access_path& at,
+                            std::vector<written_part>& parts) const -> void;
+
     auto operator=(expr_type&&) noexcept -> expr_type&;
 
     //
     // statics
     //
-
-    // the braced elements of 'src' of the type 'element_type' are written one
-    // by one from 'offset' in 'dst', each after it is read, e.g. the 'a[0]' of
-    // 'a = {a[1], a[0]}' reads what the first element wrote
-    static auto assert_elements_not_reading(const expr_any& src,
-                                            const type& element_type,
-                                            const constructor_target& dst,
-                                            const size_t offset) -> void;
 
     // unlisted elements are zero like unlisted fields, returns the zeroed size
     static auto zero_remaining_elements(toc& tc, const size_t indent,
@@ -202,9 +173,6 @@ class expr_type final : public statement {
 
   private:
     auto assert_call_type(const type& tp) const -> void;
-
-    auto assert_items_not_reading(const constructor_target& dst,
-                                  const size_t record_offset) const -> void;
 
     // the '}' that ends the fields, when it is the next character, e.g. the '}'
     // of '{x, y}'
@@ -303,65 +271,6 @@ class expr_type final : public statement {
         });
     }
 
-    static auto assert_item_not_reading(const statement& item,
-                                        const constructor_target& dst,
-                                        const size_t written_size_bytes)
-        -> void {
-
-        if (written_size_bytes == 0) {
-            return;
-        }
-
-        const byte_range exact{
-            .offset{dst.range.offset},
-            .size_bytes{written_size_bytes},
-        };
-
-        // with a run-time index any element of the array may already be written
-        const byte_range& written{dst.is_exact ? exact : dst.range};
-
-        item.visit_reads(
-            dst.root,
-            [&dst, &written, written_size_bytes](
-                const token& src_loc_tk, const std::string_view read_text,
-                const byte_range& accessed_bytes,
-                const access_path& accessed_path) -> void {
-                if (not accessed_bytes.overlaps(written)) {
-                    return;
-                }
-
-                // a read at a run-time index covers the whole array, its
-                // fields tell it apart, e.g. the 'ps[i].y' of
-                // 'ps[0] = {1, ps[i].y}'
-                const bool is_read_at_run_time_index{
-                    accessed_path.has_run_time_index(),
-                };
-
-                if (is_read_at_run_time_index and dst.is_exact and
-                    not reads_written_field(dst, written_size_bytes,
-                                            accessed_path)) {
-
-                    return;
-                }
-
-                // a run-time index may or may not refer to the written element
-                if (not dst.is_exact or is_read_at_run_time_index) {
-                    throw compile_error{
-                        src_loc_tk,
-                        std::format(
-                            "'{}' may have been overwritten in the same "
-                            "statement",
-                            read_text)};
-                }
-
-                throw compile_error{
-                    src_loc_tk,
-                    std::format("'{}' is read but has been overwritten in the "
-                                "same statement",
-                                read_text)};
-            });
-    }
-
     // the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)',
     // none when 'tk' names no built-in with a value
     [[nodiscard]] static auto builtin_value_type(const toc& tc, const token& tk,
@@ -380,6 +289,12 @@ class expr_type final : public statement {
                                      const expr_any& src,
                                      const type_field& field,
                                      const destination& dst) -> void;
+
+    // the parts of the value 'src' of 'field' at 'at', as
+    // 'compile_field' writes them
+    static auto list_field_parts(const expr_any& src, const type_field& field,
+                                 const access_path& at,
+                                 std::vector<written_part>& parts) -> void;
 
     // the bytes that no field covers, between the data ranges and after the
     // last one; the first of them when there are more than 'max_count'
@@ -410,33 +325,6 @@ class expr_type final : public statement {
         append_gap(gaps, covered_bytes, tp.size_bytes(), tp.alignment());
 
         return gaps;
-    }
-
-    // the read may be in a field of 'dst' that its first 'written_size_bytes'
-    // cover, always when 'dst' is not one instance
-    [[nodiscard]] static auto
-    reads_written_field(const constructor_target& dst,
-                        const size_t written_size_bytes,
-                        const access_path& read_path) -> bool {
-
-        if (dst.record_type == nullptr) {
-            return true;
-        }
-
-        for (const type_field& field : dst.record_type->fields()) {
-            if (field.offset >= written_size_bytes) {
-                break;
-            }
-
-            access_path field_path{dst.path};
-            field_path.add_field(field.offset);
-
-            if (read_path.overlaps(field_path)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     static auto validate_array_assignment(const token& src_loc_tk,

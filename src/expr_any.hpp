@@ -336,29 +336,6 @@ class expr_any final : public statement {
         return std::get<expr_type>(elements_.at(index));
     }
 
-    // a value written in parts to 'dst' does not read a part written before,
-    // e.g. 'a = {a[1], a[0]}' or 'p = {p.y, p.x}'
-    auto
-    assert_value_not_reading(const expr_type::constructor_target& dst) const
-        -> void {
-
-        // note: a copy of an array reads the same bytes or other ones
-        if (is_array_identifier()) {
-            return;
-        }
-
-        if (is_array_) {
-            expr_type::assert_elements_not_reading(*this, get_type(), dst, 0);
-            return;
-        }
-
-        if (not std::holds_alternative<expr_type>(elements_.at(0))) {
-            return;
-        }
-
-        as_expr_type().assert_not_reading(dst);
-    }
-
     // compiles all but the trailing added constant of an arithmetic
     // expression and returns the constant, e.g. 'ix + 1' compiles 'ix' and
     // returns 1, empty when nothing was compiled
@@ -424,6 +401,32 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto is_string() const -> bool {
         return string_tk_.is_string();
+    }
+
+    // the parts of the value at 'at' in the destination, in the order
+    // 'compile' writes them; a single value, a copy or a string is one part
+    auto list_written_parts(const access_path& at,
+                            std::vector<written_part>& parts) const -> void {
+
+        if (is_identifier_ or not is_array_) {
+            list_element_parts(0, at, parts);
+            return;
+        }
+
+        if (is_string()) {
+            parts.push_back({
+                .item{this},
+                .suffix{at},
+            });
+
+            return;
+        }
+
+        for (size_t i{}; i < elements_.size(); ++i) {
+            access_path element_at{at};
+            element_at.add_fixed_index(i);
+            list_element_parts(i, element_at, parts);
+        }
     }
 
     [[nodiscard]] auto open_bracket_token() const -> const token& {
@@ -579,6 +582,26 @@ class expr_any final : public statement {
         return *array_len;
     }
 
+    // the value boundary is where a wider source loses bits, an instance or a
+    // 'bool' has none to lose
+    // an instance is written field by field, any other value at once
+    auto list_element_parts(const size_t index, const access_path& at,
+                            std::vector<written_part>& parts) const -> void {
+
+        if (const expr_type* const record{
+                std::get_if<expr_type>(&elements_.at(index)),
+            }) {
+
+            record->list_written_parts(at, parts);
+            return;
+        }
+
+        parts.push_back({
+            .item{&element(index)},
+            .suffix{at},
+        });
+    }
+
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
     auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp) -> void {
 
@@ -719,8 +742,6 @@ class expr_any final : public statement {
         };
     }
 
-    // the value boundary is where a wider source loses bits, an instance or a
-    // 'bool' has none to lose
     static auto compile_element(toc& tc, const size_t indent,
                                 const statement& value, const destination& dst)
         -> void {

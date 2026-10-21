@@ -1,0 +1,4 @@
+
+1400.baz:10:18: 'ls[i].a.x' may have been overwritten in the same statement
+    ls[0] = {{1, ls[i].a.x}, {3, 4}}
+                 ^~

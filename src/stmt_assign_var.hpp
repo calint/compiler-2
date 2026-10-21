@@ -4,6 +4,7 @@
 #include <format>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -91,19 +92,7 @@ class stmt_assign_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const type& dst_type{stmt_ident_.get_type()};
-
-        const bool is_record{
-            not stmt_ident_.is_array() and not dst_type.is_builtin(),
-        };
-
-        expr_.assert_value_not_reading({
-            .root{stmt_ident_.first_token().text()},
-            .range{stmt_ident_.accessed_bytes()},
-            .is_exact{stmt_ident_.is_exact_access()},
-            .path{stmt_ident_.accessed_path()},
-            .record_type{is_record ? &dst_type : nullptr},
-        });
+        assert_no_read_of_written_part();
 
         const ident_info var_info{tc.make_ident_info(stmt_ident_)};
 
@@ -193,6 +182,60 @@ class stmt_assign_var final : public statement {
             std::format("destination array size {} does not match source "
                         "size {}",
                         *dst_len, *src_len)};
+    }
+
+    // a part of the value does not read a part written before it, e.g. the
+    // 'p.x' of 'p = {p.y, p.x}'
+    auto assert_no_read_of_written_part() const -> void {
+        std::vector<written_part> parts;
+        expr_.list_written_parts(access_path::whole_variable(), parts);
+
+        // the paths of the parts before the current one
+        std::vector<access_path> written;
+
+        for (const written_part& part : parts) {
+            assert_not_reading(*part.item, written);
+
+            written.push_back(
+                stmt_ident_.accessed_path().extended_by(part.suffix));
+        }
+    }
+
+    // 'item' reads none of the 'written' paths under the destination's name
+    auto assert_not_reading(const statement& item,
+                            const std::span<const access_path> written) const
+        -> void {
+
+        item.visit_reads(
+            stmt_ident_.first_token().text(),
+            [written](const token& src_loc_tk, const std::string_view read_text,
+                      [[maybe_unused]] const byte_range& accessed_bytes,
+                      const access_path& read_path) -> void {
+                for (const access_path& path : written) {
+                    if (not read_path.overlaps(path)) {
+                        continue;
+                    }
+
+                    // note: a run-time index on either side may name other
+                    //       bytes
+
+                    if (read_path.has_run_time_index() or
+                        path.has_run_time_index()) {
+
+                        throw compile_error{
+                            src_loc_tk,
+                            std::format("'{}' may have been overwritten in "
+                                        "the same statement",
+                                        read_text)};
+                    }
+
+                    throw compile_error{
+                        src_loc_tk,
+                        std::format("'{}' is read but has been overwritten in "
+                                    "the same statement",
+                                    read_text)};
+                }
+            });
     }
 
     // a destination that names storage under another name, e.g. a parameter or
