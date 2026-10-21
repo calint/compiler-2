@@ -99,6 +99,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           function name as a value (0792)
        R5 'conversion_widths' under 'plan_computation'/'ops_place_for';
           the convert 'constant_value'/'narrow' become its 'fold' only
+          => done (2026-10-21), byte-identical: 'constant_value' and
+          'narrow' merged into 'fold_at', shared by 'fold' and 'compile';
+          'conversion_widths' dropped: 'ops_place_for' and
+          'plan_computation' compare D and T directly, a struct would only
+          rename those comparisons
        F  the differential fuzz mode (tests below), a baseline run
        B1 'compile_value' (rule 8), emit at the use width, delete
           'make_constant_operand' and the constant branches of the compile

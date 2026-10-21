@@ -49,7 +49,7 @@ struct folded_value {
     // statics
     //
 
-    // a literal or a 'let' name
+    // checked by its value, e.g. a literal or a 'let' name
     [[nodiscard]] static auto untyped(const int64_t value) -> folded_value {
         return {
             .value{value},

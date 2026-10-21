@@ -153,17 +153,17 @@ class stmt_builtin_convert final : public expression {
 
         machine& x{tc.machine()};
 
-        const std::optional<int64_t> value{
-            constant_value(tc, dst.type_ref()),
+        const std::optional<folded_value> folded{
+            fold_at(tc, dst.type_ref()),
         };
 
         // an out-of-range immediate makes nasm warn, so fold it here
-        if (value) {
+        if (folded) {
             // e.g. 128 of '-i8(-128)' in an 'i16' destination
             const type& value_type{*wider(get_type(), dst.type_ref())};
 
             x.copy_value(tok(), indent, dst.operand(),
-                         operand::imm(*value, value_type));
+                         operand::imm(folded->value, value_type));
 
             return;
         }
@@ -224,16 +224,7 @@ class stmt_builtin_convert final : public expression {
             return std::nullopt;
         }
 
-        const std::optional<int64_t> value{constant_value(tc, width_type)};
-
-        if (not value) {
-            return std::nullopt;
-        }
-
-        return folded_value{
-            .value{*value},
-            .own_type{},
-        };
+        return fold_at(tc, width_type);
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
@@ -411,14 +402,25 @@ class stmt_builtin_convert final : public expression {
         x.free_scratch_register(tok(), indent, converted);
     }
 
-    // the value used at the width of 'width_type'
-    [[nodiscard]] auto constant_value(const toc& tc,
-                                      const type& width_type) const
-        -> std::optional<int64_t> {
+    // the unary ops of the argument apply at its width, then the value is
+    // narrowed to the type
+    [[nodiscard]] auto converted_constant(const int64_t value) const
+        -> int64_t {
+
+        return constant_arith::wrap_to_width(
+            arg_.get_unary_ops().evaluate_constant(value), get_type());
+    }
+
+    // the value used at the width of 'width_type': the converted argument
+    // with the conversion's own unary ops applied at the width it is used
+    // at, at least that of the type, e.g. 'i16' for '-i8(-128)' in an 'i16'
+    // list; under the overflow check a result that does not fit is an error
+    [[nodiscard]] auto fold_at(const toc& tc, const type& width_type) const
+        -> std::optional<folded_value> {
 
         // the bare form has no argument
         if (open_paren_tk_.is_empty()) {
-            return 0;
+            return folded_value::untyped(0);
         }
 
         if (arg_.is_expression()) {
@@ -431,34 +433,16 @@ class stmt_builtin_convert final : public expression {
             return std::nullopt;
         }
 
-        return narrow(tc, info.constant().value, width_type);
-    }
-
-    // the unary ops of the argument apply at its width, then the value is
-    // narrowed to the type
-    [[nodiscard]] auto converted_constant(const int64_t value) const
-        -> int64_t {
-
-        return constant_arith::wrap_to_width(
-            arg_.get_unary_ops().evaluate_constant(value), get_type());
-    }
-
-    // the unary ops of the conversion apply to the converted value at the
-    // width it is used at, where under the overflow check a result that does
-    // not fit is an error
-    [[nodiscard]] auto narrow(const toc& tc, const int64_t value,
-                              const type& width_type) const -> int64_t {
-
-        const int64_t converted{converted_constant(value)};
-
-        // the width of the use, at least that of the type, e.g. 'i16' for
-        // '-i8(-128)' in an 'i16' list
+        const int64_t converted{converted_constant(info.constant().value)};
         const type& result_type{*wider(get_type(), width_type)};
 
-        return constant_arith::wrap_to_width(
+        const int64_t value{
             get_unary_ops().evaluate_at(converted, result_type,
                                         tc.checks().overflow),
-            result_type);
+        };
+
+        return folded_value::untyped(
+            constant_arith::wrap_to_width(value, result_type));
     }
 
     [[nodiscard]] auto ops_place_for(const toc& tc,
