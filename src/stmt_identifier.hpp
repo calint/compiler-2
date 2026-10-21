@@ -202,9 +202,6 @@ class stmt_identifier final : public statement {
     // the fields and indexes of this path
     access_path access_path_;
 
-    // false when a run-time index leaves the element unknown
-    bool is_exact_access_{};
-
     // e.g. '.add' in 'lst.add(x)', the path is the receiver
     token method_dot_tk_;
     token method_name_tk_;
@@ -513,8 +510,9 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
 
+    // false when a run-time index leaves the element unknown
     [[nodiscard]] auto is_exact_access() const -> bool {
-        return is_exact_access_;
+        return not access_path_.has_run_time_index();
     }
 
     [[nodiscard]] auto is_method_receiver() const -> bool {
@@ -549,7 +547,7 @@ class stmt_identifier final : public statement {
 
     // a run-time index does not prove which element is written
     auto record_assignment(assignment_flow& flow) const -> void {
-        if (not first_token().is_text(flow.var) or not is_exact_access_) {
+        if (not first_token().is_text(flow.var) or not is_exact_access()) {
             return;
         }
 
@@ -754,7 +752,7 @@ class stmt_identifier final : public statement {
     auto narrow_accessed_bytes(const size_t offset, const size_t size_bytes_in)
         -> void {
 
-        if (not is_exact_access_) {
+        if (not is_exact_access()) {
             return;
         }
 
@@ -776,7 +774,6 @@ class stmt_identifier final : public statement {
         const size_t element_size_bytes{array_info.type_ref().size_bytes()};
 
         if (not index) {
-            is_exact_access_ = false;
             access_path_.add_run_time_index();
             return;
         }
@@ -825,8 +822,6 @@ class stmt_identifier final : public statement {
         if (names_function(tc)) {
             return;
         }
-
-        is_exact_access_ = true;
 
         std::string path;
         const type* parent_type{};

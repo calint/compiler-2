@@ -67,6 +67,13 @@ struct access_path {
         return result;
     }
 
+    // the element is not known at compile time, e.g. 'ps[i].x'
+    [[nodiscard]] auto has_run_time_index() const -> bool {
+        return std::ranges::any_of(steps, [](const path_step& step) -> bool {
+            return step.kind == path_step::kind_type::run_time_index;
+        });
+    }
+
     // false only when the bytes cannot be the same
     [[nodiscard]] auto overlaps(const access_path& other) const -> bool {
         return not are_disjoint(steps, other.steps);

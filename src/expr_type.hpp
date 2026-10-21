@@ -340,7 +340,7 @@ class expr_type final : public statement {
                 // fields tell it apart, e.g. the 'ps[i].y' of
                 // 'ps[0] = {1, ps[i].y}'
                 const bool is_read_at_run_time_index{
-                    has_run_time_index(accessed_path),
+                    accessed_path.has_run_time_index(),
                 };
 
                 if (is_read_at_run_time_index and dst.is_exact and
@@ -387,15 +387,6 @@ class expr_type final : public statement {
                                      const type_field& field,
                                      const destination& dst, operand& dst_op)
         -> void;
-
-    [[nodiscard]] static auto has_run_time_index(const access_path& path)
-        -> bool {
-
-        return std::ranges::any_of(
-            path.steps, [](const path_step& step) -> bool {
-                return step.kind == path_step::kind_type::run_time_index;
-            });
-    }
 
     // the bytes that no field covers, between the data ranges and after the
     // last one; the first of them when there are more than 'max_count'
