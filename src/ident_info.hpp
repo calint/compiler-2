@@ -23,8 +23,6 @@
 #include "type.hpp"
 #include "ub_alias.hpp"
 
-class type;
-
 // why a name cannot be written, for the diagnostic; 'none' is writable
 enum class read_only_cause : uint8_t {
     none,

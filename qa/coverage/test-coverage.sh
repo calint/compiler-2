@@ -191,12 +191,21 @@ run_uart() {
     { cat "$input"; printf '\x04\x04'; } | "$@"
 }
 
-execute_program() {
+# sets 'PROGRAM_COMMAND' to the command that runs the program of the target
+program_command() {
     case "$MACHINE" in
-    x86_64) ./gen ;;
-    rv32i) qemu-riscv32 ./gen ;;
-    rv32i-qemu) run_uart "${QEMU_SYSTEM[@]}" ;;
-    rv32i-fpga) run_uart "${FPGA_EMULATOR[@]}" ;;
+    x86_64) PROGRAM_COMMAND=(./gen) ;;
+    rv32i) PROGRAM_COMMAND=(qemu-riscv32 ./gen) ;;
+    rv32i-qemu) PROGRAM_COMMAND=("${QEMU_SYSTEM[@]}") ;;
+    rv32i-fpga) PROGRAM_COMMAND=("${FPGA_EMULATOR[@]}") ;;
+    esac
+}
+
+execute_program() {
+    program_command
+    case "$MACHINE" in
+    rv32i-qemu | rv32i-fpga) run_uart "${PROGRAM_COMMAND[@]}" ;;
+    *) "${PROGRAM_COMMAND[@]}" ;;
     esac
 }
 
@@ -379,18 +388,8 @@ DIFFINP2() {
     echo -n "$SRC: "
     compile_and_build
 
-    local command=(./gen)
-    if [ "$MACHINE" = rv32i ]; then
-        command=(qemu-riscv32 ./gen)
-    fi
-    if [ "$MACHINE" = rv32i-qemu ]; then
-        command=("${QEMU_SYSTEM[@]}")
-    fi
-    if [ "$MACHINE" = rv32i-fpga ]; then
-        command=("${FPGA_EMULATOR[@]}")
-    fi
-
-    "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${command[@]}" >out 2>err
+    program_command
+    "$SCRIPT_DIR/input-lines.py" "${SRC%.*}.in" "${PROGRAM_COMMAND[@]}" >out 2>err
 
     check_output "$(expected_output_file)"
 }

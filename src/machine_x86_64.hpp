@@ -207,8 +207,7 @@ class machine_x86_64 final : public machine {
     };
 
     // note: in order of likelihood they are not used by name, 'rsi', 'rdi'
-    //       and 'rcx' last since every copy and compare of memory needs all
-    //       three
+    //       and 'rcx' last since 'rep movsb' and 'repe cmpsb' need all three
 
     static constexpr std::string_view slot_register_{"r11"};
 
@@ -416,13 +415,8 @@ class machine_x86_64 final : public machine {
                     (options.lower and not range.count.is_empty()),
             };
 
-            compare_upper_bound(src_loc_tk, indent, range, is_unsigned_compare,
-                                options.with_line);
-
-            branch_to_bounds_panic(
-                src_loc_tk, indent,
-                out_of_bounds_condition(range.allow_end, is_unsigned_compare),
-                options.with_line);
+            check_upper_bound(src_loc_tk, indent, range, is_unsigned_compare,
+                              options.with_line);
         }
 
         comment(src_loc_tk, indent, "bounds check end");
@@ -1673,23 +1667,24 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "shift check end");
     }
 
-    auto cmp(const token& src_loc_tk, const size_t indent,
-             const operand& dst_op, const operand& src_op) -> void {
+    // branches to the panic when the range passes the array count, a range
+    // 'index + count' may end at it; a signed end that passes the signed
+    // maximum is out of bounds, the unsigned compare sees it large
+    auto check_upper_bound(const token& src_loc_tk, const size_t indent,
+                           const bounds_range& range,
+                           const bool is_unsigned_compare, const bool with_line)
+        -> void {
 
-        emit_op(src_loc_tk, indent, op::cmp, dst_op, src_op);
-    }
-
-    // a range 'index + count' may end at the array count
-    // a signed end that passes the signed maximum is out of bounds, the
-    // unsigned compare sees it large
-    auto compare_upper_bound(const token& src_loc_tk, const size_t indent,
-                             const bounds_range& range,
-                             const bool is_unsigned_compare,
-                             const bool with_line) -> void {
+        const condition out_of_bounds{
+            out_of_bounds_condition(range.allow_end, is_unsigned_compare),
+        };
 
         if (range.count.is_empty()) {
             cmp(src_loc_tk, indent, range.checked,
                 immediate(range.array_count));
+
+            branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds,
+                                   with_line);
 
             return;
         }
@@ -1716,6 +1711,14 @@ class machine_x86_64 final : public machine {
         cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
 
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
+
+        branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds, with_line);
+    }
+
+    auto cmp(const token& src_loc_tk, const size_t indent,
+             const operand& dst_op, const operand& src_op) -> void {
+
+        emit_op(src_loc_tk, indent, op::cmp, dst_op, src_op);
     }
 
     // 'load_source_address' sets the 'rep movsb' source pointer

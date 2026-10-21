@@ -49,7 +49,7 @@ it in a couple of minutes. That alone saved me days.
 As an experiment, without expecting much, I asked for a feature that would have
 taken me days to implement. The AI was done in minutes. I was thrilled.
 
-It solved a few of my problems with ease. When I asked how it knew the
+It also solved a few of my problems with ease. When I asked how it knew the
 solution, it said it was a common compiler technique. In this case, the problem
 was how to handle end-of-line comments: make them part of the whitespace that
 belongs to the token. I thought that was clever.

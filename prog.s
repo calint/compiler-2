@@ -66,7 +66,8 @@ main:
 ;   [prog.baz:187:5] var answer = 0
 ;   [prog.baz:187:9] answer: i64 (8 B @ [rbp + 384])
 ;   [prog.baz:187:9] answer = 0
-;   [prog.baz:187:18] 0
+;   [prog.baz:187:18] answer = 0
+;   [prog.baz:187:18] src: folded constant '0'
     mov qword [rbp + 384], 0
 ;   [prog.baz:189:5] assert(answer == 0)
 ;   [prog.baz:189:12] allocate scratch register -> r15
@@ -86,7 +87,8 @@ main:
         if.38.27.189.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -95,7 +97,8 @@ main:
 ;       [prog.baz:189:5] free scratch register r15
     func.assert.189.5.end:
 ;   [prog.baz:191:5] answer = maybe
-;   [prog.baz:191:14] maybe
+;   [prog.baz:191:14] answer = -1
+;   [prog.baz:191:14] src: folded constant 'maybe'
     mov qword [rbp + 384], -1
 ;   [prog.baz:192:5] assert(answer == -1)
 ;   [prog.baz:192:12] allocate scratch register -> r15
@@ -115,7 +118,8 @@ main:
         if.38.27.192.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -169,7 +173,8 @@ main:
         if.38.27.203.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -201,7 +206,8 @@ main:
         if.38.27.204.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -212,7 +218,8 @@ main:
 ;   [prog.baz:206:5] var a = 7
 ;   [prog.baz:206:9] a: i64 (8 B @ [rbp + 392])
 ;   [prog.baz:206:9] a = 7
-;   [prog.baz:206:13] 7
+;   [prog.baz:206:13] a = 7
+;   [prog.baz:206:13] src: folded constant '7'
     mov qword [rbp + 392], 7
 ;   [prog.baz:207:5] assert(a & 3 == 3)
 ;   [prog.baz:207:12] allocate scratch register -> r15
@@ -239,7 +246,8 @@ main:
         if.38.27.207.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -272,7 +280,8 @@ main:
         if.38.27.208.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -305,7 +314,8 @@ main:
         if.38.27.209.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -338,7 +348,8 @@ main:
         if.38.27.210.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -373,7 +384,8 @@ main:
         if.38.27.211.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -414,7 +426,8 @@ main:
         if.38.27.214.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -453,7 +466,8 @@ main:
         if.38.27.215.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -492,7 +506,8 @@ main:
         if.38.27.220.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -503,6 +518,8 @@ main:
 ;   [prog.baz:223:5] var small = i8(100)
 ;   [prog.baz:223:9] small: i8 (1 B @ [rbp + 400])
 ;   [prog.baz:223:9] small = i8(100)
+;   [prog.baz:223:17] small = 100
+;   [prog.baz:223:17] src: folded constant 'i8(100)'
     mov byte [rbp + 400], 100
 ;   [prog.baz:224:5] small = i8(small + small)
 ;   [prog.baz:224:13] small = i8(small + small)
@@ -534,7 +551,8 @@ main:
         if.38.27.225.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -573,7 +591,8 @@ main:
         if.38.27.229.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -584,7 +603,8 @@ main:
 ;   [prog.baz:236:5] var letter = '\x41'
 ;   [prog.baz:236:9] letter: i64 (8 B @ [rbp + 416])
 ;   [prog.baz:236:9] letter = '\x41'
-;   [prog.baz:236:18] '\x41'
+;   [prog.baz:236:18] letter = 65
+;   [prog.baz:236:18] src: folded constant ''\x41''
     mov qword [rbp + 416], 65
 ;   [prog.baz:237:5] assert(letter == 'A')
 ;   [prog.baz:237:12] allocate scratch register -> r15
@@ -604,7 +624,8 @@ main:
         if.38.27.237.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -622,7 +643,8 @@ main:
 ;   [prog.baz:242:5] var ix = 1
 ;   [prog.baz:242:9] ix: i64 (8 B @ [rbp + 440])
 ;   [prog.baz:242:9] ix = 1
-;   [prog.baz:242:14] 1
+;   [prog.baz:242:14] ix = 1
+;   [prog.baz:242:14] src: folded constant '1'
     mov qword [rbp + 440], 1
 ;   [prog.baz:243:5] arr[ix] = 2
 ;   [prog.baz:243:9] allocate scratch register -> r15
@@ -636,7 +658,8 @@ main:
     cmp r15, 4
     jae baz_bounds_line_243
 ;   [prog.baz:243:9] bounds check end
-;   [prog.baz:243:15] 2
+;   [prog.baz:243:15] arr = 2
+;   [prog.baz:243:15] src: folded constant '2'
     mov dword [rbp + r15 * 4 + 424], 2
 ;   [prog.baz:243:5] free scratch register r15
 ;   [prog.baz:244:5] arr[ix + 1] = arr[ix]
@@ -691,7 +714,8 @@ main:
         if.38.27.245.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -717,7 +741,8 @@ main:
         if.38.27.246.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -730,12 +755,14 @@ main:
 ;   [prog.baz:248:5] allocate named register rdi
 ;   [prog.baz:248:5] allocate named register rcx
 ;   [prog.baz:248:29] 2
-;   [prog.baz:248:29] 2
+;   [prog.baz:248:29] rcx = 2
+;   [prog.baz:248:29] src: folded constant '2'
     mov rcx, 2
 ;   [prog.baz:248:16] arr[2]
 ;   [prog.baz:248:20] allocate scratch register -> r15
 ;   [prog.baz:248:20] set array index
-;   [prog.baz:248:20] 2
+;   [prog.baz:248:20] r15 = 2
+;   [prog.baz:248:20] src: folded constant '2'
     mov r15, 2
 ;   [prog.baz:248:20] bounds check begin
 ;   [prog.baz:248:20] lower bound
@@ -796,7 +823,8 @@ main:
         if.38.27.249.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -818,7 +846,8 @@ main:
 ;   [prog.baz:253:5] allocate named register rdi
 ;   [prog.baz:253:5] allocate named register rcx
 ;   [prog.baz:253:27] 4
-;   [prog.baz:253:27] 4
+;   [prog.baz:253:27] rcx = 4
+;   [prog.baz:253:27] src: folded constant '4'
     mov rcx, 4
 ;   [prog.baz:253:16] arr
 ;   [prog.baz:253:16] bounds check begin
@@ -865,12 +894,14 @@ main:
 ;       [prog.baz:254:14] allocate named register rdi
 ;       [prog.baz:254:14] allocate named register rcx
 ;       [prog.baz:254:44] 3
-;       [prog.baz:254:44] 3
+;       [prog.baz:254:44] rcx = 3
+;       [prog.baz:254:44] src: folded constant '3'
         mov rcx, 3
 ;       [prog.baz:254:27] arr[1]
 ;       [prog.baz:254:31] allocate scratch register -> r15
 ;       [prog.baz:254:31] set array index
-;       [prog.baz:254:31] 1
+;       [prog.baz:254:31] r15 = 1
+;       [prog.baz:254:31] src: folded constant '1'
         mov r15, 1
 ;       [prog.baz:254:31] bounds check begin
 ;       [prog.baz:254:31] lower bound
@@ -890,7 +921,8 @@ main:
 ;       [prog.baz:254:35] arr1[1]
 ;       [prog.baz:254:40] allocate scratch register -> r15
 ;       [prog.baz:254:40] set array index
-;       [prog.baz:254:40] 1
+;       [prog.baz:254:40] r15 = 1
+;       [prog.baz:254:40] src: folded constant '1'
         mov r15, 1
 ;       [prog.baz:254:40] bounds check begin
 ;       [prog.baz:254:40] lower bound
@@ -926,7 +958,8 @@ main:
         if.38.27.257.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -934,8 +967,8 @@ main:
         if.38.24.257.5.end:
     func.assert.257.5.end:
 ;   [prog.baz:259:5] arr1[2] = -1
-;   [prog.baz:259:15] smaller of two versions of 1 and 2 instructions
-;   [prog.baz:259:16] -1
+;   [prog.baz:259:15] arr1 = -1
+;   [prog.baz:259:15] src: folded constant '-1'
     mov dword [rbp + 456], -1
 ;   [prog.baz:260:5] assert(not arrays_equal(arr, arr1, 4))
 ;   [prog.baz:260:12] allocate scratch register -> r15
@@ -946,7 +979,8 @@ main:
 ;       [prog.baz:260:16] allocate named register rdi
 ;       [prog.baz:260:16] allocate named register rcx
 ;       [prog.baz:260:40] 4
-;       [prog.baz:260:40] 4
+;       [prog.baz:260:40] rcx = 4
+;       [prog.baz:260:40] src: folded constant '4'
         mov rcx, 4
 ;       [prog.baz:260:29] arr
 ;       [prog.baz:260:29] bounds check begin
@@ -985,7 +1019,8 @@ main:
         if.38.27.260.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1032,7 +1067,8 @@ main:
         if.38.27.263.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1041,7 +1077,8 @@ main:
 ;       [prog.baz:263:5] free scratch register r15
     func.assert.263.5.end:
 ;   [prog.baz:270:5] ix = 3
-;   [prog.baz:270:10] 3
+;   [prog.baz:270:10] ix = 3
+;   [prog.baz:270:10] src: folded constant '3'
     mov qword [rbp + 440], 3
 ;   [prog.baz:271:5] var tmp = ~inv(arr[ix - 1])
 ;   [prog.baz:271:9] tmp: i32 (4 B @ [rbp + 500])
@@ -1128,7 +1165,8 @@ main:
         if.38.27.273.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1141,7 +1179,8 @@ main:
     func.faz.275.5:
 ;       [prog.baz:275:5] alias arg -> arr
 ;       [prog.baz:79:5] arg[1] = 0xfe
-;       [prog.baz:79:14] 0xfe
+;       [prog.baz:79:14] arg = 254
+;       [prog.baz:79:14] src: folded constant '0xfe'
         mov dword [rbp + 428], 254
     func.faz.275.5.end:
 ;   [prog.baz:276:5] assert(arr[1] == 0xfe)
@@ -1162,7 +1201,8 @@ main:
         if.38.27.276.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1225,7 +1265,8 @@ main:
         if.38.27.282.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1252,7 +1293,8 @@ main:
         if.38.27.283.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1272,10 +1314,12 @@ main:
     func.point.fooz.291.7:
 ;       [prog.baz:291:7] alias self -> p
 ;       [prog.baz:48:5] self.x = 0b10
-;       [prog.baz:48:14] 0b10
+;       [prog.baz:48:14] self.x = 2
+;       [prog.baz:48:14] src: folded constant '0b10'
         mov qword [rbp + 520], 2
 ;       [prog.baz:49:5] self.y = 0xb
-;       [prog.baz:49:14] 0xb
+;       [prog.baz:49:14] self.y = 11
+;       [prog.baz:49:14] src: folded constant '0xb'
         mov qword [rbp + 528], 11
     func.point.fooz.291.7.end:
 ;   [prog.baz:294:5] assert(p.x == 2)
@@ -1296,7 +1340,8 @@ main:
         if.38.27.294.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1322,7 +1367,8 @@ main:
         if.38.27.295.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1369,7 +1415,8 @@ main:
         if.38.27.300.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1378,7 +1425,8 @@ main:
 ;       [prog.baz:300:5] free scratch register r15
     func.assert.300.5.end:
 ;   [prog.baz:304:5] q.x = 3
-;   [prog.baz:304:11] 3
+;   [prog.baz:304:11] q.x = 3
+;   [prog.baz:304:11] src: folded constant '3'
     mov qword [rbp + 536], 3
 ;   [prog.baz:305:5] assert(p != q)
 ;   [prog.baz:305:12] allocate scratch register -> r15
@@ -1409,7 +1457,8 @@ main:
         if.38.27.305.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1420,7 +1469,8 @@ main:
 ;   [prog.baz:307:5] var i = 0
 ;   [prog.baz:307:9] i: i64 (8 B @ [rbp + 552])
 ;   [prog.baz:307:9] i = 0
-;   [prog.baz:307:13] 0
+;   [prog.baz:307:13] i = 0
+;   [prog.baz:307:13] src: folded constant '0'
     mov qword [rbp + 552], 0
 ;   [prog.baz:308:5] bar(i)
 ;   [prog.baz:59:6] bar(arg mut)
@@ -1435,7 +1485,8 @@ main:
 ;           [prog.baz:60:17] return
         if.60.5.308.5.end:
 ;       [prog.baz:61:5] arg = 0xff
-;       [prog.baz:61:11] 0xff
+;       [prog.baz:61:11] arg = 255
+;       [prog.baz:61:11] src: folded constant '0xff'
         mov qword [rbp + 552], 255
     func.bar.308.5.end:
 ;   [prog.baz:309:5] assert(i == 0)
@@ -1456,7 +1507,8 @@ main:
         if.38.27.309.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1465,7 +1517,8 @@ main:
 ;       [prog.baz:309:5] free scratch register r15
     func.assert.309.5.end:
 ;   [prog.baz:311:5] i = 1
-;   [prog.baz:311:9] 1
+;   [prog.baz:311:9] i = 1
+;   [prog.baz:311:9] src: folded constant '1'
     mov qword [rbp + 552], 1
 ;   [prog.baz:312:5] bar(i)
 ;   [prog.baz:59:6] bar(arg mut)
@@ -1480,7 +1533,8 @@ main:
 ;           [prog.baz:60:17] return
         if.60.5.312.5.end:
 ;       [prog.baz:61:5] arg = 0xff
-;       [prog.baz:61:11] 0xff
+;       [prog.baz:61:11] arg = 255
+;       [prog.baz:61:11] src: folded constant '0xff'
         mov qword [rbp + 552], 255
     func.bar.312.5.end:
 ;   [prog.baz:313:5] assert(i == 0xff)
@@ -1501,7 +1555,8 @@ main:
         if.38.27.313.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1512,7 +1567,8 @@ main:
 ;   [prog.baz:315:5] var j = 1
 ;   [prog.baz:315:9] j: i64 (8 B @ [rbp + 560])
 ;   [prog.baz:315:9] j = 1
-;   [prog.baz:315:13] 1
+;   [prog.baz:315:13] j = 1
+;   [prog.baz:315:13] src: folded constant '1'
     mov qword [rbp + 560], 1
 ;   [prog.baz:316:5] var k = baz(j)
 ;   [prog.baz:316:9] k: i64 (8 B @ [rbp + 568])
@@ -1554,7 +1610,8 @@ main:
         if.38.27.317.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1593,7 +1650,8 @@ main:
         if.38.27.320.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1604,7 +1662,8 @@ main:
 ;   [prog.baz:322:5] var five = 5
 ;   [prog.baz:322:9] five: i64 (8 B @ [rbp + 576])
 ;   [prog.baz:322:9] five = 5
-;   [prog.baz:322:16] 5
+;   [prog.baz:322:16] five = 5
+;   [prog.baz:322:16] src: folded constant '5'
     mov qword [rbp + 576], 5
 ;   [prog.baz:323:5] var f = factorial(five)
 ;   [prog.baz:323:9] f: i64 (8 B @ [rbp + 584])
@@ -1660,7 +1719,8 @@ main:
         if.38.27.324.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1685,6 +1745,8 @@ main:
         mov qword [rbp + 592], 6
     func.baz.326.20.end:
 ;   [prog.baz:326:28] copy field 'y'
+;   [prog.baz:326:28] p0.y = 0
+;   [prog.baz:326:28] src: folded constant '0'
     mov qword [rbp + 600], 0
 ;   [prog.baz:327:5] assert(p0.x == 6)
 ;   [prog.baz:327:12] allocate scratch register -> r15
@@ -1704,7 +1766,8 @@ main:
         if.38.27.327.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1722,10 +1785,12 @@ main:
 ;       [prog.baz:329:14] alias x -> -1
 ;       [prog.baz:329:14] alias y -> -2
 ;       [prog.baz:109:5] self.x = x
-;       [prog.baz:109:14] x
+;       [prog.baz:109:14] self.x = -1
+;       [prog.baz:109:14] src: folded constant 'x'
         mov qword [rbp + 608], -1
 ;       [prog.baz:110:5] self.y = y
-;       [prog.baz:110:14] y
+;       [prog.baz:110:14] self.y = -2
+;       [prog.baz:110:14] src: folded constant 'y'
         mov qword [rbp + 616], -2
     func.point.at.329.14.end:
 ;   [prog.baz:333:5] assert(pt.x == -1)
@@ -1746,7 +1811,8 @@ main:
         if.38.27.333.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1772,7 +1838,8 @@ main:
         if.38.27.334.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1786,7 +1853,8 @@ main:
 ;       [prog.baz:336:8] alias self -> pt
 ;       [prog.baz:336:8] alias x -> 2
 ;       [prog.baz:115:5] self.x = x
-;       [prog.baz:115:14] x
+;       [prog.baz:115:14] self.x = 2
+;       [prog.baz:115:14] src: folded constant 'x'
         mov qword [rbp + 608], 2
     func.point.x.336.8.end:
 ;   [prog.baz:337:5] assert(pt.x == 2)
@@ -1807,7 +1875,8 @@ main:
         if.38.27.337.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1850,7 +1919,8 @@ main:
         if.38.27.338.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1861,12 +1931,14 @@ main:
 ;   [prog.baz:340:5] var x = 1
 ;   [prog.baz:340:9] x: i64 (8 B @ [rbp + 624])
 ;   [prog.baz:340:9] x = 1
-;   [prog.baz:340:13] 1
+;   [prog.baz:340:13] x = 1
+;   [prog.baz:340:13] src: folded constant '1'
     mov qword [rbp + 624], 1
 ;   [prog.baz:341:5] var y = 2
 ;   [prog.baz:341:9] y: i64 (8 B @ [rbp + 632])
 ;   [prog.baz:341:9] y = 2
-;   [prog.baz:341:13] 2
+;   [prog.baz:341:13] y = 2
+;   [prog.baz:341:13] src: folded constant '2'
     mov qword [rbp + 632], 2
 ;   [prog.baz:343:5] var o1 = object{{x * 10, y}, 0xff0000}
 ;   [prog.baz:343:9] o1: object (24 B @ [rbp + 640])
@@ -1889,6 +1961,8 @@ main:
     mov qword [rbp + 648], r15
 ;   [prog.baz:343:30] free scratch register r15
 ;   [prog.baz:343:34] copy field 'color'
+;   [prog.baz:343:34] o1.color = 16711680
+;   [prog.baz:343:34] src: folded constant '0xff0000'
     mov dword [rbp + 656], 16711680
 ;   [prog.baz:343:14] zero padding: 4 B
 ;   [prog.baz:343:14] size <= 32 B, use mov
@@ -1911,7 +1985,8 @@ main:
         if.38.27.344.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1937,7 +2012,8 @@ main:
         if.38.27.345.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -1963,7 +2039,8 @@ main:
         if.38.27.346.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2016,7 +2093,8 @@ main:
         if.38.27.350.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2042,7 +2120,8 @@ main:
         if.38.27.351.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2081,7 +2160,8 @@ main:
         if.38.27.354.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2107,7 +2187,8 @@ main:
         if.38.27.355.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2133,7 +2214,8 @@ main:
         if.38.27.356.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2170,7 +2252,8 @@ main:
         if.38.27.359.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2207,7 +2290,8 @@ main:
         if.38.27.361.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2230,7 +2314,8 @@ main:
 ;   [prog.baz:368:14] free named register rdi
 ;   [prog.baz:368:14] free named register rax
 ;   [prog.baz:369:5] o3[0].pos.y = 73
-;   [prog.baz:369:19] 73
+;   [prog.baz:369:19] o3.pos.y = 73
+;   [prog.baz:369:19] src: folded constant '73'
     mov qword [rbp + 712], 73
 ;   [prog.baz:371:5] assert(o3[0].pos.y == 73)
 ;   [prog.baz:371:12] allocate scratch register -> r15
@@ -2250,7 +2335,8 @@ main:
         if.38.27.371.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2277,14 +2363,17 @@ main:
 ;           [prog.baz:120:16] alias x -> 2
 ;           [prog.baz:120:16] alias y -> 74
 ;           [prog.baz:109:5] self.x = x
-;           [prog.baz:109:14] x
+;           [prog.baz:109:14] self.x = 2
+;           [prog.baz:109:14] src: folded constant 'x'
             mov qword [rbp + 728], 2
 ;           [prog.baz:110:5] self.y = y
-;           [prog.baz:110:14] y
+;           [prog.baz:110:14] self.y = 74
+;           [prog.baz:110:14] src: folded constant 'y'
             mov qword [rbp + 736], 74
         func.point.at.120.16.372.13.end:
 ;       [prog.baz:121:5] self.color = color
-;       [prog.baz:121:18] color
+;       [prog.baz:121:18] self.color = 16777215
+;       [prog.baz:121:18] src: folded constant 'color'
         mov dword [rbp + 744], 16777215
     func.object.at.372.13.end:
 ;   [prog.baz:373:5] assert(o3[1].pos.y == 74)
@@ -2305,7 +2394,8 @@ main:
         if.38.27.373.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2318,10 +2408,12 @@ main:
     func.point.fooz.375.15:
 ;       [prog.baz:375:15] alias self -> o3.pos (lea: rbp + 728)
 ;       [prog.baz:48:5] self.x = 0b10
-;       [prog.baz:48:14] 0b10
+;       [prog.baz:48:14] self.x = 2
+;       [prog.baz:48:14] src: folded constant '0b10'
         mov qword [rbp + 728], 2
 ;       [prog.baz:49:5] self.y = 0xb
-;       [prog.baz:49:14] 0xb
+;       [prog.baz:49:14] self.y = 11
+;       [prog.baz:49:14] src: folded constant '0xb'
         mov qword [rbp + 736], 11
     func.point.fooz.375.15.end:
 ;   [prog.baz:376:5] assert(o3[1].pos.sum() == 13)
@@ -2359,7 +2451,8 @@ main:
         if.38.27.376.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2382,7 +2475,8 @@ main:
 ;   [prog.baz:379:18] free named register rdi
 ;   [prog.baz:379:18] free named register rax
 ;   [prog.baz:380:5] worlds[1].locations[1] = 0xffee
-;   [prog.baz:380:30] 0xffee
+;   [prog.baz:380:30] worlds.locations = 65518
+;   [prog.baz:380:30] src: folded constant '0xffee'
     mov qword [rbp + 824], 65518
 ;   [prog.baz:381:5] assert(worlds[1].locations[1] == 0xffee)
 ;   [prog.baz:381:12] allocate scratch register -> r15
@@ -2402,7 +2496,8 @@ main:
         if.38.27.381.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2471,7 +2566,8 @@ main:
         if.38.27.390.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2528,7 +2624,8 @@ main:
         if.38.27.391.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2570,7 +2667,8 @@ main:
         if.38.27.399.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2596,7 +2694,8 @@ main:
         if.38.27.400.5.code:
 ;           [prog.baz:38:34] exit(1)
 ;           [prog.baz:38:34] allocate named register rdi
-;           [prog.baz:38:39] 1
+;           [prog.baz:38:39] rdi = 1
+;           [prog.baz:38:39] src: folded constant '1'
             mov rdi, 1
             mov rax, 60
             syscall
@@ -2607,7 +2706,8 @@ main:
 ;   [prog.baz:402:5] var counter = 0
 ;   [prog.baz:402:9] counter: i64 (8 B @ [rbp + 1280])
 ;   [prog.baz:402:9] counter = 0
-;   [prog.baz:402:19] 0
+;   [prog.baz:402:19] counter = 0
+;   [prog.baz:402:19] src: folded constant '0'
     mov qword [rbp + 1280], 0
 ;   [prog.baz:403:5] var nm = str
 ;   [prog.baz:403:9] nm: str (128 B @ [rbp + 1288])
@@ -2631,7 +2731,8 @@ main:
 ;       [prog.baz:42:5] allocate named register rdi
 ;       [prog.baz:42:5] allocate named register rsi
 ;       [prog.baz:42:5] allocate named register rdx
-;       [prog.baz:42:11] 1
+;       [prog.baz:42:11] rdi = 1
+;       [prog.baz:42:11] src: folded constant '1'
         mov rdi, 1
         mov rdx, 21
         lea rsi, [rbp]
@@ -2686,7 +2787,8 @@ main:
 ;           [prog.baz:42:5] allocate named register rdi
 ;           [prog.baz:42:5] allocate named register rsi
 ;           [prog.baz:42:5] allocate named register rdx
-;           [prog.baz:42:11] 1
+;           [prog.baz:42:11] rdi = 1
+;           [prog.baz:42:11] src: folded constant '1'
             mov rdi, 1
             mov rdx, 2
             lea rsi, [rbp + 61]
@@ -2706,7 +2808,8 @@ main:
 ;           [prog.baz:42:5] allocate named register rdi
 ;           [prog.baz:42:5] allocate named register rsi
 ;           [prog.baz:42:5] allocate named register rdx
-;           [prog.baz:42:11] 1
+;           [prog.baz:42:11] rdi = 1
+;           [prog.baz:42:11] src: folded constant '1'
             mov rdi, 1
             mov rdx, 12
             lea rsi, [rbp + 21]
@@ -2731,7 +2834,8 @@ main:
 ;           [prog.baz:89:18] allocate named register rdi
 ;           [prog.baz:89:18] allocate named register rsi
 ;           [prog.baz:89:18] allocate named register rdx
-;           [prog.baz:89:23] 0
+;           [prog.baz:89:23] rdi = 0
+;           [prog.baz:89:23] src: folded constant '0'
             mov rdi, 0
             mov rdx, 127
             lea rsi, [rbp + 1289]
@@ -2776,7 +2880,8 @@ main:
 ;               [prog.baz:42:5] allocate named register rdi
 ;               [prog.baz:42:5] allocate named register rsi
 ;               [prog.baz:42:5] allocate named register rdx
-;               [prog.baz:42:11] 1
+;               [prog.baz:42:11] rdi = 1
+;               [prog.baz:42:11] src: folded constant '1'
                 mov rdi, 1
                 mov rdx, 20
                 lea rsi, [rbp + 33]
@@ -2803,7 +2908,8 @@ main:
 ;                   [prog.baz:42:5] allocate named register rdi
 ;                   [prog.baz:42:5] allocate named register rsi
 ;                   [prog.baz:42:5] allocate named register rdx
-;                   [prog.baz:42:11] 1
+;                   [prog.baz:42:11] rdi = 1
+;                   [prog.baz:42:11] src: folded constant '1'
                     mov rdi, 1
                     mov rdx, 6
                     lea rsi, [rbp + 53]
@@ -2823,7 +2929,8 @@ main:
 ;                   [prog.baz:96:5] allocate named register rdi
 ;                   [prog.baz:96:5] allocate named register rsi
 ;                   [prog.baz:96:5] allocate named register rdx
-;                   [prog.baz:96:11] 1
+;                   [prog.baz:96:11] rdi = 1
+;                   [prog.baz:96:11] src: folded constant '1'
                     mov rdi, 1
 ;                   [prog.baz:96:25] self.len
                     movsx rdx, byte [rbp + 1288]
@@ -2851,7 +2958,8 @@ main:
 ;                   [prog.baz:42:5] allocate named register rdi
 ;                   [prog.baz:42:5] allocate named register rsi
 ;                   [prog.baz:42:5] allocate named register rdx
-;                   [prog.baz:42:11] 1
+;                   [prog.baz:42:11] rdi = 1
+;                   [prog.baz:42:11] src: folded constant '1'
                     mov rdi, 1
                     mov rdx, 1
                     lea rsi, [rbp + 59]
@@ -2871,7 +2979,8 @@ main:
 ;                   [prog.baz:42:5] allocate named register rdi
 ;                   [prog.baz:42:5] allocate named register rsi
 ;                   [prog.baz:42:5] allocate named register rdx
-;                   [prog.baz:42:11] 1
+;                   [prog.baz:42:11] rdi = 1
+;                   [prog.baz:42:11] src: folded constant '1'
                     mov rdi, 1
                     mov rdx, 1
                     lea rsi, [rbp + 60]
@@ -2902,7 +3011,8 @@ main:
 ;       [prog.baz:42:5] allocate named register rdi
 ;       [prog.baz:42:5] allocate named register rsi
 ;       [prog.baz:42:5] allocate named register rdx
-;       [prog.baz:42:11] 1
+;       [prog.baz:42:11] rdi = 1
+;       [prog.baz:42:11] src: folded constant '1'
         mov rdi, 1
         mov rdx, 15
         lea rsi, [rbp + 352]
@@ -2948,7 +3058,8 @@ main:
 ;       [prog.baz:42:5] allocate named register rdi
 ;       [prog.baz:42:5] allocate named register rsi
 ;       [prog.baz:42:5] allocate named register rdx
-;       [prog.baz:42:11] 1
+;       [prog.baz:42:11] rdi = 1
+;       [prog.baz:42:11] src: folded constant '1'
         mov rdi, 1
         mov rdx, 1
         lea rsi, [rbp + 60]
@@ -2972,9 +3083,11 @@ main:
 ;   [prog.baz:427:5] allocate named register rdi
 ;   [prog.baz:427:5] allocate named register rsi
 ;   [prog.baz:427:5] allocate named register rdx
-;   [prog.baz:427:11] 1
+;   [prog.baz:427:11] rdi = 1
+;   [prog.baz:427:11] src: folded constant '1'
     mov rdi, 1
-;   [prog.baz:427:19] 3
+;   [prog.baz:427:19] rdx = 3
+;   [prog.baz:427:19] src: folded constant '3'
     mov rdx, 3
 ;   [prog.baz:427:14] bounds check begin
 ;   [prog.baz:427:14] lower bound
@@ -2995,9 +3108,11 @@ main:
 ;   [prog.baz:428:5] allocate named register rdi
 ;   [prog.baz:428:5] allocate named register rsi
 ;   [prog.baz:428:5] allocate named register rdx
-;   [prog.baz:428:11] 1
+;   [prog.baz:428:11] rdi = 1
+;   [prog.baz:428:11] src: folded constant '1'
     mov rdi, 1
-;   [prog.baz:428:19] 1
+;   [prog.baz:428:19] rdx = 1
+;   [prog.baz:428:19] src: folded constant '1'
     mov rdx, 1
 ;   [prog.baz:428:22] allocate scratch register -> r15
 ;   [prog.baz:428:22] r15 = 12
@@ -3038,7 +3153,8 @@ func.factorial:
 ;   [prog.baz:176:5] res = 1
 ;   [prog.baz:176:5] allocate scratch register -> r15
     mov r15, qword [rbx]
-;   [prog.baz:176:11] 1
+;   [prog.baz:176:11] res = 1
+;   [prog.baz:176:11] src: folded constant '1'
     mov qword [r15], 1
 ;   [prog.baz:176:5] free scratch register r15
     if.177.8:
@@ -3156,7 +3272,8 @@ func.print_num:
 ;   [prog.baz:140:5] var is_negative = false
 ;   [prog.baz:140:9] is_negative: bool (1 B @ [rbx + 40])
 ;   [prog.baz:140:9] is_negative = false
-;   [prog.baz:140:23] false
+;   [prog.baz:140:23] is_negative = 0
+;   [prog.baz:140:23] src: folded constant 'false'
     mov byte [rbx + 40], 0
     if.144.8:
 ;   [prog.baz:144:8] ? n < 0
@@ -3165,7 +3282,8 @@ func.print_num:
     jge if.144.5.end
     if.144.8.code:
 ;       [prog.baz:145:9] is_negative = true
-;       [prog.baz:145:23] true
+;       [prog.baz:145:23] is_negative = 1
+;       [prog.baz:145:23] src: folded constant 'true'
         mov byte [rbx + 40], 1
     if.144.5.end:
     if.147.8:
@@ -3186,7 +3304,8 @@ func.print_num:
 ;   [prog.baz:151:5] var i = buf_count
 ;   [prog.baz:151:9] i: i64 (8 B @ [rbx + 48])
 ;   [prog.baz:151:9] i = buf_count
-;   [prog.baz:151:13] buf_count
+;   [prog.baz:151:13] i = 20
+;   [prog.baz:151:13] src: folded constant 'buf_count'
     mov qword [rbx + 48], 20
 ;   [prog.baz:152:5] loop
     loop.152.5:
@@ -3312,14 +3431,16 @@ func.print_num:
         cmp r15, 20
         jae baz_bounds_line_161
 ;       [prog.baz:161:13] bounds check end
-;       [prog.baz:161:18] '-'
+;       [prog.baz:161:18] buf = 45
+;       [prog.baz:161:18] src: folded constant ''-''
         mov byte [rbx + r15 + 8], 45
 ;       [prog.baz:161:9] free scratch register r15
     if.159.5.end:
 ;   [prog.baz:164:5] var write_pos = 0
 ;   [prog.baz:164:9] write_pos: i64 (8 B @ [rbx + 56])
 ;   [prog.baz:164:9] write_pos = 0
-;   [prog.baz:164:21] 0
+;   [prog.baz:164:21] write_pos = 0
+;   [prog.baz:164:21] src: folded constant '0'
     mov qword [rbx + 56], 0
 ;   [prog.baz:165:5] loop
     loop.165.5:
@@ -3380,7 +3501,8 @@ func.print_num:
 ;   [prog.baz:172:5] allocate named register rdi
 ;   [prog.baz:172:5] allocate named register rsi
 ;   [prog.baz:172:5] allocate named register rdx
-;   [prog.baz:172:11] 1
+;   [prog.baz:172:11] rdi = 1
+;   [prog.baz:172:11] src: folded constant '1'
     mov rdi, 1
 ;   [prog.baz:172:19] write_pos
     mov rdx, qword [rbx + 56]

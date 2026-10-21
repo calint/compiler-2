@@ -530,7 +530,8 @@ class assembler {
     inverse_branch_mnemonic(std::string_view mnemonic) const
         -> std::string_view = 0;
 
-    // zero for labels, comments and directives that emit no code
+    // zero for comments and directives that emit no code, a label is added
+    // apart
     [[nodiscard]] virtual auto text_code_size(std::string_view text) const
         -> size_t = 0;
 

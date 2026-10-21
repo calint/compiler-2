@@ -16,14 +16,13 @@
 #   DIFFNOPT     run, and compare the difference of the output of '--nopt' and
 #                of the optimized compile with 'NNN.TARGET.diff'
 #   COMPERR      the compile fails with exit code 1 and its message is
-#                'NNN.TARGET.out' or else 'NNN.out', TARGET is the compiler
-#                target, x86_64 or rv32i
-#
-# A run case expects 'NNN.TARGET.out' instead of 'NNN.out' and the exit code in
-# 'NNN.TARGET.exit' instead of 'EXP' when that file exists for the target,
-# e.g. 'NNN.rv32i-fpga.exit'.
+#                'NNN.out'
 #   SDCARD SIZE  the sd card image of the cases that follow, sparse, or no
 #                image for 'none'
+#
+# A case expects 'NNN.TARGET.out' instead of 'NNN.out' and a run case the exit
+# code in 'NNN.TARGET.exit' instead of 'EXP' when that file exists, TARGET is
+# the target of the run, e.g. 'NNN.rv32i.out' or 'NNN.rv32i-fpga.exit'.
 #
 # A case inside 'if [[ $MACHINE ... ]]' runs only for those targets (x86_64,
 # rv32i, rv32i-qemu, rv32i-fpga). A commented case is disabled on purpose.
