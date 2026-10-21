@@ -196,6 +196,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           a record operand that compiled, now 'bx.a.x', same error
        B7 'array_length' typed in comparisons too: one verdict called and
           uncalled
+          => done (2026-10-21): its fold is typed with the default type;
+          'e < array_length(a)' with an 'i8' 'e' is rejected as wider in
+          'main', in a called inlined or noinline function and in an
+          uncalled one alike (1389), 'array_length(a) > e' runs (1390);
+          gate unchanged
        B8 remove the parse-time 'folded_' of a conversion (asm comments
           only)
        B9 'let' of a typed initializer keeps the type (rule 10): 'let v =

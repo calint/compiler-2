@@ -119,9 +119,11 @@ class stmt_builtin_array_length final : public expression {
 
         const int64_t length{static_cast<int64_t>(*array_len)};
 
+        // typed, so a comparison gets the verdict of the length computed at
+        // run time, e.g. in a function checked without a call
         return folded_value{
             .value{get_unary_ops().evaluate_constant(length)},
-            .own_type{},
+            .own_type{&get_type()},
         };
     }
 

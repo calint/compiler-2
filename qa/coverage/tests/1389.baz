@@ -1,0 +1,10 @@
+# 'array_length' is a value of the default type also when it folds, so a
+# narrower left side is rejected as in a function checked without a call
+
+func main() {
+    var a = i8[3]
+    var e = i8(1)
+    if e < array_length(a) {
+        exit(1)
+    }
+}

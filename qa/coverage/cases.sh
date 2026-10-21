@@ -4484,3 +4484,7 @@ SRC=1385 && COMPERR
 SRC=1386 && COMPERR
 SRC=1387 && COMPERR
 SRC=1388 && COMPERR
+
+# 'array_length' is a value of the default type also when it folds
+SRC=1389 && COMPERR
+SRC=1390 && EXP=0 && RUN

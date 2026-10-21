@@ -1,0 +1,4 @@
+
+1389.baz:7:12: 'array_length(a)' of type 'i64' is wider than 'e' of type 'i8', swap the operands: 'array_length(a) > e'
+    if e < array_length(a) {
+           ^

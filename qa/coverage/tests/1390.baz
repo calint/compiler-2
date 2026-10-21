@@ -1,0 +1,18 @@
+# 'array_length' compared with a narrower value on the left side of the
+# comparison, called and inlined
+
+func shorter(a i8[], e i8) res i8 {
+    res = 0
+    if array_length(a) > e {
+        res = 1
+    }
+}
+
+func main() {
+    var a = i8[3]
+    var e = i8(1)
+    if array_length(a) > e {
+        exit(int(shorter(a, e)) - 1)
+    }
+    exit(1)
+}
