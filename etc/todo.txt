@@ -169,6 +169,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        B5 overflow policy on 'destination', delete pause and resume:
           'i8(-m8())' under '--checks=overflow' gives 128 (G4-1); index
           arithmetic inside a conversion argument becomes checked
+          => done (2026-10-21): 'destination::as_wrapping' and
+          'in_register' (a scratch register keeps the policy),
+          'toc::overflow_options(dst)', 'toc::checks_overflow(dst)',
+          'value_use::checks_overflow' made by 'toc::use_of(dst)' and
+          'toc::use_at(type)'; 'call_site::uops_check' carries the policy
+          of the call's destination to its unary ops; pause, resume and
+          'overflow_requested_' went, 'toc::checks()' never changes; gate:
+          only 1338 under the overflow check, the '-' of '-g(v)' in a
+          conversion argument wraps (4 'jo' fewer); 1382 ('i8(-m8())',
+          inlined and noinline), 1383 (a call argument in a conversion
+          stays checked); etc/docs/README.md updated
        B6 'assert_number': a record in a numeric position is rejected on
           both targets (G5-2), "expected type 'i64', got 'p'" for a whole
           value as for a 'bool', "an instance of 'p' is not a number" for

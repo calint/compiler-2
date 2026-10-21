@@ -224,24 +224,17 @@ class one_line_source final {
 // the width an expression is computed at compared with its own
 enum class width_change : uint8_t { narrowed, widened };
 
-// where a value is used: the width it is computed at
+// where a value is used: the width it is computed at and whether its
+// arithmetic is checked for overflow; made by 'toc::use_of' from a
+// destination and by 'toc::use_at' for a value without one
 struct value_use {
     const type* width{};
+    bool checks_overflow{};
 
     [[nodiscard]] auto width_ref() const -> const type& {
         assert(width != nullptr);
 
         return *width;
-    }
-
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto at(const type& width_in) -> value_use {
-        return {
-            .width{&width_in},
-        };
     }
 };
 

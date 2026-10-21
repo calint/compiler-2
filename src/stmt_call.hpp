@@ -362,6 +362,9 @@ struct call_site {
     std::span<const expr_any> args;
     // e.g. the '~' of '~f(x)', applied to the result
     unary_ops uops;
+    // the overflow check of 'uops', that of the destination of the call,
+    // e.g. none in the argument of a conversion
+    machine::runtime_check uops_check;
 
     // a frame is a scope being compiled: a block, a loop or a function body,
     // inlined or the dry run of a noinline call; each recurses in the compiler
@@ -698,7 +701,7 @@ class inline_call {
         machine& x{tc.machine()};
 
         call_.uops.compile(x, indent, call_.tk, ret_info.operand(),
-                           tc.checks().overflow_options());
+                           call_.uops_check);
     }
 
     // the id has no indexes, so an id naming an array means the result is
@@ -912,7 +915,7 @@ class inline_call {
         x.free_scratch_register(call_.tk, indent, result);
 
         call_.uops.compile(x, indent, call_.tk, dst.operand(),
-                           tc.checks().overflow_options());
+                           call_.uops_check);
     }
 
     // note: the body is compiled in three versions and the one with the least
@@ -1156,7 +1159,7 @@ class inline_call {
         -> alias_info {
 
         const std::optional<folded_value> folded{
-            arg.fold(tc, value_use::at(param.get_type())),
+            arg.fold(tc, tc.use_at(param.get_type())),
         };
 
         if (folded) {
@@ -1195,7 +1198,7 @@ class inline_call {
         // e.g. '~1' is not
         if (arg_info.is_const()) {
             const std::optional<folded_value> folded{
-                arg.fold(tc, value_use::at(param.get_type())),
+                arg.fold(tc, tc.use_at(param.get_type())),
             };
 
             // note: a constant name or literal folds
@@ -1382,7 +1385,7 @@ class noinline_call {
         machine& x{tc.machine()};
 
         call_.uops.compile(x, indent, call_.tk, dst.operand(),
-                           tc.checks().overflow_options());
+                           call_.uops_check);
     }
 
     // the callee reaches the result and arguments through their addresses
@@ -2023,7 +2026,7 @@ class stmt_call : public expression {
 
         assert(not tc.funcs().is_builtin(func_name_));
 
-        const call_site call{site()};
+        const call_site call{site(tc.overflow_options(dst))};
 
         machine& x{tc.machine()};
 
@@ -2040,8 +2043,6 @@ class stmt_call : public expression {
         if (func.returns()) {
             call.assert_result_type(dst, func);
         }
-
-        const toc::overflow_check_resume checked{tc};
 
         if (not func.is_inlined()) {
             noinline_call{call}.compile(tc, indent, dst, func);
@@ -2521,7 +2522,9 @@ class stmt_call : public expression {
     }
 
     // what 'inline_call' and 'noinline_call' need of this call
-    [[nodiscard]] auto site() const -> call_site {
+    [[nodiscard]] auto site(const machine::runtime_check& uops_check) const
+        -> call_site {
+
         return {
             .tk{tok()},
             .begin_tk{call_begin_token()},
@@ -2529,6 +2532,7 @@ class stmt_call : public expression {
             .source{statement::trimmed_source(*this)},
             .args{args_},
             .uops{get_unary_ops()},
+            .uops_check{uops_check},
         };
     }
 

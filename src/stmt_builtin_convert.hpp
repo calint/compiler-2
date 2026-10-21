@@ -28,10 +28,10 @@
 // 'T(arg)' behaves like a temporary of type T that holds 'arg' computed at W
 // and wrapped to T. W is the wider of T and the type of the argument, which is
 // that of its first element. The argument follows the rule of a list at W: a
-// wider element is rejected as narrowed, '+', '-' and '*' wrap (the overflow
-// check is paused, a call in it is checked as anywhere else) and its own unary
-// ops apply at W. The conversion's own '-' and '~' apply where the value is
-// used, at the width D of the destination.
+// wider element is rejected as narrowed, '+', '-' and '*' wrap (it is
+// compiled into a wrapping destination, a call in it is checked as anywhere
+// else) and its own unary ops apply at W. The conversion's own '-' and '~'
+// apply where the value is used, at the width D of the destination.
 //
 // where the conversion's own unary ops apply, 'ops_place_for', the first row
 // that matches:
@@ -152,7 +152,7 @@ class stmt_builtin_convert final : public expression {
         -> void override {
 
         // note: a list copies a constant itself
-        assert(not fold(tc, value_use::at(dst.type_ref())));
+        assert(not fold(tc, tc.use_of(dst)));
 
         // the argument follows the rule of a list at the width it is computed
         // at, e.g. the 'i16' 'b' of 'i8(a + b)' is narrowed to 'i8'
@@ -171,8 +171,6 @@ class stmt_builtin_convert final : public expression {
             compile_after_widening(tc, indent, dst);
             return;
         }
-
-        const toc::overflow_check_pause pause{tc};
 
         compile_argument(tc, indent, dst, get_unary_ops());
     }
@@ -199,7 +197,7 @@ class stmt_builtin_convert final : public expression {
 
             const int64_t value{
                 get_unary_ops().evaluate_at(info.constant().value, width_type,
-                                            tc.checks().overflow),
+                                            use.checks_overflow),
             };
 
             return folded_value{
@@ -223,7 +221,7 @@ class stmt_builtin_convert final : public expression {
 
         const int64_t value{
             get_unary_ops().evaluate_at(converted, result_type,
-                                        tc.checks().overflow),
+                                        use.checks_overflow),
         };
 
         // a narrower width keeps the low bits, e.g. 44 of the 'i16' 300 of
@@ -301,7 +299,7 @@ class stmt_builtin_convert final : public expression {
         x.copy_value(tok(), indent, widened, converted);
 
         get_unary_ops().compile(x, indent, tok(), widened,
-                                tc.checks().overflow_options());
+                                tc.overflow_options(dst));
 
         if (dst.is_register()) {
             return;
@@ -311,20 +309,22 @@ class stmt_builtin_convert final : public expression {
         x.free_scratch_register(tok(), indent, converted);
     }
 
-    // 'uops' apply to the converted value; the argument is an operand, so a
+    // the arithmetic of the argument wraps, 'uops' apply to the converted
+    // value as the target checks them; the argument is an operand, so a
     // narrower call result widens into a wider register, e.g. 'i16((g()))'
     auto compile_argument(toc& tc, const size_t indent,
                           const destination& target,
                           const unary_ops& uops) const -> void {
 
+        const machine::runtime_check uops_check{tc.overflow_options(target)};
+
         const auto in_destination{
             [&] -> void {
-                arg_.compile(tc, indent, target.as_operand());
+                arg_.compile(tc, indent, target.as_wrapping().as_operand());
 
                 machine& x{tc.machine()};
 
-                uops.compile(x, indent, tok(), target.operand(),
-                             tc.checks().overflow_options());
+                uops.compile(x, indent, tok(), target.operand(), uops_check);
             },
         };
 
@@ -338,8 +338,9 @@ class stmt_builtin_convert final : public expression {
                     x.alloc_scratch_register(tok(), indent, *plan.scratch_type),
                 };
 
-                arg_.compile(tc, indent,
-                             destination::of_register(wide).as_operand());
+                arg_.compile(
+                    tc, indent,
+                    destination::of_register(wide).as_wrapping().as_operand());
 
                 // a 'bool' is not negated, e.g. the '-' of '-i8(b)' applies
                 // to the copy
@@ -348,7 +349,7 @@ class stmt_builtin_convert final : public expression {
                     x.free_scratch_register(tok(), indent, wide);
 
                     uops.compile(x, indent, tok(), target.operand(),
-                                 tc.checks().overflow_options());
+                                 uops_check);
 
                     return;
                 }
@@ -366,8 +367,7 @@ class stmt_builtin_convert final : public expression {
 
                     x.copy_value(tok(), indent, widened, wide);
 
-                    uops.compile(x, indent, tok(), widened,
-                                 tc.checks().overflow_options());
+                    uops.compile(x, indent, tok(), widened, uops_check);
 
                     x.copy_value(tok(), indent, target.operand(), widened);
                     x.free_scratch_register(tok(), indent, wide);
@@ -377,8 +377,7 @@ class stmt_builtin_convert final : public expression {
 
                 // '-' and '~' give the same low bits at any width, so the one
                 // store also narrows their result
-                uops.compile(x, indent, tok(), wide,
-                             tc.checks().overflow_options());
+                uops.compile(x, indent, tok(), wide, uops_check);
 
                 x.copy_value(tok(), indent, target.operand(), wide);
                 x.free_scratch_register(tok(), indent, wide);
@@ -405,8 +404,6 @@ class stmt_builtin_convert final : public expression {
     auto compile_at_type(toc& tc, const size_t indent, const operand& reg) const
         -> void {
 
-        const toc::overflow_check_pause pause{tc};
-
         compile_argument(tc, indent, destination::of_register(reg), {});
     }
 
@@ -425,7 +422,7 @@ class stmt_builtin_convert final : public expression {
         compile_at_type(tc, indent, converted);
 
         get_unary_ops().compile(x, indent, tok(), converted,
-                                tc.checks().overflow_options());
+                                tc.overflow_options(dst));
 
         x.copy_value(tok(), indent, dst.operand(), converted);
         x.free_scratch_register(tok(), indent, converted);
@@ -455,11 +452,12 @@ class stmt_builtin_convert final : public expression {
             return ops_place::after_widening;
         }
 
-        // the overflow check is off for the argument, not for the unary ops
-        // of the conversion, which apply to the converted value
-        if (tc.checks().overflow and not get_unary_ops().is_empty()) {
+        // the arithmetic of the argument wraps, the unary ops of the
+        // conversion apply to the converted value as the destination checks
+        // them
+        if (tc.checks_overflow(dst) and not get_unary_ops().is_empty()) {
             // note: a narrower destination is only the argument of an outer
-            //       conversion, where the overflow check is paused
+            //       conversion, whose arithmetic wraps
 
             assert(dst.type_ref().size_bytes() == get_type().size_bytes());
 

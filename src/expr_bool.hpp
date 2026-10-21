@@ -797,7 +797,7 @@ class expr_bool_op final : public statement {
     [[nodiscard]] static auto fold_side(const toc& tc, const expr_arith& side)
         -> std::optional<folded_value> {
 
-        return side.fold_checked(tc, value_use::at(side.get_type()));
+        return side.fold_checked(tc, tc.use_at(side.get_type()));
     }
 
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
@@ -1046,8 +1046,9 @@ class expr_bool_op final : public statement {
         }
 
         const operand reg{
-            expr_arith::compile_unary_to_scratch(tc, indent, expr, value,
-                                                 value_type),
+            expr_arith::compile_unary_to_scratch(
+                tc, indent, expr, value, value_type,
+                tc.checks().overflow_options()),
         };
 
         allocated_registers.emplace_back(reg);

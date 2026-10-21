@@ -273,7 +273,7 @@ class stmt_identifier final : public statement {
         x.copy_value(tok(), indent, dst.operand(), op);
 
         get_unary_ops().compile(x, indent, tok(), dst.operand(),
-                                tc.checks().overflow_options());
+                                tc.overflow_options(dst));
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
@@ -406,7 +406,7 @@ class stmt_identifier final : public statement {
 
         const int64_t value{
             get_unary_ops().evaluate_at(constant.value, use.width_ref(),
-                                        tc.checks().overflow),
+                                        use.checks_overflow),
         };
 
         return folded_value{

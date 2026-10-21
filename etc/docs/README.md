@@ -202,9 +202,12 @@ A conversion 'T(arg)' ('stmt_builtin_convert') behaves like a temporary of
 type T: its argument is a list computed at W, the wider of T and the type of
 the argument's first element (on a tie the argument's type, so the 'b' of
 'i8(b)' stays 'bool'), where a wider element is rejected as narrowed and the
-arithmetic wraps; a call in it is not the conversion's own arithmetic, its
-arguments and body are checked as anywhere else
-('toc::overflow_check_resume'). The conversion's own '-' and '~' apply where
+arithmetic wraps. A destination carries whether the arithmetic of its value is
+checked for overflow ('destination::as_wrapping', 'toc::overflow_options'):
+the argument is compiled into a wrapping one, which its scratch registers
+keep; a call in it builds destinations of its own, so its arguments and body
+are checked as anywhere else, while the call's own unary ops follow the
+argument. The conversion's own '-' and '~' apply where
 the value is used, at the width of the destination or of the list it is an
 operand of, as for '-v' of a variable of type T. The argument is compiled as
 an operand, so a narrower call result widens into it.

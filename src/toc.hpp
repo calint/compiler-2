@@ -2384,9 +2384,6 @@ class toc final {
     variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_;
-    // the overflow check as '--checks' asks for it, 'checks_' has it off
-    // while an 'overflow_check_pause' lives
-    bool overflow_requested_;
     // above zero inside 'check_only', no noinline body is added there
     size_t check_only_depth_{};
     // the deepest level of noinline dry runs reached in the dry run being
@@ -2521,53 +2518,6 @@ class toc final {
         }
     };
 
-    // an explicit conversion wraps the arithmetic of its argument, the
-    // overflow check is off while it is compiled, up to a call, see
-    // 'overflow_check_resume'
-    class overflow_check_pause final {
-        toc& tc_;
-        bool was_enabled_;
-
-      public:
-        explicit overflow_check_pause(toc& tc)
-            : tc_{tc}, was_enabled_{tc.checks_.overflow} {
-
-            tc_.checks_.overflow = false;
-        }
-
-        overflow_check_pause(const overflow_check_pause&) = delete;
-        overflow_check_pause(overflow_check_pause&&) = delete;
-        auto operator=(const overflow_check_pause&)
-            -> overflow_check_pause& = delete;
-        auto operator=(overflow_check_pause&&)
-            -> overflow_check_pause& = delete;
-
-        ~overflow_check_pause() { tc_.checks_.overflow = was_enabled_; }
-    };
-
-    // a call in the argument of a conversion is not the conversion's own
-    // arithmetic, its arguments and body are checked as anywhere else
-    class overflow_check_resume final {
-        toc& tc_;
-        bool was_enabled_;
-
-      public:
-        explicit overflow_check_resume(toc& tc)
-            : tc_{tc}, was_enabled_{tc.checks_.overflow} {
-
-            tc_.checks_.overflow = tc_.overflow_requested_;
-        }
-
-        overflow_check_resume(const overflow_check_resume&) = delete;
-        overflow_check_resume(overflow_check_resume&&) = delete;
-        auto operator=(const overflow_check_resume&)
-            -> overflow_check_resume& = delete;
-        auto operator=(overflow_check_resume&&)
-            -> overflow_check_resume& = delete;
-
-        ~overflow_check_resume() { tc_.checks_.overflow = was_enabled_; }
-    };
-
     toc(::machine& backend, const source_files& files,
         const builtin_type_set& builtin_set, const size_t vars_capacity_bytes,
         const check_options& checks)
@@ -2578,7 +2528,7 @@ class toc final {
           resolver_{scopes_, backend, generics_, builtins_},
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
-          checks_{checks}, overflow_requested_{checks.overflow} {}
+          checks_{checks} {}
 
     auto add_alias(const alias_info& ai) -> void {
         scopes_.back().add_alias(ai);
@@ -2801,6 +2751,12 @@ class toc final {
     // what '--checks' turned on
     [[nodiscard]] auto checks() const -> const check_options& {
         return checks_;
+    }
+
+    // whether the arithmetic of a value that 'dst' receives is checked for
+    // overflow
+    [[nodiscard]] auto checks_overflow(const destination& dst) const -> bool {
+        return checks_.overflow and not dst.wraps();
     }
 
     // a number or a constant
@@ -3057,6 +3013,16 @@ class toc final {
         return storage_.next_frame_address(builtins_.address());
     }
 
+    [[nodiscard]] auto overflow_options(const destination& dst) const
+        -> machine::runtime_check {
+
+        if (dst.wraps()) {
+            return {};
+        }
+
+        return checks_.overflow_options();
+    }
+
     auto reach_dry_run_level(const size_t level) -> void {
         deepest_dry_run_level_ = std::max(deepest_dry_run_level_, level);
     }
@@ -3142,6 +3108,22 @@ class toc final {
             .dat_size_bytes{data_.total_size_bytes()},
             .dat_var_padding_bytes{data_.dat_var_padding_bytes()},
             .uninstantiated_generics{generics_.uninstantiated_func_names()},
+        };
+    }
+
+    // a value used without a destination, e.g. a comparison side or an
+    // argument, is checked as '--checks' asks
+    [[nodiscard]] auto use_at(const type& width) const -> value_use {
+        return {
+            .width{&width},
+            .checks_overflow{checks_.overflow},
+        };
+    }
+
+    [[nodiscard]] auto use_of(const destination& dst) const -> value_use {
+        return {
+            .width{&dst.type_ref()},
+            .checks_overflow{checks_overflow(dst)},
         };
     }
 

@@ -382,7 +382,7 @@ class expr_any final : public statement {
         -> std::optional<int64_t> {
 
         return folded_value::value_of(
-            fold(tc, value_use::at(tc.builtins().default_type())));
+            fold(tc, tc.use_at(tc.builtins().default_type())));
     }
 
     // every kind of element is a 'statement', the forwarding methods call its
@@ -557,7 +557,7 @@ class expr_any final : public statement {
             // e.g. '{300}' for 'i8' is rejected as when stored alone
             const std::optional<int64_t> value{
                 folded_value::value_of(
-                    fold_element(tc, index, value_use::at(element_type))),
+                    fold_element(tc, index, tc.use_at(element_type))),
             };
 
             if (not value) {

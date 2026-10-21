@@ -1,0 +1,20 @@
+# the unary ops of a call in the argument of a conversion are arithmetic of
+# the argument, which wraps also under the overflow check, e.g. 'i8(-m8())'
+# of an 'm8()' of -128 is -128 as 'i8(-n)' of an 'n' of -128 is
+
+func inlined() res i8 {
+    res = -128
+}
+
+func noinline called() res i8 {
+    res = -128
+}
+
+func main() {
+    var a = i8(-inlined())
+    var b = i8(-called())
+    if a != -128 or b != -128 {
+        exit(1)
+    }
+    exit(0)
+}

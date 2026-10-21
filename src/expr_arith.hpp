@@ -234,7 +234,7 @@ class expr_arith final : public expression {
 
         // a list that folds is one copy of its value
         const std::optional<folded_value> folded{
-            fold(tc, value_use::at(dst.type_ref())),
+            fold(tc, tc.use_of(dst)),
         };
 
         if (folded) {
@@ -326,10 +326,9 @@ class expr_arith final : public expression {
         }
 
         const type& width_type{use.width_ref()};
-        const value_use element_use{value_use::at(width_type)};
 
         const std::optional<folded_value> first{
-            exprs_.front()->fold(tc, element_use),
+            exprs_.front()->fold(tc, use),
         };
 
         if (not first) {
@@ -346,14 +345,14 @@ class expr_arith final : public expression {
             }
 
             const std::optional<int64_t> rhs{
-                folded_value::value_of(e->fold(tc, element_use)),
+                folded_value::value_of(e->fold(tc, use)),
             };
 
             if (not rhs) {
                 return std::nullopt;
             }
 
-            if (tc.checks().overflow and
+            if (use.checks_overflow and
                 constant_arith::overflows_width(*value, o, *rhs, width_type)) {
 
                 throw compile_error{e->tok(),
@@ -368,7 +367,7 @@ class expr_arith final : public expression {
         }
 
         const int64_t result{
-            uops_.evaluate_at(*value, width_type, tc.checks().overflow),
+            uops_.evaluate_at(*value, width_type, use.checks_overflow),
         };
 
         return folded_value{
@@ -481,9 +480,7 @@ class expr_arith final : public expression {
         // note: only an index expression asks, it has no unary ops of its own
         assert(uops_.is_empty());
 
-        const type& width_type{dst.type_ref()};
-
-        const std::vector<step> steps{plan_steps(tc, width_type)};
+        const std::vector<step> steps{plan_steps(tc, dst)};
 
         const step& last{steps.back()};
 
@@ -533,10 +530,10 @@ class expr_arith final : public expression {
     //
 
     // the caller frees the returned register
-    [[nodiscard]] static auto
-    compile_unary_to_scratch(toc& tc, const size_t indent, const statement& src,
-                             const operand& src_operand,
-                             const type& register_type) -> operand {
+    [[nodiscard]] static auto compile_unary_to_scratch(
+        toc& tc, const size_t indent, const statement& src,
+        const operand& src_operand, const type& register_type,
+        const machine::runtime_check& overflow_check) -> operand {
 
         machine& x{tc.machine()};
 
@@ -546,8 +543,7 @@ class expr_arith final : public expression {
 
         x.copy_value(src.tok(), indent, reg, src_operand);
 
-        src.get_unary_ops().compile(x, indent, src.tok(), reg,
-                                    tc.checks().overflow_options());
+        src.get_unary_ops().compile(x, indent, src.tok(), reg, overflow_check);
 
         return reg;
     }
@@ -608,7 +604,7 @@ class expr_arith final : public expression {
             op == arithmetic_operator::subtract) {
 
             x.add_subtract(tok(), indent, op, dst.operand(), constant,
-                           tc.checks().overflow_options());
+                           tc.overflow_options(dst));
 
             return;
         }
@@ -616,7 +612,7 @@ class expr_arith final : public expression {
         if (op == arithmetic_operator::multiply) {
             x.multiply(tok(), indent, dst.operand(), constant,
                        machine::factor_use::read_only,
-                       tc.checks().overflow_options());
+                       tc.overflow_options(dst));
 
             return;
         }
@@ -647,7 +643,7 @@ class expr_arith final : public expression {
 
         // the wide result must be checked against the narrow type, and a
         // shift count against the width of the narrow type
-        if (tc.checks().overflow or tc.checks().shift) {
+        if (tc.checks_overflow(dst) or tc.checks().shift) {
             return false;
         }
 
@@ -659,9 +655,7 @@ class expr_arith final : public expression {
     auto compile_elements(toc& tc, const size_t indent,
                           const destination& dst) const -> void {
 
-        const type& width_type{dst.type_ref()};
-
-        const std::vector<step> steps{plan_steps(tc, width_type)};
+        const std::vector<step> steps{plan_steps(tc, dst)};
 
         compile_first_step(tc, indent, dst, steps.front());
 
@@ -705,7 +699,7 @@ class expr_arith final : public expression {
             machine& x{tc.machine()};
 
             x.unary(tok(), indent, machine::arithmetic_operator::negate,
-                    dst.operand(), tc.checks().overflow_options());
+                    dst.operand(), tc.overflow_options(dst));
         }
     }
 
@@ -715,7 +709,7 @@ class expr_arith final : public expression {
         // the merging passes are off under the overflow check, a constant
         // that changes nothing must still not reach the backend
         const bool is_checked_constant{
-            tc.checks().overflow and s.value.has_value() and
+            tc.checks_overflow(dst) and s.value.has_value() and
                 is_regroupable(s.op),
         };
 
@@ -763,7 +757,7 @@ class expr_arith final : public expression {
             x.alloc_scratch_register(tok(), indent, scratch_type),
         };
 
-        do_compile(tc, indent, destination::of_register(reg));
+        do_compile(tc, indent, dst.in_register(reg));
 
         x.copy_value(tok(), indent, dst.operand(), reg);
 
@@ -803,7 +797,7 @@ class expr_arith final : public expression {
 
         // the unary ops of the list apply to its result, e.g. '-(a + b)'
         uops_.compile(x, indent, tok(), dst.operand(),
-                      tc.checks().overflow_options());
+                      tc.overflow_options(dst));
     }
 
     // 'ws_before_op_tk' belongs to what follows the list
@@ -896,7 +890,7 @@ class expr_arith final : public expression {
 
     // pass 0: one step per element with the constant value of the element
     //   'a * 3 * 2 / 3 / 2 * 4'  =>  '* a' '* 3' '* 2' '/ 3' '/ 2' '* 4'
-    [[nodiscard]] auto make_steps(const toc& tc, const type& width_type) const
+    [[nodiscard]] auto make_steps(const toc& tc, const destination& dst) const
         -> std::vector<step> {
 
         std::vector<step> steps;
@@ -911,8 +905,7 @@ class expr_arith final : public expression {
                 .op{op},
                 .element{&e},
                 .value{
-                    folded_value::value_of(
-                        e.fold(tc, value_use::at(width_type))),
+                    folded_value::value_of(e.fold(tc, tc.use_of(dst))),
                 },
                 .folded_source{
                     std::format("{} {}", machine::source_text(op),
@@ -953,16 +946,18 @@ class expr_arith final : public expression {
     }
 
     // the passes in order, the steps are ready to compile
-    [[nodiscard]] auto plan_steps(const toc& tc, const type& width_type) const
+    [[nodiscard]] auto plan_steps(const toc& tc, const destination& dst) const
         -> std::vector<step> {
 
-        std::vector<step> steps{make_steps(tc, width_type)};
+        std::vector<step> steps{make_steps(tc, dst)};
 
         // moving or combining constants changes which partial results
         // overflow
-        if (tc.checks().overflow) {
+        if (tc.checks_overflow(dst)) {
             return steps;
         }
+
+        const type& width_type{dst.type_ref()};
 
         steps = merge_regroupable_constants(steps, width_type);
         steps = merge_divisors(steps, width_type);
@@ -1063,7 +1058,7 @@ class expr_arith final : public expression {
         // note: the rewrite hides an overflow of the negation, the check
         //       computes it
 
-        if (not tc.checks().overflow and is_negated_operand(tc, src)) {
+        if (not tc.checks_overflow(dst) and is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
             const ident_info src_info{tc.make_scalar_ident_info(src)};
@@ -1077,7 +1072,7 @@ class expr_arith final : public expression {
                 src.tok(), indent,
                 op == arithmetic_operator::add ? arithmetic_operator::subtract
                                                : arithmetic_operator::add,
-                dst.operand(), src_operand, tc.checks().overflow_options());
+                dst.operand(), src_operand, tc.overflow_options(dst));
 
             x.free_scratch_registers(src.tok(), indent, lea_registers);
 
@@ -1086,12 +1081,11 @@ class expr_arith final : public expression {
 
         // a negated operand is computed at the width of the destination so
         // the overflow check sees it
-        emit_with_source(tc, indent, src, dst.type_ref(),
-                         [&](const operand& term, const bool) -> void {
-                             x.add_subtract(src.tok(), indent, op,
-                                            dst.operand(), term,
-                                            tc.checks().overflow_options());
-                         });
+        emit_with_source(
+            tc, indent, src, dst, [&](const operand& term, const bool) -> void {
+                x.add_subtract(src.tok(), indent, op, dst.operand(), term,
+                               tc.overflow_options(dst));
+            });
     }
 
     static auto asm_op_bitwise(toc& tc, const size_t indent,
@@ -1101,7 +1095,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst.type_ref(),
+        emit_with_source(tc, indent, src, dst,
                          [&](const operand& value, const bool) -> void {
                              x.bitwise(src.tok(), indent, op, dst.operand(),
                                        value);
@@ -1114,7 +1108,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst.type_ref(),
+        emit_with_source(tc, indent, src, dst,
                          [&](const operand& divisor, const bool) -> void {
                              if (divisor.is_immediate()) {
                                  assert_divisor_not_zero(src.tok(),
@@ -1146,7 +1140,7 @@ class expr_arith final : public expression {
 
         // a scratch register factor can be overwritten by the backend
         emit_with_source(
-            tc, indent, src, dst.type_ref(),
+            tc, indent, src, dst,
             [&](const operand& factor, const bool is_scratch) -> void {
                 const machine::factor_use use{
                     is_scratch ? machine::factor_use::may_overwrite
@@ -1154,7 +1148,7 @@ class expr_arith final : public expression {
                 };
 
                 x.multiply(src.tok(), indent, dst.operand(), factor, use,
-                           tc.checks().overflow_options());
+                           tc.overflow_options(dst));
             });
     }
 
@@ -1171,7 +1165,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst.type_ref(),
+        emit_with_source(tc, indent, src, dst,
                          [&](const operand& count, const bool) -> void {
                              if (count.is_immediate()) {
                                  assert_shift_count_fits(src.tok(),
@@ -1278,17 +1272,17 @@ class expr_arith final : public expression {
 
     [[nodiscard]] static auto compile_to_scratch(toc& tc, const size_t indent,
                                                  const statement& src,
-                                                 const type& register_type)
+                                                 const destination& dst)
         -> operand {
 
         machine& x{tc.machine()};
 
         const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, register_type),
+            x.alloc_scratch_register(src.tok(), indent, dst.type_ref()),
         };
 
         // note: the callers are the operators after the first element
-        src.compile(tc, indent, destination::of_register(reg).as_operand());
+        src.compile(tc, indent, dst.in_register(reg).as_operand());
 
         return reg;
     }
@@ -1310,20 +1304,22 @@ class expr_arith final : public expression {
         }
     }
 
-    // compiles 'src' into an operand the operation accepts, emits the
-    // operation and frees the registers that producing the operand needed
+    // compiles 'src' into an operand the operation on 'dst' accepts, emits
+    // the operation and frees the registers that producing the operand needed
     static auto emit_with_source(
         toc& tc, const size_t indent, const statement& src,
-        const type& operand_type,
+        const destination& dst,
         const std::function_ref<void(const operand&, bool is_scratch)> emit)
         -> void {
 
         machine& x{tc.machine()};
 
+        const type& operand_type{dst.type_ref()};
+
         if (src.is_expression()) {
             // e.g. 'a / (1 + 1)'
             const std::optional<folded_value> folded{
-                src.fold(tc, value_use::at(operand_type)),
+                src.fold(tc, tc.use_of(dst)),
             };
 
             if (folded) {
@@ -1338,7 +1334,7 @@ class expr_arith final : public expression {
             x.comment(src.tok(), indent, "src: expression");
 
             const operand reg{
-                compile_to_scratch(tc, indent, src, operand_type),
+                compile_to_scratch(tc, indent, src, dst),
             };
 
             emit(reg, true);
@@ -1351,7 +1347,7 @@ class expr_arith final : public expression {
 
         if (src_info.is_const()) {
             const std::optional<folded_value> folded{
-                src.fold(tc, value_use::at(operand_type)),
+                src.fold(tc, tc.use_of(dst)),
             };
 
             // note: a constant name or literal folds
@@ -1379,8 +1375,8 @@ class expr_arith final : public expression {
         x.comment(src.tok(), indent, "src: operand with unary ops");
 
         const operand reg{
-            compile_unary_to_scratch(tc, indent, src, src_operand,
-                                     operand_type),
+            compile_unary_to_scratch(tc, indent, src, src_operand, operand_type,
+                                     tc.overflow_options(dst)),
         };
 
         emit(reg, true);

@@ -4469,3 +4469,10 @@ SRC=1380 && EXP=0 && OPTS="--checks=overflow" RUN
 # the '-' of a conversion overflows at the width of its use under the
 # overflow check
 SRC=1381 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# the unary ops of a call in the argument of a conversion wrap under the
+# overflow check, as the argument's arithmetic does
+SRC=1382 && EXP=0 && OPTS="--checks=overflow" RUN
+
+# the arguments of a call in the argument of a conversion are checked
+SRC=1383 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"

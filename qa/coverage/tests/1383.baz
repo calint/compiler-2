@@ -1,0 +1,12 @@
+# the arguments of a call in the argument of a conversion are checked as
+# anywhere else, e.g. the '+' of 'i8(f(k + 1))' overflows 'i8'
+
+func f(x i8) res i8 {
+    res = x
+}
+
+func main() {
+    var k = i8(127)
+    var r = i8(f(k + 1))
+    exit(int(r))
+}

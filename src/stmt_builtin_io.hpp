@@ -144,7 +144,7 @@ class stmt_builtin_io final : public stmt_call {
         emit_call(x, indent, result, args);
 
         get_unary_ops().compile(x, indent, tok(), result,
-                                tc.checks().overflow_options());
+                                tc.overflow_options(dst));
 
         if (not dst.is_empty()) {
             x.copy_value(tok(), indent, dst.operand(), result);

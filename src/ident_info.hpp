@@ -395,6 +395,9 @@ class destination final {
     bool is_array_{};
     // an operand of an operator, e.g. the 'g()' of 'w + g()', see 'as_operand'
     bool is_operand_{};
+    // its arithmetic wraps on purpose, see 'as_wrapping'; otherwise the
+    // overflow check is as '--checks' asks
+    bool wraps_{};
     // the elements of an array, an unsized one gets them from the argument,
     // see 'var_info::array_len'
     std::optional<size_t> array_len_;
@@ -447,6 +450,15 @@ class destination final {
         return result;
     }
 
+    // the argument of a conversion, whose arithmetic wraps, e.g. the '+' of
+    // 'i8(a + b)'; a call in it builds destinations of its own, so its
+    // arguments and body are checked as anywhere else
+    [[nodiscard]] auto as_wrapping() const -> destination {
+        destination result{*this};
+        result.wraps_ = true;
+        return result;
+    }
+
     // at 'address', e.g. a field that a call writes in place
     [[nodiscard]] auto at_address(const ::operand& address) const
         -> destination {
@@ -474,6 +486,14 @@ class destination final {
             result.accessed_path_->add_field(fld.offset);
         }
 
+        return result;
+    }
+
+    // a scratch register that holds the value on its way to this
+    // destination, its arithmetic is checked alike
+    [[nodiscard]] auto in_register(const ::operand& reg) const -> destination {
+        destination result{of_register(reg)};
+        result.wraps_ = wraps_;
         return result;
     }
 
@@ -522,6 +542,8 @@ class destination final {
         moved.operand_ = op;
         return moved;
     }
+
+    [[nodiscard]] auto wraps() const -> bool { return wraps_; }
 
     //
     // statics
