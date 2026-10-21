@@ -4507,3 +4507,10 @@ SRC=1397 && EXP=0 && RUN
 SRC=1398 && COMPERR
 SRC=1399 && EXP=0 && RUN
 SRC=1400 && COMPERR
+
+# a part read under another name of the destination: a parameter, inline and
+# noinline, the element of a 'foo', and a local that hides the global
+SRC=1401 && COMPERR
+SRC=1402 && COMPERR
+SRC=1403 && COMPERR
+SRC=1404 && EXP=0 && RUN

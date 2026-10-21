@@ -1,0 +1,15 @@
+# a part of a value read under another name of the destination is overwritten
+# like one read under its own name: 'p' is bound to 'g'
+
+type point {x, y}
+
+var g = point{3, 5}
+
+func f(p point) {
+    g = {1, p.x}
+}
+
+func main() {
+    f(g)
+    exit(g.y)
+}

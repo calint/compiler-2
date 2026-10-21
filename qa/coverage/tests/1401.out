@@ -1,0 +1,7 @@
+
+1401.baz:9:13: 'p.x' is read but has been overwritten in the same statement
+    g = {1, p.x}
+            ^
+1401.baz:13:5: called from
+    f(g)
+    ^

@@ -33,6 +33,13 @@ class stmt_assign_var final : public statement {
         access_path path;
     };
 
+    // a part of the value written before a read: its storage and its path
+    // under the destination's name
+    struct written_place {
+        storage_path storage;
+        access_path path;
+    };
+
   public:
     stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si,
                     const token equals_tk)
@@ -92,7 +99,7 @@ class stmt_assign_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        assert_no_read_of_written_part();
+        assert_no_read_of_written_part(tc);
 
         const ident_info var_info{tc.make_ident_info(stmt_ident_)};
 
@@ -184,55 +191,78 @@ class stmt_assign_var final : public statement {
                         *dst_len, *src_len)};
     }
 
-    // a part of the value does not read a part written before it, e.g. the
-    // 'p.x' of 'p = {p.y, p.x}'
-    auto assert_no_read_of_written_part() const -> void {
+    // a part of the value does not read a part written before it, under any
+    // name, e.g. the 'p.x' of 'p = {p.y, p.x}' or of 'g = {1, p.x}' with 'p'
+    // bound to 'g'
+    auto assert_no_read_of_written_part(const toc& tc) const -> void {
+        const std::optional<storage_path> dst{
+            tc.storage_of(stmt_ident_.first_token(),
+                          stmt_ident_.first_token().text(),
+                          stmt_ident_.accessed_path()),
+        };
+
+        // note: a value in a register is written as one part
+        if (not dst) {
+            return;
+        }
+
         std::vector<written_part> parts;
         expr_.list_written_parts(access_path::whole_variable(), parts);
 
-        // the paths of the parts before the current one
-        std::vector<access_path> written;
+        // the parts before the current one
+        std::vector<written_place> written;
 
         for (const written_part& part : parts) {
-            assert_not_reading(*part.item, written);
+            assert_not_reading(tc, *part.item, written);
 
-            written.push_back(
-                stmt_ident_.accessed_path().extended_by(part.suffix));
+            written.push_back({
+                .storage{
+                    .root{dst->root},
+                    .path{dst->path.extended_by(part.suffix)},
+                },
+                .path{stmt_ident_.accessed_path().extended_by(part.suffix)},
+            });
         }
     }
 
-    // 'item' reads none of the 'written' paths under the destination's name
-    auto assert_not_reading(const statement& item,
-                            const std::span<const access_path> written) const
+    // 'item' reads none of the 'written' parts
+    auto assert_not_reading(const toc& tc, const statement& item,
+                            const std::span<const written_place> written) const
         -> void {
 
         item.visit_reads(
-            stmt_ident_.first_token().text(),
-            [written](const token& src_loc_tk, const std::string_view read_text,
-                      [[maybe_unused]] const byte_range& accessed_bytes,
-                      const access_path& read_path) -> void {
-                for (const access_path& path : written) {
-                    if (not read_path.overlaps(path)) {
+            std::nullopt,
+            [&](const token& src_loc_tk, const std::string_view read_text,
+                [[maybe_unused]] const byte_range& accessed_bytes,
+                const access_path& read_path) -> void {
+                const std::optional<storage_path> read{
+                    tc.storage_of(src_loc_tk, src_loc_tk.text(), read_path),
+                };
+
+                // note: a constant or a value in a register is no storage
+                if (not read) {
+                    return;
+                }
+
+                for (const written_place& place : written) {
+                    if (not read->may_overlap(place.storage)) {
                         continue;
                     }
 
-                    // note: a run-time index on either side may name other
-                    //       bytes
-
-                    if (read_path.has_run_time_index() or
-                        path.has_run_time_index()) {
+                    if (is_certain_overwrite(src_loc_tk, *read, read_path,
+                                             place)) {
 
                         throw compile_error{
                             src_loc_tk,
-                            std::format("'{}' may have been overwritten in "
-                                        "the same statement",
+                            std::format("'{}' is read but has been "
+                                        "overwritten in the same statement",
                                         read_text)};
                     }
 
                     throw compile_error{
                         src_loc_tk,
-                        std::format("'{}' is read but has been overwritten in "
-                                    "the same statement",
+                        std::format("'{}' may have been overwritten in the "
+                                    "same statement",
                                     read_text)};
                 }
             });
@@ -275,6 +305,27 @@ class stmt_assign_var final : public statement {
                             read.text, stmt_ident_.path_text(),
                             dst->root.name)};
         }
+    }
+
+    // the read is of the written bytes, not only maybe: no run-time index
+    // on either side, or none under the destination's name, which reaches
+    // the bytes through the same binding, e.g. 'p.x' of 'p = {1, p.x}' with
+    // 'p' bound to 'ps[i]'
+    [[nodiscard]] auto is_certain_overwrite(const token& read_tk,
+                                            const storage_path& read,
+                                            const access_path& read_path,
+                                            const written_place& place) const
+        -> bool {
+
+        if (not read.path.has_run_time_index() and
+            not place.storage.path.has_run_time_index()) {
+
+            return true;
+        }
+
+        return read_tk.text() == stmt_ident_.first_token().text() and
+               not read_path.has_run_time_index() and
+               not place.path.has_run_time_index();
     }
 
     // a pointer, a parameter that names its argument or an element of a 'foo'
