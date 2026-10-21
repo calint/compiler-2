@@ -1097,9 +1097,8 @@ class scope_stack final {
     // the storage that the parameter 'name' names with 'path' inside it,
     // empty when its argument holds none, e.g. a constant or a value in a
     // register
-    [[nodiscard]] auto
-    bound_storage_of(const std::string_view name,
-                     const std::optional<access_path>& path) const
+    [[nodiscard]] auto bound_storage_of(const std::string_view name,
+                                        const access_path& path) const
         -> std::optional<storage_path> {
 
         const alias_info* const alias{find_alias(name)};
@@ -1116,17 +1115,9 @@ class scope_stack final {
 
         const storage_path& bound{*storage->bound};
 
-        // note: an unknown path is the whole variable
-        if (not bound.path or not path) {
-            return storage_path{
-                .root{bound.root},
-                .path{},
-            };
-        }
-
         return storage_path{
             .root{bound.root},
-            .path{bound.path->extended_by(*path)},
+            .path{bound.path.extended_by(path)},
         };
     }
 
@@ -3019,7 +3010,7 @@ class toc final {
     // of the array it iterates
     [[nodiscard]] auto storage_of(const token& src_loc_tk,
                                   const std::string_view name,
-                                  const std::optional<access_path>& path) const
+                                  const access_path& path) const
         -> std::optional<storage_path> {
 
         const name_meaning meaning{scopes_.lookup(name)};

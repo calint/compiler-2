@@ -1065,7 +1065,8 @@ class inline_call {
 
                 aliases.push_back(make_storage_alias(
                     param, temporary,
-                    tc.storage_of(call_.tk, temporary, std::nullopt)));
+                    tc.storage_of(call_.tk, temporary,
+                                  access_path::whole_variable())));
 
                 continue;
             }
@@ -1539,7 +1540,8 @@ class noinline_call {
             arguments.push_back({
                 .info{temporary},
                 .target{
-                    tc.storage_of(call_.tk, temporary.root_id(), std::nullopt),
+                    tc.storage_of(call_.tk, temporary.root_id(),
+                                  access_path::whole_variable()),
                 },
                 .is_temporary{true},
             });
@@ -1875,8 +1877,7 @@ class noinline_call {
 
         const storage_path& target{*item.target};
 
-        // note: an unknown path is the whole variable
-        const std::string path{target.path ? target.path->text() : "*"};
+        const std::string path{target.path.text()};
 
         if (target.root.is_global()) {
             return part + std::format(" global {}{}", target.root.name, path);

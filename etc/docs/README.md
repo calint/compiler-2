@@ -729,8 +729,8 @@ number of aliases is compared as if it were written out on the root variable.
 The element 'e' of a 'foo' adds a run-time index, since it is any element of
 the array.
 
-A target whose path is not known has no path. It stands for the whole
-variable and always may alias.
+The whole variable has the empty path, e.g. a temporary of a call, which is a
+root variable of its own.
 
 ### 3.6 The other checks on a read
 
@@ -833,8 +833,8 @@ name + for the result and each argument:
     ' local K' path     a local, K is the order of first appearance
     path                the bytes passed, the access path of chapter 3:
                         '.8' the field at offset 8, '[2]' element 2, '[?]'
-                        an element at a run-time index, '*' when not
-                        known, nothing for the whole variable
+                        an element at a run-time index, nothing for the
+                        whole variable
 + ' temporary' or ' variable' per argument
 
 f(v, v, n)       "f local 0 local 0 local 1 variable variable variable"

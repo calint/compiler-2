@@ -387,22 +387,20 @@ class destination final {
     // the elements of an array, an unsized one gets them from the argument,
     // see 'var_info::array_len'
     std::optional<size_t> array_len_;
-    // the path of the root variable, empty when unknown or the whole variable
-    std::optional<access_path> accessed_path_;
+    // the path from the root variable, empty for the whole variable
+    access_path accessed_path_;
 
     // what a resolved name adds when it is the destination of an assignment
     struct name_parts {
         ::operand address;
         bool is_address_known{};
-        std::optional<access_path> accessed_path;
+        access_path accessed_path;
     };
 
   public:
     destination() = default;
 
-    [[nodiscard]] auto accessed_path() const
-        -> const std::optional<access_path>& {
-
+    [[nodiscard]] auto accessed_path() const -> const access_path& {
         return accessed_path_;
     }
 
@@ -421,9 +419,7 @@ class destination final {
         element.is_array_ = false;
         element.array_len_ = std::nullopt;
 
-        if (element.accessed_path_) {
-            element.accessed_path_->add_fixed_index(index);
-        }
+        element.accessed_path_.add_fixed_index(index);
 
         return element;
     }
@@ -468,9 +464,7 @@ class destination final {
         result.type_ptr_ = &fld.type();
         result.src_loc_tk_ = {};
 
-        if (result.accessed_path_) {
-            result.accessed_path_->add_field(fld.offset);
-        }
+        result.accessed_path_.add_field(fld.offset);
 
         return result;
     }
@@ -540,7 +534,7 @@ class destination final {
         return of_name(info, {
                                  .address{info.operand()},
                                  .is_address_known{},
-                                 .accessed_path{},
+                                 .accessed_path{access_path::whole_variable()},
                              });
     }
 

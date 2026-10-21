@@ -5,10 +5,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <optional>
 #include <span>
 #include <string>
-#include <utility>
 #include <vector>
 
 // aliasing: two accesses that cannot be the same bytes because they name
@@ -133,6 +131,9 @@ struct access_path {
 
         return false;
     }
+
+    // the empty path
+    [[nodiscard]] static auto whole_variable() -> access_path { return {}; }
 };
 
 // a variable: its name and the frame it is declared in, a callee's local of
@@ -149,45 +150,28 @@ struct root_variable {
 };
 
 // storage under the name of a root variable: the root variable and the path
-// to what is accessed, empty when it is not known
+// to what is accessed, empty for the whole variable
 struct storage_path {
     root_variable root;
-    std::optional<access_path> path;
+    access_path path;
 
     // 'suffix' inside the element at a run-time index of the array this
     // names, e.g. the element 'e' of a 'foo'
-    [[nodiscard]] auto
-    any_element(const std::optional<access_path>& suffix) const
+    [[nodiscard]] auto any_element(const access_path& suffix) const
         -> storage_path {
 
-        std::optional<access_path> element_path{path};
-
-        if (element_path) {
-            element_path->add_run_time_index();
-
-            if (suffix) {
-                element_path = element_path->extended_by(*suffix);
-            }
-        }
+        access_path element_path{path};
+        element_path.add_run_time_index();
 
         return {
             .root{root},
-            .path{std::move(element_path)},
+            .path{element_path.extended_by(suffix)},
         };
     }
 
     // true when both may name the same bytes, a read of other bytes or of
     // another variable is not
     [[nodiscard]] auto may_overlap(const storage_path& other) const -> bool {
-        if (not root.is_same(other.root)) {
-            return false;
-        }
-
-        // note: an unknown path is the whole variable
-        if (not path or not other.path) {
-            return true;
-        }
-
-        return path->overlaps(*other.path);
+        return root.is_same(other.root) and path.overlaps(other.path);
     }
 };
