@@ -1,0 +1,5 @@
+# a type whose size rounded up to its alignment passes the storage limit is
+# rejected
+type s {a i16, b i8[0x7fffffffffffffed]}
+
+func main() {}

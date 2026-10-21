@@ -133,7 +133,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         "production": [],
         "unoptimized": ["--checks=upper,lower,line", "--nopt"],
     }
-    # 1. Check only the 'max vars size' statistic printed by toc::finish().
+    # 1. Check only the 'max vars size' statistic of the report after the code.
     # Vary the data prefix around alignment boundaries: neither data bytes nor
     # the padding before vars may contribute to the reported variable peak.
     # The inferred array also checks a data size learned from its initializer.

@@ -1,0 +1,4 @@
+
+1305.baz:4:13: '~b' is not an array
+    read(0, ~b, 2)
+            ^

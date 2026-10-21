@@ -1,0 +1,9 @@
+# a 'not' on the right side of a comparison is rejected, a condition is stored
+# in a 'bool' first
+func main() {
+    var b = true
+    if b == not b {
+        exit(1)
+    }
+    exit(0)
+}

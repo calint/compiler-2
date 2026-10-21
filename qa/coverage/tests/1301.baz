@@ -1,0 +1,9 @@
+# a 'let' that reads its own name is rejected as uninitialized, also when an
+# outer block has a constant of that name
+func main() {
+    let k = 5
+    {
+        let k = k + 1
+        exit(k)
+    }
+}

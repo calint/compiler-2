@@ -66,14 +66,34 @@ inline constexpr size_t max_size_bytes{
     return base + size_bytes;
 }
 
+// the bytes that round 'size_bytes' up to a multiple of 'alignment', a power
+// of two
+[[nodiscard]] inline auto alignment_padding_bytes(const size_t size_bytes,
+                                                  const size_t alignment)
+    -> size_t {
+
+    assert(std::has_single_bit(alignment));
+
+    return (alignment - (size_bytes % alignment)) % alignment;
+}
+
 // rounds 'size_bytes' up to a multiple of 'alignment', a power of two
 [[nodiscard]] inline auto align_storage_size(const size_t size_bytes,
                                              const size_t alignment) -> size_t {
 
-    assert(std::has_single_bit(alignment));
-
     return sum_storage_size(size_bytes,
-                            (alignment - (size_bytes % alignment)) % alignment);
+                            alignment_padding_bytes(size_bytes, alignment));
+}
+
+// 'align_storage_size' of a size that the source gives, which the padding may
+// take past the limit, e.g. the end of the fields of a type
+[[nodiscard]] inline auto checked_align_storage_size(const token& src_loc_tk,
+                                                     const size_t size_bytes,
+                                                     const size_t alignment)
+    -> size_t {
+
+    return add_storage_size(src_loc_tk, size_bytes,
+                            alignment_padding_bytes(size_bytes, alignment));
 }
 
 // the alignment known at 'offset' bytes from an address aligned to

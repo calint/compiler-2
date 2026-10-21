@@ -199,6 +199,12 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
                             "expected constant, identifier, or function call"};
     }
 
+    // e.g. the 'not b' of 'int(not b)' or of 'a == not b'
+    if (tk.is_text("not")) {
+        throw compile_error{tk, "'not' makes a condition, which is not an "
+                                "operand here, store it in a 'bool' first"};
+    }
+
     const stmt_builtin_io::io_function* const io{
         stmt_builtin_io::find(tk.text()),
     };
@@ -211,7 +217,6 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     // 'exit' ends the program and the sector functions only transfer, they
     // have no value to use
     if ((tk.is_text("exit") or io) and tz.peek_char_after_whitespace() == '(') {
-
         throw compile_error{tk, "function does not return a value"};
     }
 

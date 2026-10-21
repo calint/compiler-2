@@ -1,0 +1,7 @@
+# a field of a global constant is rejected, a constant has no fields
+let N = 3
+
+func main() {
+    var a = N.x
+    exit(a)
+}

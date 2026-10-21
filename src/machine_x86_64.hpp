@@ -855,14 +855,7 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         std::ignore = alloc_bulk_registers(src_loc_tk, indent);
-
-        request.lhs({}, {}, [&](const operand& address) -> void {
-            lea(src_loc_tk, indent, qword_register("rsi"), address);
-        });
-
-        request.rhs({}, {}, [&](const operand& address) -> void {
-            lea(src_loc_tk, indent, qword_register("rdi"), address);
-        });
+        load_bulk_addresses(src_loc_tk, indent, {}, request.lhs, request.rhs);
 
         const std::vector<op> compares{memory_equal_compares(size_bytes)};
 
@@ -1466,7 +1459,8 @@ class machine_x86_64 final : public machine {
     auto branch_on_overflow(const token& src_loc_tk, const size_t indent,
                             const runtime_check& check) -> void {
 
-        branch_to_overflow_panic(src_loc_tk, indent, condition::o, check);
+        branch_to_overflow_panic(src_loc_tk, indent, condition::o,
+                                 check.with_line);
     }
 
     // a reported line goes through the stub of its line, which sets rbp for
@@ -1481,12 +1475,12 @@ class machine_x86_64 final : public machine {
     }
 
     auto branch_to_overflow_panic(const token& src_loc_tk, const size_t indent,
-                                  const condition failed,
-                                  const runtime_check& check) -> void {
+                                  const condition failed, const bool with_line)
+        -> void {
 
         assembler_.jcc(indent, failed,
                        failure_label("overflow", overflow_failure_handler_label,
-                                     src_loc_tk, check.with_line));
+                                     src_loc_tk, with_line));
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1523,7 +1517,9 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent, right, low_byte);
         cmp(src_loc_tk, indent, right, left);
-        branch_to_overflow_panic(src_loc_tk, indent, condition::ne, check);
+
+        branch_to_overflow_panic(src_loc_tk, indent, condition::ne,
+                                 check.with_line);
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
@@ -2145,8 +2141,20 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    // the register it allocates is freed by the 'address_scope' of the
-    // caller
+    auto load_bulk_addresses(const token& src_loc_tk, const size_t indent,
+                             const operand& count,
+                             const address_emitter& to_rsi,
+                             const address_emitter& to_rdi) -> void {
+
+        to_rsi(count, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rsi"), address);
+        });
+
+        to_rdi(count, {}, [&](const operand& address) -> void {
+            lea(src_loc_tk, indent, qword_register("rdi"), address);
+        });
+    }
+
     // the bulk registers of 'rep movsb' and 'repe cmpsb': 'rcx' the count in
     // bytes, 'rsi' the address of 'to_rsi' and 'rdi' that of 'to_rdi'
     auto load_bulk_registers(
@@ -2158,19 +2166,14 @@ class machine_x86_64 final : public machine {
         const operand count{alloc_bulk_registers(src_loc_tk, indent)};
 
         emit_count(count);
-
-        to_rsi(count, {}, [&](const operand& address) -> void {
-            lea(src_loc_tk, indent, qword_register("rsi"), address);
-        });
-
-        to_rdi(count, {}, [&](const operand& address) -> void {
-            lea(src_loc_tk, indent, qword_register("rdi"), address);
-        });
+        load_bulk_addresses(src_loc_tk, indent, count, to_rsi, to_rdi);
 
         scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
                                     element_size_bytes);
     }
 
+    // the register it allocates is freed by the 'address_scope' of the
+    // caller
     [[nodiscard]] auto lower_address(const token& src_loc_tk,
                                      const size_t indent, const operand& value)
         -> operand {

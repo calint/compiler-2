@@ -1,0 +1,8 @@
+# a constant count of 'arrays_equal' larger than the arrays is rejected also
+# when both starts are computed at run time
+func main() {
+    var a = i8[8]
+    var b = i8[8]
+    var i = 0
+    var e = arrays_equal(a[i], b[i], 9)
+}

@@ -14,8 +14,6 @@
 
 #include "token.hpp"
 
-class type;
-
 // the registers of a machine that hold a value: named ones are fixed by an
 // instruction or the calling convention, scratch ones are picked by the
 // machine, all are freed in the reverse order of allocation. a register is
@@ -29,7 +27,6 @@ class register_pool final {
         // where it was allocated, 'indent' is the indent of that code
         token src_loc_tk;
         size_t indent{};
-        const type* type_ptr{};
         bool named{};
         // the index of the inlined call that allocated it, see 'call_frame'
         size_t frame{};
@@ -55,8 +52,8 @@ class register_pool final {
             std::ranges::find(allocations_, index, &allocation::index),
         };
 
-        // note: a register is protected without being allocated only while
-        //       one instruction is lowered, which allocates no register
+        // note: a register is protected without being allocated only inside a
+        //       backend operation, which reserves no named register there
         assert(holder != allocations_.end());
 
         return *holder;

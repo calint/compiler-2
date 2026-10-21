@@ -1,0 +1,7 @@
+# a constant count of 'read' larger than the array is rejected also when the
+# start is computed at run time
+func main() {
+    var b = i8[4]
+    var i = 0
+    read(0, b, 5, i)
+}

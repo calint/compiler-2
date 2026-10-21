@@ -912,12 +912,18 @@ class expr_bool_op final : public statement {
         if (expr.is_indexed() or
             (expr.is_name_or_literal() and expr_info.is_address_computed())) {
 
-            return expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
-                                    {
-                                        .reg_count{},
-                                        .known{expr_info.known()},
-                                        .address_register{},
-                                    });
+            const operand address{
+                expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
+                                 {
+                                     .reg_count{},
+                                     .known{expr_info.known()},
+                                     .address_register{},
+                                 }),
+            };
+
+            // e.g. '-a[i]'
+            return with_unary_ops(tc, indent, expr, address,
+                                  expr_info.type_ref(), allocated_registers);
         }
 
         // a typed constant left side is a value of its type in a register
@@ -944,18 +950,8 @@ class expr_bool_op final : public statement {
             return expr.make_constant_operand(expr_info);
         }
 
-        if (expr.get_unary_ops().is_empty()) {
-            return expr_info.operand();
-        }
-
-        const operand reg{
-            expr_arith::compile_unary_to_scratch(
-                tc, indent, expr, expr_info.operand(), expr_info.type_ref()),
-        };
-
-        allocated_registers.emplace_back(reg);
-
-        return reg;
+        return with_unary_ops(tc, indent, expr, expr_info.operand(),
+                              expr_info.type_ref(), allocated_registers);
     }
 
     // a side computed at run time in a register of its own type, so a
@@ -1003,6 +999,27 @@ class expr_bool_op final : public statement {
         }
 
         return resolve_expr(tc, indent, lhs, true, allocated_registers);
+    }
+
+    // 'value' with the unary operators of 'expr' applied, in a scratch register
+    // when it has any
+    [[nodiscard]] static auto
+    with_unary_ops(toc& tc, const size_t indent, const expr_arith& expr,
+                   const operand& value, const type& value_type,
+                   std::vector<operand>& allocated_registers) -> operand {
+
+        if (expr.get_unary_ops().is_empty()) {
+            return value;
+        }
+
+        const operand reg{
+            expr_arith::compile_unary_to_scratch(tc, indent, expr, value,
+                                                 value_type),
+        };
+
+        allocated_registers.emplace_back(reg);
+
+        return reg;
     }
 };
 
@@ -1079,7 +1096,7 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        // e.g. 'true' or a named constant
+        // e.g. '(true)' or the bare type 'bool'
         if (not is_expression()) {
             const ident_info src_info{tc.make_ident_info(*this)};
 

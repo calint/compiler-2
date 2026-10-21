@@ -1,6 +1,71 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: findings of the fourth review round of 2026-10-21 (phase R4a),
+    without the conversions and the noinline chain limit (phase R4b)
+    => done (2026-10-21):
+       1. byte-identical output on every test of both targets: x86_64
+          'load_bulk_addresses' serves 'memory_equal' and
+          'load_bulk_registers', 'branch_to_overflow_panic' takes 'with_line'
+          like its sibling; rv32i 'line_size_bytes' has no label case, the
+          linux 'emit_stack_limit_load' is unreachable and qemu has its own,
+          qemu 'emit_sector_routines' is unreachable, 'emit_report_line_routine'
+          and named labels for the shared routines; 'is_enterable' asserts a
+          label; 'register_pool::allocation' has no type; 'used_routines_'
+          keys own their names; one enum for the kind of a scope frame;
+          'ident_info::element_count' for the length of an array; the padding
+          gaps stop past the backend limit, so their count does not grow
+          with an array; 'comment_type_layout' takes the type;
+          'stmt_def_type' and 'stmt_def_type_alias' cannot be copied or
+          moved; 'compile_field' checks an array copy once;
+          'source_files::is_empty' is gone; comments, includes and style of
+          the review items G1 to G7 and ARCH; README 4.4, 5.2 and 7.8
+       2. only asm comments change: a noinline method no longer comments a
+          frame slot it does not write; an empty array field is zeroed at
+          its '{}'
+       3. an error that depends on a call ends the check of a function that
+          nothing calls only when the function takes something from a call:
+          a noinline function without unsized arrays or an inlined one
+          without parameters is rejected (1288 to 1290, README 1.5)
+       4. a unary operator on an indexed argument or a parameter of an
+          inlined call passes the value (0232 is now a run, 1291 to 1293)
+       5. a constant count larger than the array is rejected also with a
+          start computed at run time, for 'array_copy', 'arrays_equal',
+          'read' and 'write' (1294 to 1298)
+       6. a call of 'main' is rejected at the parse (1299); "expected ')'
+          after arguments" is tested (1300)
+       7. 'let k = k + 1' reads the uninitialized 'k' like 'var', also with
+          an outer or a global constant 'k' (1301 to 1303)
+       8. a unary operator on the buffer of 'read' or 'write' or on the
+          argument of an array parameter is rejected (1304 to 1307);
+          'array_length(1)' says "'1' is not an array" (0262)
+       9. a unary operator on an indexed side of a comparison or on one
+          whose address is computed is applied (1308, 1309)
+       10. braced elements assigned to the array they read and a call in an
+           instance field are checked for reads of written parts (1310 to
+           1313)
+       11. messages: the io built-ins and 'exit' at an instance or array
+           destination (1314 to 1316); a condition in parentheses that is
+           compared (1317, 1318); "a 'bool' is not an arithmetic operand,
+           'int(b)' converts it" (0347, 0620, 1083 to 1087); a global
+           initializer out of registers reports "global initializers"
+           (1319); "constant 'N' has no fields" (1320, 1321); a type at the
+           storage limit is rejected, not asserted (1322, 1323); a token
+           where a definition is expected is quoted as written, a control
+           byte as '\xNN' (1324 to 1326); a call in a field of an instance
+           literal is located at the call (1327 to 1329); 'not' in an
+           arithmetic operand (1330, 1331)
+       12. '--bin' naming an included file is rejected after the parse;
+           'test-cli.sh' tests it and a source larger than 256 MiB
+       13. 'unlocated_error' (was 'usage_error') and 'print_option_error'
+           (was 'print_usage_error'): every user error without a place in
+           the source prints "error: ...", an option error adds the hint;
+           a stack below what 'main' uses is "invalid --stack: ..."
+       14. rv32i writes a 'dat' array as one data line, e.g. '.word 1, 2,
+           3' (images unchanged); rv32i-fpga drops '--checks=line'
+           ('machine::reports_line'), so a check loads no line
+       15. README 1.5 says that 's[m]' with 'let m = n' in a 'foo' is left
+           to the run-time check where 's[n]' is rejected
 [x] medium: clean ups of the third review round of 2026-10-21 (phase R3d)
     => done (2026-10-21):
        1. a method that an alias of a generic type instantiates and nothing

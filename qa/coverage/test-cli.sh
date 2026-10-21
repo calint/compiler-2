@@ -97,9 +97,20 @@ CLI_BINARY_NAME() {
     local exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    grep -Fq "invalid --bin: './gen-source.baz' is the source file" err
+    grep -Fq "invalid --bin: './gen-source.baz' is a source file" err
     cmp -s 0426.baz gen-source.baz
     rm -f gen-source.baz
+    # nor an included file
+    printf 'func three() res {\n    res = 3\n}\n' >gen-include.baz
+    printf 'include "gen-include.baz"\n\nfunc main() {\n    exit(three())\n}\n' >gen-main.baz
+    set +e
+    "$BIN" --target=rv32i --bin=gen-include.baz gen-main.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "invalid --bin: 'gen-include.baz' is a source file" err
+    grep -Fq "res = 3" gen-include.baz
+    rm -f gen-include.baz gen-main.baz
     echo ok
 }
 
@@ -189,7 +200,8 @@ CLI_FILE_ERRORS() {
     local exit_code=$?
     set -e
     [[ $exit_code -eq 1 ]]
-    grep -Fq "cannot open file 'missing-source.baz'" err
+    # an error without a place in the source has the format of an option error
+    grep -Fq "error: cannot open file 'missing-source.baz'" err
     set +e
     "$BIN" --target=rv32i --bin=missing-directory/gen-rv32i.bin 0015.baz >gen.s 2>err
     exit_code=$?
@@ -197,6 +209,13 @@ CLI_FILE_ERRORS() {
     [[ $exit_code -eq 1 ]]
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file 'missing-directory/gen-rv32i.bin'" err
+    # a source is read up to its size limit
+    set +e
+    "$BIN" /dev/zero >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "file '/dev/zero' is larger than 268435456 B" err
     echo ok
 }
 
@@ -431,7 +450,7 @@ CLI_SMALL_STACK() {
         exit_code=$?
         set -e
         [[ $exit_code -eq 1 ]]
-        grep -Fq "the stack 32 B is smaller than the 48 B that 'main' may use without a stack check" err
+        grep -Fq "error: invalid --stack: 32 B is smaller than the 48 B that 'main' may use without a stack check" err
         "$BIN" --target=$target --bin=gen-rv32i.bin --stack=48 0426.baz >gen.s 2>err
         [[ ! -s err ]]
     done
@@ -480,7 +499,7 @@ CLI_PADDING_ZERO_BY_TARGET() {
 }
 
 CLI_USAGE_MESSAGES() {
-    echo -n "cli usage errors name their option: "
+    echo -n "cli option errors name their option: "
     local arg exit_code
     for arg in --vars=0 --stack=x --memory=100 --memory=0x100000000 --target=x --checks=x --report=x --versions=x; do
         set +e
@@ -488,7 +507,7 @@ CLI_USAGE_MESSAGES() {
         exit_code=$?
         set -e
         [[ $exit_code -eq 1 ]]
-        grep -Fq "invalid ${arg%%=*}: " err
+        grep -Fq "error: invalid ${arg%%=*}: " err
     done
     echo ok
 }

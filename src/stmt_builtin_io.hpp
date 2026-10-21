@@ -218,7 +218,8 @@ class stmt_builtin_io final : public stmt_call {
                             io_.is_sector ? "3rd" : "4th", usage_text())};
         }
 
-        if (buffer.is_name_or_literal()) {
+        // e.g. not '-b', a unary operator makes a value
+        if (buffer.is_name_or_literal() and buffer.get_unary_ops().is_empty()) {
             const ident_info info{tc.make_ident_info(buffer)};
 
             if (info.is_var() and info.is_array()) {
@@ -249,7 +250,6 @@ class stmt_builtin_io final : public stmt_call {
             has_start() ? argument_constant(tc, start_index) : int64_t{},
         };
 
-        // note: a sector function has no count, its start passes the end
         assert_constant_range(
             buffer_info,
             {
@@ -259,6 +259,8 @@ class stmt_builtin_io final : public stmt_call {
                     has_start() ? std::optional{argument(start_index).tok()}
                                 : std::nullopt,
                 },
+                // note: a sector function has no count argument, an error
+                //       about its range points at the start
                 .count_tk{
                     has_count() ? argument(2).tok()
                                 : argument(start_index).tok(),
@@ -302,7 +304,6 @@ class stmt_builtin_io final : public stmt_call {
         const size_t buffer_size_bytes{*array_len * element_size_bytes};
 
         if (buffer_size_bytes < sector_size_bytes) {
-
             throw compile_error{
                 buffer.tok(),
                 std::format("the array of {} B is smaller than a sector of "
@@ -357,7 +358,8 @@ class stmt_builtin_io final : public stmt_call {
 
         assert_constant_range_in_bounds(tc, buffer_info);
 
-        // a start is checked with the start, a bare count by 'compile_lea'
+        // a count with a start is checked by 'compile_start', a bare count by
+        // 'compile_lea'
         compile_buffer_address(tc, indent, buffer_reg, buffer_info,
                                has_count() and not has_start() ? count
                                                                : operand{});
@@ -410,9 +412,8 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         const size_t element_count{
-            io_.is_sector
-                ? sector_element_count(tc, buffer_info)
-                : buffer_info.array_len().value_or(discarded_array_len),
+            io_.is_sector ? sector_element_count(tc, buffer_info)
+                          : buffer_info.element_count(),
         };
 
         machine& x{tc.machine()};
@@ -438,12 +439,10 @@ class stmt_builtin_io final : public stmt_call {
 
         start_arg.compile(tc, indent, destination::of_register(start));
 
-        x.check_bounds(
-            start_arg.tok(), indent,
-            machine::bounds_range::range(
-                start, count,
-                buffer_info.array_len().value_or(discarded_array_len)),
-            tc.checks().bounds_options());
+        x.check_bounds(start_arg.tok(), indent,
+                       machine::bounds_range::range(
+                           start, count, buffer_info.element_count()),
+                       tc.checks().bounds_options());
 
         return start;
     }

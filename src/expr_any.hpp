@@ -328,12 +328,23 @@ class expr_any final : public statement {
         return std::get<expr_type>(elements_.at(index));
     }
 
-    auto assert_record_value_not_reading(
-        const expr_type::constructor_target& dst) const -> void {
+    // a value written in parts to 'dst' does not read a part written before,
+    // e.g. 'a = {a[1], a[0]}' or 'p = {p.y, p.x}'
+    auto
+    assert_value_not_reading(const expr_type::constructor_target& dst) const
+        -> void {
 
-        if (is_array_ or
-            not std::holds_alternative<expr_type>(elements_.at(0))) {
+        // note: a copy of an array reads the same bytes or other ones
+        if (is_array_identifier()) {
+            return;
+        }
 
+        if (is_array_) {
+            expr_type::assert_elements_not_reading(*this, get_type(), dst, 0);
+            return;
+        }
+
+        if (not std::holds_alternative<expr_type>(elements_.at(0))) {
             return;
         }
 
@@ -573,7 +584,7 @@ class expr_any final : public statement {
     }
 
     // an unsized destination, e.g. a parameter 's[]', has the size of the
-    // argument, which is known only at compile time
+    // argument, which is known only when the call is compiled
     [[nodiscard]] auto destination_array_count(const destination& dst) const
         -> size_t {
 

@@ -1,4 +1,4 @@
 
-1086.baz:3:10: boolean values cannot be arithmetic operands
+1086.baz:3:10: a 'bool' is not an arithmetic operand, 'int(true)' converts it
 dat d = -true
          ^~~~

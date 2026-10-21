@@ -1,0 +1,4 @@
+
+1331.baz:5:13: 'not' makes a condition, which is not an operand here, store it in a 'bool' first
+    if b == not b {
+            ^~~

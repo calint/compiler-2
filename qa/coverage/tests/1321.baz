@@ -1,0 +1,6 @@
+# a field of a local constant is rejected, a constant has no fields
+func main() {
+    let M = 4
+    var a = M.x
+    exit(a)
+}

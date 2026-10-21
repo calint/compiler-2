@@ -1,0 +1,8 @@
+# the count of 'read' assigned to an array is rejected like any value of a
+# built-in type, the source must be an array
+func main() {
+    var buf = i8[4]
+    var a = i64[2]
+    a = read(0, buf, 4)
+    exit(0)
+}

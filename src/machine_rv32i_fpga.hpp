@@ -9,6 +9,8 @@
 
 #include "assembler_rv32i.hpp"
 #include "machine_rv32i_bare_metal.hpp"
+#include "operand.hpp"
+#include "token.hpp"
 
 // runs the flat image loaded at address 0 on the fpga or its emulator,
 // input and output go through the memory mapped uart
@@ -62,16 +64,20 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     //
 
     // a panic prints nothing and exits with the code of its failure, which
-    // lights a diode, and the exit routine loops; under '--checks=line' the
-    // line in 'a0' is dropped
+    // lights a diode, and the exit routine loops; no line is reported, see
+    // 'reports_line'
     auto emit_bounds_failure_handler([[maybe_unused]] const bool with_line)
         -> void override {
+
+        assert(not with_line);
 
         emit_panic_exit(bounds_failure_handler_label, bounds_exit_code_);
     }
 
     auto emit_division_failure_handler([[maybe_unused]] const bool with_line)
         -> void override {
+
+        assert(not with_line);
 
         emit_panic_exit(division_failure_handler_label, division_exit_code_);
     }
@@ -83,11 +89,15 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     auto emit_overflow_failure_handler([[maybe_unused]] const bool with_line)
         -> void override {
 
+        assert(not with_line);
+
         emit_panic_exit(overflow_failure_handler_label, overflow_exit_code_);
     }
 
     auto emit_overlap_failure_handler([[maybe_unused]] const bool with_line)
         -> void override {
+
+        assert(not with_line);
 
         emit_panic_exit(overlap_failure_handler_label, overlap_exit_code_);
     }
@@ -95,12 +105,16 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     auto emit_shift_failure_handler([[maybe_unused]] const bool with_line)
         -> void override {
 
+        assert(not with_line);
+
         emit_panic_exit(shift_failure_handler_label, shift_exit_code_);
     }
 
     auto emit_stack_overflow_handler() -> void override {
         emit_panic_exit(stack_overflow_handler_label, stack_exit_code_);
     }
+
+    [[nodiscard]] auto reports_line() const -> bool override { return false; }
 
   protected:
     //

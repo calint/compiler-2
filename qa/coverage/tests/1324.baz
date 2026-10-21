@@ -1,0 +1,4 @@
+# a string where a definition is expected is reported with its quotes
+"abc"
+
+func main() {}

@@ -1,0 +1,14 @@
+# a call that is a field of an instance field reads the fields written before
+# it, its argument is checked like a braced field
+type point {x, y}
+type line {a point, b point}
+
+func mk(v) res point {
+    res = {v, v}
+}
+
+func main() {
+    var l = line{{1, 2}, {3, 4}}
+    l = {{5, 6}, mk(l.a.x + 0)}
+    exit(l.b.x)
+}

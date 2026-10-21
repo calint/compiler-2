@@ -1,0 +1,4 @@
+
+1307.baz:7:7: '~a' is not an array, parameter 'x' takes one
+    f(~a)
+      ^

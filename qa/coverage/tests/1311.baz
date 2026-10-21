@@ -1,0 +1,9 @@
+# braced instances assigned to the array they read are rejected when a field
+# reads an instance written before it
+type point {x, y}
+
+func main() {
+    var ps = point[2]{{1, 2}, {3, 4}}
+    ps = {{5, 6}, {ps[0].x, 0}}
+    exit(ps[1].x)
+}

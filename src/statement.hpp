@@ -236,7 +236,8 @@ enum class width_change : uint8_t { narrowed, widened };
 //                  'is_expression', 'produces_boolean', 'compile_boolean':
 //                  'expr_arith', 'expr_any', 'expr_bool', 'expr_zero',
 //                  'stmt_builtin_convert', 'stmt_builtin_array_length',
-//                  'stmt_builtin_arrays_equal', 'stmt_call'
+//                  'stmt_builtin_arrays_equal', 'stmt_call',
+//                  'stmt_identifier' ('assert_not_narrowed', 'keeps_low_bits')
 //   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and

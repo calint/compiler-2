@@ -1,0 +1,13 @@
+# a unary operator on a parameter passed to an inlined call is accepted in a
+# function that nothing calls
+func f(x) res {
+    res = x
+}
+
+func h(y) res {
+    res = f(-y)
+}
+
+func main() {
+    exit(7)
+}

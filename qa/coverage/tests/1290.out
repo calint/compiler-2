@@ -1,0 +1,22 @@
+
+1290.baz:5:103: out of scratch registers, simplify the expression
+    res = (v - (v * 2 + (v - (v * 4 + (v - (v * 6 + (v - (v * 8 + (v - (v * 10 + (v - (v * 12 + (v - (v * 14 + (v - (v * 16 + (v - (v * 18 + (v - (v * 20 + (v - (v * 22 + (v - (v * 24 + (v - (v * 26 + (v - (v * 28 + (v - (v * 30 + (v - (v * 32 + v * v) * (v + 30))) * (v + 28))) * (v + 26))) * (v + 24))) * (v + 22))) * (v + 20))) * (v + 18))) * (v + 16))) * (v + 14))) * (v + 12))) * (v + 10))) * (v + 8))) * (v + 6))) * (v + 4))) * (v + 2))) * (v + 0))
+                                                                                                      ^
+
+register use at the failure: 13 of 13 registers live
+
+  held  frame, registers (allocated at)
+    13  f (noinline body)
+          r15 5:5
+          r14 5:17
+          r13 5:26
+          r12 5:31
+          r10 5:40
+          r9 5:45
+          r8 5:54
+          r11 5:59
+          rdx 5:68
+          rax 5:73
+          rsi 5:83
+          rdi 5:88
+          rcx 5:98

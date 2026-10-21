@@ -1,0 +1,4 @@
+
+1303.baz:3:17: use of uninitialized variable 'k'
+    let k = 1 + k
+                ^

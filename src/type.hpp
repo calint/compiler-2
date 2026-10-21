@@ -88,7 +88,10 @@ class type final {
         type_field field{
             .name{name},
             .type_ptr{&tp},
-            .offset{align_storage_size(fields_end_bytes_, tp.alignment_)},
+            .offset{
+                checked_align_storage_size(src_loc_tk, fields_end_bytes_,
+                                           tp.alignment_),
+            },
             .size_bytes{},
             .array_count{array_count},
         };
@@ -102,13 +105,19 @@ class type final {
         fields_.emplace_back(std::move(field));
 
         alignment_ = std::max(alignment_, tp.alignment_);
-        size_bytes_ = align_storage_size(fields_end_bytes_, alignment_);
+
+        size_bytes_ = checked_align_storage_size(src_loc_tk, fields_end_bytes_,
+                                                 alignment_);
     }
 
     [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
 
-    // the bytes of a value without padding, adjacent fields are merged
-    [[nodiscard]] auto data_ranges() const -> std::vector<byte_range> {
+    // the bytes of a value without padding, adjacent fields are merged; stops
+    // at more than 'max_count' ranges, the last of which may then be
+    // incomplete, so the work does not grow with the size of an array
+    [[nodiscard]] auto data_ranges(const size_t max_count) const
+        -> std::vector<byte_range> {
+
         std::vector<byte_range> ranges;
 
         if (is_builtin()) {
@@ -117,11 +126,29 @@ class type final {
         }
 
         for (const type_field& f : fields_) {
+            if (ranges.size() > max_count) {
+                break;
+            }
+
             const std::vector<byte_range> element_ranges{
-                f.type().data_ranges(),
+                f.type().data_ranges(max_count),
             };
 
-            for (size_t i{}; i < f.element_count(); ++i) {
+            const bool is_unpadded{
+                element_ranges.size() == 1 and
+                    element_ranges.front().size_bytes == f.type().size_bytes_,
+            };
+
+            if (is_unpadded) {
+                append_range(ranges, f.offset, f.size_bytes);
+                continue;
+            }
+
+            // note: each padded element after the first adds a range, so the
+            //       loop ends within 'max_count' + 2 elements
+            for (size_t i{};
+                 i < f.element_count() and ranges.size() <= max_count; ++i) {
+
                 const size_t element_offset{
                     f.offset + (i * f.type().size_bytes_),
                 };

@@ -361,8 +361,14 @@ class stmt_def_func final : public statement {
     // noinline body and discarded; an unsized array parameter has no length
     // ('ident_info::is_length_unknown'). an error that depends on the
     // arguments of a call, e.g. an inlined recursion that a constant argument
-    // ends, cannot be told and ends the check
+    // ends, cannot be told and ends the check; a body that takes nothing from
+    // a call, a noinline one without unsized arrays or an inlined one without
+    // parameters, has no such error
     auto check_body(toc& tc, const size_t indent) const -> void {
+        const bool takes_from_call{
+            array_param_count() != 0 or (is_inlined() and not params().empty()),
+        };
+
         tc.check_only([&] -> void {
             machine& x{tc.machine()};
 
@@ -376,7 +382,7 @@ class stmt_def_func final : public statement {
             try {
                 std::ignore = compile_in_frame(tc, indent, {});
             } catch (const compile_error& e) {
-                if (not e.depends_on_call()) {
+                if (not takes_from_call or not e.depends_on_call()) {
                     throw;
                 }
             }

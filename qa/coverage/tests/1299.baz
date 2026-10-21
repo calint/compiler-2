@@ -1,0 +1,8 @@
+# a call of 'main' is rejected also in a function that nothing calls
+func main() {
+    exit(0)
+}
+
+func g() {
+    main()
+}

@@ -1,0 +1,8 @@
+# a constant count of 'array_copy' larger than the array is rejected also when
+# the start is computed at run time
+func main() {
+    var a = i8[4]
+    var b = i8[8]
+    var i = 0
+    array_copy(b, a[i], 5)
+}

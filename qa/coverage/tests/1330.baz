@@ -1,0 +1,7 @@
+# a 'not' in an arithmetic operand is rejected, a condition is stored in a
+# 'bool' first
+func main() {
+    var b = true
+    var n = int(not b)
+    exit(n)
+}

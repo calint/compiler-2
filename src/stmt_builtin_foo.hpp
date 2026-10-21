@@ -107,8 +107,7 @@ class stmt_builtin_foo final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand limit{
-            compile_limit(tc, indent,
-                          array_info.array_len().value_or(discarded_array_len),
+            compile_limit(tc, indent, array_info.element_count(),
                           allocated_registers),
         };
 
@@ -156,7 +155,7 @@ class stmt_builtin_foo final : public statement {
   private:
     // 'e' is the element at the iterator, 'i' the counter and 'n' the array
     // size, declared at the 'foo'; parsing registers them without iterator
-    // and counter registers. 'n' is a constant when the size is known, else
+    // and counter registers; 'n' is a constant when the size is known, else
     // a read-only variable that is never read at run time, see
     // 'ident_info::is_length_unknown'
     auto add_loop_names(toc& tc, const size_t indent, const token& src_loc_tk,

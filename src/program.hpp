@@ -240,7 +240,7 @@ class assignment_analysis final {
     static auto assert_functions_set_return_value(
         const std::span<const stmt_def_func* const> funcs) -> void {
 
-        for (const stmt_def_func* f : funcs) {
+        for (const stmt_def_func* const f : funcs) {
             const std::optional<func_return_info> ret_info{f->returns()};
 
             if (not ret_info) {
@@ -294,8 +294,8 @@ class program final {
         size_t file_ix{};
         size_t begin{};
         size_t end{};
-        // the end of the file, its whitespace holds the comments of a file
-        // without statements, the last token of a statement holds them else
+        // the end of the file, its whitespace holds the comments and blank
+        // lines after the last statement
         token end_tk;
     };
 
@@ -445,7 +445,7 @@ class program final {
 
         try {
             text = source_files::read_file(path.string());
-        } catch (const usage_error& e) {
+        } catch (const unlocated_error& e) {
             throw compile_error{path_tk, e.what()};
         }
 
@@ -494,7 +494,7 @@ class program final {
 
     // a file is parsed once, a later 'include' of it, also from a file it
     // includes, changes nothing
-    [[nodiscard]] auto parse_include(tokenizer& tz, const token include_tk,
+    [[nodiscard]] auto parse_include(tokenizer& tz, const token& include_tk,
                                      const size_t file_ix)
         -> std::unique_ptr<statement> {
 
@@ -544,7 +544,7 @@ class program final {
     static auto check_unreached_functions(toc& tc, const size_t indent)
         -> void {
 
-        for (const stmt_def_func* f : tc.funcs().defs()) {
+        for (const stmt_def_func* const f : tc.funcs().defs()) {
             if (tc.funcs().is_reached(*f)) {
                 continue;
             }
@@ -693,7 +693,7 @@ class program final {
 
     // only definitions are allowed at the top level
     [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
-                                               const token tk)
+                                               const token& tk)
         -> std::unique_ptr<statement> {
 
         if (tk.is_text("func")) {
@@ -719,7 +719,43 @@ class program final {
 
         throw compile_error{
             tk, std::format("expected a definition ('func', 'type', 'var', "
-                            "'let' or 'dat'), got '{}'",
-                            tk.text())};
+                            "'let' or 'dat'), got {}",
+                            quoted_as_written(tk))};
+    }
+
+    // a control byte as '\xNN', so the message stays on its line
+    [[nodiscard]] static auto printable(const std::string_view text)
+        -> std::string {
+
+        std::string result;
+
+        for (const char ch : text) {
+            const unsigned char byte{static_cast<unsigned char>(ch)};
+
+            if (byte < ' ' or byte == '\x7f') {
+                result += std::format("\\x{:02x}", byte);
+                continue;
+            }
+
+            result.push_back(ch);
+        }
+
+        return result;
+    }
+
+    // the token quoted as the source writes it: a string keeps its double
+    // quotes and a character literal is in its own quotes
+    [[nodiscard]] static auto quoted_as_written(const token& tk)
+        -> std::string {
+
+        if (tk.is_string()) {
+            return std::format("'\"{}\"'", printable(tk.text()));
+        }
+
+        if (tk.text().starts_with('\'')) {
+            return printable(tk.text());
+        }
+
+        return std::format("'{}'", printable(tk.text()));
     }
 };

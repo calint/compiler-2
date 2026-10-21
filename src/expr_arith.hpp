@@ -592,6 +592,23 @@ class expr_arith final : public expression {
         return constant_arith::wrap_to_width(value, width_type);
     }
 
+    // a comparison operator, '<' and '>' are not shifts where an arithmetic
+    // list ends
+    [[nodiscard]] static auto is_comparison_next(const tokenizer& tz) -> bool {
+        tokenizer probe{tz};
+        std::ignore = probe.next_whitespace_token();
+
+        if (probe.is_next_char('<') or probe.is_next_char('>')) {
+            return true;
+        }
+
+        if (not probe.is_next_char('=') and not probe.is_next_char('!')) {
+            return false;
+        }
+
+        return probe.is_next_char('=');
+    }
+
   private:
     // e.g. 'b + 1 - 1' or 'b / 1 / 1' apply nothing
     auto apply_merged_constant(toc& tc, const size_t indent,
@@ -820,7 +837,7 @@ class expr_arith final : public expression {
         x.free_scratch_register(tok(), indent, reg);
     }
 
-    // a plain first element is copied before anything writes the destination
+    // a plain first element is copied before anything writes the destination;
     // a negated one may move behind a leading constant: 'n = -n + 1'
     [[nodiscard]] auto
     destination_is_clobbered_before_read(const destination& dst) const -> bool {
@@ -861,6 +878,14 @@ class expr_arith final : public expression {
                   const token& ws_before_op_tk) const -> void {
 
         tz.put_back_token(ws_before_op_tk);
+
+        // e.g. the '==' of '(x == 1) == b', which takes the condition for an
+        // arithmetic operand
+        if (is_enclosed() and is_comparison_next(tz)) {
+            throw compile_error{tz.next_token(),
+                                "a condition in parentheses cannot be "
+                                "compared, store it in a 'bool' first"};
+        }
 
         // an enclosed list ends with its ')'
         // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
@@ -1255,8 +1280,16 @@ class expr_arith final : public expression {
             return;
         }
 
-        throw compile_error{term.tok(),
-                            "boolean values cannot be arithmetic operands"};
+        // the conversion goes inside the unary operators, e.g. '-int(t)'
+        const std::string_view converted{
+            term.is_name_or_literal() ? term.name_or_literal() : "...",
+        };
+
+        throw compile_error{
+            term.tok(),
+            std::format("a 'bool' is not an arithmetic operand, 'int({})' "
+                        "converts it",
+                        converted)};
     }
 
     // the targets shift differently by a count outside the width, so a

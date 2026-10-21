@@ -1,0 +1,6 @@
+# a unary operator on the buffer of 'read' is rejected, the buffer is an array
+func main() {
+    var b = i8[4]
+    read(0, ~b, 2)
+    exit(0)
+}

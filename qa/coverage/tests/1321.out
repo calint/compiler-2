@@ -1,0 +1,4 @@
+
+1321.baz:4:15: constant 'M' has no fields
+    var a = M.x
+              ^

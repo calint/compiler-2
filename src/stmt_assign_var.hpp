@@ -91,7 +91,7 @@ class stmt_assign_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        expr_.assert_record_value_not_reading({
+        expr_.assert_value_not_reading({
             .root{stmt_ident_.first_token().text()},
             .range{stmt_ident_.accessed_bytes()},
             .is_exact{stmt_ident_.is_exact_access()},

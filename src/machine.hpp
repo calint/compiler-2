@@ -39,8 +39,9 @@ struct runtime_check {
 
 // what the front end emits through, and what every target shares: the
 // registers with the variables and frame bases, the trace of their use and
-// the sd card routines in use; a backend supplies the instructions, the names
-// of its registers and the order it picks scratch registers in
+// the routines, helpers and failure stubs the code uses; a backend supplies
+// the instructions, the names of its registers and the order it picks scratch
+// registers in
 class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
@@ -259,7 +260,7 @@ class machine {
     // far uses, emitted after the code, with the lines whose failure stubs it
     // uses, e.g. 'sector_read' or the lines of the bounds checks that report
     // them; see 'mark_used'
-    std::map<std::string_view, std::set<size_t>> used_routines_;
+    std::map<std::string, std::set<size_t>, std::less<>> used_routines_;
 
     // what compiling a version of code changes in the machine: the registers
     // held, the trace of the calls, the most scratch registers in use and the
@@ -268,7 +269,7 @@ class machine {
         register_pool registers;
         register_trace trace;
         size_t max_scratch_regs{};
-        std::map<std::string_view, std::set<size_t>> used_routines;
+        std::map<std::string, std::set<size_t>, std::less<>> used_routines;
     };
 
     // the state before a version, put back when the scope ends, also when an
@@ -696,6 +697,10 @@ class machine {
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers = 0;
 
+    // whether a failure handler can report the line of the check, else
+    // '--checks=line' is dropped and a check loads no line
+    [[nodiscard]] virtual auto reports_line() const -> bool { return true; }
+
     virtual auto reserve_variables(const size_t alignment,
                                    const size_t size_bytes) -> void = 0;
 
@@ -731,8 +736,8 @@ class machine {
                        const arithmetic_operator operation, const operand& dst,
                        const runtime_check& check = {}) -> void = 0;
 
-    // 'dat' is where the variables base register points, unless it points past
-    // the 'vars' label, then this is the distance
+    // empty when the variables base register points at 'dat', else how far
+    // past the 'vars' label it points
     [[nodiscard]] virtual auto variables_base_past_vars_bytes() const
         -> std::optional<size_t> = 0;
 
@@ -782,7 +787,7 @@ class machine {
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_name);
 
-            push_allocation(src_loc_tk, indent, register_name, type_ref, false);
+            push_allocation(src_loc_tk, indent, register_name, false);
 
             usage_max_scratch_regs_ =
                 std::max(usage_max_scratch_regs_, registers_.scratch_count());
@@ -865,8 +870,9 @@ class machine {
             });
         } catch (compile_error& e) {
             // note: the registers it starts with do not depend on the code
-            //       around it, so the error is not one of a version there,
-            //       and its parameters are not known, so it does not depend on
+            //       around it, so the error is not one of a version there;
+            //       discarded code stands for a noinline body, compiled for
+            //       real when it is called, so the error does not depend on
             //       the arguments of a call
             e.kind = compile_error::error_kind::source;
             throw;
@@ -1005,8 +1011,7 @@ class machine {
         assert(not frame_base_reserved_);
         assert(registers_.scratch_count() == 0);
 
-        push_allocation(token{}, 0, frame_base_register(), default_type(),
-                        true);
+        push_allocation(token{}, 0, frame_base_register(), true);
 
         frame_base_reserved_ = true;
 
@@ -1094,8 +1099,13 @@ class machine {
     [[nodiscard]] auto statistics() const -> output_statistics {
         const assembler& output{target_assembler()};
 
-        output_statistics stats;
-        stats.max_scratch_registers = usage_max_scratch_regs_;
+        output_statistics stats{
+            .is_counted{},
+            .optimizations{assembler::optimization_counts{}},
+            .noinline_functions{},
+            .max_scratch_registers{usage_max_scratch_regs_},
+            .instruction_count{},
+        };
 
         if (output.is_buffering()) {
             stats.is_counted = true;
@@ -1115,6 +1125,9 @@ class machine {
                       const size_t alignment,
                       const std::span<const padding_gap> gaps) -> void {
 
+        // note: a measured threshold, not 'emit_most_efficient': both forms
+        //       would multiply the versions of the inlined calls around it,
+        //       and an instance with thousands of gaps would cost compile time
         if (gaps.size() > max_padding_gaps_zeroed_one_by_one()) {
             comment(src_loc_tk, indent, "zero instance for its padding: {} B",
                     size_bytes);
@@ -1406,8 +1419,8 @@ class machine {
         return variables_base_reserved_;
     }
 
-    // before the frame base, the address may be relative to it; the receiver of
-    // the caller, already in the register, is passed as is
+    // loaded before the frame base is set, the address may be relative to the
+    // caller's; the receiver already in the register is passed as is
     auto load_slot_address(const token& src_loc_tk, const size_t indent,
                            const operand& slot_address) -> void {
 
@@ -1434,13 +1447,13 @@ class machine {
     // the routine is emitted after the code; the use is version state, so a
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
-        used_routines_.try_emplace(routine);
+        used_routines_.try_emplace(std::string{routine});
     }
 
     // the failure stub of 'line' is emitted with the handler of 'routine',
     // see 'mark_used'
     auto mark_used(const std::string_view routine, const size_t line) -> void {
-        used_routines_[routine].insert(line);
+        used_routines_[std::string{routine}].insert(line);
     }
 
     // 'signed_max' is the largest value of the signed type of the compare
@@ -1470,7 +1483,7 @@ class machine {
         registers_.protect(register_mask(name));
     }
 
-    // a call of the function with the body 'label' saves the registers 'saved'
+    // a call of the function with the body 'label' saves 'saved' registers
     auto record_noinline_call(const token& call_site_tk,
                               const std::string_view label, const size_t saved)
         -> void {
@@ -1535,7 +1548,7 @@ class machine {
             throw register_in_use_error(src_loc_tk, register_name);
         }
 
-        push_allocation(src_loc_tk, indent, register_name, type_ref, true);
+        push_allocation(src_loc_tk, indent, register_name, true);
     }
 
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
@@ -1800,7 +1813,6 @@ class machine {
             .index{frame_base_index},
             .src_loc_tk{},
             .indent{},
-            .type_ptr{&default_type()},
             .named{true},
             .frame{current_call_frame()},
         });
@@ -1841,14 +1853,13 @@ class machine {
     // named and scratch allocations share one stack, each is recorded for
     // the report of the use of registers
     auto push_allocation(const token& src_loc_tk, const size_t indent,
-                         const std::string_view register_name,
-                         const type& type_ref, const bool named) -> void {
+                         const std::string_view register_name, const bool named)
+        -> void {
 
         registers_.push({
             .index{pool_index(register_name)},
             .src_loc_tk{src_loc_tk},
             .indent{indent},
-            .type_ptr{&type_ref},
             .named{named},
             .frame{current_call_frame()},
         });

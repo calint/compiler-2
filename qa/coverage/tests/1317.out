@@ -1,0 +1,4 @@
+
+1317.baz:6:11: a condition in parentheses cannot be compared, store it in a 'bool' first
+    if (x == 1) == b {
+          ^

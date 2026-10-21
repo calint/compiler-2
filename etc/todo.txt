@@ -6,6 +6,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: rv32i (both targets) fails the assert 'not uses_register(source,
+    "a0")' in 'machine_rv32i::load_helper_arguments' when the registers run
+    low in a nested product, e.g. the body of 1290 nested 14 levels deep
+    instead of 16, where x86_64 reports "out of scratch registers" (found in
+    the fourth review round, 2026-10-21)
 [ ] medium: low priority: a conversion to a narrower type of an argument
     with '<<' computes the argument at its own width and narrows it, one
     copy more (0589 'i8(1 << 7)', 1226 on rv32i); a '<<' by a count below

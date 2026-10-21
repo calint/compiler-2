@@ -1,0 +1,7 @@
+# 'exit' assigned to an instance is rejected, it does not return a value
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    p = exit(1)
+}

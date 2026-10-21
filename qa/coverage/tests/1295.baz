@@ -1,0 +1,7 @@
+# a constant count of 'write' larger than the array is rejected also when the
+# start is computed at run time
+func main() {
+    var a = i8[4]
+    var i = 0
+    write(1, a, 5, i)
+}

@@ -43,7 +43,8 @@
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place
 //   'noinline_call'   passes addresses to the body that is emitted once
-//   'constructor_call_tag'  selects the constructor of 'point.at(1, 2)'
+//   'constructor_call_tag'
+//                     selects the constructor of 'point.at(1, 2)'
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -564,7 +565,12 @@ class inline_call {
                  const stmt_def_func& func) const -> void {
 
         if (func.returns() and not dst.type_ref().is_same(func.get_type())) {
+            // note: 'call_site::assert_result_type' allows a type mismatch
+            //       only for an operand
+            assert(dst.is_operand());
+
             compile_widened(tc, indent, dst, func);
+
             return;
         }
 
@@ -1089,20 +1095,23 @@ class inline_call {
                       .is_address_computed())),
         };
 
-        if (is_reference and not arg.get_unary_ops().is_empty()) {
-            throw compile_error{
-                arg.tok(),
-                "unary operators on reference arguments are unsupported"};
-        }
-
         // an alias uses the argument's storage so its type must match
         if (not call_site::is_computed_value(arg)) {
             assert_alias_type(tc, arg, param);
         }
 
-        if (is_reference) {
+        if (is_reference and arg.get_unary_ops().is_empty()) {
             return make_reference_alias(tc, indent, arg, param,
                                         allocated_registers);
+        }
+
+        // e.g. '-a[i]', a value computed like an expression that must fit
+        // the parameter like a name with unary operators
+        if (is_reference) {
+            arg.assert_not_narrowed(tc, param.get_type());
+
+            return make_expression_alias(tc, indent, arg, param,
+                                         allocated_registers);
         }
 
         if (arg.is_expression()) {
@@ -1609,13 +1618,12 @@ class noinline_call {
         operand slot{frame_address};
 
         for (const auto [i, addr] : std::views::enumerate(addresses)) {
-            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
-
             // the callee finds it in a register, it has no slot
             if (std::cmp_equal(i, register_slot.value_or(addresses.size()))) {
                 continue;
             }
 
+            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
             x.address_of(call_.tk, indent, slot, addr);
 
             slot.increment_offset(address_offset(x.address_size_bytes()));
@@ -1695,8 +1703,7 @@ class noinline_call {
              std::views::zip(arguments, func.params())) {
 
             if (param.is_array()) {
-                lengths.push_back(
-                    argument.info.array_len().value_or(discarded_array_len));
+                lengths.push_back(argument.info.element_count());
             }
         }
 
@@ -1849,6 +1856,12 @@ class stmt_call : public expression {
         };
 
         read_open_paren(tc, tz, "function name");
+
+        // note: a call of 'main' can only be in 'main' or after it, in a
+        //       function that nothing calls, since names are defined before use
+        if (func_name_ == reserved_names::main) {
+            throw compile_error{tok(), "'main' cannot be called"};
+        }
 
         if (not tc.funcs().is_builtin(func_name_)) {
             parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_),
@@ -2069,11 +2082,6 @@ class stmt_call : public expression {
         constexpr size_t max_inlined_nesting{64};
 
         if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
-            // note: 'main' cannot be declared 'noinline'
-            if (func.name() == reserved_names::main) {
-                throw compile_error{tok(), "'main' cannot be called"};
-            }
-
             throw inlining_limit_error(std::format(
                 "recursion of inlined function '{}' does not end at compile "
                 "time, declare it 'noinline'",
@@ -2512,9 +2520,11 @@ class stmt_call : public expression {
         -> void {
 
         if (param.is_array()) {
-            // an expression is not an array
+            // an expression is not an array, nor is a name with a unary
+            // operator, e.g. '-a'
             const bool is_array_arg{
-                arg.is_name_or_literal() and not arg.is_expression() and
+                arg.is_name_or_literal() and
+                    not call_site::is_computed_value(arg) and
                     tc.make_ident_info(arg).is_array(),
             };
 

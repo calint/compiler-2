@@ -1,0 +1,4 @@
+
+1310.baz:5:16: 'a[0]' is read but has been overwritten in the same statement
+    a = {a[1], a[0]}
+               ^

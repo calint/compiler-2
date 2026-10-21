@@ -1,0 +1,22 @@
+# a unary operator on an indexed side of a comparison applies before the
+# comparison, with a constant or a run-time index, on either side
+func main() {
+    var a = [3]{1, 2, 3}
+    var i = 1
+    var x = -2
+    var r = 0
+    if -a[1] == -2 {
+        r = r + 1
+    }
+    if x == -a[i] {
+        r = r + 2
+    }
+    if ~a[i] == -3 {
+        r = r + 4
+    }
+    var b = x == -a[i]
+    if b {
+        r = r + 8
+    }
+    exit(r)
+}

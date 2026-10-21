@@ -1,0 +1,12 @@
+# a call of the wrong type in a field of an instance literal is reported at the
+# call
+type rec {a, b}
+
+func t() res bool {
+    res = true
+}
+
+func main() {
+    var s = rec{2, t()}
+    exit(0)
+}

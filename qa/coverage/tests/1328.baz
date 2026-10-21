@@ -1,0 +1,13 @@
+# a call of the wrong type in a field of a braced instance assigned to a
+# variable is reported at the call
+type rec {a, b}
+
+func t() res bool {
+    res = true
+}
+
+func main() {
+    var s = rec{1, 2}
+    s = {1, t()}
+    exit(0)
+}

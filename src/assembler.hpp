@@ -5,6 +5,7 @@
 #include <cctype>
 #include <cstddef>
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -51,7 +52,7 @@
 //     cmp.19.27:                        cmp.19.27:
 //
 // a label between the lines stops a rule only when a jump or another line,
-// such as a call, names it
+// such as a call, names it, or when it is numeric, e.g. '1:' named by '1b'
 
 class assembler {
   public:
@@ -197,6 +198,8 @@ class assembler {
     auto emit_buffered(const std::function_ref<void()> emit) -> void {
         std::ostream* const os{direct_output_};
         direct_output_ = nullptr;
+        // note: an error leaves the lines buffered, as they are anyway from
+        //       'start_output' to the end of the code
         emit();
 
         if (os == nullptr) {
@@ -771,6 +774,9 @@ class assembler {
         if (not l.entry) {
             return false;
         }
+
+        // note: only 'add_label' sets 'entry', with a name
+        assert(not l.label.empty());
 
         if (is_numeric(l.label)) {
             return true;

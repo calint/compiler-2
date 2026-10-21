@@ -1,0 +1,10 @@
+# 'arrays_equal' in a field of an instance literal of the wrong type is
+# reported at the 'arrays_equal'
+type rec {a, b}
+
+func main() {
+    var x = i8[2]
+    var y = i8[2]
+    var s = rec{1, arrays_equal(x, y, 2)}
+    exit(0)
+}

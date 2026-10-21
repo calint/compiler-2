@@ -1,0 +1,4 @@
+# a character literal where a definition is expected is reported as written
+'a'
+
+func main() {}

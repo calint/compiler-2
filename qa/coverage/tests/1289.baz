@@ -1,0 +1,15 @@
+# an inlined recursion in a noinline function is rejected also when nothing
+# calls the function, its argument is not known at any call
+func r(x) {
+    if x > 0 {
+        r(x - 1)
+    }
+}
+
+func noinline b(x) {
+    r(x)
+}
+
+func main() {
+    exit(4)
+}

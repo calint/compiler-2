@@ -1,4 +1,4 @@
 
-0620.baz:5:13: boolean values cannot be arithmetic operands
+0620.baz:5:13: a 'bool' is not an arithmetic operand, 'int(true)' converts it
     n = n + true
             ^~~~

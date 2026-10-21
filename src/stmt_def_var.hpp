@@ -60,6 +60,20 @@ class initializer_declaration final {
         return array_count_;
     }
 
+    // the folded 'value', read with the name in scope like its parse, so
+    // 'let k = k + 1' reads the uninitialized 'k', not a constant of an outer
+    // block
+    [[nodiscard]] auto constant_value(toc& tc, const expr_any& value) const
+        -> std::optional<int64_t> {
+
+        std::optional<int64_t> constant;
+
+        with_placeholder(tc,
+                         [&] -> void { constant = value.constant_value(tc); });
+
+        return constant;
+    }
+
     // the value at the deduced type and size
     [[nodiscard]] auto parse_value(toc& tc, tokenizer& tz) const -> expr_any {
         expr_any value;
@@ -463,7 +477,7 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
     };
 
     const std::optional<int64_t> constant{
-        may_fold ? value.constant_value(tc) : std::nullopt,
+        may_fold ? declaration.constant_value(tc, value) : std::nullopt,
     };
 
     if (constant) {

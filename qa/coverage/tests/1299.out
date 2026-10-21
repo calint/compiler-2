@@ -1,0 +1,4 @@
+
+1299.baz:7:5: 'main' cannot be called
+    main()
+    ^~~~

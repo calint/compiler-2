@@ -165,7 +165,9 @@ make_backend(const target machine_target, const source_files* const files,
              const std::string_view binary_file_name)
     -> std::unique_ptr<machine>;
 
-auto print_usage_error(const std::string_view message) -> void;
+auto print_option_error(const std::string_view message) -> void;
+
+auto print_unlocated_error(const std::string_view message) -> void;
 
 auto print_call_frames(const source_files& files,
                        std::span<const compile_error::call_frame> frames)
@@ -308,12 +310,12 @@ template <typename Name, size_t count>
     }
 
     if (arg.starts_with('-')) {
-        print_usage_error(std::format("unknown option: '{}'", arg));
+        print_option_error(std::format("unknown option: '{}'", arg));
         return false;
     }
 
     if (opts.src_file_given) {
-        print_usage_error(
+        print_option_error(
             std::format("more than one source file: '{}' and '{}'",
                         opts.src_file_name, arg));
 
@@ -352,7 +354,7 @@ template <typename Name, size_t count>
     }
 
     if (*parsed > max_memory_size_bytes) {
-        print_usage_error(
+        print_option_error(
             std::format("invalid --memory: '{}', must be from {} to {} bytes",
                         value, memory_alignment, max_memory_size_bytes));
 
@@ -370,7 +372,7 @@ template <typename Name, size_t count>
     const std::optional<target> found{find_target(value)};
 
     if (not found) {
-        print_usage_error(
+        print_option_error(
             std::format("invalid --target: '{}', supported targets are: {}",
                         value, supported_target_texts()));
 
@@ -400,7 +402,7 @@ template <typename Name, size_t count>
     opts.binary_file_name = value;
 
     if (opts.binary_file_name.empty()) {
-        print_usage_error("invalid --bin: empty file name");
+        print_option_error("invalid --bin: empty file name");
         return false;
     }
 
@@ -413,7 +415,7 @@ template <typename Name, size_t count>
     opts.sd_card_file_name = value;
 
     if (opts.sd_card_file_name.empty()) {
-        print_usage_error("invalid --sdcard: empty file name");
+        print_option_error("invalid --sdcard: empty file name");
         return false;
     }
 
@@ -430,7 +432,7 @@ template <typename Name, size_t count>
         }
     }
 
-    print_usage_error(
+    print_option_error(
         std::format("invalid --versions: '{}', supported values are: {}", value,
                     joined_texts(kept_version_names)));
 
@@ -517,6 +519,7 @@ examples:
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
     source_files files;
+
     try {
         files.add(opts.src_file_name,
                   source_files::read_file(opts.src_file_name));
@@ -533,16 +536,6 @@ examples:
                 : std::string{opts.binary_file_name},
         };
 
-        // the image would replace the source
-        std::error_code ec;
-
-        if (std::filesystem::equivalent(binary, opts.src_file_name, ec)) {
-            print_usage_error(
-                std::format("invalid --bin: '{}' is the source file", binary));
-
-            return 1;
-        }
-
         const std::unique_ptr<machine> backend{
             make_backend(opts.machine_target, &files, jumps,
                          opts.stack_size_bytes, opts.memory_size_bytes, binary),
@@ -550,7 +543,7 @@ examples:
 
         // the option is wrong, not the source
         if (opts.vars_size_bytes > backend->max_storage_bytes()) {
-            print_usage_error(std::format(
+            print_option_error(std::format(
                 "invalid --vars: {} B exceeds the {} B that the target "
                 "addresses",
                 opts.vars_size_bytes, backend->max_storage_bytes()));
@@ -559,7 +552,7 @@ examples:
         }
 
         if (opts.stack_size_bytes > backend->max_storage_bytes()) {
-            print_usage_error(std::format(
+            print_option_error(std::format(
                 "invalid --stack: {} B exceeds the {} B that the target "
                 "addresses",
                 opts.stack_size_bytes, backend->max_storage_bytes()));
@@ -574,19 +567,34 @@ examples:
         backend->set_sd_card_file_name(opts.sd_card_file_name);
         backend->set_kept_version(opts.kept_version);
 
-        program prg{*backend, files, opts.vars_size_bytes, opts.checks};
+        // e.g. 'rv32i-fpga' exits with the code of the failure only
+        check_options checks{opts.checks};
+        checks.with_line = checks.with_line and backend->reports_line();
+
+        program prg{*backend, files, opts.vars_size_bytes, checks};
+
+        // the image would replace a source file, the parse read the includes
+        for (size_t i{}; i < files.count(); ++i) {
+            std::error_code ec;
+
+            if (std::filesystem::equivalent(binary, files.name(i), ec)) {
+                print_option_error(std::format(
+                    "invalid --bin: '{}' is a source file", binary));
+
+                return 1;
+            }
+        }
 
         if (opts.reproduce_source) {
             check_reproduced_source(prg, files);
         }
 
         prg.build(std::cout);
-
     } catch (const compile_error& e) {
         print_compiler_error(files, e);
         return 1;
-    } catch (const usage_error& e) {
-        std::println(stderr, "error: {}", e.what());
+    } catch (const unlocated_error& e) {
+        print_unlocated_error(e.what());
         return 1;
     } catch (const std::exception& e) {
         // a defect of the compiler, the input is not at fault
@@ -659,21 +667,21 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     };
 
     if (parsed.ec != std::errc{} or parsed.ptr != digits_end) {
-        print_usage_error(
+        print_option_error(
             std::format("invalid {}: '{}' is not a number", option, text));
 
         return std::nullopt;
     }
 
     if (parsed_size_bytes == 0) {
-        print_usage_error(
+        print_option_error(
             std::format("invalid {}: '{}' is zero", option, text));
 
         return std::nullopt;
     }
 
     if (parsed_size_bytes % alignment != 0) {
-        print_usage_error(
+        print_option_error(
             std::format("invalid {}: '{}' is not a multiple of {}", option,
                         text, alignment));
 
@@ -700,9 +708,9 @@ auto check_reproduced_source(const program& prg, const source_files& files)
         if (report == "registers") {
             parsed.registers = true;
         } else {
-            print_usage_error(std::format("invalid --report: '{}', supported "
-                                          "reports are: registers",
-                                          report));
+            print_option_error(std::format("invalid --report: '{}', supported "
+                                           "reports are: registers",
+                                           report));
 
             return std::nullopt;
         }
@@ -779,7 +787,7 @@ constexpr std::array<check_name, 10> check_names{
             };
 
             if (found == check_names.end()) {
-                print_usage_error(std::format(
+                print_option_error(std::format(
                     "invalid --checks: '{}', supported options are: {}, "
                     "noub, each with a '+' or '-' prefix",
                     written, check_texts()));
@@ -874,9 +882,14 @@ make_backend(const target machine_target, const source_files* const files,
 }
 
 // every command line error ends with the same hint
-auto print_usage_error(const std::string_view message) -> void {
-    std::println(stderr, "{}", message);
+auto print_option_error(const std::string_view message) -> void {
+    print_unlocated_error(message);
     std::println(stderr, "use --help for usage information");
+}
+
+// a user error without a place in the source, e.g. a file that cannot be read
+auto print_unlocated_error(const std::string_view message) -> void {
+    std::println(stderr, "error: {}", message);
 }
 
 // the inlined calls the error was found in, innermost first

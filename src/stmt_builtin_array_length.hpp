@@ -67,36 +67,29 @@ class stmt_builtin_array_length final : public expression {
 
         const ident_info src_info{tc.make_ident_info(stmt_ident_)};
 
-        if (not src_info.is_var()) {
-            throw compile_error{stmt_ident_.first_token(),
-                                "argument must be a variable"};
+        if (not src_info.is_var() or not src_info.is_array()) {
+            throw compile_error{
+                stmt_ident_.first_token(),
+                std::format("'{}' is not an array",
+                            statement::trimmed_source(stmt_ident_))};
         }
 
-        // e.g. the left side of 'array_length(a) * i', which an operation
-        // with a run-time right side compiles without folding
-        // the code of a function checked without a call is discarded
+        // unknown in a function checked without a call, whose code is
+        // discarded, e.g. the left side of 'array_length(a) * i', which an
+        // operation with a run-time right side compiles without folding
         if (src_info.is_length_unknown()) {
             return;
         }
 
-        if (src_info.is_array()) {
-            const std::optional<int64_t> length{
-                folded_constant(tc, dst.type_ref()),
-            };
+        const std::optional<int64_t> length{
+            folded_constant(tc, dst.type_ref()),
+        };
 
-            // note: the destination has the default type, so the length folds
-            assert(length);
+        // note: the destination has the default type, so the length folds
+        assert(length);
 
-            x.copy_value(tok(), indent, dst.operand(),
-                         operand::imm(*length, dst.type_ref()));
-
-            return;
-        }
-
-        throw compile_error{
-            stmt_ident_.first_token(),
-            std::format("'{}' is not an array",
-                        statement::trimmed_source(stmt_ident_))};
+        x.copy_value(tok(), indent, dst.operand(),
+                     operand::imm(*length, dst.type_ref()));
     }
 
     auto assert_not_narrowed([[maybe_unused]] const toc& tc,

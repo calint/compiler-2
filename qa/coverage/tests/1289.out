@@ -1,0 +1,56 @@
+
+1289.baz:5:11: out of scratch registers, simplify the expression
+        r(x - 1)
+          ^
+1289.baz:10:5: called from
+    r(x)
+    ^
+
+register use at the failure: 13 of 13 registers live
+
+  held  frame, registers (allocated at)
+     1  b (noinline body)
+          r15 10:7
+     1  r called at 10:5
+          r14 5:11
+     1  r called at 5:9
+          r13 5:11
+     1  r called at 5:9
+          r12 5:11
+     1  r called at 5:9
+          r10 5:11
+     1  r called at 5:9
+          r9 5:11
+     1  r called at 5:9
+          r8 5:11
+     1  r called at 5:9
+          r11 5:11
+     1  r called at 5:9
+          rdx 5:11
+     1  r called at 5:9
+          rax 5:11
+     1  r called at 5:9
+          rsi 5:11
+     1  r called at 5:9
+          rdi 5:11
+     1  r called at 5:9
+          rcx 5:11
+     0  r called at 5:9
+
+these frames are not noinline, making one noinline starts its body with all 13
+registers free and saves the registers held above it around the call:
+
+  held inside  saved at the call  candidate frame
+           12                  1  r
+           11                  2  r
+           10                  3  r
+            9                  4  r
+            8                  5  r
+            7                  6  r
+            6                  7  r
+            5                  8  r
+            4                  9  r
+            3                 10  r
+            2                 11  r
+            1                 12  r
+            0                 13  r

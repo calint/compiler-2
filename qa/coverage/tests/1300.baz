@@ -1,0 +1,7 @@
+# a call with more arguments than parameters and no comma between them is
+# rejected at the extra argument
+func f(x) {}
+
+func main() {
+    f(1 2)
+}

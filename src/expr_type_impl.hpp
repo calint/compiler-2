@@ -26,6 +26,7 @@
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_builtin_convert.hpp"
+#include "stmt_builtin_io.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
@@ -142,6 +143,18 @@ inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
 inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
+    const stmt_builtin_io::io_function* const io{
+        stmt_builtin_io::find(tok().text()),
+    };
+
+    // 'exit' ends the program and the sector functions only transfer, as in
+    // an expression
+    if ((tok().is_text("exit") or (io != nullptr and not io->has_result())) and
+        tz.peek_char_after_whitespace() == '(') {
+
+        throw compile_error{tok(), "function does not return a value"};
+    }
+
     // a built-in is not a function, its value is a scalar of a built-in type
     if (const type* const value_type{builtin_value_type(tc, tok(), tz)};
         value_type != nullptr) {
@@ -188,6 +201,15 @@ inline auto expr_type::builtin_value_type(const toc& tc, const token& tk,
 
     if (tk.is_text("arrays_equal")) {
         return &tc.builtins().boolean();
+    }
+
+    // e.g. the count of 'read(0, buf, 4)'
+    const stmt_builtin_io::io_function* const io{
+        stmt_builtin_io::find(tk.text()),
+    };
+
+    if (io != nullptr and io->has_result()) {
+        return &tc.builtins().default_type();
     }
 
     if (tc.builtins().is_integer_name(tk.text()) and
@@ -268,49 +290,46 @@ expr_type::assert_items_not_reading(const constructor_target& dst,
 
         const size_t field_offset{record_offset + field.offset};
 
-        if (not field.type().is_builtin() and not expr->is_array_identifier()) {
-            assert_record_field_not_reading(*expr, field, dst, field_offset);
-            continue;
-        }
-
         // a copy of an array field reads the same bytes or other ones, e.g.
         // 'v = {v.a, 4}'
-        if (not field.is_array() or expr->is_array_identifier()) {
+        if (expr->is_array_identifier()) {
             assert_item_not_reading(*expr, dst, field_offset);
             continue;
         }
 
-        // braced elements are written one by one, each after it is read
-        const size_t element_size_bytes{field.type().size_bytes()};
-
-        for (size_t i{}; i < expr->element_count(); ++i) {
-            const size_t element_offset{
-                field_offset +
-                    multiply_storage_size(expr->tok(), element_size_bytes, i),
-            };
-
-            assert_item_not_reading(expr->element(i), dst, element_offset);
+        // braced elements and instances are written in parts, a plain
+        // instance field is the single element
+        if (not field.type().is_builtin() or field.is_array()) {
+            assert_elements_not_reading(*expr, field.type(), dst, field_offset);
+            continue;
         }
+
+        assert_item_not_reading(*expr, dst, field_offset);
     }
 }
 
-// each element of an instance array field is an item of its own, a plain
-// instance field is the single element
-inline auto expr_type::assert_record_field_not_reading(
-    const expr_any& src, const type_field& field, const constructor_target& dst,
-    const size_t field_offset) -> void {
+// each element is an item of its own; an instance written field by field,
+// e.g. 'point{l.a.x, 0}', is checked field by field, a copy or a call as one
+// item
+inline auto expr_type::assert_elements_not_reading(
+    const expr_any& src, const type& element_type,
+    const constructor_target& dst, const size_t offset) -> void {
 
-    const size_t element_size_bytes{field.type().size_bytes()};
+    const size_t element_size_bytes{element_type.size_bytes()};
 
     for (size_t i{}; i < src.element_count(); ++i) {
-        const expr_type& element{src.as_expr_type(i)};
-
         const size_t element_offset{
-            field_offset +
-                multiply_storage_size(src.tok(), element_size_bytes, i),
+            offset + multiply_storage_size(src.tok(), element_size_bytes, i),
         };
 
-        if (element.is_name_or_literal()) {
+        if (element_type.is_builtin()) {
+            assert_item_not_reading(src.element(i), dst, element_offset);
+            continue;
+        }
+
+        const expr_type& element{src.as_expr_type(i)};
+
+        if (not element.is_literal()) {
             assert_item_not_reading(element, dst, element_offset);
             continue;
         }
@@ -357,8 +376,13 @@ inline auto expr_type::compile_call_field(toc& tc, const size_t indent,
 inline auto expr_type::compile_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,
-                                     const destination& dst,
-                                     operand& dst_op) const -> void {
+                                     const destination& dst, operand& dst_op)
+    -> void {
+
+    // the copy size comes from the source so it must match the field
+    if (field.is_array() and src.is_array_identifier()) {
+        validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
+    }
 
     if (not field.type().is_builtin()) {
         compile_record_field(tc, indent, src, field, dst, dst_op);
@@ -452,9 +476,11 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 }
 
 // the caller advances 'dst_op' past the field
-inline auto expr_type::write_builtin_field(
-    toc& tc, const size_t indent, const expr_any& src, const type_field& field,
-    const destination& dst, const operand& dst_op) const -> void {
+inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
+                                           const expr_any& src,
+                                           const type_field& field,
+                                           const destination& dst,
+                                           const operand& dst_op) -> void {
 
     machine& x{tc.machine()};
 
@@ -464,14 +490,10 @@ inline auto expr_type::write_builtin_field(
                   field.array_count, field.type().size_bytes(),
                   field.size_bytes);
 
-        x.zero(tok(), indent, dst_op, field.size_bytes,
+        x.zero(src.tok(), indent, dst_op, field.size_bytes,
                field.type().alignment());
 
         return;
-    }
-
-    if (field.is_array() and src.is_array_identifier()) {
-        validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
     }
 
     const operand dst_operand{operand::mem(dst_op, field.type())};
@@ -547,11 +569,6 @@ inline auto expr_type::compile_record_field(toc& tc, const size_t indent,
                                             const type_field& field,
                                             const destination& dst,
                                             operand& dst_op) -> void {
-
-    // the copy size comes from the source so it must match the field
-    if (field.is_array() and src.is_array_identifier()) {
-        validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
-    }
 
     // one assignment fills an instance or copies a whole array identifier
     if (not field.is_array() or src.is_array_identifier()) {

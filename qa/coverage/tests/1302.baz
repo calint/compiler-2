@@ -1,0 +1,8 @@
+# a 'let' that reads its own name is rejected as uninitialized, also when a
+# global constant has that name
+let k = 5
+
+func main() {
+    let k = k + 1
+    exit(k)
+}

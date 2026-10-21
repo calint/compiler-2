@@ -1,0 +1,4 @@
+
+1294.baz:7:25: count 5 is past the end of array 'a' of size 4
+    array_copy(b, a[i], 5)
+                        ^

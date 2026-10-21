@@ -1,0 +1,4 @@
+
+1300.baz:6:9: expected ')' after arguments
+    f(1 2)
+        ^

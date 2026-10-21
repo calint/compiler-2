@@ -1,0 +1,4 @@
+# a field whose alignment takes its offset past the storage limit is rejected
+type s {a i8[0x7fffffffffffffef], b i16}
+
+func main() {}

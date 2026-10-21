@@ -1,8 +1,11 @@
 #pragma once
 
 // what a name resolves to ('ident_info'), what a variable is declared as
-// ('var_info'), where 'compile' writes a value ('destination') and what a
-// caller asks of the address of an identifier ('lea_request')
+// ('var_info'), where 'compile' writes a value ('destination'), what a
+// caller asks of the address of an identifier ('lea_request'), why a name
+// cannot be written ('read_only_cause'), the array of the element of a 'foo'
+// ('foo_array_info') and an address computed at an inlined call
+// ('known_address')
 
 #include <cassert>
 #include <cstddef>
@@ -424,13 +427,16 @@ class destination final {
         return src_loc_tk_.is_empty() ? fallback : src_loc_tk_;
     }
 
-    // the field 'field_name' of type 'field_type', as the comments name it
+    // the field 'field_name' of type 'field_type', as the comments name it;
+    // the source names no field of a literal, so an error about it is at its
+    // value, e.g. the 't()' of 'rec{2, t()}'
     [[nodiscard]] auto field(const std::string_view field_name,
                              const type& field_type) const -> destination {
 
         destination result{*this};
         result.name_ += std::format(".{}", field_name);
         result.type_ptr_ = &field_type;
+        result.src_loc_tk_ = {};
         return result;
     }
 

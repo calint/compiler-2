@@ -233,7 +233,7 @@ compile_and_build_with_opts() {
     assemble_and_link
 }
 
-# Common: compile and assemble
+# the compile fails with exit code 1, its message is in 'out'
 compile_expect_error() {
     set +e
     "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS >gen.s 2>out

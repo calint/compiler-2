@@ -1,0 +1,10 @@
+# the count of 'read' assigned to an instance is rejected like any value of a
+# built-in type
+type point {x, y}
+
+func main() {
+    var buf = i8[4]
+    var p = point{1, 2}
+    p = read(0, buf, 4)
+    exit(0)
+}

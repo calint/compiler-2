@@ -1,4 +1,4 @@
 
-0262.baz:4:26: argument must be a variable
+0262.baz:4:26: '1' is not an array
     var n = array_length(1)
                          ^

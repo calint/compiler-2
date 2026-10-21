@@ -1,0 +1,38 @@
+
+1319.baz:4:159: out of scratch registers, simplify the expression
+var r = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a))))))))))))))))))))))))))))))
+                                                                                                                                                              ^
+
+register use at the failure: 29 of 29 registers live
+
+  held  frame, registers (allocated at)
+    29  global initializers
+          t0 4:14
+          t1 4:19
+          t2 4:24
+          t3 4:29
+          t4 4:34
+          t5 4:39
+          t6 4:44
+          s1 4:49
+          s2 4:54
+          s3 4:59
+          s4 4:64
+          s5 4:69
+          s6 4:74
+          s7 4:79
+          s8 4:84
+          s9 4:89
+          s10 4:94
+          s11 4:99
+          tp 4:104
+          gp 4:109
+          ra 4:114
+          a1 4:119
+          a2 4:124
+          a3 4:129
+          a4 4:134
+          a5 4:139
+          a6 4:144
+          a7 4:149
+          a0 4:154

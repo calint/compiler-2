@@ -66,7 +66,8 @@ inline auto assert_constant_index(const ident_info& array_info,
 // the constant range of a bulk operation, 'count' elements from 'start', e.g.
 // 'array_copy(a[1], b, 5)' or 'write(1, a, 5, 1)'
 struct constant_range {
-    // empty when computed at run time, then only a negative count is known
+    // empty when computed at run time, then a count is known to pass the end
+    // only when it is larger than the array
     std::optional<int64_t> start;
     int64_t count{};
     // the written start, empty when the range starts at the array
@@ -90,14 +91,10 @@ inline auto assert_constant_range(const ident_info& array_info,
                             std::format("count {} is negative", range.count)};
     }
 
-    if (not range.start) {
-        return;
-    }
-
-    const bool has_start{range.start_tk.has_value()};
+    const bool has_constant_start{range.start and range.start_tk};
 
     // a start at the end is the empty range of a zero count
-    if (has_start) {
+    if (has_constant_start) {
         assert_constant_index(array_info, *range.start_tk, range.array_name,
                               *range.start, true);
     }
@@ -108,14 +105,20 @@ inline auto assert_constant_range(const ident_info& array_info,
         return;
     }
 
-    const size_t remaining{*array_len - static_cast<size_t>(*range.start)};
+    // note: a start computed at run time that passes its bounds check is not
+    //       negative, so at most the whole array remains
+    const size_t remaining{
+        range.start ? *array_len - static_cast<size_t>(*range.start)
+                    : *array_len,
+    };
 
     if (std::cmp_less_equal(range.count, remaining)) {
         return;
     }
 
     const std::string from_index{
-        has_start ? std::format(" from index {}", *range.start) : std::string{},
+        has_constant_start ? std::format(" from index {}", *range.start)
+                           : std::string{},
     };
 
     throw compile_error{
@@ -885,9 +888,9 @@ class stmt_identifier final : public statement {
         const operand& index_register{registers.index_register()};
 
         const int64_t addend_elements{
-            compile_checked_index(
-                tc, indent, *cur_elem.array_index_expr, index_register,
-                cur_info.array_len().value_or(discarded_array_len), reg_count),
+            compile_checked_index(tc, indent, *cur_elem.array_index_expr,
+                                  index_register, cur_info.element_count(),
+                                  reg_count),
         };
 
         const size_t type_size{cur_info.type_ref().size_bytes()};
@@ -941,10 +944,9 @@ class stmt_identifier final : public statement {
         // note: an array before the last element is indexed
         assert(is_last_elem);
 
-        check_array_bounds(
-            tc, indent, src_loc_tk,
-            machine::bounds_range::count_alone(
-                reg_count, cur_info.array_len().value_or(discarded_array_len)));
+        check_array_bounds(tc, indent, src_loc_tk,
+                           machine::bounds_range::count_alone(
+                               reg_count, cur_info.element_count()));
     }
 
     // the index goes into 'index_register', returns the constant a trailing

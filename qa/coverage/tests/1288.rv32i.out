@@ -1,0 +1,37 @@
+
+1288.baz:8:96: out of scratch registers, simplify the expression
+    res = sum(v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v)
+                                                                                               ^
+
+register use at the failure: 28 of 28 registers live
+
+  held  frame, registers (allocated at)
+    28  g (noinline body)
+          t0 8:5
+          t1 8:15
+          t2 8:18
+          t3 8:21
+          t4 8:24
+          t5 8:27
+          t6 8:30
+          s2 8:33
+          s3 8:36
+          s4 8:39
+          s5 8:42
+          s6 8:45
+          s7 8:48
+          s8 8:51
+          s9 8:54
+          s10 8:57
+          s11 8:60
+          tp 8:63
+          gp 8:66
+          ra 8:69
+          a1 8:72
+          a2 8:75
+          a3 8:78
+          a4 8:81
+          a5 8:84
+          a6 8:87
+          a7 8:90
+          a0 8:93

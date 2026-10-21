@@ -1,0 +1,8 @@
+# a global initializer that runs out of scratch registers reports its
+# registers under the frame of the global initializers
+var a = 1
+var r = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a))))))))))))))))))))))))))))))
+
+func main() {
+    exit(0)
+}

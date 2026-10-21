@@ -1,0 +1,4 @@
+
+1297.baz:7:38: count 9 is past the end of array 'a' of size 8
+    var e = arrays_equal(a[i], b[i], 9)
+                                     ^

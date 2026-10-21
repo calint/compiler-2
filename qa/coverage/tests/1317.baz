@@ -1,0 +1,10 @@
+# a condition in parentheses compared with a 'bool' is rejected at its
+# comparison, it is stored in a 'bool' first
+func main() {
+    var x = 1
+    var b = true
+    if (x == 1) == b {
+        exit(1)
+    }
+    exit(0)
+}

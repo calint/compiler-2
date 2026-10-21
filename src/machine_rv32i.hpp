@@ -350,6 +350,19 @@ class machine_rv32i : public machine {
         ~bulk_depth_scope() { operations_.resize(depth_); }
     };
 
+    // the shared tail of the handlers that report a line, and its powers of
+    // ten
+    static constexpr std::string_view report_line_label_{".Lbaz_report_line"};
+    static constexpr std::string_view decimal_places_label_{
+        ".Lbaz_decimal_places",
+    };
+    // the part the system call sector routines share, and their data
+    static constexpr std::string_view sector_transfer_label_{
+        ".Lbaz_sector_transfer",
+    };
+    static constexpr std::string_view sd_card_label_{".Lbaz_sd_card"};
+    static constexpr std::string_view sd_card_name_label_{".Lbaz_sd_card_name"};
+
     // empty when no binary image is written
     std::string binary_file_name_;
     assembler_rv32i assembler_;
@@ -454,12 +467,13 @@ class machine_rv32i : public machine {
         assembler_.ecall(indent);
     }
 
-    // loads the lowest address the stack may reach into the register 'reg',
-    // the stack follows the variables unless a target says otherwise
-    virtual auto emit_stack_limit_load(const size_t indent,
-                                       const std::string_view reg) -> void {
+    // loads the lowest address the stack may reach into the register 'reg'
+    // note: linux does not bound the stack, see 'is_stack_bounded'
+    virtual auto
+    emit_stack_limit_load([[maybe_unused]] const size_t indent,
+                          [[maybe_unused]] const std::string_view reg) -> void {
 
-        assembler_.la(indent, reg, variables_end_label);
+        std::unreachable();
     }
 
     // same registers as 'emit_read_call'
@@ -1091,17 +1105,25 @@ class machine_rv32i : public machine {
     auto emit_data(const size_t element_size_bytes, const int64_t value)
         -> void override {
 
-        emit_repeated_data(element_size_bytes, 1, value);
+        assert_data_element_size(element_size_bytes);
+
+        assembler_.data(element_size_bytes, std::array{value});
     }
 
+    // the elements on one line, e.g. '.word 1, 2, 3'
     auto emit_data_array(const size_t element_size_bytes,
                          const std::function_ref<bool(int64_t&)> next)
         -> void override {
 
+        assert_data_element_size(element_size_bytes);
+
+        std::vector<int64_t> values;
         int64_t value{};
         while (next(value)) {
-            emit_data(element_size_bytes, value);
+            values.push_back(value);
         }
+
+        assembler_.data(element_size_bytes, values);
     }
 
     auto emit_division_failure_handler(const bool with_line) -> void override {
@@ -1127,10 +1149,7 @@ class machine_rv32i : public machine {
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
                             const int64_t value) -> void override {
 
-        // 'data_element_size_error' rejects other sizes
-        assert(element_size_bytes == byte_size_bytes_ or
-               element_size_bytes == half_size_bytes_ or
-               element_size_bytes == word_size_bytes_);
+        assert_data_element_size(element_size_bytes);
 
         assembler_.repeated_data(element_size_bytes, count, value);
     }
@@ -1591,7 +1610,7 @@ class machine_rv32i : public machine {
         std::ofstream binary{binary_file_name_, std::ios::binary};
 
         if (not binary) {
-            throw usage_error{
+            throw unlocated_error{
                 std::format("cannot write file '{}'", binary_file_name_)};
         }
 
@@ -3339,71 +3358,17 @@ class machine_rv32i : public machine {
     auto emit_line_failure(const std::string_view message_label,
                            const std::string_view message) -> void {
 
-        constexpr int digit_zero{'0'};
-        constexpr int newline{'\n'};
-
         assembler_.mv(1, "s2", "a0");
         assembler_.li(1, "a0", stderr_descriptor);
         assembler_.la(1, "a1", message_label);
         assembler_.li(1, "a2", message.size());
         emit_write_call(1);
 
-        const bool is_first{not line_report_emitted_};
-        line_report_emitted_ = true;
-
-        if (not is_first) {
-            assembler_.j(1, ".Lbaz_report_line");
+        if (line_report_emitted_) {
+            assembler_.j(1, report_line_label_);
         } else {
-            // writes the line number of s2 in decimal: each power of ten of
-            // '.Lbaz_decimal_places' gives a digit by repeated subtraction,
-            // leading zeros are skipped and the last place always writes its
-            // digit
-            assembler_.label(0, ".Lbaz_report_line");
-            assembler_.addi(1, "sp", "sp", -line_digits_bytes_);
-            assembler_.mv(1, "a1", "sp");
-            assembler_.li(1, "a2", 0);
-            assembler_.la(1, "t0", ".Lbaz_decimal_places");
-            assembler_.label(0, "1");
-            assembler_.lw(1, "t1", 0, "t0");
-            assembler_.li(1, "t2", 0);
-            assembler_.label(0, "2");
-            assembler_.bltu(1, "s2", "t1", "3f");
-            assembler_.sub(1, "s2", "s2", "t1");
-            assembler_.addi(1, "t2", "t2", 1);
-            assembler_.j(1, "2b");
-            assembler_.label(0, "3");
-            assembler_.or_op(1, "t3", "a2", "t2");
-            assembler_.bnez(1, "t3", "4f");
-            assembler_.li(1, "t3", 1);
-            assembler_.bne(1, "t1", "t3", "5f");
-            assembler_.label(0, "4");
-            assembler_.addi(1, "t2", "t2", digit_zero);
-            assembler_.sb(1, "t2", 0, "a1");
-            assembler_.addi(1, "a1", "a1", 1);
-            assembler_.addi(1, "a2", "a2", 1);
-            assembler_.label(0, "5");
-            assembler_.addi(1, "t0", "t0", word_size_bytes_);
-            assembler_.li(1, "t3", 1);
-            assembler_.bne(1, "t1", "t3", "1b");
-            assembler_.li(1, "t2", newline);
-            assembler_.sb(1, "t2", 0, "a1");
-            assembler_.addi(1, "a2", "a2", 1);
-            assembler_.mv(1, "a1", "sp");
-            assembler_.li(1, "a0", stderr_descriptor);
-            emit_write_call(1);
-
-            exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
-
-            constexpr std::array<int64_t, 10> decimal_places{
-                1000000000, 100000000, 10000000, 1000000, 100000,
-                10000,      1000,      100,      10,      1,
-            };
-
-            assembler_.switch_section(section::rodata);
-            assembler_.align(word_size_bytes_);
-            assembler_.label(0, ".Lbaz_decimal_places");
-            assembler_.data(word_size_bytes_, decimal_places);
-            assembler_.switch_section(section::text);
+            line_report_emitted_ = true;
+            emit_report_line_routine();
         }
 
         assembler_.switch_section(section::rodata);
@@ -3470,6 +3435,61 @@ class machine_rv32i : public machine {
         assembler_.switch_section(section::text);
     }
 
+    // writes the line number of s2 in decimal, then exits: each power of ten
+    // of '.Lbaz_decimal_places' gives a digit by repeated subtraction,
+    // leading zeros are skipped and the last place always writes its digit
+    auto emit_report_line_routine() -> void {
+        constexpr int digit_zero{'0'};
+        constexpr int newline{'\n'};
+
+        assembler_.label(0, report_line_label_);
+        assembler_.addi(1, "sp", "sp", -line_digits_bytes_);
+        assembler_.mv(1, "a1", "sp");
+        assembler_.li(1, "a2", 0);
+        assembler_.la(1, "t0", decimal_places_label_);
+        assembler_.label(0, "1");
+        assembler_.lw(1, "t1", 0, "t0");
+        assembler_.li(1, "t2", 0);
+        assembler_.label(0, "2");
+        assembler_.bltu(1, "s2", "t1", "3f");
+        assembler_.sub(1, "s2", "s2", "t1");
+        assembler_.addi(1, "t2", "t2", 1);
+        assembler_.j(1, "2b");
+        assembler_.label(0, "3");
+        assembler_.or_op(1, "t3", "a2", "t2");
+        assembler_.bnez(1, "t3", "4f");
+        assembler_.li(1, "t3", 1);
+        assembler_.bne(1, "t1", "t3", "5f");
+        assembler_.label(0, "4");
+        assembler_.addi(1, "t2", "t2", digit_zero);
+        assembler_.sb(1, "t2", 0, "a1");
+        assembler_.addi(1, "a1", "a1", 1);
+        assembler_.addi(1, "a2", "a2", 1);
+        assembler_.label(0, "5");
+        assembler_.addi(1, "t0", "t0", word_size_bytes_);
+        assembler_.li(1, "t3", 1);
+        assembler_.bne(1, "t1", "t3", "1b");
+        assembler_.li(1, "t2", newline);
+        assembler_.sb(1, "t2", 0, "a1");
+        assembler_.addi(1, "a2", "a2", 1);
+        assembler_.mv(1, "a1", "sp");
+        assembler_.li(1, "a0", stderr_descriptor);
+        emit_write_call(1);
+
+        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
+
+        constexpr std::array<int64_t, 10> decimal_places{
+            1000000000, 100000000, 10000000, 1000000, 100000,
+            10000,      1000,      100,      10,      1,
+        };
+
+        assembler_.switch_section(section::rodata);
+        assembler_.align(word_size_bytes_);
+        assembler_.label(0, decimal_places_label_);
+        assembler_.data(word_size_bytes_, decimal_places);
+        assembler_.switch_section(section::text);
+    }
+
     // opens the image file at the first transfer and keeps its descriptor and
     // sector count in '.Lbaz_sd_card', a sector past the end, a failed open or
     // a short transfer panics
@@ -3501,7 +3521,7 @@ class machine_rv32i : public machine {
         if (read_used) {
             a.label(0, sector_read_label_);
             a.li(1, "a5", syscall_pread_);
-            a.j(1, ".Lbaz_sector_transfer");
+            a.j(1, sector_transfer_label_);
         }
 
         if (write_used) {
@@ -3510,22 +3530,22 @@ class machine_rv32i : public machine {
         }
 
         // a5 holds the system call, a6 the return address
-        a.label(0, ".Lbaz_sector_transfer");
+        a.label(0, sector_transfer_label_);
         a.mv(1, "a6", "a7");
-        a.la(1, "a3", ".Lbaz_sd_card");
+        a.la(1, "a3", sd_card_label_);
         a.lw(1, "a4", 0, "a3");
         a.bgez(1, "a4", "2f");
 
         const size_t stack_bytes{save_registers(1, saved)};
 
         a.li(1, "a0", current_directory);
-        a.la(1, "a1", ".Lbaz_sd_card_name");
+        a.la(1, "a1", sd_card_name_label_);
         a.li(1, "a2", read_write);
         a.li(1, "a3", 0);
         a.li(1, "a7", syscall_openat_);
         a.ecall(1);
         a.bltz(1, "a0", sd_card_handler_label);
-        a.la(1, "a3", ".Lbaz_sd_card");
+        a.la(1, "a3", sd_card_label_);
         a.sw(1, "a0", 0, "a3");
         // 'llseek' writes the size of the file at a3
         a.li(1, "a1", 0);
@@ -3535,7 +3555,7 @@ class machine_rv32i : public machine {
         a.li(1, "a7", syscall_llseek_);
         a.ecall(1);
         a.bnez(1, "a0", sd_card_handler_label);
-        a.la(1, "a3", ".Lbaz_sd_card");
+        a.la(1, "a3", sd_card_label_);
         a.lw(1, "a4", size_low_offset, "a3");
         a.lw(1, "a0", size_high_offset, "a3");
         a.srli(1, "a4", "a4", sector_shift);
@@ -3566,10 +3586,10 @@ class machine_rv32i : public machine {
 
         a.switch_section(section::data);
         a.align(word_size_bytes_);
-        a.label(0, ".Lbaz_sd_card");
+        a.label(0, sd_card_label_);
         a.data(word_size_bytes_, sd_card_words);
         a.switch_section(section::rodata);
-        a.label(0, ".Lbaz_sd_card_name");
+        a.label(0, sd_card_name_label_);
         a.ascii(sd_card_file_name());
         a.data(1, name_end);
         a.switch_section(section::text);
@@ -4863,6 +4883,16 @@ class machine_rv32i : public machine {
         return helper_routine::multiply;
     }
 
+    // note: 'data_element_size_error' rejects other sizes
+    static auto
+    assert_data_element_size([[maybe_unused]] const size_t element_size_bytes)
+        -> void {
+
+        assert(element_size_bytes == byte_size_bytes_ or
+               element_size_bytes == half_size_bytes_ or
+               element_size_bytes == word_size_bytes_);
+    }
+
     // folding removes the operations that keep the destination, an operation
     // of a location with itself is a valid one that an aliased result reaches
     static auto
@@ -4944,7 +4974,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        throw usage_error{std::format(
+        throw unlocated_error{std::format(
             "code, data and variables use {} B, which exceeds the RV32I "
             "address range",
             memory_end_address)};

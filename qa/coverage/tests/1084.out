@@ -1,4 +1,4 @@
 
-1084.baz:4:15: boolean values cannot be arithmetic operands
+1084.baz:4:15: a 'bool' is not an arithmetic operand, 'int(false)' converts it
     var b = ~(false)
               ^~~~~

@@ -139,7 +139,7 @@ class assembler_rv32i final : public assembler {
         branch,
         // 'j target' within 1 MiB
         jal,
-        // 'jump target, scratch' within 2 GiB
+        // 'jump target, scratch' anywhere in the 32-bit address space
         far,
     };
 
@@ -879,14 +879,14 @@ class assembler_rv32i final : public assembler {
         return two_instructions_bytes;
     }
 
-    // labels, directives and comments occupy no space, instructions are added
+    // directives and comments occupy no space, instructions are added
     // as records except for jumps, which start as one instruction
     [[nodiscard]] static auto line_size_bytes(const std::string_view text)
         -> size_t {
 
         const std::string_view code{code_part(text)};
 
-        if (code.empty() or code.back() == ':' or is_sizeless_directive(code)) {
+        if (code.empty() or is_sizeless_directive(code)) {
             return 0;
         }
 
@@ -1119,7 +1119,7 @@ class assembler_rv32i final : public assembler {
         };
 
         if (grown == jump_reach::far and jump.scratch.empty()) {
-            throw usage_error{std::format(
+            throw unlocated_error{std::format(
                 "jump to '{}' exceeds 1 MiB and no scratch register is free",
                 jump.target)};
         }
@@ -2122,7 +2122,6 @@ class assembler_rv32i final : public assembler {
     static auto write_data(std::ostream& os, const data_values& data) -> void {
         // zero fills such as the variables area can be large
         if (is_zero_fill(data)) {
-
             write_zeros(os, data_size_bytes(data));
             return;
         }

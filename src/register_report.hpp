@@ -291,11 +291,12 @@ class register_reporter final {
     frame_uses(const std::vector<register_trace::frame>& frames) const
         -> std::vector<register_use_report::frame_use> {
 
+        // note: only the global initializers compile outside a function
         if (frames.empty()) {
             return {
                 {
-                    .callee{"code"},
-                    .label{"code"},
+                    .callee{"global initializers"},
+                    .label{"global initializers"},
                     .registers{},
                 },
             };

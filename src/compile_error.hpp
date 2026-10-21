@@ -18,7 +18,7 @@ class tokenizer;
 // an error of the user without a place in the source, e.g. a file that cannot
 // be read; 'main' reports it as the user's, any other 'std::exception' as a
 // defect of the compiler
-class usage_error final : public std::runtime_error {
+class unlocated_error final : public std::runtime_error {
   public:
     using std::runtime_error::runtime_error;
 };

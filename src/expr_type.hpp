@@ -156,6 +156,14 @@ class expr_type final : public statement {
     // statics
     //
 
+    // the braced elements of 'src' of the type 'element_type' are written one
+    // by one from 'offset' in 'dst', each after it is read, e.g. the 'a[0]' of
+    // 'a = {a[1], a[0]}' reads what the first element wrote
+    static auto assert_elements_not_reading(const expr_any& src,
+                                            const type& element_type,
+                                            const constructor_target& dst,
+                                            size_t offset) -> void;
+
     // unlisted elements are zero like unlisted fields, returns the zeroed size
     static auto zero_remaining_elements(toc& tc, const size_t indent,
                                         const token& src_loc_tk,
@@ -204,10 +212,6 @@ class expr_type final : public statement {
                             const destination& dst, operand& dst_op) const
         -> void;
 
-    auto compile_field(toc& tc, const size_t indent, const expr_any& src,
-                       const type_field& field, const destination& dst,
-                       operand& dst_op) const -> void;
-
     auto compile_field_list(toc& tc, const size_t indent, const type& dst_type,
                             const destination& dst, operand& dst_op) const
         -> void;
@@ -237,23 +241,21 @@ class expr_type final : public statement {
     // creates an 'expr_any' for each field
     auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
 
-    auto write_builtin_field(toc& tc, const size_t indent, const expr_any& src,
-                             const type_field& field, const destination& dst,
-                             const operand& dst_op) const -> void;
-
     // a call writes the fields only, so the padding is zeroed before it and
     // '==' can compare instances byte by byte; the backend decides whether
     // gap by gap or the whole instance
     auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
                       const operand& dst_op) const -> void {
 
-        const std::vector<machine::padding_gap> gaps{padding_gaps(dst_type)};
+        machine& x{tc.machine()};
+
+        const std::vector<machine::padding_gap> gaps{
+            padding_gaps(dst_type, x.max_padding_gaps_zeroed_one_by_one()),
+        };
 
         if (gaps.empty()) {
             return;
         }
-
-        machine& x{tc.machine()};
 
         x.zero_padding(tok(), indent, dst_op, dst_type.size_bytes(),
                        dst_type.alignment(), gaps);
@@ -341,12 +343,6 @@ class expr_type final : public statement {
             });
     }
 
-    static auto assert_record_field_not_reading(const expr_any& src,
-                                                const type_field& field,
-                                                const constructor_target& dst,
-                                                const size_t field_offset)
-        -> void;
-
     // the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)',
     // none when 'tk' names no built-in with a value
     [[nodiscard]] static auto builtin_value_type(const toc& tc, const token& tk,
@@ -357,6 +353,10 @@ class expr_type final : public statement {
                                       const operand& src_op, const operand& dst)
         -> void;
 
+    static auto compile_field(toc& tc, const size_t indent, const expr_any& src,
+                              const type_field& field, const destination& dst,
+                              operand& dst_op) -> void;
+
     static auto compile_record_field(toc& tc, const size_t indent,
                                      const expr_any& src,
                                      const type_field& field,
@@ -364,16 +364,28 @@ class expr_type final : public statement {
         -> void;
 
     // the bytes that no field covers, between the data ranges and after the
-    // last one
-    [[nodiscard]] static auto padding_gaps(const type& tp)
+    // last one; the first of them when there are more than 'max_count'
+    [[nodiscard]] static auto padding_gaps(const type& tp,
+                                           const size_t max_count)
         -> std::vector<machine::padding_gap> {
+
+        // note: + 1 because a gap is between two ranges, so more than
+        //       'max_count' + 1 ranges give more than 'max_count' gaps
+        const size_t max_range_count{max_count + 1};
+
+        const std::vector<byte_range> ranges{tp.data_ranges(max_range_count)};
 
         std::vector<machine::padding_gap> gaps;
         size_t covered_bytes{};
 
-        for (const byte_range& r : tp.data_ranges()) {
+        for (const byte_range& r : ranges) {
             append_gap(gaps, covered_bytes, r.offset, tp.alignment());
             covered_bytes = r.offset + r.size_bytes;
+        }
+
+        // the last range of a stopped search may be incomplete
+        if (ranges.size() > max_range_count) {
+            return gaps;
         }
 
         append_gap(gaps, covered_bytes, tp.size_bytes(), tp.alignment());
@@ -402,4 +414,10 @@ class expr_type final : public statement {
                             fld.array_count, *src_len)};
         }
     }
+
+    static auto write_builtin_field(toc& tc, const size_t indent,
+                                    const expr_any& src,
+                                    const type_field& field,
+                                    const destination& dst,
+                                    const operand& dst_op) -> void;
 };

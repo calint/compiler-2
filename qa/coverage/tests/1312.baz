@@ -1,0 +1,10 @@
+# braced elements assigned to an array at a run-time index are rejected when an
+# element reads that array, any of its elements may have been written
+type line {a i8[2]}
+
+func main() {
+    var ls = line[2]{{{1, 2}}, {{3, 4}}}
+    var i = 0
+    ls[i].a = {5, ls[0].a[0]}
+    exit(ls[0].a[1])
+}

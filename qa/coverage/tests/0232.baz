@@ -1,7 +1,10 @@
-# unary negation of an array element is rejected here
+# unary negation of an array element passes its value to an inlined call
 
-func f(x i8) {}
+func f(x i8) res {
+    res = x + 7
+}
+
 func main() {
-    var a = i8[2]{}
-    f(-a[0])
+    var a = i8[2]{1, 5}
+    exit(f(-a[1]))
 }

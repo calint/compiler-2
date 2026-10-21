@@ -755,9 +755,9 @@ auto check_line_sizes() -> void {
         assert(assembler_rv32i::line_size_bytes(jump) == 4);
     }
 
-    // comments, directives and labels take no space
+    // comments and directives take no space
     for (const std::string_view sizeless :
-         {"  # comment", "\t.option norelax", ".Lcandidate: \t# label"}) {
+         {"  # comment", "\t.option norelax"}) {
         assert(assembler_rv32i::line_size_bytes(sizeless) == 0);
     }
 }

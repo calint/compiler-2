@@ -241,7 +241,16 @@ enum class var_kind : uint8_t { var, dat, param, result };
 
 // one scope; the static functions make each kind, e.g. 'frame::block()'
 class frame final {
-    enum class frame_type : uint8_t { func, block, loop, foo };
+    // a function frame is 'inlined_func', 'noinline_dry_run' or
+    // 'noinline_func', see the statics that make them
+    enum class frame_type : uint8_t {
+        block,
+        loop,
+        foo,
+        inlined_func,
+        noinline_dry_run,
+        noinline_func,
+    };
 
     // optional name
     std::string_view name_;
@@ -272,10 +281,7 @@ class frame final {
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
-    frame_type type_{frame_type::func};
-    bool is_inlined_{true};
-    // see 'noinline_dry_run'
-    bool is_noinline_dry_run_{};
+    frame_type type_{frame_type::block};
     std::string_view storage_base_register_;
     size_t peak_storage_size_bytes_{};
 
@@ -361,13 +367,16 @@ class frame final {
     }
 
     [[nodiscard]] auto is_func() const -> bool {
-        return type_ == frame_type::func;
+        return type_ == frame_type::inlined_func or
+               type_ == frame_type::noinline_dry_run or
+               type_ == frame_type::noinline_func;
     }
 
+    // a dry run is compiled in place like an inlined function
     [[nodiscard]] auto is_inlined_func() const -> bool {
         assert(is_func());
 
-        return is_inlined_;
+        return type_ != frame_type::noinline_func;
     }
 
     [[nodiscard]] auto is_loop() const -> bool {
@@ -379,7 +388,7 @@ class frame final {
     }
 
     [[nodiscard]] auto is_noinline_dry_run() const -> bool {
-        return is_noinline_dry_run_;
+        return type_ == frame_type::noinline_dry_run;
     }
 
     [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
@@ -428,12 +437,12 @@ class frame final {
     //
 
     [[nodiscard]] static auto block() -> frame {
-        return {"", frame_type::block, {}, {}, true, {}};
+        return {"", frame_type::block, {}, {}, {}};
     }
 
     // the body of a 'foo' named by its loop label
     [[nodiscard]] static auto foo(const std::string_view name) -> frame {
-        return {name, frame_type::foo, {}, {}, true, {}};
+        return {name, frame_type::foo, {}, {}, {}};
     }
 
     // a function compiled in place, 'call_path' keeps its labels unique and
@@ -443,16 +452,15 @@ class frame final {
                                            std::string return_label) -> frame {
 
         return {name,
-                frame_type::func,
+                frame_type::inlined_func,
                 std::move(call_path),
                 std::move(return_label),
-                true,
                 {}};
     }
 
     // the body of a loop named by its label
     [[nodiscard]] static auto loop(const std::string_view name) -> frame {
-        return {name, frame_type::loop, {}, {}, true, {}};
+        return {name, frame_type::loop, {}, {}, {}};
     }
 
     // a noinline function compiled in place, the dry run that checks the
@@ -462,13 +470,11 @@ class frame final {
                                                std::string return_label)
         -> frame {
 
-        frame result{
-            inlined_func(name, std::move(call_path), std::move(return_label)),
-        };
-
-        result.is_noinline_dry_run_ = true;
-
-        return result;
+        return {name,
+                frame_type::noinline_dry_run,
+                std::move(call_path),
+                std::move(return_label),
+                {}};
     }
 
     // a function with a body of its own, its variables are placed from
@@ -477,18 +483,19 @@ class frame final {
     noinline_func(const std::string_view name, std::string call_path,
                   const std::string_view storage_base_register) -> frame {
 
-        return {name,  frame_type::func,     std::move(call_path), {},
-                false, storage_base_register};
+        return {name,
+                frame_type::noinline_func,
+                std::move(call_path),
+                {},
+                storage_base_register};
     }
 
   private:
     frame(const std::string_view name, const frame_type frm_type,
           std::string call_path, std::string func_ret_label,
-          const bool is_inlined,
           const std::string_view storage_base_register) noexcept
         : name_{name}, call_path_{std::move(call_path)},
           func_ret_label_{std::move(func_ret_label)}, type_{frm_type},
-          is_inlined_{is_inlined},
           storage_base_register_{storage_base_register} {}
 };
 
@@ -790,7 +797,7 @@ class function_table final {
                        .generic_method{std::move(generic_method)},
                    });
 
-        if (func_def) {
+        if (func_def != nullptr) {
             defs_.emplace_back(func_def);
         }
     }
@@ -1941,10 +1948,12 @@ class ident_resolver final {
                                                     std::move(info));
             }
 
-            // note: a constant has no fields and no elements
+            // a constant has no fields and no elements
             if (meaning.is_constant()) {
                 if (step.id.path().size() != 1) {
-                    return ident_info::make_empty();
+                    throw compile_error{
+                        src_loc_tk, std::format("constant '{}' has no fields",
+                                                step.id.base())};
                 }
 
                 return ident_info::make_const(
@@ -2108,12 +2117,12 @@ class definition_checks final {
             return;
         }
 
-        const const_info& c{scopes_.get().back().get_const(name)};
+        const const_info& existing{scopes_.get().back().get_const(name)};
 
         throw compile_error{
             src_loc_tk,
             std::format("constant '{}' already defined in this block at {}",
-                        name, where(c.src_loc_tk))};
+                        name, where(existing.src_loc_tk))};
     }
 
     // note: a parameter may hide a constant of the generic instance in the
@@ -2263,8 +2272,6 @@ class variable_comments final {
             resolver_.get().resolve(src_loc_tk, var.name),
         };
 
-        ::machine& x{machine_.get()};
-
         std::string text{
             std::format("{}: {}", var.name, name_info.type_ref().name()),
         };
@@ -2279,6 +2286,8 @@ class variable_comments final {
             var.value_register.is_empty() ? var.pointer_register
                                           : var.value_register,
         };
+
+        ::machine& x{machine_.get()};
 
         if (not reg.is_empty()) {
             x.comment(src_loc_tk, indent, "{} ({})", text, reg.base_register());

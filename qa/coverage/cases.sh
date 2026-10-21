@@ -668,8 +668,8 @@ SRC=0230 && EXP=0 && RUN
 # arrays_equal compares indexed byte ranges
 SRC=0231 && EXP=0 && RUN
 
-# unary negation of an array element is rejected here
-SRC=0232 && COMPERR
+# unary negation of an array element passes its value to an inlined call
+SRC=0232 && EXP=2 && RUN
 
 # == compares indexed i32 values
 SRC=0233 && EXP=0 && RUN
@@ -4095,3 +4095,170 @@ SRC=1286 && COMPERR
 # a call into an instance with six gaps of padding: x86_64 zeroes the whole
 # instance, rv32i each gap, and both compare equal byte by byte
 SRC=1287 && EXP=8 && RUN
+
+# a noinline function that runs out of scratch registers is rejected also when
+# nothing calls it, its body is compiled the same for every call
+SRC=1288 && COMPERR
+
+# an inlined recursion in a noinline function is rejected also when nothing
+# calls the function, its argument is not known at any call
+SRC=1289 && COMPERR
+
+# a noinline function without parameters that runs out of scratch registers is
+# rejected also when nothing calls it
+SRC=1290 && COMPERR
+
+# a unary operator on a parameter of a noinline function passes its value to an
+# inlined call
+SRC=1291 && EXP=4 && RUN
+
+# a unary operator on a parameter that names an indexed element passes its
+# value to an inlined call, like one on the element itself
+SRC=1292 && EXP=5 && RUN
+
+# a unary operator on a parameter passed to an inlined call is accepted in a
+# function that nothing calls
+SRC=1293 && EXP=7 && RUN
+
+# a constant count of 'array_copy' larger than the array is rejected also when
+# the start is computed at run time
+SRC=1294 && COMPERR
+
+# a constant count of 'write' larger than the array is rejected also when the
+# start is computed at run time
+SRC=1295 && COMPERR
+
+# a constant count of 'read' larger than the array is rejected also when the
+# start is computed at run time
+SRC=1296 && COMPERR
+
+# a constant count of 'arrays_equal' larger than the arrays is rejected also
+# when both starts are computed at run time
+SRC=1297 && COMPERR
+
+# a constant count of 'array_copy' larger than the arrays is rejected also when
+# both starts are computed at run time
+SRC=1298 && COMPERR
+
+# a call of 'main' is rejected also in a function that nothing calls
+SRC=1299 && COMPERR
+
+# a call with more arguments than parameters and no comma between them is
+# rejected at the extra argument
+SRC=1300 && COMPERR
+
+# a 'let' that reads its own name is rejected as uninitialized, also when an
+# outer block has a constant of that name
+SRC=1301 && COMPERR
+
+# a 'let' that reads its own name is rejected as uninitialized, also when a
+# global constant has that name
+SRC=1302 && COMPERR
+
+# a 'let' that reads its own name is rejected as uninitialized, like a 'var'
+SRC=1303 && COMPERR
+
+# a unary operator on the buffer of 'write' is rejected, the buffer is an array
+SRC=1304 && COMPERR
+
+# a unary operator on the buffer of 'read' is rejected, the buffer is an array
+SRC=1305 && COMPERR
+
+# a unary operator on an argument of an array parameter is rejected, the
+# parameter takes an array
+SRC=1306 && COMPERR
+
+# a unary operator on an argument of an array parameter of a noinline function
+# is rejected, the parameter takes an array
+SRC=1307 && COMPERR
+
+# a unary operator on an indexed side of a comparison applies before the
+# comparison, with a constant or a run-time index, on either side
+SRC=1308 && EXP=15 && RUN
+
+# a unary operator on a side of a comparison whose address is computed, a
+# parameter naming an element or a field of a noinline record parameter,
+# applies before the comparison
+SRC=1309 && EXP=3 && RUN
+
+# braced elements assigned to the array they read are rejected when an element
+# reads one written before it
+SRC=1310 && COMPERR
+
+# braced instances assigned to the array they read are rejected when a field
+# reads an instance written before it
+SRC=1311 && COMPERR
+
+# braced elements assigned to an array at a run-time index are rejected when an
+# element reads that array, any of its elements may have been written
+SRC=1312 && COMPERR
+
+# a call that is a field of an instance field reads the fields written before
+# it, its argument is checked like a braced field
+SRC=1313 && COMPERR
+
+# the count of 'read' assigned to an instance is rejected like any value of a
+# built-in type
+SRC=1314 && COMPERR
+
+# 'exit' assigned to an instance is rejected, it does not return a value
+SRC=1315 && COMPERR
+
+# the count of 'read' assigned to an array is rejected like any value of a
+# built-in type, the source must be an array
+SRC=1316 && COMPERR
+
+# a condition in parentheses compared with a 'bool' is rejected at its
+# comparison, it is stored in a 'bool' first
+SRC=1317 && COMPERR
+
+# a condition in parentheses on the right side of a comparison is rejected at
+# its comparison
+SRC=1318 && COMPERR
+
+# a global initializer that runs out of scratch registers reports its
+# registers under the frame of the global initializers
+SRC=1319 && COMPERR
+
+# a field of a global constant is rejected, a constant has no fields
+SRC=1320 && COMPERR
+
+# a field of a local constant is rejected, a constant has no fields
+SRC=1321 && COMPERR
+
+# a field whose alignment takes its offset past the storage limit is rejected
+SRC=1322 && COMPERR
+
+# a type whose size rounded up to its alignment passes the storage limit is
+# rejected
+SRC=1323 && COMPERR
+
+# a string where a definition is expected is reported with its quotes
+SRC=1324 && COMPERR
+
+# a character literal where a definition is expected is reported as written
+SRC=1325 && COMPERR
+
+# a control byte in a name where a definition is expected is reported as
+# an escape
+SRC=1326 && COMPERR
+
+# a call of the wrong type in a field of an instance literal is reported at the
+# call
+SRC=1327 && COMPERR
+
+# a call of the wrong type in a field of a braced instance assigned to a
+# variable is reported at the call
+SRC=1328 && COMPERR
+
+# 'arrays_equal' in a field of an instance literal of the wrong type is
+# reported at the 'arrays_equal'
+SRC=1329 && COMPERR
+
+# a 'not' in an arithmetic operand is rejected, a condition is stored in a
+# 'bool' first
+SRC=1330 && COMPERR
+
+# a 'not' on the right side of a comparison is rejected, a condition is stored
+# in a 'bool' first
+SRC=1331 && COMPERR

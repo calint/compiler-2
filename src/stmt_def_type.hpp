@@ -116,16 +116,13 @@ class type_fields final {
     }
 };
 
-// the field layout of the type named by 'name_tk' as comments
+// the field layout of the type 'tp' as comments
 inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
-                                const token& name_tk) -> void {
-
-    const type& tp{tc.get_type_or_throw(tk, name_tk.text())};
+                                const type& tp) -> void {
 
     machine& x{tc.machine()};
 
-    x.comment(tk, indent, "{} : {} B    fields:", name_tk.text(),
-              tp.size_bytes());
+    x.comment(tk, indent, "{} : {} B    fields:", tp.name(), tp.size_bytes());
 
     x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", "name",
               "offset", "size", "array?", "array size");
@@ -212,6 +209,13 @@ class stmt_def_type final : public statement {
     }
 
     stmt_def_type() = default;
+    // 'toc' keeps the address of the type
+    stmt_def_type(const stmt_def_type&) = delete;
+    stmt_def_type(stmt_def_type&&) = delete;
+    auto operator=(const stmt_def_type&) -> stmt_def_type& = delete;
+    auto operator=(stmt_def_type&&) -> stmt_def_type& = delete;
+
+    ~stmt_def_type() override = default;
 
     //
     // overridden methods
@@ -227,7 +231,7 @@ class stmt_def_type final : public statement {
                  [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        comment_type_layout(tc, indent, tok(), name_tk_);
+        comment_type_layout(tc, indent, tok(), type_);
     }
 };
 
@@ -349,6 +353,13 @@ class stmt_def_type_alias final : public statement {
     }
 
     stmt_def_type_alias() = default;
+    // 'toc' keeps the address of the type
+    stmt_def_type_alias(const stmt_def_type_alias&) = delete;
+    stmt_def_type_alias(stmt_def_type_alias&&) = delete;
+    auto operator=(const stmt_def_type_alias&) -> stmt_def_type_alias& = delete;
+    auto operator=(stmt_def_type_alias&&) -> stmt_def_type_alias& = delete;
+
+    ~stmt_def_type_alias() override = default;
 
     //
     // overridden methods
@@ -367,7 +378,7 @@ class stmt_def_type_alias final : public statement {
                  [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        comment_type_layout(tc, indent, tok(), name_tk_);
+        comment_type_layout(tc, indent, tok(), type_);
     }
 
   private:

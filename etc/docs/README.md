@@ -249,16 +249,21 @@ unsized array parameter has no length there ('ident_info::is_length_unknown'),
 so the rules that need the length are left to the calls: 's[7]' and
 'array_copy(s, d, 2)' are accepted, 's[-1]' is not. The 'n' of a 'foo' over
 it is a read-only variable there and in the parse, not a constant, so
-'let m = n' is not folded before a call gives the length. An error that
-depends on the arguments of a call cannot be told without one
+'let m = n' is not folded before a call gives the length; 'm' stays a variable
+at the calls too, so 's[m]' past the end is left to the run-time bounds check
+where 's[n]' is rejected at compile time. An error that depends on the
+arguments of a call cannot be told without one
 ('compile_error::depends_on_call'): running out of scratch registers, e.g.
 twelve parameters that one call gives the same argument, and the limits of
 inlined calls, e.g. 'r(x - 1)' in 'r(x)' that a constant argument ends; such
-an error ends the check and the function is accepted. An instance of a generic
-definition is a function like the others: a use of a generic function makes
-it, an alias of a generic type makes its methods, and an instance that nothing
-calls is checked too; a generic function that nothing instantiates is listed
-in the report ([1.6](#16-reports)).
+an error ends the check and the function is accepted. A function that takes
+nothing from a call, a noinline one without unsized array parameters or an
+inlined one without parameters, has at least as many free registers in the
+check as at any call, so there such an error rejects it. An instance of a
+generic definition is a function like the others: a use of a generic function
+makes it, an alias of a generic type makes its methods, and an instance that
+nothing calls is checked too; a generic function that nothing instantiates is
+listed in the report ([1.6](#16-reports)).
 
 ### 1.6 Reports
 
@@ -801,9 +806,10 @@ signature: the dry run is skipped and no aliasing is reported for it.
 
 A value without storage (a constant, 'point{1, 2}') is passed in a temporary
 of the call. The dry run names it as a temporary argument, not as a register
-of the caller that the body does not see. The body is checked with the value
-of the first call of its kind, so whether an argument is a temporary or a
-variable is part of the signature.
+of the caller that the body does not see. The temporary is storage, not a
+constant of the body, so the dry run does not depend on the value, just as
+the body compiled once does not. A temporary aliases no variable, so whether
+an argument is a temporary or a variable is part of the signature.
 
 ## 5. Versions of the same code: compiled, measured, the shorter kept
 
@@ -855,6 +861,11 @@ x86_64 has base + index addressing, so only the assignment chooses, once per
 body. rv32i grows as (n + 1) * (n + 5). The trade is compile time for code
 size: the depth 8 chain compiles in about 75 ms on rv32i against 12 ms on
 x86_64.
+
+Not every choice is measured. The padding of an instance is zeroed gap by gap
+or as the whole instance by a gap count that each backend measured once
+('machine::zero_padding'): compiling both would multiply the versions above
+it, and an instance with thousands of gaps would cost compile time.
 
 ### 5.3 State: each version starts from the same machine
 
@@ -1202,9 +1213,12 @@ Cost: every change rebuilds everything.
 
 An error is a 'compile_error' at the token that caused it, with the
 inlined calls and generic instances that led there. No code recovers from an
-error, so no error leads to a second, wrong one. The one exception is a
-version of code that runs out of scratch registers: the other version is kept
-and the error is dropped with the state of the failed version, see
-[5.3](#53-state-each-version-starts-from-the-same-machine).
+error, so no error leads to a second, wrong one. There are two exceptions:
+a version of code that runs out of scratch registers, where the other version
+is kept and the error is dropped with the state of the failed version, see
+[5.3](#53-state-each-version-starts-from-the-same-machine); and the check of
+a function that nothing calls, where an error that depends on the arguments
+of a call ends the check and the function is accepted, see
+[1.5](#15-checks).
 
 Cost: one error per run.

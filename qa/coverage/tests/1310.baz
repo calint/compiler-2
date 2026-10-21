@@ -1,0 +1,7 @@
+# braced elements assigned to the array they read are rejected when an element
+# reads one written before it
+func main() {
+    var a = i8[2]{1, 2}
+    a = {a[1], a[0]}
+    exit(a[1])
+}

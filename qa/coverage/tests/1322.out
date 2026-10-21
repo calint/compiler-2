@@ -1,0 +1,4 @@
+
+1322.baz:2:35: storage size exceeds signed 64-bit range
+type s {a i8[0x7fffffffffffffef], b i16}
+                                  ^

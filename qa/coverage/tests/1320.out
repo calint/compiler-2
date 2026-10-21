@@ -1,0 +1,4 @@
+
+1320.baz:5:15: constant 'N' has no fields
+    var a = N.x
+              ^

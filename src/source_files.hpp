@@ -62,10 +62,6 @@ class source_files final {
 
     [[nodiscard]] auto count() const -> size_t { return files_.size(); }
 
-    [[nodiscard]] auto is_empty() const -> bool {
-        return files_.empty() or files_.front().text.empty();
-    }
-
     [[nodiscard]] auto name(const size_t file_ix) const -> std::string_view {
         return files_.at(file_ix).name;
     }
@@ -89,7 +85,8 @@ class source_files final {
         std::ifstream fs{std::string{file_name}};
 
         if (not fs.is_open()) {
-            throw usage_error{std::format("cannot open file '{}'", file_name)};
+            throw unlocated_error{
+                std::format("cannot open file '{}'", file_name)};
         }
 
         std::string contents;
@@ -102,15 +99,16 @@ class source_files final {
             contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
 
             if (contents.size() > max_source_size_bytes) {
-                throw usage_error{std::format("file '{}' is larger than {} B",
-                                              file_name,
-                                              max_source_size_bytes)};
+                throw unlocated_error{
+                    std::format("file '{}' is larger than {} B", file_name,
+                                max_source_size_bytes)};
             }
         }
 
         // a directory opens but cannot be read
         if (fs.bad()) {
-            throw usage_error{std::format("cannot read file '{}'", file_name)};
+            throw unlocated_error{
+                std::format("cannot read file '{}'", file_name)};
         }
 
         return contents;
@@ -162,9 +160,7 @@ class source_locations final {
                            text(src_loc_tk, '.'));
     }
 
-    [[nodiscard]] auto has_source() const -> bool {
-        return files_ != nullptr and not files_->is_empty();
-    }
+    [[nodiscard]] auto has_source() const -> bool { return files_ != nullptr; }
 
     // human-readable source location, with the file name when the program
     // has more than one file

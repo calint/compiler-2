@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <ostream>
 #include <string_view>
+#include <utility>
 
 #include "assembler_rv32i.hpp"
 #include "machine_rv32i_bare_metal.hpp"
@@ -40,6 +41,26 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // the machine has no sd card, so the sector functions are rejected
     [[nodiscard]] auto sector_size_bytes() const -> size_t override {
         return 0;
+    }
+
+  protected:
+    //
+    // overridden methods
+    //
+
+    // note: 'sector_size_bytes' is 0, so the sector functions are rejected
+    auto emit_sector_routines([[maybe_unused]] const bool read_used,
+                              [[maybe_unused]] const bool write_used)
+        -> void override {
+
+        std::unreachable();
+    }
+
+    // the stack follows the variables, see 'emit_stack_setup'
+    auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
+        -> void override {
+
+        assembler().la(indent, reg, variables_end_label);
     }
 
   private:

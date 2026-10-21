@@ -1,0 +1,4 @@
+
+1296.baz:6:16: count 5 is past the end of array 'b' of size 4
+    read(0, b, 5, i)
+               ^
