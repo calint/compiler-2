@@ -1,0 +1,4 @@
+
+1372.baz:5:12: 'i16(300) + 1' of type 'i16' is wider than 'e' of type 'i8', swap the operands: 'i16(300) + 1 > e'
+    if e < i16(300) + 1 {
+           ^

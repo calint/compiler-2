@@ -157,6 +157,7 @@ struct generic_call {
 
         // note: read from the copy to find where the argument ends and its
         //       type, the call parses it again
+
         const stmt_identifier si{tc, {}, tk, tz};
 
         const char next{tz.peek_char_after_whitespace()};
@@ -497,6 +498,7 @@ struct call_site {
 
         // note: a register destination, its id is a register name, has no
         //       variable
+
         if (dst.is_register()) {
             return {};
         }
@@ -547,6 +549,7 @@ struct call_site {
 
         // note: a recursive call is checked inside its own body, so an error
         //       can be located after the call
+
         return e.start_index >= begin_tk.start_index() and
                e.start_index <= close_paren_tk.end_index();
     }
@@ -585,6 +588,7 @@ class inline_call {
         if (func.returns() and not dst.type_ref().is_same(func.get_type())) {
             // note: 'call_site::assert_result_type' allows a type mismatch
             //       only for an operand
+
             assert(dst.is_operand());
 
             compile_widened(tc, indent, dst, func);
@@ -604,6 +608,7 @@ class inline_call {
         // note: a block is a frame, which counts toward the nesting limit and
         //       the 'max frames in use' report, so a call without temporaries
         //       enters none
+
         if (not has_instance_temporary) {
             compile_to_destination(tc, indent, dst, func);
             return;
@@ -929,6 +934,7 @@ class inline_call {
     //
     //       the argument registers are shared by all versions, so they are
     //       freed after the choice instead of inside the body
+
     auto compile_with_address_choice(
         toc& tc, const size_t indent, const stmt_def_func& func,
         const std::vector<alias_info>& aliases,
@@ -1026,6 +1032,7 @@ class inline_call {
 
         // note: the call checked the use and the type of the result before
         //       the body was entered
+
         assert(func.returns().has_value() != dst.is_empty());
 
         std::vector<alias_info> aliases;
@@ -1351,6 +1358,7 @@ class noinline_call {
         // note: a block is a frame, which counts toward the nesting limit and
         //       the 'max frames in use' report, so a call without temporaries
         //       enters none
+
         if (not has_result_temporary(dst, func) and
             not has_argument_temporary) {
 
@@ -1384,6 +1392,7 @@ class noinline_call {
 
         // note: 'stmt_call::compile' checked the result, a result that is
         //       not in memory or is widened goes through a temporary
+
         if (func.returns()) {
             assert(dst.operand().is_memory());
             assert(dst.type_ref().is_same(func.get_type()));
@@ -1455,6 +1464,7 @@ class noinline_call {
         //       where it was entered, by at most the number of its signatures;
         //       a known limitation: near the limit the verdict of a chain
         //       through a cycle depends on the order of the calls (docs 4.3)
+
         if (checked_height) {
             tc.reach_dry_run_level(level + below.levels);
             return;
@@ -1777,6 +1787,7 @@ class noinline_call {
 
         // note: parsing the call rejects an array argument for a non-array
         //       parameter and the reverse
+
         assert(info.is_array() == param.is_array());
 
         if (not info.type_ref().is_same(param.get_type())) {
@@ -1834,6 +1845,7 @@ class noinline_call {
         if (item.is_array) {
             // note: an unsized array without a call is a parameter of a
             //       function checked as a noinline body, a pointer
+
             assert(item.array_len);
 
             part += std::format(" array {}", *item.array_len);
@@ -1916,6 +1928,7 @@ class stmt_call : public expression {
 
         // note: a call of 'main' can only be in 'main' or after it, in a
         //       function that nothing calls, since names are defined before use
+
         if (func_name_ == reserved_names::main) {
             throw compile_error{tok(), "'main' cannot be called"};
         }
@@ -2007,6 +2020,7 @@ class stmt_call : public expression {
 
         // note: 'read', 'write' and 'exit' are built-ins with a statement of
         //       their own
+
         assert(not tc.funcs().is_builtin(func_name_));
 
         const call_site call{site()};
@@ -2157,6 +2171,7 @@ class stmt_call : public expression {
 
         // note: the chain does not depend on the arguments, see
         //       'noinline_call::check_aliasing'
+
         if (tc.scopes().noinline_dry_run_level() != 0) {
             call_site::throw_dry_run_frame_limit(tok());
         }

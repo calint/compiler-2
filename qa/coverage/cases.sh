@@ -4426,3 +4426,15 @@ SRC=1369 && COMPERR
 # the count register of 'repe cmpsq': the script prints the lines of the
 # compare that name 'rcx'
 if [[ $MACHINE == x86_64 ]]; then SRC=1370 && DIFFPY; fi
+
+# a constant list whose first element is a typed constant is compared as a
+# value of its type like the same list of a variable, e.g. 'i16(300) + 1'
+SRC=1371 && EXP=0 && RUN
+
+# a constant list whose first element is a typed constant is wider than a
+# narrower left side like the same list of a variable
+SRC=1372 && COMPERR
+
+# a constant list whose first element is not typed is a number that must fit
+# the other side, a later typed element does not type it
+SRC=1373 && COMPERR

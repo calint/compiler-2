@@ -107,6 +107,7 @@ inline auto assert_constant_range(const ident_info& array_info,
 
     // note: a start computed at run time that passes its bounds check is not
     //       negative, so at most the whole array remains
+
     const size_t remaining{
         range.start ? *array_len - static_cast<size_t>(*range.start)
                     : *array_len,
@@ -403,6 +404,11 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
         return true;
+    }
+
+    [[nodiscard]] auto is_typed_constant(const toc& tc) const -> bool override {
+
+        return tc.make_ident_info(*this).is_typed_const();
     }
 
     // the low bytes are at the start address of the storage
@@ -707,6 +713,7 @@ class stmt_identifier final : public statement {
 
         // note: the first alias met while resolving a path is its root, so a
         //       known address is of the root or before the path
+
         if (not known or known->trailing_count != elems_.size() - 1) {
             return nullptr;
         }

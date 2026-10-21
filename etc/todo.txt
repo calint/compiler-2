@@ -98,26 +98,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        an enum would be a second source of truth for what they already say
     => left: a class per mode, only if the compile paths differ enough
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
-[ ] medium: comparisons: a constant list whose first element is a typed
-    constant, e.g. 'i16(300) + 1 > e' or 'p + 1 > e' with 'p' a constant
-    argument of an inlined call, is compared as an untyped constant
-    ("constant '301' does not fit 'e' of type 'i8'") where the same list of
-    a variable is accepted; a single typed operand is a value of its type
-    since review round 5 (H-1, 'is_typed_constant')
-[ ] medium: low priority: compile time: one long sum 'a + a + ...' compiles
-    in quadratic time (20k terms 1.4 s, 300k terms over 120 s) and 50k type
-    definitions take 7.9 s; find the quadratic step of each (review round 5,
-    G7-11)
 [ ] easy: consistency topic: lambdas are declared with '=' in some places and
     with brace init in others, e.g. 'const auto is_letter = [](...)' in
     'toc.hpp' against 'auto next{[&] ...}' in 'machine.hpp'; also
     'statement.hpp', 'stmt_call.hpp', 'machine_rv32i.hpp' and
     'assembler_rv32i.hpp' (review round 3, G2-11)
-[ ] easy: consistency topic: about 67 multiline 'note:' blocks across 'src/'
-    lack the blank line above or below that AGENTS.md asks for, e.g.
-    'machine_x86_64.hpp' (the 'max_padding_gaps' note) and 'assembler.hpp';
-    one pass over all sources, the formatter may enforce it (review round 5,
-    G3-13)
 [p] hard: low priority: questionable: 'statement' has 20 virtuals whose
     defaults are 'std::unreachable()' plus 'is_*' tests; a closed set of node
     kinds as 'std::variant' with visitors would drop the defaults but costs

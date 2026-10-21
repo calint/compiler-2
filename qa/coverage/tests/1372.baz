@@ -1,0 +1,9 @@
+# a constant list whose first element is a typed constant is wider than a
+# narrower left side like the same list of a variable
+func main() {
+    var e = i8(1)
+    if e < i16(300) + 1 {
+        exit(1)
+    }
+    exit(0)
+}

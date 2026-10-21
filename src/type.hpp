@@ -146,6 +146,7 @@ class type final {
 
             // note: each padded element after the first adds a range, so the
             //       loop ends within 'max_count' + 2 elements
+
             for (size_t i{};
                  i < f.element_count() and ranges.size() <= max_count; ++i) {
 

@@ -1282,6 +1282,65 @@ def designated_commas(text):
     return result
 
 
+#
+# multiline notes
+#
+# a 'note:' comment of several lines has a blank line above and below, except
+# at the edge of a block and when it ends a longer comment, which stays with
+# its code; a one-line note stays with the line above it
+#
+
+COMMENT = re.compile(r"^(\s*)//(.*)$")
+MARKER = re.compile(r"\s*(note|todo):")
+NOTE = re.compile(r"\s*note:")
+LABEL = re.compile(r"^\s*(case\b.*|default|public|protected|private):$")
+
+
+def note_end(lines, first):
+    # the line after the note that starts at 'first': its continuation is the
+    # comment lines of the same indent up to the next marker
+    indent = COMMENT.match(lines[first]).group(1)
+    end = first + 1
+    while end < len(lines):
+        m = COMMENT.match(lines[end])
+        if m is None or m.group(1) != indent or MARKER.match(m.group(2)):
+            break
+
+        end += 1
+
+    return end
+
+
+def is_block_start(line):
+    return line.rstrip().endswith("{") or LABEL.match(line) is not None
+
+
+def note_blank_lines(lines):
+    # the lines to insert a blank line before
+    inserts = set()
+    n = 0
+    while n < len(lines):
+        m = COMMENT.match(lines[n])
+        if m is None or not NOTE.match(m.group(2)):
+            n += 1
+            continue
+
+        end = note_end(lines, n)
+        above = lines[n - 1] if n > 0 else ""
+        is_tail = COMMENT.match(above) is not None
+        if end - n > 1 and not is_tail:
+            if not is_blank(above) and not is_block_start(above):
+                inserts.add(n)
+
+            below = lines[end] if end < len(lines) else ""
+            if not is_blank(below) and not below.lstrip().startswith("}"):
+                inserts.add(end)
+
+        n = end
+
+    return inserts
+
+
 def main():
     args = sys.argv[1:]
     apply = "--apply" in args
@@ -1339,7 +1398,24 @@ def main():
         # shows them better
         print(f"would lay out: {path}")
 
-    if apply and laid_out:
+    # the notes are set apart before the blank lines between the statements,
+    # whose return rule sees the blank lines they add
+    noted = 0
+    for path in paths:
+        lines = path.read_text().split("\n")
+        inserts = note_blank_lines(lines)
+        if not inserts:
+            continue
+
+        noted += 1
+        if apply:
+            path.write_text("\n".join(apply_blank_lines(lines, inserts, set())))
+            print(f"notes: {path}")
+            continue
+
+        print(f"would set apart notes: {path} (+{len(inserts)})")
+
+    if apply and (laid_out or noted):
         tu = parse()
 
     texts = {p.resolve(): p.read_text().split("\n") for p in paths}
@@ -1361,7 +1437,10 @@ def main():
         print(f"would change blank lines: {path} (+{len(inserts)} -{len(removes)})")
 
     verb = "done" if apply else "pending"
-    print(f"{laid_out} file(s) laid out, {changes} blank line change(s) {verb}")
+    print(
+        f"{laid_out} file(s) laid out, {noted} file(s) with notes set apart, "
+        f"{changes} blank line change(s) {verb}"
+    )
 
 
 main()

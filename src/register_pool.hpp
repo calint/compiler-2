@@ -54,6 +54,7 @@ class register_pool final {
 
         // note: a register is protected without being allocated only inside a
         //       backend operation, which reserves no named register there
+
         assert(holder != allocations_.end());
 
         return *holder;

@@ -232,12 +232,13 @@ enum class width_change : uint8_t { narrowed, widened };
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow), 'visit_reads' (the expressions)
 //   a value        'folded_constant', 'assert_not_narrowed',
-//                  'keeps_low_bits', 'get_unary_ops', 'is_typed_literal',
+//                  'keeps_low_bits', 'get_unary_ops', 'is_typed_constant',
 //                  'is_expression', 'produces_boolean', 'compile_boolean':
 //                  'expr_arith', 'expr_any', 'expr_bool', 'expr_zero',
 //                  'stmt_builtin_convert', 'stmt_builtin_array_length',
 //                  'stmt_builtin_arrays_equal', 'stmt_call',
-//                  'stmt_identifier' ('assert_not_narrowed', 'keeps_low_bits')
+//                  'stmt_identifier' ('assert_not_narrowed', 'keeps_low_bits',
+//                  'is_typed_constant')
 //   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and
@@ -349,9 +350,13 @@ class statement {
         return false;
     }
 
-    // a literal with a type of its own, a folded conversion, e.g. the
-    // 'i8(-128)' of '-i8(-128)', whose unary ops apply at that type
-    [[nodiscard]] virtual auto is_typed_literal() const -> bool {
+    // a constant with a type of its own, whose unary ops apply at that type:
+    // a folded conversion, e.g. the 'i8(-128)' of '-i8(-128)', an argument of
+    // an inlined call or a list that starts with one; a computed list answers
+    // by its first element, so it is asked only of one that folds
+    [[nodiscard]] virtual auto
+    is_typed_constant([[maybe_unused]] const toc& tc) const -> bool {
+
         return false;
     }
 

@@ -109,6 +109,7 @@ struct access_path {
 
             // note: an index follows a field, so steps at the same position
             //       are both fields or both indexes
+
             assert((lhs_step.kind == path_step::kind_type::field) ==
                    (rhs_step.kind == path_step::kind_type::field));
 
@@ -121,6 +122,7 @@ struct access_path {
 
             // note: fields never overlap, so a different offset is a
             //       different field, constant indexes work the same
+
             if (lhs_step.number != rhs_step.number) {
                 return true;
             }

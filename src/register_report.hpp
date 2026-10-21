@@ -127,8 +127,9 @@ class register_use_report final {
         // the label of a frame follows the number and two spaces, its
         // registers are indented two more
         const std::string register_indent(held_width_ + 4, ' ');
+
         // note: +4 for the two spaces before the label and the two of the
-        // indent
+        //       indent
 
         std::string text;
 

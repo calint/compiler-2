@@ -198,8 +198,10 @@ class assembler {
     auto emit_buffered(const std::function_ref<void()> emit) -> void {
         std::ostream* const os{direct_output_};
         direct_output_ = nullptr;
+
         // note: an error leaves the lines buffered, as they are anyway from
         //       'start_output' to the end of the code
+
         emit();
 
         if (os == nullptr) {

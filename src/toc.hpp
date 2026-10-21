@@ -1486,6 +1486,7 @@ class storage_layout final {
         // note: the compile pass places the dats in order and before the
         //       variables; the parse also places the variables of the
         //       function bodies it reads, whose offsets are not used
+
         assert(capacity_unchecked_ or
                sum_storage_size(vars_size_bytes_, dat.padding_bytes) ==
                    dat.offset_bytes);
@@ -2179,6 +2180,7 @@ class definition_checks final {
 
     // note: a parameter may hide a constant of the generic instance in the
     //       same function frame
+
     auto assert_not_declared_in_scope(const token& src_loc_tk,
                                       const std::string_view name) const
         -> void {
@@ -2263,6 +2265,7 @@ class definition_checks final {
 
         // note: the name of a built-in function is rejected by
         //       'assert_valid_unqualified_name'
+
         assert(fn.src_loc_tk.at_line() != 0);
 
         const bool is_generic{not generic_method.empty()};
@@ -3107,6 +3110,7 @@ class toc final {
 
         // note: the array was resolved to its root variable when the 'foo'
         //       was made, the callee of a call in the 'foo' does not see 'e'
+
         std::optional<access_path> element_path{array.path};
 
         if (element_path) {

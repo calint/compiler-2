@@ -297,6 +297,7 @@ class stmt_def_func final : public statement {
 
         // note: a generic definition is a 'stmt_def_func_generic', a head
         //       with type parameters is read here only for an instance
+
         assert(not head.is_generic_type_method);
         assert(instance_ or head.type_param_tks.empty());
 
@@ -1005,10 +1006,12 @@ class func_instantiator final {
 
         // note: the reference stays valid while the instance is parsed, a body
         //       defines no generic function
+
         const generic_func_info& generic{tc.generics().get_func(generic_name)};
 
         // note: the call checked the count of written type arguments, a
         //       deduction gives one per parameter
+
         assert(type_args.size() == generic.param_tks.size());
 
         // the generic functions that no call instantiates are listed in the

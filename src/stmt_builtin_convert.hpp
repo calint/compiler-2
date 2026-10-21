@@ -219,7 +219,9 @@ class stmt_builtin_convert final : public expression {
         return not folded_.empty();
     }
 
-    [[nodiscard]] auto is_typed_literal() const -> bool override {
+    [[nodiscard]] auto is_typed_constant([[maybe_unused]] const toc& tc) const
+        -> bool override {
+
         return not folded_.empty();
     }
 
@@ -468,6 +470,7 @@ class stmt_builtin_convert final : public expression {
         if (tc.checks().overflow and not get_unary_ops().is_empty()) {
             // note: a narrower destination is only the argument of an outer
             //       conversion, where the overflow check is paused
+
             assert(dst.type_ref().size_bytes() == get_type().size_bytes());
 
             return ops_place::checked_at_type;

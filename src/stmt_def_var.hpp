@@ -350,6 +350,7 @@ class stmt_def_const final : public statement {
         // note: the names it folds from are constants wherever it is
         //       compiled, a name that is a constant only with a call is a
         //       variable in the parse, e.g. the 'n' of a 'foo'
+
         assert(initializer_.constant_value(tc) == value_);
 
         tc.add_const(name_tk_, indent, name_tk_.text(), value_);

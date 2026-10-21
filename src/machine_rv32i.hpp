@@ -84,6 +84,7 @@ class machine_rv32i : public machine {
     //       tail beyond; measured on 2500 random types with padding, from 9
     //       gaps the whole instance was larger in 1 of 533, at 7 and 8 gaps in
     //       10 of 146
+
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
     static constexpr int64_t immediate_min_{-2048};
@@ -899,6 +900,7 @@ class machine_rv32i : public machine {
 
         // note: a constant count is within its array, and an array is within
         //       the 32-bit address range
+
         assert(size_bytes <= std::numeric_limits<uint32_t>::max());
 
         // the pointers of a loop advance together, unrolled accesses can
@@ -3060,6 +3062,7 @@ class machine_rv32i : public machine {
 
         // note: above the minimum because an add negates the constant into an
         //       'addi'
+
         const bool is_small_constant{
             constant.has_value() and *constant > immediate_min_ and
                 *constant <= immediate_max_,
@@ -5595,6 +5598,7 @@ class machine_rv32i : public machine {
 
         // note: '--vars' is bounded by 'max_storage_bytes' and a constant index
         //       by the array size, so an offset stays in the address range
+
         assert(address.displacement() >= -limit and
                address.displacement() <= limit);
     }

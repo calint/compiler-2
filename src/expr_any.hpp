@@ -357,6 +357,7 @@ class expr_any final : public statement {
 
         // note: only an index expression asks, it is never an array and has
         //       the default type
+
         assert(not is_array_);
 
         const expr_arith& arith{std::get<expr_arith>(elements_.front())};
@@ -689,6 +690,7 @@ class expr_any final : public statement {
 
         // note: only a declaration names the array type, its size is the one
         //       of this literal
+
         assert(array_count_ == unsized_array_count or array_count_ == count);
 
         array_count_ = count;

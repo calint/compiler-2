@@ -42,6 +42,7 @@ enum class literal_typing : uint8_t { written, from_destination };
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
 //       implemented in 'expr_type_impl.hpp', those headers include this one
 //       through 'expr_any.hpp', so their definitions are incomplete here
+
 class expr_type final : public statement {
     std::unique_ptr<stmt_identifier> stmt_ident_;
     std::unique_ptr<stmt_call> stmt_call_;
@@ -404,6 +405,7 @@ class expr_type final : public statement {
 
         // note: + 1 because a gap is between two ranges, so more than
         //       'max_count' + 1 ranges give more than 'max_count' gaps
+
         const size_t max_range_count{max_count + 1};
 
         const std::vector<byte_range> ranges{tp.data_ranges(max_range_count)};

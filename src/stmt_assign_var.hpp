@@ -244,6 +244,7 @@ class stmt_assign_var final : public statement {
 
         // note: a read under the name of the destination is handled where the
         //       value is compiled, e.g. 'x = x + 1'
+
         if (read_name == stmt_ident_.first_token().text()) {
             return false;
         }

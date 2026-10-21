@@ -1,0 +1,9 @@
+# a constant list whose first element is not typed is a number that must fit
+# the other side, a later typed element does not type it
+func main() {
+    var e = i8(1)
+    if 1 + i16(300) > e {
+        exit(1)
+    }
+    exit(0)
+}

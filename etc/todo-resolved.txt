@@ -1,6 +1,44 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] medium: low priority: compile time: one long sum 'a + a + ...' compiles
+    in quadratic time (20k terms 1.4 s, 300k terms over 120 s) and 50k type
+    definitions take 7.9 s; find the quadratic step of each (review round 5,
+    G7-11)
+    => discarded (2026-10-21): the steps are quadratic only for inputs real
+       programs do not reach, not worth a second code path
+       1. the long sum: the column of a token is found by scanning its line
+          back to the start, quadratic only in the length of one line of
+          hundreds of thousands of characters
+       2. the type and function tables, and the frames of variables (25k
+          'var' in one function 10.5 s), are a 'lut' searched linearly per
+          definition, measurable only from tens of thousands of definitions
+       3. a line start table and a 'lut' with a hash index were built and
+          reverted for that reason
+[x] medium: comparisons: a constant list whose first element is a typed
+    constant, e.g. 'i16(300) + 1 > e' or 'p + 1 > e' with 'p' a constant
+    argument of an inlined call, is compared as an untyped constant
+    ("constant '301' does not fit 'e' of type 'i8'") where the same list of
+    a variable is accepted; a single typed operand is a value of its type
+    since review round 5 (H-1, 'is_typed_constant')
+    => done (2026-10-21): the virtual 'statement::is_typed_constant'
+       replaces 'is_typed_literal' and the 'expr_bool' helper: a folded
+       conversion, a typed constant name and a list whose first element is
+       one; a typed constant list is a value of its type on either side
+       (1371), an immediate of that type on the right, so a wider one is
+       rejected like a variable (1372); an untyped first element keeps the
+       range check (1373); the outputs of the other tests are unchanged
+[x] easy: consistency topic: about 67 multiline 'note:' blocks across 'src/'
+    lack the blank line above or below that AGENTS.md asks for, e.g.
+    'machine_x86_64.hpp' (the 'max_padding_gaps' note) and 'assembler.hpp';
+    one pass over all sources, the formatter may enforce it (review round 5,
+    G3-13)
+    => done (2026-10-21): 'qa/lint/format-source.py' sets apart a 'note:'
+       comment of several lines with a blank line above and below, except
+       after a '{' or a label, before a '}', and when the note ends a longer
+       comment (9 such tails stay with their declaration); a one-line note
+       stays with its line; applied to all sources (64 blank lines), the
+       two notes whose continuation was not aligned are aligned
 [x] medium: findings of the fifth review round of 2026-10-21 (phase R5)
     => done (2026-10-21):
        1. byte-identical output of every test on both targets, seven option

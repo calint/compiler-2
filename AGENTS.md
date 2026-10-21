@@ -70,7 +70,8 @@
   (`size() - 1`), the next element (`i + 1`), the count of an enum
   (`last + 1`), the sign bit (`bits - 1`), a low-bit mask (`(1 << n) - 1`),
   rounding up (`+ alignment - 1`), the end after an inclusive position.
-  Multiline `note:` blocks get a blank line above and below.
+  Multiline `note:` blocks get a blank line above and below; a one-line
+  `note:` stays attached to the line of code above it.
 
 ### Names
 
@@ -145,6 +146,7 @@
 
 ## Process
 
+- Fixes: no hacks; refactor first when a clean solution needs it.
 - Mechanical refactors preserve behavior; ask before changing optimization,
   allocation or functionality.
 - Big change (several files or interfaces): plan in the todo file, wait for

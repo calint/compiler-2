@@ -103,6 +103,7 @@ class machine {
     // note: at namespace scope because a default argument '= {}' of a
     //       member function cannot use a nested class with default member
     //       initializers
+
     using runtime_check = ::runtime_check;
 
     struct output_statistics {
@@ -875,6 +876,7 @@ class machine {
             //       discarded code stands for a noinline body, compiled for
             //       real when it is called, so the error does not depend on
             //       the arguments of a call
+
             e.kind = compile_error::error_kind::source;
             throw;
         }
@@ -1143,6 +1145,7 @@ class machine {
         // note: a measured threshold, not 'emit_most_efficient': both forms
         //       would multiply the versions of the inlined calls around it,
         //       and an instance with thousands of gaps would cost compile time
+
         if (gaps.size() > max_padding_gaps_zeroed_one_by_one()) {
             comment(src_loc_tk, indent, "zero instance for its padding: {} B",
                     size_bytes);
@@ -1593,7 +1596,8 @@ class machine {
         output.set_direct_output(nullptr);
 
         // note: the parse emits no code, so it allocates no register and uses
-        // no routine
+        //       no routine
+
         assert(usage_max_scratch_regs_ == 0);
         assert(used_routines_.empty());
 
@@ -1901,6 +1905,7 @@ class machine {
 
         // note: the registers that the backend holds without a place in the
         //       source, e.g. the variables base, are needed by no instruction
+
         assert(holder.src_loc_tk.at_line() != 0);
 
         const std::string holder_location{location_text(holder.src_loc_tk)};

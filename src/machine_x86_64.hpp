@@ -77,6 +77,7 @@ class machine_x86_64 final : public machine {
     //       instructions; measured on 2500 random types with padding, from 5
     //       gaps the whole instance was never larger, at 4 gaps it was larger
     //       by one instruction in 32 of 128
+
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{4};
 
     static constexpr size_t threshold_for_rep_movs_size_bytes_{16};
@@ -286,6 +287,7 @@ class machine_x86_64 final : public machine {
 
         // note: a zero count compares nothing and leaves the flags of 'test',
         //       ZF set, so it compares equal
+
         test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
         assembler_.instruction(indent, op::repe_cmpsb);
         release_bulk_registers(src_loc_tk, indent);
@@ -461,8 +463,10 @@ class machine_x86_64 final : public machine {
         cmp(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
+
         // note: the value of 'start' is no longer needed, its register is
         //       reused
+
         mov(src_loc_tk, indent, start, frame_size_bytes);
         cmp(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);

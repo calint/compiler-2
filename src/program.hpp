@@ -630,6 +630,7 @@ class program final {
 
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
+
         for (size_t i{}; i < tc.funcs().noinline_body_count(); ++i) {
             const noinline_body body{tc.funcs().noinline_body_at(i)};
 

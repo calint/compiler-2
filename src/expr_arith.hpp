@@ -374,6 +374,7 @@ class expr_arith final : public expression {
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
         // note: the unary ops of a multi-element list are never asked for,
         //       they are compiled with the list
+
         assert(exprs_.size() == 1);
 
         return exprs_.at(0)->get_unary_ops();
@@ -408,9 +409,10 @@ class expr_arith final : public expression {
         return exprs_.size() == 1 and exprs_.at(0)->is_name_or_literal();
     }
 
-    [[nodiscard]] auto is_typed_literal() const -> bool override {
-        return exprs_.size() == 1 and uops_.is_empty() and
-               exprs_.at(0)->is_typed_literal();
+    // the first element gives the list its type
+    [[nodiscard]] auto is_typed_constant(const toc& tc) const -> bool override {
+
+        return exprs_.front()->is_typed_constant(tc);
     }
 
     // '/', '%' and '>>' read the high bits of their operands. narrowed, a
@@ -498,6 +500,7 @@ class expr_arith final : public expression {
         const std::span<const step> middle_steps{
             std::span{steps}.subspan(1, steps.size() - 2),
         };
+
         // note: the 1 skips the first step compiled above and the 2 also
         //       leaves out the trailing constant
 
@@ -592,9 +595,7 @@ class expr_arith final : public expression {
 
         const int64_t value{uops.evaluate_constant(info.const_value())};
 
-        const bool is_typed{info.is_typed_const() or e.is_typed_literal()};
-
-        if (wrap == constant_wrap::as_written and not is_typed) {
+        if (wrap == constant_wrap::as_written and not e.is_typed_constant(tc)) {
             return value;
         }
 
@@ -1127,6 +1128,7 @@ class expr_arith final : public expression {
 
         // note: the rewrite hides an overflow of the negation, the check
         //       computes it
+
         if (not tc.checks().overflow and is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
@@ -1230,6 +1232,7 @@ class expr_arith final : public expression {
         // note: a count wider than the value is rejected as narrowed also in
         //       the argument of a conversion, which narrows the other elements
         //       on purpose
+
         src.assert_not_narrowed(tc, dst.type_ref());
 
         machine& x{tc.machine()};
@@ -1284,6 +1287,7 @@ class expr_arith final : public expression {
 
         // note: the list may be narrower than 'int', e.g. 'y + b' of an 'i8'
         //       'y' takes 'i8(b)'
+
         throw compile_error{
             term.tok(),
             std::format("a 'bool' is not an arithmetic operand, convert it, "

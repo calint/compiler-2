@@ -167,6 +167,7 @@ class stmt_builtin_io final : public stmt_call {
 
         // note: a user definition with the name of an io function is
         //       rejected because the name is in the language-level list
+
         constexpr auto is_reserved{
             [](const std::string_view fn) -> bool {
                 return std::ranges::contains(reserved_names::builtin_functions,
@@ -259,8 +260,10 @@ class stmt_builtin_io final : public stmt_call {
                     has_start() ? std::optional{argument(start_index).tok()}
                                 : std::nullopt,
                 },
+
                 // note: a sector function has no count argument, an error
                 //       about its range points at the start
+
                 .count_tk{
                     has_count() ? argument(2).tok()
                                 : argument(start_index).tok(),

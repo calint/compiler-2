@@ -221,6 +221,7 @@ class stmt_block final : public statement {
 
         // note: solves circular reference problem, 'loop' and 'if' use this
         //       class
+
         if (std::unique_ptr<statement> built{
                 create_statement_in_stmt_block(tc, tz, tk),
             }) {
