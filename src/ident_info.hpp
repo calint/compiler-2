@@ -45,6 +45,10 @@ class foo_array_info final {
     std::optional<access_path> path;
 };
 
+// the length that an array of unknown length is parsed and compiled with,
+// what it gives is discarded, see 'ident_info::is_length_unknown'
+inline constexpr size_t discarded_array_len{};
+
 struct var_info {
     std::string name;
     const type* type_ptr{};
@@ -56,7 +60,9 @@ struct var_info {
     read_only_cause read_only_why{};
     // a variable the compiler adds, see 'toc::temporary_name'
     bool is_temporary{};
-    size_t array_len{};
+    // the elements of an array, empty when not an array or not known, see
+    // 'ident_info::is_length_unknown'
+    std::optional<size_t> array_len;
     // variable location is in register
     operand pointer_register;
     std::string_view base_register;
@@ -88,7 +94,8 @@ class ident_info final {
         ::operand operand;
         // the deepest address known from the calls, empty when none is
         std::optional<known_address> known;
-        size_t array_len{};
+        // see 'var_info::array_len'
+        std::optional<size_t> array_len;
         bool is_array{};
         bool is_pointer{};
         read_only_cause read_only_why{};
@@ -117,9 +124,9 @@ class ident_info final {
         part_;
 
   public:
-    [[nodiscard]] auto array_len() const -> size_t {
+    [[nodiscard]] auto array_len() const -> std::optional<size_t> {
         const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage == nullptr ? 0 : storage->array_len;
+        return storage == nullptr ? std::nullopt : storage->array_len;
     }
 
     [[nodiscard]] auto const_value() const -> int64_t {
@@ -131,9 +138,9 @@ class ident_info final {
         return elem_path_;
     }
 
-    // 1 for a name that is not an array
+    // 1 for a name that is not an array, see 'discarded_array_len'
     [[nodiscard]] auto element_count() const -> size_t {
-        return is_array() ? array_len() : 1;
+        return is_array() ? array_len().value_or(discarded_array_len) : 1;
     }
 
     [[nodiscard]] auto has_known_address() const -> bool {
@@ -158,9 +165,8 @@ class ident_info final {
 
     // an unsized array parameter where no call gave it a length: in the parse
     // and in the check of a function that nothing calls
-    // note: a declared array has at least one element
     [[nodiscard]] auto is_length_unknown() const -> bool {
-        return is_array() and array_len() == 0;
+        return is_array() and not array_len();
     }
 
     [[nodiscard]] auto is_pointer() const -> bool {
@@ -353,8 +359,9 @@ class destination final {
     bool is_array_{};
     // an operand of an operator, e.g. the 'g()' of 'w + g()', see 'as_operand'
     bool is_operand_{};
-    // the elements of an array, an unsized one gets them from the argument
-    size_t array_len_{};
+    // the elements of an array, an unsized one gets them from the argument,
+    // see 'var_info::array_len'
+    std::optional<size_t> array_len_;
     // the path of the root variable, empty when unknown or the whole variable
     std::optional<access_path> accessed_path_;
 
@@ -374,7 +381,9 @@ class destination final {
         return accessed_path_;
     }
 
-    [[nodiscard]] auto array_len() const -> size_t { return array_len_; }
+    [[nodiscard]] auto array_len() const -> std::optional<size_t> {
+        return array_len_;
+    }
 
     // the destination at 'address', e.g. an element of an array literal
     [[nodiscard]] auto as_element(const ::operand& address) const
@@ -383,7 +392,7 @@ class destination final {
         destination element{with_operand(address)};
         element.is_address_known_ = true;
         element.is_array_ = false;
-        element.array_len_ = 0;
+        element.array_len_ = std::nullopt;
         return element;
     }
 
@@ -429,7 +438,7 @@ class destination final {
 
     // see 'ident_info::is_length_unknown'
     [[nodiscard]] auto is_length_unknown() const -> bool {
-        return is_array_ and array_len_ == 0;
+        return is_array_ and not array_len_;
     }
 
     [[nodiscard]] auto is_operand() const -> bool { return is_operand_; }

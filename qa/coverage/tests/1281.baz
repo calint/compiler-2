@@ -1,0 +1,22 @@
+# a call into an instance whose padding lies in the elements of an array
+# zeroes the whole instance before the call, the code stays small
+type r { a i8, b i32 }
+type big { x r[4000] }
+type holder { v big, n i32 }
+
+func make() res big {
+    res = {}
+    res.x[3999].b = 7
+}
+
+func main() {
+    var h = holder{make(), 1}
+    var g = holder{}
+    g.v.x[3999].b = 7
+    g.n = 1
+    var ret = 0
+    if h == g {
+        ret = h.v.x[3999].b + h.n
+    }
+    exit(ret)
+}

@@ -57,8 +57,8 @@ class expr_any final : public statement {
     bool is_unsized_destination_{};
 
   public:
-    // a single value, or with 'array_count' an array of that many elements, 0
-    // when the initializer gives the count; where 'typing' is 'written' a
+    // a single value, or with 'array_count' an array of that many elements,
+    // see 'unsized_array_count'; where 'typing' is 'written' a
     // type or array may be written without '{}', e.g. 'var p = point' and
     // 'var a = i8[4]'
     expr_any(toc& tc, tokenizer& tz, const type& tp,
@@ -78,7 +78,7 @@ class expr_any final : public statement {
 
         // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
 
-        is_unsized_destination_ = array_count_ == 0;
+        is_unsized_destination_ = array_count_ == unsized_array_count;
 
         // e.g. "hello" fills the start of an 'i8' array
         if (tz.is_peek_char('"')) {
@@ -178,28 +178,28 @@ class expr_any final : public statement {
             return;
         }
 
+        // a call element writes at the element, not at the array start the
+        // identifier names, and an element is not an array
+        const destination first{dst.as_element(dst.operand())};
+
+        // the size is not checked and the elements after the literal are not
+        // known
+        if (dst.is_length_unknown()) {
+            std::ignore = compile_elements(tc, indent, first);
+            return;
+        }
+
         const size_t array_count{destination_array_count(dst)};
 
-        const bool is_length_unknown{dst.is_length_unknown()};
-
         // the parser could not check the size of an unsized destination
-        if (not is_length_unknown and elements_.size() > array_count) {
+        if (elements_.size() > array_count) {
             throw compile_error{
                 element(array_count).tok(),
                 std::format("too many elements for array of size {}",
                             array_count)};
         }
 
-        // a call element writes at the element, not at the array start the
-        // identifier names, and an element is not an array
-        const destination first{dst.as_element(dst.operand())};
-
         const operand after_elements{compile_elements(tc, indent, first)};
-
-        // the elements after the literal are not known
-        if (is_length_unknown) {
-            return;
-        }
 
         expr_type::zero_remaining_elements(tc, indent, tok(), after_elements,
                                            first.type_ref(),
@@ -436,7 +436,9 @@ class expr_any final : public statement {
   private:
     // the remaining count would wrap around past the array size
     auto assert_room_for_element(const tokenizer& tz) const -> void {
-        if (array_count_ == 0 or elements_.size() != array_count_) {
+        if (array_count_ == unsized_array_count or
+            elements_.size() != array_count_) {
+
             return;
         }
 
@@ -495,15 +497,18 @@ class expr_any final : public statement {
 
         const size_t size_bytes{bytes.size()};
 
-        const size_t array_count{destination_array_count(dst)};
+        // empty when the size is not known
+        const std::optional<size_t> array_count{
+            dst.is_length_unknown()
+                ? std::nullopt
+                : std::optional{destination_array_count(dst)},
+        };
 
-        const bool is_length_unknown{dst.is_length_unknown()};
-
-        if (not is_length_unknown and size_bytes > array_count) {
+        if (array_count and size_bytes > *array_count) {
             throw compile_error{
                 string_tk_,
                 std::format("string size {} overflows array size {}",
-                            size_bytes, array_count)};
+                            size_bytes, *array_count)};
         }
 
         operand cursor{dst.operand()};
@@ -519,11 +524,11 @@ class expr_any final : public statement {
         }
 
         // the bytes after the string are not known
-        if (is_length_unknown) {
+        if (not array_count) {
             return;
         }
 
-        const size_t remaining_size_bytes{array_count - size_bytes};
+        const size_t remaining_size_bytes{*array_count - size_bytes};
 
         if (remaining_size_bytes == 0) {
             return;
@@ -572,11 +577,15 @@ class expr_any final : public statement {
     [[nodiscard]] auto destination_array_count(const destination& dst) const
         -> size_t {
 
-        if (is_unsized_destination_) {
-            return dst.array_len();
+        if (not is_unsized_destination_) {
+            return array_count_;
         }
 
-        return array_count_;
+        const std::optional<size_t> array_len{dst.array_len()};
+
+        assert(array_len);
+
+        return *array_len;
     }
 
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
@@ -598,7 +607,7 @@ class expr_any final : public statement {
             close_brace_tk_ = tz.is_next_char_token('}');
         }
 
-        if (array_count_ == 0) {
+        if (array_count_ == unsized_array_count) {
             array_count_ = elements_.size();
         }
     }
@@ -671,7 +680,7 @@ class expr_any final : public statement {
 
         // note: only a declaration names the array type, its size is the one
         //       of this literal
-        assert(array_count_ == 0 or array_count_ == count);
+        assert(array_count_ == unsized_array_count or array_count_ == count);
 
         array_count_ = count;
     }

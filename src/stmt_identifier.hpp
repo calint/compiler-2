@@ -28,6 +28,106 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+// the array size is known at compile time, also for an inlined array
+// argument, so a constant index out of bounds is always a bug; without a
+// length only a negative index is known. 'allow_end' accepts the end, where a
+// range of a zero count starts
+inline auto assert_constant_index(const ident_info& array_info,
+                                  const token& index_tk,
+                                  const std::string_view array_name,
+                                  const int64_t index, const bool allow_end)
+    -> void {
+
+    const std::optional<size_t> array_len{array_info.array_len()};
+
+    if (not array_len and index >= 0) {
+        return;
+    }
+
+    if (not array_len) {
+        throw compile_error{index_tk,
+                            std::format("index {} is negative", index)};
+    }
+
+    const bool is_past_end{
+        allow_end ? std::cmp_greater(index, *array_len)
+                  : std::cmp_greater_equal(index, *array_len),
+    };
+
+    if (index >= 0 and not is_past_end) {
+        return;
+    }
+
+    throw compile_error{
+        index_tk,
+        std::format("index {} is out of bounds for array '{}' of size {}",
+                    index, array_name, *array_len)};
+}
+
+// the constant range of a bulk operation, 'count' elements from 'start', e.g.
+// 'array_copy(a[1], b, 5)' or 'write(1, a, 5, 1)'
+struct constant_range {
+    // empty when computed at run time, then only a negative count is known
+    std::optional<int64_t> start;
+    int64_t count{};
+    // the written start, empty when the range starts at the array
+    std::optional<token> start_tk;
+    // where an error about the count points
+    token count_tk;
+    // e.g. 'count 5' or 'a sector of 4 elements'
+    std::string count_text;
+    // the array as an error about the start names it, e.g. 'b' of 'a.b[1]'
+    std::string_view start_array_name;
+    // the array as an error about the count names it, e.g. 'a.b'
+    std::string_view count_array_name;
+};
+
+// a constant range is known to be negative or to pass the end of the array,
+// e.g. 5 in 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time one is left to
+// the bounds check at run time
+inline auto assert_constant_range(const ident_info& array_info,
+                                  const constant_range& range) -> void {
+
+    if (range.count < 0) {
+        throw compile_error{range.count_tk,
+                            std::format("count {} is negative", range.count)};
+    }
+
+    if (not range.start) {
+        return;
+    }
+
+    const bool has_start{range.start_tk.has_value()};
+
+    // a start at the end is the empty range of a zero count
+    if (has_start) {
+        assert_constant_index(array_info, *range.start_tk,
+                              range.start_array_name, *range.start, true);
+    }
+
+    const std::optional<size_t> array_len{array_info.array_len()};
+
+    if (not array_len) {
+        return;
+    }
+
+    const size_t remaining{*array_len - static_cast<size_t>(*range.start)};
+
+    if (std::cmp_less_equal(range.count, remaining)) {
+        return;
+    }
+
+    const std::string from_index{
+        has_start ? std::format(" from index {}", *range.start) : std::string{},
+    };
+
+    throw compile_error{
+        range.count_tk,
+        std::format("{}{} is past the end of array '{}' of size {}",
+                    range.count_text, from_index, range.count_array_name,
+                    *array_len)};
+}
+
 class stmt_identifier final : public statement {
     struct ident_elem {
         token name_tk;
@@ -89,7 +189,8 @@ class stmt_identifier final : public statement {
     std::vector<ident_elem> elems_;
     std::vector<token> elem_delims_tk_;
     std::string path_as_string_;
-    size_t array_count_{};
+    // see 'var_info::array_len'
+    std::optional<size_t> array_count_;
     bool is_array_{};
     bool is_indexed_{};
 
@@ -305,11 +406,10 @@ class stmt_identifier final : public statement {
     }
 
     // the low bytes are at the start address of the storage
-    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
-        return true;
-    }
+    [[nodiscard]] auto
+    keeps_low_bits([[maybe_unused]] const width_change change) const
+        -> bool override {
 
-    [[nodiscard]] auto keeps_low_bits_when_widened() const -> bool override {
         return true;
     }
 
@@ -340,7 +440,9 @@ class stmt_identifier final : public statement {
         return accessed_bytes_;
     }
 
-    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
+        return array_count_;
+    }
 
     // an array or an element of one, where a bulk operation starts
     auto assert_array_or_element() const -> void {
@@ -352,55 +454,30 @@ class stmt_identifier final : public statement {
                                                        name_or_literal())};
     }
 
-    // a constant count of a bulk operation that starts at this path is known
-    // to be negative or to pass the end of the array like a constant index,
-    // e.g. 5 in 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time start index
-    // is left to the bounds check at run time
+    // a constant count of a bulk operation that starts at this path, see
+    // 'assert_constant_range'
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,
                                 const int64_t count) const -> void {
-
-        if (count < 0) {
-            throw compile_error{count_tk,
-                                std::format("count {} is negative", count)};
-        }
-
-        const std::optional<int64_t> start{constant_start_index(tc)};
-
-        if (not start) {
-            return;
-        }
 
         const ident_info array_info{
             tc.make_ident_info(first_token(), path_as_string_),
         };
 
-        const size_t array_len{array_info.array_len()};
-
-        // a start at the end is the empty range of a zero count
-        if (is_array_element()) {
-            assert_index_in_bounds(elems_.back(), array_info, *start, true);
-        }
-
-        if (array_info.is_length_unknown()) {
-            return;
-        }
-
-        const size_t remaining{array_len - static_cast<size_t>(*start)};
-
-        if (std::cmp_less_equal(count, remaining)) {
-            return;
-        }
-
-        const std::string from_index{
-            is_array_element() ? std::format(" from index {}", *start)
-                               : std::string{},
-        };
-
-        throw compile_error{
-            count_tk,
-            std::format("count {}{} is past the end of array '{}' of "
-                        "size {}",
-                        count, from_index, path_as_string_, array_len)};
+        assert_constant_range(
+            array_info,
+            {
+                .start{constant_start_index(tc)},
+                .count{count},
+                .start_tk{
+                    is_array_element()
+                        ? std::optional{elems_.back().array_index_expr->tok()}
+                        : std::nullopt,
+                },
+                .count_tk{count_tk},
+                .count_text{std::format("count {}", count)},
+                .start_array_name{elems_.back().name_tk.text()},
+                .count_array_name{path_as_string_},
+            });
     }
 
     [[nodiscard]] auto first_token() const -> const token& {
@@ -679,7 +756,8 @@ class stmt_identifier final : public statement {
         const size_t element_offset{*index * element_size_bytes};
 
         // the last element keeps the padding after the array
-        const bool is_last_element{*index == array_info.array_len() - 1};
+        // note: an index in range has a known length
+        const bool is_last_element{array_info.array_len() == *index + 1};
 
         access_path_.add_fixed_index(*index);
 
@@ -811,9 +889,9 @@ class stmt_identifier final : public statement {
         const operand& index_register{registers.index_register()};
 
         const int64_t addend_elements{
-            compile_checked_index(tc, indent, *cur_elem.array_index_expr,
-                                  index_register, cur_info.array_len(),
-                                  reg_count),
+            compile_checked_index(
+                tc, indent, *cur_elem.array_index_expr, index_register,
+                cur_info.array_len().value_or(discarded_array_len), reg_count),
         };
 
         const size_t type_size{cur_info.type_ref().size_bytes()};
@@ -844,38 +922,6 @@ class stmt_identifier final : public statement {
                             cur_info.type_ref());
     }
 
-    // the array size is known at compile time, also for an inlined array
-    // argument, so a constant index out of bounds is always a bug
-    static auto assert_index_in_bounds(const ident_elem& elem,
-                                       const ident_info& array_info,
-                                       const int64_t index,
-                                       const bool allow_end) -> void {
-
-        // without a length only a negative index is known to be out of bounds
-        if (array_info.is_length_unknown() and index >= 0) {
-            return;
-        }
-
-        if (array_info.is_length_unknown()) {
-            throw compile_error{elem.array_index_expr->tok(),
-                                std::format("index {} is negative", index)};
-        }
-
-        const bool is_past_end{
-            allow_end ? std::cmp_greater(index, array_info.array_len())
-                      : std::cmp_greater_equal(index, array_info.array_len()),
-        };
-
-        if (index >= 0 and not is_past_end) {
-            return;
-        }
-
-        throw compile_error{
-            elem.array_index_expr->tok(),
-            std::format("index {} is out of bounds for array '{}' of size {}",
-                        index, elem.name_tk.text(), array_info.array_len())};
-    }
-
     static auto check_array_bounds(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    const machine::bounds_range& range) -> void {
@@ -899,9 +945,10 @@ class stmt_identifier final : public statement {
         // note: an array before the last element is indexed
         assert(is_last_elem);
 
-        check_array_bounds(tc, indent, src_loc_tk,
-                           machine::bounds_range::count_alone(
-                               reg_count, cur_info.array_len()));
+        check_array_bounds(
+            tc, indent, src_loc_tk,
+            machine::bounds_range::count_alone(
+                reg_count, cur_info.array_len().value_or(discarded_array_len)));
     }
 
     // the index goes into 'index_register', returns the constant a trailing
@@ -967,8 +1014,9 @@ class stmt_identifier final : public statement {
         };
 
         if (constant_index) {
-            assert_index_in_bounds(cur_elem, cur_info, *constant_index,
-                                   not range_count.is_empty());
+            assert_constant_index(cur_info, cur_elem.array_index_expr->tok(),
+                                  cur_elem.name_tk.text(), *constant_index,
+                                  not range_count.is_empty());
         }
 
         // with a range count the run-time check covers 'index + count'
@@ -1064,8 +1112,10 @@ class stmt_identifier final : public statement {
 
         const std::optional<int64_t> index{index_expr.constant_value(tc)};
 
-        if (not index or *index < 0 or
-            std::cmp_greater_equal(*index, array_info.array_len())) {
+        const std::optional<size_t> array_len{array_info.array_len()};
+
+        if (not index or *index < 0 or not array_len or
+            std::cmp_greater_equal(*index, *array_len)) {
 
             return std::nullopt;
         }

@@ -274,6 +274,8 @@ class frame final {
 
     frame_type type_{frame_type::func};
     bool is_inlined_{true};
+    // see 'noinline_dry_run'
+    bool is_noinline_dry_run_{};
     std::string_view storage_base_register_;
     size_t peak_storage_size_bytes_{};
 
@@ -376,6 +378,10 @@ class frame final {
         return name_ == name;
     }
 
+    [[nodiscard]] auto is_noinline_dry_run() const -> bool {
+        return is_noinline_dry_run_;
+    }
+
     [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
         return result_name_ == name;
     }
@@ -447,6 +453,22 @@ class frame final {
     // the body of a loop named by its label
     [[nodiscard]] static auto loop(const std::string_view name) -> frame {
         return {name, frame_type::loop, {}, {}, true, {}};
+    }
+
+    // a noinline function compiled in place, the dry run that checks the
+    // aliasing of a call to it, see 'noinline_call::check_aliasing'
+    [[nodiscard]] static auto noinline_dry_run(const std::string_view name,
+                                               std::string call_path,
+                                               std::string return_label)
+        -> frame {
+
+        frame result{
+            inlined_func(name, std::move(call_path), std::move(return_label)),
+        };
+
+        result.is_noinline_dry_run_ = true;
+
+        return result;
     }
 
     // a function with a body of its own, its variables are placed from
@@ -526,7 +548,7 @@ class ident_builder final {
 
         ident_info::storage_part& storage{info.storage()};
         storage.is_array = false;
-        storage.array_len = 0;
+        storage.array_len = std::nullopt;
 
         return info;
     }
@@ -547,7 +569,7 @@ class ident_builder final {
 
         size_t offset{};
         bool is_array{var.is_array};
-        size_t array_count{var.array_len};
+        std::optional<size_t> array_count{var.array_len};
 
         for (const std::string& field_name : path | std::views::drop(1)) {
             // note: drop 1 because the first element is retrieved outside the
@@ -1138,6 +1160,18 @@ class scope_stack final {
         track_depth();
     }
 
+    // see 'frame::noinline_dry_run'
+    auto enter_noinline_dry_run(const std::string_view name,
+                                const std::string_view call_path,
+                                const std::string_view return_jmp_label)
+        -> void {
+
+        frames_.push_back(frame::noinline_dry_run(
+            name, std::string{call_path}, std::string{return_jmp_label}));
+
+        track_depth();
+    }
+
     // a function with a body of its own, its variables are placed from
     // 'storage_base_register' when not empty
     auto enter_noinline_func(const std::string_view name,
@@ -1641,8 +1675,9 @@ class storage_layout final {
             return machine_.get().address_size_bytes();
         }
 
-        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
-                                     var.is_array ? var.array_len : 1);
+        return multiply_storage_size(
+            src_loc_tk, var.type_ptr->size_bytes(),
+            var.is_array ? var.array_len.value_or(discarded_array_len) : 1);
     }
 
     [[nodiscard]] auto vars_capacity_bytes() const -> size_t {
@@ -2270,8 +2305,8 @@ class variable_comments final {
             std::format("{}: {}", var.name, name_info.type_ref().name()),
         };
 
-        if (var.array_len != 0) {
-            text += std::format("[{}]", var.array_len);
+        if (var.array_len) {
+            text += std::format("[{}]", *var.array_len);
         }
 
         // the iterator 'e' is memory at its register, the counter 'i' is the
@@ -2701,6 +2736,15 @@ class toc final {
 
     auto enter_loop(const std::string_view name) -> void {
         scopes_.enter_loop(name);
+    }
+
+    // see 'frame::noinline_dry_run'
+    auto enter_noinline_dry_run(const std::string_view name,
+                                const std::string_view call_path,
+                                const std::string_view return_jmp_label)
+        -> void {
+
+        scopes_.enter_noinline_dry_run(name, call_path, return_jmp_label);
     }
 
     // a function with a body of its own, its variables are placed from

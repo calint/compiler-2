@@ -450,6 +450,21 @@ CLI_VERSIONS() {
     echo ok
 }
 
+CLI_PADDING_ZERO() {
+    echo -n "cli padding in array elements zeroed as one instance: "
+    local target
+    for target in x86_64 rv32i-fpga; do
+        # 1281.baz: 4000 elements with 3 B of padding each, one zero of the
+        # instance instead of a store per gap
+        "$BIN" --target=$target --bin=gen-rv32i.bin 1281.baz >gen.s 2>err
+        [[ ! -s err ]]
+        [[ $(grep -c "zero instance for its padding: 32000 B" gen.s) -eq 1 ]]
+        [[ $(grep -c "zero padding" gen.s) -eq 0 ]]
+        [[ $(wc -l <gen.s) -lt 1000 ]]
+    done
+    echo ok
+}
+
 CLI_USAGE_MESSAGES() {
     echo -n "cli usage errors name their option: "
     local arg exit_code
@@ -541,5 +556,6 @@ CLI_SOURCE_LINE_ENDS
 CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS
 CLI_VERSIONS
+CLI_PADDING_ZERO
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

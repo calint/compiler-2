@@ -35,9 +35,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     };
 
     size_t stack_size_bytes_{};
-    bool read_used_{};
-    bool write_used_{};
-    bool exit_used_{};
 
   protected:
     // the routines a program calls, the target defines the exit one
@@ -60,15 +57,15 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     // only the routines the program calls are emitted
     auto begin_data(const size_t alignment) -> void override {
-        if (exit_used_) {
+        if (is_used("exit")) {
             emit_exit_routine(assembler());
         }
 
-        if (read_used_) {
+        if (is_used("read")) {
             emit_read_routine();
         }
 
-        if (write_used_) {
+        if (is_used("write")) {
             emit_write_routine();
         }
 
@@ -82,7 +79,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                    exit_code);
 
         branch(indent, exit_label_);
-        mark_used(exit_used_);
+        mark_used("exit");
     }
 
     // no operating system stops a program that overflows the stack
@@ -91,10 +88,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     }
 
     auto start() -> void override {
-        read_used_ = false;
-        write_used_ = false;
-        exit_used_ = false;
-
         machine_rv32i::start();
 
         // no operating system sets up a stack
@@ -135,12 +128,12 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     auto emit_read_call(const size_t indent) -> void override {
         call_io_routine(indent, read_label_, read_clobbered_);
-        mark_used(read_used_);
+        mark_used("read");
     }
 
     auto emit_write_call(const size_t indent) -> void override {
         call_io_routine(indent, write_label_, write_clobbered_);
-        mark_used(write_used_);
+        mark_used("write");
     }
 
     //

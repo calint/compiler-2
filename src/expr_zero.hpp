@@ -60,11 +60,10 @@ class expr_zero final : public expression {
     }
 
     // zero has no high bits to lose
-    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
-        return true;
-    }
+    [[nodiscard]] auto
+    keeps_low_bits([[maybe_unused]] const width_change change) const
+        -> bool override {
 
-    [[nodiscard]] auto keeps_low_bits_when_widened() const -> bool override {
         return true;
     }
 

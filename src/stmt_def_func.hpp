@@ -561,6 +561,7 @@ class stmt_def_func final : public statement {
                            .type_ptr{&get_type()},
                            .src_loc_tk{returns_->ident_tk},
                            .is_pointer{is_pointer},
+                           .array_len{},
                            .pointer_register{},
                            .base_register{},
                            .value_register{},
@@ -570,10 +571,10 @@ class stmt_def_func final : public statement {
         }
 
         for (const auto [param_index, param] : std::views::enumerate(params_)) {
-            const size_t array_len{
+            const std::optional<size_t> array_len{
                 param.is_array() and not array_lengths.empty()
-                    ? array_lengths.at(next_array_index++)
-                    : size_t{},
+                    ? std::optional{array_lengths.at(next_array_index++)}
+                    : std::nullopt,
             };
 
             // the register is the address of the variable, it has no slot in

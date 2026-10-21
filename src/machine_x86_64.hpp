@@ -216,16 +216,6 @@ class machine_x86_64 final : public machine {
     size_t overlap_label_count_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
-    // the lines that have a stub of the division failure handler
-    std::set<size_t> division_panic_lines_;
-    // the lines that have a stub of the overflow failure handler
-    std::set<size_t> overflow_panic_lines_;
-    // the lines that have a stub of the overlap failure handler
-    std::set<size_t> overlap_panic_lines_;
-    // the lines that have a stub of the shift failure handler
-    std::set<size_t> shift_panic_lines_;
-    // source lines of the bounds checks, each gets a stub that reports it
-    std::set<size_t> bounds_panic_lines_;
 
     assembler_x86_64 assembler_;
 
@@ -704,7 +694,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "bounds", bounds_panic_lines_,
+        emit_line_panic_handler(with_line, "bounds", used_lines("bounds"),
                                 bounds_failure_handler_label);
     }
 
@@ -730,7 +720,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_division_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "division", division_panic_lines_,
+        emit_line_panic_handler(with_line, "division", used_lines("division"),
                                 division_failure_handler_label);
     }
 
@@ -740,12 +730,12 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_overflow_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "overflow", overflow_panic_lines_,
+        emit_line_panic_handler(with_line, "overflow", used_lines("overflow"),
                                 overflow_failure_handler_label);
     }
 
     auto emit_overlap_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "overlap", overlap_panic_lines_,
+        emit_line_panic_handler(with_line, "overlap", used_lines("overlap"),
                                 overlap_failure_handler_label);
     }
 
@@ -756,7 +746,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_shift_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "shift", shift_panic_lines_,
+        emit_line_panic_handler(with_line, "shift", used_lines("shift"),
                                 shift_failure_handler_label);
     }
 
@@ -1489,9 +1479,8 @@ class machine_x86_64 final : public machine {
                             const runtime_check& check) -> void {
 
         assembler_.jcc(indent, condition::o,
-                       failure_label("overflow", overflow_panic_lines_,
-                                     overflow_failure_handler_label, src_loc_tk,
-                                     check.with_line));
+                       failure_label("overflow", overflow_failure_handler_label,
+                                     src_loc_tk, check.with_line));
     }
 
     // a reported line goes through the stub of its line, which sets rbp for
@@ -1501,9 +1490,8 @@ class machine_x86_64 final : public machine {
         -> void {
 
         assembler_.jcc(indent, failed,
-                       failure_label("bounds", bounds_panic_lines_,
-                                     bounds_failure_handler_label, src_loc_tk,
-                                     with_line));
+                       failure_label("bounds", bounds_failure_handler_label,
+                                     src_loc_tk, with_line));
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1542,9 +1530,8 @@ class machine_x86_64 final : public machine {
         cmp(src_loc_tk, indent, right, left);
 
         assembler_.jcc(indent, condition::ne,
-                       failure_label("overflow", overflow_panic_lines_,
-                                     overflow_failure_handler_label, src_loc_tk,
-                                     check.with_line));
+                       failure_label("overflow", overflow_failure_handler_label,
+                                     src_loc_tk, check.with_line));
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
@@ -1557,8 +1544,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "overlap check begin");
 
         const std::string failed{
-            failure_label("overlap", overlap_panic_lines_,
-                          overlap_failure_handler_label, src_loc_tk,
+            failure_label("overlap", overlap_failure_handler_label, src_loc_tk,
                           check.with_line),
         };
 
@@ -1604,9 +1590,8 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "division check begin");
 
         const std::string failed{
-            failure_label("division", division_panic_lines_,
-                          division_failure_handler_label, src_loc_tk,
-                          with_line),
+            failure_label("division", division_failure_handler_label,
+                          src_loc_tk, with_line),
         };
 
         comment(src_loc_tk, indent, "zero divisor");
@@ -1654,8 +1639,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "shift check begin");
 
         const std::string failed{
-            failure_label("shift", shift_panic_lines_,
-                          shift_failure_handler_label, src_loc_tk,
+            failure_label("shift", shift_failure_handler_label, src_loc_tk,
                           check.with_line),
         };
 
@@ -2067,9 +2051,8 @@ class machine_x86_64 final : public machine {
     }
 
     // the handler 'handler_label' to jump to, or with the line the stub of
-    // the line, which 'panic_lines' records so the handler emits it
+    // the line, which is marked used so the handler of 'name' emits it
     [[nodiscard]] auto failure_label(const std::string_view name,
-                                     std::set<size_t>& panic_lines,
                                      const std::string_view handler_label,
                                      const token& src_loc_tk,
                                      const bool with_line) -> std::string {
@@ -2080,7 +2063,7 @@ class machine_x86_64 final : public machine {
 
         const size_t line{src_loc_tk.at_line()};
 
-        mark_used([&panic_lines, line] -> void { panic_lines.insert(line); });
+        mark_used(name, line);
 
         return line_panic_label(name, line);
     }

@@ -408,31 +408,13 @@ class expr_arith final : public expression {
         return exprs_.size() == 1 and exprs_.at(0)->is_name_or_literal();
     }
 
-    // '/', '%' and '>>' read the high bits of their operands, and '<<' by a
-    // count not below the narrower width is defined only at the wider one
-    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
-        for (const arithmetic_operator o : ops_) {
-            if (o == arithmetic_operator::divide or
-                o == arithmetic_operator::remainder or
-                o == arithmetic_operator::shift_left or
-                o == arithmetic_operator::shift_right) {
+    // '/', '%' and '>>' read the high bits of their operands. narrowed, a
+    // '<<' by a count not below the narrower width is defined only at the
+    // wider one; widened, a '<<' count has the narrower type, so where it is
+    // defined it is below that width
+    [[nodiscard]] auto keeps_low_bits(const width_change change) const
+        -> bool override {
 
-                return false;
-            }
-        }
-
-        for (const std::unique_ptr<statement>& e : exprs_) {
-            if (not e->keeps_low_bits_when_narrowed()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // '/', '%' and '>>' read the high bits of their operands; a '<<' count
-    // has the narrower type, so where it is defined it is below that width
-    [[nodiscard]] auto keeps_low_bits_when_widened() const -> bool override {
         for (const arithmetic_operator o : ops_) {
             if (o == arithmetic_operator::divide or
                 o == arithmetic_operator::remainder or
@@ -440,10 +422,16 @@ class expr_arith final : public expression {
 
                 return false;
             }
+
+            if (o == arithmetic_operator::shift_left and
+                change == width_change::narrowed) {
+
+                return false;
+            }
         }
 
         for (const std::unique_ptr<statement>& e : exprs_) {
-            if (not e->keeps_low_bits_when_widened()) {
+            if (not e->keeps_low_bits(change)) {
                 return false;
             }
         }
@@ -703,7 +691,7 @@ class expr_arith final : public expression {
             return false;
         }
 
-        return keeps_low_bits_when_widened();
+        return keeps_low_bits(width_change::widened);
     }
 
     auto compile_constant(toc& tc, const size_t indent, const destination& dst,

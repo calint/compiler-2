@@ -4067,3 +4067,7 @@ SRC=1279 && COMPERR
 # an inlined call past the frame limit in the dry runs of a chain of noinline
 # calls is reported as the chain: the script compiles a generated chain
 SRC=1280 && DIFFPY
+
+# a call into an instance whose padding lies in the elements of an array
+# zeroes the whole instance before the call, the code stays small
+SRC=1281 && EXP=8 && RUN

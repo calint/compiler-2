@@ -242,16 +242,30 @@ class expr_type final : public statement {
                              const operand& dst_op) const -> void;
 
     // a call writes the fields only, so the padding is zeroed before it and
-    // '==' can compare instances byte by byte
+    // '==' can compare instances byte by byte; padding in the elements of an
+    // array is many gaps, then the whole instance is zeroed in one go
     auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
                       const operand& dst_op) const -> void {
+
+        // note: each gap takes one to three stores, the whole instance at most
+        //       a loop of 4 instructions on x86_64 and 5 on rv32i, or a store
+        //       per word when it is small
+        constexpr size_t max_gaps_zeroed_one_by_one{8};
+
+        const std::vector<byte_range> ranges{dst_type.data_ranges()};
+
+        // note: a gap follows each range except, maybe, the last
+        if (ranges.size() > max_gaps_zeroed_one_by_one) {
+            zero_whole_instance(tc, indent, dst_type, dst_op);
+            return;
+        }
 
         operand cursor{dst_op};
 
         // bytes of the instance before 'cursor', fields in order then padding
         size_t covered_bytes{};
 
-        for (const byte_range& r : dst_type.data_ranges()) {
+        for (const byte_range& r : ranges) {
             zero_unwritten(
                 tc, indent, "padding", r.offset - covered_bytes,
                 offset_alignment(covered_bytes, dst_type.alignment()), cursor);
@@ -279,6 +293,19 @@ class expr_type final : public statement {
         x.comment(tok(), indent, "zero {}: {} B", what, size_bytes);
         x.zero(tok(), indent, dst_op, size_bytes, alignment);
         dst_op.increment_offset(address_offset(size_bytes));
+    }
+
+    // the call writes the fields over the zeroes
+    auto zero_whole_instance(toc& tc, const size_t indent, const type& dst_type,
+                             const operand& dst_op) const -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, "zero instance for its padding: {} B",
+                  dst_type.size_bytes());
+
+        x.zero(tok(), indent, dst_op, dst_type.size_bytes(),
+               dst_type.alignment());
     }
 
     //
@@ -363,14 +390,14 @@ class expr_type final : public statement {
         // 'expr_any' validates the source element type before entering here
         assert(fld.type().is_same(src_info.type_ref()));
 
-        if (not src_info.is_length_unknown() and
-            fld.array_count != src_info.array_len()) {
+        const std::optional<size_t> src_len{src_info.array_len()};
 
+        if (src_len and fld.array_count != *src_len) {
             throw compile_error{
                 src_loc_tk,
                 std::format("destination array size {} does not match source "
                             "size {}",
-                            fld.array_count, src_info.array_len())};
+                            fld.array_count, *src_len)};
         }
     }
 };

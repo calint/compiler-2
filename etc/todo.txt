@@ -10,7 +10,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     with '<<' computes the argument at its own width and narrows it, one
     copy more (0589 'i8(1 << 7)', 1226 on rv32i); a '<<' by a count below
     the narrower width keeps its low bits when narrowed, e.g. a constant
-    count ('keeps_low_bits_when_narrowed', an optimization)
+    count ('keeps_low_bits', an optimization)
 [ ] medium: a conversion of an expression, e.g. 'i8(2 + 3)', does not fold:
     computed at run time in a 'var' and rejected in a 'dat'; the fold of the
     argument must pause the overflow check as its compile does, and the fold

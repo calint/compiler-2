@@ -383,6 +383,7 @@ struct call_site {
                        .type_ptr{&tpe},
                        .src_loc_tk{tk},
                        .is_temporary{true},
+                       .array_len{},
                        .pointer_register{},
                        .base_register{},
                        .value_register{},
@@ -718,7 +719,13 @@ class inline_call {
 
         x.label(indent, call_label);
 
-        tc.enter_func(func.name(), new_call_path, ret_jmp_label);
+        // note: a noinline function is compiled in place only in its dry run
+        if (func.is_inlined()) {
+            tc.enter_func(func.name(), new_call_path, ret_jmp_label);
+        } else {
+            tc.enter_noinline_dry_run(func.name(), new_call_path,
+                                      ret_jmp_label);
+        }
 
         const machine::call_frame_scope call_frame{
             x,
@@ -1281,7 +1288,7 @@ class noinline_call {
         storage_target target;
         bool is_pointer{};
         bool is_array{};
-        size_t array_len{};
+        std::optional<size_t> array_len;
     };
 
     call_site call_;
@@ -1685,7 +1692,8 @@ class noinline_call {
              std::views::zip(arguments, func.params())) {
 
             if (param.is_array()) {
-                lengths.push_back(argument.info.array_len());
+                lengths.push_back(
+                    argument.info.array_len().value_or(discarded_array_len));
             }
         }
 
@@ -1757,7 +1765,11 @@ class noinline_call {
 
         // the body can reject an index by the length of its array
         if (item.is_array) {
-            part += std::format(" array {}", item.array_len);
+            // note: an unsized array without a call is a parameter of a
+            //       function checked as a noinline body, a pointer
+            assert(item.array_len);
+
+            part += std::format(" array {}", *item.array_len);
         }
 
         const storage_target& target{item.target};
@@ -2290,16 +2302,6 @@ class stmt_call : public expression {
         return not constructor_dot_tk_.is_empty();
     }
 
-    // a noinline function compiled in place is the dry run that checks the
-    // arguments of a call to it
-    [[nodiscard]] auto is_in_noinline_dry_run(const toc& tc) const -> bool {
-        return std::ranges::any_of(
-            tc.scopes().frames(), [&](const frame& frm) -> bool {
-                return frm.is_func() and frm.is_inlined_func() and
-                       not tc.get_func_or_throw(tok(), frm.name()).is_inlined();
-            });
-    }
-
     [[nodiscard]] auto is_method() const -> bool {
         return not method_dot_tk_.is_empty();
     }
@@ -2562,6 +2564,13 @@ class stmt_call : public expression {
                            constructor_name_tk.text());
 
         return name;
+    }
+
+    // see 'frame::noinline_dry_run'
+    [[nodiscard]] static auto is_in_noinline_dry_run(const toc& tc) -> bool {
+        return std::ranges::any_of(
+            tc.scopes().frames(),
+            [](const frame& frm) -> bool { return frm.is_noinline_dry_run(); });
     }
 
     // the type as written, with the type it is bound to when that differs,

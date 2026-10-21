@@ -40,8 +40,8 @@ class initializer_declaration final {
     token name_tk_;
     name_in_initializer name_visibility_;
     const type* type_{};
-    // none when not an array, 0 only while the initializer that gives the
-    // size is parsed
+    // none when not an array, 'unsized_array_count' only while the
+    // initializer that gives the size is parsed
     std::optional<size_t> array_count_;
 
   public:
@@ -53,7 +53,7 @@ class initializer_declaration final {
         deduce_declaration(tc, tz);
 
         // note: both deductions reject an array whose size is not known
-        assert(array_count_ != 0);
+        assert(array_count_ != statement::unsized_array_count);
     }
 
     [[nodiscard]] auto array_count() const -> std::optional<size_t> {
@@ -87,7 +87,7 @@ class initializer_declaration final {
             .type_ptr{&tp},
             .src_loc_tk{name_tk},
             .is_array{array_count.has_value()},
-            .array_len{array_count.value_or(0)},
+            .array_len{array_count},
             .pointer_register{},
             .base_register{},
             .value_register{},
@@ -123,7 +123,7 @@ class initializer_declaration final {
         }
 
         // e.g. an unsized array parameter
-        if (info.array_len() == 0) {
+        if (info.is_length_unknown()) {
             throw compile_error{tk,
                                 std::format("size of array '{}' is not known",
                                             arith.name_or_literal())};
@@ -153,7 +153,7 @@ class initializer_declaration final {
             return;
         }
 
-        array_count_ = 0;
+        array_count_ = statement::unsized_array_count;
         set_type(*element_type);
 
         token bracket_tk;
@@ -161,14 +161,15 @@ class initializer_declaration final {
         trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
             // an unsized array, the initializer gives the count
             const expr_any initializer{tc, tz, type_ref(),
-                                       literal_typing::written, 0};
+                                       literal_typing::written,
+                                       statement::unsized_array_count};
 
             // later statements read the size while parsing, e.g. 'var b = a'
             array_count_ = initializer.array_count();
             bracket_tk = initializer.open_bracket_token();
         });
 
-        if (array_count_ == 0) {
+        if (array_count_ == statement::unsized_array_count) {
             // e.g. the '[' of 'var a = i8[]{}'
             // note: an empty string is rejected by 'string_array_count'
             assert(not bracket_tk.is_empty());

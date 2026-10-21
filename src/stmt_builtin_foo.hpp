@@ -107,7 +107,8 @@ class stmt_builtin_foo final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand limit{
-            compile_limit(tc, indent, array_info.array_len(),
+            compile_limit(tc, indent,
+                          array_info.array_len().value_or(discarded_array_len),
                           allocated_registers),
         };
 
@@ -175,6 +176,7 @@ class stmt_builtin_foo final : public statement {
                     array_info.is_read_only() ? read_only_cause::foo_element
                                               : read_only_cause::none,
                 },
+                .array_len{},
                 .pointer_register{iterator},
                 .base_register{},
                 .value_register{},
@@ -189,6 +191,7 @@ class stmt_builtin_foo final : public statement {
                        .type_ptr{&tc.builtins().default_type()},
                        .src_loc_tk{tok()},
                        .read_only_why{read_only_cause::foo_counter},
+                       .array_len{},
                        .pointer_register{},
                        .base_register{},
                        .value_register{counter},
@@ -196,14 +199,17 @@ class stmt_builtin_foo final : public statement {
                    },
                    var_kind::var);
 
+        const std::optional<size_t> array_len{array_info.array_len()};
+
         // note: a constant 0 would fold, e.g. 'let m = n' would keep it
-        if (array_info.is_length_unknown()) {
+        if (not array_len) {
             tc.add_var(src_loc_tk, indent,
                        {
                            .name{"n"},
                            .type_ptr{&tc.builtins().default_type()},
                            .src_loc_tk{tok()},
                            .read_only_why{read_only_cause::foo_length},
+                           .array_len{},
                            .pointer_register{},
                            .base_register{},
                            .value_register{},
@@ -214,8 +220,7 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        tc.add_const(src_loc_tk, indent, "n",
-                     static_cast<int64_t>(array_info.array_len()));
+        tc.add_const(src_loc_tk, indent, "n", static_cast<int64_t>(*array_len));
     }
 
     // a one-line comment for the definition

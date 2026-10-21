@@ -163,11 +163,10 @@ class stmt_builtin_convert final : public expression {
     }
 
     // the builtin computes its own width before the destination narrows it
-    [[nodiscard]] auto keeps_low_bits_when_narrowed() const -> bool override {
-        return true;
-    }
+    [[nodiscard]] auto
+    keeps_low_bits([[maybe_unused]] const width_change change) const
+        -> bool override {
 
-    [[nodiscard]] auto keeps_low_bits_when_widened() const -> bool override {
         return true;
     }
 
@@ -235,8 +234,8 @@ class stmt_builtin_convert final : public expression {
         };
 
         const bool keeps_low_bits{
-            is_narrowed ? arg_.keeps_low_bits_when_narrowed()
-                        : arg_.keeps_low_bits_when_widened(),
+            arg_.keeps_low_bits(is_narrowed ? width_change::narrowed
+                                            : width_change::widened),
         };
 
         // a shift count is checked against the width the shift is computed

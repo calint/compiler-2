@@ -26,6 +26,28 @@
        5. docs: 'README.md', 'etc/tutorial.baz', 'etc/docs/README.md' 1.3,
           'qa/fuzz/README.md'; 'fuzz-ub.py' compares with 0 where it tested
           an integer, 'fuzz-reject.py' has the three rules
+       6. refactors of the third review round (phase R3c), output
+          byte-identical on every test of both targets: an array length is
+          'std::optional<size_t>' in 'var_info', 'ident_info' and
+          'destination', empty when not known, 'discarded_array_len' names
+          the 0 that discarded code is compiled with and
+          'statement::unsized_array_count' the parse-time count that the
+          initializer or the argument gives; one constant range rule,
+          'assert_constant_range' and 'assert_constant_index' in
+          'stmt_identifier.hpp', for the bulk operations and 'read', 'write'
+          and the sector functions; the use of routines, helpers and failure
+          stubs is a value in 'machine::version_state'
+          ('used_routines_', 'mark_used'), no deferred marks, version depth
+          or backend reset lines; 'keeps_low_bits(width_change)' replaces
+          the two virtuals, 'statement' has 20 again; the dry run of a
+          noinline call is a frame kind ('frame::noinline_dry_run') instead
+          of a lookup of the frame name
+       7. a call into an instance with more than 8 data ranges, e.g. padding
+          in the elements of an array, zeroes the whole instance with one
+          'zero' instead of each gap: a gap takes one to three stores, the
+          whole instance a loop of 4 (x86_64) or 5 (rv32i) instructions;
+          1281 and 'test-cli.sh' (4000 elements: 160 and 238 lines of
+          assembly, were 16149 and 30183)
 [x] hard: third review round of 2026-10-21, seven reviews of 'src/', one of
     the architecture and an adversarial bug hunt; the defects (phase R3a)
     => done (2026-10-21):

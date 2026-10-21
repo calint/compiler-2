@@ -684,11 +684,11 @@ class expr_bool_op final : public statement {
     }
 
     // the bytes that both sides hold, they hold the same type and, as arrays,
-    // the same number of elements
+    // the same number of elements; empty when an array length is not known
     [[nodiscard]] static auto
     compared_size_bytes(const statement& lhs, const statement& rhs,
                         const ident_info& lhs_info, const ident_info& rhs_info)
-        -> size_t {
+        -> std::optional<size_t> {
 
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compile_error{
@@ -710,23 +710,23 @@ class expr_bool_op final : public statement {
             return element_size_bytes;
         }
 
-        const bool is_length_unknown{
-            lhs_info.is_length_unknown() or rhs_info.is_length_unknown(),
-        };
+        const std::optional<size_t> lhs_len{lhs_info.array_len()};
+        const std::optional<size_t> rhs_len{rhs_info.array_len()};
+
+        if (not lhs_len or not rhs_len) {
+            return std::nullopt;
+        }
 
         // arrays are compared element by element, so their lengths must agree
         // note: a whole array on one side only was rejected above
-        if (not is_length_unknown and
-            lhs_info.array_len() != rhs_info.array_len()) {
-
+        if (*lhs_len != *rhs_len) {
             throw compile_error{
                 rhs.tok(),
                 std::format("cannot compare arrays of sizes {} and {}",
-                            lhs_info.array_len(), rhs_info.array_len())};
+                            *lhs_len, *rhs_len)};
         }
 
-        return multiply_storage_size(lhs.tok(), element_size_bytes,
-                                     lhs_info.array_len());
+        return multiply_storage_size(lhs.tok(), element_size_bytes, *lhs_len);
     }
 
     // compares the bytes of two user type instances or of two whole arrays,
@@ -741,20 +741,20 @@ class expr_bool_op final : public statement {
         const ident_info lhs_info{make_memory_operand_info(tc, lhs)};
         const ident_info rhs_info{make_memory_operand_info(tc, rhs)};
 
-        const size_t size_bytes{
+        const std::optional<size_t> size_bytes{
             compared_size_bytes(lhs, rhs, lhs_info, rhs_info),
         };
 
         // nothing to compare, the code of a function checked without a call
         // is discarded
-        if (lhs_info.is_length_unknown() or rhs_info.is_length_unknown()) {
+        if (not size_bytes) {
             return;
         }
 
         machine& x{tc.machine()};
 
         x.memory_equal(
-            src_loc_tk, indent, size_bytes,
+            src_loc_tk, indent, *size_bytes,
             {
                 .alignment{lhs_info.type_ref().alignment()},
                 .lhs{lhs.address_emitter_of(tc, indent, src_loc_tk, lhs_info)},

@@ -347,9 +347,6 @@ class machine_rv32i : public machine {
     // empty when no binary image is written
     std::string binary_file_name_;
     assembler_rv32i assembler_;
-    bool multiply_helper_used_{};
-    bool multiply_checked_helper_used_{};
-    bool divide_helper_used_{};
     // the shared tail of the handlers that report a line was emitted
     bool line_report_emitted_{};
     std::vector<bulk_operation> bulk_operations_;
@@ -1089,7 +1086,7 @@ class machine_rv32i : public machine {
 
         assert(dst.is_register() or dst.is_memory());
 
-        mark_used(divide_helper_used_);
+        mark_used("divide_helper");
 
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor,
                                operation == arithmetic_operator::remainder
@@ -1333,9 +1330,9 @@ class machine_rv32i : public machine {
         // variable factors use the shared run-time helper
         if (not constant.has_value() or is_checked_constant) {
             if (check.enabled) {
-                mark_used(multiply_checked_helper_used_);
+                mark_used("multiply_checked_helper");
             } else {
-                mark_used(multiply_helper_used_);
+                mark_used("multiply_helper");
             }
 
             const runtime_check no_division_check;
@@ -1489,9 +1486,6 @@ class machine_rv32i : public machine {
     }
 
     auto start() -> void override {
-        multiply_helper_used_ = false;
-        multiply_checked_helper_used_ = false;
-        divide_helper_used_ = false;
         line_report_emitted_ = false;
 
         start_output();
@@ -2782,7 +2776,7 @@ class machine_rv32i : public machine {
 
     auto emit_arithmetic_helpers() -> void {
         // unused helpers contribute no code
-        if (multiply_helper_used_) {
+        if (is_used("multiply_helper")) {
             assembler_.label(0, helper_label(helper_routine::multiply));
             assembler_.mv(1, "a2", "a0");
             assembler_.li(1, "a0", 0);
@@ -2803,7 +2797,7 @@ class machine_rv32i : public machine {
         // sum, the multiplicand losing its top bit while multiplier bits
         // remain or a magnitude above the range of the sign leaves the flag
         // in a1 set, the sign is applied last
-        if (multiply_checked_helper_used_) {
+        if (is_used("multiply_checked_helper")) {
             // 'lui' of 2^31
             constexpr int sign_bit_upper{0x80000};
 
@@ -2848,7 +2842,7 @@ class machine_rv32i : public machine {
         }
 
         // divide and remainder share magnitude division and sign restoration
-        if (divide_helper_used_) {
+        if (is_used("divide_helper")) {
             // one quotient bit per step
             constexpr int divide_steps{32};
 

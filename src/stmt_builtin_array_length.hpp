@@ -121,13 +121,15 @@ class stmt_builtin_array_length final : public expression {
             return std::nullopt;
         }
 
+        const std::optional<size_t> array_len{src_info.array_len()};
+
         // an unsized array parameter has no length before its call
-        if (src_info.array_len() == 0) {
+        if (not array_len) {
             return std::nullopt;
         }
 
         return get_unary_ops().evaluate_constant(
-            static_cast<int64_t>(src_info.array_len()));
+            static_cast<int64_t>(*array_len));
     }
 
     // the length is known at compile time so the value is not read

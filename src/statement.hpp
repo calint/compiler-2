@@ -229,8 +229,7 @@ class one_line_source final {
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow), 'visit_reads' (the expressions)
 //   a value        'folded_constant', 'assert_not_narrowed',
-//                  'keeps_low_bits_when_narrowed',
-//                  'keeps_low_bits_when_widened', 'get_unary_ops',
+//                  'keeps_low_bits', 'get_unary_ops',
 //                  'is_expression', 'produces_boolean', 'compile_boolean':
 //                  'expr_arith', 'expr_any', 'expr_bool', 'expr_zero',
 //                  'stmt_builtin_convert', 'stmt_builtin_array_length',
@@ -241,6 +240,9 @@ class one_line_source final {
 //                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
 //                  'expr_bool' ('name_or_literal') and 'expr_zero'
 //                  ('is_name_or_literal', 'name_or_literal')
+// the width an expression is computed at compared with its own
+enum class width_change : uint8_t { narrowed, widened };
+
 class statement {
     token token_;
     unary_ops uops_;
@@ -257,6 +259,10 @@ class statement {
     auto operator=(statement&&) -> statement& = default;
 
     virtual ~statement() = default;
+
+    // the count of an array whose declaration does not give it: the
+    // initializer gives it, or the argument of an unsized parameter 's[]'
+    static constexpr size_t unsized_array_count{};
 
     //
     // virtual methods
@@ -341,13 +347,10 @@ class statement {
         return false;
     }
 
-    // true when computing at a narrower width gives the same low bits
-    [[nodiscard]] virtual auto keeps_low_bits_when_narrowed() const -> bool {
-        return false;
-    }
+    // true when computing at the width that 'change' gives keeps the low bits
+    [[nodiscard]] virtual auto
+    keeps_low_bits([[maybe_unused]] const width_change change) const -> bool {
 
-    // true when computing at a wider width gives the same low bits
-    [[nodiscard]] virtual auto keeps_low_bits_when_widened() const -> bool {
         return false;
     }
 
@@ -613,8 +616,8 @@ class statement {
         return std::format(", '{}' is the size of the array of 'foo'", root);
     }
 
-    // shared by 'dat' and 'var' initializers, 'array_count' 0 takes the size
-    // of the string
+    // shared by 'dat' and 'var' initializers, an 'unsized_array_count' takes
+    // the size of the string
     [[nodiscard]] static auto
     string_array_count(const type& string_element_type, const token& string_tk,
                        const type& element_type, const size_t array_count)
@@ -628,19 +631,19 @@ class statement {
         }
 
         // arrays of zero length are not allowed
-        if (size_bytes == 0 and array_count == 0) {
+        if (size_bytes == 0 and array_count == unsized_array_count) {
             throw compile_error{
                 string_tk, "an empty string is not valid for an array with "
                            "unspecified size"};
         }
 
-        if (array_count != 0 and size_bytes > array_count) {
+        if (array_count != unsized_array_count and size_bytes > array_count) {
             throw compile_error{
                 string_tk, std::format("string size {} overflows array size {}",
                                        size_bytes, array_count)};
         }
 
-        if (array_count == 0) {
+        if (array_count == unsized_array_count) {
             return size_bytes;
         }
 

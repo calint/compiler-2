@@ -48,8 +48,10 @@ class stmt_assign_var final : public statement {
         // the value is parsed as the type of the destination, which gives the
         // type of a literal, e.g. 'a = {1, 2}'
         const std::optional<size_t> array_count{
-            stmt_ident_.is_array() ? std::optional{stmt_ident_.array_count()}
-                                   : std::nullopt,
+            stmt_ident_.is_array()
+                ? std::optional{stmt_ident_.array_count().value_or(
+                      unsized_array_count)}
+                : std::nullopt,
         };
 
         expr_ = {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
@@ -149,8 +151,8 @@ class stmt_assign_var final : public statement {
 
   private:
     // the destination is not a constant and an array copy has the size of
-    // the destination; an unsized array parameter, of size 0, is checked when
-    // its call gives it a size
+    // the destination; an unsized array parameter is checked when its call
+    // gives it a size
     auto assert_assignable(const toc& tc, const ident_info& dst_info) const
         -> void {
 
@@ -166,10 +168,10 @@ class stmt_assign_var final : public statement {
 
         const ident_info src_info{tc.make_ident_info(expr_)};
 
-        if (not src_info.is_array() or src_info.array_len() == 0 or
-            dst_info.array_len() == 0 or
-            src_info.array_len() == dst_info.array_len()) {
+        const std::optional<size_t> src_len{src_info.array_len()};
+        const std::optional<size_t> dst_len{dst_info.array_len()};
 
+        if (not src_len or not dst_len or *src_len == *dst_len) {
             return;
         }
 
@@ -177,7 +179,7 @@ class stmt_assign_var final : public statement {
             expr_.tok(),
             std::format("destination array size {} does not match source "
                         "size {}",
-                        dst_info.array_len(), src_info.array_len())};
+                        *dst_len, *src_len)};
     }
 
     // a destination that names storage under another name, e.g. a parameter or

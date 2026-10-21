@@ -10,9 +10,11 @@
 #include <format>
 #include <functional>
 #include <limits>
+#include <map>
 #include <optional>
 #include <ostream>
 #include <ranges>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -241,29 +243,22 @@ class machine {
     register_pool registers_;
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
-    // the sector routines that 'emit_used_sector_routines' emits
-    bool sector_read_used_{};
-    bool sector_write_used_{};
-    // above zero while versions of code are compiled, see 'version_scope'
-    size_t version_depth_{};
     kept_version kept_version_{kept_version::smaller};
 
-    // applied when the code that uses a routine, helper or failure stub is
-    // kept, see 'mark_used'
-    using use_mark = std::function<void()>;
-
-    // the marks of the code compiled in versions, applied when the outermost
-    // version is kept
-    std::vector<use_mark> pending_marks_;
+    // the routines, helpers and failure handlers that the code compiled so
+    // far uses, emitted after the code, with the lines whose failure stubs it
+    // uses, e.g. 'sector_read' or the lines of the bounds checks that report
+    // them; see 'mark_used'
+    std::map<std::string_view, std::set<size_t>> used_routines_;
 
     // what compiling a version of code changes in the machine: the registers
     // held, the trace of the calls, the most scratch registers in use and the
-    // marks it made
+    // routines used
     struct version_state {
         register_pool registers;
         register_trace trace;
         size_t max_scratch_regs{};
-        std::vector<use_mark> pending_marks;
+        std::map<std::string_view, std::set<size_t>> used_routines;
     };
 
     // the state before a version, put back when the scope ends, also when an
@@ -275,20 +270,14 @@ class machine {
 
       public:
         explicit version_scope(machine& backend)
-            : machine_{backend}, start_{backend.version_state_now()} {
-
-            ++backend.version_depth_;
-        }
+            : machine_{backend}, start_{backend.version_state_now()} {}
 
         version_scope(const version_scope&) = delete;
         version_scope(version_scope&&) = delete;
         auto operator=(const version_scope&) -> version_scope& = delete;
         auto operator=(version_scope&&) -> version_scope& = delete;
 
-        ~version_scope() {
-            --machine_.version_depth_;
-            machine_.restore_version_state(std::move(start_));
-        }
+        ~version_scope() { machine_.restore_version_state(std::move(start_)); }
     };
 
     // the lines of a compiled version with the state it ended in
@@ -898,10 +887,6 @@ class machine {
 
             restore_version_state(std::move(kept.end_state));
 
-            if (version_depth_ == 0) {
-                apply_pending_marks();
-            }
-
             output.append(std::move(kept.lines));
         });
     }
@@ -1051,7 +1036,7 @@ class machine {
         call_sector_routine(src_loc_tk, indent, sector, address, size,
                             builtin_function::sector_read);
 
-        mark_used(sector_read_used_);
+        mark_used("sector_read");
     }
 
     // writes the 'size' bytes at 'address' to the sd card sector, like
@@ -1063,7 +1048,7 @@ class machine {
         call_sector_routine(src_loc_tk, indent, sector, address, size,
                             builtin_function::sector_write);
 
-        mark_used(sector_write_used_);
+        mark_used("sector_write");
     }
 
     // a blank line that separates the code from the report
@@ -1339,8 +1324,11 @@ class machine {
 
     // unused routines contribute no code
     auto emit_used_sector_routines() -> void {
-        if (sector_read_used_ or sector_write_used_) {
-            emit_sector_routines(sector_read_used_, sector_write_used_);
+        const bool is_read_used{is_used("sector_read")};
+        const bool is_write_used{is_used("sector_write")};
+
+        if (is_read_used or is_write_used) {
+            emit_sector_routines(is_read_used, is_write_used);
         }
     }
 
@@ -1367,6 +1355,10 @@ class machine {
 
     [[nodiscard]] auto is_frame_base_reserved() const -> bool {
         return frame_base_reserved_;
+    }
+
+    [[nodiscard]] auto is_used(const std::string_view routine) const -> bool {
+        return used_routines_.contains(routine);
     }
 
     [[nodiscard]] auto is_variables_base_reserved() const -> bool {
@@ -1398,21 +1390,16 @@ class machine {
             register_mask(lower_checked_register(range)));
     }
 
-    // the routine, helper or stub of 'used' is emitted after the code
-    auto mark_used(bool& used) -> void {
-        mark_used([&used] -> void { used = true; });
+    // the routine is emitted after the code; the use is version state, so a
+    // version that is not kept and discarded code use nothing
+    auto mark_used(const std::string_view routine) -> void {
+        used_routines_.try_emplace(routine);
     }
 
-    // code compiled in a version is not known to be kept, so its marks wait
-    // until the outermost version is kept, a version that is not kept or
-    // discarded code needs no routine, helper or failure stub
-    auto mark_used(use_mark mark) -> void {
-        if (version_depth_ == 0) {
-            mark();
-            return;
-        }
-
-        pending_marks_.push_back(std::move(mark));
+    // the failure stub of 'line' is emitted with the handler of 'routine',
+    // see 'mark_used'
+    auto mark_used(const std::string_view routine, const size_t line) -> void {
+        used_routines_[routine].insert(line);
     }
 
     // 'signed_max' is the largest value of the signed type of the compare
@@ -1524,13 +1511,22 @@ class machine {
         output.set_direct_output(nullptr);
 
         usage_max_scratch_regs_ = 0;
-        sector_read_used_ = false;
-        sector_write_used_ = false;
+
+        // note: the parse emits no code that uses a routine
+        assert(used_routines_.empty());
 
         output.comment(0, "");
         output.comment(0, "generated by baz");
         output.comment(0, "");
         output.add_separator_newline();
+    }
+
+    // the lines of the failure stubs of 'routine'
+    [[nodiscard]] auto used_lines(const std::string_view routine) const
+        -> std::set<size_t> {
+
+        const auto it{used_routines_.find(routine)};
+        return it == used_routines_.end() ? std::set<size_t>{} : it->second;
     }
 
     //
@@ -1669,15 +1665,6 @@ class machine {
         result.set_allocation_register(register_name);
 
         return result;
-    }
-
-    // the marks of the kept outermost version
-    auto apply_pending_marks() -> void {
-        for (const use_mark& mark : pending_marks_) {
-            mark();
-        }
-
-        pending_marks_.clear();
     }
 
     // the registers allocated until 'end_call_frame' belong to the inlined call
@@ -1873,7 +1860,7 @@ class machine {
         registers_ = std::move(state.registers);
         trace_ = std::move(state.trace);
         usage_max_scratch_regs_ = state.max_scratch_regs;
-        pending_marks_ = std::move(state.pending_marks);
+        used_routines_ = std::move(state.used_routines);
     }
 
     // the choice between two versions, at least one available, e.g. 'smaller
@@ -1910,7 +1897,7 @@ class machine {
             .registers{registers_},
             .trace{trace_},
             .max_scratch_regs{usage_max_scratch_regs_},
-            .pending_marks{pending_marks_},
+            .used_routines{used_routines_},
         };
     }
 };

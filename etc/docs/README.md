@@ -864,10 +864,9 @@ when an error unwinds it:
 1. the registers held, with what a passed lower bounds check proved
 2. the trace of the calls, which the register report and errors print
 3. the most scratch registers in use, the footer of the output
-4. the routines, helpers and failure stubs marked used: inside a version a
-   mark waits ('machine::mark_used'), the marks of the kept version are
-   applied when the outermost version is kept, those of a dropped version or
-   of discarded code are dropped
+4. the routines, helpers and failure stubs marked used
+   ('machine::mark_used'), a set of values like the registers: those of a
+   dropped version or of discarded code are dropped
 
 Each version starts from the saved state; after the choice the state the kept
 version ended in remains. So the footer and '--report=registers' describe the
