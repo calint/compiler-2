@@ -93,6 +93,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           'constant_part' went; 'type_of_first_element' moves to R4
           (G5-6), the frame constants stay numbers (rule 9)
        R4 delete 'single_operand_type' (G5-6)
+          => done (2026-10-21), byte-identical: 'single_operand_type' and
+          the branches of 'type_of_first_element' went, a list has the
+          type of its first element; the lookup stays because it rejects a
+          function name as a value (0792)
        R5 'conversion_widths' under 'plan_computation'/'ops_place_for';
           the convert 'constant_value'/'narrow' become its 'fold' only
        F  the differential fuzz mode (tests below), a baseline run

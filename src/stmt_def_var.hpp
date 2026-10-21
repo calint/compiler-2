@@ -222,14 +222,9 @@ class initializer_declaration final {
         }
 
         // the first operand decides the width of an expression
-        if (not arith->is_single_operand()) {
-            set_type(arith->get_type());
-            return;
-        }
+        set_type(arith->get_type());
 
-        set_type(arith->single_operand_type());
-
-        if (not arith->is_name_or_literal() or
+        if (not arith->is_single_operand() or not arith->is_name_or_literal() or
             not arith->get_unary_ops().is_empty()) {
 
             return;

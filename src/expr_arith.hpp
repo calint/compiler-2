@@ -530,13 +530,6 @@ class expr_arith final : public expression {
         return not is_first_enclosed_;
     }
 
-    // the list type of a folded 'i8(-3)' is the default type of a constant
-    [[nodiscard]] auto single_operand_type() const -> const type& {
-        assert(is_single_operand());
-
-        return exprs_.front()->get_type();
-    }
-
     //
     // statics
     //
@@ -990,24 +983,18 @@ class expr_arith final : public expression {
         return steps;
     }
 
-    // the type of the list is that of its first element
+    // a function name has no type, its lookup rejects it as a value, e.g. the
+    // 'make' of 'var x = make'
     [[nodiscard]] auto type_of_first_element(const toc& tc) const
         -> const type& {
 
         const statement& first_expr{*exprs_.front()};
 
-        if (not first_expr.is_name_or_literal()) {
-            return first_expr.get_type();
+        if (first_expr.is_name_or_literal()) {
+            std::ignore = tc.make_ident_info(first_expr);
         }
 
-        const ident_info info{tc.make_ident_info(first_expr)};
-
-        // a folded conversion such as 'i32(8)' keeps its type
-        if (info.is_const() and not info.constant().is_typed()) {
-            return first_expr.get_type();
-        }
-
-        return info.type_ref();
+        return first_expr.get_type();
     }
 
     // the elements are operands of the operators of the list or of its unary
