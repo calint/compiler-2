@@ -11,7 +11,16 @@
 # the operands of an operation decides which of two panics comes first, either
 # is accepted
 #
-# usage: [FUZZ_CHECKS=noub] fuzz-exprs.py [count] [seed] [jobs]
+# with FUZZ_SPELLING=1 a program is built twice from one template whose
+# leaves are typed values: once with each leaf spelled as a constant
+# ('T(lit)', 'T(K)' of a 'let K', an inlined parameter bound to one) and once
+# as a variable (a 'var', an inlined or noinline parameter bound to one). both
+# must end alike on both targets, with and without the overflow check: the
+# same exit code, the same panic or both rejected; a constant overflow or
+# zero divisor rejected at compile time equals the panic at run time
+#
+# usage: [FUZZ_CHECKS=noub] [FUZZ_SPELLING=1] fuzz-exprs.py [count] [seed]
+#        [jobs]
 import concurrent.futures
 import importlib.util
 import os
@@ -25,6 +34,7 @@ import fuzzlib as fl
 
 BITS = {"i8": 8, "i16": 16, "i32": 32, "i64": 64}
 CHECKS = os.environ.get("FUZZ_CHECKS", "noub")
+SPELLING = os.environ.get("FUZZ_SPELLING") == "1"
 
 
 class Reject(Exception):
@@ -411,6 +421,168 @@ class Program:
         return ("exit", (env["v0"] ^ env["v1"] ^ env["v2"] ^ env["v3"]
                          ^ env["v4"] ^ env["v5"]) & 127)
 
+#
+# spelling mode
+#
+
+SPELLING_TYPES = ("i8", "i16", "i32")
+# a zero divisor is a panic at run time only with the division check
+SPELLING_OPTIONS = (("--checks=division",), ("--checks=division,overflow",))
+# the compile errors that are a panic at run time when the value is a variable
+FOLDED_PANICS = {"constant expression overflows the type": 249,
+                 "divisor must not be zero": 253}
+
+
+class Leaf:
+    # a typed value 'v' of type 't' with its own unary ops, written as the
+    # literal 'lit' that wraps to 'v'
+    def __init__(self, rnd, index):
+        self.index = index
+        self.t = rnd.choice(SPELLING_TYPES)
+        low, high = limits(self.t)
+        self.v = rnd.choice([low, low + 1, -1, 0, 1, 2, high - 1, high,
+                             rnd.randint(low, high), rnd.randint(-9, 9)])
+        bits = BITS[self.t]
+        self.lit = self.v + rnd.choice([0, 0, 0, 1 << bits, -(1 << bits)])
+        self.uops = rnd.choice(["", "", "-", "~", "--"])
+        self.const_spelling = rnd.choice(["conv", "let", "param"])
+        self.var_spelling = rnd.choice(["var", "param"])
+        # a 'let' has the default type, 'i32' on rv32i
+        if self.const_spelling == "let" and not fits("i32", self.lit):
+            self.lit = self.v
+
+    def text(self, as_constant):
+        name = self.spelled(as_constant)
+        return f"{self.uops}{name}"
+
+    def spelled(self, as_constant):
+        if as_constant and self.const_spelling == "conv":
+            return f"{self.t}({self.lit})"
+        if as_constant and self.const_spelling == "let":
+            return f"{self.t}(K{self.index})"
+        if not as_constant and self.var_spelling == "var":
+            return f"c{self.index}"
+        return f"p{self.index}"
+
+    def is_param(self, as_constant):
+        return (self.const_spelling if as_constant
+                else self.var_spelling) == "param"
+
+    def argument(self, as_constant):
+        if as_constant:
+            return f"{self.t}({self.lit})"
+        return f"c{self.index}"
+
+
+class SpellingProgram:
+    def __init__(self, rnd):
+        self.rnd = rnd
+        self.leaves = [Leaf(rnd, i) for i in range(rnd.randint(1, 2))]
+        self.d = rnd.choice(SPELLING_TYPES)
+        self.context = rnd.choice(["assign", "list", "compare", "convert",
+                                   "argument"])
+        self.op = rnd.choice(["+", "-", "*", "&", "|", "^", "/", "%"])
+        self.u = rnd.choice(SPELLING_TYPES)
+        self.u_uops = rnd.choice(["", "-", "~"])
+        self.cmp = rnd.choice(["==", "!=", "<", "<=", ">", ">="])
+        self.literal = rnd.choice([1, 2, -1, 100, 300, 70000])
+        self.noinline = rnd.random() < 0.5
+
+    def operand(self, as_constant, i):
+        if i < len(self.leaves):
+            return self.leaves[i].text(as_constant)
+        return str(self.literal)
+
+    def body(self, as_constant):
+        a = self.operand(as_constant, 0)
+        b = self.operand(as_constant, 1)
+        if self.context == "assign":
+            return [f"res = {a}"]
+        if self.context == "list":
+            return [f"res = {a} {self.op} {b}"]
+        if self.context == "compare":
+            return ["res = 2", f"if {a} {self.cmp} {b} {{", "    res = 1",
+                    "}"]
+        if self.context == "convert":
+            return [f"res = {self.u_uops}{self.u}({a})"]
+        return [f"res = h({a})"]
+
+    def source(self, as_constant):
+        lines = []
+        for leaf in self.leaves:
+            if as_constant and leaf.const_spelling == "let":
+                lines.append(f"let K{leaf.index} = {leaf.lit}")
+            if not as_constant:
+                lines.append(f"var c{leaf.index} = {leaf.t}({leaf.lit})")
+        if self.context == "argument":
+            lines += [f"func h(a {self.d}) res {self.d} {{", "    res = a",
+                      "}"]
+        params = [leaf for leaf in self.leaves
+                  if leaf.is_param(as_constant)]
+        # a constant argument binds only in an inlined call
+        inline = "" if as_constant or not self.noinline else "noinline "
+        signature = ", ".join(f"p{p.index} {p.t}" for p in params)
+        lines.append(f"func {inline}e({signature}) res {self.d} {{")
+        lines += ["    " + line for line in self.body(as_constant)]
+        lines.append("}")
+        arguments = ", ".join(p.argument(as_constant) for p in params)
+        lines += ["func main() {", f"    exit(int(e({arguments})) & 127)",
+                  "}"]
+        return "\n".join(lines) + "\n"
+
+    def shape(self, as_constant):
+        kinds = [leaf.const_spelling if as_constant else leaf.var_spelling
+                 for leaf in self.leaves]
+        return f"{self.context} {'+'.join(kinds)}"
+
+
+def spelling_outcome(got):
+    # a compile error that a variable would meet at run time as a panic
+    if got[0] == "compile":
+        for message, code in FOLDED_PANICS.items():
+            if message in str(got[1]):
+                return ("panic", code)
+        return ("compile",)
+    return got
+
+
+def fuzz_spelling(args):
+    seed, index = args
+    rnd = random.Random(seed * 1000003 + index)
+    program = SpellingProgram(rnd)
+    constant_source = program.source(True)
+    variable_source = program.source(False)
+    work = tempfile.mkdtemp(prefix="fuzzs-")
+    found = []
+    kind = "exit"
+    try:
+        for target in fl.TARGETS:
+            for options in SPELLING_OPTIONS:
+                constant = run_target(work, constant_source, target, options)
+                variable = run_target(work, variable_source, target, options)
+                if fl.known_crash(str(constant[1:])) or \
+                        fl.known_crash(str(variable[1:])):
+                    continue
+                kind = constant[0] if constant[0] in ("exit", "panic") \
+                    else "compile"
+                c = spelling_outcome(constant)
+                v = spelling_outcome(variable)
+                # both rejected, whichever check comes first
+                if c == v or constant[0] == variable[0] == "compile":
+                    continue
+                found.append((
+                    "spelling",
+                    f"{program.context} {target} {' '.join(options)} "
+                    f"constant {c[0]} variable {v[0]}",
+                    f"{program.shape(True)} vs {program.shape(False)}\n"
+                    f"constant {constant[0]} {str(constant[1:])[:300]}\n"
+                    f"variable {variable[0]} {str(variable[1:])[:300]}\n\n"
+                    f"variable source:\n{variable_source}"))
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    return constant_source, found, kind
+
+
 
 def fuzz_one(args):
     seed, index = args
@@ -433,7 +605,7 @@ def fuzz_one(args):
     found = []
     try:
         for target in program.targets:
-            got = run_target(work, source, target)
+            got = run_target(work, source, target, ["--checks=" + CHECKS])
             if fl.known_crash(str(got[1])):
                 continue
             if not matches(expected, got) and not (
@@ -450,11 +622,11 @@ def fuzz_one(args):
     return source, found, expected[0]
 
 
-def run_target(work, source, target):
+def run_target(work, source, target, options):
     path = os.path.join(work, "f.baz")
     with open(path, "w") as f:
         f.write(source)
-    options = ["--checks=" + CHECKS]
+    options = list(options)
     if target == "x86_64":
         c, o, problem = fl.run_x86(fl.COMPILER, path, options, work)
     else:
@@ -501,14 +673,16 @@ def main():
     seed = int(sys.argv[2]) if len(sys.argv) > 2 else random.randrange(1 << 30)
     jobs = int(sys.argv[3]) if len(sys.argv) > 3 else max(1, (os.cpu_count() or 2) - 2)
     findings = fl.Findings()
-    print(f"seed {seed}, {count} programs, {jobs} jobs, checks {CHECKS}")
+    mode = "spelling" if SPELLING else f"checks {CHECKS}"
+    print(f"seed {seed}, {count} programs, {jobs} jobs, {mode}")
     tally = {"exit": 0, "panic": 0, "compile": 0}
     new = 0
     total = 0
     begin = time.time()
     with concurrent.futures.ProcessPoolExecutor(jobs) as pool:
         for n, (source, found, kind) in enumerate(
-                pool.map(fuzz_one, [(seed, i) for i in range(count)],
+                pool.map(fuzz_spelling if SPELLING else fuzz_one,
+                         [(seed, i) for i in range(count)],
                          chunksize=4), 1):
             tally[kind] += 1
             for category, key, detail in found:

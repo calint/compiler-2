@@ -105,6 +105,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           'plan_computation' compare D and T directly, a struct would only
           rename those comparisons
        F  the differential fuzz mode (tests below), a baseline run
+          => done (2026-10-21): 'FUZZ_SPELLING=1 fuzz-exprs.py'; baseline
+          of 10000 programs (seed 1): 12 findings in 2 classes, 'argument'
+          (G4-2, a typed constant argument to a wider parameter) and
+          'compare' (G6-2, G5-1); it does not reach G6-1, G6-3 and G4-1,
+          which need a call or a nested conversion as a leaf
        B1 'compile_value' (rule 8), emit at the use width, delete
           'make_constant_operand' and the constant branches of the compile
           overrides: 'i8(i16(K))' emits 44, not 300 (G6-3); immediates and
