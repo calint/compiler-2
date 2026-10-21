@@ -1,0 +1,10 @@
+# an element of an array of instances is not a number, on every target
+
+type point {x, y}
+
+func main() {
+    var ps = point[2]
+    var i = 1
+    ps[1] = {7, 2}
+    exit(ps[i])
+}

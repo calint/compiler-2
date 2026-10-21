@@ -1,0 +1,4 @@
+
+1386.baz:9:10: expected type 'i32', got 'point'
+    exit(ps[i])
+         ^~

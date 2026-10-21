@@ -1,0 +1,10 @@
+# a built-in destination takes a number, not an instance
+
+type point {x, y}
+
+func main() {
+    var p = point{5, 2}
+    var y = 1
+    y = p
+    exit(y)
+}

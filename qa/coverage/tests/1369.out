@@ -1,4 +1,4 @@
 
-1369.baz:7:8: an instance of 'point' is not a number
+1369.baz:7:9: an instance of 'point' is not a number
     if -p == p {
-       ^
+        ^

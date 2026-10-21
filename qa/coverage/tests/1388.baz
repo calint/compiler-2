@@ -1,0 +1,9 @@
+# an index is a number, not an instance
+
+type point {x, y}
+
+func main() {
+    var p = point{3, 2}
+    var a = int[4]
+    exit(a[p])
+}

@@ -1,0 +1,10 @@
+# a 'bool' destination does not take an instance
+
+type point {x, y}
+
+func main() {
+    var p = point{5, 2}
+    var b = false
+    b = p
+    exit(0)
+}

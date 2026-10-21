@@ -184,6 +184,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           both targets (G5-2), "expected type 'i64', got 'p'" for a whole
           value as for a 'bool', "an instance of 'p' is not a number" for
           an operand
+          => done (2026-10-21): an operand of an operator is checked at
+          parse ('expr_arith::assert_number', the 'bool' rule extended); a
+          whole value by the fit rule, 'stmt_identifier::assert_not_narrowed'
+          rejects a record source "expected type 'i64', got 'p'"; a check
+          in 'parse_variant' was rejected: a built-in parses its arguments
+          at the default type before it knows their use, e.g. the record
+          buffer of 'write' (0509, 1044, 1049); 1384-1388 (value, operand,
+          'exit(ps[i])' now the same on both targets, 'bool' destination,
+          index); 1368, 1369 point at the instance after the '-'; 1018 had
+          a record operand that compiled, now 'bx.a.x', same error
        B7 'array_length' typed in comparisons too: one verdict called and
           uncalled
        B8 remove the parse-time 'folded_' of a conversion (asm comments

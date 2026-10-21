@@ -4476,3 +4476,11 @@ SRC=1382 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # the arguments of a call in the argument of a conversion are checked
 SRC=1383 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+
+# an instance is not a number: a whole value, an operand, an element of an
+# array of instances on every target, a 'bool' destination and an index
+SRC=1384 && COMPERR
+SRC=1385 && COMPERR
+SRC=1386 && COMPERR
+SRC=1387 && COMPERR
+SRC=1388 && COMPERR

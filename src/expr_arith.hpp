@@ -988,7 +988,7 @@ class expr_arith final : public expression {
         }
 
         for (const std::unique_ptr<statement>& expr : exprs_) {
-            assert_not_boolean(tc, *expr);
+            assert_number(tc, *expr);
         }
     }
 
@@ -1190,14 +1190,20 @@ class expr_arith final : public expression {
         throw compile_error{src_loc_tk, "divisor must not be zero"};
     }
 
-    // a stored 'bool' is 0 or 1, arithmetic would make other values
-    static auto assert_not_boolean(const toc& tc, const statement& term)
-        -> void {
-
+    // an operand of an operator is a number: an instance is not, and a
+    // stored 'bool' is 0 or 1, arithmetic would make other values, so it is
+    // converted
+    static auto assert_number(const toc& tc, const statement& term) -> void {
         const type& operand_type{
             term.is_name_or_literal() ? tc.make_ident_info(term).type_ref()
                                       : term.get_type(),
         };
+
+        if (not operand_type.is_builtin()) {
+            throw compile_error{
+                term.tok(), std::format("an instance of '{}' is not a number",
+                                        operand_type.name())};
+        }
 
         if (not operand_type.is_bool()) {
             return;
@@ -1701,7 +1707,7 @@ class expr_arith final : public expression {
         };
 
         if (not uo.is_empty()) {
-            assert_not_boolean(tc, *element);
+            assert_number(tc, *element);
         }
 
         return {

@@ -1,0 +1,4 @@
+
+1387.baz:8:9: expected type 'bool', got 'point'
+    b = p
+        ^

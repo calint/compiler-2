@@ -1,0 +1,4 @@
+
+1385.baz:8:13: an instance of 'point' is not a number
+    y = y + p
+            ^
