@@ -354,6 +354,22 @@ CLI_FPGA_MEMORY() {
     set -e
     [[ $exit_code -eq 1 ]]
     grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
+    # the options are checked before the source, so an error in the source
+    # does not hide a stack below what 'main' may use
+    set +e
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=16 0218.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "error: invalid --stack: 16 B is smaller than the 48 B" err
+    grep -Fq "cannot resolve" err && exit 1
+    # a size beyond the range of a number is out of range, not a non-number
+    set +e
+    "$BIN" --target=rv32i-fpga --stack=99999999999999999999999 0426.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "error: invalid --stack: '99999999999999999999999' is out of range" err
     # a smaller memory moves the end of the stack and the limit of the vars
     local small_size=$((0x40000))
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size 0426.baz >gen.s 2>err

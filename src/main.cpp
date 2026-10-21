@@ -462,7 +462,8 @@ options:
   --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
                       multiple of {1} (default: {2})
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
-                      hex, must be a multiple of {3} (default: {4})
+                      hex, must be a multiple of {3}, at least {7} and at
+                      most the memory of the target (default: {4})
   --memory=SIZE       rv32i-fpga memory in bytes, decimal or 0x hex, must be a
                       multiple of {5} (default: {6}), the emulator is
                       built for the default
@@ -518,7 +519,7 @@ examples:
 )",
                program_name, vars_alignment, default_vars_size_bytes,
                stack_alignment, default_stack_size_bytes, memory_alignment,
-               default_memory_size_bytes);
+               default_memory_size_bytes, machine_rv32i::leaf_stack_bytes());
 }
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {
@@ -662,6 +663,13 @@ auto check_reproduced_source(const program& prg, const source_files& files)
         std::from_chars(std::to_address(digits.begin()), digits_end,
                         parsed_size_bytes, base),
     };
+
+    if (parsed.ec == std::errc::result_out_of_range) {
+        print_option_error(
+            std::format("invalid {}: '{}' is out of range", option, text));
+
+        return std::nullopt;
+    }
 
     if (parsed.ec != std::errc{} or parsed.ptr != digits_end) {
         print_option_error(

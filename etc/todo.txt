@@ -6,6 +6,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: rv32i-fpga: the smallest '--stack' ('leaf_stack_bytes', 48 B)
+    counts 16 B of line digits that fpga never prints ('reports_line' is
+    false), so '--stack=32' is rejected although it is enough; count the
+    digits only when the target reports lines (changes which values are
+    accepted)
 [ ] medium: aliasing: a call in a value written in parts reads, in its body,
     a part written before it without an error, e.g. 'g = {1, gx()}' with
     'gx' returning 'g.x' (inline and noinline); rule A sees only the reads
@@ -15,6 +20,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     the operand and the 'storage_path' only in the storage kind; today the
     kind, an empty storage and an empty operand are kept consistent by
     asserts (deferred by the aliasing plan)
+[p] medium: aliasing: the same verdict inline and noinline; today 'g = p * 2
+    + p' with 'p' bound to 'g' is accepted inline (scratch register) and
+    rejected in the dry run of a noinline call (rule B), so switching a
+    function to noinline can add an error
+    => option C: the real noinline body protects the read itself, two roots
+       that are each a pointer parameter or a global may overlap
+       ('toc::reads_destination'), then rule B and its dry-run check go
+       (the item below, test 1410); cost: an extra copy in bodies like
+       'res = a + b' when 'res' and 'b' are pointers, measure the instruction
+       counts over all tests before deciding
 [ ] medium: aliasing: in the dry run of a noinline call, rule B
     ('stmt_assign_var::assert_no_read_of_computed_part') also rejects an
     overlap that the body sees and protects itself, e.g. 'g' of the body

@@ -108,7 +108,8 @@ options:
   --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
                       multiple of 16 (default: 65536)
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
-                      hex, must be a multiple of 16 (default: 65536)
+                      hex, must be a multiple of 16, at least 48 and at
+                      most the memory of the target (default: 65536)
   --memory=SIZE       rv32i-fpga memory in bytes, decimal or 0x hex, must be a
                       multiple of 4096 (default: 8388608), the emulator is
                       built for the default

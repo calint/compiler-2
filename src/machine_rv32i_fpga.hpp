@@ -43,20 +43,21 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr uint32_t half_bits_{16};
     static constexpr uint32_t half_mask_{0xffff};
 
-    uint32_t memory_size_bytes_{};
-
   public:
     machine_rv32i_fpga(std::ostream* const direct_output,
                        const source_files* const files, const jump_mode jumps,
                        const std::string_view binary_file_name,
                        const size_t stack_size_bytes,
-                       const size_t memory_size_bytes_in)
-        : machine_rv32i_bare_metal{direct_output, files, jumps,
-                                   binary_file_name, stack_size_bytes},
-          memory_size_bytes_{static_cast<uint32_t>(memory_size_bytes_in)} {
+                       const size_t memory_size_bytes)
+        : machine_rv32i_bare_metal{direct_output,
+                                   files,
+                                   jumps,
+                                   binary_file_name,
+                                   stack_size_bytes,
+                                   memory_size_bytes} {
 
         // 'lui' loads the end of memory
-        assert(memory_size_bytes_ % (uint32_t{1} << lui_shift_) == 0);
+        assert(memory_size_bytes % (size_t{1} << lui_shift_) == 0);
     }
 
     //
@@ -166,10 +167,10 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
         -> void override {
 
-        // note: 'start' rejected a stack larger than the memory
-        assert(stack_size_bytes() <= memory_size_bytes_);
+        // note: the constructor rejected a stack larger than the memory
+        assert(stack_size_bytes() <= memory_size_bytes());
 
-        assembler().li(indent, reg, memory_size_bytes_ - stack_size_bytes());
+        assembler().li(indent, reg, memory_size_bytes() - stack_size_bytes());
     }
 
   private:
@@ -197,10 +198,10 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         // 'std::format' has no digit separators so the halves are printed
         // apart
         a.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
-                                 memory_size_bytes_ >> half_bits_,
-                                 memory_size_bytes_ & half_mask_));
+                                 memory_size_bytes() >> half_bits_,
+                                 memory_size_bytes() & half_mask_));
 
-        a.lui(0, "sp", memory_size_bytes_ >> lui_shift_);
+        a.lui(0, "sp", memory_size_bytes() >> lui_shift_);
         a.add_separator_newline();
     }
 
@@ -214,11 +215,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     auto emit_uart_setup(assembler_rv32i& a) const -> void override {
         a.li(1, "a3", uart_idle_);
-    }
-
-    // from '--memory'
-    [[nodiscard]] auto memory_size_bytes() const -> size_t override {
-        return memory_size_bytes_;
     }
 
     //

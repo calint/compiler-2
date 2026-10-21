@@ -31,8 +31,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
                        const source_files* const files, const jump_mode jumps,
                        const std::string_view binary_file_name,
                        const size_t stack_size_bytes)
-        : machine_rv32i_bare_metal{direct_output, files, jumps,
-                                   binary_file_name, stack_size_bytes} {}
+        : machine_rv32i_bare_metal{
+              direct_output,    files,          jumps, binary_file_name,
+              stack_size_bytes, ram_size_bytes_} {}
 
     //
     // overridden methods
@@ -107,9 +108,5 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
     auto emit_uart_setup(assembler_rv32i& a) const -> void override {
         a.lui(1, "a3", uart_upper_);
-    }
-
-    [[nodiscard]] auto memory_size_bytes() const -> size_t override {
-        return ram_size_bytes_;
     }
 };

@@ -507,24 +507,6 @@ class machine_rv32i : public machine {
         assembler_.call(indent, label, "a7");
     }
 
-    //
-    // statics
-    //
-
-    // what a callee pushes without a check of its own: a helper call saves
-    // the registers the helper changes, and a failed check of the helper,
-    // made while they are saved, writes the digits of its line
-    [[nodiscard]] static auto leaf_stack_bytes() -> size_t {
-        // note: '.Lbaz_divide' changes the most registers
-        const size_t helper_save_bytes{
-            align_storage_size(helper_clobbers(helper_routine::divide).size() *
-                                   word_size_bytes_,
-                               stack_alignment_),
-        };
-
-        return helper_save_bytes + line_digits_bytes_;
-    }
-
   public:
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
@@ -1629,6 +1611,24 @@ class machine_rv32i : public machine {
         const access_start start{start_of(dst, alignment)};
 
         zero_known_size(src_loc_tk, indent, dst, size_bytes, start);
+    }
+
+    //
+    // statics
+    //
+
+    // what a callee pushes without a check of its own: a helper call saves
+    // the registers the helper changes, and a failed check of the helper,
+    // made while they are saved, writes the digits of its line
+    [[nodiscard]] static auto leaf_stack_bytes() -> size_t {
+        // note: '.Lbaz_divide' changes the most registers
+        const size_t helper_save_bytes{
+            align_storage_size(helper_clobbers(helper_routine::divide).size() *
+                                   word_size_bytes_,
+                               stack_alignment_),
+        };
+
+        return helper_save_bytes + line_digits_bytes_;
     }
 
   private:

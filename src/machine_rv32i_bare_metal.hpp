@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <format>
 #include <ostream>
@@ -35,6 +36,8 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     };
 
     size_t stack_size_bytes_{};
+    // the memory of the device, the image is loaded at its start
+    size_t memory_size_bytes_{};
 
   protected:
     // the routines a program calls, the target defines the exit one
@@ -47,9 +50,17 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                              const source_files* const files,
                              const jump_mode jumps,
                              const std::string_view binary_file_name,
-                             const size_t stack_size_bytes)
+                             const size_t stack_size_bytes,
+                             const size_t memory_size_bytes)
         : machine_rv32i{direct_output, files, jumps, binary_file_name},
-          stack_size_bytes_{stack_size_bytes} {}
+          stack_size_bytes_{stack_size_bytes},
+          memory_size_bytes_{memory_size_bytes} {
+
+        // note: the options are checked before the source is parsed, so an
+        //       error in the source does not hide them
+
+        check_stack_size();
+    }
 
     //
     // overridden methods
@@ -87,11 +98,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         return true;
     }
 
-    // the stack fits the memory and what 'main' may use without a stack
-    // check, which 'check_memory_end' and the stack limit rely on
     auto start() -> void override {
-        assert_stack_size();
-
         machine_rv32i::start();
 
         // no operating system sets up a stack
@@ -111,7 +118,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
         const size_t memory_bytes{memory_size_bytes()};
 
-        // note: 'start' rejected a stack larger than the memory
+        // note: the constructor rejected a stack larger than the memory
         assert(stack_size_bytes() <= memory_bytes);
 
         if (memory_end_address <= memory_bytes - stack_size_bytes()) {
@@ -138,6 +145,10 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // class methods
     //
 
+    [[nodiscard]] auto memory_size_bytes() const -> size_t {
+        return memory_size_bytes_;
+    }
+
     [[nodiscard]] auto stack_size_bytes() const -> size_t {
         return stack_size_bytes_;
     }
@@ -162,14 +173,13 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // prepares a3 for 'emit_receive_byte' and 'emit_transmit_byte'
     virtual auto emit_uart_setup(assembler_rv32i& a) const -> void = 0;
 
-    // the memory of the device, the image is loaded at its start
-    [[nodiscard]] virtual auto memory_size_bytes() const -> size_t = 0;
-
     //
     // class methods
     //
 
-    auto assert_stack_size() const -> void {
+    // the stack fits the memory and what 'main' may use without a stack
+    // check, which 'check_memory_end' and the stack limit rely on
+    auto check_stack_size() const -> void {
         if (stack_size_bytes() > memory_size_bytes()) {
             throw option_error{
                 std::format("invalid --stack: {} B exceeds the {} B of device "
