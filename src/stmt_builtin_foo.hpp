@@ -35,6 +35,8 @@ class stmt_builtin_foo final : public statement {
 
         ident_ = {tc, {}, tz.next_token(), tz};
 
+        ident_.assert_not_method();
+
         if (not ident_.is_array()) {
             throw compile_error{ident_.tok(),
                                 std::format("'{}' is not an array",
@@ -143,13 +145,22 @@ class stmt_builtin_foo final : public statement {
 
     // the body may run zero times so its assignments do not count
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        ident_.assert_var_not_used(flow.var, flow.assigned);
+        ident_.assert_var_not_used(flow);
 
         if (has_count()) {
-            count_.assert_var_not_used(flow.var, flow.assigned);
+            count_.assert_var_not_used(flow);
         }
 
+        // the loop names hide the traced variable only in the body
+        const bool was_shadowed{flow.is_shadowed};
+
+        flow.declare("e");
+        flow.declare("i");
+        flow.declare("n");
+
         std::ignore = code_.trace_loop_body(flow);
+
+        flow.is_shadowed = was_shadowed;
     }
 
   private:

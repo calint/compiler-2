@@ -1,0 +1,6 @@
+# a unary operator on a parenthesized buffer makes a value, not an array
+func main() {
+    var buf = i8[4]
+    var n = read(0, -(buf))
+    exit(n)
+}

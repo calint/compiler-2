@@ -1914,12 +1914,21 @@ class machine {
         const std::string holder_location{location_text(holder.src_loc_tk)};
 
         if (not holder.named) {
-            return register_error(
-                src_loc_tk,
-                std::format("cannot allocate register {} because it holds a "
-                            "scratch value allocated at {}, simplify the "
-                            "expression",
-                            name, holder_location));
+            compile_error error{
+                register_error(
+                    src_loc_tk,
+                    std::format("cannot allocate register {} because it holds "
+                                "a scratch value allocated at {}, simplify the "
+                                "expression",
+                                name, holder_location)),
+            };
+
+            // note: which register a scratch value takes depends on how many
+            //       are live, as running out of them does
+
+            error.kind = compile_error::error_kind::out_of_registers;
+
+            return error;
         }
 
         return register_error(

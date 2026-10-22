@@ -352,6 +352,10 @@ class stmt_def_const final : public statement {
         tc.add_const(name_tk_, indent, name_tk_.text(), constant_);
     }
 
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        flow.declare(name_tk_.text());
+    }
+
     // the value is folded, nothing is read at run time
     auto visit_reads([[maybe_unused]] const read_filter var,
                      [[maybe_unused]] const read_visitor reader) const
@@ -427,6 +431,12 @@ class stmt_def_var final : public statement {
 
         // the assignment names its destination itself
         assign_var_.compile(tc, indent, destination{});
+    }
+
+    // the initializer is read before the name is declared
+    auto trace_assignment(assignment_flow& flow) const -> void override {
+        assert_var_not_used(flow);
+        flow.declare(name_tk_.text());
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const

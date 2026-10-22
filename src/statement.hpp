@@ -383,7 +383,7 @@ class statement {
     // definite assignment: checks the reads of 'flow.var' and records its
     // assignments
     virtual auto trace_assignment(assignment_flow& flow) const -> void {
-        assert_var_not_used(flow.var, flow.assigned);
+        assert_var_not_used(flow);
     }
 
     // reports every read of 'var' in this statement, of every variable when
@@ -422,6 +422,16 @@ class statement {
                             },
                             use);
         };
+    }
+
+    // definite assignment: throws if 'flow.var' is read outside of the
+    // assigned bytes, unless a declaration hides it
+    auto assert_var_not_used(const assignment_flow& flow) const -> void {
+        if (flow.is_shadowed) {
+            return;
+        }
+
+        assert_var_not_used(flow.var, flow.assigned);
     }
 
     // definite assignment: throws if 'var' is read outside of the 'assigned'
@@ -484,6 +494,12 @@ class statement {
         assert(type_ != nullptr);
 
         return *type_;
+    }
+
+    // a name or a literal read in place, e.g. 'x' or '(x)', not '-x' or '-(x)'
+    [[nodiscard]] auto is_bare_name_or_literal() const -> bool {
+        return is_name_or_literal() and not is_expression() and
+               get_unary_ops().is_empty();
     }
 
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {

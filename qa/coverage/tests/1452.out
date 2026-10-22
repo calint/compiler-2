@@ -1,0 +1,4 @@
+
+1452.baz:6:10: array 'a' must be indexed
+    if -(a) == b {
+         ^

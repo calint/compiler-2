@@ -345,7 +345,7 @@ class program final {
 
         tc_.enter_block();
 
-        loaded_paths_.insert(std::filesystem::weakly_canonical(files.name(0)));
+        loaded_paths_.insert(main_file_path(files.name(0)));
 
         parse_file(0);
 
@@ -734,6 +734,21 @@ class program final {
         // note: unsigned, the bytes of UTF-8 are above DEL
 
         return byte < ' ' or byte == '\x7f';
+    }
+
+    // the path an include of the main file compares with; a file that was
+    // read but has no canonical path, e.g. '/dev/stdin' of a pipe, is known
+    // by its own
+    [[nodiscard]] static auto main_file_path(const std::string_view name)
+        -> std::filesystem::path {
+
+        std::error_code error;
+
+        const std::filesystem::path path{
+            std::filesystem::weakly_canonical(name, error),
+        };
+
+        return error ? std::filesystem::path{name}.lexically_normal() : path;
     }
 
     // only definitions are allowed at the top level

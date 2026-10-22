@@ -3215,10 +3215,9 @@ class toc final {
                                               const token& src_loc_tk,
                                               std::string text) -> std::string {
 
-        return data_.add_constant(
-            std::format("{}.{}", kind,
-                        source_location_for_use_in_label(src_loc_tk)),
-            std::move(text));
+        // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
+        return data_.add_constant(create_unique_label(src_loc_tk, kind),
+                                  std::move(text));
     }
 
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,

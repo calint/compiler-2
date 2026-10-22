@@ -1625,8 +1625,9 @@ SRC=0534 && EXP=0 && RUN
 # x86: division needs 'rdx' while it holds a last resort scratch value
 if [[ $MACHINE == x86_64 ]]; then SRC=0535 && COMPERR; fi
 
-# x86: a variable shift needs 'rcx' while it holds a last resort scratch value
-if [[ $MACHINE == x86_64 ]]; then SRC=0536 && COMPERR; fi
+# x86: a variable shift needs 'rcx' while it holds a last resort scratch value,
+# the other version of the code compiles
+if [[ $MACHINE == x86_64 ]]; then SRC=0536 && EXP=119 && RUN; fi
 
 # x86: a nested expression deeper than all fourteen scratch registers
 if [[ $MACHINE == x86_64 ]]; then SRC=0537 && COMPERR; fi
@@ -3160,7 +3161,8 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1016 && COMPERR; fi
 # a shift count wider than the value is narrowed, as any operand
 SRC=1017 && COMPERR
 
-# x86: a shift count computed in 'rcx' while the other scratch registers hold values is a register error
+# x86: a shift count computed in 'rcx' while the other scratch registers hold
+# values, the other version of the code compiles up to the index error
 if [[ $MACHINE == x86_64 ]]; then SRC=1018 && COMPERR; fi
 
 # a shift count wider than the value in a condition is narrowed
@@ -4598,3 +4600,41 @@ SRC=1441 && COMPERR
 
 # a branch that a constant argument makes false is not compiled
 SRC=1442 && EXP=7 && RUN
+
+# a stored condition decided by a constant or an instance compare after a
+# run-time element
+SRC=1443 && EXP=0 && RUN
+
+# a constant initializer with bytes that differ per call or per instance
+SRC=1444 && EXP=7 && RUN
+
+# an error in an included function keeps the frame of the call whose offsets
+# in the calling file span it
+SRC=1445 && COMPERR
+
+# a declaration named like the result hides it in the definite-assignment check
+SRC=1446 && EXP=11 && RUN
+SRC=1447 && COMPERR
+
+# a generic function or a method of a generic type without '('
+SRC=1448 && COMPERR
+SRC=1449 && COMPERR
+
+# a function named like a type is called in an initializer
+SRC=1450 && EXP=7 && RUN
+
+# a unary operator on a parenthesized name makes a value
+SRC=1451 && COMPERR
+SRC=1452 && COMPERR
+SRC=1453 && COMPERR
+
+# a path that ends at a method where an array is expected
+SRC=1454 && COMPERR
+SRC=1455 && COMPERR
+SRC=1456 && COMPERR
+
+# unary operators separated by whitespace
+SRC=1457 && EXP=14 && RUN
+
+# an ordering comparison of two 'bool's
+SRC=1458 && COMPERR

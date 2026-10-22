@@ -1,0 +1,5 @@
+# a generic function without '(' is rejected at its definition, the skip of
+# its body would take the next definition
+func f<T type>
+func main() {
+}

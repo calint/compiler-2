@@ -467,6 +467,8 @@ class stmt_identifier final : public statement {
 
     // an array or an element of one, where a bulk operation starts
     auto assert_array_or_element() const -> void {
+        assert_not_method();
+
         if (is_array_ or is_array_element()) {
             return;
         }
@@ -498,6 +500,19 @@ class stmt_identifier final : public statement {
                 .count_text{std::format("count {}", count)},
                 .array_name{path_as_string_},
             });
+    }
+
+    // where only an array is expected, the path does not end at a method,
+    // e.g. 'array_length(a.m)'
+    auto assert_not_method() const -> void {
+        if (not is_method_receiver()) {
+            return;
+        }
+
+        throw compile_error{
+            method_name_tk_,
+            std::format("'{}.{}' is a method, expected an array",
+                        path_as_string_, method_name_tk_.text())};
     }
 
     [[nodiscard]] auto first_token() const -> const token& {
@@ -543,7 +558,9 @@ class stmt_identifier final : public statement {
 
     // a run-time index does not prove which element is written
     auto record_assignment(assignment_flow& flow) const -> void {
-        if (not first_token().is_text(flow.var) or not is_exact_access()) {
+        if (flow.is_shadowed or not first_token().is_text(flow.var) or
+            not is_exact_access()) {
+
             return;
         }
 

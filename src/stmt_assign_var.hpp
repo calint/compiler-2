@@ -132,7 +132,7 @@ class stmt_assign_var final : public statement {
 
     // the value is read before the destination is written
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        assert_var_not_used(flow.var, flow.assigned);
+        assert_var_not_used(flow);
         stmt_ident_.record_assignment(flow);
     }
 

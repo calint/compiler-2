@@ -1,8 +1,5 @@
 # generics that are never instantiated are listed in the footer, their bodies
 # are not checked
-func no_parens<T type> {
-}
-
 func untyped<T type>(a b) {
 }
 

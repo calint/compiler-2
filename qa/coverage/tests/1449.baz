@@ -1,0 +1,6 @@
+# a method of a generic type without '(' is rejected at its definition, the
+# skip of its body would take the next definition
+type text<n> { chars i8[n] }
+func text.print
+func main() {
+}

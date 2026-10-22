@@ -1,0 +1,25 @@
+# a stored condition holds its value when a constant or a compare of
+# instances decides it after a run-time element
+
+type point { x, y }
+
+func accept(x, strict bool) res bool {
+    res = x == 3 or (x == 2 and strict)
+}
+
+func main() {
+    var x = 2
+    var p = point{1, 2}
+    var q = point{1, 2}
+    var a = x == 3 or (x == 2 and false)
+    if a exit(1)
+    var b = x == 2 and (x == 1 or true)
+    if not b exit(2)
+    var c = p == q or x == 1
+    if not c exit(3)
+    var d = p != q or p == q or x == 1
+    if not d exit(4)
+    if accept(x, false) exit(5)
+    if not accept(x, true) exit(6)
+    exit(0)
+}

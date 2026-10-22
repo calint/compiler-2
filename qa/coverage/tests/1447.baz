@@ -1,0 +1,12 @@
+# setting a variable that hides the result does not set the result
+func f() res {
+    {
+        var res = 1
+        res = 5
+    }
+}
+
+func main() {
+    var r = f()
+    exit(r)
+}

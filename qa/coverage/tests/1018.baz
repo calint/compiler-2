@@ -1,4 +1,4 @@
-# x86: a shift count computed in 'rcx' while the other scratch registers hold values is a register error
+# x86: 'rcx' for a shift count holds a scratch value, the other version compiles
 
 type pt{x,y}type box{a pt,items[4]}func rec(acc)res{res=acc}func f0(p0)res{var acc0=(0){if(p0)<2154{}}res=acc0}func f1(p0,p1,p2[])res{var acc1=(0)if((acc1)>(((p1))))and((((p0)+(acc1))<<(((7))&7))<((acc1)+((p2[p0<<p0&3])))){}res=32768}func f2(p0)res{var acc2=(0)if((((1)))*((p0)-((2))))!=7>>1{{}}res=32768}func main(){var v0=(211)var v1=(1766)var v2=(2746)var v3=(2906)var arr=[4]var bytes=i8[8]var p=pt
     var bx=box

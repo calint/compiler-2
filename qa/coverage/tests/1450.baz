@@ -1,0 +1,14 @@
+# a function named like a type is called in an initializer as anywhere else
+type point { x }
+
+func point(a) res {
+    res = a
+}
+
+func main() {
+    var y = point(3)
+    let z = point(4)
+    var p = point
+    p.x = y + z
+    exit(p.x)
+}

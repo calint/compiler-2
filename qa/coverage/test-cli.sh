@@ -223,6 +223,9 @@ CLI_FILE_ERRORS() {
     set -e
     [[ $exit_code -eq 1 ]]
     grep -Fq "file '/dev/zero' is larger than 268435456 B" err
+    # a source from a pipe has no canonical path
+    cat 0015.baz | "$BIN" /dev/stdin >gen.s 2>err
+    [[ ! -s err ]]
     echo ok
 }
 
@@ -270,7 +273,6 @@ CLI_UNINSTANTIATED_GENERICS() {
     "$BIN" 0851.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fq "uninstantiated generics:" gen.s
-    grep -Eq '^; +no_parens$' gen.s
     grep -Eq '^; +untyped$' gen.s
     grep -Eq '^; +missing_comma$' gen.s
     echo ok

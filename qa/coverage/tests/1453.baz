@@ -1,0 +1,9 @@
+# a unary operator on a parenthesized instance applies to a number
+type point { x, y }
+
+func main() {
+    var p = point{1, 2}
+    if -(p) == p {
+        exit(1)
+    }
+}

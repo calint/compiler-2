@@ -1,0 +1,8 @@
+# two 'bool's are compared only for equality, they are not numbers
+func main() {
+    var t = true
+    var f = false
+    if t > f {
+        exit(1)
+    }
+}

@@ -1,0 +1,9 @@
+# unary operators may be separated by whitespace, as the first is from its
+# operand
+func main() {
+    var y = 3
+    var a = - -y
+    var b = -  ~ - y
+    var c = 10 - - y
+    exit(a + b + c)
+}

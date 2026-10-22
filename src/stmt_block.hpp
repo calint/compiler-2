@@ -82,16 +82,21 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
+    // a declaration hides the traced variable only to the end of the block
     auto trace_assignment(assignment_flow& flow) const -> void override {
+        const bool was_shadowed{flow.is_shadowed};
+
         for (const std::unique_ptr<statement>& s : statements_) {
             s->trace_assignment(flow);
 
             // statements after 'return', 'break', 'continue' or 'exit' never
             // run
             if (not flow.is_reachable) {
-                return;
+                break;
             }
         }
+
+        flow.is_shadowed = was_shadowed;
     }
 
     //

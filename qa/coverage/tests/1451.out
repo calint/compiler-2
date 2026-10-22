@@ -1,0 +1,4 @@
+
+1451.baz:4:21: '-(buf)' is not an array
+    var n = read(0, -(buf))
+                    ^

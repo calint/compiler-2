@@ -960,11 +960,10 @@ class func_instantiator final {
                      : head.name,
         };
 
-        // note: a missing '(' is reported when an instance is parsed
-        const signature_types types{
-            head.open_paren_tk.is_empty() ? signature_types{}
-                                          : read_signature_types(tc, tz),
-        };
+        // note: the definition checked that the '(' follows
+        assert(not head.open_paren_tk.is_empty());
+
+        const signature_types types{read_signature_types(tc, tz)};
 
         // a constructor is called as 'point.at(...)', there is no place for
         // type arguments
@@ -1265,13 +1264,21 @@ class stmt_def_func_generic final : public statement {
                           tokenizer& tz)
         : statement{tk} {
 
+        // note: the signature is checked before the definition, which makes
+        //       the instances of the types already defined, e.g. 'str.print'
+
         if (head.is_generic_type_method) {
+            skip_signature(tc, head, tz);
             func_instantiator::define_method(tc, tk, head);
         } else {
-            func_instantiator::define_func(tc, tk, head, tz, std::nullopt);
-        }
+            // e.g. 'func f<T type> {'
+            if (head.open_paren_tk.is_empty()) {
+                throw compile_error{tz, "expected '(' after function name"};
+            }
 
-        skip_signature(tc, head, tz);
+            func_instantiator::define_func(tc, tk, head, tz, std::nullopt);
+            skip_signature(tc, head, tz);
+        }
 
         generic_text_ = tz.skip_braced_block_after(tk);
     }
@@ -1297,21 +1304,31 @@ class stmt_def_func_generic final : public statement {
     // statics
     //
 
-    // the body must follow the signature, else the skip of the body would take
+    // the '(' and the body must follow, else the skip of the body would take
     // the next definition, e.g. 'func g' after 'func f<T type>(x T)'; other
     // errors in the signature are found when an instance is parsed; 'tz' is
     // after the head
     static auto skip_signature(const toc& tc, const func_head& head,
                                tokenizer& tz) -> void {
 
+        // e.g. the '.print(' of 'func text.print()' or the '.to<T type>(' of
+        // 'func text.to<T type>()'
         if (head.is_generic_type_method) {
-            // e.g. the '.print(' of 'func text.print()'
-            if (tz.skip_to_open_paren().is_empty()) {
-                return;
+            const token dot_tk{tz.is_next_char_token('.')};
+
+            // note: 'func_head::names_generic_type' saw the '.'
+            assert(not dot_tk.is_empty());
+
+            if (tz.next_token().text().empty()) {
+                throw compile_error{tz, "expected method name after '.'"};
             }
-        } else if (head.open_paren_tk.is_empty()) {
-            // e.g. 'func f<T type> {'
-            return;
+
+            if (tz.peek_char_after_whitespace() == '<') {
+                std::ignore = generic_param::parse(tz);
+            }
+
+            std::ignore =
+                tz.expect_char_token('(', "expected '(' after function name");
         }
 
         tz.skip_to_close_paren();

@@ -1,0 +1,31 @@
+# a declaration named like the result hides it to the end of its block, the
+# definite-assignment check then traces the result only outside that block
+
+func block() res {
+    {
+        var res = 1
+        res = res + 1
+    }
+    res = 2
+}
+
+func branch() res {
+    if 1 == 1 {
+        let res = 3
+        var x = res
+    }
+    res = 4
+}
+
+func loop_name(arr[]) i {
+    foo arr {
+        var x = i
+    }
+    i = 5
+}
+
+func main() {
+    var a = []{1, 2}
+    var r = block() + branch() + loop_name(a)
+    exit(r)
+}

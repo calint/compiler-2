@@ -199,6 +199,7 @@ class expr_bool_op final : public statement {
     auto assert_boolean_operands() const -> void {
         if (not is_shorthand_) {
             assert_not_boolean_with_integer();
+            assert_boolean_equality_only();
             return;
         }
 
@@ -285,6 +286,22 @@ class expr_bool_op final : public statement {
     }
 
   private:
+    // e.g. 'a < b' of two 'bool's, which are not numbers
+    auto assert_boolean_equality_only() const -> void {
+        if (not lhs_.get_type().is_bool()) {
+            return;
+        }
+
+        if (op_ == machine::comparison_operator::equal or
+            op_ == machine::comparison_operator::not_equal) {
+
+            return;
+        }
+
+        throw compile_error{lhs_.tok(),
+                            "a 'bool' is compared only with '==' or '!='"};
+    }
+
     // a comparison that folds is checked like one that is compiled
     auto assert_folded_sides_fit(const toc& tc) const -> void {
         if (is_shorthand_) {
@@ -345,6 +362,7 @@ class expr_bool_op final : public statement {
         machine::comparison_action branch_action{action};
 
         // the stored result has the inversion applied
+        branch_action.operation = machine::comparison_operator::not_equal;
         branch_action.destination = {};
         branch_action.inverted = false;
 
@@ -400,6 +418,11 @@ class expr_bool_op final : public statement {
 
         x.comment(lhs_.tok(), indent, "const eval to {}",
                   value ? "true" : "false");
+
+        // note: a run-time element before it may have stored the other value
+        if (not action.destination.is_empty()) {
+            x.store_boolean(tok(), indent, action.destination, value);
+        }
 
         if (value == action.branch_on_true) {
             x.branch(indent, action.target);
@@ -649,9 +672,9 @@ class expr_bool_op final : public statement {
 
         const std::string_view type_name{side.get_type().name()};
 
-        // e.g. the '-' of '-p == p' applies to a number
+        // e.g. the '-' of '-p == p' or '-(p) == p' applies to a number
         const bool has_unary_ops{
-            side.is_name_or_literal() and not side.get_unary_ops().is_empty(),
+            side.is_name_or_literal() and not side.is_bare_name_or_literal(),
         };
 
         if (is_equality and not has_unary_ops) {
@@ -821,9 +844,7 @@ class expr_bool_op final : public statement {
                                                 const expr_arith& side)
         -> bool {
 
-        if (not side.is_name_or_literal() or
-            not side.get_unary_ops().is_empty()) {
-
+        if (not side.is_bare_name_or_literal()) {
             return false;
         }
 
@@ -1449,23 +1470,17 @@ class expr_bool final : public statement {
             toc::end_label(tc.create_unique_label(tok(), "bool")),
         };
 
-        const condition_result const_eval{
-            compile(tc, indent,
-                    {
-                        .if_false{jmp_to_end},
-                        .if_true{jmp_to_end},
-                    },
-                    dst),
-        };
+        // note: every element stores its value, a known result included
+        std::ignore = compile(tc, indent,
+                              {
+                                  .if_false{jmp_to_end},
+                                  .if_true{jmp_to_end},
+                              },
+                              dst);
 
         machine& x{tc.machine()};
 
         x.label(indent, jmp_to_end);
-
-        // a constant evaluation stores its value
-        if (is_known(const_eval)) {
-            x.store_boolean(tok(), indent, dst, result_value(const_eval));
-        }
     }
 
     // earlier elements jump to the label that begins a nested list

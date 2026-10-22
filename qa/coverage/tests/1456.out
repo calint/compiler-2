@@ -1,0 +1,4 @@
+
+1456.baz:10:28: 'a.m' is a method, expected an array
+    var n = array_length(a.m)
+                           ^

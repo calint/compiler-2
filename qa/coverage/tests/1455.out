@@ -1,0 +1,4 @@
+
+1455.baz:10:11: 'a.m' is a method, expected an array
+    foo a.m {
+          ^

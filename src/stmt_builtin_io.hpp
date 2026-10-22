@@ -222,7 +222,7 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         // e.g. not '-b', a unary operator makes a value
-        if (buffer.is_name_or_literal() and buffer.get_unary_ops().is_empty()) {
+        if (buffer.is_bare_name_or_literal()) {
             const ident_info info{make_ident_info(tc, buffer)};
 
             if (info.is_var() and info.is_array()) {

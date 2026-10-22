@@ -71,7 +71,8 @@
 }
 
 // e.g. 'point' in 'var p = point' is 'point{}', a user type name not followed
-// by '{', '[' or '.' has no other meaning
+// by '{', '[', '.' or '(' has no other meaning, e.g. 'point(3)' calls a
+// function named like the type
 [[nodiscard]] inline auto is_bare_record_type(const toc& tc, const token& tk,
                                               tokenizer& tz) -> bool {
 
@@ -85,7 +86,7 @@
 
     const char next{tz.peek_char_after_whitespace()};
 
-    return next != '{' and next != '[' and next != '.';
+    return next != '{' and next != '[' and next != '.' and next != '(';
 }
 
 // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',

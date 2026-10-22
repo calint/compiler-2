@@ -1,0 +1,4 @@
+
+1458.baz:5:8: a 'bool' is compared only with '==' or '!='
+    if t > f {
+       ^

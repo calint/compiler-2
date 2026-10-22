@@ -135,6 +135,10 @@ struct assignment_flow {
 
     bool is_reachable{true};
 
+    // a declaration in the current block hides 'var', the name then means
+    // that declaration until the block ends
+    bool is_shadowed{};
+
     auto assert_set_at_return() const -> void {
         if (assigned.is_full()) {
             return;
@@ -142,6 +146,13 @@ struct assignment_flow {
 
         throw compile_error{
             src_loc_tk, "function may return without setting its return value"};
+    }
+
+    // a declaration of 'name' hides 'var' for the rest of its block
+    auto declare(const std::string_view name) -> void {
+        if (name == var) {
+            is_shadowed = true;
+        }
     }
 
     // a path that never reaches the next statement cannot narrow a merge

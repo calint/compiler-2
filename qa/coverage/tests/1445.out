@@ -1,0 +1,7 @@
+
+include/frame.baz:3:71: divisor must not be zero
+func divide(a) res {                                       res = 10 / a }
+                                                                      ^
+1445.baz:7:13: called from 'divide(0)'
+    var x = divide(0)
+            ^~~~~~

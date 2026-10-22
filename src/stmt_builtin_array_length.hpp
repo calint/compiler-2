@@ -36,6 +36,7 @@ class stmt_builtin_array_length final : public expression {
         }
 
         stmt_ident_ = {tc, {}, tz.next_token(), tz};
+        stmt_ident_.assert_not_method();
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the argument");

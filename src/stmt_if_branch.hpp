@@ -42,7 +42,7 @@ class stmt_if_branch final : public statement {
 
     // the condition is read before the branch code runs
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        condition_.assert_var_not_used(flow.var, flow.assigned);
+        condition_.assert_var_not_used(flow);
         code_.trace_assignment(flow);
     }
 

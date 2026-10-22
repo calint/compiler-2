@@ -56,7 +56,7 @@ class stmt_builtin_exit final : public stmt_call {
     // the program ends here, so this path never returns and cannot leave the
     // result unset
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        assert_var_not_used(flow.var, flow.assigned);
+        assert_var_not_used(flow);
         flow.end_path();
     }
 };

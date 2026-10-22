@@ -19,6 +19,8 @@
 class unary_ops final {
     token ws_pre_;          // whitespace before the ops, at where they start
     std::vector<char> ops_; // the unary ops as characters
+    // the whitespace after each op but the last, e.g. the ' ' of '- -x'
+    std::vector<token> ws_between_;
 
   public:
     explicit unary_ops(tokenizer& tz) : ws_pre_{tz.next_whitespace_token()} {
@@ -30,6 +32,16 @@ class unary_ops final {
             } else {
                 break;
             }
+
+            // note: the whitespace before the operand belongs to its token
+            const token ws_tk{tz.next_whitespace_token()};
+
+            if (tz.peek_char() != '~' and tz.peek_char() != '-') {
+                tz.put_back_token(ws_tk);
+                break;
+            }
+
+            ws_between_.emplace_back(ws_tk);
         }
     }
 
@@ -94,8 +106,14 @@ class unary_ops final {
 
     auto put_back(tokenizer& tz) const -> void {
         // the last character read is put back first
-        for (const char o : ops_ | std::views::reverse) {
-            tz.put_back_char(o);
+        for (size_t i{ops_.size()}; i > 0; --i) {
+            const size_t op_ix{i - 1};
+
+            tz.put_back_char(ops_.at(op_ix));
+
+            if (op_ix > 0) {
+                tz.put_back_token(ws_between_.at(op_ix - 1));
+            }
         }
 
         tz.put_back_token(ws_pre_);
@@ -103,9 +121,17 @@ class unary_ops final {
 
     auto source_to(std::ostream& os) const -> void {
         ws_pre_.source_to(os);
-        source_to_without_whitespace(os);
+
+        for (size_t i{}; i < ops_.size(); ++i) {
+            if (i > 0) {
+                ws_between_.at(i - 1).source_to(os);
+            }
+
+            std::print(os, "{}", ops_.at(i));
+        }
     }
 
+    // the ops without whitespace, e.g. '--' of '- -x'
     [[nodiscard]] auto to_string() const -> std::string_view {
         return {ops_.begin(), ops_.end()};
     }
@@ -132,9 +158,5 @@ class unary_ops final {
         }
 
         return false;
-    }
-
-    auto source_to_without_whitespace(std::ostream& os) const -> void {
-        std::print(os, "{}", to_string());
     }
 };
