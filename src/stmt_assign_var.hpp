@@ -93,8 +93,7 @@ class stmt_assign_var final : public statement {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         const std::optional<storage_path> dst_storage{
-            tc.storage_of(stmt_ident_.first_token(),
-                          stmt_ident_.first_token().text(),
+            tc.storage_of(stmt_ident_.first_token().text(),
                           stmt_ident_.accessed_path()),
         };
 
@@ -205,7 +204,7 @@ class stmt_assign_var final : public statement {
                 }
 
                 const std::optional<storage_path> read{
-                    tc.storage_of(src_loc_tk, src_loc_tk.text(), read_path),
+                    tc.storage_of(src_loc_tk.text(), read_path),
                 };
 
                 if (not read or not read->may_overlap(part)) {
@@ -233,7 +232,7 @@ class stmt_assign_var final : public statement {
                 [[maybe_unused]] const byte_range& accessed_bytes,
                 const access_path& read_path) -> void {
                 const std::optional<storage_path> read{
-                    tc.storage_of(src_loc_tk, src_loc_tk.text(), read_path),
+                    tc.storage_of(src_loc_tk.text(), read_path),
                 };
 
                 // note: a constant or a value in a register is no storage

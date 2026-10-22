@@ -737,20 +737,19 @@ inline auto assert_not_whole_array(const statement& st, const ident_info& info)
 
     bool is_read{};
 
-    st.visit_reads(
-        std::nullopt,
-        [&](const token& src_loc_tk,
-            [[maybe_unused]] const std::string_view read_text,
-            [[maybe_unused]] const byte_range& accessed_bytes,
-            const access_path& read_path) -> void {
-            const std::optional<storage_path> read{
-                tc.storage_of(src_loc_tk, src_loc_tk.text(), read_path),
-            };
+    st.visit_reads(std::nullopt,
+                   [&](const token& src_loc_tk,
+                       [[maybe_unused]] const std::string_view read_text,
+                       [[maybe_unused]] const byte_range& accessed_bytes,
+                       const access_path& read_path) -> void {
+                       const std::optional<storage_path> read{
+                           tc.storage_of(src_loc_tk.text(), read_path),
+                       };
 
-            if (read and read->may_overlap(*dst.storage())) {
-                is_read = true;
-            }
-        });
+                       if (read and read->may_overlap(*dst.storage())) {
+                           is_read = true;
+                       }
+                   });
 
     return is_read;
 }

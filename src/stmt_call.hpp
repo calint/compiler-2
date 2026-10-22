@@ -444,14 +444,6 @@ struct call_site {
         return toc::temporary_name(tk, "call-arg", index);
     }
 
-    // a temporary of the call is a root variable of its own
-    [[nodiscard]] auto temporary_storage(const toc& tc,
-                                         const std::string_view name) const
-        -> std::optional<storage_path> {
-
-        return tc.storage_of(tk, name, access_path::whole_variable());
-    }
-
     //
     // statics
     //
@@ -462,8 +454,7 @@ struct call_site {
                                               const expr_any& arg)
         -> std::optional<storage_path> {
 
-        return tc.storage_of(arg.tok(),
-                             ident_info::root_of(arg.name_or_literal()),
+        return tc.storage_of(ident_info::root_of(arg.name_or_literal()),
                              arg.accessed_path());
     }
 
@@ -494,6 +485,14 @@ struct call_site {
         return result_type.is_builtin() and not result_type.is_bool() and
                dst_type.is_builtin() and not dst_type.is_bool() and
                result_type.size_bytes() < dst_type.size_bytes();
+    }
+
+    // a temporary of the call is a root variable of its own
+    [[nodiscard]] static auto temporary_storage(const toc& tc,
+                                                const std::string_view name)
+        -> std::optional<storage_path> {
+
+        return tc.storage_of(name, access_path::whole_variable());
     }
 
     // the frames ran out in the dry run of a noinline call, see
@@ -621,7 +620,7 @@ class inline_call {
 
             arg.compile(tc, indent,
                         destination::of_name(
-                            temporary_info, call_.temporary_storage(
+                            temporary_info, call_site::temporary_storage(
                                                 tc, temporary_info.root_id())));
         }
 
@@ -1060,7 +1059,8 @@ class inline_call {
                 const std::string temporary{call_.temporary_argument_name(i)};
 
                 aliases.push_back(make_storage_alias(
-                    param, temporary, call_.temporary_storage(tc, temporary)));
+                    param, temporary,
+                    call_site::temporary_storage(tc, temporary)));
 
                 continue;
             }
@@ -1457,7 +1457,7 @@ class noinline_call {
             arguments.push_back({
                 .info{temporary},
                 .target{
-                    call_.temporary_storage(tc, temporary.root_id()),
+                    call_site::temporary_storage(tc, temporary.root_id()),
                 },
                 .is_temporary{true},
             });
@@ -1480,7 +1480,7 @@ class noinline_call {
                 tc, indent,
                 destination::of_name(
                     result_info,
-                    call_.temporary_storage(tc, result_info.root_id())),
+                    call_site::temporary_storage(tc, result_info.root_id())),
                 func, arguments);
 
             machine& x{tc.machine()};

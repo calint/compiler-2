@@ -3061,8 +3061,7 @@ class toc final {
     // of it, empty when it holds no storage, e.g. a constant. a parameter is
     // followed to its argument and the element 'e' of a 'foo' is any element
     // of the array it iterates
-    [[nodiscard]] auto storage_of(const token& src_loc_tk,
-                                  const std::string_view name,
+    [[nodiscard]] auto storage_of(const std::string_view name,
                                   const access_path& path) const
         -> std::optional<storage_path> {
 
@@ -3084,8 +3083,12 @@ class toc final {
             return array->any_element(path);
         }
 
+        const var_info& var{
+            scopes_.frames().at(meaning.frame_index).get_var_const_ref(name),
+        };
+
         // a value in a register has no storage, e.g. the counter 'i' of a 'foo'
-        if (make_ident_info(src_loc_tk, name).is_register()) {
+        if (std::holds_alternative<in_value_register>(var.placement)) {
             return std::nullopt;
         }
 

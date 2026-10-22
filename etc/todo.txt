@@ -6,11 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] easy: 'toc::storage_of' resolves the name with 'resolver_.resolve' only
-    to ask whether it is in a register, after 'scopes_.lookup' found its
-    'var_info'; the placement of that 'var_info' tells it (A6 follow-up)
-    => check that the alias and 'foo' element paths resolve to the same
-       'var_info' before using it
 [ ] medium: architecture A8: the checks made while compiling are skipped in
     a branch that is never compiled, so whether a program is accepted can
     depend on the constant arguments of an inlined call, e.g. 'if 1 == 2 {
