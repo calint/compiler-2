@@ -20,12 +20,14 @@
 #   SDCARD SIZE  the sd card image of the cases that follow, sparse, or no
 #                image for 'none'
 #
-# A case expects 'NNN.TARGET.out' instead of 'NNN.out' and a run case the exit
-# code in 'NNN.TARGET.exit' instead of 'EXP' when that file exists, TARGET is
-# the target of the run, e.g. 'NNN.rv32i.out' or 'NNN.rv32i-fpga.exit'.
+# A case expects 'NNN.TARGET.out' instead of 'NNN.out' when that file exists,
+# and 'RUN_ERR', 'RUN_ERR_OPTS' and 'DIFFNOPT' the exit code in
+# 'NNN.TARGET.exit' instead of 'EXP'; TARGET is the target of the run, e.g.
+# 'NNN.rv32i.out' or 'NNN.rv32i-fpga.exit'. 'RUN' compares with 'EXP' only.
 #
 # A case inside 'if [[ $MACHINE ... ]]' runs only for those targets (x86_64,
-# rv32i, rv32i-qemu, rv32i-fpga). A commented case is disabled on purpose.
+# rv32i, rv32i-qemu, rv32i-fpga), e.g. a 'RUN' whose exit code differs by
+# target. A commented case is disabled on purpose.
 
 # arithmetic precedence and grouping
 SRC=0001 && EXP=58 && RUN
