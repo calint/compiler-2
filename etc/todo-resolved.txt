@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: generics: an error inside an instance found after its parse
+    has no frame naming the instance: the result check
+    ('assert_functions_set_return_value' runs after the parse) and the check
+    of an uncalled method instance ('check_body'); 'generics.hpp' says an
+    error in the text of an instance gets the 'generic_frame's (round 8 G-3,
+    B-5)
+    => design: check the result at the end of the 'stmt_def_func'
+       constructor so the instance catch blocks add the frames; keep the
+       instance frames with the method's 'stmt_def_func' for 'check_body'
+    => done (2026-10-22): as designed; 'stmt_def_func::assert_sets_result'
+       runs at the end of the body's parse ('program' no longer walks every
+       definition), 'func_instance::frames' keeps what made the instance
+       and 'check_body' adds them; the signature rules of 'main' moved to
+       'assert_main_signature', checked after the body and before the
+       result, so 'func main() res {}' still says "'main' cannot have a
+       result"; tests 1513, 1514, 1282 gains its frame
 [x] easy: messages, one consistency pass (round 8):
     1. argument counts: "'point.sum' takes 0 arguments", "expected 1
        argument" ('exit'), "expected 2 to 4 arguments" (io); one form with

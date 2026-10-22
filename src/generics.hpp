@@ -382,6 +382,9 @@ struct func_instance {
     std::string generic_method;
     // the constants of the generic type of a method, in the frame of the body
     std::vector<generic_arg> constants;
+    // what made the instance, e.g. the call 'make<i8>' or the alias 'type str =
+    // text<8>', for the errors that the check of an uncalled instance finds
+    std::vector<generic_frame> frames;
 };
 
 // a method of a generic type, e.g. 'func text.print()', every instance of the

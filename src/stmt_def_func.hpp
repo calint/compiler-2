@@ -361,6 +361,56 @@ class stmt_def_func final : public statement {
         }
     }
 
+    // the frames of what made the instance, see 'func_instance::frames'
+    auto add_instance_frames(compile_error& e) const -> void {
+        if (not instance_) {
+            return;
+        }
+
+        for (const generic_frame& frame : instance_->frames) {
+            e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
+        }
+    }
+
+    // no caller gives 'main' arguments or takes its result
+    auto assert_main_signature() const -> void {
+        if (name() != reserved_names::main) {
+            return;
+        }
+
+        if (not is_inlined()) {
+            throw compile_error{noinline_token(),
+                                "'main' cannot be declared 'noinline'"};
+        }
+
+        if (not params().empty()) {
+            throw compile_error{params().front().tok(),
+                                "'main' cannot have parameters"};
+        }
+
+        if (returns()) {
+            throw compile_error{returns()->ident_tk,
+                                "'main' cannot have a result"};
+        }
+    }
+
+    // every path through the body sets the result, also the end, which
+    // returns like a 'return' statement
+    auto assert_sets_result() const -> void {
+        if (not returns_) {
+            return;
+        }
+
+        assignment_flow flow{
+            returns_->ident_tk.text(),
+            returns_->ident_tk,
+            returns_->type_ptr->size_bytes(),
+        };
+
+        code_.trace_assignment(flow);
+        flow.assert_set_at_return();
+    }
+
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum.len.4.8' for array lengths 4 and 8
     [[nodiscard]] auto
@@ -397,8 +447,9 @@ class stmt_def_func final : public statement {
 
             try {
                 std::ignore = compile_in_frame(tc, indent, {});
-            } catch (const compile_error& e) {
+            } catch (compile_error& e) {
                 if (not takes_from_call or not e.depends_on_call()) {
+                    add_instance_frames(e);
                     throw;
                 }
             }
@@ -772,6 +823,11 @@ class stmt_def_func final : public statement {
 
         code_ = {tc, tz, true};
 
+        // checked here so that the error of an instance gets its frames, a
+        // signature that 'main' cannot have first
+        assert_main_signature();
+        assert_sets_result();
+
         body_uses_ = tc.scopes().current_func_frame().body_uses_of_func();
 
         tc.exit_func(name());
@@ -1064,8 +1120,13 @@ class func_instantiator final {
 
         // an error in the instance reports the call that needed it, like the
         // frames of a generic type instance
+        const generic_frame call_frame{
+            .src_loc_tk{call_tk},
+            .text{name},
+        };
+
         try {
-            parse_func_instance(tc, generic, name, type_args);
+            parse_func_instance(tc, generic, name, type_args, call_frame);
         } catch (compile_error& e) {
             e.add_call_frame(call_tk, name, "instantiated by");
             throw;
@@ -1152,7 +1213,8 @@ class func_instantiator final {
     static auto
     parse_func_instance(toc& tc, const generic_func_info& generic,
                         const std::string& name,
-                        const std::span<const type* const> type_args) -> void {
+                        const std::span<const type* const> type_args,
+                        const generic_frame& call_frame) -> void {
 
         generic_scope scope{tc};
 
@@ -1188,6 +1250,7 @@ class func_instantiator final {
             .name{name},
             .generic_method{},
             .constants{},
+            .frames{call_frame},
         };
 
         // e.g. 'str.append<i8>' keeps 'text.append' and the constants of
@@ -1234,6 +1297,7 @@ class func_instantiator final {
             .name{head.name},
             .generic_method{receiver.method_name(head.method_name_tk.text())},
             .constants{receiver.constants()},
+            .frames{receiver.frames},
         };
 
         tc.add_func_instance(std::make_shared<stmt_def_func>(

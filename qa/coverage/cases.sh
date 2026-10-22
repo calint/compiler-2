@@ -4732,3 +4732,7 @@ SRC=1509 && EXP=255 && RUN_ERR
 SRC=1510 && COMPERR
 SRC=1511 && COMPERR
 SRC=1512 && COMPERR
+
+# an error found after the parse of an instance names what made the instance
+SRC=1513 && COMPERR
+SRC=1514 && COMPERR

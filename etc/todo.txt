@@ -227,15 +227,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     test that reached it is now rejected at the call with '--checks=alias',
     and it is off without; confirm with 'test-coverage.sh report', then
     remove it and its docs paragraph, or find the input that reaches it
-[ ] medium: generics: an error inside an instance found after its parse
-    has no frame naming the instance: the result check
-    ('assert_functions_set_return_value' runs after the parse) and the check
-    of an uncalled method instance ('check_body'); 'generics.hpp' says an
-    error in the text of an instance gets the 'generic_frame's (round 8 G-3,
-    B-5)
-    => design: check the result at the end of the 'stmt_def_func'
-       constructor so the instance catch blocks add the frames; keep the
-       instance frames with the method's 'stmt_def_func' for 'check_body'
 [ ] medium: generics: a duplicate method of a generic type is detected only
     at the first alias ('func text.print' twice is accepted without one);
     a generic body sees the globals defined after it and before its first

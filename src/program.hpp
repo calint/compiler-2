@@ -227,29 +227,6 @@ class assignment_analysis final {
     // statics
     //
 
-    static auto assert_functions_set_return_value(
-        const std::span<const stmt_def_func* const> funcs) -> void {
-
-        for (const stmt_def_func* const f : funcs) {
-            const std::optional<func_return_info> ret_info{f->returns()};
-
-            if (not ret_info) {
-                continue;
-            }
-
-            assignment_flow flow{
-                ret_info->ident_tk.text(),
-                ret_info->ident_tk,
-                ret_info->type_ptr->size_bytes(),
-            };
-
-            f->code().trace_assignment(flow);
-
-            // the end of the body returns like a 'return' statement
-            flow.assert_set_at_return();
-        }
-    }
-
     // uses the definite-assignment walk for its reachability only
     [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
         -> bool {
@@ -329,9 +306,6 @@ class program final {
         tc_.exit_block();
 
         main_func_ = &checked_main(tc_);
-
-        assignment_analysis::assert_functions_set_return_value(
-            tc_.funcs().defs());
     }
 
     auto build(std::ostream& os) -> void {
@@ -573,25 +547,9 @@ class program final {
                 "'main' cannot have type parameters"};
         }
 
-        const stmt_def_func& func_main{tc.get_main_or_throw()};
+        // note: 'stmt_def_func::assert_main_signature' checked the rest
 
-        if (not func_main.is_inlined()) {
-            throw compile_error{func_main.noinline_token(),
-                                "'main' cannot be declared 'noinline'"};
-        }
-
-        // no caller gives 'main' arguments or takes its result
-        if (not func_main.params().empty()) {
-            throw compile_error{func_main.params().front().tok(),
-                                "'main' cannot have parameters"};
-        }
-
-        if (func_main.returns()) {
-            throw compile_error{func_main.returns()->ident_tk,
-                                "'main' cannot have a result"};
-        }
-
-        return func_main;
+        return tc.get_main_or_throw();
     }
 
     // the main function is compiled where the program starts

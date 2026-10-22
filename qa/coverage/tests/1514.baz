@@ -1,0 +1,8 @@
+# a result that an instance of a method may leave unset names the alias that
+# made the instance
+type list<T type> {x T}
+func list.get() res T {
+    var z = 1
+}
+type a = list<i8>
+func main() {}

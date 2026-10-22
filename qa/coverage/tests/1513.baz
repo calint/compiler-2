@@ -1,0 +1,8 @@
+# a result that an instance of a generic function may leave unset names the
+# call that made the instance
+func make<T type>() res T {
+    var x = 1
+}
+func main() {
+    var y = make<i8>()
+}

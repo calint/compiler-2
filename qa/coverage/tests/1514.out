@@ -1,0 +1,7 @@
+
+1514.baz:4:17: function may return without setting its return value
+func list.get() res T {
+                ^~~
+1514.baz:7:6: instantiated by
+type a = list<i8>
+     ^
