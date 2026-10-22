@@ -1089,6 +1089,19 @@ class machine {
         mark_used("sector_write");
     }
 
+    // the lines buffered so far, for backend tests that read what an emit
+    // adds with 'emitted_text'
+    [[nodiscard]] auto emitted_line_count() const -> size_t {
+        return target_assembler().line_count();
+    }
+
+    // the text of the lines buffered from 'first_line' on
+    [[nodiscard]] auto emitted_text(const size_t first_line) const
+        -> std::string {
+
+        return target_assembler().text_from(first_line);
+    }
+
     // a blank line that separates the code from the report
     auto separate_report() -> void {
         target_assembler().add_separator_newline();

@@ -10,6 +10,7 @@
 #include <iterator>
 #include <memory>
 #include <optional>
+#include <ranges>
 #include <ostream>
 #include <print>
 #include <span>
@@ -239,6 +240,8 @@ class assembler {
     // nothing is buffered
     [[nodiscard]] auto is_empty() const -> bool { return lines_.empty(); }
 
+    [[nodiscard]] auto line_count() const -> size_t { return lines_.size(); }
+
     auto label(const size_t indent, const std::string_view name) -> void {
         add_label(std::string{name},
                   std::format("{}{}:", indentation(indent), name));
@@ -311,6 +314,22 @@ class assembler {
     // lines are written to 'os' as they are added, or buffered when null
     auto set_direct_output(std::ostream* const os) -> void {
         direct_output_ = os;
+    }
+
+    // the text of the lines from 'first_line' on, as 'write' writes them
+    [[nodiscard]] auto text_from(const size_t first_line) const -> std::string {
+        assert(captures_.empty());
+
+        std::string text;
+
+        for (const line& l : lines_ | std::views::drop(first_line)) {
+            if (not l.removed) {
+                text += l.text;
+                text += '\n';
+            }
+        }
+
+        return text;
     }
 
     // writes the lines as they are, far jumps are left to the caller

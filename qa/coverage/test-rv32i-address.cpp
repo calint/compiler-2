@@ -47,13 +47,31 @@
 //   12 the front end tables: scopes and storage
 // ============================================================================
 
-// instruction-shape tests must not depend on register diagnostic comments
-class assembly_output final : public std::ostringstream {
-  public:
-    using std::ostringstream::str;
+// the text a backend emitted since this was made or cleared, read by the
+// checks of emitted text from the lines the backend buffers
+class emitted_since final {
+    std::reference_wrapper<const machine> backend_;
+    size_t first_line_;
+    // instruction-shape checks must not depend on register diagnostic
+    // comments
+    bool drops_register_comments_;
 
-    auto str() const -> std::string {
-        std::istringstream input{std::ostringstream::str()};
+  public:
+    explicit emitted_since(const machine& backend,
+                           const bool drops_register_comments = false)
+        : backend_{backend}, first_line_{backend.emitted_line_count()},
+          drops_register_comments_{drops_register_comments} {}
+
+    auto clear() -> void { first_line_ = backend_.get().emitted_line_count(); }
+
+    [[nodiscard]] auto str() const -> std::string {
+        const std::string text{backend_.get().emitted_text(first_line_)};
+
+        if (not drops_register_comments_) {
+            return text;
+        }
+
+        std::istringstream input{text};
         std::string result;
         std::string line;
         while (std::getline(input, line)) {
@@ -149,16 +167,15 @@ auto rejected_with(const action_t& action, const std::string_view text = {})
 
 // an RV32I backend whose output is captured, for checks of emitted text
 struct captured_rv32i {
-    assembly_output output;
-    std::ostream stream{output.rdbuf()};
-    machine_rv32i_linux backend{&stream, test_builtins};
+    machine_rv32i_linux backend{nullptr, test_builtins};
+    emitted_since output{backend, true};
 
     // the text that 'emit' adds, the output is empty again afterwards
     auto emitted(const auto& emit) -> std::string {
-        output.str({});
+        output.clear();
         emit();
         std::string text{output.str()};
-        output.str({});
+        output.clear();
 
         return text;
     }
@@ -166,8 +183,8 @@ struct captured_rv32i {
 
 // an x86_64 backend whose output is captured
 struct captured_x86_64 {
-    std::ostringstream output;
-    machine_x86_64 backend{&output, test_builtins, {}};
+    machine_x86_64 backend{nullptr, test_builtins, {}};
+    emitted_since output{backend};
 };
 
 // allocates scratch registers so that a check proves it needs no more
@@ -194,7 +211,7 @@ auto compiled_rv32i(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{&output, test_builtins};
+    machine_rv32i_linux compiler{nullptr, test_builtins};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -207,7 +224,7 @@ auto compiled_x86_64(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_x86_64 compiler{&output, test_builtins, &files};
+    machine_x86_64 compiler{nullptr, test_builtins, &files};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -750,7 +767,7 @@ auto check_equal_size_choice() -> void {
     for (const assembler::jump_mode jumps :
          {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{&output, test_builtins, {}, {.jumps{jumps}}};
+        machine_rv32i_linux backend{nullptr, test_builtins, {}, {.jumps{jumps}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -786,7 +803,7 @@ auto check_version_state_kept() -> void {
     for (const machine::kept_version kept :
          {machine::kept_version::smaller, machine::kept_version::last}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{&output, test_builtins, {}, {.kept{kept}}};
+        machine_rv32i_linux backend{nullptr, test_builtins, {}, {.kept{kept}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -828,7 +845,7 @@ auto check_version_state_kept() -> void {
 // the jump optimizer sees the jumps and labels that the backend emits
 auto check_backend_jump_optimization() -> void {
     std::ostringstream output;
-    machine_rv32i_linux backend{&output, test_builtins, {}, {.jumps{assembler::jump_mode::optimized}}};
+    machine_rv32i_linux backend{nullptr, test_builtins, {}, {.jumps{assembler::jump_mode::optimized}}};
     backend.start();
 
     const operand left{operand::reg("a0", integer)};
@@ -923,14 +940,14 @@ auto check_variable_comments() -> void {
 
 // an RV32I backend over a source file, its comments carry source positions
 struct located_rv32i {
-    std::ostringstream comments;
     source_files files;
-    machine_rv32i_linux backend;
+    machine_rv32i_linux backend{nullptr, test_builtins, &files};
+    emitted_since comments{backend};
 
     // 'value' on the second line, at column 5
     const token location{0, {}, 10, "value", 15, {}, 2, false};
 
-    located_rv32i() : backend{&comments, test_builtins, &files} {
+    located_rv32i() {
         files.add("test.baz", "first\n    value");
     }
 };
@@ -1259,7 +1276,7 @@ auto check_x86_syscall_register_saving() -> void {
             };
 
             for (const std::function<void()>& system_call : system_calls) {
-                x86.output.str({});
+                x86.output.clear();
                 system_call();
 
                 const std::string assembly{x86.output.str()};
@@ -1284,7 +1301,7 @@ auto check_x86_syscall_register_saving() -> void {
             }
 
             // 'exit' does not return, so nothing is saved
-            x86.output.str({});
+            x86.output.clear();
             backend.exit(token{}, 0, args.at(0));
             assert(not x86.output.str().contains("push "));
             assert(not x86.output.str().contains("pop "));
@@ -1390,7 +1407,7 @@ auto check_memory_comparison_tail() -> void {
                     .rhs{[&](const operand&, const operand&,
                              const machine::address_use use) -> void {
                         use(buffer);
-                        rv32i.output.str({});
+                        rv32i.output.clear();
                     }},
                     .dst{result},
                     .inverted{false},
@@ -1419,7 +1436,7 @@ auto check_memory_comparison_tail() -> void {
 
         backend.free_scratch_registers(token{}, 0, held);
         backend.finish();
-        rv32i.output.str({});
+        rv32i.output.clear();
     }
 }
 
@@ -2304,8 +2321,8 @@ auto check_scratch_register_pool() -> void {
 // by a constant ('+' here) never needs the routine
 auto check_multiply_divide_routines() -> void {
     for (const char operation : {'*', '/', '%', '+'}) {
-        std::ostringstream output;
-        machine_rv32i_linux backend{&output, test_builtins};
+        machine_rv32i_linux backend{nullptr, test_builtins};
+        emitted_since output{backend};
 
         const auto computed = [&](const operand& dst, const operand& src) {
             if (operation == '*') {
@@ -2339,7 +2356,7 @@ auto check_multiply_divide_routines() -> void {
             computed(dst, src);
             backend.free_scratch_registers(token{}, 0, held);
 
-            output.str({});
+            output.clear();
         }
 
         for (size_t count{}; count < 2; ++count) {
@@ -2442,7 +2459,7 @@ auto generate_noninline() -> void {
     // note: 2032 is where 'start' puts the variables base past 'dat'
     constexpr size_t variables_base_offset{2032};
 
-    machine_rv32i_linux backend{&std::cout, test_builtins};
+    machine_rv32i_linux backend{nullptr, test_builtins};
     backend.start();
 
     hand_written(backend, "    addi sp, sp, -128\n    sw sp, 124(sp)");
@@ -2540,7 +2557,7 @@ auto generate_noninline() -> void {
 auto generate_frame_checks() -> void {
     constexpr int vars_size_bytes{256};
 
-    machine_rv32i_linux backend{&std::cout, test_builtins};
+    machine_rv32i_linux backend{nullptr, test_builtins};
     backend.start();
 
     // 's3' is where the overflow handler continues
@@ -2607,7 +2624,7 @@ auto generate_long_loop() -> void {
     // note: 3 iterations of 'foo'
     constexpr int64_t iteration_count{3};
 
-    machine_rv32i_linux backend{&std::cout, test_builtins};
+    machine_rv32i_linux backend{nullptr, test_builtins};
     backend.start();
     hand_written(backend, "    addi sp, sp, -16");
 
@@ -2650,7 +2667,7 @@ auto generate_long_loop() -> void {
 // jumps around padding of 8 KiB (needs 'j') and 1.08 MiB (needs 'jump'),
 // executed in every direction
 auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
-    machine_rv32i_linux backend{&std::cout, test_builtins, {}, {.jumps{jumps}}};
+    machine_rv32i_linux backend{nullptr, test_builtins, {}, {.jumps{jumps}}};
     backend.start();
 
     // buffered output must come from the backend, so pad with 'xori' on a
@@ -2760,7 +2777,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{&std::cout, test_builtins, {}, {.jumps{jumps}}};
+    machine_rv32i_linux compiler{nullptr, test_builtins, {}, {.jumps{jumps}}};
 
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(std::cout);
@@ -2796,8 +2813,8 @@ struct bounds_case {
 // check jumped to the panic label, which is compared with the expectation
 auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
                       const size_t case_index) -> void {
-    std::println("    li a0, {}\n    li a1, {}\n    la s3, bounds_result_{}",
-                 parameters.index, parameters.count, case_index);
+    hand_written(backend, std::format("    li a0, {}\n    li a1, {}\n    la s3, bounds_result_{}",
+                 parameters.index, parameters.count, case_index));
 
     // a count found non-negative is remembered until allocated again
     const operand count_register{
@@ -2817,14 +2834,14 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
 
     backend.free_named_register(token{}, 0, count_register);
 
-    std::println("    li a3, 0\nbounds_result_{}:\n    li a4, {}\n"
+    hand_written(backend, std::format("    li a3, 0\nbounds_result_{}:\n    li a4, {}\n"
                  "    beq a3, a4, 1f\n    j bounds_failure\n1:",
-                 case_index, parameters.violated() ? 1 : 0);
+                 case_index, parameters.violated() ? 1 : 0));
 
     // the check must not change its operands
-    std::println("    li a4, {}\n    beq a0, a4, 1f\n    j bounds_failure\n1:\n"
+    hand_written(backend, std::format("    li a4, {}\n    beq a0, a4, 1f\n    j bounds_failure\n1:\n"
                  "    li a4, {}\n    beq a1, a4, 1f\n    j bounds_failure\n1:",
-                 parameters.index, parameters.count);
+                 parameters.index, parameters.count));
 }
 
 // 'bounds-matrix': 'check_bounds' reports a violation exactly when the index
@@ -2867,17 +2884,18 @@ auto generate_bounds_matrix(machine_rv32i& backend) -> void {
 
     backend.free_named_register(token{}, 0, continuation);
     backend.end_main();
-    std::println("baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
+    hand_written(backend, "baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
     backend.exit(token{}, 1, operand::imm(1, integer));
 }
 
 auto generate_bounds() -> void {
-    machine_rv32i_linux backend{&std::cout, test_builtins};
-    std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    machine_rv32i_linux backend{nullptr, test_builtins};
+    hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
     generate_bounds_matrix(backend);
 
     backend.finish();
+    write_with_hand_written(backend);
 }
 
 // ============================================================================
@@ -2890,10 +2908,11 @@ auto generate_bounds() -> void {
 
 // prints the check of one result: continues when 'reg' holds 'value', jumps
 // to 'failure' otherwise
-auto emit_expect(const std::string_view reg, const int64_t value,
+auto emit_expect(machine_rv32i& backend, const std::string_view reg,
+                 const int64_t value,
                  const std::string_view scratch = "a3") -> void {
-    std::println("    li {}, {}\n    beq {}, {}, 1f\n    j failure\n1:",
-                 scratch, value, reg, scratch);
+    hand_written(backend, std::format("    li {}, {}\n    beq {}, {}, 1f\n    j failure\n1:",
+                 scratch, value, reg, scratch));
 }
 
 // where the second operand of a runtime case is: 'a1', the word at
@@ -2945,18 +2964,18 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                     std::array{-2048, 0, 2047, 2048}.at(alignment),
                 };
 
-                std::println("    addi sp, sp, -64");
+                hand_written(backend, "    addi sp, sp, -64");
 
                 for (size_t offset{}; offset < area_bytes; ++offset) {
-                    std::println("    li a2, {}\n    sb a2, {}(sp)\n"
+                    hand_written(backend, std::format("    li a2, {}\n    sb a2, {}(sp)\n"
                                  "    li a2, {}\n    sb a2, {}(sp)",
                                  128 + offset, offset, fill_byte,
-                                 area_bytes + offset);
+                                 area_bytes + offset));
                 }
 
                 // note: +4 is the start of the copy in the destination
-                std::println("    addi a0, sp, {}\n    addi a1, sp, {}",
-                             alignment, area_bytes + 4 + alignment);
+                hand_written(backend, std::format("    addi a0, sp, {}\n    addi a1, sp, {}",
+                             alignment, area_bytes + 4 + alignment));
 
                 // both addresses are 'alignment' bytes past a word boundary
                 const size_t known_alignment{offset_alignment(alignment, 4)};
@@ -2977,16 +2996,16 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                                 operand::mem("a1", {}, 1, 0, byte))},
                         });
                 } else {
-                    std::println(
+                    hand_written(backend, std::format(
                         "    li a2, {}\n    sub a0, a0, a2\n    sub a1, a1, a2",
-                        displacement);
+                        displacement));
                     backend.copy(token{}, 1,
                                  operand::mem("a1", {}, 1, displacement, byte),
                                  operand::mem("a0", {}, 1, displacement, byte),
                                  size_bytes, known_alignment);
-                    std::println(
+                    hand_written(backend, std::format(
                         "    li a2, {}\n    add a0, a0, a2\n    add a1, a1, a2",
-                        displacement);
+                        displacement));
                 }
 
                 for (size_t offset{}; offset < area_bytes; ++offset) {
@@ -3002,15 +3021,15 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                                   : fill_byte,
                     };
 
-                    std::println("    lbu a2, {}(sp)", area_bytes + offset);
-                    emit_expect("a2", expected);
+                    hand_written(backend, std::format("    lbu a2, {}(sp)", area_bytes + offset));
+                    emit_expect(backend, "a2", expected);
                 }
 
-                std::println("    addi a2, sp, {}\n    beq a0, a2, 1f\n"
+                hand_written(backend, std::format("    addi a2, sp, {}\n    beq a0, a2, 1f\n"
                              "    j failure\n1:\n    addi a2, sp, {}\n"
                              "    beq a1, a2, 1f\n    j failure\n1:\n"
                              "    addi sp, sp, 64",
-                             alignment, area_bytes + 4 + alignment);
+                             alignment, area_bytes + 4 + alignment));
                 backend.finish();
             }
         }
@@ -3029,9 +3048,9 @@ auto emit_division_tests(machine_rv32i& backend) -> void {
                      {1, -1, 2, -2, 3, -7, 255, 65536, INT32_MIN, INT32_MAX}) {
                     for (const source_place place : source_places) {
                         for (const char operation : {'/', '%'}) {
-                            std::println("    la a2, buffer\n    li a1, {}\n"
+                            hand_written(backend, std::format("    la a2, buffer\n    li a1, {}\n"
                                          "    sw a1, 4(a2)",
-                                         divisor);
+                                         divisor));
 
                             const operand dst{
                                 destination_at(in_memory, *value_type),
@@ -3056,12 +3075,12 @@ auto emit_division_tests(machine_rv32i& backend) -> void {
                                                  : dividend % divisor,
                             };
 
-                            emit_expect("a0",
+                            emit_expect(backend, "a0",
                                         wrapped(static_cast<uint32_t>(result),
                                                 *value_type));
 
                             if (place == source_place::reg) {
-                                emit_expect("a1", divisor);
+                                emit_expect(backend, "a1", divisor);
                             }
 
                             backend.finish();
@@ -3082,12 +3101,12 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
              {"ra", "a0", "a1", "t0", "t1", "t2", "t3", "t4"}) {
             live.push_back(
                 backend.alloc_named_register(token{}, 0, name, integer));
-            std::println("    li {}, {}", name, 100 + live.size());
+            hand_written(backend, std::format("    li {}, {}", name, 100 + live.size()));
         }
 
         // note: -17 and 3 at 'sp' and 'sp + 4'
-        std::println("    addi sp, sp, -16\n    mv s2, sp\n    li a2, -17\n"
-                     "    sw a2, 0(sp)\n    li a2, 3\n    sw a2, 4(sp)");
+        hand_written(backend, std::format("    addi sp, sp, -16\n    mv s2, sp\n    li a2, -17\n"
+                     "    sw a2, 0(sp)\n    li a2, 3\n    sw a2, 4(sp)"));
 
         const operand dst{operand::mem("s2", {}, 1, 0, integer)};
         const operand src{operand::mem("s2", {}, 1, 4, integer)};
@@ -3101,16 +3120,16 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
         }
 
         for (const auto [index, reg] : std::views::enumerate(live)) {
-            emit_expect(reg.base_register(), 101 + index, "a2");
+            emit_expect(backend, reg.base_register(), 101 + index, "a2");
         }
 
         // -17 * 3, -17 / 3 and -17 % 3
         const int expected{operation == '*' ? -51 : operation == '/' ? -5 : -2};
 
-        std::println("    lw a2, 0(sp)\n    li a3, {}\n    beq a2, a3, 1f\n"
+        hand_written(backend, std::format("    lw a2, 0(sp)\n    li a3, {}\n    beq a2, a3, 1f\n"
                      "    j failure\n1:\n    beq sp, s2, 1f\n    j failure\n1:\n"
                      "    addi sp, sp, 16",
-                     expected);
+                     expected));
 
         backend.free_named_registers(token{}, 0, live);
         backend.finish();
@@ -3120,14 +3139,14 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
 // '/' and '%' at the same address: a value by itself is 1 with no remainder
 auto emit_division_same_address(machine_rv32i& backend) -> void {
     for (const char operation : {'/', '%'}) {
-        std::println("    la t0, buffer\n    li a0, -17\n    sw a0, 0(t0)");
+        hand_written(backend, "    la t0, buffer\n    li a0, -17\n    sw a0, 0(t0)");
 
         const operand address{operand::mem("t0", {}, 1, 0, integer)};
 
         backend.divide(token{}, 1, op_of(operation), address, address,
                        machine::runtime_check{});
-        std::println("    lw a0, 0(t0)");
-        emit_expect("a0", operation == '/' ? 1 : 0);
+        hand_written(backend, "    lw a0, 0(t0)");
+        emit_expect(backend, "a0", operation == '/' ? 1 : 0);
         backend.finish();
     }
 }
@@ -3168,9 +3187,9 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
                 for (const int32_t multiplier :
                      {0, 1, -1, 2, 3, 12, -7, 255, INT32_MIN, INT32_MAX}) {
                     for (const factor_form& factor : factors) {
-                        std::println("    la a2, buffer\n    li a1, {}\n"
+                        hand_written(backend, std::format("    la a2, buffer\n    li a1, {}\n"
                                      "    sw a1, 4(a2)",
-                                     multiplier);
+                                     multiplier));
 
                         const operand product{
                             destination_at(in_memory, *value_type),
@@ -3191,11 +3210,11 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
                                 static_cast<uint32_t>(multiplier),
                         };
 
-                        emit_expect("a0", wrapped(expected, *value_type));
+                        emit_expect(backend, "a0", wrapped(expected, *value_type));
 
                         if (factor.place == source_place::reg and
                             factor.use == machine::factor_use::read_only) {
-                            emit_expect("a1", multiplier);
+                            emit_expect(backend, "a1", multiplier);
                         }
 
                         backend.finish();
@@ -3211,13 +3230,13 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
 auto emit_multiplication_aliased_operands(machine_rv32i& backend) -> void {
     for (const machine::factor_use use :
          {machine::factor_use::read_only, machine::factor_use::may_overwrite}) {
-        std::println("    la a2, buffer\n    li a0, -7\n    sw a0, 0(a2)");
+        hand_written(backend, "    la a2, buffer\n    li a0, -7\n    sw a0, 0(a2)");
 
         const operand address{operand::mem("a2", {}, 1, 0, integer)};
 
         backend.multiply(token{}, 1, address, address, use);
-        std::println("    lw a0, 0(a2)");
-        emit_expect("a0", 49);
+        hand_written(backend, "    lw a0, 0(a2)");
+        emit_expect(backend, "a0", 49);
         backend.finish();
     }
 }
@@ -3231,10 +3250,10 @@ auto emit_index_scaling_tests(machine_rv32i& backend) -> void {
     for (const size_t scale :
          {size_t{0}, size_t{1}, size_t{2}, size_t{3}, size_t{7}, size_t{12},
           size_t{256}, size_t{4097}}) {
-        std::println("    li a0, -7");
+        hand_written(backend, "    li a0, -7");
         backend.scale_index(token{}, 1, operand::reg("a0", integer), scale);
 
-        emit_expect("a0", std::bit_cast<int32_t>(
+        emit_expect(backend, "a0", std::bit_cast<int32_t>(
                               minus_seven * static_cast<uint32_t>(scale)));
 
         backend.finish();
@@ -3245,8 +3264,8 @@ auto emit_index_scaling_tests(machine_rv32i& backend) -> void {
 // the same base as the left one
 auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
     for (const bool shared_address : {false, true}) {
-        std::println("    la a0, buffer\n    li a1, -257\n    sw a1, 0(a0)\n"
-                     "    li a1, 257\n    sw a1, 4(a0)");
+        hand_written(backend, std::format("    la a0, buffer\n    li a1, -257\n    sw a1, 0(a0)\n"
+                     "    li a1, 257\n    sw a1, 4(a0)"));
 
         backend.compare_and_branch(
             token{}, 1, operand::mem("a0", {}, 1, 0, integer),
@@ -3258,7 +3277,7 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
             },
             {});
 
-        emit_expect("a0", 1);
+        emit_expect(backend, "a0", 1);
         backend.finish();
     }
 }
@@ -3391,10 +3410,10 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                             result = operand::mem("a2", {}, 1, 8, boolean);
                         }
 
-                        std::println("    li a0, {}\n    li a1, {}\n"
+                        hand_written(backend, std::format("    li a0, {}\n    li a1, {}\n"
                                      "    la a2, buffer\n    sw a0, 0(a2)\n"
                                      "    sw a1, 4(a2)",
-                                     left_value, right_value);
+                                     left_value, right_value));
 
                         const operand lhs{
                             layout.memory_operands
@@ -3424,11 +3443,11 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                         // the branch is taken exactly when expected
                         if (layout.branches) {
                             if (expected == branch_on_true) {
-                                std::println("    j failure\n{}:", target);
+                                hand_written(backend, std::format("    j failure\n{}:", target));
                             } else {
-                                std::println("    j {}_done\n{}:\n"
+                                hand_written(backend, std::format("    j {}_done\n{}:\n"
                                              "    j failure\n{}_done:",
-                                             target, target, target);
+                                             target, target, target));
                             }
                         }
 
@@ -3436,7 +3455,7 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                             backend.copy_value(token{}, 1,
                                                operand::reg("a3", integer),
                                                result);
-                            emit_expect("a3", expected ? 1 : 0, "a4");
+                            emit_expect(backend, "a3", expected ? 1 : 0, "a4");
                         }
 
                         backend.finish();
@@ -3454,17 +3473,17 @@ auto emit_zeroing_tests(machine_rv32i& backend) -> void {
 
     for (size_t count{1}; count <= 35; ++count) {
         for (size_t alignment{}; alignment < 4; ++alignment) {
-            std::println("    addi sp, sp, -64\n    li a0, -1");
+            hand_written(backend, "    addi sp, sp, -64\n    li a0, -1");
             for (size_t offset{}; offset < area_bytes; offset += 4) {
-                std::println("    sw a0, {}(sp)", offset);
+                hand_written(backend, std::format("    sw a0, {}(sp)", offset));
             }
 
             // note: +4 keeps the zeroing inside the area at every alignment
             const size_t start{4 + alignment};
             const size_t displacement{count % 2 == 0 ? 2047U : 2048U};
 
-            std::println("    li a2, {}\n    sub a2, sp, a2",
-                         displacement - start);
+            hand_written(backend, std::format("    li a2, {}\n    sub a2, sp, a2",
+                         displacement - start));
 
             backend.zero(token{}, 1,
                          operand::mem("a2", {}, 1,
@@ -3473,11 +3492,11 @@ auto emit_zeroing_tests(machine_rv32i& backend) -> void {
 
             for (size_t offset{}; offset < area_bytes; ++offset) {
                 const bool is_zeroed{offset >= start and offset < start + count};
-                std::println("    lbu a0, {}(sp)", offset);
-                emit_expect("a0", is_zeroed ? 0 : 255, "a1");
+                hand_written(backend, std::format("    lbu a0, {}(sp)", offset));
+                emit_expect(backend, "a0", is_zeroed ? 0 : 255, "a1");
             }
 
-            std::println("    addi sp, sp, 64");
+            hand_written(backend, "    addi sp, sp, 64");
             backend.finish();
         }
     }
@@ -3489,7 +3508,7 @@ auto emit_unary_tests(machine_rv32i& backend) -> void {
         for (const bool in_memory : {false, true}) {
             for (const int32_t initial : {0, 1, -1, -128, -32768, INT32_MIN}) {
                 for (const char operation : {'-', '~'}) {
-                    std::println("    la a2, buffer");
+                    hand_written(backend, "    la a2, buffer");
 
                     const operand dst{destination_at(in_memory, *value_type)};
 
@@ -3504,7 +3523,7 @@ auto emit_unary_tests(machine_rv32i& backend) -> void {
                         operation == '-' ? uint32_t{} - bits : ~bits,
                     };
 
-                    emit_expect("a0", wrapped(result, *value_type));
+                    emit_expect(backend, "a0", wrapped(result, *value_type));
 
                     backend.finish();
                 }
@@ -3558,9 +3577,9 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
                             continue;
                         }
 
-                        std::println("    la a2, buffer\n    li a1, {}\n"
+                        hand_written(backend, std::format("    la a2, buffer\n    li a1, {}\n"
                                      "    sw a1, 4(a2)",
-                                     source_value);
+                                     source_value));
 
                         const operand dst{
                             destination_at(in_memory, *value_type),
@@ -3588,7 +3607,7 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
                                     static_cast<uint32_t>(source_value)),
                         };
 
-                        emit_expect("a0", wrapped(result, *value_type));
+                        emit_expect(backend, "a0", wrapped(result, *value_type));
 
                         backend.finish();
                     }
@@ -3605,8 +3624,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
         for (const char operation : {'<', '>'}) {
             for (const bool in_memory : {false, true}) {
                 for (const source_place place : source_places) {
-                    std::println(
-                        "    la a2, buffer\n    li a1, 35\n    sw a1, 4(a2)");
+                    hand_written(backend, "    la a2, buffer\n    li a1, 35\n    sw a1, 4(a2)");
 
                     const operand dst{destination_at(in_memory, *value_type)};
 
@@ -3624,7 +3642,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
                                                : (operation == '<' ? -128 : -2),
                     };
 
-                    emit_expect("a0", expected);
+                    emit_expect(backend, "a0", expected);
 
                     backend.finish();
                 }
@@ -3633,10 +3651,10 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
     }
 
     // the count is the shifted register itself
-    std::println("    li a0, 3");
+    hand_written(backend, "    li a0, 3");
     backend.shift(token{}, 1, op_of('<'), operand::reg("a0", integer),
                   operand::reg("a0", integer), machine::runtime_check{});
-    emit_expect("a0", 24);
+    emit_expect(backend, "a0", 24);
     backend.finish();
 }
 
@@ -3652,16 +3670,16 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
           INT64_C(-2048), INT64_C(2047), INT64_C(2048), INT64_C(8196),
           INT64_C(2147483648), INT64_C(4294967295)}) {
         // the base is 'buffer - offset'
-        std::println("    la t6, buffer\n    li a3, {}\n    sub t6, t6, a3",
-                     static_cast<uint32_t>(offset));
+        hand_written(backend, std::format("    la t6, buffer\n    li a3, {}\n    sub t6, t6, a3",
+                     static_cast<uint32_t>(offset)));
 
         const operand direct{operand::mem("t6", {}, 1, offset, integer)};
 
         backend.copy_value(token{}, 1, direct, operand::imm(42, integer));
         backend.copy_value(token{}, 1, operand::reg("a0", integer), direct);
-        std::println("    li a3, 42\n    bne a0, a3, failure");
+        hand_written(backend, "    li a3, 42\n    bne a0, a3, failure");
         backend.address_of(token{}, 1, operand::reg("t6", integer), direct);
-        std::println("    la a3, buffer\n    bne t6, a3, failure");
+        hand_written(backend, "    la a3, buffer\n    bne t6, a3, failure");
         backend.finish();
 
         for (const uint64_t scale :
@@ -3676,7 +3694,7 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
                             static_cast<uint32_t>(index_value * scale)),
             };
 
-            std::println("{}\n    li t4, 42", base_setup);
+            hand_written(backend, std::format("{}\n    li t4, 42", base_setup));
 
             const operand address{
                 operand::mem("t6", "t5", scale, offset, integer),
@@ -3686,27 +3704,27 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
                                operand::reg("t4", integer));
             backend.copy_value(token{}, 1, operand::reg("t3", integer),
                                address);
-            std::println("    li a3, 42\n    bne t3, a3, failure");
+            hand_written(backend, "    li a3, 42\n    bne t3, a3, failure");
             backend.address_of(token{}, 1, operand::reg("t3", integer),
                                address);
-            std::println("    la a3, buffer\n    bne t3, a3, failure");
+            hand_written(backend, "    la a3, buffer\n    bne t3, a3, failure");
 
             // a copy from memory to memory
-            std::println("    la a4, buffer_copy");
+            hand_written(backend, "    la a4, buffer_copy");
             backend.copy_value(token{}, 1,
                                operand::mem("a4", {}, 1, 0, integer), address);
             backend.copy_value(token{}, 1, operand::reg("t3", integer),
                                operand::mem("a4", {}, 1, 0, integer));
-            std::println("    li a3, 42\n    bne t3, a3, failure");
+            hand_written(backend, "    li a3, 42\n    bne t3, a3, failure");
 
             // the address stored in memory
-            std::println("{}", base_setup);
-            std::println("    la a4, pointer");
+            hand_written(backend, std::format("{}", base_setup));
+            hand_written(backend, "    la a4, pointer");
             backend.address_of(token{}, 1,
                                operand::mem("a4", {}, 1, 0, integer), address);
             backend.copy_value(token{}, 1, operand::reg("t3", integer),
                                operand::mem("a4", {}, 1, 0, integer));
-            std::println("    la a3, buffer\n    bne t3, a3, failure");
+            hand_written(backend, "    la a3, buffer\n    bne t3, a3, failure");
             backend.finish();
         }
     }
@@ -3726,8 +3744,8 @@ auto emit_address_of_register_tests(machine_rv32i& backend) -> void {
           UINT64_C(2147483648)}) {
         for (const std::string_view base : {"a2", "a3", "a4", "zero"}) {
             for (const std::string_view dst : {"a2", "a3", "a4"}) {
-                std::println("    li a2, {}\n    li a3, {}\n    la a4, buffer",
-                             a2_value, index_value);
+                hand_written(backend, std::format("    li a2, {}\n    li a3, {}\n    la a4, buffer",
+                             a2_value, index_value));
 
                 backend.address_of(
                     token{}, 1, operand::reg(dst, integer),
@@ -3738,9 +3756,9 @@ auto emit_address_of_register_tests(machine_rv32i& backend) -> void {
                 };
 
                 if (base == "a4") {
-                    std::println(
+                    hand_written(backend, std::format(
                         "    la a5, buffer\n    li a6, {}\n    add a5, a5, a6",
-                        displacement);
+                        displacement));
                 } else {
                     const uint32_t base_value{
                         base == "a2"   ? a2_value
@@ -3748,10 +3766,10 @@ auto emit_address_of_register_tests(machine_rv32i& backend) -> void {
                                        : 0U,
                     };
 
-                    std::println("    li a5, {}", displacement + base_value);
+                    hand_written(backend, std::format("    li a5, {}", displacement + base_value));
                 }
 
-                std::println("    beq {}, a5, 1f\n    j failure\n1:", dst);
+                hand_written(backend, std::format("    beq {}, a5, 1f\n    j failure\n1:", dst));
                 backend.finish();
             }
         }
@@ -3762,20 +3780,20 @@ auto emit_address_of_register_tests(machine_rv32i& backend) -> void {
 // an address that uses 'sp' as base and index
 auto emit_narrow_memory_tests(machine_rv32i& backend) -> void {
     for (const type* value_type : {&byte, &half, &boolean}) {
-        std::println("    la a2, buffer");
+        hand_written(backend, "    la a2, buffer");
         backend.copy_value(token{}, 1,
                            operand::mem("a2", {}, 1, 0, *value_type),
                            operand::imm(-1, integer));
         backend.copy_value(token{}, 1, operand::reg("a0", integer),
                            operand::mem("a2", {}, 1, 0, *value_type));
-        std::println("    li a1, {}\n    bne a0, a1, failure",
-                     value_type == &boolean ? 255 : -1);
+        hand_written(backend, std::format("    li a1, {}\n    bne a0, a1, failure",
+                     value_type == &boolean ? 255 : -1));
     }
 
     backend.address_of(token{}, 1, operand::reg("t6", integer),
                        operand::mem("sp", "sp", 4, 2048, integer));
-    std::println("    slli a0, sp, 2\n    add a0, a0, sp\n    li a1, 2048\n"
-                 "    add a0, a0, a1\n    bne t6, a0, failure");
+    hand_written(backend, std::format("    slli a0, sp, 2\n    add a0, a0, sp\n    li a1, 2048\n"
+                 "    add a0, a0, a1\n    bne t6, a0, failure"));
 }
 
 // 'read' and 'write' system calls: results, argument registers, the stack
@@ -3804,25 +3822,25 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
     };
 
     // 6 bytes from stdin to 'buffer' and back to stdout
-    std::println("    mv s2, sp\n    li a0, 0\n    la a1, buffer\n    li a2, 6");
+    hand_written(backend, "    mv s2, sp\n    li a0, 0\n    la a1, buffer\n    li a2, 6");
     read();
-    std::println("    li t0, 6\n    bne a0, t0, failure\n"
+    hand_written(backend, std::format("    li t0, 6\n    bne a0, t0, failure\n"
                  "    bne a2, t0, failure\n    la t0, buffer\n"
                  "    bne a1, t0, failure\n    bne sp, s2, failure\n"
-                 "    li a0, 1");
+                 "    li a0, 1"));
     write();
-    std::println("    li t0, 6\n    bne a0, t0, failure\n"
+    hand_written(backend, std::format("    li t0, 6\n    bne a0, t0, failure\n"
                  "    bne a2, t0, failure\n    la t0, buffer\n"
-                 "    bne a1, t0, failure\n    li a0, -1");
+                 "    bne a1, t0, failure\n    li a0, -1"));
 
     // a bad descriptor is reported in the result
     read();
-    std::println("    li t0, {}\n    bne a0, t0, failure\n    li a0, -1",
-                 bad_descriptor_result);
+    hand_written(backend, std::format("    li t0, {}\n    bne a0, t0, failure\n    li a0, -1",
+                 bad_descriptor_result));
     write();
-    std::println("    li t0, {}\n    bne a0, t0, failure\n"
+    hand_written(backend, std::format("    li t0, {}\n    bne a0, t0, failure\n"
                  "    bne sp, s2, failure",
-                 bad_descriptor_result);
+                 bad_descriptor_result));
 
     backend.free_named_registers(token{}, 0, io_args);
 
@@ -3844,9 +3862,9 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 // the end of 'main', and the entry points that 'test-rv32i.sh' starts
 // separately (division by zero, bounds failures) with the failure path
 auto generate_runtime_program() -> void {
-    machine_rv32i_linux backend{&std::cout, test_builtins};
+    machine_rv32i_linux backend{nullptr, test_builtins};
 
-    std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
+    hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
     emit_copy_tests(backend);
     emit_division_tests(backend);
@@ -3870,15 +3888,15 @@ auto generate_runtime_program() -> void {
     // 'test-rv32i.sh' as separate programs
     backend.end_main();
 
-    std::println(".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
+    hand_written(backend, ".globl divide_by_zero\ndivide_by_zero:\n    li a0, 17");
     backend.divide(token{}, 1, op_of('/'), operand::reg("a0", integer),
                    operand::imm(0, integer), machine::runtime_check{});
     backend.exit(token{}, 1, operand::imm(0, integer));
 
     // the line of a failed check is printed, also the largest one
     for (const uint32_t line : {0U, 9U, 123U, UINT32_MAX}) {
-        std::println(".globl bounds_line_{}\nbounds_line_{}:\n    li a0, -1",
-                     line, line);
+        hand_written(backend, std::format(".globl bounds_line_{}\nbounds_line_{}:\n    li a0, -1",
+                     line, line));
 
         const token location{0, {}, 0, {}, 0, {}, line, false};
 
@@ -3890,11 +3908,12 @@ auto generate_runtime_program() -> void {
     }
 
     backend.emit_bounds_failure_handler(true);
-    std::println("failure:\n    li a0, 1\n    li a7, 93\n    ecall");
+    hand_written(backend, "failure:\n    li a0, 1\n    li a7, 93\n    ecall");
     backend.emit_used_routines();
     backend.begin_data(4);
-    std::println("buffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
+    hand_written(backend, "buffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
     backend.finish();
+    write_with_hand_written(backend);
 }
 
 // ============================================================================
@@ -3904,9 +3923,8 @@ auto generate_runtime_program() -> void {
 // a 'toc' over an x86_64 backend with the builtin types, compiling, the global
 // frame is entered
 struct front_end {
-    std::ostringstream output;
     source_files files;
-    machine_x86_64 backend{&output, test_builtins, &files};
+    machine_x86_64 backend{nullptr, test_builtins, &files};
     toc tc;
 
     // errors need a token with a line
