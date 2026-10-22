@@ -1,7 +1,7 @@
 
-1410.baz:12:7: argument 1 'g' may share storage with the global 'g' that 'h' uses, use a temporary variable for one of them
+1410.baz:11:7: argument 1 'g' may share storage with the global 'g' that 'h' uses, use a temporary variable for one of them
     h(g)
       ^
-1410.baz:16:5: called from
+1410.baz:15:5: called from
     f()
     ^

@@ -189,45 +189,6 @@ class stmt_assign_var final : public statement {
                         *dst_len, *src_len)};
     }
 
-    // a read under another name of the part that 'item' computes, in the dry
-    // run of a noinline call: the compile protects such a read from the
-    // destination written before the value is complete
-    // ('expr_arith::destination_is_clobbered_before_read'), but the body is
-    // compiled once and does not see that its parameters name the same bytes
-    //
-    // todo: an overlap that the body sees itself is rejected too, e.g. 'g' of
-    //       a noinline body passed to an inline call that writes 'g'
-    auto assert_no_read_of_computed_part(const toc& tc, const statement& item,
-                                         const storage_path& part) const
-        -> void {
-
-        item.visit_reads(
-            std::nullopt,
-            [&](const token& src_loc_tk, const std::string_view read_text,
-                [[maybe_unused]] const byte_range& accessed_bytes,
-                const access_path& read_path) -> void {
-                if (src_loc_tk.text() == stmt_ident_.first_token().text()) {
-                    return;
-                }
-
-                const std::optional<storage_path> read{
-                    tc.storage_of(src_loc_tk.text(), read_path),
-                };
-
-                if (not read or not read->may_overlap(part)) {
-                    return;
-                }
-
-                throw compile_error{
-                    src_loc_tk,
-                    std::format("'{}' may share storage with the destination "
-                                "'{}' (both name '{}'), compute the value in "
-                                "a temporary variable first",
-                                read_text, stmt_ident_.path_text(),
-                                part.root.name)};
-            });
-    }
-
     // 'item' reads none of the 'written' parts, under any name
     auto assert_no_read_of_written_part(
         const toc& tc, const statement& item,
@@ -272,9 +233,7 @@ class stmt_assign_var final : public statement {
     }
 
     // the value is written part by part, so a part must not read what is
-    // already written, e.g. the 'p.x' of 'p = {p.y, p.x}', or with
-    // '--checks=alias' in a noinline body the part it computes under another
-    // name, e.g. the 'p' of 'g = p * 2 + p' with 'p' bound to 'g'
+    // already written, e.g. the 'p.x' of 'p = {p.y, p.x}'
     auto assert_parts_not_clobbered(
         const toc& tc, const std::optional<storage_path>& dst) const -> void {
 
@@ -301,13 +260,6 @@ class stmt_assign_var final : public statement {
             };
 
             assert_no_read_of_written_part(tc, *part.item, written);
-
-            if (tc.checks().alias and
-                tc.scopes().noinline_dry_run_level() != 0) {
-
-                assert_no_read_of_computed_part(tc, *part.item, place.storage);
-            }
-
             written.push_back(place);
         }
     }

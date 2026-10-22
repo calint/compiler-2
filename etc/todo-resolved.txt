@@ -1,6 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: aliasing: the same verdict inline and noinline; today 'g = p * 2
+    + p' with 'p' bound to 'g' is accepted inline (scratch register) and
+    rejected in the dry run of a noinline call (rule B), so switching a
+    function to noinline can add an error
+    => option C: the real noinline body protects the read itself, two roots
+       that are each a pointer parameter or a global may overlap
+       ('reads_destination' in 'statement.hpp'), then rule B and its dry-run
+       check go (the item below, test 1410); cost: an extra copy in bodies like
+       'res = a + b' when 'res' and 'b' are pointers, measure the instruction
+       counts over all tests before deciding
+    => done (2026-10-22): the same verdict without option C: 'h(g)' with
+       'h' using 'g' is rejected at the call inline and noinline (the global
+       check of decision 1), rule B is removed (see the next item),
+       an overlap a noinline body sees itself is protected like inline
+[x] easy: the noinline statement check of docs 3.6 ('may share storage with
+    the destination', 'stmt_assign_var::assert_no_read_of_computed_part') may
+    be unreachable since a global a callee uses counts as an argument: every
+    test that reached it is now rejected at the call with '--checks=alias',
+    and it is off without; confirm with 'test-coverage.sh report', then
+    remove it and its docs paragraph, or find the input that reaches it
+    => done (2026-10-22): reachable, but only by an overlap the body sees
+       itself, e.g. the element 'e' of a 'foo' and its array
+       ('e = {ps[0].x + 1, 3}'), which the compile protects; the overlaps
+       it was written for, two names that meet only through the call, are
+       rejected at the call (arguments sharing storage, a global the callee
+       uses; tests 1409, 1410); the check and its docs paragraph are
+       removed, test 1525 runs the overlaps the body protects
+[x] medium: aliasing: in the dry run of a noinline call, rule B
+    ('stmt_assign_var::assert_no_read_of_computed_part') also rejects an
+    overlap that the body sees and protects itself, e.g. 'g' of the body
+    passed to an inlined 'h(p)' that does 'g = p * 2 + p' (test 1410); a
+    precise check resolves each binding also as the innermost noinline body
+    sees it (a second binding in 'bound_storage' and 'destination') and
+    rejects only an overlap that this view does not show
+    => done (2026-10-22): rule B is removed (item above), no precise
+       check is needed: the overlaps a body cannot see are rejected at the
+       call
 [x] medium: generics: a duplicate method of a generic type is detected only
     at the first alias ('func text.print' twice is accepted without one);
     a generic body sees the globals defined after it and before its first

@@ -1,5 +1,6 @@
 # a noinline body is compiled once and does not see that its parameter names
-# the destination, so its dry run rejects the read
+# the destination, so the call that passes the global the body uses is
+# rejected
 
 var g = 3
 

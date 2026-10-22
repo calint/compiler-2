@@ -781,11 +781,11 @@ The compile decides that in
 like above.
 
 A noinline body is compiled once and reaches its parameters through
-addresses, so it cannot see that 'p' is 'g' and cannot protect the read. The
-dry run of the call sees it and, with '--checks=alias', rejects the read of
-the part being computed under another name: "'p' may share storage with the
-destination 'g'". An overlap that the body could see itself, e.g. 'g' passed to
-an inlined call inside the body, is rejected too (etc/todo.txt).
+addresses, so it cannot see that 'p' is 'g' and cannot protect the read.
+With '--checks=alias' the call is rejected instead: an argument may not share
+storage with another argument or with a global the callee uses. An overlap
+that the body sees itself, e.g. the element 'e' of a 'foo' and the array it
+iterates, is protected like in an inlined body.
 
 ### 3.7 The other checks on a read
 

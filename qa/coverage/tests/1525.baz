@@ -1,0 +1,33 @@
+# a noinline body sees that the element of a 'foo' and the array it iterates
+# name the same bytes and protects the read, like an inlined body
+
+type point { x, y }
+
+func noinline first_plus_one(ps mut point[]) {
+    foo ps {
+        e = {ps[0].x + 1, 3}
+    }
+}
+
+func noinline twice_first(ps mut point[]) {
+    foo ps {
+        e.x = 1 + ps[0].x * 2
+    }
+}
+
+func noinline copy_first(ps mut point[]) {
+    foo ps {
+        e = ps[0]
+    }
+}
+
+func main() {
+    var a = point[4]
+    first_plus_one(a)
+    var b = point[4]
+    twice_first(b)
+    var c = point[4]
+    c[0] = {5, 6}
+    copy_first(c)
+    exit(a[1].x * 100 + b[1].x * 10 + c[3].y)
+}

@@ -4751,3 +4751,6 @@ SRC=1521 && COMPERR
 SRC=1522 && COMPERR
 SRC=1523 && COMPERR
 SRC=1524 && EXP=23 && RUN
+
+# an overlap a noinline body sees itself is protected, not rejected
+SRC=1525 && EXP=236 && RUN
