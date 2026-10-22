@@ -70,8 +70,9 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
     // only the routines the program calls are emitted; the shared routines
     // come first, they may use 'exit'
-    auto begin_data(const size_t alignment) -> void override {
-        emit_used_routines();
+    // after the shared ones, which may use 'exit', e.g. the division by zero
+    auto emit_used_routines() -> void override {
+        machine_rv32i::emit_used_routines();
 
         if (is_used("exit")) {
             emit_exit_routine(assembler());
@@ -84,8 +85,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         if (is_used("write")) {
             emit_write_routine();
         }
-
-        begin_data_section(alignment);
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,

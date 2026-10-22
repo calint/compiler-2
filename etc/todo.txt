@@ -213,23 +213,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     keep adding virtuals
     => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
        'std::variant' and rejected it, see 'etc/todo-resolved.txt'
-[p] medium: design: 'begin_data' sounds like "open the data section" but also
-    emits code: the arithmetic helpers, the sector routines and, on bare
-    metal, exit, read and write; so 'emit_string_constants' must leave the
-    text section current, bare metal re-implements the whole base
-    'begin_data', and correctness depends on the order failure handlers,
-    read-only data, 'begin_data' (the handlers and the divide trap mark
-    'exit' and 'write' used before bare metal tests 'is_used'); no comment
-    says so (round 8 R-1)
-    => design: a machine virtual 'emit_used_routines()' called by
-       'program::compile' right after 'emit_failure_handlers' and before
-       'emit_read_only_data'; 'begin_data' only switches section, aligns and
-       labels, and is not virtual; bare metal overrides 'emit_used_routines'
-       as the base plus its routines in its own order
-    => invariant: every routine is emitted after every code that marks it
-       used, in one step whose name says so
-    => tests: the suite; the '.s' listings of the rv32i targets move the
-       routines before the read-only data, check the image sizes
 [p] medium: design: the operator enums 'machine::arithmetic_operator' and
     'machine::comparison_operator' are language concepts owned by the
     backend; 'constant_arith.hpp' needs only them but includes machine.hpp,

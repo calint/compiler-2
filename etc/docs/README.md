@@ -88,7 +88,7 @@ main.cpp         options, the backend for '--target', error printing
 program.hpp      parse: every file, 'include' in place
   |              definite assignment of the results of the functions
   |              compile: globals, 'main', noinline bodies, handlers,
-  |              read-only data, data and variables
+  |              used routines, read-only data, data and variables
   |              report after the code
   v
 machine.hpp      one virtual method per operation the front end needs,
@@ -162,8 +162,9 @@ Invariants the code relies on:
    compile for the array lengths of its arguments; the bodies are compiled
    after 'main', and compiling one can add more. Then each function that no
    compile reached is checked and emits nothing ([1.5](#15-checks)). Then the
-   failure handlers of the checks that are on, the read-only strings, the data
-   and the variables.
+   failure handlers of the checks that are on, the routines and helpers the
+   code and the handlers marked used ('machine::emit_used_routines'), the
+   read-only strings, the data and the variables.
 
 4. output ('machine::finish', 'write_assembly'): the buffered lines get their
    jumps optimized, the assembly is written, the rv32i targets also write the

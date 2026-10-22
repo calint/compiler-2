@@ -460,12 +460,6 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
-    auto begin_data_section(const size_t alignment) -> void {
-        assembler_.switch_section(section::data);
-        assembler_.align(alignment);
-        label(0, data_label);
-    }
-
     // i/o routines replacing system calls return through a7 and change only
     // 'clobbered' besides a0, which are free at the call, so like a system
     // call it saves nothing
@@ -522,13 +516,6 @@ class machine_rv32i : public machine {
         assembler_.ascii(message);
         assembler_.data(1, newline);
         assembler_.switch_section(section::text);
-    }
-
-    // the helpers and routines the program calls, which may mark more
-    // routines used, e.g. the exit of a division by zero on bare metal
-    auto emit_used_routines() -> void {
-        emit_arithmetic_helpers();
-        emit_used_sector_routines();
     }
 
     auto restore_saved_registers(const size_t indent,
@@ -677,8 +664,9 @@ class machine_rv32i : public machine {
     }
 
     auto begin_data(const size_t alignment) -> void override {
-        emit_used_routines();
-        begin_data_section(alignment);
+        assembler_.switch_section(section::data);
+        assembler_.align(alignment);
+        label(0, data_label);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -1220,14 +1208,17 @@ class machine_rv32i : public machine {
             assembler_.label(0, s.label);
             emit_string_data(s.text);
         }
-
-        // the routines that 'begin_data' emits follow and must stay in the code
-        // section
-        assembler_.switch_section(section::text);
     }
 
     auto emit_string_data(const std::string_view value) -> void override {
         assembler_.ascii(token::decode_string(value));
+    }
+
+    // the helpers before the sector routines, e.g. a division by zero marks
+    // the 'exit' on bare metal
+    auto emit_used_routines() -> void override {
+        emit_arithmetic_helpers();
+        emit_used_sector_routines();
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {

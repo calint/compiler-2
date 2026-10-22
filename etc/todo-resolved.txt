@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: design: 'begin_data' sounds like "open the data section" but also
+    emits code: the arithmetic helpers, the sector routines and, on bare
+    metal, exit, read and write; so 'emit_string_constants' must leave the
+    text section current, bare metal re-implements the whole base
+    'begin_data', and correctness depends on the order failure handlers,
+    read-only data, 'begin_data' (the handlers and the divide trap mark
+    'exit' and 'write' used before bare metal tests 'is_used'); no comment
+    says so (round 8 R-1)
+    => design: a machine virtual 'emit_used_routines()' called by
+       'program::compile' right after 'emit_failure_handlers' and before
+       'emit_read_only_data'; 'begin_data' only switches section, aligns and
+       labels, and is not virtual; bare metal overrides 'emit_used_routines'
+       as the base plus its routines in its own order
+    => invariant: every routine is emitted after every code that marks it
+       used, in one step whose name says so
+    => tests: the suite; the '.s' listings of the rv32i targets move the
+       routines before the read-only data, check the image sizes
+    => done (2026-10-22): as designed; 'begin_data' stays virtual for the
+       section directives of each target, 'begin_data_section' merged into
+       the rv32i one; 'emit_string_constants' no longer switches back to
+       the text section on either target; the 1999 rv32i images of the
+       tests (three targets) keep their sizes; docs 1.2 and the layer
+       diagram name the step
 [x] medium: design: the built-in types have three owners: 'program' owns the
     'type' objects, 'machine' gets them through 'set_builtin_types' after its
     constructor ("the machine is made before the program that owns the

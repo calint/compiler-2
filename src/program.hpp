@@ -400,6 +400,11 @@ class program final {
         tc_.exit_block();
 
         emit_failure_handlers(tc_);
+
+        machine& x{tc_.machine()};
+
+        x.emit_used_routines();
+
         emit_read_only_data(tc_);
         emit_data_section();
     }

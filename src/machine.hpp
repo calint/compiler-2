@@ -485,6 +485,7 @@ class machine {
                  const std::function_ref<void(const operand&)> emit_count,
                  const equality_request& request) -> void = 0;
 
+    // starts the data section, after the code and every routine it uses
     virtual auto begin_data(const size_t alignment) -> void = 0;
 
     virtual auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -624,6 +625,11 @@ class machine {
         -> void = 0;
 
     virtual auto emit_string_data(const std::string_view value) -> void = 0;
+
+    // the helpers and routines that the code marked used, after the code and
+    // the failure handlers, which mark some, e.g. the 'exit' of a division
+    // by zero on bare metal; a routine may mark another one it calls
+    virtual auto emit_used_routines() -> void = 0;
 
     virtual auto emit_zero_data(const size_t size_bytes) -> void = 0;
 
