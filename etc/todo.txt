@@ -217,14 +217,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'func_info::def', every entry has a definition since the built-ins left
     'function_table'; 'get_func_return_type_or_throw' could read the
     definition and 'add_func' lose the parameter
-[p] easy: design: what fpga allows for '--memory' is decided in main.cpp
-    ('max_memory_size_bytes', 'memory_alignment' "what a 'lui' loads") while
-    the device map and 'lui_shift_' live in 'machine_rv32i_fpga', whose
-    constructor only asserts; '--stack' is checked by the backend
-    constructor, so target limits are checked in two layers (round 8 R-2)
-    => design: the fpga constructor throws 'option_error' for a memory that
-       is not a multiple of '1 << lui_shift_' or reaches the lowest device
-       address; 'apply_memory' only parses; the messages stay
     => found (2026-10-22): not behavior-preserving, main.cpp checks
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range

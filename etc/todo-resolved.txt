@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: design: what fpga allows for '--memory' is decided in main.cpp
+    ('max_memory_size_bytes', 'memory_alignment' "what a 'lui' loads") while
+    the device map and 'lui_shift_' live in 'machine_rv32i_fpga', whose
+    constructor only asserts; '--stack' is checked by the backend
+    constructor, so target limits are checked in two layers (round 8 R-2)
+    => design: the fpga constructor throws 'option_error' for a memory that
+       is not a multiple of '1 << lui_shift_' or reaches the lowest device
+       address; 'apply_memory' only parses; the messages stay
+    => done (2026-10-22), revised to the pattern of '--stack': the
+       alignment stays a format rule of 'main' (shown in '--help'), the
+       maximum 'max_memory_size_bytes_' moved to 'machine_rv32i_fpga',
+       whose constructor throws "invalid --memory: N B exceeds the M B
+       below the device addresses"; another target ignores '--memory' as
+       x86_64 ignores '--stack'; test-cli checks the message and the
+       largest memory
 [x] medium: bug: an include counts as a level of the 128-level statement
     nesting limit: a file accepted when included directly is rejected when
     reached through a chain of 120 includes, at an innocent 'if' (round 8

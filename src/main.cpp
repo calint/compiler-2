@@ -47,9 +47,6 @@ constexpr size_t default_stack_size_bytes{0x10000};
 constexpr size_t stack_alignment{16};
 constexpr size_t default_memory_size_bytes{0x800000};
 constexpr size_t memory_alignment{4096};
-// the uart and the other devices follow the memory at the end of the address
-// space
-constexpr size_t max_memory_size_bytes{0xfffff000};
 
 enum class target : uint8_t { x86_64, rv32i, rv32i_qemu, rv32i_fpga };
 
@@ -352,25 +349,8 @@ template <typename Name, size_t count>
 [[nodiscard]] auto apply_memory(const std::string_view value, options& opts)
     -> bool {
 
-    const std::optional<size_t> parsed{
-        parse_size_bytes(value, "--memory", memory_alignment),
-    };
-
-    if (not parsed) {
-        return false;
-    }
-
-    if (*parsed > max_memory_size_bytes) {
-        print_option_error(
-            std::format("invalid --memory: '{}', must be from {} to {} bytes",
-                        value, memory_alignment, max_memory_size_bytes));
-
-        return false;
-    }
-
-    opts.memory_size_bytes = *parsed;
-
-    return true;
+    return store_parsed(parse_size_bytes(value, "--memory", memory_alignment),
+                        opts.memory_size_bytes);
 }
 
 [[nodiscard]] auto apply_target(const std::string_view value, options& opts)

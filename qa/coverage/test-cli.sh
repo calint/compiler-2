@@ -392,6 +392,14 @@ CLI_FPGA_MEMORY() {
         [[ $exit_code -eq 1 ]]
         [[ ! -s gen.s ]]
     done
+    # the target rejects a memory that reaches its devices
+    set +e
+    "$BIN" --target=rv32i-fpga --memory=0x100000000 0426.baz >gen.s 2>err
+    set -e
+    grep -Fq "error: invalid --memory: 4294967296 B exceeds the 4294963200 B below the device addresses" err
+    # the largest memory below the devices is accepted
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 0426.baz >gen.s 2>err
+    [[ ! -s err ]]
     echo "ok (image $image_size B, vars up to $vars_fit B)"
 }
 
@@ -536,7 +544,7 @@ CLI_PADDING_ZERO_BY_TARGET() {
 CLI_OPTION_MESSAGES() {
     echo -n "cli option errors name their option: "
     local arg exit_code
-    for arg in --vars=0 --stack=x --memory=100 --memory=0x100000000 --target=x --checks=x --report=x --versions=x; do
+    for arg in --vars=0 --stack=x --memory=100 --target=x --checks=x --report=x --versions=x; do
         set +e
         "$BIN" "$arg" 0015.baz >/dev/null 2>err
         exit_code=$?

@@ -8,6 +8,7 @@
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
+#include "compile_error.hpp"
 #include "machine_rv32i_bare_metal.hpp"
 #include "operand.hpp"
 #include "token.hpp"
@@ -39,6 +40,9 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr int sd_write_sector_offset_{-32};
     // 'lui' places the immediate in the upper 20 bits
     static constexpr uint32_t lui_shift_{12};
+    // the uart and the sd card are in the last 'lui' step of the address
+    // space, the memory ends below it
+    static constexpr size_t max_memory_size_bytes_{0xffff'f000};
     // the comment prints the address as two 16 bit halves
     static constexpr uint32_t half_bits_{16};
     static constexpr uint32_t half_mask_{0xffff};
@@ -58,8 +62,17 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                                    stack_size_bytes,
                                    memory_size_bytes} {
 
-        // 'lui' loads the end of memory
+        // note: 'main' accepts only a multiple of what a 'lui' loads, the end
+        //       of memory
+
         assert(memory_size_bytes % (size_t{1} << lui_shift_) == 0);
+
+        if (memory_size_bytes > max_memory_size_bytes_) {
+            throw option_error{
+                std::format("invalid --memory: {} B exceeds the {} B below "
+                            "the device addresses",
+                            memory_size_bytes, max_memory_size_bytes_)};
+        }
     }
 
     //
