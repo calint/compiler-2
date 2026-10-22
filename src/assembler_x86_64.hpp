@@ -186,10 +186,10 @@ class assembler_x86_64 final : public assembler {
     //
 
     auto align(const size_t size_bytes) -> void {
-        add_text(std::format("align {}", size_bytes));
+        add_directive(std::format("align {}", size_bytes));
     }
 
-    auto bits64() -> void { add_text("bits 64"); }
+    auto bits64() -> void { add_directive("bits 64"); }
 
     auto call(const size_t indent, const std::string_view target) -> void {
         add_text(std::format("{}call {}", indentation(indent), target));
@@ -210,26 +210,26 @@ class assembler_x86_64 final : public assembler {
             separator = ", ";
         }
 
-        add_text(std::move(text));
+        add_directive(std::move(text));
     }
 
-    auto default_rel() -> void { add_text("default rel"); }
+    auto default_rel() -> void { add_directive("default rel"); }
 
     auto define_constant(const std::string_view name, const int64_t value)
         -> void {
 
-        add_text(std::format("{} equ {}", name, value));
+        add_directive(std::format("{} equ {}", name, value));
     }
 
     // the bytes from label 'start' to this line
     auto define_length(const std::string_view name,
                        const std::string_view start) -> void {
 
-        add_text(std::format("{} equ $ - {}", name, start));
+        add_directive(std::format("{} equ $ - {}", name, start));
     }
 
     auto global(const std::string_view name) -> void {
-        add_text(std::format("global {}", name));
+        add_directive(std::format("global {}", name));
     }
 
     auto instruction(const size_t indent, const op code) -> void {
@@ -276,14 +276,15 @@ class assembler_x86_64 final : public assembler {
                        const int64_t value) -> void {
 
         for_each_chunk(count, [&](const size_t chunk) -> void {
-            add_text(std::format("times {} {} {}", chunk,
-                                 data_directive(element_size_bytes), value));
+            add_directive(std::format("times {} {} {}", chunk,
+                                      data_directive(element_size_bytes),
+                                      value));
         });
     }
 
     auto reserve(const size_t size_bytes) -> void {
         for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
-            add_text(std::format("resb {}", chunk));
+            add_directive(std::format("resb {}", chunk));
         });
     }
 
@@ -310,14 +311,14 @@ class assembler_x86_64 final : public assembler {
 
         line += '`';
 
-        add_text(std::move(line));
+        add_directive(std::move(line));
     }
 
     // sizes only count in code, so code must be in the text section
     auto switch_section(const section which) -> void {
         set_code_section(which == section::text);
 
-        add_text(std::string{section_directive(which)});
+        add_directive(std::string{section_directive(which)});
     }
 
     //
@@ -411,19 +412,23 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] auto text_code_size(const std::string_view text) const
         -> size_t override {
 
-        const std::string_view code{code_before(text, ";")};
-
-        if (code.empty() or is_directive(code)) {
-            return 0;
-        }
-
-        return 1;
+        // note: the directives are added with size 0 by 'add_directive'
+        return code_before(text, ";").empty() ? 0 : 1;
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
         -> std::string_view override {
 
         return "jmp";
+    }
+
+    //
+    // class methods
+    //
+
+    // a directive emits no instruction, e.g. 'align 16' or 'x equ 3'
+    auto add_directive(std::string text) -> void {
+        add_record_line(std::move(text), 0, std::nullopt);
     }
 
     //
@@ -583,21 +588,6 @@ class assembler_x86_64 final : public assembler {
         static_assert(infos.size() == op_count_);
 
         return infos.at(std::to_underlying(code));
-    }
-
-    // lines such as 'bits 64', 'global _start' and 'size.func.f equ 32'
-    [[nodiscard]] static auto is_directive(const std::string_view code)
-        -> bool {
-
-        constexpr std::array<std::string_view, 11> keywords{
-            "align", "bits",   "db",   "dd",      "default", "dq",
-            "dw",    "global", "resb", "section", "times",
-        };
-
-        const std::string_view first_word{code.substr(0, code.find(' '))};
-
-        return std::ranges::contains(keywords, first_word) or
-               code.contains(" equ ");
     }
 
     [[nodiscard]] static auto section_directive(const section which)

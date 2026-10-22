@@ -63,6 +63,8 @@ struct func_head {
     token name_tk;
     token method_dot_tk;
     token method_name_tk;
+    // the type of 'name_tk' of a method, null for a function
+    const type* receiver_type{};
     // e.g. 'f' or 'list.add', the receiver named as the type it is bound to,
     // e.g. 'str.print' for 'text.print' when 'text' names 'str'
     std::string name;
@@ -142,15 +144,13 @@ struct func_head {
     // 'name_tk' is the receiver type, a method gets an implicit first
     // parameter 'self' of that type and a constructor builds a 'self' of it
     auto read_method_name(const toc& tc, tokenizer& tz) -> void {
-        const type& receiver_type{
-            tc.get_type_or_throw(name_tk),
-        };
+        receiver_type = &tc.get_type_or_throw(name_tk);
 
-        if (receiver_type.is_builtin()) {
+        if (receiver_type->is_builtin()) {
             throw compile_error{
                 name_tk, std::format("methods on built-in type '{}' are not "
                                      "supported",
-                                     receiver_type.name())};
+                                     receiver_type->name())};
         }
 
         method_name_tk = tz.next_token();
@@ -162,7 +162,7 @@ struct func_head {
         toc::assert_valid_name(method_name_tk);
 
         name =
-            std::format("{}.{}", receiver_type.name(), method_name_tk.text());
+            std::format("{}.{}", receiver_type->name(), method_name_tk.text());
     }
 
     // 'noinline' and 'mut' before the name; a word followed by '(' is read as
@@ -537,7 +537,7 @@ class stmt_def_func final : public statement {
 
   private:
     // located at the method name for diagnostics
-    auto add_self_param(const toc& tc) -> void {
+    auto add_self_param() -> void {
         const token self_tk{
             token::synthetic(head_.method_name_tk.file_index(),
                              reserved_names::self,
@@ -545,9 +545,10 @@ class stmt_def_func final : public statement {
                              head_.method_name_tk.at_line()),
         };
 
+        assert(head_.receiver_type != nullptr);
+
         params_.insert(params_.begin(),
-                       stmt_def_func_param{self_tk,
-                                           tc.get_type_or_throw(head_.name_tk),
+                       stmt_def_func_param{self_tk, *head_.receiver_type,
                                            head_.mut_tk.is_empty()});
     }
 
@@ -792,7 +793,7 @@ class stmt_def_func final : public statement {
         }
 
         if (result.is_self()) {
-            set_constructor_result(tc, result.name_tk, result.type_tk);
+            set_constructor_result(result.name_tk, result.type_tk);
             return;
         }
 
@@ -821,7 +822,7 @@ class stmt_def_func final : public statement {
 
         // known only after the result: a constructor builds 'self' instead
         if (is_method()) {
-            add_self_param(tc);
+            add_self_param();
         }
 
         // e.g. 'text.size' for the instance 'str.size', empty if the function
@@ -835,8 +836,8 @@ class stmt_def_func final : public statement {
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'
-    auto set_constructor_result(const toc& tc, const token& self_tk,
-                                const token& type_tk) -> void {
+    auto set_constructor_result(const token& self_tk, const token& type_tk)
+        -> void {
 
         if (head_.method_dot_tk.is_empty()) {
             throw compile_error{
@@ -849,9 +850,9 @@ class stmt_def_func final : public statement {
                 type_tk, "result 'self' has the type of the constructor"};
         }
 
-        const type& tp{
-            tc.get_type_or_throw(head_.name_tk),
-        };
+        assert(head_.receiver_type != nullptr);
+
+        const type& tp{*head_.receiver_type};
 
         returns_.emplace(type_tk, self_tk, &tp);
         set_type(tp);

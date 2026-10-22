@@ -116,6 +116,27 @@ struct alias_info {
     const type* type_ptr{};
     std::variant<bound_constant, bound_register, bound_storage> binding;
 
+    // the storage that the parameter names with 'path' inside it, empty when
+    // its argument holds none, e.g. a constant or a value in a register
+    [[nodiscard]] auto bound_storage_of(const access_path& path) const
+        -> std::optional<storage_path> {
+
+        const bound_storage* const storage{
+            std::get_if<bound_storage>(&binding),
+        };
+
+        if (storage == nullptr or not storage->bound) {
+            return std::nullopt;
+        }
+
+        const storage_path& bound{*storage->bound};
+
+        return storage_path{
+            .root{bound.root},
+            .path{bound.path.extended_by(path)},
+        };
+    }
+
     // what the alias stands for, as the comments show it
     [[nodiscard]] auto target_text() const -> std::string {
         if (const bound_constant* const bound{
@@ -228,8 +249,8 @@ class frame final {
     // a unique path of source locations of the inlined call
     std::string call_path_;
 
-    // number of bytes used on the stack by this frame
-    size_t allocated_stack_size_bytes_{};
+    // the bytes of variable storage this frame uses
+    size_t allocated_storage_size_bytes_{};
 
     // the root frame: the padding between the dats and its variables
     size_t dat_var_padding_bytes_{};
@@ -267,8 +288,8 @@ class frame final {
     auto add_var(const var_info& var, const size_t allocated_size_bytes,
                  const var_kind kind) -> void {
 
-        allocated_stack_size_bytes_ =
-            sum_storage_size(allocated_stack_size_bytes_, allocated_size_bytes);
+        allocated_storage_size_bytes_ = sum_storage_size(
+            allocated_storage_size_bytes_, allocated_size_bytes);
 
         vars_.put(var.name, var);
 
@@ -281,8 +302,8 @@ class frame final {
         }
     }
 
-    [[nodiscard]] auto allocated_stack_size_bytes() const -> size_t {
-        return sum_storage_size(allocated_stack_size_bytes_,
+    [[nodiscard]] auto allocated_storage_size_bytes() const -> size_t {
+        return sum_storage_size(allocated_storage_size_bytes_,
                                 dat_var_padding_bytes_);
     }
 
@@ -1160,33 +1181,6 @@ class scope_stack final {
 
     [[nodiscard]] auto back() const -> const frame& { return frames_.back(); }
 
-    // the storage that the parameter 'name' names with 'path' inside it,
-    // empty when its argument holds none, e.g. a constant or a value in a
-    // register
-    [[nodiscard]] auto bound_storage_of(const std::string_view name,
-                                        const access_path& path) const
-        -> std::optional<storage_path> {
-
-        const alias_info* const alias{find_alias(name)};
-
-        assert(alias != nullptr);
-
-        const bound_storage* const storage{
-            std::get_if<bound_storage>(&alias->binding),
-        };
-
-        if (storage == nullptr or not storage->bound) {
-            return std::nullopt;
-        }
-
-        const storage_path& bound{*storage->bound};
-
-        return storage_path{
-            .root{bound.root},
-            .path{bound.path.extended_by(path)},
-        };
-    }
-
     // the value of 'name' when it means a constant
     [[nodiscard]] auto const_value(const std::string_view name) const
         -> std::optional<int64_t> {
@@ -1260,22 +1254,6 @@ class scope_stack final {
                                                storage_base_register));
 
         track_depth();
-    }
-
-    // the array that variable 'name' is an element of, empty when it is not the
-    // element of a 'foo'
-    [[nodiscard]] auto foo_array(const std::string_view name) const
-        -> std::optional<storage_path> {
-
-        const name_meaning meaning{lookup(name)};
-
-        if (not meaning.is_variable()) {
-            return {};
-        }
-
-        return frames_.at(meaning.frame_index)
-            .get_var_const_ref(name)
-            .foo_array;
     }
 
     [[nodiscard]] auto frames() -> std::vector<frame>& { return frames_; }
@@ -1422,18 +1400,6 @@ class scope_stack final {
   private:
     // the alias 'name' of the innermost function, null when 'name' means
     // something else
-    [[nodiscard]] auto find_alias(const std::string_view name) const
-        -> const alias_info* {
-
-        const name_meaning meaning{lookup(name)};
-
-        if (not meaning.is_alias()) {
-            return nullptr;
-        }
-
-        return &frames_.at(meaning.frame_index).get_alias(name);
-    }
-
     auto track_depth() -> void {
         max_depth_ = std::max(frames_.size(), max_depth_);
     }
@@ -1646,12 +1612,12 @@ class storage_layout final {
         return frame_at(*frame_index).peak_storage_size_bytes();
     }
 
-    // the root frame applies the dat var padding again when it is entered anew
-    auto pop_scope() -> void {
-        vars_size_bytes_ -= scopes_.get().back().allocated_stack_size_bytes();
-        scopes_.get().pop();
+    // the storage of 'popped', the innermost frame, is free again; the root
+    // frame applies the dat var padding again when it is entered anew
+    auto release_scope(const frame& popped, const bool is_root) -> void {
+        vars_size_bytes_ -= popped.allocated_storage_size_bytes();
 
-        if (not scopes_.get().is_empty()) {
+        if (not is_root) {
             return;
         }
 
@@ -1773,7 +1739,7 @@ class storage_layout final {
             const frame& frm{frames.at(i - 1)};
 
             local_size_bytes = sum_storage_size(
-                local_size_bytes, frm.allocated_stack_size_bytes());
+                local_size_bytes, frm.allocated_storage_size_bytes());
 
             if (not frm.storage_base_register().empty()) {
                 return {
@@ -2462,7 +2428,7 @@ class toc final {
 
         ~frame_depth_scope() {
             while (tc_.scopes_.frames().size() > depth_) {
-                tc_.storage_.pop_scope();
+                tc_.pop_frame();
             }
         }
     };
@@ -2878,25 +2844,25 @@ class toc final {
     auto exit_block() -> void {
         assert(scopes_.back().is_block());
 
-        storage_.pop_scope();
+        pop_frame();
     }
 
     auto exit_foo([[maybe_unused]] const std::string_view name) -> void {
         assert(scopes_.back().is_foo() and scopes_.back().is_name(name));
 
-        storage_.pop_scope();
+        pop_frame();
     }
 
     auto exit_func([[maybe_unused]] const std::string_view name) -> void {
         assert(scopes_.back().is_func() and scopes_.back().is_name(name));
 
-        storage_.pop_scope();
+        pop_frame();
     }
 
     auto exit_loop([[maybe_unused]] const std::string_view name) -> void {
         assert(scopes_.back().is_loop() and scopes_.back().is_name(name));
 
-        storage_.pop_scope();
+        pop_frame();
     }
 
     auto exit_type_params() -> void { types_.exit_params(); }
@@ -3064,24 +3030,27 @@ class toc final {
         const name_meaning meaning{scopes_.lookup(name)};
 
         if (meaning.is_alias()) {
-            return scopes_.bound_storage_of(name, path);
+            const alias_info& alias{
+                scopes_.frames().at(meaning.frame_index).get_alias(name),
+            };
+
+            return alias.bound_storage_of(path);
         }
 
         if (not meaning.is_variable()) {
             return std::nullopt;
         }
 
-        // note: the array was resolved to its root variable when the 'foo'
-        //       was made, the callee of a call in the 'foo' does not see 'e'
-
-        if (const std::optional<storage_path> array{scopes_.foo_array(name)}) {
-
-            return array->any_element(path);
-        }
-
         const var_info& var{
             scopes_.frames().at(meaning.frame_index).get_var_const_ref(name),
         };
+
+        // note: the array was resolved to its root variable when the 'foo'
+        //       was made, the callee of a call in the 'foo' does not see 'e'
+
+        if (var.foo_array) {
+            return var.foo_array->any_element(path);
+        }
 
         // a value in a register has no storage, e.g. the counter 'i' of a 'foo'
         if (std::holds_alternative<in_value_register>(var.placement)) {
@@ -3226,6 +3195,12 @@ class toc final {
         }
 
         return funcs_.get(name);
+    }
+
+    // the frames are pushed by 'scope_stack', popped here with their storage
+    auto pop_frame() -> void {
+        storage_.release_scope(scopes_.back(), scopes_.frames().size() == 1);
+        scopes_.pop();
     }
 };
 

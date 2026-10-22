@@ -549,12 +549,10 @@ examples:
 
         // the option is wrong, not the source
         if (opts.vars_size_bytes > backend->max_storage_bytes()) {
-            print_option_error(std::format(
+            throw option_error{std::format(
                 "invalid --vars: {} B exceeds the {} B that the target "
                 "addresses",
-                opts.vars_size_bytes, backend->max_storage_bytes()));
-
-            return 1;
+                opts.vars_size_bytes, backend->max_storage_bytes())};
         }
 
         if (opts.reports.registers) {
@@ -575,10 +573,8 @@ examples:
         if (opts.machine_target != target::x86_64 and
             is_source_file(binary, files)) {
 
-            print_option_error(
-                std::format("invalid --bin: '{}' is a source file", binary));
-
-            return 1;
+            throw option_error{
+                std::format("invalid --bin: '{}' is a source file", binary)};
         }
 
         if (opts.reproduce_source) {

@@ -134,12 +134,8 @@ struct generic_call {
     [[nodiscard]] static auto argument_type(toc& tc, tokenizer tz,
                                             const size_t index) -> const type* {
 
-        for (size_t i{}; i < index; ++i) {
-            tz.skip_argument();
-
-            if (tz.is_next_char_token(',').is_empty()) {
-                return nullptr;
-            }
+        if (not skip_to_argument(tz, index)) {
+            return nullptr;
         }
 
         const token tk{tz.next_token()};
@@ -175,13 +171,7 @@ struct generic_call {
                                         const std::string_view param_name)
         -> void {
 
-        for (size_t i{}; i < index; ++i) {
-            tz.skip_argument();
-
-            if (tz.is_next_char_token(',').is_empty()) {
-                break;
-            }
-        }
+        std::ignore = skip_to_argument(tz, index);
 
         // a malformed list is reported by the parse of the arguments
         if (tz.peek_char_after_whitespace() != ')') {
@@ -248,6 +238,22 @@ struct generic_call {
         }
 
         return deduced;
+    }
+
+    // moves 'tz' from after the '(' to the argument at 'index', false when the
+    // list ends before it
+    [[nodiscard]] static auto skip_to_argument(tokenizer& tz,
+                                               const size_t index) -> bool {
+
+        for (size_t i{}; i < index; ++i) {
+            tz.skip_argument();
+
+            if (tz.is_next_char_token(',').is_empty()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // the type of an instance literal, a constructor call or a call of a
@@ -409,7 +415,7 @@ struct call_site {
     auto assert_result_type(const destination& dst,
                             const stmt_def_func& func) const -> void {
 
-        if (dst.type_ref().is_same(func.get_type())) {
+        if (not result_type_differs(dst, func)) {
             return;
         }
 
@@ -489,6 +495,15 @@ struct call_site {
         return result_type.is_builtin() and not result_type.is_bool() and
                dst_type.is_builtin() and not dst_type.is_bool() and
                result_type.size_bytes() < dst_type.size_bytes();
+    }
+
+    // 'dst' has another type than the result, after 'assert_result_type' a
+    // widening of an operand
+    [[nodiscard]] static auto result_type_differs(const destination& dst,
+                                                  const stmt_def_func& func)
+        -> bool {
+
+        return not dst.type_ref().is_same(func.get_type());
     }
 
     // a temporary of the call is a root variable of its own
@@ -578,7 +593,7 @@ class inline_call {
     auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
 
-        if (func.returns() and not dst.type_ref().is_same(func.get_type())) {
+        if (func.returns() and call_site::result_type_differs(dst, func)) {
             // note: 'call_site::assert_result_type' allows a type mismatch
             //       only for an operand
 
@@ -1840,7 +1855,7 @@ class noinline_call {
         -> bool {
 
         return func.returns() and (not dst.operand().is_memory() or
-                                   not dst.type_ref().is_same(func.get_type()));
+                                   call_site::result_type_differs(dst, func));
     }
 
     // the index of 'root' among the locals met so far, added when it is new

@@ -1448,11 +1448,18 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] auto address_is_encodable(const operand& value) const
         -> bool {
 
-        return not value.is_memory() or
-               (std::in_range<int32_t>(value.displacement()) and
-                (value.index_register().empty() or
-                 (value.index_register() != "rsp" and
-                  can_lower_index_scale(value.scale()))));
+        if (not value.is_memory()) {
+            return true;
+        }
+
+        // note: an index is a scratch register with an encodable scale,
+        //       'stmt_identifier' applies another scale with 'scale_index'
+
+        assert(value.index_register().empty() or
+               (value.index_register() != "rsp" and
+                can_lower_index_scale(value.scale())));
+
+        return std::in_range<int32_t>(value.displacement());
     }
 
     [[nodiscard]] auto alloc_bulk_registers(const token& src_loc_tk,

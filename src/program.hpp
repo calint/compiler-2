@@ -302,6 +302,8 @@ class program final {
     std::vector<file_statements> file_statements_;
     std::set<std::filesystem::path> loaded_paths_;
     toc tc_; // table of contents
+    // where the program starts, checked when every definition is parsed
+    const stmt_def_func* main_func_{};
 
   public:
     // the main file is the first of 'files', the included ones are added
@@ -353,7 +355,7 @@ class program final {
 
         tc_.exit_block();
 
-        assert_main_valid(tc_);
+        main_func_ = &checked_main(tc_);
 
         assignment_analysis::assert_functions_set_return_value(
             tc_.funcs().defs());
@@ -365,7 +367,7 @@ class program final {
         machine& x{tc_.machine()};
 
         x.start();
-        compile(0);
+        compile();
         x.finish();
         report_renderer::write(x, tc_.usage());
         tc_.assert_released();
@@ -401,16 +403,18 @@ class program final {
         };
     }
 
-    auto compile(const size_t indent) -> void {
+    auto compile() -> void {
         tc_.enter_block();
 
         for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc_, indent, destination{});
+            s->compile(tc_, 0, destination{});
         }
 
-        compile_main(tc_, indent);
-        compile_noinline_functions(tc_, indent);
-        check_unreached_functions(tc_, indent);
+        assert(main_func_ != nullptr);
+
+        compile_main(tc_, *main_func_);
+        compile_noinline_functions(tc_);
+        check_unreached_functions(tc_);
 
         tc_.exit_block();
 
@@ -550,8 +554,24 @@ class program final {
     // statics
     //
 
+    // the rules checked while compiling, e.g. a constant index in bounds,
+    // hold in a function that no compile reached too, so whether a program is
+    // accepted does not depend on its calls; this includes the instances that
+    // an alias of a generic type makes of its methods
+    static auto check_unreached_functions(toc& tc) -> void {
+        for (const stmt_def_func* const f : tc.funcs().defs()) {
+            if (tc.funcs().is_reached(*f)) {
+                continue;
+            }
+
+            f->check_body(tc, 0);
+        }
+    }
+
     // the program starts at 'main', checked once every definition is parsed
-    static auto assert_main_valid(const toc& tc) -> void {
+    [[nodiscard]] static auto checked_main(const toc& tc)
+        -> const stmt_def_func& {
+
         // e.g. 'func main<T type>()' is recorded as a generic function
         if (tc.generics().has_func(reserved_names::main)) {
             throw compile_error{
@@ -576,28 +596,12 @@ class program final {
             throw compile_error{func_main.returns()->ident_tk,
                                 "'main' cannot have a result"};
         }
-    }
 
-    // the rules checked while compiling, e.g. a constant index in bounds,
-    // hold in a function that no compile reached too, so whether a program is
-    // accepted does not depend on its calls; this includes the instances that
-    // an alias of a generic type makes of its methods
-    static auto check_unreached_functions(toc& tc, const size_t indent)
-        -> void {
-
-        for (const stmt_def_func* const f : tc.funcs().defs()) {
-            if (tc.funcs().is_reached(*f)) {
-                continue;
-            }
-
-            f->check_body(tc, indent);
-        }
+        return func_main;
     }
 
     // the main function is compiled where the program starts
-    static auto compile_main(toc& tc, const size_t indent) -> void {
-        const stmt_def_func& func_main{tc.get_main_or_throw()};
-
+    static auto compile_main(toc& tc, const stmt_def_func& func_main) -> void {
         machine& x{tc.machine()};
 
         const machine::call_frame_scope call_frame{
@@ -611,7 +615,7 @@ class program final {
 
         x.label(0, reserved_names::main);
         tc.enter_func(reserved_names::main);
-        func_main.compile_statements(tc, indent);
+        func_main.compile_statements(tc, 0);
         tc.exit_func(reserved_names::main);
 
         // code after an 'exit' or 'return' on every path would never run
@@ -621,8 +625,7 @@ class program final {
     }
 
     static auto
-    compile_noinline_body(toc& tc, const size_t indent,
-                          const stmt_def_func& func,
+    compile_noinline_body(toc& tc, const stmt_def_func& func,
                           const std::span<const size_t> array_lengths) -> void {
 
         machine& x{tc.machine()};
@@ -644,10 +647,10 @@ class program final {
             x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
         }
 
-        x.label(indent, func.body_label(array_lengths));
+        x.label(0, func.body_label(array_lengths));
 
         const size_t frame_size_bytes{
-            func.compile_body(tc, indent, array_lengths),
+            func.compile_body(tc, 0, array_lengths),
         };
 
         x.define_constant(func.frame_size_label(array_lengths),
@@ -658,8 +661,7 @@ class program final {
 
     // each noinline function that is called has one body per kind of call,
     // after 'main'; a function nothing calls leaves no code
-    static auto compile_noinline_functions(toc& tc, const size_t indent)
-        -> void {
+    static auto compile_noinline_functions(toc& tc) -> void {
 
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
@@ -667,7 +669,7 @@ class program final {
         for (size_t i{}; i < tc.funcs().noinline_body_count(); ++i) {
             const noinline_body body{tc.funcs().noinline_body_at(i)};
 
-            compile_noinline_body(tc, indent, *body.func, body.array_lengths);
+            compile_noinline_body(tc, *body.func, body.array_lengths);
         }
     }
 
