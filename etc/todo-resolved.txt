@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' ends
+    the emulator with the dividend in a0 as exit code
+    => done (2026-10-22): also rv32i-qemu, whose 'ebreak' never ended (no
+       trap vector); 'emit_divide_by_zero_trap': linux keeps 'ebreak', bare
+       metal exits with 'panic_exit_code'; bare metal emits the shared
+       routines before 'exit', 'read' and 'write' so a helper can mark
+       'exit' used, test 1437
 [x] medium: a typed constant argument passed to a wider parameter is accepted
     where the variable is rejected (G4-2), e.g. 'f(5)' with 'f(a i8)' calling
     'g(b i16)' with 'g(a)'; also 'f(v + 1)' with the parameter in a register;

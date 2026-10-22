@@ -1,0 +1,10 @@
+# an unchecked division by zero ends the program: linux with a signal, bare
+# metal with the panic exit code
+
+func noinline divide(a, b) res {
+    res = a / b
+}
+
+func main() {
+    var c = divide(7, 0)
+}

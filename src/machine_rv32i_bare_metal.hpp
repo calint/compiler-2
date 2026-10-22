@@ -66,8 +66,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // overridden methods
     //
 
-    // only the routines the program calls are emitted
+    // only the routines the program calls are emitted; the shared routines
+    // come first, they may use 'exit'
     auto begin_data(const size_t alignment) -> void override {
+        emit_used_routines();
+
         if (is_used("exit")) {
             emit_exit_routine(assembler());
         }
@@ -80,7 +83,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
             emit_write_routine();
         }
 
-        machine_rv32i::begin_data(alignment);
+        begin_data_section(alignment);
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,
@@ -129,6 +132,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
             std::format("code, data and variables use {} B and the stack {} B, "
                         "which exceeds the {} B of device memory",
                         memory_end_address, stack_size_bytes(), memory_bytes)};
+    }
+
+    // no operating system catches a trap, the program exits like a panic
+    auto emit_divide_by_zero_trap() -> void override {
+        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
     }
 
     auto emit_read_call(const size_t indent) -> void override {

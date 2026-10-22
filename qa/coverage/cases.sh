@@ -4581,3 +4581,9 @@ SRC=1435 && COMPERR
 
 # a global variable is not initialized with 'read' or 'write'
 SRC=1436 && COMPERR
+
+# an unchecked division by zero ends the program: x86_64 with SIGFPE, rv32i
+# with SIGTRAP, bare metal with the panic exit code
+if [[ $MACHINE == x86_64 ]]; then SRC=1437 && EXP=136 && RUN; fi
+if [[ $MACHINE == rv32i ]]; then SRC=1437 && EXP=133 && RUN; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=1437 && EXP=255 && RUN; fi

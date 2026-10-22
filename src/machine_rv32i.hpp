@@ -461,6 +461,13 @@ class machine_rv32i : public machine {
     check_memory_end([[maybe_unused]] const size_t memory_end_address) const
         -> void {}
 
+    // the divide helper found a zero divisor without '--checks=division',
+    // linux stops the program with a trap signal
+    virtual auto emit_divide_by_zero_trap() -> void {
+        assembler_.ebreak(1);
+        assembler_.j(1, "5b");
+    }
+
     // a0 is the descriptor and receives the byte count, a1 is the address,
     // a2 the count and a7 is reserved; an override may change the registers
     // after a2 in the allocation order, see 'call_io_routine'
@@ -490,6 +497,12 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
+    auto begin_data_section(const size_t alignment) -> void {
+        assembler_.switch_section(section::data);
+        assembler_.align(alignment);
+        label(0, data_label);
+    }
+
     // i/o routines replacing system calls return through a7 and change only
     // 'clobbered' besides a0, which are free at the call, so like a system
     // call it saves nothing
@@ -505,6 +518,13 @@ class machine_rv32i : public machine {
                                     }));
 
         assembler_.call(indent, label, "a7");
+    }
+
+    // the helpers and routines the program calls, which may mark more
+    // routines used, e.g. the exit of a division by zero on bare metal
+    auto emit_used_routines() -> void {
+        emit_arithmetic_helpers();
+        emit_used_sector_routines();
     }
 
   public:
@@ -613,13 +633,8 @@ class machine_rv32i : public machine {
     }
 
     auto begin_data(const size_t alignment) -> void override {
-        emit_arithmetic_helpers();
-
-        emit_used_sector_routines();
-
-        assembler_.switch_section(section::data);
-        assembler_.align(alignment);
-        label(0, data_label);
+        emit_used_routines();
+        begin_data_section(alignment);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -2896,8 +2911,7 @@ class machine_rv32i : public machine {
             assembler_.sub(1, "a1", "a1", "a4");
             assembler_.ret(1);
             assembler_.label(0, "5");
-            assembler_.ebreak(1);
-            assembler_.j(1, "5b");
+            emit_divide_by_zero_trap();
         }
     }
 

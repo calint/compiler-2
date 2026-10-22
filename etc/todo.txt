@@ -292,8 +292,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 3. new features
 --------------------------------------------------------------------------------
-[ ] easy: rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' ends
-    the emulator with the dividend in a0 as exit code
 [ ] easy: variable argument count in read/write might be confusing, consider
     requiring all arguments
 [ ] easy: should 'if str == "abc"' be supported?
