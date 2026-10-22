@@ -1,0 +1,4 @@
+
+1434.baz:4:9: the file name has a control character
+include "1434\x00.baz"
+        ^~~~~~~~~~~~~~

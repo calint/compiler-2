@@ -1,0 +1,7 @@
+# a control character in the name of an included file, e.g. a NUL that would
+# end the path early
+
+include "1434\x00.baz"
+
+func main() {
+}

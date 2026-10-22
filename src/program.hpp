@@ -513,6 +513,13 @@ class program final {
         // escapes are decoded like in any other string, e.g. '\x20'
         const std::string name{token::decode_string(path_tk.string_text())};
 
+        // e.g. a NUL would end the path early and a line end split the
+        // messages that name the file
+        if (std::ranges::any_of(name, is_control_char)) {
+            throw compile_error{path_tk,
+                                "the file name has a control character"};
+        }
+
         // relative to the directory of the file with the 'include'
         const std::filesystem::path path{
             (std::filesystem::path{files_.get().name(file_ix)}.parent_path() /
@@ -723,6 +730,14 @@ class program final {
         x.emit_string_constants(tc.data().constants());
     }
 
+    // a byte below ' ' or DEL, which would break a message or a path
+    [[nodiscard]] static auto is_control_char(const char ch) -> bool {
+        const unsigned char byte{static_cast<unsigned char>(ch)};
+        // note: unsigned, the bytes of UTF-8 are above DEL
+
+        return byte < ' ' or byte == '\x7f';
+    }
+
     // only definitions are allowed at the top level
     [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
                                                const token& tk)
@@ -762,10 +777,10 @@ class program final {
         std::string result;
 
         for (const char ch : text) {
-            const unsigned char byte{static_cast<unsigned char>(ch)};
+            if (is_control_char(ch)) {
+                result +=
+                    std::format("\\x{:02x}", static_cast<unsigned char>(ch));
 
-            if (byte < ' ' or byte == '\x7f') {
-                result += std::format("\\x{:02x}", byte);
                 continue;
             }
 

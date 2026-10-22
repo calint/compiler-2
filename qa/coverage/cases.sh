@@ -4571,3 +4571,6 @@ SRC=1430 && COMPERR
 SRC=1431 && COMPERR
 SRC=1432 && COMPERR
 SRC=1433 && COMPERR
+
+# a control character in the name of an included file
+SRC=1434 && COMPERR
