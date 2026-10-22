@@ -560,16 +560,11 @@ class machine_rv32i : public machine {
   public:
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
-    machine_rv32i(std::ostream* const direct_output,
-                  const builtin_type_set& builtins,
-                  const source_files* const files = nullptr,
-                  const target_options& options = {})
-        : machine{direct_output, builtins, files, options},
-          binary_file_name_{options.binary_file_name} {
-
-        // output before 'start' is written as emitted
-        assembler_.set_direct_output(direct_stream());
-    }
+    explicit machine_rv32i(const builtin_type_set& builtins,
+                           const source_files* const files = nullptr,
+                           const target_options& options = {})
+        : machine{builtins, files, options},
+          binary_file_name_{options.binary_file_name} {}
 
     using machine::emit_data_array;
 
@@ -1235,11 +1230,6 @@ class machine_rv32i : public machine {
 
         finish_output();
 
-        // direct output was written as emitted, there is nothing to resolve
-        if (not assembler_.is_buffering()) {
-            return;
-        }
-
         // the report counts after resolving because grown jumps take more
         // instructions, a failing build writes nothing
         assembler_.resolve_jumps();
@@ -1603,11 +1593,6 @@ class machine_rv32i : public machine {
 
     // a named binary image is written together with the assembly source
     auto write_assembly(std::ostream& os) -> void override {
-        // a build buffers its output
-        assert(assembler_.is_buffering());
-
-        assembler_.set_direct_output(direct_stream());
-
         if (binary_file_name_.empty()) {
             assembler_.write_resolved(os);
             return;

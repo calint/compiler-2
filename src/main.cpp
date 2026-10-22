@@ -861,25 +861,21 @@ default_binary_file_name(const std::string_view src_file_name,
 
     // todo: x86_64 writes no binary, see etc/todo.txt
     if (machine_target == target::x86_64) {
-        return std::make_unique<machine_x86_64>(nullptr, builtins, files,
-                                                options);
+        return std::make_unique<machine_x86_64>(builtins, files, options);
     }
 
     if (machine_target == target::rv32i) {
-        return std::make_unique<machine_rv32i_linux>(nullptr, builtins, files,
-                                                     options);
+        return std::make_unique<machine_rv32i_linux>(builtins, files, options);
     }
 
     if (machine_target == target::rv32i_qemu) {
-        return std::make_unique<machine_rv32i_qemu>(nullptr, builtins, files,
-                                                    options);
+        return std::make_unique<machine_rv32i_qemu>(builtins, files, options);
     }
 
     // the command line accepts only these four targets
     assert(machine_target == target::rv32i_fpga);
 
-    return std::make_unique<machine_rv32i_fpga>(nullptr, builtins, files,
-                                                options);
+    return std::make_unique<machine_rv32i_fpga>(builtins, files, options);
 }
 
 // every command line error ends with the same hint

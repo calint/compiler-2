@@ -167,7 +167,7 @@ auto rejected_with(const action_t& action, const std::string_view text = {})
 
 // an RV32I backend whose output is captured, for checks of emitted text
 struct captured_rv32i {
-    machine_rv32i_linux backend{nullptr, test_builtins};
+    machine_rv32i_linux backend{test_builtins};
     emitted_since output{backend, true};
 
     // the text that 'emit' adds, the output is empty again afterwards
@@ -183,7 +183,7 @@ struct captured_rv32i {
 
 // an x86_64 backend whose output is captured
 struct captured_x86_64 {
-    machine_x86_64 backend{nullptr, test_builtins, {}};
+    machine_x86_64 backend{test_builtins, {}};
     emitted_since output{backend};
 };
 
@@ -211,7 +211,7 @@ auto compiled_rv32i(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{nullptr, test_builtins};
+    machine_rv32i_linux compiler{test_builtins};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -224,7 +224,7 @@ auto compiled_x86_64(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_x86_64 compiler{nullptr, test_builtins, &files};
+    machine_x86_64 compiler{test_builtins, &files};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -767,7 +767,7 @@ auto check_equal_size_choice() -> void {
     for (const assembler::jump_mode jumps :
          {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{nullptr, test_builtins, {}, {.jumps{jumps}}};
+        machine_rv32i_linux backend{test_builtins, {}, {.jumps{jumps}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -803,7 +803,7 @@ auto check_version_state_kept() -> void {
     for (const machine::kept_version kept :
          {machine::kept_version::smaller, machine::kept_version::last}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{nullptr, test_builtins, {}, {.kept{kept}}};
+        machine_rv32i_linux backend{test_builtins, {}, {.kept{kept}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -845,7 +845,7 @@ auto check_version_state_kept() -> void {
 // the jump optimizer sees the jumps and labels that the backend emits
 auto check_backend_jump_optimization() -> void {
     std::ostringstream output;
-    machine_rv32i_linux backend{nullptr, test_builtins, {}, {.jumps{assembler::jump_mode::optimized}}};
+    machine_rv32i_linux backend{test_builtins, {}, {.jumps{assembler::jump_mode::optimized}}};
     backend.start();
 
     const operand left{operand::reg("a0", integer)};
@@ -941,7 +941,7 @@ auto check_variable_comments() -> void {
 // an RV32I backend over a source file, its comments carry source positions
 struct located_rv32i {
     source_files files;
-    machine_rv32i_linux backend{nullptr, test_builtins, &files};
+    machine_rv32i_linux backend{test_builtins, &files};
     emitted_since comments{backend};
 
     // 'value' on the second line, at column 5
@@ -984,7 +984,7 @@ auto check_allocation_comments() -> void {
            "    # [test.baz:2:5] free named register a0\n"
            "    # [test.baz:2:5] free scratch register t0\n");
 
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // an operation on memory loads, computes and stores through a scratch
@@ -1001,7 +1001,7 @@ auto check_memory_operation_comments() -> void {
            "    lw t0, 0(a0)\n    addi t0, t0, 1\n    sw t0, 0(a0)\n"
            "    # [test.baz:2:5] free scratch register t0\n");
 
-    located.backend.finish();
+    located.backend.assert_registers_free();
 }
 
 // the scratch registers are handed out temporaries first and the argument
@@ -1024,7 +1024,7 @@ auto check_rv32i_scratch_order() -> void {
     }
 
     backend.free_scratch_registers(located.location, 1, allocated);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // the copy helper describes the registers it uses and its steps
@@ -1053,7 +1053,7 @@ auto check_copy_helper_comments() -> void {
             std::format("# [test.baz:2:5] {}\n", text)));
     }
 
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // ============================================================================
@@ -1220,7 +1220,7 @@ auto check_x86_scratch_registers() -> void {
         assert(registers.back().base_register() == "rcx");
 
         backend.free_scratch_registers(token{}, 0, registers);
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -1312,7 +1312,7 @@ auto check_x86_syscall_register_saving() -> void {
             if (rcx_allocated) {
                 backend.free_named_register(token{}, 0, live_rcx);
             }
-            backend.finish();
+            backend.assert_registers_free();
         }
     }
 }
@@ -1435,7 +1435,7 @@ auto check_memory_comparison_tail() -> void {
         assert(not assembly.contains("slli"));
 
         backend.free_scratch_registers(token{}, 0, held);
-        backend.finish();
+        backend.assert_registers_free();
         rv32i.output.clear();
     }
 }
@@ -1506,7 +1506,7 @@ auto check_known_size_copy() -> void {
                    not assembly.contains("andi "));
         }
 
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -1577,7 +1577,7 @@ auto check_shifts() -> void {
     }
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // 'add_subtract' and 'bitwise' with register and constant operands, a
@@ -1639,7 +1639,7 @@ auto check_add_subtract_bitwise() -> void {
     }
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // 'x & 0' stores or loads its known result for every value width, a shift by
@@ -1695,7 +1695,7 @@ auto check_zero_operations_and_zero_shifts() -> void {
     }) == "sub a0, zero, a0\n");
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // byte values: an operation with a known result loads it, a shift extends the
@@ -1744,7 +1744,7 @@ auto check_narrow_values_and_large_constants() -> void {
     }) == "addi a0, a0, -2048\naddi a0, a0, -1\n");
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // ============================================================================
@@ -1772,7 +1772,7 @@ auto check_copy_widths() -> void {
         assert(rv32i.emitted([&] { backend.copy_value(token{}, 0, reg, reg); })
                    .empty());
 
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -1793,7 +1793,7 @@ auto check_byte_bitwise() -> void {
 
         assert(std::ranges::count(assembly, '\n') == 1);
 
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -1838,7 +1838,7 @@ auto check_address_lowering() -> void {
                            std::countr_zero(scale)));
     }
 
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // with every scratch register but 'a0' held, an address is built in the
@@ -1912,7 +1912,7 @@ auto check_address_lowering_in_destination() -> void {
     }
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // with every scratch register held, an address is built in the destination
@@ -1969,7 +1969,7 @@ auto check_address_forms_without_temporaries() -> void {
                .empty());
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // stores of constants and zeroing of small ranges need no temporary register:
@@ -2007,7 +2007,7 @@ auto check_constant_stores_and_small_zeroing() -> void {
     assert(zeroed(0, 4) == "sw zero, 0(a2)\n");
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // a comparison, its operands and the text it emits with every scratch
@@ -2118,7 +2118,7 @@ auto check_comparison_selection() -> void {
     }
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // multiplication by constants: 1 changes nothing, a power of two is a shift,
@@ -2148,7 +2148,7 @@ auto check_multiply_by_constants() -> void {
            "sw zero, 0(a2)\n");
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // a known-size copy takes 't0' as its temporary, and any free register when
@@ -2181,7 +2181,7 @@ auto check_copy_temporaries() -> void {
     assert(copied(208, 240, 4) == "lw a0, 208(a1)\nsw a0, 240(a2)\n");
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // zeroing: a base offset beyond 12 bits moves into a temporary, and more than
@@ -2210,7 +2210,7 @@ auto check_zeroing_ranges() -> void {
            "sw zero, 0(t0)\naddi t0, t0, 4\nbne t0, t1, 1b\n"
            "# zero 3 B tail\nsh zero, 0(t0)\nsb zero, 2(t0)\n");
 
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // an address that cannot be lowered is rejected: a scale beyond the 32-bit
@@ -2235,7 +2235,7 @@ auto check_invalid_addresses_rejected() -> void {
     }));
 
     backend.free_scratch_registers(token{}, 0, held);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // the scratch register pool: which registers it hands out, in which order,
@@ -2308,7 +2308,7 @@ auto check_scratch_register_pool() -> void {
         };
         assert(named.base_register() == "ra");
         backend.free_named_register(token{}, 0, named);
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -2321,7 +2321,7 @@ auto check_scratch_register_pool() -> void {
 // by a constant ('+' here) never needs the routine
 auto check_multiply_divide_routines() -> void {
     for (const char operation : {'*', '/', '%', '+'}) {
-        machine_rv32i_linux backend{nullptr, test_builtins};
+        machine_rv32i_linux backend{test_builtins};
         emitted_since output{backend};
 
         const auto computed = [&](const operand& dst, const operand& src) {
@@ -2398,7 +2398,7 @@ auto check_multiply_divide_routines() -> void {
             }
         }
 
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -2459,7 +2459,7 @@ auto generate_noninline() -> void {
     // note: 2032 is where 'start' puts the variables base past 'dat'
     constexpr size_t variables_base_offset{2032};
 
-    machine_rv32i_linux backend{nullptr, test_builtins};
+    machine_rv32i_linux backend{test_builtins};
     backend.start();
 
     hand_written(backend, "    addi sp, sp, -128\n    sw sp, 124(sp)");
@@ -2557,7 +2557,7 @@ auto generate_noninline() -> void {
 auto generate_frame_checks() -> void {
     constexpr int vars_size_bytes{256};
 
-    machine_rv32i_linux backend{nullptr, test_builtins};
+    machine_rv32i_linux backend{test_builtins};
     backend.start();
 
     // 's3' is where the overflow handler continues
@@ -2624,7 +2624,7 @@ auto generate_long_loop() -> void {
     // note: 3 iterations of 'foo'
     constexpr int64_t iteration_count{3};
 
-    machine_rv32i_linux backend{nullptr, test_builtins};
+    machine_rv32i_linux backend{test_builtins};
     backend.start();
     hand_written(backend, "    addi sp, sp, -16");
 
@@ -2667,11 +2667,11 @@ auto generate_long_loop() -> void {
 // jumps around padding of 8 KiB (needs 'j') and 1.08 MiB (needs 'jump'),
 // executed in every direction
 auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
-    machine_rv32i_linux backend{nullptr, test_builtins, {}, {.jumps{jumps}}};
+    machine_rv32i_linux backend{test_builtins, {}, {.jumps{jumps}}};
     backend.start();
 
-    // buffered output must come from the backend, so pad with 'xori' on a
-    // register nothing reads
+    // the jumps are resolved over the backend's lines, so pad with 'xori' on
+    // a register nothing reads
     const auto padding = [&](const size_t count) -> void {
         for (size_t i{}; i < count; ++i) {
             backend.unary(token{}, 1, unary_of('~'),
@@ -2777,7 +2777,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{nullptr, test_builtins, {}, {.jumps{jumps}}};
+    machine_rv32i_linux compiler{test_builtins, {}, {.jumps{jumps}}};
 
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(std::cout);
@@ -2884,12 +2884,14 @@ auto generate_bounds_matrix(machine_rv32i& backend) -> void {
 
     backend.free_named_register(token{}, 0, continuation);
     backend.end_main();
-    hand_written(backend, "baz_bounds_panic:\n    li a3, 1\n    jr s3\nbounds_failure:");
+    // the checks jump to the panic label, so it is the backend's
+    backend.label(0, "baz_bounds_panic");
+    hand_written(backend, "    li a3, 1\n    jr s3\nbounds_failure:");
     backend.exit(token{}, 1, operand::imm(1, integer));
 }
 
 auto generate_bounds() -> void {
-    machine_rv32i_linux backend{nullptr, test_builtins};
+    machine_rv32i_linux backend{test_builtins};
     hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
     generate_bounds_matrix(backend);
@@ -3030,7 +3032,7 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                              "    beq a1, a2, 1f\n    j failure\n1:\n"
                              "    addi sp, sp, 64",
                              alignment, area_bytes + 4 + alignment));
-                backend.finish();
+                backend.assert_registers_free();
             }
         }
     }
@@ -3083,7 +3085,7 @@ auto emit_division_tests(machine_rv32i& backend) -> void {
                                 emit_expect(backend, "a1", divisor);
                             }
 
-                            backend.finish();
+                            backend.assert_registers_free();
                         }
                     }
                 }
@@ -3132,7 +3134,7 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
                      expected));
 
         backend.free_named_registers(token{}, 0, live);
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -3147,7 +3149,7 @@ auto emit_division_same_address(machine_rv32i& backend) -> void {
                        machine::runtime_check{});
         hand_written(backend, "    lw a0, 0(t0)");
         emit_expect(backend, "a0", operation == '/' ? 1 : 0);
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -3217,7 +3219,7 @@ auto emit_multiplication_tests(machine_rv32i& backend) -> void {
                             emit_expect(backend, "a1", multiplier);
                         }
 
-                        backend.finish();
+                        backend.assert_registers_free();
                     }
                 }
             }
@@ -3237,7 +3239,7 @@ auto emit_multiplication_aliased_operands(machine_rv32i& backend) -> void {
         backend.multiply(token{}, 1, address, address, use);
         hand_written(backend, "    lw a0, 0(a2)");
         emit_expect(backend, "a0", 49);
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -3256,7 +3258,7 @@ auto emit_index_scaling_tests(machine_rv32i& backend) -> void {
         emit_expect(backend, "a0", std::bit_cast<int32_t>(
                               minus_seven * static_cast<uint32_t>(scale)));
 
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -3278,7 +3280,7 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
             {});
 
         emit_expect(backend, "a0", 1);
-        backend.finish();
+        backend.assert_registers_free();
     }
 }
 
@@ -3442,12 +3444,16 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
 
                         // the branch is taken exactly when expected
                         if (layout.branches) {
+                            // the backend jumps to the label, so it is the
+                            // backend's
                             if (expected == branch_on_true) {
-                                hand_written(backend, std::format("    j failure\n{}:", target));
+                                hand_written(backend, "    j failure");
+                                backend.label(0, target);
                             } else {
-                                hand_written(backend, std::format("    j {}_done\n{}:\n"
-                                             "    j failure\n{}_done:",
-                                             target, target, target));
+                                hand_written(backend, std::format("    j {}_done", target));
+                                backend.label(0, target);
+                                hand_written(backend, std::format("    j failure\n{}_done:",
+                                                                  target));
                             }
                         }
 
@@ -3458,7 +3464,7 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                             emit_expect(backend, "a3", expected ? 1 : 0, "a4");
                         }
 
-                        backend.finish();
+                        backend.assert_registers_free();
                     }
                 }
             }
@@ -3497,7 +3503,7 @@ auto emit_zeroing_tests(machine_rv32i& backend) -> void {
             }
 
             hand_written(backend, "    addi sp, sp, 64");
-            backend.finish();
+            backend.assert_registers_free();
         }
     }
 }
@@ -3525,7 +3531,7 @@ auto emit_unary_tests(machine_rv32i& backend) -> void {
 
                     emit_expect(backend, "a0", wrapped(result, *value_type));
 
-                    backend.finish();
+                    backend.assert_registers_free();
                 }
             }
         }
@@ -3609,7 +3615,7 @@ auto emit_add_subtract_bitwise_tests(machine_rv32i& backend) -> void {
 
                         emit_expect(backend, "a0", wrapped(result, *value_type));
 
-                        backend.finish();
+                        backend.assert_registers_free();
                     }
                 }
             }
@@ -3644,7 +3650,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
 
                     emit_expect(backend, "a0", expected);
 
-                    backend.finish();
+                    backend.assert_registers_free();
                 }
             }
         }
@@ -3655,7 +3661,7 @@ auto emit_shift_tests(machine_rv32i& backend) -> void {
     backend.shift(token{}, 1, op_of('<'), operand::reg("a0", integer),
                   operand::reg("a0", integer), machine::runtime_check{});
     emit_expect(backend, "a0", 24);
-    backend.finish();
+    backend.assert_registers_free();
 }
 
 // loads, stores and 'address_of' on memory at offsets around the 12-bit and
@@ -3680,7 +3686,7 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
         hand_written(backend, "    li a3, 42\n    bne a0, a3, failure");
         backend.address_of(token{}, 1, operand::reg("t6", integer), direct);
         hand_written(backend, "    la a3, buffer\n    bne t6, a3, failure");
-        backend.finish();
+        backend.assert_registers_free();
 
         for (const uint64_t scale :
              std::array<uint64_t, 11>{1, 2, 4, 8, 16, 32, 64, 128, 256, 65536,
@@ -3725,7 +3731,7 @@ auto emit_address_range_tests(machine_rv32i& backend) -> void {
             backend.copy_value(token{}, 1, operand::reg("t3", integer),
                                operand::mem("a4", {}, 1, 0, integer));
             hand_written(backend, "    la a3, buffer\n    bne t3, a3, failure");
-            backend.finish();
+            backend.assert_registers_free();
         }
     }
 }
@@ -3770,7 +3776,7 @@ auto emit_address_of_register_tests(machine_rv32i& backend) -> void {
                 }
 
                 hand_written(backend, std::format("    beq {}, a5, 1f\n    j failure\n1:", dst));
-                backend.finish();
+                backend.assert_registers_free();
             }
         }
     }
@@ -3862,7 +3868,7 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 // the end of 'main', and the entry points that 'test-rv32i.sh' starts
 // separately (division by zero, bounds failures) with the failure path
 auto generate_runtime_program() -> void {
-    machine_rv32i_linux backend{nullptr, test_builtins};
+    machine_rv32i_linux backend{test_builtins};
 
     hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
@@ -3924,7 +3930,7 @@ auto generate_runtime_program() -> void {
 // frame is entered
 struct front_end {
     source_files files;
-    machine_x86_64 backend{nullptr, test_builtins, &files};
+    machine_x86_64 backend{test_builtins, &files};
     toc tc;
 
     // errors need a token with a line

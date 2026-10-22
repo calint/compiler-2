@@ -98,8 +98,6 @@ class machine {
     };
 
     struct output_statistics {
-        // false when written output was not kept to count
-        bool is_counted{};
         assembler::optimization_counts optimizations;
         std::vector<assembler::function_summary> noinline_functions;
         size_t max_scratch_registers{};
@@ -227,9 +225,6 @@ class machine {
   private:
     using routine_uses = std::map<std::string, std::set<size_t>, std::less<>>;
 
-    // receives the lines emitted before 'start' as they are emitted, which
-    // backend tests use, null for a build
-    std::ostream* direct_output_;
     source_locations locations_;
     std::reference_wrapper<const builtin_type_set> builtins_;
     assembler::jump_mode jump_mode_;
@@ -295,11 +290,9 @@ class machine {
 
   public:
     // 'files' locate the tokens of comments, backend tests may leave it null
-    // and give a stream that receives the lines as they are emitted
-    machine(std::ostream* const direct_output, const builtin_type_set& builtins,
-            const source_files* const files, const target_options& options)
-        : direct_output_{direct_output}, locations_{files}, builtins_{builtins},
-          jump_mode_{options.jumps},
+    machine(const builtin_type_set& builtins, const source_files* const files,
+            const target_options& options)
+        : locations_{files}, builtins_{builtins}, jump_mode_{options.jumps},
           sd_card_file_name_{options.sd_card_file_name},
           kept_version_{options.kept} {
 
@@ -795,6 +788,14 @@ class machine {
         throw out_of_registers_error(src_loc_tk);
     }
 
+    // every operation freed what it allocated, also checked by backend tests
+    // between their cases
+    auto assert_registers_free() const -> void {
+        assert(registers_.is_empty());
+        assert(registers_.unavailable_mask() == 0);
+        assert(not frame_base_reserved_);
+    }
+
     // the code emitted up to 'end_noinline_body' is a body of 'function'
     auto begin_noinline_body(std::string function, std::string label) -> void {
         target_assembler().begin_body(std::move(function), std::move(label));
@@ -866,10 +867,7 @@ class machine {
         registers_ = noinline_body_pool();
 
         try {
-            // buffered because comments are otherwise written as emitted
-            target_assembler().emit_buffered([&] -> void {
-                std::ignore = target_assembler().capture(emit);
-            });
+            std::ignore = target_assembler().capture(emit);
         } catch (compile_error& e) {
             // note: the registers it starts with do not depend on the code
             //       around it, so the error is not one of a version there;
@@ -886,8 +884,7 @@ class machine {
     // or the one that '--versions' names; a version that runs out of
     // registers is not kept, when both do the error of the first is thrown.
     // each version starts from the state before it, the state of the kept
-    // one remains. both are buffered to be compared, even when output is
-    // otherwise written as emitted
+    // one remains
     auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
                              const std::function_ref<void()> emit_first,
                              const std::function_ref<void()> emit_second)
@@ -895,24 +892,35 @@ class machine {
 
         assembler& output{target_assembler()};
 
-        output.emit_buffered([&] -> void {
-            version_result first{compile_version(emit_first)};
-            version_result second{compile_version(emit_second)};
+        version_result first{compile_version(emit_first)};
+        version_result second{compile_version(emit_second)};
 
-            if (not first and not second) {
-                std::rethrow_exception(first.error());
-            }
+        if (not first and not second) {
+            std::rethrow_exception(first.error());
+        }
 
-            const bool keeps_first{keeps_first_version(first, second)};
+        const bool keeps_first{keeps_first_version(first, second)};
 
-            comment(src_loc_tk, indent, version_comment(first, second));
+        comment(src_loc_tk, indent, version_comment(first, second));
 
-            compiled_version& kept{keeps_first ? *first : *second};
+        compiled_version& kept{keeps_first ? *first : *second};
 
-            restore_version_state(std::move(kept.end_state));
+        restore_version_state(std::move(kept.end_state));
 
-            output.append(std::move(kept.lines));
-        });
+        output.append(std::move(kept.lines));
+    }
+
+    // the lines buffered so far, for backend tests that read what an emit
+    // adds with 'emitted_text'
+    [[nodiscard]] auto emitted_line_count() const -> size_t {
+        return target_assembler().line_count();
+    }
+
+    // the text of the lines buffered from 'first_line' on
+    [[nodiscard]] auto emitted_text(const size_t first_line) const
+        -> std::string {
+
+        return target_assembler().text_from(first_line);
     }
 
     auto end_noinline_body() -> void { target_assembler().end_body(); }
@@ -1089,45 +1097,22 @@ class machine {
         mark_used("sector_write");
     }
 
-    // the lines buffered so far, for backend tests that read what an emit
-    // adds with 'emitted_text'
-    [[nodiscard]] auto emitted_line_count() const -> size_t {
-        return target_assembler().line_count();
-    }
-
-    // the text of the lines buffered from 'first_line' on
-    [[nodiscard]] auto emitted_text(const size_t first_line) const
-        -> std::string {
-
-        return target_assembler().text_from(first_line);
-    }
-
     // a blank line that separates the code from the report
     auto separate_report() -> void {
         target_assembler().add_separator_newline();
     }
 
-    // what the output measured, for the report of the front end. the counts
-    // are valid after 'finish' and only for buffered output
+    // what the output measured, for the report of the front end, valid after
+    // 'finish'
     [[nodiscard]] auto statistics() const -> output_statistics {
         const assembler& output{target_assembler()};
 
-        output_statistics stats{
-            .is_counted{},
-            .optimizations{assembler::optimization_counts{}},
-            .noinline_functions{},
+        return {
+            .optimizations{output.optimizations()},
+            .noinline_functions{output.noinline_summaries()},
             .max_scratch_registers{usage_max_scratch_regs_},
-            .instruction_count{},
+            .instruction_count{output.instruction_count()},
         };
-
-        if (output.is_buffering()) {
-            stats.is_counted = true;
-            stats.optimizations = output.optimizations();
-            stats.noinline_functions = output.noinline_summaries();
-            stats.instruction_count = output.instruction_count();
-        }
-
-        return stats;
     }
 
     // a 'bool' is stored as 0 or 1
@@ -1276,10 +1261,6 @@ class machine {
         }
     }
 
-    [[nodiscard]] auto direct_stream() const -> std::ostream* {
-        return direct_output_;
-    }
-
     // unused routines contribute no code
     auto emit_used_sector_routines() -> void {
         const bool is_read_used{is_used("sector_read")};
@@ -1290,11 +1271,11 @@ class machine {
         }
     }
 
-    // the optional jump optimization of buffered output
+    // the optional jump optimization
     auto finish_output() -> void {
         assembler& output{target_assembler()};
 
-        if (output.is_buffering() and jump_mode_ == jump_mode::optimized) {
+        if (jump_mode_ == jump_mode::optimized) {
             output.optimize_jumps();
         }
     }
@@ -1306,9 +1287,7 @@ class machine {
             release_variables_base();
         }
 
-        assert(registers_.is_empty());
-        assert(registers_.unavailable_mask() == 0);
-        assert(not frame_base_reserved_);
+        assert_registers_free();
     }
 
     [[nodiscard]] auto is_frame_base_reserved() const -> bool {
@@ -1478,8 +1457,6 @@ class machine {
 
         // note: the parse declares names without emitting
         assert(output.is_empty());
-
-        output.set_direct_output(nullptr);
 
         // note: the parse emits no code, so it allocates no register and uses
         //       no routine

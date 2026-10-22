@@ -27,12 +27,10 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     static constexpr size_t ram_size_bytes_{0x800'0000};
 
   public:
-    machine_rv32i_qemu(std::ostream* const direct_output,
-                       const builtin_type_set& builtins,
+    machine_rv32i_qemu(const builtin_type_set& builtins,
                        const source_files* const files,
                        const target_options& options)
-        : machine_rv32i_bare_metal{direct_output, builtins, files,
-                                   with_ram_size(options)} {}
+        : machine_rv32i_bare_metal{builtins, files, with_ram_size(options)} {}
 
     //
     // overridden methods

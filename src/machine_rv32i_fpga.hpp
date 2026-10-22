@@ -48,11 +48,10 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr uint32_t half_mask_{0xffff};
 
   public:
-    machine_rv32i_fpga(std::ostream* const direct_output,
-                       const builtin_type_set& builtins,
+    machine_rv32i_fpga(const builtin_type_set& builtins,
                        const source_files* const files,
                        const target_options& options)
-        : machine_rv32i_bare_metal{direct_output, builtins, files, options} {
+        : machine_rv32i_bare_metal{builtins, files, options} {
 
         // note: 'main' accepts only a multiple of what a 'lui' loads, the end
         //       of memory

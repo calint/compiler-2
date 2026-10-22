@@ -85,15 +85,9 @@ class report_renderer final {
 
         x.separate_report();
 
-        if (stats.is_counted) {
-            noinline_report(stats).write_to(x);
-        }
-
+        noinline_report(stats).write_to(x);
         generics_report(usage).write_to(x);
-
-        if (stats.is_counted) {
-            optimization_report(stats).write_to(x);
-        }
+        optimization_report(stats).write_to(x);
 
         usage_report(stats, usage).write_to(x);
 
@@ -216,12 +210,10 @@ class report_renderer final {
             },
         };
 
-        if (stats.is_counted) {
-            section.entries.push_back({
-                .name{"instructions"},
-                .value{std::format("{}", stats.instruction_count)},
-            });
-        }
+        section.entries.push_back({
+            .name{"instructions"},
+            .value{std::format("{}", stats.instruction_count)},
+        });
 
         return section;
     }

@@ -221,19 +221,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
-[p] hard: low priority: design: the "write lines as emitted" mode of the
-    assembler exists only for qa/coverage/test-rv32i-address.cpp (57 checks
-    read the text after each emit); main.cpp always passes nullptr, yet it
-    runs through 'write_directly' in every add, 'is_buffering', the toggle in
-    'emit_buffered', 'output_statistics::is_counted' and its three branches in
-    'report_renderer', 'source_locations::has_source' and a branch of
-    'finish_registers' (round 8 X-2, R-5, D-5)
-    => design: the backend tests read the lines through a test accessor of
-       the buffered lines instead of a stream ('assembler::lines_text()'),
-       then the 'std::ostream*' constructor parameters and every branch above
-       go
-    => cost: every check of the test file; first measure that buffered
-       output keeps the checks' meaning (jumps are resolved at 'finish')
 [p] medium: low priority: design: x86 'scale_index' and
     'scale_by_element_size_bytes' repeat 'multiply_by_constant' (no code for
     1, 'sal' for a power of two, 'imul' else); rv32i 'scale_index' already

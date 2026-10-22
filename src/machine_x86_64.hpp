@@ -225,15 +225,10 @@ class machine_x86_64 final : public machine {
     assembler_x86_64 assembler_;
 
   public:
-    machine_x86_64(std::ostream* const direct_output,
-                   const builtin_type_set& builtins,
+    machine_x86_64(const builtin_type_set& builtins,
                    const source_files* const files,
                    const target_options& options = {})
-        : machine{direct_output, builtins, files, options} {
-
-        // output before 'start' is written as emitted
-        assembler_.set_direct_output(direct_stream());
-    }
+        : machine{builtins, files, options} {}
 
     using machine::emit_data_array;
 
@@ -1160,7 +1155,6 @@ class machine_x86_64 final : public machine {
 
     auto write_assembly(std::ostream& os) -> void override {
         assembler_.write(os);
-        assembler_.set_direct_output(direct_stream());
     }
 
     auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,

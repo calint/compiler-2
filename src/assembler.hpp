@@ -10,9 +10,9 @@
 #include <iterator>
 #include <memory>
 #include <optional>
-#include <ranges>
 #include <ostream>
 #include <print>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -125,7 +125,6 @@ class assembler {
     bool code_section_{true};
     optimization_counts optimizations_;
     std::vector<body> bodies_;
-    std::ostream* direct_output_{};
 
   public:
     assembler() = default;
@@ -176,9 +175,6 @@ class assembler {
     [[nodiscard]] auto capture(const std::function_ref<void()> emit)
         -> captured_lines {
 
-        // note: written directly, the lines would bypass the capture
-        assert(is_buffering());
-
         captures_.emplace_back();
 
         try {
@@ -192,25 +188,6 @@ class assembler {
         captures_.pop_back();
 
         return captured;
-    }
-
-    // 'emit' is buffered even when lines are otherwise written as added, so
-    // versions it captures can be compared before one is written
-    auto emit_buffered(const std::function_ref<void()> emit) -> void {
-        std::ostream* const os{direct_output_};
-        direct_output_ = nullptr;
-
-        // note: an error leaves the lines buffered, as they are anyway from
-        //       'start_output' to the end of the code
-
-        emit();
-
-        if (os == nullptr) {
-            return;
-        }
-
-        direct_output_ = os;
-        write(*os);
     }
 
     auto end_body() -> void {
@@ -233,19 +210,15 @@ class assembler {
         return instructions_in(code_size_of(lines));
     }
 
-    [[nodiscard]] auto is_buffering() const -> bool {
-        return direct_output_ == nullptr;
-    }
-
     // nothing is buffered
     [[nodiscard]] auto is_empty() const -> bool { return lines_.empty(); }
-
-    [[nodiscard]] auto line_count() const -> size_t { return lines_.size(); }
 
     auto label(const size_t indent, const std::string_view name) -> void {
         add_label(std::string{name},
                   std::format("{}{}:", indentation(indent), name));
     }
+
+    [[nodiscard]] auto line_count() const -> size_t { return lines_.size(); }
 
     // the bodies of each noinline function with their calls and size, in
     // the order of definition
@@ -311,11 +284,6 @@ class assembler {
         }
     }
 
-    // lines are written to 'os' as they are added, or buffered when null
-    auto set_direct_output(std::ostream* const os) -> void {
-        direct_output_ = os;
-    }
-
     // the text of the lines from 'first_line' on, as 'write' writes them
     [[nodiscard]] auto text_from(const size_t first_line) const -> std::string {
         assert(captures_.empty());
@@ -352,10 +320,6 @@ class assembler {
                   const std::string_view target, const std::string_view scratch,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
-        if (write_directly(text)) {
-            return;
-        }
-
         const size_t code_size{text_code_size(text)};
 
         current_lines().push_back({
@@ -378,10 +342,6 @@ class assembler {
     }
 
     auto add_label(std::string name, std::string text) -> void {
-        if (write_directly(text)) {
-            return;
-        }
-
         current_lines().push_back({
             .text{std::move(text)},
             .label{std::move(name)},
@@ -398,10 +358,6 @@ class assembler {
     auto add_record_line(std::string text, const size_t code_size,
                          const std::optional<size_t> record) -> void {
 
-        if (write_directly(text)) {
-            return;
-        }
-
         current_lines().push_back({
             .text{std::move(text)},
             .label{},
@@ -415,10 +371,6 @@ class assembler {
     }
 
     auto add_text(std::string text) -> void {
-        if (write_directly(text)) {
-            return;
-        }
-
         const size_t code_size{code_section_ ? text_code_size(text) : 0};
 
         current_lines().push_back({
@@ -469,10 +421,6 @@ class assembler {
 
     // the line just added calls the label 'target'
     auto mark_call(const std::string_view target) -> void {
-        if (direct_output_ != nullptr) {
-            return;
-        }
-
         current_lines().back().call_target = target;
     }
 
@@ -718,18 +666,6 @@ class assembler {
         }
 
         return referenced;
-    }
-
-    [[nodiscard]] auto write_directly(const std::string_view text) const
-        -> bool {
-
-        if (direct_output_ == nullptr) {
-            return false;
-        }
-
-        std::println(*direct_output_, "{}", text);
-
-        return true;
     }
 
     //

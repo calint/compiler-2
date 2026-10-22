@@ -46,11 +46,10 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr std::string_view write_label_{".Lbaz_write"};
 
   public:
-    machine_rv32i_bare_metal(std::ostream* const direct_output,
-                             const builtin_type_set& builtins,
+    machine_rv32i_bare_metal(const builtin_type_set& builtins,
                              const source_files* const files,
                              const target_options& options)
-        : machine_rv32i{direct_output, builtins, files, options},
+        : machine_rv32i{builtins, files, options},
           stack_size_bytes_{options.stack_size_bytes},
           memory_size_bytes_{options.memory_size_bytes} {
 

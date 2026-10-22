@@ -21,7 +21,7 @@ done
 # the read and write results compared with 'tests/0430.out'
 printf 'rv32i address lowering: compiling backend tests\n'
 # the driver stays after the run so that 'test-coverage.sh report' counts the
-# lines only it reaches, e.g. jumps written as emitted
+# lines only it reaches, e.g. the accessors of the emitted text
 clang++ -std=c++26 -O3 -Wno-braced-scalar-init \
     -fprofile-instr-generate -fcoverage-mapping \
     "$SCRIPT_DIR/test-rv32i-address.cpp" -o "$SCRIPT_DIR/rv32i-driver"

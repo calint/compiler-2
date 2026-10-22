@@ -712,7 +712,7 @@ class assembler_rv32i final : public assembler {
         const std::string_view mnemonic{info(code).mnemonic};
         const std::string operands{std::format("{}, {}", rs1, rs2)};
 
-        const std::optional<size_t> index{
+        const size_t index{
             store_record(jump_registers{
                 .rs1{number_of(rs1)},
                 .rs2{number_of(rs2)},
@@ -989,7 +989,7 @@ class assembler_rv32i final : public assembler {
     auto add_record(std::string text, const size_t code_size, record structured)
         -> void {
 
-        const std::optional<size_t> index{store_record(std::move(structured))};
+        const size_t index{store_record(std::move(structured))};
         add_record_line(std::move(text), code_size, index);
     }
 
@@ -1304,16 +1304,8 @@ class assembler_rv32i final : public assembler {
         return one_instruction_bytes;
     }
 
-    // written lines are not assembled again, so they keep no record
-    [[nodiscard]] auto store_record(record structured)
-        -> std::optional<size_t> {
-
-        if (not is_buffering()) {
-            return std::nullopt;
-        }
-
+    [[nodiscard]] auto store_record(record structured) -> size_t {
         records_.push_back(std::move(structured));
-
         return records_.size() - 1;
     }
 
