@@ -280,6 +280,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        running out of registers into the recursion message (test 1289 now
        says so; such an error no longer lets 'emit_most_efficient' try the
        other version, whose body has the same recursion); tests 1506, 1507
+    => 10 done (2026-10-22): 'printable' and 'is_control_char' moved from
+       'program' to compile_error.hpp; 'main.cpp' writes every message, call
+       frame text and unlocated or option error through 'printable', so a
+       control byte is '\xNN' everywhere; 'quoted_as_written' no longer
+       escapes itself; test 1508
 [ ] medium: generics: an error inside an instance found after its parse
     has no frame naming the instance: the result check
     ('assert_functions_set_return_value' runs after the parse) and the check

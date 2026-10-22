@@ -1,0 +1,4 @@
+# a control byte that a message quotes is written as an escape
+func main() {
+    var x = ab
+}

@@ -4721,3 +4721,6 @@ SRC=1505 && COMPERR
 # registers
 SRC=1506 && COMPERR
 SRC=1507 && COMPERR
+
+# a message quotes a control byte as an escape
+SRC=1508 && COMPERR

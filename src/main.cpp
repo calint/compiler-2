@@ -886,7 +886,7 @@ auto print_option_error(const std::string_view message) -> void {
 
 // a user error without a place in the source, e.g. a file that cannot be read
 auto print_unlocated_error(const std::string_view message) -> void {
-    std::println(stderr, "error: {}", message);
+    std::println(stderr, "error: {}", printable(message));
 }
 
 // the inlined calls the error was found in, innermost first
@@ -906,7 +906,7 @@ auto print_call_frames(const source_files& files,
                          frame.reason);
         } else {
             std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, frame.line,
-                         col, frame.reason, frame.text);
+                         col, frame.reason, printable(frame.text));
         }
 
         print_source_line(src, frame.start_index, frame.end_index);
@@ -962,13 +962,14 @@ auto print_source_error(const source_files& files, const size_t file_ix,
     const std::string_view src{files.text(file_ix)};
 
     if (line == 0) {
-        std::println(stderr, "\n{}: {}", src_file_name, message);
+        std::println(stderr, "\n{}: {}", src_file_name, printable(message));
         return;
     }
 
     const size_t col{column_for_char_index(start_index, src)};
 
-    std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col, message);
+    std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col,
+                 printable(message));
 
     print_source_line(src, start_index, end_index);
 }

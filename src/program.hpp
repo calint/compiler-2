@@ -689,14 +689,6 @@ class program final {
         x.emit_string_constants(tc.data().constants());
     }
 
-    // a byte below ' ' or DEL, which would break a message or a path
-    [[nodiscard]] static auto is_control_char(const char ch) -> bool {
-        const unsigned char byte{static_cast<unsigned char>(ch)};
-        // note: unsigned, the bytes of UTF-8 are above DEL
-
-        return byte < ' ' or byte == '\x7f';
-    }
-
     // the path an include of the main file compares with; a file that was
     // read but has no canonical path, e.g. '/dev/stdin' of a pipe, is known
     // by its own
@@ -744,39 +736,19 @@ class program final {
                             quoted_as_written(tk))};
     }
 
-    // a control byte as '\xNN', so the message stays on its line
-    [[nodiscard]] static auto printable(const std::string_view text)
-        -> std::string {
-
-        std::string result;
-
-        for (const char ch : text) {
-            if (is_control_char(ch)) {
-                result +=
-                    std::format("\\x{:02x}", static_cast<unsigned char>(ch));
-
-                continue;
-            }
-
-            result.push_back(ch);
-        }
-
-        return result;
-    }
-
     // the token quoted as the source writes it: a string keeps its double
     // quotes and a character literal is in its own quotes
     [[nodiscard]] static auto quoted_as_written(const token& tk)
         -> std::string {
 
         if (tk.is_string()) {
-            return std::format("'\"{}\"'", printable(tk.text()));
+            return std::format("'\"{}\"'", tk.text());
         }
 
         if (tk.text().starts_with('\'')) {
-            return printable(tk.text());
+            return std::string{tk.text()};
         }
 
-        return std::format("'{}'", printable(tk.text()));
+        return std::format("'{}'", tk.text());
     }
 };

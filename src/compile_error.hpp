@@ -113,6 +113,33 @@ class compile_error final : public std::exception {
     explicit compile_error(std::string message) : msg{std::move(message)} {}
 };
 
+// a byte below ' ' or DEL, which would break a message or a path
+[[nodiscard]] inline auto is_control_char(const char ch) -> bool {
+    const unsigned char byte{static_cast<unsigned char>(ch)};
+    // note: unsigned, the bytes of UTF-8 are above DEL
+
+    return byte < ' ' or byte == '\x7f';
+}
+
+// a control byte as '\xNN', so a message that quotes the source stays on its
+// line
+[[nodiscard]] inline auto printable(const std::string_view text)
+    -> std::string {
+
+    std::string result;
+
+    for (const char ch : text) {
+        if (is_control_char(ch)) {
+            result += std::format("\\x{:02x}", static_cast<unsigned char>(ch));
+            continue;
+        }
+
+        result.push_back(ch);
+    }
+
+    return result;
+}
+
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'
 [[nodiscard]] inline auto counted(const size_t count,
                                   const std::string_view noun) -> std::string {
