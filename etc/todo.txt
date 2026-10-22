@@ -213,6 +213,328 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     keep adding virtuals
     => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
        'std::variant' and rejected it, see 'etc/todo-resolved.txt'
+[p] easy: design: the keywords of a statement in a block are dispatched in two
+    places split by include cycle, not by role: 'stmt_block::parse_statement'
+    makes var/let, dat (error), break, continue, return and array_copy,
+    'create_statement_in_stmt_block' makes loop, if, exit, io and foo; the
+    comments of 'decouple.hpp' and 'decouple_impl.hpp' say the factories make
+    every statement (round 8 A-1, S-4)
+    => design: every keyword branch moves into
+       'create_statement_in_stmt_block'; 'parse_statement' keeps the string
+       check, the factory and 'create_statement_of_identifier'; stmt_block.hpp
+       drops five includes; the comments name the three dispatchers (top
+       level, block, expression)
+    => step 2, behavior: 'func', 'type' and 'include' in a block get "'func'
+       can only be declared in global scope" like 'dat', 'else' without 'if'
+       gets "'else' without 'if'" (today "cannot resolve identifier"), with
+       error tests
+    => rejected: a keyword table of factories, the branches differ in what
+       they pass
+    => tests: the suite, step 1 is behavior-preserving
+[p] medium: design: the built-in types have three owners: 'program' owns the
+    'type' objects, 'machine' gets them through 'set_builtin_types' after its
+    constructor ("the machine is made before the program that owns the
+    types") with asserting accessors, and 'toc::builtin_types' holds the set
+    again; the machine is half-built until the program constructor runs
+    (round 8 A-7)
+    => design: the built-in types are stateless (name, size, kind): 'inline
+       const type' constants in type.hpp, e.g. 'builtin::i8'; 'program'
+       registers them in 'type_table' by address; 'machine' reads them
+       directly, 'set_builtin_types', its four pointers and asserts go;
+       'builtin_type_set' becomes a constant or goes
+    => invariant: a built-in type has one object for the whole run, compared
+       by address as today
+    => cost: type.hpp, program.hpp, machine.hpp, toc.hpp, both targets,
+       test-rv32i-address.cpp ('test_types')
+    => rejected: the program made before the machine, the machine is
+       chosen from the options first and the program needs it to parse
+[p] medium: design: 'begin_data' sounds like "open the data section" but also
+    emits code: the arithmetic helpers, the sector routines and, on bare
+    metal, exit, read and write; so 'emit_string_constants' must leave the
+    text section current, bare metal re-implements the whole base
+    'begin_data', and correctness depends on the order failure handlers,
+    read-only data, 'begin_data' (the handlers and the divide trap mark
+    'exit' and 'write' used before bare metal tests 'is_used'); no comment
+    says so (round 8 R-1)
+    => design: a machine virtual 'emit_used_routines()' called by
+       'program::compile' right after 'emit_failure_handlers' and before
+       'emit_read_only_data'; 'begin_data' only switches section, aligns and
+       labels, and is not virtual; bare metal overrides 'emit_used_routines'
+       as the base plus its routines in its own order
+    => invariant: every routine is emitted after every code that marks it
+       used, in one step whose name says so
+    => tests: the suite; the '.s' listings of the rv32i targets move the
+       routines before the read-only data, check the image sizes
+[p] easy: design: "the address of a place" is two virtuals: 'compile_lea'
+    returns an address and appends its registers, 'compile_address' calls it,
+    passes the address to a callback and frees them; forwarding nodes must
+    override both, 'expr_arith' does, 'expr_any' and 'expr_type' forward only
+    'compile_lea' so 'compile_address' on them is the 'std::unreachable()'
+    default (round 8 A-2)
+    => design: 'compile_address' becomes a non-virtual 'statement' method
+       with the body of the 'stmt_identifier' version; the overrides in
+       stmt_identifier.hpp and expr_arith.hpp go, only 'compile_lea' is
+       forwarded; 'statement' drops to 19 virtuals
+    => cost: the comment of a parenthesized side names '(p)' instead of 'p',
+       '.s' listings only
+[p] medium: design: the operator enums 'machine::arithmetic_operator' and
+    'machine::comparison_operator' are language concepts owned by the
+    backend; 'constant_arith.hpp' needs only them but includes machine.hpp,
+    which puts the whole backend under 'ident_info.hpp', the only include
+    that points from the front end records into the backend; 'mirrored' and
+    both 'source_text' overloads are statics of 'machine' that only the
+    front end calls (round 8 A-5, X-9)
+    => design: the two enums move to namespace scope in operand.hpp, which
+       machine.hpp includes, with 'using' aliases in 'machine' so no caller
+       changes; 'mirrored' and 'source_text' move next to them as free
+       functions; 'negated' stays in 'machine', the backends use it;
+       constant_arith.hpp includes operand.hpp and type.hpp
+    => invariant: the value model does not include the backend
+[p] medium: design: a built-in that parses like a call is recognised by a
+    hidden convention: 'program' registers exit, read, write and the sector
+    functions in 'function_table' with a null definition, 'is_builtin' means
+    "def == nullptr", the public function-call constructor of 'stmt_call'
+    branches on it into 'parse_builtin_arguments' (a fourth mode the
+    'stmt_call' modes item does not list) and 'compile' asserts it away; the
+    other built-ins are not registered (round 8 A-4, C-5)
+    => design: a protected 'stmt_call(builtin_call_tag, tc, uops, tk, tz)'
+       that reads the parenthesized arguments, used by 'stmt_builtin_exit'
+       and 'stmt_builtin_io'; the public constructor drops the branch;
+       'program' stops calling 'add_func' for the five names and
+       'function_table::is_builtin' goes, 'reserved_names::builtin_functions'
+       already reserves the names
+    => check first: no lookup ('get_func_or_throw', the noinline report)
+       needs the null entries
+    => after: one message for a built-in given type arguments (round 8
+       D-6, four messages today)
+[p] medium: design: 'toc::enter_func' makes an inlined frame whose defaults
+    (empty call path and return label) serve two unrelated callers, the
+    parse and 'main', and 'stmt_return' reads an empty return label as "this
+    is 'main', exit"; the name does not say inlined; 'get_call_path' is a
+    'scope_stack' query on 'toc' (round 8 T-4, S-7, round 7 T-10, T-11)
+    => design: 'enter_inlined_func(name, call_path, return_label)' without
+       defaults, the parse passes empty labels as 'enter_noinline_func'
+       does; 'enter_main()' makes a frame that answers 'is_main()';
+       'stmt_return' asks 'is_main()' and binds 'current_func_frame()' once;
+       'get_call_path' becomes 'scope_stack::call_path()'
+    => invariant: no empty string selects a behavior
+[p] medium: naming: "alias" names three concepts: what a parameter of an
+    inlined call is bound to ('alias_info', 'frame::aliases',
+    'follow_alias', 'make_*_alias', about 150 uses), a named generic
+    instance or 'int' ('stmt_def_type_alias'), and overlapping storage
+    ('ub_alias.hpp', '--checks=alias'); in stmt_call.hpp the first and the
+    third meet (round 8 A-6)
+    => design: rename the first, its variant already says so
+       ('bound_constant', 'bound_register', 'bound_storage'): 'alias_info'
+       -> 'param_binding', 'aliases' -> 'bindings', 'make_*_alias' ->
+       'bind_*', 'comment_alias' -> 'comment_binding', 'follow_alias' ->
+       'follow_binding', docs chapter 1.3; "alias" stays for types (a
+       language term) and "aliasing" for overlap (a user option)
+    => mechanical, symbol renames before anything else in the step
+[p] medium: bug: an include counts as a level of the 128-level statement
+    nesting limit: a file accepted when included directly is rejected when
+    reached through a chain of 120 includes, at an innocent 'if' (round 8
+    D-1, repro scratchpad r8 'D/chain2')
+    => design: includes come before every definition, so 'parse_file' runs
+       a worklist: a stack of {file index, tokenizer}; the top file reads its
+       next 'include', a new path is pushed; a file without more includes
+       parses its definitions at nesting 0 and is popped; the file order and
+       'statements_' order stay; the 'parse_nesting_scope' of
+       'parse_include' goes
+    => rejected: a counter of its own for includes, acceptance would still
+       depend on where the include is
+    => tests: a chain of 130 includes, generated by a test-cli case
+[p] easy: design: "is '--checks=stack' in effect" is decided twice,
+    'checks.stack and x.is_stack_bounded()' in program.hpp and stmt_call.hpp,
+    while the same "target cannot honor the option" case of 'line' is
+    normalized once in main.cpp (round 8 R-3)
+    => design: 'checks.stack = checks.stack and backend->is_stack_bounded()'
+       next to the 'with_line' line in main.cpp, both conjunctions go
+[p] easy: design: what fpga allows for '--memory' is decided in main.cpp
+    ('max_memory_size_bytes', 'memory_alignment' "what a 'lui' loads") while
+    the device map and 'lui_shift_' live in 'machine_rv32i_fpga', whose
+    constructor only asserts; '--stack' is checked by the backend
+    constructor, so target limits are checked in two layers (round 8 R-2)
+    => design: the fpga constructor throws 'option_error' for a memory that
+       is not a multiple of '1 << lui_shift_' or reaches the lowest device
+       address; 'apply_memory' only parses; the messages stay
+[p] easy: consistency: 'machine' declares 'register_error' and
+    'register_peak_report' and register_report.hpp defines them; both
+    targets include register_report.hpp only for that; the pattern
+    elsewhere is an include in the translation unit with 'IWYU pragma: keep'
+    (main.cpp for decouple_impl.hpp and expr_type_impl.hpp) and a note at the
+    declaration (compile_error.hpp: "defined in 'tokenizer.hpp'") (round 8
+    A-8, X-5)
+    => design: main.cpp and test-rv32i-address.cpp include
+       register_report.hpp with the pragma, the targets drop it, the two
+       declarations get "defined in 'register_report.hpp'"
+[p] easy: design: a noinline body is emitted in two files: 'program'
+    writes its label, source comment, frame size constant and begin and end
+    ('compile_noinline_body'), 'stmt_def_func' compiles the frame and checks
+    an uncalled body under the same call frame kind (round 8 A-11)
+    => design: 'compile_noinline_body' moves to
+       'stmt_def_func::emit_noinline_body(tc, array_lengths)' next to
+       'check_body'; 'program::compile_noinline_functions' keeps the worklist
+[p] medium: design: the merge rules of the definite-assignment flow are
+    written in three statement classes that change 'flow.assigned',
+    'flow.is_reachable', 'flow.at_breaks' and 'flow.is_shadowed' directly:
+    'stmt_block::trace_loop_body' (used by loop and foo), 'stmt_if::trace_path'
+    with five parameters, two of them out-parameters; 'is_end_reachable'
+    traces an empty name as "no variable" (round 8 S-3, S-5, round 7 S-5,
+    S-6, S-7)
+    => design: 'assignment_flow::trace_loop(body)' returning the coverage at
+       the breaks, a 'path_merge' {entry, merged, is_reachable} with
+       'trace(flow, path)' for 'stmt_if', and 'var' as an optional, empty for
+       reachability only
+[p] medium: design: target options arrive two ways: stack, memory and image
+    name through 'make_backend' and the constructors, register report, sd
+    card and kept version through setters called right after (round 8 A-12,
+    round 7 D-7)
+    => design: one 'backend_options' record passed to 'make_backend' and the
+       constructors; the setters go
+[p] hard: low priority: design: the "write lines as emitted" mode of the
+    assembler exists only for qa/coverage/test-rv32i-address.cpp (57 checks
+    read the text after each emit); main.cpp always passes nullptr, yet it
+    runs through 'write_directly' in every add, 'is_buffering', the toggle in
+    'emit_buffered', 'output_statistics::is_counted' and its three branches in
+    'report_renderer', 'source_locations::has_source' and a branch of
+    'finish_registers' (round 8 X-2, R-5, D-5)
+    => design: the backend tests read the lines through a test accessor of
+       the buffered lines instead of a stream ('assembler::lines_text()'),
+       then the 'std::ostream*' constructor parameters and every branch above
+       go
+    => cost: every check of the test file; first measure that buffered
+       output keeps the checks' meaning (jumps are resolved at 'finish')
+[p] medium: low priority: design: x86 'scale_index' and
+    'scale_by_element_size_bytes' repeat 'multiply_by_constant' (no code for
+    1, 'sal' for a power of two, 'imul' else); rv32i 'scale_index' already
+    calls 'multiply' (round 8 X-4, round 7 X-2)
+    => design: 'scale_index' becomes a non-virtual 'machine' method calling
+       'multiply(..., factor_use::read_only)', 'load_bulk_registers' calls
+       'multiply', 'scale_by_element_size_bytes' goes; same output
+[p] medium: low priority: design: 'compare_and_branch' takes the front end's
+    scratch registers and frees them between the compare and the store or
+    branch, the backend ends the lifetime of front end allocations; three
+    of five callers pass '{}' (round 8 X-8, round 7 X-5)
+    => design: callers free after the call, the parameter goes; output
+       differs only when a 'setcc' to memory past 2 GiB needs a scratch
+       register while all are held, check first
+[p] easy: low priority: consistency: rv32i ISA facts are defined twice:
+    'immediate_min_'/'immediate_max_' in machine and assembler,
+    'address_space_bytes_' (size_t with a note against int64), the 12-bit
+    'lui' shift (fpga 'lui_shift_' against 'upper_part'); the target hooks
+    reach the assembler three ways (repeated 'assembler()', a local, a
+    parameter of const hooks) (round 8 R-6, R-7)
+    => design: public constants of 'assembler_rv32i' like
+       'one_instruction_bytes'; every hook binds 'assembler_rv32i&
+       a{assembler()};', the bare-metal hooks lose the parameter and 'const'
+[p] easy: low priority: front end small designs (round 8 F-8, F-9, F-10,
+    F-11):
+    1. "no token here" ('text().empty() and not is_string()') is spelled at
+       4 sites and 13 others test only 'text().empty()', which takes the
+       string '""' for no token: 'func f("")' points past it; one
+       'token::is_none()' at every site (behavior: carets of those errors)
+    2. 'lut::keys()' copies the keys and the callers look each up again,
+       a 'values()' view instead (generics.hpp)
+    3. 'peek_char_after_whitespace' moves and moves back so every lookahead
+       predicate takes a mutable 'tokenizer&'; probe a copy, make the
+       predicates take 'const tokenizer&'
+    4. 'fits_size_bytes(value, size_bytes)' is the only width query in
+       bytes, both callers pass 'type.size_bytes()': 'fits_width(value,
+       type)' via 'wrap_to_width'
+[p] easy: comments: core classes without a header comment of their role and
+    invariants: 'stmt_identifier' (a place, central to docs chapter 6),
+    'operand', 'program', 'stmt_assign_var', 'stmt_block', 'stmt_if',
+    'stmt_if_branch', 'stmt_builtin_foo', 'stmt_return', 'stmt_const' (an
+    array size, never compiled, its name reads like 'stmt_def_const'); the
+    base class 'expression' adds only 'is_expression' but is not the base of
+    'expr_bool' or 'expr_any' (round 8 A-9, A-10)
+    => design: write the comments, 'stmt_identifier', 'operand' and
+       'stmt_const' first; rename 'expression' to 'computed_value' and the
+       virtual to 'is_computed' only if the comments do not make it clear
+[ ] medium: decide: aliasing rule C compares the arguments with the result
+    only; a global that an inlined body names is compared with neither, so
+    'g = add_g()' with 'res = res + g' in the body is accepted inline and
+    rejected noinline (rule B) (round 8 B-1, scratchpad r8 'B/t31.baz')
+    => options: compare the result and argument targets with the globals the
+       body reads or writes (the dry run keys calls by ' global g'), or say
+       in the tutorial and docs 3.6 that only arguments and the result are
+       compared
+[ ] easy: decide: 'read' and 'write' take their count in elements but return
+    the byte count of the system call; the tutorial says "the number of
+    elements read" (round 8 B-2, 'B/t80.baz': 'i16' gives 4 for 2)
+    => options: divide by the element size (see the partial read item), or
+       say bytes in the tutorial; then a test with 'i16' elements
+[ ] medium: decide: 'p == mk()' with 'mk' returning the type of 'p' is
+    rejected with "an instance of 'point' is compared only with an instance
+    of the same type", although both are 'point'; 'is_memory_operand' takes
+    only names (round 8 B-3, A-13)
+    => options: copy the result to a temporary, as arguments are, or say
+       "store the result of 'mk' in a variable before comparing it" at the
+       call
+[ ] easy: decide: a trailing ',' in a value literal is rejected, with "too
+    many fields" for 'point{1, 2,}' and "expected constant" for '[3]{1,}';
+    type definitions accept it (round 8 B-6)
+    => options: accept it before '}' as types do, or one message "a trailing
+       ',' is not allowed in a value"
+[ ] easy: decide: '{}' continues as the first operand of an expression only
+    where 'expr_any' parses it: 'n = {} + 1' is accepted, 'n = 1 + {}' and
+    'var n = {} + 1' are not; a bare type name followed by an operator is not
+    continued (round 8 F-2)
+    => options: '{}' is a whole value, an operator after it is an error
+       (a lookahead helper shared with 'is_bare_builtin_type')
+[ ] easy: decide: the escapes of a string are checked by the tokenizer, those
+    of a character literal only where it is resolved, so 'var c = 'ab'' in a
+    generic body that is never instantiated is accepted and '"\q"' is not;
+    the messages differ too (round 8 F-3)
+    => options: 'finish_character_literal_token' checks the body with
+       'token::decode_escape' and the same messages
+[ ] easy: messages, one consistency pass (round 8):
+    1. argument counts: "'point.sum' takes 0 arguments", "expected 1
+       argument" ('exit'), "expected 2 to 4 arguments" (io); one form with
+       'counted' (C-8)
+    2. a string into a non-'i8' array: "only arrays of type 'i8' can be
+       initialized with strings" (also for an assignment) and "a string can
+       only be assigned to an array of type 'i8'" (also for an 'i8'
+       element) (F-12, B-10)
+    3. a generic function instance frame says "called from 'make<i8>'", a
+       type instance "instantiated by" (D-9)
+    4. '--memory' says "bytes", every other size "B" (D-10)
+    5. 'true.x' gives "field 'x' not found in type 'bool'", 'c.x'
+       "constant 'c' has no fields" (T-5)
+    6. a clash of a generic method with type parameters gets the plain
+       "function 'sd.app' already defined" (G-4)
+    7. 'func f(a i8[4])' gives "expected ']'" (G-12); 'var x = (a)' of an
+       array "expected '{' to begin a value of type 'i64'" (G-13); a local
+       hiding a type gives "expected '=' for assignment" at '{' (G-14)
+    8. 'p..x' gives "field '' not found", 'p.' at a line end takes the next
+       line's name (E-5)
+    9. deduction from an unknown name says "cannot deduce 'T'" instead of
+       "cannot resolve identifier" (C-2); an inlined recursion with run-time
+       arguments says "out of scratch registers" instead of "declare it
+       'noinline'" (C-3)
+    10. control bytes are printed raw in every message that quotes a token
+        except "expected a definition" (D-2, F-4)
+    11. 'panic: bounds at line 3' names no file when the failure is in an
+        included file (round 7 B-5)
+    12. '(t and f) == f' says "expected ')'"; 'point + 1' says "unexpected
+        '+'" (round 7 B-7, B-8)
+[ ] medium: generics: an error inside an instance found after its parse
+    has no frame naming the instance: the result check
+    ('assert_functions_set_return_value' runs after the parse) and the check
+    of an uncalled method instance ('check_body'); 'generics.hpp' says an
+    error in the text of an instance gets the 'generic_frame's (round 8 G-3,
+    B-5)
+    => design: check the result at the end of the 'stmt_def_func'
+       constructor so the instance catch blocks add the frames; keep the
+       instance frames with the method's 'stmt_def_func' for 'check_body'
+[ ] medium: generics: a duplicate method of a generic type is detected only
+    at the first alias ('func text.print' twice is accepted without one);
+    a generic body sees the globals defined after it and before its first
+    use, a plain body does not; 'res T' is deduced from the destination only
+    for a user type, the tutorial states no limit; 'type read {x}' is
+    accepted but every method of it is rejected (round 8 G-5, G-6, G-8,
+    G-7, round 7 G-2, G-3, G-5, G-6)
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------
