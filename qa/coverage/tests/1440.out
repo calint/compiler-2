@@ -1,0 +1,4 @@
+
+1440.baz:5:5: return value is discarded
+    array_length(a)
+    ^~~~~~~~~~~~

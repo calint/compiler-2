@@ -1,0 +1,6 @@
+# the value of 'array_length' is not used
+
+func main() {
+    var a = i8[4]
+    array_length(a)
+}

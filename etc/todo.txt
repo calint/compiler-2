@@ -6,21 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: architecture A3: whether a built-in has a value is decided in
-    two places, 'create_statement_in_expr_arith' (decouple_impl.hpp) and
-    'expr_type::builtin_value_type' with 'parse_copy_source'
-    (expr_type_impl.hpp); a new built-in with a value is added to both
-    (round 7 C-2, E-2)
-    => design, step 1 (no behavior change): one 'builtin_value_type(tc, tk,
-       tz) -> const type*' and one 'assert_builtin_has_value(tk, tz)' next
-       to the factory in decouple_impl.hpp, both callers use them,
-       'expr_type::builtin_value_type' goes
-    => design, step 2 (messages): a built-in in the wrong position says so
-       instead of "function 'x' not found", e.g. 'var n = array_copy(a, b,
-       2)' "function does not return a value", 'arrays_equal(a, b, 4)' as a
-       statement "return value is discarded"; error tests
-    => rejected: a table of every built-in with its result, the factory
-       still needs a branch per kind to make its statement
 [ ] hard: architecture A4: 'machine_rv32i' is both the rv32i instruction
     backend and the linux target, about 150 lines of linux code (system
     calls, 'ecall' exit, sector system calls, 'is_stack_bounded' false, the

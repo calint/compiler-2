@@ -1,0 +1,6 @@
+# the value of a conversion is not used
+
+func main() {
+    var x = 1
+    i8(x)
+}

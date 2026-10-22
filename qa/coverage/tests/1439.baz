@@ -1,0 +1,7 @@
+# the value of 'arrays_equal' is not used
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    arrays_equal(a, b, 4)
+}

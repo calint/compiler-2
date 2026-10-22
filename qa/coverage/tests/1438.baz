@@ -1,0 +1,7 @@
+# 'array_copy' has no value
+
+func main() {
+    var a = i8[4]
+    var b = i8[4]
+    var n = array_copy(a, b, 2)
+}

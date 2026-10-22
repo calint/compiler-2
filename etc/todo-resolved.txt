@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: architecture A3: whether a built-in has a value is decided in
+    two places, 'create_statement_in_expr_arith' (decouple_impl.hpp) and
+    'expr_type::builtin_value_type' with 'parse_copy_source'
+    (expr_type_impl.hpp); a new built-in with a value is added to both
+    (round 7 C-2, E-2)
+    => design, step 1 (no behavior change): one 'builtin_value_type(tc, tk,
+       tz) -> const type*' and one 'assert_builtin_has_value(tk, tz)' next
+       to the factory in decouple_impl.hpp, both callers use them,
+       'expr_type::builtin_value_type' goes
+    => design, step 2 (messages): a built-in in the wrong position says so
+       instead of "function 'x' not found", e.g. 'var n = array_copy(a, b,
+       2)' "function does not return a value", 'arrays_equal(a, b, 4)' as a
+       statement "return value is discarded"; error tests
+    => rejected: a table of every built-in with its result, the factory
+       still needs a branch per kind to make its statement
+    => done (2026-10-22): step 1 'assert_builtin_has_value' and
+       'builtin_value_type' next to the factory in decouple_impl.hpp, same
+       output; step 2 'array_copy' has no value, a built-in value alone is
+       "return value is discarded", also a conversion 'i8(x)'; tests
+       1438-1441
 [x] easy: architecture A2: 'store_boolean' and 'label' are virtual with the
     same body on both targets (round 7 X-4)
     => design: non-virtual in 'machine', like 'begin_noinline_body':

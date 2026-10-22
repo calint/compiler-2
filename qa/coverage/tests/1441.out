@@ -1,0 +1,4 @@
+
+1441.baz:5:5: return value is discarded
+    i8(x)
+    ^~

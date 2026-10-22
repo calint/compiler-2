@@ -4589,3 +4589,9 @@ SRC=1436 && COMPERR
 if [[ $MACHINE == x86_64 ]]; then SRC=1437 && EXP=136 && RUN; fi
 if [[ $MACHINE == rv32i ]]; then SRC=1437 && EXP=133 && RUN; fi
 if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=1437 && EXP=255 && RUN; fi
+
+# a built-in without a value used as one, a built-in value not used
+SRC=1438 && COMPERR
+SRC=1439 && COMPERR
+SRC=1440 && COMPERR
+SRC=1441 && COMPERR
