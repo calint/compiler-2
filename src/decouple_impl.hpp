@@ -182,6 +182,54 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
 
 // called from 'expr_arith' to solve circular dependencies with function
 // calls
+// 'exit' ends the program and the sector functions only transfer, they have
+// no value to use
+inline auto assert_builtin_has_value(const token& tk, tokenizer& tz) -> void {
+    const stmt_builtin_io::io_function* const io{
+        stmt_builtin_io::find(tk.text()),
+    };
+
+    const bool has_no_value{
+        tk.is_text("exit") or (io != nullptr and not io->has_result()),
+    };
+
+    if (has_no_value and tz.peek_char_after_whitespace() == '(') {
+        throw compile_error{tk, "function does not return a value"};
+    }
+}
+
+// the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)', none
+// when 'tk' names no built-in with a value; 'create_statement_in_expr_arith'
+// makes a statement for each
+[[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
+                                             tokenizer& tz) -> const type* {
+
+    if (tk.is_text("array_length")) {
+        return &tc.builtins().default_type();
+    }
+
+    if (tk.is_text("arrays_equal")) {
+        return &tc.builtins().boolean();
+    }
+
+    // e.g. the count of 'read(0, buf, 4)'
+    const stmt_builtin_io::io_function* const io{
+        stmt_builtin_io::find(tk.text()),
+    };
+
+    if (io != nullptr and io->has_result()) {
+        return &tc.builtins().default_type();
+    }
+
+    if (tc.builtins().is_integer_name(tk.text()) and
+        tz.peek_char_after_whitespace() == '(') {
+
+        return &stmt_builtin_convert::conversion_type(tc, tk);
+    }
+
+    return nullptr;
+}
+
 inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
@@ -214,11 +262,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
                                                  tz);
     }
 
-    // 'exit' ends the program and the sector functions only transfer, they
-    // have no value to use
-    if ((tk.is_text("exit") or io) and tz.peek_char_after_whitespace() == '(') {
-        throw compile_error{tk, "function does not return a value"};
-    }
+    assert_builtin_has_value(tk, tz);
 
     if (tk.is_text("array_length")) {
         return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),

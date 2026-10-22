@@ -271,11 +271,6 @@ class expr_type final : public statement {
         });
     }
 
-    // the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)',
-    // none when 'tk' names no built-in with a value
-    [[nodiscard]] static auto builtin_value_type(const toc& tc, const token& tk,
-                                                 tokenizer& tz) -> const type*;
-
     static auto compile_builtin_field(toc& tc, const size_t indent,
                                       const expr_any& src,
                                       const operand& src_op, const operand& dst)

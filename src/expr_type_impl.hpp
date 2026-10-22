@@ -25,8 +25,6 @@
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
-#include "stmt_builtin_convert.hpp"
-#include "stmt_builtin_io.hpp"
 #include "stmt_call.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
@@ -150,17 +148,7 @@ inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
 inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
-    const stmt_builtin_io::io_function* const io{
-        stmt_builtin_io::find(tok().text()),
-    };
-
-    // 'exit' ends the program and the sector functions only transfer, as in
-    // an expression
-    if ((tok().is_text("exit") or (io != nullptr and not io->has_result())) and
-        tz.peek_char_after_whitespace() == '(') {
-
-        throw compile_error{tok(), "function does not return a value"};
-    }
+    assert_builtin_has_value(tok(), tz);
 
     // a built-in is not a function, its value is a scalar of a built-in type
     if (const type* const value_type{builtin_value_type(tc, tok(), tz)};
@@ -197,35 +185,6 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
                         src_info.type_ref().name()),
         };
     }
-}
-
-inline auto expr_type::builtin_value_type(const toc& tc, const token& tk,
-                                          tokenizer& tz) -> const type* {
-
-    if (tk.is_text("array_length")) {
-        return &tc.builtins().default_type();
-    }
-
-    if (tk.is_text("arrays_equal")) {
-        return &tc.builtins().boolean();
-    }
-
-    // e.g. the count of 'read(0, buf, 4)'
-    const stmt_builtin_io::io_function* const io{
-        stmt_builtin_io::find(tk.text()),
-    };
-
-    if (io != nullptr and io->has_result()) {
-        return &tc.builtins().default_type();
-    }
-
-    if (tc.builtins().is_integer_name(tk.text()) and
-        tz.peek_char_after_whitespace() == '(') {
-
-        return &stmt_builtin_convert::conversion_type(tc, tk);
-    }
-
-    return nullptr;
 }
 
 inline auto expr_type::assert_call_type(const type& tp) const -> void {
