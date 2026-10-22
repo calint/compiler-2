@@ -1,0 +1,4 @@
+
+1430.baz:3:14: expected a type name, got a string
+func f() res "i8" {
+             ^~~~

@@ -1,0 +1,4 @@
+
+1432.baz:7:14: generic parameter 'c' of 'buf' needs a constant, got a string
+type b = buf<"4">
+             ^~~

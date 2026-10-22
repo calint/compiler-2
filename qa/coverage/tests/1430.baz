@@ -1,0 +1,9 @@
+# a string is not a type name
+
+func f() res "i8" {
+    res = 2
+}
+
+func main() {
+    var r = f()
+}

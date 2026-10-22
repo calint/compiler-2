@@ -1,0 +1,10 @@
+# a string is not a generic argument
+
+type buf<c> {
+    x i8[c]
+}
+
+type b = buf<"4">
+
+func main() {
+}

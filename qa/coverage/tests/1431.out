@@ -1,0 +1,4 @@
+
+1431.baz:4:16: expected a constant value or a constant identifier
+    var a = i8["4"]
+               ^

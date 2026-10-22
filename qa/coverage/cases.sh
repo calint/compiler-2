@@ -4565,3 +4565,9 @@ SRC=1428 && EXP=12 && RUN
 
 # a function named like an integer type, whose call would be a conversion
 SRC=1429 && COMPERR
+
+# a string is not a type name, a constant array size or a generic argument
+SRC=1430 && COMPERR
+SRC=1431 && COMPERR
+SRC=1432 && COMPERR
+SRC=1433 && COMPERR

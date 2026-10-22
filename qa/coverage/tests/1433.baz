@@ -1,0 +1,10 @@
+# a string is not a type argument of a generic function
+
+func id<T type>(a T) res T {
+    res = a
+}
+
+func main() {
+    var x = i8(1)
+    var y = id<"i8">(x)
+}

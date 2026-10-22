@@ -1,0 +1,4 @@
+
+1433.baz:9:16: expected a type name, got a string
+    var y = id<"i8">(x)
+               ^~~~

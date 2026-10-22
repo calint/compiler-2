@@ -29,7 +29,7 @@ class stmt_const final : public statement {
 
         set_type(tc.builtins().default_type());
 
-        if (literal_tk_.has_whitespace_before()) {
+        if (literal_tk_.has_whitespace_before() or literal_tk_.is_string()) {
             throw compile_error{
                 tok(), "expected a constant value or a constant identifier"};
         }

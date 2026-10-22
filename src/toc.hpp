@@ -2901,6 +2901,11 @@ class toc final {
     [[nodiscard]] auto get_type_or_throw(const token& type_tk) const
         -> const type& {
 
+        // note: the text of a string token reads like a name
+        if (type_tk.is_string()) {
+            throw compile_error{type_tk, "expected a type name, got a string"};
+        }
+
         const std::string_view name{type_tk.text()};
 
         if (not types_.has(name)) {
@@ -3320,6 +3325,14 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
 
     for (const auto [param, arg_tk] : std::views::zip(params, arg_tks)) {
         const std::string_view name{param.name_tk.text()};
+
+        if (arg_tk.is_string()) {
+            throw compile_error{
+                arg_tk, std::format("generic parameter '{}' of '{}' needs a "
+                                    "{}, got a string",
+                                    name, generic_name,
+                                    param.is_type ? "type" : "constant")};
+        }
 
         if (param.is_type) {
             args.push_back({
