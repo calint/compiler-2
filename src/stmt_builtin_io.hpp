@@ -111,6 +111,8 @@ class stmt_builtin_io final : public stmt_call {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
+        assert_in_func(tc);
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));

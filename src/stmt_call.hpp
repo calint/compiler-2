@@ -2018,10 +2018,7 @@ class stmt_call : public expression {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        if (not tc.scopes().is_in_func()) {
-            throw compile_error{
-                tok(), "a global variable cannot be initialized with a call"};
-        }
+        assert_in_func(tc);
 
         // note: 'read', 'write' and 'exit' are built-ins with a statement of
         //       their own
@@ -2087,6 +2084,14 @@ class stmt_call : public expression {
     }
 
     [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
+
+    // a call outside a function would run before 'main'
+    auto assert_in_func(const toc& tc) const -> void {
+        if (not tc.scopes().is_in_func()) {
+            throw compile_error{
+                tok(), "a global variable cannot be initialized with a call"};
+        }
+    }
 
   private:
     // the receiver is the first argument

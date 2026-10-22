@@ -1,0 +1,8 @@
+# a global variable is not initialized with a built-in that reads or writes,
+# it would run before 'main'
+
+var a = i8[4]
+var g = read(0, a)
+
+func main() {
+}

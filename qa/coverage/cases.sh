@@ -4578,3 +4578,6 @@ SRC=1434 && COMPERR
 # an error in a call that is an argument of an inlined call is called from the
 # argument only
 SRC=1435 && COMPERR
+
+# a global variable is not initialized with 'read' or 'write'
+SRC=1436 && COMPERR
