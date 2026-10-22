@@ -60,8 +60,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     // note: compared by type, a type parameter names the type of its argument
-    if (is_typed_literal and
-        not tc.get_type_or_throw(tok(), tok().text()).is_same(tp)) {
+    if (is_typed_literal and not tc.get_type_or_throw(tok()).is_same(tp)) {
 
         throw compile_error{tok(), std::format("expected type '{}', got '{}'",
                                                tp.name(), tok().text())};

@@ -654,8 +654,7 @@ class expr_any final : public statement {
         open_bracket_tk_ = tz.is_next_char_token('[');
 
         const type& literal_type{
-            is_typed ? tc.get_type_or_throw(tk, tk.text())
-                     : tc.builtins().default_type(),
+            is_typed ? tc.get_type_or_throw(tk) : tc.builtins().default_type(),
         };
 
         if (not literal_type.is_same(tp)) {

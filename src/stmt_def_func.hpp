@@ -143,7 +143,7 @@ struct func_head {
     // parameter 'self' of that type and a constructor builds a 'self' of it
     auto read_method_name(const toc& tc, tokenizer& tz) -> void {
         const type& receiver_type{
-            tc.get_type_or_throw(name_tk, name_tk.text()),
+            tc.get_type_or_throw(name_tk),
         };
 
         if (receiver_type.is_builtin()) {
@@ -545,12 +545,10 @@ class stmt_def_func final : public statement {
                              head_.method_name_tk.at_line()),
         };
 
-        params_.insert(
-            params_.begin(),
-            stmt_def_func_param{
-                self_tk,
-                tc.get_type_or_throw(head_.name_tk, head_.name_tk.text()),
-                head_.mut_tk.is_empty()});
+        params_.insert(params_.begin(),
+                       stmt_def_func_param{self_tk,
+                                           tc.get_type_or_throw(head_.name_tk),
+                                           head_.mut_tk.is_empty()});
     }
 
     // a noinline body reaches the result and the arguments through pointer
@@ -798,9 +796,8 @@ class stmt_def_func final : public statement {
         }
 
         const type& tp{
-            result.type_tk.is_empty()
-                ? tc.builtins().default_type()
-                : tc.get_type_or_throw(result.type_tk, result.type_tk.text()),
+            result.type_tk.is_empty() ? tc.builtins().default_type()
+                                      : tc.get_type_or_throw(result.type_tk),
         };
 
         returns_.emplace(result.type_tk, result.name_tk, &tp);
@@ -852,7 +849,7 @@ class stmt_def_func final : public statement {
         }
 
         const type& tp{
-            tc.get_type_or_throw(head_.name_tk, head_.name_tk.text()),
+            tc.get_type_or_throw(head_.name_tk),
         };
 
         returns_.emplace(type_tk, self_tk, &tp);

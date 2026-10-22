@@ -67,7 +67,7 @@
         return false;
     }
 
-    return not tc.get_type_or_throw(tk, tk.text()).is_builtin();
+    return not tc.get_type_or_throw(tk).is_builtin();
 }
 
 // e.g. 'point' in 'var p = point' is 'point{}', a user type name not followed
@@ -79,7 +79,7 @@
         return false;
     }
 
-    if (tc.get_type_or_throw(tk, tk.text()).is_builtin()) {
+    if (tc.get_type_or_throw(tk).is_builtin()) {
         return false;
     }
 

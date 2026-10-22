@@ -266,9 +266,7 @@ struct generic_call {
         // e.g. 'point{1, 2}'
         if (is_type and tz.peek_char_after_whitespace() == '{') {
             tz.skip_braced_block();
-
-            return is_whole_argument() ? &tc.get_type_or_throw(tk, tk.text())
-                                       : nullptr;
+            return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
         }
 
         // e.g. 'point.at(1, 2)'
@@ -282,8 +280,7 @@ struct generic_call {
 
             tz.skip_to_close_paren();
 
-            return is_whole_argument() ? &tc.get_type_or_throw(tk, tk.text())
-                                       : nullptr;
+            return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
         }
 
         // e.g. 'mk(1, 2)', a generic function has no return type before it is
@@ -2661,8 +2658,7 @@ class stmt_call : public expression {
             return name;
         }
 
-        name = std::format("{}.{}",
-                           tc.get_type_or_throw(type_tk, type_tk.text()).name(),
+        name = std::format("{}.{}", tc.get_type_or_throw(type_tk).name(),
                            constructor_name_tk.text());
 
         return name;
@@ -2678,7 +2674,7 @@ class stmt_call : public expression {
 
         if (tc.types().has(type_tk.text())) {
             const std::string_view bound{
-                tc.get_type_or_throw(type_tk, type_tk.text()).name(),
+                tc.get_type_or_throw(type_tk).name(),
             };
 
             if (bound != type_tk.text()) {

@@ -199,7 +199,7 @@ class initializer_declaration final {
         const token tk{tz.next_token()};
 
         if (is_record_literal(tc, tk, tz) or is_bare_record_type(tc, tk, tz)) {
-            set_type(tc.get_type_or_throw(tk, tk.text()));
+            set_type(tc.get_type_or_throw(tk));
             return;
         }
 
@@ -296,7 +296,7 @@ class initializer_declaration final {
             return nullptr;
         }
 
-        return &tc.get_type_or_throw(tk, tk.text());
+        return &tc.get_type_or_throw(tk);
     }
 };
 

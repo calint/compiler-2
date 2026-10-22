@@ -234,7 +234,7 @@ class stmt_builtin_convert final : public expression {
             return tc.builtins().default_type();
         }
 
-        return tc.get_type_or_throw(tk, tk.text());
+        return tc.get_type_or_throw(tk);
     }
 
   private:

@@ -48,9 +48,8 @@ class type_fields final {
             // a field without a type name has the default type, e.g. 'x' of
             // 'type point { x, y }'
             const type& fld_tp{
-                fld.type_str().empty()
-                    ? tc.builtins().default_type()
-                    : tc.get_type_or_throw(fld.type_token(), fld.type_str()),
+                fld.type_str().empty() ? tc.builtins().default_type()
+                                       : tc.get_type_or_throw(fld.type_token()),
             };
 
             // note: 'stmt_def_type_field' rejects an array size below 1

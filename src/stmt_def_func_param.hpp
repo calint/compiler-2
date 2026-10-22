@@ -146,8 +146,7 @@ class stmt_def_func_param final : public statement {
 
         toc::assert_valid_unqualified_name(tok());
 
-        set_type(type_tk_.is_empty()
-                     ? tc.builtins().default_type()
-                     : tc.get_type_or_throw(type_tk_, type_tk_.text()));
+        set_type(type_tk_.is_empty() ? tc.builtins().default_type()
+                                     : tc.get_type_or_throw(type_tk_));
     }
 };

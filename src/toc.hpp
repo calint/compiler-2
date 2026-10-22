@@ -2898,27 +2898,28 @@ class toc final {
         return *funcs_.get(reserved_names::main).def;
     }
 
-    [[nodiscard]] auto get_type_or_throw(const token& src_loc_tk,
-                                         const std::string_view name) const
+    [[nodiscard]] auto get_type_or_throw(const token& type_tk) const
         -> const type& {
+
+        const std::string_view name{type_tk.text()};
 
         if (not types_.has(name)) {
             if (generics_.has_type(name)) {
                 throw compile_error{
-                    src_loc_tk,
+                    type_tk,
                     std::format("generic type '{}' is not a type, name an "
                                 "instance first, e.g. 'type str = {}<...>'",
                                 name, name)};
             }
 
-            throw compile_error{src_loc_tk,
+            throw compile_error{type_tk,
                                 std::format("type '{}' not found", name)};
         }
 
         // note: 'void' is the type of what has no value, it has no size
         if (types_.get(name).is_same(builtins_.void_type())) {
             throw compile_error{
-                src_loc_tk, std::format("'{}' is not a type of a value", name)};
+                type_tk, std::format("'{}' is not a type of a value", name)};
         }
 
         return types_.get(name);
@@ -3281,7 +3282,7 @@ class toc final {
                                 param_name, generic_name, arg_tk.text())};
     }
 
-    return tc.get_type_or_throw(arg_tk, arg_tk.text());
+    return tc.get_type_or_throw(arg_tk);
 }
 
 // e.g. '8' of 'list<i8, 8>' for 'capacity'
