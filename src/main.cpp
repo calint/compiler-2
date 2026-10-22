@@ -32,6 +32,7 @@
 #include "machine_rv32i_qemu.hpp"
 #include "machine_x86_64.hpp"
 #include "program.hpp"
+#include "register_report.hpp" // IWYU pragma: keep
 #include "source_files.hpp"
 #include "toc.hpp"
 
@@ -562,9 +563,11 @@ examples:
         backend->set_sd_card_file_name(opts.sd_card_file_name);
         backend->set_kept_version(opts.kept_version);
 
-        // e.g. 'rv32i-fpga' exits with the code of the failure only
+        // the checks the target cannot honor are off, e.g. 'rv32i-fpga' exits
+        // with the code of the failure only and x86_64 has no stack bound
         check_options checks{opts.checks};
         checks.with_line = checks.with_line and backend->reports_line();
+        checks.stack = checks.stack and backend->is_stack_bounded();
 
         program prg{*backend, files, opts.vars_size_bytes, checks};
 

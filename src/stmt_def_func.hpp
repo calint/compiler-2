@@ -405,31 +405,50 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
-    // the lengths are those of the array arguments, one per array parameter
-    [[nodiscard]] auto
-    compile_body(toc& tc, const size_t indent,
-                 const std::span<const size_t> array_lengths) const -> size_t {
+    // in place or in a body of its own, the function is reached
+    auto compile_statements(toc& tc, const size_t indent) const -> void {
+        tc.mark_func_reached(*this);
+        code_.compile(tc, indent, destination{});
+    }
+
+    // the body of a noinline function for one kind of call, after 'main'; the
+    // lengths are those of the array arguments, one per array parameter
+    auto emit_noinline_body(toc& tc,
+                            const std::span<const size_t> array_lengths) const
+        -> void {
 
         assert(not is_inlined());
         assert(array_lengths.size() == array_param_count());
 
         machine& x{tc.machine()};
 
+        const machine::call_frame_scope call_frame{
+            x,
+            token{},
+            std::string{name()},
+            machine::frame_kind::noinline_body,
+        };
+
+        x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
+
+        x.comment({}, 0, "");
+        source_def_comment_to(x, 0);
+
+        if (not array_lengths.empty()) {
+            x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
+        }
+
+        x.label(0, body_label(array_lengths));
+
         x.reserve_frame_base();
 
-        const size_t frame_size_bytes{
-            compile_in_frame(tc, indent, array_lengths),
-        };
+        const size_t frame_size_bytes{compile_in_frame(tc, 0, array_lengths)};
 
         x.release_frame_base();
 
-        return frame_size_bytes;
-    }
+        x.define_constant(frame_size_label(array_lengths), frame_size_bytes);
 
-    // in place or in a body of its own, the function is reached
-    auto compile_statements(toc& tc, const size_t indent) const -> void {
-        tc.mark_func_reached(*this);
-        code_.compile(tc, indent, destination{});
+        x.end_noinline_body();
     }
 
     // the slots of a call are the result, when there is one, then the

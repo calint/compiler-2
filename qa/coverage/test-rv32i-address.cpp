@@ -8,6 +8,7 @@
 #include "../../src/machine_rv32i.hpp"
 #include "../../src/machine_x86_64.hpp"
 #include "../../src/program.hpp"
+#include "../../src/register_report.hpp" // IWYU pragma: keep
 
 // ============================================================================
 // test driver of the RV32I backend ('test-rv32i.sh' builds and runs it)

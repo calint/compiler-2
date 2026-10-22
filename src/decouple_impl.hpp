@@ -1,8 +1,9 @@
 #pragma once
 
-// the statement factories declared in 'decouple.hpp': they create every
-// statement class, and 'stmt_block' and 'expr_arith', which call them, are
-// included by those classes
+// the statement factories declared in 'decouple.hpp': they create the
+// statements of a block and the elements of an expression, and 'stmt_block'
+// and 'expr_arith', which call them, are included by those classes; the
+// definitions of the top level are made by 'program::parse_definition'
 
 #include <format>
 #include <memory>
@@ -12,6 +13,8 @@
 #include "decouple.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
+#include "stmt_break.hpp"
+#include "stmt_builtin_array_copy.hpp"
 #include "stmt_builtin_array_length.hpp"
 #include "stmt_builtin_arrays_equal.hpp"
 #include "stmt_builtin_convert.hpp"
@@ -19,9 +22,12 @@
 #include "stmt_builtin_foo.hpp"
 #include "stmt_builtin_io.hpp"
 #include "stmt_call.hpp"
+#include "stmt_continue.hpp"
+#include "stmt_def_var.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
 #include "stmt_loop.hpp"
+#include "stmt_return.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
@@ -76,11 +82,37 @@ inline auto assert_builtin_has_value(const token& tk, tokenizer& tz) -> void {
     return nullptr;
 }
 
-// called from 'stmt_block' to solve circular dependencies with 'loop', 'if',
-// 'exit', the io functions and 'foo', null for any other keyword
+// every statement of a block that starts with a keyword or a built-in, null
+// for a name; called from 'stmt_block', which the statements with a block
+// include
 inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
                                            const token tk)
     -> std::unique_ptr<statement> {
+
+    if (tk.is_text("var") or tk.is_text("let")) {
+        return make_stmt_def_var(tc, tk, tz);
+    }
+
+    // rejected before its initializer, whose errors would hide this one
+    if (tk.is_text("dat")) {
+        throw compile_error{tk, "'dat' can only be declared in global scope"};
+    }
+
+    if (tk.is_text("break")) {
+        return std::make_unique<stmt_break>(tc, tk);
+    }
+
+    if (tk.is_text("continue")) {
+        return std::make_unique<stmt_continue>(tc, tk);
+    }
+
+    if (tk.is_text("return")) {
+        return std::make_unique<stmt_return>(tc, tk);
+    }
+
+    if (tk.is_text("array_copy")) {
+        return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
+    }
 
     if (tk.is_text("loop")) {
         return std::make_unique<stmt_loop>(tc, tk, tz);

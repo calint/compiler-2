@@ -2,9 +2,9 @@
 
 // the declarations that break include cycles, defined in 'decouple_impl.hpp'
 // and 'expr_type_impl.hpp':
-//   - the statement factories create every statement class, and the
-//     statement headers that need them ('stmt_block', 'expr_arith') are
-//     included by those classes
+//   - the statement factories create the statements of a block and the
+//     elements of an expression, and the statement headers that need them
+//     ('stmt_block', 'expr_arith') are included by those classes
 //   - 'expr_type' holds the classes below, whose headers include
 //     'expr_type.hpp' through 'expr_any.hpp'
 

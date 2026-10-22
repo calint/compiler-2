@@ -1571,7 +1571,7 @@ class noinline_call {
         // the registers holding the addresses of the arguments are still
         // allocated, the check must not change a register that is free but
         // used by the call
-        if (tc.checks().stack and x.is_stack_bounded()) {
+        if (tc.checks().stack) {
             x.check_stack_capacity(call_.tk, indent);
         }
 

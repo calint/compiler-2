@@ -238,9 +238,9 @@ enum class width_change : uint8_t { narrowed, widened };
 //                  'stmt_call', 'stmt_identifier' ('assert_not_narrowed',
 //                  'fold', 'keeps_low_bits')
 //   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
-//                  'compile_lea', 'compile_address', 'is_indexed',
-//                  'is_array_element', 'name_token': 'stmt_identifier', and
-//                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
+//                  'compile_lea', 'is_indexed', 'is_array_element',
+//                  'name_token': 'stmt_identifier', and 'expr_arith',
+//                  'expr_any' and 'expr_type' that hold one;
 //                  'expr_bool' ('name_or_literal') and 'expr_zero'
 //                  ('is_name_or_literal', 'name_or_literal')
 class statement {
@@ -283,18 +283,6 @@ class statement {
                          [[maybe_unused]] const size_t indent,
                          [[maybe_unused]] const destination& dst) const
         -> void {
-
-        std::unreachable();
-    }
-
-    // 'use' runs while the scratch registers that build the address are still
-    // allocated, then they are freed
-    virtual auto compile_address(
-        [[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
-        [[maybe_unused]] const token& src_loc_tk,
-        [[maybe_unused]] const lea_request& request,
-        [[maybe_unused]] const std::function_ref<void(const operand&)> use)
-        const -> void {
 
         std::unreachable();
     }
@@ -449,6 +437,30 @@ class statement {
 
                 throw_uninitialized(src_loc_tk, var);
             });
+    }
+
+    // the address of this place from 'compile_lea': 'use' runs while the
+    // scratch registers that build it are still allocated, then they are
+    // freed
+    auto
+    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const lea_request& request,
+                    const std::function_ref<void(const operand&)> use) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, statement::trimmed_source(*this));
+
+        std::vector<operand> allocated_registers;
+
+        const operand address{
+            compile_lea(tc, indent, tok(), allocated_registers, request),
+        };
+
+        use(address);
+
+        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
     }
 
     // the fold of a value that must fit where it is used, checked as its

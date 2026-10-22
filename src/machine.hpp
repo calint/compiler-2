@@ -981,7 +981,7 @@ class machine {
     }
 
     // the use of registers at the busiest point of the build, as lines after
-    // the code when asked for, else none
+    // the code when asked for, else none; defined in 'register_report.hpp'
     [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
 
     // the register of 'reg' at the width of 'type_ref', freed by the same
@@ -1889,7 +1889,8 @@ class machine {
     }
 
     // an error that the registers ran out or are held by a value, with how the
-    // registers are used by each frame and what a 'noinline' frame would give
+    // registers are used by each frame and what a 'noinline' frame would give;
+    // defined in 'register_report.hpp'
     [[nodiscard]] auto register_error(const token& src_loc_tk,
                                       std::string message) const
         -> compile_error;

@@ -624,41 +624,6 @@ class program final {
         }
     }
 
-    static auto
-    compile_noinline_body(toc& tc, const stmt_def_func& func,
-                          const std::span<const size_t> array_lengths) -> void {
-
-        machine& x{tc.machine()};
-
-        const machine::call_frame_scope call_frame{
-            x,
-            token{},
-            std::string{func.name()},
-            machine::frame_kind::noinline_body,
-        };
-
-        x.begin_noinline_body(std::string{func.name()},
-                              func.body_label(array_lengths));
-
-        x.comment({}, 0, "");
-        func.source_def_comment_to(x, 0);
-
-        if (not array_lengths.empty()) {
-            x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
-        }
-
-        x.label(0, func.body_label(array_lengths));
-
-        const size_t frame_size_bytes{
-            func.compile_body(tc, 0, array_lengths),
-        };
-
-        x.define_constant(func.frame_size_label(array_lengths),
-                          frame_size_bytes);
-
-        x.end_noinline_body();
-    }
-
     // each noinline function that is called has one body per kind of call,
     // after 'main'; a function nothing calls leaves no code
     static auto compile_noinline_functions(toc& tc) -> void {
@@ -669,7 +634,7 @@ class program final {
         for (size_t i{}; i < tc.funcs().noinline_body_count(); ++i) {
             const noinline_body body{tc.funcs().noinline_body_at(i)};
 
-            compile_noinline_body(tc, *body.func, body.array_lengths);
+            body.func->emit_noinline_body(tc, body.array_lengths);
         }
     }
 
@@ -699,7 +664,7 @@ class program final {
             x.emit_overflow_failure_handler(checks.with_line);
         }
 
-        if (checks.stack and x.is_stack_bounded()) {
+        if (checks.stack) {
             x.comment({}, 0, "stack overflow handler (--checks=stack)");
             x.emit_stack_overflow_handler();
         }

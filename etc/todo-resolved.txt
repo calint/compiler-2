@@ -1,6 +1,47 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: design: "the address of a place" is two virtuals: 'compile_lea'
+    returns an address and appends its registers, 'compile_address' calls it,
+    passes the address to a callback and frees them; forwarding nodes must
+    override both, 'expr_arith' does, 'expr_any' and 'expr_type' forward only
+    'compile_lea' so 'compile_address' on them is the 'std::unreachable()'
+    default (round 8 A-2)
+    => design: 'compile_address' becomes a non-virtual 'statement' method
+       with the body of the 'stmt_identifier' version; the overrides in
+       stmt_identifier.hpp and expr_arith.hpp go, only 'compile_lea' is
+       forwarded; 'statement' drops to 19 virtuals
+    => cost: the comment of a parenthesized side names '(p)' instead of 'p',
+       '.s' listings only
+    => done (2026-10-22): as designed; the listings and outputs of the suite
+       are unchanged
+[x] easy: design: "is '--checks=stack' in effect" is decided twice,
+    'checks.stack and x.is_stack_bounded()' in program.hpp and stmt_call.hpp,
+    while the same "target cannot honor the option" case of 'line' is
+    normalized once in main.cpp (round 8 R-3)
+    => design: 'checks.stack = checks.stack and backend->is_stack_bounded()'
+       next to the 'with_line' line in main.cpp, both conjunctions go
+    => done (2026-10-22): as designed, the comment names both cases
+[x] easy: consistency: 'machine' declares 'register_error' and
+    'register_peak_report' and register_report.hpp defines them; both
+    targets include register_report.hpp only for that; the pattern
+    elsewhere is an include in the translation unit with 'IWYU pragma: keep'
+    (main.cpp for decouple_impl.hpp and expr_type_impl.hpp) and a note at the
+    declaration (compile_error.hpp: "defined in 'tokenizer.hpp'") (round 8
+    A-8, X-5)
+    => design: main.cpp and test-rv32i-address.cpp include
+       register_report.hpp with the pragma, the targets drop it, the two
+       declarations get "defined in 'register_report.hpp'"
+    => done (2026-10-22): as designed
+[x] easy: design: a noinline body is emitted in two files: 'program'
+    writes its label, source comment, frame size constant and begin and end
+    ('compile_noinline_body'), 'stmt_def_func' compiles the frame and checks
+    an uncalled body under the same call frame kind (round 8 A-11)
+    => design: 'compile_noinline_body' moves to
+       'stmt_def_func::emit_noinline_body(tc, array_lengths)' next to
+       'check_body'; 'program::compile_noinline_functions' keeps the worklist
+    => done (2026-10-22): 'emit_noinline_body' also takes in 'compile_body',
+       which had no other caller
 [x] medium: architecture A8: the checks made while compiling are skipped in
     a branch that is never compiled, so whether a program is accepted can
     depend on the constant arguments of an inlined call, e.g. 'if 1 == 2 {

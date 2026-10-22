@@ -10,11 +10,6 @@
 #include "compile_error.hpp"
 #include "decouple.hpp"
 #include "ident_info.hpp"
-#include "stmt_break.hpp"
-#include "stmt_builtin_array_copy.hpp"
-#include "stmt_continue.hpp"
-#include "stmt_def_var.hpp"
-#include "stmt_return.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "ub_assigned.hpp"
@@ -200,34 +195,8 @@ class stmt_block final : public statement {
             throw compile_error{tk, "expected a statement"};
         }
 
-        if (tk.is_text("var") or tk.is_text("let")) {
-            return make_stmt_def_var(tc, tk, tz);
-        }
-
-        // rejected before its initializer, whose errors would hide this one
-        if (tk.is_text("dat")) {
-            throw compile_error{tk,
-                                "'dat' can only be declared in global scope"};
-        }
-
-        if (tk.is_text("break")) {
-            return std::make_unique<stmt_break>(tc, tk);
-        }
-
-        if (tk.is_text("continue")) {
-            return std::make_unique<stmt_continue>(tc, tk);
-        }
-
-        if (tk.is_text("return")) {
-            return std::make_unique<stmt_return>(tc, tk);
-        }
-
-        if (tk.is_text("array_copy")) {
-            return std::make_unique<stmt_builtin_array_copy>(tc, tk, tz);
-        }
-
-        // note: solves circular reference problem, 'loop' and 'if' use this
-        //       class
+        // note: in 'decouple_impl.hpp', the statements it makes include this
+        //       class, e.g. 'loop' and 'if'
 
         if (std::unique_ptr<statement> built{
                 create_statement_in_stmt_block(tc, tz, tk),

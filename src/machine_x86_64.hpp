@@ -26,7 +26,6 @@
 #include "machine.hpp"
 #include "operand.hpp"
 #include "register_pool.hpp"
-#include "register_report.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
