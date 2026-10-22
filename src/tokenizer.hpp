@@ -254,6 +254,14 @@ class tokenizer final {
         }
     }
 
+    // skips up to and including the next '(' before a '{', returns it, empty
+    // when there is none
+    // e.g. '.print<T type>(' of 'func text.print<T type>()'
+    [[nodiscard]] auto skip_to_open_paren() -> token {
+        skip_to_unnested("({");
+        return is_next_char_token('(');
+    }
+
     // the source text from the end of 'tk' to the current position
     [[nodiscard]] auto text_after(const token& tk) const -> std::string_view {
         const size_t begin_ix{tk.source_end_index()};

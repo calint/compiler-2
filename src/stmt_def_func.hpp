@@ -1263,6 +1263,8 @@ class stmt_def_func_generic final : public statement {
             func_instantiator::define_func(tc, tk, head, tz, std::nullopt);
         }
 
+        skip_signature(tc, head, tz);
+
         generic_text_ = tz.skip_braced_block_after(tk);
     }
 
@@ -1281,6 +1283,38 @@ class stmt_def_func_generic final : public statement {
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
+
+  private:
+    //
+    // statics
+    //
+
+    // the body must follow the signature, else the skip of the body would take
+    // the next definition, e.g. 'func g' after 'func f<T type>(x T)'; other
+    // errors in the signature are found when an instance is parsed; 'tz' is
+    // after the head
+    static auto skip_signature(const toc& tc, const func_head& head,
+                               tokenizer& tz) -> void {
+
+        if (head.is_generic_type_method) {
+            // e.g. the '.print(' of 'func text.print()'
+            if (tz.skip_to_open_paren().is_empty()) {
+                return;
+            }
+        } else if (head.open_paren_tk.is_empty()) {
+            // e.g. 'func f<T type> {'
+            return;
+        }
+
+        tz.skip_to_close_paren();
+        std::ignore = func_result_syntax::read(tc, tz);
+
+        const token open_brace_tk{
+            tz.expect_char_token('{', "expected '{' to begin block"),
+        };
+
+        tz.put_back_token(open_brace_tk);
+    }
 };
 
 // reads the head and makes the statement of the kind that follows it

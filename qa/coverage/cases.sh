@@ -4541,3 +4541,8 @@ SRC=1416 && EXP=0 && RUN
 # an instance or an array in parentheses is compared as memory
 SRC=1417 && EXP=0 && RUN
 SRC=1418 && EXP=1 && RUN
+
+# a generic function or method without a body does not take the next
+# definition as its body
+SRC=1419 && COMPERR
+SRC=1420 && COMPERR

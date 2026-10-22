@@ -1,0 +1,15 @@
+# a method of a generic type without a body does not take the next definition
+# as its body
+
+type buf<c> {
+    x i8[c]
+}
+
+func buf.f()
+func g() {
+    exit(3)
+}
+
+func main() {
+    g()
+}

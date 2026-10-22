@@ -1,0 +1,11 @@
+# a generic function without a body does not take the next definition as its
+# body
+
+func f<T type>(x T) res T
+func g() {
+    exit(3)
+}
+
+func main() {
+    g()
+}
