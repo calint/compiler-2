@@ -1043,14 +1043,6 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(indent, op::ret);
     }
 
-    auto scale_index(const token& src_loc_tk, const size_t indent,
-                     const operand& index, const size_t element_size_bytes)
-        -> void override {
-
-        scale_by_element_size_bytes(src_loc_tk, indent, index,
-                                    element_size_bytes);
-    }
-
     auto shift(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
                const operand& count, const runtime_check& check)
@@ -2203,8 +2195,8 @@ class machine_x86_64 final : public machine {
         emit_count(count);
         load_bulk_addresses(src_loc_tk, indent, count, to_rsi, to_rdi);
 
-        scale_by_element_size_bytes(src_loc_tk, indent, qword_register("rcx"),
-                                    element_size_bytes);
+        scale_index(src_loc_tk, indent, qword_register("rcx"),
+                    element_size_bytes);
     }
 
     // the register it allocates is freed by the 'address_scope' of the
@@ -2347,24 +2339,6 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rcx");
         release_named_register(src_loc_tk, indent, "rdi");
         release_named_register(src_loc_tk, indent, "rsi");
-    }
-
-    auto scale_by_element_size_bytes(const token& src_loc_tk,
-                                     const size_t indent, const operand& value,
-                                     const size_t element_size_bytes) -> void {
-
-        if (element_size_bytes <= 1) {
-            return;
-        }
-
-        if (std::has_single_bit(element_size_bytes)) {
-            emit_op(src_loc_tk, indent, op::sal, value,
-                    immediate(std::countr_zero(element_size_bytes)));
-
-            return;
-        }
-
-        imul(src_loc_tk, indent, value, immediate(element_size_bytes));
     }
 
     auto setcc(const token& src_loc_tk, const size_t indent, const condition cc,

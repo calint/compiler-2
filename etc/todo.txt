@@ -221,13 +221,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
-[p] medium: low priority: design: x86 'scale_index' and
-    'scale_by_element_size_bytes' repeat 'multiply_by_constant' (no code for
-    1, 'sal' for a power of two, 'imul' else); rv32i 'scale_index' already
-    calls 'multiply' (round 8 X-4, round 7 X-2)
-    => design: 'scale_index' becomes a non-virtual 'machine' method calling
-       'multiply(..., factor_use::read_only)', 'load_bulk_registers' calls
-       'multiply', 'scale_by_element_size_bytes' goes; same output
 [p] medium: low priority: design: 'compare_and_branch' takes the front end's
     scratch registers and frees them between the compare and the store or
     branch, the backend ends the lifetime of front end allocations; three

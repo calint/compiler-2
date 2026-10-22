@@ -1436,20 +1436,6 @@ class machine_rv32i : public machine {
         assembler_.ret(indent);
     }
 
-    auto scale_index(const token& src_loc_tk, const size_t indent,
-                     const operand& index, const size_t element_size_bytes)
-        -> void override {
-
-        // index scaling uses the target's address width, element sizes are
-        // limited by the variables that hold the arrays
-        assert(index.type_ref().size_bytes() == address_size_bytes());
-        assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
-
-        multiply(src_loc_tk, indent, index,
-                 operand::imm(element_size_bytes, default_type()),
-                 factor_use::read_only);
-    }
-
     auto shift(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
                const operand& count, const runtime_check& check)

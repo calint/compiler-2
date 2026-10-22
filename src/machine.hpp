@@ -700,10 +700,6 @@ class machine {
 
     virtual auto return_function(const size_t indent) -> void = 0;
 
-    virtual auto scale_index(const token& src_loc_tk, const size_t indent,
-                             const operand& index,
-                             const size_t element_size_bytes) -> void = 0;
-
     // the size of a sector of the sd card, 0 when the target has no card
     [[nodiscard]] virtual auto sector_size_bytes() const -> size_t {
         return card_sector_size_bytes;
@@ -1024,7 +1020,6 @@ class machine {
         frame_base_reserved_ = false;
     }
 
-    // held from 'start' to 'finish'
     auto release_variables_base() -> void {
         assert(variables_base_reserved_);
 
@@ -1051,6 +1046,23 @@ class machine {
                                default_type());
 
         variables_base_reserved_ = true;
+    }
+
+    // held from 'start' to 'finish'
+    // an index or a count of elements becomes a byte offset
+    auto scale_index(const token& src_loc_tk, const size_t indent,
+                     const operand& index, const size_t element_size_bytes)
+        -> void {
+
+        // note: element sizes are limited by the variables that hold the
+        //       arrays
+
+        assert(index.type_ref().size_bytes() == address_size_bytes());
+        assert(element_size_bytes <= max_storage_bytes());
+
+        multiply(src_loc_tk, indent, index,
+                 operand::imm(element_size_bytes, default_type()),
+                 factor_use::read_only);
     }
 
     // the scratch registers that can hold values beside the ones the backend
