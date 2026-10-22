@@ -1,0 +1,8 @@
+# an error after a blank line and a comment line is reported at its own line
+
+func main() {
+    var a = i8[
+
+        # the size
+        0]
+}

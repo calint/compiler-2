@@ -4556,3 +4556,6 @@ SRC=1423 && COMPERR
 SRC=1424 && COMPERR
 SRC=1425 && COMPERR
 SRC=1426 && COMPERR
+
+# the line of an error after a blank line and a comment line
+SRC=1427 && COMPERR

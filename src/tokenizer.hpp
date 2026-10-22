@@ -154,10 +154,10 @@ class tokenizer final {
     }
 
     [[nodiscard]] auto next_whitespace_token() -> token {
-        const size_t at_line{at_line_};
+        const std::string_view ws_before{next_whitespace()};
 
-        return {file_ix_, next_whitespace(), char_ix_, "", char_ix_,
-                "",       at_line,           false};
+        return {file_ix_, ws_before, char_ix_, "",
+                char_ix_, "",        at_line_, false};
     }
 
     [[nodiscard]] auto peek_char() const -> char {
