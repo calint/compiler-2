@@ -1,0 +1,11 @@
+# '--checks=-alias' does not compare the result with the globals
+var g = 5
+
+func f() res {
+    res = g + 1
+}
+
+func main() {
+    g = f()
+    exit(g)
+}

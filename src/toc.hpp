@@ -27,14 +27,16 @@
 #include "operand.hpp"
 #include "token.hpp"
 #include "type.hpp"
+#include "ub_alias.hpp"
 
 //
 // the table of contents: what the names of the program are while it is parsed
 // and compiled, see 'etc/docs/README.md'. the classes below, in reading
 // order:
 //
-//   records         'func_info', 'noinline_body', 'param_binding' (what a
-//                   parameter of an inlined call stands for), 'const_info'
+//   records         'func_info', 'noinline_body', 'body_uses' (what a body
+//                   reaches that its callers name too), 'param_binding' (what
+//                   a parameter of an inlined call stands for), 'const_info'
 //   'frame'         one scope: its constants, variables and parameter bindings
 //   'ident_path'    a name as its path of elements, e.g. 'p.x'
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
@@ -75,6 +77,82 @@ struct noinline_body {
     const stmt_def_func* func{};
     // one per array parameter, in parameter order
     std::vector<size_t> array_lengths;
+};
+
+// what a function body reaches that its callers name too: global variables
+// and data, its parameters and its result, each with the path below it and
+// whether it is written, also through the functions it calls; a call compares
+// what the callee writes through a parameter or the result with the globals
+// it uses, and what it writes to a global with what it reaches through a
+// parameter or the result, see 'stmt_call::assert_no_shared_storage'
+class body_uses final {
+  public:
+    // e.g. 'entities' and '.array[?].messages' of 'entities.array[e].messages'
+    struct global_use {
+        storage_path storage;
+        bool is_written{};
+    };
+
+    // e.g. parameter 0 and '.messages.len' of 'self.messages.len = 0'
+    struct binding_use {
+        // empty for the result
+        std::optional<size_t> param_index;
+        access_path path;
+        bool is_written{};
+    };
+
+  private:
+    // in the order of first use, one per path
+    std::vector<global_use> globals_;
+    std::vector<binding_use> bindings_;
+
+  public:
+    auto add_binding(const std::optional<size_t> param_index,
+                     const access_path& path, const bool is_written) -> void {
+
+        const std::string path_text{path.text()};
+
+        for (binding_use& u : bindings_) {
+            if (u.param_index == param_index and u.path.text() == path_text) {
+                u.is_written = u.is_written or is_written;
+                return;
+            }
+        }
+
+        bindings_.push_back({
+            .param_index{param_index},
+            .path{path},
+            .is_written{is_written},
+        });
+    }
+
+    auto add_global(const storage_path& storage, const bool is_written)
+        -> void {
+
+        const std::string path_text{storage.path.text()};
+
+        for (global_use& u : globals_) {
+            if (u.storage.root.is_same(storage.root) and
+                u.storage.path.text() == path_text) {
+
+                u.is_written = u.is_written or is_written;
+                return;
+            }
+        }
+
+        globals_.push_back({
+            .storage{storage},
+            .is_written{is_written},
+        });
+    }
+
+    [[nodiscard]] auto bindings() const -> std::span<const binding_use> {
+        return bindings_;
+    }
+
+    [[nodiscard]] auto globals() const -> std::span<const global_use> {
+        return globals_;
+    }
 };
 
 // a parameter that is a constant, e.g. 'x' of 'f(3)' or of 'f(2 * n)' when
@@ -272,6 +350,12 @@ class frame final {
     // the name of the result of a function frame, empty when it has none
     std::string result_name_;
 
+    // the parameters of a function frame, in order
+    std::vector<std::string> param_names_;
+
+    // a function frame while its body is parsed: what its callers name too
+    body_uses body_uses_;
+
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
@@ -300,6 +384,10 @@ class frame final {
             result_name_ = var.name;
         }
 
+        if (kind == var_kind::param) {
+            param_names_.emplace_back(var.name);
+        }
+
         if (kind != var_kind::dat) {
             non_dat_var_has_been_added_ = true;
         }
@@ -309,6 +397,12 @@ class frame final {
         return sum_storage_size(allocated_storage_size_bytes_,
                                 dat_var_padding_bytes_);
     }
+
+    [[nodiscard]] auto body_uses_of_func() const -> const body_uses& {
+        return body_uses_;
+    }
+
+    [[nodiscard]] auto body_uses_ref() -> body_uses& { return body_uses_; }
 
     [[nodiscard]] auto call_path() const -> std::string_view {
         return call_path_;
@@ -401,6 +495,19 @@ class frame final {
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
+
+    // the index of the parameter 'name', none for another name
+    [[nodiscard]] auto param_index(const std::string_view name) const
+        -> std::optional<size_t> {
+
+        for (size_t i{}; i < param_names_.size(); ++i) {
+            if (param_names_.at(i) == name) {
+                return i;
+            }
+        }
+
+        return std::nullopt;
+    }
 
     [[nodiscard]] auto peak_storage_size_bytes() const -> size_t {
         assert(not storage_base_register_.empty());
@@ -1417,11 +1524,92 @@ class scope_stack final {
 
     auto pop() -> void { frames_.pop_back(); }
 
+    // the globals that a function called in the body being parsed uses
+    auto record_callee_globals(const body_uses& callee) -> void {
+        for (const body_uses::global_use& u : callee.globals()) {
+            func_frame().body_uses_ref().add_global(u.storage, u.is_written);
+        }
+    }
+
+    // a path in the body being parsed whose root is 'name', recorded when it
+    // names a global, a parameter or the result, see 'body_uses'
+    auto record_use(const std::string_view name, const access_path& path,
+                    const bool is_written) -> void {
+
+        const name_meaning meaning{lookup(name)};
+
+        if (not meaning.is_variable()) {
+            return;
+        }
+
+        const var_info& var{
+            frames_.at(meaning.frame_index).get_var_const_ref(name),
+        };
+
+        // e.g. the 'e' of 'foo g' is an element of 'g'
+        if (var.foo_array) {
+            record_storage_use(var.foo_array->any_element(path), is_written);
+            return;
+        }
+
+        record_storage_use(
+            {
+                .root{
+                    .name{std::string{name}},
+                    .frame_index{meaning.frame_index},
+                },
+                .path{path},
+            },
+            is_written);
+    }
+
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
   private:
-    // the binding of 'name' in the innermost function, null when 'name' means
-    // something else
+    [[nodiscard]] auto func_frame() -> frame& {
+        return frames_.at(func_frame_index());
+    }
+
+    [[nodiscard]] auto func_frame_index() const -> size_t {
+        for (size_t i{frames_.size()}; i > 0; --i) {
+            if (frames_.at(i - 1).is_func()) {
+                return i - 1;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    // a local of the body is not named by the callers
+    auto record_storage_use(const storage_path& storage, const bool is_written)
+        -> void {
+
+        frame& func{func_frame()};
+
+        if (storage.root.is_global()) {
+            func.body_uses_ref().add_global(storage, is_written);
+            return;
+        }
+
+        if (storage.root.frame_index != func_frame_index()) {
+            return;
+        }
+
+        if (func.is_result(storage.root.name)) {
+            func.body_uses_ref().add_binding(std::nullopt, storage.path,
+                                             is_written);
+
+            return;
+        }
+
+        if (const std::optional<size_t> index{
+                func.param_index(storage.root.name),
+            }) {
+
+            func.body_uses_ref().add_binding(index, storage.path, is_written);
+        }
+    }
+
     auto track_depth() -> void {
         max_depth_ = std::max(frames_.size(), max_depth_);
     }
@@ -3011,6 +3199,23 @@ class toc final {
     // noinline check repeats, see 'noinline_call::dry_run_body'
     auto reach_frame_check(const size_t frame_count) -> void {
         dry_runs_.reach_frame_check(frame_count);
+    }
+
+    // the globals that a function called in the body uses
+    auto record_callee_globals(const body_uses& callee) -> void {
+        if (scopes_.is_in_func()) {
+            scopes_.record_callee_globals(callee);
+        }
+    }
+
+    // a path in a function body whose root is 'name', see 'body_uses';
+    // outside a function nothing is recorded
+    auto record_use(const std::string_view name, const access_path& path,
+                    const bool is_written) -> void {
+
+        if (scopes_.is_in_func()) {
+            scopes_.record_use(name, path, is_written);
+        }
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }

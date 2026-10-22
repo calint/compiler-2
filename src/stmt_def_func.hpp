@@ -293,6 +293,8 @@ class stmt_def_func final : public statement {
     stmt_block code_;
     // the definition parsed again with the parameters naming the arguments
     std::optional<func_instance> instance_;
+    // what the body reaches that its callers name too, see 'body_uses'
+    body_uses body_uses_;
 
     // how the body reaches the result and the parameters: a parsed body only
     // names them, a compiled noinline body has pointers to them in its frame
@@ -554,6 +556,8 @@ class stmt_def_func final : public statement {
         }
     }
 
+    [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
+
   private:
     // located at the method name for diagnostics
     auto add_self_param() -> void {
@@ -767,6 +771,8 @@ class stmt_def_func final : public statement {
         add_signature_vars(tc, 0, var_access::direct, {}, {});
 
         code_ = {tc, tz, true};
+
+        body_uses_ = tc.scopes().current_func_frame().body_uses_of_func();
 
         tc.exit_func(name());
     }

@@ -1,7 +1,4 @@
 
-1143.baz:9:9: 'g.b' may share storage with the destination 'v' (both name 'g'), compute the value in a temporary variable first
-    v = g.b + 1
-        ^
-1143.baz:14:5: called from
+1143.baz:14:9: argument 1 'g.b' may share storage with the global 'g' that 'set' uses, use a temporary variable for one of them
     set(g.b)
-    ^~~
+        ^

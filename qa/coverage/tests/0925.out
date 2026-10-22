@@ -1,7 +1,4 @@
 
-0925.baz:6:20: 'g[3]' may share storage with the destination 'x' (both name 'g'), compute the value in a temporary variable first
-    x = k + (100 - g[3])
-                   ^
-0925.baz:10:5: called from
+0925.baz:10:9: argument 1 'g[3]' may share storage with the global 'g' that 'put' uses, use a temporary variable for one of them
     put(g[3], 10)
-    ^~~
+        ^

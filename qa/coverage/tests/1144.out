@@ -1,10 +1,7 @@
 
-1144.baz:10:13: 'total.b' may share storage with the destination 'value' (both name 'total'), compute the value in a temporary variable first
-    value = total.b + 1
-            ^~~~~
-1144.baz:14:5: called from
+1144.baz:14:10: argument 1 'total.b' may share storage with the global 'total' that 'bump' uses, use a temporary variable for one of them
     bump(total.b)
-    ^~~~
+         ^
 1144.baz:20:5: called from
     bump_global()
     ^~~~~~~~~~~

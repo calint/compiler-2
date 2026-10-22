@@ -779,14 +779,6 @@ the part being computed under another name: "'p' may share storage with the
 destination 'g'". An overlap that the body could see itself, e.g. 'g' passed to
 an inlined call inside the body, is rejected too (etc/todo.txt).
 
-A global that the body names is such another name: in 'g = f()' with the
-body 'res = g + 1', 'res' is 'g'. Inlined, the statement reads 'g' before it
-writes it, as above; noinline, the read is rejected. The call compares only
-the arguments and the result with each other, not with the globals the body
-names, so a body that reads 'g' in a later statement than the one that set
-'res' reads the new value, inlined and noinline alike, e.g. 'res = 1', then
-'var x = g' gives 1.
-
 ### 3.7 The other checks on a read
 
 Other checks look at the reads of a variable and do need bytes, because they
@@ -845,6 +837,14 @@ which arguments name the same variable. A noinline body is compiled once and
 receives addresses, so it cannot know which arguments are the same variable.
 Whether a body is unsafe depends on the call, so the error ("may share
 storage") has to be reported at the call, not once for the body.
+
+A global that the callee uses, also through its calls, counts as an argument,
+inlined and noinline alike. The parse records what each body reaches that its
+callers name too ('body_uses'): the globals, its parameters and its result,
+each with its path and whether it is written. The call rejects a write through
+a parameter or the result that may overlap a global the callee uses, and a
+write to a global that may overlap what it reaches through them, e.g. 'g =
+f()' where 'f' reads 'g'.
 
 ### 4.2 Dry run
 

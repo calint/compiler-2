@@ -1,7 +1,4 @@
 
-0527.baz:11:21: 'value' may share storage with the destination 'total' (both name 'total'), compute the value in a temporary variable first
-    total = add_one(value)
-                    ^~~~~
-0527.baz:15:5: called from
+0527.baz:15:10: argument 1 'total' may share storage with the global 'total' that 'bump' uses, use a temporary variable for one of them
     bump(total)
-    ^~~~
+         ^

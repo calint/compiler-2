@@ -1,7 +1,7 @@
 
-0705.baz:11:22: 'g.x' is read but has been overwritten in the same statement
+0705.baz:13:22: 'g.x' is read but has been overwritten in the same statement
     g = {v + self.x, g.x}
                      ^
-0705.baz:16:5: called from
+0705.baz:18:5: called from
     p.bad(g.y)
     ^

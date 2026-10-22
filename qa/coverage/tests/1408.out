@@ -1,7 +1,7 @@
 
-1408.baz:9:15: 'g.x' is read but has been overwritten in the same statement
+1408.baz:11:15: 'g.x' is read but has been overwritten in the same statement
     p = {g.y, g.x}
               ^
-1408.baz:13:5: called from
+1408.baz:15:5: called from
     f(g)
     ^

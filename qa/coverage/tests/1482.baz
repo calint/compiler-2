@@ -1,0 +1,12 @@
+# a global that a function uses counts as an argument: the result 'res' is
+# 'g' and the body reads 'g'
+var g = 5
+
+func f() res {
+    res = g + 1
+}
+
+func main() {
+    g = f()
+    exit(g)
+}

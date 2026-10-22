@@ -106,6 +106,9 @@ class stmt_builtin_io final : public stmt_call {
             if (info.is_var()) {
                 assert_not_read_only(buffer.tok(), "read into",
                                      buffer.name_or_literal(), info);
+
+                tc.record_use(ident_info::root_of(buffer.name_or_literal()),
+                              buffer.accessed_path(), true);
             }
         }
     }

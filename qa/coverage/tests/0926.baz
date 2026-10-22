@@ -1,5 +1,5 @@
 # --checks=alias: a read at a run-time index of the data that the argument names
-# the value is computed before the destination is written
+# rejected inlined as well as noinline
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 

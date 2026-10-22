@@ -1,0 +1,4 @@
+
+0927.baz:17:9: argument 1 'w.items[2]' may share storage with the global 'w' that 'put' uses, use a temporary variable for one of them
+    put(w.items[2])
+        ^

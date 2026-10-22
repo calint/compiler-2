@@ -31,6 +31,9 @@ class stmt_builtin_array_copy final : public statement {
 
         assert_not_read_only(dst.tok(), "copy into", dst.name_or_literal(),
                              make_ident_info(tc, dst));
+
+        tc.record_use(ident_info::root_of(dst.name_or_literal()),
+                      dst.accessed_path(), true);
     }
 
     stmt_builtin_array_copy() = default;

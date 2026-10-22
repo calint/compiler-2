@@ -1,5 +1,7 @@
 # a part of a value read under another name of the destination is overwritten
 # like one read under its own name: 'p' is bound to 'g'
+# with '--checks=-alias', which otherwise rejects the call first: the
+# function uses the global the call passes it
 
 type point {x, y}
 

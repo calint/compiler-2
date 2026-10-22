@@ -1,6 +1,8 @@
-# --checks=alias: the destination has two run-time indexes and the read one, the
+# aliasing: the destination has two run-time indexes and the read one, the
 # read is of the same field that the destination can select
 # the value is computed before the destination is written
+# with '--checks=-alias': the function uses the global the call passes it,
+# which the alias check rejects
 
 type item {
     f i32,

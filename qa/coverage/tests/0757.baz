@@ -1,4 +1,6 @@
 # an indexed argument may be the array element a non-inline body names
+# with '--checks=-alias', which otherwise rejects the call first: the
+# function uses the global the call passes it
 
 var arr = i32[4]{}
 

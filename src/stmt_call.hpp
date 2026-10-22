@@ -2250,7 +2250,8 @@ class stmt_call : public expression {
     // the callee writes a 'mut' parameter in place, so storage shared with
     // another argument could be read after it changed, unless both
     // parameters are read-only. the result destination is only compared with
-    // '--checks=alias'
+    // '--checks=alias'. with it, a global that the callee uses counts as an
+    // argument, see 'body_uses'
     auto assert_no_shared_storage(const toc& tc, const destination& dst,
                                   const stmt_def_func& func) const -> void {
 
@@ -2299,6 +2300,15 @@ class stmt_call : public expression {
                 .target{std::move(*target)},
                 .is_read_only{is_read_only},
             });
+        }
+
+        if (not tc.checks().alias) {
+            return;
+        }
+
+        for (const body_uses::global_use& global : func.uses().globals()) {
+            assert_not_shared_with_global(func, global, references, dst,
+                                          result);
         }
     }
 
@@ -2351,6 +2361,57 @@ class stmt_call : public expression {
                             describe_argument(other.index),
                             statement::trimmed_source(args_.at(other.index)),
                             target.root.name, use_temporary_fix_)};
+        }
+    }
+
+    // what the callee writes through the result or an argument may be a
+    // global it uses, or what it writes to the global may be what it reaches
+    // through them, e.g. 'g = add_g()' where 'add_g' sets 'res' and reads 'g'
+    auto assert_not_shared_with_global(
+        const stmt_def_func& func, const body_uses::global_use& global,
+        const std::span<const reference> args, const destination& dst,
+        const std::optional<storage_path>& result) const -> void {
+
+        // the part of 'target' that the callee reaches through it as 'u'
+        const auto overlaps = [&](const storage_path& target,
+                                  const body_uses::binding_use& u) -> bool {
+            const storage_path reached{
+                .root{target.root},
+                .path{target.path.extended_by(u.path)},
+            };
+
+            return (u.is_written or global.is_written) and
+                   reached.may_overlap(global.storage);
+        };
+
+        for (const body_uses::binding_use& u : func.uses().bindings()) {
+            if (u.param_index or not result or not overlaps(*result, u)) {
+                continue;
+            }
+
+            throw compile_error{
+                tok(), std::format("the result destination '{}' may share "
+                                   "storage with the global '{}' that '{}' "
+                                   "uses, {}",
+                                   dst.text(), global.storage.root.name,
+                                   func_name_, use_temporary_fix_)};
+        }
+
+        for (const reference& arg : args) {
+            for (const body_uses::binding_use& u : func.uses().bindings()) {
+                if (u.param_index != arg.index or not overlaps(arg.target, u)) {
+                    continue;
+                }
+
+                throw compile_error{
+                    args_.at(arg.index).tok(),
+                    std::format("{} '{}' may share storage with the global "
+                                "'{}' that '{}' uses, {}",
+                                describe_argument(arg.index),
+                                statement::trimmed_source(args_.at(arg.index)),
+                                global.storage.root.name, func_name_,
+                                use_temporary_fix_)};
+            }
         }
     }
 
@@ -2507,6 +2568,8 @@ class stmt_call : public expression {
             assert_argument_usable(tc, args_.at(i), params.at(i));
             assert_argument_writable(tc, i, func);
         }
+
+        record_uses_of_call(tc, func);
     }
 
     // a built-in has no parameter list, so any count of default type
@@ -2570,6 +2633,53 @@ class stmt_call : public expression {
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
         assert_open_paren_found(tz, what);
+    }
+
+    // what the callee reaches through a parameter the caller reaches through
+    // the argument, and the globals it uses are the caller's too; a call of
+    // the function being parsed has no complete record yet, so a 'mut'
+    // argument counts as written whole
+    auto record_uses_of_call(toc& tc, const stmt_def_func& func) const -> void {
+
+        // note: a call outside a function is rejected when it is compiled
+
+        if (not tc.scopes().is_in_func()) {
+            return;
+        }
+
+        const body_uses& callee{func.uses()};
+
+        tc.record_callee_globals(callee);
+
+        const bool is_recursive{
+            tc.scopes().current_func_frame().is_name(func.name()),
+        };
+
+        for (size_t i{}; i < args_.size(); ++i) {
+            const expr_any& arg{args_.at(i)};
+
+            if (call_site::is_copied_value(arg)) {
+                continue;
+            }
+
+            const std::string_view root{
+                ident_info::root_of(arg.name_or_literal()),
+            };
+
+            if (is_recursive) {
+                tc.record_use(root, arg.accessed_path(),
+                              not func.param(i).is_read_only());
+
+                continue;
+            }
+
+            for (const body_uses::binding_use& u : callee.bindings()) {
+                if (u.param_index == i) {
+                    tc.record_use(root, arg.accessed_path().extended_by(u.path),
+                                  u.is_written);
+                }
+            }
+        }
     }
 
     // what 'inline_call' and 'noinline_call' need of this call

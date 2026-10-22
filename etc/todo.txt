@@ -221,6 +221,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
+[ ] easy: the noinline statement check of docs 3.6 ('may share storage with
+    the destination', 'stmt_assign_var::assert_no_read_of_computed_part') may
+    be unreachable since a global a callee uses counts as an argument: every
+    test that reached it is now rejected at the call with '--checks=alias',
+    and it is off without; confirm with 'test-coverage.sh report', then
+    remove it and its docs paragraph, or find the input that reaches it
 [ ] easy: decide: '{}' continues as the first operand of an expression only
     where 'expr_any' parses it: 'n = {} + 1' is accepted, 'n = 1 + {}' and
     'var n = {} + 1' are not; a bare type name followed by an operator is not

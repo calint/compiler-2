@@ -1,6 +1,6 @@
 # --checks=alias: the method writes a field of an element chosen at run time and
 # reads the same field of another element, which can be the same one
-# the value is computed before the destination is written
+# rejected inlined as well as noinline
 
 type entity {
     len i32,

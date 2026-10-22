@@ -48,6 +48,9 @@ class stmt_assign_var final : public statement {
         assert_not_read_only(tok(), "assign to", stmt_ident_.name_or_literal(),
                              dst_info);
 
+        tc.record_use(ident_info::root_of(stmt_ident_.name_or_literal()),
+                      stmt_ident_.accessed_path(), true);
+
         set_type(dst_info.type_ref());
 
         // the value is parsed as the type of the destination, which gives the

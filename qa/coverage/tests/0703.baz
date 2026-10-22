@@ -1,4 +1,6 @@
 # a global passed to a non-inline function that also names it shares storage
+# with '--checks=-alias', which otherwise rejects the call first: the
+# function uses the global the call passes it
 
 var g = 1
 

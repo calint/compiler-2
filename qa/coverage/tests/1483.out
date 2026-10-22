@@ -1,0 +1,4 @@
+
+1483.baz:10:9: the result destination 'g' may share storage with the global 'g' that 'f' uses, use a temporary variable for one of them
+    g = f()
+        ^

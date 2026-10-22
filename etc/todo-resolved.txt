@@ -1,6 +1,59 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: design: aliasing rule C compares the arguments with the result
+    only; a global that an inlined body names is compared with neither, so
+    'g = add_g()' with 'res = res + g' in the body is accepted inline and
+    rejected noinline (rule B) (round 8 B-1, scratchpad r8 'B/t31.baz')
+    => options: compare the result and argument targets with the globals the
+       body reads or writes (the dry run keys calls by ' global g'), or say
+       in the tutorial and docs 3.6 that only arguments and the result are
+       compared
+    => design (2026-10-22): a global that a function uses counts as an
+       argument of its calls, inlined and noinline alike, so the rule is
+       the one the tutorial states for arguments, with no exception:
+       1. the parse records, in the function frame, each global variable
+          or 'dat' that the body names, and whether it writes it (the
+          destination of an assignment, 'array_copy', 'read' and a 'mut'
+          argument); a call in the body adds the callee's record, so the
+          record is transitive ('stmt_def_func::global_uses', kept when
+          the body's frame exits)
+       2. 'stmt_call::assert_no_shared_storage' compares, besides the
+          arguments with each other and with the result:
+          - the result destination with every global the callee uses, with
+            '--checks=alias' like the result today
+          - each argument target with every global the callee uses, unless
+            the parameter is read-only and the callee only reads the global
+       3. messages in the form of today's, e.g. "the result destination 'g'
+          may share storage with the global 'g' that 'add_g' uses, use a
+          temporary variable for one of them"
+    => effect: 'g = f()' is rejected when 'f' uses 'g', in both modes (today
+       inline accepts and noinline rejects 'res = g + 1'); also a body that
+       reads 'g' only before it sets 'res', as 'x = f(x)' is rejected today
+       for an argument; the noinline statement check (docs 3.6) stays for
+       parameters
+    => docs: one sentence each in docs 3.6/4.1 and the tutorial's alias
+       paragraph: "a global that a function uses counts as an argument"
+    => rejected: the noinline statement check inline as well (acceptance
+       would hinge on which statement reads, and reads in later statements
+       stay unchecked); documenting the difference (the check is the point
+       of the language)
+    => tests: inline and noinline for 'res = g + 1', 't31', a later read,
+       a callee that uses 'g' (transitive), a 'mut' argument 'g' with a
+       body that reads 'g', a read-only argument 'g' with a body that only
+       reads it (accepted, run), '--checks=-alias' accepts the result case
+    => done (2026-10-22), refined: 'body_uses' records paths, not names, and
+       the parameter and result uses too, translated through the arguments
+       of each call in a body (a call of the function being parsed counts
+       a 'mut' argument as written whole); the call rejects a write through
+       a parameter or the result that may overlap a used global, and a
+       write to a global that may overlap what it reaches through them; a
+       whole-variable record rejected 'roome' at 'notify_room' and
+       'print_messages', paths accept them; both global checks follow
+       '--checks=alias' like the result (test 1146: '-noub' turns them off);
+       tests 1482 to 1489; 0924, 0926 to 0928, 0932 and 0934 (the old
+       "inline computes it, noinline rejects it") are rejected now; nine
+       tests of deeper checks run with '-alias' to keep reaching them
 [x] easy: decide: a trailing ',' in a value literal is rejected, with "too
     many fields" for 'point{1, 2,}' and "expected constant" for '[3]{1,}';
     type definitions accept it (round 8 B-6)
@@ -34,23 +87,6 @@
     => done (2026-10-22): bytes, as the partial read item decided; the
        tutorial says the result is in bytes and the count in elements, the
        same for 'i8'; test 1474 writes 2 'i16' elements and prints 4
-[-] medium: decide: aliasing rule C compares the arguments with the result
-    only; a global that an inlined body names is compared with neither, so
-    'g = add_g()' with 'res = res + g' in the body is accepted inline and
-    rejected noinline (rule B) (round 8 B-1, scratchpad r8 'B/t31.baz')
-    => options: compare the result and argument targets with the globals the
-       body reads or writes (the dry run keys calls by ' global g'), or say
-       in the tutorial and docs 3.6 that only arguments and the result are
-       compared
-    => discarded (2026-10-22): no behavior change, documented; an inlined
-       'res' is the destination, so the 0 of 't31.baz' is the defined result
-       (noinline gives the same reference results, e.g. 2 for 'res = 1',
-       'var x = g', 'res = res + x'); the inline/noinline difference is the
-       one docs 3.6 describes for a parameter bound to the destination:
-       inlined, a statement that reads 'g' while it writes 'res' is computed
-       through a scratch register, noinline it is rejected; comparing the
-       globals per call would reject more inline than noinline; docs 3.6
-       and the tutorial say how a global behaves
 [x] easy: low priority: front end small designs (round 8 F-8, F-9, F-10,
     F-11):
     1. "no token here" ('text().empty() and not is_string()') is spelled at

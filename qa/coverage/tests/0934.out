@@ -1,0 +1,4 @@
+
+0934.baz:18:5: receiver 'entities[i]' may share storage with the global 'entities' that 'entity.bump' uses, use a temporary variable for one of them
+    entities[i].bump(1)
+    ^~~~~~~~

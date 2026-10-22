@@ -2184,13 +2184,13 @@ SRC=0701 && EXP=255 && RUN_ERR_OPTS "--vars=0x10000 --checks=lower"
 SRC=0702 && EXP=0 && RUN_ERR_OPTS "--vars=0x10000 --checks=lower"
 
 # a global passed to a non-inline function that also names it shares storage
-SRC=0703 && COMPERR
+SRC=0703 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 
 # a constant passed to a mut parameter cannot be written
 SRC=0704 && COMPERR
 
 # an error in a method body names the method call
-SRC=0705 && COMPERR
+SRC=0705 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 
 # a constant element decides a boolean list passed to an inline function
 SRC=0706 && EXP=2 && RUN
@@ -2345,13 +2345,13 @@ SRC=0753 && EXP=5 && RUN
 SRC=0754 && EXP=21 && RUN
 
 # a global reaches a global named by a callee through two non-inline calls
-SRC=0755 && COMPERR
+SRC=0755 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 
 # a recursive non-inline call is checked once
 SRC=0756 && EXP=0 && RUN
 
 # an indexed argument may be the array element a non-inline body names
-SRC=0757 && COMPERR
+SRC=0757 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 
 # a type or array initializer without '{}' is the same as with an empty '{}'
 SRC=0758 && EXP=0 && RUN
@@ -2871,13 +2871,12 @@ SRC=0922 && EXP=0 && OPTS="$UB_ALIAS" RUN
 SRC=0923 && OPTS="$UB_ALIAS" COMPERR
 
 # --checks=alias: a function that writes a 'mut' parameter and reads the data
-# that the argument names: inline it computes the value before it is written,
-# noinline it is rejected
-SRC=0924 && EXP=0 && OPTS="$UB_ALIAS" RUN
+# that the argument names is rejected, inlined and noinline alike
+SRC=0924 && OPTS="$UB_ALIAS" COMPERR
 SRC=0925 && OPTS="$UB_ALIAS" COMPERR
-SRC=0926 && EXP=0 && OPTS="$UB_ALIAS" RUN
-SRC=0927 && EXP=0 && OPTS="$UB_ALIAS" RUN
-SRC=0928 && EXP=0 && OPTS="$UB_ALIAS" RUN
+SRC=0926 && OPTS="$UB_ALIAS" COMPERR
+SRC=0927 && OPTS="$UB_ALIAS" COMPERR
+SRC=0928 && OPTS="$UB_ALIAS" COMPERR
 
 # --checks=alias: arguments that are other bytes than the data the function
 # reads are accepted
@@ -2885,12 +2884,14 @@ SRC=0929 && EXP=0 && OPTS="$UB_ALIAS" RUN
 SRC=0930 && EXP=0 && OPTS="$UB_ALIAS" RUN
 SRC=0931 && EXP=0 && OPTS="$UB_ALIAS" RUN
 
-# --checks=alias: a call result written into data that the function reads
-SRC=0932 && EXP=0 && OPTS="$UB_ALIAS" RUN
+# --checks=alias: a call result written into data that the function reads is
+# rejected, inlined and noinline alike
+SRC=0932 && OPTS="$UB_ALIAS" COMPERR
 SRC=0933 && OPTS="$UB_ALIAS" COMPERR
 
-# --checks=alias: a run-time element written and read at the same field
-SRC=0934 && EXP=0 && OPTS="$UB_ALIAS" RUN
+# --checks=alias: a run-time element written and read at the same field is
+# rejected
+SRC=0934 && OPTS="$UB_ALIAS" COMPERR
 
 # --checks=alias: a run-time element written and read at different fields
 SRC=0935 && EXP=0 && OPTS="$UB_ALIAS" RUN
@@ -2916,26 +2917,26 @@ SRC=0941 && COMPERR
 
 # --checks=alias: arrays of different element sizes that overlap are assumed to
 # reach the same bytes
-SRC=0942 && EXP=0 && RUN
+SRC=0942 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
 
 # --checks=alias: the aliasing is made inside the body of the function that
 # passes a parameter and a global that name the same data
-SRC=0943 && COMPERR
+SRC=0943 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 
 # --checks=alias: the same for non-inlined functions, the aliasing is made
 # inside the body of the function that passes a parameter and a global
-SRC=0944 && COMPERR
+SRC=0944 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 
 # --checks=alias: the element 'e' of a 'foo' is passed to a function that reads
 # the array, which can be the element itself
-SRC=0945 && EXP=0 && RUN
+SRC=0945 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
 
 # --checks=alias: the same for a non-inlined function
 SRC=0946 && COMPERR
 
 # --checks=alias: a call result is written into the element 'e' of a 'foo' and
 # the function reads the array, which can be the element itself
-SRC=0947 && EXP=0 && RUN
+SRC=0947 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
 
 # --checks=alias: the element 'e' of a 'foo' is passed to a function that reads
 # another array, which is accepted
@@ -2967,7 +2968,7 @@ SRC=0954 && EXP=0 && RUN
 
 # --checks=alias: two run-time indexes in a path, the read is of the same field
 # of an element that both indexes can select
-SRC=0955 && EXP=0 && RUN
+SRC=0955 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
 
 # --checks=alias: two run-time indexes in a path, the read is of another field
 # of the elements, which is accepted
@@ -2979,7 +2980,7 @@ SRC=0957 && EXP=0 && RUN
 
 # --checks=alias: the destination has two run-time indexes and the read one, the
 # read is of the same field that the destination can select
-SRC=0958 && EXP=0 && RUN
+SRC=0958 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
 
 # --checks=alias: the destination has one run-time index and the read two, the
 # fields in the elements are different, which is accepted
@@ -4516,17 +4517,17 @@ SRC=1400 && COMPERR
 
 # a part read under another name of the destination: a parameter, inline and
 # noinline, the element of a 'foo', and a local that hides the global
-SRC=1401 && COMPERR
-SRC=1402 && COMPERR
+SRC=1401 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
+SRC=1402 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 SRC=1403 && COMPERR
 SRC=1404 && EXP=0 && RUN
 
 # a part read under another name of the destination: while it is computed,
 # inline and noinline, not written yet and already written
-SRC=1405 && EXP=0 && RUN
-SRC=1406 && EXP=0 && RUN
-SRC=1407 && EXP=0 && RUN
-SRC=1408 && COMPERR
+SRC=1405 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+SRC=1406 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+SRC=1407 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" RUN
+SRC=1408 && OPTS="--vars=0x40000 --checks=upper,lower,line,-alias --reproduce-source" COMPERR
 SRC=1409 && COMPERR
 SRC=1410 && COMPERR
 
@@ -4677,3 +4678,14 @@ SRC=1478 && EXP=15 && RUN
 SRC=1479 && COMPERR
 SRC=1480 && COMPERR
 SRC=1481 && COMPERR
+
+# a global that a function uses, also through its calls, counts as an
+# argument of its calls, inlined and noinline alike
+SRC=1482 && COMPERR
+SRC=1483 && COMPERR
+SRC=1484 && COMPERR
+SRC=1485 && COMPERR
+SRC=1486 && COMPERR
+SRC=1487 && EXP=19 && RUN
+SRC=1488 && EXP=6 && OPTS="--vars=0x40000 --checks=-alias" RUN
+SRC=1489 && COMPERR

@@ -678,9 +678,7 @@ func noinline factorial(n) res {
     res = n * partial
 }
 # 'noinline' emits the function once and calls it, which allows recursion
-# a call follows the same typing and aliasing rules as an inlined call, and
-# also rejects a read of the result under another name in the statement that
-# sets it, e.g. 'res = g + 1' in 'g = f()', which an inlined body computes
+# a call follows the same typing and aliasing rules as an inlined call
 
 func noinline add_all(a []) res {
     res = 0
@@ -872,9 +870,8 @@ func checks() {
 #   gives 0 because the result 'res' and the argument 'v' refer to the same
 #   variable 'x', so 'res = 0' also clears 'v'
 #   calls where the result and the arguments may share storage with each
-#   other are rejected, '--checks=-alias' turns that check off
-#   a global that the function names is not an argument: in 'g = f()' the
-#   result 'res' is 'g' too, so after 'res = 0' the function reads 0 from 'g'
+#   other are rejected, '--checks=-alias' turns that check off; a global
+#   that the function uses counts as an argument
 
     var p = point{1, 2}
     p = {2, 1}

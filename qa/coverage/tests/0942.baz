@@ -1,6 +1,8 @@
-# --checks=alias: arrays of different element sizes that overlap are assumed to
+# aliasing: arrays of different element sizes that overlap are assumed to
 # reach the same bytes
 # the value is computed before the destination is written
+# with '--checks=-alias': the function uses the global the call passes it,
+# which the alias check rejects
 
 type entity {
     vals i32[3],

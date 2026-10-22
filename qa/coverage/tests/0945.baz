@@ -1,6 +1,8 @@
-# --checks=alias: the element 'e' of a 'foo' is passed to a function that reads
+# aliasing: the element 'e' of a 'foo' is passed to a function that reads
 # the array, which can be the element itself
 # the value is computed before the destination is written
+# with '--checks=-alias': the function uses the global the call passes it,
+# which the alias check rejects
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 

@@ -1,0 +1,23 @@
+# a read-only argument that names a global the body only reads is accepted,
+# so is a field the body does not reach, and a result destination that no
+# global the body uses overlaps
+type pair {a, b}
+
+var g = 5
+var ps = pair[2]
+
+func sum(p) res {
+    res = p + g
+}
+
+func set_b(p) {
+    ps[1].b = p
+}
+
+func main() {
+    var x = sum(g)
+    ps[0].a = 3
+    set_b(ps[0].a)
+    ps[0].b = sum(1)
+    exit(x + ps[1].b + ps[0].b)
+}

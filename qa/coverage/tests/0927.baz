@@ -1,5 +1,5 @@
 # --checks=alias: the data is a record, the argument and the read are the same element
-# the value is computed before the destination is written
+# rejected inlined as well as noinline
 
 type world {
     items[4],

@@ -1,0 +1,4 @@
+
+0928.baz:15:11: argument 1 'g[3]' may share storage with the global 'g' that 'outer' uses, use a temporary variable for one of them
+    outer(g[3])
+          ^

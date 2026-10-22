@@ -1,5 +1,5 @@
 # --checks=alias: a call result is written into data that the function reads
-# the value is computed before the destination is written
+# rejected inlined as well as noinline
 
 dat g = i32[4]{ 1, 2, 3, 4 }
 

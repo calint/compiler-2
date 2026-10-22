@@ -1,0 +1,11 @@
+# a read-only argument names a global that the body writes
+var g = 3
+
+func f(p) {
+    g = p * 2 + p
+}
+
+func main() {
+    f(g)
+    exit(g - 9)
+}

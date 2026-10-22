@@ -1,0 +1,13 @@
+# a 'mut' argument names a global that the body reads after it wrote the
+# parameter
+var g = 5
+
+func f(p mut) {
+    p = 1
+    var x = g
+    exit(x)
+}
+
+func main() {
+    f(g)
+}

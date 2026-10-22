@@ -1,7 +1,4 @@
 
-1409.baz:7:9: 'p' may share storage with the destination 'g' (both name 'g'), compute the value in a temporary variable first
-    g = p * 2 + p
-        ^
-1409.baz:11:5: called from
+1409.baz:11:7: argument 1 'g' may share storage with the global 'g' that 'f' uses, use a temporary variable for one of them
     f(g)
-    ^
+      ^
