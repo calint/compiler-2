@@ -61,19 +61,21 @@ class constant_parser final {
         // note: +1 because the escape starts after the backslash
 
         if (not decoded) {
+            // note: the tokenizer checks a literal as it reads it, so
+            //       'src_loc_tk' is the literal
+
+            assert(src_loc_tk.is_text(str));
+
             const size_t backslash_index{src_loc_tk.start_index() + 1};
             // note: +1 because the backslash follows the opening quote
 
             const token escape_tk{
-                src_loc_tk.is_text(str)
-                    ? token::position(src_loc_tk.file_index(), backslash_index,
-                                      src_loc_tk.at_line())
-                    : src_loc_tk,
+                token::position(src_loc_tk.file_index(), backslash_index,
+                                src_loc_tk.at_line()),
             };
 
-            throw compile_error{
-                escape_tk,
-                std::format("unsupported escape in character literal {}", str)};
+            throw compile_error{escape_tk,
+                                std::format("unsupported escape '{}'", body)};
         }
 
         return static_cast<unsigned char>(*decoded);

@@ -1,0 +1,7 @@
+# a character literal is checked where it is read, also in a generic body that
+# no instance parses
+func g<T type>() {
+    var c = 'ab'
+}
+
+func main() {}

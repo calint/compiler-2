@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "compile_error.hpp"
+#include "constant_parser.hpp"
 #include "token.hpp"
 
 class tokenizer final {
@@ -324,9 +325,16 @@ class tokenizer final {
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        return {
+        const token literal_tk{
             file_ix_, ws_before, bgn_ix,  src_.substr(bgn_ix, end_ix - bgn_ix),
             end_ix,   ws_after,  at_line, false};
+
+        // checked where it is read like a string, also in a generic body that
+        // no instance parses
+        std::ignore =
+            constant_parser::parse_character(literal_tk, literal_tk.text());
+
+        return literal_tk;
     }
 
     // the opening quote has been read, the text excludes both quotes

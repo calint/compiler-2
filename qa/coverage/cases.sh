@@ -4695,3 +4695,7 @@ SRC=1490 && COMPERR
 SRC=1491 && COMPERR
 SRC=1492 && COMPERR
 SRC=1493 && COMPERR
+
+# a character literal is checked as it is read, like a string
+SRC=1494 && COMPERR
+SRC=1495 && COMPERR

@@ -227,12 +227,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     test that reached it is now rejected at the call with '--checks=alias',
     and it is off without; confirm with 'test-coverage.sh report', then
     remove it and its docs paragraph, or find the input that reaches it
-[ ] easy: decide: the escapes of a string are checked by the tokenizer, those
-    of a character literal only where it is resolved, so 'var c = 'ab'' in a
-    generic body that is never instantiated is accepted and '"\q"' is not;
-    the messages differ too (round 8 F-3)
-    => options: 'finish_character_literal_token' checks the body with
-       'token::decode_escape' and the same messages
 [ ] easy: messages, one consistency pass (round 8):
     1. argument counts: "'point.sum' takes 0 arguments", "expected 1
        argument" ('exit'), "expected 2 to 4 arguments" (io); one form with

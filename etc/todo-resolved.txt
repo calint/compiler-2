@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: decide: the escapes of a string are checked by the tokenizer, those
+    of a character literal only where it is resolved, so 'var c = 'ab'' in a
+    generic body that is never instantiated is accepted and '"\q"' is not;
+    the messages differ too (round 8 F-3)
+    => options: 'finish_character_literal_token' checks the body with
+       'token::decode_escape' and the same messages
+    => done (2026-10-22): 'finish_character_literal_token' checks the
+       literal with 'constant_parser::parse_character', so a bad one is
+       rejected wherever it is read, generic bodies included; one message
+       "unsupported escape '\q'" for strings and characters (0543, 0721,
+       0722); tests 1494 and 1495
 [x] easy: decide: '{}' continues as the first operand of an expression only
     where 'expr_any' parses it: 'n = {} + 1' is accepted, 'n = 1 + {}' and
     'var n = {} + 1' are not; a bare type name followed by an operator is not
