@@ -4727,3 +4727,8 @@ SRC=1508 && COMPERR
 
 # a failed check in an included file names that file
 SRC=1509 && EXP=255 && RUN_ERR
+
+# a parenthesized 'and' is not an operand, a bare type name is not a number
+SRC=1510 && COMPERR
+SRC=1511 && COMPERR
+SRC=1512 && COMPERR

@@ -815,11 +815,21 @@ class expr_arith final : public expression {
                                 "an operand here, store it in a 'bool' first"};
         }
 
-        // an enclosed list ends with its ')'
-        // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
         if (is_enclosed()) {
-            throw compile_error{tz.next_token(),
-                                "expected ')' to close expression"};
+            const token next_tk{tz.next_token()};
+
+            // e.g. the 'and' of '(t and f) == f', like a comparison above
+            if (next_tk.is_text("and") or next_tk.is_text("or")) {
+                throw compile_error{
+                    next_tk, std::format("'{}' makes a condition, which is not "
+                                         "an operand here, store it in a "
+                                         "'bool' first",
+                                         next_tk.text())};
+            }
+
+            // an enclosed list ends with its ')'
+            // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
+            throw compile_error{next_tk, "expected ')' to close expression"};
         }
 
         validate_arithmetic_operands(tc);

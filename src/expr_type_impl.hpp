@@ -71,6 +71,13 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'var p = point', no fields are listed
     if (is_bare) {
+        // e.g. the '+' of 'point + 1', like 'p + 1' of a variable 'p'
+        if (continues_expression(tz)) {
+            throw compile_error{
+                tok(), std::format("an instance of '{}' is not a number",
+                                   tok().text())};
+        }
+
         return;
     }
 

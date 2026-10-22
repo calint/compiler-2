@@ -1,0 +1,4 @@
+
+1510.baz:5:11: 'and' makes a condition, which is not an operand here, store it in a 'bool' first
+    if (t and f) == f {
+          ^~~

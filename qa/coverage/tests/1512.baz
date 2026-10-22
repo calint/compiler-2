@@ -1,0 +1,6 @@
+# a type name alone is an instance, which is not a number
+type point {x, y}
+func main() {
+    var p = point{1, 2}
+    var x = point + 1
+}

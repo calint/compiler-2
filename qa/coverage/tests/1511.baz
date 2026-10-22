@@ -1,0 +1,6 @@
+# the same in an initializer
+func main() {
+    var t = true
+    var f = false
+    var b = (t and f) == f
+}

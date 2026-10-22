@@ -1,0 +1,8 @@
+# 'and' in parentheses makes a condition, not an operand of a comparison
+func main() {
+    var t = true
+    var f = false
+    if (t and f) == f {
+        exit(1)
+    }
+}

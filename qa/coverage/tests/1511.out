@@ -1,0 +1,4 @@
+
+1511.baz:5:16: 'and' makes a condition, which is not an operand here, store it in a 'bool' first
+    var b = (t and f) == f
+               ^~~
