@@ -4595,3 +4595,6 @@ SRC=1438 && COMPERR
 SRC=1439 && COMPERR
 SRC=1440 && COMPERR
 SRC=1441 && COMPERR
+
+# a branch that a constant argument makes false is not compiled
+SRC=1442 && EXP=7 && RUN

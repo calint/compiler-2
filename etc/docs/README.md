@@ -253,10 +253,10 @@ machine emits as a compare and a branch to a failure handler, and compile-time
 rejections (aliasing, narrowing, uninitialized reads). 'toc::checks' gives
 the options, they build the option records of the machine methods.
 
-The rules checked while compiling, e.g. a constant index in bounds, a
-constant that fits its variable, 'break' in a loop, hold in every function,
-also in one that nothing calls, so whether a program is accepted does not
-depend on its calls. 'function_table' records the functions whose body a
+The rules checked while compiling, e.g. a constant index in bounds or a
+constant that fits its variable, hold in every function, also in one that
+nothing calls, so whether a program is accepted does not depend on its
+calls. 'function_table' records the functions whose body a
 compile reached, in place, as a noinline body or in a dry run; after the
 noinline bodies, 'program::check_unreached_functions' compiles each other
 function like a noinline body under 'toc::check_only'
@@ -286,6 +286,14 @@ counts the levels and the frames below each call, so a chain that is too deep
 is rejected at any call of it, whatever the order of the calls, except for a
 chain through a cycle of noinline calls
 ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
+
+A branch whose condition folds to false is not compiled, so the rules
+checked while compiling do not run in it: a constant argument of an inlined
+call decides it, e.g. 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards
+the division. The branch is parsed like any code, so the rules of the parse
+hold in it, e.g. the names, the types and 'break' in a loop. Checking it
+with the constants of the call would reject the guard, and checking it
+without them would need a second copy of the rules that use no constant.
 
 ### 1.6 Reports
 

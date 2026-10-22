@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: architecture A8: the checks made while compiling are skipped in
+    a branch that is never compiled, so whether a program is accepted can
+    depend on the constant arguments of an inlined call, e.g. 'if 1 == 2 {
+    x = 1000 }' with 'x' an 'i8' is accepted, without the 'if' rejected
+    (round 7 S-2); 'break' outside a loop moved to the parse (test 1424)
+    => decide: (a) accept dead code as unchecked and say so in the docs, or
+       (b) run at the parse the checks that do not depend on a call, e.g.
+       a constant that does not fit a destination of known type
+    => not possible: compile dead branches as a dry run, an inlined
+       recursion ends through a constant-false branch
+    => done (2026-10-22): (a), documented: such a branch is often a guard
+       that depends on the call, e.g. 'if b != 0 { res = a / b }' in
+       'ratio(10, 0)', which a check with the constants of the call would
+       reject; 'etc/docs/README.md' 1.5 and 'etc/tutorial.baz' ('ratio')
+       state the rule, test 1442 pins it; 1.5 no longer lists 'break' among
+       the compile checks (it is checked at the parse, test 1424)
 [x] easy: 'toc::storage_of' resolves the name with 'resolver_.resolve' only
     to ask whether it is in a register, after 'scopes_.lookup' found its
     'var_info'; the placement of that 'var_info' tells it (A6 follow-up)

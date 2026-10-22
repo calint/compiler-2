@@ -422,6 +422,17 @@ func total(values[]) res {
 # an array argument without 'mut' cannot be written either, not even through
 # 'e'
 
+func ratio(a, b) res {
+    res = 0
+    if b != 0 {
+        res = a / b
+    }
+}
+# a constant argument folds a condition and a branch that is always false is
+# not compiled: 'ratio(10, 0)' has no division by zero, the 'if' guards it;
+# that branch is still parsed, so a name, a type or a 'break' outside a loop
+# in it is an error
+
 func functions() {
     var x = 3
     assert(twice(x) == 6)
@@ -449,6 +460,9 @@ func functions() {
     assert(sum_of(x, fixed) == 9)
     let items = []{1, 2, 3}
     assert(total(items) == 6)
+
+    assert(ratio(10, 2) == 5)
+    assert(ratio(10, 0) == 0)
 }
 
 #

@@ -6,16 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: architecture A8: the checks made while compiling are skipped in
-    a branch that is never compiled, so whether a program is accepted can
-    depend on the constant arguments of an inlined call, e.g. 'if 1 == 2 {
-    x = 1000 }' with 'x' an 'i8' is accepted, without the 'if' rejected
-    (round 7 S-2); 'break' outside a loop moved to the parse (test 1424)
-    => decide: (a) accept dead code as unchecked and say so in the docs, or
-       (b) run at the parse the checks that do not depend on a call, e.g.
-       a constant that does not fit a destination of known type
-    => not possible: compile dead branches as a dry run, an inlined
-       recursion ends through a constant-false branch
 [p] medium: low priority: generic function instances: the nesting limit
     counts the depth of the first use of an instance (H-2): its body is
     parsed inside the parse of that use, e.g. a body nested 70 levels used
