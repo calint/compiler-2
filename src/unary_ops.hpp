@@ -92,6 +92,25 @@ class unary_ops final {
         return ops_.size() == 1 and ops_.back() == '-';
     }
 
+    auto put_back(tokenizer& tz) const -> void {
+        // the last character read is put back first
+        for (const char o : ops_ | std::views::reverse) {
+            tz.put_back_char(o);
+        }
+
+        tz.put_back_token(ws_pre_);
+    }
+
+    auto source_to(std::ostream& os) const -> void {
+        ws_pre_.source_to(os);
+        source_to_without_whitespace(os);
+    }
+
+    [[nodiscard]] auto to_string() const -> std::string_view {
+        return {ops_.begin(), ops_.end()};
+    }
+
+  private:
     // true when a negation of the list is applied to 'minimum', the most
     // negative value of the width, which has no positive counterpart
     [[nodiscard]] auto negation_overflows(int64_t v,
@@ -115,25 +134,6 @@ class unary_ops final {
         return false;
     }
 
-    auto put_back(tokenizer& tz) const -> void {
-        // the last character read is put back first
-        for (const char o : ops_ | std::views::reverse) {
-            tz.put_back_char(o);
-        }
-
-        tz.put_back_token(ws_pre_);
-    }
-
-    auto source_to(std::ostream& os) const -> void {
-        ws_pre_.source_to(os);
-        source_to_without_whitespace(os);
-    }
-
-    [[nodiscard]] auto to_string() const -> std::string_view {
-        return {ops_.begin(), ops_.end()};
-    }
-
-  private:
     auto source_to_without_whitespace(std::ostream& os) const -> void {
         std::print(os, "{}", to_string());
     }

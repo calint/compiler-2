@@ -3021,7 +3021,7 @@ class toc final {
 
         st.visit_reads(
             std::nullopt,
-            [&]([[maybe_unused]] const token& src_loc_tk,
+            [&](const token& src_loc_tk,
                 [[maybe_unused]] const std::string_view read_text,
                 [[maybe_unused]] const byte_range& accessed_bytes,
                 const access_path& read_path) -> void {

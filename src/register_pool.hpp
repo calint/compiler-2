@@ -76,15 +76,11 @@ class register_pool final {
     }
 
     // the register of the last allocation, freeing is in reverse order
-    auto pop(const size_t index) -> allocation {
+    auto pop(const size_t index) -> void {
         assert(top().index == index);
-
-        const allocation entry{allocations_.back()};
 
         allocations_.pop_back();
         unavailable_ &= ~(uint32_t{1} << index);
-
-        return entry;
     }
 
     auto protect(const uint32_t mask) -> void { unavailable_ |= mask; }

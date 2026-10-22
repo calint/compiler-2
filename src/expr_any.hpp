@@ -582,8 +582,6 @@ class expr_any final : public statement {
         return *array_len;
     }
 
-    // the value boundary is where a wider source loses bits, an instance or a
-    // 'bool' has none to lose
     // an instance is written field by field, any other value at once
     auto list_element_parts(const size_t index, const access_path& at,
                             std::vector<written_part>& parts) const -> void {

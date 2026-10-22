@@ -28,11 +28,32 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        check an uncalled inlined function with every register free, as a
        caller at the top of 'main' gives, and excuse call-dependent errors
        only when the function takes arguments
-[ ] easy: rv32i-fpga: the smallest '--stack' ('leaf_stack_bytes', 48 B)
-    counts 16 B of line digits that fpga never prints ('reports_line' is
-    false), so '--stack=32' is rejected although it is enough; count the
-    digits only when the target reports lines (changes which values are
-    accepted)
+[p] medium: rv32i-fpga: a panic prints nothing and exits with a code per
+    failure (249 to 255), '--checks=line' is turned off ('reports_line'); the
+    smallest '--stack' (48 B) counts 16 B of line digits it never writes
+    (G1-6); plan: fpga prints like x86_64 and rv32i-qemu
+    => problem: the uart is there, the shared rv32i handlers already print
+       through 'emit_write_call', fpga overrides all seven of them
+    => design:
+       1. 'machine_rv32i_fpga': remove the seven handler overrides,
+          'emit_panic_exit', the seven exit code constants and the
+          'reports_line' override; fpga then prints 'panic: bounds at line
+          12' and exits with 'panic_exit_code' (255) like every target
+       2. 'machine::reports_line' and its use in 'main.cpp' go, no target
+          returns false any more
+       3. the fpga class comment and README say it prints panics
+       4. G1-6 is gone: 48 B is what fpga then pushes
+       5. qa: 'NNN.rv32i-fpga.exit' and 'expected_exit_code' go (every such
+          file holds a failure code), 'cases.sh' header updated
+    => rejected: keep a code per failure, the shared line routine exits
+       with one code, carrying it costs a register and code in every
+       handler, and the message now tells the failures apart
+    => rejected: fpga overrides that print, duplicates of the shared ones
+    => invariant: every target prints the same panic text for a source
+    => tests: 'UPDATE=1' for rv32i-fpga, then remove each
+       'NNN.rv32i-fpga.out' equal to the file the target falls back to;
+       test-cli: fpga '--stack=16' still says 48 B, fpga '--checks=line'
+       prints the line
 [ ] medium: aliasing: a call in a value written in parts reads, in its body,
     a part written before it without an error, e.g. 'g = {1, gx()}' with
     'gx' returning 'g.x' (inline and noinline); rule A sees only the reads

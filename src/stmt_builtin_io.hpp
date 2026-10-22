@@ -262,7 +262,8 @@ class stmt_builtin_io final : public stmt_call {
                 },
 
                 // note: a sector function has no count argument, an error
-                //       about its range points at the start
+                //       about its range points at the start, or at the
+                //       buffer when there is none
 
                 .count_tk{
                     has_count() ? argument(2).tok()

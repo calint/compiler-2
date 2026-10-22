@@ -22,8 +22,7 @@
 #include "compile_error.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
-#include "operand.hpp"
-#include "register_report.hpp"
+#include "source_files.hpp"
 #include "statement.hpp"
 #include "stmt_def_dat.hpp"
 #include "stmt_def_func.hpp"
@@ -35,7 +34,6 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 #include "ub_assigned.hpp"
-#include "unary_ops.hpp"
 
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a
 // value only the name is written
@@ -57,20 +55,20 @@ struct report_section {
         }
 
         if (not title.empty()) {
-            x.comment(token{}, 0, "{:>28}:", title);
+            x.comment({}, 0, "{:>28}:", title);
         }
 
         for (const report_entry& entry : entries) {
             if (entry.value.empty()) {
-                x.comment(token{}, 0, "{:>28}", entry.name);
+                x.comment({}, 0, "{:>28}", entry.name);
                 continue;
             }
 
-            x.comment(token{}, 0, "{:>28}: {}", entry.name, entry.value);
+            x.comment({}, 0, "{:>28}: {}", entry.name, entry.value);
         }
 
         if (not title.empty()) {
-            x.comment(token{}, 0, "");
+            x.comment({}, 0, "");
         }
     }
 };
@@ -103,11 +101,11 @@ class report_renderer final {
 
         // set apart from the reports above
         if (not register_lines.empty()) {
-            x.comment(token{}, 0, "");
+            x.comment({}, 0, "");
         }
 
         for (const std::string& line : register_lines) {
-            x.comment(token{}, 0, "{}", line);
+            x.comment({}, 0, "{}", line);
         }
     }
 

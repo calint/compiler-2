@@ -92,7 +92,13 @@ class stmt_assign_var final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        assert_parts_not_clobbered(tc);
+        const std::optional<storage_path> dst_storage{
+            tc.storage_of(stmt_ident_.first_token(),
+                          stmt_ident_.first_token().text(),
+                          stmt_ident_.accessed_path()),
+        };
+
+        assert_parts_not_clobbered(tc, dst_storage);
 
         const ident_info var_info{tc.make_ident_info(stmt_ident_)};
 
@@ -112,18 +118,13 @@ class stmt_assign_var final : public statement {
         };
 
         const destination var_dst{
-            destination::of_name(
-                var_info,
-                {
-                    .address{address},
-                    .is_address_known{is_address_known},
-                    .storage{
-                        tc.storage_of(stmt_ident_.first_token(),
-                                      stmt_ident_.first_token().text(),
-                                      stmt_ident_.accessed_path()),
-                    },
-                    .text{stmt_ident_.path_text()},
-                }),
+            destination::of_name(var_info,
+                                 {
+                                     .address{address},
+                                     .is_address_known{is_address_known},
+                                     .storage{dst_storage},
+                                     .text{stmt_ident_.path_text()},
+                                 }),
         };
 
         expr_.compile(tc, indent, var_dst);
@@ -268,12 +269,8 @@ class stmt_assign_var final : public statement {
     // already written, e.g. the 'p.x' of 'p = {p.y, p.x}', or with
     // '--checks=alias' in a noinline body the part it computes under another
     // name, e.g. the 'p' of 'g = p * 2 + p' with 'p' bound to 'g'
-    auto assert_parts_not_clobbered(const toc& tc) const -> void {
-        const std::optional<storage_path> dst{
-            tc.storage_of(stmt_ident_.first_token(),
-                          stmt_ident_.first_token().text(),
-                          stmt_ident_.accessed_path()),
-        };
+    auto assert_parts_not_clobbered(
+        const toc& tc, const std::optional<storage_path>& dst) const -> void {
 
         // note: a value in a register is written as one part that no other
         //       name reaches

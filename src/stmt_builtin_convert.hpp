@@ -41,8 +41,8 @@
 //                    applied at D
 //   checked_at_type  D == T, ops, the overflow check: in a register of T,
 //                    checked there, then copied
-//   fused            otherwise (D <= T): with the argument, at the width it
-//                    is computed at
+//   fused            otherwise (D <= T): with the argument, at the width of
+//                    its computation below
 //
 // where the argument is computed for a target 't' at most T wide,
 // 'plan_computation', the first row that matches:

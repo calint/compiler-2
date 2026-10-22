@@ -84,7 +84,8 @@ struct func_head {
     // 'tz' is after 'func'
     //
     // the '(' is looked for after each word: a word followed by '(' is the
-    // name, e.g. 'func noinline()' names a function 'noinline'
+    // name, e.g. 'func noinline()' reads 'noinline' as the name, which is
+    // then rejected as a keyword
     [[nodiscard]] static auto read(const toc& tc, tokenizer& tz) -> func_head {
         func_head head;
         head.start_tk = tz.cur_position_token();
@@ -154,8 +155,8 @@ struct func_head {
             std::format("{}.{}", receiver_type.name(), method_name_tk.text());
     }
 
-    // 'noinline' and 'mut' before the name; a function can be named like them
-    // when '(' follows
+    // 'noinline' and 'mut' before the name; a word followed by '(' is read as
+    // the name
     auto read_modifiers(tokenizer& tz) -> void {
         if (name_tk.is_text("noinline") and open_paren_tk.is_empty()) {
             noinline_tk = name_tk;

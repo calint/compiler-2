@@ -146,7 +146,7 @@ class expr_type final : public statement {
     // statics
     //
 
-    // unlisted elements are zero like unlisted fields, returns the zeroed size
+    // unlisted elements are zero like unlisted fields
     static auto zero_remaining_elements(toc& tc, const size_t indent,
                                         const token& src_loc_tk,
                                         const operand& dst,

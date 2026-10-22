@@ -1785,8 +1785,7 @@ class noinline_call {
             kind += *part;
         }
 
-        // the body is checked with the value, e.g. a constant, of the first
-        // call of its kind
+        // a temporary aliases no variable, a variable may be named by the body
         for (const noinline_arg& argument : arguments) {
             kind += argument.is_temporary ? " temporary" : " variable";
         }

@@ -278,12 +278,6 @@ inline auto expr_type::is_array_element() const -> bool {
 inline auto expr_type::compile(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
-    if (stmt_call_) {
-        zero_padding(tc, indent, dst.type_ref(), dst.operand());
-        stmt_call_->compile(tc, indent, dst);
-        return;
-    }
-
     compile_assign(tc, indent, dst);
 }
 
