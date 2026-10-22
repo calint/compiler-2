@@ -228,8 +228,8 @@ class machine_x86_64 final : public machine {
     machine_x86_64(std::ostream* const direct_output,
                    const builtin_type_set& builtins,
                    const source_files* const files,
-                   const jump_mode jumps = jump_mode::resolved)
-        : machine{direct_output, builtins, files, jumps} {
+                   const target_options& options = {})
+        : machine{direct_output, builtins, files, options} {
 
         // output before 'start' is written as emitted
         assembler_.set_direct_output(direct_stream());

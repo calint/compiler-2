@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: design: target options arrive two ways: stack, memory and image
+    name through 'make_backend' and the constructors, register report, sd
+    card and kept version through setters called right after (round 8 A-12,
+    round 7 D-7)
+    => design: one 'backend_options' record passed to 'make_backend' and the
+       constructors; the setters go
+    => done (2026-10-22): 'machine::target_options' (jumps, kept version,
+       register report, sd card, image name, stack, memory) is nested in
+       'machine' next to 'kept_version'; every constructor takes it, the
+       derived ones read what they have, 'machine_rv32i_qemu' replaces the
+       memory with its fixed 'virt' size ('with_ram_size'); the three
+       setters are gone; the backend tests pass '{.jumps{...}}' or
+       '{.kept{...}}'
 [x] medium: design: the merge rules of the definite-assignment flow are
     written in three statement classes that change 'flow.assigned',
     'flow.is_reachable', 'flow.at_breaks' and 'flow.is_shadowed' directly:

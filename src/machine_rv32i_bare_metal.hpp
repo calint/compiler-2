@@ -49,14 +49,10 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     machine_rv32i_bare_metal(std::ostream* const direct_output,
                              const builtin_type_set& builtins,
                              const source_files* const files,
-                             const jump_mode jumps,
-                             const std::string_view binary_file_name,
-                             const size_t stack_size_bytes,
-                             const size_t memory_size_bytes)
-        : machine_rv32i{direct_output, builtins, files, jumps,
-                        binary_file_name},
-          stack_size_bytes_{stack_size_bytes},
-          memory_size_bytes_{memory_size_bytes} {
+                             const target_options& options)
+        : machine_rv32i{direct_output, builtins, files, options},
+          stack_size_bytes_{options.stack_size_bytes},
+          memory_size_bytes_{options.memory_size_bytes} {
 
         // note: the options are checked before the source is parsed, so an
         //       error in the source does not hide them

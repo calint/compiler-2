@@ -29,12 +29,10 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
   public:
     machine_rv32i_qemu(std::ostream* const direct_output,
                        const builtin_type_set& builtins,
-                       const source_files* const files, const jump_mode jumps,
-                       const std::string_view binary_file_name,
-                       const size_t stack_size_bytes)
-        : machine_rv32i_bare_metal{
-              direct_output,    builtins,         files,          jumps,
-              binary_file_name, stack_size_bytes, ram_size_bytes_} {}
+                       const source_files* const files,
+                       const target_options& options)
+        : machine_rv32i_bare_metal{direct_output, builtins, files,
+                                   with_ram_size(options)} {}
 
     //
     // overridden methods
@@ -109,5 +107,18 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
     auto emit_uart_setup(assembler_rv32i& a) const -> void override {
         a.lui(1, "a3", uart_upper_);
+    }
+
+    //
+    // statics
+    //
+
+    // the memory of the 'virt' machine is fixed, '--memory' is for
+    // 'rv32i-fpga'
+    [[nodiscard]] static auto with_ram_size(target_options options)
+        -> target_options {
+
+        options.memory_size_bytes = ram_size_bytes_;
+        return options;
     }
 };

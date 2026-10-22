@@ -750,7 +750,7 @@ auto check_equal_size_choice() -> void {
     for (const assembler::jump_mode jumps :
          {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{&output, test_builtins, {}, jumps};
+        machine_rv32i_linux backend{&output, test_builtins, {}, {.jumps{jumps}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -786,8 +786,7 @@ auto check_version_state_kept() -> void {
     for (const machine::kept_version kept :
          {machine::kept_version::smaller, machine::kept_version::last}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{&output, test_builtins, {}, assembler::jump_mode::resolved};
-        backend.set_kept_version(kept);
+        machine_rv32i_linux backend{&output, test_builtins, {}, {.kept{kept}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -829,7 +828,7 @@ auto check_version_state_kept() -> void {
 // the jump optimizer sees the jumps and labels that the backend emits
 auto check_backend_jump_optimization() -> void {
     std::ostringstream output;
-    machine_rv32i_linux backend{&output, test_builtins, {}, assembler::jump_mode::optimized};
+    machine_rv32i_linux backend{&output, test_builtins, {}, {.jumps{assembler::jump_mode::optimized}}};
     backend.start();
 
     const operand left{operand::reg("a0", integer)};
@@ -2651,7 +2650,7 @@ auto generate_long_loop() -> void {
 // jumps around padding of 8 KiB (needs 'j') and 1.08 MiB (needs 'jump'),
 // executed in every direction
 auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
-    machine_rv32i_linux backend{&std::cout, test_builtins, {}, jumps};
+    machine_rv32i_linux backend{&std::cout, test_builtins, {}, {.jumps{jumps}}};
     backend.start();
 
     // buffered output must come from the backend, so pad with 'xori' on a
@@ -2761,7 +2760,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{&std::cout, test_builtins, {}, jumps};
+    machine_rv32i_linux compiler{&std::cout, test_builtins, {}, {.jumps{jumps}}};
 
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(std::cout);

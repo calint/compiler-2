@@ -161,11 +161,10 @@ default_binary_file_name(const std::string_view src_file_name,
 [[nodiscard]] auto is_source_file(const std::string_view path,
                                   const source_files& files) -> bool;
 
-[[nodiscard]] auto
-make_backend(const target machine_target, const builtin_type_set& builtins,
-             const source_files* const files, const assembler::jump_mode jumps,
-             const size_t stack_size_bytes, const size_t memory_size_bytes,
-             const std::string_view binary_file_name)
+[[nodiscard]] auto make_backend(const target machine_target,
+                                const builtin_type_set& builtins,
+                                const source_files* const files,
+                                const machine::target_options& options)
     -> std::unique_ptr<machine>;
 
 auto print_option_error(const std::string_view message) -> void;
@@ -515,11 +514,6 @@ examples:
         files.add(opts.src_file_name,
                   source_files::read_file(opts.src_file_name));
 
-        const assembler::jump_mode jumps{
-            opts.optimize_jumps ? assembler::jump_mode::optimized
-                                : assembler::jump_mode::resolved,
-        };
-
         const std::string binary{
             opts.binary_file_name.empty()
                 ? default_binary_file_name(opts.src_file_name,
@@ -527,9 +521,21 @@ examples:
                 : std::string{opts.binary_file_name},
         };
 
+        const machine::target_options target_opts{
+            .jumps{
+                opts.optimize_jumps ? assembler::jump_mode::optimized
+                                    : assembler::jump_mode::resolved,
+            },
+            .kept{opts.kept_version},
+            .register_report{opts.reports.registers},
+            .sd_card_file_name{opts.sd_card_file_name},
+            .binary_file_name{binary},
+            .stack_size_bytes{opts.stack_size_bytes},
+            .memory_size_bytes{opts.memory_size_bytes},
+        };
+
         const std::unique_ptr<machine> backend{
-            make_backend(opts.machine_target, builtins, &files, jumps,
-                         opts.stack_size_bytes, opts.memory_size_bytes, binary),
+            make_backend(opts.machine_target, builtins, &files, target_opts),
         };
 
         // the option is wrong, not the source
@@ -539,13 +545,6 @@ examples:
                 "addresses",
                 opts.vars_size_bytes, backend->max_storage_bytes())};
         }
-
-        if (opts.reports.registers) {
-            backend->enable_register_report();
-        }
-
-        backend->set_sd_card_file_name(opts.sd_card_file_name);
-        backend->set_kept_version(opts.kept_version);
 
         // the checks the target cannot honor are off, e.g. 'rv32i-fpga' exits
         // with the code of the failure only and x86_64 has no stack bound
@@ -854,36 +853,33 @@ default_binary_file_name(const std::string_view src_file_name,
     return false;
 }
 
-[[nodiscard]] auto
-make_backend(const target machine_target, const builtin_type_set& builtins,
-             const source_files* const files, const assembler::jump_mode jumps,
-             const size_t stack_size_bytes, const size_t memory_size_bytes,
-             const std::string_view binary_file_name)
+[[nodiscard]] auto make_backend(const target machine_target,
+                                const builtin_type_set& builtins,
+                                const source_files* const files,
+                                const machine::target_options& options)
     -> std::unique_ptr<machine> {
 
     // todo: x86_64 writes no binary, see etc/todo.txt
     if (machine_target == target::x86_64) {
         return std::make_unique<machine_x86_64>(nullptr, builtins, files,
-                                                jumps);
+                                                options);
     }
 
     if (machine_target == target::rv32i) {
         return std::make_unique<machine_rv32i_linux>(nullptr, builtins, files,
-                                                     jumps, binary_file_name);
+                                                     options);
     }
 
     if (machine_target == target::rv32i_qemu) {
         return std::make_unique<machine_rv32i_qemu>(nullptr, builtins, files,
-                                                    jumps, binary_file_name,
-                                                    stack_size_bytes);
+                                                    options);
     }
 
     // the command line accepts only these four targets
     assert(machine_target == target::rv32i_fpga);
 
-    return std::make_unique<machine_rv32i_fpga>(
-        nullptr, builtins, files, jumps, binary_file_name, stack_size_bytes,
-        memory_size_bytes);
+    return std::make_unique<machine_rv32i_fpga>(nullptr, builtins, files,
+                                                options);
 }
 
 // every command line error ends with the same hint

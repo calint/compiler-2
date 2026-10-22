@@ -50,28 +50,20 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
   public:
     machine_rv32i_fpga(std::ostream* const direct_output,
                        const builtin_type_set& builtins,
-                       const source_files* const files, const jump_mode jumps,
-                       const std::string_view binary_file_name,
-                       const size_t stack_size_bytes,
-                       const size_t memory_size_bytes)
-        : machine_rv32i_bare_metal{direct_output,
-                                   builtins,
-                                   files,
-                                   jumps,
-                                   binary_file_name,
-                                   stack_size_bytes,
-                                   memory_size_bytes} {
+                       const source_files* const files,
+                       const target_options& options)
+        : machine_rv32i_bare_metal{direct_output, builtins, files, options} {
 
         // note: 'main' accepts only a multiple of what a 'lui' loads, the end
         //       of memory
 
-        assert(memory_size_bytes % (size_t{1} << lui_shift_) == 0);
+        assert(memory_size_bytes() % (size_t{1} << lui_shift_) == 0);
 
-        if (memory_size_bytes > max_memory_size_bytes_) {
+        if (memory_size_bytes() > max_memory_size_bytes_) {
             throw option_error{
                 std::format("invalid --memory: {} B exceeds the {} B below "
                             "the device addresses",
-                            memory_size_bytes, max_memory_size_bytes_)};
+                            memory_size_bytes(), max_memory_size_bytes_)};
         }
     }
 

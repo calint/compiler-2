@@ -563,10 +563,9 @@ class machine_rv32i : public machine {
     machine_rv32i(std::ostream* const direct_output,
                   const builtin_type_set& builtins,
                   const source_files* const files = nullptr,
-                  const jump_mode jumps = jump_mode::resolved,
-                  const std::string_view binary_file_name = {})
-        : machine{direct_output, builtins, files, jumps},
-          binary_file_name_{binary_file_name} {
+                  const target_options& options = {})
+        : machine{direct_output, builtins, files, options},
+          binary_file_name_{options.binary_file_name} {
 
         // output before 'start' is written as emitted
         assembler_.set_direct_output(direct_stream());

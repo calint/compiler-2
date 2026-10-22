@@ -80,6 +80,23 @@ class machine {
     // function cannot use a nested class with default member initializers
     using runtime_check = ::runtime_check;
 
+    // what the command line chooses for the target, a target reads what it
+    // has, e.g. only the bare-metal ones a stack
+    struct target_options {
+        assembler::jump_mode jumps{assembler::jump_mode::resolved};
+        kept_version kept{kept_version::smaller};
+        // the use of registers is kept for 'register_peak_report'
+        bool register_report{};
+        // the image of the sd card on targets with an operating system
+        std::string_view sd_card_file_name;
+        // the image that the rv32i targets write
+        std::string_view binary_file_name;
+        // the stack of the bare-metal targets
+        size_t stack_size_bytes{};
+        // the memory of 'rv32i-fpga'
+        size_t memory_size_bytes{};
+    };
+
     struct output_statistics {
         // false when written output was not kept to count
         bool is_counted{};
@@ -274,13 +291,22 @@ class machine {
     // kept to be thrown when the other version runs out too
     using version_result = std::expected<compiled_version, std::exception_ptr>;
 
+    using jump_mode = assembler::jump_mode;
+
   public:
     // 'files' locate the tokens of comments, backend tests may leave it null
     // and give a stream that receives the lines as they are emitted
     machine(std::ostream* const direct_output, const builtin_type_set& builtins,
-            const source_files* const files, const assembler::jump_mode jumps)
+            const source_files* const files, const target_options& options)
         : direct_output_{direct_output}, locations_{files}, builtins_{builtins},
-          jump_mode_{jumps} {}
+          jump_mode_{options.jumps},
+          sd_card_file_name_{options.sd_card_file_name},
+          kept_version_{options.kept} {
+
+        if (options.register_report) {
+            trace_.enable();
+        }
+    }
 
     machine(const machine&) = delete;
     machine(machine&&) = delete;
@@ -290,8 +316,6 @@ class machine {
     virtual ~machine() = default;
 
   protected:
-    using jump_mode = assembler::jump_mode;
-
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
     // lowered. on exit, also while an exception unwinds, it frees the
@@ -891,9 +915,6 @@ class machine {
         });
     }
 
-    // the report of the use of registers is kept for 'register_peak_report'
-    auto enable_register_report() -> void { trace_.enable(); }
-
     auto end_noinline_body() -> void { target_assembler().end_body(); }
 
     auto free_named_register(const token& src_loc_tk, const size_t indent,
@@ -1071,16 +1092,6 @@ class machine {
     // a blank line that separates the code from the report
     auto separate_report() -> void {
         target_assembler().add_separator_newline();
-    }
-
-    auto set_kept_version(const kept_version kept) -> void {
-        kept_version_ = kept;
-    }
-
-    // the image file that the sector functions read and write on targets with
-    // an operating system
-    auto set_sd_card_file_name(const std::string_view file_name) -> void {
-        sd_card_file_name_ = file_name;
     }
 
     // what the output measured, for the report of the front end. the counts

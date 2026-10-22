@@ -221,12 +221,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
-[p] medium: design: target options arrive two ways: stack, memory and image
-    name through 'make_backend' and the constructors, register report, sd
-    card and kept version through setters called right after (round 8 A-12,
-    round 7 D-7)
-    => design: one 'backend_options' record passed to 'make_backend' and the
-       constructors; the setters go
 [p] hard: low priority: design: the "write lines as emitted" mode of the
     assembler exists only for qa/coverage/test-rv32i-address.cpp (57 checks
     read the text after each emit); main.cpp always passes nullptr, yet it
