@@ -1085,6 +1085,14 @@ class scope_stack final {
     size_t max_depth_{};
 
   public:
+    // checked at the parse, which reaches the branches that are not compiled,
+    // e.g. the 'break' of 'if 1 == 2 { break }'
+    auto assert_in_loop(const token& src_loc_tk) const -> void {
+        if (not innermost_loop()) {
+            throw compile_error{src_loc_tk, "not in a loop"};
+        }
+    }
+
     [[nodiscard]] auto back() -> frame& { return frames_.back(); }
 
     [[nodiscard]] auto back() const -> const frame& { return frames_.back(); }
@@ -1243,19 +1251,17 @@ class scope_stack final {
 
     // the innermost 'loop' or 'foo' of the function, the target of a 'break'
     // or a 'continue'
-    [[nodiscard]] auto innermost_loop_or_throw(const token& src_loc_tk) const
-        -> loop_target {
-
+    [[nodiscard]] auto innermost_loop() const -> std::optional<loop_target> {
         for (const frame& frm : frames_ | std::views::reverse) {
             if (frm.is_loop() or frm.is_foo()) {
-                return {
+                return loop_target{
                     .label{frm.name()},
                     .is_foo{frm.is_foo()},
                 };
             }
 
             if (frm.is_func()) {
-                throw compile_error{src_loc_tk, "not in a loop"};
+                return std::nullopt;
             }
         }
 

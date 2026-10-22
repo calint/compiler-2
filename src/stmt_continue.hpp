@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
-#include <string_view>
+#include <optional>
 
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -15,6 +16,7 @@ class stmt_continue final : public statement {
     stmt_continue(const toc& tc, const token src_loc_tk)
         : statement{src_loc_tk} {
 
+        tc.scopes().assert_in_loop(src_loc_tk);
         set_type(tc.builtins().void_type());
     }
 
@@ -32,15 +34,18 @@ class stmt_continue final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const loop_target loop{tc.scopes().innermost_loop_or_throw(tok())};
+        const std::optional<loop_target> loop{tc.scopes().innermost_loop()};
 
-        if (not loop.is_foo) {
-            x.branch(indent, loop.label);
+        // note: the parse rejected a 'continue' outside a loop
+        assert(loop);
+
+        if (not loop->is_foo) {
+            x.branch(indent, loop->label);
             return;
         }
 
         // a 'foo' advances its counter before the next iteration
-        x.branch(indent, toc::continue_label(loop.label));
+        x.branch(indent, toc::continue_label(loop->label));
     }
 
     // the next iteration starts with at least the loop entry coverage

@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
-#include <string_view>
+#include <optional>
 
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -13,6 +14,7 @@
 class stmt_break final : public statement {
   public:
     stmt_break(const toc& tc, const token src_loc_tk) : statement{src_loc_tk} {
+        tc.scopes().assert_in_loop(src_loc_tk);
         set_type(tc.builtins().void_type());
     }
 
@@ -30,11 +32,12 @@ class stmt_break final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const std::string_view loop_label{
-            tc.scopes().innermost_loop_or_throw(tok()).label,
-        };
+        const std::optional<loop_target> loop{tc.scopes().innermost_loop()};
 
-        x.branch(indent, toc::end_label(loop_label));
+        // note: the parse rejected a 'break' outside a loop
+        assert(loop);
+
+        x.branch(indent, toc::end_label(loop->label));
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

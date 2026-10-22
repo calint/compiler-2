@@ -1,0 +1,7 @@
+# a 'break' outside a loop is rejected in a branch that is never taken
+
+func main() {
+    if 1 == 2 {
+        break
+    }
+}

@@ -1,0 +1,11 @@
+# a 'break' outside a loop is rejected whatever the argument of an inlined call
+
+func f(a) {
+    if a == 2 {
+        break
+    }
+}
+
+func main() {
+    f(1)
+}

@@ -4551,3 +4551,8 @@ SRC=1420 && COMPERR
 SRC=1421 && COMPERR
 SRC=1422 && COMPERR
 SRC=1423 && COMPERR
+
+# a 'break' or 'continue' outside a loop is rejected in code never compiled
+SRC=1424 && COMPERR
+SRC=1425 && COMPERR
+SRC=1426 && COMPERR
