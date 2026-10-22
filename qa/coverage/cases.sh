@@ -4724,3 +4724,6 @@ SRC=1507 && COMPERR
 
 # a message quotes a control byte as an escape
 SRC=1508 && COMPERR
+
+# a failed check in an included file names that file
+SRC=1509 && EXP=255 && RUN_ERR

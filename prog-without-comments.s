@@ -1567,14 +1567,14 @@ msg_frame_overflow_len equ $ - msg_frame_overflow
 section .text
 baz_division_line_154:
     mov rbp, 154
-    jmp baz_division_panic
+    jmp baz_division_panic_file_0
 baz_division_line_155:
     mov rbp, 155
-baz_division_panic:
+baz_division_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_division]
-    mov rdx, msg_division_len
+    lea rsi, [msg_division_file_0]
+    mov rdx, msg_division_file_0_len
     syscall
 baz_report_line:
     mov rax, rbp
@@ -1604,180 +1604,168 @@ section .bss
 num_buffer:
 resb 21
 section .rodata
-msg_division:
-db `panic: division at line `
-msg_division_len equ $ - msg_division
+msg_division_file_0:
+db `panic: division at prog.baz:`
+msg_division_file_0_len equ $ - msg_division_file_0
 section .text
 baz_overlap_line_248:
     mov rbp, 248
-    jmp baz_overlap_panic
+    jmp baz_overlap_panic_file_0
 baz_overlap_line_253:
     mov rbp, 253
-    jmp baz_overlap_panic
+    jmp baz_overlap_panic_file_0
 baz_overlap_line_383:
     mov rbp, 383
-baz_overlap_panic:
+baz_overlap_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overlap]
-    mov rdx, msg_overlap_len
+    lea rsi, [msg_overlap_file_0]
+    mov rdx, msg_overlap_file_0_len
     syscall
     jmp baz_report_line
 section .rodata
-msg_overlap:
-db `panic: overlap at line `
-msg_overlap_len equ $ - msg_overlap
+msg_overlap_file_0:
+db `panic: overlap at prog.baz:`
+msg_overlap_file_0_len equ $ - msg_overlap_file_0
 section .text
 baz_overflow_line_55:
     mov rbp, 55
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_67:
     mov rbp, 67
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_104:
     mov rbp, 104
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_148:
     mov rbp, 148
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_153:
     mov rbp, 153
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_160:
     mov rbp, 160
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_167:
     mov rbp, 167
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_168:
     mov rbp, 168
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_179:
     mov rbp, 179
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_181:
     mov rbp, 181
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_211:
     mov rbp, 211
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_214:
     mov rbp, 214
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_215:
     mov rbp, 215
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_244:
     mov rbp, 244
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_271:
     mov rbp, 271
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_280:
     mov rbp, 280
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_343:
     mov rbp, 343
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_348:
     mov rbp, 348
-    jmp baz_overflow_panic
+    jmp baz_overflow_panic_file_0
 baz_overflow_line_406:
     mov rbp, 406
-baz_overflow_panic:
+baz_overflow_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_overflow]
-    mov rdx, msg_overflow_len
+    lea rsi, [msg_overflow_file_0]
+    mov rdx, msg_overflow_file_0_len
     syscall
     jmp baz_report_line
 section .rodata
-msg_overflow:
-db `panic: overflow at line `
-msg_overflow_len equ $ - msg_overflow
-section .text
-baz_shift_panic:
-    mov rax, 1
-    mov rdi, 2
-    lea rsi, [msg_shift]
-    mov rdx, msg_shift_len
-    syscall
-    jmp baz_report_line
-section .rodata
-msg_shift:
-db `panic: shift at line `
-msg_shift_len equ $ - msg_shift
+msg_overflow_file_0:
+db `panic: overflow at prog.baz:`
+msg_overflow_file_0_len equ $ - msg_overflow_file_0
 section .text
 baz_bounds_line_96:
     mov rbp, 96
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_154:
     mov rbp, 154
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_161:
     mov rbp, 161
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_166:
     mov rbp, 166
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_172:
     mov rbp, 172
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_243:
     mov rbp, 243
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_244:
     mov rbp, 244
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_248:
     mov rbp, 248
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_253:
     mov rbp, 253
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_254:
     mov rbp, 254
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_260:
     mov rbp, 260
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_271:
     mov rbp, 271
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_272:
     mov rbp, 272
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_273:
     mov rbp, 273
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_384:
     mov rbp, 384
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_385:
     mov rbp, 385
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_392:
     mov rbp, 392
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_393:
     mov rbp, 393
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_427:
     mov rbp, 427
-    jmp baz_bounds_panic
+    jmp baz_bounds_panic_file_0
 baz_bounds_line_428:
     mov rbp, 428
-baz_bounds_panic:
+baz_bounds_panic_file_0:
     mov rax, 1
     mov rdi, 2
-    lea rsi, [msg_bounds]
-    mov rdx, msg_bounds_len
+    lea rsi, [msg_bounds_file_0]
+    mov rdx, msg_bounds_file_0_len
     syscall
     jmp baz_report_line
 section .rodata
-msg_bounds:
-db `panic: bounds at line `
-msg_bounds_len equ $ - msg_bounds
+msg_bounds_file_0:
+db `panic: bounds at prog.baz:`
+msg_bounds_file_0_len equ $ - msg_bounds_file_0
 section .text
 section .data
 align 16

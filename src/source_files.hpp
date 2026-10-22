@@ -129,6 +129,13 @@ class source_locations final {
                                      files_->text(src_loc_tk.file_index()));
     }
 
+    // e.g. 'include/x.baz', as the messages of the compiler name it
+    [[nodiscard]] auto file_name(const size_t file_ix) const
+        -> std::string_view {
+
+        return files_->name(file_ix);
+    }
+
     // the file is named relative to the directory of the main file, so the
     // text does not depend on where the compiler was run from
     [[nodiscard]] auto for_comment(const token& src_loc_tk) const

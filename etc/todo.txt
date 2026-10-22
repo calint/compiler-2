@@ -285,6 +285,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        frame text and unlocated or option error through 'printable', so a
        control byte is '\xNN' everywhere; 'quoted_as_written' no longer
        escapes itself; test 1508
+    => 11 done (2026-10-22): a failed check with '--checks=line' prints
+       'panic: bounds at prog.baz:3' (the file as the compile errors name
+       it); the machine records the failures of a routine as lines by file
+       ('failure_lines_of'), each file with a failure gets an entry of the
+       handler that writes 'panic: NAME at FILE:' before the shared line
+       routine: x86 stubs jump to it, rv32i check sites branch to it
+       ('branch_to_failure'), so no check costs an instruction more; the
+       backend driver names its file 'test.baz'; 43 outputs changed only
+       in the prefix, line numbers the same; test 1509 (rv32i-fpga prints
+       no message, '1509.rv32i-fpga.out')
 [ ] medium: generics: an error inside an instance found after its parse
     has no frame naming the instance: the result check
     ('assert_functions_set_return_value' runs after the parse) and the check

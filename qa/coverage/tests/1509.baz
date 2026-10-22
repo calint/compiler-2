@@ -1,0 +1,8 @@
+# a failed check names the file it is in, here an included one
+include "include/get.baz"
+
+func main() {
+    var a = i32[4]
+    var i = 4
+    var x = get(a, i)
+}

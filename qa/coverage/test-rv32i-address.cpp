@@ -3864,7 +3864,11 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 // the end of 'main', and the entry points that 'test-rv32i.sh' starts
 // separately (division by zero, bounds failures) with the failure path
 auto generate_runtime_program() -> void {
-    machine_rv32i_linux backend{test_builtins};
+    // the failure messages name the file of the location
+    source_files files;
+    files.add("test.baz", "");
+
+    machine_rv32i_linux backend{test_builtins, &files};
 
     hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 

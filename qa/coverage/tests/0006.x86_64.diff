@@ -13,7 +13,7 @@
 >     je if.19.8.code
 106d99
 <     jmp if.19.8.code
-182,185c175,178
+139,142c132,135
 < ;   removed jumps to next code: 0
 < ;    removed unreachable jumps: 0
 < ; removed same target branches: 0
@@ -23,7 +23,7 @@
 > ;    removed unreachable jumps: 1
 > ; removed same target branches: 1
 > ; inverted branches over jumps: 1
-191c184
-< ;                 instructions: 64
+148c141
+< ;                 instructions: 37
 ---
-> ;                 instructions: 57
+> ;                 instructions: 30

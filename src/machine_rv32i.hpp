@@ -454,6 +454,26 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
+    // the line in a0 and a jump to the handler of the check, with the line
+    // to the entry of the handler for the file of 'src_loc_tk'
+    auto branch_to_failure(const token& src_loc_tk, const size_t indent,
+                           const std::string_view name,
+                           const std::string_view handler_label,
+                           const bool with_line) -> void {
+
+        if (not with_line) {
+            branch(indent, handler_label);
+            return;
+        }
+
+        comment(src_loc_tk, indent, "source line");
+        assembler_.li(indent, "a0", src_loc_tk.at_line());
+        mark_used(name, src_loc_tk);
+
+        branch(indent,
+               failure_entry_label(handler_label, src_loc_tk.file_index()));
+    }
+
     // i/o routines replacing system calls return through a7 and change only
     // 'clobbered' besides a0, which are free at the call, so like a system
     // call it saves nothing
@@ -471,8 +491,9 @@ class machine_rv32i : public machine {
         assembler_.call(indent, label, "a7");
     }
 
-    // the handler of a check that prints 'panic: NAME', with the line number
-    // in a0 when 'with_line', then exits
+    // the handler of a check that prints 'panic: NAME' then exits; with the
+    // line, one entry per file prints 'panic: NAME at FILE:' and the line
+    // number in a0, see 'branch_to_failure'
     auto emit_named_failure_handler(const std::string_view handler_label,
                                     const std::string_view name,
                                     const bool with_line) -> void {
@@ -482,18 +503,25 @@ class machine_rv32i : public machine {
         std::string label_name{name};
         std::ranges::replace(label_name, ' ', '_');
 
+        if (with_line) {
+            for (const size_t file_ix :
+                 failure_lines_of(name) | std::views::keys) {
+
+                label(0, failure_entry_label(handler_label, file_ix));
+
+                emit_line_failure(
+                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
+                    failure_message(name, file_ix));
+            }
+
+            return;
+        }
+
         const std::string message_label{
             std::format(".Lbaz_{}_message", label_name),
         };
 
         label(0, handler_label);
-
-        if (with_line) {
-            emit_line_failure(message_label,
-                              std::format("panic: {} at line ", name));
-
-            return;
-        }
 
         const std::string message{std::format("panic: {}", name)};
 
@@ -1874,11 +1902,9 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        if (check.with_line) {
-            assembler_.li(indent, "a0", src_loc_tk.at_line());
-        }
+        branch_to_failure(src_loc_tk, indent, "overlap",
+                          overlap_failure_handler_label, check.with_line);
 
-        branch(indent, overlap_failure_handler_label);
         assembler_.label(indent, passed.name);
 
         comment(src_loc_tk, indent, "overlap check end");
@@ -1921,11 +1947,9 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        if (with_line) {
-            assembler_.li(indent, "a0", src_loc_tk.at_line());
-        }
+        branch_to_failure(src_loc_tk, indent, "division",
+                          division_failure_handler_label, with_line);
 
-        branch(indent, division_failure_handler_label);
         assembler_.label(indent, pass.name);
 
         comment(src_loc_tk, indent, "division check end");
@@ -2084,11 +2108,9 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        if (check.with_line) {
-            assembler_.li(indent, "a0", src_loc_tk.at_line());
-        }
+        branch_to_failure(src_loc_tk, indent, "shift",
+                          shift_failure_handler_label, check.with_line);
 
-        branch(indent, shift_failure_handler_label);
         assembler_.label(indent, pass.name);
 
         comment(src_loc_tk, indent, "shift check end");
@@ -2993,12 +3015,9 @@ class machine_rv32i : public machine {
 
         assembler_.label(indent, bounds_fail_.name);
 
-        if (options.with_line) {
-            comment(src_loc_tk, indent, "source line");
-            assembler_.li(indent, "a0", src_loc_tk.at_line());
-        }
+        branch_to_failure(src_loc_tk, indent, "bounds",
+                          bounds_failure_handler_label, options.with_line);
 
-        branch(indent, bounds_failure_handler_label);
         assembler_.label(indent, bounds_pass_.name);
     }
 
@@ -3545,11 +3564,8 @@ class machine_rv32i : public machine {
     auto fail_on_overflow(const token& src_loc_tk, const size_t indent,
                           const runtime_check& check) -> void {
 
-        if (check.with_line) {
-            assembler_.li(indent, "a0", src_loc_tk.at_line());
-        }
-
-        branch(indent, overflow_failure_handler_label);
+        branch_to_failure(src_loc_tk, indent, "overflow",
+                          overflow_failure_handler_label, check.with_line);
     }
 
     // a jump grown beyond 1 MiB needs a register without a live value

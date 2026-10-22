@@ -673,7 +673,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_bounds_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "bounds", used_lines("bounds"),
+        emit_line_panic_handler(with_line, "bounds", failure_lines_of("bounds"),
                                 bounds_failure_handler_label);
     }
 
@@ -699,7 +699,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_division_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "division", used_lines("division"),
+        emit_line_panic_handler(with_line, "division",
+                                failure_lines_of("division"),
                                 division_failure_handler_label);
     }
 
@@ -709,12 +710,14 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_overflow_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "overflow", used_lines("overflow"),
+        emit_line_panic_handler(with_line, "overflow",
+                                failure_lines_of("overflow"),
                                 overflow_failure_handler_label);
     }
 
     auto emit_overlap_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "overlap", used_lines("overlap"),
+        emit_line_panic_handler(with_line, "overlap",
+                                failure_lines_of("overlap"),
                                 overlap_failure_handler_label);
     }
 
@@ -725,7 +728,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_shift_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "shift", used_lines("shift"),
+        emit_line_panic_handler(with_line, "shift", failure_lines_of("shift"),
                                 shift_failure_handler_label);
     }
 
@@ -1742,47 +1745,59 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    // the handler of a check that may report the line: one stub per line sets
-    // rbp and enters the handler, then the message 'panic: NAME' is printed
+    // the handler of a check: without the line it prints 'panic: NAME'; with
+    // it, one stub per failure location sets rbp to the line and enters the
+    // entry of its file, which prints 'panic: NAME at FILE:' and the line
     auto emit_line_panic_handler(const bool with_line,
                                  const std::string_view name,
-                                 const std::set<size_t>& panic_lines,
+                                 const failure_lines& lines_by_file,
                                  const std::string_view handler_label) -> void {
 
         // a label has no space, 'frame overflow' is 'msg_frame_overflow'
         std::string label_name{name};
         std::ranges::replace(label_name, ' ', '_');
 
-        const std::string message_label{std::format("msg_{}", label_name)};
+        if (not with_line) {
+            const std::string message_label{std::format("msg_{}", label_name)};
 
-        if (with_line) {
-            for (const size_t line : panic_lines) {
-                assembler_.label(0, line_panic_label(name, line));
+            assembler_.label(0, handler_label);
+            emit_panic_message(message_label);
+            emit_panic_exit();
+            emit_message_data(message_label, std::format("panic: {}\\n", name));
+
+            return;
+        }
+
+        for (const auto& [file_ix, lines] : lines_by_file) {
+            for (const size_t line : lines) {
+                assembler_.label(0, line_panic_label(name, file_ix, line));
                 assembler_.instruction(1, op::mov, "rbp", line);
-                assembler_.jmp(1, handler_label);
+                assembler_.jmp(1, failure_entry_label(handler_label, file_ix));
             }
         }
 
-        assembler_.label(0, handler_label);
-        emit_panic_message(message_label);
+        for (const size_t file_ix : lines_by_file | std::views::keys) {
+            const std::string message_label{
+                std::format("msg_{}_file_{}", label_name, file_ix),
+            };
 
-        if (with_line) {
+            assembler_.label(0, failure_entry_label(handler_label, file_ix));
+            emit_panic_message(message_label);
             emit_report_line();
-        } else {
-            emit_panic_exit();
+
+            // a backslash of a path is an escape in a nasm string
+            std::string text;
+
+            for (const char ch : failure_message(name, file_ix)) {
+                if (ch == '\\') {
+                    text += '\\';
+                }
+
+                text += ch;
+            }
+
+            emit_message_data(message_label, text);
         }
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-
-        assembler_.string_data(with_line
-                                   ? std::format("panic: {} at line ", name)
-                                   : std::format("panic: {}\\n", name));
-
-        assembler_.define_length(std::format("{}_len", message_label),
-                                 message_label);
-
-        assembler_.switch_section(section::text);
     }
 
     // x86 has no memory to memory form, the source goes through a register of
@@ -1810,6 +1825,20 @@ class machine_x86_64 final : public machine {
         emit(indent, code, dst_op, reg);
 
         free_scratch_register(src_loc_tk, indent, reg);
+    }
+
+    // the text of a message in read-only data with its length
+    auto emit_message_data(const std::string_view message_label,
+                           const std::string_view text) -> void {
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+        assembler_.string_data(text);
+
+        assembler_.define_length(std::format("{}_len", message_label),
+                                 message_label);
+
+        assembler_.switch_section(section::text);
     }
 
     // the low part of the source is used, so a narrower destination needs no
@@ -2072,11 +2101,10 @@ class machine_x86_64 final : public machine {
             return std::string{handler_label};
         }
 
-        const size_t line{src_loc_tk.at_line()};
+        mark_used(name, src_loc_tk);
 
-        mark_used(name, line);
-
-        return line_panic_label(name, line);
+        return line_panic_label(name, src_loc_tk.file_index(),
+                                src_loc_tk.at_line());
     }
 
     auto idiv(const token& src_loc_tk, const size_t indent,
@@ -2512,11 +2540,18 @@ class machine_x86_64 final : public machine {
         return condition::ge;
     }
 
+    // a location in the main file has no file index, so the label stays the
+    // same for a program of one file
     [[nodiscard]] static auto line_panic_label(const std::string_view name,
+                                               const size_t file_ix,
                                                const size_t line)
         -> std::string {
 
-        return std::format("baz_{}_line_{}", name, line);
+        if (file_ix == 0) {
+            return std::format("baz_{}_line_{}", name, line);
+        }
+
+        return std::format("baz_{}_f{}_line_{}", name, file_ix, line);
     }
 
     // the qwords, then the remaining dword, word and byte

@@ -1,0 +1,4 @@
+# an element of an array, the index checked where it is read
+func get(a i32[], i) res i32 {
+    res = a[i]
+}
