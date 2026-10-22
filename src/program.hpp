@@ -584,7 +584,7 @@ class program final {
         x.comment({}, 0, "");
 
         x.label(0, reserved_names::main);
-        tc.enter_func(reserved_names::main);
+        tc.enter_main();
         func_main.compile_statements(tc, 0);
         tc.exit_func(reserved_names::main);
 

@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: design: 'toc::enter_func' makes an inlined frame whose defaults
+    (empty call path and return label) serve two unrelated callers, the
+    parse and 'main', and 'stmt_return' reads an empty return label as "this
+    is 'main', exit"; the name does not say inlined; 'get_call_path' is a
+    'scope_stack' query on 'toc' (round 8 T-4, S-7, round 7 T-10, T-11)
+    => design: 'enter_inlined_func(name, call_path, return_label)' without
+       defaults, the parse passes empty labels as 'enter_noinline_func'
+       does; 'enter_main()' makes a frame that answers 'is_main()';
+       'stmt_return' asks 'is_main()' and binds 'current_func_frame()' once;
+       'get_call_path' becomes 'scope_stack::call_path()'
+    => invariant: no empty string selects a behavior
+    => done (2026-10-22): as designed, 'main' has a frame kind of its own
+       ('frame::main_func'), compiled in place like an inlined function;
+       'qa/coverage/test-rv32i-address.cpp' calls 'emit_used_routines'
+       before 'begin_data', which no longer emits the routines (missed when
+       'emit_used_routines' was added)
 [x] medium: design: a built-in that parses like a call is recognised by a
     hidden convention: 'program' registers exit, read, write and the sector
     functions in 'function_table' with a null definition, 'is_builtin' means

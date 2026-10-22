@@ -754,7 +754,7 @@ class stmt_def_func final : public statement {
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
         if (is_inlined()) {
-            tc.enter_func(name());
+            tc.enter_inlined_func(name(), {}, {});
         } else {
             tc.enter_noinline_func(name(), {}, {});
         }

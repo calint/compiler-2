@@ -756,7 +756,7 @@ class inline_call {
 
         // the body is inlined at every call, so its labels are named by the
         // call
-        const std::string_view call_path{tc.get_call_path()};
+        const std::string_view call_path{tc.scopes().call_path()};
 
         const std::string src_loc{
             tc.source_location_for_use_in_label(call_.tk),
@@ -779,7 +779,7 @@ class inline_call {
 
         // note: a noinline function is compiled in place only in its dry run
         if (func.is_inlined()) {
-            tc.enter_func(func.name(), new_call_path, ret_jmp_label);
+            tc.enter_inlined_func(func.name(), new_call_path, ret_jmp_label);
         } else {
             tc.enter_noinline_dry_run(func.name(), new_call_path,
                                       ret_jmp_label);

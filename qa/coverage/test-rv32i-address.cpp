@@ -812,6 +812,7 @@ auto check_version_state_kept() -> void {
         backend.emit_most_efficient(token{}, 0, load, exhaust);
 
         // the helpers in use are emitted before the data
+        backend.emit_used_routines();
         backend.begin_data(4);
         backend.finish();
         backend.write_assembly(output);
@@ -2358,6 +2359,7 @@ auto check_multiply_divide_routines() -> void {
         assert(not output.str().contains(".Lbaz_divide:"));
 
         backend.end_main();
+        backend.emit_used_routines();
         backend.begin_data(4);
 
         const std::string assembly{output.str()};
@@ -3890,6 +3892,7 @@ auto generate_runtime_program() -> void {
 
     backend.emit_bounds_failure_handler(true);
     std::println("failure:\n    li a0, 1\n    li a7, 93\n    ecall");
+    backend.emit_used_routines();
     backend.begin_data(4);
     std::println("buffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
     backend.finish();
@@ -4005,9 +4008,9 @@ auto check_constant_scopes() -> void {
     front_end fe{64};
 
     fe.tc.add_const(token{}, 0, "global", folded_value::untyped(1));
-    fe.tc.enter_func("outer");
+    fe.tc.enter_inlined_func("outer", {}, {});
     fe.tc.add_const(token{}, 0, "outer_only", folded_value::untyped(2));
-    fe.tc.enter_func("inner", "path", "");
+    fe.tc.enter_inlined_func("inner", "path", {});
     assert(fe.tc.scopes().lookup("global").is_constant());
     assert(not fe.tc.scopes().lookup("outer_only").is_constant());
     fe.tc.exit_func("inner");

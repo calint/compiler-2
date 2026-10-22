@@ -217,17 +217,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'func_info::def', every entry has a definition since the built-ins left
     'function_table'; 'get_func_return_type_or_throw' could read the
     definition and 'add_func' lose the parameter
-[p] medium: design: 'toc::enter_func' makes an inlined frame whose defaults
-    (empty call path and return label) serve two unrelated callers, the
-    parse and 'main', and 'stmt_return' reads an empty return label as "this
-    is 'main', exit"; the name does not say inlined; 'get_call_path' is a
-    'scope_stack' query on 'toc' (round 8 T-4, S-7, round 7 T-10, T-11)
-    => design: 'enter_inlined_func(name, call_path, return_label)' without
-       defaults, the parse passes empty labels as 'enter_noinline_func'
-       does; 'enter_main()' makes a frame that answers 'is_main()';
-       'stmt_return' asks 'is_main()' and binds 'current_func_frame()' once;
-       'get_call_path' becomes 'scope_stack::call_path()'
-    => invariant: no empty string selects a behavior
 [p] medium: naming: "alias" names three concepts: what a parameter of an
     inlined call is bound to ('alias_info', 'frame::aliases',
     'follow_alias', 'make_*_alias', about 150 uses), a named generic

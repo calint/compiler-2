@@ -31,25 +31,22 @@ class stmt_return final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        if (not tc.scopes().current_func_frame().is_inlined_func()) {
-            x.return_function(indent);
-            return;
-        }
+        const frame& func_frm{tc.scopes().current_func_frame()};
 
-        const std::string_view return_label{
-            tc.scopes().current_func_frame().func_ret_label(),
-        };
-
-        if (return_label.empty()) {
-            // note: return from 'main' is exiting
+        if (func_frm.is_main()) {
             x.exit(tok(), indent,
                    operand::imm(0, tc.builtins().default_type()));
 
             return;
         }
 
+        if (not func_frm.is_inlined_func()) {
+            x.return_function(indent);
+            return;
+        }
+
         // an inlined body ends where the call continues
-        x.branch(indent, return_label);
+        x.branch(indent, func_frm.func_ret_label());
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

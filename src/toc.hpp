@@ -232,12 +232,13 @@ enum class var_kind : uint8_t { var, dat, param, result };
 
 // one scope; the static functions make each kind, e.g. 'frame::block()'
 class frame final {
-    // a function frame is 'inlined_func', 'noinline_dry_run' or
+    // a function frame is 'main_func', 'inlined_func', 'noinline_dry_run' or
     // 'noinline_func', see the statics that make them
     enum class frame_type : uint8_t {
         block,
         loop,
         foo,
+        main_func,
         inlined_func,
         noinline_dry_run,
         noinline_func,
@@ -358,12 +359,13 @@ class frame final {
     }
 
     [[nodiscard]] auto is_func() const -> bool {
-        return type_ == frame_type::inlined_func or
+        return type_ == frame_type::main_func or
+               type_ == frame_type::inlined_func or
                type_ == frame_type::noinline_dry_run or
                type_ == frame_type::noinline_func;
     }
 
-    // a dry run is compiled in place like an inlined function
+    // 'main' and a dry run are compiled in place like an inlined function
     [[nodiscard]] auto is_inlined_func() const -> bool {
         assert(is_func());
 
@@ -372,6 +374,10 @@ class frame final {
 
     [[nodiscard]] auto is_loop() const -> bool {
         return type_ == frame_type::loop;
+    }
+
+    [[nodiscard]] auto is_main() const -> bool {
+        return type_ == frame_type::main_func;
     }
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
@@ -452,6 +458,11 @@ class frame final {
     // the body of a loop named by its label
     [[nodiscard]] static auto loop(const std::string_view name) -> frame {
         return {name, frame_type::loop, {}, {}, {}};
+    }
+
+    // 'main' is compiled in place, 'return' exits the program
+    [[nodiscard]] static auto main_func() -> frame {
+        return {reserved_names::main, frame_type::main_func, {}, {}, {}};
     }
 
     // a noinline function compiled in place, the dry run for the errors of a
@@ -1174,6 +1185,15 @@ class scope_stack final {
 
     [[nodiscard]] auto back() const -> const frame& { return frames_.back(); }
 
+    // empty outside of a function, e.g. in the initializer of a global variable
+    [[nodiscard]] auto call_path() const -> std::string_view {
+        if (not is_in_func()) {
+            return {};
+        }
+
+        return current_func_frame().call_path();
+    }
+
     // the value of 'name' when it means a constant
     [[nodiscard]] auto const_value(const std::string_view name) const
         -> std::optional<int64_t> {
@@ -1209,9 +1229,9 @@ class scope_stack final {
     }
 
     // a function compiled in place, 'return' jumps to 'return_jmp_label'
-    auto enter_func(const std::string_view name,
-                    const std::string_view call_path,
-                    const std::string_view return_jmp_label) -> void {
+    auto enter_inlined_func(const std::string_view name,
+                            const std::string_view call_path,
+                            const std::string_view return_jmp_label) -> void {
 
         frames_.push_back(frame::inlined_func(name, std::string{call_path},
                                               std::string{return_jmp_label}));
@@ -1221,6 +1241,11 @@ class scope_stack final {
 
     auto enter_loop(const std::string_view name) -> void {
         frames_.push_back(frame::loop(name));
+        track_depth();
+    }
+
+    auto enter_main() -> void {
+        frames_.push_back(frame::main_func());
         track_depth();
     }
 
@@ -2740,7 +2765,7 @@ class toc final {
                                            const std::string_view prefix) const
         -> std::string {
 
-        const std::string_view call_path{get_call_path()};
+        const std::string_view call_path{scopes_.call_path()};
         const std::string src_loc{source_location_for_use_in_label(src_loc_tk)};
 
         return std::format("{}.{}{}", prefix, src_loc,
@@ -2795,16 +2820,18 @@ class toc final {
     }
 
     // a function compiled in place, 'return' jumps to 'return_jmp_label'
-    auto enter_func(const std::string_view name,
-                    const std::string_view call_path = {},
-                    const std::string_view return_jmp_label = {}) -> void {
+    auto enter_inlined_func(const std::string_view name,
+                            const std::string_view call_path,
+                            const std::string_view return_jmp_label) -> void {
 
-        scopes_.enter_func(name, call_path, return_jmp_label);
+        scopes_.enter_inlined_func(name, call_path, return_jmp_label);
     }
 
     auto enter_loop(const std::string_view name) -> void {
         scopes_.enter_loop(name);
     }
+
+    auto enter_main() -> void { scopes_.enter_main(); }
 
     // see 'frame::noinline_dry_run'
     auto enter_noinline_dry_run(const std::string_view name,
@@ -2859,15 +2886,6 @@ class toc final {
 
     [[nodiscard]] auto generics() const -> const generic_registry& {
         return generics_;
-    }
-
-    // empty outside of a function, e.g. in the initializer of a global variable
-    [[nodiscard]] auto get_call_path() const -> std::string_view {
-        if (not scopes_.is_in_func()) {
-            return {};
-        }
-
-        return scopes_.current_func_frame().call_path();
     }
 
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
