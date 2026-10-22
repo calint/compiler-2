@@ -93,8 +93,7 @@ inline auto assert_builtin_without_type_args(const token& tk,
         return &tc.builtins().default_type();
     }
 
-    if (tc.builtins().is_integer_name(tk.text()) and
-        tz.peek_char_after_whitespace() == '(') {
+    if (names_integer_type(tc, tk) and tz.peek_char_after_whitespace() == '(') {
 
         return &stmt_builtin_convert::conversion_type(tc, tk);
     }
@@ -378,8 +377,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
                                                            tk, tz);
     }
 
-    if (tc.builtins().is_integer_name(tk.text()) and
-        tz.peek_char_after_whitespace() == '(') {
+    if (names_integer_type(tc, tk) and tz.peek_char_after_whitespace() == '(') {
 
         return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
                                                       tz);

@@ -1,0 +1,12 @@
+# a type parameter bound to a built-in type alone is its zero value
+func next<U type>(v) res U {
+    var x = U
+    x = U(v) + 1
+    res = x
+}
+
+func main() {
+    var b = i16(0)
+    b = next<i16>(5)
+    exit(b)
+}

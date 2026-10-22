@@ -100,7 +100,7 @@ class stmt_builtin_io final : public stmt_call {
         // 'read' and 'sector_read' fill the buffer, the second argument
         const statement& buffer{argument(1)};
 
-        if (io_.fills_buffer and buffer.is_name_or_literal()) {
+        if (io_.fills_buffer and buffer.is_bare_name_or_literal()) {
             const ident_info info{make_ident_info(tc, buffer)};
 
             if (info.is_var()) {

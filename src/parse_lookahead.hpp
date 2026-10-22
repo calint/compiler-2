@@ -106,6 +106,26 @@
     return next_tk.is_text("and") or next_tk.is_text("or");
 }
 
+// a call of a generic function without type arguments is the whole value,
+// e.g. 'make()' of 'b = make()', its result type is that of the destination
+[[nodiscard]] inline auto is_whole_generic_call(const toc& tc,
+                                                const tokenizer& tz) -> bool {
+
+    tokenizer probe{tz};
+    const token tk{probe.next_token()};
+
+    if (not tk.is_word() or not tc.generics().has_func(tk.text()) or
+        is_hidden_by_value(tc, tk.text()) or
+        probe.is_next_char_token('(').is_empty()) {
+
+        return false;
+    }
+
+    probe.skip_to_close_paren();
+
+    return not continues_expression(probe);
+}
+
 // '{}' follows, the zero value of a typed destination
 [[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
     tokenizer probe{tz};
@@ -114,12 +134,20 @@
            probe.peek_char_after_whitespace() == '}';
 }
 
+// e.g. 'i8' or a type parameter bound to it, a '(' after it makes a conversion
+[[nodiscard]] inline auto names_integer_type(const toc& tc, const token& tk)
+    -> bool {
+
+    const type* const tp{tc.builtin_value_type_named(tk)};
+    return tp != nullptr and not tp->is_bool();
+}
+
 // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
 // a builtin type name not followed by '(' or '[' has no other meaning
 [[nodiscard]] inline auto is_bare_builtin_type(const toc& tc, const token& tk,
                                                const tokenizer& tz) -> bool {
 
-    if (not(tc.builtins().is_integer_name(tk.text()) or tk.is_text("bool")) or
+    if (tc.builtin_value_type_named(tk) == nullptr or
         is_hidden_by_value(tc, tk.text())) {
 
         return false;

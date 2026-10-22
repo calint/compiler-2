@@ -1,0 +1,4 @@
+
+1528.baz:4:9: a string is not a number, it fills only an array of 'i8'
+    x = "i16"
+        ^~~~~

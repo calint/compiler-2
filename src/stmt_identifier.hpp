@@ -920,7 +920,7 @@ class stmt_identifier final : public statement {
 
         const operand& index_register{registers.index_register()};
 
-        const int64_t addend_elements{
+        int64_t addend_elements{
             compile_checked_index(tc, indent, *cur_elem.array_index_expr,
                                   index_register, cur_info.element_count(),
                                   reg_count),
@@ -928,13 +928,26 @@ class stmt_identifier final : public statement {
 
         const size_t type_size{cur_info.type_ref().size_bytes()};
 
-        // an index that is a constant far from the array has no address
+        const token& index_tk{cur_elem.array_index_expr->tok()};
+
+        // a constant too far for the displacement is added to the index, the
+        // sum can still be an element, e.g. 'a[i - 9223372036854775806]'
         if (not fits_address_offset(address.displacement(), addend_elements,
                                     type_size)) {
 
-            throw compile_error{
-                cur_elem.array_index_expr->tok(),
-                "index offset is out of the range of addresses"};
+            x.comment(index_tk, indent, "index constant {} is added",
+                      addend_elements);
+
+            x.add_subtract(
+                src_loc_tk, indent, machine::arithmetic_operator::add,
+                index_register,
+                operand::imm(addend_elements, tc.builtins().default_type()));
+
+            addend_elements = 0;
+        } else if (addend_elements != 0) {
+            x.comment(index_tk, indent,
+                      "index constant {} goes into the displacement",
+                      addend_elements);
         }
 
         // a scale the addressing mode cannot encode is applied to the index
@@ -1010,10 +1023,6 @@ class stmt_identifier final : public statement {
             };
 
             if (addend) {
-                x.comment(index_expr.tok(), indent,
-                          "index constant {} goes into the displacement",
-                          *addend);
-
                 return *addend;
             }
         }

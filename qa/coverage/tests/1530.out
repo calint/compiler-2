@@ -1,0 +1,4 @@
+
+1530.baz:2:19: expected ')'
+func f<T type>(a T] {}
+                  ^

@@ -806,7 +806,9 @@ class expr_any final : public statement {
 
         // a generic call takes the type of a known destination for its
         // result, e.g. 'x = make()'
-        if (not tp.is_bool()) {
+        if (not tp.is_bool() or (typing == literal_typing::from_destination and
+                                 is_whole_generic_call(tc, tz))) {
+
             expr_arith value{
                 tc,
                 tz,

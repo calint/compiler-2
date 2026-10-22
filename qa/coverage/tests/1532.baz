@@ -1,0 +1,10 @@
+# a type parameter bound to a built-in type converts like the type
+func conv<U type>(v) res U {
+    res = U(v)
+}
+
+func main() {
+    var a = i8(0)
+    a = conv<i8>(261)
+    exit(a)
+}

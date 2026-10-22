@@ -355,6 +355,14 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "set function frame base");
 
+        // a far frame address is lowered through a scratch register, which
+        // must not be the loaded slot register
+        const address_scope slot_kept{
+            *this,
+            make_register_operand(slot_register(), default_type()),
+            operand{},
+        };
+
         lea(src_loc_tk, indent,
             make_register_operand(frame_base_register(), default_type()),
             frame_address);
@@ -1785,18 +1793,12 @@ class machine_x86_64 final : public machine {
             emit_panic_message(message_label);
             emit_report_line();
 
-            // a backslash of a path is an escape in a nasm string
-            std::string text;
+            // note: a backslash or a control byte of a path is written as an
+            //       escape of a nasm string
 
-            for (const char ch : failure_message(name, file_ix)) {
-                if (ch == '\\') {
-                    text += '\\';
-                }
-
-                text += ch;
-            }
-
-            emit_message_data(message_label, text);
+            emit_message_data(
+                message_label,
+                token::encode_string(failure_message(name, file_ix)));
         }
     }
 

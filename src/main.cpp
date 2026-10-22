@@ -196,6 +196,10 @@ auto print_source_line(std::string_view src, size_t start_index,
 
 [[nodiscard]] auto is_utf8_continuation(char ch) -> bool;
 
+[[nodiscard]] auto is_escaped_in_line(char ch) -> bool;
+
+[[nodiscard]] auto printable_line(std::string_view line) -> std::string;
+
 [[nodiscard]] auto display_columns(std::string_view text) -> size_t;
 } // namespace
 
@@ -903,11 +907,11 @@ auto print_call_frames(const source_files& files,
 
         // the source line shows a call that is the whole line
         if (frame.text == trimmed_line_at(src, frame.start_index)) {
-            std::println(stderr, "{}:{}:{}: {}", src_file_name, frame.line, col,
-                         frame.reason);
+            std::println(stderr, "{}:{}:{}: {}", printable(src_file_name),
+                         frame.line, col, frame.reason);
         } else {
-            std::println(stderr, "{}:{}:{}: {} '{}'", src_file_name, frame.line,
-                         col, frame.reason, printable(frame.text));
+            std::println(stderr, "{}:{}:{}: {} '{}'", printable(src_file_name),
+                         frame.line, col, frame.reason, printable(frame.text));
         }
 
         print_source_line(src, frame.start_index, frame.end_index);
@@ -963,13 +967,15 @@ auto print_source_error(const source_files& files, const size_t file_ix,
     const std::string_view src{files.text(file_ix)};
 
     if (line == 0) {
-        std::println(stderr, "\n{}: {}", src_file_name, printable(message));
+        std::println(stderr, "\n{}: {}", printable(src_file_name),
+                     printable(message));
+
         return;
     }
 
     const size_t col{column_for_char_index(start_index, src)};
 
-    std::println(stderr, "\n{}:{}:{}: {}", src_file_name, line, col,
+    std::println(stderr, "\n{}:{}:{}: {}", printable(src_file_name), line, col,
                  printable(message));
 
     print_source_line(src, start_index, end_index);
@@ -987,15 +993,19 @@ auto print_source_error(const source_files& files, const size_t file_ix,
 
 // the columns a terminal shows: a continuation byte after a lead or
 // continuation byte is part of that character, a lone one is shown as a
-// replacement character
+// replacement character, a control byte as its escape
 [[nodiscard]] auto display_columns(const std::string_view text) -> size_t {
     constexpr unsigned char first_non_ascii{0x80};
+    // note: 4 for the '\xNN' that 'printable_line' shows
+    constexpr size_t escape_columns{4};
 
     size_t columns{};
     bool after_non_ascii{};
 
     for (const char ch : text) {
-        if (not after_non_ascii or not is_utf8_continuation(ch)) {
+        if (is_escaped_in_line(ch)) {
+            columns += escape_columns;
+        } else if (not after_non_ascii or not is_utf8_continuation(ch)) {
             ++columns;
         }
 
@@ -1003,6 +1013,28 @@ auto print_source_error(const source_files& files, const size_t file_ix,
     }
 
     return columns;
+}
+
+// a tab stays in a shown line so that the mark lines up, the other control
+// bytes are escaped
+[[nodiscard]] auto is_escaped_in_line(const char ch) -> bool {
+    return is_control_char(ch) and ch != '\t';
+}
+
+// the line as 'printable' shows it, with its tabs
+[[nodiscard]] auto printable_line(const std::string_view line) -> std::string {
+    std::string result;
+
+    for (const char ch : line) {
+        if (is_escaped_in_line(ch)) {
+            result += printable(std::string_view{&ch, 1});
+            continue;
+        }
+
+        result.push_back(ch);
+    }
+
+    return result;
 }
 
 // the source line of the error with a '^' under its first character and a '~'
@@ -1053,7 +1085,7 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     // a position without a token still has the caret
     const size_t mark_size{std::max(marked_count, size_t{1})};
 
-    std::println(stderr, "{}\n{}^{}", line, padding,
+    std::println(stderr, "{}\n{}^{}", printable_line(line), padding,
                  std::string(mark_size - 1, '~'));
     // note: -1 because the caret already marks the first character
 }

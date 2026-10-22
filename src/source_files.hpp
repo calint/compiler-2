@@ -148,7 +148,9 @@ class source_locations final {
             src_path.lexically_relative(main_dir),
         };
 
-        return std::format("{}:{}", relative.string(), text(src_loc_tk, ':'));
+        // note: a line end in a file name would end the comment
+        return std::format("{}:{}", printable(relative.string()),
+                           text(src_loc_tk, ':'));
     }
 
     // the location in the main file has no file name, a label stays the same

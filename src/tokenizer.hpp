@@ -279,6 +279,13 @@ class tokenizer final {
         }
     }
 
+    // like 'skip_to_close_paren' where the skip must end at a ')', e.g. the
+    // parameters of a generic function, which are parsed only by an instance
+    auto skip_to_expected_close_paren() -> void {
+        skip_to_unnested(")");
+        std::ignore = expect_char_token(')', "expected ')'");
+    }
+
     // the source text from the end of 'tk' to the current position
     [[nodiscard]] auto text_after(const token& tk) const -> std::string_view {
         const size_t begin_ix{tk.source_end_index()};

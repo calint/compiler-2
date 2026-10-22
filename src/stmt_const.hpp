@@ -38,6 +38,12 @@ class stmt_const final : public statement {
         }
 
         if (not has_value()) {
+            // e.g. 'i8[-]', the operators need a value
+            if (not uops_.is_empty()) {
+                throw compile_error{
+                    tz, "expected a constant value or a constant identifier"};
+            }
+
             return;
         }
 

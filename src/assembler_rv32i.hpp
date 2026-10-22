@@ -180,10 +180,14 @@ class assembler_rv32i final : public assembler {
     static constexpr uint32_t auipc_encoding_{0x00000017};
     static constexpr uint32_t jal_encoding_{0x0000006f};
     static constexpr uint32_t jalr_encoding_{0x00000067};
+    static constexpr uint32_t slli_encoding_{0x00001013};
 
     static constexpr uint8_t zero_register_{};
     static constexpr uint8_t return_address_register_{1};
 
+    // the 6 bit immediate of the compressed 'c.li'
+    static constexpr int64_t compressed_immediate_min_{-32};
+    static constexpr int64_t compressed_immediate_max_{31};
     static constexpr int64_t shift_max_{31};
     static constexpr int64_t upper_max_{0xfffff};
     static constexpr uint32_t upper_mask_{0xfffff};
@@ -1983,6 +1987,30 @@ class assembler_rv32i final : public assembler {
             return {
                 encode_immediate(addi_encoding_, rd, zero_register_, number),
             };
+        }
+
+        // e.g. 2048 is 'addi 1' and 'slli 11': llvm loads a small value
+        // shifted left so, as it compresses better, and the image must equal
+        // what llvm assembles from the listing
+        const uint32_t bits{static_cast<uint32_t>(value)};
+        const int shift{std::countr_zero(bits)};
+
+        // note: the low bits are not all zero, so the shift is below 12 and
+        //       the division is exact
+
+        if ((bits & low_mask_) != 0 and shift != 0) {
+            const uint32_t factor{1U << static_cast<uint32_t>(shift)};
+            const int32_t shifted{number / static_cast<int32_t>(factor)};
+
+            if (fits(shifted, compressed_immediate_min_,
+                     compressed_immediate_max_)) {
+
+                return {
+                    encode_immediate(addi_encoding_, rd, zero_register_,
+                                     shifted),
+                    encode_immediate(slli_encoding_, rd, rd, shift),
+                };
+            }
         }
 
         const uint32_t upper{

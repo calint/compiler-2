@@ -1,0 +1,4 @@
+
+1535.baz:4:15: cannot resolve identifier '\x0c'
+    var a = 1 \x0c+ q
+              ^~~~

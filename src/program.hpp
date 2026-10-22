@@ -292,7 +292,7 @@ class program final {
 
         tc_.enter_block();
 
-        loaded_paths_.insert(main_file_path(files.name(0)));
+        loaded_paths_.insert(identity_path(files.name(0)));
 
         parse_files(0);
 
@@ -490,22 +490,10 @@ class program final {
                 .lexically_normal(),
         };
 
-        // e.g. a directory without access or a path too long for the system
-        std::error_code error;
-
-        const std::filesystem::path canonical_path{
-            std::filesystem::weakly_canonical(path, error),
-        };
-
-        if (error) {
-            throw compile_error{
-                path_tk, std::format("cannot open file '{}'", path.string())};
-        }
-
         file.parsed.emplace_back(
             std::make_unique<stmt_include>(include_tk, path_tk));
 
-        const bool is_new{loaded_paths_.insert(canonical_path).second};
+        const bool is_new{loaded_paths_.insert(identity_path(path)).second};
 
         if (not is_new) {
             return std::nullopt;
@@ -643,10 +631,10 @@ class program final {
         x.emit_string_constants(tc.data().constants());
     }
 
-    // the path an include of the main file compares with; a file that was
-    // read but has no canonical path, e.g. '/dev/stdin' of a pipe, is known
-    // by its own
-    [[nodiscard]] static auto main_file_path(const std::string_view name)
+    // the path that tells loaded files apart; a file without a canonical
+    // path, e.g. '/dev/stdin' of a pipe, is known by its own, a file that
+    // cannot be read is reported when it is loaded
+    [[nodiscard]] static auto identity_path(const std::filesystem::path& name)
         -> std::filesystem::path {
 
         std::error_code error;
@@ -655,7 +643,7 @@ class program final {
             std::filesystem::weakly_canonical(name, error),
         };
 
-        return error ? std::filesystem::path{name}.lexically_normal() : path;
+        return error ? name.lexically_normal() : path;
     }
 
     // only definitions are allowed at the top level

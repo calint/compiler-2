@@ -1,0 +1,14 @@
+# a constant that is a small value shifted left is loaded as llvm loads it,
+# an 'addi' and an 'slli', so the image equals the assembled listing
+func main() {
+    var x = 7
+    if x == 2048 {
+        exit(1)
+    }
+    x = x + 6144
+    x = x - 14336
+    if x == -8185 {
+        exit(9)
+    }
+    exit(2)
+}

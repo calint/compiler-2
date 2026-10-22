@@ -1,0 +1,26 @@
+# a generic result is deduced from a 'bool' destination, a variable, a field
+# or a parameter
+type flags {on bool}
+
+func zero<T type>() res T {
+    res = {}
+}
+
+func count(v bool) res {
+    res = 1
+    if v {
+        res = 2
+    }
+}
+
+func main() {
+    var b = true
+    b = zero()
+    var f = flags{true}
+    f.on = zero()
+    var n = count(zero())
+    if b or f.on {
+        exit(1)
+    }
+    exit(n + 4)
+}

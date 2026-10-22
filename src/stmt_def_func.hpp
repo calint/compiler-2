@@ -1455,7 +1455,7 @@ class stmt_def_func_generic final : public statement {
                 tz.expect_char_token('(', "expected '(' after function name");
         }
 
-        tz.skip_to_close_paren();
+        tz.skip_to_expected_close_paren();
         std::ignore = func_result_syntax::read(tc, tz);
 
         const token open_brace_tk{

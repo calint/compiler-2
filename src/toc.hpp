@@ -2993,6 +2993,24 @@ class toc final {
     // a top-level definition starts, see 'definition_order'
     auto begin_definition() -> void { order_.begin_definition(); }
 
+    // the built-in integer or 'bool' type that 'tk' names, also through a
+    // type parameter, e.g. 'U' bound to 'i8'; null for any other token
+    [[nodiscard]] auto builtin_value_type_named(const token& tk) const
+        -> const type* {
+
+        if (not tk.is_word() or not types_.has(tk.text())) {
+            return nullptr;
+        }
+
+        const type& tp{types_.get(tk.text())};
+
+        if (not tp.is_bool() and not builtins_.is_integer_name(tp.name())) {
+            return nullptr;
+        }
+
+        return &tp;
+    }
+
     // the tables are read through these accessors, a change goes through a
     // method of 'toc' because it keeps several of them consistent
     [[nodiscard]] auto builtins() const -> const builtin_types& {

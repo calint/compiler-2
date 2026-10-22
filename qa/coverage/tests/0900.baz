@@ -1,7 +1,10 @@
-# an index constant that no element is that far from is rejected
+# a constant of a run-time index that is too far for the displacement is added
+# to the index, the sum is an element
+func noinline at(a i64[], i) res {
+    res = a[i - 9223372036854775806]
+}
 
 func main() {
-    var arr = i32[4]
-    var ix = 3
-    arr[ix - 9223372036854775807] = arr[ix]
+    var a = i64[]{1, 7, 3}
+    exit(at(a, 9223372036854775807))
 }

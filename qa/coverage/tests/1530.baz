@@ -1,0 +1,4 @@
+# the parameters of a generic function end with ')', checked at the definition
+func f<T type>(a T] {}
+
+func main() {}

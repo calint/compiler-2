@@ -1,0 +1,5 @@
+# a string whose text names a built-in type is a string, not the type
+func main() {
+    var x = 3
+    x = "i16"
+}

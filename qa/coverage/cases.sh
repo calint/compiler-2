@@ -2793,8 +2793,9 @@ SRC=0898 && EXP=8 && RUN
 # a call checked for aliasing inside the body of a function that is not inlined
 SRC=0899 && EXP=0 && OPTS="--checks=noub" RUN
 
-# an index constant that no element is that far from is rejected
-if [[ $MACHINE == x86_64 ]]; then SRC=0900 && OPTS="--vars=0x40000" COMPERR; fi
+# a constant of a run-time index that is too far for the displacement is added
+# to the index, the sum is an element
+if [[ $MACHINE == x86_64 ]]; then SRC=0900 && EXP=7 && OPTS="--vars=0x40000" RUN; fi
 
 # a comment on the last line without a line end
 SRC=0901 && EXP=3 && RUN
@@ -4754,3 +4755,37 @@ SRC=1524 && EXP=23 && RUN
 
 # an overlap a noinline body sees itself is protected, not rejected
 SRC=1525 && EXP=236 && RUN
+
+# a far frame address of a noinline call is lowered through a scratch
+# register that is not the register of the receiver address
+if [[ $MACHINE == x86_64 ]]; then
+    SRC=1526 && EXP=6 && OPTS="--vars=0x100000000" RUN
+fi
+
+# unary operators without a value are not an array size
+SRC=1527 && COMPERR
+
+# a string whose text names a built-in type is a string, not the type
+SRC=1528 && COMPERR
+
+# a buffer with an operator is not an array, also when it names a 'let'
+SRC=1529 && COMPERR
+
+# the parameters of a generic function end with ')', checked at the definition
+SRC=1530 && COMPERR
+
+# a constant that is a small value shifted left is loaded as llvm loads it
+SRC=1531 && EXP=9 && RUN
+
+# a type parameter bound to a built-in type converts like the type and alone
+# is its zero value
+SRC=1532 && EXP=5 && RUN
+SRC=1533 && EXP=6 && RUN
+
+# a generic result is deduced from a 'bool' destination, a variable, a field
+# or a parameter
+SRC=1534 && EXP=5 && RUN
+
+# a control byte in the quoted source line is shown as an escape and the
+# caret stays under the token
+SRC=1535 && COMPERR

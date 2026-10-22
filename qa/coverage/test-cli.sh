@@ -226,6 +226,13 @@ CLI_FILE_ERRORS() {
     # a source from a pipe has no canonical path
     cat 0015.baz | "$BIN" /dev/stdin >gen.s 2>err
     [[ ! -s err ]]
+    # nor has an included one, it is known by its own path like the main file
+    printf 'include "/proc/self/fd/0"\n\nfunc main() {\n    exit(k())\n}\n' \
+        >gen-pipe-include.baz
+    printf 'func k() res {\n    res = 3\n}\n' |
+        "$BIN" gen-pipe-include.baz >gen.s 2>err
+    [[ ! -s err ]]
+    rm -f gen-pipe-include.baz
     echo ok
 }
 
@@ -288,6 +295,25 @@ CLI_COMMENT_LOCATIONS() {
         grep -Fq '[0906.baz:4:5] exit(three())' gen.s
         grep -Fq '[include/cycle.baz:4:5] res = 3' gen.s
     done
+    echo ok
+}
+
+CLI_CONTROL_BYTE_FILE_NAME() {
+    echo -n "cli control byte in a file name: "
+    local name=$'gen\nname.baz'
+    # a message escapes the line end of the name
+    cp 1535.baz "$name"
+    if "$BIN" "$name" >gen.s 2>err; then
+        exit 1
+    fi
+    grep -Fq 'gen\x0aname.baz:4:15:' err
+    # the comments and the panic message of the listing stay on their lines
+    printf 'func main() {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n}\n' >"$name"
+    "$BIN" --checks=upper,line "$name" >gen.s 2>err
+    nasm -w+error -f elf64 gen.s -o gen.o
+    "$BIN" --target=rv32i --checks=upper,line "$name" >gen.s 2>err
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
+    rm -f "$name" gen.o
     echo ok
 }
 
@@ -630,6 +656,7 @@ CLI_ADDRESS_RANGE
 CLI_SOURCE_LINE_ENDS
 CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS
+CLI_CONTROL_BYTE_FILE_NAME
 CLI_VERSIONS
 CLI_PADDING_ZERO
 CLI_PADDING_ZERO_BY_TARGET

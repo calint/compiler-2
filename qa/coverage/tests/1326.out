@@ -1,4 +1,4 @@
 
 1326.baz:3:1: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got 'func\x0bmain'
-funcmain() {}
-^~~~~~~~~
+func\x0bmain() {}
+^~~~~~~~~~~~
