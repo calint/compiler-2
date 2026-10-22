@@ -1,0 +1,7 @@
+# a method with type parameters clashes with a method of an alias defined
+# before it
+type buffer<c> { a i8[c] }
+type sd = buffer<4>
+func sd.app(x) {}
+func buffer.app<T type>(x T) {}
+func main() {}

@@ -1,5 +1,5 @@
 
-1072.baz:16:25: field 'x' not found in type 'i8'
+1072.baz:16:25: type 'i8' has no fields
     res = self.array[0].x
                         ^
 1072.baz:9:23: instantiated by 'list<i8, 4>'

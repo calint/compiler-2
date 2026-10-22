@@ -4699,3 +4699,9 @@ SRC=1493 && COMPERR
 # a character literal is checked as it is read, like a string
 SRC=1494 && COMPERR
 SRC=1495 && COMPERR
+
+# a clash of a generic method with type parameters names the generic method
+SRC=1496 && COMPERR
+SRC=1497 && COMPERR
+SRC=1498 && COMPERR
+SRC=1499 && COMPERR

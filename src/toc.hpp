@@ -2312,16 +2312,20 @@ class definition_checks final {
         const std::string_view generic_method) const -> void {
 
         if (funcs_.get().has(name)) {
+            const func_info& fn{funcs_.get().get(name)};
+
             throw_function_defined(src_loc_tk, name, generic_method,
-                                   funcs_.get().get(name));
+                                   fn.src_loc_tk, fn.generic_method);
         }
 
+        // e.g. 'str.app' of 'func text.app<T type>()', a method with type
+        // parameters of its own is a generic function of the instance
         if (generics_.get().has_func(name)) {
             const generic_func_info& fn{generics_.get().get_func(name)};
 
-            throw compile_error{
-                src_loc_tk, std::format("function '{}' already defined at {}",
-                                        name, where(fn.src_loc_tk))};
+            throw_function_defined(src_loc_tk, name, generic_method,
+                                   fn.src_loc_tk,
+                                   fn.receiver ? fn.report_name : "");
         }
     }
 
@@ -2466,32 +2470,32 @@ class definition_checks final {
   private:
     // the message tells a built-in, an instance of a generic method and a
     // function written in the source apart
-    [[noreturn]] auto
-    throw_function_defined(const token& src_loc_tk, const std::string_view name,
-                           const std::string_view generic_method,
-                           const func_info& fn) const -> void {
+    [[noreturn]] auto throw_function_defined(
+        const token& src_loc_tk, const std::string_view name,
+        const std::string_view generic_method, const token& existing_tk,
+        const std::string_view existing_generic_method) const -> void {
 
         const bool is_generic{not generic_method.empty()};
-        const bool is_existing_generic{not fn.generic_method.empty()};
+        const bool is_existing_generic{not existing_generic_method.empty()};
 
         // e.g. 'text.print' and 'list.print' for
         // 'type text<size> = list<i8, size>'
         if (is_generic and is_existing_generic and
-            generic_method != fn.generic_method) {
+            generic_method != existing_generic_method) {
 
             throw compile_error{
                 src_loc_tk,
                 std::format("generic method '{}' clashes with the generic "
                             "method '{}' defined at {}",
-                            generic_method, fn.generic_method,
-                            where(fn.src_loc_tk))};
+                            generic_method, existing_generic_method,
+                            where(existing_tk))};
         }
 
         if (is_generic and is_existing_generic) {
             throw compile_error{
                 src_loc_tk,
                 std::format("generic method '{}' already defined at {}",
-                            generic_method, where(fn.src_loc_tk))};
+                            generic_method, where(existing_tk))};
         }
 
         if (is_generic) {
@@ -2499,7 +2503,7 @@ class definition_checks final {
                 src_loc_tk,
                 std::format("generic method '{}' clashes with the method "
                             "'{}' defined at {}",
-                            generic_method, name, where(fn.src_loc_tk))};
+                            generic_method, name, where(existing_tk))};
         }
 
         if (is_existing_generic) {
@@ -2507,12 +2511,12 @@ class definition_checks final {
                 src_loc_tk,
                 std::format("method '{}' clashes with the generic method "
                             "'{}' defined at {}",
-                            name, fn.generic_method, where(fn.src_loc_tk))};
+                            name, existing_generic_method, where(existing_tk))};
         }
 
         throw compile_error{src_loc_tk,
                             std::format("function '{}' already defined at {}",
-                                        name, where(fn.src_loc_tk))};
+                                        name, where(existing_tk))};
     }
 
     [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
@@ -2767,7 +2771,8 @@ class toc final {
     }
 
     auto add_generic_func(std::string name, generic_func_info info) -> void {
-        definitions_.assert_function_not_defined(info.src_loc_tk, name, {});
+        definitions_.assert_function_not_defined(
+            info.src_loc_tk, name, info.receiver ? info.report_name : "");
 
         generics_.add_func(std::move(name), std::move(info));
     }

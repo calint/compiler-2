@@ -257,6 +257,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
         included file (round 7 B-5)
     12. '(t and f) == f' says "expected ')'"; 'point + 1' says "unexpected
         '+'" (round 7 B-7, B-8)
+    => 1 to 6 done (2026-10-22): 1. "'exit' takes 1 argument", "'read'
+       takes 2 to 4 arguments"; 2. "a string fills only an array of 'i8',
+       not an array of 'i16'" and "a string is not a number, it fills only
+       an array of 'i8'"; 3. an error in the parse of a generic function
+       instance says "instantiated by 'make<i8>'" like a type instance, a
+       compiled inlined call keeps "called from"; 4. already "B" since the
+       '--memory' maximum moved to the fpga backend; 5. "type 'bool' has no
+       fields" for a built-in, like "constant 'c' has no fields"; 6. a
+       method with type parameters goes through the generic method clash
+       messages (tests 1496 to 1499)
 [ ] medium: generics: an error inside an instance found after its parse
     has no frame naming the instance: the result check
     ('assert_functions_set_return_value' runs after the parse) and the check

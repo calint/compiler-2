@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <format>
 
 #include "ident_info.hpp"
 #include "machine.hpp"
@@ -17,7 +18,9 @@ class stmt_builtin_exit final : public stmt_call {
                     tc.builtins().void_type()} {
 
         if (argument_count() != 1) {
-            throw compile_error{tok(), "expected 1 argument"};
+            throw compile_error{tok(),
+                                std::format("'{}' takes {}", tok().text(),
+                                            counted(1, "argument"))};
         }
     }
 

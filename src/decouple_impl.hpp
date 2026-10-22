@@ -311,7 +311,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     // array destinations parse strings in 'expr_any'
     if (tk.is_string()) {
         throw compile_error{
-            tk, "a string can only be assigned to an array of type 'i8'"};
+            tk, "a string is not a number, it fills only an array of 'i8'"};
     }
 
     // e.g. the '{}' of '1 + {}', which the destination types

@@ -1,0 +1,4 @@
+
+1498.baz:6:6: method 'sd.app' clashes with the generic method 'buffer.app' defined at 5:6
+func sd.app(x) {}
+     ^~

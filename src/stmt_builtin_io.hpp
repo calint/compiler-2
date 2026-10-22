@@ -199,7 +199,8 @@ class stmt_builtin_io final : public stmt_call {
     }
 
   private:
-    // e.g. "expected 2 to 4 arguments" or "expected 2 or 3 arguments"
+    // e.g. "'write' takes 2 to 4 arguments" or "'sector_read' takes 2 or 3
+    // arguments"
     auto assert_argument_count() const -> void {
         const size_t min_count{io_.min_arg_count};
         const size_t max_count{io_.max_arg_count};
@@ -212,9 +213,9 @@ class stmt_builtin_io final : public stmt_call {
             max_count == min_count + 1 ? "or" : "to",
         };
 
-        throw compile_error{tok(),
-                            std::format("expected {} {} {} arguments",
-                                        min_count, conjunction, max_count)};
+        throw compile_error{tok(), std::format("'{}' takes {} {} {} arguments",
+                                               tok().text(), min_count,
+                                               conjunction, max_count)};
     }
 
     // an address would bypass the bounds check, so only arrays are accepted

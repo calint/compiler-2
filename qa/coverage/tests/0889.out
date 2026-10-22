@@ -1,4 +1,4 @@
 
-0889.baz:3:13: a string can only be assigned to an array of type 'i8'
+0889.baz:3:13: a string is not a number, it fills only an array of 'i8'
 dat x = i32("5")
             ^~~

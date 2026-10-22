@@ -667,8 +667,11 @@ class statement {
         const size_t size_bytes{string_tk.string_size_bytes()};
 
         if (not element_type.is_same(string_element_type)) {
-            throw compile_error{string_tk, "only arrays of type 'i8' can be "
-                                           "initialized with strings"};
+            throw compile_error{string_tk,
+                                std::format("a string fills only an array of "
+                                            "'{}', not an array of '{}'",
+                                            string_element_type.name(),
+                                            element_type.name())};
         }
 
         // arrays of zero length are not allowed

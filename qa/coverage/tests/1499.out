@@ -1,0 +1,7 @@
+
+1499.baz:6:6: generic method 'buffer.app' clashes with the method 'sd.app' defined at 5:6
+func buffer.app<T type>(x T) {}
+     ^~~~~~
+1499.baz:4:6: instantiated by
+type sd = buffer<4>
+     ^~

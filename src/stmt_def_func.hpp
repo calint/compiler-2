@@ -1062,11 +1062,12 @@ class func_instantiator final {
             return name;
         }
 
-        // an error in the instance reports the call that needed it
+        // an error in the instance reports the call that needed it, like the
+        // frames of a generic type instance
         try {
             parse_func_instance(tc, generic, name, type_args);
         } catch (compile_error& e) {
-            e.add_call_frame(call_tk, name);
+            e.add_call_frame(call_tk, name, "instantiated by");
             throw;
         }
 

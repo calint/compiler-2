@@ -1,4 +1,4 @@
 
-0678.baz:4:5: expected 1 argument
+0678.baz:4:5: 'exit' takes 1 argument
     exit()
     ^~~~

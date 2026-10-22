@@ -1,0 +1,8 @@
+# a method with type parameters of a based generic type clashes with the
+# same method of its base
+type buffer<c> { a i8[c] }
+type deck<c> = buffer<c>
+func buffer.app<T type>(x T) {}
+func deck.app<T type>(x T) {}
+type sd = deck<4>
+func main() {}
