@@ -93,9 +93,21 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
         return make_stmt_def_var(tc, tk, tz);
     }
 
-    // rejected before its initializer, whose errors would hide this one
-    if (tk.is_text("dat")) {
-        throw compile_error{tk, "'dat' can only be declared in global scope"};
+    // rejected before its initializer or body, whose errors would hide this
+    // one
+    if (tk.is_text("dat") or tk.is_text("func") or tk.is_text("type")) {
+        throw compile_error{
+            tk, std::format("'{}' can only be declared in global scope",
+                            tk.text())};
+    }
+
+    if (tk.is_text("include")) {
+        throw compile_error{tk, "'include' can only be in global scope"};
+    }
+
+    // e.g. a second 'else', or an 'else' after a statement that is not 'if'
+    if (tk.is_text("else")) {
+        throw compile_error{tk, "'else' without 'if'"};
     }
 
     if (tk.is_text("break")) {

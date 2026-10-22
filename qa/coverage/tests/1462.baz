@@ -1,0 +1,8 @@
+# an 'else' follows an 'if' and its code
+func main() {
+    var a = 1
+    if a == 1 {
+        exit(1)
+    } else else {
+    }
+}

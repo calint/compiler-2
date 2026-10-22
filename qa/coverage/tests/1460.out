@@ -1,0 +1,4 @@
+
+1460.baz:3:5: 'type' can only be declared in global scope
+    type point { x, y }
+    ^~~~

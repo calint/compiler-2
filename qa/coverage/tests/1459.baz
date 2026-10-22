@@ -1,0 +1,6 @@
+# a function is declared only in global scope
+func main() {
+    loop {
+        func g() {}
+    }
+}

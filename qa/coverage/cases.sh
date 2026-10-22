@@ -4638,3 +4638,9 @@ SRC=1457 && EXP=14 && RUN
 
 # an ordering comparison of two 'bool's
 SRC=1458 && COMPERR
+
+# a definition or an include in a block, an 'else' without 'if'
+SRC=1459 && COMPERR
+SRC=1460 && COMPERR
+SRC=1461 && COMPERR
+SRC=1462 && COMPERR

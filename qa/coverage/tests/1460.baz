@@ -1,0 +1,4 @@
+# a type is declared only in global scope
+func main() {
+    type point { x, y }
+}

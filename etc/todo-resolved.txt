@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: design: the keywords of a statement in a block are dispatched in two
+    places split by include cycle, not by role: 'stmt_block::parse_statement'
+    makes var/let, dat (error), break, continue, return and array_copy,
+    'create_statement_in_stmt_block' makes loop, if, exit, io and foo; the
+    comments of 'decouple.hpp' and 'decouple_impl.hpp' say the factories make
+    every statement (round 8 A-1, S-4)
+    => design: every keyword branch moves into
+       'create_statement_in_stmt_block'; 'parse_statement' keeps the string
+       check, the factory and 'create_statement_of_identifier'; stmt_block.hpp
+       drops five includes; the comments name the three dispatchers (top
+       level, block, expression)
+    => step 2, behavior: 'func', 'type' and 'include' in a block get "'func'
+       can only be declared in global scope" like 'dat', 'else' without 'if'
+       gets "'else' without 'if'" (today "cannot resolve identifier"), with
+       error tests
+    => rejected: a keyword table of factories, the branches differ in what
+       they pass
+    => tests: the suite, step 1 is behavior-preserving
+    => step 1 done (2026-10-22): the branches are in
+       'create_statement_in_stmt_block', the comments name the dispatchers
+    => step 2 done (2026-10-22): 'func' and 'type' share the 'dat' message,
+       'include' says "can only be in global scope", tests 1459 to 1462
 [x] easy: design: "the address of a place" is two virtuals: 'compile_lea'
     returns an address and appends its registers, 'compile_address' calls it,
     passes the address to a callback and frees them; forwarding nodes must

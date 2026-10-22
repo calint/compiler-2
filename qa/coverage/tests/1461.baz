@@ -1,0 +1,4 @@
+# an include is only in global scope
+func main() {
+    include "include/util.baz"
+}
