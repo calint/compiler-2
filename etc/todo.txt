@@ -315,9 +315,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     => 'fuzz-programs.py' has no model: wrong code that both targets share
        is seen only through 'fuzz-exprs.py'
     => medium: a very long expression compiles in more than linear time (8000
-       terms of '+' take 3 s in the debug build, 100000 terms of '<<' with a
-       count above the width take minutes, 16000 negations on rv32i with
-       '--checks=noub' take 11 s); the superlinear part is not found
+       terms of '+' take 3 s in the debug build, 16000 negations on rv32i with
+       '--checks=noub' take 11 s)
+       => cause: 'source_locations::column' searches back to the previous
+          newline for every comment, quadratic in the length of a line;
+          32000 terms of '+' on one line take 2.84 s, one per line 0.29 s
+          (-O3)
+       => fix (tried, reverted): 'source_files' keeps the index where each
+          line begins, 'source_files::column' finds the line by binary search
+          and replaces 'column_for_char_index' in 'main.cpp'; one line of
+          32000 terms then takes 0.28 s, 64000 terms 0.53 s, same assembly
 [ ] medium: --checks=overflow: rv32i multiply: loop on the operand with fewer
     significant bits (swap) in '.Lbaz_multiply_checked' and
     '.Lbaz_multiply'; a constant factor under the check always calls the
