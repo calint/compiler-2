@@ -1778,7 +1778,7 @@ SRC=0581 && COMPERR
 # '==' of a whole array and an element
 SRC=0582 && COMPERR
 
-# aliases of array elements are read as the element
+# a parameter bound to an array element reads the element
 SRC=0583 && EXP=0 && RUN
 
 # a trailing comma after the last field of a type
@@ -4399,9 +4399,10 @@ SRC=1361 && COMPERR
 # is not an operand
 SRC=1362 && COMPERR
 
-# the parse of a generic instance and of an included file nests in the parse
-# that needs it, so a long chain of them is past the nesting limit, not a
-# crash: the script compiles a generated chain of each
+# the parse of a generic instance nests in the parse that needs it, so a long
+# chain of them is past the nesting limit, not a crash; an included file is
+# parsed before the file that includes it, so a long chain of them adds no
+# nesting: the script compiles a generated chain of each
 SRC=1363 && DIFFPY
 
 # a call in a braced literal is checked for shared storage with the field or

@@ -85,7 +85,7 @@ For a reviewer:
 ```text
 main.cpp         options, the backend for '--target', error printing
   |
-program.hpp      parse: every file, 'include' in place
+program.hpp      parse: every file, an included one before its includer
   |              definite assignment of the results of the functions
   |              compile: globals, 'main', noinline bodies, handlers,
   |              used routines, read-only data, data and variables
@@ -1168,7 +1168,7 @@ parameter keeps the operand ('bound_storage::lea'):
 w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
 
     ...                               r15 and r14 as in 6.2
-    alias self -> w.rooms.items (lea: r15 + r14)
+    bind self -> w.rooms.items (lea: r15 + r14)
     mov qword [r15 + r14 + 8], 8      'self.x'
 ```
 

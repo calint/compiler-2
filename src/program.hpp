@@ -289,6 +289,14 @@ class program final {
         token end_tk;
     };
 
+    // a file whose includes are being parsed, see 'parse_files'
+    struct open_file {
+        size_t file_ix{};
+        tokenizer tz;
+        // its includes, then its definitions
+        std::vector<std::unique_ptr<statement>> parsed;
+    };
+
     std::reference_wrapper<source_files> files_;
     std::vector<std::unique_ptr<statement>> statements_;
     std::vector<file_statements> file_statements_;
@@ -326,7 +334,7 @@ class program final {
 
         loaded_paths_.insert(main_file_path(files.name(0)));
 
-        parse_file(0);
+        parse_files(0);
 
         tc_.assert_generic_params_free();
 
@@ -412,8 +420,9 @@ class program final {
         x.reserve_variables(alignment, tc_.storage().vars_capacity_bytes());
     }
 
-    auto load_file(const std::filesystem::path& path, const token& path_tk)
-        -> void {
+    // the index of the file in 'files_'
+    [[nodiscard]] auto load_file(const std::filesystem::path& path,
+                                 const token& path_tk) -> size_t {
 
         std::string text;
 
@@ -423,57 +432,80 @@ class program final {
             throw compile_error{path_tk, e.what()};
         }
 
-        const size_t file_ix{files_.get().add(path.string(), std::move(text))};
-
-        parse_file(file_ix);
+        return files_.get().add(path.string(), std::move(text));
     }
 
-    // the included files are parsed where their 'include' is, before the
-    // definitions of the including file
-    auto parse_file(const size_t file_ix) -> void {
-        tokenizer tz{file_ix, files_.get().text(file_ix)};
-        std::vector<std::unique_ptr<statement>> parsed;
+    [[nodiscard]] auto opened_file(const size_t file_ix) const -> open_file {
+        return {
+            .file_ix{file_ix},
+            .tz{file_ix, files_.get().text(file_ix)},
+            .parsed{},
+        };
+    }
 
-        token tk{tz.next_token()};
-
-        while (tk.is_text("include")) {
-            parsed.emplace_back(parse_include(tz, tk, file_ix));
-            tk = tz.next_token();
-        }
-
+    // the definitions after the includes, 'tk' is the first of them; the
+    // statements of the file follow those of the files it included
+    auto parse_definitions(open_file& file, token tk) -> void {
         while (true) {
             if (tk.text().empty() and not tk.is_string()) {
                 // a delimiter is not a token, only the end of the source ends
                 // the definitions
-                tz.assert_not_at_delimiter();
+                file.tz.assert_not_at_delimiter();
 
                 break;
             }
 
-            parsed.emplace_back(parse_definition(tc_, tz, tk));
-            tk = tz.next_token();
+            file.parsed.emplace_back(parse_definition(tc_, file.tz, tk));
+            tk = file.tz.next_token();
         }
 
         const size_t begin{statements_.size()};
 
-        std::ranges::move(parsed, std::back_inserter(statements_));
+        std::ranges::move(file.parsed, std::back_inserter(statements_));
 
         file_statements_.push_back({
-            .file_ix{file_ix},
+            .file_ix{file.file_ix},
             .begin{begin},
             .end{statements_.size()},
             .end_tk{tk},
         });
     }
 
-    // a file is parsed once, a later 'include' of it, also from a file it
-    // includes, changes nothing
-    [[nodiscard]] auto parse_include(tokenizer& tz, const token& include_tk,
-                                     const size_t file_ix)
-        -> std::unique_ptr<statement> {
+    // the includes of a file come before its definitions, so an included
+    // file is parsed before the definitions of the file that includes it:
+    // the last open file reads on, an include of a new file opens it, a
+    // file without more includes parses its definitions and is closed; the
+    // files are a stack, not nested calls, so an include is no level of the
+    // nesting limit
+    auto parse_files(const size_t main_file_ix) -> void {
+        std::vector<open_file> open_files;
+        open_files.push_back(opened_file(main_file_ix));
 
-        // the included file is parsed inside the include
-        const toc::parse_nesting_scope nesting{tc_, tz};
+        while (not open_files.empty()) {
+            open_file& file{open_files.back()};
+            const token tk{file.tz.next_token()};
+
+            if (not tk.is_text("include")) {
+                parse_definitions(file, tk);
+                open_files.pop_back();
+                continue;
+            }
+
+            const std::optional<size_t> loaded_ix{parse_include(file, tk)};
+
+            if (loaded_ix) {
+                open_files.push_back(opened_file(*loaded_ix));
+            }
+        }
+    }
+
+    // a file is loaded once, a later 'include' of it, also from a file it
+    // includes, changes nothing; the loaded file, none when it was loaded
+    // before
+    [[nodiscard]] auto parse_include(open_file& file, const token& include_tk)
+        -> std::optional<size_t> {
+
+        tokenizer& tz{file.tz};
 
         const token path_tk{tz.next_token()};
 
@@ -494,7 +526,8 @@ class program final {
 
         // relative to the directory of the file with the 'include'
         const std::filesystem::path path{
-            (std::filesystem::path{files_.get().name(file_ix)}.parent_path() /
+            (std::filesystem::path{files_.get().name(file.file_ix)}
+                 .parent_path() /
              name)
                 .lexically_normal(),
         };
@@ -511,13 +544,16 @@ class program final {
                 path_tk, std::format("cannot open file '{}'", path.string())};
         }
 
+        file.parsed.emplace_back(
+            std::make_unique<stmt_include>(include_tk, path_tk));
+
         const bool is_new{loaded_paths_.insert(canonical_path).second};
 
-        if (is_new) {
-            load_file(path, path_tk);
+        if (not is_new) {
+            return std::nullopt;
         }
 
-        return std::make_unique<stmt_include>(include_tk, path_tk);
+        return load_file(path, path_tk);
     }
 
     //

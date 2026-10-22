@@ -1,6 +1,7 @@
-# the parse of a generic instance and of an included file nests in the parse
-# that needs it, so a long chain of them is past the nesting limit, not a
-# crash: the script compiles a generated chain of each
+# the parse of a generic instance nests in the parse that needs it, so a long
+# chain of them is past the nesting limit, not a crash; an included file is
+# parsed before the file that includes it, so a long chain of them adds no
+# nesting: the script compiles a generated chain of each
 func main() {
     exit(0)
 }

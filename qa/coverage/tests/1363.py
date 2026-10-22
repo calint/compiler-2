@@ -5,8 +5,9 @@ import subprocess
 import tempfile
 
 # compiles a chain of generic functions, each calling the instance of the one
-# before it, and a chain of included files, each including the next, and
-# prints the exit code and the message of each
+# before it, and a chain of included files, each including the next, the last
+# with a body nested 120 levels, and prints the exit code and the message of
+# each
 machine = os.environ.get('MACHINE')
 compiler = os.path.abspath('../../../baz')
 
@@ -17,6 +18,15 @@ def generic_chain(length):
         lines += [f'func g{i}<T type>(n T) res T {{',
                   f'    res = g{i - 1}<T>(n)', '}', '']
     lines += ['func main() {', f'    exit(int(g{length - 1}<i8>(3)))', '}', '']
+    return '\n'.join(lines)
+
+
+def nested_function(name, depth):
+    lines = [f'func {name}() {{', '    var x = 1']
+    lines += ['    if x == 1 {'] * depth
+    lines += ['    x = 2']
+    lines += ['    }'] * depth
+    lines += ['}', '']
     return '\n'.join(lines)
 
 
@@ -38,7 +48,9 @@ with tempfile.TemporaryDirectory() as root:
         with open(os.path.join(root, f'i{i}.baz'), 'w') as f:
             if i + 1 < length:
                 f.write(f'include "i{i + 1}.baz"\n\n')
-            f.write(f'func f{i}() {{\n}}\n')
+                f.write(f'func f{i}() {{\n}}\n')
+            else:
+                f.write(nested_function(f'f{i}', 120))
     with open(os.path.join(root, 'include.baz'), 'w') as f:
         f.write('include "i1.baz"\n\nfunc main() {\n    exit(0)\n}\n')
     compile_source(root, 'include.baz')

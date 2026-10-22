@@ -896,7 +896,7 @@ class machine_rv32i : public machine {
                          [[maybe_unused]] const operand& address)
         -> void override {
 
-        comment(src_loc_tk, indent, "alias {} -> {}", from, to);
+        comment(src_loc_tk, indent, "bind {} -> {}", from, to);
     }
 
     auto comment_variable(const token& src_loc_tk, const size_t indent,

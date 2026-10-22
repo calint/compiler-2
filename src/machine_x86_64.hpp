@@ -480,11 +480,11 @@ class machine_x86_64 final : public machine {
                          const operand& address) -> void override {
 
         if (address.is_empty()) {
-            comment(src_loc_tk, indent, "alias {} -> {}", from, to);
+            comment(src_loc_tk, indent, "bind {} -> {}", from, to);
             return;
         }
 
-        comment(src_loc_tk, indent, "alias {} -> {} (lea: {})", from, to,
+        comment(src_loc_tk, indent, "bind {} -> {} (lea: {})", from, to,
                 assembler_x86_64::address_text(to_address(address)));
     }
 

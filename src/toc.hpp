@@ -2396,9 +2396,9 @@ class toc final {
     // false while the program is parsed: the names are declared without
     // comments and without the capacity check of the storage
     bool is_compiling_{};
-    // the parsers recurse on the one stack, e.g. an included file or a
-    // generic instance is parsed inside the parse that needs it, so the levels
-    // are counted once for all of them, see 'parse_nesting_scope'
+    // the parsers recurse on the one stack, e.g. a generic instance is parsed
+    // inside the parse that needs it, so the levels are counted once for all
+    // of them, see 'parse_nesting_scope'
     size_t parse_nesting_{};
 
     // what a dry run changes in 'toc' is put back when it ends, also when an

@@ -78,7 +78,7 @@ main:
     bool.189.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.189.5:
-;       [prog.baz:189:5] alias ok -> r15b
+;       [prog.baz:189:5] bind ok -> r15b
         if.38.27.189.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.189.5:
@@ -109,7 +109,7 @@ main:
     bool.192.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.192.5:
-;       [prog.baz:192:5] alias ok -> r15b
+;       [prog.baz:192:5] bind ok -> r15b
         if.38.27.192.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.192.5:
@@ -132,7 +132,7 @@ main:
 ;       [prog.baz:198:9] assert(maybe == 33)
 ;       [prog.baz:38:6] assert(ok bool)
         func.assert.198.9:
-;           [prog.baz:198:9] alias ok -> 1
+;           [prog.baz:198:9] bind ok -> 1
             if.38.27.198.9:
 ;           [prog.baz:38:27] ? shorthand: not ok
             cmp.38.27.198.9:
@@ -142,7 +142,7 @@ main:
 ;   [prog.baz:201:5] assert(maybe == -1)
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.201.5:
-;       [prog.baz:201:5] alias ok -> 1
+;       [prog.baz:201:5] bind ok -> 1
         if.38.27.201.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.201.5:
@@ -164,7 +164,7 @@ main:
     bool.203.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.203.5:
-;       [prog.baz:203:5] alias ok -> r15b
+;       [prog.baz:203:5] bind ok -> r15b
         if.38.27.203.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.203.5:
@@ -197,7 +197,7 @@ main:
     bool.204.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.204.5:
-;       [prog.baz:204:5] alias ok -> r15b
+;       [prog.baz:204:5] bind ok -> r15b
         if.38.27.204.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.204.5:
@@ -237,7 +237,7 @@ main:
     bool.207.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.207.5:
-;       [prog.baz:207:5] alias ok -> r15b
+;       [prog.baz:207:5] bind ok -> r15b
         if.38.27.207.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.207.5:
@@ -271,7 +271,7 @@ main:
     bool.208.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.208.5:
-;       [prog.baz:208:5] alias ok -> r15b
+;       [prog.baz:208:5] bind ok -> r15b
         if.38.27.208.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.208.5:
@@ -305,7 +305,7 @@ main:
     bool.209.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.209.5:
-;       [prog.baz:209:5] alias ok -> r15b
+;       [prog.baz:209:5] bind ok -> r15b
         if.38.27.209.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.209.5:
@@ -339,7 +339,7 @@ main:
     bool.210.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.210.5:
-;       [prog.baz:210:5] alias ok -> r15b
+;       [prog.baz:210:5] bind ok -> r15b
         if.38.27.210.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.210.5:
@@ -375,7 +375,7 @@ main:
     bool.211.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.211.5:
-;       [prog.baz:211:5] alias ok -> r15b
+;       [prog.baz:211:5] bind ok -> r15b
         if.38.27.211.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.211.5:
@@ -417,7 +417,7 @@ main:
     bool.214.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.214.5:
-;       [prog.baz:214:5] alias ok -> r15b
+;       [prog.baz:214:5] bind ok -> r15b
         if.38.27.214.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.214.5:
@@ -457,7 +457,7 @@ main:
     bool.215.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.215.5:
-;       [prog.baz:215:5] alias ok -> r15b
+;       [prog.baz:215:5] bind ok -> r15b
         if.38.27.215.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.215.5:
@@ -497,7 +497,7 @@ main:
     bool.220.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.220.5:
-;       [prog.baz:220:5] alias ok -> r15b
+;       [prog.baz:220:5] bind ok -> r15b
         if.38.27.220.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.220.5:
@@ -542,7 +542,7 @@ main:
     bool.225.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.225.5:
-;       [prog.baz:225:5] alias ok -> r15b
+;       [prog.baz:225:5] bind ok -> r15b
         if.38.27.225.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.225.5:
@@ -582,7 +582,7 @@ main:
     bool.229.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.229.5:
-;       [prog.baz:229:5] alias ok -> r15b
+;       [prog.baz:229:5] bind ok -> r15b
         if.38.27.229.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.229.5:
@@ -615,7 +615,7 @@ main:
     bool.237.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.237.5:
-;       [prog.baz:237:5] alias ok -> r15b
+;       [prog.baz:237:5] bind ok -> r15b
         if.38.27.237.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.237.5:
@@ -705,7 +705,7 @@ main:
     bool.245.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.245.5:
-;       [prog.baz:245:5] alias ok -> r15b
+;       [prog.baz:245:5] bind ok -> r15b
         if.38.27.245.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.245.5:
@@ -732,7 +732,7 @@ main:
     bool.246.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.246.5:
-;       [prog.baz:246:5] alias ok -> r15b
+;       [prog.baz:246:5] bind ok -> r15b
         if.38.27.246.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.246.5:
@@ -814,7 +814,7 @@ main:
     bool.249.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.249.5:
-;       [prog.baz:249:5] alias ok -> r15b
+;       [prog.baz:249:5] bind ok -> r15b
         if.38.27.249.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.249.5:
@@ -949,7 +949,7 @@ main:
 ;   [prog.baz:257:5] assert(eq)
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.257.5:
-;       [prog.baz:257:5] alias ok -> eq
+;       [prog.baz:257:5] bind ok -> eq
         if.38.27.257.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.257.5:
@@ -1010,7 +1010,7 @@ main:
     bool.260.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.260.5:
-;       [prog.baz:260:5] alias ok -> r15b
+;       [prog.baz:260:5] bind ok -> r15b
         if.38.27.260.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.260.5:
@@ -1058,7 +1058,7 @@ main:
     bool.263.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.263.5:
-;       [prog.baz:263:5] alias ok -> r15b
+;       [prog.baz:263:5] bind ok -> r15b
         if.38.27.263.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.263.5:
@@ -1104,8 +1104,8 @@ main:
 ;   [prog.baz:271:24] bounds check end
 ;   [prog.baz:72:6] inv(i i32) res i32
     func.inv.271.16:
-;       [prog.baz:271:16] alias res -> tmp
-;       [prog.baz:271:16] alias i -> arr (lea: rbp + r15 * 4 + 424)
+;       [prog.baz:271:16] bind res -> tmp
+;       [prog.baz:271:16] bind i -> arr (lea: rbp + r15 * 4 + 424)
 ;       [prog.baz:73:5] res = ~i
 ;       [prog.baz:73:11] smaller of two versions of 3 and 3 instructions
 ;       [prog.baz:73:12] ~i
@@ -1156,7 +1156,7 @@ main:
     bool.273.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.273.5:
-;       [prog.baz:273:5] alias ok -> r15b
+;       [prog.baz:273:5] bind ok -> r15b
         if.38.27.273.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.273.5:
@@ -1177,7 +1177,7 @@ main:
 ;   [prog.baz:275:5] faz(arr)
 ;   [prog.baz:78:6] faz(arg mut i32[])
     func.faz.275.5:
-;       [prog.baz:275:5] alias arg -> arr
+;       [prog.baz:275:5] bind arg -> arr
 ;       [prog.baz:79:5] arg[1] = 0xfe
 ;       [prog.baz:79:14] arg = 254
 ;       [prog.baz:79:14] src: folded constant '0xfe'
@@ -1192,7 +1192,7 @@ main:
     bool.276.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.276.5:
-;       [prog.baz:276:5] alias ok -> r15b
+;       [prog.baz:276:5] bind ok -> r15b
         if.38.27.276.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.276.5:
@@ -1256,7 +1256,7 @@ main:
     bool.282.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.282.5:
-;       [prog.baz:282:5] alias ok -> r15b
+;       [prog.baz:282:5] bind ok -> r15b
         if.38.27.282.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.282.5:
@@ -1284,7 +1284,7 @@ main:
     bool.283.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.283.5:
-;       [prog.baz:283:5] alias ok -> r15b
+;       [prog.baz:283:5] bind ok -> r15b
         if.38.27.283.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.283.5:
@@ -1312,7 +1312,7 @@ main:
 ;   [prog.baz:291:7] p.fooz()
 ;   [prog.baz:47:10] mut point.fooz()
     func.point.fooz.291.7:
-;       [prog.baz:291:7] alias self -> p
+;       [prog.baz:291:7] bind self -> p
 ;       [prog.baz:48:5] self.x = 0b10
 ;       [prog.baz:48:14] self.x = 2
 ;       [prog.baz:48:14] src: folded constant '0b10'
@@ -1331,7 +1331,7 @@ main:
     bool.294.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.294.5:
-;       [prog.baz:294:5] alias ok -> r15b
+;       [prog.baz:294:5] bind ok -> r15b
         if.38.27.294.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.294.5:
@@ -1358,7 +1358,7 @@ main:
     bool.295.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.295.5:
-;       [prog.baz:295:5] alias ok -> r15b
+;       [prog.baz:295:5] bind ok -> r15b
         if.38.27.295.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.295.5:
@@ -1406,7 +1406,7 @@ main:
     bool.300.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.300.5:
-;       [prog.baz:300:5] alias ok -> r15b
+;       [prog.baz:300:5] bind ok -> r15b
         if.38.27.300.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.300.5:
@@ -1448,7 +1448,7 @@ main:
     bool.305.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.305.5:
-;       [prog.baz:305:5] alias ok -> r15b
+;       [prog.baz:305:5] bind ok -> r15b
         if.38.27.305.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.305.5:
@@ -1475,7 +1475,7 @@ main:
 ;   [prog.baz:308:5] bar(i)
 ;   [prog.baz:59:6] bar(arg mut)
     func.bar.308.5:
-;       [prog.baz:308:5] alias arg -> i
+;       [prog.baz:308:5] bind arg -> i
         if.60.8.308.5:
 ;       [prog.baz:60:8] ? arg == 0
         cmp.60.8.308.5:
@@ -1498,7 +1498,7 @@ main:
     bool.309.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.309.5:
-;       [prog.baz:309:5] alias ok -> r15b
+;       [prog.baz:309:5] bind ok -> r15b
         if.38.27.309.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.309.5:
@@ -1523,7 +1523,7 @@ main:
 ;   [prog.baz:312:5] bar(i)
 ;   [prog.baz:59:6] bar(arg mut)
     func.bar.312.5:
-;       [prog.baz:312:5] alias arg -> i
+;       [prog.baz:312:5] bind arg -> i
         if.60.8.312.5:
 ;       [prog.baz:60:8] ? arg == 0
         cmp.60.8.312.5:
@@ -1546,7 +1546,7 @@ main:
     bool.313.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.313.5:
-;       [prog.baz:313:5] alias ok -> r15b
+;       [prog.baz:313:5] bind ok -> r15b
         if.38.27.313.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.313.5:
@@ -1578,8 +1578,8 @@ main:
 ;   [prog.baz:316:13] baz(j)
 ;   [prog.baz:66:6] baz(arg) res
     func.baz.316.13:
-;       [prog.baz:316:13] alias res -> k
-;       [prog.baz:316:13] alias arg -> j
+;       [prog.baz:316:13] bind res -> k
+;       [prog.baz:316:13] bind arg -> j
 ;       [prog.baz:67:5] res = arg * 2
 ;       [prog.baz:67:11] smaller of two versions of 6 and 4 instructions
 ;       [prog.baz:67:11] allocate scratch register -> r15
@@ -1601,7 +1601,7 @@ main:
     bool.317.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.317.5:
-;       [prog.baz:317:5] alias ok -> r15b
+;       [prog.baz:317:5] bind ok -> r15b
         if.38.27.317.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.317.5:
@@ -1625,8 +1625,8 @@ main:
 ;   [prog.baz:319:9] baz(1)
 ;   [prog.baz:66:6] baz(arg) res
     func.baz.319.9:
-;       [prog.baz:319:9] alias res -> k
-;       [prog.baz:319:9] alias arg -> 1
+;       [prog.baz:319:9] bind res -> k
+;       [prog.baz:319:9] bind arg -> 1
 ;       [prog.baz:67:5] res = arg * 2
 ;       [prog.baz:67:11] res = 2
 ;       [prog.baz:67:11] src: folded constant 'arg * 2'
@@ -1641,7 +1641,7 @@ main:
     bool.320.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.320.5:
-;       [prog.baz:320:5] alias ok -> r15b
+;       [prog.baz:320:5] bind ok -> r15b
         if.38.27.320.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.320.5:
@@ -1710,7 +1710,7 @@ main:
     bool.324.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.324.5:
-;       [prog.baz:324:5] alias ok -> r15b
+;       [prog.baz:324:5] bind ok -> r15b
         if.38.27.324.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.324.5:
@@ -1737,8 +1737,8 @@ main:
 ;   [prog.baz:326:20] baz(3)
 ;   [prog.baz:66:6] baz(arg) res
     func.baz.326.20:
-;       [prog.baz:326:20] alias res -> p0.x (lea: rbp + 592)
-;       [prog.baz:326:20] alias arg -> 3
+;       [prog.baz:326:20] bind res -> p0.x (lea: rbp + 592)
+;       [prog.baz:326:20] bind arg -> 3
 ;       [prog.baz:67:5] res = arg * 2
 ;       [prog.baz:67:11] res = 6
 ;       [prog.baz:67:11] src: folded constant 'arg * 2'
@@ -1757,7 +1757,7 @@ main:
     bool.327.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.327.5:
-;       [prog.baz:327:5] alias ok -> r15b
+;       [prog.baz:327:5] bind ok -> r15b
         if.38.27.327.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.327.5:
@@ -1781,9 +1781,9 @@ main:
 ;   [prog.baz:329:14] point.at(-1, -2)
 ;   [prog.baz:108:6] point.at(x, y) self
     func.point.at.329.14:
-;       [prog.baz:329:14] alias self -> pt
-;       [prog.baz:329:14] alias x -> -1
-;       [prog.baz:329:14] alias y -> -2
+;       [prog.baz:329:14] bind self -> pt
+;       [prog.baz:329:14] bind x -> -1
+;       [prog.baz:329:14] bind y -> -2
 ;       [prog.baz:109:5] self.x = x
 ;       [prog.baz:109:14] self.x = -1
 ;       [prog.baz:109:14] src: folded constant 'x'
@@ -1802,7 +1802,7 @@ main:
     bool.333.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.333.5:
-;       [prog.baz:333:5] alias ok -> r15b
+;       [prog.baz:333:5] bind ok -> r15b
         if.38.27.333.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.333.5:
@@ -1829,7 +1829,7 @@ main:
     bool.334.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.334.5:
-;       [prog.baz:334:5] alias ok -> r15b
+;       [prog.baz:334:5] bind ok -> r15b
         if.38.27.334.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.334.5:
@@ -1850,8 +1850,8 @@ main:
 ;   [prog.baz:336:8] pt.x(2)
 ;   [prog.baz:114:10] mut point.x(x)
     func.point.x.336.8:
-;       [prog.baz:336:8] alias self -> pt
-;       [prog.baz:336:8] alias x -> 2
+;       [prog.baz:336:8] bind self -> pt
+;       [prog.baz:336:8] bind x -> 2
 ;       [prog.baz:115:5] self.x = x
 ;       [prog.baz:115:14] self.x = 2
 ;       [prog.baz:115:14] src: folded constant 'x'
@@ -1866,7 +1866,7 @@ main:
     bool.337.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.337.5:
-;       [prog.baz:337:5] alias ok -> r15b
+;       [prog.baz:337:5] bind ok -> r15b
         if.38.27.337.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.337.5:
@@ -1894,8 +1894,8 @@ main:
 ;       [prog.baz:338:15] pt.sum()
 ;       [prog.baz:54:6] point.sum() res
         func.point.sum.338.15:
-;           [prog.baz:338:15] alias res -> r14
-;           [prog.baz:338:15] alias self -> pt
+;           [prog.baz:338:15] bind res -> r14
+;           [prog.baz:338:15] bind self -> pt
 ;           [prog.baz:55:5] res = self.x + self.y
 ;           [prog.baz:55:11] self.x
             mov r14, qword [rbp + 608]
@@ -1910,7 +1910,7 @@ main:
     bool.338.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.338.5:
-;       [prog.baz:338:5] alias ok -> r15b
+;       [prog.baz:338:5] bind ok -> r15b
         if.38.27.338.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.338.5:
@@ -1976,7 +1976,7 @@ main:
     bool.344.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.344.5:
-;       [prog.baz:344:5] alias ok -> r15b
+;       [prog.baz:344:5] bind ok -> r15b
         if.38.27.344.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.344.5:
@@ -2003,7 +2003,7 @@ main:
     bool.345.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.345.5:
-;       [prog.baz:345:5] alias ok -> r15b
+;       [prog.baz:345:5] bind ok -> r15b
         if.38.27.345.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.345.5:
@@ -2030,7 +2030,7 @@ main:
     bool.346.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.346.5:
-;       [prog.baz:346:5] alias ok -> r15b
+;       [prog.baz:346:5] bind ok -> r15b
         if.38.27.346.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.346.5:
@@ -2084,7 +2084,7 @@ main:
     bool.350.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.350.5:
-;       [prog.baz:350:5] alias ok -> r15b
+;       [prog.baz:350:5] bind ok -> r15b
         if.38.27.350.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.350.5:
@@ -2111,7 +2111,7 @@ main:
     bool.351.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.351.5:
-;       [prog.baz:351:5] alias ok -> r15b
+;       [prog.baz:351:5] bind ok -> r15b
         if.38.27.351.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.351.5:
@@ -2151,7 +2151,7 @@ main:
     bool.354.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.354.5:
-;       [prog.baz:354:5] alias ok -> r15b
+;       [prog.baz:354:5] bind ok -> r15b
         if.38.27.354.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.354.5:
@@ -2178,7 +2178,7 @@ main:
     bool.355.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.355.5:
-;       [prog.baz:355:5] alias ok -> r15b
+;       [prog.baz:355:5] bind ok -> r15b
         if.38.27.355.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.355.5:
@@ -2205,7 +2205,7 @@ main:
     bool.356.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.356.5:
-;       [prog.baz:356:5] alias ok -> r15b
+;       [prog.baz:356:5] bind ok -> r15b
         if.38.27.356.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.356.5:
@@ -2243,7 +2243,7 @@ main:
     bool.359.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.359.5:
-;       [prog.baz:359:5] alias ok -> r15b
+;       [prog.baz:359:5] bind ok -> r15b
         if.38.27.359.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.359.5:
@@ -2281,7 +2281,7 @@ main:
     bool.361.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.361.5:
-;       [prog.baz:361:5] alias ok -> r15b
+;       [prog.baz:361:5] bind ok -> r15b
         if.38.27.361.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.361.5:
@@ -2326,7 +2326,7 @@ main:
     bool.371.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.371.5:
-;       [prog.baz:371:5] alias ok -> r15b
+;       [prog.baz:371:5] bind ok -> r15b
         if.38.27.371.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.371.5:
@@ -2351,17 +2351,17 @@ main:
 ;   [prog.baz:372:13] object.at(2, 74, 0xffffff)
 ;   [prog.baz:119:6] object.at(x, y, color i32) self
     func.object.at.372.13:
-;       [prog.baz:372:13] alias self -> o3 (lea: rbp + 728)
-;       [prog.baz:372:13] alias x -> 2
-;       [prog.baz:372:13] alias y -> 74
-;       [prog.baz:372:13] alias color -> 16777215
+;       [prog.baz:372:13] bind self -> o3 (lea: rbp + 728)
+;       [prog.baz:372:13] bind x -> 2
+;       [prog.baz:372:13] bind y -> 74
+;       [prog.baz:372:13] bind color -> 16777215
 ;       [prog.baz:120:5] self.pos = point.at(x, y)
 ;       [prog.baz:120:16] point.at(x, y)
 ;       [prog.baz:108:6] point.at(x, y) self
         func.point.at.120.16.372.13:
-;           [prog.baz:120:16] alias self -> self.pos (lea: rbp + 728)
-;           [prog.baz:120:16] alias x -> 2
-;           [prog.baz:120:16] alias y -> 74
+;           [prog.baz:120:16] bind self -> self.pos (lea: rbp + 728)
+;           [prog.baz:120:16] bind x -> 2
+;           [prog.baz:120:16] bind y -> 74
 ;           [prog.baz:109:5] self.x = x
 ;           [prog.baz:109:14] self.x = 2
 ;           [prog.baz:109:14] src: folded constant 'x'
@@ -2385,7 +2385,7 @@ main:
     bool.373.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.373.5:
-;       [prog.baz:373:5] alias ok -> r15b
+;       [prog.baz:373:5] bind ok -> r15b
         if.38.27.373.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.373.5:
@@ -2406,7 +2406,7 @@ main:
 ;   [prog.baz:375:15] o3[1].pos.fooz()
 ;   [prog.baz:47:10] mut point.fooz()
     func.point.fooz.375.15:
-;       [prog.baz:375:15] alias self -> o3.pos (lea: rbp + 728)
+;       [prog.baz:375:15] bind self -> o3.pos (lea: rbp + 728)
 ;       [prog.baz:48:5] self.x = 0b10
 ;       [prog.baz:48:14] self.x = 2
 ;       [prog.baz:48:14] src: folded constant '0b10'
@@ -2426,8 +2426,8 @@ main:
 ;       [prog.baz:376:22] o3[1].pos.sum()
 ;       [prog.baz:54:6] point.sum() res
         func.point.sum.376.22:
-;           [prog.baz:376:22] alias res -> r14
-;           [prog.baz:376:22] alias self -> o3.pos (lea: rbp + 728)
+;           [prog.baz:376:22] bind res -> r14
+;           [prog.baz:376:22] bind self -> o3.pos (lea: rbp + 728)
 ;           [prog.baz:55:5] res = self.x + self.y
 ;           [prog.baz:55:11] self.x
             mov r14, qword [rbp + 728]
@@ -2442,7 +2442,7 @@ main:
     bool.376.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.376.5:
-;       [prog.baz:376:5] alias ok -> r15b
+;       [prog.baz:376:5] bind ok -> r15b
         if.38.27.376.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.376.5:
@@ -2487,7 +2487,7 @@ main:
     bool.381.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.381.5:
-;       [prog.baz:381:5] alias ok -> r15b
+;       [prog.baz:381:5] bind ok -> r15b
         if.38.27.381.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.381.5:
@@ -2557,7 +2557,7 @@ main:
     bool.390.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.390.5:
-;       [prog.baz:390:5] alias ok -> r15b
+;       [prog.baz:390:5] bind ok -> r15b
         if.38.27.390.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.390.5:
@@ -2615,7 +2615,7 @@ main:
     bool.391.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.391.5:
-;       [prog.baz:391:5] alias ok -> r15b
+;       [prog.baz:391:5] bind ok -> r15b
         if.38.27.391.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.391.5:
@@ -2642,7 +2642,7 @@ main:
 ;   [prog.baz:398:5] assert(array_length(arr2) == 2)
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.398.5:
-;       [prog.baz:398:5] alias ok -> 1
+;       [prog.baz:398:5] bind ok -> 1
         if.38.27.398.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.398.5:
@@ -2658,7 +2658,7 @@ main:
     bool.399.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.399.5:
-;       [prog.baz:399:5] alias ok -> r15b
+;       [prog.baz:399:5] bind ok -> r15b
         if.38.27.399.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.399.5:
@@ -2685,7 +2685,7 @@ main:
     bool.400.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.400.5:
-;       [prog.baz:400:5] alias ok -> r15b
+;       [prog.baz:400:5] bind ok -> r15b
         if.38.27.400.5:
 ;       [prog.baz:38:27] ? shorthand: not ok
         cmp.38.27.400.5:
@@ -2726,7 +2726,7 @@ main:
 ;   [prog.baz:404:5] print(hello)
 ;   [prog.baz:41:6] print(str i8[])
     func.print.404.5:
-;       [prog.baz:404:5] alias str -> hello
+;       [prog.baz:404:5] bind str -> hello
 ;       [prog.baz:42:5] write(1, str)
 ;       [prog.baz:42:5] allocate named register rdi
 ;       [prog.baz:42:5] allocate named register rsi
@@ -2782,7 +2782,7 @@ main:
 ;       [prog.baz:408:9] print(colon)
 ;       [prog.baz:41:6] print(str i8[])
         func.print.408.9:
-;           [prog.baz:408:9] alias str -> colon
+;           [prog.baz:408:9] bind str -> colon
 ;           [prog.baz:42:5] write(1, str)
 ;           [prog.baz:42:5] allocate named register rdi
 ;           [prog.baz:42:5] allocate named register rsi
@@ -2803,7 +2803,7 @@ main:
 ;       [prog.baz:409:9] print(prompt1)
 ;       [prog.baz:41:6] print(str i8[])
         func.print.409.9:
-;           [prog.baz:409:9] alias str -> prompt1
+;           [prog.baz:409:9] bind str -> prompt1
 ;           [prog.baz:42:5] write(1, str)
 ;           [prog.baz:42:5] allocate named register rdi
 ;           [prog.baz:42:5] allocate named register rsi
@@ -2824,7 +2824,7 @@ main:
 ;       [prog.baz:410:12] nm.input()
 ;       [prog.baz:88:10] mut str.input()
         func.str.input.410.12:
-;           [prog.baz:410:12] alias self -> nm
+;           [prog.baz:410:12] bind self -> nm
 ;           [prog.baz:89:5] var nbytes = read(0, self.data)
 ;           [prog.baz:89:9] nbytes: i64 (8 B @ [rbp + 1416])
 ;           [prog.baz:89:9] nbytes = read(0, self.data)
@@ -2875,7 +2875,7 @@ main:
 ;           [prog.baz:415:13] print(prompt2)
 ;           [prog.baz:41:6] print(str i8[])
             func.print.415.13:
-;               [prog.baz:415:13] alias str -> prompt2
+;               [prog.baz:415:13] bind str -> prompt2
 ;               [prog.baz:42:5] write(1, str)
 ;               [prog.baz:42:5] allocate named register rdi
 ;               [prog.baz:42:5] allocate named register rsi
@@ -2899,11 +2899,11 @@ main:
 ;           [prog.baz:418:13] greet(nm)
 ;           [prog.baz:99:6] greet(name str)
             func.greet.418.13:
-;               [prog.baz:418:13] alias name -> nm
+;               [prog.baz:418:13] bind name -> nm
 ;               [prog.baz:100:5] print(prompt3)
 ;               [prog.baz:41:6] print(str i8[])
                 func.print.100.5.418.13:
-;                   [prog.baz:100:5] alias str -> prompt3
+;                   [prog.baz:100:5] bind str -> prompt3
 ;                   [prog.baz:42:5] write(1, str)
 ;                   [prog.baz:42:5] allocate named register rdi
 ;                   [prog.baz:42:5] allocate named register rsi
@@ -2924,7 +2924,7 @@ main:
 ;               [prog.baz:101:10] name.print()
 ;               [prog.baz:95:6] str.print()
                 func.str.print.101.10.418.13:
-;                   [prog.baz:101:10] alias self -> name
+;                   [prog.baz:101:10] bind self -> name
 ;                   [prog.baz:96:5] write(1, self.data, self.len)
 ;                   [prog.baz:96:5] allocate named register rdi
 ;                   [prog.baz:96:5] allocate named register rsi
@@ -2953,7 +2953,7 @@ main:
 ;               [prog.baz:102:5] print(dot)
 ;               [prog.baz:41:6] print(str i8[])
                 func.print.102.5.418.13:
-;                   [prog.baz:102:5] alias str -> dot
+;                   [prog.baz:102:5] bind str -> dot
 ;                   [prog.baz:42:5] write(1, str)
 ;                   [prog.baz:42:5] allocate named register rdi
 ;                   [prog.baz:42:5] allocate named register rsi
@@ -2974,7 +2974,7 @@ main:
 ;               [prog.baz:103:5] print(nl)
 ;               [prog.baz:41:6] print(str i8[])
                 func.print.103.5.418.13:
-;                   [prog.baz:103:5] alias str -> nl
+;                   [prog.baz:103:5] bind str -> nl
 ;                   [prog.baz:42:5] write(1, str)
 ;                   [prog.baz:42:5] allocate named register rdi
 ;                   [prog.baz:42:5] allocate named register rsi
@@ -3006,7 +3006,7 @@ main:
 ;   [prog.baz:422:5] print(greeted)
 ;   [prog.baz:41:6] print(str i8[])
     func.print.422.5:
-;       [prog.baz:422:5] alias str -> greeted
+;       [prog.baz:422:5] bind str -> greeted
 ;       [prog.baz:42:5] write(1, str)
 ;       [prog.baz:42:5] allocate named register rdi
 ;       [prog.baz:42:5] allocate named register rsi
@@ -3053,7 +3053,7 @@ main:
 ;   [prog.baz:424:5] print(nl)
 ;   [prog.baz:41:6] print(str i8[])
     func.print.424.5:
-;       [prog.baz:424:5] alias str -> nl
+;       [prog.baz:424:5] bind str -> nl
 ;       [prog.baz:42:5] write(1, str)
 ;       [prog.baz:42:5] allocate named register rdi
 ;       [prog.baz:42:5] allocate named register rsi
