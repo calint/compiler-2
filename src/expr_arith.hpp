@@ -789,14 +789,14 @@ class expr_arith final : public expression {
             first.is_name_or_literal() and first.get_unary_ops().is_empty(),
         };
 
-        if (not is_plain and tc.reads_destination(first, dst)) {
+        if (not is_plain and reads_destination(tc, first, dst)) {
             return true;
         }
 
         return std::ranges::any_of(
             exprs_ | std::views::drop(1),
             [&tc, &dst](const std::unique_ptr<statement>& e) -> bool {
-                return tc.reads_destination(*e, dst);
+                return reads_destination(tc, *e, dst);
             });
     }
 
@@ -986,7 +986,7 @@ class expr_arith final : public expression {
         const statement& first_expr{*exprs_.front()};
 
         if (first_expr.is_name_or_literal()) {
-            std::ignore = tc.make_ident_info(first_expr);
+            std::ignore = make_ident_info(tc, first_expr);
         }
 
         return first_expr.get_type();
@@ -1073,7 +1073,7 @@ class expr_arith final : public expression {
         if (not tc.checks_overflow(dst) and is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
-            const ident_info src_info{tc.make_scalar_ident_info(src)};
+            const ident_info src_info{make_scalar_ident_info(tc, src)};
             std::vector<operand> lea_registers;
 
             const operand src_operand{
@@ -1207,7 +1207,7 @@ class expr_arith final : public expression {
     // converted
     static auto assert_number(const toc& tc, const statement& term) -> void {
         const type& operand_type{
-            term.is_name_or_literal() ? tc.make_ident_info(term).type_ref()
+            term.is_name_or_literal() ? make_ident_info(tc, term).type_ref()
                                       : term.get_type(),
         };
 
@@ -1361,7 +1361,7 @@ class expr_arith final : public expression {
             return;
         }
 
-        const ident_info src_info{tc.make_scalar_ident_info(src)};
+        const ident_info src_info{make_scalar_ident_info(tc, src)};
 
         if (src_info.is_const()) {
             const std::optional<folded_value> folded{
@@ -1497,7 +1497,7 @@ class expr_arith final : public expression {
                                               const statement& src) -> bool {
 
         return not src.is_expression() and
-               not tc.make_ident_info(src).is_const();
+               not make_ident_info(tc, src).is_const();
     }
 
     // pass 3: a subtracted or negated first element needs a negation so the

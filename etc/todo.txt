@@ -11,18 +11,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'var_info'; the placement of that 'var_info' tells it (A6 follow-up)
     => check that the alias and 'foo' element paths resolve to the same
        'var_info' before using it
-[ ] medium: architecture A7: 'toc.hpp' includes 'statement.hpp' and calls
-    statement virtuals, the symbol table depends on the tree:
-    'reads_destination' walks 'visit_reads', 'make_ident_info',
-    'make_scalar_ident_info' and 'assert_not_whole_array' take statements
-    (round 7 T-4)
-    => design: 'reads_destination' moves next to its callers
-       (expr_arith.hpp, which expr_bool.hpp includes); the statement
-       overloads become helpers on the statement side that pass the token,
-       the name and whether it is an element; 'value_use' moves next to
-       'destination' in ident_info.hpp
-    => invariant: toc.hpp needs ident_info.hpp, not statement.hpp
-    => tests: the suite
 [ ] medium: architecture A8: the checks made while compiling are skipped in
     a branch that is never compiled, so whether a program is accepted can
     depend on the constant arguments of an inlined call, e.g. 'if 1 == 2 {

@@ -185,7 +185,7 @@ class stmt_builtin_convert final : public expression {
             return std::nullopt;
         }
 
-        const ident_info info{tc.make_ident_info(arg_)};
+        const ident_info info{make_ident_info(tc, arg_)};
 
         if (not info.is_const()) {
             return std::nullopt;

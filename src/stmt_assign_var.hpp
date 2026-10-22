@@ -39,7 +39,7 @@ class stmt_assign_var final : public statement {
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           equals_tk_{equals_tk} {
 
-        const ident_info dst_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info dst_info{make_ident_info(tc, stmt_ident_)};
 
         assert_not_read_only(tok(), "assign to", stmt_ident_.name_or_literal(),
                              dst_info);
@@ -67,7 +67,7 @@ class stmt_assign_var final : public statement {
         : statement{si.tok()}, stmt_ident_{std::move(si)},
           expr_{std::move(value)}, equals_tk_{equals_tk} {
 
-        set_type(tc.make_ident_info(stmt_ident_).type_ref());
+        set_type(make_ident_info(tc, stmt_ident_).type_ref());
     }
 
     stmt_assign_var() = default;
@@ -100,7 +100,7 @@ class stmt_assign_var final : public statement {
 
         assert_parts_not_clobbered(tc, dst_storage);
 
-        const ident_info var_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info var_info{make_ident_info(tc, stmt_ident_)};
 
         // a parameter names its argument only here, e.g. a constant
         assert_assignable(tc, var_info);
@@ -167,7 +167,7 @@ class stmt_assign_var final : public statement {
             return;
         }
 
-        const ident_info src_info{tc.make_ident_info(expr_)};
+        const ident_info src_info{make_ident_info(tc, expr_)};
 
         const std::optional<size_t> src_len{src_info.array_len()};
         const std::optional<size_t> dst_len{dst_info.array_len()};

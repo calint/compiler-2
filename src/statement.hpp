@@ -19,6 +19,7 @@
 #include "compile_error.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
+#include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
@@ -223,20 +224,6 @@ class one_line_source final {
 
 // the width an expression is computed at compared with its own
 enum class width_change : uint8_t { narrowed, widened };
-
-// where a value is used: the width it is computed at and whether its
-// arithmetic is checked for overflow; made by 'toc::use_of' from a
-// destination and by 'toc::use_at' for a value without one
-struct value_use {
-    const type* width{};
-    bool checks_overflow{};
-
-    [[nodiscard]] auto width_ref() const -> const type& {
-        assert(width != nullptr);
-
-        return *width;
-    }
-};
 
 // a node of the program: it parses itself in its constructor, writes its
 // source back ('source_to') and compiles; the virtuals in groups, with the
@@ -692,3 +679,78 @@ class statement {
             src_loc_tk, std::format("use of uninitialized variable '{}'", var)};
     }
 };
+
+//
+// what the symbol table tells about a statement that names a place
+//
+
+// the identifier the place names, e.g. one element for 'ps[1]'
+[[nodiscard]] inline auto make_ident_info(const toc& tc, const statement& st)
+    -> ident_info {
+
+    // the name refers to the declared array, 'ps[1]' accesses one element
+    const ident_info declared{
+        tc.make_ident_info(st.tok(), st.name_or_literal()),
+    };
+
+    const bool is_element{st.is_array_element()};
+    ident_info info{ident_builder::as_element_if(is_element, declared)};
+
+    info.set_src_loc_tk(st.name_token());
+
+    return info;
+}
+
+inline auto assert_not_whole_array(const statement& st, const ident_info& info)
+    -> void {
+
+    if (not info.is_array()) {
+        return;
+    }
+
+    throw compile_error{st.tok(), std::format("array '{}' must be indexed",
+                                              st.name_or_literal())};
+}
+
+// a whole array is not read as its first element
+[[nodiscard]] inline auto make_scalar_ident_info(const toc& tc,
+                                                 const statement& st)
+    -> ident_info {
+
+    ident_info info{make_ident_info(tc, st)};
+    assert_not_whole_array(st, info);
+    return info;
+}
+
+// 'st' reads bytes of 'dst' under any name, e.g. the 'p' of 'g = p + 1'
+// with 'p' bound to 'g'; a register only under its own name
+[[nodiscard]] inline auto reads_destination(const toc& tc, const statement& st,
+                                            const destination& dst) -> bool {
+
+    if (st.reads_var(dst.root_id())) {
+        return true;
+    }
+
+    if (not dst.storage()) {
+        return false;
+    }
+
+    bool is_read{};
+
+    st.visit_reads(
+        std::nullopt,
+        [&](const token& src_loc_tk,
+            [[maybe_unused]] const std::string_view read_text,
+            [[maybe_unused]] const byte_range& accessed_bytes,
+            const access_path& read_path) -> void {
+            const std::optional<storage_path> read{
+                tc.storage_of(src_loc_tk, src_loc_tk.text(), read_path),
+            };
+
+            if (read and read->may_overlap(*dst.storage())) {
+                is_read = true;
+            }
+        });
+
+    return is_read;
+}

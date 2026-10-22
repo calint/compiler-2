@@ -708,8 +708,8 @@ class expr_bool_op final : public statement {
 
         // a whole array is not compared as its first element
         if (lhs_info.is_array() != rhs_info.is_array()) {
-            toc::assert_not_whole_array(lhs, lhs_info);
-            toc::assert_not_whole_array(rhs, rhs_info);
+            assert_not_whole_array(lhs, lhs_info);
+            assert_not_whole_array(rhs, rhs_info);
         }
 
         const size_t element_size_bytes{lhs_info.type_ref().size_bytes()};
@@ -827,7 +827,7 @@ class expr_bool_op final : public statement {
             return false;
         }
 
-        const ident_info info{tc.make_ident_info(side.identifier_statement())};
+        const ident_info info{make_ident_info(tc, side.identifier_statement())};
 
         return not info.is_const() and
                (info.is_array() or not info.type_ref().is_builtin());
@@ -847,7 +847,7 @@ class expr_bool_op final : public statement {
     make_memory_operand_info(const toc& tc, const statement& identifier)
         -> ident_info {
 
-        ident_info info{tc.make_ident_info(identifier)};
+        ident_info info{make_ident_info(tc, identifier)};
 
         // note: 'is_memory_operand' rejected constants
         assert(not info.is_const());
@@ -928,7 +928,7 @@ class expr_bool_op final : public statement {
             return operand::imm(folded->value, tc.builtins().default_type());
         }
 
-        const ident_info expr_info{tc.make_scalar_ident_info(expr)};
+        const ident_info expr_info{make_scalar_ident_info(tc, expr)};
 
         if (expr.is_indexed() or
             (expr.is_name_or_literal() and expr_info.is_address_computed())) {
@@ -1132,7 +1132,7 @@ class expr_bool final : public statement {
 
         // e.g. '(true)' or the bare type 'bool'
         if (not is_expression()) {
-            const ident_info src_info{tc.make_ident_info(*this)};
+            const ident_info src_info{make_ident_info(tc, *this)};
 
             assert(src_info.is_const());
 
@@ -1144,7 +1144,7 @@ class expr_bool final : public statement {
         }
 
         // stored comparisons would change what later elements read
-        if (dst.is_register() or not tc.reads_destination(*this, dst)) {
+        if (dst.is_register() or not reads_destination(tc, *this, dst)) {
             compile_value(tc, indent, dst.operand());
             return;
         }

@@ -95,7 +95,7 @@ class stmt_builtin_io final : public stmt_call {
         const statement& buffer{argument(1)};
 
         if (io_.fills_buffer and buffer.is_name_or_literal()) {
-            const ident_info info{tc.make_ident_info(buffer)};
+            const ident_info info{make_ident_info(tc, buffer)};
 
             if (info.is_var()) {
                 assert_not_read_only(buffer.tok(), "read into",
@@ -223,7 +223,7 @@ class stmt_builtin_io final : public stmt_call {
 
         // e.g. not '-b', a unary operator makes a value
         if (buffer.is_name_or_literal() and buffer.get_unary_ops().is_empty()) {
-            const ident_info info{tc.make_ident_info(buffer)};
+            const ident_info info{make_ident_info(tc, buffer)};
 
             if (info.is_var() and info.is_array()) {
                 return;
@@ -352,7 +352,7 @@ class stmt_builtin_io final : public stmt_call {
 
         argument(0).compile(tc, indent, destination::of_register(descriptor));
 
-        const ident_info buffer_info{tc.make_ident_info(argument(1))};
+        const ident_info buffer_info{make_ident_info(tc, argument(1))};
 
         compile_count(tc, indent, count, buffer_info);
 

@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: architecture A7: 'toc.hpp' includes 'statement.hpp' and calls
+    statement virtuals, the symbol table depends on the tree:
+    'reads_destination' walks 'visit_reads', 'make_ident_info',
+    'make_scalar_ident_info' and 'assert_not_whole_array' take statements
+    (round 7 T-4)
+    => design: 'reads_destination' moves next to its callers
+       (expr_arith.hpp, which expr_bool.hpp includes); the statement
+       overloads become helpers on the statement side that pass the token,
+       the name and whether it is an element; 'value_use' moves next to
+       'destination' in ident_info.hpp
+    => invariant: toc.hpp needs ident_info.hpp, not statement.hpp
+    => tests: the suite
+    => done (2026-10-22): 'make_ident_info(tc, st)',
+       'make_scalar_ident_info', 'assert_not_whole_array' and
+       'reads_destination' are free functions at the end of statement.hpp,
+       which includes toc.hpp; 'value_use' is in ident_info.hpp; 49 callers;
+       toc.hpp and statement.hpp compile on their own; same output on all
+       four targets
 [x] hard: architecture A6: where a variable lives is a choice of three
     (storage at base and offset, a pointer register, a value register) held
     as independent fields of 'var_info' and decided again in 'add_var',

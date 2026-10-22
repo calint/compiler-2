@@ -399,6 +399,20 @@ class ident_info final {
     }
 };
 
+// where a value is used: the width it is computed at and whether its
+// arithmetic is checked for overflow; made by 'toc::use_of' from a
+// destination and by 'toc::use_at' for a value without one
+struct value_use {
+    const type* width{};
+    bool checks_overflow{};
+
+    [[nodiscard]] auto width_ref() const -> const type& {
+        assert(width != nullptr);
+
+        return *width;
+    }
+};
+
 // where 'compile' writes a value: nowhere for a statement, a register, or the
 // storage that a name of the source resolves to, e.g. 'p.x'; it is not changed
 // after it is made, a field or an element of it is a destination of its own

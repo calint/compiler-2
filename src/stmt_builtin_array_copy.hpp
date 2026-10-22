@@ -30,7 +30,7 @@ class stmt_builtin_array_copy final : public statement {
         const stmt_identifier& dst{operands_.second()};
 
         assert_not_read_only(dst.tok(), "copy into", dst.name_or_literal(),
-                             tc.make_ident_info(dst));
+                             make_ident_info(tc, dst));
     }
 
     stmt_builtin_array_copy() = default;

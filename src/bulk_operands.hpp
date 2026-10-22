@@ -114,8 +114,8 @@ class bulk_operands final {
     // the elements are compared or copied as a whole, so their types match
     [[nodiscard]] auto resolve_arrays(toc& tc) const -> arrays_info {
         arrays_info info{
-            .first{tc.make_ident_info(first_)},
-            .second{tc.make_ident_info(second_)},
+            .first{make_ident_info(tc, first_)},
+            .second{make_ident_info(tc, second_)},
         };
 
         if (not info.first.type_ref().is_same(info.second.type_ref())) {

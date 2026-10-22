@@ -25,7 +25,6 @@
 #include "lut.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
-#include "statement.hpp"
 #include "token.hpp"
 #include "type.hpp"
 
@@ -2989,36 +2988,11 @@ class toc final {
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
-    [[nodiscard]] auto make_ident_info(const statement& st) const
-        -> ident_info {
-
-        // the name refers to the declared array, 'ps[1]' accesses one element
-        const ident_info declared{
-            resolver_.resolve(st.tok(), st.name_or_literal()),
-        };
-
-        const bool is_element{st.is_array_element()};
-        ident_info info{ident_builder::as_element_if(is_element, declared)};
-
-        info.set_src_loc_tk(st.name_token());
-
-        return info;
-    }
-
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
                                        const std::string_view ident) const
         -> ident_info {
 
         return resolver_.resolve(src_loc_tk, ident);
-    }
-
-    // a whole array is not read as its first element
-    [[nodiscard]] auto make_scalar_ident_info(const statement& st) const
-        -> ident_info {
-
-        ident_info info{make_ident_info(st)};
-        assert_not_whole_array(st, info);
-        return info;
     }
 
     // the variable declared last in this scope, e.g. a 'let' variable once
@@ -3061,39 +3035,6 @@ class toc final {
     // noinline check repeats, see 'noinline_call::dry_run_body'
     auto reach_frame_check(const size_t frame_count) -> void {
         dry_runs_.reach_frame_check(frame_count);
-    }
-
-    // 'st' reads bytes of 'dst' under any name, e.g. the 'p' of 'g = p + 1'
-    // with 'p' bound to 'g'; a register only under its own name
-    [[nodiscard]] auto reads_destination(const statement& st,
-                                         const destination& dst) const -> bool {
-
-        if (st.reads_var(dst.root_id())) {
-            return true;
-        }
-
-        if (not dst.storage()) {
-            return false;
-        }
-
-        bool is_read{};
-
-        st.visit_reads(
-            std::nullopt,
-            [&](const token& src_loc_tk,
-                [[maybe_unused]] const std::string_view read_text,
-                [[maybe_unused]] const byte_range& accessed_bytes,
-                const access_path& read_path) -> void {
-                const std::optional<storage_path> read{
-                    storage_of(src_loc_tk, src_loc_tk.text(), read_path),
-                };
-
-                if (read and read->may_overlap(*dst.storage())) {
-                    is_read = true;
-                }
-            });
-
-        return is_read;
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
@@ -3188,17 +3129,6 @@ class toc final {
     //
     // statics
     //
-
-    static auto assert_not_whole_array(const statement& st,
-                                       const ident_info& info) -> void {
-
-        if (not info.is_array()) {
-            return;
-        }
-
-        throw compile_error{st.tok(), std::format("array '{}' must be indexed",
-                                                  st.name_or_literal())};
-    }
 
     // a name is an identifier that is not a keyword
     static auto assert_valid_name(const token& name_tk) -> void {

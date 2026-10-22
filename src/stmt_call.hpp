@@ -166,7 +166,7 @@ struct generic_call {
             return nullptr;
         }
 
-        return &tc.make_ident_info(si).type_ref();
+        return &make_ident_info(tc, si).type_ref();
     }
 
     // e.g. 'f(1)' of 'func f<T type>(a, x T)' lacks the argument that would
@@ -1079,7 +1079,7 @@ class inline_call {
     static auto assert_alias_type(const toc& tc, const expr_any& arg,
                                   const stmt_def_func_param& param) -> void {
 
-        const ident_info info{tc.make_ident_info(arg)};
+        const ident_info info{make_ident_info(tc, arg)};
 
         // an untyped constant, e.g. a literal, is checked by its value; a
         // typed one has the rules of a variable of its type
@@ -1191,7 +1191,7 @@ class inline_call {
         // must fit the parameter
         arg.assert_not_narrowed(tc, param.get_type());
 
-        const ident_info arg_info{tc.make_ident_info(arg)};
+        const ident_info arg_info{make_ident_info(tc, arg)};
 
         // a name is resolved in the callee where its own constants would
         // shadow the caller's, and the alias target must be a plain integer,
@@ -1237,7 +1237,7 @@ class inline_call {
                          std::vector<operand>& allocated_registers)
         -> alias_info {
 
-        const ident_info arg_info{tc.make_ident_info(arg)};
+        const ident_info arg_info{make_ident_info(tc, arg)};
 
         std::vector<operand> regs_lea;
 
@@ -1440,7 +1440,7 @@ class noinline_call {
 
             if (not needs_temporary(tc, arg, param)) {
                 arguments.push_back({
-                    .info{tc.make_ident_info(arg)},
+                    .info{make_ident_info(tc, arg)},
                     .target{call_site::argument_target(tc, arg)},
                     .is_temporary{},
                 });
@@ -1872,7 +1872,7 @@ class noinline_call {
             return true;
         }
 
-        return not tc.make_ident_info(arg).is_var();
+        return not make_ident_info(tc, arg).is_var();
     }
 };
 
@@ -2129,7 +2129,7 @@ class stmt_call : public expression {
                                "");
         }
 
-        const ident_info info{tc.make_ident_info(arg)};
+        const ident_info info{make_ident_info(tc, arg)};
 
         // e.g. '2' or a 'let' constant
         if (not info.is_var()) {
@@ -2231,7 +2231,7 @@ class stmt_call : public expression {
             }
 
             // constants pass their value
-            if (not tc.make_ident_info(arg).is_var()) {
+            if (not make_ident_info(tc, arg).is_var()) {
                 continue;
             }
 
@@ -2610,7 +2610,7 @@ class stmt_call : public expression {
             const bool is_array_arg{
                 arg.is_name_or_literal() and
                     not call_site::is_computed_value(arg) and
-                    tc.make_ident_info(arg).is_array(),
+                    make_ident_info(tc, arg).is_array(),
             };
 
             // an element would give the parameter the whole array's
@@ -2628,7 +2628,7 @@ class stmt_call : public expression {
 
         // the alias would make the parameter name the whole array
         if (arg.is_name_or_literal()) {
-            toc::assert_not_whole_array(arg, tc.make_ident_info(arg));
+            assert_not_whole_array(arg, make_ident_info(tc, arg));
         }
     }
 

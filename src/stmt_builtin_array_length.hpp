@@ -67,7 +67,7 @@ class stmt_builtin_array_length final : public expression {
 
         assert(dst.type_ref().is_same(tc.builtins().default_type()));
 
-        const ident_info src_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info src_info{make_ident_info(tc, stmt_ident_)};
 
         if (not src_info.is_var() or not src_info.is_array()) {
             throw compile_error{
@@ -103,7 +103,7 @@ class stmt_builtin_array_length final : public expression {
             return std::nullopt;
         }
 
-        const ident_info src_info{tc.make_ident_info(stmt_ident_)};
+        const ident_info src_info{make_ident_info(tc, stmt_ident_)};
 
         // 'compile' reports an argument that is not an array
         if (not src_info.is_var() or not src_info.is_array()) {

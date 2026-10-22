@@ -256,7 +256,7 @@ class stmt_identifier final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const ident_info src_info{tc.make_scalar_ident_info(*this)};
+        const ident_info src_info{make_scalar_ident_info(tc, *this)};
 
         // note: a list copies a constant itself
         assert(not src_info.is_const());
@@ -285,7 +285,7 @@ class stmt_identifier final : public statement {
         // instances are copied whole and cannot narrow
         assert(dst_type.is_builtin());
 
-        const ident_info info{tc.make_ident_info(*this)};
+        const ident_info info{make_ident_info(tc, *this)};
 
         if (info.is_const() and not info.constant().is_typed()) {
             assert_constant_fits(info, dst_type);
@@ -399,7 +399,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
-        const ident_info info{tc.make_ident_info(*this)};
+        const ident_info info{make_ident_info(tc, *this)};
 
         if (not info.is_const()) {
             return std::nullopt;

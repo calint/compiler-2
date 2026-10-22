@@ -129,7 +129,7 @@ class initializer_declaration final {
     auto deduce_array_copy(toc& tc, const token& tk, const expr_arith& arith)
         -> void {
 
-        const ident_info info{tc.make_ident_info(arith)};
+        const ident_info info{make_ident_info(tc, arith)};
 
         if (not info.is_array()) {
             return;

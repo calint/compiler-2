@@ -176,7 +176,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
 
     stmt_ident_ = std::move(parsed.identifier);
 
-    const ident_info src_info{tc.make_ident_info(*stmt_ident_)};
+    const ident_info src_info{make_ident_info(tc, *stmt_ident_)};
 
     if (not tp.is_same(src_info.type_ref())) {
         throw compile_error{
@@ -271,7 +271,7 @@ inline auto expr_type::compile_field(toc& tc, const size_t indent,
 
     // the copy size comes from the source so it must match the field
     if (field.is_array() and src.is_array_identifier()) {
-        validate_array_assignment(src.tok(), field, tc.make_ident_info(src));
+        validate_array_assignment(src.tok(), field, make_ident_info(tc, src));
     }
 
     if (not field.type().is_builtin()) {
@@ -328,7 +328,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     const type& dst_type{dst.type_ref()};
 
-    const ident_info src_info{tc.make_ident_info(*this)};
+    const ident_info src_info{make_ident_info(tc, *this)};
 
     // 'expr_type' validates the source type before entering here
     assert(dst_type.is_same(src_info.type_ref()));
@@ -396,7 +396,7 @@ inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
     // an array field is parsed as an array 'expr_any' which is an expression
     assert(not field.is_array());
 
-    const ident_info src_info{tc.make_scalar_ident_info(src)};
+    const ident_info src_info{make_scalar_ident_info(tc, src)};
 
     // a constant is copied by its list
     if (src_info.is_const()) {

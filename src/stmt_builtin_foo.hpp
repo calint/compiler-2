@@ -51,7 +51,7 @@ class stmt_builtin_foo final : public statement {
 
         // the element and the counter are declared during the parse so the
         // block can name them
-        const ident_info array_info{tc.make_ident_info(ident_)};
+        const ident_info array_info{make_ident_info(tc, ident_)};
         const std::string label{tc.create_unique_label(tok(), "foo")};
         tc.enter_foo(label);
 
@@ -93,7 +93,7 @@ class stmt_builtin_foo final : public statement {
 
         // the array and the count are resolved before 'e', 'i' and 'n' can
         // hide names they use
-        const ident_info array_info{tc.make_ident_info(ident_)};
+        const ident_info array_info{make_ident_info(tc, ident_)};
 
         const operand reg_iter{
             x.alloc_scratch_register(ident_.tok(), indent,
