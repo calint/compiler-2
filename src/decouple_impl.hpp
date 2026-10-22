@@ -314,6 +314,13 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
             tk, "a string can only be assigned to an array of type 'i8'"};
     }
 
+    // e.g. the '{}' of '1 + {}', which the destination types
+    if (tk.is_none() and is_zero_value(tz)) {
+        throw compile_error{
+            tk,
+            "'{}' is the zero value of a typed destination, not an operand"};
+    }
+
     if (tk.is_none()) {
         throw compile_error{tk,
                             "expected constant, identifier, or function call"};

@@ -1,0 +1,4 @@
+
+1493.baz:4:13: '{}' is the zero value of a typed destination, not an operand
+    if b == {} {
+            ^

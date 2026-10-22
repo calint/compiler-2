@@ -1,0 +1,7 @@
+# a word operator does not follow '{}' either
+func main() {
+    var c = true
+    var b = false
+    b = {} and c
+    if b exit(1)
+}

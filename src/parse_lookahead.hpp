@@ -91,6 +91,29 @@
     return next != '{' and next != '[' and next != '.' and next != '(';
 }
 
+// an operator follows, which would continue the expression, e.g. the '+' of
+// 'x + 1' or the 'and' of 'b and c'
+[[nodiscard]] inline auto continues_expression(const tokenizer& tz) -> bool {
+    const char next{tz.peek_char_after_whitespace()};
+
+    if (std::string_view{"+-*/%&|^<>=!"}.contains(next)) {
+        return true;
+    }
+
+    tokenizer probe{tz};
+    const token next_tk{probe.next_token()};
+
+    return next_tk.is_text("and") or next_tk.is_text("or");
+}
+
+// '{}' follows, the zero value of a typed destination
+[[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
+    tokenizer probe{tz};
+
+    return not probe.is_next_char_token('{').is_empty() and
+           probe.peek_char_after_whitespace() == '}';
+}
+
 // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
 // a builtin type name not followed by '(' or '[' has no other meaning
 [[nodiscard]] inline auto is_bare_builtin_type(const toc& tc, const token& tk,
@@ -104,16 +127,6 @@
 
     const char next{tz.peek_char_after_whitespace()};
 
-    // an operator would continue the expression, e.g. 'i8 + 1'
-    if (next == '(' or next == '[' or
-        std::string_view{"+-*/%&|^<>=!"}.contains(next)) {
-
-        return false;
-    }
-
-    // a word operator too, e.g. 'bool and true'
-    tokenizer probe{tz};
-    const token next_tk{probe.next_token()};
-
-    return not next_tk.is_text("and") and not next_tk.is_text("or");
+    // e.g. 'i8 + 1' or 'bool and true' continue an expression
+    return next != '(' and next != '[' and not continues_expression(tz);
 }

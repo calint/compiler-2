@@ -227,12 +227,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     test that reached it is now rejected at the call with '--checks=alias',
     and it is off without; confirm with 'test-coverage.sh report', then
     remove it and its docs paragraph, or find the input that reaches it
-[ ] easy: decide: '{}' continues as the first operand of an expression only
-    where 'expr_any' parses it: 'n = {} + 1' is accepted, 'n = 1 + {}' and
-    'var n = {} + 1' are not; a bare type name followed by an operator is not
-    continued (round 8 F-2)
-    => options: '{}' is a whole value, an operator after it is an error
-       (a lookahead helper shared with 'is_bare_builtin_type')
 [ ] easy: decide: the escapes of a string are checked by the tokenizer, those
     of a character literal only where it is resolved, so 'var c = 'ab'' in a
     generic body that is never instantiated is accepted and '"\q"' is not;

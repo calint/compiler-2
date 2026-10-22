@@ -1,0 +1,6 @@
+# '{}' is a whole value, no operator follows it
+func main() {
+    var n = 5
+    n = {} + 1
+    exit(n)
+}

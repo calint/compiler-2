@@ -4689,3 +4689,9 @@ SRC=1486 && COMPERR
 SRC=1487 && EXP=19 && RUN
 SRC=1488 && EXP=6 && OPTS="--vars=0x40000 --checks=-alias" RUN
 SRC=1489 && COMPERR
+
+# '{}' is a whole value of a typed destination, not an operand
+SRC=1490 && COMPERR
+SRC=1491 && COMPERR
+SRC=1492 && COMPERR
+SRC=1493 && COMPERR

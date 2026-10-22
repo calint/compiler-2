@@ -1,0 +1,7 @@
+# '{}' is not an operand of a comparison
+func main() {
+    var b = bool
+    if b == {} {
+        exit(1)
+    }
+}

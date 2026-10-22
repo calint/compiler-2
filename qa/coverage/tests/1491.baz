@@ -1,0 +1,6 @@
+# '{}' is not an operand
+func main() {
+    var n = 5
+    n = 1 + {}
+    exit(n)
+}

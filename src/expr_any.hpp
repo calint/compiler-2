@@ -775,6 +775,12 @@ class expr_any final : public statement {
                     '}', "expected '}', the zero value of a built-in is '{}'"),
             };
 
+            // e.g. the '+' of 'n = {} + 1'
+            if (continues_expression(tz)) {
+                throw compile_error{
+                    tz, "'{}' is a whole value, an operator cannot follow it"};
+            }
+
             return builtin_value(
                 tc, tz, pos_tk, tp,
                 std::make_unique<expr_zero>(tp, open_brace_tk, close_brace_tk));

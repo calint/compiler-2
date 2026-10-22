@@ -1,0 +1,4 @@
+
+1490.baz:4:12: '{}' is a whole value, an operator cannot follow it
+    n = {} + 1
+           ^

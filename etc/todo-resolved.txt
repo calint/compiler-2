@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: decide: '{}' continues as the first operand of an expression only
+    where 'expr_any' parses it: 'n = {} + 1' is accepted, 'n = 1 + {}' and
+    'var n = {} + 1' are not; a bare type name followed by an operator is not
+    continued (round 8 F-2)
+    => options: '{}' is a whole value, an operator after it is an error
+       (a lookahead helper shared with 'is_bare_builtin_type')
+    => done (2026-10-22): '{}' is a whole value; an operator after it gives
+       "'{}' is a whole value, an operator cannot follow it" at the operator
+       ('continues_expression', shared with 'is_bare_builtin_type'), '{}'
+       in operand position gives "'{}' is the zero value of a typed
+       destination, not an operand" ('is_zero_value'); 'n = {} + 1' is
+       rejected now; tests 1490 to 1493
 [x] medium: design: aliasing rule C compares the arguments with the result
     only; a global that an inlined body names is compared with neither, so
     'g = add_g()' with 'res = res + g' in the body is accepted inline and
