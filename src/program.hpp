@@ -353,6 +353,8 @@ class program final {
 
         tc_.exit_block();
 
+        assert_main_valid(tc_);
+
         assignment_analysis::assert_functions_set_return_value(
             tc_.funcs().defs());
     }
@@ -543,6 +545,16 @@ class program final {
     // statics
     //
 
+    // the program starts at 'main', checked once every definition is parsed
+    static auto assert_main_valid(const toc& tc) -> void {
+        const stmt_def_func& func_main{tc.get_main_or_throw()};
+
+        if (not func_main.is_inlined()) {
+            throw compile_error{func_main.noinline_token(),
+                                "'main' cannot be declared 'noinline'"};
+        }
+    }
+
     // the rules checked while compiling, e.g. a constant index in bounds,
     // hold in a function that no compile reached too, so whether a program is
     // accepted does not depend on its calls; this includes the instances that
@@ -562,11 +574,6 @@ class program final {
     // the main function is compiled where the program starts
     static auto compile_main(toc& tc, const size_t indent) -> void {
         const stmt_def_func& func_main{tc.get_main_or_throw()};
-
-        if (not func_main.is_inlined()) {
-            throw compile_error{func_main.noinline_token(),
-                                "'main' cannot be declared 'noinline'"};
-        }
 
         machine& x{tc.machine()};
 
