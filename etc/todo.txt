@@ -6,6 +6,99 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: architecture A1: the switch from parse to compile is two calls in
+    two methods, 'build' calls 'toc::begin_compile' and 'compile' calls
+    'toc::reset_usage'; either can run without the other (round 7 D-4, T-7)
+    => design: 'toc::begin_compile' asserts no scope is open, forgets the
+       storage peak and the depth of the parse, asserts no compile record,
+       then sets 'is_compiling_'; 'toc::reset_usage' and its call in
+       'program::compile' go
+    => rejected: move the 'reset_usage' call next to 'begin_compile', two
+       calls still say one thing
+    => invariant: the compile starts with no scope and no usage of the parse
+    => tests: the suite; 'test-rv32i-address.cpp' calls 'begin_compile'
+       with no scope open
+[ ] easy: architecture A2: 'store_boolean' and 'label' are virtual with the
+    same body on both targets (round 7 X-4)
+    => design: non-virtual in 'machine', like 'begin_noinline_body':
+       'store_boolean' is 'copy_value' of the immediate 0 or 1, 'label' is
+       'target_assembler().label'; the four overrides go
+    => rejected: keep them virtual, nothing differs per target
+    => tests: the suite, and the x86_64 assembly of 'etc/tutorial.baz' is
+       the same ('mov' against 'copy_value' of an immediate)
+[ ] medium: architecture A3: whether a built-in has a value is decided in
+    two places, 'create_statement_in_expr_arith' (decouple_impl.hpp) and
+    'expr_type::builtin_value_type' with 'parse_copy_source'
+    (expr_type_impl.hpp); a new built-in with a value is added to both
+    (round 7 C-2, E-2)
+    => design, step 1 (no behavior change): one 'builtin_value_type(tc, tk,
+       tz) -> const type*' and one 'assert_builtin_has_value(tk, tz)' next
+       to the factory in decouple_impl.hpp, both callers use them,
+       'expr_type::builtin_value_type' goes
+    => design, step 2 (messages): a built-in in the wrong position says so
+       instead of "function 'x' not found", e.g. 'var n = array_copy(a, b,
+       2)' "function does not return a value", 'arrays_equal(a, b, 4)' as a
+       statement "return value is discarded"; error tests
+    => rejected: a table of every built-in with its result, the factory
+       still needs a branch per kind to make its statement
+[ ] hard: architecture A4: 'machine_rv32i' is both the rv32i instruction
+    backend and the linux target, about 150 lines of linux code (system
+    calls, 'ecall' exit, sector system calls, 'is_stack_bounded' false, the
+    no-op 'check_memory_end', 'emit_stack_limit_load' unreachable) are
+    overridden away by 'machine_rv32i_bare_metal' (round 7 R-2)
+    => design: 'machine_rv32i' is abstract with the target hooks pure
+       virtual; 'machine_rv32i_linux final' in machine_rv32i.hpp holds the
+       linux code; 'main.cpp' and 'test-rv32i-address.cpp' construct it; a
+       mechanical move, the same output
+    => rejected: a new file for the linux class, it is near its base
+    => invariant: a target class holds only what differs per target
+    => tests: the suite on rv32i, rv32i-qemu and rv32i-fpga, same images
+[ ] medium: architecture A5: the dry-run bookkeeping of noinline calls is in
+    four places: toc fields 'check_only_depth_', 'deepest_dry_run_level_',
+    'deepest_frame_check_', 'function_table::dry_run_heights_',
+    'scope_stack::noinline_dry_run_level' and the toc methods
+    'reach_dry_run_level', 'reach_frame_check', 'dry_run_call_kind'; one
+    decision in 'noinline_call::dry_run_body' reads all of them (round 7
+    T-2)
+    => design: a 'dry_run_ledger' next to 'function_table', owned by 'toc'
+       and read through 'tc.dry_runs()', holds the heights and the deepest
+       level and frame; 'dry_run_call_kind' stays in 'toc' because it needs
+       'check_only'
+    => rejected: a new header, the ledger is used only by toc
+    => tests: the suite, dry run tests unchanged
+[ ] hard: architecture A6: where a variable lives is a choice of three
+    (storage at base and offset, a pointer register, a value register) held
+    as independent fields of 'var_info' and decided again in 'add_var',
+    'make_var_ident_info', 'resolve_var', 'variable_comments' and
+    'storage_of' (round 7 T-5)
+    => design: 'std::variant<in_storage, at_pointer_register,
+       in_value_register> placement' in 'var_info', a visitor at each site;
+       'storage_of' reads the 'var_info' it found instead of resolving the
+       name again
+    => invariant: a variable has exactly one placement, by type
+    => tests: the suite, same assembly
+[ ] medium: architecture A7: 'toc.hpp' includes 'statement.hpp' and calls
+    statement virtuals, the symbol table depends on the tree:
+    'reads_destination' walks 'visit_reads', 'make_ident_info',
+    'make_scalar_ident_info' and 'assert_not_whole_array' take statements
+    (round 7 T-4)
+    => design: 'reads_destination' moves next to its callers
+       (expr_arith.hpp, which expr_bool.hpp includes); the statement
+       overloads become helpers on the statement side that pass the token,
+       the name and whether it is an element; 'value_use' moves next to
+       'destination' in ident_info.hpp
+    => invariant: toc.hpp needs ident_info.hpp, not statement.hpp
+    => tests: the suite
+[ ] medium: architecture A8: the checks made while compiling are skipped in
+    a branch that is never compiled, so whether a program is accepted can
+    depend on the constant arguments of an inlined call, e.g. 'if 1 == 2 {
+    x = 1000 }' with 'x' an 'i8' is accepted, without the 'if' rejected
+    (round 7 S-2); 'break' outside a loop moved to the parse (test 1424)
+    => decide: (a) accept dead code as unchecked and say so in the docs, or
+       (b) run at the parse the checks that do not depend on a call, e.g.
+       a constant that does not fit a destination of known type
+    => not possible: compile dead branches as a dry run, an inlined
+       recursion ends through a constant-false branch
 [p] medium: low priority: generic function instances: the nesting limit
     counts the depth of the first use of an instance (H-2): its body is
     parsed inside the parse of that use, e.g. a body nested 70 levels used
@@ -54,6 +147,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        'NNN.rv32i-fpga.out' equal to the file the target falls back to;
        test-cli: fpga '--stack=16' still says 48 B, fpga '--checks=line'
        prints the line
+    => after: the seven 'emit_*_failure_handler' virtuals pair a label with
+       a name in each backend and 'program::emit_failure_handlers' has seven
+       matching blocks; one table {check, label, name, takes a line} in
+       'machine', one virtual 'emit_failure_handler(label, name, with_line)'
+       (round 7 X-3, R-4)
 [ ] medium: aliasing: a call in a value written in parts reads, in its body,
     a part written before it without an error, e.g. 'g = {1, gx()}' with
     'gx' returning 'g.x' (inline and noinline); rule A sees only the reads
