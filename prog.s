@@ -1032,12 +1032,12 @@ main:
 ;   [prog.baz:262:9] arr4: i32[4] (16 B @ [rbp + 484])
 ;   [prog.baz:262:9] arr4 = arr
 ;   [prog.baz:262:16] size <= 16 B, use mov
-;   [prog.baz:262:16] allocate named register rax
-    mov rax, qword [rbp + 424]
-    mov qword [rbp + 484], rax
-    mov rax, qword [rbp + 432]
-    mov qword [rbp + 492], rax
-;   [prog.baz:262:16] free named register rax
+;   [prog.baz:262:16] allocate scratch register -> r15
+    mov r15, qword [rbp + 424]
+    mov qword [rbp + 484], r15
+    mov r15, qword [rbp + 432]
+    mov qword [rbp + 492], r15
+;   [prog.baz:262:16] free scratch register r15
 ;   [prog.baz:263:5] assert(arr == arr4)
 ;   [prog.baz:263:12] allocate scratch register -> r15
 ;   [prog.baz:263:12] ? arr == arr4
@@ -1380,12 +1380,12 @@ main:
 ;   [prog.baz:297:9] q: point (16 B @ [rbp + 536])
 ;   [prog.baz:297:9] q = p
 ;   [prog.baz:297:13] size <= 16 B, use mov
-;   [prog.baz:297:13] allocate named register rax
-    mov rax, qword [rbp + 520]
-    mov qword [rbp + 536], rax
-    mov rax, qword [rbp + 528]
-    mov qword [rbp + 544], rax
-;   [prog.baz:297:13] free named register rax
+;   [prog.baz:297:13] allocate scratch register -> r15
+    mov r15, qword [rbp + 520]
+    mov qword [rbp + 536], r15
+    mov r15, qword [rbp + 528]
+    mov qword [rbp + 544], r15
+;   [prog.baz:297:13] free scratch register r15
 ;   [prog.baz:300:5] assert(p == q)
 ;   [prog.baz:300:12] allocate scratch register -> r15
 ;   [prog.baz:300:12] ? p == q
@@ -2069,12 +2069,12 @@ main:
     jo baz_overflow_line_348
 ;   [prog.baz:349:5] o1.pos = p1
 ;   [prog.baz:349:14] size <= 16 B, use mov
-;   [prog.baz:349:14] allocate named register rax
-    mov rax, qword [rbp + 664]
-    mov qword [rbp + 640], rax
-    mov rax, qword [rbp + 672]
-    mov qword [rbp + 648], rax
-;   [prog.baz:349:14] free named register rax
+;   [prog.baz:349:14] allocate scratch register -> r15
+    mov r15, qword [rbp + 664]
+    mov qword [rbp + 640], r15
+    mov r15, qword [rbp + 672]
+    mov qword [rbp + 648], r15
+;   [prog.baz:349:14] free scratch register r15
 ;   [prog.baz:350:5] assert(o1.pos.x == -1)
 ;   [prog.baz:350:12] allocate scratch register -> r15
 ;   [prog.baz:350:12] ? o1.pos.x == -1

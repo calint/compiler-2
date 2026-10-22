@@ -450,10 +450,10 @@ main:
             syscall
         if.38.24.260.5.end:
     func.assert.260.5.end:
-    mov rax, qword [rbp + 424]
-    mov qword [rbp + 484], rax
-    mov rax, qword [rbp + 432]
-    mov qword [rbp + 492], rax
+    mov r15, qword [rbp + 424]
+    mov qword [rbp + 484], r15
+    mov r15, qword [rbp + 432]
+    mov qword [rbp + 492], r15
     cmp.263.12:
         lea rsi, [rbp + 424]
         lea rdi, [rbp + 484]
@@ -608,10 +608,10 @@ main:
             syscall
         if.38.24.295.5.end:
     func.assert.295.5.end:
-    mov rax, qword [rbp + 520]
-    mov qword [rbp + 536], rax
-    mov rax, qword [rbp + 528]
-    mov qword [rbp + 544], rax
+    mov r15, qword [rbp + 520]
+    mov qword [rbp + 536], r15
+    mov r15, qword [rbp + 528]
+    mov qword [rbp + 544], r15
     cmp.300.12:
         lea rsi, [rbp + 520]
         lea rdi, [rbp + 536]
@@ -930,10 +930,10 @@ main:
     mov qword [rbp + 672], r15
     neg qword [rbp + 672]
     jo baz_overflow_line_348
-    mov rax, qword [rbp + 664]
-    mov qword [rbp + 640], rax
-    mov rax, qword [rbp + 672]
-    mov qword [rbp + 648], rax
+    mov r15, qword [rbp + 664]
+    mov qword [rbp + 640], r15
+    mov r15, qword [rbp + 672]
+    mov qword [rbp + 648], r15
     cmp.350.12:
     cmp qword [rbp + 640], -1
     sete r15b
