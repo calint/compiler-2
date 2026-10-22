@@ -1,0 +1,4 @@
+
+1429.baz:4:6: 'int' is a built-in type, 'int(...)' is a conversion
+func int(a) res {
+     ^~~

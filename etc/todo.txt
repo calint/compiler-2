@@ -149,6 +149,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        scale until a stop time, findings deduplicated by key, a summary at
        the end; sanitizer build refreshed first; log in 'findings/night.log'
     => 5. run it, triage findings one by one (reduce with 'fuzz-reduce.py')
+[ ] hard: x86_64: a call whose arguments are indexed elements runs out of
+    registers, rv32i accepts the same program; the address registers of every
+    argument stay allocated until the callee frame is written
+    ('noinline_call::frame_slot_addresses' then 'write_frame_slots')
+    e.g. 'res = sum(v[i], v[i], v[i], v[i], v[i], v[i])' in a noinline body
+    with 'v' and 'i' parameters: "out of scratch registers, simplify the
+    expression" with nothing to simplify; 12 forwarded parameters fail the
+    same way; an inlined 'sum' fails too (its aliases hold the registers)
+    => repro: round 7 'bugs/np2.baz', 'nd.baz', 'ni2.baz' (scratchpad r7)
+    => idea: write each slot as soon as its address is computed and free its
+       registers; the frame and stack checks move before the arguments
+    => caution: an argument with a call in its index, e.g. 'v[g(1)]', builds
+       the frame of 'g' at the same next frame address, so an early write is
+       overwritten; today 'sum(v[g(1)], v[g(2)])' is correct
+    => inlined calls: spill an alias address to a temporary when the pool runs
+       out
 [ ] hard: noinline calls: cost of the call protocol (x86_64, no checks, every
     function but 'main' noinline: 4117 instructions against 4467 all inline;
     the call protocol is 68% of the reachable code, about 11 instructions per

@@ -1,0 +1,10 @@
+# a function named like an integer type could never be called, its call is a
+# conversion
+
+func int(a) res {
+    res = a + 100
+}
+
+func main() {
+    exit(int(2))
+}

@@ -4562,3 +4562,6 @@ SRC=1427 && COMPERR
 
 # a small copy takes any free register
 SRC=1428 && EXP=12 && RUN
+
+# a function named like an integer type, whose call would be a conversion
+SRC=1429 && COMPERR

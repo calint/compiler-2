@@ -106,6 +106,16 @@ struct func_head {
 
         head.read_receiver(tc, tz);
 
+        if (head.method_dot_tk.is_empty() and
+            tc.builtins().is_integer_name(head.name_tk.text())) {
+
+            throw compile_error{
+                head.name_tk,
+                std::format("'{}' is a built-in type, '{}(...)' is a "
+                            "conversion",
+                            head.name_tk.text(), head.name_tk.text())};
+        }
+
         // e.g. 'func tokenizer.to<T type>()'
         if (head.open_paren_tk.is_empty() and
             tz.peek_char_after_whitespace() == '<') {
