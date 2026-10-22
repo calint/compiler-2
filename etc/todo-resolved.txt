@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: architecture A6: where a variable lives is a choice of three
+    (storage at base and offset, a pointer register, a value register) held
+    as independent fields of 'var_info' and decided again in 'add_var',
+    'make_var_ident_info', 'resolve_var', 'variable_comments' and
+    'storage_of' (round 7 T-5)
+    => design: 'std::variant<in_storage, at_pointer_register,
+       in_value_register> placement' in 'var_info', a visitor at each site;
+       'storage_of' reads the 'var_info' it found instead of resolving the
+       name again
+    => invariant: a variable has exactly one placement, by type
+    => tests: the suite, same assembly
+    => done (2026-10-22): 'var_placement' in ident_info.hpp replaces
+       'offset', 'base_register', 'pointer_register' and 'value_register';
+       'base_register' is set by 'allocate_var' for a frame with its own
+       base; 'register_of' and 'ident_builder::memory_at' read it; 'foo'
+       chooses storage when its iterator or counter register is empty (the
+       parse); the 'storage_of' part is a new item; same output on all four
+       targets
 [x] medium: architecture A5: the dry-run bookkeeping of noinline calls is in
     four places: toc fields 'check_only_depth_', 'deepest_dry_run_level_',
     'deepest_frame_check_', 'function_table::dry_run_heights_',

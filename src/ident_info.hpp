@@ -77,12 +77,55 @@ struct folded_value {
 // what it gives is discarded, see 'ident_info::is_length_unknown'
 inline constexpr size_t discarded_array_len{};
 
+// where a variable lives: in storage at an offset from a base register, at
+// the memory a register points to, or in a register without storage
+struct in_storage {
+    // from the base register, set when the storage is allocated
+    int64_t offset{};
+    // the base of the frame that holds the storage, empty for the base the
+    // name is resolved with, e.g. the variables base
+    std::string_view base_register;
+};
+
+// e.g. the element 'e' of a 'foo' or a parameter whose address the call
+// passes in a register
+struct at_pointer_register {
+    operand reg;
+};
+
+// e.g. the counter 'i' of a 'foo'
+struct in_value_register {
+    operand reg;
+};
+
+using var_placement =
+    std::variant<in_storage, at_pointer_register, in_value_register>;
+
+// the register of a variable in a register or at one, empty in storage
+[[nodiscard]] inline auto register_of(const var_placement& placement)
+    -> operand {
+
+    if (const at_pointer_register* const pointed{
+            std::get_if<at_pointer_register>(&placement),
+        }) {
+
+        return pointed->reg;
+    }
+
+    if (const in_value_register* const in_register{
+            std::get_if<in_value_register>(&placement),
+        }) {
+
+        return in_register->reg;
+    }
+
+    return {};
+}
+
 struct var_info {
     std::string name;
     const type* type_ptr{};
     token src_loc_tk;
-    // location offset from base register
-    int64_t offset{};
     bool is_array{};
     bool is_pointer{};
     read_only_cause read_only_why{};
@@ -91,11 +134,7 @@ struct var_info {
     // the elements of an array, empty when not an array or not known, see
     // 'ident_info::is_length_unknown'
     std::optional<size_t> array_len;
-    // variable location is in register
-    operand pointer_register;
-    std::string_view base_register;
-    // variable value is in register, no storage
-    operand value_register;
+    var_placement placement;
 
     // the array that the element 'e' of a 'foo' belongs to, empty unless this
     // is that element

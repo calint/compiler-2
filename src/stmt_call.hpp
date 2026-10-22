@@ -392,9 +392,7 @@ struct call_site {
                        .src_loc_tk{tk},
                        .is_temporary{true},
                        .array_len{},
-                       .pointer_register{},
-                       .base_register{},
-                       .value_register{},
+                       .placement{},
                        .foo_array{},
                    },
                    var_kind::var);

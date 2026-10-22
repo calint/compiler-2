@@ -560,16 +560,6 @@ class ident_builder final {
             type_path.emplace_back(tp);
         }
 
-        const int64_t idx{
-            var.pointer_register.is_empty()
-                ? add_address_offset(var.offset, address_offset(offset))
-                : address_offset(offset),
-        };
-
-        const std::string_view storage_base{
-            var.base_register.empty() ? base_register : var.base_register,
-        };
-
         // a memory operand needs a built-in type, the first field of an
         // instance starts at its address
         while (not tp->is_builtin()) {
@@ -577,10 +567,8 @@ class ident_builder final {
         }
 
         const operand op{
-            operand::mem(var.pointer_register.is_empty()
-                             ? storage_base
-                             : var.pointer_register.base_register(),
-                         "", 1, idx, *tp),
+            memory_at(var.placement, base_register, address_offset(offset),
+                      *tp),
         };
 
         return ident_info::make_var(std::string{ident}, path,
@@ -593,6 +581,35 @@ class ident_builder final {
                                         .is_pointer{var.is_pointer},
                                         .read_only_why{var.read_only_why},
                                     });
+    }
+
+    // the memory 'offset' bytes into a variable placed at 'placement', in
+    // storage from its own base or else from 'base_register'
+    [[nodiscard]] static auto memory_at(const var_placement& placement,
+                                        const std::string_view base_register,
+                                        const int64_t offset,
+                                        const type& value_type) -> operand {
+
+        if (const at_pointer_register* const pointed{
+                std::get_if<at_pointer_register>(&placement),
+            }) {
+
+            return operand::mem(pointed->reg.base_register(), "", 1, offset,
+                                value_type);
+        }
+
+        // note: a variable in a value register has no memory, 'resolve_var'
+        //       makes its register operand
+
+        const in_storage& stored{std::get<in_storage>(placement)};
+
+        const std::string_view storage_base{
+            stored.base_register.empty() ? base_register : stored.base_register,
+        };
+
+        return operand::mem(storage_base, "", 1,
+                            add_address_offset(stored.offset, offset),
+                            value_type);
     }
 
     // a built-in identifier below a run-time indexed element is addressed from
@@ -1467,7 +1484,7 @@ class storage_layout final {
 
     // the storage of the dat 'var' is where the data table placed it, after
     // the dats before it; returns the bytes it takes with the padding before
-    // it, 'var.offset' is set
+    // it, the offset of its storage is set
     [[nodiscard]] auto allocate_dat(const token& src_loc_tk, var_info& var)
         -> size_t {
 
@@ -1486,8 +1503,8 @@ class storage_layout final {
                              var_storage_size_bytes(src_loc_tk, var)),
         };
 
-        var.offset = add_address_offset(address_offset(dat.offset_bytes),
-                                        -variables_base_shift_bytes());
+        std::get<in_storage>(var.placement).offset = add_address_offset(
+            address_offset(dat.offset_bytes), -variables_base_shift_bytes());
 
         add_allocated_size_bytes(src_loc_tk, allocated_size_bytes);
 
@@ -1495,7 +1512,7 @@ class storage_layout final {
     }
 
     // places 'var' in the innermost storage that has room and returns the
-    // bytes it takes with the alignment padding, 'var.offset' is set
+    // bytes it takes with the alignment padding, its storage is set
     [[nodiscard]] auto allocate_var(const token& src_loc_tk, var_info& var)
         -> size_t {
 
@@ -1519,20 +1536,22 @@ class storage_layout final {
 
         assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
 
-        var.offset = address_offset(base_offset + padding_bytes);
+        in_storage& stored{std::get<in_storage>(var.placement)};
+
+        stored.offset = address_offset(base_offset + padding_bytes);
 
         if (location.frame_index) {
             frame& storage_frame{
                 scopes_.get().frames().at(*location.frame_index),
             };
 
-            var.base_register = storage_frame.storage_base_register();
+            stored.base_register = storage_frame.storage_base_register();
 
             storage_frame.record_storage_size_bytes(add_storage_size(
                 src_loc_tk, base_offset, allocated_size_bytes));
         } else {
-            var.offset =
-                add_address_offset(var.offset, -variables_base_shift_bytes());
+            stored.offset = add_address_offset(stored.offset,
+                                               -variables_base_shift_bytes());
         }
 
         add_allocated_size_bytes(src_loc_tk, allocated_size_bytes);
@@ -2013,8 +2032,12 @@ class ident_resolver final {
                 const ident_path& id, const var_info& var,
                 const std::optional<known_address>& known) const -> ident_info {
 
-        if (var.value_register.is_register() and id.path().size() == 1) {
-            return ident_info::make_register(ident, var.value_register);
+        if (const in_value_register* const in_register{
+                std::get_if<in_value_register>(&var.placement),
+            };
+            in_register != nullptr and id.path().size() == 1) {
+
+            return ident_info::make_register(ident, in_register->reg);
         }
 
         ident_info info{
@@ -2352,10 +2375,7 @@ class variable_comments final {
 
         // the iterator 'e' is memory at its register, the counter 'i' is the
         // register
-        const operand& reg{
-            var.value_register.is_empty() ? var.pointer_register
-                                          : var.value_register,
-        };
+        const operand reg{register_of(var.placement)};
 
         ::machine& x{machine_.get()};
 
@@ -2652,17 +2672,16 @@ class toc final {
                                                      var.name);
         }
 
-        // the value lives in its register for the whole scope
-        const bool is_value_register{not var.value_register.is_empty()};
-
-        // the variable is where the register points, it has no storage
-        const bool is_pointer_register{not var.pointer_register.is_empty()};
+        // a variable in a register or at one has no storage
+        const bool is_in_storage{
+            std::holds_alternative<in_storage>(var.placement),
+        };
 
         size_t allocated_size_bytes{};
 
         if (kind == var_kind::dat) {
             allocated_size_bytes = storage_.allocate_dat(src_loc_tk, var);
-        } else if (not is_value_register and not is_pointer_register) {
+        } else if (is_in_storage) {
             allocated_size_bytes = storage_.allocate_var(src_loc_tk, var);
         }
 

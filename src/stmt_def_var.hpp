@@ -103,9 +103,7 @@ class initializer_declaration final {
             .src_loc_tk{name_tk},
             .is_array{array_count.has_value()},
             .array_len{array_count},
-            .pointer_register{},
-            .base_register{},
-            .value_register{},
+            .placement{},
             .foo_array{},
         };
     }

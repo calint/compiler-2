@@ -576,9 +576,7 @@ class stmt_def_func final : public statement {
                            .src_loc_tk{returns_->ident_tk},
                            .is_pointer{is_pointer},
                            .array_len{},
-                           .pointer_register{},
-                           .base_register{},
-                           .value_register{},
+                           .placement{},
                            .foo_array{},
                        },
                        var_kind::result);
@@ -599,6 +597,13 @@ class stmt_def_func final : public statement {
                         first_param_slot() + static_cast<size_t>(param_index),
             };
 
+            const at_pointer_register address_in_register{address_register};
+
+            const var_placement placement{
+                is_in_register ? var_placement{address_in_register}
+                               : var_placement{},
+            };
+
             tc.add_var(param.tok(), indent,
                        {
                            .name{param.name()},
@@ -611,11 +616,7 @@ class stmt_def_func final : public statement {
                                                     : read_only_cause::none,
                            },
                            .array_len{array_len},
-                           .pointer_register{
-                               is_in_register ? address_register : operand{},
-                           },
-                           .base_register{},
-                           .value_register{},
+                           .placement{placement},
                            .foo_array{},
                        },
                        var_kind::param);

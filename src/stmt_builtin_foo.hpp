@@ -176,9 +176,11 @@ class stmt_builtin_foo final : public statement {
                                               : read_only_cause::none,
                 },
                 .array_len{},
-                .pointer_register{iterator},
-                .base_register{},
-                .value_register{},
+                .placement{
+                    iterator.is_empty()
+                        ? var_placement{}
+                        : var_placement{at_pointer_register{iterator}},
+                },
                 .foo_array{array},
             },
             var_kind::var);
@@ -191,9 +193,11 @@ class stmt_builtin_foo final : public statement {
                        .src_loc_tk{tok()},
                        .read_only_why{read_only_cause::foo_counter},
                        .array_len{},
-                       .pointer_register{},
-                       .base_register{},
-                       .value_register{counter},
+                       .placement{
+                           counter.is_empty()
+                               ? var_placement{}
+                               : var_placement{in_value_register{counter}},
+                       },
                        .foo_array{},
                    },
                    var_kind::var);
@@ -209,9 +213,7 @@ class stmt_builtin_foo final : public statement {
                            .src_loc_tk{tok()},
                            .read_only_why{read_only_cause::foo_length},
                            .array_len{},
-                           .pointer_register{},
-                           .base_register{},
-                           .value_register{},
+                           .placement{},
                            .foo_array{},
                        },
                        var_kind::var);
