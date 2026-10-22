@@ -1,4 +1,4 @@
 
-0724.baz:7:9: expected '{' to begin a value of type 'point'
+0724.baz:7:9: a value in parentheses is a number, not an instance of 'point'
     q = (1)
         ^

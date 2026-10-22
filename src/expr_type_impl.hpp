@@ -80,6 +80,15 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
         return;
     }
 
+    // e.g. the '(' of 'q = (p)', parentheses group numbers
+    if (tz.peek_char() == '(') {
+        throw compile_error{
+            tz, std::format("a value in parentheses is a number, not {} of "
+                            "'{}'",
+                            is_array_destination_ ? "an array" : "an instance",
+                            tp.name())};
+    }
+
     // e.g. the '-' of 'q = -p'
     if (tz.peek_char() == '-' or tz.peek_char() == '~') {
         throw compile_error{

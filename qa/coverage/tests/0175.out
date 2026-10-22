@@ -1,4 +1,4 @@
 
-0175.baz:3:13: expected ']'
+0175.baz:3:13: an array parameter takes arrays of any size, write 'i8[]'
 func f(x i8[2) {}
             ^

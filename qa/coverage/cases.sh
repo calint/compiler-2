@@ -4705,3 +4705,14 @@ SRC=1496 && COMPERR
 SRC=1497 && COMPERR
 SRC=1498 && COMPERR
 SRC=1499 && COMPERR
+
+# an array parameter with a size, an array in parentheses, a value hiding a
+# type before '{'
+SRC=1500 && COMPERR
+SRC=1501 && COMPERR
+SRC=1502 && COMPERR
+SRC=1503 && COMPERR
+
+# a path goes on across whitespace and line ends, a name follows each '.'
+SRC=1504 && EXP=3 && RUN
+SRC=1505 && COMPERR

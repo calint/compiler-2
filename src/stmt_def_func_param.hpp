@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <ostream>
 #include <string_view>
 
@@ -61,10 +62,14 @@ class stmt_def_func_param final : public statement {
                                            : tz.is_next_char_token(']'),
             };
 
+            // e.g. the '4' of 'a i8[4]', each size gets a body of its own
             if (not open_bracket_tk.is_empty() and
                 close_bracket_tk.is_empty()) {
 
-                throw compile_error{tz, "expected ']'"};
+                throw compile_error{
+                    tz, std::format("an array parameter takes arrays of any "
+                                    "size, write '{}[]'",
+                                    type_tk.text())};
             }
 
             return {

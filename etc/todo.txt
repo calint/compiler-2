@@ -267,6 +267,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        fields" for a built-in, like "constant 'c' has no fields"; 6. a
        method with type parameters goes through the generic method clash
        messages (tests 1496 to 1499)
+    => 7 and 8 done (2026-10-22): 7. "an array parameter takes arrays of
+       any size, write 'i8[]'", "a value in parentheses is a number, not an
+       array of 'i8'", "'point' names a value here, which hides the type
+       'point'" (tests 1500 to 1503); 8. 'p..x' gives "expected a field name
+       after '.'"; a path goes on across whitespace and line ends around a
+       '.' by design, 'entities.' then 'array  .x' on the next line compiles
+       (tests 1504, 1505)
 [ ] medium: generics: an error inside an instance found after its parse
     has no frame naming the instance: the result check
     ('assert_functions_set_return_value' runs after the parse) and the check

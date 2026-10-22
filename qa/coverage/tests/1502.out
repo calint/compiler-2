@@ -1,0 +1,4 @@
+
+1502.baz:5:13: 'point' names a value here, which hides the type 'point'
+    var p = point{1, 2}
+            ^~~~~

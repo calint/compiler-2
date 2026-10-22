@@ -1,0 +1,3 @@
+# an array parameter has no size, each size of argument gets a body
+func f(a i8[4]) {}
+func main() {}

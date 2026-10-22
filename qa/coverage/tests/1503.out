@@ -1,0 +1,4 @@
+
+1503.baz:5:5: 'point' names a value here, which hides the type 'point'
+    point{1, 2}
+    ^~~~~

@@ -674,6 +674,12 @@ class stmt_identifier final : public statement {
 
         const token next_tk{tz.next_token()};
 
+        // e.g. 'p..x', a path may go on after whitespace and line ends
+        if (not next_tk.is_word()) {
+            throw compile_error{tz.position_of(next_tk),
+                                "expected a field name after '.'"};
+        }
+
         // e.g. the '.add' of 'lst.add(1)'
         if (is_method_name(tc, tz, tk, next_tk)) {
             // the path so far is resolved as the receiver

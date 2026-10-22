@@ -1,0 +1,6 @@
+# a local named like a type hides it, also as a statement
+type point {x, y}
+func main() {
+    var point = 1
+    point{1, 2}
+}

@@ -1,0 +1,4 @@
+
+1505.baz:5:15: expected a field name after '.'
+    var a = p..x
+              ^

@@ -1,0 +1,4 @@
+
+1501.baz:4:13: a value in parentheses is a number, not an array of 'i8'
+    var x = (a)
+            ^

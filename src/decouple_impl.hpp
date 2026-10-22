@@ -223,6 +223,16 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                      const type* const expected_type)
     -> call_or_identifier {
 
+    // e.g. 'point{1, 2}' after 'var point = 1', the value hides the type
+    if (tc.types().has(tk.text()) and is_hidden_by_value(tc, tk.text()) and
+        tz.peek_char_after_whitespace() == '{') {
+
+        throw compile_error{
+            tk, std::format("'{}' names a value here, which hides the type "
+                            "'{}'",
+                            tk.text(), tk.text())};
+    }
+
     // e.g. 'foo(x)' or 'show<name>(x)', the call reads the type arguments
     if (tz.peek_char_after_whitespace() == '(' or
         is_generic_call(tc, tk.text(), tz)) {
