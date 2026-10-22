@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: architecture A2: 'store_boolean' and 'label' are virtual with the
+    same body on both targets (round 7 X-4)
+    => design: non-virtual in 'machine', like 'begin_noinline_body':
+       'store_boolean' is 'copy_value' of the immediate 0 or 1, 'label' is
+       'target_assembler().label'; the four overrides go
+    => rejected: keep them virtual, nothing differs per target
+    => tests: the suite, and the x86_64 assembly of 'etc/tutorial.baz' is
+       the same ('mov' against 'copy_value' of an immediate)
+    => done (2026-10-22): non-virtual in 'machine', the four overrides are
+       gone; the assembly of every test and the tutorial is the same on
+       x86_64 and rv32i-fpga
+[x] easy: architecture A1: the switch from parse to compile is two calls in
+    two methods, 'build' calls 'toc::begin_compile' and 'compile' calls
+    'toc::reset_usage'; either can run without the other (round 7 D-4, T-7)
+    => design: 'toc::begin_compile' asserts no scope is open, forgets the
+       storage peak and the depth of the parse, asserts no compile record,
+       then sets 'is_compiling_'; 'toc::reset_usage' and its call in
+       'program::compile' go
+    => rejected: move the 'reset_usage' call next to 'begin_compile', two
+       calls still say one thing
+    => invariant: the compile starts with no scope and no usage of the parse
+    => tests: the suite; 'test-rv32i-address.cpp' calls 'begin_compile'
+       with no scope open
+    => done (2026-10-22): 'begin_compile' does both, 'reset_usage' is gone;
+       the suite and 'test-rv32i.sh' pass
 [x] easy: rv32i-fpga: the division by zero trap 'ebreak' in '.Lbaz_divide' ends
     the emulator with the dividend in a0 as exit code
     => done (2026-10-22): also rv32i-qemu, whose 'ebreak' never ended (no

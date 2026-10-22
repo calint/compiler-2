@@ -659,9 +659,6 @@ class machine {
     // stack: calls check that the stack has room and a failure has a handler
     [[nodiscard]] virtual auto is_stack_bounded() const -> bool = 0;
 
-    virtual auto label(const size_t indent, const std::string_view label)
-        -> void = 0;
-
     [[nodiscard]] virtual auto
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
@@ -727,10 +724,6 @@ class machine {
     [[nodiscard]] virtual auto slot_register() const -> std::string_view = 0;
 
     virtual auto start() -> void = 0;
-
-    virtual auto store_boolean(const token& src_loc_tk, const size_t indent,
-                               const operand& dst, const bool value)
-        -> void = 0;
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
@@ -957,6 +950,10 @@ class machine {
         }
     }
 
+    auto label(const size_t indent, const std::string_view name) -> void {
+        target_assembler().label(indent, name);
+    }
+
     [[nodiscard]] auto location_text(const token& src_loc_tk) const
         -> std::string {
 
@@ -1130,6 +1127,14 @@ class machine {
         }
 
         return stats;
+    }
+
+    // a 'bool' is stored as 0 or 1
+    auto store_boolean(const token& src_loc_tk, const size_t indent,
+                       const operand& dst, const bool value) -> void {
+
+        copy_value(src_loc_tk, indent, dst,
+                   operand::imm(value ? 1 : 0, default_type()));
     }
 
     // the padding of the instance of 'size_bytes' at 'dst', zeroed gap by gap

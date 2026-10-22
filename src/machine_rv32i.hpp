@@ -1272,12 +1272,6 @@ class machine_rv32i : public machine {
         return false;
     }
 
-    auto label(const size_t indent, const std::string_view label)
-        -> void override {
-
-        assembler_.label(indent, label);
-    }
-
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
@@ -1519,13 +1513,6 @@ class machine_rv32i : public machine {
                         static_cast<int64_t>(variables_base_past_vars_bytes_));
 
         assembler_.add_separator_newline();
-    }
-
-    auto store_boolean(const token& src_loc_tk, const size_t indent,
-                       const operand& dst, const bool value) -> void override {
-
-        copy_value(src_loc_tk, indent, dst,
-                   operand::imm(value ? 1 : 0, default_type()));
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,

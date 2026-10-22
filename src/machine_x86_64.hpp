@@ -829,12 +829,6 @@ class machine_x86_64 final : public machine {
         return false;
     }
 
-    auto label(const size_t indent, const std::string_view label)
-        -> void override {
-
-        assembler_.label(indent, label);
-    }
-
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
@@ -1126,12 +1120,6 @@ class machine_x86_64 final : public machine {
                                assembler_x86_64::memory::of_symbol(data_label));
 
         assembler_.add_separator_newline();
-    }
-
-    auto store_boolean(const token& src_loc_tk, const size_t indent,
-                       const operand& dst, const bool value) -> void override {
-
-        mov(src_loc_tk, indent, dst, immediate(value ? 1 : 0));
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
