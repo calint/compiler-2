@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: architecture A5: the dry-run bookkeeping of noinline calls is in
+    four places: toc fields 'check_only_depth_', 'deepest_dry_run_level_',
+    'deepest_frame_check_', 'function_table::dry_run_heights_',
+    'scope_stack::noinline_dry_run_level' and the toc methods
+    'reach_dry_run_level', 'reach_frame_check', 'dry_run_call_kind'; one
+    decision in 'noinline_call::dry_run_body' reads all of them (round 7
+    T-2)
+    => design: a 'dry_run_ledger' next to 'function_table', owned by 'toc'
+       and read through 'tc.dry_runs()', holds the heights and the deepest
+       level and frame; 'dry_run_call_kind' stays in 'toc' because it needs
+       'check_only'
+    => rejected: a new header, the ledger is used only by toc
+    => tests: the suite, dry run tests unchanged
+    => done (2026-10-22): 'dry_run_ledger' holds the heights and the deepest
+       level and frame check, 'measure' is the body of the old
+       'dry_run_call_kind'; 'toc' keeps 'check_only_depth_' and forwards
+       'dry_run_call_kind' and the two 'reach_' methods (a change goes
+       through 'toc'); same output on all four targets
 [x] hard: architecture A4: 'machine_rv32i' is both the rv32i instruction
     backend and the linux target, about 150 lines of linux code (system
     calls, 'ecall' exit, sector system calls, 'is_stack_bounded' false, the

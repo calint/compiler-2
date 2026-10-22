@@ -1605,7 +1605,7 @@ class noinline_call {
         const size_t level{tc.scopes().noinline_dry_run_level() + 1};
 
         const std::optional<dry_run_height> checked_height{
-            tc.funcs().dry_run_height_of(*kind),
+            tc.dry_runs().height_of(*kind),
         };
 
         const dry_run_height below{checked_height.value_or(dry_run_height{})};

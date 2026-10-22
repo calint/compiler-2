@@ -41,6 +41,7 @@
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
 //                   address
 //   tables          'type_table', 'function_table', 'data_table'
+//   'dry_run_ledger' the heights of the checked dry runs of noinline calls
 //   options         'check_options', 'usage_statistics'
 //   'scope_stack'   the frames from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
@@ -750,17 +751,13 @@ struct dry_run_height {
 };
 
 // the functions of the program: the built-in ones, the defined ones and the
-// instances of generic ones, the bodies of noinline functions to compile, the
-// definitions a compile reached and the dry-run heights of the checked
-// noinline calls
+// instances of generic ones, the bodies of noinline functions to compile and
+// the definitions a compile reached
 class function_table final {
     lut<func_info> funcs_;
     std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
     std::vector<noinline_body> noinline_bodies_;
-    // the dry-run levels below each kind of call dry run, see
-    // 'noinline_call::dry_run_body'
-    std::map<std::string, dry_run_height, std::less<>> dry_run_heights_;
     // the definitions whose body a compile reached
     std::set<const stmt_def_func*> reached_;
 
@@ -810,19 +807,6 @@ class function_table final {
         return defs_;
     }
 
-    // none when the kind of call is not dry run yet
-    [[nodiscard]] auto dry_run_height_of(const std::string_view kind) const
-        -> std::optional<dry_run_height> {
-
-        const auto it{dry_run_heights_.find(kind)};
-
-        if (it == dry_run_heights_.end()) {
-            return std::nullopt;
-        }
-
-        return it->second;
-    }
-
     // the name is known
     [[nodiscard]] auto get(const std::string_view name) const
         -> const func_info& {
@@ -862,11 +846,73 @@ class function_table final {
     [[nodiscard]] auto noinline_body_count() const -> size_t {
         return noinline_bodies_.size();
     }
+};
 
-    auto set_dry_run_height(const std::string_view kind,
-                            const dry_run_height height) -> void {
+// the dry runs of noinline calls: the height of each kind of call checked and
+// the deepest level and frame check reached in the dry run being checked, see
+// 'noinline_call::dry_run_body'
+class dry_run_ledger final {
+    // the dry-run levels below each kind of call dry run
+    std::map<std::string, dry_run_height, std::less<>> heights_;
+    // the deepest level of noinline dry runs reached in the dry run being
+    // checked
+    size_t deepest_level_{};
+    // the most frames at a check of the frame limit in that dry run
+    size_t deepest_frame_check_{};
 
-        dry_run_heights_.insert_or_assign(std::string{kind}, height);
+  public:
+    // none when the kind of call is not dry run yet
+    [[nodiscard]] auto height_of(const std::string_view kind) const
+        -> std::optional<dry_run_height> {
+
+        const auto it{heights_.find(kind)};
+
+        if (it == heights_.end()) {
+            return std::nullopt;
+        }
+
+        return it->second;
+    }
+
+    // the dry run of the kind of noinline call 'kind' at 'level' with
+    // 'frame_count' frames: the kind counts as dry run with the height 0
+    // while 'dry_run' runs, so the same kind reached inside returns, then the
+    // levels and frames reached below are its height and the enclosing dry
+    // run reaches them too
+    auto measure(const std::string_view kind, const size_t level,
+                 const size_t frame_count,
+                 const std::function_ref<void()> dry_run) -> void {
+
+        const size_t enclosing_deepest{
+            std::exchange(deepest_level_, level),
+        };
+
+        const size_t enclosing_frame_check{
+            std::exchange(deepest_frame_check_, frame_count),
+        };
+
+        heights_.insert_or_assign(std::string{kind}, dry_run_height{});
+
+        dry_run();
+
+        heights_.insert_or_assign(
+            std::string{kind}, dry_run_height{
+                                   .levels{deepest_level_ - level},
+                                   .frames{deepest_frame_check_ - frame_count},
+                               });
+
+        deepest_level_ = std::max(enclosing_deepest, deepest_level_);
+
+        deepest_frame_check_ =
+            std::max(enclosing_frame_check, deepest_frame_check_);
+    }
+
+    auto reach_frame_check(const size_t frame_count) -> void {
+        deepest_frame_check_ = std::max(deepest_frame_check_, frame_count);
+    }
+
+    auto reach_level(const size_t level) -> void {
+        deepest_level_ = std::max(deepest_level_, level);
     }
 };
 
@@ -2340,13 +2386,9 @@ class toc final {
     variable_comments var_comments_;
     storage_layout storage_;
     check_options checks_;
+    dry_run_ledger dry_runs_;
     // above zero inside 'check_only', no noinline body is added there
     size_t check_only_depth_{};
-    // the deepest level of noinline dry runs reached in the dry run being
-    // checked, see 'noinline_call::dry_run_body'
-    size_t deepest_dry_run_level_{};
-    // the most frames at a check of the frame limit in that dry run
-    size_t deepest_frame_check_{};
     // false while the program is parsed: the names are declared without
     // comments and without the capacity check of the storage
     bool is_compiling_{};
@@ -2740,11 +2782,8 @@ class toc final {
 
     [[nodiscard]] auto data() const -> const data_table& { return data_; }
 
-    // the dry run of the kind of noinline call 'kind' at 'level': the kind
-    // counts as dry run with the height 0 while 'dry_run' runs, so the same
-    // kind reached inside returns, then the levels and frames reached below
-    // are its height and the enclosing dry run reaches them too, see
-    // 'noinline_call::dry_run_body'
+    // the dry run of the kind of noinline call 'kind' at 'level', measured
+    // by 'dry_run_ledger::measure'
     //
     // note: an error out of 'dry_run' ends the compile, so nothing is put
     //       back: 'check_only' makes every error a 'source' error and only
@@ -2753,31 +2792,12 @@ class toc final {
     auto dry_run_call_kind(const std::string_view kind, const size_t level,
                            const std::function_ref<void()> dry_run) -> void {
 
-        const size_t frame_count{scopes_.frames().size()};
+        dry_runs_.measure(kind, level, scopes_.frames().size(),
+                          [&] -> void { check_only(dry_run); });
+    }
 
-        const size_t enclosing_deepest{
-            std::exchange(deepest_dry_run_level_, level),
-        };
-
-        const size_t enclosing_frame_check{
-            std::exchange(deepest_frame_check_, frame_count),
-        };
-
-        funcs_.set_dry_run_height(kind, {});
-
-        check_only(dry_run);
-
-        funcs_.set_dry_run_height(
-            kind, {
-                      .levels{deepest_dry_run_level_ - level},
-                      .frames{deepest_frame_check_ - frame_count},
-                  });
-
-        deepest_dry_run_level_ =
-            std::max(enclosing_deepest, deepest_dry_run_level_);
-
-        deepest_frame_check_ =
-            std::max(enclosing_frame_check, deepest_frame_check_);
+    [[nodiscard]] auto dry_runs() const -> const dry_run_ledger& {
+        return dry_runs_;
     }
 
     // 'machine::emit_most_efficient' of versions that compile statements
@@ -3015,13 +3035,13 @@ class toc final {
     }
 
     auto reach_dry_run_level(const size_t level) -> void {
-        deepest_dry_run_level_ = std::max(deepest_dry_run_level_, level);
+        dry_runs_.reach_level(level);
     }
 
     // a check of the frame limit with 'frame_count' frames, which a cached
     // noinline check repeats, see 'noinline_call::dry_run_body'
     auto reach_frame_check(const size_t frame_count) -> void {
-        deepest_frame_check_ = std::max(deepest_frame_check_, frame_count);
+        dry_runs_.reach_frame_check(frame_count);
     }
 
     // 'st' reads bytes of 'dst' under any name, e.g. the 'p' of 'g = p + 1'

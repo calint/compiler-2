@@ -6,19 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] medium: architecture A5: the dry-run bookkeeping of noinline calls is in
-    four places: toc fields 'check_only_depth_', 'deepest_dry_run_level_',
-    'deepest_frame_check_', 'function_table::dry_run_heights_',
-    'scope_stack::noinline_dry_run_level' and the toc methods
-    'reach_dry_run_level', 'reach_frame_check', 'dry_run_call_kind'; one
-    decision in 'noinline_call::dry_run_body' reads all of them (round 7
-    T-2)
-    => design: a 'dry_run_ledger' next to 'function_table', owned by 'toc'
-       and read through 'tc.dry_runs()', holds the heights and the deepest
-       level and frame; 'dry_run_call_kind' stays in 'toc' because it needs
-       'check_only'
-    => rejected: a new header, the ledger is used only by toc
-    => tests: the suite, dry run tests unchanged
 [ ] hard: architecture A6: where a variable lives is a choice of three
     (storage at base and offset, a pointer register, a value register) held
     as independent fields of 'var_info' and decided again in 'add_var',
