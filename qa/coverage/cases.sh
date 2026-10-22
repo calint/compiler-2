@@ -4574,3 +4574,7 @@ SRC=1433 && COMPERR
 
 # a control character in the name of an included file
 SRC=1434 && COMPERR
+
+# an error in a call that is an argument of an inlined call is called from the
+# argument only
+SRC=1435 && COMPERR

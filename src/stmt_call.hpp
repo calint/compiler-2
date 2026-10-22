@@ -759,23 +759,30 @@ class inline_call {
             machine::frame_kind::inlined,
         };
 
-        func.add_constants(tc, indent + 1);
+        // an error found in the inlined body reports where it was called from,
+        // an error in the arguments is in the caller and has no call frame
+        try {
+            func.add_constants(tc, indent + 1);
 
-        // the body names the arguments and the result by the parameters
-        for (const alias_info& e : aliases_to_add) {
-            const bound_storage* const storage{
-                std::get_if<bound_storage>(&e.binding),
-            };
+            // the body names the arguments and the result by the parameters
+            for (const alias_info& e : aliases_to_add) {
+                const bound_storage* const storage{
+                    std::get_if<bound_storage>(&e.binding),
+                };
 
-            x.comment_alias(call_.tk, indent + 1, e.from, e.target_text(),
-                            storage == nullptr ? operand{} : storage->lea);
+                x.comment_alias(call_.tk, indent + 1, e.from, e.target_text(),
+                                storage == nullptr ? operand{} : storage->lea);
 
-            tc.add_alias(e);
+                tc.add_alias(e);
+            }
+
+            // the result reaches the destination through the 'res' alias, so
+            // the statements of the body have no destination
+            func.compile_statements(tc, indent);
+        } catch (compile_error& e) {
+            call_.add_call_frame(e);
+            throw;
         }
-
-        // the result reaches the destination through the 'res' alias, so the
-        // statements of the body have no destination
-        func.compile_statements(tc, indent);
 
         x.free_scratch_registers(call_.tk, indent + 1, registers_to_free);
 
@@ -1632,14 +1639,9 @@ class noinline_call {
 
         const inline_call dry_run{call_};
 
-        try {
-            tc.dry_run_call_kind(*kind, level, [&] -> void {
-                dry_run.compile_with_aliases(tc, indent, dst, func, arguments);
-            });
-        } catch (compile_error& e) {
-            call_.add_call_frame(e);
-            throw;
-        }
+        tc.dry_run_call_kind(*kind, level, [&] -> void {
+            dry_run.compile_with_aliases(tc, indent, dst, func, arguments);
+        });
     }
 
     // the result address precedes the argument addresses
@@ -2051,13 +2053,7 @@ class stmt_call : public expression {
 
         assert_inline_nesting(tc, func);
 
-        // an error found in the inlined body reports where it was called from
-        try {
-            inline_call{call}.compile(tc, indent, dst, func);
-        } catch (compile_error& e) {
-            call.add_call_frame(e);
-            throw;
-        }
+        inline_call{call}.compile(tc, indent, dst, func);
     }
 
     // reported at the call because an inlined result aliases the destination

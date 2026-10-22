@@ -1,0 +1,15 @@
+# an error in the body of a call that is an argument of an inlined call is
+# reported as called from the argument only
+
+func g(a) res {
+    var arr = i8[2]
+    res = arr[a]
+}
+
+func f(a) res {
+    res = a
+}
+
+func main() {
+    var x = f(g(5))
+}
