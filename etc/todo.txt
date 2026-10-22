@@ -213,19 +213,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     keep adding virtuals
     => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
        'std::variant' and rejected it, see 'etc/todo-resolved.txt'
-[p] medium: design: the operator enums 'machine::arithmetic_operator' and
-    'machine::comparison_operator' are language concepts owned by the
-    backend; 'constant_arith.hpp' needs only them but includes machine.hpp,
-    which puts the whole backend under 'ident_info.hpp', the only include
-    that points from the front end records into the backend; 'mirrored' and
-    both 'source_text' overloads are statics of 'machine' that only the
-    front end calls (round 8 A-5, X-9)
-    => design: the two enums move to namespace scope in operand.hpp, which
-       machine.hpp includes, with 'using' aliases in 'machine' so no caller
-       changes; 'mirrored' and 'source_text' move next to them as free
-       functions; 'negated' stays in 'machine', the backends use it;
-       constant_arith.hpp includes operand.hpp and type.hpp
-    => invariant: the value model does not include the backend
 [p] medium: design: a built-in that parses like a call is recognised by a
     hidden convention: 'program' registers exit, read, write and the sector
     functions in 'function_table' with a null definition, 'is_builtin' means

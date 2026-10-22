@@ -220,7 +220,7 @@ class expr_arith final : public expression {
                  ws_before_ops_, ops_, exprs_ | std::views::drop(1))) {
 
             ws.source_to(os);
-            std::print(os, "{}", machine::source_text(o));
+            std::print(os, "{}", source_text(o));
 
             e->source_to(os);
         }
@@ -593,8 +593,8 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, "{} {} {}", dst.name(),
-                  machine::source_text(op), value);
+        x.comment(tok(), indent, "{} {} {}", dst.name(), source_text(op),
+                  value);
 
         x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
 
@@ -909,7 +909,7 @@ class expr_arith final : public expression {
                     folded_value::value_of(e.fold(tc, tc.use_of(dst))),
                 },
                 .folded_source{
-                    std::format("{} {}", machine::source_text(op),
+                    std::format("{} {}", source_text(op),
                                 statement::trimmed_source(e)),
                 },
             });
@@ -1012,8 +1012,7 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         x.comment(src.tok(), indent,
-                  statement::trimmed_source(src, dst.name(),
-                                            machine::source_text(op)));
+                  statement::trimmed_source(src, dst.name(), source_text(op)));
 
         if (op == arithmetic_operator::assign) {
             asm_op_mov(tc, indent, dst, src);

@@ -12,12 +12,10 @@
 #include <optional>
 #include <utility>
 
-#include "machine.hpp"
+#include "operand.hpp"
 #include "type.hpp"
 
 class constant_arith final {
-    using arithmetic_operator = machine::arithmetic_operator;
-
   public:
     //
     // statics
@@ -94,31 +92,31 @@ class constant_arith final {
     }
 
     // the comparison of two constants
-    [[nodiscard]] static auto
-    eval_constant(const int64_t lhs, const machine::comparison_operator op,
-                  const int64_t rhs) -> bool {
+    [[nodiscard]] static auto eval_constant(const int64_t lhs,
+                                            const comparison_operator op,
+                                            const int64_t rhs) -> bool {
 
-        if (op == machine::comparison_operator::equal) {
+        if (op == comparison_operator::equal) {
             return lhs == rhs;
         }
 
-        if (op == machine::comparison_operator::not_equal) {
+        if (op == comparison_operator::not_equal) {
             return lhs != rhs;
         }
 
-        if (op == machine::comparison_operator::less) {
+        if (op == comparison_operator::less) {
             return lhs < rhs;
         }
 
-        if (op == machine::comparison_operator::less_equal) {
+        if (op == comparison_operator::less_equal) {
             return lhs <= rhs;
         }
 
-        if (op == machine::comparison_operator::greater) {
+        if (op == comparison_operator::greater) {
             return lhs > rhs;
         }
 
-        assert(op == machine::comparison_operator::greater_equal);
+        assert(op == comparison_operator::greater_equal);
 
         return lhs >= rhs;
     }

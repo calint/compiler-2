@@ -159,7 +159,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        std::print(os, "{}", machine::source_text(op_));
+        std::print(os, "{}", source_text(op_));
         ws_post_op_.source_to(os);
         rhs_.source_to(os);
     }
@@ -460,7 +460,7 @@ class expr_bool_op final : public statement {
             not is_typed_constant(tc, lhs_)) {
 
             machine::comparison_action mirrored_action{action};
-            mirrored_action.operation = machine::mirrored(op_);
+            mirrored_action.operation = mirrored(op_);
 
             resolve_cmp(tc, indent, rhs_, lhs_, mirrored_action);
 
@@ -1017,7 +1017,7 @@ class expr_bool_op final : public statement {
                         statement::trimmed_source(rhs), rhs_type.name(),
                         statement::trimmed_source(lhs), lhs_type.name(),
                         statement::trimmed_source(rhs),
-                        machine::source_text(machine::mirrored(op)),
+                        source_text(mirrored(op)),
                         statement::trimmed_source(lhs))};
     }
 

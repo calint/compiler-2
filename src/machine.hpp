@@ -65,34 +65,10 @@ class machine {
     using address_emitter = std::function<void(
         const operand& count, const operand& preferred, address_use use)>;
 
-    // what the methods 'add_subtract', 'bitwise', 'divide', 'shift' and
-    // 'unary' take, each one a part of it
-    enum class arithmetic_operator : uint8_t {
-        add,
-        subtract,
-        multiply,
-        divide,
-        remainder,
-        bit_and,
-        bit_or,
-        bit_xor,
-        shift_left,
-        shift_right,
-        // the first element of a list that is neither added nor multiplied
-        assign,
-        negate,
-        complement,
-    };
+    // at namespace scope, the front end computes with them too
+    using arithmetic_operator = ::arithmetic_operator;
 
-    // what a comparison asks, e.g. 'a <= b' is 'less_equal'
-    enum class comparison_operator : uint8_t {
-        equal,
-        not_equal,
-        less,
-        less_equal,
-        greater,
-        greater_equal,
-    };
+    using comparison_operator = ::comparison_operator;
 
     // whether an operation may overwrite a register operand, e.g. a scratch
     // register that holds a factor and is freed after the operation
@@ -1166,116 +1142,6 @@ class machine {
             comment(src_loc_tk, indent, "zero padding: {} B", gap.size_bytes);
             zero(src_loc_tk, indent, gap_dst, gap.size_bytes, gap.alignment);
         }
-    }
-
-    //
-    // statics
-    //
-
-    // the operator that gives the same result with the operands swapped
-    [[nodiscard]] static auto mirrored(const comparison_operator op)
-        -> comparison_operator {
-
-        if (op == comparison_operator::less) {
-            return comparison_operator::greater;
-        }
-
-        if (op == comparison_operator::less_equal) {
-            return comparison_operator::greater_equal;
-        }
-
-        if (op == comparison_operator::greater) {
-            return comparison_operator::less;
-        }
-
-        if (op == comparison_operator::greater_equal) {
-            return comparison_operator::less_equal;
-        }
-
-        return op;
-    }
-
-    // the operator as written in the source, 'assign' as the '=' of a copy
-    [[nodiscard]] static auto source_text(const arithmetic_operator op)
-        -> std::string_view {
-
-        if (op == arithmetic_operator::add) {
-            return "+";
-        }
-
-        if (op == arithmetic_operator::subtract or
-            op == arithmetic_operator::negate) {
-
-            return "-";
-        }
-
-        if (op == arithmetic_operator::multiply) {
-            return "*";
-        }
-
-        if (op == arithmetic_operator::divide) {
-            return "/";
-        }
-
-        if (op == arithmetic_operator::remainder) {
-            return "%";
-        }
-
-        if (op == arithmetic_operator::bit_and) {
-            return "&";
-        }
-
-        if (op == arithmetic_operator::bit_or) {
-            return "|";
-        }
-
-        if (op == arithmetic_operator::bit_xor) {
-            return "^";
-        }
-
-        if (op == arithmetic_operator::shift_left) {
-            return "<<";
-        }
-
-        if (op == arithmetic_operator::shift_right) {
-            return ">>";
-        }
-
-        if (op == arithmetic_operator::assign) {
-            return "=";
-        }
-
-        // note: 'complement' is a unary operator, 'unary_ops' writes it
-        std::unreachable();
-    }
-
-    // the operator as written in the source
-    [[nodiscard]] static auto source_text(const comparison_operator op)
-        -> std::string_view {
-
-        if (op == comparison_operator::equal) {
-            return "==";
-        }
-
-        if (op == comparison_operator::not_equal) {
-            return "!=";
-        }
-
-        if (op == comparison_operator::less) {
-            return "<";
-        }
-
-        if (op == comparison_operator::less_equal) {
-            return "<=";
-        }
-
-        if (op == comparison_operator::greater) {
-            return ">";
-        }
-
-        assert(op == comparison_operator::greater_equal);
-
-        return ">=";
     }
 
   protected:
