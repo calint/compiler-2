@@ -11,6 +11,8 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
+// 'exit(code)' ends the program with 'code', the path after it is not
+// reached
 class stmt_builtin_exit final : public stmt_call {
   public:
     stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)

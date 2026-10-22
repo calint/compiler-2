@@ -635,7 +635,7 @@ class machine {
     // prints 'panic: stack overflow', only where 'is_stack_bounded'
     virtual auto emit_stack_overflow_handler() -> void = 0;
 
-    // leaves the code section current
+    // leaves the read-only data section current
     virtual auto
     emit_string_constants(const std::span<const string_constant> strings)
         -> void = 0;
@@ -758,8 +758,7 @@ class machine {
                        const operand& address, const operand& count)
         -> void = 0;
 
-    // writes the lines buffered from 'start', output emitted before it was
-    // already written
+    // writes the lines buffered from 'start'
     virtual auto write_assembly(std::ostream& os) -> void = 0;
 
     virtual auto zero(const token& src_loc_tk, const size_t indent,
@@ -1062,6 +1061,7 @@ class machine {
         emit_frame_entry();
     }
 
+    // held from 'start' to 'finish'
     auto reserve_variables_base() -> void {
         assert(not variables_base_reserved_);
 
@@ -1071,7 +1071,6 @@ class machine {
         variables_base_reserved_ = true;
     }
 
-    // held from 'start' to 'finish'
     // an index or a count of elements becomes a byte offset
     auto scale_index(const token& src_loc_tk, const size_t indent,
                      const operand& index, const size_t element_size_bytes)
@@ -1488,7 +1487,6 @@ class machine {
         return sd_card_file_name_;
     }
 
-    // resolved and optimized jumps need every line before writing
     auto start_output() -> void {
         assembler& output{target_assembler()};
 
@@ -1547,7 +1545,6 @@ class machine {
         };
     }
 
-    // the lines of the failure stubs of 'routine'
     // the entry of the handler 'handler_label' for the failures in a file,
     // which names the file before the line
     [[nodiscard]] static auto

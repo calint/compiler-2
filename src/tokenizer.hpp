@@ -13,6 +13,8 @@
 #include "constant_parser.hpp"
 #include "token.hpp"
 
+// reads the tokens of one source file, keeping the whitespace and comments
+// in the tokens so that the source can be reproduced
 class tokenizer final {
     std::string_view src_;
     size_t char_ix_{}; // current char index in 'src_'
@@ -225,11 +227,16 @@ class tokenizer final {
     // e.g. 'a + f(b, c), d)' stops at the ',' before 'd'
     auto skip_argument() -> void { skip_to_unnested(",)"); }
 
-    // skips up to and including the '}' that closes the next '{', strings and
+    // skips the braced block that starts at the next '{', strings and
     // character literals may contain braces
     // e.g. '{ a = { 1 } b = 2 }', the depth counts the braces that are open
     auto skip_braced_block() -> void {
-        size_t depth{};
+        const token open_tk{is_next_char_token('{')};
+
+        // note: every caller has seen the '{'
+        assert(not open_tk.is_empty());
+
+        size_t depth{1};
 
         while (true) {
             if (not is_next_char_token('{').is_empty()) {
@@ -237,19 +244,13 @@ class tokenizer final {
                 continue;
             }
 
-            const token close_tk{is_next_char_token('}')};
-
-            if (close_tk.is_empty()) {
+            if (is_next_char_token('}').is_empty()) {
                 if (is_eos()) {
                     throw compile_error{*this, "expected '}' to end block"};
                 }
 
                 skip_token();
                 continue;
-            }
-
-            if (depth == 0) {
-                throw compile_error{close_tk, "expected '{' to begin block"};
             }
 
             if (--depth == 0) {
@@ -276,14 +277,6 @@ class tokenizer final {
         if (not is_eos()) {
             skip_token();
         }
-    }
-
-    // skips up to and including the next '(' before a '{', returns it, empty
-    // when there is none
-    // e.g. '.print<T type>(' of 'func text.print<T type>()'
-    [[nodiscard]] auto skip_to_open_paren() -> token {
-        skip_to_unnested("({");
-        return is_next_char_token('(');
     }
 
     // the source text from the end of 'tk' to the current position

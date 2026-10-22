@@ -497,7 +497,8 @@ struct call_site {
 
     // unique per call and argument, an inlined body names it through the
     // binding of its parameter and a call in the body has temporaries of its
-    // own
+    // own; each level of an inlined recursion declares it again, the binding
+    // resolves it in the caller's scope
     [[nodiscard]] auto temporary_argument_name(const size_t index) const
         -> std::string {
 
@@ -1382,8 +1383,9 @@ class inline_call {
 //
 // the steps:
 //
-//   1. 'compile': a result or an argument that is not a variable in memory
-//      goes through a temporary
+//   1. 'compile' and 'compile_arguments_and_call': a result or an argument
+//      that is not a variable in memory goes through a temporary, the result
+//      is copied and the unary ops applied after the call
 //   2. 'compile_with_arguments': the types are checked ('assert_call'), the
 //      errors that depend on this call, e.g. shared storage, are found by a
 //      dry run of the body as an inlined call ('dry_run_body', see
@@ -1814,13 +1816,15 @@ class noinline_call {
 
         std::vector<call_kind_item> items;
 
-        // note: a pointer destination is resolved to its address before
+        // note: a pointer destination is resolved to its address before, and
+        //       the result is not an array, see 'assert_call'
+
         if (func.returns()) {
             items.push_back({
                 .target{dst.storage()},
                 .is_pointer{},
-                .is_array{dst.is_array()},
-                .array_len{dst.array_len()},
+                .is_array{},
+                .array_len{},
             });
         }
 
@@ -2111,17 +2115,17 @@ class stmt_call : public expression {
 
         assert_inline_nesting(tc, func);
 
+        // note: read before the compile, a throw leaves its frames entered
+        const bool is_recursion{tc.scopes().inlined_nesting(func.name()) != 0};
+
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same
-        if (tc.scopes().inlined_nesting(func.name()) == 0) {
-            inline_call{call}.compile(tc, indent, dst, func);
-            return;
-        }
-
         try {
             inline_call{call}.compile(tc, indent, dst, func);
         } catch (const compile_error& e) {
-            if (e.kind != compile_error::error_kind::out_of_registers) {
+            if (not is_recursion or
+                e.kind != compile_error::error_kind::out_of_registers) {
+
                 throw;
             }
 

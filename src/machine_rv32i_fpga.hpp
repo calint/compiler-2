@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <ostream>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
@@ -51,8 +50,8 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                        const target_options& options)
         : machine_rv32i_bare_metal{builtins, files, options} {
 
-        // note: 'main' accepts only a multiple of what a 'lui' loads, the end
-        //       of memory
+        // note: the '--memory' option accepts only a multiple of what a
+        //       'lui' loads, the end of memory
 
         assert(memory_size_bytes() %
                    (size_t{1} << assembler_rv32i::lui_shift) ==

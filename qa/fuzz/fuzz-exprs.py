@@ -22,7 +22,6 @@
 # usage: [FUZZ_CHECKS=noub] [FUZZ_SPELLING=1] fuzz-exprs.py [count] [seed]
 #        [jobs]
 import concurrent.futures
-import importlib.util
 import os
 import random
 import shutil

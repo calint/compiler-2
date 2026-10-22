@@ -211,7 +211,7 @@ class assignment_flow final {
             "function may return without setting its return value"};
     }
 
-    // definite assignment of 'name' assigns these bytes
+    // the traced variable is assigned these bytes
     auto assign(const byte_range bytes) -> void { assigned_.add(bytes); }
 
     [[nodiscard]] auto assigned() const -> const assigned_bytes& {

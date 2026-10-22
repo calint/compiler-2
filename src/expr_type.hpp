@@ -51,6 +51,9 @@ struct written_part {
 //       implemented in 'expr_type_impl.hpp', those headers include this one
 //       through 'expr_any.hpp', so their definitions are incomplete here
 
+// a value of a user type or an array: a list of fields or elements '{...}',
+// the type name alone as its zero value, a copy of a name or a call; exactly
+// one of 'stmt_call_', 'stmt_ident_' and the list 'exprs_' is used
 class expr_type final : public statement {
     std::unique_ptr<stmt_identifier> stmt_ident_;
     std::unique_ptr<stmt_call> stmt_call_;
@@ -180,9 +183,6 @@ class expr_type final : public statement {
         close_brace_tk_ = tz.is_next_char_token('}');
         return not close_brace_tk_.is_empty();
     }
-
-    auto compile_assign(toc& tc, const size_t indent,
-                        const destination& dst) const -> void;
 
     auto compile_call_field(toc& tc, const size_t indent,
                             const destination& dst) const -> void;

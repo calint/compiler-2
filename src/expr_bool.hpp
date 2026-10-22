@@ -75,6 +75,9 @@ struct branch_targets {
     return nots.size() % 2 == 1;
 }
 
+// one operand of an 'expr_bool': a comparison 'a < b', a comparison of the
+// bytes of two instances or arrays, or the shorthand, the operand alone as
+// the condition, e.g. 'if a', which leaves 'op_' and 'rhs_' unused
 class expr_bool_op final : public statement {
     // e.g. the 'not' of 'if not a == b ...'
     std::vector<token> nots_;

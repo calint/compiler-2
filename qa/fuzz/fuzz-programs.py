@@ -395,7 +395,7 @@ class Generator:
         self.emit("if cmp { v2 = v2 + 1 }")
         self.emit("var eq = arrays_equal(arr, big, 4)")
         self.emit("if eq { v3 = v3 + 1 }")
-        self.emit(f"v0 = (v0 + s + i32(array_length(arr)) + table[v1 & 7]) & 0xffff")
+        self.emit("v0 = (v0 + s + i32(array_length(arr)) + table[v1 & 7]) & 0xffff")
         self.emit("var out = i8[16]")
         names = self.scalars[:6]
         for k in range(16):

@@ -1225,8 +1225,6 @@ class machine_rv32i : public machine {
         assembler_.ascii(token::decode_string(value));
     }
 
-    // the helpers before the sector routines, e.g. a division by zero marks
-    // the 'exit' on bare metal
     auto emit_used_routines() -> void override {
         emit_arithmetic_helpers();
         emit_used_sector_routines();
@@ -5491,8 +5489,10 @@ class machine_rv32i_linux final : public machine_rv32i {
         copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
                    exit_code);
 
-        assembler().li(indent, "a7", syscall_exit_);
-        assembler().ecall(indent);
+        assembler_rv32i& a{assembler()};
+
+        a.li(indent, "a7", syscall_exit_);
+        a.ecall(indent);
     }
 
     // linux stops a program that overflows the stack
@@ -5512,43 +5512,27 @@ class machine_rv32i_linux final : public machine_rv32i {
 
     // linux stops the program with a trap signal
     auto emit_divide_by_zero_trap() -> void override {
-        assembler().ebreak(1);
-        assembler().j(1, "5b");
+        assembler_rv32i& a{assembler()};
+
+        a.ebreak(1);
+        a.j(1, "5b");
     }
 
     auto emit_read_call(const size_t indent) -> void override {
-        assembler().li(indent, "a7", syscall_read_);
-        assembler().ecall(indent);
+        assembler_rv32i& a{assembler()};
+
+        a.li(indent, "a7", syscall_read_);
+        a.ecall(indent);
     }
 
     // the routines take the sector in a0, the address in a1 and the size in
     // a2, return through a7 and may change a0 and a3 to a6; an operating
     // system transfers the sector of the image file
-    auto emit_sector_routines(const bool read_used, const bool write_used)
-        -> void override {
-
-        emit_sector_system_call_routines(read_used, write_used);
-    }
-
-    // note: linux does not bound the stack, see 'is_stack_bounded'
-    auto emit_stack_limit_load([[maybe_unused]] const size_t indent,
-                               [[maybe_unused]] const std::string_view reg)
-        -> void override {
-
-        std::unreachable();
-    }
-
-    auto emit_write_call(const size_t indent) -> void override {
-        assembler().li(indent, "a7", syscall_write_);
-        assembler().ecall(indent);
-    }
-
-  private:
     // opens the image file at the first transfer and keeps its descriptor and
     // sector count in '.Lbaz_sd_card', a sector past the end, a failed open or
     // a short transfer panics
-    auto emit_sector_system_call_routines(const bool read_used,
-                                          const bool write_used) -> void {
+    auto emit_sector_routines(const bool read_used, const bool write_used)
+        -> void override {
 
         // 'AT_FDCWD', 'O_RDWR' and 'SEEK_END' of linux
         constexpr int current_directory{-100};
@@ -5647,5 +5631,20 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.ascii(sd_card_file_name());
         a.data(1, name_end);
         a.switch_section(section::text);
+    }
+
+    // note: linux does not bound the stack, see 'is_stack_bounded'
+    auto emit_stack_limit_load([[maybe_unused]] const size_t indent,
+                               [[maybe_unused]] const std::string_view reg)
+        -> void override {
+
+        std::unreachable();
+    }
+
+    auto emit_write_call(const size_t indent) -> void override {
+        assembler_rv32i& a{assembler()};
+
+        a.li(indent, "a7", syscall_write_);
+        a.ecall(indent);
     }
 };

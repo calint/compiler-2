@@ -9,7 +9,7 @@ For a reviewer:
 2. the code: the reading order in 1.1, the choices in chapter 7
 3. build: './make.sh build' (clang++ with c++26), one translation unit
 4. test: 'qa/coverage/test-coverage.sh --target=x86_64 run' and
-   '--target=rv32i-fpga run' run the about 1100 cases of 'cases.sh' on the
+   '--target=rv32i-fpga run' run the about 1500 cases of 'cases.sh' on the
    two main targets; 'qa/coverage/test-all.sh' runs them on all four
    targets with the other suites and a coverage report in
    'qa/coverage/report/' (needs nasm, ld, llvm-mc, ld.lld, qemu-riscv32 and
@@ -644,7 +644,7 @@ the call that needed the instance, for the same reason as in
 example.baz:9:9: field 'size' not found in type 'name'
     res.size = n
         ^~~~
-example.baz:13:13: called from 'make<name>'
+example.baz:13:13: instantiated by 'make<name>'
     var m = make<name>(2)
             ^~~~
 ```
@@ -782,8 +782,9 @@ like above.
 
 A noinline body is compiled once and reaches its parameters through
 addresses, so it cannot see that 'p' is 'g' and cannot protect the read.
-With '--checks=alias' the call is rejected instead: an argument may not share
-storage with another argument or with a global the callee uses. An overlap
+The call is rejected instead: an argument may not share storage with a 'mut'
+argument (always), nor with '--checks=alias' with the result or a global the
+callee uses. An overlap
 that the body sees itself, e.g. the element 'e' of a 'foo' and the array it
 iterates, is protected like in an inlined body.
 

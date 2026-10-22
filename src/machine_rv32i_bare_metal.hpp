@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
-#include <ostream>
 #include <string_view>
 
 #include "assembler_rv32i.hpp"
@@ -64,8 +63,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
 
     // only the routines the program calls are emitted; the shared routines
-    // come first, they may use 'exit'
-    // after the shared ones, which may use 'exit', e.g. the division by zero
+    // come first, they may use 'exit', e.g. the division by zero
     auto emit_used_routines() -> void override {
         machine_rv32i::emit_used_routines();
 

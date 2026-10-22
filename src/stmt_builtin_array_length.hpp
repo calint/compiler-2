@@ -18,6 +18,8 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+// 'array_length(a)' is the length of the array 'a' in the default type, a
+// constant whenever the length is known, see 'fold'
 class stmt_builtin_array_length final : public expression {
     token open_paren_tk_;
     stmt_identifier stmt_ident_;

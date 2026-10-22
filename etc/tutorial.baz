@@ -60,9 +60,9 @@ func literals() {
     assert(neg == -255)
     assert(inv == -256)
     # unary '-' negates and '~' inverts the bits
-    # the minus is applied after the literal is read, so the most negative
-    # value of a type has no literal: '9223372036854775808' is out of range
-    # for an 'i64' even in '-9223372036854775808', write it as
+    # the minus is applied after the literal is read as an 'i64', so the most
+    # negative 'i64' has no literal: '9223372036854775808' is out of range
+    # even in '-9223372036854775808', write it as
     # '-9223372036854775807 - 1'
 }
 
@@ -871,7 +871,8 @@ func checks() {
 #   variable 'x', so 'res = 0' also clears 'v'
 #   calls where the result and the arguments may share storage with each
 #   other are rejected, '--checks=-alias' turns that check off; a global
-#   that the function uses counts as an argument
+#   that the function uses counts as an argument; two arguments that may
+#   share storage when one is 'mut' are always rejected
 
     var p = point{1, 2}
     p = {2, 1}

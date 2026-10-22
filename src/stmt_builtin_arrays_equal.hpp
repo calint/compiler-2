@@ -16,6 +16,8 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+// 'arrays_equal(a, b, count)' is a 'bool': whether the elements of the two
+// ranges are equal; it takes no unary ops
 class stmt_builtin_arrays_equal final : public expression {
     bulk_operands operands_;
 

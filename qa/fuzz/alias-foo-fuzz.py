@@ -2,14 +2,15 @@
 # end to end fuzz of '--checks=alias': random programs whose destination is the
 # element 'e' of a 'foo' or a 'mut' parameter, the value reads a variable; the
 # verdict of the compiler ("may share storage" or not) against a brute force of
-# the bytes, every value of every run-time index is tried. an overlap is
-# rejected only through a noinline call, whose body is compiled once and
-# cannot see it; inline code computes the value before it writes it
+# the bytes, every value of every run-time index is tried. a 'mut' argument
+# that may overlap a global the callee reads is rejected at the call, inline or
+# noinline; the element of a 'foo' is inline code, which computes the value
+# before it writes it
 #
 # usage: alias-foo-fuzz.py [programs] [seed] [compiler]
-# exits 1 on a missed overlap (a noinline call accepted, bytes can be the same),
-# on a false positive (rejected, bytes never are or the code is inline) or on
-# an error that is not an alias error
+# exits 1 on a missed overlap (a call accepted, bytes can be the same), on a
+# false positive (rejected, bytes never are or the code is a 'foo') or on an
+# error that is not an alias error
 #
 # note: a read under the name of the destination ('e.f = e.g') is handled where
 #       the value is compiled, not by this check, so it must be accepted
@@ -230,7 +231,7 @@ def gen_param(rng):
     src.append("func main() {")
     src.append(f"    put({dst_text})")
     src.append("}")
-    return "\n".join(src) + "\n", truth and modifier != ""
+    return "\n".join(src) + "\n", truth
 
 
 def main():

@@ -745,14 +745,14 @@ class machine_x86_64 final : public machine {
         }
     }
 
+    // the escapes of the source are not those of nasm, e.g. nasm reads '\01'
+    // as one octal escape and '\`' would end the string, so the bytes are
+    // written again with the escapes both read the same
     auto emit_string_data(const std::string_view value) -> void override {
         assembler_.string_data(
             token::encode_string(token::decode_string(value)));
     }
 
-    // the escapes of the source are not those of nasm, e.g. nasm reads '\01'
-    // as one octal escape and '\`' would end the string, so the bytes are
-    // written again with the escapes both read the same
     auto emit_used_routines() -> void override { emit_used_sector_routines(); }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {

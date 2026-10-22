@@ -1,15 +1,11 @@
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
 #include <optional>
 #include <ostream>
 #include <string_view>
 
 #include "expression.hpp"
 #include "ident_info.hpp"
-#include "machine.hpp"
-#include "operand.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
@@ -39,14 +35,6 @@ class expr_zero final : public expression {
         close_brace_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void override {
-
-        machine& x{tc.machine()};
-
-        x.copy_value(tok(), indent, dst.operand(), operand::imm(0, get_type()));
-    }
-
     [[nodiscard]] auto fold([[maybe_unused]] const toc& tc,
                             [[maybe_unused]] const value_use& use) const
         -> std::optional<folded_value> override {
@@ -58,14 +46,6 @@ class expr_zero final : public expression {
     }
 
     [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return true;
-    }
-
-    // zero has no high bits to lose
-    [[nodiscard]] auto
-    keeps_low_bits([[maybe_unused]] const width_change change) const
-        -> bool override {
-
         return true;
     }
 

@@ -608,7 +608,9 @@ class expr_arith final : public expression {
 
         x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
 
-        const operand constant{constant_operand(tc, value)};
+        const operand constant{
+            folded_value::untyped(value).operand_at(dst.type_ref()),
+        };
 
         if (op == arithmetic_operator::add or
             op == arithmetic_operator::subtract) {
@@ -1315,12 +1317,6 @@ class expr_arith final : public expression {
     }
 
     // constants have the default type like literals
-    [[nodiscard]] static auto constant_operand(const toc& tc,
-                                               const int64_t value) -> operand {
-
-        return operand::imm(value, tc.builtins().default_type());
-    }
-
     static auto consume_peeked_operator(tokenizer& tz) -> void {
         const char ch{tz.next_char()};
 

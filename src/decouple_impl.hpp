@@ -217,7 +217,8 @@ struct call_or_identifier {
 
 // parses what follows the token 'tk' as a call of a function, a generic
 // function, a constructor or a method, otherwise as an identifier, 'uops' go to
-// the call and 'expected_type' is the type the call is assigned to or null
+// the call or the identifier and 'expected_type' is the type the call is
+// assigned to or null
 inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                      unary_ops uops,
                                      const type* const expected_type)
@@ -272,6 +273,8 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
             .identifier{},
         };
     }
+
+    si.set_unary_ops(std::move(uops));
 
     return {
         .call{},
@@ -383,14 +386,12 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
     }
 
     call_or_identifier parsed{
-        parse_call_or_identifier(tc, tz, tk, uops, destination_type),
+        parse_call_or_identifier(tc, tz, tk, std::move(uops), destination_type),
     };
 
     if (parsed.call) {
         return value_call(tc, std::move(parsed.call));
     }
-
-    parsed.identifier->set_unary_ops(std::move(uops));
 
     return std::move(parsed.identifier);
 }

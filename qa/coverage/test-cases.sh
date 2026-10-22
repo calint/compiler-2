@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # runs the compiler cases of 'cases.sh' for one target, a simpler runner than
 # 'test-coverage.sh', and writes the coverage report
 #
@@ -58,8 +58,7 @@ execute_program() {
 }
 
 compile_and_build() {
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS 2>err >gen.s
-    if [ $? -ne 0 ]; then
+    if ! LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $OPTS 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
@@ -67,8 +66,7 @@ compile_and_build() {
 }
 
 compile_and_build_no_checks() {
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source 2>err >gen.s
-    if [ $? -ne 0 ]; then
+    if ! LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin --reproduce-source 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi
@@ -77,8 +75,7 @@ compile_and_build_no_checks() {
 
 compile_and_build_with_opts() {
     local opts="$1"
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source 2>err >gen.s
-    if [ $? -ne 0 ]; then
+    if ! LLVM_PROFILE_FILE="$SCRIPT_DIR/${SRC%.*}.profraw" "$BIN" "$SRC.baz" --target="$MACHINE" --bin=gen-rv32i.bin $opts --reproduce-source 2>err >gen.s; then
         echo "compiler failed. see 'err' and 'gen.s'" >&2
         exit 1
     fi

@@ -147,9 +147,6 @@ def fuzz_one(args):
         image = os.path.join(work, "image.bin")
         if "rv32i" in target and not any(o.startswith("--bin") for o in options):
             options.append("--bin=" + image)
-        assembly = os.path.join(work, "f.s")
-        c = fl.compile_source(fl.COMPILER_ASAN, None, options + file_arguments,
-                              assembly, cwd=work) if False else None
         command = [fl.COMPILER_ASAN] + options + file_arguments
         begin = time.time()
         result = fl.run(command, fl.COMPILE_TIMEOUT, cwd=work, file_size=1 << 30)
@@ -176,13 +173,12 @@ def fuzz_one(args):
 
 def run_accepted(work, path, options, target, fpga, expected, name, description,
                  found, result, image):
-    checks = ",".join(o for o in options if o.startswith("--checks="))
     if target == "x86_64":
         assembly = os.path.join(work, "f.s")
         with open(assembly, "wb") as f:
             f.write(result.stdout)
         # the listing went to stdout of the run above, compile again to a file
-        c = fl.compile_source(fl.COMPILER_ASAN, path, options, assembly, cwd=work)
+        fl.compile_source(fl.COMPILER_ASAN, path, options, assembly, cwd=work)
         exe, problem = fl.assemble_x86(assembly, work)
         if problem and problem[0] != "skip":
             found.append((problem[0], description[:100], problem[1][-800:]))

@@ -124,11 +124,6 @@ class source_locations final {
     explicit source_locations(const source_files* const files)
         : files_{files} {}
 
-    [[nodiscard]] auto column(const token& src_loc_tk) const -> size_t {
-        return column_for_char_index(src_loc_tk.start_index(),
-                                     files_->text(src_loc_tk.file_index()));
-    }
-
     // e.g. 'include/x.baz', as the messages of the compiler name it
     [[nodiscard]] auto file_name(const size_t file_ix) const
         -> std::string_view {
@@ -189,6 +184,11 @@ class source_locations final {
     }
 
   private:
+    [[nodiscard]] auto column(const token& src_loc_tk) const -> size_t {
+        return column_for_char_index(src_loc_tk.start_index(),
+                                     files_->text(src_loc_tk.file_index()));
+    }
+
     // 'line' and 'column' of the token, 'separator' between them
     [[nodiscard]] auto text(const token& src_loc_tk, const char separator) const
         -> std::string {

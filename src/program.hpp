@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <filesystem>
 #include <format>
 #include <functional>
@@ -12,7 +11,6 @@
 #include <optional>
 #include <ostream>
 #include <set>
-#include <span>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -184,7 +182,7 @@ class report_renderer final {
     usage_report(const machine::output_statistics& stats,
                  const usage_statistics& usage) -> report_section {
 
-        report_section section{
+        return {
             .title{},
             .entries{
                 {
@@ -207,15 +205,12 @@ class report_renderer final {
                     .name{"max vars size"},
                     .value{std::format("{} B", usage.max_vars_size_bytes)},
                 },
+                {
+                    .name{"instructions"},
+                    .value{std::format("{}", stats.instruction_count)},
+                },
             },
         };
-
-        section.entries.push_back({
-            .name{"instructions"},
-            .value{std::format("{}", stats.instruction_count)},
-        });
-
-        return section;
     }
 };
 

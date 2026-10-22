@@ -51,6 +51,8 @@ struct byte_range {
 // of its size
 enum class type_kind : uint8_t { user, builtin, boolean };
 
+// a built-in type or a user type with its fields at aligned offsets; the
+// size is rounded up so that the elements of an array stay aligned
 class type final {
     std::string name_;
     size_t size_bytes_{};       // total size of type in bytes including padding

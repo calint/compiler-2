@@ -586,8 +586,8 @@ examples:
     return 0;
 }
 
-// the message of the error at its source line, the inlined calls it was found
-// in and what else is known about it
+// the message of the error at its source line, the inlined calls and generic
+// instances it was found through and what else is known about it
 auto print_compiler_error(const source_files& files, const compile_error& e)
     -> void {
 
@@ -889,7 +889,8 @@ auto print_unlocated_error(const std::string_view message) -> void {
     std::println(stderr, "error: {}", printable(message));
 }
 
-// the inlined calls the error was found in, innermost first
+// the inlined calls and generic instances the error was found through,
+// innermost first
 auto print_call_frames(const source_files& files,
                        const std::span<const compile_error::call_frame> frames)
     -> void {

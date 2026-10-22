@@ -16,6 +16,8 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 
+// the prefix '-' and '~' of an operand, applied after the operand is
+// evaluated, the innermost first
 class unary_ops final {
     token ws_pre_;          // whitespace before the ops, at where they start
     std::vector<char> ops_; // the unary ops as characters

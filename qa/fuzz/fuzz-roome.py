@@ -16,7 +16,6 @@ import concurrent.futures
 import os
 import random
 import re
-import shutil
 import sys
 import tempfile
 import time

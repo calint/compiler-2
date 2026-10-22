@@ -28,7 +28,8 @@ class register_pool final {
         token src_loc_tk;
         size_t indent{};
         bool named{};
-        // the index of the inlined call that allocated it, see 'call_frame'
+        // the index of the inlined call that allocated it, see
+        // 'register_trace::frame'
         size_t frame{};
     };
 

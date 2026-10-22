@@ -612,6 +612,7 @@ class frame final {
           storage_base_register_{storage_base_register} {}
 };
 
+// an identifier and its path split at the '.', e.g. 'p.pos.x'
 class ident_path final {
     std::string id_;
     std::vector<std::string> path_;
@@ -914,15 +915,6 @@ class type_table final {
     }
 };
 
-// what the dry run of a checked noinline call reached below it, see
-// 'noinline_call::dry_run_body'
-struct dry_run_height {
-    // the noinline dry runs nested in it
-    size_t levels{};
-    // the frames above it at the deepest check of the frame limit
-    size_t frames{};
-};
-
 // the functions of the program: the defined ones and the instances of
 // generic ones, the bodies of noinline functions to compile and
 // the definitions a compile reached
@@ -1024,6 +1016,15 @@ class function_table final {
     [[nodiscard]] auto noinline_body_count() const -> size_t {
         return noinline_bodies_.size();
     }
+};
+
+// what the dry run of a checked noinline call reached below it, see
+// 'noinline_call::dry_run_body'
+struct dry_run_height {
+    // the noinline dry runs nested in it
+    size_t levels{};
+    // the frames above it at the deepest check of the frame limit
+    size_t frames{};
 };
 
 // the dry runs of noinline calls: the height of each kind of call checked and
@@ -1292,7 +1293,8 @@ struct name_meaning {
         return what == kind::constant;
     }
 
-    // a name that has a value hides a type or a function of that name
+    // a name that has a value hides a type or a generic function of that name,
+    // a call 'f()' still calls the function
     [[nodiscard]] auto is_value() const -> bool { return what != kind::none; }
 
     [[nodiscard]] auto is_var_or_binding() const -> bool {
@@ -1353,13 +1355,7 @@ class scope_stack final {
 
     // blocks and loops belong to the function frame below them
     [[nodiscard]] auto current_func_frame() const -> const frame& {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_func()) {
-                return frm;
-            }
-        }
-
-        std::unreachable();
+        return frames_.at(func_frame_index());
     }
 
     auto enter_block() -> void {
@@ -2334,7 +2330,7 @@ class ident_resolver final {
             };
 
             // note: -1 because the parameter names the first element of the
-            // path
+            //       path
         }
 
         step.id = ident_builder::replace_binding_base(storage, step.id);
@@ -2382,10 +2378,46 @@ class definition_checks final {
         }
     }
 
+    auto
+    assert_generic_method_not_defined(const generic_method_info& method) const
+        -> void {
+
+        for (const generic_method_info& known :
+             generics_.get().get_methods(method.type_tk.text())) {
+
+            if (known.method_name_tk.text() == method.method_name_tk.text()) {
+                throw compile_error{
+                    method.method_name_tk,
+                    std::format("generic method '{}.{}' already defined at {}",
+                                method.type_tk.text(),
+                                method.method_name_tk.text(),
+                                where(known.method_name_tk))};
+            }
+        }
+    }
+
+    // a generic parameter of a definition cannot be the name of a generic
+    // type; an instance names the generic type itself, e.g. 'text' names 'str'
+    auto assert_generic_param_not_generic_type(
+        const token& src_loc_tk, const std::string_view name) const -> void {
+
+        if (not generics_.get().exists_type(name)) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("generic parameter '{}' hides the generic type '{}' "
+                        "defined at {}, use another name",
+                        name, name,
+                        where(generics_.get().get_type(name).src_loc_tk))};
+    }
+
     // a generic parameter names its argument, so it cannot be the name of a
     // type
-    auto assert_generic_param_free(const token& src_loc_tk,
-                                   const std::string_view name) const -> void {
+    auto assert_generic_param_not_type(const token& src_loc_tk,
+                                       const std::string_view name) const
+        -> void {
 
         if (not types_.get().exists(name)) {
             return;
@@ -2407,23 +2439,6 @@ class definition_checks final {
             std::format("generic parameter '{}' hides the type '{}' defined "
                         "at {}, use another name",
                         name, name, where(type_tk))};
-    }
-
-    // a generic parameter of a definition cannot be the name of a generic
-    // type; an instance names the generic type itself, e.g. 'text' names 'str'
-    auto assert_generic_param_not_generic_type(
-        const token& src_loc_tk, const std::string_view name) const -> void {
-
-        if (not generics_.get().exists_type(name)) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("generic parameter '{}' hides the generic type '{}' "
-                        "defined at {}, use another name",
-                        name, name,
-                        where(generics_.get().get_type(name).src_loc_tk))};
     }
 
     // a frame declares a variable or a constant of a name, not both
@@ -2840,18 +2855,7 @@ class toc final {
     // a method is defined once for its generic type, also when no alias
     // makes an instance of the type
     auto add_generic_method(const generic_method_info& method) -> void {
-        for (const generic_method_info& known :
-             generics_.get_methods(method.type_tk.text())) {
-
-            if (known.method_name_tk.text() == method.method_name_tk.text()) {
-                throw compile_error{
-                    method.method_name_tk,
-                    std::format(
-                        "generic method '{}.{}' already defined at {}",
-                        method.type_tk.text(), method.method_name_tk.text(),
-                        locations_.human_readable(known.method_name_tk))};
-            }
-        }
+        definitions_.assert_generic_method_not_defined(method);
 
         generics_.add_method(method);
     }
@@ -2906,7 +2910,7 @@ class toc final {
     auto add_type_param(const token& src_loc_tk, const std::string_view name,
                         const type& tpe) -> void {
 
-        definitions_.assert_generic_param_free(src_loc_tk, name);
+        definitions_.assert_generic_param_not_type(src_loc_tk, name);
         types_.add_param(src_loc_tk, name, tpe);
     }
 
@@ -2947,7 +2951,7 @@ class toc final {
     // a generic parameter is a name like the others, e.g. not a keyword
     auto assert_generic_param_free(const token& name_tk) const -> void {
         assert_valid_unqualified_name(name_tk);
-        definitions_.assert_generic_param_free(name_tk, name_tk.text());
+        definitions_.assert_generic_param_not_type(name_tk, name_tk.text());
 
         definitions_.assert_generic_param_not_generic_type(name_tk,
                                                            name_tk.text());
@@ -3017,7 +3021,7 @@ class toc final {
     // whether the arithmetic of a value that 'dst' receives is checked for
     // overflow
     [[nodiscard]] auto checks_overflow(const destination& dst) const -> bool {
-        return checks_.overflow and not dst.wraps();
+        return overflow_options(dst).enabled;
     }
 
     // a number or a constant

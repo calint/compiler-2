@@ -265,12 +265,6 @@ inline auto expr_type::is_array_element() const -> bool {
 inline auto expr_type::compile(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
-    compile_assign(tc, indent, dst);
-}
-
-inline auto expr_type::compile_assign(toc& tc, const size_t indent,
-                                      const destination& dst) const -> void {
-
     if (stmt_call_) {
         compile_call_field(tc, indent, dst);
         return;
@@ -481,14 +475,14 @@ inline auto expr_type::compile_record_field(toc& tc, const size_t indent,
 
     // one assignment fills an instance or copies a whole array identifier
     if (not field.is_array() or src.is_array_identifier()) {
-        src.as_expr_type().compile_assign(tc, indent, dst);
+        src.as_expr_type().compile(tc, indent, dst);
         return;
     }
 
     const size_t count{src.element_count()};
 
     for (size_t i{}; i < count; ++i) {
-        src.as_expr_type(i).compile_assign(tc, indent, dst.element(i));
+        src.as_expr_type(i).compile(tc, indent, dst.element(i));
     }
 
     zero_remaining_elements(
