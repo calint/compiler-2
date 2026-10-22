@@ -221,15 +221,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
-[p] easy: low priority: consistency: rv32i ISA facts are defined twice:
-    'immediate_min_'/'immediate_max_' in machine and assembler,
-    'address_space_bytes_' (size_t with a note against int64), the 12-bit
-    'lui' shift (fpga 'lui_shift_' against 'upper_part'); the target hooks
-    reach the assembler three ways (repeated 'assembler()', a local, a
-    parameter of const hooks) (round 8 R-6, R-7)
-    => design: public constants of 'assembler_rv32i' like
-       'one_instruction_bytes'; every hook binds 'assembler_rv32i&
-       a{assembler()};', the bare-metal hooks lose the parameter and 'const'
 [p] easy: low priority: front end small designs (round 8 F-8, F-9, F-10,
     F-11):
     1. "no token here" ('text().empty() and not is_string()') is spelled at

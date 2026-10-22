@@ -38,8 +38,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr int sd_read_sector_offset_{-20};
     static constexpr int sd_next_byte_offset_{-24};
     static constexpr int sd_write_sector_offset_{-32};
-    // 'lui' places the immediate in the upper 20 bits
-    static constexpr uint32_t lui_shift_{12};
     // the uart and the sd card are in the last 'lui' step of the address
     // space, the memory ends below it
     static constexpr size_t max_memory_size_bytes_{0xffff'f000};
@@ -56,7 +54,9 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         // note: 'main' accepts only a multiple of what a 'lui' loads, the end
         //       of memory
 
-        assert(memory_size_bytes() % (size_t{1} << lui_shift_) == 0);
+        assert(memory_size_bytes() %
+                   (size_t{1} << assembler_rv32i::lui_shift) ==
+               0);
 
         if (memory_size_bytes() > max_memory_size_bytes_) {
             throw option_error{
@@ -176,7 +176,9 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         // note: the constructor rejected a stack larger than the memory
         assert(stack_size_bytes() <= memory_size_bytes());
 
-        assembler().li(indent, reg, memory_size_bytes() - stack_size_bytes());
+        assembler_rv32i& a{assembler()};
+
+        a.li(indent, reg, memory_size_bytes() - stack_size_bytes());
     }
 
   private:
@@ -186,32 +188,40 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     // the emulator exits at 'ebreak' with a0 as its status, the loop halts
     // hardware that continues
-    auto emit_exit_routine(assembler_rv32i& a) const -> void override {
+    auto emit_exit_routine() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.label(0, exit_label_);
         a.label(0, "1");
         a.ebreak(1);
         a.j(1, "1b");
     }
 
-    auto emit_receive_byte(assembler_rv32i& a) const -> void override {
+    auto emit_receive_byte() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.label(0, "2");
         a.lw(1, "a4", uart_in_offset_, "zero");
         a.beq(1, "a4", "a3", "2b");
     }
 
     // the stack grows down from the end of memory
-    auto emit_stack_setup(assembler_rv32i& a) const -> void override {
+    auto emit_stack_setup() -> void override {
+        assembler_rv32i& a{assembler()};
+
         // 'std::format' has no digit separators so the halves are printed
         // apart
         a.comment(0, std::format("load stack pointer to {:#x}:{:04x}",
                                  memory_size_bytes() >> half_bits_,
                                  memory_size_bytes() & half_mask_));
 
-        a.lui(0, "sp", memory_size_bytes() >> lui_shift_);
+        a.lui(0, "sp", memory_size_bytes() >> assembler_rv32i::lui_shift);
         a.add_separator_newline();
     }
 
-    auto emit_transmit_byte(assembler_rv32i& a) const -> void override {
+    auto emit_transmit_byte() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.label(0, "2");
         a.lw(1, "a4", uart_out_offset_, "zero");
         a.bne(1, "a4", "a3", "2b");
@@ -219,7 +229,9 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         a.sw(1, "a4", uart_out_offset_, "zero");
     }
 
-    auto emit_uart_setup(assembler_rv32i& a) const -> void override {
+    auto emit_uart_setup() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.li(1, "a3", uart_idle_);
     }
 

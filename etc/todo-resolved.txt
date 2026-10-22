@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: low priority: consistency: rv32i ISA facts are defined twice:
+    'immediate_min_'/'immediate_max_' in machine and assembler,
+    'address_space_bytes_' (size_t with a note against int64), the 12-bit
+    'lui' shift (fpga 'lui_shift_' against 'upper_part'); the target hooks
+    reach the assembler three ways (repeated 'assembler()', a local, a
+    parameter of const hooks) (round 8 R-6, R-7)
+    => design: public constants of 'assembler_rv32i' like
+       'one_instruction_bytes'; every hook binds 'assembler_rv32i&
+       a{assembler()};', the bare-metal hooks lose the parameter and 'const'
+    => done (2026-10-22): as designed; 'assembler_rv32i' has the public
+       'immediate_min', 'immediate_max', 'lui_shift' (also used by
+       'upper_part') and 'address_space_bytes' (size_t, cast once where
+       the assembler checks a signed distance); the five bare-metal hooks
+       and the two 'emit_stack_limit_load' bind the assembler; the output
+       of the 1466 tests on rv32i, rv32i-fpga and rv32i-qemu is identical
 [x] medium: low priority: design: 'compare_and_branch' takes the front end's
     scratch registers and frees them between the compare and the store or
     branch, the backend ends the lifetime of front end allocations; three

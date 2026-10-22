@@ -88,8 +88,6 @@ class machine_rv32i : public machine {
 
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
-    static constexpr int64_t immediate_min_{-2048};
-    static constexpr int64_t immediate_max_{2047};
     static constexpr std::array<std::string_view, 4> sector_clobbered_{
         "a3",
         "a4",
@@ -106,10 +104,6 @@ class machine_rv32i : public machine {
     static constexpr int64_t line_digits_bytes_{16};
     static constexpr size_t byte_size_bytes_{1};
     static constexpr size_t half_size_bytes_{2};
-    static constexpr size_t address_space_bytes_{
-        size_t{std::numeric_limits<uint32_t>::max()} + 1,
-    };
-    // note: +1 because the highest address is the maximum value
 
     static constexpr const decltype(assembler_rv32i::register_names)&
         register_names_{assembler_rv32i::register_names};
@@ -1297,7 +1291,7 @@ class machine_rv32i : public machine {
     }
 
     [[nodiscard]] auto max_storage_bytes() const -> size_t override {
-        return address_space_bytes_;
+        return assembler_rv32i::address_space_bytes;
     }
 
     // every known size is compared from the address operands, small ones
@@ -2901,8 +2895,9 @@ class machine_rv32i : public machine {
                                    : int64_t{constant.value_or(0)},
         };
 
-        if (constant.has_value() and immediate >= immediate_min_ and
-            immediate <= immediate_max_) {
+        if (constant.has_value() and
+            immediate >= assembler_rv32i::immediate_min and
+            immediate <= assembler_rv32i::immediate_max) {
 
             assembler_.immediate_op(indent, immediate_form(instruction),
                                     left.base_register(), left.base_register(),
@@ -2913,11 +2908,12 @@ class machine_rv32i : public machine {
 
         // two addi are shorter than li and add
         if (constant.has_value() and arithmetic and
-            immediate >= 2 * immediate_min_ and
-            immediate <= 2 * immediate_max_) {
+            immediate >= 2 * assembler_rv32i::immediate_min and
+            immediate <= 2 * assembler_rv32i::immediate_max) {
 
             const int64_t first{
-                immediate < 0 ? immediate_min_ : immediate_max_,
+                immediate < 0 ? assembler_rv32i::immediate_min
+                              : assembler_rv32i::immediate_max,
             };
 
             assembler_.addi(indent, left.base_register(), left.base_register(),
@@ -3050,8 +3046,9 @@ class machine_rv32i : public machine {
         //       'addi'
 
         const bool is_small_constant{
-            constant.has_value() and *constant > immediate_min_ and
-                *constant <= immediate_max_,
+            constant.has_value() and
+                *constant > assembler_rv32i::immediate_min and
+                *constant <= assembler_rv32i::immediate_max,
         };
 
         if (is_register_source or is_small_constant) {
@@ -3214,7 +3211,8 @@ class machine_rv32i : public machine {
         // a branch compares registers, a boolean result can use an immediate
         const bool use_immediate{
             not action.destination.is_empty() and constant.has_value() and
-                threshold >= immediate_min_ and threshold <= immediate_max_,
+                threshold >= assembler_rv32i::immediate_min and
+                threshold <= assembler_rv32i::immediate_max,
         };
 
         const std::optional<int64_t> immediate{
@@ -4208,7 +4206,7 @@ class machine_rv32i : public machine {
         operand lowered{lower_address(src_loc_tk, indent, address)};
 
         if (lowered.displacement() + static_cast<int64_t>(size_bytes) - 1 >
-            immediate_max_) {
+            assembler_rv32i::immediate_max) {
 
             const operand pointer{
                 alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -4781,7 +4779,7 @@ class machine_rv32i : public machine {
 
     // the code and data of the image cannot be addressed beyond 32 bits
     static auto check_address_range(const size_t memory_end_address) -> void {
-        if (memory_end_address <= address_space_bytes_) {
+        if (memory_end_address <= assembler_rv32i::address_space_bytes) {
             return;
         }
 

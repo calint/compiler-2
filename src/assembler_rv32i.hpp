@@ -184,8 +184,6 @@ class assembler_rv32i final : public assembler {
     static constexpr uint8_t zero_register_{};
     static constexpr uint8_t return_address_register_{1};
 
-    static constexpr int64_t immediate_min_{-2048};
-    static constexpr int64_t immediate_max_{2047};
     static constexpr int64_t shift_max_{31};
     static constexpr int64_t upper_max_{0xfffff};
     static constexpr uint32_t upper_mask_{0xfffff};
@@ -194,7 +192,6 @@ class assembler_rv32i final : public assembler {
     static constexpr int64_t branch_max_{4094};
     static constexpr int64_t jal_min_{-1048576};
     static constexpr int64_t jal_max_{1048574};
-    static constexpr int64_t address_space_bytes_{0x100000000};
 
     struct instruction {
         op code{};
@@ -279,6 +276,12 @@ class assembler_rv32i final : public assembler {
 
     static constexpr size_t one_instruction_bytes{4};
     static constexpr size_t two_instructions_bytes{8};
+    // the 12-bit signed immediate of the I and S formats
+    static constexpr int64_t immediate_min{-2048};
+    static constexpr int64_t immediate_max{2047};
+    // 'lui' places its immediate in the upper 20 bits
+    static constexpr unsigned lui_shift{12};
+    static constexpr size_t address_space_bytes{0x1'0000'0000};
 
     //
     // overridden methods
@@ -873,7 +876,7 @@ class assembler_rv32i final : public assembler {
         const uint32_t bits{static_cast<uint32_t>(value)};
         const int32_t number{std::bit_cast<int32_t>(bits)};
 
-        if ((number >= immediate_min_ and number <= immediate_max_) or
+        if ((number >= immediate_min and number <= immediate_max) or
             (bits & low_mask_) == 0) {
 
             return one_instruction_bytes;
@@ -903,7 +906,7 @@ class assembler_rv32i final : public assembler {
             static_cast<int32_t>(static_cast<uint32_t>(value) & low_mask_),
         };
 
-        if (low > immediate_max_) {
+        if (low > immediate_max) {
             return low - low_range;
         }
 
@@ -926,9 +929,8 @@ class assembler_rv32i final : public assembler {
     // '%hi' rounds up when the sign-extended '%lo' is negative
     [[nodiscard]] static auto upper_part(const int64_t value) -> uint32_t {
         constexpr uint32_t rounding{0x800};
-        constexpr unsigned low_bits{12};
 
-        return ((static_cast<uint32_t>(value) + rounding) >> low_bits) &
+        return ((static_cast<uint32_t>(value) + rounding) >> lui_shift) &
                upper_mask_;
     }
 
@@ -1723,7 +1725,7 @@ class assembler_rv32i final : public assembler {
                 return value.symbol_part == immediate::part::low;
             }
 
-            return fits(value.number, immediate_min_, immediate_max_);
+            return fits(value.number, immediate_min, immediate_max);
         }
 
         if (operands == form::shift) {
@@ -1740,7 +1742,7 @@ class assembler_rv32i final : public assembler {
 
         if (operands == form::load or operands == form::store) {
             return not symbolic and
-                   fits(value.number, immediate_min_, immediate_max_);
+                   fits(value.number, immediate_min, immediate_max);
         }
 
         if (operands == form::load_immediate) {
@@ -1977,7 +1979,7 @@ class assembler_rv32i final : public assembler {
             std::bit_cast<int32_t>(static_cast<uint32_t>(value)),
         };
 
-        if (fits(number, immediate_min_, immediate_max_)) {
+        if (fits(number, immediate_min, immediate_max)) {
             return {
                 encode_immediate(addi_encoding_, rd, zero_register_, number),
             };
@@ -2026,8 +2028,10 @@ class assembler_rv32i final : public assembler {
         -> std::vector<uint32_t> {
 
         // addresses are 32 bit, so the distance wraps around the address space
-        assert(distance > -address_space_bytes_ and
-               distance < address_space_bytes_);
+        // note: the address space fits a signed distance
+        constexpr auto space_bytes{static_cast<int64_t>(address_space_bytes)};
+
+        assert(distance > -space_bytes and distance < space_bytes);
 
         return {
             encode_upper(auipc_encoding_, base, upper_part(distance)),

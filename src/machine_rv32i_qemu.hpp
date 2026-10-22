@@ -58,7 +58,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     auto emit_stack_limit_load(const size_t indent, const std::string_view reg)
         -> void override {
 
-        assembler().la(indent, reg, variables_end_label);
+        assembler_rv32i& a{assembler()};
+
+        a.la(indent, reg, variables_end_label);
     }
 
   private:
@@ -67,7 +69,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     //
 
     // ends qemu with the exit code a0 as its status
-    auto emit_exit_routine(assembler_rv32i& a) const -> void override {
+    auto emit_exit_routine() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.label(0, exit_label_);
         a.slli(1, "a0", "a0", finisher_code_shift_);
         a.li(1, "t0", finisher_pass_);
@@ -79,7 +83,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         a.j(1, "1b");
     }
 
-    auto emit_receive_byte(assembler_rv32i& a) const -> void override {
+    auto emit_receive_byte() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.label(0, "2");
         a.lbu(1, "a4", line_status_offset_, "a3");
         a.andi(1, "a4", "a4", line_status_data_ready_);
@@ -88,13 +94,17 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     }
 
     // the stack follows the variables
-    auto emit_stack_setup(assembler_rv32i& a) const -> void override {
+    auto emit_stack_setup() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.la(0, "sp", variables_end_label);
         a.li(0, "t0", stack_size_bytes());
         a.add(0, "sp", "sp", "t0");
     }
 
-    auto emit_transmit_byte(assembler_rv32i& a) const -> void override {
+    auto emit_transmit_byte() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.label(0, "2");
         a.lbu(1, "a4", line_status_offset_, "a3");
         a.andi(1, "a4", "a4", line_status_transmit_empty_);
@@ -103,7 +113,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         a.sb(1, "a4", 0, "a3");
     }
 
-    auto emit_uart_setup(assembler_rv32i& a) const -> void override {
+    auto emit_uart_setup() -> void override {
+        assembler_rv32i& a{assembler()};
+
         a.lui(1, "a3", uart_upper_);
     }
 

@@ -70,7 +70,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         machine_rv32i::emit_used_routines();
 
         if (is_used("exit")) {
-            emit_exit_routine(assembler());
+            emit_exit_routine();
         }
 
         if (is_used("read")) {
@@ -101,7 +101,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         machine_rv32i::start();
 
         // no operating system sets up a stack
-        emit_stack_setup(assembler());
+        emit_stack_setup();
     }
 
   protected:
@@ -163,19 +163,19 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     //
 
     // '.Lbaz_exit' ends the program with the exit code in a0
-    virtual auto emit_exit_routine(assembler_rv32i& a) const -> void = 0;
+    virtual auto emit_exit_routine() -> void = 0;
 
     // waits for a byte and loads it into a4, may change only a4
-    virtual auto emit_receive_byte(assembler_rv32i& a) const -> void = 0;
+    virtual auto emit_receive_byte() -> void = 0;
 
-    virtual auto emit_stack_setup(assembler_rv32i& a) const -> void = 0;
+    virtual auto emit_stack_setup() -> void = 0;
 
     // waits until the uart is ready and sends the byte at a5, may change
     // only a4
-    virtual auto emit_transmit_byte(assembler_rv32i& a) const -> void = 0;
+    virtual auto emit_transmit_byte() -> void = 0;
 
     // prepares a3 for 'emit_receive_byte' and 'emit_transmit_byte'
-    virtual auto emit_uart_setup(assembler_rv32i& a) const -> void = 0;
+    virtual auto emit_uart_setup() -> void = 0;
 
     //
     // class methods
@@ -205,12 +205,12 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         assembler_rv32i& a{assembler()};
 
         a.label(0, read_label_);
-        emit_uart_setup(a);
+        emit_uart_setup();
         a.mv(1, "a6", "a1");
         a.li(1, "a0", 0);
         a.label(0, "1");
         a.beq(1, "a0", "a2", "4f");
-        emit_receive_byte(a);
+        emit_receive_byte();
         // the uart has no end of input, so ctrl-d stands for it
         a.li(1, "a5", end_of_transmission_);
         a.beq(1, "a4", "a5", "4f");
@@ -233,7 +233,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         assembler_rv32i& a{assembler()};
 
         a.label(0, write_label_);
-        emit_uart_setup(a);
+        emit_uart_setup();
         a.mv(1, "a5", "a1");
         // the descriptor is not needed so a0 holds the end
         a.add(1, "a0", "a1", "a2");
@@ -241,7 +241,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         // handles a count of zero
         a.beq(1, "a5", "a0", "3f");
         a.label(0, "1");
-        emit_transmit_byte(a);
+        emit_transmit_byte();
         a.addi(1, "a5", "a5", 1);
         a.bne(1, "a5", "a0", "1b");
         a.label(0, "3");
