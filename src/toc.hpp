@@ -2655,11 +2655,19 @@ class toc final {
         storage_.assert_released();
     }
 
-    // the parse is over: declarations comment where they are stored and the
-    // storage capacity is checked, e.g. a parameter 'self' of a type larger
-    // than the vars section is a pointer once the body is compiled
+    // the parse is over: its frames are popped and its use of storage is
+    // forgotten, declarations comment where they are stored and the storage
+    // capacity is checked, e.g. a parameter 'self' of a type larger than the
+    // vars section is a pointer once the body is compiled
     auto begin_compile() -> void {
         assert(not is_compiling_);
+        assert(scopes_.is_empty());
+
+        storage_.reset_usage();
+        scopes_.set_max_depth(0);
+
+        // note: the parse compiles no call
+        assert(not funcs_.has_compile_records());
 
         is_compiling_ = true;
         storage_.begin_compile();
@@ -3047,16 +3055,6 @@ class toc final {
             });
 
         return is_read;
-    }
-
-    auto reset_usage() -> void {
-        assert(scopes_.is_empty());
-
-        storage_.reset_usage();
-        scopes_.set_max_depth(0);
-
-        // note: the parse compiles no call
-        assert(not funcs_.has_compile_records());
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }

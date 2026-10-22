@@ -402,8 +402,6 @@ class program final {
     }
 
     auto compile(const size_t indent) -> void {
-        tc_.reset_usage();
-
         tc_.enter_block();
 
         for (const std::unique_ptr<statement>& s : statements_) {
