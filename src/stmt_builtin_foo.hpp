@@ -371,7 +371,6 @@ class stmt_builtin_foo final : public statement {
                 .destination{},
                 .target{end_label},
                 .branch_on_true{true},
-            },
-            {});
+            });
     }
 };

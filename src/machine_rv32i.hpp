@@ -901,16 +901,11 @@ class machine_rv32i : public machine {
                 format_address(address));
     }
 
-    auto
-    compare_and_branch(const token& src_loc_tk, const size_t indent,
-                       const operand& lhs, const operand& rhs,
-                       const comparison_action& action,
-                       const std::span<const operand> scratch_registers_to_free)
-        -> void override {
+    auto compare_and_branch(const token& src_loc_tk, const size_t indent,
+                            const operand& lhs, const operand& rhs,
+                            const comparison_action& action) -> void override {
 
-        // the address scopes in 'emit_comparison' end before these are freed
         emit_comparison(src_loc_tk, indent, lhs, rhs, action);
-        free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
     }
 
     auto copy(const token& src_loc_tk, const size_t indent, const operand& dst,

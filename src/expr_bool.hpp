@@ -370,7 +370,7 @@ class expr_bool_op final : public statement {
 
         x.compare_and_branch(tok(), indent, action.destination,
                              operand::imm(0, tc.builtins().default_type()),
-                             branch_action, {});
+                             branch_action);
     }
 
     // two instances or arrays are compared as memory, anything else as numbers
@@ -516,8 +516,8 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        x.compare_and_branch(tok(), indent, dst, src, action,
-                             allocated_registers);
+        x.compare_and_branch(tok(), indent, dst, src, action);
+        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
     auto resolve_cmp_shorthand(toc& tc, const size_t indent,
@@ -564,7 +564,9 @@ class expr_bool_op final : public statement {
 
         x.compare_and_branch(tok(), indent, dst,
                              operand::imm(0, tc.builtins().default_type()),
-                             action, allocated_registers);
+                             action);
+
+        x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
     auto resolve_if_op_is_expression() -> void {
@@ -617,11 +619,11 @@ class expr_bool_op final : public statement {
         machine::comparison_action branch_action{action};
         branch_action.operation = machine::comparison_operator::not_equal;
 
-        const std::vector<operand> allocated_registers{result};
-
         x.compare_and_branch(tok(), indent, result,
                              operand::imm(0, tc.builtins().default_type()),
-                             branch_action, allocated_registers);
+                             branch_action);
+
+        x.free_scratch_register(tok(), indent, result);
     }
 
     //

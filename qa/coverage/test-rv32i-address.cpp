@@ -859,8 +859,7 @@ auto check_backend_jump_optimization() -> void {
                 .operation{machine::comparison_operator::not_equal},
                 .target{target},
                 .branch_on_true{true},
-            },
-            {});
+            });
     };
 
     backend.branch(0, "cmp_13_26");
@@ -2113,7 +2112,7 @@ auto check_comparison_selection() -> void {
     for (const comparison_form& form : forms) {
         assert(rv32i.emitted([&] {
             backend.compare_and_branch(token{}, 0, form.lhs, form.rhs,
-                                       form.action, {});
+                                       form.action);
         }) == form.expected);
     }
 
@@ -2688,8 +2687,7 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
                                        .operation{operation},
                                        .target{target},
                                        .branch_on_true{true},
-                                   },
-                                   {});
+                                   });
     };
 
     const operand stack{operand::reg("sp", integer)};
@@ -3276,8 +3274,7 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
             {
                 .operation{machine::comparison_operator::less},
                 .destination{operand::reg("a0", boolean)},
-            },
-            {});
+            });
 
         emit_expect(backend, "a0", 1);
         backend.assert_registers_free();
@@ -3439,8 +3436,7 @@ auto emit_comparison_matrix(machine_rv32i& backend) -> void {
                                 .target{layout.branches ? std::string_view{target}
                                                         : std::string_view{}},
                                 .branch_on_true{branch_on_true},
-                            },
-                            {});
+                            });
 
                         // the branch is taken exactly when expected
                         if (layout.branches) {

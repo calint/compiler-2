@@ -526,10 +526,11 @@ class machine {
                                   const size_t size_bytes,
                                   const operand& address) -> void = 0;
 
-    virtual auto compare_and_branch(
-        const token& src_loc_tk, const size_t indent, const operand& lhs,
-        const operand& rhs, const comparison_action& action,
-        const std::span<const operand> scratch_registers_to_free) -> void = 0;
+    virtual auto compare_and_branch(const token& src_loc_tk,
+                                    const size_t indent, const operand& lhs,
+                                    const operand& rhs,
+                                    const comparison_action& action)
+        -> void = 0;
 
     // 'alignment' is the alignment known for both addresses
     virtual auto copy(const token& src_loc_tk, const size_t indent,

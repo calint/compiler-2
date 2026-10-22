@@ -491,16 +491,11 @@ class machine_x86_64 final : public machine {
                 assembler_x86_64::address_text(to_address(address)));
     }
 
-    auto
-    compare_and_branch(const token& src_loc_tk, const size_t indent,
-                       const operand& lhs, const operand& rhs,
-                       const comparison_action& action,
-                       const std::span<const operand> scratch_registers_to_free)
-        -> void override {
+    auto compare_and_branch(const token& src_loc_tk, const size_t indent,
+                            const operand& lhs, const operand& rhs,
+                            const comparison_action& action) -> void override {
 
         cmp(src_loc_tk, indent, lhs, rhs);
-
-        free_scratch_registers(src_loc_tk, indent, scratch_registers_to_free);
 
         if (not action.destination.is_empty()) {
             store_condition(

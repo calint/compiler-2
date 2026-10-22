@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: low priority: design: 'compare_and_branch' takes the front end's
+    scratch registers and frees them between the compare and the store or
+    branch, the backend ends the lifetime of front end allocations; three
+    of five callers pass '{}' (round 8 X-8, round 7 X-5)
+    => design: callers free after the call, the parameter goes; output
+       differs only when a 'setcc' to memory past 2 GiB needs a scratch
+       register while all are held, check first
+    => done (2026-10-22): as designed; checked: the code of the 1466 tests
+       is identical on x86_64 and rv32i, rv32i listings are identical, 102
+       x86_64 listings move their 'free scratch register' comments after
+       the 'setcc' or the jump
 [x] medium: low priority: design: x86 'scale_index' and
     'scale_by_element_size_bytes' repeat 'multiply_by_constant' (no code for
     1, 'sal' for a power of two, 'imul' else); rv32i 'scale_index' already

@@ -232,8 +232,8 @@ main:
 ;       [prog.baz:207:12] src: folded constant '& 3'
         and r14, 3
     cmp r14, 3
-;   [prog.baz:207:12] free scratch register r14
     sete r15b
+;   [prog.baz:207:12] free scratch register r14
     bool.207.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.207.5:
@@ -266,8 +266,8 @@ main:
 ;       [prog.baz:208:12] src: folded constant '| 8'
         or r14, 8
     cmp r14, 15
-;   [prog.baz:208:12] free scratch register r14
     sete r15b
+;   [prog.baz:208:12] free scratch register r14
     bool.208.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.208.5:
@@ -300,8 +300,8 @@ main:
 ;       [prog.baz:209:12] src: folded constant '^ 1'
         xor r14, 1
     cmp r14, 6
-;   [prog.baz:209:12] free scratch register r14
     sete r15b
+;   [prog.baz:209:12] free scratch register r14
     bool.209.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.209.5:
@@ -334,8 +334,8 @@ main:
 ;       [prog.baz:210:17] src: constant
         sal r14, 2
     cmp r14, 28
-;   [prog.baz:210:12] free scratch register r14
     sete r15b
+;   [prog.baz:210:12] free scratch register r14
     bool.210.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.210.5:
@@ -370,8 +370,8 @@ main:
 ;       [prog.baz:211:18] src: constant
         sar r14, 1
     cmp r14, -4
-;   [prog.baz:211:12] free scratch register r14
     sete r15b
+;   [prog.baz:211:12] free scratch register r14
     bool.211.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.211.5:
@@ -412,8 +412,8 @@ main:
         jo baz_overflow_line_214
 ;       [prog.baz:214:16] free scratch register r13
     cmp r14, 21
-;   [prog.baz:214:12] free scratch register r14
     sete r15b
+;   [prog.baz:214:12] free scratch register r14
     bool.214.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.214.5:
@@ -452,8 +452,8 @@ main:
 ;       [prog.baz:215:23] src: constant
         sal r14, 1
     cmp r14, 28
-;   [prog.baz:215:12] free scratch register r14
     sete r15b
+;   [prog.baz:215:12] free scratch register r14
     bool.215.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.215.5:
@@ -1151,8 +1151,8 @@ main:
     jae baz_bounds_line_273
 ;   [prog.baz:273:16] bounds check end
     cmp dword [rbp + r14 * 4 + 424], 2
-;   [prog.baz:273:12] free scratch register r14
     sete r15b
+;   [prog.baz:273:12] free scratch register r14
     bool.273.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.273.5:
@@ -1905,8 +1905,8 @@ main:
             jo baz_overflow_line_55
         func.point.sum.338.15.end:
     cmp r14, 0
-;   [prog.baz:338:12] free scratch register r14
     sete r15b
+;   [prog.baz:338:12] free scratch register r14
     bool.338.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.338.5:
@@ -2437,8 +2437,8 @@ main:
             jo baz_overflow_line_55
         func.point.sum.376.22.end:
     cmp r14, 13
-;   [prog.baz:376:12] free scratch register r14
     sete r15b
+;   [prog.baz:376:12] free scratch register r14
     bool.376.12.end:
 ;   [prog.baz:38:6] assert(ok bool)
     func.assert.376.5:
@@ -3163,8 +3163,8 @@ func.factorial:
 ;   [prog.baz:177:8] allocate scratch register -> r15
     mov r15, qword [rbx + 8]
     cmp qword [r15], 1
-;   [prog.baz:177:8] free scratch register r15
     jg if.177.5.end
+;   [prog.baz:177:8] free scratch register r15
     if.177.8.code:
 ;       [prog.baz:177:15] return
         ret
