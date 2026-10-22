@@ -221,26 +221,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
-[p] easy: low priority: front end small designs (round 8 F-8, F-9, F-10,
-    F-11):
-    1. "no token here" ('text().empty() and not is_string()') is spelled at
-       4 sites and 13 others test only 'text().empty()', which takes the
-       string '""' for no token: 'func f("")' points past it; one
-       'token::is_none()' at every site (behavior: carets of those errors)
-    2. 'lut::keys()' copies the keys and the callers look each up again,
-       a 'values()' view instead (generics.hpp)
-    3. 'peek_char_after_whitespace' moves and moves back so every lookahead
-       predicate takes a mutable 'tokenizer&'; probe a copy, make the
-       predicates take 'const tokenizer&'
-    4. 'fits_size_bytes(value, size_bytes)' is the only width query in
-       bytes, both callers pass 'type.size_bytes()': 'fits_width(value,
-       type)' via 'wrap_to_width'
-    => 1 done (2026-10-22): 'token::is_none()' where the code looks for the
-       end (definitions, statements, a copy source, an array size) and
-       'token::is_word()' where a name or type is expected, so a string
-       there is reported at the string ('tokenizer::position_of', the
-       next token's place when there is none); generic arguments keep
-       'is_none' for their own string messages; tests 1467 to 1473
 [ ] medium: decide: aliasing rule C compares the arguments with the result
     only; a global that an inlined body names is compared with neither, so
     'g = add_g()' with 'res = res + g' in the body is accepted inline and

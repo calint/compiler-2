@@ -641,7 +641,7 @@ class expr_bool_op final : public statement {
 
         const int64_t value{folded->value};
 
-        if (constant_arith::fits_size_bytes(value, typed_type.size_bytes())) {
+        if (constant_arith::fits_width(value, typed_type)) {
             return;
         }
 

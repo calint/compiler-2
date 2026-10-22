@@ -121,23 +121,12 @@ class constant_arith final {
         return lhs >= rhs;
     }
 
-    // 'value' is in the range of a signed integer of 'size_bytes'
-    [[nodiscard]] static auto fits_size_bytes(const int64_t value,
-                                              const size_t size_bytes) -> bool {
+    // 'value' is in the range of a signed integer of the width of
+    // 'width_type', a register of that width holds it unchanged
+    [[nodiscard]] static auto fits_width(const int64_t value,
+                                         const type& width_type) -> bool {
 
-        switch (size_bytes) {
-        case sizeof(int8_t):
-            return std::in_range<int8_t>(value);
-
-        case sizeof(int16_t):
-            return std::in_range<int16_t>(value);
-
-        case sizeof(int32_t):
-            return std::in_range<int32_t>(value);
-
-        default:
-            return true;
-        }
+        return wrap_to_width(value, width_type) == value;
     }
 
     // true when the sum, difference or product is outside the width, e.g.

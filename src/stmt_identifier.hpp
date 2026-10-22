@@ -574,7 +574,7 @@ class stmt_identifier final : public statement {
             get_unary_ops().evaluate_constant(info.constant().value),
         };
 
-        if (constant_arith::fits_size_bytes(value, dst_type.size_bytes())) {
+        if (constant_arith::fits_width(value, dst_type)) {
             return;
         }
 

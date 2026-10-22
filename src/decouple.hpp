@@ -35,4 +35,4 @@ class type;
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto builtin_value_type(const toc& tc, const token& tk,
-                                      tokenizer& tz) -> const type*;
+                                      const tokenizer& tz) -> const type*;

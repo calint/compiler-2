@@ -473,14 +473,12 @@ class generic_registry final {
     [[nodiscard]] auto param_tokens() const -> std::vector<token> {
         std::vector<token> tks;
 
-        for (const std::string& name : funcs_.keys()) {
-            tks.append_range(funcs_.get_const_ref(name).param_tks);
+        for (const generic_func_info& func : funcs_.values()) {
+            tks.append_range(func.param_tks);
         }
 
-        for (const std::string& name : types_.keys()) {
-            for (const generic_param& param :
-                 types_.get_const_ref(name).params) {
-
+        for (const generic_type_info& type : types_.values()) {
+            for (const generic_param& param : type.params) {
                 tks.push_back(param.name_tk);
             }
         }
@@ -495,8 +493,8 @@ class generic_registry final {
 
         std::vector<std::string> names;
 
-        for (const std::string& key : funcs_.keys()) {
-            const std::string& name{funcs_.get_const_ref(key).report_name};
+        for (const generic_func_info& func : funcs_.values()) {
+            const std::string& name{func.report_name};
 
             if (not instantiated_funcs_.contains(name) and
                 not std::ranges::contains(names, name)) {

@@ -166,11 +166,12 @@ class tokenizer final {
 
     // trailing whitespace ends at a newline so lookahead past a token skips
     // the next line's indentation
-    [[nodiscard]] auto peek_char_after_whitespace() -> char {
-        const std::string_view ws{next_whitespace()};
-        const char ch{peek_char()};
-        move_back(ws.size());
-        return ch;
+    [[nodiscard]] auto peek_char_after_whitespace() const -> char {
+        tokenizer probe{*this};
+
+        std::ignore = probe.next_whitespace();
+
+        return probe.peek_char();
     }
 
     // where an error about 'tk', the token just read, points: at 'tk', or

@@ -36,7 +36,9 @@
 
 // 'exit' ends the program, 'array_copy' and the sector functions only
 // transfer, they have no value to use
-inline auto assert_builtin_has_value(const token& tk, tokenizer& tz) -> void {
+inline auto assert_builtin_has_value(const token& tk, const tokenizer& tz)
+    -> void {
+
     const stmt_builtin_io::io_function* const io{
         stmt_builtin_io::find(tk.text()),
     };
@@ -52,8 +54,8 @@ inline auto assert_builtin_has_value(const token& tk, tokenizer& tz) -> void {
 }
 
 // a built-in is not generic, e.g. 'read<i8>(0, buf)'
-inline auto assert_builtin_without_type_args(const token& tk, tokenizer& tz)
-    -> void {
+inline auto assert_builtin_without_type_args(const token& tk,
+                                             const tokenizer& tz) -> void {
 
     if (not std::ranges::contains(reserved_names::builtin_functions,
                                   tk.text()) or
@@ -71,7 +73,8 @@ inline auto assert_builtin_without_type_args(const token& tk, tokenizer& tz)
 // when 'tk' names no built-in with a value; 'create_statement_in_expr_arith'
 // makes a statement for each
 [[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
-                                             tokenizer& tz) -> const type* {
+                                             const tokenizer& tz)
+    -> const type* {
 
     if (tk.is_text("array_length")) {
         return &tc.builtins().default_type();
@@ -179,7 +182,7 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
 // e.g. 'show<name>(x)' where 'show' is not generic, says so instead of reading
 // the '<' as an operator
 inline auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
-                                               tokenizer& tz) -> void {
+                                               const tokenizer& tz) -> void {
 
     // a variable or a constant of that name is an operand of '<'
     if (not tc.is_func(tk.text()) or tc.generics().has_func(tk.text()) or
