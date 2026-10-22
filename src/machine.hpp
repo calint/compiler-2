@@ -499,10 +499,10 @@ class machine {
     virtual auto check_stack_capacity(const token& src_loc_tk,
                                       const size_t indent) -> void = 0;
 
-    virtual auto comment_alias(const token& src_loc_tk, const size_t indent,
-                               const std::string_view from,
-                               const std::string_view to,
-                               const operand& address) -> void = 0;
+    virtual auto comment_binding(const token& src_loc_tk, const size_t indent,
+                                 const std::string_view from,
+                                 const std::string_view to,
+                                 const operand& address) -> void = 0;
 
     virtual auto comment_variable(const token& src_loc_tk, const size_t indent,
                                   const std::string_view text,

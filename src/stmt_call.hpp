@@ -150,7 +150,7 @@ struct generic_call {
         }
 
         // e.g. 'point{1, 2}', a variable or a parameter hides the type
-        if (not meaning.is_var_or_alias()) {
+        if (not meaning.is_var_or_binding()) {
             return value_type(tc, tz, tk);
         }
 
@@ -462,8 +462,9 @@ struct call_site {
         }
     }
 
-    // unique per call and argument, an inlined body names it through the alias
-    // of its parameter and a call in the body has temporaries of its own
+    // unique per call and argument, an inlined body names it through the
+    // binding of its parameter and a call in the body has temporaries of its
+    // own
     [[nodiscard]] auto temporary_argument_name(const size_t index) const
         -> std::string {
 
@@ -580,7 +581,7 @@ struct call_site {
 };
 
 // compiles a call of an inlined function: the body is compiled in place, its
-// parameters and its result are aliases of the arguments and the destination
+// parameters and its result are bound to the arguments and the destination
 //
 // the steps:
 //
@@ -589,12 +590,12 @@ struct call_site {
 //   2. 'compile_to_destination': a memory destination may get its address in
 //      a register ('compile_with_result_address_register'), or unary
 //      operators may work on a scratch register
-//   3. 'compile_with_aliases': the aliases of the result and the arguments
-//      ('make_aliases'), an indexed argument may get its address in a
+//   3. 'compile_with_bindings': the bindings of the result and the arguments
+//      ('make_bindings'), an indexed argument may get its address in a
 //      register ('compile_with_address_choice',
 //      'compile_body_with_address_registers')
 //   4. 'compile_body': the body under labels unique to the call, with the
-//      aliases added
+//      bindings added
 //
 // a 'noinline_call' runs step 3 as a dry run for the errors of its call
 class inline_call {
@@ -604,7 +605,7 @@ class inline_call {
     explicit inline_call(call_site call) : call_{std::move(call)} {}
 
     // an instance literal or a call result is made in a variable of the
-    // parameter's type that the body reaches through the alias of its
+    // parameter's type that the body reaches through the binding of its
     // parameter
     auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
@@ -668,7 +669,7 @@ class inline_call {
     // 'call_arguments' are those of a 'noinline' call that is only checked,
     // the body sees an argument that went through a temporary as that
     // temporary
-    auto compile_with_aliases(
+    auto compile_with_bindings(
         toc& tc, const size_t indent, const destination& dst,
         const stmt_def_func& func,
         const std::span<const noinline_arg> call_arguments = {}) const -> void {
@@ -676,20 +677,22 @@ class inline_call {
         // scratch registers stay allocated until the inlined body is compiled
         std::vector<operand> allocated_registers;
 
-        const std::vector<alias_info> aliases{
-            make_aliases(tc, indent, dst, func, call_arguments,
-                         allocated_registers),
+        const std::vector<param_binding> bindings{
+            make_bindings(tc, indent, dst, func, call_arguments,
+                          allocated_registers),
         };
 
-        // the result alias has its own address choice in
+        // the result binding has its own address choice in
         // 'compile_to_destination'
-        // note: the result alias is made before the aliases of the arguments,
+        // note: the result binding is made before those of the arguments,
         //       which are the last 'call_.args.size()'
-        const size_t first_argument_alias{aliases.size() - call_.args.size()};
+        const size_t first_argument_binding{
+            bindings.size() - call_.args.size(),
+        };
 
         const bool has_indexed_argument{
-            std::ranges::any_of(aliases |
-                                    std::views::drop(first_argument_alias),
+            std::ranges::any_of(bindings |
+                                    std::views::drop(first_argument_binding),
                                 is_indexed_reference),
         };
 
@@ -698,12 +701,13 @@ class inline_call {
         // an access can use the indexed address as it is, so computing it
         // into a register is not tried
         if (not has_indexed_argument or x.has_indexed_addressing()) {
-            compile_body(tc, indent, func, aliases, allocated_registers);
+            compile_body(tc, indent, func, bindings, allocated_registers);
             return;
         }
 
-        compile_with_address_choice(tc, indent, func, aliases,
-                                    first_argument_alias, allocated_registers);
+        compile_with_address_choice(tc, indent, func, bindings,
+                                    first_argument_binding,
+                                    allocated_registers);
     }
 
   private:
@@ -748,7 +752,7 @@ class inline_call {
 
     // the registers are freed before the exit label
     auto compile_body(toc& tc, const size_t indent, const stmt_def_func& func,
-                      const std::span<const alias_info> aliases_to_add,
+                      const std::span<const param_binding> bindings_to_add,
                       const std::span<const operand> registers_to_free) const
         -> void {
 
@@ -798,19 +802,20 @@ class inline_call {
             func.add_constants(tc, indent + 1);
 
             // the body names the arguments and the result by the parameters
-            for (const alias_info& e : aliases_to_add) {
+            for (const param_binding& e : bindings_to_add) {
                 const bound_storage* const storage{
-                    std::get_if<bound_storage>(&e.binding),
+                    std::get_if<bound_storage>(&e.target),
                 };
 
-                x.comment_alias(call_.tk, indent + 1, e.from, e.target_text(),
-                                storage == nullptr ? operand{} : storage->lea);
+                x.comment_binding(call_.tk, indent + 1, e.from, e.target_text(),
+                                  storage == nullptr ? operand{}
+                                                     : storage->lea);
 
-                tc.add_alias(e);
+                tc.add_binding(e);
             }
 
-            // the result reaches the destination through the 'res' alias, so
-            // the statements of the body have no destination
+            // the result reaches the destination through the binding of 'res',
+            // so the statements of the body have no destination
             func.compile_statements(tc, indent);
         } catch (compile_error& e) {
             call_.add_call_frame(e);
@@ -828,25 +833,25 @@ class inline_call {
     }
 
     // a new register per argument because the index register may belong to
-    // an enclosing alias that is used after the call
+    // an enclosing binding that is used after the call
     auto compile_body_with_address_registers(
         toc& tc, const size_t indent, const stmt_def_func& func,
-        std::vector<alias_info> aliases_to_add,
-        const size_t first_argument_alias, const bool keeps_displacement) const
-        -> void {
+        std::vector<param_binding> bindings_to_add,
+        const size_t first_argument_binding,
+        const bool keeps_displacement) const -> void {
 
         machine& x{tc.machine()};
 
         std::vector<operand> address_registers;
 
-        for (alias_info& alias :
-             aliases_to_add | std::views::drop(first_argument_alias)) {
+        for (param_binding& binding :
+             bindings_to_add | std::views::drop(first_argument_binding)) {
 
-            if (not is_indexed_reference(alias)) {
+            if (not is_indexed_reference(binding)) {
                 continue;
             }
 
-            bound_storage& storage{std::get<bound_storage>(alias.binding)};
+            bound_storage& storage{std::get<bound_storage>(binding.target)};
 
             const operand address{
                 x.alloc_scratch_register(call_.tk, indent,
@@ -856,13 +861,13 @@ class inline_call {
             address_registers.push_back(address);
 
             x.comment(call_.tk, indent, "address of parameter '{}'",
-                      alias.from);
+                      binding.from);
 
             storage.lea = load_indexed_address(x, indent, address, storage.lea,
                                                keeps_displacement);
         }
 
-        compile_body(tc, indent, func, aliases_to_add, address_registers);
+        compile_body(tc, indent, func, bindings_to_add, address_registers);
     }
 
     auto compile_to_destination(toc& tc, const size_t indent,
@@ -870,7 +875,7 @@ class inline_call {
                                 const stmt_def_func& func) const -> void {
 
         if (not dst.operand().is_memory()) {
-            compile_with_aliases(tc, indent, dst, func);
+            compile_with_bindings(tc, indent, dst, func);
             return;
         }
 
@@ -889,7 +894,7 @@ class inline_call {
 
             tc.emit_most_efficient(
                 call_.tk, indent,
-                [&] -> void { compile_with_aliases(tc, indent, dst, func); },
+                [&] -> void { compile_with_bindings(tc, indent, dst, func); },
                 [&] -> void {
                     emit_most_efficient_address(
                         tc, indent, [&](const bool keeps) -> void {
@@ -902,7 +907,7 @@ class inline_call {
         }
 
         if (not has_unary_ops) {
-            compile_with_aliases(tc, indent, dst, func);
+            compile_with_bindings(tc, indent, dst, func);
             return;
         }
 
@@ -910,14 +915,14 @@ class inline_call {
         // load/store machine, a scratch register can be shorter
         tc.emit_most_efficient(
             call_.tk, indent,
-            [&] -> void { compile_with_aliases(tc, indent, dst, func); },
+            [&] -> void { compile_with_bindings(tc, indent, dst, func); },
             [&] -> void {
                 const operand reg{
                     x.alloc_scratch_register(call_.tk, indent, dst.type_ref()),
                 };
 
-                compile_with_aliases(tc, indent, destination::of_register(reg),
-                                     func);
+                compile_with_bindings(tc, indent, destination::of_register(reg),
+                                      func);
 
                 x.copy_value(call_.tk, indent, dst.operand(), reg);
                 x.free_scratch_register(call_.tk, indent, reg);
@@ -952,7 +957,7 @@ class inline_call {
     // note: the body is compiled in three versions and the one with the least
     //       code is kept
     //
-    //       1. aliases use the indexed addresses as they are, e.g.
+    //       1. bindings use the indexed addresses as they are, e.g.
     //          '[s0 + t0 * 4 + 28]'
     //       2. each indexed address goes once into a new register, the
     //          displacement included, e.g. '[t1]'
@@ -971,20 +976,20 @@ class inline_call {
 
     auto compile_with_address_choice(
         toc& tc, const size_t indent, const stmt_def_func& func,
-        const std::vector<alias_info>& aliases,
-        const size_t first_argument_alias,
+        const std::vector<param_binding>& bindings,
+        const size_t first_argument_binding,
         const std::span<const operand> allocated_registers) const -> void {
 
         machine& x{tc.machine()};
 
         tc.emit_most_efficient(
             call_.tk, indent,
-            [&] -> void { compile_body(tc, indent, func, aliases, {}); },
+            [&] -> void { compile_body(tc, indent, func, bindings, {}); },
             [&] -> void {
                 emit_most_efficient_address(
                     tc, indent, [&](const bool keeps) -> void {
                         compile_body_with_address_registers(
-                            tc, indent, func, aliases, first_argument_alias,
+                            tc, indent, func, bindings, first_argument_binding,
                             keeps);
                     });
             });
@@ -993,7 +998,7 @@ class inline_call {
     }
 
     // a new register because the index register may belong to an enclosing
-    // alias that is used after the call
+    // binding that is used after the call
     auto compile_with_result_address_register(
         toc& tc, const size_t indent, const destination& dst,
         const stmt_def_func& func, const bool keeps_displacement) const
@@ -1012,7 +1017,7 @@ class inline_call {
                 x, indent, address, dst.operand(), keeps_displacement)),
         };
 
-        compile_with_aliases(tc, indent, address_info, func);
+        compile_with_bindings(tc, indent, address_info, func);
 
         x.free_scratch_register(call_.tk, indent, address);
     }
@@ -1053,13 +1058,13 @@ class inline_call {
                             location.type_ref());
     }
 
-    // the aliases of the result and of the arguments of the inlined body
+    // the bindings of the result and of the arguments of the inlined body
     [[nodiscard]] auto
-    make_aliases(toc& tc, const size_t indent, const destination& dst,
-                 const stmt_def_func& func,
-                 const std::span<const noinline_arg> call_arguments,
-                 std::vector<operand>& allocated_registers) const
-        -> std::vector<alias_info> {
+    make_bindings(toc& tc, const size_t indent, const destination& dst,
+                  const stmt_def_func& func,
+                  const std::span<const noinline_arg> call_arguments,
+                  std::vector<operand>& allocated_registers) const
+        -> std::vector<param_binding> {
 
         assert(call_arguments.empty() or
                call_arguments.size() == call_.args.size());
@@ -1069,13 +1074,13 @@ class inline_call {
 
         assert(func.returns().has_value() != dst.is_empty());
 
-        std::vector<alias_info> aliases;
+        std::vector<param_binding> bindings;
 
         // the result names the destination, so the widths must agree
         if (const std::optional<func_return_info> ret{func.returns()}; ret) {
             assert(dst.type_ref().is_same(func.get_type()));
 
-            aliases.push_back(make_result_alias(dst, *ret));
+            bindings.push_back(bind_result(dst, *ret));
         }
 
         for (const auto [i, arg, param] : std::views::zip(
@@ -1094,26 +1099,26 @@ class inline_call {
 
                 const std::string temporary{call_.temporary_argument_name(i)};
 
-                aliases.push_back(make_storage_alias(
-                    param, temporary,
-                    call_site::temporary_storage(tc, temporary)));
+                bindings.push_back(
+                    bind_storage(param, temporary,
+                                 call_site::temporary_storage(tc, temporary)));
 
                 continue;
             }
 
-            aliases.push_back(make_argument_alias(tc, indent, arg, param,
-                                                  allocated_registers));
+            bindings.push_back(
+                bind_argument(tc, indent, arg, param, allocated_registers));
         }
 
-        return aliases;
+        return bindings;
     }
 
     //
     // statics
     //
 
-    static auto assert_alias_type(const toc& tc, const expr_any& arg,
-                                  const stmt_def_func_param& param) -> void {
+    static auto assert_binding_type(const toc& tc, const expr_any& arg,
+                                    const stmt_def_func_param& param) -> void {
 
         const ident_info info{make_ident_info(tc, arg)};
 
@@ -1130,25 +1135,12 @@ class inline_call {
         call_site::throw_parameter_type_mismatch(arg, param, info);
     }
 
-    // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
-    [[nodiscard]] static auto is_indexed_reference(const alias_info& alias)
-        -> bool {
-
-        const bound_storage* const storage{
-            std::get_if<bound_storage>(&alias.binding),
-        };
-
-        return storage != nullptr and storage->lea.is_memory() and
-               not storage->lea.index_register().empty();
-    }
-
     // the inlined body reaches an argument through its storage, its constant
     // value or a scratch register holding its value
     [[nodiscard]] static auto
-    make_argument_alias(toc& tc, const size_t indent, const expr_any& arg,
-                        const stmt_def_func_param& param,
-                        std::vector<operand>& allocated_registers)
-        -> alias_info {
+    bind_argument(toc& tc, const size_t indent, const expr_any& arg,
+                  const stmt_def_func_param& param,
+                  std::vector<operand>& allocated_registers) -> param_binding {
 
         const bool is_reference{
             not arg.is_expression() and
@@ -1158,49 +1150,44 @@ class inline_call {
                       .is_address_computed())),
         };
 
-        // an alias uses the argument's storage or typed value, so its type
+        // a binding uses the argument's storage or typed value, so its type
         // must match
         if (not call_site::is_computed_value(arg)) {
-            assert_alias_type(tc, arg, param);
+            assert_binding_type(tc, arg, param);
         }
 
         if (is_reference and arg.get_unary_ops().is_empty()) {
-            return make_reference_alias(tc, indent, arg, param,
-                                        allocated_registers);
+            return bind_reference(tc, indent, arg, param, allocated_registers);
         }
 
         // e.g. '-a[i]', a value computed like an expression that must fit
         // the parameter like a name with unary operators
         if (is_reference) {
             arg.assert_not_narrowed(tc, param.get_type());
-
-            return make_expression_alias(tc, indent, arg, param,
-                                         allocated_registers);
+            return bind_expression(tc, indent, arg, param, allocated_registers);
         }
 
         if (arg.is_expression()) {
-            return make_expression_alias(tc, indent, arg, param,
-                                         allocated_registers);
+            return bind_expression(tc, indent, arg, param, allocated_registers);
         }
 
-        return make_plain_argument_alias(tc, indent, arg, param,
-                                         allocated_registers);
+        return bind_plain_argument(tc, indent, arg, param, allocated_registers);
     }
 
     // a constant lets the inlined body be decided at compile time
     [[nodiscard]] static auto
-    make_expression_alias(toc& tc, const size_t indent, const expr_any& arg,
-                          const stmt_def_func_param& param,
-                          std::vector<operand>& allocated_registers)
-        -> alias_info {
+    bind_expression(toc& tc, const size_t indent, const expr_any& arg,
+                    const stmt_def_func_param& param,
+                    std::vector<operand>& allocated_registers)
+        -> param_binding {
 
         const std::optional<folded_value> folded{
             arg.fold(tc, tc.use_at(param.get_type())),
         };
 
         if (folded) {
-            return alias_info::make_constant(param.name_or_literal(),
-                                             param.get_type(), folded->value);
+            return param_binding::make_constant(
+                param.name_or_literal(), param.get_type(), folded->value);
         }
 
         machine& x{tc.machine()};
@@ -1212,16 +1199,16 @@ class inline_call {
         allocated_registers.push_back(reg);
         arg.compile(tc, indent, destination::of_register(reg));
 
-        return alias_info::make_register(param.name_or_literal(),
-                                         param.get_type(), reg);
+        return param_binding::make_register(param.name_or_literal(),
+                                            param.get_type(), reg);
     }
 
     // an identifier or a constant, with or without unary operators
     [[nodiscard]] static auto
-    make_plain_argument_alias(toc& tc, const size_t indent, const expr_any& arg,
-                              const stmt_def_func_param& param,
-                              std::vector<operand>& allocated_registers)
-        -> alias_info {
+    bind_plain_argument(toc& tc, const size_t indent, const expr_any& arg,
+                        const stmt_def_func_param& param,
+                        std::vector<operand>& allocated_registers)
+        -> param_binding {
 
         // constants and unary ops pass a value, not storage, so the value
         // must fit the parameter
@@ -1230,7 +1217,7 @@ class inline_call {
         const ident_info arg_info{make_ident_info(tc, arg)};
 
         // a name is resolved in the callee where its own constants would
-        // shadow the caller's, and the alias target must be a plain integer,
+        // shadow the caller's, and the bound constant must be a plain integer,
         // e.g. '~1' is not
         if (arg_info.is_const()) {
             const std::optional<folded_value> folded{
@@ -1240,13 +1227,13 @@ class inline_call {
             // note: a constant name or literal folds
             assert(folded);
 
-            return alias_info::make_constant(param.name_or_literal(),
-                                             param.get_type(), folded->value);
+            return param_binding::make_constant(
+                param.name_or_literal(), param.get_type(), folded->value);
         }
 
         if (arg.get_unary_ops().is_empty()) {
-            return make_storage_alias(param, arg.name_or_literal(),
-                                      call_site::argument_target(tc, arg));
+            return bind_storage(param, arg.name_or_literal(),
+                                call_site::argument_target(tc, arg));
         }
 
         machine& x{tc.machine()};
@@ -1261,17 +1248,16 @@ class inline_call {
         arg.get_unary_ops().compile(x, indent, arg.tok(), reg,
                                     tc.checks().overflow_options());
 
-        return alias_info::make_register(param.name_or_literal(),
-                                         param.get_type(), reg);
+        return param_binding::make_register(param.name_or_literal(),
+                                            param.get_type(), reg);
     }
 
     // an indexed argument keeps its computed address, e.g.
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
     [[nodiscard]] static auto
-    make_reference_alias(toc& tc, const size_t indent, const expr_any& arg,
-                         const stmt_def_func_param& param,
-                         std::vector<operand>& allocated_registers)
-        -> alias_info {
+    bind_reference(toc& tc, const size_t indent, const expr_any& arg,
+                   const stmt_def_func_param& param,
+                   std::vector<operand>& allocated_registers) -> param_binding {
 
         const ident_info arg_info{make_ident_info(tc, arg)};
 
@@ -1290,7 +1276,7 @@ class inline_call {
         // compiled
         allocated_registers.append_range(regs_lea);
 
-        return alias_info::make_storage(
+        return param_binding::make_storage(
             param.name_or_literal(), param.get_type(),
             {
                 .path{std::string{arg.name_or_literal()}},
@@ -1301,9 +1287,9 @@ class inline_call {
     }
 
     // the result name of the function refers to the destination
-    [[nodiscard]] static auto make_result_alias(const destination& dst,
-                                                const func_return_info& ret)
-        -> alias_info {
+    [[nodiscard]] static auto bind_result(const destination& dst,
+                                          const func_return_info& ret)
+        -> param_binding {
 
         // e.g. the scratch register of an expression, or a parameter that
         // stands for one
@@ -1311,8 +1297,8 @@ class inline_call {
             // note: a register has no address to keep
             assert(not dst.is_address_known());
 
-            return alias_info::make_register(ret.ident_tk.text(), *ret.type_ptr,
-                                             dst.operand(), dst.name());
+            return param_binding::make_register(
+                ret.ident_tk.text(), *ret.type_ptr, dst.operand(), dst.name());
         }
 
         operand dst_lea{
@@ -1320,29 +1306,40 @@ class inline_call {
         };
 
         // a destination such as 'arr[1]' is not an array
-        return alias_info::make_storage(ret.ident_tk.text(), *ret.type_ptr,
-                                        {
-                                            .path{dst.name()},
-                                            .lea{std::move(dst_lea)},
-                                            .is_element{not dst.is_array()},
-                                            .bound{dst.storage()},
-                                        });
+        return param_binding::make_storage(ret.ident_tk.text(), *ret.type_ptr,
+                                           {
+                                               .path{dst.name()},
+                                               .lea{std::move(dst_lea)},
+                                               .is_element{not dst.is_array()},
+                                               .bound{dst.storage()},
+                                           });
     }
 
     // a variable of the caller or a temporary of the call, named by 'path'
     [[nodiscard]] static auto
-    make_storage_alias(const stmt_def_func_param& param,
-                       const std::string_view path,
-                       const std::optional<storage_path>& bound) -> alias_info {
+    bind_storage(const stmt_def_func_param& param, const std::string_view path,
+                 const std::optional<storage_path>& bound) -> param_binding {
 
-        return alias_info::make_storage(param.name_or_literal(),
-                                        param.get_type(),
-                                        {
-                                            .path{std::string{path}},
-                                            .lea{},
-                                            .is_element{},
-                                            .bound{bound},
-                                        });
+        return param_binding::make_storage(param.name_or_literal(),
+                                           param.get_type(),
+                                           {
+                                               .path{std::string{path}},
+                                               .lea{},
+                                               .is_element{},
+                                               .bound{bound},
+                                           });
+    }
+
+    // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
+    [[nodiscard]] static auto is_indexed_reference(const param_binding& binding)
+        -> bool {
+
+        const bound_storage* const storage{
+            std::get_if<bound_storage>(&binding.target),
+        };
+
+        return storage != nullptr and storage->lea.is_memory() and
+               not storage->lea.index_register().empty();
     }
 };
 
@@ -1674,7 +1671,7 @@ class noinline_call {
         const inline_call dry_run{call_};
 
         tc.dry_run_call_kind(*kind, level, [&] -> void {
-            dry_run.compile_with_aliases(tc, indent, dst, func, arguments);
+            dry_run.compile_with_bindings(tc, indent, dst, func, arguments);
         });
     }
 
@@ -2672,7 +2669,7 @@ class stmt_call : public expression {
             return;
         }
 
-        // the alias would make the parameter name the whole array
+        // the binding would make the parameter name the whole array
         if (arg.is_name_or_literal()) {
             assert_not_whole_array(arg, make_ident_info(tc, arg));
         }

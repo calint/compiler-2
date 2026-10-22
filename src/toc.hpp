@@ -33,9 +33,9 @@
 // and compiled, see 'etc/docs/README.md'. the classes below, in reading
 // order:
 //
-//   records         'func_info', 'noinline_body', 'alias_info' (what a
+//   records         'func_info', 'noinline_body', 'param_binding' (what a
 //                   parameter of an inlined call stands for), 'const_info'
-//   'frame'         one scope: its constants, variables and aliases
+//   'frame'         one scope: its constants, variables and parameter bindings
 //   'ident_path'    a name as its path of elements, e.g. 'p.x'
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
 //                   address
@@ -47,7 +47,7 @@
 //                   'lookup', the one rule of what a name means
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_types' the types the front end needs by role
-//   'ident_resolver' resolves a name by walking the frames, following aliases
+//   'ident_resolver' resolves a name by walking the frames, following bindings
 //   'definition_checks' the errors of a name defined twice
 //   'variable_comments' the comment of where a variable is stored
 //   'toc'           the facade the statements use, owns all of the above; a
@@ -101,7 +101,7 @@ struct bound_storage {
     operand lea;
     // e.g. 'i' -> 'arr[ix]' names one element, not the array 'arr'
     bool is_element{};
-    // the root variable and the path that the alias names, found where
+    // the root variable and the path that the parameter names, found where
     // the call is made because the callee does not see the caller's names,
     // e.g. the element 'e' of a 'foo'; empty when the argument holds no
     // storage, e.g. a value in a register
@@ -110,11 +110,11 @@ struct bound_storage {
 
 // what the name of a parameter or of the result of an inlined call stands
 // for in its body
-struct alias_info {
+struct param_binding {
     std::string from;
     // the type of the parameter or the result
     const type* type_ptr{};
-    std::variant<bound_constant, bound_register, bound_storage> binding;
+    std::variant<bound_constant, bound_register, bound_storage> target;
 
     // the storage that the parameter names with 'path' inside it, empty when
     // its argument holds none, e.g. a constant or a value in a register
@@ -122,7 +122,7 @@ struct alias_info {
         -> std::optional<storage_path> {
 
         const bound_storage* const storage{
-            std::get_if<bound_storage>(&binding),
+            std::get_if<bound_storage>(&target),
         };
 
         if (storage == nullptr or not storage->bound) {
@@ -137,23 +137,23 @@ struct alias_info {
         };
     }
 
-    // what the alias stands for, as the comments show it
+    // what the parameter stands for, as the comments show it
     [[nodiscard]] auto target_text() const -> std::string {
         if (const bound_constant* const bound{
-                std::get_if<bound_constant>(&binding),
+                std::get_if<bound_constant>(&target),
             }) {
 
             return std::format("{}", bound->constant.value);
         }
 
         if (const bound_register* const reg{
-                std::get_if<bound_register>(&binding),
+                std::get_if<bound_register>(&target),
             }) {
 
             return reg->name;
         }
 
-        return std::get<bound_storage>(binding).path;
+        return std::get<bound_storage>(target).path;
     }
 
     //
@@ -161,20 +161,21 @@ struct alias_info {
     //
 
     [[nodiscard]] static auto make_constant(const std::string_view name,
-                                            const type& alias_type,
-                                            const int64_t value) -> alias_info {
+                                            const type& param_type,
+                                            const int64_t value)
+        -> param_binding {
 
         // note: only a built-in parameter takes a constant
-        assert(alias_type.is_builtin());
+        assert(param_type.is_builtin());
 
         return {
             .from{std::string{name}},
-            .type_ptr{&alias_type},
-            .binding{
+            .type_ptr{&param_type},
+            .target{
                 bound_constant{
                     .constant{
                         .value{value},
-                        .own_type{&alias_type},
+                        .own_type{&param_type},
                     },
                 },
             },
@@ -182,16 +183,16 @@ struct alias_info {
     }
 
     [[nodiscard]] static auto
-    make_register(const std::string_view name, const type& alias_type,
+    make_register(const std::string_view name, const type& param_type,
                   const operand& reg, const std::string_view reg_name)
-        -> alias_info {
+        -> param_binding {
 
         assert(reg.is_register());
 
         return {
             .from{std::string{name}},
-            .type_ptr{&alias_type},
-            .binding{
+            .type_ptr{&param_type},
+            .target{
                 bound_register{
                     .reg{reg},
                     .name{std::string{reg_name}},
@@ -201,21 +202,22 @@ struct alias_info {
     }
 
     [[nodiscard]] static auto make_register(const std::string_view name,
-                                            const type& alias_type,
-                                            const operand& reg) -> alias_info {
+                                            const type& param_type,
+                                            const operand& reg)
+        -> param_binding {
 
-        return make_register(name, alias_type, reg, reg.base_register());
+        return make_register(name, param_type, reg, reg.base_register());
     }
 
     [[nodiscard]] static auto make_storage(const std::string_view name,
-                                           const type& alias_type,
+                                           const type& param_type,
                                            bound_storage storage)
-        -> alias_info {
+        -> param_binding {
 
         return {
             .from{std::string{name}},
-            .type_ptr{&alias_type},
-            .binding{std::move(storage)},
+            .type_ptr{&param_type},
+            .target{std::move(storage)},
         };
     }
 };
@@ -261,8 +263,8 @@ class frame final {
     // variables declared in this frame
     lut<var_info> vars_;
 
-    // the parameters and the result of an inlined call, see 'alias_info'
-    lut<alias_info> aliases_;
+    // the parameters and the result of an inlined call, see 'param_binding'
+    lut<param_binding> bindings_;
 
     // the label to jump to when exiting an inlined function
     std::string func_ret_label_;
@@ -278,8 +280,8 @@ class frame final {
     size_t peak_storage_size_bytes_{};
 
   public:
-    auto add_alias(const alias_info& ai) -> void {
-        aliases_.put(std::string{ai.from}, ai);
+    auto add_binding(const param_binding& binding) -> void {
+        bindings_.put(std::string{binding.from}, binding);
     }
 
     auto add_const(const std::string_view name, const const_info& ci) -> void {
@@ -316,10 +318,10 @@ class frame final {
         return func_ret_label_;
     }
 
-    [[nodiscard]] auto get_alias(const std::string_view name) const
-        -> const alias_info& {
+    [[nodiscard]] auto get_binding(const std::string_view name) const
+        -> const param_binding& {
 
-        return aliases_.get_const_ref(name);
+        return bindings_.get_const_ref(name);
     }
 
     [[nodiscard]] auto get_const(const std::string_view name) const
@@ -334,8 +336,8 @@ class frame final {
         return vars_.get_const_ref(name);
     }
 
-    [[nodiscard]] auto has_alias(const std::string_view name) const -> bool {
-        return aliases_.has(name);
+    [[nodiscard]] auto has_binding(const std::string_view name) const -> bool {
+        return bindings_.has(name);
     }
 
     [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
@@ -541,7 +543,7 @@ class ident_path final {
 };
 
 // builds the identifier info of a path: the elements of an indexed array, the
-// address held below a run-time index and the base of an alias
+// address held below a run-time index and the base of a parameter binding
 class ident_builder final {
   public:
     //
@@ -696,15 +698,15 @@ class ident_builder final {
         }
     }
 
-    // 'id' with the base replaced by what the alias refers to, e.g.
+    // 'id' with the base replaced by what the parameter is bound to, e.g.
     //   res -> pt.x becomes pt.x
     //   pt.x -> p becomes p.x
     //   lnk.count -> world.room.link becomes world.room.link.count
-    [[nodiscard]] static auto replace_alias_base(const bound_storage& alias,
-                                                 const ident_path& id)
+    [[nodiscard]] static auto replace_binding_base(const bound_storage& binding,
+                                                   const ident_path& id)
         -> ident_path {
 
-        ident_path target{alias.path};
+        ident_path target{binding.path};
 
         for (const std::string& s : id.path() | std::views::drop(1)) {
             target.append(s);
@@ -1142,13 +1144,15 @@ struct loop_target {
 
 // what a name means where it is used, see 'scope_stack::lookup'
 struct name_meaning {
-    enum class kind : uint8_t { none, variable, alias, constant };
+    enum class kind : uint8_t { none, variable, binding, constant };
 
     kind what{kind::none};
     // the frame that declares the name
     size_t frame_index{};
 
-    [[nodiscard]] auto is_alias() const -> bool { return what == kind::alias; }
+    [[nodiscard]] auto is_binding() const -> bool {
+        return what == kind::binding;
+    }
 
     [[nodiscard]] auto is_constant() const -> bool {
         return what == kind::constant;
@@ -1157,8 +1161,8 @@ struct name_meaning {
     // a name that has a value hides a type or a function of that name
     [[nodiscard]] auto is_value() const -> bool { return what != kind::none; }
 
-    [[nodiscard]] auto is_var_or_alias() const -> bool {
-        return is_variable() or is_alias();
+    [[nodiscard]] auto is_var_or_binding() const -> bool {
+        return is_variable() or is_binding();
     }
 
     [[nodiscard]] auto is_variable() const -> bool {
@@ -1362,9 +1366,9 @@ class scope_stack final {
                 };
             }
 
-            if (frm.is_func() and frm.has_alias(name)) {
+            if (frm.is_func() and frm.has_binding(name)) {
                 return {
-                    .what{name_meaning::kind::alias},
+                    .what{name_meaning::kind::binding},
                     .frame_index{index},
                 };
             }
@@ -1416,7 +1420,7 @@ class scope_stack final {
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
   private:
-    // the alias 'name' of the innermost function, null when 'name' means
+    // the binding of 'name' in the innermost function, null when 'name' means
     // something else
     auto track_depth() -> void {
         max_depth_ = std::max(frames_.size(), max_depth_);
@@ -1846,7 +1850,7 @@ class builtin_types final {
 };
 
 // resolves a name to a variable, a register or a constant by
-// 'scope_stack::lookup_below', an alias is followed into the frames of the
+// 'scope_stack::lookup_below', a binding is followed into the frames of the
 // caller
 class ident_resolver final {
     std::reference_wrapper<const scope_stack> scopes_;
@@ -1858,14 +1862,15 @@ class ident_resolver final {
     struct walk {
         explicit walk(ident_path identifier) : id{std::move(identifier)} {}
 
-        // the identifier, an alias rewrites it to what the alias stands for
+        // the identifier, a binding rewrites it to what the parameter stands
+        // for
         ident_path id;
 
-        // the first address met is the deepest, outer aliases only rewrite
+        // the first address met is the deepest, outer bindings only rewrite
         // the base of the path
         std::optional<known_address> known;
 
-        // an alias of an element names the element, not the array holding it
+        // a binding to an element names the element, not the array holding it
         bool is_element{};
     };
 
@@ -1949,7 +1954,7 @@ class ident_resolver final {
     }
 
     // the root name of the identifier is looked up in the frames below 'end',
-    // an alias rewrites the identifier and the lookup goes on in the frames of
+    // a binding rewrites the identifier and the lookup goes on in the frames of
     // the caller
     [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
                                         const std::string_view ident) const
@@ -1997,7 +2002,8 @@ class ident_resolver final {
             }
 
             if (std::optional<ident_info> found{
-                    follow_alias(frm.get_alias(step.id.base()), ident, step),
+                    follow_binding(frm.get_binding(step.id.base()), ident,
+                                   step),
                 };
                 found) {
 
@@ -2042,29 +2048,29 @@ class ident_resolver final {
     // statics
     //
 
-    // the constant or the register an alias stands for, else the walk goes on
-    // with the identifier rewritten to the variable that the alias refers to
-    [[nodiscard]] static auto follow_alias(const alias_info& alias,
-                                           const std::string_view ident,
-                                           walk& step)
+    // the constant or the register a parameter stands for, else the walk goes
+    // on with the identifier rewritten to the variable that it is bound to
+    [[nodiscard]] static auto follow_binding(const param_binding& binding,
+                                             const std::string_view ident,
+                                             walk& step)
         -> std::optional<ident_info> {
 
         const bool is_single{step.id.path().size() == 1};
 
         // the value of an argument keeps the type of its parameter
         if (const bound_constant* const bound{
-                std::get_if<bound_constant>(&alias.binding),
+                std::get_if<bound_constant>(&binding.target),
             }) {
 
             // note: a built-in has no fields and no elements
             assert(is_single);
 
-            return ident_info::make_const(ident, alias.target_text(),
-                                          *alias.type_ptr, bound->constant);
+            return ident_info::make_const(ident, binding.target_text(),
+                                          *binding.type_ptr, bound->constant);
         }
 
         if (const bound_register* const reg{
-                std::get_if<bound_register>(&alias.binding),
+                std::get_if<bound_register>(&binding.target),
             }) {
 
             // note: a built-in has no fields and no elements
@@ -2073,7 +2079,7 @@ class ident_resolver final {
             return ident_info::make_register(ident, reg->reg);
         }
 
-        const bound_storage& storage{std::get<bound_storage>(alias.binding)};
+        const bound_storage& storage{std::get<bound_storage>(binding.target)};
 
         // a field path such as 'p.x' gets its array-ness from the field
         if (storage.is_element and is_single) {
@@ -2085,10 +2091,12 @@ class ident_resolver final {
                 .address{storage.lea},
                 .trailing_count{step.id.path().size() - 1},
             };
-            // note: -1 because the alias names the first element of the path
+
+            // note: -1 because the parameter names the first element of the
+            // path
         }
 
-        step.id = ident_builder::replace_alias_base(storage, step.id);
+        step.id = ident_builder::replace_binding_base(storage, step.id);
 
         return std::nullopt;
     }
@@ -2489,8 +2497,8 @@ class toc final {
     // the stack
     static constexpr size_t max_parse_nesting{128};
 
-    auto add_alias(const alias_info& ai) -> void {
-        scopes_.back().add_alias(ai);
+    auto add_binding(const param_binding& binding) -> void {
+        scopes_.back().add_binding(binding);
     }
 
     // e.g. the packed elements of a constant '{...}' initializer
@@ -3035,12 +3043,12 @@ class toc final {
 
         const name_meaning meaning{scopes_.lookup(name)};
 
-        if (meaning.is_alias()) {
-            const alias_info& alias{
-                scopes_.frames().at(meaning.frame_index).get_alias(name),
+        if (meaning.is_binding()) {
+            const param_binding& binding{
+                scopes_.frames().at(meaning.frame_index).get_binding(name),
             };
 
-            return alias.bound_storage_of(path);
+            return binding.bound_storage_of(path);
         }
 
         if (not meaning.is_variable()) {

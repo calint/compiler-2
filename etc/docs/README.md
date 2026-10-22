@@ -24,7 +24,7 @@ For a reviewer:
 - [1. Architecture: from source to assembly and binary image](#1-architecture-from-source-to-assembly-and-binary-image)
     - [1.1 Pipeline](#11-pipeline)
     - [1.2 Passes](#12-passes)
-    - [1.3 Names during compile: frames and aliases](#13-names-during-compile-frames-and-aliases)
+    - [1.3 Names during compile: frames and bindings](#13-names-during-compile-frames-and-bindings)
     - [1.4 Dry runs](#14-dry-runs)
     - [1.5 Checks](#15-checks)
     - [1.6 Reports](#16-reports)
@@ -73,7 +73,7 @@ For a reviewer:
     - [7.2 A node parses itself and keeps every token](#72-a-node-parses-itself-and-keeps-every-token)
     - [7.3 One base class for every node](#73-one-base-class-for-every-node)
     - [7.4 Generic definitions are text parsed again](#74-generic-definitions-are-text-parsed-again)
-    - [7.5 Calls are inlined, parameters are aliases](#75-calls-are-inlined-parameters-are-aliases)
+    - [7.5 Calls are inlined, parameters are bound to arguments](#75-calls-are-inlined-parameters-are-bound-to-arguments)
     - [7.6 'toc' is one facade over the tables](#76-toc-is-one-facade-over-the-tables)
     - [7.7 One translation unit](#77-one-translation-unit)
     - [7.8 The first error ends the compile](#78-the-first-error-ends-the-compile)
@@ -134,7 +134,7 @@ Invariants the code relies on:
 3. registers are freed in the reverse order of their allocation, an
    operation frees the registers it allocated before it returns
 4. a name is resolved again at every compile through the frames, an
-   inlined parameter is an alias of its argument, never a copy
+   inlined parameter is bound to its argument, never a copy
 5. a 'destination' is not changed after it is made, a field or element
    of it is a destination of its own
 6. labels are named by source location and call path, so a body inlined
@@ -158,7 +158,7 @@ Invariants the code relies on:
 3. compile ('program::build'): the statements are walked again with a fresh
    scope stack in 'toc'. Global variables and data are declared again, then
    'main' is compiled where the program starts. An inlined call compiles the
-   body of the callee in place ([1.3](#13-names-during-compile-frames-and-aliases)). A noinline call adds a body to
+   body of the callee in place ([1.3](#13-names-during-compile-frames-and-bindings)). A noinline call adds a body to
    compile for the array lengths of its arguments; the bodies are compiled
    after 'main', and compiling one can add more. Then each function that no
    compile reached is checked and emits nothing ([1.5](#15-checks)). Then the
@@ -170,7 +170,7 @@ Invariants the code relies on:
    jumps optimized, the assembly is written, the rv32i targets also write the
    binary image.
 
-### 1.3 Names during compile: frames and aliases
+### 1.3 Names during compile: frames and bindings
 
 'toc' keeps a stack of frames: blocks, loops, 'foo' loops and functions. What
 a name means is decided by one rule, 'scope_stack::lookup': the frames of the
@@ -190,11 +190,11 @@ statement can resolve to another variable, register or constant each time it
 is compiled.
 
 An inlined call does not copy its arguments. It enters a function frame that
-maps each parameter name to the argument ('alias_info'), e.g. 'p' to
+maps each parameter name to the argument ('param_binding'), e.g. 'p' to
 'world.rooms[i]' with the address of that element computed once, '3' to the
 constant 3, or 'x' to a scratch register holding the value of an expression.
 The result name maps to the destination of the call. Resolving 'p.x' in the
-body follows the alias and continues the walk in the frames of the caller.
+body follows the binding and continues the walk in the frames of the caller.
 The result has the type of the destination, except that a narrower integer
 widens into an operand of an operator, e.g. the 'g()' of 'w + g()'
 ('destination::as_operand'): an inlined result is made in a register of its
@@ -736,10 +736,10 @@ Examples:
 An identifier adds a step per element of what it names: '.name' adds a field,
 '[3]' a constant index, '[i]' a run-time index.
 
-An alias (a parameter, a result, the element 'e' of a 'foo') is bound to the
-path of what it names, and an access through it is the path of the target
+A bound name (a parameter, a result, the element 'e' of a 'foo') stands for
+the path of what it names, and an access through it is the path of the target
 followed by the path of the access inside it. This way an access through any
-number of aliases is compared as if it were written out on the root variable.
+number of bound names is compared as if it were written out on the root variable.
 The element 'e' of a 'foo' adds a run-time index, since it is any element of
 the array.
 
@@ -831,7 +831,7 @@ cores and is meant for any change to the check.
 
 ### 4.1 Problem
 
-An inline call is compiled at the call site, so its parameters are aliases of
+An inline call is compiled at the call site, so its parameters are bound to
 the arguments and the aliasing check ([chapter 3](#3-access-paths-aliasing-check-of-what-is-reached-through-run-time-indexes)) sees
 which arguments name the same variable. A noinline body is compiled once and
 receives addresses, so it cannot know which arguments are the same variable.
@@ -1161,7 +1161,7 @@ count of a bulk operation, e.g. 'array_copy(a[i], b, n)', the check covers
 ### 6.5 Addresses an inlined call computed
 
 An argument with a run-time index is computed once at the call, the body of
-the inlined function reaches it through its parameter. The alias of the
+the inlined function reaches it through its parameter. The binding of the
 parameter keeps the operand ('bound_storage::lea'):
 
 ```text
@@ -1289,7 +1289,7 @@ Cost: an error in a generic definition shows at its first instance; the
 generic functions nothing instantiates are listed in the report after the
 code.
 
-### 7.5 Calls are inlined, parameters are aliases
+### 7.5 Calls are inlined, parameters are bound to arguments
 
 The programs are super loops, so a call is compiled in place by default and a
 parameter names its argument instead of copying it: no call overhead, and a
@@ -1304,7 +1304,7 @@ checked at compile time (chapters 3 and 4).
 Every statement receives 'toc', which owns the scopes, the types, the
 functions, the generics, the data and the storage layout. A method of 'toc'
 changes state or combines tables, a question to one table goes through its
-const accessor, e.g. 'tc.scopes().is_alias(name)'.
+const accessor, e.g. 'tc.scopes().lookup(name)'.
 
 'toc' is also the compile context: it carries the machine and whether the
 program is being parsed or compiled, and whether a dry run is active. A

@@ -722,7 +722,7 @@ class stmt_identifier final : public statement {
     known_in_path(const std::optional<known_address>& known) const
         -> const known_address* {
 
-        // note: the first alias met while resolving a path is its root, so a
+        // note: the first binding met while resolving a path is its root, so a
         //       known address is of the root or before the path
 
         if (not known or known->trailing_count != elems_.size() - 1) {
@@ -732,8 +732,8 @@ class stmt_identifier final : public statement {
         return &*known;
     }
 
-    // the path names a function, unless a variable, an alias or a constant of
-    // the same root is in scope, it shadows the function
+    // the path names a function, unless a variable, a parameter or a constant
+    // of the same root is in scope, it shadows the function
     [[nodiscard]] auto names_function(const toc& tc) const -> bool {
         const std::string_view root{ident_info::root_of(path_as_string_)};
         return tc.is_func(path_as_string_) and not is_hidden_by_value(tc, root);

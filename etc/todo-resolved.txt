@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: naming: "alias" names three concepts: what a parameter of an
+    inlined call is bound to ('alias_info', 'frame::aliases',
+    'follow_alias', 'make_*_alias', about 150 uses), a named generic
+    instance or 'int' ('stmt_def_type_alias'), and overlapping storage
+    ('ub_alias.hpp', '--checks=alias'); in stmt_call.hpp the first and the
+    third meet (round 8 A-6)
+    => design: rename the first, its variant already says so
+       ('bound_constant', 'bound_register', 'bound_storage'): 'alias_info'
+       -> 'param_binding', 'aliases' -> 'bindings', 'make_*_alias' ->
+       'bind_*', 'comment_alias' -> 'comment_binding', 'follow_alias' ->
+       'follow_binding', docs chapter 1.3; "alias" stays for types (a
+       language term) and "aliasing" for overlap (a user option)
+    => mechanical, symbol renames before anything else in the step
+    => done (2026-10-22): as designed, also 'name_meaning::kind::binding'
+       ('is_binding', 'is_var_or_binding'), 'replace_binding_base',
+       'assert_binding_type', 'compile_with_bindings', 'make_bindings';
+       the variant field 'param_binding::binding' is 'target' (with
+       'target_text') so a variable 'binding' reads 'binding.target'; docs
+       1.1, 1.3, 3, 4.1, 6.5 and 7.5 say bound, 7.6 names 'lookup' in place
+       of the removed 'is_alias'; the listing comment still says 'alias p
+       -> x', output unchanged
 [x] medium: design: 'toc::enter_func' makes an inlined frame whose defaults
     (empty call path and return label) serve two unrelated callers, the
     parse and 'main', and 'stmt_return' reads an empty return label as "this

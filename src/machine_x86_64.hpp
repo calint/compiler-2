@@ -475,9 +475,9 @@ class machine_x86_64 final : public machine {
         std::unreachable();
     }
 
-    auto comment_alias(const token& src_loc_tk, const size_t indent,
-                       const std::string_view from, const std::string_view to,
-                       const operand& address) -> void override {
+    auto comment_binding(const token& src_loc_tk, const size_t indent,
+                         const std::string_view from, const std::string_view to,
+                         const operand& address) -> void override {
 
         if (address.is_empty()) {
             comment(src_loc_tk, indent, "alias {} -> {}", from, to);

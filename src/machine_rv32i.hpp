@@ -891,9 +891,9 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "stack capacity check end");
     }
 
-    auto comment_alias(const token& src_loc_tk, const size_t indent,
-                       const std::string_view from, const std::string_view to,
-                       [[maybe_unused]] const operand& address)
+    auto comment_binding(const token& src_loc_tk, const size_t indent,
+                         const std::string_view from, const std::string_view to,
+                         [[maybe_unused]] const operand& address)
         -> void override {
 
         comment(src_loc_tk, indent, "alias {} -> {}", from, to);
@@ -1033,7 +1033,7 @@ class machine_rv32i : public machine {
 
         assert(not src.is_empty());
 
-        // a copy onto itself, e.g. of an alias to its argument, changes
+        // a copy onto itself, e.g. of a parameter to its argument, changes
         // nothing
         if (same_memory(dst, src)) {
             return;
