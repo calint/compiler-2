@@ -1,0 +1,5 @@
+# 'main' has no caller to give it arguments
+
+func main(x) {
+    exit(x)
+}

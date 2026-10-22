@@ -1,0 +1,4 @@
+
+1421.baz:3:11: 'main' cannot have parameters
+func main(x) {
+          ^

@@ -1,0 +1,4 @@
+# 'main' has no caller to give it type arguments
+
+func main<T type>() {
+}

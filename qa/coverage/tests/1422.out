@@ -1,0 +1,4 @@
+
+1422.baz:3:13: 'main' cannot have a result
+func main() res {
+            ^~~

@@ -4546,3 +4546,8 @@ SRC=1418 && EXP=1 && RUN
 # definition as its body
 SRC=1419 && COMPERR
 SRC=1420 && COMPERR
+
+# 'main' has no parameters, result or type parameters
+SRC=1421 && COMPERR
+SRC=1422 && COMPERR
+SRC=1423 && COMPERR

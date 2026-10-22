@@ -547,11 +547,29 @@ class program final {
 
     // the program starts at 'main', checked once every definition is parsed
     static auto assert_main_valid(const toc& tc) -> void {
+        // e.g. 'func main<T type>()' is recorded as a generic function
+        if (tc.generics().has_func(reserved_names::main)) {
+            throw compile_error{
+                tc.generics().get_func(reserved_names::main).param_tks.front(),
+                "'main' cannot have type parameters"};
+        }
+
         const stmt_def_func& func_main{tc.get_main_or_throw()};
 
         if (not func_main.is_inlined()) {
             throw compile_error{func_main.noinline_token(),
                                 "'main' cannot be declared 'noinline'"};
+        }
+
+        // no caller gives 'main' arguments or takes its result
+        if (not func_main.params().empty()) {
+            throw compile_error{func_main.params().front().tok(),
+                                "'main' cannot have parameters"};
+        }
+
+        if (func_main.returns()) {
+            throw compile_error{func_main.returns()->ident_tk,
+                                "'main' cannot have a result"};
         }
     }
 

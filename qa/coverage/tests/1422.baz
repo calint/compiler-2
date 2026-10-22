@@ -1,0 +1,4 @@
+# 'main' has no caller to take its result
+
+func main() res {
+}
