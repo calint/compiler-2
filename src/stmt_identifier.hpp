@@ -129,6 +129,13 @@ inline auto assert_constant_range(const ident_info& array_info,
                     *array_len)};
 }
 
+// a place: a variable, a field or an element named by a path, e.g.
+// 'w.rooms[i].items[j].x', also the receiver of a method call; the parse
+// resolves the type and the bytes of the root variable that the path reaches
+// ('accessed_bytes_', the whole array after a run-time index), the compile
+// resolves the names again in the current frames and builds one memory operand
+// ('compile_lea', see 'etc/docs/README.md' chapter 6); a path that names a
+// function or a constant has no storage
 class stmt_identifier final : public statement {
     struct ident_elem {
         token name_tk;

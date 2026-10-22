@@ -12,6 +12,7 @@
 #include "stmt_block.hpp"
 #include "ub_assigned.hpp"
 
+// one condition of an 'if' or 'else if' and the block it guards
 class stmt_if_branch final : public statement {
     expr_bool condition_;
     stmt_block code_;

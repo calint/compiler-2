@@ -12,6 +12,9 @@
 #include "tokenizer.hpp"
 #include "ub_assigned.hpp"
 
+// a scope of statements, '{...}' or one statement without braces; its
+// declarations end with it, in 'toc' and in the definite-assignment walk,
+// and each block is one level of the parse nesting limit
 class stmt_block final : public statement {
     token open_brace_tk_;
     std::vector<std::unique_ptr<statement>> statements_;

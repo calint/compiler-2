@@ -15,6 +15,9 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
+// 'if', 'else if' and 'else': the branches are tried in order and the first
+// whose condition holds runs; a branch that is constant true ends the chain
+// and one that is constant false is not compiled
 class stmt_if final : public statement {
     // e.g. 'else if' of 'else if c == d {y = 2}'
     struct else_if_tokens {

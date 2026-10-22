@@ -11,6 +11,8 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
+// 'return' leaves the function where its frame says: 'main' exits with 0, an
+// inlined body jumps to the end of its call, a noinline body returns
 class stmt_return final : public statement {
   public:
     stmt_return(const toc& tc, const token src_loc_tk) : statement{src_loc_tk} {

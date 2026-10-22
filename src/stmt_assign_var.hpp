@@ -21,6 +21,10 @@
 #include "ub_assigned.hpp"
 #include "ub_reads.hpp"
 
+// 'dst = value' and the initializer of a declaration: the value is parsed as
+// the type of the destination, which types its literals, and is written
+// into the destination part by part, so a part that reads a part already
+// written is rejected ('assert_parts_not_clobbered')
 class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;

@@ -16,6 +16,9 @@
 #include "tokenizer.hpp"
 #include "unary_ops.hpp"
 
+// the constant size of an array, e.g. the '4' of 'i8[4]' or the 'n' of a
+// field 'i8[n]' where 'n' is a constant; folded when parsed and never
+// compiled, empty for 'i8[]'; not a constant definition ('stmt_def_const')
 class stmt_const final : public statement {
     unary_ops uops_;
     token literal_tk_;

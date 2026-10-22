@@ -20,6 +20,9 @@
 #include "ub_assigned.hpp"
 #include "unary_ops.hpp"
 
+// 'foo arr' or 'foo arr, count': the body runs once per element of the array,
+// or of its first 'count' elements, with 'e' the element, 'i' its index and
+// 'n' the length of the array; the body may run zero times
 class stmt_builtin_foo final : public statement {
     stmt_identifier ident_;
     token count_delim_tk_;

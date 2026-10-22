@@ -271,16 +271,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     4. 'fits_size_bytes(value, size_bytes)' is the only width query in
        bytes, both callers pass 'type.size_bytes()': 'fits_width(value,
        type)' via 'wrap_to_width'
-[p] easy: comments: core classes without a header comment of their role and
-    invariants: 'stmt_identifier' (a place, central to docs chapter 6),
-    'operand', 'program', 'stmt_assign_var', 'stmt_block', 'stmt_if',
-    'stmt_if_branch', 'stmt_builtin_foo', 'stmt_return', 'stmt_const' (an
-    array size, never compiled, its name reads like 'stmt_def_const'); the
-    base class 'expression' adds only 'is_expression' but is not the base of
-    'expr_bool' or 'expr_any' (round 8 A-9, A-10)
-    => design: write the comments, 'stmt_identifier', 'operand' and
-       'stmt_const' first; rename 'expression' to 'computed_value' and the
-       virtual to 'is_computed' only if the comments do not make it clear
 [ ] medium: decide: aliasing rule C compares the arguments with the result
     only; a global that an inlined body names is compared with neither, so
     'g = add_g()' with 'res = res + g' in the body is accepted inline and

@@ -168,6 +168,10 @@ inline constexpr size_t max_size_bytes{
     return base + offset;
 }
 
+// what an operation of the backend reads or writes: empty, a register, an
+// immediate, a symbol or a memory operand '[base + index * scale +
+// displacement]'; the front end builds it and the backend lowers it to what
+// the target encodes
 class operand final {
     // a symbol is the value of a label or a constant of the assembler, known
     // when the program is assembled

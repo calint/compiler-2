@@ -270,6 +270,10 @@ class assignment_analysis final {
     }
 };
 
+// the whole program: the constructor parses the main file and the files it
+// includes into 'statements_', in file order, and checks the definite
+// assignment of the results; 'build' compiles from the parsed statements,
+// 'main' first, see 'etc/docs/README.md' section 1.2
 class program final {
     // the statements of one file, in 'statements_'
     struct file_statements {

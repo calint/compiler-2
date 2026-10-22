@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: comments: core classes without a header comment of their role and
+    invariants: 'stmt_identifier' (a place, central to docs chapter 6),
+    'operand', 'program', 'stmt_assign_var', 'stmt_block', 'stmt_if',
+    'stmt_if_branch', 'stmt_builtin_foo', 'stmt_return', 'stmt_const' (an
+    array size, never compiled, its name reads like 'stmt_def_const'); the
+    base class 'expression' adds only 'is_expression' but is not the base of
+    'expr_bool' or 'expr_any' (round 8 A-9, A-10)
+    => design: write the comments, 'stmt_identifier', 'operand' and
+       'stmt_const' first; rename 'expression' to 'computed_value' and the
+       virtual to 'is_computed' only if the comments do not make it clear
+    => done (2026-10-22): the eleven classes have header comments; the one
+       of 'expression' says why 'expr_any', 'expr_bool' and 'expr_type'
+       are not its subclasses, so no rename
 [x] medium: design: target options arrive two ways: stack, memory and image
     name through 'make_backend' and the constructors, register report, sd
     card and kept version through setters called right after (round 8 A-12,
