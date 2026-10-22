@@ -263,7 +263,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         stmt_builtin_io::find(tk.text()),
     };
 
-    if (io and io->has_result()) {
+    if (io != nullptr and io->has_result()) {
         return std::make_unique<stmt_builtin_io>(tc, *io, std::move(uops), tk,
                                                  tz);
     }

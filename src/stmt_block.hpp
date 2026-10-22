@@ -70,13 +70,15 @@ class stmt_block final : public statement {
         }
     }
 
-    auto compile(toc& tc, const size_t indent, const destination& dst) const
+    // a statement in a block has no destination, its value is not used
+    auto compile(toc& tc, const size_t indent,
+                 [[maybe_unused]] const destination& dst) const
         -> void override {
 
         tc.enter_block();
 
         for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc, indent + 1, dst);
+            s->compile(tc, indent + 1, destination{});
         }
 
         tc.exit_block();

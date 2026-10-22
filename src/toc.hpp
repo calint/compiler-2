@@ -39,8 +39,9 @@
 //   'ident_path'    a name as its path of elements, e.g. 'p.x'
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
 //                   address
-//   tables          'type_table', 'function_table', 'data_table'
+//   tables          'type_table', 'function_table'
 //   'dry_run_ledger' the heights of the checked dry runs of noinline calls
+//   'data_table'    the dats and the read-only constants
 //   options         'check_options', 'usage_statistics'
 //   'scope_stack'   the frames from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
@@ -52,7 +53,7 @@
 //   'toc'           the facade the statements use, owns all of the above; a
 //                   method of 'toc' changes state or combines tables, a query
 //                   of one table goes through its const accessor, e.g.
-//                   'tc.scopes().is_alias(name)'
+//                   'tc.scopes().current_func_frame()'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
 //
@@ -1328,11 +1329,6 @@ class scope_stack final {
         }
 
         std::unreachable();
-    }
-
-    // true when 'name' is a parameter that names its argument
-    [[nodiscard]] auto is_alias(const std::string_view name) const -> bool {
-        return find_alias(name) != nullptr;
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return frames_.empty(); }

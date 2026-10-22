@@ -74,8 +74,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     function to noinline can add an error
     => option C: the real noinline body protects the read itself, two roots
        that are each a pointer parameter or a global may overlap
-       ('toc::reads_destination'), then rule B and its dry-run check go
-       (the item below, test 1410); cost: an extra copy in bodies like
+       ('reads_destination' in 'statement.hpp'), then rule B and its dry-run
+       check go (the item below, test 1410); cost: an extra copy in bodies like
        'res = a + b' when 'res' and 'b' are pointers, measure the instruction
        counts over all tests before deciding
 [ ] medium: aliasing: in the dry run of a noinline call, rule B

@@ -371,7 +371,8 @@ struct generic_func_info {
 struct func_instance {
     // e.g. 'tokenizer.to<name>' or 'str.print'
     std::string name;
-    // e.g. 'text.print' for 'str.print', empty for a generic function
+    // e.g. 'text.print' for 'str.print', empty for a generic function without
+    // a receiver
     std::string generic_method;
     // the constants of the generic type of a method, in the frame of the body
     std::vector<generic_arg> constants;

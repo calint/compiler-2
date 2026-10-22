@@ -306,7 +306,9 @@ optimizations, usage ('report_renderer' in 'program.hpp'), and with
 
 A constant follows the rules of a variable; only the code differs, an
 immediate instead of a load. One virtual, 'statement::fold', evaluates a value
-known at compile time; nothing else does. Its result, 'folded_value', is
+known at compile time. The exceptions are read at the parse from a literal or
+a constant name: array sizes ('stmt_const') and the constant arguments of a
+generic ('toc::constant_value_of'). The result of 'fold', 'folded_value', is
 stored as it is wherever a constant is kept ('ident_info', the alias of an
 inlined argument, the constant of a 'let'):
 
@@ -902,7 +904,7 @@ limits the depth depends on the calls. The dry runs also share the frame limit
 of the inlined calls and blocks ('call_site::max_frame_count', 256 scopes). A
 call kind keeps the number of levels its dry run reached below it and the
 frames above it at its deepest check of the frame limit ('dry_run_height',
-'function_table::dry_run_height_of'), and a call that finds its kind dry run
+'dry_run_ledger::height_of'), and a call that finds its kind dry run
 counts both without running again, so the verdict does not depend on which
 calls were checked first ('toc::dry_run_call_kind'). A cycle of call kinds,
 e.g. 'f(a, b)' calling 'f(b, a)', is measured from where it was entered and
@@ -1208,7 +1210,7 @@ stmt_identifier::add_index            the index register and the scale
 stmt_identifier::fold_indexed_address the second index
 stmt_identifier::compile_checked_index
                                       the bounds check and the '+ c' of 6.4
-toc::get_lea_operand                  an operand without a path to walk is
+statement::get_lea_operand            an operand without a path to walk is
                                       the storage of the name
 ident_builder::place_operand_from_lea a built-in reached below a known
                                       address, for the resolver
@@ -1315,10 +1317,12 @@ ones its callees need.
 
 'main.cpp' includes the headers, there is no build system and the compiler
 sees the whole program. The include cycles between the statement classes are
-broken in 'decouple.hpp', 'decouple_impl.hpp' and 'expr_type_impl.hpp' only.
-A forward declaration of a class used only by reference or pointer is the
-opaque-pointer pattern and is also allowed: 'toc' in 'statement.hpp',
-'stmt_def_dat' and 'stmt_def_func' in 'toc.hpp'.
+broken in 'decouple.hpp', 'decouple_impl.hpp' and 'expr_type_impl.hpp'; for
+the same reason two headers define members of an earlier class: 'tokenizer.hpp'
+the 'compile_error' of a tokenizer, 'register_report.hpp'
+'machine::register_error' and 'machine::register_peak_report'. A forward
+declaration of a class used only by reference or pointer is the opaque-pointer
+pattern and is also allowed: 'stmt_def_dat' and 'stmt_def_func' in 'toc.hpp'.
 
 Cost: every change rebuilds everything.
 

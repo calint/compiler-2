@@ -16,7 +16,6 @@
 #include "machine.hpp"
 #include "operand.hpp"
 #include "stmt_call.hpp"
-#include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "unary_ops.hpp"
 
@@ -86,7 +85,6 @@ class stmt_builtin_io final : public stmt_call {
 
         if (io_.is_sector) {
             assert_target_has_sd_card(tc);
-            set_type(tc.builtins().void_type());
         }
 
         assert_argument_count();

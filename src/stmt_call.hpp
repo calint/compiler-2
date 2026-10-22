@@ -371,6 +371,10 @@ struct call_site {
     // call that reaches it, see 'noinline_call::dry_run_body'
     static constexpr size_t max_noinline_dry_run_level{100};
 
+    // an inlined recursion ends at compile time when a constant argument
+    // makes its condition fold, otherwise it would expand without end
+    static constexpr size_t max_inlined_nesting{64};
+
     // the error was found inside the inlined body, unless it is in the call
     // itself where the call is already the error location
     auto add_call_frame(compile_error& e) const -> void {
@@ -1685,7 +1689,7 @@ class noinline_call {
 
         for (const auto [i, addr] : std::views::enumerate(addresses)) {
             // the callee finds it in a register, it has no slot
-            if (std::cmp_equal(i, register_slot.value_or(addresses.size()))) {
+            if (register_slot and std::cmp_equal(i, *register_slot)) {
                 continue;
             }
 
@@ -1882,8 +1886,9 @@ struct constructor_call_tag {};
 
 // a call of a function, a method or a constructor
 //
-// parsing, in the constructors: the callee and its '(' ('read_callee', a
-// generic function through 'generic_call'), the kind of the callee
+// parsing, in the constructors: the callee and its '('
+// ('read_generic_callee', a generic function through 'generic_call', and
+// 'read_open_paren'), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), then the arguments
 // ('parse_arguments', each checked by 'assert_argument_usable' and
 // 'assert_argument_writable', or 'parse_builtin_arguments')
@@ -2019,8 +2024,8 @@ class stmt_call : public expression {
 
         assert_in_func(tc);
 
-        // note: 'read', 'write' and 'exit' are built-ins with a statement of
-        //       their own
+        // note: the built-ins that parse like a call, e.g. 'exit' and the io
+        //       functions, are subclasses that override 'compile'
 
         assert(not tc.funcs().is_builtin(func_name_));
 
@@ -2151,11 +2156,9 @@ class stmt_call : public expression {
     auto assert_inline_nesting(toc& tc, const stmt_def_func& func) const
         -> void {
 
-        // an inlined recursion ends at compile time when a constant argument
-        // makes its condition fold, otherwise it would expand without end
-        constexpr size_t max_inlined_nesting{64};
+        if (tc.scopes().inlined_nesting(func.name()) >=
+            call_site::max_inlined_nesting) {
 
-        if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
             throw inlining_limit_error(std::format(
                 "recursion of inlined function '{}' does not end at compile "
                 "time, declare it 'noinline'",

@@ -27,8 +27,6 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
-class toc;
-
 // the source text of a statement on one line, for the comments of the output
 class one_line_source final {
     // a part of the source text as it reads, a source comment, or a string or
@@ -243,9 +241,8 @@ enum class width_change : uint8_t { narrowed, widened };
 //                  'compile_lea', 'compile_address', 'is_indexed',
 //                  'is_array_element', 'name_token': 'stmt_identifier', and
 //                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
-//                  'expr_bool' ('name_or_literal') and 'expr_zero',
-//                  'stmt_builtin_convert' ('is_name_or_literal',
-//                  'name_or_literal')
+//                  'expr_bool' ('name_or_literal') and 'expr_zero'
+//                  ('is_name_or_literal', 'name_or_literal')
 class statement {
     token token_;
     unary_ops uops_;
@@ -358,7 +355,7 @@ class statement {
     }
 
     // the text the resolver looks up: a name such as 'p.x', or a literal such
-    // as '3', 'true' or the folded '-3' of 'i8(-3)', which resolve to constants
+    // as '3' or 'true', which resolve to constants
     [[nodiscard]] virtual auto name_or_literal() const -> std::string_view {
         return token_.text();
     }

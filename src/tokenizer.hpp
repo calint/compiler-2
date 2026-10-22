@@ -191,7 +191,7 @@ class tokenizer final {
     auto rewind_to_position(const token& pos_tk) -> void {
         const size_t new_pos{pos_tk.start_index()};
 
-        assert(new_pos <= src_.size());
+        assert(new_pos <= char_ix_);
 
         const size_t char_count{char_ix_ - new_pos};
         move_back(char_count);

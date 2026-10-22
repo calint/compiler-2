@@ -4,7 +4,9 @@
 // ('var_info'), where 'compile' writes a value ('destination'), what a
 // caller asks of the address of an identifier ('lea_request'), why a name
 // cannot be written ('read_only_cause'), an address computed at an inlined
-// call ('known_address') and a value known at compile time ('folded_value')
+// call ('known_address'), a value known at compile time ('folded_value'),
+// where a variable lives ('var_placement') and how a value is used
+// ('value_use')
 
 #include <cassert>
 #include <cstddef>
@@ -176,7 +178,8 @@ class ident_info final {
     };
 
     std::string id_;
-    // where the name is in the source, empty for a register
+    // where the name is in the source, set by 'make_ident_info(tc, st)',
+    // empty when resolved without a statement
     token src_loc_tk_;
     std::vector<std::string> elem_path_;
     std::vector<const type*> type_path_;
@@ -286,7 +289,8 @@ class ident_info final {
 
     auto set_src_loc_tk(const token& tk) -> void { src_loc_tk_ = tk; }
 
-    // where the name is in the source, empty for a register
+    // where the name is in the source, set by 'make_ident_info(tc, st)',
+    // empty when resolved without a statement
     [[nodiscard]] auto src_loc_tk() const -> const token& {
         return src_loc_tk_;
     }

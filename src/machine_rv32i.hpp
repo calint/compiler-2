@@ -58,8 +58,10 @@
 //                'emit_checked_add_subtract'
 //   handlers     'emit_*_failure_handler', 'emit_named_failure_handler',
 //                'emit_line_failure', 'emit_report_line_routine'
-//   calls        'call_function', the target hooks 'emit_read_call',
-//                'emit_write_call' and 'exit', the sector routines
+//   calls        'call_function', the sector and i/o routine calls
+//   target hooks 'emit_read_call', 'emit_write_call',
+//                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
+//                'check_memory_end'
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
     using op = assembler_rv32i::op;

@@ -58,8 +58,9 @@ class expr_arith final : public expression {
     bool is_implied_subexpression_{};
 
     // the first element is an enclosed list, e.g. the '(a + b)' of
-    // '(a + b) * c'; a list given its first element by the caller has two or
-    // more elements and keeps it false
+    // '(a + b) * c'; a first element given by the caller keeps it false: the
+    // element before a higher-precedence operator, which makes two or more
+    // elements, or a zero value, e.g. '{}', which is never enclosed
     bool is_first_enclosed_{};
 
     // an operation of the list being folded: an element, or merged constants

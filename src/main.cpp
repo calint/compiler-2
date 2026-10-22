@@ -185,7 +185,8 @@ struct source_line {
 
 [[nodiscard]] auto line_at(std::string_view src, size_t index) -> source_line;
 
-auto trimmed_line_at(std::string_view src, size_t index) -> std::string_view;
+[[nodiscard]] auto trimmed_line_at(std::string_view src, size_t index)
+    -> std::string_view;
 
 auto print_source_error(const source_files& files, const size_t file_ix,
                         const size_t line, const size_t start_index,
@@ -856,8 +857,8 @@ default_binary_file_name(const std::string_view src_file_name,
     return std::format("{}-{}.bin", path.string(), target_text(machine_target));
 }
 
-auto is_source_file(const std::string_view path, const source_files& files)
-    -> bool {
+[[nodiscard]] auto is_source_file(const std::string_view path,
+                                  const source_files& files) -> bool {
 
     for (size_t i{}; i < files.count(); ++i) {
         std::error_code ec;
@@ -958,8 +959,8 @@ auto print_call_frames(const source_files& files,
 }
 
 // the line of the character at 'index' without its surrounding whitespace
-auto trimmed_line_at(const std::string_view src, const size_t index)
-    -> std::string_view {
+[[nodiscard]] auto trimmed_line_at(const std::string_view src,
+                                   const size_t index) -> std::string_view {
 
     constexpr std::string_view whitespace{" \t\r"};
 
@@ -996,7 +997,7 @@ auto print_source_error(const source_files& files, const size_t file_ix,
 }
 
 // the bytes after the first one of a multi-byte UTF-8 character
-auto is_utf8_continuation(const char ch) -> bool {
+[[nodiscard]] auto is_utf8_continuation(const char ch) -> bool {
     constexpr unsigned char first{0x80};
     constexpr unsigned char last{0xBF};
 
@@ -1008,7 +1009,7 @@ auto is_utf8_continuation(const char ch) -> bool {
 // the columns a terminal shows: a continuation byte after a lead or
 // continuation byte is part of that character, a lone one is shown as a
 // replacement character
-auto display_columns(const std::string_view text) -> size_t {
+[[nodiscard]] auto display_columns(const std::string_view text) -> size_t {
     constexpr unsigned char first_non_ascii{0x80};
 
     size_t columns{};

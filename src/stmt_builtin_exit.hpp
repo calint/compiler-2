@@ -18,8 +18,6 @@ class stmt_builtin_exit final : public stmt_call {
         if (argument_count() != 1) {
             throw compile_error{tok(), "expected 1 argument"};
         }
-
-        set_type(tc.builtins().void_type());
     }
 
     //

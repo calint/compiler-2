@@ -78,8 +78,8 @@ class register_use_report final {
         size_t saved{};
         size_t inside{live_count()};
 
-        for (const auto [frame, use] : std::views::enumerate(frames_)) {
-            if (frame > 0 and saved > 0) {
+        for (const frame_use& use : frames_) {
+            if (saved > 0) {
                 found.push_back({
                     .name{use.callee},
                     .inside{inside},

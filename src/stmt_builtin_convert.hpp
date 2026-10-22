@@ -179,8 +179,6 @@ class stmt_builtin_convert final : public expression {
             };
         }
 
-        const type& width_type{use.width_ref()};
-
         if (arg_.is_expression()) {
             return std::nullopt;
         }
@@ -192,7 +190,8 @@ class stmt_builtin_convert final : public expression {
         }
 
         const int64_t converted{converted_constant(info.constant().value)};
-        const type& result_type{*wider(get_type(), width_type)};
+        const type& use_width{use.width_ref()};
+        const type& result_type{*wider(get_type(), use_width)};
 
         const int64_t value{
             get_unary_ops().evaluate_at(converted, result_type,
@@ -202,7 +201,7 @@ class stmt_builtin_convert final : public expression {
         // a narrower width keeps the low bits, e.g. 44 of the 'i16' 300 of
         // 'i8(i16(k))'
         return folded_value{
-            .value{constant_arith::wrap_to_width(value, width_type)},
+            .value{constant_arith::wrap_to_width(value, use_width)},
             .own_type{&get_type()},
         };
     }
