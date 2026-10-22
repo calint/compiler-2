@@ -5,6 +5,7 @@
 // and 'expr_arith', which call them, are included by those classes; the
 // definitions of the top level are made by 'program::parse_definition'
 
+#include <algorithm>
 #include <format>
 #include <memory>
 #include <utility>
@@ -50,6 +51,22 @@ inline auto assert_builtin_has_value(const token& tk, tokenizer& tz) -> void {
     }
 }
 
+// a built-in is not generic, e.g. 'read<i8>(0, buf)'
+inline auto assert_builtin_without_type_args(const token& tk, tokenizer& tz)
+    -> void {
+
+    if (not std::ranges::contains(reserved_names::builtin_functions,
+                                  tk.text()) or
+        tz.peek_char_after_whitespace() != '<') {
+
+        return;
+    }
+
+    throw compile_error{
+        tk, std::format("built-in function '{}' takes no type arguments",
+                        tk.text())};
+}
+
 // the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)', none
 // when 'tk' names no built-in with a value; 'create_statement_in_expr_arith'
 // makes a statement for each
@@ -88,6 +105,8 @@ inline auto assert_builtin_has_value(const token& tk, tokenizer& tz) -> void {
 inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
                                            const token tk)
     -> std::unique_ptr<statement> {
+
+    assert_builtin_without_type_args(tk, tz);
 
     if (tk.is_text("var") or tk.is_text("let")) {
         return make_stmt_def_var(tc, tk, tz);
@@ -302,6 +321,8 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
         throw compile_error{tk, "'not' makes a condition, which is not an "
                                 "operand here, store it in a 'bool' first"};
     }
+
+    assert_builtin_without_type_args(tk, tz);
 
     const stmt_builtin_io::io_function* const io{
         stmt_builtin_io::find(tk.text()),

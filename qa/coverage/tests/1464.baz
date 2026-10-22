@@ -1,0 +1,6 @@
+# a built-in given type arguments in an expression
+func main() {
+    var a = i8[4]
+    var n = 1 + array_length<i8>(a)
+    exit(n)
+}

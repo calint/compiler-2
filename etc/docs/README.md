@@ -562,12 +562,14 @@ this order. The examples use 'make' and 'same' from the start of
       ```
 
    2. a value that names its type: an instance literal, a constructor call,
-      or a call of a function that is not generic and returns a value
+      a call of a function that is not generic and returns a value, or a
+      built-in with a value
 
       ```text
       same(name{}, t)         T = name
       same(point.at(1, 2), p) T = point
       same(mk(), t)           T = the return type of 'mk'
+      same(i8(n), t)          T = i8
       ```
 
       A generic function does not count: its return type is not known

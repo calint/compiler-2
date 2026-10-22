@@ -1,0 +1,11 @@
+# a built-in given type arguments as the source of a copy
+type point {x, y}
+
+type obj {pos point}
+
+func main() {
+    var a = i8[4]
+    var o = obj
+    o.pos = arrays_equal<i8>(a, a, 4)
+    exit(o.pos.x)
+}

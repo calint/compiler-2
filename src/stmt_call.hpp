@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "compile_error.hpp"
+#include "decouple.hpp"
 #include "expr_any.hpp"
 #include "expression.hpp"
 #include "generics.hpp"
@@ -45,6 +46,8 @@
 //   'noinline_call'   passes addresses to the body that is emitted once
 //   'constructor_call_tag'
 //                     selects the constructor of 'point.at(1, 2)'
+//   'builtin_call_tag'
+//                     selects the constructor of 'exit(0)'
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -287,6 +290,19 @@ struct generic_call {
             tz.skip_to_close_paren();
 
             return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
+        }
+
+        // e.g. 'read(0, buf)', the value of a built-in
+        if (const type* const builtin_type{builtin_value_type(tc, tk, tz)};
+            builtin_type != nullptr) {
+
+            if (tz.is_next_char_token('(').is_empty()) {
+                return nullptr;
+            }
+
+            tz.skip_to_close_paren();
+
+            return is_whole_argument() ? builtin_type : nullptr;
         }
 
         // e.g. 'mk(1, 2)', a generic function has no return type before it is
@@ -1899,6 +1915,10 @@ class noinline_call {
 // selects the constructor of 'stmt_call' for 'point.at(1, 2)'
 struct constructor_call_tag {};
 
+// selects the constructor of 'stmt_call' for a built-in that parses like a
+// call, e.g. 'exit(0)'
+struct builtin_call_tag {};
+
 // a call of a function, a method or a constructor
 //
 // parsing, in the constructors: the callee and its '('
@@ -1957,14 +1977,8 @@ class stmt_call : public expression {
             throw compile_error{tok(), "'main' cannot be called"};
         }
 
-        if (not tc.funcs().is_builtin(func_name_)) {
-            parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_),
-                            deducing_args);
-
-            return;
-        }
-
-        parse_builtin_arguments(tc, tz);
+        parse_arguments(tc, tz, tc.get_func_or_throw(tok(), func_name_),
+                        deducing_args);
     }
 
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
@@ -2042,8 +2056,6 @@ class stmt_call : public expression {
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
         //       functions, are subclasses that override 'compile'
 
-        assert(not tc.funcs().is_builtin(func_name_));
-
         const call_site call{site(tc.overflow_options(dst))};
 
         machine& x{tc.machine()};
@@ -2088,6 +2100,21 @@ class stmt_call : public expression {
     }
 
   protected:
+    // a built-in has no definition, 'result_type' is the type of its value,
+    // 'void' if it has none
+    stmt_call(builtin_call_tag /*tag*/, toc& tc, unary_ops uops, const token tk,
+              tokenizer& tz, const type& result_type)
+        : expression{tk, std::move(uops)}, func_name_{tk.text()} {
+
+        open_paren_tk_ = tz.is_next_char_token('(');
+
+        set_type(result_type);
+
+        assert_open_paren_found(tz, "function name");
+
+        parse_builtin_arguments(tc, tz);
+    }
+
     [[nodiscard]] auto argument(const size_t arg_index) const
         -> const statement& {
 

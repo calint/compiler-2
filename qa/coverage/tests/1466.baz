@@ -1,0 +1,15 @@
+# a type argument deduced from the value of a built-in
+func id<T type>(x T) res T {
+    res = x
+}
+
+func main() {
+    var a = i8[4]
+    var n = id(array_length(a))
+    var c = id(i8(3))
+    var w = id(write(1, a, 0))
+    var e = id(arrays_equal(a, a, 4))
+    if e {
+        exit(n + c + w)
+    }
+}

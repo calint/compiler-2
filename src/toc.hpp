@@ -62,8 +62,8 @@ class stmt_def_dat;
 class stmt_def_func;
 
 struct func_info {
-    token src_loc_tk;           // the definition, empty for a built-in
-    const stmt_def_func* def{}; // null if built-in function
+    token src_loc_tk;           // the definition
+    const stmt_def_func* def{}; // never null
     const type* type_ptr{};     // return type or void
     // e.g. 'text.size' for the instance 'str.size', empty if not an instance
     // of a method of a generic type
@@ -788,8 +788,8 @@ struct dry_run_height {
     size_t frames{};
 };
 
-// the functions of the program: the built-in ones, the defined ones and the
-// instances of generic ones, the bodies of noinline functions to compile and
+// the functions of the program: the defined ones and the instances of
+// generic ones, the bodies of noinline functions to compile and
 // the definitions a compile reached
 class function_table final {
     lut<func_info> funcs_;
@@ -800,22 +800,20 @@ class function_table final {
     std::set<const stmt_def_func*> reached_;
 
   public:
-    // the name has been checked, a built-in function has no definition
+    // the name has been checked
     auto add(const token& src_loc_tk, std::string name, const type& return_type,
-             const stmt_def_func* const func_def, std::string generic_method)
+             const stmt_def_func& func_def, std::string generic_method)
         -> void {
 
         funcs_.put(std::move(name),
                    {
                        .src_loc_tk{src_loc_tk},
-                       .def{func_def},
+                       .def{&func_def},
                        .type_ptr{&return_type},
                        .generic_method{std::move(generic_method)},
                    });
 
-        if (func_def != nullptr) {
-            defs_.emplace_back(func_def);
-        }
+        defs_.emplace_back(&func_def);
     }
 
     // keeps the instance alive, 'funcs_' refers to it
@@ -859,11 +857,6 @@ class function_table final {
     // a noinline body to emit or a function reached by a call
     [[nodiscard]] auto has_compile_records() const -> bool {
         return not noinline_bodies_.empty() or not reached_.empty();
-    }
-
-    // declared without a definition, e.g. 'exit'
-    [[nodiscard]] auto is_builtin(const std::string_view name) const -> bool {
-        return get(name).def == nullptr;
     }
 
     [[nodiscard]] auto is_reached(const stmt_def_func& func) const -> bool {
@@ -2257,11 +2250,6 @@ class definition_checks final {
                            const std::string_view generic_method,
                            const func_info& fn) const -> void {
 
-        // note: the name of a built-in function is rejected by
-        //       'assert_valid_unqualified_name'
-
-        assert(fn.src_loc_tk.at_line() != 0);
-
         const bool is_generic{not generic_method.empty()};
         const bool is_existing_generic{not fn.generic_method.empty()};
 
@@ -2540,7 +2528,7 @@ class toc final {
     }
 
     auto add_func(const token& src_loc_tk, std::string name,
-                  const type& return_type, const stmt_def_func* const func_def,
+                  const type& return_type, const stmt_def_func& func_def,
                   std::string generic_method) -> void {
 
         definitions_.assert_function_not_defined(src_loc_tk, name,

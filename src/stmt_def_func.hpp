@@ -851,7 +851,7 @@ class stmt_def_func final : public statement {
         };
 
         tc.add_func(head_.name_tk, std::string{name()}, statement::get_type(),
-                    this, generic_method);
+                    *this, generic_method);
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'

@@ -37,6 +37,12 @@ class stmt_builtin_io final : public stmt_call {
         [[nodiscard]] constexpr auto has_result() const -> bool {
             return not is_sector;
         }
+
+        // the count of a transfer, nothing for a sector function
+        [[nodiscard]] auto result_type(const toc& tc) const -> const type& {
+            return has_result() ? tc.builtins().default_type()
+                                : tc.builtins().void_type();
+        }
     };
 
   private:
@@ -81,7 +87,9 @@ class stmt_builtin_io final : public stmt_call {
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
-        : stmt_call{tc, std::move(uops), tk, tz, nullptr}, io_{io} {
+        : stmt_call{builtin_call_tag{}, tc, std::move(uops), tk, tz,
+                    io.result_type(tc)},
+          io_{io} {
 
         if (io_.is_sector) {
             assert_target_has_sd_card(tc);

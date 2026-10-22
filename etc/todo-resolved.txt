@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: design: a built-in that parses like a call is recognised by a
+    hidden convention: 'program' registers exit, read, write and the sector
+    functions in 'function_table' with a null definition, 'is_builtin' means
+    "def == nullptr", the public function-call constructor of 'stmt_call'
+    branches on it into 'parse_builtin_arguments' (a fourth mode the
+    'stmt_call' modes item does not list) and 'compile' asserts it away; the
+    other built-ins are not registered (round 8 A-4, C-5)
+    => design: a protected 'stmt_call(builtin_call_tag, tc, uops, tk, tz)'
+       that reads the parenthesized arguments, used by 'stmt_builtin_exit'
+       and 'stmt_builtin_io'; the public constructor drops the branch;
+       'program' stops calling 'add_func' for the five names and
+       'function_table::is_builtin' goes, 'reserved_names::builtin_functions'
+       already reserves the names
+    => check first: no lookup ('get_func_or_throw', the noinline report)
+       needs the null entries
+    => after: one message for a built-in given type arguments (round 8
+       D-6, four messages today)
+    => done (2026-10-22): as designed; 'func_info::def' is never null and
+       'add_func' takes a reference; deduction asks 'builtin_value_type',
+       so 'read', 'write', 'array_length', 'arrays_equal' and the
+       conversions name their type (docs 2.10.2); one message "built-in
+       function 'exit' takes no type arguments" from the three dispatchers;
+       tests 1463 to 1466
 [x] medium: design: the operator enums 'machine::arithmetic_operator' and
     'machine::comparison_operator' are language concepts owned by the
     backend; 'constant_arith.hpp' needs only them but includes machine.hpp,

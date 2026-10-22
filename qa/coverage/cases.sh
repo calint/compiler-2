@@ -4644,3 +4644,9 @@ SRC=1459 && COMPERR
 SRC=1460 && COMPERR
 SRC=1461 && COMPERR
 SRC=1462 && COMPERR
+
+# a built-in given type arguments, a type argument deduced from a built-in
+SRC=1463 && COMPERR
+SRC=1464 && COMPERR
+SRC=1465 && COMPERR
+SRC=1466 && EXP=7 && RUN

@@ -1,0 +1,4 @@
+# a built-in given type arguments as a statement
+func main() {
+    exit<i8>(0)
+}

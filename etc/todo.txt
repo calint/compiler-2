@@ -213,23 +213,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     keep adding virtuals
     => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
        'std::variant' and rejected it, see 'etc/todo-resolved.txt'
-[p] medium: design: a built-in that parses like a call is recognised by a
-    hidden convention: 'program' registers exit, read, write and the sector
-    functions in 'function_table' with a null definition, 'is_builtin' means
-    "def == nullptr", the public function-call constructor of 'stmt_call'
-    branches on it into 'parse_builtin_arguments' (a fourth mode the
-    'stmt_call' modes item does not list) and 'compile' asserts it away; the
-    other built-ins are not registered (round 8 A-4, C-5)
-    => design: a protected 'stmt_call(builtin_call_tag, tc, uops, tk, tz)'
-       that reads the parenthesized arguments, used by 'stmt_builtin_exit'
-       and 'stmt_builtin_io'; the public constructor drops the branch;
-       'program' stops calling 'add_func' for the five names and
-       'function_table::is_builtin' goes, 'reserved_names::builtin_functions'
-       already reserves the names
-    => check first: no lookup ('get_func_or_throw', the noinline report)
-       needs the null entries
-    => after: one message for a built-in given type arguments (round 8
-       D-6, four messages today)
+[ ] easy: design: 'func_info::type_ptr' repeats the return type of
+    'func_info::def', every entry has a definition since the built-ins left
+    'function_table'; 'get_func_return_type_or_throw' could read the
+    definition and 'add_func' lose the parameter
 [p] medium: design: 'toc::enter_func' makes an inlined frame whose defaults
     (empty call path and return label) serve two unrelated callers, the
     parse and 'main', and 'stmt_return' reads an empty return label as "this

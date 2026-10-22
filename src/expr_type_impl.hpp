@@ -148,6 +148,8 @@ inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
 inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
+    assert_builtin_without_type_args(tok(), tz);
+
     assert_builtin_has_value(tok(), tz);
 
     // a built-in is not a function, its value is a scalar of a built-in type

@@ -1,0 +1,4 @@
+
+1464.baz:4:17: built-in function 'array_length' takes no type arguments
+    var n = 1 + array_length<i8>(a)
+                ^~~~~~~~~~~~

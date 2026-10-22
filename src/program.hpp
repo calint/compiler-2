@@ -311,16 +311,6 @@ class program final {
 
         const builtin_type_set& builtins{backend.builtin_types()};
 
-        // the built-in functions are called like the defined ones, so their
-        // names are declared the same way
-        tc_.add_func(src_loc_tk, "exit", builtins.void_type, nullptr, {});
-
-        tc_.add_func(src_loc_tk, "sector_read", builtins.void_type, nullptr,
-                     {});
-
-        tc_.add_func(src_loc_tk, "sector_write", builtins.void_type, nullptr,
-                     {});
-
         // the built-in types are looked up by name like the defined ones
         tc_.add_type(src_loc_tk, builtins.i64);
         tc_.add_type(src_loc_tk, builtins.i32);
@@ -331,12 +321,6 @@ class program final {
 
         // the default type has a name of its own so that it is portable
         tc_.add_type_alias(src_loc_tk, "int", tc_.builtins().default_type());
-
-        tc_.add_func(src_loc_tk, "read", tc_.builtins().default_type(), nullptr,
-                     {});
-
-        tc_.add_func(src_loc_tk, "write", tc_.builtins().default_type(),
-                     nullptr, {});
 
         tc_.enter_block();
 
