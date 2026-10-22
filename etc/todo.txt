@@ -274,6 +274,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        after '.'"; a path goes on across whitespace and line ends around a
        '.' by design, 'entities.' then 'array  .x' on the next line compiles
        (tests 1504, 1505)
+    => 9 done (2026-10-22): an unknown name as the argument of a deduction
+       gives "cannot resolve identifier" at it ('is_unknown_name'); an
+       inlined call of a function inside its own inlined body converts
+       running out of registers into the recursion message (test 1289 now
+       says so; such an error no longer lets 'emit_most_efficient' try the
+       other version, whose body has the same recursion); tests 1506, 1507
 [ ] medium: generics: an error inside an instance found after its parse
     has no frame naming the instance: the result check
     ('assert_functions_set_return_value' runs after the parse) and the check

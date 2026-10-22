@@ -4716,3 +4716,8 @@ SRC=1503 && COMPERR
 # a path goes on across whitespace and line ends, a name follows each '.'
 SRC=1504 && EXP=3 && RUN
 SRC=1505 && COMPERR
+
+# an unknown name in deduction, an inlined recursion that runs out of
+# registers
+SRC=1506 && COMPERR
+SRC=1507 && COMPERR

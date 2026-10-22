@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -149,6 +150,12 @@ struct generic_call {
             return nullptr;
         }
 
+        // e.g. 'show(nope)', an unknown name is reported as such, not as a
+        // type that cannot be deduced
+        if (is_unknown_name(tc, tk)) {
+            std::ignore = tc.make_ident_info(tk, tk.text());
+        }
+
         // e.g. 'point{1, 2}', a variable or a parameter hides the type
         if (not meaning.is_var_or_binding()) {
             return value_type(tc, tz, tk);
@@ -241,6 +248,32 @@ struct generic_call {
         }
 
         return deduced;
+    }
+
+    // a name that names nothing: no value, type or function, no keyword or
+    // built-in; a number or a character literal is not a name
+    [[nodiscard]] static auto is_unknown_name(const toc& tc, const token& tk)
+        -> bool {
+
+        const std::string_view text{tk.text()};
+
+        if (not tk.is_word()) {
+            return false;
+        }
+
+        const char first{text.front()};
+
+        if (std::isalpha(static_cast<unsigned char>(first)) == 0 and
+            first != '_') {
+
+            return false;
+        }
+
+        return not tc.scopes().lookup(text).is_value() and
+               not tc.types().has(text) and not tc.is_func(text) and
+               not std::ranges::contains(reserved_names::keywords, text) and
+               not std::ranges::contains(reserved_names::builtin_functions,
+                                         text);
     }
 
     // moves 'tz' from after the '(' to the argument at 'index', false when the
@@ -2078,7 +2111,22 @@ class stmt_call : public expression {
 
         assert_inline_nesting(tc, func);
 
-        inline_call{call}.compile(tc, indent, dst, func);
+        // a recursion that does not end with constant arguments runs out of
+        // registers before it reaches the nesting limit, the advice is the same
+        if (tc.scopes().inlined_nesting(func.name()) == 0) {
+            inline_call{call}.compile(tc, indent, dst, func);
+            return;
+        }
+
+        try {
+            inline_call{call}.compile(tc, indent, dst, func);
+        } catch (const compile_error& e) {
+            if (e.kind != compile_error::error_kind::out_of_registers) {
+                throw;
+            }
+
+            throw inlining_limit_error(recursion_message(func));
+        }
     }
 
     // reported at the call because an inlined result aliases the destination
@@ -2198,10 +2246,7 @@ class stmt_call : public expression {
         if (tc.scopes().inlined_nesting(func.name()) >=
             call_site::max_inlined_nesting) {
 
-            throw inlining_limit_error(std::format(
-                "recursion of inlined function '{}' does not end at compile "
-                "time, declare it 'noinline'",
-                func.name()));
+            throw inlining_limit_error(recursion_message(func));
         }
 
         const size_t frame_count{tc.scopes().frames().size()};
@@ -2819,6 +2864,14 @@ class stmt_call : public expression {
                            constructor_name_tk.text());
 
         return name;
+    }
+
+    [[nodiscard]] static auto recursion_message(const stmt_def_func& func)
+        -> std::string {
+
+        return std::format("recursion of inlined function '{}' does not end at "
+                           "compile time, declare it 'noinline'",
+                           func.name());
     }
 
     // the type as written, with the type it is bound to when that differs,

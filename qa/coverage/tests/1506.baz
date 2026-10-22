@@ -1,0 +1,5 @@
+# an unknown name as the argument a type is deduced from is reported as such
+func show<T type>(x T) {}
+func main() {
+    show(nope)
+}
