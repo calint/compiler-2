@@ -1,0 +1,7 @@
+
+1521.baz:3:13: cannot resolve identifier 'point'
+    var p = point{1, 2}
+            ^~~~~
+1521.baz:10:10: instantiated by 'make<i32>'
+    exit(make<i32>(2))
+         ^~~~

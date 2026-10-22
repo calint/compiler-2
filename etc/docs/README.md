@@ -492,6 +492,9 @@ base with the arguments it got, e.g. 'list<i8, 8>', before the alias frame.
    it, since the alias reads it at once.
 2. A method of a generic type may come before or after the aliases
    ([2.7](#27-methods), item 2).
+3. The fields and the methods of a generic type see the names defined
+   before them, like a plain definition, also when an alias after them
+   instantiates them.
 
 ### 2.10 Generic functions
 
@@ -652,6 +655,11 @@ example.baz:13:13: called from 'make<name>'
 2. The type arguments are fixed before the arguments are parsed, so an
    argument is parsed with the type its parameter has in the instance. This
    is why deduction looks ahead instead of parsing the argument first.
+3. The body sees the names defined before the generic function, like a
+   plain body, also when a call after them instantiates it. Methods,
+   constructors and instances of generic functions are reached through
+   their type and their generic, so the body sees those defined before the
+   call that instantiates it, e.g. the methods of a type argument.
 
 ## 3. Access paths: aliasing check of what is reached through run-time indexes
 

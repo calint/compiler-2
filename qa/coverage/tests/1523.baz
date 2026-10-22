@@ -1,0 +1,8 @@
+# the fields of a generic type see only the types defined before it
+type pair<T type> { first T, second point }
+
+type point { x, y }
+
+type ipair = pair<i32>
+
+func main() {}

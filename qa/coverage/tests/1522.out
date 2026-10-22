@@ -1,0 +1,7 @@
+
+1522.baz:3:11: cannot resolve identifier 'inner'
+    res = inner<T>(x)
+          ^~~~~
+1522.baz:11:10: instantiated by 'outer<i32>'
+    exit(outer<i32>(2))
+         ^~~~~

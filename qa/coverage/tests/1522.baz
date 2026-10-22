@@ -1,0 +1,12 @@
+# a generic body sees only the generic functions defined before it
+func outer<T type>(x T) res T {
+    res = inner<T>(x)
+}
+
+func inner<T type>(x T) res T {
+    res = x
+}
+
+func main() {
+    exit(outer<i32>(2))
+}

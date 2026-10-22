@@ -1,0 +1,7 @@
+
+1520.baz:3:11: function 'add' not found
+    res = add(x, x)
+          ^~~
+1520.baz:11:10: instantiated by 'twice<i32>'
+    exit(twice<i32>(2))
+         ^~~~~

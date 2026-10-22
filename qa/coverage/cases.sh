@@ -4743,3 +4743,11 @@ SRC=1515 && COMPERR
 SRC=1516 && COMPERR
 SRC=1517 && EXP=100 && RUN
 SRC=1518 && COMPERR
+
+# a generic sees only the definitions before it, like a plain body
+SRC=1519 && COMPERR
+SRC=1520 && COMPERR
+SRC=1521 && COMPERR
+SRC=1522 && COMPERR
+SRC=1523 && COMPERR
+SRC=1524 && EXP=23 && RUN

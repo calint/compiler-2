@@ -1,0 +1,10 @@
+# a generic body sees only the globals defined before it, like a plain body
+func get<T type>() res T {
+    res = limit
+}
+
+var limit = 7
+
+func main() {
+    exit(get<i8>())
+}

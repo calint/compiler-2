@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: generics: a duplicate method of a generic type is detected only
+    at the first alias ('func text.print' twice is accepted without one);
+    a generic body sees the globals defined after it and before its first
+    use, a plain body does not; 'res T' is deduced from the destination only
+    for a user type, the tutorial states no limit; 'type read {x}' is
+    accepted but every method of it is rejected (round 8 G-5, G-6, G-8,
+    G-7, round 7 G-2, G-3, G-5, G-6)
+    => 1, 3 and 4 done (2026-10-22): a second method of the same name on a
+       generic type is rejected at its definition ('add_generic_method',
+       tests 1515, 0813 and 1497 now report it there); a generic call
+       deduces 'res T' from a built-in destination too, carried by
+       'expr_arith::options::destination_type' (test 1517), a variable
+       without a type still gives none (1518); a type is not named like a
+       built-in function ('assert_valid_unqualified_name', test 1516, 0126
+       renames its type 'exit' to 'room_exit')
+    => left, decided (2026-10-22): a generic body sees only the names
+       defined before the generic, like a plain body: every top-level
+       definition gets a sequence number, globals, types, functions and
+       generics record theirs, an instance parse hides those after its
+       generic; function instances made by a call stay visible, they are
+       reached through their generic
+    => done (2026-10-22): 2 as decided: 'definition_order' numbers the
+       top-level definitions, an instance parse ('instance_scope') hides the
+       globals, types, functions and generics after its generic; methods,
+       constructors and instances stay visible, they are reached through
+       their type or generic, e.g. a method of a type argument defined after
+       the generic; the checks of a name defined twice see every name
+       ('exists'); docs 2.9 and 2.10.4 state the rule; tests 1519-1523
+       reject a later global, function, type, generic and field type, 1524
+       runs what stays visible
 [x] medium: generics: an error inside an instance found after its parse
     has no frame naming the instance: the result check
     ('assert_functions_set_return_value' runs after the parse) and the check

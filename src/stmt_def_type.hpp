@@ -293,6 +293,7 @@ class stmt_def_type_generic final : public statement {
                                 .params{std::move(params)},
                                 .base_tk{base_tk},
                                 .base_arg_tks{std::move(args.arg_tks)},
+                                .definition{tc.current_definition()},
                             });
 
         // e.g. 'text<size> = list<i8, size>'
@@ -321,13 +322,15 @@ class stmt_def_type_generic final : public statement {
                                 "expected '{' to begin declaration of type"};
         }
 
-        tc.add_generic_type(name_tk_.text(), {
-                                                 .src_loc_tk{name_tk_},
-                                                 .start_tk{start_tk_},
-                                                 .params{std::move(params)},
-                                                 .base_tk{},
-                                                 .base_arg_tks{},
-                                             });
+        tc.add_generic_type(name_tk_.text(),
+                            {
+                                .src_loc_tk{name_tk_},
+                                .start_tk{start_tk_},
+                                .params{std::move(params)},
+                                .base_tk{},
+                                .base_arg_tks{},
+                                .definition{tc.current_definition()},
+                            });
 
         // e.g. 'text<capacity> { items i8[capacity] }'
         generic_text_ = tz.skip_braced_block_after(type_tk);
@@ -480,6 +483,11 @@ class stmt_def_type_alias final : public statement {
         generic_scope scope{tc};
         scope.add_args(instance.args);
 
+        const definition_order::instance_scope visible{
+            tc.definition_order_ref(),
+            generic.definition,
+        };
+
         tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
 
         // note: the instance is parsed inside the parse that needs it
@@ -558,6 +566,11 @@ class stmt_def_type_alias final : public statement {
 
         generic_scope scope{tc};
         scope.add_args(args);
+
+        const definition_order::instance_scope visible{
+            tc.definition_order_ref(),
+            generic.definition,
+        };
 
         const generic_type_info& base{
             tc.generics().get_type(generic.base_tk.text()),

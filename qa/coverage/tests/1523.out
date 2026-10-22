@@ -1,0 +1,7 @@
+
+1523.baz:2:37: type 'point' not found
+type pair<T type> { first T, second point }
+                                    ^~~~~
+1523.baz:6:6: instantiated by
+type ipair = pair<i32>
+     ^~~~~

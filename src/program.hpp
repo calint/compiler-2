@@ -417,6 +417,7 @@ class program final {
                 break;
             }
 
+            tc_.begin_definition();
             file.parsed.emplace_back(parse_definition(tc_, file.tz, tk));
             tk = file.tz.next_token();
         }

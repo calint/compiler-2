@@ -1,0 +1,12 @@
+# a generic body sees only the functions defined before it
+func twice<T type>(x T) res T {
+    res = add(x, x)
+}
+
+func add(a, b) res int {
+    res = a + b
+}
+
+func main() {
+    exit(twice<i32>(2))
+}

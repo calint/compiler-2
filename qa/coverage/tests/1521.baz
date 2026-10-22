@@ -1,0 +1,11 @@
+# a generic body sees only the types defined before it
+func make<T type>(x T) res T {
+    var p = point{1, 2}
+    res = x + p.x
+}
+
+type point { x, y }
+
+func main() {
+    exit(make<i32>(2))
+}

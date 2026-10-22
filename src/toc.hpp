@@ -70,6 +70,8 @@ struct func_info {
     // e.g. 'text.size' for the instance 'str.size', empty if not an instance
     // of a method of a generic type
     std::string generic_method;
+    // see 'definition_order', 0 for a method, a constructor or an instance
+    size_t definition{};
 };
 
 // a noinline body compiled for the array lengths of one kind of call
@@ -830,18 +832,20 @@ class type_table final {
     struct entry {
         token src_loc_tk;
         const type* type_ptr;
+        // see 'definition_order'
+        size_t definition{};
     };
 
     lut<entry> entries_;
     // the type parameters of the instances being parsed, the innermost last
     std::vector<lut<entry>> params_;
+    std::reference_wrapper<const definition_order> order_;
 
   public:
+    explicit type_table(const definition_order& order) : order_{order} {}
+
     auto add(const token& src_loc_tk, const type& tpe) -> void {
-        entries_.put(std::string{tpe.name()}, {
-                                                  .src_loc_tk{src_loc_tk},
-                                                  .type_ptr{&tpe},
-                                              });
+        add_alias(src_loc_tk, tpe.name(), tpe);
     }
 
     // another name for a type, e.g. 'int' for the default type
@@ -851,6 +855,7 @@ class type_table final {
         entries_.put(std::string{name}, {
                                             .src_loc_tk{src_loc_tk},
                                             .type_ptr{&tpe},
+                                            .definition{order_.get().current()},
                                         });
     }
 
@@ -858,16 +863,23 @@ class type_table final {
     auto add_param(const token& src_loc_tk, const std::string_view name,
                    const type& tpe) -> void {
 
-        assert(not has(name));
+        assert(not exists(name));
 
         params_.back().put(std::string{name}, {
                                                   .src_loc_tk{src_loc_tk},
                                                   .type_ptr{&tpe},
+                                                  .definition{},
                                               });
     }
 
     // the parameters of an enclosing instance are hidden until 'exit_params'
     auto enter_params() -> void { params_.emplace_back(); }
+
+    // also a type that the current instance parse does not see, for the
+    // checks of a name defined twice
+    [[nodiscard]] auto exists(const std::string_view name) const -> bool {
+        return is_param(name) or entries_.has(name);
+    }
 
     auto exit_params() -> void { params_.pop_back(); }
 
@@ -875,8 +887,11 @@ class type_table final {
         return *find(name).type_ptr;
     }
 
+    // a type the current instance parse sees, see 'definition_order'
     [[nodiscard]] auto has(const std::string_view name) const -> bool {
-        return is_param(name) or entries_.has(name);
+        return is_param(name) or (entries_.has(name) and
+                                  order_.get().is_visible(
+                                      entries_.get_const_ref(name).definition));
     }
 
     [[nodiscard]] auto src_loc_tk_of(const std::string_view name) const
@@ -918,12 +933,15 @@ class function_table final {
     std::vector<noinline_body> noinline_bodies_;
     // the definitions whose body a compile reached
     std::set<const stmt_def_func*> reached_;
+    std::reference_wrapper<const definition_order> order_;
 
   public:
+    explicit function_table(const definition_order& order) : order_{order} {}
+
     // the name has been checked
     auto add(const token& src_loc_tk, std::string name, const type& return_type,
-             const stmt_def_func& func_def, std::string generic_method)
-        -> void {
+             const stmt_def_func& func_def, std::string generic_method,
+             const size_t definition) -> void {
 
         funcs_.put(std::move(name),
                    {
@@ -931,6 +949,7 @@ class function_table final {
                        .def{&func_def},
                        .type_ptr{&return_type},
                        .generic_method{std::move(generic_method)},
+                       .definition{definition},
                    });
 
         defs_.emplace_back(&func_def);
@@ -963,6 +982,12 @@ class function_table final {
         return defs_;
     }
 
+    // also a function that the current instance parse does not see, for the
+    // checks of a name defined twice
+    [[nodiscard]] auto exists(const std::string_view name) const -> bool {
+        return funcs_.has(name);
+    }
+
     // the name is known
     [[nodiscard]] auto get(const std::string_view name) const
         -> const func_info& {
@@ -970,8 +995,10 @@ class function_table final {
         return funcs_.get_const_ref(name);
     }
 
+    // a function the current instance parse sees, see 'definition_order'
     [[nodiscard]] auto has(const std::string_view name) const -> bool {
-        return funcs_.has(name);
+        return funcs_.has(name) and
+               order_.get().is_visible(funcs_.get_const_ref(name).definition);
     }
 
     // a noinline body to emit or a function reached by a call
@@ -1282,8 +1309,14 @@ struct name_meaning {
 class scope_stack final {
     std::vector<frame> frames_;
     size_t max_depth_{};
+    std::reference_wrapper<const definition_order> order_;
+    // the definition of each global variable, data and constant, see
+    // 'definition_order'
+    std::map<std::string, size_t, std::less<>> global_definitions_;
 
   public:
+    explicit scope_stack(const definition_order& order) : order_{order} {}
+
     // checked at the parse, which reaches the branches that are not compiled,
     // e.g. the 'break' of 'if 1 == 2 { break }'
     auto assert_in_loop(const token& src_loc_tk) const -> void {
@@ -1494,6 +1527,11 @@ class scope_stack final {
 
         const frame& root{frames_.front()};
 
+        // e.g. a global defined after the generic whose instance is parsed
+        if (not is_global_visible(name)) {
+            return {};
+        }
+
         if (root.has_var(name)) {
             return {
                 .what{name_meaning::kind::variable},
@@ -1529,6 +1567,12 @@ class scope_stack final {
         for (const body_uses::global_use& u : callee.globals()) {
             func_frame().body_uses_ref().add_global(u.storage, u.is_written);
         }
+    }
+
+    // a variable, data or constant of the root frame
+    auto record_global(const std::string_view name) -> void {
+        global_definitions_.try_emplace(std::string{name},
+                                        order_.get().current());
     }
 
     // a path in the body being parsed whose root is 'name', recorded when it
@@ -1578,6 +1622,15 @@ class scope_stack final {
         }
 
         std::unreachable();
+    }
+
+    [[nodiscard]] auto is_global_visible(const std::string_view name) const
+        -> bool {
+
+        const auto it{global_definitions_.find(name)};
+
+        return it == global_definitions_.end() or
+               order_.get().is_visible(it->second);
     }
 
     // a local of the body is not named by the callers
@@ -2311,7 +2364,7 @@ class definition_checks final {
         const token& src_loc_tk, const std::string_view name,
         const std::string_view generic_method) const -> void {
 
-        if (funcs_.get().has(name)) {
+        if (funcs_.get().exists(name)) {
             const func_info& fn{funcs_.get().get(name)};
 
             throw_function_defined(src_loc_tk, name, generic_method,
@@ -2320,7 +2373,7 @@ class definition_checks final {
 
         // e.g. 'str.app' of 'func text.app<T type>()', a method with type
         // parameters of its own is a generic function of the instance
-        if (generics_.get().has_func(name)) {
+        if (generics_.get().exists_func(name)) {
             const generic_func_info& fn{generics_.get().get_func(name)};
 
             throw_function_defined(src_loc_tk, name, generic_method,
@@ -2334,7 +2387,7 @@ class definition_checks final {
     auto assert_generic_param_free(const token& src_loc_tk,
                                    const std::string_view name) const -> void {
 
-        if (not types_.get().has(name)) {
+        if (not types_.get().exists(name)) {
             return;
         }
 
@@ -2361,7 +2414,7 @@ class definition_checks final {
     auto assert_generic_param_not_generic_type(
         const token& src_loc_tk, const std::string_view name) const -> void {
 
-        if (not generics_.get().has_type(name)) {
+        if (not generics_.get().exists_type(name)) {
             return;
         }
 
@@ -2444,7 +2497,7 @@ class definition_checks final {
     auto assert_type_not_defined(const token& src_loc_tk,
                                  const std::string_view name) const -> void {
 
-        if (types_.get().has(name)) {
+        if (types_.get().exists(name)) {
             const token& type_tk{types_.get().src_loc_tk_of(name)};
 
             // a built-in type has no place in the source
@@ -2458,7 +2511,7 @@ class definition_checks final {
                                             name, where(type_tk))};
         }
 
-        if (generics_.get().has_type(name)) {
+        if (generics_.get().exists_type(name)) {
             throw compile_error{
                 src_loc_tk,
                 std::format("type '{}' already defined as a generic type at {}",
@@ -2571,6 +2624,8 @@ class variable_comments final {
 class toc final {
     std::reference_wrapper<::machine> machine_;
     source_locations locations_;
+    // before the tables, which refer to it
+    definition_order order_;
     scope_stack scopes_;
     data_table data_;
     function_table funcs_;
@@ -2676,8 +2731,9 @@ class toc final {
 
     toc(::machine& backend, const source_files& files,
         const size_t vars_capacity_bytes, const check_options& checks)
-        : machine_{backend}, locations_{&files},
-          data_{backend.data_alignment()},
+        : machine_{backend}, locations_{&files}, scopes_{order_},
+          data_{backend.data_alignment()}, funcs_{order_}, generics_{order_},
+          types_{order_},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
           builtins_{backend}, resolver_{scopes_, backend, generics_, builtins_},
           var_comments_{backend, resolver_},
@@ -2720,6 +2776,8 @@ class toc final {
                                            .src_loc_tk{src_loc_tk},
                                            .constant{constant},
                                        });
+
+        record_if_global(name);
     }
 
     // the parse places the data of 'dat' after the dats before it and
@@ -2752,15 +2810,17 @@ class toc final {
         add_var(var.src_loc_tk, 0, var, var_kind::dat);
     }
 
+    // see 'definition_order'
     auto add_func(const token& src_loc_tk, std::string name,
                   const type& return_type, const stmt_def_func& func_def,
-                  std::string generic_method) -> void {
+                  std::string generic_method, const bool is_ordered) -> void {
 
         definitions_.assert_function_not_defined(src_loc_tk, name,
                                                  generic_method);
 
         funcs_.add(src_loc_tk, std::move(name), return_type, func_def,
-                   std::move(generic_method));
+                   std::move(generic_method),
+                   is_ordered ? order_.current() : 0);
     }
 
     // keeps the instance alive, 'funcs_' refers to it
@@ -2877,6 +2937,8 @@ class toc final {
 
         scopes_.back().add_var(var, allocated_size_bytes, kind);
 
+        record_if_global(var.name);
+
         if (is_compiling_) {
             var_comments_.comment(src_loc_tk, indent, var);
         }
@@ -2923,6 +2985,9 @@ class toc final {
         is_compiling_ = true;
         storage_.begin_compile();
     }
+
+    // a top-level definition starts, see 'definition_order'
+    auto begin_definition() -> void { order_.begin_definition(); }
 
     // the tables are read through these accessors, a change goes through a
     // method of 'toc' because it keeps several of them consistent
@@ -2989,7 +3054,15 @@ class toc final {
                                              : std::format(".{}", call_path));
     }
 
+    [[nodiscard]] auto current_definition() const -> size_t {
+        return order_.current();
+    }
+
     [[nodiscard]] auto data() const -> const data_table& { return data_; }
+
+    [[nodiscard]] auto definition_order_ref() -> definition_order& {
+        return order_;
+    }
 
     // the dry run of the kind of noinline call 'kind' at 'level', measured
     // by 'dry_run_ledger::measure'
@@ -3225,6 +3298,14 @@ class toc final {
     auto record_callee_globals(const body_uses& callee) -> void {
         if (scopes_.is_in_func()) {
             scopes_.record_callee_globals(callee);
+        }
+    }
+
+    // a global keeps the definition that declared it at the parse, the
+    // compile declares it again
+    auto record_if_global(const std::string_view name) -> void {
+        if (scopes_.frames().size() == 1) {
+            scopes_.record_global(name);
         }
     }
 

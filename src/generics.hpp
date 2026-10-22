@@ -257,6 +257,49 @@ generic_instance_text(const std::string_view generic_name,
     return text;
 }
 
+// the order of the top-level definitions: a generic body sees, like a plain
+// body, only what is defined before its generic, so while an instance is
+// parsed the globals, types, functions and generics defined after it are
+// hidden; the built-ins come before every definition, and a method, a
+// constructor and an instance have no place in the order: they are reached
+// through their type or their generic, e.g. the methods of a type argument
+class definition_order final {
+    // the definition being parsed, 0 before the first
+    size_t current_{};
+    // set while an instance is parsed, the last definition it sees
+    std::optional<size_t> visible_until_;
+
+  public:
+    // an instance parse sees the definitions up to 'last'
+    class instance_scope final {
+        definition_order& order_;
+        std::optional<size_t> saved_;
+
+      public:
+        instance_scope(definition_order& order, const size_t last)
+            : order_{order}, saved_{order.visible_until_} {
+
+            order_.visible_until_ = last;
+        }
+
+        instance_scope(const instance_scope&) = delete;
+        instance_scope(instance_scope&&) = delete;
+        auto operator=(const instance_scope&) -> instance_scope& = delete;
+        auto operator=(instance_scope&&) -> instance_scope& = delete;
+
+        ~instance_scope() { order_.visible_until_ = saved_; }
+    };
+
+    auto begin_definition() -> void { ++current_; }
+
+    [[nodiscard]] auto current() const -> size_t { return current_; }
+
+    // what definition 'definition' made is seen where the name is used
+    [[nodiscard]] auto is_visible(const size_t definition) const -> bool {
+        return not visible_until_ or definition <= *visible_until_;
+    }
+};
+
 // an error in the generic code is reported with the instances that led to it,
 // e.g. 'list<i8, 8>' at the 'list' of 'type text<size> = list<i8, size>'
 struct generic_frame {
@@ -278,6 +321,8 @@ struct generic_type_info {
     token base_tk;
     // e.g. 'i8' and 'size' of 'list<i8, size>'
     std::vector<token> base_arg_tks;
+    // see 'definition_order'
+    size_t definition{};
 };
 
 // the instance of a generic type that an alias names, or a base of it, e.g.
@@ -369,6 +414,10 @@ struct generic_func_info {
     // the instance of the generic type of a method, e.g. 'text<8>' for
     // 'str.append'
     std::optional<generic_type_instance> receiver;
+    // the last definition the body sees, see 'definition_order'
+    size_t definition{};
+    // reached through its type wherever it is defined
+    bool is_method{};
 };
 
 // what a function made from a generic definition keeps of it
@@ -398,6 +447,8 @@ struct generic_method_info {
     token func_tk;
     // where the definition continues after 'func', e.g. at 'text'
     token start_tk;
+    // see 'definition_order'
+    size_t definition{};
 };
 
 // the generic functions and types of the program, the methods of the generic
@@ -409,7 +460,11 @@ class generic_registry final {
     std::vector<generic_type_instance> type_instances_;
     std::set<std::string, std::less<>> instantiated_funcs_;
 
+    std::reference_wrapper<const definition_order> order_;
+
   public:
+    explicit generic_registry(const definition_order& order) : order_{order} {}
+
     auto add_func(std::string name, generic_func_info info) -> void {
         funcs_.put(std::move(name), std::move(info));
     }
@@ -424,6 +479,16 @@ class generic_registry final {
 
     auto add_type_instance(generic_type_instance instance) -> void {
         type_instances_.emplace_back(std::move(instance));
+    }
+
+    // also a generic that the current instance parse does not see, for the
+    // checks of a name defined twice
+    [[nodiscard]] auto exists_func(const std::string_view name) const -> bool {
+        return funcs_.has(name);
+    }
+
+    [[nodiscard]] auto exists_type(const std::string_view name) const -> bool {
+        return types_.has(name);
     }
 
     [[nodiscard]] auto get_func(const std::string_view name) const
@@ -467,12 +532,20 @@ class generic_registry final {
         return instances;
     }
 
+    // a generic the current instance parse sees, see 'definition_order'
     [[nodiscard]] auto has_func(const std::string_view name) const -> bool {
-        return funcs_.has(name);
+        if (not funcs_.has(name)) {
+            return false;
+        }
+
+        const generic_func_info& info{funcs_.get_const_ref(name)};
+
+        return info.is_method or order_.get().is_visible(info.definition);
     }
 
     [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
-        return types_.has(name);
+        return types_.has(name) and
+               order_.get().is_visible(types_.get_const_ref(name).definition);
     }
 
     auto mark_func_instantiated(const std::string_view name) -> void {

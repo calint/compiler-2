@@ -1,0 +1,7 @@
+
+1519.baz:3:11: cannot resolve identifier 'limit'
+    res = limit
+          ^~~~~
+1519.baz:9:10: instantiated by 'get<i8>'
+    exit(get<i8>())
+         ^~~

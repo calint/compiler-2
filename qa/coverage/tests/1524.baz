@@ -1,0 +1,48 @@
+# a generic sees what is defined before it; a method of its type argument and
+# an instance made by another call are reached through the type and the
+# generic, also when defined after it
+var base = 10
+
+type point { x, y }
+
+func add(a, b) res int {
+    res = a + b
+}
+
+func inner<T type>(x T) res T {
+    res = x
+}
+
+type text<size> { len, chars i8[size] }
+
+func text.length() res int {
+    res = self.len
+}
+
+func length_of<T type>(t T) res int {
+    res = t.length()
+}
+
+func sum<T type>(x T) res T {
+    var p = point{1, 2}
+    res = add(base, inner<T>(x)) + p.y
+}
+
+type box { v }
+
+func value_of<T type>(t T) res int {
+    res = t.value()
+}
+
+func box.value() res int {
+    res = self.v
+}
+
+type str = text<8>
+
+func main() {
+    let n = inner<int>(3)
+    var s = str{5}
+    var b = box{3}
+    exit(sum<int>(n) + length_of<str>(s) + value_of<box>(b))
+}

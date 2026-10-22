@@ -914,8 +914,11 @@ class stmt_def_func final : public statement {
             instance_ ? instance_->generic_method : std::string{},
         };
 
+        // see 'definition_order'
+        const bool is_ordered{not instance_ and head_.method_dot_tk.is_empty()};
+
         tc.add_func(head_.name_tk, std::string{name()}, statement::get_type(),
-                    *this, generic_method);
+                    *this, generic_method, is_ordered);
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'
@@ -1028,11 +1031,12 @@ class func_instantiator final {
     // records a generic function for its calls, e.g. 'func f<T type>(x T)'; a
     // method of an instance of a generic type keeps that instance, e.g.
     // 'str.append' of 'func text.append<T type>(s T)' keeps 'text<8>'. 'tz'
-    // is after the '(' of 'head'
+    // is after the '(' of 'head'; 'definition' is the last one the body sees,
+    // that of the generic method for a method of a generic type
     static auto define_func(toc& tc, const token& func_tk,
                             const func_head& head, const tokenizer& tz,
-                            std::optional<generic_type_instance> receiver)
-        -> void {
+                            std::optional<generic_type_instance> receiver,
+                            const size_t definition) -> void {
 
         for (const token& param_tk : head.type_param_tks) {
             tc.assert_generic_param_free(param_tk);
@@ -1058,15 +1062,18 @@ class func_instantiator final {
                             report_name)};
         }
 
-        tc.add_generic_func(head.name, {
-                                           .src_loc_tk{head.name_tk},
-                                           .func_tk{func_tk},
-                                           .start_tk{head.start_tk},
-                                           .report_name{std::move(report_name)},
-                                           .param_tks{head.type_param_tks},
-                                           .deductions{deductions(head, types)},
-                                           .receiver{std::move(receiver)},
-                                       });
+        tc.add_generic_func(head.name,
+                            {
+                                .src_loc_tk{head.name_tk},
+                                .func_tk{func_tk},
+                                .start_tk{head.start_tk},
+                                .report_name{std::move(report_name)},
+                                .param_tks{head.type_param_tks},
+                                .deductions{deductions(head, types)},
+                                .receiver{std::move(receiver)},
+                                .definition{definition},
+                                .is_method{not head.method_dot_tk.is_empty()},
+                            });
     }
 
     // e.g. 'func text.print()' of the generic type 'text': every instance of
@@ -1080,6 +1087,7 @@ class func_instantiator final {
             .method_name_tk{method_name_tk},
             .func_tk{func_tk},
             .start_tk{head.start_tk},
+            .definition{tc.current_definition()},
         };
 
         tc.add_generic_method(method);
@@ -1220,6 +1228,11 @@ class func_instantiator final {
 
         generic_scope scope{tc};
 
+        const definition_order::instance_scope visible{
+            tc.definition_order_ref(),
+            generic.definition,
+        };
+
         // e.g. 'text' names 'str' for 'func text.append<T type>(s T)'
         if (generic.receiver) {
             scope.add_receiver(*generic.receiver);
@@ -1280,6 +1293,11 @@ class func_instantiator final {
         generic_scope scope{tc};
         scope.add_receiver(receiver);
 
+        const definition_order::instance_scope visible{
+            tc.definition_order_ref(),
+            method.definition,
+        };
+
         tokenizer tz{tc.source_of(method.start_tk), method.start_tk};
 
         // note: the instance is parsed inside the parse that needs it
@@ -1291,7 +1309,9 @@ class func_instantiator final {
         assert(not head.is_generic_type_method);
 
         if (not head.type_param_tks.empty()) {
-            define_func(tc, method.func_tk, head, tz, receiver);
+            define_func(tc, method.func_tk, head, tz, receiver,
+                        method.definition);
+
             return;
         }
 
@@ -1371,7 +1391,9 @@ class stmt_def_func_generic final : public statement {
                 throw compile_error{tz, "expected '(' after function name"};
             }
 
-            func_instantiator::define_func(tc, tk, head, tz, std::nullopt);
+            func_instantiator::define_func(tc, tk, head, tz, std::nullopt,
+                                           tc.current_definition());
+
             std::ignore = skip_signature(tc, head, tz);
         }
 
