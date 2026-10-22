@@ -246,11 +246,9 @@ class assignment_analysis final {
             }
 
             assignment_flow flow{
-                .var{ret_info->ident_tk.text()},
-                .src_loc_tk{ret_info->ident_tk},
-                .assigned{assigned_bytes{ret_info->type_ptr->size_bytes()}},
-                .at_breaks{},
-                .is_reachable{true},
+                ret_info->ident_tk.text(),
+                ret_info->ident_tk,
+                ret_info->type_ptr->size_bytes(),
             };
 
             f->code().trace_assignment(flow);
@@ -264,17 +262,11 @@ class assignment_analysis final {
     [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
         -> bool {
 
-        assignment_flow flow{
-            .var{},
-            .src_loc_tk{func.tok()},
-            .assigned{assigned_bytes{0}},
-            .at_breaks{},
-            .is_reachable{true},
-        };
+        assignment_flow flow{std::nullopt, func.tok(), 0};
 
         func.code().trace_assignment(flow);
 
-        return flow.is_reachable;
+        return flow.is_reachable();
     }
 };
 

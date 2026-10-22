@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: design: the merge rules of the definite-assignment flow are
+    written in three statement classes that change 'flow.assigned',
+    'flow.is_reachable', 'flow.at_breaks' and 'flow.is_shadowed' directly:
+    'stmt_block::trace_loop_body' (used by loop and foo), 'stmt_if::trace_path'
+    with five parameters, two of them out-parameters; 'is_end_reachable'
+    traces an empty name as "no variable" (round 8 S-3, S-5, round 7 S-5,
+    S-6, S-7)
+    => design: 'assignment_flow::trace_loop(body)' returning the coverage at
+       the breaks, a 'path_merge' {entry, merged, is_reachable} with
+       'trace(flow, path)' for 'stmt_if', and 'var' as an optional, empty for
+       reachability only
+    => done (2026-10-22): 'assignment_flow' is a class whose state is
+       private; the statements report through 'declare', 'assign',
+       'end_path', 'record_break' and read 'traced_var', 'assigned',
+       'is_reachable'; the rules are its 'trace_loop' (after: the breaks or
+       no path), 'trace_foo' (after: the entry), the nested 'path_merge'
+       for 'stmt_if' and 'block_scope' for the shadowing of a block and of
+       the 'foo' names; the var is an optional, 'is_end_reachable' passes
+       none; 'stmt_block::trace_loop_body' and 'stmt_if::trace_path' are gone
 [x] easy: design: what fpga allows for '--memory' is decided in main.cpp
     ('max_memory_size_bytes', 'memory_alignment' "what a 'lui' loads") while
     the device map and 'lui_shift_' live in 'machine_rv32i_fpga', whose

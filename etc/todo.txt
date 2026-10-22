@@ -221,17 +221,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
-[p] medium: design: the merge rules of the definite-assignment flow are
-    written in three statement classes that change 'flow.assigned',
-    'flow.is_reachable', 'flow.at_breaks' and 'flow.is_shadowed' directly:
-    'stmt_block::trace_loop_body' (used by loop and foo), 'stmt_if::trace_path'
-    with five parameters, two of them out-parameters; 'is_end_reachable'
-    traces an empty name as "no variable" (round 8 S-3, S-5, round 7 S-5,
-    S-6, S-7)
-    => design: 'assignment_flow::trace_loop(body)' returning the coverage at
-       the breaks, a 'path_merge' {entry, merged, is_reachable} with
-       'trace(flow, path)' for 'stmt_if', and 'var' as an optional, empty for
-       reachability only
 [p] medium: design: target options arrive two ways: stack, memory and image
     name through 'make_backend' and the constructors, register report, sd
     card and kept version through setters called right after (round 8 A-12,

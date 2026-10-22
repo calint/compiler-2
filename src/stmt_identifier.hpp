@@ -536,13 +536,15 @@ class stmt_identifier final : public statement {
 
     // a run-time index does not prove which element is written
     auto record_assignment(assignment_flow& flow) const -> void {
-        if (flow.is_shadowed or not first_token().is_text(flow.var) or
+        const std::optional<std::string_view> var{flow.traced_var()};
+
+        if (not var or not first_token().is_text(*var) or
             not is_exact_access()) {
 
             return;
         }
 
-        flow.assigned.add(accessed_bytes_);
+        flow.assign(accessed_bytes_);
     }
 
     // index expressions are read even when the path is written

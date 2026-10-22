@@ -365,8 +365,8 @@ class statement {
 
     [[nodiscard]] virtual auto tok() const -> const token& { return token_; }
 
-    // definite assignment: checks the reads of 'flow.var' and records its
-    // assignments
+    // definite assignment: checks the reads of the traced variable and records
+    // its assignments
     virtual auto trace_assignment(assignment_flow& flow) const -> void {
         assert_var_not_used(flow);
     }
@@ -409,14 +409,16 @@ class statement {
         };
     }
 
-    // definite assignment: throws if 'flow.var' is read outside of the
-    // assigned bytes, unless a declaration hides it
+    // definite assignment: throws if the traced variable is read outside of
+    // the assigned bytes
     auto assert_var_not_used(const assignment_flow& flow) const -> void {
-        if (flow.is_shadowed) {
+        const std::optional<std::string_view> var{flow.traced_var()};
+
+        if (not var) {
             return;
         }
 
-        assert_var_not_used(flow.var, flow.assigned);
+        assert_var_not_used(*var, flow.assigned());
     }
 
     // definite assignment: throws if 'var' is read outside of the 'assigned'

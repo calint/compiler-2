@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <optional>
 #include <ostream>
 #include <string>
 
@@ -56,14 +55,6 @@ class stmt_loop final : public statement {
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        const std::optional<assigned_bytes> breaks{code_.trace_loop_body(flow)};
-
-        // without a 'break' only 'return' or 'exit' leave the loop
-        if (not breaks) {
-            flow.end_path();
-            return;
-        }
-
-        flow.assigned = *breaks;
+        flow.trace_loop(code_);
     }
 };

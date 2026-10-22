@@ -7,7 +7,6 @@
 #include <ostream>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -143,7 +142,6 @@ class stmt_builtin_foo final : public statement {
         tc.exit_foo(loop_label);
     }
 
-    // the body may run zero times so its assignments do not count
     auto trace_assignment(assignment_flow& flow) const -> void override {
         ident_.assert_var_not_used(flow);
 
@@ -152,15 +150,13 @@ class stmt_builtin_foo final : public statement {
         }
 
         // the loop names hide the traced variable only in the body
-        const bool was_shadowed{flow.is_shadowed};
+        const assignment_flow::block_scope scope{flow};
 
         flow.declare("e");
         flow.declare("i");
         flow.declare("n");
 
-        std::ignore = code_.trace_loop_body(flow);
-
-        flow.is_shadowed = was_shadowed;
+        flow.trace_foo(code_);
     }
 
   private:

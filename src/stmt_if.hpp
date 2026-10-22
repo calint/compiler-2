@@ -6,7 +6,6 @@
 #include <ranges>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <vector>
 
 #include "ident_info.hpp"
@@ -106,22 +105,15 @@ class stmt_if final : public statement {
         x.label(indent, label_after_if);
     }
 
-    // every path starts at the 'if' and afterwards only what all paths
-    // assigned remains
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        const assigned_bytes entry{flow.assigned};
-        assigned_bytes merged{assigned_bytes::full(entry.size_bytes())};
-        bool is_reachable{};
+        assignment_flow::path_merge paths{flow};
 
         for (const stmt_if_branch& branch : branches_) {
-            trace_path(branch, entry, flow, merged, is_reachable);
+            paths.trace(branch);
         }
 
         // an empty 'else' is the path that skips every branch
-        trace_path(else_code_, entry, flow, merged, is_reachable);
-
-        flow.assigned = std::move(merged);
-        flow.is_reachable = is_reachable;
+        paths.trace(else_code_);
     }
 
   private:
@@ -197,16 +189,5 @@ class stmt_if final : public statement {
         }
 
         return std::format("{}.else", if_label);
-    }
-
-    static auto trace_path(const statement& path, const assigned_bytes& entry,
-                           assignment_flow& flow, assigned_bytes& merged,
-                           bool& is_reachable) -> void {
-
-        flow.assigned = entry;
-        flow.is_reachable = true;
-        path.trace_assignment(flow);
-        merged.intersect(flow.assigned);
-        is_reachable = is_reachable or flow.is_reachable;
     }
 };

@@ -2,9 +2,7 @@
 
 #include <cstddef>
 #include <memory>
-#include <optional>
 #include <ostream>
-#include <utility>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -79,21 +77,18 @@ class stmt_block final : public statement {
         tc.exit_block();
     }
 
-    // a declaration hides the traced variable only to the end of the block
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        const bool was_shadowed{flow.is_shadowed};
+        const assignment_flow::block_scope scope{flow};
 
         for (const std::unique_ptr<statement>& s : statements_) {
             s->trace_assignment(flow);
 
             // statements after 'return', 'break', 'continue' or 'exit' never
             // run
-            if (not flow.is_reachable) {
+            if (not flow.is_reachable()) {
                 break;
             }
         }
-
-        flow.is_shadowed = was_shadowed;
     }
 
     //
@@ -101,29 +96,6 @@ class stmt_block final : public statement {
     //
 
     [[nodiscard]] auto is_empty() const -> bool { return statements_.empty(); }
-
-    // every iteration starts with at least the coverage at loop entry
-    // returns the coverage common to every 'break' of this loop body
-    [[nodiscard]] auto trace_loop_body(assignment_flow& flow) const
-        -> std::optional<assigned_bytes> {
-
-        const assigned_bytes entry{flow.assigned};
-
-        std::optional<assigned_bytes> outer_breaks{
-            std::exchange(flow.at_breaks, std::nullopt),
-        };
-
-        trace_assignment(flow);
-
-        std::optional<assigned_bytes> breaks{
-            std::exchange(flow.at_breaks, std::move(outer_breaks)),
-        };
-
-        flow.assigned = entry;
-        flow.is_reachable = true;
-
-        return breaks;
-    }
 
   private:
     [[nodiscard]] auto is_one_statement() const -> bool {
