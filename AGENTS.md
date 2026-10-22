@@ -147,6 +147,8 @@
 
 ## Process
 
+- Subagents for searching and lookups use model 'sonnet'; review and
+  bug-hunting agents keep the default.
 - Fixes: within a clean design, no hacks; refactor first when needed. Tell
   the user the intended fix (and any refactor) before changing code.
 - Mechanical refactors preserve behavior; ask before changing optimization,
@@ -173,3 +175,5 @@
   recreate old files on save).
 - `make.sh` (without `build`) and `roome/run.sh` read input: after `make.sh`
   type return; after `roome/run.sh` type "go home".
+- Large sources, e.g. `src/machine_rv32i.hpp` (5.7k lines), `src/toc.hpp`:
+  grep or read line ranges, never the whole file.
