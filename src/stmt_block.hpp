@@ -116,7 +116,7 @@ class stmt_block final : public statement {
 
         const token tk{tz.next_token()};
 
-        if (tk.text().empty() and not tk.is_string()) {
+        if (tk.is_none()) {
             tz.assert_not_at_delimiter();
             return;
         }
@@ -147,7 +147,7 @@ class stmt_block final : public statement {
             const token tk{tz.next_token()};
 
             // the source ended before the '}'
-            if (tk.text().empty() and not tk.is_string()) {
+            if (tk.is_none()) {
                 tz.assert_not_at_delimiter();
 
                 throw compile_error{tz, "expected '}' to close block"};

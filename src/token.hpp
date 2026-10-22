@@ -81,11 +81,22 @@ class token final {
         return ws_left_.empty() and text_.empty() and ws_right_.empty();
     }
 
+    // no token here: the source ends or a delimiter follows; the string '""'
+    // is a token
+    [[nodiscard]] auto is_none() const -> bool {
+        return text_.empty() and not is_str_;
+    }
+
     [[nodiscard]] auto is_string() const -> bool { return is_str_; }
 
     // a string literal is never a keyword or a name, whatever it says
     [[nodiscard]] auto is_text(const std::string_view s) const -> bool {
         return not is_str_ and text_ == s;
+    }
+
+    // a name, a keyword or a number, not a string or no token
+    [[nodiscard]] auto is_word() const -> bool {
+        return not text_.empty() and not is_str_;
     }
 
     // the indexes include the quotes that string token text excludes

@@ -9,7 +9,6 @@
 #include <ranges>
 #include <span>
 #include <string_view>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -276,8 +275,11 @@ class stmt_def_type_generic final : public statement {
         const token equals_tk{tz.is_next_char_token('=')};
         const token base_tk{tz.next_token()};
 
-        if (base_tk.text().empty()) {
-            throw compile_error{equals_tk, "expected a generic type after '='"};
+        // note: the '=' is the place when the source ends after it
+
+        if (not base_tk.is_word()) {
+            throw compile_error{base_tk.is_none() ? equals_tk : base_tk,
+                                "expected a generic type after '='"};
         }
 
         assert_generic_type(tc, base_tk, "the type based on it");
@@ -398,8 +400,9 @@ class stmt_def_type_alias final : public statement {
         const token generic_tk{tz.next_token()};
         alias_tks_.emplace_back(generic_tk);
 
-        if (generic_tk.text().empty()) {
-            throw compile_error{equals_tk, "expected a generic type after '='"};
+        if (not generic_tk.is_word()) {
+            throw compile_error{generic_tk.is_none() ? equals_tk : generic_tk,
+                                "expected a generic type after '='"};
         }
 
         assert_generic_type(tc, generic_tk, "the alias that names it");

@@ -23,7 +23,7 @@ class stmt_def_type_field final : public statement {
 
         set_type(tc.builtins().void_type());
 
-        if (tk.text().empty()) {
+        if (not tk.is_word()) {
             throw compile_error{tk, "expected field name"};
         }
 

@@ -75,7 +75,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     // e.g. 'p = pt', the token is empty at '{x, y}'
-    if (not tok().text().empty() and not is_typed_literal) {
+    if (not tok().is_none() and not is_typed_literal) {
         parse_copy_source(tc, tz, tp);
         return;
     }

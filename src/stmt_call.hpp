@@ -2386,8 +2386,9 @@ class stmt_call : public expression {
                                         const tokenizer& tz) const
         -> const stmt_def_func& {
 
-        if (constructor_name_tk_.text().empty()) {
-            throw compile_error{tz, "expected constructor name after '.'"};
+        if (not constructor_name_tk_.is_word()) {
+            throw compile_error{tz.position_of(constructor_name_tk_),
+                                "expected constructor name after '.'"};
         }
 
         if (not tc.is_func(func_name_)) {

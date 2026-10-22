@@ -1,0 +1,5 @@
+# a string where a name is expected, the caret is on the string
+type point {x}
+func main() {
+    var p = point.""(1)
+}

@@ -1,0 +1,4 @@
+# a string where a name is expected, the caret is on the string
+type list<T type> {x T}
+func list."" () {}
+func main() {}

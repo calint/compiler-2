@@ -102,8 +102,8 @@ struct generic_param {
 
         const token name_tk{tz.next_token()};
 
-        if (name_tk.text().empty()) {
-            throw compile_error{tz,
+        if (not name_tk.is_word()) {
+            throw compile_error{tz.position_of(name_tk),
                                 "expected a name for the generic parameter"};
         }
 
@@ -166,7 +166,7 @@ struct generic_arg_tokens {
         while (true) {
             const token arg_tk{tz.next_token()};
 
-            if (arg_tk.text().empty()) {
+            if (arg_tk.is_none()) {
                 throw compile_error{tz, "expected a generic argument"};
             }
 

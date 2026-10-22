@@ -155,8 +155,9 @@ struct func_head {
 
         method_name_tk = tz.next_token();
 
-        if (method_name_tk.text().empty()) {
-            throw compile_error{tz, "expected method name after '.'"};
+        if (not method_name_tk.is_word()) {
+            throw compile_error{tz.position_of(method_name_tk),
+                                "expected method name after '.'"};
         }
 
         toc::assert_valid_name(method_name_tk);
@@ -249,7 +250,7 @@ struct func_result_syntax {
 
         const token name_tk{tz.next_token()};
 
-        if (name_tk.text().empty()) {
+        if (not name_tk.is_word()) {
             tz.put_back_token(name_tk);
             return {};
         }
@@ -261,8 +262,7 @@ struct func_result_syntax {
         // note: the '{' also tells the type of a generic definition, where
         //       'T' of 'res T {' is not a type yet
         const bool is_type_before_body{
-            not type_tk.text().empty() and
-                tz.peek_char_after_whitespace() == '{',
+            type_tk.is_word() and tz.peek_char_after_whitespace() == '{',
         };
 
         if (not tc.types().has(type_tk.text()) and not is_type_before_body) {
@@ -762,7 +762,7 @@ class stmt_def_func final : public statement {
         add_constants(tc, 0);
 
         // note: 'parse_returns' only creates a return with a name
-        assert(not returns_ or not returns_->ident_tk.text().empty());
+        assert(not returns_ or returns_->ident_tk.is_word());
 
         add_signature_vars(tc, 0, var_access::direct, {}, {});
 
@@ -1339,8 +1339,9 @@ class stmt_def_func_generic final : public statement {
             // note: 'func_head::names_generic_type' saw the '.'
             assert(not dot_tk.is_empty());
 
-            if (tz.next_token().text().empty()) {
-                throw compile_error{tz, "expected method name after '.'"};
+            if (const token name_tk{tz.next_token()}; not name_tk.is_word()) {
+                throw compile_error{tz.position_of(name_tk),
+                                    "expected method name after '.'"};
             }
 
             if (tz.peek_char_after_whitespace() == '<') {

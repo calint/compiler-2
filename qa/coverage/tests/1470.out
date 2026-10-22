@@ -1,0 +1,4 @@
+
+1470.baz:3:11: expected method name after '.'
+func list."" () {}
+          ^~

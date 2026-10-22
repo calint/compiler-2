@@ -1,0 +1,4 @@
+
+1467.baz:2:8: expected a parameter name
+func f("") {}
+       ^~

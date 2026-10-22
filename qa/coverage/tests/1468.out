@@ -1,0 +1,4 @@
+
+1468.baz:2:8: expected a name for the generic parameter
+func f<"">() {}
+       ^~

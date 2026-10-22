@@ -311,7 +311,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
             tk, "a string can only be assigned to an array of type 'i8'"};
     }
 
-    if (tk.text().empty()) {
+    if (tk.is_none()) {
         throw compile_error{tk,
                             "expected constant, identifier, or function call"};
     }

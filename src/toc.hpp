@@ -3114,7 +3114,7 @@ class toc final {
 
     // a name is an identifier that is not a keyword
     static auto assert_valid_name(const token& name_tk) -> void {
-        if (name_tk.text().empty()) {
+        if (not name_tk.is_word()) {
             throw compile_error{name_tk, "expected a name"};
         }
 

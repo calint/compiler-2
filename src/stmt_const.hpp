@@ -126,6 +126,6 @@ class stmt_const final : public statement {
     }
 
     [[nodiscard]] auto has_value() const -> bool {
-        return not literal_tk_.text().empty();
+        return not literal_tk_.is_none();
     }
 };

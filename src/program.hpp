@@ -435,7 +435,7 @@ class program final {
     // statements of the file follow those of the files it included
     auto parse_definitions(open_file& file, token tk) -> void {
         while (true) {
-            if (tk.text().empty() and not tk.is_string()) {
+            if (tk.is_none()) {
                 // a delimiter is not a token, only the end of the source ends
                 // the definitions
                 file.tz.assert_not_at_delimiter();

@@ -173,6 +173,12 @@ class tokenizer final {
         return ch;
     }
 
+    // where an error about 'tk', the token just read, points: at 'tk', or
+    // where the next token starts when there was none
+    [[nodiscard]] auto position_of(const token& tk) const -> token {
+        return tk.is_none() ? next_token_position() : tk;
+    }
+
     auto put_back_char(const char ch) -> void {
         assert(char_ix_ > 0 and src_.at(char_ix_ - 1) == ch);
 
@@ -496,7 +502,7 @@ class tokenizer final {
     auto skip_token() -> void {
         const token tk{next_token()};
 
-        if (tk.text().empty() and not tk.is_string() and not is_eos()) {
+        if (tk.is_none() and not is_eos()) {
             skip_char();
         }
     }

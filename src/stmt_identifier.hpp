@@ -222,7 +222,7 @@ class stmt_identifier final : public statement {
             throw compile_error{tk, "expected an identifier"};
         }
 
-        if (tk.text().empty()) {
+        if (tk.is_none()) {
             throw compile_error{tz, "expected an identifier"};
         }
 

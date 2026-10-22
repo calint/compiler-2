@@ -1,0 +1,4 @@
+
+1472.baz:2:18: expected a generic type after '='
+type t<T type> = ""
+                 ^~

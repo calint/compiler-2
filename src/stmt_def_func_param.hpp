@@ -41,8 +41,9 @@ class stmt_def_func_param final : public statement {
         [[nodiscard]] static auto read(tokenizer& tz) -> syntax {
             const token name_tk{tz.next_token()};
 
-            if (name_tk.text().empty()) {
-                throw compile_error{tz, "expected a parameter name"};
+            if (not name_tk.is_word()) {
+                throw compile_error{tz.position_of(name_tk),
+                                    "expected a parameter name"};
             }
 
             const token mut_tk{read_mut(tz)};

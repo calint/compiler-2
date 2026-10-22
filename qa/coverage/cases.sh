@@ -4651,3 +4651,14 @@ SRC=1463 && COMPERR
 SRC=1464 && COMPERR
 SRC=1465 && COMPERR
 SRC=1466 && EXP=7 && RUN
+
+# a string where a name is expected: a parameter, a generic parameter, a
+# method of a type and of a generic type, a constructor, the base of a generic
+# type and an alias
+SRC=1467 && COMPERR
+SRC=1468 && COMPERR
+SRC=1469 && COMPERR
+SRC=1470 && COMPERR
+SRC=1471 && COMPERR
+SRC=1472 && COMPERR
+SRC=1473 && COMPERR
