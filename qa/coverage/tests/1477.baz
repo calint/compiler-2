@@ -1,0 +1,9 @@
+# an instance literal is not an operand of a comparison
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    if p == point{1, 2} {
+        exit(1)
+    }
+}

@@ -84,12 +84,16 @@ struct generic_param {
             return true;
         }
 
-        if (tz.is_next_char_token(',').is_empty()) {
+        const token delimiter_tk{tz.is_next_char_token(',')};
+
+        if (delimiter_tk.is_empty()) {
             throw compile_error{tz,
                                 std::format("expected ',' or '>' after generic "
                                             "parameter '{}'",
                                             param.name_tk.text())};
         }
+
+        tz.assert_no_trailing_delimiter(delimiter_tk, '>', "parameters");
 
         return false;
     }
@@ -184,6 +188,8 @@ struct generic_arg_tokens {
                 tz.expect_char_token(
                     ',', "expected ',' or '>' after generic argument"),
             };
+
+            tz.assert_no_trailing_delimiter(delim_tk, '>', "type arguments");
 
             args.list_tks.emplace_back(delim_tk);
         }

@@ -1,0 +1,4 @@
+
+1480.baz:5:8: a trailing ',' is not allowed in a call
+    f(1,)
+       ^

@@ -151,15 +151,15 @@ class expr_any final : public statement {
 
         open_brace_tk_.source_to(os);
 
-        if (not elements_.empty()) {
-            element(0).source_to(os);
-            for (size_t i{1}; i < elements_.size(); ++i) {
-                element_delims_tk_.at(i - 1).source_to(os);
-                // note: -1 because there is one delimiter fewer than elements
+        const auto elements{
+            std::views::iota(size_t{}, elements_.size()) |
+                std::views::transform(
+                    [this](const size_t i) -> const statement& {
+                        return element(i);
+                    }),
+        };
 
-                element(i).source_to(os);
-            }
-        }
+        source_delimited_to(os, elements, element_delims_tk_);
 
         close_brace_tk_.source_to(os);
     }
@@ -607,6 +607,13 @@ class expr_any final : public statement {
         while (close_brace_tk_.is_empty()) {
             if (not elements_.empty()) {
                 parse_element_delimiter(tz, tp);
+
+                // a trailing ',' lets each element end its line the same way
+                close_brace_tk_ = tz.is_next_char_token('}');
+
+                if (not close_brace_tk_.is_empty()) {
+                    break;
+                }
             }
 
             assert_room_for_element(tz);

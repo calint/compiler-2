@@ -1940,8 +1940,8 @@ SRC=0630 && COMPERR
 # data built-in field initialized with braces
 SRC=0631 && COMPERR
 
-# data array initializer with trailing comma
-SRC=0632 && COMPERR
+# data array initializer with a trailing comma
+SRC=0632 && EXP=10 && RUN
 
 # a backslash at the end of a line continues the string on the next line,
 # leading whitespace of the next line is part of the string
@@ -4662,3 +4662,18 @@ SRC=1470 && COMPERR
 SRC=1471 && COMPERR
 SRC=1472 && COMPERR
 SRC=1473 && COMPERR
+
+# 'write' returns bytes while its count is in elements
+SRC=1474 && DIFF
+
+# an instance from a call or a literal is stored in a variable before it is
+# compared
+SRC=1475 && COMPERR
+SRC=1476 && COMPERR
+SRC=1477 && COMPERR
+
+# a trailing ',' ends a braced list, not parameters, a call or type arguments
+SRC=1478 && EXP=15 && RUN
+SRC=1479 && COMPERR
+SRC=1480 && COMPERR
+SRC=1481 && COMPERR

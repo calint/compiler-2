@@ -351,8 +351,10 @@ func reading() {
     var got = read(0, line, 16)
     write(1, line, got)
     # 'read' fills an array from a file descriptor, here 0 is standard input
-    # it returns the number of elements read, 0 at the end of the input, and
-    # takes the same optional count and start index as 'write'
+    # it returns the number of bytes read, 0 at the end of the input, and
+    # takes the same optional count and start index as 'write'; the count is
+    # in elements and the result in bytes, the same for an 'i8' array, and
+    # 'write' returns the bytes it wrote
     # 'main' does not call this function because it waits for input
 }
 
@@ -482,7 +484,8 @@ type pixel {
 func user_types() {
     var p = point{1, 2}
     assert(p.x == 1 and p.y == 2)
-    # an instance literal names the type and lists the fields in order
+    # an instance literal names the type and lists the fields in order, a
+    # ',' may end the list before '}' as in a type, not in a call
 
     var origin = point
     assert(origin.x == 0 and origin.y == 0)
@@ -675,7 +678,9 @@ func noinline factorial(n) res {
     res = n * partial
 }
 # 'noinline' emits the function once and calls it, which allows recursion
-# a call follows the same typing and aliasing rules as an inlined call
+# a call follows the same typing and aliasing rules as an inlined call, and
+# also rejects a read of the result under another name in the statement that
+# sets it, e.g. 'res = g + 1' in 'g = f()', which an inlined body computes
 
 func noinline add_all(a []) res {
     res = 0
@@ -868,6 +873,8 @@ func checks() {
 #   variable 'x', so 'res = 0' also clears 'v'
 #   calls where the result and the arguments may share storage with each
 #   other are rejected, '--checks=-alias' turns that check off
+#   a global that the function names is not an argument: in 'g = f()' the
+#   result 'res' is 'g' too, so after 'res = 0' the function reads 0 from 'g'
 
     var p = point{1, 2}
     p = {2, 1}

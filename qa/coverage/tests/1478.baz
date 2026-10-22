@@ -1,0 +1,12 @@
+# a value literal may end with a ',' before its '}', also one value per line
+type point {x, y}
+
+func main() {
+    var p = point{1, 2,}
+    var a = [3]{4, 5,}
+    var ps = point[]{
+        {6, 7},
+        {8, 9,},
+    }
+    exit(p.y + a[1] + a[2] + ps[1].x)
+}

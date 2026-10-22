@@ -1,0 +1,4 @@
+
+1477.baz:6:13: an instance literal of 'point' is not an operand here, store it in a variable first
+    if p == point{1, 2} {
+            ^~~~~

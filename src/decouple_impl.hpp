@@ -325,6 +325,15 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
                                 "operand here, store it in a 'bool' first"};
     }
 
+    // e.g. the 'point{1, 2}' of 'p == point{1, 2}', an instance is compared
+    // as memory, which only a variable has
+    if (is_record_literal(tc, tk, tz)) {
+        throw compile_error{
+            tk, std::format("an instance literal of '{}' is not an operand "
+                            "here, store it in a variable first",
+                            tk.text())};
+    }
+
     assert_builtin_without_type_args(tk, tz);
 
     const stmt_builtin_io::io_function* const io{

@@ -1,4 +1,4 @@
 
-0235.baz:3:22: expected argument after ','
+0235.baz:3:21: a trailing ',' is not allowed in a call
 func main() { exit(1,) }
-                     ^
+                    ^

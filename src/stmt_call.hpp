@@ -2313,6 +2313,14 @@ class stmt_call : public expression {
             return;
         }
 
+        // e.g. 'f(1, 2,)' has no surplus argument
+        tokenizer probe{tz};
+        const token delimiter_tk{probe.is_next_char_token(',')};
+
+        if (not delimiter_tk.is_empty()) {
+            probe.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
+        }
+
         throw compile_error{tz, std::format("'{}' takes {}", func_name_,
                                             counted(param_count, "argument"))};
     }
@@ -2471,6 +2479,8 @@ class stmt_call : public expression {
 
                 const token delimiter_tk{tz.expect_char_token(',', message)};
 
+                tz.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
+
                 arg_delims_tk_.emplace_back(delimiter_tk);
             }
 
@@ -2502,16 +2512,10 @@ class stmt_call : public expression {
     // a built-in has no parameter list, so any count of default type
     // arguments is parsed and the built-in checks the count
     auto parse_builtin_arguments(toc& tc, tokenizer& tz) -> void {
-        bool expect_arg{};
         while (true) {
             close_paren_tk_ = tz.is_next_char_token(')');
 
             if (not close_paren_tk_.is_empty()) {
-                if (expect_arg) {
-                    throw compile_error{close_paren_tk_,
-                                        "expected argument after ','"};
-                }
-
                 return;
             }
 
@@ -2519,9 +2523,9 @@ class stmt_call : public expression {
                                literal_typing::from_destination);
 
             const token delim_tk{tz.is_next_char_token(',')};
-            expect_arg = not delim_tk.is_empty();
 
-            if (expect_arg) {
+            if (not delim_tk.is_empty()) {
+                tz.assert_no_trailing_delimiter(delim_tk, ')', "a call");
                 arg_delims_tk_.emplace_back(delim_tk);
                 continue;
             }

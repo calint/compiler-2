@@ -1,4 +1,4 @@
 
-0236.baz:4:18: 'f' takes 1 argument
+0236.baz:4:18: a trailing ',' is not allowed in a call
 func main() { f(1,) }
                  ^

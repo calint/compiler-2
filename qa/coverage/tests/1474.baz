@@ -1,0 +1,10 @@
+# 'write' takes its count in elements and returns the bytes it wrote: 2 'i16'
+# elements are 4 bytes, the output is 'ABC', a newline and '4'
+func main() {
+    let a = i16[]{0x4241, 0x0a43}
+    var written = write(1, a, 2)
+    var digit = i8[2]
+    digit[0] = i8('0' + written)
+    digit[1] = '\n'
+    write(1, digit)
+}

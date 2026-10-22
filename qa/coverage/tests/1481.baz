@@ -1,0 +1,6 @@
+# type arguments do not end with a ','
+type list<T type> {x T}
+
+type a = list<i8,>
+
+func main() {}

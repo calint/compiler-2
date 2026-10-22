@@ -556,6 +556,11 @@ class statement {
             d.source_to(os);
             e.source_to(os);
         }
+
+        // a trailing delimiter, e.g. the last ',' of '{1, 2,}'
+        if (std::ssize(delims) == std::ranges::distance(items)) {
+            delims.back().source_to(os);
+        }
     }
 
     // one-line, whitespace-collapsed rendering of source text, suitable for

@@ -99,10 +99,6 @@ class type_fields final {
 
         statement::source_delimited_to(os, fields_, field_delims_tk_);
 
-        if (field_delims_tk_.size() == fields_.size()) {
-            field_delims_tk_.back().source_to(os);
-        }
-
         close_brace_tk_.source_to(os);
     }
 

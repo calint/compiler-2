@@ -1,0 +1,4 @@
+
+1479.baz:2:12: a trailing ',' is not allowed in parameters
+func f(a, b,) {}
+           ^

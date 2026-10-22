@@ -1,6 +1,56 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: decide: a trailing ',' in a value literal is rejected, with "too
+    many fields" for 'point{1, 2,}' and "expected constant" for '[3]{1,}';
+    type definitions accept it (round 8 B-6)
+    => options: accept it before '}' as types do, or one message "a trailing
+       ',' is not allowed in a value"
+    => done (2026-10-22): a braced list may end with a ',' before '}':
+       types, instance literals and array literals ('dat' tables too, test
+       0632 now runs); parameters, generic parameters, calls (also
+       built-ins) and type arguments reject it with "a trailing ',' is not
+       allowed in parameters" / "in a call" / "in type arguments" at the
+       ',' ('tokenizer::assert_no_trailing_delimiter'); a trailing
+       delimiter is reproduced by 'statement::source_delimited_to'; tests
+       1478 to 1481, 0235, 0236 and 0803 changed message
+[x] medium: decide: 'p == mk()' with 'mk' returning the type of 'p' is
+    rejected with "an instance of 'point' is compared only with an instance
+    of the same type", although both are 'point'; 'is_memory_operand' takes
+    only names (round 8 B-3, A-13)
+    => options: copy the result to a temporary, as arguments are, or say
+       "store the result of 'mk' in a variable before comparing it" at the
+       call
+    => done (2026-10-22): a message: 'p == mk()' gives "store 'mk()' in a
+       variable before comparing it" at the call ('assert_instance_stored'),
+       'p == point{1, 2}' gives "an instance literal of 'point' is not an
+       operand here, store it in a variable first" (it said "cannot resolve
+       identifier 'point'"); tests 1475 to 1477
+[x] easy: decide: 'read' and 'write' take their count in elements but return
+    the byte count of the system call; the tutorial says "the number of
+    elements read" (round 8 B-2, 'B/t80.baz': 'i16' gives 4 for 2)
+    => options: divide by the element size (see the partial read item), or
+       say bytes in the tutorial; then a test with 'i16' elements
+    => done (2026-10-22): bytes, as the partial read item decided; the
+       tutorial says the result is in bytes and the count in elements, the
+       same for 'i8'; test 1474 writes 2 'i16' elements and prints 4
+[-] medium: decide: aliasing rule C compares the arguments with the result
+    only; a global that an inlined body names is compared with neither, so
+    'g = add_g()' with 'res = res + g' in the body is accepted inline and
+    rejected noinline (rule B) (round 8 B-1, scratchpad r8 'B/t31.baz')
+    => options: compare the result and argument targets with the globals the
+       body reads or writes (the dry run keys calls by ' global g'), or say
+       in the tutorial and docs 3.6 that only arguments and the result are
+       compared
+    => discarded (2026-10-22): no behavior change, documented; an inlined
+       'res' is the destination, so the 0 of 't31.baz' is the defined result
+       (noinline gives the same reference results, e.g. 2 for 'res = 1',
+       'var x = g', 'res = res + x'); the inline/noinline difference is the
+       one docs 3.6 describes for a parameter bound to the destination:
+       inlined, a statement that reads 'g' while it writes 'res' is computed
+       through a scratch register, noinline it is rejected; comparing the
+       globals per call would reject more inline than noinline; docs 3.6
+       and the tutorial say how a global behaves
 [x] easy: low priority: front end small designs (round 8 F-8, F-9, F-10,
     F-11):
     1. "no token here" ('text().empty() and not is_string()') is spelled at

@@ -1,0 +1,6 @@
+# a call does not end with a ',', also when an argument is missing
+func f(a, b) {}
+
+func main() {
+    f(1,)
+}

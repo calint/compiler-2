@@ -1,0 +1,4 @@
+# a parameter list does not end with a ','
+func f(a, b,) {}
+
+func main() {}

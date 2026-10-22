@@ -384,6 +384,11 @@ class expr_bool_op final : public statement {
         is_memory_comparison_ = is_equality and is_memory_operand(tc, lhs_) and
                                 is_memory_operand(tc, rhs_);
 
+        if (is_equality) {
+            assert_instance_stored(tc, lhs_);
+            assert_instance_stored(tc, rhs_);
+        }
+
         if (not is_memory_comparison_) {
             assert_not_record(lhs_, is_equality);
             assert_not_record(rhs_, is_equality);
@@ -651,6 +656,24 @@ class expr_bool_op final : public statement {
                         statement::trimmed_source(typed), typed_type.name())};
     }
 
+    // an operator would compare a user type instance as its first field only
+    // e.g. the 'mk()' of 'p == mk()', an instance is compared as memory,
+    // which only a variable has
+    static auto assert_instance_stored(const toc& tc, const expr_arith& side)
+        -> void {
+
+        if (side.get_type().is_builtin() or side.is_name_or_literal() or
+            is_memory_operand(tc, side)) {
+
+            return;
+        }
+
+        throw compile_error{
+            side.tok(), std::format("store '{}' in a variable before comparing "
+                                    "it",
+                                    statement::trimmed_source(side))};
+    }
+
     // a condition tests a number, an instance would be tested as its first
     // field; checked when compiling since the initializer of a 'var' parses
     // its expression to learn the type, e.g. 'var b = a' copies the instance
@@ -664,7 +687,6 @@ class expr_bool_op final : public statement {
                                     side.get_type().name())};
     }
 
-    // an operator would compare a user type instance as its first field only
     static auto assert_not_record(const expr_arith& side,
                                   const bool is_equality) -> void {
 

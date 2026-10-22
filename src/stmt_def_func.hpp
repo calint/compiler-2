@@ -778,6 +778,8 @@ class stmt_def_func final : public statement {
                                  params_.back().tok().text())),
         };
 
+        tz.assert_no_trailing_delimiter(delimiter_tk, ')', "parameters");
+
         param_delims_tk_.emplace_back(delimiter_tk);
     }
 

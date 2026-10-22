@@ -779,6 +779,14 @@ the part being computed under another name: "'p' may share storage with the
 destination 'g'". An overlap that the body could see itself, e.g. 'g' passed to
 an inlined call inside the body, is rejected too (etc/todo.txt).
 
+A global that the body names is such another name: in 'g = f()' with the
+body 'res = g + 1', 'res' is 'g'. Inlined, the statement reads 'g' before it
+writes it, as above; noinline, the read is rejected. The call compares only
+the arguments and the result with each other, not with the globals the body
+names, so a body that reads 'g' in a later statement than the one that set
+'res' reads the new value, inlined and noinline alike, e.g. 'res = 1', then
+'var x = g' gives 1.
+
 ### 3.7 The other checks on a read
 
 Other checks look at the reads of a variable and do need bytes, because they

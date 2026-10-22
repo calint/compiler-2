@@ -34,6 +34,22 @@ class tokenizer final {
         assert(char_ix_ <= src_.size());
     }
 
+    // e.g. the last ',' of 'f(1, 2,)', 'close' ends the list; a braced list
+    // may end with a ',', see the value literals and the type definitions
+    auto assert_no_trailing_delimiter(const token& delimiter_tk,
+                                      const char close,
+                                      const std::string_view list) const
+        -> void {
+
+        if (peek_char_after_whitespace() != close) {
+            return;
+        }
+
+        throw compile_error{
+            delimiter_tk,
+            std::format("a trailing ',' is not allowed in {}", list)};
+    }
+
     // 'next_token' made no text: the source ended or a delimiter is next, which
     // no statement or definition starts with
     auto assert_not_at_delimiter() const -> void {

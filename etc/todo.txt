@@ -221,31 +221,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        '--memory' for every target and only fpga uses it; decide first
        whether '--memory' with another target is an error (today the range
        is checked for all)
-[ ] medium: decide: aliasing rule C compares the arguments with the result
-    only; a global that an inlined body names is compared with neither, so
-    'g = add_g()' with 'res = res + g' in the body is accepted inline and
-    rejected noinline (rule B) (round 8 B-1, scratchpad r8 'B/t31.baz')
-    => options: compare the result and argument targets with the globals the
-       body reads or writes (the dry run keys calls by ' global g'), or say
-       in the tutorial and docs 3.6 that only arguments and the result are
-       compared
-[ ] easy: decide: 'read' and 'write' take their count in elements but return
-    the byte count of the system call; the tutorial says "the number of
-    elements read" (round 8 B-2, 'B/t80.baz': 'i16' gives 4 for 2)
-    => options: divide by the element size (see the partial read item), or
-       say bytes in the tutorial; then a test with 'i16' elements
-[ ] medium: decide: 'p == mk()' with 'mk' returning the type of 'p' is
-    rejected with "an instance of 'point' is compared only with an instance
-    of the same type", although both are 'point'; 'is_memory_operand' takes
-    only names (round 8 B-3, A-13)
-    => options: copy the result to a temporary, as arguments are, or say
-       "store the result of 'mk' in a variable before comparing it" at the
-       call
-[ ] easy: decide: a trailing ',' in a value literal is rejected, with "too
-    many fields" for 'point{1, 2,}' and "expected constant" for '[3]{1,}';
-    type definitions accept it (round 8 B-6)
-    => options: accept it before '}' as types do, or one message "a trailing
-       ',' is not allowed in a value"
 [ ] easy: decide: '{}' continues as the first operand of an expression only
     where 'expr_any' parses it: 'n = {} + 1' is accepted, 'n = 1 + {}' and
     'var n = {} + 1' are not; a bare type name followed by an operator is not

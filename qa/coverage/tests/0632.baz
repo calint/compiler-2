@@ -1,5 +1,8 @@
-# data array initializer with trailing comma
+# data array initializer with a trailing comma, the element it leaves out is
+# zero
 
 dat a = i16[2]{ 1, }
 
-func main() {}
+func main() {
+    exit(a[0] * 10 + a[1])
+}

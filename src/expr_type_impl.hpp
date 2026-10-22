@@ -106,10 +106,16 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
         const size_t index{exprs_.size()};
 
         if (index == flds.size()) {
+            const token delimiter_tk{tz.is_next_char_token(',')};
+
+            // a trailing ',' lets each field end its line the same way
+            if (not delimiter_tk.is_empty() and at_closing_brace(tz)) {
+                expr_delims_tk_.emplace_back(delimiter_tk);
+                break;
+            }
+
             // the error is at the field that is too much
             // e.g. the 'z' of '{x, y, z}' for a type with two fields
-            std::ignore = tz.is_next_char_token(',');
-
             throw compile_error{
                 tz, std::format("too many fields for type '{}'", tp.name())};
         }
@@ -118,6 +124,11 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 
         if (index > 0) {
             parse_field_delimiter(tz, tp, tf);
+
+            // a trailing ',' lets each field end its line the same way
+            if (at_closing_brace(tz)) {
+                break;
+            }
         }
 
         // the value is parsed as the type of the field, so a nested '{...}'

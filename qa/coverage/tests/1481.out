@@ -1,0 +1,4 @@
+
+1481.baz:4:17: a trailing ',' is not allowed in type arguments
+type a = list<i8,>
+                ^

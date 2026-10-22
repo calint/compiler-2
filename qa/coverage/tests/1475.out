@@ -1,0 +1,4 @@
+
+1475.baz:11:13: store 'mk()' in a variable before comparing it
+    if p == mk() {
+            ^
