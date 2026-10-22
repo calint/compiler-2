@@ -883,8 +883,8 @@ make_backend(const target machine_target, const source_files* const files,
     }
 
     if (machine_target == target::rv32i) {
-        return std::make_unique<machine_rv32i>(nullptr, files, jumps,
-                                               binary_file_name);
+        return std::make_unique<machine_rv32i_linux>(nullptr, files, jumps,
+                                                     binary_file_name);
     }
 
     if (machine_target == target::rv32i_qemu) {

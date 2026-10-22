@@ -32,9 +32,9 @@
 #include "type.hpp"
 
 // the rv32i backend, written as llvm assembler text and a binary image
-// through 'assembler_rv32i'; on linux in qemu user mode, the bare-metal targets
-// derive from it ('machine_rv32i_bare_metal'). the formatter sorts the
-// functions by name, so by topic they are:
+// through 'assembler_rv32i'; the targets derive from it, 'machine_rv32i_linux'
+// below for linux in qemu user mode and 'machine_rv32i_bare_metal'. the
+// formatter sorts the functions by name, so by topic they are:
 //
 //   registers    'machine' allocates them, here the order
 //                'scratch_registers_', the frame base 's1' and the variables
@@ -58,7 +58,7 @@
 //                'emit_checked_add_subtract'
 //   handlers     'emit_*_failure_handler', 'emit_named_failure_handler',
 //                'emit_line_failure', 'emit_report_line_routine'
-//   calls        'call_function', the system calls 'emit_read_call',
+//   calls        'call_function', the target hooks 'emit_read_call',
 //                'emit_write_call' and 'exit', the sector routines
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
@@ -89,13 +89,6 @@ class machine_rv32i : public machine {
 
     static constexpr int64_t immediate_min_{-2048};
     static constexpr int64_t immediate_max_{2047};
-    static constexpr int syscall_read_{63};
-    static constexpr int syscall_write_{64};
-    static constexpr int syscall_exit_{93};
-    static constexpr int syscall_openat_{56};
-    static constexpr int syscall_llseek_{62};
-    static constexpr int syscall_pread_{67};
-    static constexpr int syscall_pwrite_{68};
     static constexpr std::array<std::string_view, 4> sector_clobbered_{
         "a3",
         "a4",
@@ -112,10 +105,6 @@ class machine_rv32i : public machine {
     static constexpr int64_t line_digits_bytes_{16};
     static constexpr size_t byte_size_bytes_{1};
     static constexpr size_t half_size_bytes_{2};
-    static constexpr size_t word_size_bytes_{4};
-    static constexpr size_t register_bits_{
-        std::numeric_limits<uint32_t>::digits,
-    };
     static constexpr size_t address_space_bytes_{
         size_t{std::numeric_limits<uint32_t>::max()} + 1,
     };
@@ -358,12 +347,6 @@ class machine_rv32i : public machine {
     static constexpr std::string_view decimal_places_label_{
         ".Lbaz_decimal_places",
     };
-    // the part the system call sector routines share, and their data
-    static constexpr std::string_view sector_transfer_label_{
-        ".Lbaz_sector_transfer",
-    };
-    static constexpr std::string_view sd_card_label_{".Lbaz_sd_card"};
-    static constexpr std::string_view sd_card_name_label_{".Lbaz_sd_card_name"};
 
     // empty when no binary image is written
     std::string binary_file_name_;
@@ -373,6 +356,10 @@ class machine_rv32i : public machine {
     std::vector<bulk_operation> bulk_operations_;
 
   protected:
+    static constexpr size_t word_size_bytes_{4};
+    static constexpr size_t register_bits_{
+        std::numeric_limits<uint32_t>::digits,
+    };
     // the sector routines, see 'emit_sector_routines'
     static constexpr std::string_view sector_read_label_{".Lbaz_sector_read"};
     static constexpr std::string_view sector_write_label_{
@@ -416,15 +403,6 @@ class machine_rv32i : public machine {
         comment(token{}, 0, "free named register {}", frame_base_register());
     }
 
-    // the routines take the sector in a0, the address in a1 and the size in
-    // a2, return through a7 and may change a0 and a3 to a6; an operating
-    // system transfers the sector of the image file
-    auto emit_sector_routines(const bool read_used, const bool write_used)
-        -> void override {
-
-        emit_sector_system_call_routines(read_used, write_used);
-    }
-
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
 
@@ -457,39 +435,23 @@ class machine_rv32i : public machine {
 
     // devices with a fixed memory size reject images that do not fit, an
     // operating system loads the program where it has room
-    virtual auto
-    check_memory_end([[maybe_unused]] const size_t memory_end_address) const
-        -> void {}
+    virtual auto check_memory_end(const size_t memory_end_address) const
+        -> void = 0;
 
-    // the divide helper found a zero divisor without '--checks=division',
-    // linux stops the program with a trap signal
-    virtual auto emit_divide_by_zero_trap() -> void {
-        assembler_.ebreak(1);
-        assembler_.j(1, "5b");
-    }
+    // the divide helper found a zero divisor without '--checks=division'
+    virtual auto emit_divide_by_zero_trap() -> void = 0;
 
     // a0 is the descriptor and receives the byte count, a1 is the address,
     // a2 the count and a7 is reserved; an override may change the registers
     // after a2 in the allocation order, see 'call_io_routine'
-    virtual auto emit_read_call(const size_t indent) -> void {
-        assembler_.li(indent, "a7", syscall_read_);
-        assembler_.ecall(indent);
-    }
+    virtual auto emit_read_call(const size_t indent) -> void = 0;
 
     // loads the lowest address the stack may reach into the register 'reg'
-    // note: linux does not bound the stack, see 'is_stack_bounded'
-    virtual auto
-    emit_stack_limit_load([[maybe_unused]] const size_t indent,
-                          [[maybe_unused]] const std::string_view reg) -> void {
-
-        std::unreachable();
-    }
+    virtual auto emit_stack_limit_load(const size_t indent,
+                                       const std::string_view reg) -> void = 0;
 
     // same registers as 'emit_read_call'
-    virtual auto emit_write_call(const size_t indent) -> void {
-        assembler_.li(indent, "a7", syscall_write_);
-        assembler_.ecall(indent);
-    }
+    virtual auto emit_write_call(const size_t indent) -> void = 0;
 
     //
     // class methods
@@ -520,11 +482,91 @@ class machine_rv32i : public machine {
         assembler_.call(indent, label, "a7");
     }
 
+    // the handler of a check that prints 'panic: NAME', with the line number
+    // in a0 when 'with_line', then exits
+    auto emit_named_failure_handler(const std::string_view handler_label,
+                                    const std::string_view name,
+                                    const bool with_line) -> void {
+
+        constexpr std::array<int64_t, 1> newline{'\n'};
+
+        std::string label_name{name};
+        std::ranges::replace(label_name, ' ', '_');
+
+        const std::string message_label{
+            std::format(".Lbaz_{}_message", label_name),
+        };
+
+        label(0, handler_label);
+
+        if (with_line) {
+            emit_line_failure(message_label,
+                              std::format("panic: {} at line ", name));
+
+            return;
+        }
+
+        const std::string message{std::format("panic: {}", name)};
+
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", message_label);
+        // the newline follows the message text
+        assembler_.li(1, "a2", message.size() + 1);
+        emit_write_call(1);
+
+        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+        assembler_.ascii(message);
+        assembler_.data(1, newline);
+        assembler_.switch_section(section::text);
+    }
+
     // the helpers and routines the program calls, which may mark more
     // routines used, e.g. the exit of a division by zero on bare metal
     auto emit_used_routines() -> void {
         emit_arithmetic_helpers();
         emit_used_sector_routines();
+    }
+
+    auto restore_saved_registers(const size_t indent,
+                                 const std::span<const std::string_view> saved,
+                                 const size_t stack_bytes) -> void {
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.lw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+
+        // restore sp before writing a possibly stack-relative destination
+        if (stack_bytes != 0) {
+            assembler_.addi(indent, "sp", "sp", stack_bytes);
+        }
+    }
+
+    // an aligned stack area is allocated only when a register is saved, the
+    // returned size lets 'restore_saved_registers' free it
+    auto save_registers(const size_t indent,
+                        const std::span<const std::string_view> saved)
+        -> size_t {
+
+        const size_t stack_bytes{
+            align_storage_size(saved.size() * word_size_bytes_,
+                               stack_alignment_),
+        };
+
+        if (stack_bytes != 0) {
+            assembler_.addi(indent, "sp", "sp",
+                            -static_cast<int64_t>(stack_bytes));
+        }
+
+        for (const auto [index, name] : std::views::enumerate(saved)) {
+            assembler_.sw(indent, name,
+                          static_cast<size_t>(index) * word_size_bytes_, "sp");
+        }
+
+        return stack_bytes;
     }
 
   public:
@@ -1194,16 +1236,6 @@ class machine_rv32i : public machine {
         exit(token{}, 1, operand::imm(0, default_type()));
     }
 
-    auto exit(const token& src_loc_tk, const size_t indent,
-              const operand& exit_code) -> void override {
-
-        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
-                   exit_code);
-
-        assembler_.li(indent, "a7", syscall_exit_);
-        assembler_.ecall(indent);
-    }
-
     auto finish() -> void override {
         finish_registers();
 
@@ -1264,11 +1296,6 @@ class machine_rv32i : public machine {
 
     // a load or store adds only an immediate to its base register
     [[nodiscard]] auto has_indexed_addressing() const -> bool override {
-        return false;
-    }
-
-    // linux stops a program that overflows the stack
-    [[nodiscard]] auto is_stack_bounded() const -> bool override {
         return false;
     }
 
@@ -3405,47 +3432,6 @@ class machine_rv32i : public machine {
         mark_lower_checked(range);
     }
 
-    // the handler of a check that prints 'panic: NAME', with the line number
-    // in a0 when 'with_line', then exits
-    auto emit_named_failure_handler(const std::string_view handler_label,
-                                    const std::string_view name,
-                                    const bool with_line) -> void {
-
-        constexpr std::array<int64_t, 1> newline{'\n'};
-
-        std::string label_name{name};
-        std::ranges::replace(label_name, ' ', '_');
-
-        const std::string message_label{
-            std::format(".Lbaz_{}_message", label_name),
-        };
-
-        label(0, handler_label);
-
-        if (with_line) {
-            emit_line_failure(message_label,
-                              std::format("panic: {} at line ", name));
-
-            return;
-        }
-
-        const std::string message{std::format("panic: {}", name)};
-
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", message_label);
-        // the newline follows the message text
-        assembler_.li(1, "a2", message.size() + 1);
-        emit_write_call(1);
-
-        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-        assembler_.ascii(message);
-        assembler_.data(1, newline);
-        assembler_.switch_section(section::text);
-    }
-
     // writes the line number of s2 in decimal, then exits: each power of ten
     // of '.Lbaz_decimal_places' gives a digit by repeated subtraction,
     // leading zeros are skipped and the last place always writes its digit
@@ -3499,111 +3485,6 @@ class machine_rv32i : public machine {
         assembler_.label(0, decimal_places_label_);
         assembler_.data(word_size_bytes_, decimal_places);
         assembler_.switch_section(section::text);
-    }
-
-    // opens the image file at the first transfer and keeps its descriptor and
-    // sector count in '.Lbaz_sd_card', a sector past the end, a failed open or
-    // a short transfer panics
-    auto emit_sector_system_call_routines(const bool read_used,
-                                          const bool write_used) -> void {
-
-        // 'AT_FDCWD', 'O_RDWR' and 'SEEK_END' of linux
-        constexpr int current_directory{-100};
-        constexpr int read_write{2};
-        constexpr int seek_end{2};
-        // the descriptor, the sector count and the 64 bit size of the file
-        constexpr std::array<int64_t, 4> sd_card_words{-1, 0, 0, 0};
-        constexpr int64_t count_offset{4};
-        constexpr int64_t size_low_offset{8};
-        constexpr int64_t size_high_offset{12};
-        // the arguments and the system call are kept while the file is opened
-        constexpr std::array<std::string_view, 4> saved{"a0", "a1", "a2", "a5"};
-        // the file name ends with a zero byte for the system call
-        constexpr std::array<int64_t, 1> name_end{0};
-        // the byte offset of a sector is split into two words
-        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes)};
-
-        constexpr int high_shift{
-            static_cast<int>(register_bits_) - sector_shift,
-        };
-
-        assembler_rv32i& a{assembler_};
-
-        if (read_used) {
-            a.label(0, sector_read_label_);
-            a.li(1, "a5", syscall_pread_);
-            a.j(1, sector_transfer_label_);
-        }
-
-        if (write_used) {
-            a.label(0, sector_write_label_);
-            a.li(1, "a5", syscall_pwrite_);
-        }
-
-        // a5 holds the system call, a6 the return address
-        a.label(0, sector_transfer_label_);
-        a.mv(1, "a6", "a7");
-        a.la(1, "a3", sd_card_label_);
-        a.lw(1, "a4", 0, "a3");
-        a.bgez(1, "a4", "2f");
-
-        const size_t stack_bytes{save_registers(1, saved)};
-
-        a.li(1, "a0", current_directory);
-        a.la(1, "a1", sd_card_name_label_);
-        a.li(1, "a2", read_write);
-        a.li(1, "a3", 0);
-        a.li(1, "a7", syscall_openat_);
-        a.ecall(1);
-        a.bltz(1, "a0", sd_card_handler_label);
-        a.la(1, "a3", sd_card_label_);
-        a.sw(1, "a0", 0, "a3");
-        // 'llseek' writes the size of the file at a3
-        a.li(1, "a1", 0);
-        a.li(1, "a2", 0);
-        a.addi(1, "a3", "a3", size_low_offset);
-        a.li(1, "a4", seek_end);
-        a.li(1, "a7", syscall_llseek_);
-        a.ecall(1);
-        a.bnez(1, "a0", sd_card_handler_label);
-        a.la(1, "a3", sd_card_label_);
-        a.lw(1, "a4", size_low_offset, "a3");
-        a.lw(1, "a0", size_high_offset, "a3");
-        a.srli(1, "a4", "a4", sector_shift);
-        a.slli(1, "a1", "a0", high_shift);
-        a.or_op(1, "a4", "a4", "a1");
-        // an image of 2 TB or more has more sectors than a sector number
-        // reaches
-        a.srli(1, "a0", "a0", sector_shift);
-        a.beqz(1, "a0", "1f");
-        a.li(1, "a4", -1);
-        a.label(0, "1");
-        a.sw(1, "a4", count_offset, "a3");
-        restore_saved_registers(1, saved, stack_bytes);
-        a.label(0, "2");
-        a.lw(1, "a4", count_offset, "a3");
-        a.bgeu(1, "a0", "a4", sd_card_handler_label);
-        // a0 the descriptor, a3 and a4 the low and high word of the offset
-        a.lw(1, "a7", 0, "a3");
-        a.slli(1, "a3", "a0", sector_shift);
-        a.srli(1, "a4", "a0", high_shift);
-        a.mv(1, "a0", "a7");
-        a.mv(1, "a7", "a5");
-        a.ecall(1);
-        a.bne(1, "a0", "a2", sd_card_handler_label);
-        a.jr(1, "a6");
-
-        emit_named_failure_handler(sd_card_handler_label, "sd card", false);
-
-        a.switch_section(section::data);
-        a.align(word_size_bytes_);
-        a.label(0, sd_card_label_);
-        a.data(word_size_bytes_, sd_card_words);
-        a.switch_section(section::rodata);
-        a.label(0, sd_card_name_label_);
-        a.ascii(sd_card_file_name());
-        a.data(1, name_end);
-        a.switch_section(section::text);
     }
 
     // the result replaces the value in 'loaded', a partial sum goes through a
@@ -4123,45 +4004,6 @@ class machine_rv32i : public machine {
 
         return reserve_call_register(src_loc_tk, indent, descriptor, address,
                                      count);
-    }
-
-    auto restore_saved_registers(const size_t indent,
-                                 const std::span<const std::string_view> saved,
-                                 const size_t stack_bytes) -> void {
-
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.lw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
-
-        // restore sp before writing a possibly stack-relative destination
-        if (stack_bytes != 0) {
-            assembler_.addi(indent, "sp", "sp", stack_bytes);
-        }
-    }
-
-    // an aligned stack area is allocated only when a register is saved, the
-    // returned size lets 'restore_saved_registers' free it
-    auto save_registers(const size_t indent,
-                        const std::span<const std::string_view> saved)
-        -> size_t {
-
-        const size_t stack_bytes{
-            align_storage_size(saved.size() * word_size_bytes_,
-                               stack_alignment_),
-        };
-
-        if (stack_bytes != 0) {
-            assembler_.addi(indent, "sp", "sp",
-                            -static_cast<int64_t>(stack_bytes));
-        }
-
-        for (const auto [index, name] : std::views::enumerate(saved)) {
-            assembler_.sw(indent, name,
-                          static_cast<size_t>(index) * word_size_bytes_, "sp");
-        }
-
-        return stack_bytes;
     }
 
     // the pointer of 'slot', 0 the first address and 1 the second, holds the
@@ -5641,5 +5483,197 @@ class machine_rv32i : public machine {
 
         return (instruction == op::and_op and constant == 0) or
                (instruction == op::or_op and has_all_bits(constant, width));
+    }
+};
+
+// the rv32i target on linux in qemu user mode: system calls read, write, exit
+// and transfer the sectors of the image file, the operating system stops a
+// program that overflows the stack
+class machine_rv32i_linux final : public machine_rv32i {
+    using section = assembler_rv32i::section;
+
+    static constexpr int syscall_read_{63};
+    static constexpr int syscall_write_{64};
+    static constexpr int syscall_exit_{93};
+    static constexpr int syscall_openat_{56};
+    static constexpr int syscall_llseek_{62};
+    static constexpr int syscall_pread_{67};
+    static constexpr int syscall_pwrite_{68};
+    // the part the system call sector routines share, and their data
+    static constexpr std::string_view sector_transfer_label_{
+        ".Lbaz_sector_transfer",
+    };
+    static constexpr std::string_view sd_card_label_{".Lbaz_sd_card"};
+    static constexpr std::string_view sd_card_name_label_{".Lbaz_sd_card_name"};
+
+  public:
+    using machine_rv32i::machine_rv32i;
+
+    //
+    // overridden methods
+    //
+
+    auto exit(const token& src_loc_tk, const size_t indent,
+              const operand& exit_code) -> void override {
+
+        copy_value(src_loc_tk, indent, operand::reg("a0", default_type()),
+                   exit_code);
+
+        assembler().li(indent, "a7", syscall_exit_);
+        assembler().ecall(indent);
+    }
+
+    // linux stops a program that overflows the stack
+    [[nodiscard]] auto is_stack_bounded() const -> bool override {
+        return false;
+    }
+
+  protected:
+    //
+    // overridden methods
+    //
+
+    // an operating system loads the program where it has room
+    auto
+    check_memory_end([[maybe_unused]] const size_t memory_end_address) const
+        -> void override {}
+
+    // linux stops the program with a trap signal
+    auto emit_divide_by_zero_trap() -> void override {
+        assembler().ebreak(1);
+        assembler().j(1, "5b");
+    }
+
+    auto emit_read_call(const size_t indent) -> void override {
+        assembler().li(indent, "a7", syscall_read_);
+        assembler().ecall(indent);
+    }
+
+    // the routines take the sector in a0, the address in a1 and the size in
+    // a2, return through a7 and may change a0 and a3 to a6; an operating
+    // system transfers the sector of the image file
+    auto emit_sector_routines(const bool read_used, const bool write_used)
+        -> void override {
+
+        emit_sector_system_call_routines(read_used, write_used);
+    }
+
+    // note: linux does not bound the stack, see 'is_stack_bounded'
+    auto emit_stack_limit_load([[maybe_unused]] const size_t indent,
+                               [[maybe_unused]] const std::string_view reg)
+        -> void override {
+
+        std::unreachable();
+    }
+
+    auto emit_write_call(const size_t indent) -> void override {
+        assembler().li(indent, "a7", syscall_write_);
+        assembler().ecall(indent);
+    }
+
+  private:
+    // opens the image file at the first transfer and keeps its descriptor and
+    // sector count in '.Lbaz_sd_card', a sector past the end, a failed open or
+    // a short transfer panics
+    auto emit_sector_system_call_routines(const bool read_used,
+                                          const bool write_used) -> void {
+
+        // 'AT_FDCWD', 'O_RDWR' and 'SEEK_END' of linux
+        constexpr int current_directory{-100};
+        constexpr int read_write{2};
+        constexpr int seek_end{2};
+        // the descriptor, the sector count and the 64 bit size of the file
+        constexpr std::array<int64_t, 4> sd_card_words{-1, 0, 0, 0};
+        constexpr int64_t count_offset{4};
+        constexpr int64_t size_low_offset{8};
+        constexpr int64_t size_high_offset{12};
+        // the arguments and the system call are kept while the file is opened
+        constexpr std::array<std::string_view, 4> saved{"a0", "a1", "a2", "a5"};
+        // the file name ends with a zero byte for the system call
+        constexpr std::array<int64_t, 1> name_end{0};
+        // the byte offset of a sector is split into two words
+        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes)};
+
+        constexpr int high_shift{
+            static_cast<int>(register_bits_) - sector_shift,
+        };
+
+        assembler_rv32i& a{assembler()};
+
+        if (read_used) {
+            a.label(0, sector_read_label_);
+            a.li(1, "a5", syscall_pread_);
+            a.j(1, sector_transfer_label_);
+        }
+
+        if (write_used) {
+            a.label(0, sector_write_label_);
+            a.li(1, "a5", syscall_pwrite_);
+        }
+
+        // a5 holds the system call, a6 the return address
+        a.label(0, sector_transfer_label_);
+        a.mv(1, "a6", "a7");
+        a.la(1, "a3", sd_card_label_);
+        a.lw(1, "a4", 0, "a3");
+        a.bgez(1, "a4", "2f");
+
+        const size_t stack_bytes{save_registers(1, saved)};
+
+        a.li(1, "a0", current_directory);
+        a.la(1, "a1", sd_card_name_label_);
+        a.li(1, "a2", read_write);
+        a.li(1, "a3", 0);
+        a.li(1, "a7", syscall_openat_);
+        a.ecall(1);
+        a.bltz(1, "a0", sd_card_handler_label);
+        a.la(1, "a3", sd_card_label_);
+        a.sw(1, "a0", 0, "a3");
+        // 'llseek' writes the size of the file at a3
+        a.li(1, "a1", 0);
+        a.li(1, "a2", 0);
+        a.addi(1, "a3", "a3", size_low_offset);
+        a.li(1, "a4", seek_end);
+        a.li(1, "a7", syscall_llseek_);
+        a.ecall(1);
+        a.bnez(1, "a0", sd_card_handler_label);
+        a.la(1, "a3", sd_card_label_);
+        a.lw(1, "a4", size_low_offset, "a3");
+        a.lw(1, "a0", size_high_offset, "a3");
+        a.srli(1, "a4", "a4", sector_shift);
+        a.slli(1, "a1", "a0", high_shift);
+        a.or_op(1, "a4", "a4", "a1");
+        // an image of 2 TB or more has more sectors than a sector number
+        // reaches
+        a.srli(1, "a0", "a0", sector_shift);
+        a.beqz(1, "a0", "1f");
+        a.li(1, "a4", -1);
+        a.label(0, "1");
+        a.sw(1, "a4", count_offset, "a3");
+        restore_saved_registers(1, saved, stack_bytes);
+        a.label(0, "2");
+        a.lw(1, "a4", count_offset, "a3");
+        a.bgeu(1, "a0", "a4", sd_card_handler_label);
+        // a0 the descriptor, a3 and a4 the low and high word of the offset
+        a.lw(1, "a7", 0, "a3");
+        a.slli(1, "a3", "a0", sector_shift);
+        a.srli(1, "a4", "a0", high_shift);
+        a.mv(1, "a0", "a7");
+        a.mv(1, "a7", "a5");
+        a.ecall(1);
+        a.bne(1, "a0", "a2", sd_card_handler_label);
+        a.jr(1, "a6");
+
+        emit_named_failure_handler(sd_card_handler_label, "sd card", false);
+
+        a.switch_section(section::data);
+        a.align(word_size_bytes_);
+        a.label(0, sd_card_label_);
+        a.data(word_size_bytes_, sd_card_words);
+        a.switch_section(section::rodata);
+        a.label(0, sd_card_name_label_);
+        a.ascii(sd_card_file_name());
+        a.data(1, name_end);
+        a.switch_section(section::text);
     }
 };

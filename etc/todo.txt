@@ -6,18 +6,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] hard: architecture A4: 'machine_rv32i' is both the rv32i instruction
-    backend and the linux target, about 150 lines of linux code (system
-    calls, 'ecall' exit, sector system calls, 'is_stack_bounded' false, the
-    no-op 'check_memory_end', 'emit_stack_limit_load' unreachable) are
-    overridden away by 'machine_rv32i_bare_metal' (round 7 R-2)
-    => design: 'machine_rv32i' is abstract with the target hooks pure
-       virtual; 'machine_rv32i_linux final' in machine_rv32i.hpp holds the
-       linux code; 'main.cpp' and 'test-rv32i-address.cpp' construct it; a
-       mechanical move, the same output
-    => rejected: a new file for the linux class, it is near its base
-    => invariant: a target class holds only what differs per target
-    => tests: the suite on rv32i, rv32i-qemu and rv32i-fpga, same images
 [ ] medium: architecture A5: the dry-run bookkeeping of noinline calls is in
     four places: toc fields 'check_only_depth_', 'deepest_dry_run_level_',
     'deepest_frame_check_', 'function_table::dry_run_heights_',

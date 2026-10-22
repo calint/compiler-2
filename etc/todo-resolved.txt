@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: architecture A4: 'machine_rv32i' is both the rv32i instruction
+    backend and the linux target, about 150 lines of linux code (system
+    calls, 'ecall' exit, sector system calls, 'is_stack_bounded' false, the
+    no-op 'check_memory_end', 'emit_stack_limit_load' unreachable) are
+    overridden away by 'machine_rv32i_bare_metal' (round 7 R-2)
+    => design: 'machine_rv32i' is abstract with the target hooks pure
+       virtual; 'machine_rv32i_linux final' in machine_rv32i.hpp holds the
+       linux code; 'main.cpp' and 'test-rv32i-address.cpp' construct it; a
+       mechanical move, the same output
+    => rejected: a new file for the linux class, it is near its base
+    => invariant: a target class holds only what differs per target
+    => tests: the suite on rv32i, rv32i-qemu and rv32i-fpga, same images
+    => done (2026-10-22): the hooks are pure in 'machine_rv32i';
+       'machine_rv32i_linux' holds the system calls, 'exit', the sector
+       system call routines, 'is_stack_bounded' and the no-op and
+       unreachable hooks; 'save_registers', 'restore_saved_registers',
+       'emit_named_failure_handler', 'word_size_bytes_' and 'register_bits_'
+       became protected for it; the assembly and images of every test and
+       the tutorial are the same on all four targets
 [x] medium: architecture A3: whether a built-in has a value is decided in
     two places, 'create_statement_in_expr_arith' (decouple_impl.hpp) and
     'expr_type::builtin_value_type' with 'parse_copy_source'
