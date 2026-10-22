@@ -4736,3 +4736,10 @@ SRC=1512 && COMPERR
 # an error found after the parse of an instance names what made the instance
 SRC=1513 && COMPERR
 SRC=1514 && COMPERR
+
+# a duplicate generic method without an alias, a type named like a built-in,
+# a generic result deduced from a built-in destination
+SRC=1515 && COMPERR
+SRC=1516 && COMPERR
+SRC=1517 && EXP=100 && RUN
+SRC=1518 && COMPERR

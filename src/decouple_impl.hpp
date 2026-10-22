@@ -312,7 +312,8 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
 
 // called from 'expr_arith' to solve circular dependencies with function
 // calls
-inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
+inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
+                                           const type* const destination_type)
     -> std::unique_ptr<statement> {
 
     unary_ops uops{tz};
@@ -382,7 +383,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
     }
 
     call_or_identifier parsed{
-        parse_call_or_identifier(tc, tz, tk, uops, nullptr),
+        parse_call_or_identifier(tc, tz, tk, uops, destination_type),
     };
 
     if (parsed.call) {

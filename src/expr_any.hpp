@@ -741,6 +741,7 @@ class expr_any final : public statement {
                 .is_implied_subexpression{},
                 .first_op_precedence{expr_arith::initial_precedence},
                 .first_expression{std::move(first)},
+                .destination_type{},
             },
         };
     }
@@ -803,9 +804,27 @@ class expr_any final : public statement {
         // note: rewound by position, a string token cannot be put back
         tz.rewind_to_position(pos_tk);
 
+        // a generic call takes the type of a known destination for its
+        // result, e.g. 'x = make()'
         if (not tp.is_bool()) {
-            expr_arith value{tc, tz};
+            expr_arith value{
+                tc,
+                tz,
+                expr_arith::options{
+                    .uops{},
+                    .open_paren_tk{},
+                    .is_implied_subexpression{},
+                    .first_op_precedence{expr_arith::initial_precedence},
+                    .first_expression{},
+                    .destination_type{
+                        typing == literal_typing::from_destination ? &tp
+                                                                   : nullptr,
+                    },
+                },
+            };
+
             assert_not_boolean_name(value, tp);
+
             return value;
         }
 

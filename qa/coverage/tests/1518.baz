@@ -1,0 +1,8 @@
+# a variable without a type gives its initializer none to deduce from
+func make<T type>() res T {
+    res = 1
+}
+
+func main() {
+    var x = make()
+}

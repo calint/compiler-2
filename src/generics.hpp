@@ -392,6 +392,8 @@ struct func_instance {
 struct generic_method_info {
     // the generic type it is a method of, e.g. 'text'
     token type_tk;
+    // e.g. 'print'
+    token method_name_tk;
     // e.g. 'func'
     token func_tk;
     // where the definition continues after 'func', e.g. at 'text'

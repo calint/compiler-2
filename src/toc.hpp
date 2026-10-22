@@ -2777,7 +2777,22 @@ class toc final {
         generics_.add_func(std::move(name), std::move(info));
     }
 
+    // a method is defined once for its generic type, also when no alias
+    // makes an instance of the type
     auto add_generic_method(const generic_method_info& method) -> void {
+        for (const generic_method_info& known :
+             generics_.get_methods(method.type_tk.text())) {
+
+            if (known.method_name_tk.text() == method.method_name_tk.text()) {
+                throw compile_error{
+                    method.method_name_tk,
+                    std::format(
+                        "generic method '{}.{}' already defined at {}",
+                        method.type_tk.text(), method.method_name_tk.text(),
+                        locations_.human_readable(known.method_name_tk))};
+            }
+        }
+
         generics_.add_method(method);
     }
 
@@ -3343,8 +3358,8 @@ class toc final {
         }
     }
 
-    // a name of a function, variable, constant, data or parameter, which is
-    // used without a qualifier
+    // a name of a type, function, variable, constant, data or parameter, which
+    // is used without a qualifier
     static auto assert_valid_unqualified_name(const token& name_tk) -> void {
         assert_valid_name(name_tk);
 

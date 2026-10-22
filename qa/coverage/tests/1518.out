@@ -1,0 +1,4 @@
+
+1518.baz:7:13: cannot deduce 'T' of generic function 'make', write 'make<...>'
+    var x = make()
+            ^~~~

@@ -109,6 +109,7 @@ class expr_bool_op final : public statement {
                     .is_implied_subexpression{},
                     .first_op_precedence{expr_arith::initial_precedence},
                     .first_expression{std::move(first_expression)},
+                    .destination_type{},
                 }};
 
         ws_pre_op_ = tz.next_whitespace_token();

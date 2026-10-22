@@ -1,0 +1,5 @@
+# a type is not named like a built-in function, its constructors would read as
+# the built-in
+type read {x}
+
+func main() {}

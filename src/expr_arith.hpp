@@ -57,6 +57,11 @@ class expr_arith final : public expression {
     //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
     bool is_implied_subexpression_{};
 
+    // the type of the destination, which a generic call deduces its result
+    // from, e.g. 'make<i8>' of 'x = make()' for an 'i8' 'x'; null when not
+    // known
+    const type* destination_type_{};
+
     // the first element is an enclosed list, e.g. the '(a + b)' of
     // '(a + b) * c'; a first element given by the caller keeps it false: the
     // element before a higher-precedence operator, which makes two or more
@@ -103,6 +108,9 @@ class expr_arith final : public expression {
         // an element the caller has already parsed, e.g. the 'b' of 'b * c' in
         // 'a + b * c'
         std::unique_ptr<statement> first_expression;
+
+        // see 'destination_type_'
+        const type* destination_type{};
     };
 
     expr_arith(toc& tc, tokenizer& tz)
@@ -113,6 +121,7 @@ class expr_arith final : public expression {
                          .is_implied_subexpression{},
                          .first_op_precedence{initial_precedence},
                          .first_expression{},
+                         .destination_type{},
                      }} {}
 
     // the list is located where its first element starts
@@ -120,7 +129,8 @@ class expr_arith final : public expression {
         : expression{opts.first_expression ? position_of(*opts.first_expression)
                                            : tz.cur_position_token()},
           uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
-          is_implied_subexpression_{opts.is_implied_subexpression} {
+          is_implied_subexpression_{opts.is_implied_subexpression},
+          destination_type_{opts.destination_type} {
 
         const toc::parse_nesting_scope nesting{tc, tz};
 
@@ -130,7 +140,7 @@ class expr_arith final : public expression {
         if (opts.first_expression) {
             exprs_.emplace_back(std::move(opts.first_expression));
         } else {
-            parsed_element first{parse_element(tc, tz)};
+            parsed_element first{parse_element(tc, tz, destination_type_)};
             is_first_enclosed_ = first.is_enclosed;
             exprs_.emplace_back(std::move(first.node));
         }
@@ -194,7 +204,7 @@ class expr_arith final : public expression {
             ws_before_ops_.emplace_back(ws_before_op_tk);
             consume_peeked_operator(tz);
 
-            exprs_.emplace_back(parse_element(tc, tz).node);
+            exprs_.emplace_back(parse_element(tc, tz, destination_type_).node);
         }
     }
 
@@ -953,6 +963,7 @@ class expr_arith final : public expression {
                 .is_implied_subexpression{true},
                 .first_op_precedence{next_precedence},
                 .first_expression{std::move(last_elem_in_list)},
+                .destination_type{destination_type_},
             }));
     }
 
@@ -1681,7 +1692,8 @@ class expr_arith final : public expression {
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
-    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
+                                            const type* const destination_type)
         -> parsed_element {
 
         // '-(a + b)' negates the list, so its unary ops come before the '('
@@ -1700,6 +1712,7 @@ class expr_arith final : public expression {
                         .is_implied_subexpression{},
                         .first_op_precedence{initial_precedence},
                         .first_expression{},
+                        .destination_type{destination_type},
                     }),
             };
 
@@ -1713,7 +1726,7 @@ class expr_arith final : public expression {
         uo.put_back(tz);
 
         std::unique_ptr<statement> element{
-            create_statement_in_expr_arith(tc, tz),
+            create_statement_in_expr_arith(tc, tz, destination_type),
         };
 
         if (not uo.is_empty()) {

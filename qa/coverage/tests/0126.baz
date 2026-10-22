@@ -33,7 +33,7 @@ type list {
     data i8[127]
 }
 
-type exit {
+type room_exit {
     name str,
     to i8
 }
@@ -64,7 +64,7 @@ func foozi(src location, dst mut location) {
 func main() {
     var locations = location[128]{}
     var entities = entity[128]{}
-    var exits = exit[1024]{}
+    var exits = room_exit[1024]{}
 
     locations[0].name.data[1] = 0x61
 

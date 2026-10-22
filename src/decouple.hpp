@@ -22,7 +22,10 @@ class stmt_call;
 class expr_any;
 class type;
 
-[[nodiscard]] auto create_statement_in_expr_arith(toc& tc, tokenizer& tz)
+// 'destination_type' is the type a generic call takes for its result, null
+// when not known
+[[nodiscard]] auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
+                                                  const type* destination_type)
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,

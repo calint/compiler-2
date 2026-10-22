@@ -1072,10 +1072,12 @@ class func_instantiator final {
     // e.g. 'func text.print()' of the generic type 'text': every instance of
     // the type gets the method, also those made after this definition
     static auto define_method(toc& tc, const token& func_tk,
-                              const func_head& head) -> void {
+                              const func_head& head,
+                              const token& method_name_tk) -> void {
 
         const generic_method_info method{
             .type_tk{head.name_tk},
+            .method_name_tk{method_name_tk},
             .func_tk{func_tk},
             .start_tk{head.start_tk},
         };
@@ -1361,8 +1363,8 @@ class stmt_def_func_generic final : public statement {
         //       the instances of the types already defined, e.g. 'str.print'
 
         if (head.is_generic_type_method) {
-            skip_signature(tc, head, tz);
-            func_instantiator::define_method(tc, tk, head);
+            const token method_name_tk{skip_signature(tc, head, tz)};
+            func_instantiator::define_method(tc, tk, head, method_name_tk);
         } else {
             // e.g. 'func f<T type> {'
             if (head.open_paren_tk.is_empty()) {
@@ -1370,7 +1372,7 @@ class stmt_def_func_generic final : public statement {
             }
 
             func_instantiator::define_func(tc, tk, head, tz, std::nullopt);
-            skip_signature(tc, head, tz);
+            std::ignore = skip_signature(tc, head, tz);
         }
 
         generic_text_ = tz.skip_braced_block_after(tk);
@@ -1400,9 +1402,13 @@ class stmt_def_func_generic final : public statement {
     // the '(' and the body must follow, else the skip of the body would take
     // the next definition, e.g. 'func g' after 'func f<T type>(x T)'; other
     // errors in the signature are found when an instance is parsed; 'tz' is
-    // after the head
-    static auto skip_signature(const toc& tc, const func_head& head,
-                               tokenizer& tz) -> void {
+    // after the head; returns the name of a method of a generic type, e.g.
+    // 'print' of 'func text.print()', empty for a generic function
+    [[nodiscard]] static auto skip_signature(const toc& tc,
+                                             const func_head& head,
+                                             tokenizer& tz) -> token {
+
+        token method_name_tk;
 
         // e.g. the '.print(' of 'func text.print()' or the '.to<T type>(' of
         // 'func text.to<T type>()'
@@ -1412,8 +1418,10 @@ class stmt_def_func_generic final : public statement {
             // note: 'func_head::names_generic_type' saw the '.'
             assert(not dot_tk.is_empty());
 
-            if (const token name_tk{tz.next_token()}; not name_tk.is_word()) {
-                throw compile_error{tz.position_of(name_tk),
+            method_name_tk = tz.next_token();
+
+            if (not method_name_tk.is_word()) {
+                throw compile_error{tz.position_of(method_name_tk),
                                     "expected method name after '.'"};
             }
 
@@ -1433,6 +1441,8 @@ class stmt_def_func_generic final : public statement {
         };
 
         tz.put_back_token(open_brace_tk);
+
+        return method_name_tk;
     }
 };
 

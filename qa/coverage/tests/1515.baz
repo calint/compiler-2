@@ -1,0 +1,9 @@
+# a method of a generic type is defined once, also when no alias makes an
+# instance of the type
+type text<n> {a i8[n]}
+
+func text.print() {}
+
+func text.print() {}
+
+func main() {}

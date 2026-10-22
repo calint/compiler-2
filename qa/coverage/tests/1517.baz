@@ -1,0 +1,12 @@
+# a generic call takes the type of a built-in destination for its result
+func make<T type>() res T {
+    res = 100
+}
+
+func main() {
+    var x = i8(0)
+    x = make()
+    var y = i16(0)
+    y = make() + 1
+    exit(x + y - 101)
+}
