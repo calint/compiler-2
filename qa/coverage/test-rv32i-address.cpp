@@ -4035,9 +4035,9 @@ auto check_dry_run_leaves_no_trace() -> void {
 auto check_constant_scopes() -> void {
     front_end fe{64};
 
-    fe.tc.add_const(token{}, 0, "global", 1);
+    fe.tc.add_const(token{}, 0, "global", folded_value::untyped(1));
     fe.tc.enter_func("outer");
-    fe.tc.add_const(token{}, 0, "outer_only", 2);
+    fe.tc.add_const(token{}, 0, "outer_only", folded_value::untyped(2));
     fe.tc.enter_func("inner", "path", "");
     assert(fe.tc.scopes().lookup("global").is_constant());
     assert(not fe.tc.scopes().lookup("outer_only").is_constant());
