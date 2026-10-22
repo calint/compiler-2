@@ -213,23 +213,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     keep adding virtuals
     => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
        'std::variant' and rejected it, see 'etc/todo-resolved.txt'
-[p] medium: design: the built-in types have three owners: 'program' owns the
-    'type' objects, 'machine' gets them through 'set_builtin_types' after its
-    constructor ("the machine is made before the program that owns the
-    types") with asserting accessors, and 'toc::builtin_types' holds the set
-    again; the machine is half-built until the program constructor runs
-    (round 8 A-7)
-    => design: the built-in types are stateless (name, size, kind): 'inline
-       const type' constants in type.hpp, e.g. 'builtin::i8'; 'program'
-       registers them in 'type_table' by address; 'machine' reads them
-       directly, 'set_builtin_types', its four pointers and asserts go;
-       'builtin_type_set' becomes a constant or goes
-    => invariant: a built-in type has one object for the whole run, compared
-       by address as today
-    => cost: type.hpp, program.hpp, machine.hpp, toc.hpp, both targets,
-       test-rv32i-address.cpp ('test_types')
-    => rejected: the program made before the machine, the machine is
-       chosen from the options first and the program needs it to parse
 [p] medium: design: 'begin_data' sounds like "open the data section" but also
     emits code: the arithmetic helpers, the sector routines and, on bare
     metal, exit, read and write; so 'emit_string_constants' must leave the

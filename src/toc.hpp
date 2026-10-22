@@ -1785,43 +1785,45 @@ class storage_layout final {
     }
 };
 
-// the types the front end needs by role: the builtin ones given by the
-// program and the ones the machine decides
+// the types the front end needs by role: the builtin ones and the ones the
+// machine decides
 class builtin_types final {
     std::reference_wrapper<const ::machine> machine_;
-    builtin_type_set types_;
+    std::reference_wrapper<const builtin_type_set> types_;
 
   public:
-    builtin_types(const ::machine& backend, const builtin_type_set& types)
-        : machine_{backend}, types_{types} {}
+    explicit builtin_types(const ::machine& backend)
+        : machine_{backend}, types_{backend.builtin_types()} {}
 
     [[nodiscard]] auto address() const -> const type& {
         return machine_.get().address_size_bytes() == sizeof(int32_t)
-                   ? *types_.i32
-                   : *types_.i64;
+                   ? types_.get().i32
+                   : types_.get().i64;
     }
 
     [[nodiscard]] auto boolean() const -> const type& {
-        return *types_.boolean;
+        return types_.get().boolean;
     }
 
     [[nodiscard]] auto default_type() const -> const type& {
         return machine_.get().default_type();
     }
 
-    [[nodiscard]] auto i8() const -> const type& { return *types_.i8; }
+    [[nodiscard]] auto i8() const -> const type& { return types_.get().i8; }
 
     // 'int' and the names of the builtin integer types
     [[nodiscard]] auto is_integer_name(const std::string_view name) const
         -> bool {
 
-        return name == "int" or name == types_.i8->name() or
-               name == types_.i16->name() or name == types_.i32->name() or
-               name == types_.i64->name();
+        const builtin_type_set& types{types_.get()};
+
+        return name == "int" or name == types.i8.name() or
+               name == types.i16.name() or name == types.i32.name() or
+               name == types.i64.name();
     }
 
     [[nodiscard]] auto void_type() const -> const type& {
-        return *types_.void_type;
+        return types_.get().void_type;
     }
 };
 
@@ -2460,13 +2462,11 @@ class toc final {
     };
 
     toc(::machine& backend, const source_files& files,
-        const builtin_type_set& builtin_set, const size_t vars_capacity_bytes,
-        const check_options& checks)
+        const size_t vars_capacity_bytes, const check_options& checks)
         : machine_{backend}, locations_{&files},
           data_{backend.data_alignment()},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
-          builtins_{backend, builtin_set},
-          resolver_{scopes_, backend, generics_, builtins_},
+          builtins_{backend}, resolver_{scopes_, backend, generics_, builtins_},
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
           checks_{checks} {}

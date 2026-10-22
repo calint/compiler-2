@@ -35,6 +35,7 @@
 #include "register_report.hpp" // IWYU pragma: keep
 #include "source_files.hpp"
 #include "toc.hpp"
+#include "type.hpp"
 
 namespace {
 // the sizes of '--vars', '--stack' and '--memory' are multiples of their
@@ -164,9 +165,9 @@ default_binary_file_name(const std::string_view src_file_name,
                                   const source_files& files) -> bool;
 
 [[nodiscard]] auto
-make_backend(const target machine_target, const source_files* const files,
-             const assembler::jump_mode jumps, const size_t stack_size_bytes,
-             const size_t memory_size_bytes,
+make_backend(const target machine_target, const builtin_type_set& builtins,
+             const source_files* const files, const assembler::jump_mode jumps,
+             const size_t stack_size_bytes, const size_t memory_size_bytes,
              const std::string_view binary_file_name)
     -> std::unique_ptr<machine>;
 
@@ -527,6 +528,9 @@ examples:
 [[nodiscard]] auto compile_file(const options& opts) -> int {
     source_files files;
 
+    // the machine and the program refer to them
+    const builtin_type_set builtins;
+
     try {
         files.add(opts.src_file_name,
                   source_files::read_file(opts.src_file_name));
@@ -544,7 +548,7 @@ examples:
         };
 
         const std::unique_ptr<machine> backend{
-            make_backend(opts.machine_target, &files, jumps,
+            make_backend(opts.machine_target, builtins, &files, jumps,
                          opts.stack_size_bytes, opts.memory_size_bytes, binary),
         };
 
@@ -871,32 +875,34 @@ default_binary_file_name(const std::string_view src_file_name,
 }
 
 [[nodiscard]] auto
-make_backend(const target machine_target, const source_files* const files,
-             const assembler::jump_mode jumps, const size_t stack_size_bytes,
-             const size_t memory_size_bytes,
+make_backend(const target machine_target, const builtin_type_set& builtins,
+             const source_files* const files, const assembler::jump_mode jumps,
+             const size_t stack_size_bytes, const size_t memory_size_bytes,
              const std::string_view binary_file_name)
     -> std::unique_ptr<machine> {
 
     // todo: x86_64 writes no binary, see etc/todo.txt
     if (machine_target == target::x86_64) {
-        return std::make_unique<machine_x86_64>(nullptr, files, jumps);
+        return std::make_unique<machine_x86_64>(nullptr, builtins, files,
+                                                jumps);
     }
 
     if (machine_target == target::rv32i) {
-        return std::make_unique<machine_rv32i_linux>(nullptr, files, jumps,
-                                                     binary_file_name);
+        return std::make_unique<machine_rv32i_linux>(nullptr, builtins, files,
+                                                     jumps, binary_file_name);
     }
 
     if (machine_target == target::rv32i_qemu) {
-        return std::make_unique<machine_rv32i_qemu>(
-            nullptr, files, jumps, binary_file_name, stack_size_bytes);
+        return std::make_unique<machine_rv32i_qemu>(nullptr, builtins, files,
+                                                    jumps, binary_file_name,
+                                                    stack_size_bytes);
     }
 
     // the command line accepts only these four targets
     assert(machine_target == target::rv32i_fpga);
 
     return std::make_unique<machine_rv32i_fpga>(
-        nullptr, files, jumps, binary_file_name, stack_size_bytes,
+        nullptr, builtins, files, jumps, binary_file_name, stack_size_bytes,
         memory_size_bytes);
 }
 

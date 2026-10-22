@@ -47,12 +47,14 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
   public:
     machine_rv32i_bare_metal(std::ostream* const direct_output,
+                             const builtin_type_set& builtins,
                              const source_files* const files,
                              const jump_mode jumps,
                              const std::string_view binary_file_name,
                              const size_t stack_size_bytes,
                              const size_t memory_size_bytes)
-        : machine_rv32i{direct_output, files, jumps, binary_file_name},
+        : machine_rv32i{direct_output, builtins, files, jumps,
+                        binary_file_name},
           stack_size_bytes_{stack_size_bytes},
           memory_size_bytes_{memory_size_bytes} {
 

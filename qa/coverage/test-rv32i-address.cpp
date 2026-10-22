@@ -117,24 +117,13 @@ auto unary_of(const char op) -> machine::arithmetic_operator {
                      : machine::arithmetic_operator::complement;
 }
 
-const type integer64{"i64", 8, type_kind::builtin};
-const type integer{"i32", 4, type_kind::builtin};
-const type half{"i16", 2, type_kind::builtin};
-const type byte{"i8", 1, type_kind::builtin};
-const type boolean{"bool", 1, type_kind::boolean};
-
-// the built-in types the checks give the backend and the front end, the
-// front end checks need no 'void' of its own
-auto test_types() -> builtin_type_set {
-    return {
-        .void_type{&integer},
-        .boolean{&boolean},
-        .i64{&integer64},
-        .i32{&integer},
-        .i16{&half},
-        .i8{&byte},
-    };
-}
+// the built-in types the checks give the backend and the front end
+const builtin_type_set test_builtins;
+const type& integer64{test_builtins.i64};
+const type& integer{test_builtins.i32};
+const type& half{test_builtins.i16};
+const type& byte{test_builtins.i8};
+const type& boolean{test_builtins.boolean};
 
 // the diagnostics of the rejected calls need a real position
 const token source_tk{token::position(0, 0, 1)};
@@ -162,11 +151,7 @@ auto rejected_with(const action_t& action, const std::string_view text = {})
 struct captured_rv32i {
     assembly_output output;
     std::ostream stream{output.rdbuf()};
-    machine_rv32i_linux backend{&stream};
-
-    captured_rv32i() {
-        backend.set_builtin_types(test_types());
-    }
+    machine_rv32i_linux backend{&stream, test_builtins};
 
     // the text that 'emit' adds, the output is empty again afterwards
     auto emitted(const auto& emit) -> std::string {
@@ -182,11 +167,7 @@ struct captured_rv32i {
 // an x86_64 backend whose output is captured
 struct captured_x86_64 {
     std::ostringstream output;
-    machine_x86_64 backend{&output, {}};
-
-    captured_x86_64() {
-        backend.set_builtin_types(test_types());
-    }
+    machine_x86_64 backend{&output, test_builtins, {}};
 };
 
 // allocates scratch registers so that a check proves it needs no more
@@ -213,7 +194,7 @@ auto compiled_rv32i(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{&output};
+    machine_rv32i_linux compiler{&output, test_builtins};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -226,7 +207,7 @@ auto compiled_x86_64(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_x86_64 compiler{&output, &files};
+    machine_x86_64 compiler{&output, test_builtins, &files};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -769,8 +750,7 @@ auto check_equal_size_choice() -> void {
     for (const assembler::jump_mode jumps :
          {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{&output, {}, jumps};
-        backend.set_builtin_types(test_types());
+        machine_rv32i_linux backend{&output, test_builtins, {}, jumps};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -806,8 +786,7 @@ auto check_version_state_kept() -> void {
     for (const machine::kept_version kept :
          {machine::kept_version::smaller, machine::kept_version::last}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{&output, {}, assembler::jump_mode::resolved};
-        backend.set_builtin_types(test_types());
+        machine_rv32i_linux backend{&output, test_builtins, {}, assembler::jump_mode::resolved};
         backend.set_kept_version(kept);
         backend.start();
 
@@ -849,8 +828,7 @@ auto check_version_state_kept() -> void {
 // the jump optimizer sees the jumps and labels that the backend emits
 auto check_backend_jump_optimization() -> void {
     std::ostringstream output;
-    machine_rv32i_linux backend{&output, {}, assembler::jump_mode::optimized};
-    backend.set_builtin_types(test_types());
+    machine_rv32i_linux backend{&output, test_builtins, {}, assembler::jump_mode::optimized};
     backend.start();
 
     const operand left{operand::reg("a0", integer)};
@@ -952,9 +930,8 @@ struct located_rv32i {
     // 'value' on the second line, at column 5
     const token location{0, {}, 10, "value", 15, {}, 2, false};
 
-    located_rv32i() : backend{&comments, &files} {
+    located_rv32i() : backend{&comments, test_builtins, &files} {
         files.add("test.baz", "first\n    value");
-        backend.set_builtin_types(test_types());
     }
 };
 
@@ -2328,8 +2305,7 @@ auto check_scratch_register_pool() -> void {
 auto check_multiply_divide_routines() -> void {
     for (const char operation : {'*', '/', '%', '+'}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{&output};
-        backend.set_builtin_types(test_types());
+        machine_rv32i_linux backend{&output, test_builtins};
 
         const auto computed = [&](const operand& dst, const operand& src) {
             if (operation == '*') {
@@ -2465,8 +2441,7 @@ auto generate_noninline() -> void {
     // note: 2032 is where 'start' puts the variables base past 'dat'
     constexpr size_t variables_base_offset{2032};
 
-    machine_rv32i_linux backend{&std::cout};
-    backend.set_builtin_types(test_types());
+    machine_rv32i_linux backend{&std::cout, test_builtins};
     backend.start();
 
     hand_written(backend, "    addi sp, sp, -128\n    sw sp, 124(sp)");
@@ -2564,8 +2539,7 @@ auto generate_noninline() -> void {
 auto generate_frame_checks() -> void {
     constexpr int vars_size_bytes{256};
 
-    machine_rv32i_linux backend{&std::cout};
-    backend.set_builtin_types(test_types());
+    machine_rv32i_linux backend{&std::cout, test_builtins};
     backend.start();
 
     // 's3' is where the overflow handler continues
@@ -2632,8 +2606,7 @@ auto generate_long_loop() -> void {
     // note: 3 iterations of 'foo'
     constexpr int64_t iteration_count{3};
 
-    machine_rv32i_linux backend{&std::cout};
-    backend.set_builtin_types(test_types());
+    machine_rv32i_linux backend{&std::cout, test_builtins};
     backend.start();
     hand_written(backend, "    addi sp, sp, -16");
 
@@ -2676,8 +2649,7 @@ auto generate_long_loop() -> void {
 // jumps around padding of 8 KiB (needs 'j') and 1.08 MiB (needs 'jump'),
 // executed in every direction
 auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
-    machine_rv32i_linux backend{&std::cout, {}, jumps};
-    backend.set_builtin_types(test_types());
+    machine_rv32i_linux backend{&std::cout, test_builtins, {}, jumps};
     backend.start();
 
     // buffered output must come from the backend, so pad with 'xori' on a
@@ -2787,7 +2759,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{&std::cout, {}, jumps};
+    machine_rv32i_linux compiler{&std::cout, test_builtins, {}, jumps};
 
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(std::cout);
@@ -2899,8 +2871,7 @@ auto generate_bounds_matrix(machine_rv32i& backend) -> void {
 }
 
 auto generate_bounds() -> void {
-    machine_rv32i_linux backend{&std::cout};
-    backend.set_builtin_types(test_types());
+    machine_rv32i_linux backend{&std::cout, test_builtins};
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
     generate_bounds_matrix(backend);
@@ -3872,8 +3843,7 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 // the end of 'main', and the entry points that 'test-rv32i.sh' starts
 // separately (division by zero, bounds failures) with the failure path
 auto generate_runtime_program() -> void {
-    machine_rv32i_linux backend{&std::cout};
-    backend.set_builtin_types(test_types());
+    machine_rv32i_linux backend{&std::cout, test_builtins};
 
     std::println(".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
@@ -3934,18 +3904,16 @@ auto generate_runtime_program() -> void {
 struct front_end {
     std::ostringstream output;
     source_files files;
-    machine_x86_64 backend{&output, &files};
+    machine_x86_64 backend{&output, test_builtins, &files};
     toc tc;
 
     // errors need a token with a line
     token at{0, {}, 0, {}, 0, {}, 1, false};
 
     explicit front_end(const size_t vars_capacity_bytes_in)
-        : tc{backend, files, test_types(), vars_capacity_bytes_in,
-             check_options{}} {
+        : tc{backend, files, vars_capacity_bytes_in, check_options{}} {
 
         files.add("test.baz", "");
-        backend.set_builtin_types(test_types());
         tc.begin_compile();
         tc.enter_block();
     }

@@ -51,17 +51,6 @@ struct byte_range {
 // of its size
 enum class type_kind : uint8_t { user, builtin, boolean };
 
-// the types of the language that the source does not define, owned by the
-// program and given to the front end and the machine
-struct builtin_type_set {
-    const type* void_type{};
-    const type* boolean{};
-    const type* i64{};
-    const type* i32{};
-    const type* i16{};
-    const type* i8{};
-};
-
 class type final {
     std::string name_;
     size_t size_bytes_{};       // total size of type in bytes including padding
@@ -282,4 +271,24 @@ class type final {
             .size_bytes{size_bytes},
         });
     }
+};
+
+// the types of the language that the source does not define, made once before
+// the machine and the program, which refer to them; a type is compared by
+// address, so the set is not copied
+class builtin_type_set final {
+  public:
+    builtin_type_set() = default;
+    builtin_type_set(const builtin_type_set&) = delete;
+    builtin_type_set(builtin_type_set&&) = delete;
+    auto operator=(const builtin_type_set&) -> builtin_type_set& = delete;
+    auto operator=(builtin_type_set&&) -> builtin_type_set& = delete;
+    ~builtin_type_set() = default;
+
+    const type void_type{"void", 0, type_kind::builtin};
+    const type boolean{"bool", sizeof(int8_t), type_kind::boolean};
+    const type i64{"i64", sizeof(int64_t), type_kind::builtin};
+    const type i32{"i32", sizeof(int32_t), type_kind::builtin};
+    const type i16{"i16", sizeof(int16_t), type_kind::builtin};
+    const type i8{"i8", sizeof(int8_t), type_kind::builtin};
 };

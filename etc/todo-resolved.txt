@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: design: the built-in types have three owners: 'program' owns the
+    'type' objects, 'machine' gets them through 'set_builtin_types' after its
+    constructor ("the machine is made before the program that owns the
+    types") with asserting accessors, and 'toc::builtin_types' holds the set
+    again; the machine is half-built until the program constructor runs
+    (round 8 A-7)
+    => design: the built-in types are stateless (name, size, kind): 'inline
+       const type' constants in type.hpp, e.g. 'builtin::i8'; 'program'
+       registers them in 'type_table' by address; 'machine' reads them
+       directly, 'set_builtin_types', its four pointers and asserts go;
+       'builtin_type_set' becomes a constant or goes
+    => invariant: a built-in type has one object for the whole run, compared
+       by address as today
+    => cost: type.hpp, program.hpp, machine.hpp, toc.hpp, both targets,
+       test-rv32i-address.cpp ('test_types')
+    => rejected: the program made before the machine, the machine is
+       chosen from the options first and the program needs it to parse
+    => done (2026-10-22), revised: a 'type' cannot be a constant, its
+       'std::string' is not constexpr in libstdc++ and a global or a static
+       local fails '-Wglobal-constructors' and '-Wexit-time-destructors';
+       'builtin_type_set' owns the six types (not copyable), 'compile_file'
+       makes it before the machine, every machine constructor takes it,
+       'program' and 'toc' reach it through 'machine::builtin_types()' so
+       there is one path; 'set_builtin_types', the four pointers and their
+       asserts and 'program::builtin_set' are gone; the backend test driver
+       uses one 'test_builtins' and a real 'void'
 [x] easy: design: the keywords of a statement in a block are dispatched in two
     places split by include cycle, not by role: 'stmt_block::parse_statement'
     makes var/let, dat (error), break, continue, return and array_copy,

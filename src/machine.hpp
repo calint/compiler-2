@@ -238,11 +238,8 @@ class machine {
     // backend tests use, null for a build
     std::ostream* direct_output_;
     source_locations locations_;
+    std::reference_wrapper<const builtin_type_set> builtins_;
     assembler::jump_mode jump_mode_;
-    const type* type_i64_{};
-    const type* type_i32_{};
-    const type* type_i16_{};
-    const type* type_i8_{};
     size_t usage_max_scratch_regs_{};
     // the image of the sd card on targets with an operating system
     std::string sd_card_file_name_;
@@ -304,9 +301,10 @@ class machine {
   public:
     // 'files' locate the tokens of comments, backend tests may leave it null
     // and give a stream that receives the lines as they are emitted
-    machine(std::ostream* const direct_output, const source_files* const files,
-            const assembler::jump_mode jumps)
-        : direct_output_{direct_output}, locations_{files}, jump_mode_{jumps} {}
+    machine(std::ostream* const direct_output, const builtin_type_set& builtins,
+            const source_files* const files, const assembler::jump_mode jumps)
+        : direct_output_{direct_output}, locations_{files}, builtins_{builtins},
+          jump_mode_{jumps} {}
 
     machine(const machine&) = delete;
     machine(machine&&) = delete;
@@ -796,6 +794,11 @@ class machine {
         target_assembler().begin_body(std::move(function), std::move(label));
     }
 
+    // the set the front end shares, made before the machine
+    [[nodiscard]] auto builtin_types() const -> const builtin_type_set& {
+        return builtins_.get();
+    }
+
     // synthetic tokens and standalone backend calls have no source location
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void {
@@ -1088,14 +1091,6 @@ class machine {
         target_assembler().add_separator_newline();
     }
 
-    // the machine is made before the program that owns the types
-    auto set_builtin_types(const builtin_type_set& types) -> void {
-        type_i64_ = types.i64;
-        type_i32_ = types.i32;
-        type_i16_ = types.i16;
-        type_i8_ = types.i8;
-    }
-
     auto set_kept_version(const kept_version kept) -> void {
         kept_version_ = kept;
     }
@@ -1348,27 +1343,19 @@ class machine {
     //
 
     [[nodiscard]] auto builtin_type_i16() const -> const type& {
-        assert(type_i16_ != nullptr);
-
-        return *type_i16_;
+        return builtins_.get().i16;
     }
 
     [[nodiscard]] auto builtin_type_i32() const -> const type& {
-        assert(type_i32_ != nullptr);
-
-        return *type_i32_;
+        return builtins_.get().i32;
     }
 
     [[nodiscard]] auto builtin_type_i64() const -> const type& {
-        assert(type_i64_ != nullptr);
-
-        return *type_i64_;
+        return builtins_.get().i64;
     }
 
     [[nodiscard]] auto builtin_type_i8() const -> const type& {
-        assert(type_i8_ != nullptr);
-
-        return *type_i8_;
+        return builtins_.get().i8;
     }
 
     // the comments of a lower bound check, which the upper comparison or an

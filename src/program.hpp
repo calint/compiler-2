@@ -279,14 +279,6 @@ class assignment_analysis final {
 };
 
 class program final {
-    // built-in types
-    type type_void_{"void", 0, type_kind::builtin};
-    type type_i64_{"i64", sizeof(int64_t), type_kind::builtin};
-    type type_i32_{"i32", sizeof(int32_t), type_kind::builtin};
-    type type_i16_{"i16", sizeof(int16_t), type_kind::builtin};
-    type type_i8_{"i8", sizeof(int8_t), type_kind::builtin};
-    type type_bool_{"bool", type_i8_.size_bytes(), type_kind::boolean};
-
     // the statements of one file, in 'statements_'
     struct file_statements {
         size_t file_ix{};
@@ -309,8 +301,7 @@ class program final {
     // the main file is the first of 'files', the included ones are added
     program(machine& backend, source_files& files, const size_t vars_size_bytes,
             const check_options& checks)
-        : files_{files},
-          tc_{backend, files, builtin_set(), vars_size_bytes, checks} {
+        : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
 
         // note: 'main' rejects a larger '--vars' as an option error
         assert(vars_size_bytes <= backend.max_storage_bytes());
@@ -318,23 +309,25 @@ class program final {
         // a built-in has no place in the source
         const token src_loc_tk;
 
+        const builtin_type_set& builtins{backend.builtin_types()};
+
         // the built-in functions are called like the defined ones, so their
         // names are declared the same way
-        tc_.add_func(src_loc_tk, "exit", type_void_, nullptr, {});
-        tc_.add_func(src_loc_tk, "sector_read", type_void_, nullptr, {});
-        tc_.add_func(src_loc_tk, "sector_write", type_void_, nullptr, {});
+        tc_.add_func(src_loc_tk, "exit", builtins.void_type, nullptr, {});
+
+        tc_.add_func(src_loc_tk, "sector_read", builtins.void_type, nullptr,
+                     {});
+
+        tc_.add_func(src_loc_tk, "sector_write", builtins.void_type, nullptr,
+                     {});
 
         // the built-in types are looked up by name like the defined ones
-        tc_.add_type(src_loc_tk, type_i64_);
-        tc_.add_type(src_loc_tk, type_i32_);
-        tc_.add_type(src_loc_tk, type_i16_);
-        tc_.add_type(src_loc_tk, type_i8_);
-        tc_.add_type(src_loc_tk, type_bool_);
-        tc_.add_type(src_loc_tk, type_void_);
-
-        machine& x{tc_.machine()};
-
-        x.set_builtin_types(builtin_set());
+        tc_.add_type(src_loc_tk, builtins.i64);
+        tc_.add_type(src_loc_tk, builtins.i32);
+        tc_.add_type(src_loc_tk, builtins.i16);
+        tc_.add_type(src_loc_tk, builtins.i8);
+        tc_.add_type(src_loc_tk, builtins.boolean);
+        tc_.add_type(src_loc_tk, builtins.void_type);
 
         // the default type has a name of its own so that it is portable
         tc_.add_type_alias(src_loc_tk, "int", tc_.builtins().default_type());
@@ -391,18 +384,6 @@ class program final {
     }
 
   private:
-    // the types the front end and the machine need by role
-    [[nodiscard]] auto builtin_set() const -> builtin_type_set {
-        return {
-            .void_type{&type_void_},
-            .boolean{&type_bool_},
-            .i64{&type_i64_},
-            .i32{&type_i32_},
-            .i16{&type_i16_},
-            .i8{&type_i8_},
-        };
-    }
-
     auto compile() -> void {
         tc_.enter_block();
 
