@@ -1,0 +1,12 @@
+# an instance in parentheses is compared as memory
+
+type point {x, y}
+
+func main() {
+    var p = point{1, 2}
+    var q = p
+    if (p) == ((q)) {
+        exit(0)
+    }
+    exit(1)
+}

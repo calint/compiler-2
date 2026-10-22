@@ -294,6 +294,18 @@ class expr_arith final : public expression {
         }
     }
 
+    // e.g. the 'p' of '(p) == q'
+    auto
+    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const lea_request& request,
+                    const std::function_ref<void(const operand&)> use) const
+        -> void override {
+
+        assert(exprs_.size() == 1);
+
+        exprs_.at(0)->compile_address(tc, indent, src_loc_tk, request, use);
+    }
+
     auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
                          const bool inverted) const -> void override {
 

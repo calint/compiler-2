@@ -4537,3 +4537,7 @@ SRC=1414 && COMPERR
 # an operator on a whole array; the path of an 'include' decodes its escapes
 SRC=1415 && COMPERR
 SRC=1416 && EXP=0 && RUN
+
+# an instance or an array in parentheses is compared as memory
+SRC=1417 && EXP=0 && RUN
+SRC=1418 && EXP=1 && RUN
