@@ -1,0 +1,16 @@
+# a copy of a small instance needs one register, not 'rax', which here holds a
+# value of the expression
+
+type point {x, y}
+
+func cp(a point) res {
+    var b = a
+    res = b.x
+}
+
+func main() {
+    var q = point{1, 2}
+    var a = 1
+    var n = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + cp(q)))))))))))
+    exit(n)
+}

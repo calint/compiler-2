@@ -541,12 +541,14 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "size <= {} B, use mov",
                 threshold_for_rep_movs_size_bytes_);
 
-        reserve_named_register(src_loc_tk, indent, "rax", default_type());
+        const operand tmp{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
 
         for_each_part(
             size_bytes, size_qword_,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
-                const operand reg{sized_register("rax", part_size_bytes)};
+                const operand reg{sized_register(tmp, part_size_bytes)};
 
                 mov(src_loc_tk, indent, reg,
                     memory_part(src, part_size_bytes, offset));
@@ -555,7 +557,7 @@ class machine_x86_64 final : public machine {
                     memory_part(dst, part_size_bytes, offset), reg);
             });
 
-        release_named_register(src_loc_tk, indent, "rax");
+        free_scratch_register(src_loc_tk, indent, tmp);
     }
 
     // an immediate store is one instruction without a register while a copy

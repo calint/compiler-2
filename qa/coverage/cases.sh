@@ -4559,3 +4559,6 @@ SRC=1426 && COMPERR
 
 # the line of an error after a blank line and a comment line
 SRC=1427 && COMPERR
+
+# a small copy takes any free register
+SRC=1428 && EXP=12 && RUN
