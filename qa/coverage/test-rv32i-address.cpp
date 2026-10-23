@@ -10,6 +10,7 @@
 #include "../../src/machine_x86_64.hpp"
 #include "../../src/program.hpp"
 #include "../../src/register_report.hpp" // IWYU pragma: keep
+#include "../../src/stmt_identifier_impl.hpp" // IWYU pragma: keep
 
 // ============================================================================
 // test driver of the RV32I backend ('test-rv32i.sh' builds and runs it)
@@ -2841,7 +2842,7 @@ auto emit_bounds_case(machine_rv32i& backend, const bounds_case& parameters,
             .array_count{parameters.size},
             .allow_end{parameters.allow_end},
         },
-        {.upper{parameters.upper}, .lower{parameters.lower}, .with_line{}});
+        {.upper{parameters.upper}, .lower{parameters.lower}});
 
     backend.free_named_register(token{}, 0, count_register);
 
@@ -3881,7 +3882,8 @@ auto generate_runtime_program() -> void {
     source_files files;
     files.add("test.baz", "");
 
-    machine_rv32i_linux backend{test_builtins, files};
+    // the failed checks report their line, see 'bounds_line_'
+    machine_rv32i_linux backend{test_builtins, files, {.reports_line{true}}};
 
     hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
@@ -3922,11 +3924,11 @@ auto generate_runtime_program() -> void {
         backend.check_bounds(
             location, 1,
             machine::bounds_range::index(operand::reg("a0", integer), 4),
-            {.upper{true}, .lower{true}, .with_line{true}});
+            {.upper{true}, .lower{true}});
         backend.exit(token{}, 1, operand::imm(0, integer));
     }
 
-    backend.emit_used_failure_handlers(true);
+    backend.emit_used_failure_handlers();
     hand_written(backend, "failure:\n    li a0, 1\n    li a7, 93\n    ecall");
     backend.emit_used_routines();
     backend.begin_data(4);

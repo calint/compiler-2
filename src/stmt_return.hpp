@@ -44,7 +44,7 @@ class stmt_return final : public statement {
             return;
         }
 
-        if (not func_frm.is_inlined_func()) {
+        if (not func_frm.is_compiled_in_place()) {
             x.return_function(indent);
             return;
         }

@@ -250,22 +250,21 @@ class program final {
             const check_options& checks)
         : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
 
-        // a built-in has no place in the source
-        const token src_loc_tk;
-
         const builtin_type_set& builtins{backend.builtin_types()};
 
         // the built-in types are looked up by name like the defined ones
-        tc_.add_type(src_loc_tk, builtins.i64);
-        tc_.add_type(src_loc_tk, builtins.i32);
-        tc_.add_type(src_loc_tk, builtins.i16);
-        tc_.add_type(src_loc_tk, builtins.i8);
-        tc_.add_type(src_loc_tk, builtins.boolean);
-        tc_.add_type(src_loc_tk, builtins.void_type);
+        const std::array<const type*, 6> builtin_types{
+            &builtins.i64, &builtins.i32,     &builtins.i16,
+            &builtins.i8,  &builtins.boolean, &builtins.void_type,
+        };
+
+        for (const type* const tpe : builtin_types) {
+            tc_.add_builtin_type(tpe->name(), *tpe);
+        }
 
         // the default type has a name of its own so that it is portable
-        tc_.add_type_alias(src_loc_tk, reserved_names::default_type_name,
-                           tc_.builtins().default_type());
+        tc_.add_builtin_type(reserved_names::default_type_name,
+                             tc_.builtins().default_type());
 
         {
             const toc::frame_scope root{tc_, frame::block()};
@@ -327,7 +326,7 @@ class program final {
 
         machine& x{tc_.machine()};
 
-        x.emit_used_failure_handlers(tc_.checks().with_line);
+        x.emit_used_failure_handlers();
         x.emit_used_routines();
 
         emit_read_only_data(tc_);

@@ -122,6 +122,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             by flags; an 'expr_array' node with the form as a variant for
             the initializers, 'expr_any' a single value (a new class, plan
             the call sites first)
+            => done (2026-10-23), inside 'expr_any': the form is a variant
+               of 'single_value', 'string_array', 'element_list' (with its
+               'array_prefix'), 'zero_array' and 'array_copy', each holding
+               only its own tokens; the flags 'is_array_', 'is_identifier_'
+               and the loose tokens gone, the interface kept (a separate
+               'expr_array' class would move the form test to the four
+               holders that take either); no output change
        C.2. 'expr_type': "exactly one of a copy, a call, a field list" as a
             variant
             => done (2026-10-23): 'value_' is a variant of 'field_list',
@@ -203,12 +210,29 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        F.1. 'frame' holds the fields of five kinds under asserts: a function
             part (bindings, result, parameters, path flag, body uses, its
             own storage base) and a root part as optional members
+            => done (2026-10-23): 'frame::function_part' (call path, return
+               label, bindings, path flag, result and parameter names, body
+               uses) and 'frame::storage_base' (base register, peak size) are
+               optional members; 'is_func' and 'has_storage_base' tell them,
+               the accessors assert; the root keeps its padding field (one
+               field); no output change
        F.2. the storage total is kept in 'storage_layout' and in the frames
             and synced by hand: derived from the frames, 'storage_layout' no
             longer writes into the frames (after F.1)
+            => done (2026-10-23): 'storage_layout::vars_size_bytes' sums the
+               frames, the kept total and 'release_scope' gone
+               ('release_root' resets the padding flag); the peak is recorded
+               only under the capacity check, where the dats are placed
+               (the parse wrapped the unsigned 'used' size before, then
+               forgot it); no output change
        F.3. definition order visibility is written five times with
             'exists'/'has' pairs and three spellings of "always visible": one
             'ordered_table' with 'find_visible' and 'find_any'
+            => deferred (2026-10-23): the rule is one function
+               ('definition_order::is_visible'); a 'get' that checks it
+               would review 129 lookups, and the generic functions (methods
+               always visible) and the globals (absent means visible) keep
+               rules of their own
        F.4. array-ness has four encodings ('array_count' 0, 'is_array' with
             'array_len' in 'var_info', 'ident_info', 'destination'): one
             'array_shape' {none, sized n, unsized}
@@ -218,6 +242,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'function_table', built-in types registered by the table with a
             flag (no empty-token sentinel), 'generic_arg' kind as a variant,
             'is_inlined_func' named 'is_compiled_in_place'
+            => partly done (2026-10-23): built-in types registered by
+               'type_table::add_builtin' with a flag ('is_builtin'), the
+               empty-token sentinel gone; 'is_compiled_in_place'; the rest
+               open
        F.7. large, plan first: a binding stores its resolved root and steps
             instead of the caller's text, the resolver walk returns the root
             variable, 'storage_of' and 'make_ident_info' cannot disagree
@@ -227,20 +255,57 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'failure_exit_codes_', 'exit_code_of' and 'emit_panic_exit'; the
             invariant holds for failed checks, not the bare metal division
             trap
+            => done (2026-10-23): the fpga overrides, 'reports_line', the
+               exit code table, 'emit_panic_exit' and 'exit_code_of' gone; fpga
+               prints 'panic: ...' and exits 255 like rv32i-qemu; the 36
+               'NNN.rv32i-fpga.exit' and 'expected_exit_code' gone, 76
+               'NNN.rv32i-fpga.out' gone (74 equal to 'NNN.out' after
+               'UPDATE=1', two empty orphans: 0314 runs on x86_64 only, 0695
+               is a compile error); '--stack=16' still says 48 B
        G.2. the failure handlers emitted once in 'machine' (both backends
             write the same shape, two 'line_report_emitted_' flags, the sd
             card handler copied on x86_64) (after G.1)
+            => deferred (2026-10-23): after G.1 and G.3 the two handlers
+               differ in the line stubs (x86_64 sets rbp in a stub per line,
+               rv32i loads a0 at the check), the message print and the data;
+               a shared skeleton needs five virtual steps for about thirty
+               lines
        G.3. '--checks=line' one value the backend reads, the 'with_line'
             parameters (about 45) go (R11 A-2, after G.1)
+            => done (2026-10-23): 'target_options::reports_line' set from
+               '--checks=line', 'machine::reports_line()'; 'runtime_check' and
+               'bounds_check_options' lose 'with_line'; the line flag
+               parameters of 14 backend helpers go, and the 'runtime_check'
+               parameters that only carried it; a handler reports the line
+               when the machine does and the handler takes one, decided in
+               'branch_to_failure' and 'failure_label' (a frame overflow no
+               longer passes 'false'); the handler emit keeps the flag
+               'emit_used_failure_handlers' computes; no output change
        G.4. the register contract of the built-in calls in 'machine' from
             the argument and result registers of the backend, the
             hard-coded register asserts go
+            => done (2026-10-23): 'machine::assert_builtin_registers'
+               checks the operands of 'read', 'write' and the sector calls
+               against 'registers_for_builtin_function' in both backends; the
+               eleven hard-coded register asserts gone; no output change
        G.5. the stack bound owned by the bare metal backend, the
             unreachable overrides go
+            => done (2026-10-23): 'machine::is_stack_bounded' defaults to
+               false, 'check_stack_capacity' and 'emit_stack_limit_load'
+               default to 'std::unreachable()' with the note that only a
+               bounded target is asked; the x86_64 and rv32i linux overrides
+               gone; the check stays in 'machine_rv32i', which holds the
+               private constants it needs; no output change
        G.6. small: 'emit_data_array' takes a span, the comment marker in
             'assembler', the bare metal memory size passed explicitly, a
             'backend_held' flag in the register pool, one
             'is_register_held'
+            => register items deferred (2026-10-23): x86_64 'is_allocated'
+               asks the allocations, rv32i 'is_register_allocated' also the
+               protected registers ('is_unavailable'); one query would change
+               a meaning; also found: 'qa/coverage/test-rv32i.sh' did not
+               link since the header restructure, its driver now includes
+               'stmt_identifier_impl.hpp' like 'main.cpp'
        G.7. optional: 'start'/'finish' as template methods; one traits
             struct for the constant getters
     => order: A, B.1, B.3, B.2, D, E, C, F.1-F.6, G.1-G.6, then F.7; B.4,
@@ -984,42 +1049,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        check an uncalled inlined function with every register free, as a
        caller at the top of 'main' gives, and excuse call-dependent errors
        only when the function takes arguments
-[p] medium: rv32i-fpga: a panic prints nothing and exits with a code per
-    failure (249 to 255), '--checks=line' is turned off ('reports_line'); the
-    smallest '--stack' (48 B) counts 16 B of line digits it never writes
-    (G1-6); plan: fpga prints like x86_64 and rv32i-qemu
-    => problem: the uart is there, the shared rv32i handlers already print
-       through 'emit_write_call', fpga overrides all seven of them
-    => design:
-       1. 'machine_rv32i_fpga': remove the seven handler overrides,
-          'emit_panic_exit', the seven exit code constants and the
-          'reports_line' override; fpga then prints 'panic: bounds at line
-          12' and exits with 'panic_exit_code' (255) like every target
-       2. 'machine::reports_line' and its use in 'main.cpp' go, no target
-          returns false any more
-       3. the fpga class comment and README say it prints panics
-       4. G1-6 is gone: 48 B is what fpga then pushes
-       5. qa: 'NNN.rv32i-fpga.exit' and 'expected_exit_code' go (every such
-          file holds a failure code), 'cases.sh' header updated
-    => rejected: keep a code per failure, the shared line routine exits
-       with one code, carrying it costs a register and code in every
-       handler, and the message now tells the failures apart
-    => rejected: fpga overrides that print, duplicates of the shared ones
-    => also (R11 A-2): '--checks=line' is decided in 'main' by
-       'reports_line', copied into every 'runtime_check' and
-       'bounds_check_options' and passed to 'emit_used_failure_handlers';
-       with 'reports_line' gone it becomes one value the backend reads, the
-       check sites and the emit lose their 'with_line'
-    => invariant: every target prints the same panic text for a source
-    => tests: 'UPDATE=1' for rv32i-fpga, then remove each
-       'NNN.rv32i-fpga.out' equal to the file the target falls back to;
-       test-cli: fpga '--stack=16' still says 48 B, fpga '--checks=line'
-       prints the line
-    => after: the seven 'emit_*_failure_handler' virtuals pair a label with
-       a name in each backend and 'program::emit_failure_handlers' has seven
-       matching blocks; one table {check, label, name, takes a line} in
-       'machine', one virtual 'emit_failure_handler(label, name, with_line)'
-       (round 7 X-3, R-4)
 [ ] medium: aliasing: 'destination' as a variant '{none, reg, storage}' with
     the operand and the 'storage_path' only in the storage kind; today the
     kind, an empty storage and an empty operand are kept consistent by

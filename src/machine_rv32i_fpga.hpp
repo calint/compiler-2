@@ -1,41 +1,20 @@
 #pragma once
 
-#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <format>
 #include <string_view>
-#include <utility>
 
 #include "assembler_rv32i.hpp"
 #include "compile_error.hpp"
 #include "machine_rv32i_bare_metal.hpp"
-#include "operand.hpp"
-#include "token.hpp"
 
 // runs the flat image loaded at address 0 on the fpga or its emulator,
-// input and output go through the memory mapped uart
+// input and output go through the memory mapped uart, a panic prints its
+// message there like on rv32i-qemu
 
 class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
-    // the exit code of each failure, the program prints no message so the code
-    // tells the failure apart
-    struct failure_exit_code {
-        std::string_view handler_label;
-        int code{};
-    };
-
-    static constexpr std::array<failure_exit_code, 7> failure_exit_codes_{
-        {
-            {.handler_label{bounds_failure.label}, .code{255}},
-            {.handler_label{frame_overflow_failure.label}, .code{254}},
-            {.handler_label{division_failure.label}, .code{253}},
-            {.handler_label{shift_failure.label}, .code{252}},
-            {.handler_label{overlap_failure.label}, .code{251}},
-            {.handler_label{stack_overflow_failure.label}, .code{250}},
-            {.handler_label{overflow_failure.label}, .code{249}},
-        },
-    };
     // the uart addresses 0xffff'fff4 and 0xffff'fff8 are reached as sign
     // extended offsets from the zero register
     static constexpr int uart_in_offset_{-12};
@@ -74,24 +53,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                             memory_size_bytes(), max_memory_size_bytes_)};
         }
     }
-
-    //
-    // overridden methods
-    //
-
-    // a panic prints nothing and exits with the code of its failure, which
-    // lights a diode, and the exit routine loops; no line is reported, see
-    // 'reports_line'
-    auto emit_failure_handler(const failure_handler& handler,
-                              [[maybe_unused]] const bool with_line)
-        -> void override {
-
-        assert(not with_line);
-
-        emit_panic_exit(handler.label, exit_code_of(handler.label));
-    }
-
-    [[nodiscard]] auto reports_line() const -> bool override { return false; }
 
   protected:
     //
@@ -205,18 +166,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     }
 
     //
-    // class methods
-    //
-
-    auto emit_panic_exit(const std::string_view handler_label,
-                         const int exit_code) -> void {
-
-        assembler().label(0, handler_label);
-
-        exit(token{}, 1, operand::imm(exit_code, default_type()));
-    }
-
-    //
     // statics
     //
 
@@ -229,17 +178,5 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
         a.label(0, label_name);
         a.lw(1, "a4", sd_busy_offset_, "zero");
         a.bnez(1, "a4", std::format("{}b", label_name));
-    }
-
-    [[nodiscard]] static auto exit_code_of(const std::string_view handler_label)
-        -> int {
-
-        for (const failure_exit_code& failure : failure_exit_codes_) {
-            if (failure.handler_label == handler_label) {
-                return failure.code;
-            }
-        }
-
-        std::unreachable();
     }
 };

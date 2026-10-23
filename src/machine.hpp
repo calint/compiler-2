@@ -10,6 +10,7 @@
 #include <expected>
 #include <format>
 #include <functional>
+#include <initializer_list>
 #include <limits>
 #include <map>
 #include <optional>
@@ -31,11 +32,10 @@
 #include "type.hpp"
 
 // a check of an operation at run time: enabled, a failure jumps to the failure
-// handler of the check, which reports the line when 'with_line'; the operation
-// that takes it tells what fails
+// handler of the check, which reports the line when the machine
+// 'reports_line'; the operation that takes it tells what fails
 struct runtime_check {
     bool enabled{};
-    bool with_line{};
 };
 
 // what the front end emits through, and what every target shares: the
@@ -96,6 +96,8 @@ class machine {
         size_t stack_size_bytes{};
         // the memory of 'rv32i-fpga'
         size_t memory_size_bytes{};
+        // '--checks=line': a failed check reports the line of its source
+        bool reports_line{};
     };
 
     struct output_statistics {
@@ -124,7 +126,6 @@ class machine {
     struct bounds_check_options {
         bool upper{};
         bool lower{};
-        bool with_line{};
     };
 
     // what a bounds check compares with 'array_count' elements: an index, a
@@ -366,6 +367,8 @@ class machine {
     bool variables_base_reserved_{};
     bool frame_base_reserved_{};
     kept_version kept_version_{kept_version::smaller};
+    // see 'target_options::reports_line'
+    bool reports_line_{};
 
     // the routines, helpers and failure handlers the code uses, by name, e.g.
     // 'sector_read', each with the locations its failures report; emitted
@@ -420,7 +423,7 @@ class machine {
             const target_options& options)
         : locations_{files}, builtins_{builtins}, jump_mode_{options.jumps},
           sd_card_file_name_{options.sd_card_file_name},
-          kept_version_{options.kept} {
+          kept_version_{options.kept}, reports_line_{options.reports_line} {
 
         if (options.register_report) {
             trace_.enable();
@@ -573,10 +576,14 @@ class machine {
         -> void = 0;
 
     // jumps to the stack overflow handler when a noinline call, made with the
-    // registers allocated now, does not fit in the stack; only where
-    // 'is_stack_bounded'
-    virtual auto check_stack_capacity(const token& src_loc_tk,
-                                      const size_t indent) -> void = 0;
+    // registers allocated now, does not fit in the stack; only a target that
+    // 'is_stack_bounded' is asked
+    virtual auto check_stack_capacity([[maybe_unused]] const token& src_loc_tk,
+                                      [[maybe_unused]] const size_t indent)
+        -> void {
+
+        std::unreachable();
+    }
 
     virtual auto comment_binding(const token& src_loc_tk, const size_t indent,
                                  const std::string_view from,
@@ -691,7 +698,9 @@ class machine {
 
     // true where no operating system stops a program that overflows the
     // stack: calls check that the stack has room and a failure has a handler
-    [[nodiscard]] virtual auto is_stack_bounded() const -> bool = 0;
+    [[nodiscard]] virtual auto is_stack_bounded() const -> bool {
+        return false;
+    }
 
     [[nodiscard]] virtual auto
     make_register_operand(const std::string_view name,
@@ -727,10 +736,6 @@ class machine {
     [[nodiscard]] virtual auto
     registers_for_builtin_function(const builtin_function function) const
         -> builtin_function_registers = 0;
-
-    // whether a failure handler can report the line of the check, else
-    // '--checks=line' is dropped and a check loads no line
-    [[nodiscard]] virtual auto reports_line() const -> bool { return true; }
 
     virtual auto reserve_variables(const size_t alignment,
                                    const size_t size_bytes) -> void = 0;
@@ -948,14 +953,14 @@ class machine {
 
     // the handlers that the code branches to, see 'mark_used'; before
     // 'emit_used_routines', a handler marks the routines it calls
-    auto emit_used_failure_handlers(const bool with_line) -> void {
+    auto emit_used_failure_handlers() -> void {
         for (const failure_handler& handler : failure_handlers) {
             if (not is_used(handler.name)) {
                 continue;
             }
 
             comment({}, 0, handler.comment);
-            emit_failure_handler(handler, with_line and handler.takes_line);
+            emit_failure_handler(handler, reports_line_ and handler.takes_line);
         }
     }
 
@@ -1270,6 +1275,34 @@ class machine {
     // class methods
     //
 
+    // the arguments of a call of 'function' and its result, when it has one,
+    // are in the registers 'registers_for_builtin_function' gives it
+    auto assert_builtin_registers(
+        const builtin_function function,
+        const std::initializer_list<const operand*> arguments,
+        const operand* const result) const -> void {
+
+        const builtin_function_registers registers{
+            registers_for_builtin_function(function),
+        };
+
+        assert(arguments.size() == registers.arguments.size());
+
+        for (const auto [arg, name] :
+             std::views::zip(arguments, registers.arguments)) {
+
+            assert(arg->is_register() and
+                   register_index_of(arg->base_register()) ==
+                       register_index_of(name));
+        }
+
+        assert((result == nullptr) == registers.result.empty());
+
+        assert(result == nullptr or
+               register_index_of(result->base_register()) ==
+                   register_index_of(registers.result));
+    }
+
     [[nodiscard]] auto builtin_type_i16() const -> const type& {
         return builtins_.get().i16;
     }
@@ -1495,6 +1528,9 @@ class machine {
 
         pop_allocation(register_name);
     }
+
+    // see 'target_options::reports_line'
+    [[nodiscard]] auto reports_line() const -> bool { return reports_line_; }
 
     // 'alloc_named_register' without an operand, for a register that the
     // backend uses by name

@@ -1,6 +1,44 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: rv32i-fpga: a panic prints nothing and exits with a code per
+    failure (249 to 255), '--checks=line' is turned off ('reports_line'); the
+    smallest '--stack' (48 B) counts 16 B of line digits it never writes
+    (G1-6); plan: fpga prints like x86_64 and rv32i-qemu
+    => problem: the uart is there, the shared rv32i handlers already print
+       through 'emit_write_call', fpga overrides all seven of them
+    => design:
+       1. 'machine_rv32i_fpga': remove the seven handler overrides,
+          'emit_panic_exit', the seven exit code constants and the
+          'reports_line' override; fpga then prints 'panic: bounds at line
+          12' and exits with 'panic_exit_code' (255) like every target
+       2. 'machine::reports_line' and its use in 'main.cpp' go, no target
+          returns false any more
+       3. the fpga class comment and README say it prints panics
+       4. G1-6 is gone: 48 B is what fpga then pushes
+       5. qa: 'NNN.rv32i-fpga.exit' and 'expected_exit_code' go (every such
+          file holds a failure code), 'cases.sh' header updated
+    => rejected: keep a code per failure, the shared line routine exits
+       with one code, carrying it costs a register and code in every
+       handler, and the message now tells the failures apart
+    => rejected: fpga overrides that print, duplicates of the shared ones
+    => also (R11 A-2): '--checks=line' is decided in 'main' by
+       'reports_line', copied into every 'runtime_check' and
+       'bounds_check_options' and passed to 'emit_used_failure_handlers';
+       with 'reports_line' gone it becomes one value the backend reads, the
+       check sites and the emit lose their 'with_line'
+    => invariant: every target prints the same panic text for a source
+    => tests: 'UPDATE=1' for rv32i-fpga, then remove each
+       'NNN.rv32i-fpga.out' equal to the file the target falls back to;
+       test-cli: fpga '--stack=16' still says 48 B, fpga '--checks=line'
+       prints the line
+    => after: the seven 'emit_*_failure_handler' virtuals pair a label with
+       a name in each backend and 'program::emit_failure_handlers' has seven
+       matching blocks; one table {check, label, name, takes a line} in
+       'machine', one virtual 'emit_failure_handler(label, name, with_line)'
+       (round 7 X-3, R-4)
+    => done (2026-10-23, design review G.1): as designed; the 'with_line'
+       parameters stay for G.3
 [x] medium: the return check ignores constant conditions: 'if 1 == 1 {
     res = 2 }' as the only assignment of 'res' is rejected ("function may
     return without setting its return value") although 'compile' emits no

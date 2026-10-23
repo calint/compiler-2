@@ -486,7 +486,7 @@ checks:
   upper    runtime upper array bounds only, a negative index passes
   lower    runtime lower array bounds, catches negative indexes
   line     report line number on failed bounds, division, shift, overlap or
-           overflow check, rv32i-fpga ignores it
+           overflow check
   frame    runtime non-inlined function frame capacity
   alias    compile time rejection of calls where a result may share storage
            with an argument, on by default
@@ -547,16 +547,16 @@ examples:
             .binary_file_name{binary},
             .stack_size_bytes{opts.stack_size_bytes},
             .memory_size_bytes{opts.memory_size_bytes},
+            .reports_line{opts.checks.with_line},
         };
 
         const std::unique_ptr<machine> backend{
             make_backend(opts.machine_target, builtins, files, target_opts),
         };
 
-        // the checks the target cannot honor are off, e.g. 'rv32i-fpga' exits
-        // with the code of the failure only and x86_64 has no stack bound
+        // the checks the target cannot honor are off, e.g. x86_64 has no
+        // stack bound
         check_options checks{opts.checks};
-        checks.with_line = checks.with_line and backend->reports_line();
         checks.stack = checks.stack and backend->is_stack_bounded();
 
         program prg{*backend, files, opts.vars_size_bytes, checks};

@@ -371,6 +371,8 @@ class machine_rv32i : public machine {
                              const operand& size,
                              const builtin_function function) -> void override {
 
+        assert_builtin_registers(function, {&sector, &address, &size}, nullptr);
+
         const operand call_register{
             reserve_call_register(src_loc_tk, indent, sector, address, size),
         };
@@ -433,9 +435,14 @@ class machine_rv32i : public machine {
     // after a2 in the allocation order, see 'call_io_routine'
     virtual auto emit_read_call(const size_t indent) -> void = 0;
 
-    // loads the lowest address the stack may reach into the register 'reg'
-    virtual auto emit_stack_limit_load(const size_t indent,
-                                       const std::string_view reg) -> void = 0;
+    // loads the lowest address the stack may reach into the register 'reg',
+    // only a target that 'is_stack_bounded' is asked
+    virtual auto
+    emit_stack_limit_load([[maybe_unused]] const size_t indent,
+                          [[maybe_unused]] const std::string_view reg) -> void {
+
+        std::unreachable();
+    }
 
     // same registers as 'emit_read_call'
     virtual auto emit_write_call(const size_t indent) -> void = 0;
@@ -449,12 +456,10 @@ class machine_rv32i : public machine {
     // a jump to 'handler', which is marked used; with the line, the line in
     // a0 and a jump to the entry of the handler for the file of 'src_loc_tk'
     auto branch_to_failure(const token& src_loc_tk, const size_t indent,
-                           const failure_handler& handler, const bool with_line)
-        -> void {
+                           const failure_handler& handler) -> void {
 
-        assert(handler.takes_line or not with_line);
-
-        if (not with_line) {
+        // e.g. a frame overflow reports no line, it is not at a statement
+        if (not reports_line() or not handler.takes_line) {
             mark_used(handler.name);
             branch(indent, handler.label);
             return;
@@ -846,7 +851,7 @@ class machine_rv32i : public machine {
 
         assembler_.label(indent, overflow.name);
 
-        branch_to_failure(src_loc_tk, indent, frame_overflow_failure, false);
+        branch_to_failure(src_loc_tk, indent, frame_overflow_failure);
 
         assembler_.label(indent, fits.name);
         free_scratch_register(src_loc_tk, indent, remaining);
@@ -895,7 +900,7 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, lowest.base_register(), limit.base_register(),
                         fits.reference);
 
-        branch_to_failure(src_loc_tk, indent, stack_overflow_failure, false);
+        branch_to_failure(src_loc_tk, indent, stack_overflow_failure);
 
         assembler_.label(indent, fits.name);
         free_scratch_register(src_loc_tk, indent, lowest);
@@ -1024,7 +1029,7 @@ class machine_rv32i : public machine {
 
         if (request.overlap.enabled) {
             check_copy_overlap(src_loc_tk, indent, bulk.pointer(0),
-                               bulk.pointer(1), bulk.count(), request.overlap);
+                               bulk.pointer(1), bulk.count());
         }
 
         copy_runtime_count(src_loc_tk, indent, bulk.pointer(0), bulk.pointer(1),
@@ -1340,6 +1345,9 @@ class machine_rv32i : public machine {
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
 
+        assert_builtin_registers(builtin_function::read,
+                                 {&descriptor, &address, &count}, &dst);
+
         const operand call_register{
             reserve_io_call_register(src_loc_tk, indent, dst, descriptor,
                                      address, count),
@@ -1505,7 +1513,7 @@ class machine_rv32i : public machine {
         if (operation == arithmetic_operator::negate) {
             if (check.enabled) {
                 check_negate(src_loc_tk, indent, loaded.value,
-                             dst.type_ref().size_bytes(), check);
+                             dst.type_ref().size_bytes());
             }
 
             assembler_.sub(indent, loaded.value.base_register(), "zero",
@@ -1539,6 +1547,9 @@ class machine_rv32i : public machine {
     auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
+
+        assert_builtin_registers(builtin_function::write,
+                                 {&descriptor, &address, &count}, &dst);
 
         const operand call_register{
             reserve_io_call_register(src_loc_tk, indent, dst, descriptor,
@@ -1733,7 +1744,7 @@ class machine_rv32i : public machine {
         if (check.enabled) {
             emit_checked_add_subtract(src_loc_tk, indent, instruction, src,
                                       loaded.value, dst.type_ref().size_bytes(),
-                                      constant, check);
+                                      constant);
         } else {
             emit_binary_instruction(src_loc_tk, indent, instruction, src,
                                     loaded.value, constant);
@@ -1798,14 +1809,13 @@ class machine_rv32i : public machine {
         load_helper_arguments(src_loc_tk, indent, dst, source);
 
         if (division_check.enabled) {
-            check_divisor(src_loc_tk, indent, dst.type_ref().size_bytes(),
-                          division_check.with_line);
+            check_divisor(src_loc_tk, indent, dst.type_ref().size_bytes());
         }
 
         assembler_.call(indent, helper_label(routine));
 
         if (routine == helper_routine::multiply_checked) {
-            check_multiply_result(src_loc_tk, indent, dst, overflow_check);
+            check_multiply_result(src_loc_tk, indent, dst);
         }
 
         const operand result{
@@ -1835,8 +1845,7 @@ class machine_rv32i : public machine {
     // source bytes it has not read yet, the line is passed in 'a0'
     auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
                             const operand& src, const operand& dst,
-                            const operand& count_bytes,
-                            const runtime_check& check) -> void {
+                            const operand& count_bytes) -> void {
 
         constexpr local_label passed{
             .name{"1"},
@@ -1865,7 +1874,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, overlap_failure, check.with_line);
+        branch_to_failure(src_loc_tk, indent, overlap_failure);
 
         assembler_.label(indent, passed.name);
 
@@ -1876,8 +1885,7 @@ class machine_rv32i : public machine {
     // dividend in 'a0' is the minimum of its width and the divisor is -1, the
     // line is passed in 'a0'
     auto check_divisor(const token& src_loc_tk, const size_t indent,
-                       const size_t dividend_size_bytes, const bool with_line)
-        -> void {
+                       const size_t dividend_size_bytes) -> void {
 
         const int64_t minimum{
             constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
@@ -1909,7 +1917,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, division_failure, with_line);
+        branch_to_failure(src_loc_tk, indent, division_failure);
 
         assembler_.label(indent, pass.name);
 
@@ -1919,8 +1927,8 @@ class machine_rv32i : public machine {
     // the register holds a sign extended result of a narrow operation, which
     // fits when sign extending its low bits gives it back
     auto check_fits_width(const token& src_loc_tk, const size_t indent,
-                          const operand& value, const size_t width_bytes,
-                          const runtime_check& check) -> void {
+                          const operand& value, const size_t width_bytes)
+        -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -1945,7 +1953,7 @@ class machine_rv32i : public machine {
                        fits.reference);
 
         free_scratch_register(src_loc_tk, indent, extended);
-        fail_on_overflow(src_loc_tk, indent, check);
+        fail_on_overflow(src_loc_tk, indent);
         assembler_.label(indent, fits.name);
     }
 
@@ -1977,8 +1985,7 @@ class machine_rv32i : public machine {
     // after the checked multiply helper: the flag is in 'a1', the product in
     // 'a0' must fit the width of the destination
     auto check_multiply_result(const token& src_loc_tk, const size_t indent,
-                               const operand& dst, const runtime_check& check)
-        -> void {
+                               const operand& dst) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -1994,7 +2001,7 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "overflow check begin");
 
         assembler_.beqz(indent, "a1", fits.reference);
-        fail_on_overflow(src_loc_tk, indent, check);
+        fail_on_overflow(src_loc_tk, indent);
         assembler_.label(indent, fits.name);
 
         const size_t width{dst.type_ref().size_bytes()};
@@ -2005,7 +2012,7 @@ class machine_rv32i : public machine {
             assembler_.slli(indent, "a1", "a0", shift);
             assembler_.srai(indent, "a1", "a1", shift);
             assembler_.beq(indent, "a1", "a0", fits_width.reference);
-            fail_on_overflow(src_loc_tk, indent, check);
+            fail_on_overflow(src_loc_tk, indent);
             assembler_.label(indent, fits_width.name);
         }
 
@@ -2014,8 +2021,7 @@ class machine_rv32i : public machine {
 
     // the minimum of the width has no positive counterpart
     auto check_negate(const token& src_loc_tk, const size_t indent,
-                      const operand& value, const size_t width_bytes,
-                      const runtime_check& check) -> void {
+                      const operand& value, const size_t width_bytes) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -2038,7 +2044,7 @@ class machine_rv32i : public machine {
                        fits.reference);
 
         free_scratch_register(src_loc_tk, indent, minimum);
-        fail_on_overflow(src_loc_tk, indent, check);
+        fail_on_overflow(src_loc_tk, indent);
         assembler_.label(indent, fits.name);
         comment(src_loc_tk, indent, "overflow check end");
     }
@@ -2046,8 +2052,8 @@ class machine_rv32i : public machine {
     // a count below zero or not below the width jumps to the failure handler,
     // a negative count is a large unsigned one, the line is passed in 'a0'
     auto check_shift_count(const token& src_loc_tk, const size_t indent,
-                           const operand& amount, const type& dst_type,
-                           const runtime_check& check) -> void {
+                           const operand& amount, const type& dst_type)
+        -> void {
 
         constexpr local_label pass{
             .name{"1"},
@@ -2069,7 +2075,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, shift_failure, check.with_line);
+        branch_to_failure(src_loc_tk, indent, shift_failure);
 
         assembler_.label(indent, pass.name);
 
@@ -2975,8 +2981,7 @@ class machine_rv32i : public machine {
 
         assembler_.label(indent, bounds_fail_.name);
 
-        branch_to_failure(src_loc_tk, indent, bounds_failure,
-                          options.with_line);
+        branch_to_failure(src_loc_tk, indent, bounds_failure);
 
         assembler_.label(indent, bounds_pass_.name);
     }
@@ -2993,8 +2998,8 @@ class machine_rv32i : public machine {
                                    const op instruction, const operand& src,
                                    const operand& value,
                                    const size_t width_bytes,
-                                   const std::optional<int32_t> constant,
-                                   const runtime_check& check) -> void {
+                                   const std::optional<int32_t> constant)
+        -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -3007,7 +3012,7 @@ class machine_rv32i : public machine {
             emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
                                     constant);
 
-            check_fits_width(src_loc_tk, indent, value, width_bytes, check);
+            check_fits_width(src_loc_tk, indent, value, width_bytes);
 
             comment(src_loc_tk, indent, "overflow check end");
 
@@ -3032,7 +3037,7 @@ class machine_rv32i : public machine {
 
         if (is_register_source or is_small_constant) {
             emit_checked_with_one_register(src_loc_tk, indent, instruction, src,
-                                           value, constant, check);
+                                           value, constant);
 
             comment(src_loc_tk, indent, "overflow check end");
 
@@ -3074,7 +3079,7 @@ class machine_rv32i : public machine {
 
         // the scope of the operation frees the registers, the instruction
         // above may have left a temporary of its own above them
-        fail_on_overflow(src_loc_tk, indent, check);
+        fail_on_overflow(src_loc_tk, indent);
         assembler_.label(indent, fits.name);
         comment(src_loc_tk, indent, "overflow check end");
     }
@@ -3083,13 +3088,10 @@ class machine_rv32i : public machine {
     // immediate: the first operand is 'result - second' for an add and
     // 'result + second' for a subtract, the result is below it exactly when
     // the second operand is negative for an add or positive for a subtract
-    auto emit_checked_with_one_register(const token& src_loc_tk,
-                                        const size_t indent,
-                                        const op instruction,
-                                        const operand& src,
-                                        const operand& value,
-                                        const std::optional<int32_t> constant,
-                                        const runtime_check& check) -> void {
+    auto emit_checked_with_one_register(
+        const token& src_loc_tk, const size_t indent, const op instruction,
+        const operand& src, const operand& value,
+        const std::optional<int32_t> constant) -> void {
 
         constexpr local_label fits{
             .name{"2"},
@@ -3135,7 +3137,7 @@ class machine_rv32i : public machine {
                               value.base_register(), first.base_register(),
                               fits.reference);
 
-            fail_on_overflow(src_loc_tk, indent, check);
+            fail_on_overflow(src_loc_tk, indent);
             assembler_.label(indent, fits.name);
 
             return;
@@ -3157,7 +3159,7 @@ class machine_rv32i : public machine {
                           first.base_register(), fits.reference);
 
         assembler_.label(indent, failed.name);
-        fail_on_overflow(src_loc_tk, indent, check);
+        fail_on_overflow(src_loc_tk, indent);
         assembler_.label(indent, fits.name);
     }
 
@@ -3521,11 +3523,10 @@ class machine_rv32i : public machine {
     }
 
     // jumps to the overflow failure handler, the line is passed in 'a0'
-    auto fail_on_overflow(const token& src_loc_tk, const size_t indent,
-                          const runtime_check& check) -> void {
+    auto fail_on_overflow(const token& src_loc_tk, const size_t indent)
+        -> void {
 
-        branch_to_failure(src_loc_tk, indent, overflow_failure,
-                          check.with_line);
+        branch_to_failure(src_loc_tk, indent, overflow_failure);
     }
 
     // a jump grown beyond 1 MiB needs a register without a live value
@@ -3905,7 +3906,8 @@ class machine_rv32i : public machine {
         bulk_operations_.pop_back();
     }
 
-    // the arguments are in a0, a1 and a2
+    // the arguments are in the registers of 'registers_for_builtin_function',
+    // checked by the caller
     auto reserve_call_register(const token& src_loc_tk, const size_t indent,
                                const operand& first, const operand& address,
                                const operand& count) -> operand {
@@ -3914,10 +3916,6 @@ class machine_rv32i : public machine {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == word_size_bytes_);
         }
-
-        assert(register_index(first.base_register()) == register_index("a0"));
-        assert(register_index(address.base_register()) == register_index("a1"));
-        assert(register_index(count.base_register()) == register_index("a2"));
 
         // selects the system call or receives the return address
         return alloc_named_register(src_loc_tk, indent, "a7", default_type());
@@ -3931,8 +3929,6 @@ class machine_rv32i : public machine {
 
         assert(dst.is_register() and
                dst.type_ref().size_bytes() == word_size_bytes_);
-
-        assert(register_index(dst.base_register()) == register_index("a0"));
 
         return reserve_call_register(src_loc_tk, indent, descriptor, address,
                                      count);
@@ -4027,8 +4023,7 @@ class machine_rv32i : public machine {
         };
 
         if (check.enabled) {
-            check_shift_count(src_loc_tk, indent, amount, dst.type_ref(),
-                              check);
+            check_shift_count(src_loc_tk, indent, amount, dst.type_ref());
         }
 
         const bool is_left{operation == arithmetic_operator::shift_left};
@@ -5455,11 +5450,6 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.ecall(indent);
     }
 
-    // linux stops a program that overflows the stack
-    [[nodiscard]] auto is_stack_bounded() const -> bool override {
-        return false;
-    }
-
   protected:
     //
     // overridden methods
@@ -5592,14 +5582,6 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.ascii(sd_card_file_name());
         a.data(1, name_end);
         a.switch_section(section::text);
-    }
-
-    // note: linux does not bound the stack, see 'is_stack_bounded'
-    auto emit_stack_limit_load([[maybe_unused]] const size_t indent,
-                               [[maybe_unused]] const std::string_view reg)
-        -> void override {
-
-        std::unreachable();
     }
 
     auto emit_write_call(const size_t indent) -> void override {

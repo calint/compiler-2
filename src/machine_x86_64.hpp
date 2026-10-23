@@ -255,7 +255,7 @@ class machine_x86_64 final : public machine {
                 src);
 
         if (check.enabled) {
-            branch_on_overflow(src_loc_tk, indent, check);
+            branch_on_overflow(src_loc_tk, indent);
         }
     }
 
@@ -398,8 +398,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "bounds check begin");
 
         if (options.lower) {
-            check_lower_bound(src_loc_tk, indent, range, plan,
-                              options.with_line);
+            check_lower_bound(src_loc_tk, indent, range, plan);
         }
 
         if (options.upper) {
@@ -415,8 +414,7 @@ class machine_x86_64 final : public machine {
                     (options.lower and not range.count.is_empty()),
             };
 
-            check_upper_bound(src_loc_tk, indent, range, is_unsigned_compare,
-                              options.with_line);
+            check_upper_bound(src_loc_tk, indent, range, is_unsigned_compare);
         }
 
         comment(src_loc_tk, indent, "bounds check end");
@@ -433,7 +431,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "frame capacity check begin");
 
         const std::string failed{
-            failure_label(frame_overflow_failure, src_loc_tk, false),
+            failure_label(frame_overflow_failure, src_loc_tk),
         };
 
         const operand start{
@@ -471,14 +469,6 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
-    }
-
-    // note: the stack is not bounded, see 'is_stack_bounded'
-    auto check_stack_capacity([[maybe_unused]] const token& src_loc_tk,
-                              [[maybe_unused]] const size_t indent)
-        -> void override {
-
-        std::unreachable();
     }
 
     auto comment_binding(const token& src_loc_tk, const size_t indent,
@@ -630,7 +620,7 @@ class machine_x86_64 final : public machine {
                             request.src, request.dst);
 
         if (request.overlap.enabled) {
-            check_copy_overlap(src_loc_tk, indent, request.overlap);
+            check_copy_overlap(src_loc_tk, indent);
         }
 
         assembler_.instruction(indent, op::rep_movsb);
@@ -800,11 +790,6 @@ class machine_x86_64 final : public machine {
         return true;
     }
 
-    // the operating system stops a program that overflows the stack
-    [[nodiscard]] auto is_stack_bounded() const -> bool override {
-        return false;
-    }
-
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
@@ -911,7 +896,7 @@ class machine_x86_64 final : public machine {
             imul(src_loc_tk, indent, left, right);
 
             if (check.enabled) {
-                check_byte_product(src_loc_tk, indent, left, right, check);
+                check_byte_product(src_loc_tk, indent, left, right);
             }
 
             mov(src_loc_tk, indent, product, left);
@@ -925,7 +910,7 @@ class machine_x86_64 final : public machine {
             imul(src_loc_tk, indent, product, factor);
 
             if (check.enabled) {
-                branch_on_overflow(src_loc_tk, indent, check);
+                branch_on_overflow(src_loc_tk, indent);
             }
 
             return;
@@ -938,7 +923,7 @@ class machine_x86_64 final : public machine {
             mov(src_loc_tk, indent, product, factor);
 
             if (check.enabled) {
-                branch_on_overflow(src_loc_tk, indent, check);
+                branch_on_overflow(src_loc_tk, indent);
             }
 
             return;
@@ -954,7 +939,7 @@ class machine_x86_64 final : public machine {
         imul(src_loc_tk, indent, reg, factor);
 
         if (check.enabled) {
-            branch_on_overflow(src_loc_tk, indent, check);
+            branch_on_overflow(src_loc_tk, indent);
         }
 
         mov(src_loc_tk, indent, product, reg);
@@ -964,6 +949,9 @@ class machine_x86_64 final : public machine {
     auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
+
+        assert_builtin_registers(builtin_function::read,
+                                 {&descriptor, &address, &count}, &dst);
 
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
                    syscall_read_);
@@ -1058,7 +1046,7 @@ class machine_x86_64 final : public machine {
             sized_register("rcx", dst.type_ref().size_bytes()), count);
 
         if (check.enabled) {
-            check_shift_count(src_loc_tk, indent, dst.type_ref(), check);
+            check_shift_count(src_loc_tk, indent, dst.type_ref());
         }
 
         emit_op(src_loc_tk, indent, code, dst,
@@ -1104,7 +1092,7 @@ class machine_x86_64 final : public machine {
         neg(src_loc_tk, indent, dst);
 
         if (check.enabled) {
-            branch_on_overflow(src_loc_tk, indent, check);
+            branch_on_overflow(src_loc_tk, indent);
         }
     }
 
@@ -1123,6 +1111,9 @@ class machine_x86_64 final : public machine {
     auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
+
+        assert_builtin_registers(builtin_function::write,
+                                 {&descriptor, &address, &count}, &dst);
 
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
                    syscall_write_);
@@ -1201,9 +1192,7 @@ class machine_x86_64 final : public machine {
                    value->type_ref().size_bytes() == size_qword_);
         }
 
-        assert(sector.base_register() == "rdi");
-        assert(address.base_register() == "rsi");
-        assert(size.base_register() == "rdx");
+        assert_builtin_registers(function, {&sector, &address, &size}, nullptr);
 
         static constexpr std::array<std::string_view, 4> clobbered{
             "rax",
@@ -1448,29 +1437,26 @@ class machine_x86_64 final : public machine {
 
     // jumps to the overflow failure handler when the instruction before set
     // the overflow flag
-    auto branch_on_overflow(const token& src_loc_tk, const size_t indent,
-                            const runtime_check& check) -> void {
+    auto branch_on_overflow(const token& src_loc_tk, const size_t indent)
+        -> void {
 
-        branch_to_overflow_panic(src_loc_tk, indent, condition::o,
-                                 check.with_line);
+        branch_to_overflow_panic(src_loc_tk, indent, condition::o);
     }
 
     // a reported line goes through the stub of its line, which sets rbp for
     // the handler, so a passing check keeps rbp and loads nothing
     auto branch_to_bounds_panic(const token& src_loc_tk, const size_t indent,
-                                const condition failed, const bool with_line)
-        -> void {
+                                const condition failed) -> void {
 
         assembler_.jcc(indent, failed,
-                       failure_label(bounds_failure, src_loc_tk, with_line));
+                       failure_label(bounds_failure, src_loc_tk));
     }
 
     auto branch_to_overflow_panic(const token& src_loc_tk, const size_t indent,
-                                  const condition failed, const bool with_line)
-        -> void {
+                                  const condition failed) -> void {
 
         assembler_.jcc(indent, failed,
-                       failure_label(overflow_failure, src_loc_tk, with_line));
+                       failure_label(overflow_failure, src_loc_tk));
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1498,8 +1484,7 @@ class machine_x86_64 final : public machine {
     // 'left' holds the product of two bytes in a register of the default
     // width, which fits when the low byte sign extended is the same value
     auto check_byte_product(const token& src_loc_tk, const size_t indent,
-                            const operand& left, const operand& right,
-                            const runtime_check& check) -> void {
+                            const operand& left, const operand& right) -> void {
 
         const operand low_byte{
             make_register_operand(left.base_register(), builtin_type_i8()),
@@ -1508,21 +1493,20 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, right, low_byte);
         cmp(src_loc_tk, indent, right, left);
 
-        branch_to_overflow_panic(src_loc_tk, indent, condition::ne,
-                                 check.with_line);
+        branch_to_overflow_panic(src_loc_tk, indent, condition::ne);
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
     // 'rcx' of a copy: a distance from the source to the destination that is
     // not zero and below the count jumps to the failure handler, the copy
     // would overwrite source bytes it has not read yet
-    auto check_copy_overlap(const token& src_loc_tk, const size_t indent,
-                            const runtime_check& check) -> void {
+    auto check_copy_overlap(const token& src_loc_tk, const size_t indent)
+        -> void {
 
         comment(src_loc_tk, indent, "overlap check begin");
 
         const std::string failed{
-            failure_label(overlap_failure, src_loc_tk, check.with_line),
+            failure_label(overlap_failure, src_loc_tk),
         };
 
         const std::string passed{
@@ -1553,8 +1537,8 @@ class machine_x86_64 final : public machine {
     // a zero divisor and the minimum of the dividend width divided by -1 jump
     // to the failure handler, the dividend is sign extended in 'rax'
     auto check_divisor(const token& src_loc_tk, const size_t indent,
-                       const operand& divisor, const size_t dividend_size_bytes,
-                       const bool with_line) -> void {
+                       const operand& divisor, const size_t dividend_size_bytes)
+        -> void {
 
         const int64_t minimum{
             constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
@@ -1567,7 +1551,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "division check begin");
 
         const std::string failed{
-            failure_label(division_failure, src_loc_tk, with_line),
+            failure_label(division_failure, src_loc_tk),
         };
 
         comment(src_loc_tk, indent, "zero divisor");
@@ -1588,18 +1572,18 @@ class machine_x86_64 final : public machine {
     }
 
     auto check_lower_bound(const token& src_loc_tk, const size_t indent,
-                           const bounds_range& range, const bounds_plan& plan,
-                           const bool with_line) -> void {
+                           const bounds_range& range, const bounds_plan& plan)
+        -> void {
 
         comment_lower_bound(src_loc_tk, indent, range, plan);
 
         if (not plan.upper_covers_lower) {
-            test_sign(src_loc_tk, indent, range.checked, with_line);
+            test_sign(src_loc_tk, indent, range.checked);
 
             // a negative count passes 'start + count' but spans the address
             // space
             if (not plan.count_known) {
-                test_sign(src_loc_tk, indent, range.count, with_line);
+                test_sign(src_loc_tk, indent, range.count);
             }
         }
 
@@ -1609,13 +1593,12 @@ class machine_x86_64 final : public machine {
     // a count in 'rcx' below zero or not below the width jumps to the failure
     // handler, a negative count is a large unsigned one
     auto check_shift_count(const token& src_loc_tk, const size_t indent,
-                           const type& dst_type, const runtime_check& check)
-        -> void {
+                           const type& dst_type) -> void {
 
         comment(src_loc_tk, indent, "shift check begin");
 
         const std::string failed{
-            failure_label(shift_failure, src_loc_tk, check.with_line),
+            failure_label(shift_failure, src_loc_tk),
         };
 
         cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
@@ -1631,8 +1614,7 @@ class machine_x86_64 final : public machine {
     // maximum is out of bounds, the unsigned compare sees it large
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
                            const bounds_range& range,
-                           const bool is_unsigned_compare, const bool with_line)
-        -> void {
+                           const bool is_unsigned_compare) -> void {
 
         const condition out_of_bounds{
             out_of_bounds_condition(range.allow_end, is_unsigned_compare),
@@ -1642,8 +1624,7 @@ class machine_x86_64 final : public machine {
             cmp(src_loc_tk, indent, range.checked,
                 immediate(range.array_count));
 
-            branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds,
-                                   with_line);
+            branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds);
 
             return;
         }
@@ -1664,14 +1645,14 @@ class machine_x86_64 final : public machine {
         } else {
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
             add(src_loc_tk, indent, reg_top_idx, range.count);
-            branch_to_bounds_panic(src_loc_tk, indent, condition::o, with_line);
+            branch_to_bounds_panic(src_loc_tk, indent, condition::o);
         }
 
         cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
 
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
 
-        branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds, with_line);
+        branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds);
     }
 
     auto cmp(const token& src_loc_tk, const size_t indent,
@@ -1983,8 +1964,7 @@ class machine_x86_64 final : public machine {
             divisor.type_ref().size_bytes() == size_qword_) {
 
             if (check.enabled) {
-                check_divisor(src_loc_tk, indent, divisor, dividend_size_bytes,
-                              check.with_line);
+                check_divisor(src_loc_tk, indent, divisor, dividend_size_bytes);
             }
 
             assembler_.instruction(indent, op::cqo);
@@ -2000,8 +1980,7 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, scratch_reg, divisor);
 
         if (check.enabled) {
-            check_divisor(src_loc_tk, indent, scratch_reg, dividend_size_bytes,
-                          check.with_line);
+            check_divisor(src_loc_tk, indent, scratch_reg, dividend_size_bytes);
         }
 
         assembler_.instruction(indent, op::cqo);
@@ -2066,12 +2045,10 @@ class machine_x86_64 final : public machine {
     // the handler 'handler_label' to jump to, or with the line the stub of
     // the line; marked used so the handler of 'name' is emitted
     [[nodiscard]] auto failure_label(const failure_handler& handler,
-                                     const token& src_loc_tk,
-                                     const bool with_line) -> std::string {
+                                     const token& src_loc_tk) -> std::string {
 
-        assert(handler.takes_line or not with_line);
-
-        if (not with_line) {
+        // e.g. a frame overflow reports no line, it is not at a statement
+        if (not reports_line() or not handler.takes_line) {
             mark_used(handler.name);
             return std::string{handler.label};
         }
@@ -2114,11 +2091,6 @@ class machine_x86_64 final : public machine {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == size_qword_);
         }
-
-        assert(dst.base_register() == "rax");
-        assert(descriptor.base_register() == "rdi");
-        assert(address.base_register() == "rsi");
-        assert(count.base_register() == "rdx");
 
         mov(src_loc_tk, indent, dst, immediate(syscall_number));
         invoke_syscall(indent);
@@ -2281,7 +2253,7 @@ class machine_x86_64 final : public machine {
             neg(src_loc_tk, indent, product);
 
             if (check.enabled) {
-                branch_on_overflow(src_loc_tk, indent, check);
+                branch_on_overflow(src_loc_tk, indent);
             }
 
             return true;
@@ -2421,14 +2393,14 @@ class machine_x86_64 final : public machine {
 
     // a negative value is out of bounds, an empty operand has none to test
     auto test_sign(const token& src_loc_tk, const size_t indent,
-                   const operand& value, const bool with_line) -> void {
+                   const operand& value) -> void {
 
         if (value.is_empty()) {
             return;
         }
 
         test(src_loc_tk, indent, value, value);
-        branch_to_bounds_panic(src_loc_tk, indent, condition::s, with_line);
+        branch_to_bounds_panic(src_loc_tk, indent, condition::s);
     }
 
     auto with_lowered_addresses(

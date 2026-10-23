@@ -68,30 +68,65 @@ class stmt_array_size final : public statement {
 };
 
 // the value of an initializer, an argument or a field, parsed at the type of
-// its destination; one of five forms:
-//   a single value       'x + 1', 'a < b' or 'point{1, 2}', one element
-//   a string             '"hi"' fills the start of an 'i8' array
-//   braced elements      'i8[]{1, 2}' or '{{1, 2}, {3, 4}}' of an array
-//   a copy of an array   'a' of 'var b = a', one 'expr_type' element
-//   a bare sized array   'i8[4]', no elements, every element is zero
-// the form is told by 'is_array', 'is_string' and 'is_array_identifier', a
-// bare sized array is the array form without elements
+// its destination; one of the forms below, an array form only where the
+// destination is an array
 class expr_any final : public statement {
     using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;
 
-    std::vector<expr_variant> elements_;
-    std::vector<token> element_delims_tk_;
-    // e.g. 'i8' of 'i8[3]{1, 2}', empty for '[3]{1, 2}'
-    token element_type_tk_;
-    token open_bracket_tk_;
-    stmt_array_size literal_size_;
-    token close_bracket_tk_;
-    token open_brace_tk_;
-    token close_brace_tk_;
-    token string_tk_;
+    // e.g. 'i8[3]' of 'i8[3]{1, 2}' or '[3]' at the default type, empty for
+    // '{1, 2}', whose type and size the destination gives
+    struct array_prefix {
+        token element_type_tk;
+        token open_bracket_tk;
+        stmt_array_size size;
+        token close_bracket_tk;
+
+        auto source_to(std::ostream& os) const -> void {
+            if (open_bracket_tk.is_empty()) {
+                return;
+            }
+
+            element_type_tk.source_to(os);
+            open_bracket_tk.source_to(os);
+            size.source_to(os);
+            close_bracket_tk.source_to(os);
+        }
+    };
+
+    // e.g. 'x + 1', 'a < b' or 'point{1, 2}'
+    struct single_value {
+        expr_variant value;
+    };
+
+    // e.g. '"hi"', which fills the start of an 'i8' array
+    struct string_array {
+        token string_tk;
+    };
+
+    // e.g. 'i8[]{1, 2}' or '{{1, 2}, {3, 4}}'
+    struct element_list {
+        array_prefix prefix;
+        token open_brace_tk;
+        std::vector<expr_variant> elements;
+        std::vector<token> delims_tk;
+        token close_brace_tk;
+    };
+
+    // e.g. 'i8[4]', every element is zero
+    struct zero_array {
+        array_prefix prefix;
+    };
+
+    // e.g. the 'a' of 'var b = a', copied whole as bytes
+    struct array_copy {
+        expr_type source;
+    };
+
+    std::variant<single_value, string_array, element_list, zero_array,
+                 array_copy>
+        form_;
+    // the size of an array form, 'unsized_array_count' until it is known
     size_t array_count_{};
-    bool is_array_{};
-    bool is_identifier_{};
     // e.g. an array parameter 's[]' gets its size from the argument
     bool is_unsized_destination_{};
 
@@ -104,14 +139,16 @@ class expr_any final : public statement {
              const literal_typing typing,
              const std::optional<size_t> array_count = std::nullopt)
         : statement{tz.next_whitespace_token()},
-          array_count_{array_count.value_or(0)},
-          is_array_{array_count.has_value()} {
+          array_count_{array_count.value_or(0)} {
 
         set_type(tp);
 
         // the basic case, e.g. 'x + 1' or 'point{1, 2}'
-        if (not is_array_) {
-            elements_.emplace_back(parse_variant(tc, tz, tp, typing));
+        if (not array_count) {
+            form_ = single_value{
+                .value{parse_variant(tc, tz, tp, typing)},
+            };
+
             return;
         }
 
@@ -121,10 +158,14 @@ class expr_any final : public statement {
 
         // e.g. "hello" fills the start of an 'i8' array
         if (tz.is_peek_char('"')) {
-            string_tk_ = tz.next_token();
+            const token string_tk{tz.next_token()};
 
-            array_count_ = string_array_count(tc.builtins().i8(), string_tk_,
-                                              tp, array_count_);
+            array_count_ = string_array_count(tc.builtins().i8(), string_tk, tp,
+                                              array_count_);
+
+            form_ = string_array{
+                .string_tk{string_tk},
+            };
 
             return;
         }
@@ -132,43 +173,67 @@ class expr_any final : public statement {
         // an array is initialized by a '{ ... }' or by the name of an array,
         // e.g. 'str.data'
 
-        parse_element_type(tc, tz, tp, typing);
+        array_prefix prefix{parse_array_prefix(tc, tz, tp, typing)};
 
-        open_brace_tk_ = tz.is_next_char_token('{');
+        const token open_brace_tk{tz.is_next_char_token('{')};
 
-        if (open_brace_tk_.is_empty() and not open_bracket_tk_.is_empty()) {
+        if (open_brace_tk.is_empty() and
+            not prefix.open_bracket_tk.is_empty()) {
+
             // e.g. 'var a = i8[4]' is 'i8[4]{}'
-            if (not literal_size_.has_value()) {
+            if (not prefix.size.has_value()) {
                 throw compile_error{
-                    close_bracket_tk_,
+                    prefix.close_bracket_tk,
                     std::format("an array needs a constant size, e.g. "
                                 "'{}[4]'",
-                                element_type_tk_.text())};
+                                prefix.element_type_tk.text())};
             }
+
+            form_ = zero_array{
+                .prefix{std::move(prefix)},
+            };
 
             return;
         }
 
-        if (open_brace_tk_.is_empty()) {
+        if (open_brace_tk.is_empty()) {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
-            elements_.emplace_back(expr_type{
-                tc, tz, tp, expr_type::destination_kind::whole_array, typing});
-
-            is_identifier_ = true;
+            form_ = array_copy{
+                .source{
+                    tc,
+                    tz,
+                    tp,
+                    expr_type::destination_kind::whole_array,
+                    typing,
+                },
+            };
 
             return;
         }
 
         // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}'
-        parse_braced_elements(tc, tz, tp);
+        element_list list{
+            .prefix{std::move(prefix)},
+            .open_brace_tk{open_brace_tk},
+            .elements{},
+            .delims_tk{},
+            .close_brace_tk{},
+        };
+
+        parse_braced_elements(tc, tz, tp, list);
+
+        form_ = std::move(list);
     }
 
     // a method receiver, the first argument of the call
     expr_any(const token pos_tk, expr_type receiver) : statement{pos_tk} {
         set_type(receiver.get_type());
-        elements_.emplace_back(std::move(receiver));
+
+        form_ = single_value{
+            .value{std::move(receiver)},
+        };
     }
 
     expr_any() = default;
@@ -179,28 +244,38 @@ class expr_any final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        string_tk_.source_to(os);
 
-        if (not open_bracket_tk_.is_empty()) {
-            element_type_tk_.source_to(os);
-            open_bracket_tk_.source_to(os);
-            literal_size_.source_to(os);
-            close_bracket_tk_.source_to(os);
+        if (const string_array* const str{std::get_if<string_array>(&form_)}) {
+            str->string_tk.source_to(os);
+            return;
         }
 
-        open_brace_tk_.source_to(os);
+        if (const zero_array* const zero{std::get_if<zero_array>(&form_)}) {
+            zero->prefix.source_to(os);
+            return;
+        }
+
+        const element_list* const list{std::get_if<element_list>(&form_)};
+
+        if (list == nullptr) {
+            element(0).source_to(os);
+            return;
+        }
+
+        list->prefix.source_to(os);
+        list->open_brace_tk.source_to(os);
 
         const auto elements{
-            std::views::iota(size_t{}, elements_.size()) |
+            std::views::iota(size_t{}, list->elements.size()) |
                 std::views::transform(
                     [this](const size_t i) -> const statement& {
                         return element(i);
                     }),
         };
 
-        source_delimited_to(os, elements, element_delims_tk_);
+        source_delimited_to(os, elements, list->delims_tk);
 
-        close_brace_tk_.source_to(os);
+        list->close_brace_tk.source_to(os);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -208,7 +283,7 @@ class expr_any final : public statement {
 
         // note: an unsized destination is the only array of unknown length
 
-        assert(not is_array_ or is_identifier_ or
+        assert(not is_array() or is_array_identifier() or
                dst.is_length_unknown() ==
                    (is_unsized_destination_ and not dst.array_len()));
 
@@ -220,7 +295,7 @@ class expr_any final : public statement {
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
-        if (is_array_) {
+        if (is_array()) {
             return;
         }
 
@@ -231,20 +306,20 @@ class expr_any final : public statement {
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
-        assert(not is_array_);
+        assert(not is_array());
 
         return element(0).fold(tc, use);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        assert(not is_array_);
+        assert(not is_array());
 
         // note: an 'expr_type' parses no unary ops, its 'unary_ops' are empty
         return element(0).get_unary_ops();
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        if (is_array_) {
+        if (is_array()) {
             return true;
         }
 
@@ -253,7 +328,11 @@ class expr_any final : public statement {
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        if (is_array_ and not is_identifier_) {
+        if (const array_copy* const copy{std::get_if<array_copy>(&form_)}) {
+            return copy->source.operand_path();
+        }
+
+        if (is_array()) {
             return nullptr;
         }
 
@@ -261,11 +340,11 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto tok() const -> const token& override {
-        if (is_string()) {
-            return string_tk_;
+        if (const string_array* const str{std::get_if<string_array>(&form_)}) {
+            return str->string_tk;
         }
 
-        if (elements_.empty()) {
+        if (element_count() == 0) {
             return statement::tok();
         }
 
@@ -276,7 +355,7 @@ class expr_any final : public statement {
                             const call_effect_visitor visitor) const
         -> void override {
 
-        for (size_t i{}; i < elements_.size(); ++i) {
+        for (size_t i{}; i < element_count(); ++i) {
             element(i).visit_call_effects(tc, visitor);
         }
     }
@@ -284,8 +363,7 @@ class expr_any final : public statement {
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
-        // a non-array expression is the single element
-        for (size_t i{}; i < elements_.size(); ++i) {
+        for (size_t i{}; i < element_count(); ++i) {
             element(i).visit_reads(var, reader);
         }
     }
@@ -300,25 +378,33 @@ class expr_any final : public statement {
     // '[' when the type is the default one, its '{' when the destination gives
     // the type, else its value, e.g. a string
     [[nodiscard]] auto array_token() const -> const token& {
-        if (not element_type_tk_.is_empty()) {
-            return element_type_tk_;
+        if (const array_prefix* const prefix{array_prefix_of()}) {
+            if (not prefix->element_type_tk.is_empty()) {
+                return prefix->element_type_tk;
+            }
+
+            if (not prefix->open_bracket_tk.is_empty()) {
+                return prefix->open_bracket_tk;
+            }
         }
 
-        if (not open_bracket_tk_.is_empty()) {
-            return open_bracket_tk_;
-        }
-
-        if (not open_brace_tk_.is_empty()) {
-            return open_brace_tk_;
+        if (const element_list* const list{std::get_if<element_list>(&form_)}) {
+            return list->open_brace_tk;
         }
 
         return tok();
     }
 
+    // the element at 'index' of an instance value or of an array of
+    // instances, or the source of an array copy
     [[nodiscard]] auto as_expr_type(const size_t index = 0) const
         -> const expr_type& {
 
-        return std::get<expr_type>(elements_.at(index));
+        const expr_type* const record{record_at(index)};
+
+        assert(record != nullptr);
+
+        return *record;
     }
 
     // compiles all but the trailing added constant of an arithmetic
@@ -332,9 +418,9 @@ class expr_any final : public statement {
         // note: only an index expression asks, it is never an array and has
         //       the default type
 
-        assert(not is_array_);
-
-        const expr_arith& arith{std::get<expr_arith>(elements_.front())};
+        const expr_arith& arith{
+            std::get<expr_arith>(std::get<single_value>(form_).value),
+        };
 
         arith.assert_not_narrowed(tc, dst.type_ref());
 
@@ -350,19 +436,40 @@ class expr_any final : public statement {
             fold_checked(tc, tc.use_at(tc.builtins().default_type())));
     }
 
-    // every kind of element is a 'statement', the forwarding methods call its
-    // virtuals; the only 'visit' of the variant
+    // the value of a single value, an element of a list or the source of a
+    // copy
     [[nodiscard]] auto element(const size_t index) const -> const statement& {
-        const statement* const value{
-            elements_.at(index).visit(
-                [](const statement& e) -> const statement* { return &e; }),
-        };
+        if (const array_copy* const copy{std::get_if<array_copy>(&form_)}) {
+            assert(index == 0);
 
-        return *value;
+            return copy->source;
+        }
+
+        if (const single_value* const single{
+                std::get_if<single_value>(&form_),
+            }) {
+
+            assert(index == 0);
+
+            return as_statement(single->value);
+        }
+
+        return as_statement(std::get<element_list>(form_).elements.at(index));
     }
 
+    // none for a string or a zero array
     [[nodiscard]] auto element_count() const -> size_t {
-        return elements_.size();
+        if (const element_list* const list{std::get_if<element_list>(&form_)}) {
+            return list->elements.size();
+        }
+
+        if (std::holds_alternative<string_array>(form_) or
+            std::holds_alternative<zero_array>(form_)) {
+
+            return 0;
+        }
+
+        return 1;
     }
 
     // the element 'index' folded and checked, empty when it is computed at
@@ -374,18 +481,22 @@ class expr_any final : public statement {
         return element(index).fold_checked(tc, use);
     }
 
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+    [[nodiscard]] auto is_array() const -> bool {
+        return not std::holds_alternative<single_value>(form_);
+    }
 
     [[nodiscard]] auto is_array_identifier() const -> bool {
-        return is_array_ and is_identifier_;
+        return std::holds_alternative<array_copy>(form_);
     }
 
     [[nodiscard]] auto is_string() const -> bool {
-        return string_tk_.is_string();
+        return std::holds_alternative<string_array>(form_);
     }
 
-    [[nodiscard]] auto open_bracket_token() const -> const token& {
-        return open_bracket_tk_;
+    // e.g. the '[' of 'i8[]{}', empty without an array prefix
+    [[nodiscard]] auto open_bracket_token() const -> token {
+        const array_prefix* const prefix{array_prefix_of()};
+        return prefix != nullptr ? prefix->open_bracket_tk : token{};
     }
 
     // appends the steps that write the value at 'at'; 'unsized_count' is the
@@ -395,7 +506,7 @@ class expr_any final : public statement {
                      const std::optional<size_t> unsized_count,
                      write_plan& plan) const -> void {
 
-        if (is_identifier_ or not is_array_) {
+        if (not is_array() or is_array_identifier()) {
             plan_element(tc, 0, at, plan);
             return;
         }
@@ -405,34 +516,53 @@ class expr_any final : public statement {
             is_unsized_destination_ ? unsized_count : array_count_,
         };
 
-        if (is_string()) {
-            plan_string(at, array_count, plan);
+        if (const string_array* const str{std::get_if<string_array>(&form_)}) {
+            plan_string(str->string_tk, at, array_count, plan);
             return;
         }
 
+        const size_t count{element_count()};
+
         // the parser could not check the size of an unsized destination
-        if (array_count and elements_.size() > *array_count) {
+        if (array_count and count > *array_count) {
             throw compile_error{
                 element(*array_count).tok(),
                 std::format("too many elements for array of size {}",
                             *array_count)};
         }
 
-        plan_elements(tc, at, plan);
+        if (const element_list* const list{std::get_if<element_list>(&form_)}) {
+            plan_elements(tc, *list, at, plan);
+        }
 
         if (not array_count) {
             return;
         }
 
-        expr_type::plan_remaining_elements(
-            tok(), at, get_type(), elements_.size(), *array_count, plan);
+        expr_type::plan_remaining_elements(tok(), at, get_type(), count,
+                                           *array_count, plan);
     }
 
   private:
+    // the prefix of an element list or a zero array, null for another form
+    [[nodiscard]] auto array_prefix_of() const -> const array_prefix* {
+        if (const element_list* const list{std::get_if<element_list>(&form_)}) {
+            return &list->prefix;
+        }
+
+        if (const zero_array* const zero{std::get_if<zero_array>(&form_)}) {
+            return &zero->prefix;
+        }
+
+        return nullptr;
+    }
+
     // the remaining count would wrap around past the array size
-    auto assert_room_for_element(const tokenizer& tz) const -> void {
+    auto assert_room_for_element(const tokenizer& tz,
+                                 const element_list& list) const -> void {
+
         if (array_count_ == unsized_array_count or
-            elements_.size() != array_count_) {
+            list.elements.size() != array_count_) {
 
             return;
         }
@@ -444,18 +574,18 @@ class expr_any final : public statement {
 
     // the little endian bytes of the elements, empty when an element is not a
     // constant or there are no elements to store
-    [[nodiscard]] auto constant_bytes(const toc& tc,
+    [[nodiscard]] auto constant_bytes(const toc& tc, const element_list& list,
                                       const type& element_type) const
         -> std::optional<std::string> {
 
-        if (elements_.empty()) {
+        if (list.elements.empty()) {
             return std::nullopt;
         }
 
         std::string bytes;
-        for (size_t index{}; index < elements_.size(); ++index) {
+        for (size_t index{}; index < list.elements.size(); ++index) {
             // a condition is compiled, not packed, e.g. '1 == 1'
-            if (std::holds_alternative<expr_bool>(elements_.at(index))) {
+            if (std::holds_alternative<expr_bool>(list.elements.at(index))) {
                 return std::nullopt;
             }
 
@@ -479,52 +609,15 @@ class expr_any final : public statement {
         return bytes;
     }
 
-    // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
-    auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp) -> void {
-        close_brace_tk_ = tz.is_next_char_token('}');
-
-        while (close_brace_tk_.is_empty()) {
-            if (not elements_.empty()) {
-                parse_element_delimiter(tz, tp);
-
-                // a trailing ',' lets each element end its line the same way
-                close_brace_tk_ = tz.is_next_char_token('}');
-
-                if (not close_brace_tk_.is_empty()) {
-                    break;
-                }
-            }
-
-            assert_room_for_element(tz);
-
-            // the array gives the type of its elements
-            elements_.emplace_back(
-                parse_variant(tc, tz, tp, literal_typing::from_destination));
-
-            close_brace_tk_ = tz.is_next_char_token('}');
-        }
-
-        if (array_count_ == unsized_array_count) {
-            array_count_ = elements_.size();
-        }
-    }
-
-    auto parse_element_delimiter(tokenizer& tz, const type& tp) -> void {
-        const token delimiter_tk{
-            tz.expect_char_token(
-                ',', std::format("expected ',' followed by initializer "
-                                 "for type {}",
-                                 in_quotes(tp.name()))),
-        };
-
-        element_delims_tk_.emplace_back(delimiter_tk);
-    }
-
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
-    // the default type
-    auto parse_element_type(toc& tc, tokenizer& tz, const type& tp,
-                            const literal_typing typing) -> void {
+    // the default type; empty when the destination gives both
+    [[nodiscard]] auto parse_array_prefix(toc& tc, tokenizer& tz,
+                                          const type& tp,
+                                          const literal_typing typing)
+        -> array_prefix {
+
+        array_prefix prefix;
 
         const token tk{tz.next_token()};
 
@@ -537,46 +630,46 @@ class expr_any final : public statement {
         }
 
         if (not is_typed and not is_default_array_literal(tz)) {
-            return;
+            return prefix;
         }
 
-        open_bracket_tk_ = tz.is_next_char_token('[');
+        prefix.open_bracket_tk = tz.is_next_char_token('[');
 
         const type& literal_type{
             is_typed ? tc.get_type_or_throw(tk) : tc.builtins().default_type(),
         };
 
         if (not literal_type.is_same(tp)) {
-            throw compile_error{is_typed ? tk : open_bracket_tk_,
+            throw compile_error{is_typed ? tk : prefix.open_bracket_tk,
                                 std::format("expected type {}, got {}",
                                             in_quotes(tp.name()),
                                             in_quotes(literal_type.name()))};
         }
 
         if (is_typed) {
-            element_type_tk_ = tk;
+            prefix.element_type_tk = tk;
         }
 
         // e.g. the '4' of 'i8[4]', none for 'i8[]'
-        literal_size_ = {tc, tz};
+        prefix.size = {tc, tz};
 
-        close_bracket_tk_ =
+        prefix.close_bracket_tk =
             tz.expect_char_token(']', "expected ']' after array size");
 
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            throw_known_type(is_typed ? tk : open_bracket_tk_,
+            throw_known_type(is_typed ? tk : prefix.open_bracket_tk,
                              std::format("{}[]", literal_type.name()),
                              tz.peek_char_after_whitespace() == '{' ? "{...}"
                                                                     : "{}");
         }
 
-        if (not literal_size_.has_value()) {
-            return;
+        if (not prefix.size.has_value()) {
+            return prefix;
         }
 
-        const size_t count{literal_size_.array_size()};
+        const size_t count{prefix.size.array_size()};
 
         // note: only a declaration names the array type, its size is the one
         //       of this literal
@@ -584,16 +677,47 @@ class expr_any final : public statement {
         assert(array_count_ == unsized_array_count or array_count_ == count);
 
         array_count_ = count;
+
+        return prefix;
+    }
+
+    // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
+    auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
+                               element_list& list) -> void {
+
+        list.close_brace_tk = tz.is_next_char_token('}');
+
+        while (list.close_brace_tk.is_empty()) {
+            if (not list.elements.empty()) {
+                parse_element_delimiter(tz, tp, list);
+
+                // a trailing ',' lets each element end its line the same way
+                list.close_brace_tk = tz.is_next_char_token('}');
+
+                if (not list.close_brace_tk.is_empty()) {
+                    break;
+                }
+            }
+
+            assert_room_for_element(tz, list);
+
+            // the array gives the type of its elements
+            list.elements.emplace_back(
+                parse_variant(tc, tz, tp, literal_typing::from_destination));
+
+            list.close_brace_tk = tz.is_next_char_token('}');
+        }
+
+        if (array_count_ == unsized_array_count) {
+            array_count_ = list.elements.size();
+        }
     }
 
     // an instance literal is written field by field, any other value at once
     auto plan_element(const toc& tc, const size_t index,
                       const part_location& at, write_plan& plan) const -> void {
 
-        if (const expr_type* const record{
-                std::get_if<expr_type>(&elements_.at(index)),
-            }) {
-
+        if (const expr_type* const record{record_at(index)}) {
             record->plan_writes(tc, at, plan);
             return;
         }
@@ -611,30 +735,33 @@ class expr_any final : public statement {
 
     // constant elements are stored like a string so the backend can pack them
     // into wider immediates or copy them from read-only data
-    auto plan_elements(const toc& tc, const part_location& at,
-                       write_plan& plan) const -> void {
+    auto plan_elements(const toc& tc, const element_list& list,
+                       const part_location& at, write_plan& plan) const
+        -> void {
 
-        if (std::optional<std::string> bytes{constant_bytes(tc, get_type())};
+        if (std::optional<std::string> bytes{
+                constant_bytes(tc, list, get_type()),
+            };
             bytes) {
 
             plan.push_back({
                 .at{at},
                 .action{
                     bytes_write{
-                        .src_loc_tk{open_brace_tk_},
+                        .src_loc_tk{list.open_brace_tk},
                         .bytes{std::move(*bytes)},
                         .is_string{},
                     },
                 },
                 .covered{
-                    {at.elements_path(0, elements_.size())},
+                    {at.elements_path(0, list.elements.size())},
                 },
             });
 
             return;
         }
 
-        for (size_t i{}; i < elements_.size(); ++i) {
+        for (size_t i{}; i < list.elements.size(); ++i) {
             plan.push_back({
                 .at{at},
                 .action{
@@ -654,19 +781,18 @@ class expr_any final : public statement {
 
     // the string is stored and the rest of the array is zeroed like unlisted
     // elements; 'array_count' is empty when the size is not known
-    auto plan_string(const part_location& at,
+    auto plan_string(const token& string_tk, const part_location& at,
                      const std::optional<size_t> array_count,
                      write_plan& plan) const -> void {
 
-        std::string bytes{token::decode_string(string_tk_.string_text())};
+        std::string bytes{token::decode_string(string_tk.string_text())};
 
         const size_t size_bytes{bytes.size()};
 
         if (array_count and size_bytes > *array_count) {
             throw compile_error{
-                string_tk_,
-                std::format("string size {} overflows array size {}",
-                            size_bytes, *array_count)};
+                string_tk, std::format("string size {} overflows array size {}",
+                                       size_bytes, *array_count)};
         }
 
         // an empty string has nothing to store
@@ -675,7 +801,7 @@ class expr_any final : public statement {
                 .at{at},
                 .action{
                     bytes_write{
-                        .src_loc_tk{string_tk_},
+                        .src_loc_tk{string_tk},
                         .bytes{std::move(bytes)},
                         .is_string{true},
                     },
@@ -699,7 +825,7 @@ class expr_any final : public statement {
             .at{at},
             .action{
                 zero_fill{
-                    .src_loc_tk{string_tk_},
+                    .src_loc_tk{string_tk},
                     .comment{
                         std::format("zero remaining elements: {} B",
                                     remaining_size_bytes),
@@ -716,9 +842,38 @@ class expr_any final : public statement {
         });
     }
 
+    // the element at 'index' when it is an 'expr_type', null otherwise
+    [[nodiscard]] auto record_at(const size_t index) const -> const expr_type* {
+        if (const array_copy* const copy{std::get_if<array_copy>(&form_)}) {
+            return &copy->source;
+        }
+
+        if (const single_value* const single{
+                std::get_if<single_value>(&form_),
+            }) {
+
+            return std::get_if<expr_type>(&single->value);
+        }
+
+        return std::get_if<expr_type>(
+            &std::get<element_list>(form_).elements.at(index));
+    }
+
     //
     // statics
     //
+
+    // every kind of element is a 'statement'; the only 'visit' of the variant
+    [[nodiscard]] static auto as_statement(const expr_variant& value)
+        -> const statement& {
+
+        const statement* const e{
+            value.visit(
+                [](const statement& v) -> const statement* { return &v; }),
+        };
+
+        return *e;
+    }
 
     // a 'bool' is not an integer, 'int(b)' converts it; an arithmetic operand
     // and a call result are checked by rules of their own
@@ -761,6 +916,19 @@ class expr_any final : public statement {
                 .destination_type{},
             },
         };
+    }
+
+    static auto parse_element_delimiter(tokenizer& tz, const type& tp,
+                                        element_list& list) -> void {
+
+        const token delimiter_tk{
+            tz.expect_char_token(
+                ',', std::format("expected ',' followed by initializer "
+                                 "for type {}",
+                                 in_quotes(tp.name()))),
+        };
+
+        list.delims_tk.emplace_back(delimiter_tk);
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,

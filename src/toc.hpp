@@ -325,11 +325,41 @@ class frame final {
         noinline_func,
     };
 
+    // what only a function frame has
+    struct function_part {
+        // a unique path of source locations of the inlined call
+        std::string call_path;
+
+        // the label to jump to when exiting an inlined function
+        std::string ret_label;
+
+        // the parameters and the result of an inlined call, see
+        // 'param_binding'
+        lut<param_binding> bindings;
+
+        // while the body compiles: the code after the current statement runs
+        // on some path, a 'return' closes it, see 'toc::is_path_open'
+        bool is_path_open{true};
+
+        // the name of the result, empty when there is none
+        std::string result_name;
+
+        // the parameters, in order
+        std::vector<std::string> param_names;
+
+        // while the body is parsed: what its callers name too
+        body_uses uses;
+    };
+
+    // a frame whose variables are placed from a base register of their own,
+    // the body of a noinline function
+    struct storage_base {
+        std::string_view base_register;
+        size_t peak_size_bytes{};
+    };
+
     // optional name
     std::string_view name_;
-
-    // a unique path of source locations of the inlined call
-    std::string call_path_;
 
     // the bytes of variable storage this frame uses
     size_t allocated_storage_size_bytes_{};
@@ -342,36 +372,16 @@ class frame final {
     // variables declared in this frame
     lut<var_info> vars_;
 
-    // the parameters and the result of an inlined call, see 'param_binding'
-    lut<param_binding> bindings_;
-
-    // the label to jump to when exiting an inlined function
-    std::string func_ret_label_;
-
-    // a function frame while its body compiles: the code after the current
-    // statement runs on some path, a 'return' closes it, see
-    // 'toc::is_path_open'
-    bool is_path_open_{true};
-
-    // the name of the result of a function frame, empty when it has none
-    std::string result_name_;
-
-    // the parameters of a function frame, in order
-    std::vector<std::string> param_names_;
-
-    // a function frame while its body is parsed: what its callers name too
-    body_uses body_uses_;
-
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
     frame_type type_{frame_type::block};
-    std::string_view storage_base_register_;
-    size_t peak_storage_size_bytes_{};
+    std::optional<function_part> func_;
+    std::optional<storage_base> storage_;
 
   public:
     auto add_binding(const param_binding& binding) -> void {
-        bindings_.put(std::string{binding.from}, binding);
+        func_part().bindings.put(std::string{binding.from}, binding);
     }
 
     auto add_const(const std::string_view name, const const_info& ci) -> void {
@@ -387,11 +397,11 @@ class frame final {
         vars_.put(var.name, var);
 
         if (kind == var_kind::result) {
-            result_name_ = var.name;
+            func_part().result_name = var.name;
         }
 
         if (kind == var_kind::param) {
-            param_names_.emplace_back(var.name);
+            func_part().param_names.emplace_back(var.name);
         }
 
         if (kind != var_kind::dat) {
@@ -405,23 +415,25 @@ class frame final {
     }
 
     [[nodiscard]] auto body_uses_of_func() const -> const body_uses& {
-        return body_uses_;
+        return func_part().uses;
     }
 
-    [[nodiscard]] auto body_uses_ref() -> body_uses& { return body_uses_; }
+    [[nodiscard]] auto body_uses_ref() -> body_uses& {
+        return func_part().uses;
+    }
 
     [[nodiscard]] auto call_path() const -> std::string_view {
-        return call_path_;
+        return func_part().call_path;
     }
 
     [[nodiscard]] auto func_ret_label() const -> std::string_view {
-        return func_ret_label_;
+        return func_part().ret_label;
     }
 
     [[nodiscard]] auto get_binding(const std::string_view name) const
         -> const param_binding& {
 
-        return bindings_.get_const_ref(name);
+        return func_part().bindings.get_const_ref(name);
     }
 
     [[nodiscard]] auto get_const(const std::string_view name) const
@@ -437,7 +449,7 @@ class frame final {
     }
 
     [[nodiscard]] auto has_binding(const std::string_view name) const -> bool {
-        return bindings_.has(name);
+        return func_part().bindings.has(name);
     }
 
     [[nodiscard]] auto has_const(const std::string_view name) const -> bool {
@@ -448,6 +460,10 @@ class frame final {
         return non_dat_var_has_been_added_;
     }
 
+    [[nodiscard]] auto has_storage_base() const -> bool {
+        return storage_.has_value();
+    }
+
     [[nodiscard]] auto has_var(const std::string_view name) const -> bool {
         return vars_.has(name);
     }
@@ -456,23 +472,18 @@ class frame final {
         return type_ == frame_type::block;
     }
 
-    [[nodiscard]] auto is_foo() const -> bool {
-        return type_ == frame_type::foo;
-    }
-
-    [[nodiscard]] auto is_func() const -> bool {
-        return type_ == frame_type::main_func or
-               type_ == frame_type::inlined_func or
-               type_ == frame_type::noinline_dry_run or
-               type_ == frame_type::noinline_func;
-    }
-
     // 'main' and a dry run are compiled in place like an inlined function
-    [[nodiscard]] auto is_inlined_func() const -> bool {
+    [[nodiscard]] auto is_compiled_in_place() const -> bool {
         assert(is_func());
 
         return type_ != frame_type::noinline_func;
     }
+
+    [[nodiscard]] auto is_foo() const -> bool {
+        return type_ == frame_type::foo;
+    }
+
+    [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
 
     [[nodiscard]] auto is_loop() const -> bool {
         return type_ == frame_type::loop;
@@ -490,10 +501,12 @@ class frame final {
         return type_ == frame_type::noinline_dry_run;
     }
 
-    [[nodiscard]] auto is_path_open() const -> bool { return is_path_open_; }
+    [[nodiscard]] auto is_path_open() const -> bool {
+        return func_part().is_path_open;
+    }
 
     [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
-        return result_name_ == name;
+        return func_part().result_name == name;
     }
 
     auto make_var_read_only(const std::string_view name,
@@ -508,8 +521,10 @@ class frame final {
     [[nodiscard]] auto param_index(const std::string_view name) const
         -> std::optional<size_t> {
 
-        for (size_t i{}; i < param_names_.size(); ++i) {
-            if (param_names_.at(i) == name) {
+        const std::vector<std::string>& names{func_part().param_names};
+
+        for (size_t i{}; i < names.size(); ++i) {
+            if (names.at(i) == name) {
                 return i;
             }
         }
@@ -518,22 +533,17 @@ class frame final {
     }
 
     [[nodiscard]] auto peak_storage_size_bytes() const -> size_t {
-        assert(not storage_base_register_.empty());
-
-        return peak_storage_size_bytes_;
+        return base().peak_size_bytes;
     }
 
     auto record_storage_size_bytes(const size_t size_bytes) -> void {
-        assert(not storage_base_register_.empty());
+        storage_base& storage{base()};
 
-        peak_storage_size_bytes_ =
-            std::max(peak_storage_size_bytes_, size_bytes);
+        storage.peak_size_bytes = std::max(storage.peak_size_bytes, size_bytes);
     }
 
     auto restore_peak_storage_size_bytes(const size_t size_bytes) -> void {
-        assert(not storage_base_register_.empty());
-
-        peak_storage_size_bytes_ = size_bytes;
+        base().peak_size_bytes = size_bytes;
     }
 
     auto set_dat_var_padding_bytes(const size_t size_bytes) -> void {
@@ -542,10 +552,12 @@ class frame final {
         dat_var_padding_bytes_ = size_bytes;
     }
 
-    auto set_path_open(const bool is_open) -> void { is_path_open_ = is_open; }
+    auto set_path_open(const bool is_open) -> void {
+        func_part().is_path_open = is_open;
+    }
 
     [[nodiscard]] auto storage_base_register() const -> std::string_view {
-        return storage_base_register_;
+        return base().base_register;
     }
 
     //
@@ -553,12 +565,12 @@ class frame final {
     //
 
     [[nodiscard]] static auto block() -> frame {
-        return {"", frame_type::block, {}, {}, {}};
+        return {"", frame_type::block};
     }
 
     // the body of a 'foo' named by its loop label
     [[nodiscard]] static auto foo(const std::string_view name) -> frame {
-        return {name, frame_type::foo, {}, {}, {}};
+        return {name, frame_type::foo};
     }
 
     // a function compiled in place, 'call_path' keeps its labels unique and
@@ -567,21 +579,18 @@ class frame final {
                                            std::string call_path,
                                            std::string return_label) -> frame {
 
-        return {name,
-                frame_type::inlined_func,
-                std::move(call_path),
-                std::move(return_label),
-                {}};
+        return function(name, frame_type::inlined_func, std::move(call_path),
+                        std::move(return_label));
     }
 
     // the body of a loop named by its label
     [[nodiscard]] static auto loop(const std::string_view name) -> frame {
-        return {name, frame_type::loop, {}, {}, {}};
+        return {name, frame_type::loop};
     }
 
     // 'main' is compiled in place, 'return' exits the program
     [[nodiscard]] static auto main_func() -> frame {
-        return {reserved_names::main, frame_type::main_func, {}, {}, {}};
+        return function(reserved_names::main, frame_type::main_func, {}, {});
     }
 
     // a noinline function compiled in place, the dry run for the errors of a
@@ -591,11 +600,8 @@ class frame final {
                                                std::string return_label)
         -> frame {
 
-        return {name,
-                frame_type::noinline_dry_run,
-                std::move(call_path),
-                std::move(return_label),
-                {}};
+        return function(name, frame_type::noinline_dry_run,
+                        std::move(call_path), std::move(return_label));
     }
 
     // a function with a body of its own, its variables are placed from
@@ -604,20 +610,71 @@ class frame final {
     noinline_func(const std::string_view name, std::string call_path,
                   const std::string_view storage_base_register) -> frame {
 
-        return {name,
-                frame_type::noinline_func,
-                std::move(call_path),
-                {},
-                storage_base_register};
+        frame frm{
+            function(name, frame_type::noinline_func, std::move(call_path), {}),
+        };
+
+        if (not storage_base_register.empty()) {
+            frm.storage_ = storage_base{
+                .base_register{storage_base_register},
+                .peak_size_bytes{},
+            };
+        }
+
+        return frm;
     }
 
   private:
-    frame(const std::string_view name, const frame_type frm_type,
-          std::string call_path, std::string func_ret_label,
-          const std::string_view storage_base_register) noexcept
-        : name_{name}, call_path_{std::move(call_path)},
-          func_ret_label_{std::move(func_ret_label)}, type_{frm_type},
-          storage_base_register_{storage_base_register} {}
+    frame(const std::string_view name, const frame_type frm_type) noexcept
+        : name_{name}, type_{frm_type} {}
+
+    [[nodiscard]] auto base() -> storage_base& {
+        assert(storage_);
+
+        return *storage_;
+    }
+
+    [[nodiscard]] auto base() const -> const storage_base& {
+        assert(storage_);
+
+        return *storage_;
+    }
+
+    [[nodiscard]] auto func_part() -> function_part& {
+        assert(func_);
+
+        return *func_;
+    }
+
+    [[nodiscard]] auto func_part() const -> const function_part& {
+        assert(func_);
+
+        return *func_;
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto function(const std::string_view name,
+                                       const frame_type frm_type,
+                                       std::string call_path,
+                                       std::string return_label) -> frame {
+
+        frame frm{name, frm_type};
+
+        frm.func_ = function_part{
+            .call_path{std::move(call_path)},
+            .ret_label{std::move(return_label)},
+            .bindings{},
+            .is_path_open{true},
+            .result_name{},
+            .param_names{},
+            .uses{},
+        };
+
+        return frm;
+    }
 };
 
 // an identifier and its path split at the '.', e.g. 'p.pos.x'
@@ -843,6 +900,8 @@ class type_table final {
         const type* type_ptr;
         // see 'definition_order'
         size_t definition{};
+        // e.g. 'i8' or 'int', which have no place in the source
+        bool is_builtin{};
     };
 
     lut<entry> entries_;
@@ -857,7 +916,7 @@ class type_table final {
         add_alias(src_loc_tk, tpe.name(), tpe);
     }
 
-    // another name for a type, e.g. 'int' for the default type
+    // another name for a type, e.g. 'text' for 'list<i8, 8>'
     auto add_alias(const token& src_loc_tk, const std::string_view name,
                    const type& tpe) -> void {
 
@@ -865,6 +924,17 @@ class type_table final {
                                             .src_loc_tk{src_loc_tk},
                                             .type_ptr{&tpe},
                                             .definition{order_.get().current()},
+                                            .is_builtin{},
+                                        });
+    }
+
+    // a built-in type under 'name', e.g. 'i8', or 'int' for the default type
+    auto add_builtin(const std::string_view name, const type& tpe) -> void {
+        entries_.put(std::string{name}, {
+                                            .src_loc_tk{},
+                                            .type_ptr{&tpe},
+                                            .definition{},
+                                            .is_builtin{true},
                                         });
     }
 
@@ -878,6 +948,7 @@ class type_table final {
                                                   .src_loc_tk{src_loc_tk},
                                                   .type_ptr{&tpe},
                                                   .definition{},
+                                                  .is_builtin{},
                                               });
     }
 
@@ -901,6 +972,11 @@ class type_table final {
         return is_param(name) or (entries_.has(name) and
                                   order_.get().is_visible(
                                       entries_.get_const_ref(name).definition));
+    }
+
+    // a built-in type name, also one a type parameter does not hide
+    [[nodiscard]] auto is_builtin(const std::string_view name) const -> bool {
+        return entries_.has(name) and entries_.get_const_ref(name).is_builtin;
     }
 
     [[nodiscard]] auto src_loc_tk_of(const std::string_view name) const
@@ -1242,7 +1318,6 @@ struct check_options {
         return {
             .upper{bounds_upper},
             .lower{bounds_lower},
-            .with_line{with_line},
         };
     }
 
@@ -1268,13 +1343,15 @@ struct check_options {
     }
 
   private:
-    // every run-time check reports the line when '--checks=line' is given
-    [[nodiscard]] auto runtime(const bool enabled) const
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto runtime(const bool enabled)
         -> machine::runtime_check {
 
         return {
             .enabled{enabled},
-            .with_line{with_line},
         };
     }
 };
@@ -1397,7 +1474,7 @@ class scope_stack final {
                 continue;
             }
 
-            if (not frm.is_inlined_func()) {
+            if (not frm.is_compiled_in_place()) {
                 break;
             }
 
@@ -1608,8 +1685,8 @@ class scope_stack final {
 };
 
 // where the variables are placed, after the dats that 'data_table' placed: the
-// running size of the variables section, the frames that have a storage base
-// of their own, the capacity of the section and the target limits
+// frames that have a storage base of their own, the capacity of the section
+// and the target limits; the size in use is the sum of what the frames hold
 class storage_layout final {
     // where a variable is placed, 'frame_index' is empty at the variables base
     struct storage_location {
@@ -1620,7 +1697,6 @@ class storage_layout final {
     std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<scope_stack> scopes_;
     std::reference_wrapper<const data_table> data_;
-    size_t vars_size_bytes_{};
     size_t vars_capacity_bytes_;
     size_t max_vars_size_bytes_{};
     bool dat_var_padding_applied_{};
@@ -1667,7 +1743,7 @@ class storage_layout final {
         //       function bodies it reads, whose offsets are not used
 
         assert(capacity_unchecked_ or
-               sum_storage_size(vars_size_bytes_, dat.padding_bytes) ==
+               sum_storage_size(vars_size_bytes(), dat.padding_bytes) ==
                    dat.offset_bytes);
 
         const size_t allocated_size_bytes{
@@ -1678,7 +1754,7 @@ class storage_layout final {
         std::get<in_storage>(var.placement).offset = add_address_offset(
             address_offset(dat.offset_bytes), -variables_base_shift_bytes());
 
-        add_allocated_size_bytes(src_loc_tk, allocated_size_bytes);
+        assert_total_fits_target(src_loc_tk, allocated_size_bytes);
 
         return allocated_size_bytes;
     }
@@ -1726,15 +1802,22 @@ class storage_layout final {
                                                -variables_base_shift_bytes());
         }
 
-        add_allocated_size_bytes(src_loc_tk, allocated_size_bytes);
+        assert_total_fits_target(src_loc_tk, allocated_size_bytes);
 
-        max_vars_size_bytes_ =
-            std::max(used_vars_size_bytes(), max_vars_size_bytes_);
+        // note: the parse forgets the peak and a dry run puts it back, and
+        //       the parse may place a variable before the dats; the frame
+        //       holds the bytes after this returns
+
+        if (not capacity_unchecked_) {
+            max_vars_size_bytes_ = std::max(
+                sum_storage_size(used_vars_size_bytes(), allocated_size_bytes),
+                max_vars_size_bytes_);
+        }
 
         return allocated_size_bytes;
     }
 
-    auto assert_released() const -> void { assert(vars_size_bytes_ == 0); }
+    auto assert_released() const -> void { assert(vars_size_bytes() == 0); }
 
     // the declarations from here on are checked against the capacity
     auto begin_compile() -> void { capacity_unchecked_ = false; }
@@ -1823,23 +1906,13 @@ class storage_layout final {
         return frame_at(*frame_index).peak_storage_size_bytes();
     }
 
-    // the storage of 'popped', the innermost frame, is free again; the root
-    // frame applies the dat var padding again when it is entered anew
-    auto release_scope(const frame& popped, const bool is_root) -> void {
-        vars_size_bytes_ -= popped.allocated_storage_size_bytes();
-
-        if (not is_root) {
-            return;
-        }
-
-        assert(vars_size_bytes_ == 0);
-
-        dat_var_padding_applied_ = false;
-    }
+    // the root frame applies the dat var padding again when it is entered
+    // anew
+    auto release_root() -> void { dat_var_padding_applied_ = false; }
 
     // the frames of the parse are popped, its use of storage is forgotten
     auto reset_usage() -> void {
-        assert(vars_size_bytes_ == 0);
+        assert(vars_size_bytes() == 0);
 
         max_vars_size_bytes_ = 0;
     }
@@ -1872,23 +1945,6 @@ class storage_layout final {
     }
 
   private:
-    // the total accepts the size before a frame sums it
-    auto add_allocated_size_bytes(const token& src_loc_tk,
-                                  const size_t allocated_size_bytes) -> void {
-
-        // note: checked before it is stored, a frame popped by an error
-        //       releases only what it holds
-
-        const size_t total_bytes{
-            add_storage_size(src_loc_tk, vars_size_bytes_,
-                             allocated_size_bytes),
-        };
-
-        assert_storage_fits_target(src_loc_tk, total_bytes);
-
-        vars_size_bytes_ = total_bytes;
-    }
-
     // the first variable after the dats starts past the padding that aligns it
     auto apply_dat_var_padding(const token& src_loc_tk) -> void {
         if (dat_var_padding_applied_) {
@@ -1897,18 +1953,25 @@ class storage_layout final {
 
         const size_t padding_bytes{data_.get().dat_var_padding_bytes()};
 
-        scopes_.get().front().set_dat_var_padding_bytes(padding_bytes);
+        std::ignore =
+            add_storage_size(src_loc_tk, vars_size_bytes(), padding_bytes);
 
-        vars_size_bytes_ =
-            add_storage_size(src_loc_tk, vars_size_bytes_, padding_bytes);
+        scopes_.get().front().set_dat_var_padding_bytes(padding_bytes);
 
         dat_var_padding_applied_ = true;
     }
 
     // the declaration that takes the data and variables past what the target
-    // addresses is the error, not the end of the build
-    auto assert_storage_fits_target(const token& src_loc_tk,
-                                    const size_t total_bytes) const -> void {
+    // addresses is the error, not the end of the build; checked before the
+    // frame holds the bytes
+    auto assert_total_fits_target(const token& src_loc_tk,
+                                  const size_t allocated_size_bytes) const
+        -> void {
+
+        const size_t total_bytes{
+            add_storage_size(src_loc_tk, vars_size_bytes(),
+                             allocated_size_bytes),
+        };
 
         const size_t max_bytes{machine_.get().max_storage_bytes()};
 
@@ -1961,7 +2024,7 @@ class storage_layout final {
             local_size_bytes = sum_storage_size(
                 local_size_bytes, frm.allocated_storage_size_bytes());
 
-            if (not frm.storage_base_register().empty()) {
+            if (frm.has_storage_base()) {
                 return {
                     .frame_index{i - 1},
                     .base_offset{local_size_bytes},
@@ -1971,7 +2034,7 @@ class storage_layout final {
 
         return {
             .frame_index{},
-            .base_offset{vars_size_bytes_},
+            .base_offset{vars_size_bytes()},
         };
     }
 
@@ -1981,7 +2044,7 @@ class storage_layout final {
 
     // bytes of variables, without the dats and the padding after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
-        return vars_size_bytes_ - data_.get().total_size_bytes() -
+        return vars_size_bytes() - data_.get().total_size_bytes() -
                data_.get().dat_var_padding_bytes();
     }
 
@@ -2002,6 +2065,18 @@ class storage_layout final {
         };
 
         return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
+    }
+
+    // the dats, the padding after them and the variables of every frame
+    [[nodiscard]] auto vars_size_bytes() const -> size_t {
+        size_t total_bytes{};
+
+        for (const frame& frm : std::as_const(scopes_.get()).frames()) {
+            total_bytes = sum_storage_size(total_bytes,
+                                           frm.allocated_storage_size_bytes());
+        }
+
+        return total_bytes;
     }
 };
 
@@ -2447,12 +2522,12 @@ class definition_checks final {
             return;
         }
 
-        const token& type_tk{types_.get().src_loc_tk_of(name)};
-
         // note: a built-in type name is rejected by
         //       'toc::assert_valid_unqualified_name' at the definition
 
-        assert(not type_tk.is_empty());
+        assert(not types_.get().is_builtin(name));
+
+        const token& type_tk{types_.get().src_loc_tk_of(name)};
 
         throw compile_error{
             src_loc_tk,
@@ -2570,12 +2645,12 @@ class definition_checks final {
                                  const std::string_view name) const -> void {
 
         if (types_.get().exists(name)) {
-            const token& type_tk{types_.get().src_loc_tk_of(name)};
-
             // note: a built-in type name is rejected by
             //       'toc::assert_valid_unqualified_name'
 
-            assert(not type_tk.is_empty());
+            assert(not types_.get().is_builtin(name));
+
+            const token& type_tk{types_.get().src_loc_tk_of(name)};
 
             throw compile_error{src_loc_tk,
                                 std::format("type {} already defined at {}",
@@ -2828,6 +2903,13 @@ class toc final {
         scopes_.back().add_binding(binding);
     }
 
+    // e.g. 'i8', or 'int' for the default type, before any definition
+    auto add_builtin_type(const std::string_view name, const type& tpe)
+        -> void {
+
+        types_.add_builtin(name, tpe);
+    }
+
     // e.g. the packed elements of a constant '{...}' initializer
     [[nodiscard]] auto add_bytes_constant(const token& src_loc_tk,
                                           const std::string_view bytes)
@@ -2960,13 +3042,6 @@ class toc final {
         definitions_.assert_type_not_defined(src_loc_tk, tpe.name());
 
         types_.add(src_loc_tk, tpe);
-    }
-
-    auto add_type_alias(const token& src_loc_tk, const std::string_view name,
-                        const type& tpe) -> void {
-
-        definitions_.assert_type_not_defined(src_loc_tk, name);
-        types_.add_alias(src_loc_tk, name, tpe);
     }
 
     // e.g. 'T' names 'i8' in an instance of 'func f<T type>()', until
@@ -3597,12 +3672,15 @@ class toc final {
     [[nodiscard]] auto is_builtin_type_name(const std::string_view name) const
         -> bool {
 
-        return types_.exists(name) and types_.src_loc_tk_of(name).is_empty();
+        return types_.is_builtin(name);
     }
 
     // the frames are pushed by 'scope_stack', popped here with their storage
     auto pop_frame() -> void {
-        storage_.release_scope(scopes_.back(), scopes_.frames().size() == 1);
+        if (scopes_.frames().size() == 1) {
+            storage_.release_root();
+        }
+
         scopes_.pop();
     }
 
