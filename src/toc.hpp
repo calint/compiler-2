@@ -1523,62 +1523,6 @@ class scope_stack final {
 
     // a path in the body being parsed whose root is 'name', recorded when it
     // names a global, a parameter or the result, see 'body_uses'
-    auto record_use(const std::string_view name, const access_path& path,
-                    const bool is_written) -> void {
-
-        const name_meaning meaning{lookup(name)};
-
-        if (not meaning.is_variable()) {
-            return;
-        }
-
-        const var_info& var{
-            frames_.at(meaning.frame_index).get_var_const_ref(name),
-        };
-
-        // e.g. the 'e' of 'foo g' is an element of 'g'
-        if (var.foo_array) {
-            record_storage_use(var.foo_array->any_element(path), is_written);
-            return;
-        }
-
-        record_storage_use(
-            {
-                .root{
-                    .name{std::string{name}},
-                    .frame_index{meaning.frame_index},
-                },
-                .path{path},
-            },
-            is_written);
-    }
-
-    auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
-
-  private:
-    [[nodiscard]] auto func_frame() -> frame& {
-        return frames_.at(func_frame_index());
-    }
-
-    [[nodiscard]] auto func_frame_index() const -> size_t {
-        for (size_t i{frames_.size()}; i > 0; --i) {
-            if (frames_.at(i - 1).is_func()) {
-                return i - 1;
-            }
-        }
-
-        std::unreachable();
-    }
-
-    [[nodiscard]] auto is_global_visible(const std::string_view name) const
-        -> bool {
-
-        const auto it{global_definitions_.find(name)};
-
-        return it == global_definitions_.end() or
-               order_.get().is_visible(it->second);
-    }
-
     // a local of the body is not named by the callers
     auto record_storage_use(const storage_path& storage, const bool is_written)
         -> void {
@@ -1607,6 +1551,32 @@ class scope_stack final {
 
             func.body_uses_ref().add_binding(index, storage.path, is_written);
         }
+    }
+
+    auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
+
+  private:
+    [[nodiscard]] auto func_frame() -> frame& {
+        return frames_.at(func_frame_index());
+    }
+
+    [[nodiscard]] auto func_frame_index() const -> size_t {
+        for (size_t i{frames_.size()}; i > 0; --i) {
+            if (frames_.at(i - 1).is_func()) {
+                return i - 1;
+            }
+        }
+
+        std::unreachable();
+    }
+
+    [[nodiscard]] auto is_global_visible(const std::string_view name) const
+        -> bool {
+
+        const auto it{global_definitions_.find(name)};
+
+        return it == global_definitions_.end() or
+               order_.get().is_visible(it->second);
     }
 
     auto track_depth() -> void {
@@ -3327,8 +3297,15 @@ class toc final {
     auto record_use(const std::string_view name, const access_path& path,
                     const use_kind kind) -> void {
 
-        if (scopes_.is_in_func()) {
-            scopes_.record_use(name, path, kind == use_kind::write);
+        if (not scopes_.is_in_func()) {
+            return;
+        }
+
+        // note: the parse records the uses, no name is bound to an argument
+        assert(not is_compiling_);
+
+        if (const std::optional<storage_path> storage{storage_of(name, path)}) {
+            scopes_.record_storage_use(*storage, kind == use_kind::write);
         }
     }
 

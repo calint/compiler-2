@@ -27,13 +27,13 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
 
     static constexpr std::array<failure_exit_code, 7> failure_exit_codes_{
         {
-            {.handler_label{bounds_failure_handler_label}, .code{255}},
-            {.handler_label{frame_overflow_handler_label}, .code{254}},
-            {.handler_label{division_failure_handler_label}, .code{253}},
-            {.handler_label{shift_failure_handler_label}, .code{252}},
-            {.handler_label{overlap_failure_handler_label}, .code{251}},
-            {.handler_label{stack_overflow_handler_label}, .code{250}},
-            {.handler_label{overflow_failure_handler_label}, .code{249}},
+            {.handler_label{bounds_failure.label}, .code{255}},
+            {.handler_label{frame_overflow_failure.label}, .code{254}},
+            {.handler_label{division_failure.label}, .code{253}},
+            {.handler_label{shift_failure.label}, .code{252}},
+            {.handler_label{overlap_failure.label}, .code{251}},
+            {.handler_label{stack_overflow_failure.label}, .code{250}},
+            {.handler_label{overflow_failure.label}, .code{249}},
         },
     };
     // the uart addresses 0xffff'fff4 and 0xffff'fff8 are reached as sign

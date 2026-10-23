@@ -454,26 +454,26 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
-    // a jump to the handler of the check 'name', which is marked used; with
-    // the line, the line in a0 and a jump to the entry of the handler for the
-    // file of 'src_loc_tk'
+    // a jump to 'handler', which is marked used; with the line, the line in
+    // a0 and a jump to the entry of the handler for the file of 'src_loc_tk'
     auto branch_to_failure(const token& src_loc_tk, const size_t indent,
-                           const std::string_view name,
-                           const std::string_view handler_label,
-                           const bool with_line) -> void {
+                           const failure_handler& handler, const bool with_line)
+        -> void {
+
+        assert(handler.takes_line or not with_line);
 
         if (not with_line) {
-            mark_used(name);
-            branch(indent, handler_label);
+            mark_used(handler.name);
+            branch(indent, handler.label);
             return;
         }
 
         comment(src_loc_tk, indent, "source line");
         assembler_.li(indent, "a0", src_loc_tk.at_line());
-        mark_used(name, src_loc_tk);
+        mark_used(handler.name, src_loc_tk);
 
         branch(indent,
-               failure_entry_label(handler_label, src_loc_tk.file_index()));
+               failure_entry_label(handler.label, src_loc_tk.file_index()));
     }
 
     // i/o routines replacing system calls return through a7 and change only
@@ -854,8 +854,7 @@ class machine_rv32i : public machine {
 
         assembler_.label(indent, overflow.name);
 
-        branch_to_failure(src_loc_tk, indent, "frame overflow",
-                          frame_overflow_handler_label, false);
+        branch_to_failure(src_loc_tk, indent, frame_overflow_failure, false);
 
         assembler_.label(indent, fits.name);
         free_scratch_register(src_loc_tk, indent, remaining);
@@ -904,8 +903,7 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, lowest.base_register(), limit.base_register(),
                         fits.reference);
 
-        branch_to_failure(src_loc_tk, indent, "stack overflow",
-                          stack_overflow_handler_label, false);
+        branch_to_failure(src_loc_tk, indent, stack_overflow_failure, false);
 
         assembler_.label(indent, fits.name);
         free_scratch_register(src_loc_tk, indent, lowest);
@@ -1159,7 +1157,7 @@ class machine_rv32i : public machine {
     auto emit_failure_handler(const failure_handler& handler,
                               const bool with_line) -> void override {
 
-        assert(handler.label != stack_overflow_handler_label or
+        assert(handler.label != stack_overflow_failure.label or
                is_stack_bounded());
 
         emit_named_failure_handler(handler.label, handler.name, with_line);
@@ -1875,8 +1873,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, "overlap",
-                          overlap_failure_handler_label, check.with_line);
+        branch_to_failure(src_loc_tk, indent, overlap_failure, check.with_line);
 
         assembler_.label(indent, passed.name);
 
@@ -1920,8 +1917,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, "division",
-                          division_failure_handler_label, with_line);
+        branch_to_failure(src_loc_tk, indent, division_failure, with_line);
 
         assembler_.label(indent, pass.name);
 
@@ -2081,8 +2077,7 @@ class machine_rv32i : public machine {
 
         comment(src_loc_tk, indent, "failed: report and exit");
 
-        branch_to_failure(src_loc_tk, indent, "shift",
-                          shift_failure_handler_label, check.with_line);
+        branch_to_failure(src_loc_tk, indent, shift_failure, check.with_line);
 
         assembler_.label(indent, pass.name);
 
@@ -2988,8 +2983,8 @@ class machine_rv32i : public machine {
 
         assembler_.label(indent, bounds_fail_.name);
 
-        branch_to_failure(src_loc_tk, indent, "bounds",
-                          bounds_failure_handler_label, options.with_line);
+        branch_to_failure(src_loc_tk, indent, bounds_failure,
+                          options.with_line);
 
         assembler_.label(indent, bounds_pass_.name);
     }
@@ -3537,8 +3532,8 @@ class machine_rv32i : public machine {
     auto fail_on_overflow(const token& src_loc_tk, const size_t indent,
                           const runtime_check& check) -> void {
 
-        branch_to_failure(src_loc_tk, indent, "overflow",
-                          overflow_failure_handler_label, check.with_line);
+        branch_to_failure(src_loc_tk, indent, overflow_failure,
+                          check.with_line);
     }
 
     // a jump grown beyond 1 MiB needs a register without a live value

@@ -2621,7 +2621,7 @@ auto generate_frame_checks() -> void {
     backend.end_main();
 
     // the backend jumps to the label, so it defines it
-    backend.label(0, machine::frame_overflow_handler_label);
+    backend.label(0, machine::frame_overflow_failure.label);
     hand_written(backend, "    li a3, 1\n    jr s3");
     backend.label(0, "frame_failure");
     backend.exit(token{}, 1, operand::imm(1, integer));

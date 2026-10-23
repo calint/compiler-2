@@ -809,8 +809,10 @@ inline auto assert_not_whole_array(const statement& st, const ident_info& info)
     return info;
 }
 
-// 'st' reads bytes of 'dst' under any name, e.g. the 'p' of 'g = p + 1'
-// with 'p' bound to 'g'; a register only under its own name
+// 'st' reads 'dst': any read of its root name, whatever its bytes, e.g. the
+// 'p.y' of 'p.x = p.y + 1'; under another name only bytes that overlap, e.g.
+// the 'p' of 'g = p + 1' with 'p' bound to 'g'; a register only under its own
+// name
 [[nodiscard]] inline auto reads_destination(const toc& tc, const statement& st,
                                             const destination& dst) -> bool {
 

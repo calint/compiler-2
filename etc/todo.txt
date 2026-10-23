@@ -101,6 +101,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             twice => 'bulk_operands::is_constant_empty'
        3.9. S-4: 'reads_destination' counts any read of the root name
             (comment, or code with a measurement)
+       => decided (2026-10-23): do 3.1, 3.3, 3.7, 3.8, 3.9 (comment) and
+          3.4, 3.5; 3.2 joins the fpga panic item; discard 3.6, 2.8, 2.9
+       => done (2026-10-23): 3.1, 3.3, 3.7, 3.8, 3.9, assembly unchanged
+          3.1: 'machine::bounds_failure' and the other entries hold the
+          label, the name and 'takes_line'; the sites pass the entry, the
+          '*_handler_label' constants are gone
+          3.3: the pool cannot tell the frame base from a scratch use of
+          its register, so the flag stays; it is version state and
+          'emit_discarded' sets it with the pool
+          3.7: 'scope_stack::record_use' is gone, 'toc::record_use' asks
+          'storage_of' and asserts the parse
     4. apply (behavior-preserving): D-1, D-2, D-3, A-4, A-5, R10 A-9,
        A-8, R-3, E-4, E-5, E-6, F-3 to F-8, G-4 to G-6, S-5 to S-7, D-4
        (test comment); A-7 discard (document at most); A-6 gone, 1.3 adds
@@ -152,6 +163,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        with one code, carrying it costs a register and code in every
        handler, and the message now tells the failures apart
     => rejected: fpga overrides that print, duplicates of the shared ones
+    => also (R11 A-2): '--checks=line' is decided in 'main' by
+       'reports_line', copied into every 'runtime_check' and
+       'bounds_check_options' and passed to 'emit_used_failure_handlers';
+       with 'reports_line' gone it becomes one value the backend reads, the
+       check sites and the emit lose their 'with_line'
     => invariant: every target prints the same panic text for a source
     => tests: 'UPDATE=1' for rv32i-fpga, then remove each
        'NNN.rv32i-fpga.out' equal to the file the target falls back to;

@@ -59,15 +59,14 @@ class stmt_builtin_array_copy final : public statement {
 
         operands_.assert_constant_count_in_bounds(tc);
 
+        // nothing is copied
+        if (operands_.is_constant_empty(tc)) {
+            return;
+        }
+
         const std::optional<int64_t> count{
             operands_.count().constant_value(tc),
         };
-
-        // nothing is copied, so a start at the end of the array, which only a
-        // range may have, is not addressed
-        if (count and *count == 0) {
-            return;
-        }
 
         // the overlap check compares the addresses of the loop at run time
         if (count and not tc.checks().overlap) {

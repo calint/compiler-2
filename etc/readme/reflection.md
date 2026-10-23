@@ -108,8 +108,8 @@ Right now I run a swarm of AI agents. They look for bugs and refactor the design
 until a human can read it easily.
 
 The amount of bugs, unresolved edge cases and inconsistencies it finds is scary.
-This is a relatively simple language. I don't dare think of what AI would find
-in a large project.
+This is a relatively simple language. Are complex languages written in a
+flawless way by superior engineers or is AI going to scare them?
 
 ### The sense of losing touch with the code
 

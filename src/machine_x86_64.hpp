@@ -433,8 +433,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "frame capacity check begin");
 
         const std::string failed{
-            failure_label("frame overflow", frame_overflow_handler_label,
-                          src_loc_tk, false),
+            failure_label(frame_overflow_failure, src_loc_tk, false),
         };
 
         const operand start{
@@ -709,7 +708,7 @@ class machine_x86_64 final : public machine {
                               const bool with_line) -> void override {
 
         // note: the stack is not bounded, see 'is_stack_bounded'
-        assert(handler.label != stack_overflow_handler_label);
+        assert(handler.label != stack_overflow_failure.label);
 
         emit_line_panic_handler(with_line, handler.name,
                                 failure_lines_of(handler.name), handler.label);
@@ -1463,8 +1462,7 @@ class machine_x86_64 final : public machine {
         -> void {
 
         assembler_.jcc(indent, failed,
-                       failure_label("bounds", bounds_failure_handler_label,
-                                     src_loc_tk, with_line));
+                       failure_label(bounds_failure, src_loc_tk, with_line));
     }
 
     auto branch_to_overflow_panic(const token& src_loc_tk, const size_t indent,
@@ -1472,8 +1470,7 @@ class machine_x86_64 final : public machine {
         -> void {
 
         assembler_.jcc(indent, failed,
-                       failure_label("overflow", overflow_failure_handler_label,
-                                     src_loc_tk, with_line));
+                       failure_label(overflow_failure, src_loc_tk, with_line));
     }
 
     // the built-in integer type of 'size_bytes'
@@ -1525,8 +1522,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "overlap check begin");
 
         const std::string failed{
-            failure_label("overlap", overlap_failure_handler_label, src_loc_tk,
-                          check.with_line),
+            failure_label(overlap_failure, src_loc_tk, check.with_line),
         };
 
         const std::string passed{
@@ -1571,8 +1567,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "division check begin");
 
         const std::string failed{
-            failure_label("division", division_failure_handler_label,
-                          src_loc_tk, with_line),
+            failure_label(division_failure, src_loc_tk, with_line),
         };
 
         comment(src_loc_tk, indent, "zero divisor");
@@ -1620,8 +1615,7 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "shift check begin");
 
         const std::string failed{
-            failure_label("shift", shift_failure_handler_label, src_loc_tk,
-                          check.with_line),
+            failure_label(shift_failure, src_loc_tk, check.with_line),
         };
 
         cmp(src_loc_tk, indent, sized_register("rcx", dst_type.size_bytes()),
@@ -2071,19 +2065,20 @@ class machine_x86_64 final : public machine {
 
     // the handler 'handler_label' to jump to, or with the line the stub of
     // the line; marked used so the handler of 'name' is emitted
-    [[nodiscard]] auto failure_label(const std::string_view name,
-                                     const std::string_view handler_label,
+    [[nodiscard]] auto failure_label(const failure_handler& handler,
                                      const token& src_loc_tk,
                                      const bool with_line) -> std::string {
 
+        assert(handler.takes_line or not with_line);
+
         if (not with_line) {
-            mark_used(name);
-            return std::string{handler_label};
+            mark_used(handler.name);
+            return std::string{handler.label};
         }
 
-        mark_used(name, src_loc_tk);
+        mark_used(handler.name, src_loc_tk);
 
-        return line_panic_label(name, src_loc_tk.file_index(),
+        return line_panic_label(handler.name, src_loc_tk.file_index(),
                                 src_loc_tk.at_line());
     }
 

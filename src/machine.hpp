@@ -373,10 +373,11 @@ class machine {
     routine_uses used_routines_;
 
     // what compiling a version of code changes in the machine: the registers
-    // held, the trace of the calls, the most scratch registers in use and the
-    // routines used
+    // held, whether the frame base is among them, the trace of the calls, the
+    // most scratch registers in use and the routines used
     struct version_state {
         register_pool registers;
+        bool frame_base_reserved{};
         register_trace trace;
         size_t max_scratch_regs{};
         routine_uses used_routines;
@@ -455,78 +456,56 @@ class machine {
     // the start of the label of a noinline body, the report drops it
     static constexpr std::string_view body_label_prefix{"func."};
 
-    // the labels of the code that a failed check jumps to, every backend
-    // emits it
-    static constexpr std::string_view bounds_failure_handler_label{
-        "baz_bounds_panic",
+    // the handlers of the failed checks, a check site passes its entry, so
+    // the label, the name and whether it takes the line come together
+    static constexpr failure_handler bounds_failure{
+        .label{"baz_bounds_panic"},
+        .name{"bounds"},
+        .comment{"bounds failure handler (--checks=upper or --checks=lower)"},
+        .takes_line{true},
     };
-    static constexpr std::string_view division_failure_handler_label{
-        "baz_division_panic",
+    static constexpr failure_handler division_failure{
+        .label{"baz_division_panic"},
+        .name{"division"},
+        .comment{"division failure handler (--checks=division)"},
+        .takes_line{true},
     };
-    static constexpr std::string_view overflow_failure_handler_label{
-        "baz_overflow_panic",
+    static constexpr failure_handler frame_overflow_failure{
+        .label{"baz_frame_overflow"},
+        .name{"frame overflow"},
+        .comment{"frame overflow handler (--checks=frame)"},
+        .takes_line{false},
     };
-    static constexpr std::string_view overlap_failure_handler_label{
-        "baz_overlap_panic",
+    static constexpr failure_handler overflow_failure{
+        .label{"baz_overflow_panic"},
+        .name{"overflow"},
+        .comment{"overflow failure handler (--checks=overflow)"},
+        .takes_line{true},
     };
-    static constexpr std::string_view stack_overflow_handler_label{
-        "baz_stack_overflow",
+    static constexpr failure_handler overlap_failure{
+        .label{"baz_overlap_panic"},
+        .name{"overlap"},
+        .comment{"overlap failure handler (--checks=overlap)"},
+        .takes_line{true},
     };
-    static constexpr std::string_view shift_failure_handler_label{
-        "baz_shift_panic",
+    static constexpr failure_handler shift_failure{
+        .label{"baz_shift_panic"},
+        .name{"shift"},
+        .comment{"shift failure handler (--checks=shift)"},
+        .takes_line{true},
     };
-    static constexpr std::string_view frame_overflow_handler_label{
-        "baz_frame_overflow",
+    static constexpr failure_handler stack_overflow_failure{
+        .label{"baz_stack_overflow"},
+        .name{"stack overflow"},
+        .comment{"stack overflow handler (--checks=stack)"},
+        .takes_line{false},
     };
 
     // in the order they are emitted after the code
     static constexpr std::array<failure_handler, 7> failure_handlers{
-        {
-            {
-                .label{frame_overflow_handler_label},
-                .name{"frame overflow"},
-                .comment{"frame overflow handler (--checks=frame)"},
-                .takes_line{false},
-            },
-            {
-                .label{division_failure_handler_label},
-                .name{"division"},
-                .comment{"division failure handler (--checks=division)"},
-                .takes_line{true},
-            },
-            {
-                .label{overlap_failure_handler_label},
-                .name{"overlap"},
-                .comment{"overlap failure handler (--checks=overlap)"},
-                .takes_line{true},
-            },
-            {
-                .label{overflow_failure_handler_label},
-                .name{"overflow"},
-                .comment{"overflow failure handler (--checks=overflow)"},
-                .takes_line{true},
-            },
-            {
-                .label{stack_overflow_handler_label},
-                .name{"stack overflow"},
-                .comment{"stack overflow handler (--checks=stack)"},
-                .takes_line{false},
-            },
-            {
-                .label{shift_failure_handler_label},
-                .name{"shift"},
-                .comment{"shift failure handler (--checks=shift)"},
-                .takes_line{true},
-            },
-            {
-                .label{bounds_failure_handler_label},
-                .name{"bounds"},
-                .comment{
-                    "bounds failure handler (--checks=upper or --checks=lower)",
-                },
-                .takes_line{true},
-            },
-        },
+        frame_overflow_failure, division_failure,       overlap_failure,
+        overflow_failure,       stack_overflow_failure, shift_failure,
+        bounds_failure,
     };
 
     // a failed sector read or write jumps to it and exits with a panic message
@@ -918,6 +897,7 @@ class machine {
         const version_scope discarded{*this};
 
         registers_ = noinline_body_pool();
+        frame_base_reserved_ = true;
 
         try {
             std::ignore = target_assembler().capture(emit);
@@ -1886,6 +1866,7 @@ class machine {
 
     auto restore_version_state(version_state state) -> void {
         registers_ = std::move(state.registers);
+        frame_base_reserved_ = state.frame_base_reserved;
         trace_ = std::move(state.trace);
         usage_max_scratch_regs_ = state.max_scratch_regs;
         used_routines_ = std::move(state.used_routines);
@@ -1923,6 +1904,7 @@ class machine {
     [[nodiscard]] auto version_state_now() const -> version_state {
         return {
             .registers{registers_},
+            .frame_base_reserved{frame_base_reserved_},
             .trace{trace_},
             .max_scratch_regs{usage_max_scratch_regs_},
             .used_routines{used_routines_},
