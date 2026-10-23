@@ -114,9 +114,9 @@ class stmt_assign_var final : public statement {
                           stmt_ident_.accessed_path()),
         };
 
-        assert_parts_not_clobbered(tc, dst_storage);
-
         const ident_info var_info{make_ident_info(tc, stmt_ident_)};
+
+        assert_parts_not_clobbered(tc, dst_storage, var_info.array_len());
 
         // note: the parse rejected a constant destination
         assert(not var_info.is_const());
@@ -238,9 +238,11 @@ class stmt_assign_var final : public statement {
     }
 
     // the value is written part by part, so a part must not read what is
-    // already written, e.g. the 'p.x' of 'p = {p.y, p.x}'
+    // already written, e.g. the 'p.x' of 'p = {p.y, p.x}'; 'unsized_count'
+    // is the size of an unsized array destination
     auto assert_parts_not_clobbered(
-        const toc& tc, const std::optional<storage_path>& dst) const -> void {
+        const toc& tc, const std::optional<storage_path>& dst,
+        const std::optional<size_t> unsized_count) const -> void {
 
         // note: a value in a register is written as one part that no other
         //       name reaches
@@ -249,23 +251,29 @@ class stmt_assign_var final : public statement {
             return;
         }
 
-        std::vector<written_part> parts;
-        expr_.list_written_parts(access_path::whole_variable(), parts);
+        write_plan plan;
+        expr_.plan_writes(tc, part_location{}, unsized_count, plan);
 
-        // the parts before the current one
+        // the parts written by the steps before the current one
         std::vector<written_place> written;
 
-        for (const written_part& part : parts) {
-            const written_place place{
-                .storage{
-                    .root{dst->root},
-                    .path{dst->path.extended_by(part.suffix)},
-                },
-                .path{stmt_ident_.accessed_path().extended_by(part.suffix)},
-            };
+        for (const write_step& step : plan) {
+            if (const value_write* const value{
+                    std::get_if<value_write>(&step.action),
+                }) {
 
-            assert_no_read_of_written_part(tc, *part.item, written);
-            written.push_back(place);
+                assert_no_read_of_written_part(tc, *value->item, written);
+            }
+
+            for (const access_path& part : step.covered) {
+                written.push_back({
+                    .storage{
+                        .root{dst->root},
+                        .path{dst->path.extended_by(part)},
+                    },
+                    .path{stmt_ident_.accessed_path().extended_by(part)},
+                });
+            }
         }
     }
 

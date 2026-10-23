@@ -206,42 +206,15 @@ class expr_any final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        // the base case
-        if (is_identifier_ or not is_array_) {
-            compile_element(tc, indent, element(0), dst);
-            return;
-        }
+        // note: an unsized destination is the only array of unknown length
 
-        if (is_string()) {
-            compile_string(tc, indent, dst);
-            return;
-        }
+        assert(not is_array_ or is_identifier_ or
+               dst.is_length_unknown() ==
+                   (is_unsized_destination_ and not dst.array_len()));
 
-        // the size is not checked and the elements after the literal are not
-        // known
-        if (dst.is_length_unknown()) {
-            compile_elements(tc, indent, dst);
-            return;
-        }
-
-        const size_t array_count{destination_array_count(dst)};
-
-        // the parser could not check the size of an unsized destination
-        if (elements_.size() > array_count) {
-            throw compile_error{
-                element(array_count).tok(),
-                std::format("too many elements for array of size {}",
-                            array_count)};
-        }
-
-        compile_elements(tc, indent, dst);
-
-        const size_t count{elements_.size()};
-
-        expr_type::zero_remaining_elements(
-            tc, indent, tok(),
-            dst.operand_at(count * dst.type_ref().size_bytes(), dst.type_ref()),
-            dst.type_ref(), array_count - count);
+        write_plan plan;
+        plan_writes(tc, part_location{}, dst.array_len(), plan);
+        emit_write_plan(tc, indent, plan, dst);
     }
 
     [[nodiscard]] auto accessed_path() const -> access_path override {
@@ -451,34 +424,48 @@ class expr_any final : public statement {
         return string_tk_.is_string();
     }
 
-    // the parts of the value at 'at' in the destination, in the order
-    // 'compile' writes them; a single value, a copy or a string is one part
-    auto list_written_parts(const access_path& at,
-                            std::vector<written_part>& parts) const -> void {
-
-        if (is_identifier_ or not is_array_) {
-            list_element_parts(0, at, parts);
-            return;
-        }
-
-        if (is_string()) {
-            parts.push_back({
-                .item{this},
-                .suffix{at},
-            });
-
-            return;
-        }
-
-        for (size_t i{}; i < elements_.size(); ++i) {
-            access_path element_at{at};
-            element_at.add_fixed_index(i);
-            list_element_parts(i, element_at, parts);
-        }
-    }
-
     [[nodiscard]] auto open_bracket_token() const -> const token& {
         return open_bracket_tk_;
+    }
+
+    // appends the steps that write the value at 'at'; 'unsized_count' is the
+    // size of an unsized destination, e.g. a parameter 's[]', empty when it
+    // is not known, then the elements after the literal are not written
+    auto plan_writes(const toc& tc, const part_location& at,
+                     const std::optional<size_t> unsized_count,
+                     write_plan& plan) const -> void {
+
+        if (is_identifier_ or not is_array_) {
+            plan_element(tc, 0, at, plan);
+            return;
+        }
+
+        // empty when the size is not known
+        const std::optional<size_t> array_count{
+            is_unsized_destination_ ? unsized_count : array_count_,
+        };
+
+        if (is_string()) {
+            plan_string(at, array_count, plan);
+            return;
+        }
+
+        // the parser could not check the size of an unsized destination
+        if (array_count and elements_.size() > *array_count) {
+            throw compile_error{
+                element(*array_count).tok(),
+                std::format("too many elements for array of size {}",
+                            *array_count)};
+        }
+
+        plan_elements(tc, at, plan);
+
+        if (not array_count) {
+            return;
+        }
+
+        expr_type::plan_remaining_elements(
+            tok(), at, get_type(), elements_.size(), *array_count, plan);
     }
 
   private:
@@ -493,88 +480,6 @@ class expr_any final : public statement {
         throw compile_error{tz, std::format("too many elements for array of "
                                             "size {}",
                                             array_count_)};
-    }
-
-    // constant elements are stored like a string so the backend can pack them
-    // into wider immediates or copy them from read-only data, 'dst' is the
-    // array
-    auto compile_elements(toc& tc, const size_t indent,
-                          const destination& dst) const -> void {
-
-        machine& x{tc.machine()};
-
-        const std::optional<std::string> bytes{
-            constant_bytes(tc, dst.type_ref()),
-        };
-
-        if (bytes) {
-            x.copy_bytes(open_brace_tk_, indent, *bytes, dst.operand(),
-                         dst.type_ref().alignment(), [&] -> std::string {
-                             return tc.add_bytes_constant(open_brace_tk_,
-                                                          *bytes);
-                         });
-
-            return;
-        }
-
-        for (size_t i{}; i < elements_.size(); ++i) {
-            x.comment(tok(), indent, "[{}]", i);
-
-            // a call element writes at the element, not at the array start
-            // the identifier names, and an element is not an array
-            compile_element(tc, indent, element(i), dst.element(i));
-        }
-    }
-
-    // the string is stored and the rest of the array is zeroed like unlisted
-    // elements
-    auto compile_string(toc& tc, const size_t indent,
-                        const destination& dst) const -> void {
-
-        machine& x{tc.machine()};
-
-        const std::string bytes{token::decode_string(string_tk_.string_text())};
-
-        const size_t size_bytes{bytes.size()};
-
-        // empty when the size is not known
-        const std::optional<size_t> array_count{
-            dst.is_length_unknown()
-                ? std::nullopt
-                : std::optional{destination_array_count(dst)},
-        };
-
-        if (array_count and size_bytes > *array_count) {
-            throw compile_error{
-                string_tk_,
-                std::format("string size {} overflows array size {}",
-                            size_bytes, *array_count)};
-        }
-
-        // an empty string has nothing to store
-        if (size_bytes != 0) {
-            x.copy_bytes(string_tk_, indent, bytes, dst.operand(),
-                         dst.type_ref().alignment(), [&] -> std::string {
-                             return tc.add_string_constant(string_tk_);
-                         });
-        }
-
-        // the bytes after the string are not known
-        if (not array_count) {
-            return;
-        }
-
-        const size_t remaining_size_bytes{*array_count - size_bytes};
-
-        if (remaining_size_bytes == 0) {
-            return;
-        }
-
-        x.comment(string_tk_, indent, "zero remaining elements: {} B",
-                  remaining_size_bytes);
-
-        x.zero(string_tk_, indent, dst.operand_at(size_bytes, dst.type_ref()),
-               remaining_size_bytes, dst.type_ref().alignment());
     }
 
     // the little endian bytes of the elements, empty when an element is not a
@@ -612,40 +517,6 @@ class expr_any final : public statement {
         }
 
         return bytes;
-    }
-
-    // an unsized destination, e.g. a parameter 's[]', has the size of the
-    // argument, which is known only when the call is compiled
-    [[nodiscard]] auto destination_array_count(const destination& dst) const
-        -> size_t {
-
-        if (not is_unsized_destination_) {
-            return array_count_;
-        }
-
-        const std::optional<size_t> array_len{dst.array_len()};
-
-        assert(array_len);
-
-        return *array_len;
-    }
-
-    // an instance is written field by field, any other value at once
-    auto list_element_parts(const size_t index, const access_path& at,
-                            std::vector<written_part>& parts) const -> void {
-
-        if (const expr_type* const record{
-                std::get_if<expr_type>(&elements_.at(index)),
-            }) {
-
-            record->list_written_parts(at, parts);
-            return;
-        }
-
-        parts.push_back({
-            .item{&element(index)},
-            .suffix{at},
-        });
     }
 
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'
@@ -755,6 +626,138 @@ class expr_any final : public statement {
         array_count_ = count;
     }
 
+    // an instance literal is written field by field, any other value at once
+    auto plan_element(const toc& tc, const size_t index,
+                      const part_location& at, write_plan& plan) const -> void {
+
+        if (const expr_type* const record{
+                std::get_if<expr_type>(&elements_.at(index)),
+            }) {
+
+            record->plan_writes(tc, at, plan);
+            return;
+        }
+
+        plan.push_back({
+            .at{at},
+            .action{
+                value_write{
+                    .item{&element(index)},
+                },
+            },
+            .covered{at.path()},
+        });
+    }
+
+    // constant elements are stored like a string so the backend can pack them
+    // into wider immediates or copy them from read-only data
+    auto plan_elements(const toc& tc, const part_location& at,
+                       write_plan& plan) const -> void {
+
+        if (std::optional<std::string> bytes{constant_bytes(tc, get_type())};
+            bytes) {
+
+            std::vector<access_path> covered;
+
+            for (size_t i{}; i < elements_.size(); ++i) {
+                covered.push_back(at.element(i).path());
+            }
+
+            plan.push_back({
+                .at{at},
+                .action{
+                    bytes_write{
+                        .src_loc_tk{open_brace_tk_},
+                        .bytes{std::move(*bytes)},
+                        .is_string{},
+                    },
+                },
+                .covered{std::move(covered)},
+            });
+
+            return;
+        }
+
+        for (size_t i{}; i < elements_.size(); ++i) {
+            plan.push_back({
+                .at{at},
+                .action{
+                    write_comment{
+                        .src_loc_tk{tok()},
+                        .text{std::format("[{}]", i)},
+                    },
+                },
+                .covered{},
+            });
+
+            // a call element writes at the element, not at the array start
+            // the identifier names, and an element is not an array
+            plan_element(tc, i, at.element(i), plan);
+        }
+    }
+
+    // the string is stored and the rest of the array is zeroed like unlisted
+    // elements; 'array_count' is empty when the size is not known
+    auto plan_string(const part_location& at,
+                     const std::optional<size_t> array_count,
+                     write_plan& plan) const -> void {
+
+        std::string bytes{token::decode_string(string_tk_.string_text())};
+
+        const size_t size_bytes{bytes.size()};
+
+        if (array_count and size_bytes > *array_count) {
+            throw compile_error{
+                string_tk_,
+                std::format("string size {} overflows array size {}",
+                            size_bytes, *array_count)};
+        }
+
+        // an empty string has nothing to store
+        if (size_bytes != 0) {
+            plan.push_back({
+                .at{at},
+                .action{
+                    bytes_write{
+                        .src_loc_tk{string_tk_},
+                        .bytes{std::move(bytes)},
+                        .is_string{true},
+                    },
+                },
+                .covered{at.path()},
+            });
+        }
+
+        // the bytes after the string are not known
+        if (not array_count) {
+            return;
+        }
+
+        const size_t remaining_size_bytes{*array_count - size_bytes};
+
+        if (remaining_size_bytes == 0) {
+            return;
+        }
+
+        plan.push_back({
+            .at{at},
+            .action{
+                zero_fill{
+                    .src_loc_tk{string_tk_},
+                    .comment{
+                        std::format("zero remaining elements: {} B",
+                                    remaining_size_bytes),
+                    },
+                    .offset{size_bytes},
+                    .value_type{&get_type()},
+                    .size_bytes{remaining_size_bytes},
+                    .alignment{get_type().alignment()},
+                },
+            },
+            .covered{},
+        });
+    }
+
     //
     // statics
     //
@@ -800,14 +803,6 @@ class expr_any final : public statement {
                 .destination_type{},
             },
         };
-    }
-
-    static auto compile_element(toc& tc, const size_t indent,
-                                const statement& value, const destination& dst)
-        -> void {
-
-        value.assert_not_narrowed(tc, dst.type_ref());
-        value.compile(tc, indent, dst);
     }
 
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,

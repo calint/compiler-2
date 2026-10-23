@@ -8,7 +8,9 @@
 #include <optional>
 #include <ostream>
 #include <span>
+#include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -38,13 +40,172 @@ enum class literal_typing : uint8_t { written, from_destination };
                              in_quotes(type_name), in_quotes(value))};
 }
 
-// a part of an assigned value and where in the destination it is written,
-// e.g. 'q.y' at the field 'y' of 'p = {1, q.y}'
-struct written_part {
-    const statement* item{};
-    // the path from the destination to the part
-    access_path suffix;
+// a step from a destination to a part of it: the field 'field', or the
+// element 'element_index' when 'field' is null
+struct part_step {
+    const type_field* field{};
+    size_t element_index{};
 };
+
+// where a part of a value is in its destination, e.g. the field 'a' and the
+// element 3 for 'q.a[3]' of 'q'
+class part_location final {
+    std::vector<part_step> steps_;
+
+  public:
+    [[nodiscard]] auto element(const size_t index) const -> part_location {
+        part_location result{*this};
+
+        result.steps_.push_back({
+            .field{},
+            .element_index{index},
+        });
+
+        return result;
+    }
+
+    [[nodiscard]] auto field(const type_field& fld) const -> part_location {
+        part_location result{*this};
+
+        result.steps_.push_back({
+            .field{&fld},
+            .element_index{},
+        });
+
+        return result;
+    }
+
+    // the path from the destination, as the aliasing check names storage
+    [[nodiscard]] auto path() const -> access_path {
+        access_path result;
+
+        for (const part_step& step : steps_) {
+            if (step.field != nullptr) {
+                result.add_field(step.field->offset);
+            } else {
+                result.add_fixed_index(step.element_index);
+            }
+        }
+
+        return result;
+    }
+
+    // the destination of the part inside 'dst'
+    [[nodiscard]] auto within(const destination& dst) const -> destination {
+        destination result{dst};
+
+        for (const part_step& step : steps_) {
+            if (step.field != nullptr) {
+                result = result.field(*step.field);
+            } else {
+                result = result.element(step.element_index);
+            }
+        }
+
+        return result;
+    }
+};
+
+// 'item' compiled at the part writes all of it, e.g. a scalar, a call or a
+// copy, never a literal with parts of its own
+struct value_write {
+    const statement* item{};
+};
+
+// constant bytes stored at the part, e.g. the elements of '{1, 2}' or the
+// characters of a string
+struct bytes_write {
+    token src_loc_tk;
+    std::string bytes;
+    // stored as a string constant, otherwise as a bytes constant
+    bool is_string{};
+};
+
+// bytes that no listed value writes are zeroed, e.g. padding, unlisted fields
+// and elements, the rest of an array after a string
+struct zero_fill {
+    token src_loc_tk;
+    std::string comment;
+    // from the start of the part, at which the operand has 'value_type'
+    size_t offset{};
+    const type* value_type{};
+    size_t size_bytes{};
+    size_t alignment{};
+};
+
+// a comment line written before the steps it describes, e.g. "copy field
+// 'x'"
+struct write_comment {
+    token src_loc_tk;
+    std::string text;
+};
+
+// one step of writing a value in parts, see 'write_plan'
+struct write_step {
+    part_location at;
+    std::variant<value_write, bytes_write, zero_fill, write_comment> action;
+    // the paths from the destination that are written once the step is done
+    std::vector<access_path> covered;
+};
+
+// the steps that write a value, in the order they are emitted, e.g. 'q =
+// {{1}, x}' with 'q' of 'type st {a i8[4], b i8}': '1' at 'a[0]', zero
+// 'a[1]' to 'a[3]', then 'x' at 'b'; the compile emits it and the aliasing
+// check of an assignment reads it, so what is checked is what is emitted
+using write_plan = std::vector<write_step>;
+
+// writes the steps of 'plan' at 'dst'
+inline auto emit_write_plan(toc& tc, const size_t indent,
+                            const write_plan& plan, const destination& dst)
+    -> void {
+
+    machine& x{tc.machine()};
+
+    for (const write_step& step : plan) {
+        const destination part_dst{step.at.within(dst)};
+
+        if (const value_write* const value{
+                std::get_if<value_write>(&step.action),
+            }) {
+
+            value->item->assert_not_narrowed(tc, part_dst.type_ref());
+            value->item->compile(tc, indent, part_dst);
+            continue;
+        }
+
+        if (const bytes_write* const bytes{
+                std::get_if<bytes_write>(&step.action),
+            }) {
+
+            x.copy_bytes(
+                bytes->src_loc_tk, indent, bytes->bytes, part_dst.operand(),
+                part_dst.type_ref().alignment(), [&] -> std::string {
+                    if (bytes->is_string) {
+                        return tc.add_string_constant(bytes->src_loc_tk);
+                    }
+
+                    return tc.add_bytes_constant(bytes->src_loc_tk,
+                                                 bytes->bytes);
+                });
+
+            continue;
+        }
+
+        if (const zero_fill* const zero{std::get_if<zero_fill>(&step.action)}) {
+            x.comment(zero->src_loc_tk, indent, zero->comment);
+
+            x.zero(zero->src_loc_tk, indent,
+                   part_dst.operand_at(zero->offset, *zero->value_type),
+                   zero->size_bytes, zero->alignment);
+
+            continue;
+        }
+
+        const write_comment& comment{std::get<write_comment>(step.action)};
+
+        x.comment(comment.src_loc_tk, indent, comment.text);
+    }
+}
 
 // note: members that use 'expr_any', 'stmt_identifier' or 'stmt_call' are
 //       implemented in 'expr_type_impl.hpp', those headers include this one
@@ -137,40 +298,54 @@ class expr_type final : public statement {
         return stmt_ident_ == nullptr and stmt_call_ == nullptr;
     }
 
-    // the parts of the value at 'at' in the destination, in the order
-    // 'compile' writes them
-    auto list_written_parts(const access_path& at,
-                            std::vector<written_part>& parts) const -> void;
-
     auto operator=(expr_type&&) noexcept -> expr_type&;
+
+    // appends the steps that write the value at 'at'
+    auto plan_writes(const toc& tc, const part_location& at,
+                     write_plan& plan) const -> void;
 
     //
     // statics
     //
 
-    // unlisted elements are zero like unlisted fields
-    static auto zero_remaining_elements(toc& tc, const size_t indent,
-                                        const token& src_loc_tk,
-                                        const operand& dst,
-                                        const type& element_type,
-                                        const size_t remaining_count) -> void {
+    // unlisted elements are zero like unlisted fields, the first
+    // 'listed_count' of the array at 'at' are written
+    static auto
+    plan_remaining_elements(const token& src_loc_tk, const part_location& at,
+                            const type& element_type, const size_t listed_count,
+                            const size_t array_count, write_plan& plan)
+        -> void {
+
+        const size_t remaining_count{array_count - listed_count};
 
         if (remaining_count == 0) {
             return;
         }
-
-        machine& x{tc.machine()};
 
         const size_t size_bytes{
             multiply_storage_size(src_loc_tk, element_type.size_bytes(),
                                   remaining_count),
         };
 
-        x.comment(src_loc_tk, indent,
-                  "zero remaining elements: {} * {} B = {} B", remaining_count,
-                  element_type.size_bytes(), size_bytes);
-
-        x.zero(src_loc_tk, indent, dst, size_bytes, element_type.alignment());
+        plan.push_back({
+            .at{at},
+            .action{
+                zero_fill{
+                    .src_loc_tk{src_loc_tk},
+                    .comment{
+                        std::format("zero remaining elements: {} * {} B = "
+                                    "{} B",
+                                    remaining_count, element_type.size_bytes(),
+                                    size_bytes),
+                    },
+                    .offset{listed_count * element_type.size_bytes()},
+                    .value_type{&element_type},
+                    .size_bytes{size_bytes},
+                    .alignment{element_type.alignment()},
+                },
+            },
+            .covered{},
+        });
     }
 
   private:
@@ -184,9 +359,6 @@ class expr_type final : public statement {
     }
 
     auto compile_call_field(toc& tc, const size_t indent,
-                            const destination& dst) const -> void;
-
-    auto compile_field_list(toc& tc, const size_t indent,
                             const destination& dst) const -> void;
 
     auto compile_identifier_copy(toc& tc, const size_t indent,
@@ -213,6 +385,34 @@ class expr_type final : public statement {
     // creates an 'expr_any' for each field
     auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
 
+    // padding is zeroed too so that instances compare equal byte by byte,
+    // 'offset' bytes into the instance at 'at'
+    auto plan_unwritten(const part_location& at, const std::string_view what,
+                        const size_t offset, const size_t size_bytes,
+                        write_plan& plan) const -> void {
+
+        if (size_bytes == 0) {
+            return;
+        }
+
+        plan.push_back({
+            .at{at},
+            .action{
+                zero_fill{
+                    .src_loc_tk{tok()},
+                    .comment{std::format("zero {}: {} B", what, size_bytes)},
+                    .offset{offset},
+                    .value_type{&get_type()},
+                    .size_bytes{size_bytes},
+                    .alignment{
+                        offset_alignment(offset, get_type().alignment()),
+                    },
+                },
+            },
+            .covered{},
+        });
+    }
+
     // a call writes the fields only, so the padding is zeroed before it and
     // '==' can compare instances byte by byte; the backend decides whether
     // gap by gap or the whole instance
@@ -231,22 +431,6 @@ class expr_type final : public statement {
 
         x.zero_padding(tok(), indent, dst, dst_type.size_bytes(),
                        dst_type.alignment(), gaps);
-    }
-
-    // padding is zeroed too so that instances compare equal byte by byte
-    auto zero_unwritten(toc& tc, const size_t indent,
-                        const std::string_view what, const size_t size_bytes,
-                        const size_t alignment, const operand& dst) const
-        -> void {
-
-        if (size_bytes == 0) {
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        x.comment(tok(), indent, "zero {}: {} B", what, size_bytes);
-        x.zero(tok(), indent, dst, size_bytes, alignment);
     }
 
     //
@@ -269,21 +453,6 @@ class expr_type final : public statement {
             .alignment{offset_alignment(start, alignment)},
         });
     }
-
-    static auto compile_field(toc& tc, const size_t indent, const expr_any& src,
-                              const type_field& field, const destination& dst)
-        -> void;
-
-    static auto compile_record_field(toc& tc, const size_t indent,
-                                     const expr_any& src,
-                                     const type_field& field,
-                                     const destination& dst) -> void;
-
-    // the parts of the value 'src' of 'field' at 'at', as
-    // 'compile_field' writes them
-    static auto list_field_parts(const expr_any& src, const type_field& field,
-                                 const access_path& at,
-                                 std::vector<written_part>& parts) -> void;
 
     // the bytes that no field covers, between the data ranges and after the
     // last one; the first of them when there are more than 'max_count'
@@ -315,6 +484,11 @@ class expr_type final : public statement {
 
         return gaps;
     }
+
+    // appends the steps that write 'src' of the field at 'at'
+    static auto plan_field(const toc& tc, const expr_any& src,
+                           const type_field& field, const part_location& at,
+                           write_plan& plan) -> void;
 
     static auto validate_array_assignment(const token& src_loc_tk,
                                           const type_field& fld,

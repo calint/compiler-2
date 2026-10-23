@@ -278,7 +278,9 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
         return;
     }
 
-    compile_field_list(tc, indent, dst);
+    write_plan plan;
+    plan_writes(tc, part_location{}, plan);
+    emit_write_plan(tc, indent, plan, dst);
 }
 
 // e.g. 'f()' in '{f(), 3}' writes the field in place
@@ -290,64 +292,55 @@ inline auto expr_type::compile_call_field(toc& tc, const size_t indent,
     stmt_call_->compile(tc, indent, dst);
 }
 
-inline auto expr_type::compile_field(toc& tc, const size_t indent,
-                                     const expr_any& src,
-                                     const type_field& field,
-                                     const destination& dst) -> void {
+// e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
+// and the padding
+inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
+                                   write_plan& plan) const -> void {
 
-    // the copy size comes from the source so it must match the field
-    if (field.is_array() and src.is_array_identifier()) {
-        validate_array_assignment(src.tok(), field, make_ident_info(tc, src));
-    }
+    // a call or a copy writes the value at once
+    if (stmt_call_ or stmt_ident_) {
+        plan.push_back({
+            .at{at},
+            .action{
+                value_write{
+                    .item{this},
+                },
+            },
+            .covered{at.path()},
+        });
 
-    if (not field.type().is_builtin()) {
-        compile_record_field(tc, indent, src, field, dst);
         return;
     }
 
-    // note: like any value, an empty array field is zeroed, e.g. 'msg' of
-    //       'type msgpoint { msg i8[128], pt point }' given '{}'
-
-    src.compile(tc, indent, dst);
-}
-
-// e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
-// and the padding
-inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
-                                          const destination& dst) const
-    -> void {
-
-    const type& dst_type{dst.type_ref()};
-
-    const std::span<const type_field> flds{dst_type.fields()};
-
-    machine& x{tc.machine()};
+    const std::span<const type_field> flds{get_type().fields()};
 
     // bytes of the instance written so far, fields in order then padding
     size_t written_bytes{};
 
     for (const auto [expr, field] : std::views::zip(exprs_, flds)) {
-        const size_t padding_bytes{field.offset - written_bytes};
-
-        zero_unwritten(tc, indent, "padding", padding_bytes,
-                       offset_alignment(written_bytes, dst_type.alignment()),
-                       dst.operand_at(written_bytes, dst_type));
+        plan_unwritten(at, "padding", written_bytes,
+                       field.offset - written_bytes, plan);
 
         written_bytes = field.offset + field.size_bytes;
 
-        x.comment(expr->tok(), indent, "copy field {}", in_quotes(field.name));
+        plan.push_back({
+            .at{at},
+            .action{
+                write_comment{
+                    .src_loc_tk{expr->tok()},
+                    .text{std::format("copy field {}", in_quotes(field.name))},
+                },
+            },
+            .covered{},
+        });
 
-        compile_field(tc, indent, *expr, field, dst.field(field));
+        plan_field(tc, *expr, field, at.field(field), plan);
     }
 
     // zero out the remaining fields and the padding after the written ones
-    const size_t remaining_bytes{dst_type.size_bytes() - written_bytes};
-
-    zero_unwritten(
-        tc, indent,
-        exprs_.size() == flds.size() ? "padding" : "remaining fields",
-        remaining_bytes, offset_alignment(written_bytes, dst_type.alignment()),
-        dst.operand_at(written_bytes, dst_type));
+    plan_unwritten(
+        at, exprs_.size() == flds.size() ? "padding" : "remaining fields",
+        written_bytes, get_type().size_bytes() - written_bytes, plan);
 }
 
 // e.g. 'pt1 = pt2'
@@ -391,73 +384,38 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 }
 
 // an instance field, or each element of an instance array field in turn
-inline auto expr_type::compile_record_field(toc& tc, const size_t indent,
-                                            const expr_any& src,
-                                            const type_field& field,
-                                            const destination& dst) -> void {
+inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
+                                  const type_field& field,
+                                  const part_location& at, write_plan& plan)
+    -> void {
+
+    // the copy size comes from the source so it must match the field
+    if (field.is_array() and src.is_array_identifier()) {
+        validate_array_assignment(src.tok(), field, make_ident_info(tc, src));
+    }
+
+    // note: like any value, an empty array field is zeroed, e.g. 'msg' of
+    //       'type msgpoint { msg i8[128], pt point }' given '{}'
+
+    if (field.type().is_builtin()) {
+        src.plan_writes(tc, at, std::nullopt, plan);
+        return;
+    }
 
     // one assignment fills an instance or copies a whole array identifier
     if (not field.is_array() or src.is_array_identifier()) {
-        src.as_expr_type().compile(tc, indent, dst);
+        src.as_expr_type().plan_writes(tc, at, plan);
         return;
     }
 
     const size_t count{src.element_count()};
 
     for (size_t i{}; i < count; ++i) {
-        src.as_expr_type(i).compile(tc, indent, dst.element(i));
+        src.as_expr_type(i).plan_writes(tc, at.element(i), plan);
     }
 
-    zero_remaining_elements(
-        tc, indent, src.tok(),
-        dst.operand_at(count * field.type().size_bytes(), field.type()),
-        field.type(), field.array_count - count);
-}
-
-inline auto
-expr_type::list_written_parts(const access_path& at,
-                              std::vector<written_part>& parts) const -> void {
-
-    // a call or a copy writes the value at once
-    if (stmt_call_ or stmt_ident_) {
-        parts.push_back({
-            .item{this},
-            .suffix{at},
-        });
-
-        return;
-    }
-
-    for (const auto [expr, field] :
-         std::views::zip(exprs_, get_type().fields())) {
-
-        access_path field_at{at};
-        field_at.add_field(field.offset);
-        list_field_parts(*expr, field, field_at, parts);
-    }
-}
-
-inline auto expr_type::list_field_parts(const expr_any& src,
-                                        const type_field& field,
-                                        const access_path& at,
-                                        std::vector<written_part>& parts)
-    -> void {
-
-    if (field.type().is_builtin()) {
-        src.list_written_parts(at, parts);
-        return;
-    }
-
-    if (not field.is_array() or src.is_array_identifier()) {
-        src.as_expr_type().list_written_parts(at, parts);
-        return;
-    }
-
-    for (size_t i{}; i < src.element_count(); ++i) {
-        access_path element_at{at};
-        element_at.add_fixed_index(i);
-        src.as_expr_type(i).list_written_parts(element_at, parts);
-    }
+    plan_remaining_elements(src.tok(), at, field.type(), count,
+                            field.array_count, plan);
 }
 
 inline auto expr_type::visit_reads(const read_filter var,

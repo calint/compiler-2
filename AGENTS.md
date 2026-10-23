@@ -26,6 +26,11 @@
 - Brace init everywhere: `.member{value}`, `bool enabled{};`.
 - Trailing comma in multiline initializers and returned structs, one member
   per line; tables of one-line rows keep rows.
+- clang-tidy `readability-trailing-comma` rejects every braced list that
+  ends on a later line without a comma: each nesting level
+  (`.action{zero_fill{...,},}`, `push_back({...,})`) and a single value
+  that does not fit on its line (`.alignment{\n f(x),\n}`); write the
+  commas before formatting, the formatter keeps them.
 - Explicit types; `auto` only for cumbersome ones (iterators).
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
@@ -112,6 +117,13 @@
 
 - Goal: a reviewer understands the design without strain and judges it well
   done.
+- Current focus: refactor until the design is clean before looking for bugs
+  again; a bug that a refactor removes is fixed by the refactor.
+- Baz evaluates left to right: the operands, arguments and parts of a
+  statement, and the parts a literal writes. The no-UB checks assume this and
+  rely on it. They walk a statement in evaluation order and check each read
+  only against what was written before it. Code generation follows the same
+  order, so the code that is checked is the code that is emitted.
 - Design tasks: propose the best design even if it changes interfaces; plan
   first, wait for go-ahead.
 - Plan: problem, chosen design, rejected alternatives (one line each with the

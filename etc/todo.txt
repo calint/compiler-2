@@ -163,6 +163,60 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             => invariant: what is checked is what is emitted
             => rejected: adding the zero fill to 'list_written_parts', the
                order stays decided twice
+            => steps (2026-10-23), the literal half first, the scalar half
+               (step list of 'expr_arith', 'expr_bool') planned after it:
+               4.4.1. tests of V-1, each reads 0 today: an array field
+                      'q = {{1}, q.a[3]}', a record field 'o = {{1},
+                      o.i.y}', a zero field 'o = {{}, o.i.y}', an array of
+                      records 'ps = {{1}, {ps[0].y}}', an array of records
+                      in a field 'q = {{{1}}, q.ps[1].x}'
+               4.4.2. the plan: 'written_part' becomes a variant of
+                      'value_write' {item, path}, 'bytes_write' {constant
+                      bytes or a string, path} and 'zero_fill' {path of the
+                      object, offset, size, alignment, comment label, the
+                      paths it covers}; the path is the steps (field or
+                      constant index) from the destination, applied by
+                      'destination::field' and 'element' at emit and by
+                      'add_field' and 'add_fixed_index' at the check; a
+                      part may carry the comment the emit writes before it
+                      ("copy field 'x'", "[1]")
+               4.4.3. one builder 'written_parts(tc, type, array count)' in
+                      'expr_any' and 'expr_type' (mutual recursion as
+                      today, in 'expr_type_impl.hpp') replaces
+                      'list_written_parts' and decides the order: padding,
+                      field, remaining fields; elements, remaining elements;
+                      a call, a copy or a constant array at once; a string
+                      then the rest zeroed; no zero fill for an array of
+                      unknown length; the "too many elements" check moves
+                      into it
+               4.4.4. one emitter 'emit_written_parts(tc, indent, parts,
+                      dst)' replaces 'compile_field_list',
+                      'compile_record_field', 'zero_remaining_elements',
+                      'compile_elements' and the zeroing of
+                      'compile_string'; a 'value_write' item is a leaf
+                      whose 'compile' does not plan again (a scalar, a call
+                      or a copy)
+               4.4.5. rule A ('assert_parts_not_clobbered') reads the same
+                      list, a zero fill adds the paths it covers; the five
+                      tests are rejected "'q.a[3]' is read but has been
+                      overwritten in the same statement"
+               4.4.6. measure: the emitted code and its comments are
+                      unchanged on every target
+               => rejected: a callback walk shared by both consumers, a
+                  list reads plainer and is what is checked and emitted
+               => rejected: a byte range model in rule A (writes go up in
+                  address order), the alias model is paths with run-time
+                  indexes, a second model would decide overlap twice
+               => order: tests and 4.4.2-4.4.4 as one mechanical step with
+                  an unchanged rule A (the list then also holds the zero
+                  fills, rule A skips them), then 4.4.5 as the behavior
+                  change
+            => 4.4.2-4.4.4 done (2026-10-23): 'write_step' {part_location,
+               action, covered} in 'expr_type.hpp', 'emit_write_plan';
+               comment lines are steps too, so the emitted code and its
+               comments are unchanged on every target; a zero fill covers
+               nothing yet; the "too many elements" and string size checks
+               moved into the builder
        4.5. a generic definition holds its whole signature (class G, about
             12 bugs): what a generic method of a generic type declares lives
             only in its per-instance copies ('generic_method_info' has no
