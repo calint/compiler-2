@@ -223,8 +223,8 @@ struct generic_call {
 
         deduction deduced;
 
-        for (const auto [param_tk, source] :
-             std::views::zip(generic.param_tks, generic.deductions)) {
+        for (const auto [param_tk, source] : std::views::zip(
+                 generic.signature.type_param_tks, generic.deductions)) {
 
             const type* arg_type{};
 
@@ -349,7 +349,7 @@ struct generic_call {
         -> std::vector<const type*> {
 
         const std::span<const token> param_tks{
-            tc.generics().get_func(generic_name).param_tks,
+            tc.generics().get_func(generic_name).signature.type_param_tks,
         };
 
         if (arg_tks.size() != param_tks.size()) {

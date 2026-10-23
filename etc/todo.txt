@@ -262,6 +262,55 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                'box.f', the 'skip_signature' second reader
             => invariant: a definition is accepted or rejected whether or
                not it is instantiated
+            => state (2026-10-23): G-1 open (a method type parameter 'U' of
+               a generic type without an instance is not checked against a
+               later 'var U'); G-2 open ('func f<x type>(x x)' accepted when
+               bound to a user type, "'x' names the built-in type 'i8'"
+               when bound to a built-in); G-4 open; the usage report lists
+               'box.f' only when 'box' has an instance
+            => cause: 'generic_method_info' keeps no signature; its own type
+               parameters exist only in the 'generic_func_info' each
+               instance of the type makes, so with no instance neither the
+               end-of-parse check ('generic_registry::param_tokens') nor the
+               report sees them; 'skip_signature' reads the signature for
+               the checks and 'read_signature_types' reads it again for the
+               deductions
+            => steps:
+               4.5.1. mechanical: 'generic_signature' in 'generics.hpp' {own
+                      type parameters, parameters (name, type name), result
+                      name and type}, read once at the definition by one
+                      reader that replaces 'skip_signature' and
+                      'read_signature_types'; 'generic_method_info' and
+                      'generic_func_info' hold it ('param_tks' becomes its
+                      type parameters); 'define_func' and the deductions
+                      take it; no change of verdict or code
+                      => done (2026-10-23): 'read_signature' in
+                         'stmt_def_func_generic', no change of output on any
+                         target, also for the round 12 G probes
+               4.5.2. one rule function at the definition,
+                      'assert_generic_signature': the hiding checks of the
+                      type parameters (as today), the receiver parameters
+                      of a method (as today), G-2: a type parameter is not
+                      named like its function or method, a parameter or the
+                      result, "type parameter 'x' is named like the
+                      parameter 'x' at 1:15, use another name"; G-4: 'self'
+                      outside a method gets the message of a function
+                      without type parameters, "result 'self' requires a
+                      constructor 'type.name'", before the type parameter
+                      rule
+               4.5.3. G-1: 'param_tokens' takes the type parameters from
+                      the definitions (generic functions and generic
+                      methods), not from the per-instance functions
+               4.5.4. the report lists a generic method with type
+                      parameters of its own until an instance of it is
+                      made, with or without an instance of its type
+               => tests: G-1 (no instance of the type), G-2 (function
+                  name, parameter, result; bound to a user type and to a
+                  built-in), G-4, the report of 'func box.f<U type>' without
+                  an alias of 'box'
+               => rejected: running the rules on each instance and caching
+                  the verdict, the verdict would still depend on whether an
+                  instance exists
        4.6. one reachability fact (class R): whether a statement always
             leaves is known neither to the block compile (C-4: code after
             an always taken 'return' is compiled and recurses) nor to the

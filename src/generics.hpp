@@ -392,6 +392,27 @@ struct generic_deduction {
     bool is_result{};
 };
 
+// a parameter of a generic function as written, e.g. 'x' of type 'U' in
+// '(x U)'
+struct generic_signature_param {
+    token name_tk;
+    // empty for an array, which is not of the type itself
+    std::string type_name;
+};
+
+// what a generic function or a method of a generic type declares, read once
+// at its definition, e.g. '<U type>(x U) res U' of 'func box.f<U type>(x U)
+// res U'; the types are resolved by each instance
+struct generic_signature {
+    // its own, e.g. 'U', not the parameters of the generic type 'box'
+    std::vector<token> type_param_tks;
+    std::vector<generic_signature_param> params;
+    // e.g. 'res', or 'self' of a constructor, empty without a result
+    token result_name_tk;
+    // empty for the default type
+    token result_type_tk;
+};
+
 // a function with type parameters, e.g. 'func tokenizer.to<T type>()'. every
 // distinct list of type arguments is the definition parsed again from
 // 'start_tk' as an instance. the method of a generic type with type parameters
@@ -407,8 +428,8 @@ struct generic_func_info {
     // instances of its type, e.g. 'text.append' for 'str.append' and
     // 'name.append'
     std::string report_name;
-    // e.g. 'T' of '<T type>'
-    std::vector<token> param_tks;
+    // e.g. '<T type>()'
+    generic_signature signature;
     // for each type parameter
     std::vector<generic_deduction> deductions;
     // the instance of the generic type of a method, e.g. 'text<8>' for
@@ -447,6 +468,8 @@ struct generic_method_info {
     token func_tk;
     // where the definition continues after 'func', e.g. at 'text'
     token start_tk;
+    // e.g. '()' of 'func text.print()'
+    generic_signature signature;
     // see 'definition_order'
     size_t definition{};
 };
@@ -558,7 +581,7 @@ class generic_registry final {
         std::vector<token> tks;
 
         for (const generic_func_info& func : funcs_.values()) {
-            tks.append_range(func.param_tks);
+            tks.append_range(func.signature.type_param_tks);
         }
 
         for (const generic_type_info& type : types_.values()) {
