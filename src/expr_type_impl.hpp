@@ -302,7 +302,10 @@ inline auto expr_type::compile_field(toc& tc, const size_t indent,
         return;
     }
 
-    write_builtin_field(tc, indent, src, field, dst);
+    // note: like any value, an empty array field is zeroed, e.g. 'msg' of
+    //       'type msgpoint { msg i8[128], pt point }' given '{}'
+
+    src.compile(tc, indent, dst);
 }
 
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
@@ -382,88 +385,6 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
            dst_type.alignment());
 
     x.free_scratch_registers(tok(), indent, allocated_registers);
-}
-
-inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
-                                           const expr_any& src,
-                                           const type_field& field,
-                                           const destination& dst) -> void {
-
-    machine& x{tc.machine()};
-
-    // e.g. 'msg' in 'type msgpoint { msg i8[128], pt point }' given '{}'
-    if (src.is_array() and src.is_empty()) {
-        x.comment(src.tok(), indent, "zero empty field: {} * {} B = {} B",
-                  field.array_count, field.type().size_bytes(),
-                  field.size_bytes);
-
-        x.zero(src.tok(), indent, dst.operand(), field.size_bytes,
-               field.type().alignment());
-
-        return;
-    }
-
-    // the paths below that copy directly skip the check in 'expr_any'
-    src.assert_not_narrowed(tc, field.type());
-
-    // an indexed name has the address of its base, 'compile' adds the index
-    if (src.is_expression() or (src.is_name_or_literal() and
-                                src.has_computed_address(tc.make_ident_info(
-                                    src.tok(), src.name_or_literal())))) {
-
-        src.compile(tc, indent, dst);
-        return;
-    }
-
-    // an array field is parsed as an array 'expr_any' which is an expression
-    assert(not field.is_array());
-
-    const ident_info src_info{make_scalar_ident_info(tc, src)};
-
-    // a constant is copied by its list
-    if (src_info.is_const()) {
-        src.compile(tc, indent, dst);
-        return;
-    }
-
-    compile_builtin_field(tc, indent, src, src_info.operand(), dst.operand());
-}
-
-// unary ops on a memory field are a load, modify and store each on a
-// load/store machine, a scratch register can be shorter
-inline auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
-                                             const expr_any& src,
-                                             const operand& src_op,
-                                             const operand& dst) -> void {
-
-    machine& x{tc.machine()};
-
-    const unary_ops& uops{src.get_unary_ops()};
-
-    if (uops.is_empty()) {
-        x.copy_value(src.tok(), indent, dst, src_op);
-        return;
-    }
-
-    const auto compile_in_field{
-        [&] -> void {
-            x.copy_value(src.tok(), indent, dst, src_op);
-
-            uops.compile(x, indent, src.tok(), dst,
-                         tc.checks().overflow_options());
-        },
-    };
-
-    x.emit_most_efficient(src.tok(), indent, compile_in_field, [&] -> void {
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, dst.type_ref()),
-        };
-
-        x.copy_value(src.tok(), indent, reg, src_op);
-        uops.compile(x, indent, src.tok(), reg, tc.checks().overflow_options());
-        x.copy_value(src.tok(), indent, dst, reg);
-        x.free_scratch_register(src.tok(), indent, reg);
-    });
 }
 
 // an instance field, or each element of an instance array field in turn

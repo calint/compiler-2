@@ -1,0 +1,9 @@
+# a constructor of a generic type has no type parameters, also without an
+# instance of the type
+type box<n> {
+    x i8[n],
+}
+
+func box.f<T type>() self {}
+
+func main() {}

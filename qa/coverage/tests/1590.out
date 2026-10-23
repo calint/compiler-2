@@ -1,0 +1,4 @@
+
+1590.baz:7:12: 'i8' is a built-in type
+func box.f<i8 type>() {}
+           ^~

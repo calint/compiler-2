@@ -271,11 +271,6 @@ class expr_type final : public statement {
         });
     }
 
-    static auto compile_builtin_field(toc& tc, const size_t indent,
-                                      const expr_any& src,
-                                      const operand& src_op, const operand& dst)
-        -> void;
-
     static auto compile_field(toc& tc, const size_t indent, const expr_any& src,
                               const type_field& field, const destination& dst)
         -> void;
@@ -343,9 +338,4 @@ class expr_type final : public statement {
                             fld.array_count, *src_len)};
         }
     }
-
-    static auto write_builtin_field(toc& tc, const size_t indent,
-                                    const expr_any& src,
-                                    const type_field& field,
-                                    const destination& dst) -> void;
 };

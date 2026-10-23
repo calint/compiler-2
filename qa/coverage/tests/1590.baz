@@ -1,0 +1,9 @@
+# a type parameter of a method of a generic type is checked at the definition,
+# also without an instance of the type
+type box<n> {
+    x i8[n],
+}
+
+func box.f<i8 type>() {}
+
+func main() {}

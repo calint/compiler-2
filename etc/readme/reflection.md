@@ -109,7 +109,8 @@ until a human can read it easily.
 
 The amount of bugs, unresolved edge cases and inconsistencies it finds is scary.
 This is a relatively simple language. Are complex languages written in a
-flawless way by superior engineers or is AI going to scare them?
+flawless way by superior engineers or is AI going to scare them when unleashed
+on their code base?
 
 ### The sense of losing touch with the code
 

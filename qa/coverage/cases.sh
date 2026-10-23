@@ -4960,3 +4960,18 @@ SRC=1587 && COMPERR
 
 # the ',' of a call of a function without parameters is not a trailing one
 SRC=1588 && COMPERR
+
+# the built-in fields of an instance value with unary operators are computed
+# like any value, in a scratch register when that is shorter
+SRC=1589 && EXP=6 && RUN
+
+# a type parameter of a method of a generic type is checked at the definition,
+# also without an instance of the type
+SRC=1590 && COMPERR
+
+# a type parameter of a method of a generic type has the kind 'type'
+SRC=1591 && COMPERR
+
+# a constructor of a generic type has no type parameters, also without an
+# instance of the type
+SRC=1592 && COMPERR

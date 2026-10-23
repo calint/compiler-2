@@ -1,0 +1,15 @@
+# the built-in fields of an instance value with unary operators are computed
+# like any value, in a scratch register when that is shorter
+type pair {
+    a i8,
+    b i8,
+}
+
+func main() {
+    var x = i8(3)
+    var a = i8[4]
+    var i = 1
+    var p = pair{}
+    p = {-x, ~a[i]}
+    exit(p.a + p.b + 10)
+}

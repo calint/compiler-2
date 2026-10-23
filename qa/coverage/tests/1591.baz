@@ -1,0 +1,8 @@
+# a type parameter of a method of a generic type has the kind 'type'
+type box<n> {
+    x i8[n],
+}
+
+func box.f<m>() {}
+
+func main() {}

@@ -1,0 +1,4 @@
+
+1591.baz:6:12: generic parameter 'm' of a function must have the kind 'type', e.g. 'm type'
+func box.f<m>() {}
+           ^

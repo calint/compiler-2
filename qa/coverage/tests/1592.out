@@ -1,0 +1,4 @@
+
+1592.baz:7:22: constructor 'box.f' cannot have type parameters
+func box.f<T type>() self {}
+                     ^~~~
