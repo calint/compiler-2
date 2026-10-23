@@ -920,10 +920,10 @@ A noinline call inside a dry run nests another dry run, so a chain of calls
 nests one level per call ('scope_stack::noinline_dry_run_level'). The
 compiler recurses for each, so the levels are limited
 ('call_site::max_noinline_dry_run_level', 100), and like the other inlining
-limits the depth depends on the calls. The dry runs also share the frame limit
-of the inlined calls and blocks ('call_site::max_frame_count', 256 scopes). A
+limits the depth depends on the calls. The dry runs also share the scope limit
+of the inlined calls and blocks ('call_site::max_scope_count', 256). A
 call kind keeps the number of levels its dry run reached below it and the
-frames above it at its deepest check of the frame limit ('dry_run_height',
+scopes above it at its deepest check of the scope limit ('dry_run_height',
 'dry_run_ledger::height_of'), and a call that finds its kind dry run
 counts both without running again, so the verdict does not depend on which
 calls were checked first ('toc::dry_run_call_kind'). A cycle of call kinds,

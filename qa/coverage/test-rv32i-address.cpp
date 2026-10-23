@@ -4013,7 +4013,7 @@ auto check_dry_run_leaves_no_trace() -> void {
 
     const usage_statistics after{fe.tc.usage()};
     assert(after.max_vars_size_bytes == before.max_vars_size_bytes);
-    assert(after.max_frame_count == before.max_frame_count);
+    assert(after.max_scope_count == before.max_scope_count);
     assert(fe.tc.data().constants().size() == constants_before);
 
     // the capacity is enforced again after the dry run

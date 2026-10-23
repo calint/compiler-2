@@ -422,9 +422,10 @@ struct call_site {
     // e.g. none in the argument of a conversion
     machine::runtime_check uops_check;
 
-    // a frame is a scope being compiled: a block, a loop or a function body,
-    // inlined or the dry run of a noinline call; each recurses in the compiler
-    static constexpr size_t max_frame_count{256};
+    // a scope being compiled ('frame' in 'toc'): a block, a loop or a
+    // function body, inlined or the dry run of a noinline call; each recurses
+    // in the compiler
+    static constexpr size_t max_scope_count{256};
 
     // a level is the dry run of a noinline call nested in the dry run of the
     // call that reaches it, see 'noinline_call::dry_run_body'
@@ -569,9 +570,9 @@ struct call_site {
         return tc.storage_of(name, access_path::whole_variable());
     }
 
-    // the frames ran out in the dry run of a noinline call, see
+    // the scopes ran out in the dry run of a noinline call, see
     // 'noinline_call::dry_run_body'
-    [[noreturn]] static auto throw_dry_run_frame_limit(const token& src_loc_tk)
+    [[noreturn]] static auto throw_dry_run_scope_limit(const token& src_loc_tk)
         -> void {
 
         throw compile_error{
@@ -579,7 +580,7 @@ struct call_site {
             std::format("inlined calls and blocks are nested too deep to check "
                         "the arguments of a noinline call, the limit is {} "
                         "scopes",
-                        max_frame_count),
+                        max_scope_count),
         };
     }
 
@@ -669,7 +670,7 @@ class inline_call {
         };
 
         // note: a block is a frame, which counts toward the nesting limit and
-        //       the 'max frames in use' report, so a call without temporaries
+        //       the 'max scopes in use' report, so a call without temporaries
         //       enters none
 
         if (not has_instance_temporary) {
@@ -1427,7 +1428,7 @@ class noinline_call {
         };
 
         // note: a block is a frame, which counts toward the nesting limit and
-        //       the 'max frames in use' report, so a call without temporaries
+        //       the 'max scopes in use' report, so a call without temporaries
         //       enters none
 
         if (not has_result_temporary(dst, func) and
@@ -1679,19 +1680,19 @@ class noinline_call {
         const dry_run_height below{checked_height.value_or(dry_run_height{})};
 
         // e.g. a chain of noinline calls nests a dry run in each; a checked
-        // call counts the levels and the frames below it, so the verdict does
+        // call counts the levels and the scopes below it, so the verdict does
         // not depend on which calls were checked first
         if (level + below.levels > call_site::max_noinline_dry_run_level) {
             call_site::throw_noinline_nesting(call_.tk);
         }
 
-        const size_t frame_check{tc.scopes().frames().size() + below.frames};
+        const size_t scope_check{tc.scopes().frames().size() + below.scopes};
 
-        if (frame_check >= call_site::max_frame_count) {
-            call_site::throw_dry_run_frame_limit(call_.tk);
+        if (scope_check >= call_site::max_scope_count) {
+            call_site::throw_dry_run_scope_limit(call_.tk);
         }
 
-        tc.reach_frame_check(frame_check);
+        tc.reach_scope_check(scope_check);
 
         // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
         //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
@@ -2255,11 +2256,11 @@ class stmt_call : public expression {
             throw inlining_limit_error(recursion_message(func));
         }
 
-        const size_t frame_count{tc.scopes().frames().size()};
+        const size_t scope_count{tc.scopes().frames().size()};
 
-        tc.reach_frame_check(frame_count);
+        tc.reach_scope_check(scope_count);
 
-        if (frame_count < call_site::max_frame_count) {
+        if (scope_count < call_site::max_scope_count) {
             return;
         }
 
@@ -2267,13 +2268,13 @@ class stmt_call : public expression {
         //       'noinline_call::dry_run_body'
 
         if (tc.scopes().noinline_dry_run_level() != 0) {
-            call_site::throw_dry_run_frame_limit(tok());
+            call_site::throw_dry_run_scope_limit(tok());
         }
 
         throw inlining_limit_error(
             std::format("inlined calls and blocks are nested too deep, the "
                         "limit is {} scopes, declare a function 'noinline'",
-                        call_site::max_frame_count));
+                        call_site::max_scope_count));
     }
 
     // the function is a method and the receiver is a value

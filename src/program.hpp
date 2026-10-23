@@ -189,8 +189,8 @@ class report_renderer final {
                     .value{std::format("{}", stats.max_scratch_registers)},
                 },
                 {
-                    .name{"max frames in use"},
-                    .value{std::format("{}", usage.max_frame_count)},
+                    .name{"max scopes in use"},
+                    .value{std::format("{}", usage.max_scope_count)},
                 },
                 {
                     .name{"dat size"},

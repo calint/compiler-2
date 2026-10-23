@@ -4077,7 +4077,7 @@ SRC=1278 && COMPERR
 # call is rejected like a variable
 SRC=1279 && COMPERR
 
-# an inlined or a noinline call past the frame limit in the dry runs of a
+# an inlined or a noinline call past the scope limit in the dry runs of a
 # chain of noinline calls is reported as the chain: the script compiles
 # generated chains
 SRC=1280 && DIFFPY
