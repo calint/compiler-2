@@ -1,0 +1,7 @@
+
+1559.baz:4:9: 'U' names the built-in type 'i8'
+    var U = 2
+        ^
+1559.baz:9:13: instantiated by 'f<i8>'
+    var r = f(i8(1))
+            ^

@@ -175,7 +175,8 @@ class source_locations final {
             return text(src_loc_tk, ':');
         }
 
-        return std::format("{}:{}", files_->name(src_loc_tk.file_index()),
+        return std::format("{}:{}",
+                           printable(files_->name(src_loc_tk.file_index())),
                            text(src_loc_tk, ':'));
     }
 

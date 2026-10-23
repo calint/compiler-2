@@ -1,0 +1,12 @@
+# a generic type sees only the constants defined before it, like a generic
+# function
+type list<T type> { len, data T[m] }
+
+let m = 4
+
+type str = list<i8>
+
+func main() {
+    var s = str{}
+    exit(s.len)
+}

@@ -580,6 +580,13 @@ examples:
         }
 
         prg.build(std::cout);
+
+        // e.g. a full disk, the listing is incomplete
+        std::cout.flush();
+
+        if (not std::cout) {
+            throw unlocated_error{"cannot write the assembly to stdout"};
+        }
     } catch (const compile_error& e) {
         print_compiler_error(files, e);
         return 1;

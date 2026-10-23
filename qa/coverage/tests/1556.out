@@ -1,0 +1,7 @@
+
+1556.baz:4:25: generic parameter 'n' of 'list' needs a constant, got 'm'
+type text<k> = list<i8, m>
+                        ^
+1556.baz:8:6: instantiated by
+type str = text<2>
+     ^~~

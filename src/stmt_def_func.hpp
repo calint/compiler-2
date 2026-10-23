@@ -1441,8 +1441,12 @@ class stmt_def_func_generic final : public statement {
 
             method_name_tk = func_head::read_method_name_token(tz);
 
+            // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
             if (tz.peek_char_after_whitespace() == '<') {
-                std::ignore = generic_param::parse(tz);
+                for (const generic_param& param : generic_param::parse(tz)) {
+                    tc.assert_method_type_param_free(param.name_tk,
+                                                     head.name_tk.text());
+                }
             }
 
             std::ignore =

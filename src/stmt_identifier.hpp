@@ -858,9 +858,21 @@ class stmt_identifier final : public statement {
 
                 access_path_.add_field(field_offset);
 
-                narrow_accessed_bytes(field_offset,
-                                      parent_type->field_extent_bytes(
-                                          elem.name_tk, elem.name_tk.text()));
+                const size_t extent_bytes{
+                    parent_type->field_extent_bytes(elem.name_tk,
+                                                    elem.name_tk.text()),
+                };
+
+                // the last field keeps the padding after the instance that
+                // holds it, like the last element
+                const bool is_last_field{
+                    field_offset + extent_bytes == parent_type->size_bytes(),
+                };
+
+                narrow_accessed_bytes(
+                    field_offset,
+                    is_last_field ? accessed_bytes_.size_bytes - field_offset
+                                  : extent_bytes);
             }
 
             parent_type = &info.type_ref();

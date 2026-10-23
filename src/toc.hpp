@@ -1489,8 +1489,10 @@ class scope_stack final {
     [[nodiscard]] auto lookup_below(const std::string_view name,
                                     const size_t end) const -> name_meaning {
 
+        // the root is checked after the loop, where the order of the
+        // definitions applies
         for (const size_t index :
-             std::views::iota(size_t{}, end) | std::views::reverse) {
+             std::views::iota(size_t{1}, end) | std::views::reverse) {
 
             const frame& frm{frames_.at(index)};
 
@@ -2408,6 +2410,28 @@ class definition_checks final {
                         where(generics_.get().get_type(name).src_loc_tk))};
     }
 
+    // the body of a method of a generic type sees the parameters of the
+    // type too, e.g. 'n' of 'type box<n>' in 'func box.f<n type>()' would
+    // name two things
+    auto assert_generic_param_not_receiver_param(
+        const token& src_loc_tk, const std::string_view name,
+        const std::string_view generic_type) const -> void {
+
+        const generic_type_info& generic{
+            generics_.get().get_type(generic_type),
+        };
+
+        for (const generic_param& param : generic.params) {
+            if (param.name_tk.text() == name) {
+                throw compile_error{
+                    src_loc_tk,
+                    std::format("generic parameter '{}' is already declared "
+                                "by '{}' at {}",
+                                name, generic_type, where(param.name_tk))};
+            }
+        }
+    }
+
     // a generic parameter names its argument, so it cannot be the name of a
     // type
     auto assert_generic_param_not_type(const token& src_loc_tk,
@@ -2956,6 +2980,16 @@ class toc final {
         }
     }
 
+    // a type parameter of a method of the generic type 'generic_type'
+    auto
+    assert_method_type_param_free(const token& name_tk,
+                                  const std::string_view generic_type) const
+        -> void {
+
+        definitions_.assert_generic_param_not_receiver_param(
+            name_tk, name_tk.text(), generic_type);
+    }
+
     auto assert_released() const -> void {
         assert(scopes_.is_empty());
 
@@ -2980,6 +3014,13 @@ class toc final {
         if (is_builtin_type_name(name_tk.text())) {
             throw compile_error{name_tk, std::format("'{}' is a built-in type",
                                                      name_tk.text())};
+        }
+
+        // e.g. 'U' bound to 'i8'
+        if (const type* const builtin{builtin_value_type_named(name_tk)}) {
+            throw compile_error{name_tk,
+                                std::format("'{}' names the built-in type '{}'",
+                                            name_tk.text(), builtin->name())};
         }
     }
 

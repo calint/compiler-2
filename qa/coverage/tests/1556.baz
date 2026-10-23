@@ -1,0 +1,13 @@
+# the base of a generic type sees only the constants defined before it
+type list<T type, n> { len, data T[n] }
+
+type text<k> = list<i8, m>
+
+let m = 4
+
+type str = text<2>
+
+func main() {
+    var s = str{}
+    exit(s.len)
+}

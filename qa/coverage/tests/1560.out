@@ -1,0 +1,4 @@
+
+1560.baz:7:12: generic parameter 'n' is already declared by 'box' at 3:10
+func box.f<n type>(a n) res int {
+           ^

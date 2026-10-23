@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <functional>
+#include <optional>
 #include <ostream>
 #include <utility>
 
@@ -66,6 +68,20 @@ class stmt_builtin_arrays_equal final : public expression {
         const bulk_operands::arrays_info arrays{operands_.resolve_arrays(tc)};
 
         operands_.assert_constant_count_in_bounds(tc);
+
+        const std::optional<int64_t> count{
+            operands_.count().constant_value(tc),
+        };
+
+        // no elements are compared, the ranges are equal, so a start at the
+        // end of the array, which only a range may have, is not addressed
+        if (count and *count == 0) {
+            x.copy_value(
+                tok(), indent, dst,
+                operand::imm(inverted ? 0 : 1, tc.builtins().boolean()));
+
+            return;
+        }
 
         const std::function<void(const operand&)> emit_count{
             operands_.count_emitter(tc, indent),

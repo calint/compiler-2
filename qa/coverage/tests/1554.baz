@@ -1,0 +1,8 @@
+# a constant addend of a run-time index whose bytes pass the 32-bit address
+# range goes into the displacement, addresses wrap at the width of the target
+func main() {
+    var a = [8]
+    a[0] = 7
+    var i = 0
+    exit(a[(i - 2000000000) + 2000000000])
+}

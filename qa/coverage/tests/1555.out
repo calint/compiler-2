@@ -1,0 +1,7 @@
+
+1555.baz:3:33: cannot resolve identifier 'm'
+type list<T type> { len, data T[m] }
+                                ^
+1555.baz:7:6: instantiated by
+type str = list<i8>
+     ^~~

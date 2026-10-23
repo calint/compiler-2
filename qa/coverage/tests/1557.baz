@@ -1,0 +1,38 @@
+# a nested last field covers the padding after the instance that holds it,
+# like the last element, so assigning every field sets the result
+type inner {
+    y i8
+}
+
+type outer {
+    q i32,
+    a inner,
+}
+
+type outer_array {
+    q i32,
+    arr inner[2],
+}
+
+func f() res outer {
+    res.q = 1
+    res.a.y = 2
+}
+
+func g() res outer_array {
+    res.q = 3
+    res.arr[0].y = 4
+    res.arr[1].y = 5
+}
+
+func outer.at() self {
+    self.q = 6
+    self.a.y = 7
+}
+
+func main() {
+    var o = f()
+    var p = g()
+    var r = outer.at()
+    exit(o.a.y + p.arr[1].y + r.a.y)
+}

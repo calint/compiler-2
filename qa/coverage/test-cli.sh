@@ -216,6 +216,19 @@ CLI_FILE_ERRORS() {
     [[ $exit_code -eq 1 ]]
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file 'missing-directory/gen-rv32i.bin'" err
+    # a full disk is an error, for the listing and for the image
+    set +e
+    "$BIN" 0015.baz >/dev/full 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "error: cannot write the assembly to stdout" err
+    set +e
+    "$BIN" --target=rv32i --bin=/dev/full 0015.baz >gen.s 2>err
+    exit_code=$?
+    set -e
+    [[ $exit_code -eq 1 ]]
+    grep -Fq "cannot write file '/dev/full'" err
     # a source is read up to its size limit
     set +e
     "$BIN" /dev/zero >gen.s 2>err
@@ -313,7 +326,14 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     nasm -w+error -f elf64 gen.s -o gen.o
     "$BIN" --target=rv32i --checks=upper,line "$name" >gen.s 2>err
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
-    rm -f "$name" gen.o
+    # the locations of the register report name the file, also escaped
+    printf 'func g(x i64) res i64 {\n    res = x * 2 + 1\n}\n' >gen-lib.baz
+    printf 'include "gen-lib.baz"\n\nfunc main() {\n    var a = 1\n' >"$name"
+    printf '    exit(g(a) + g(a + 1) * (a + 2))\n}\n' >>"$name"
+    "$BIN" --report=registers "$name" >gen.s 2>err
+    grep -Fq 'gen\x0aname.baz:' gen.s
+    grep -q '^; name.baz' gen.s && exit 1
+    rm -f "$name" gen-lib.baz gen.o
     echo ok
 }
 
@@ -342,6 +362,16 @@ CLI_ADDRESS_RANGE() {
         set -e
         [[ $exit_code -eq 1 ]]
         [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
+        grep -Fq "exceeds the RV32I address range" err
+        # data of the whole range, its address from the variables base is
+        # past the range and wraps
+        printf 'dat d = i8[0x100000000]\nfunc main() {\n    d[1] = 1\n}\n' \
+            >gen-range.baz
+        set +e
+        "$BIN" --target=$target --bin=gen-rv32i.bin gen-range.baz >gen.s 2>err
+        exit_code=$?
+        set -e
+        [[ $exit_code -eq 1 ]]
         grep -Fq "exceeds the RV32I address range" err
     done
     rm -f gen-range.baz gen-rv32i.bin

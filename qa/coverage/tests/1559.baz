@@ -1,0 +1,11 @@
+# a variable is not named like a type parameter bound to a built-in type,
+# which it would hide only in some places, e.g. 'U(v)' still converts
+func f<U type>(v U) res U {
+    var U = 2
+    res = U(v)
+}
+
+func main() {
+    var r = f(i8(1))
+    exit(int(r))
+}

@@ -1192,8 +1192,9 @@ class expr_bool final : public statement {
             return;
         }
 
-        // stored comparisons would change what later elements read
-        if (dst.is_register() or not reads_destination(tc, *this, dst)) {
+        // stored comparisons would change what later elements read; a
+        // register that the list reads is the result of an inlined function
+        if (not reads_destination(tc, *this, dst)) {
             compile_value(tc, indent, dst.operand());
             return;
         }

@@ -1609,6 +1609,14 @@ class machine_rv32i : public machine {
         }
 
         assembler_.write_resolved(os, binary);
+
+        // e.g. a full disk, the image is incomplete
+        binary.close();
+
+        if (not binary) {
+            throw unlocated_error{
+                std::format("cannot write file '{}'", binary_file_name_)};
+        }
     }
 
     auto zero(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -5408,13 +5416,9 @@ class machine_rv32i : public machine {
         assert(address.index_register().empty() or
                address.scale() <= std::numeric_limits<uint32_t>::max());
 
-        constexpr int64_t limit{std::numeric_limits<uint32_t>::max()};
-
-        // note: '--vars' is bounded by 'max_storage_bytes' and a constant index
-        //       by the array size, so an offset stays in the address range
-
-        assert(address.displacement() >= -limit and
-               address.displacement() <= limit);
+        // note: any displacement is valid, addresses wrap at 32 bits and
+        //       'split_address_offset' keeps its low 32 bits, e.g. the
+        //       addend of 'a[i + K]' may pass the address range
     }
 
     // the result is written in place

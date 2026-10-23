@@ -4839,3 +4839,32 @@ SRC=1551 && COMPERR
 # a constant count with a constant start is checked at compile time, its
 # range is not checked again at run time; a run-time start is, once
 SRC=1552 && DIFFPY
+
+# a condition stored in an inlined result that a later element reads, the
+# result is written after all elements are read
+SRC=1553 && EXP=4 && RUN
+
+# a constant addend of a run-time index whose bytes pass the 32-bit address
+# range goes into the displacement, addresses wrap at the width of the target
+SRC=1554 && EXP=7 && RUN
+
+# a generic type and its base see only the constants defined before them,
+# like a generic function
+SRC=1555 && COMPERR
+SRC=1556 && COMPERR
+
+# a nested last field covers the padding after the instance that holds it,
+# like the last element, so assigning every field sets the result
+SRC=1557 && EXP=14 && RUN
+
+# a constant count 0 compares nothing, a start at the end of the array is
+# accepted like in 'array_copy' and 'write'
+SRC=1558 && EXP=5 && RUN
+
+# a variable is not named like a type parameter bound to a built-in type,
+# which it would hide only in some places, e.g. 'U(v)' still converts
+SRC=1559 && COMPERR
+
+# a type parameter of a method of a generic type is not named like a
+# constant parameter of the type, see 1075 for a type parameter
+SRC=1560 && COMPERR
