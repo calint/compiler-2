@@ -5022,3 +5022,21 @@ SRC=1606 && COMPERR
 
 # an array size is a constant expression, also in a field
 SRC=1607 && EXP=8 && RUN
+
+# a read of an element that an array field literal zeroed before it
+SRC=1608 && COMPERR
+
+# a read of a field that a record field literal zeroed before it
+SRC=1609 && COMPERR
+
+# a read of a field that a zero value '{}' wrote before it
+SRC=1610 && COMPERR
+
+# a read of a field that an element literal of an array zeroed before it
+SRC=1611 && COMPERR
+
+# a read of an element that an array of records field zeroed before it
+SRC=1612 && COMPERR
+
+# the remaining elements are zeroed after the listed ones, which read them first
+SRC=1613 && EXP=4 && RUN

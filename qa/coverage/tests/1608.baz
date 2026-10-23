@@ -1,0 +1,8 @@
+# a read of an element that an array field literal zeroed before it
+type st {a i8[4], b i8}
+func main() {
+    var q = st
+    q.a[3] = 4
+    q = {{1}, q.a[3]}
+    exit(q.b)
+}

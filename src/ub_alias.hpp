@@ -14,20 +14,38 @@
 // constant elements
 
 // one step of the path from a root variable to what is accessed: a field, a
-// constant index or a run-time index, e.g. 'es[1].items[i]' is a constant
-// index, a field and a run-time index. an index always follows a field or the
-// root variable
+// constant index, a constant range of indexes or a run-time index, e.g.
+// 'es[1].items[i]' is a constant index, a field and a run-time index. an index
+// always follows a field or the root variable; a range is written only, e.g.
+// the elements a literal zeroes
 struct path_step {
-    enum class kind_type : uint8_t { field, fixed_index, run_time_index };
+    enum class kind_type : uint8_t {
+        field,
+        fixed_index,
+        index_range,
+        run_time_index,
+    };
 
     kind_type kind{};
 
     // the offset of a field in its parent, which identifies the field, or the
-    // index of an element
+    // index of an element, or the first index of a range
     size_t number{};
 
+    // the index after the last of a range
+    size_t range_end{};
+
+    // the indexes from 'number' to before this, one for a constant index
+    [[nodiscard]] auto index_end() const -> size_t {
+        assert(kind == kind_type::fixed_index or
+               kind == kind_type::index_range);
+
+        return kind == kind_type::index_range ? range_end : number + 1;
+    }
+
     [[nodiscard]] auto is_same(const path_step& other) const -> bool {
-        return kind == other.kind and number == other.number;
+        return kind == other.kind and number == other.number and
+               range_end == other.range_end;
     }
 };
 
@@ -41,6 +59,7 @@ struct access_path {
         steps.push_back({
             .kind{path_step::kind_type::field},
             .number{offset},
+            .range_end{},
         });
     }
 
@@ -49,6 +68,18 @@ struct access_path {
         steps.push_back({
             .kind{path_step::kind_type::fixed_index},
             .number{index},
+            .range_end{},
+        });
+    }
+
+    // the elements from 'first' to before 'end' of the array
+    auto add_index_range(const size_t first, const size_t end) -> void {
+        assert(first < end);
+
+        steps.push_back({
+            .kind{path_step::kind_type::index_range},
+            .number{first},
+            .range_end{end},
         });
     }
 
@@ -56,6 +87,8 @@ struct access_path {
     auto add_run_time_index() -> void {
         steps.push_back({
             .kind{path_step::kind_type::run_time_index},
+            .number{},
+            .range_end{},
         });
     }
 
@@ -101,6 +134,9 @@ struct access_path {
                 result += std::format(".{}", step.number);
             } else if (step.kind == path_step::kind_type::fixed_index) {
                 result += std::format("[{}]", step.number);
+            } else if (step.kind == path_step::kind_type::index_range) {
+                result +=
+                    std::format("[{}..{}]", step.number, step.range_end - 1);
             } else {
                 result += "[?]";
             }
@@ -141,9 +177,21 @@ struct access_path {
             }
 
             // note: fields never overlap, so a different offset is a
-            //       different field, constant indexes work the same
+            //       different field
 
-            if (lhs_step.number != rhs_step.number) {
+            if (lhs_step.kind == path_step::kind_type::field) {
+                if (lhs_step.number != rhs_step.number) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            // constant indexes and ranges are disjoint when no index is in
+            // both
+            if (lhs_step.index_end() <= rhs_step.number or
+                rhs_step.index_end() <= lhs_step.number) {
+
                 return true;
             }
         }

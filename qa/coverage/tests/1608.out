@@ -1,0 +1,4 @@
+
+1608.baz:6:15: 'q.a[3]' is read but has been overwritten in the same statement
+    q = {{1}, q.a[3]}
+              ^

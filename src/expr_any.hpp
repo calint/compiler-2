@@ -657,12 +657,6 @@ class expr_any final : public statement {
         if (std::optional<std::string> bytes{constant_bytes(tc, get_type())};
             bytes) {
 
-            std::vector<access_path> covered;
-
-            for (size_t i{}; i < elements_.size(); ++i) {
-                covered.push_back(at.element(i).path());
-            }
-
             plan.push_back({
                 .at{at},
                 .action{
@@ -672,7 +666,9 @@ class expr_any final : public statement {
                         .is_string{},
                     },
                 },
-                .covered{std::move(covered)},
+                .covered{
+                    {at.elements_path(0, elements_.size())},
+                },
             });
 
             return;
@@ -754,7 +750,9 @@ class expr_any final : public statement {
                     .alignment{get_type().alignment()},
                 },
             },
-            .covered{},
+            .covered{
+                {at.elements_path(size_bytes, *array_count)},
+            },
         });
     }
 

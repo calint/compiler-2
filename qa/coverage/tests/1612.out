@@ -1,0 +1,4 @@
+
+1612.baz:7:17: 'q.ps[1].x' is read but has been overwritten in the same statement
+    q = {{{1}}, q.ps[1].x}
+                ^

@@ -1,0 +1,7 @@
+# the remaining elements are zeroed after the listed ones, which read them first
+func main() {
+    var a = i8[4]
+    a[3] = 4
+    a = {1, a[3]}
+    exit(a[1])
+}

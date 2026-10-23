@@ -117,6 +117,10 @@
 
 - Goal: a reviewer understands the design without strain and judges it well
   done.
+- Standing goal, never finished: every program the compiler accepts is free
+  of undefined behavior. Each case is either rejected at compile time or
+  checked at run time. A result never depends on the target, on inline
+  versus noinline, or on optimization.
 - Current focus: refactor until the design is clean before looking for bugs
   again; a bug that a refactor removes is fixed by the refactor.
 - Baz evaluates left to right: the operands, arguments and parts of a

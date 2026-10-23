@@ -1,0 +1,9 @@
+# a read of a field that a zero value '{}' wrote before it
+type in {x i8, y i8}
+type out {i in, z i8}
+func main() {
+    var o = out
+    o.i.y = 4
+    o = {{}, o.i.y}
+    exit(o.z)
+}

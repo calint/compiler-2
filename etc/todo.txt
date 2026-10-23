@@ -217,6 +217,30 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                comments are unchanged on every target; a zero fill covers
                nothing yet; the "too many elements" and string size checks
                moved into the builder
+            => 4.4.5 done (2026-10-23): a zero fill covers the unlisted
+               fields or one constant range of elements, a new
+               'path_step' kind 'index_range' (one path per element ran
+               out of memory for 'i8[3000000000]', test 1526); V-1 fixed in
+               its five forms, tests 1608-1612; 1613: a zero fill after the
+               read is accepted
+            => 4.4.6 plan, the scalar half: 'expr_arith::compile' asks
+               'destination_is_clobbered_before_read' about 'exprs_', while
+               the emit runs 'plan_steps', whose passes merge constants and
+               may move a leading constant before the first element
+               ('lead_with_constant'); the check is right today only
+               because each moved element also fails the 'exprs_' test
+               => design: 'compile' builds 'plan_steps(tc, dst)' once; the
+                  check reads those steps (the first step's element unless
+                  it is a plain name or literal, then every later step's
+                  element) and the in-place emit ('do_compile') takes the
+                  same steps; a scratch register destination plans its own
+                  steps, its width may differ and nothing is clobbered there
+               => 'expr_bool::compile' keeps its rule: any read of the
+                  destination goes through a scratch register, it has no
+                  order to decide
+               => invariant: the steps checked are the steps emitted in
+                  place
+               => expected: no change of verdict or code (measure)
        4.5. a generic definition holds its whole signature (class G, about
             12 bugs): what a generic method of a generic type declares lives
             only in its per-instance copies ('generic_method_info' has no

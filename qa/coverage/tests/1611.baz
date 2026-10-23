@@ -1,0 +1,8 @@
+# a read of a field that an element literal of an array zeroed before it
+type pt {x i8, y i8}
+func main() {
+    var ps = pt[2]
+    ps[0].y = 4
+    ps = {{1}, {ps[0].y}}
+    exit(ps[1].x)
+}

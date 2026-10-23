@@ -319,7 +319,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
 
     for (const auto [expr, field] : std::views::zip(exprs_, flds)) {
         plan_unwritten(at, "padding", written_bytes,
-                       field.offset - written_bytes, plan);
+                       field.offset - written_bytes, {}, plan);
 
         written_bytes = field.offset + field.size_bytes;
 
@@ -337,10 +337,16 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
         plan_field(tc, *expr, field, at.field(field), plan);
     }
 
+    std::vector<access_path> unlisted;
+
+    for (const type_field& field : flds.subspan(exprs_.size())) {
+        unlisted.push_back(at.field(field).path());
+    }
+
     // zero out the remaining fields and the padding after the written ones
-    plan_unwritten(
-        at, exprs_.size() == flds.size() ? "padding" : "remaining fields",
-        written_bytes, get_type().size_bytes() - written_bytes, plan);
+    plan_unwritten(at, unlisted.empty() ? "padding" : "remaining fields",
+                   written_bytes, get_type().size_bytes() - written_bytes,
+                   std::move(unlisted), plan);
 }
 
 // e.g. 'pt1 = pt2'

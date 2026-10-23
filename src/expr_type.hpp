@@ -10,6 +10,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -61,6 +62,16 @@ class part_location final {
             .element_index{index},
         });
 
+        return result;
+    }
+
+    // the path of the elements from 'first' to before 'end' of the array
+    // here, e.g. the elements a zero fill writes
+    [[nodiscard]] auto elements_path(const size_t first, const size_t end) const
+        -> access_path {
+
+        access_path result{path()};
+        result.add_index_range(first, end);
         return result;
     }
 
@@ -344,7 +355,9 @@ class expr_type final : public statement {
                     .alignment{element_type.alignment()},
                 },
             },
-            .covered{},
+            .covered{
+                {at.elements_path(listed_count, array_count)},
+            },
         });
     }
 
@@ -386,9 +399,11 @@ class expr_type final : public statement {
     auto parse_fields(toc& tc, tokenizer& tz, const type& tp) -> void;
 
     // padding is zeroed too so that instances compare equal byte by byte,
-    // 'offset' bytes into the instance at 'at'
+    // 'offset' bytes into the instance at 'at'; 'covered' are the unlisted
+    // fields among the bytes, none for padding
     auto plan_unwritten(const part_location& at, const std::string_view what,
                         const size_t offset, const size_t size_bytes,
+                        std::vector<access_path> covered,
                         write_plan& plan) const -> void {
 
         if (size_bytes == 0) {
@@ -409,7 +424,7 @@ class expr_type final : public statement {
                     },
                 },
             },
-            .covered{},
+            .covered{std::move(covered)},
         });
     }
 

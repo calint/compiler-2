@@ -1,0 +1,9 @@
+# a read of an element that an array of records field zeroed before it
+type pt {x i8, y i8}
+type st {ps pt[2], b i8}
+func main() {
+    var q = st
+    q.ps[1].x = 4
+    q = {{{1}}, q.ps[1].x}
+    exit(q.b)
+}
