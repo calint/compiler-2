@@ -1,4 +1,4 @@
 
-0743.baz:4:13: RV32I requires an 8-, 16-, or 32-bit scalar
+0743.baz:4:13: 'i64' is not available on this target, use 'i32' or 'int'
     var a = i64(6)
-            ^
+            ^~~

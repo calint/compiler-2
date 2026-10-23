@@ -6,10 +6,13 @@
 #include <string>
 #include <string_view>
 
+#include "compile_error.hpp"
 #include "expr_bool.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "stmt_block.hpp"
+#include "token.hpp"
+#include "tokenizer.hpp"
 #include "ub_assigned.hpp"
 
 // one condition of an 'if' or 'else if' and the block it guards
@@ -22,7 +25,7 @@ class stmt_if_branch final : public statement {
     // and the block that runs when it holds
     stmt_if_branch(toc& tc, tokenizer& tz)
         : statement{tz.next_whitespace_token()},
-          condition_{tc, tz.next_whitespace_token(), tz} {
+          condition_{tc, condition_start(tz), tz} {
 
         set_type(tc.builtins().void_type());
         condition_.assert_boolean_operands();
@@ -101,5 +104,21 @@ class stmt_if_branch final : public statement {
         }
 
         return condition_result::unknown;
+    }
+
+    //
+    // statics
+    //
+
+    // the whitespace before the condition, which a '{' does not start, e.g.
+    // 'if {x = 1}' lacks it
+    [[nodiscard]] static auto condition_start(tokenizer& tz) -> token {
+        const token ws_tk{tz.next_whitespace_token()};
+
+        if (tz.peek_char() == '{') {
+            throw compile_error{tz, "expected a condition before '{'"};
+        }
+
+        return ws_tk;
     }
 };

@@ -1,0 +1,4 @@
+
+1540.baz:4:9: 'i8' is a built-in type
+    var i8 = 3
+        ^~

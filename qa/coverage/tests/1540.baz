@@ -1,0 +1,7 @@
+# a value cannot be named like a built-in type, it would hide the type only
+# in some places
+func main() {
+    var i8 = 3
+    var z = i8(300)
+    exit(z)
+}

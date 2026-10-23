@@ -10,7 +10,4 @@ func main() {
     assert(1, p == 3)
     var q = point + 1
     assert(2, q == 4)
-    let int = 2
-    var r = int
-    assert(3, r == 2)
 }

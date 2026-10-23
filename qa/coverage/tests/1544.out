@@ -1,0 +1,4 @@
+
+1544.baz:6:11: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    v = a > 2
+          ^

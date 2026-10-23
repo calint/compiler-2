@@ -709,10 +709,18 @@ class expr_any final : public statement {
 
     // a 'bool' is not an integer, 'int(b)' converts it; an arithmetic operand
     // and a call result are checked by rules of their own
-    static auto assert_not_boolean_name(const expr_arith& value, const type& tp)
-        -> void {
+    static auto assert_not_boolean_name(const toc& tc, const expr_arith& value,
+                                        const type& tp) -> void {
 
         if (not value.is_name_or_literal() or not value.get_type().is_bool()) {
+            return;
+        }
+
+        // a whole array of 'bool' is bytes to a built-in, e.g. 'flags' of
+        // 'write(1, flags)'
+        if (value.is_bare_name_or_literal() and
+            make_ident_info(tc, value).is_array()) {
+
             return;
         }
 
@@ -825,7 +833,10 @@ class expr_any final : public statement {
                 },
             };
 
-            assert_not_boolean_name(value, tp);
+            assert_not_boolean_name(tc, value, tp);
+
+            // e.g. the '>' of 'int(a > 2)', which would end the number
+            expr_arith::assert_no_condition_next(tz);
 
             return value;
         }

@@ -1,4 +1,4 @@
 
-1178.baz:5:14: cannot index non-array 'i8'
+1178.baz:5:9: 'i8' is a built-in type
     var i8 = i8[3]{}
-             ^~
+        ^~

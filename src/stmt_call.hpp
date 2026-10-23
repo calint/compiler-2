@@ -151,8 +151,12 @@ struct generic_call {
         }
 
         // e.g. 'show(nope)', an unknown name is reported as such, not as a
-        // type that cannot be deduced
+        // type that cannot be deduced, and 'show(nope(1))' as a function
         if (is_unknown_name(tc, tk)) {
+            if (tz.peek_char_after_whitespace() == '(') {
+                std::ignore = tc.get_func_return_type_or_throw(tk, tk.text());
+            }
+
             std::ignore = tc.make_ident_info(tk, tk.text());
         }
 
@@ -2613,6 +2617,14 @@ class stmt_call : public expression {
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after arguments");
 
+        // e.g. the '.' of 'mk().y', a result has no storage to read a field of
+        if (tz.peek_char() == '.') {
+            throw compile_error{
+                tz, std::format("store the result of '{}' in a variable before "
+                                "reading its field",
+                                func_name_)};
+        }
+
         for (size_t i{}; i < args_.size(); ++i) {
             assert_argument_usable(tc, args_.at(i), params.at(i));
             assert_argument_writable(tc, i, func);
@@ -2630,6 +2642,8 @@ class stmt_call : public expression {
             if (not close_paren_tk_.is_empty()) {
                 return;
             }
+
+            assert_not_string_argument(tz);
 
             args_.emplace_back(tc, tz, tc.builtins().default_type(),
                                literal_typing::from_destination);
@@ -2873,8 +2887,8 @@ class stmt_call : public expression {
     [[nodiscard]] static auto recursion_message(const stmt_def_func& func)
         -> std::string {
 
-        return std::format("recursion of inlined function '{}' does not end at "
-                           "compile time, declare it 'noinline'",
+        return std::format("recursion of inlined function '{}' cannot be "
+                           "expanded at compile time, declare it 'noinline'",
                            func.name());
     }
 

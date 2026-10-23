@@ -1,0 +1,14 @@
+# an inlined recursion that ends at compile time but nests too deep is not
+# said to be endless
+func r(v mut, n) {
+    if n != 0 {
+        v = v + 1
+        r(v, n - 1)
+    }
+}
+
+func main() {
+    var v = 0
+    r(v, 100)
+    exit(v)
+}

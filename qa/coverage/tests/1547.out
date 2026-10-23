@@ -1,0 +1,4 @@
+
+1547.baz:3:13: '1' is a number, not a function
+    var x = 1 (2)
+            ^

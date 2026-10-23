@@ -1,0 +1,5 @@
+# rv32i: 'i64' is not available, also in an array that is only written out
+func main() {
+    var a = i64[2]
+    write(1, a)
+}

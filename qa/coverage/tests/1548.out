@@ -1,0 +1,4 @@
+
+1548.baz:8:15: function 'nope' not found
+    exit(show(nope(1)))
+              ^~~~

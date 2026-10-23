@@ -1,0 +1,4 @@
+
+1545.baz:4:8: expected a condition before '{'
+    if {
+       ^

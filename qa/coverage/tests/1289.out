@@ -1,5 +1,5 @@
 
-1289.baz:5:9: recursion of inlined function 'r' does not end at compile time, declare it 'noinline'
+1289.baz:5:9: recursion of inlined function 'r' cannot be expanded at compile time, declare it 'noinline'
         r(x - 1)
         ^
 1289.baz:10:5: called from

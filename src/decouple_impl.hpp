@@ -233,6 +233,12 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                             tk.text(), tk.text())};
     }
 
+    // e.g. '1 (2)', a number is not called
+    if (tk.is_number() and tz.peek_char_after_whitespace() == '(') {
+        throw compile_error{
+            tk, std::format("'{}' is a number, not a function", tk.text())};
+    }
+
     // e.g. 'foo(x)' or 'show<name>(x)', the call reads the type arguments
     if (tz.peek_char_after_whitespace() == '(' or
         is_generic_call(tc, tk.text(), tz)) {

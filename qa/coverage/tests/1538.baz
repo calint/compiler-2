@@ -1,0 +1,4 @@
+# rv32i: 'i64' is not available, also alone as a zero value
+func main() {
+    var x = i64
+}

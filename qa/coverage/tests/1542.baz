@@ -1,0 +1,6 @@
+# a comparison where a number is expected is reported at the comparison, e.g.
+# in a conversion
+func main() {
+    var a = 1
+    var b = int(a > 2)
+}

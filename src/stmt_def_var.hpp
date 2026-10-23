@@ -460,7 +460,7 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
 
     const token name_tk{tz.next_token()};
 
-    toc::assert_valid_unqualified_name(name_tk);
+    tc.assert_valid_unqualified_name(name_tk);
 
     // the destination is read where it ends at '=', past it the '[2]' in
     // 'var a = [2]{}' would read as an index

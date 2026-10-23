@@ -46,7 +46,7 @@ class stmt_def_dat final : public statement {
     stmt_def_dat(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, name_tk_{tz.next_token()} {
 
-        toc::assert_valid_unqualified_name(name_tk_);
+        tc.assert_valid_unqualified_name(name_tk_);
 
         equals_tk_ = initializer_declaration::parse_equals(tz, "dat");
 

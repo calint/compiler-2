@@ -96,7 +96,13 @@ struct func_head {
 
         head.read_modifiers(tz);
 
-        toc::assert_valid_unqualified_name(head.name_tk);
+        // a receiver names a type, e.g. 'point' of 'func point.at()', which
+        // 'read_method_name' checks
+        if (tz.peek_char() == '.') {
+            toc::assert_valid_name(head.name_tk);
+        } else {
+            tc.assert_valid_unqualified_name(head.name_tk);
+        }
 
         // e.g. 'func text.print()': each instance of 'text' reads the head
         // again from 'start_tk', where 'text' names a type, e.g. 'str', and
@@ -108,16 +114,6 @@ struct func_head {
 
         head.read_receiver(tc, tz);
 
-        if (head.method_dot_tk.is_empty() and
-            tc.builtins().is_integer_name(head.name_tk.text())) {
-
-            throw compile_error{
-                head.name_tk,
-                std::format("'{}' is a built-in type, '{}(...)' is a "
-                            "conversion",
-                            head.name_tk.text(), head.name_tk.text())};
-        }
-
         // e.g. 'func tokenizer.to<T type>()'
         if (head.open_paren_tk.is_empty() and
             tz.peek_char_after_whitespace() == '<') {
@@ -127,6 +123,20 @@ struct func_head {
         }
 
         return head;
+    }
+
+    // the name after the '.' of a method, e.g. 'print' of 'func text.print()'
+    [[nodiscard]] static auto read_method_name_token(tokenizer& tz) -> token {
+        const token name_tk{tz.next_token()};
+
+        if (not name_tk.is_word()) {
+            throw compile_error{tz.position_of(name_tk),
+                                "expected method name after '.'"};
+        }
+
+        toc::assert_valid_name(name_tk);
+
+        return name_tk;
     }
 
   private:
@@ -153,14 +163,7 @@ struct func_head {
                                      receiver_type->name())};
         }
 
-        method_name_tk = tz.next_token();
-
-        if (not method_name_tk.is_word()) {
-            throw compile_error{tz.position_of(method_name_tk),
-                                "expected method name after '.'"};
-        }
-
-        toc::assert_valid_name(method_name_tk);
+        method_name_tk = read_method_name_token(tz);
 
         name =
             std::format("{}.{}", receiver_type->name(), method_name_tk.text());
@@ -872,7 +875,7 @@ class stmt_def_func final : public statement {
         // a name before the body is the result, 'self' names the value a
         // constructor builds
         if (tz.peek_char_after_whitespace() == '{' and not result.is_self()) {
-            toc::assert_valid_unqualified_name(result.name_tk);
+            tc.assert_valid_unqualified_name(result.name_tk);
         }
 
         if (result.is_self()) {
@@ -1440,12 +1443,7 @@ class stmt_def_func_generic final : public statement {
             // note: 'func_head::names_generic_type' saw the '.'
             assert(not dot_tk.is_empty());
 
-            method_name_tk = tz.next_token();
-
-            if (not method_name_tk.is_word()) {
-                throw compile_error{tz.position_of(method_name_tk),
-                                    "expected method name after '.'"};
-            }
+            method_name_tk = func_head::read_method_name_token(tz);
 
             if (tz.peek_char_after_whitespace() == '<') {
                 std::ignore = generic_param::parse(tz);

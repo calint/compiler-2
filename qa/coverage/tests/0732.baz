@@ -1,4 +1,4 @@
-# rv32i: data elements must be 1, 2 or 4 bytes
+# rv32i: 'i64' is not available, also as the element type of a 'dat'
 
 dat d = i64[]{1, 2}
 

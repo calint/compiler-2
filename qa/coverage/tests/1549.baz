@@ -1,0 +1,4 @@
+# a string is not an argument of a built-in, like of a function
+func main() {
+    var n = write(1, "abc")
+}

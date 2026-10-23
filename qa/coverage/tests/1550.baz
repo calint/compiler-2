@@ -1,0 +1,11 @@
+# a field of a call result is read from a variable, the call is stored first
+type pt {x, y}
+
+func mk() res pt {
+    res = {1, 2}
+}
+
+func main() {
+    var z = mk().y
+    exit(z)
+}

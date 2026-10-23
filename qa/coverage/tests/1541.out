@@ -1,0 +1,7 @@
+
+1541.baz:6:9: recursion of inlined function 'r' cannot be expanded at compile time, declare it 'noinline'
+        r(v, n - 1)
+        ^
+1541.baz:12:5: called from
+    r(v, 100)
+    ^

@@ -1,4 +1,4 @@
-# a variable named 'int' hides the type in its own array initializer
+# a variable cannot be named 'int', the name of the default type
 
 func main() {
     var int = int[2]{1, 2}

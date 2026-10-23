@@ -87,6 +87,11 @@ class token final {
         return text_.empty() and not is_str_;
     }
 
+    // a word that starts with a digit, e.g. '12' or '0x1f'
+    [[nodiscard]] auto is_number() const -> bool {
+        return is_word() and text_.front() >= '0' and text_.front() <= '9';
+    }
+
     [[nodiscard]] auto is_string() const -> bool { return is_str_; }
 
     // a string literal is never a keyword or a name, whatever it says

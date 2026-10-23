@@ -539,6 +539,28 @@ class expr_arith final : public expression {
     // statics
     //
 
+    // a comparison, 'and' or 'or' after a number, e.g. the '>' of 'int(a > 2)'
+    // or the 'and' of '(t and f) == f'
+    static auto assert_no_condition_next(const tokenizer& tz) -> void {
+        if (is_comparison_next(tz)) {
+            tokenizer probe{tz};
+
+            throw compile_error{probe.next_token(),
+                                "a comparison makes a condition, which is not "
+                                "an operand here, store it in a 'bool' first"};
+        }
+
+        tokenizer probe{tz};
+        const token next_tk{probe.next_token()};
+
+        if (next_tk.is_text("and") or next_tk.is_text("or")) {
+            throw compile_error{
+                next_tk, std::format("'{}' makes a condition, which is not an "
+                                     "operand here, store it in a 'bool' first",
+                                     next_tk.text())};
+        }
+    }
+
     // the caller frees the returned register
     [[nodiscard]] static auto compile_unary_to_scratch(
         toc& tc, const size_t indent, const statement& src,
@@ -821,27 +843,13 @@ class expr_arith final : public expression {
 
         // e.g. the '==' of '(x == 1) == b' or of 'x = 1 + (x < 1)', which
         // takes the condition for an arithmetic operand
-        if (is_enclosed() and is_comparison_next(tz)) {
-            throw compile_error{tz.next_token(),
-                                "a comparison makes a condition, which is not "
-                                "an operand here, store it in a 'bool' first"};
-        }
-
         if (is_enclosed()) {
-            const token next_tk{tz.next_token()};
-
-            // e.g. the 'and' of '(t and f) == f', like a comparison above
-            if (next_tk.is_text("and") or next_tk.is_text("or")) {
-                throw compile_error{
-                    next_tk, std::format("'{}' makes a condition, which is not "
-                                         "an operand here, store it in a "
-                                         "'bool' first",
-                                         next_tk.text())};
-            }
+            assert_no_condition_next(tz);
 
             // an enclosed list ends with its ')'
             // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
-            throw compile_error{next_tk, "expected ')' to close expression"};
+            throw compile_error{tz.next_token(),
+                                "expected ')' to close expression"};
         }
 
         validate_arithmetic_operands(tc);

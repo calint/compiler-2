@@ -1,4 +1,5 @@
-# a variable named like a built-in type is initialized with a string
+# a variable cannot be named like a built-in type, also when initialized with
+# a string
 
 func main() {
     var i8 = "ab"

@@ -1,0 +1,4 @@
+
+1546.baz:4:12: expected a statement
+    return 2
+           ^

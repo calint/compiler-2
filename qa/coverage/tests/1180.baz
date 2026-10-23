@@ -1,5 +1,4 @@
-# a global variable named like a built-in type hides the type in its own array
-# initializer
+# a global variable cannot be named like a built-in type
 
 var i8 = i8[2]{1, 2}
 

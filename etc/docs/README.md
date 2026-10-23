@@ -185,7 +185,8 @@ the context of the definition. Every question about a name asks this lookup:
 the resolver ('ident_resolver'), the aliasing check, and the lookaheads of the
 parser, where a variable, a parameter or a constant hides a type or a generic
 function of its name, e.g. after 'let point = 3' the 'point' of 'point + 1' is
-the constant. A name followed by '(' is a call, no value is called. The same
+the constant; a built-in type, e.g. 'i8', names no value. A name followed by
+'(' is a call, no value is called. The same
 statement can resolve to another variable, register or constant each time it
 is compiled.
 
@@ -979,9 +980,10 @@ A version compiles everything under it, including the choices inside it, so a
 choice in an inlined body is compiled once per version of every choice above
 it. The work is the product of the version counts along a path, not the sum.
 
-It stays polynomial in the depth: a version that folds an address into a
-register gives the body an argument that is no longer indexed, so only the
-version that keeps the index passes the choice down.
+It stays polynomial in the depth when the chain passes the same indexed
+argument on: a version that folds an address into a register gives the body
+an argument that is no longer indexed, so only the version that keeps the
+index passes the choice down.
 
 Choices made for a chain of inlined calls, each passing an indexed argument
 on:
@@ -996,6 +998,12 @@ x86_64 has base + index addressing, so only the assignment chooses, once per
 body. rv32i grows as (n + 1) * (n + 5). The trade is compile time for code
 size: the depth 8 chain compiles in about 75 ms on rv32i against 12 ms on
 x86_64.
+
+It grows exponentially when each level passes a new indexed argument, e.g.
+'r(ps[i + n], n - 1)' in the body of 'r': every version of a level has an
+indexed argument to pass down, so on rv32i each level triples the work. Such a
+recursion 11 levels deep compiles in about 50 s on rv32i against 5 ms on
+x86_64; a 'noinline' function compiles its body once.
 
 Not every choice is measured. The padding of an instance is zeroed gap by gap
 or as the whole instance by a gap count that each backend measured once

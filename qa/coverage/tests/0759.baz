@@ -35,9 +35,4 @@ func main() {
         sum = sum + k
     }
     assert(4, sum == 0 + 1 + 2)
-
-    # a constant named 'int' is not the type either
-    let int = 5
-    var x = int
-    assert(5, x == 5)
 }

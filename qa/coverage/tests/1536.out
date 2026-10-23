@@ -1,0 +1,4 @@
+
+1536.baz:2:14: 'i64' is not available on this target, use 'i32' or 'int'
+type pair {a i64, b i32}
+             ^~~

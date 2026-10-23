@@ -1,4 +1,4 @@
 
-1194.baz:4:9: cannot index non-array 'int'
-dat b = int[2]{3}
-        ^~~
+1194.baz:3:5: 'int' is a built-in type
+dat int = int(5)
+    ^~~

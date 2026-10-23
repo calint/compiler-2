@@ -1,0 +1,4 @@
+
+1542.baz:5:19: a comparison makes a condition, which is not an operand here, store it in a 'bool' first
+    var b = int(a > 2)
+                  ^

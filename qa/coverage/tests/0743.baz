@@ -1,4 +1,4 @@
-# rv32i: a 64-bit variable is wider than a register
+# rv32i: 'i64' is not available, a 64-bit variable is wider than a register
 
 func main() {
     var a = i64(6)

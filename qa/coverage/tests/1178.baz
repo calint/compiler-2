@@ -1,5 +1,5 @@
-# a variable named like a built-in type hides the type in its own array
-# initializer
+# a variable cannot be named like a built-in type, also when its initializer
+# names the type
 
 func main() {
     var i8 = i8[3]{}

@@ -1,4 +1,4 @@
 
-1360.baz:3:8: generic parameter 'i8' hides the built-in type 'i8', use another name
+1360.baz:3:8: 'i8' is a built-in type
 func f<i8 type>(x i8) res {
        ^~

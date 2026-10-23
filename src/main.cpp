@@ -151,8 +151,6 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 
 [[nodiscard]] auto target_text(target kind) -> std::string_view;
 
-[[nodiscard]] auto supported_target_texts() -> std::string;
-
 [[nodiscard]] auto
 default_binary_file_name(const std::string_view src_file_name,
                          const target machine_target) -> std::string;
@@ -364,7 +362,7 @@ template <typename Name, size_t count>
     if (not found) {
         print_option_error(
             std::format("invalid --target: '{}', supported targets are: {}",
-                        value, supported_target_texts()));
+                        value, joined_texts(target_names)));
 
         return false;
     }
@@ -733,11 +731,6 @@ constexpr std::array<check_name, 10> check_names{
     },
 };
 
-// e.g. 'upper, lower, line'
-[[nodiscard]] auto check_texts() -> std::string {
-    return joined_texts(check_names);
-}
-
 // each '--checks' replaces the earlier ones, empty parts are ignored, 'alias'
 // stays on unless '-alias' is given, 'name' and '+name' enable a check,
 // '-name' disables it after all enables, so the order in the list does not
@@ -780,9 +773,9 @@ constexpr std::array<check_name, 10> check_names{
 
             if (found == check_names.end()) {
                 print_option_error(std::format(
-                    "invalid --checks: '{}', supported options are: {}, "
+                    "invalid --checks: '{}', supported checks are: {}, "
                     "noub, each with a '+' or '-' prefix",
-                    written, check_texts()));
+                    written, joined_texts(check_names)));
 
                 return std::nullopt;
             }
@@ -826,11 +819,6 @@ constexpr std::array<check_name, 10> check_names{
     }
 
     std::unreachable();
-}
-
-// e.g. 'x86_64, rv32i, rv32i-qemu, rv32i-fpga'
-[[nodiscard]] auto supported_target_texts() -> std::string {
-    return joined_texts(target_names);
 }
 
 // keeps the directory so the image lands next to its source

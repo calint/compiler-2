@@ -166,7 +166,8 @@ class stmt_block final : public statement {
                                               const token tk)
         -> std::unique_ptr<statement> {
 
-        if (tk.is_string()) {
+        // e.g. the '2' of 'return 2', which takes no value
+        if (tk.is_string() or tk.is_number()) {
             throw compile_error{tk, "expected a statement"};
         }
 

@@ -2272,7 +2272,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=0730 && COMPERR; fi
 # the end of the array
 SRC=0731 && OPTS="--vars=0x10000" COMPERR
 
-# rv32i: data elements must be 1, 2 or 4 bytes
+# rv32i: 'i64' is not available, also as the element type of a 'dat'
 if [[ $MACHINE != x86_64 ]]; then SRC=0732 && COMPERR; fi
 
 # an unknown escape in a string constant
@@ -2307,7 +2307,7 @@ if [[ $MACHINE == x86_64 ]]; then SRC=0741 && COMPERR; fi
 # an unsupported escape after a line continuation is located on its own line
 SRC=0742 && COMPERR
 
-# rv32i: a 64-bit variable is wider than a register
+# rv32i: 'i64' is not available, a 64-bit variable is wider than a register
 if [[ $MACHINE != x86_64 ]]; then SRC=0743 && COMPERR; fi
 
 # the largest constant shift counts of narrow values
@@ -3710,23 +3710,23 @@ SRC=1176 && COMPERR
 # name
 SRC=1177 && COMPERR
 
-# a variable named like a built-in type hides the type in its own array
-# initializer
+# a variable cannot be named like a built-in type, also when its initializer
+# names the type
 SRC=1178 && COMPERR
 
-# a variable named 'int' hides the type in its own array initializer
+# a variable cannot be named 'int', the name of the default type
 SRC=1179 && COMPERR
 
-# a global variable named like a built-in type hides the type in its own array
-# initializer
+# a global variable cannot be named like a built-in type
 SRC=1180 && COMPERR
 
 # a variable named like a record type hides the type in its own array
 # initializer
 SRC=1181 && COMPERR
 
-# a variable named like a built-in type is initialized with a string
-SRC=1182 && EXP=98 && RUN
+# a variable cannot be named like a built-in type, also when initialized with
+# a string
+SRC=1182 && COMPERR
 
 # a constant named like a variable of the same block is rejected
 SRC=1183 && COMPERR
@@ -3765,7 +3765,7 @@ SRC=1192 && EXP=4 && RUN
 # element
 SRC=1193 && EXP=4 && RUN
 
-# a 'dat' named like a type hides the type in a later initializer
+# a 'dat' cannot be named like a built-in type
 SRC=1194 && COMPERR
 
 # a 'dat' named like a record type hides the type in a later initializer
@@ -4789,3 +4789,49 @@ SRC=1534 && EXP=5 && RUN
 # a control byte in the quoted source line is shown as an escape and the
 # caret stays under the token
 SRC=1535 && COMPERR
+
+# rv32i: 'i64' is not available, also in a field that is only copied, in an
+# array that is only written out and alone as a zero value
+if [[ $MACHINE != x86_64 ]]; then SRC=1536 && COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1537 && COMPERR; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1538 && COMPERR; fi
+
+# a 'bool' array is a buffer of bytes like a record with 'bool' fields
+SRC=1539 && DIFF
+
+# a value cannot be named like a built-in type, it would hide the type only
+# in some places
+SRC=1540 && COMPERR
+
+# an inlined recursion that ends at compile time but nests too deep is not
+# said to be endless
+SRC=1541 && COMPERR
+
+# a comparison where a number is expected is reported at the comparison, in a
+# conversion, an index or an assignment
+SRC=1542 && COMPERR
+SRC=1543 && COMPERR
+SRC=1544 && COMPERR
+
+# an 'if' without a condition is reported as such
+SRC=1545 && COMPERR
+
+# a 'return' takes no value, the value after it is not a statement
+SRC=1546 && COMPERR
+
+# a number followed by '(' is not a call
+SRC=1547 && COMPERR
+
+# an unknown function in an argument that a generic call deduces from is
+# reported as a function
+SRC=1548 && COMPERR
+
+# a string is not an argument of a built-in, like of a function
+SRC=1549 && COMPERR
+
+# a field of a call result is read from a variable, the call is stored first
+SRC=1550 && COMPERR
+
+# a method of a generic type is checked for a valid name at its definition,
+# also when no alias makes an instance
+SRC=1551 && COMPERR

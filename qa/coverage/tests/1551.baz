@@ -1,0 +1,9 @@
+# a method of a generic type is checked for a valid name at its definition,
+# also when no alias makes an instance
+type text<n> {
+    items i8[n]
+}
+
+func text.if() {}
+
+func main() {}

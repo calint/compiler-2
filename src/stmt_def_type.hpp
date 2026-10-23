@@ -590,7 +590,7 @@ inline auto make_stmt_def_type(toc& tc, const token tk, tokenizer& tz)
 
     // e.g. 'type read {x}' could have no method, 'read.get' reads as the
     // built-in
-    toc::assert_valid_unqualified_name(name_tk);
+    tc.assert_valid_unqualified_name(name_tk);
 
     const char next{tz.peek_char_after_whitespace()};
 

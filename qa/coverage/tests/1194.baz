@@ -1,4 +1,4 @@
-# a 'dat' named like a type hides the type in a later initializer
+# a 'dat' cannot be named like a built-in type
 
 dat int = int(5)
 dat b = int[2]{3}

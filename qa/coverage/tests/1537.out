@@ -1,0 +1,4 @@
+
+1537.baz:3:13: 'i64' is not available on this target, use 'i32' or 'int'
+    var a = i64[2]
+            ^~~

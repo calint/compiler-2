@@ -13,17 +13,17 @@ func main() {
     rows[1].v[0] = 7
     var j = 1
     var m = 2
-    var i0 = 0
-    var i1 = 0
-    var i2 = 0
-    var i3 = 0
-    var i4 = 0
-    var i5 = 0
-    var i6 = 0
-    var i7 = 0
-    var i8 = 0
-    var i9 = 0
-    var i10 = 0
-    f(rows[j], rows2[m], arr[i0], arr[i1], arr[i2], arr[i3], arr[i4], arr[i5], arr[i6], arr[i7], arr[i8], arr[i9], arr[i10])
+    var k0 = 0
+    var k1 = 0
+    var k2 = 0
+    var k3 = 0
+    var k4 = 0
+    var k5 = 0
+    var k6 = 0
+    var k7 = 0
+    var k8 = 0
+    var k9 = 0
+    var k10 = 0
+    f(rows[j], rows2[m], arr[k0], arr[k1], arr[k2], arr[k3], arr[k4], arr[k5], arr[k6], arr[k7], arr[k8], arr[k9], arr[k10])
     exit(rows2[2].v[0])
 }

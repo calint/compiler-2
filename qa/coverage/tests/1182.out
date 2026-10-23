@@ -1,0 +1,4 @@
+
+1182.baz:5:9: 'i8' is a built-in type
+    var i8 = "ab"
+        ^~

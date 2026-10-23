@@ -1,0 +1,7 @@
+# an 'if' without a condition is reported as such
+func main() {
+    var x = 1
+    if {
+        x = 2
+    }
+}

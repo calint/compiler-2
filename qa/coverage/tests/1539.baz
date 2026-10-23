@@ -1,0 +1,8 @@
+# a 'bool' array is a buffer of bytes like a record with 'bool' fields
+func main() {
+    var flags = bool[]{true, false, true}
+    var n = write(1, flags)
+    if n != 3 {
+        exit(1)
+    }
+}

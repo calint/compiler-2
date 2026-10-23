@@ -101,6 +101,10 @@ class stmt_builtin_convert final : public expression {
             };
         }
 
+        // e.g. the '>' of 'int(a > 2)', a 'bool' converts but a condition
+        // is stored first
+        expr_arith::assert_no_condition_next(tz);
+
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the argument");
     }

@@ -1,0 +1,4 @@
+
+1549.baz:3:22: a string is not an argument, it would refer to read-only data
+    var n = write(1, "abc")
+                     ^~~~~

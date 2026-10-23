@@ -2425,14 +2425,10 @@ class definition_checks final {
 
         const token& type_tk{types_.get().src_loc_tk_of(name)};
 
-        // a built-in type has no place in the source
-        if (type_tk.is_empty()) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("generic parameter '{}' hides the built-in type "
-                            "'{}', use another name",
-                            name, name)};
-        }
+        // note: a built-in type name is rejected by
+        //       'toc::assert_valid_unqualified_name' at the definition
+
+        assert(not type_tk.is_empty());
 
         throw compile_error{
             src_loc_tk,
@@ -2515,11 +2511,10 @@ class definition_checks final {
         if (types_.get().exists(name)) {
             const token& type_tk{types_.get().src_loc_tk_of(name)};
 
-            // a built-in type has no place in the source
-            if (type_tk.is_empty()) {
-                throw compile_error{
-                    src_loc_tk, std::format("'{}' is a built-in type", name)};
-            }
+            // note: a built-in type name is rejected by
+            //       'toc::assert_valid_unqualified_name'
+
+            assert(not type_tk.is_empty());
 
             throw compile_error{src_loc_tk,
                                 std::format("type '{}' already defined at {}",
@@ -2972,6 +2967,27 @@ class toc final {
         storage_.assert_released();
     }
 
+    // a name of a type, function, variable, constant, data or parameter, which
+    // is used without a qualifier
+    auto assert_valid_unqualified_name(const token& name_tk) const -> void {
+        assert_valid_name(name_tk);
+
+        if (std::ranges::contains(reserved_names::builtin_functions,
+                                  name_tk.text())) {
+
+            throw compile_error{
+                name_tk,
+                std::format("'{}' is a built-in function", name_tk.text())};
+        }
+
+        // a value would hide the type only in some places, e.g. 'i8(300)'
+        // still converts after 'var i8 = 3'
+        if (is_builtin_type_name(name_tk.text())) {
+            throw compile_error{name_tk, std::format("'{}' is a built-in type",
+                                                     name_tk.text())};
+        }
+    }
+
     // the parse is over: its frames are popped and its use of storage is
     // forgotten, declarations comment where they are stored and the storage
     // capacity is checked, e.g. a parameter 'self' of a type larger than the
@@ -3246,19 +3262,40 @@ class toc final {
                                 std::format("type '{}' not found", name)};
         }
 
+        const type& tp{types_.get(name)};
+
         // note: 'void' is the type of what has no value, it has no size
-        if (types_.get(name).is_same(builtins_.void_type())) {
+        if (tp.is_same(builtins_.void_type())) {
             throw compile_error{
                 type_tk, std::format("'{}' is not a type of a value", name)};
         }
 
-        return types_.get(name);
+        // the default type is the widest integer the target computes with,
+        // e.g. 'i32' on rv32i
+        const type& widest{builtins_.default_type()};
+
+        if (tp.is_builtin() and tp.size_bytes() > widest.size_bytes()) {
+            throw compile_error{
+                type_tk,
+                std::format("'{}' is not available on this target, use '{}' "
+                            "or 'int'",
+                            name, widest.name())};
+        }
+
+        return tp;
     }
 
     // whether the backend passes the address of the receiver of a method in a
     // register
     [[nodiscard]] auto has_slot_register() const -> bool {
         return not machine_.get().slot_register().empty();
+    }
+
+    // a built-in type has no place in the source, e.g. 'i8' or 'int'
+    [[nodiscard]] auto is_builtin_type_name(const std::string_view name) const
+        -> bool {
+
+        return types_.exists(name) and types_.src_loc_tk_of(name).is_empty();
     }
 
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
@@ -3458,20 +3495,6 @@ class toc final {
         if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {
             throw compile_error{
                 name_tk, std::format("'{}' is a keyword", name_tk.text())};
-        }
-    }
-
-    // a name of a type, function, variable, constant, data or parameter, which
-    // is used without a qualifier
-    static auto assert_valid_unqualified_name(const token& name_tk) -> void {
-        assert_valid_name(name_tk);
-
-        if (std::ranges::contains(reserved_names::builtin_functions,
-                                  name_tk.text())) {
-
-            throw compile_error{
-                name_tk,
-                std::format("'{}' is a built-in function", name_tk.text())};
         }
     }
 

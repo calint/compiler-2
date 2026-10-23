@@ -1,5 +1,5 @@
 # a variable in the body of a function that repeats a parameter is rejected
-func f(x i64) res {
+func f(x int) res {
     var x = 7
     res = x
 }

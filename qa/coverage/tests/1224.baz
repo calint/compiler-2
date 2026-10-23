@@ -9,20 +9,20 @@ var arr = i32[8]
 
 func main() {
     arr[0] = 3
-    var i0 = 0
-    var i1 = 1
-    var i2 = 2
-    var i3 = 3
-    var i4 = 4
-    var i5 = 5
-    var i6 = 6
-    var i7 = 7
-    var i8 = 0
-    var i9 = 1
-    var i10 = 2
-    var i11 = 3
-    var i12 = 4
-    var i13 = 5
-    var r = f(arr[i0], arr[i1], arr[i2], arr[i3], arr[i4], arr[i5], arr[i6], arr[i7], arr[i8], arr[i9], arr[i10], arr[i11], arr[i12], arr[i13])
+    var k0 = 0
+    var k1 = 1
+    var k2 = 2
+    var k3 = 3
+    var k4 = 4
+    var k5 = 5
+    var k6 = 6
+    var k7 = 7
+    var k8 = 0
+    var k9 = 1
+    var k10 = 2
+    var k11 = 3
+    var k12 = 4
+    var k13 = 5
+    var r = f(arr[k0], arr[k1], arr[k2], arr[k3], arr[k4], arr[k5], arr[k6], arr[k7], arr[k8], arr[k9], arr[k10], arr[k11], arr[k12], arr[k13])
     exit(r)
 }

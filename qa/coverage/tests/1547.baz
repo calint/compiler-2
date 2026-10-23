@@ -1,0 +1,4 @@
+# a number followed by '(' is not a call
+func main() {
+    var x = 1 (2)
+}

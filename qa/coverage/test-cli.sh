@@ -578,6 +578,9 @@ CLI_OPTION_MESSAGES() {
         [[ $exit_code -eq 1 ]]
         grep -Fq "error: invalid ${arg%%=*}: " err
     done
+    # each names what it lists
+    "$BIN" --checks=x 0015.baz >/dev/null 2>err || true
+    grep -Fq "supported checks are: " err
     echo ok
 }
 
