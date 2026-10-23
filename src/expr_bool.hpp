@@ -165,6 +165,12 @@ class expr_bool_op final : public statement {
         return lhs_.name_or_literal();
     }
 
+    // a condition that is one name, e.g. 'flag', not 'not flag' or 'a == b'
+    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
+        const expr_arith* const arith{arithmetic()};
+        return arith == nullptr ? nullptr : arith->place_path();
+    }
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
@@ -691,9 +697,9 @@ class expr_bool_op final : public statement {
 
         const std::string_view type_name{side.get_type().name()};
 
-        // e.g. the '-' of '-p == p' or '-(p) == p' applies to a number
+        // e.g. the '-' of '-p == p' applies to a number
         const bool has_unary_ops{
-            side.is_name_or_literal() and not side.is_bare_name_or_literal(),
+            side.is_name_or_literal() and not side.get_unary_ops().is_empty(),
         };
 
         if (is_equality and not has_unary_ops) {
@@ -857,19 +863,15 @@ class expr_bool_op final : public statement {
                action.target.empty();
     }
 
-    // a user type instance or a whole array, not unary operated or computed
+    // a user type instance or a whole array in storage, compared in place
     [[nodiscard]] static auto is_memory_operand(const toc& tc,
                                                 const expr_arith& side)
         -> bool {
 
-        if (not side.is_bare_name_or_literal()) {
-            return false;
-        }
+        const std::optional<place> stored{as_place(tc, side)};
 
-        const ident_info info{make_ident_info(tc, side.identifier_statement())};
-
-        return not info.is_const() and
-               (info.is_array() or not info.type_ref().is_builtin());
+        return stored and (stored->info.is_array() or
+                           not stored->info.type_ref().is_builtin());
     }
 
     // a typed constant side is compared as a variable of its type
@@ -1241,6 +1243,17 @@ class expr_bool final : public statement {
         return bools_.at(0).visit([](const auto& e) -> std::string_view {
             return e.name_or_literal();
         });
+    }
+
+    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
+        if (bools_.size() != 1 or has_not()) {
+            return nullptr;
+        }
+
+        return bools_.front().visit(
+            [](const auto& e) -> const stmt_identifier* {
+                return e.place_path();
+            });
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const

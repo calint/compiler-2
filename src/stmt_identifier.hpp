@@ -435,6 +435,10 @@ class stmt_identifier final : public statement {
         return last_token();
     }
 
+    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
+        return get_unary_ops().is_empty() ? this : nullptr;
+    }
+
     // index expressions are read even when the path is written
     auto visit_index_reads(const read_filter var,
                            const read_visitor reader) const -> void override {
@@ -554,6 +558,13 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto method_name_token() const -> const token& {
         return method_name_tk_;
+    }
+
+    // the path names a function, unless a variable, a parameter or a constant
+    // of the same root is in scope, it shadows the function
+    [[nodiscard]] auto names_function(const toc& tc) const -> bool {
+        const std::string_view root{ident_info::root_of(path_as_string_)};
+        return tc.is_func(path_as_string_) and not is_hidden_by_value(tc, root);
     }
 
     auto path_source_to(std::ostream& os) const -> void {
@@ -799,13 +810,6 @@ class stmt_identifier final : public statement {
         }
 
         return &*known;
-    }
-
-    // the path names a function, unless a variable, a parameter or a constant
-    // of the same root is in scope, it shadows the function
-    [[nodiscard]] auto names_function(const toc& tc) const -> bool {
-        const std::string_view root{ident_info::root_of(path_as_string_)};
-        return tc.is_func(path_as_string_) and not is_hidden_by_value(tc, root);
     }
 
     // note: after a run-time index the range stays the whole array
@@ -1272,3 +1276,25 @@ class stmt_identifier final : public statement {
                                      info.element_count());
     }
 };
+
+// see the declaration in 'statement.hpp'
+inline auto as_place(const toc& tc, const statement& st)
+    -> std::optional<place> {
+
+    const stmt_identifier* const path{st.place_path()};
+
+    if (path == nullptr or path->names_function(tc)) {
+        return std::nullopt;
+    }
+
+    ident_info info{make_ident_info(tc, *path)};
+
+    if (not info.is_var()) {
+        return std::nullopt;
+    }
+
+    return place{
+        .path{path},
+        .info{std::move(info)},
+    };
+}

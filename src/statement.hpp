@@ -227,6 +227,8 @@ enum class width_change : uint8_t { narrowed, widened };
 // constant start was checked at compile time, e.g. 'array_copy(a[1], b, 2)'
 enum class range_check : uint8_t { run_time, compile_time };
 
+class stmt_identifier;
+
 // a node of the program: it parses itself in its constructor, writes its
 // source back ('source_to') and compiles; the virtuals in groups, with the
 // classes that override them, the default is 'std::unreachable()' where no
@@ -241,7 +243,8 @@ enum class range_check : uint8_t { run_time, compile_time };
 //                  'stmt_builtin_array_length', 'stmt_builtin_arrays_equal',
 //                  'stmt_call', 'stmt_identifier' ('assert_not_narrowed',
 //                  'fold', 'keeps_low_bits')
-//   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
+//   a place        'place_path', 'name_or_literal', 'is_name_or_literal',
+//                  'accessed_path',
 //                  'compile_lea', 'is_indexed', 'is_array_element',
 //                  'name_token', 'visit_index_reads': 'stmt_identifier', and
 //                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
@@ -356,6 +359,13 @@ class statement {
     // identifier, e.g. 'b' of 'a.b'
     [[nodiscard]] virtual auto name_token() const -> const token& {
         return token_;
+    }
+
+    // the path of names, fields and indexes this node is, without unary ops,
+    // e.g. 'p.x' or 'a[i]', not '-x', 'x + 1' or 'f(x)'; a constant or a
+    // literal is a path too, 'as_place' tells storage
+    [[nodiscard]] virtual auto place_path() const -> const stmt_identifier* {
+        return nullptr;
     }
 
     [[nodiscard]] virtual auto produces_boolean() const -> bool {
@@ -530,12 +540,6 @@ class statement {
         -> bool {
 
         return is_indexed() or info.is_address_computed();
-    }
-
-    // a name or a literal read in place, e.g. 'x', not '-x'
-    [[nodiscard]] auto is_bare_name_or_literal() const -> bool {
-        return is_name_or_literal() and not is_expression() and
-               get_unary_ops().is_empty();
     }
 
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
@@ -766,6 +770,21 @@ class statement {
 //
 // what the symbol table tells about a statement that names a place
 //
+
+// storage that a node names and that is read or passed in place, e.g. the
+// buffer 'b' of 'read(0, b)'; 'path' is a bare path of the node, 'info'
+// resolves it to a variable
+struct place {
+    const stmt_identifier* path{};
+    ident_info info;
+};
+
+// the storage 'st' names in place, empty for a value: a node with operators
+// or unary ops, a call, a method path, a literal, a constant or a name bound
+// to a register
+// note: defined in 'stmt_identifier.hpp', where 'stmt_identifier' is complete
+[[nodiscard]] auto as_place(const toc& tc, const statement& st)
+    -> std::optional<place>;
 
 // the identifier the place names, e.g. one element for 'ps[1]'
 [[nodiscard]] inline auto make_ident_info(const toc& tc, const statement& st)

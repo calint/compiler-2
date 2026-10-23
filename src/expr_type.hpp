@@ -289,6 +289,8 @@ class expr_type final : public statement {
 
     [[nodiscard]] auto name_or_literal() const -> std::string_view override;
 
+    [[nodiscard]] auto place_path() const -> const stmt_identifier* override;
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override;
 

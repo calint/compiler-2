@@ -57,8 +57,8 @@ belongs to the token. I thought that was clever.
 At times it drifted into a bad solution and had to be corrected and steered
 onto a different line of thought.
 
-I have no background in compiler theory; this is an experiment. That shows
-in the arithmetic and boolean expressions, which are handled without an abstract
+I have no background in compiler theory; this is an experiment. That shows in
+the arithmetic and boolean expressions, which are handled without an abstract
 syntax tree.
 
 I still reviewed the code, but less and less closely. First I read every line.
@@ -107,26 +107,32 @@ to build the features.
 Right now I run a swarm of AI agents. They look for bugs and refactor the design
 until a human can read it easily.
 
-The amount of bugs, unresolved edge cases and inconsistencies it finds is scary.
-This is a relatively simple language. Are complex languages written in a
-flawless way by superior engineers or is AI going to scare them when unleashed
-on their code base?
+The number of bugs, unresolved edge cases and inconsistencies they find is
+scary. This is a relatively simple language. Are complex languages written
+flawlessly by superior engineers, or will AI scare their authors when it is
+unleashed on their code bases?
 
-Given the way AI is finding bugs would not be possible manually. Once the
-fuzzing gave no further issues I thought the project was done. I was wrong.
+Finding bugs the way the AI does would not be possible by hand. Once fuzzing
+found no further issues, I thought the project was done. I was wrong.
 
-At about round 11 of Opus 5.5 bug hunting and fixing I gave up. I was facing
-generated text mass of description of issue after issue. Eventually I even
+At about round 11 of bug hunting and fixing with Opus 5.5, I gave up. I was
+facing a mass of generated text describing issue after issue. Eventually I
 skipped reading most of it.
 
-I told it to refactor so that whole classes of bugs should be impossible.
+I told it to refactor so that whole classes of bugs would become impossible.
 
 ### From exuberance to doubt
 
-For a while, seeing no end to the bug reports from using the language in ways
-which was not though of but allowed, I asked AI if it is easier to start from an
-empty directory using current code and tests as a specification and rewriting it
-all.
+For a while, there seemed to be no end to the bug reports. They came from using
+the language in ways nobody had thought of, but that it allowed. I asked the AI
+whether it would be easier to start over from an empty directory, using the
+current code and tests as the specification, and rewrite it all.
+
+The ever-increasing convolution and complexity of the generated code worried
+me.
+
+Then I decided to pause and refactor until the AI found the system in as good
+shape as it could envision.
 
 ### The sense of losing touch with the code
 

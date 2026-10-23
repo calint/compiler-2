@@ -426,6 +426,24 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             => invariant: storage is read or passed in place only through a
                'place', and every site gives the same verdict for a form
             => rejected: a fix per site (the history: 15 bugs in 9 rounds)
+            => done (2026-10-23): 'statement::place_path' with overrides in
+               'stmt_identifier', 'expr_any', 'expr_arith', 'expr_bool',
+               'expr_bool_op' and 'expr_type'; 'place' and 'as_place'
+               (declared in 'statement.hpp', defined after
+               'stmt_identifier'); the sites of 'read', 'write' and the
+               sector buffers, the instance and array comparison, the 'bool'
+               array of a built-in, the 'mut' argument, the shared-storage
+               references, the uses of a recursive call and the array
+               argument ask it; 'is_bare_name_or_literal' and
+               'is_copied_value' gone; no change of output on any target, a
+               matrix of forms (unary op, constant, literal, method path,
+               call) at each site gives the same verdict as before
+            => left to 4.8: 'bind_argument' and its 'is_computed_value'
+               (two sites), the argument modes are built on 'as_place'
+            => stays: the value sites (an operand of arithmetic or of a
+               comparison read with its unary ops, constants, messages) use
+               'is_name_or_literal' and 'is_expression', they ask "a value
+               or a name", not "storage in place"
        4.8. one argument plan (class A, about 10 bugs, inline and noinline
             verdicts differ): argument passing is decided by 'bind_argument'
             (inline) and by 'assert_argument', 'call_kind' and the

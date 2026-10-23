@@ -97,19 +97,19 @@ class stmt_builtin_io final : public stmt_call {
 
         assert_argument_count();
 
+        if (not io_.fills_buffer) {
+            return;
+        }
+
         // 'read' and 'sector_read' fill the buffer, the second argument
         const statement& buffer{argument(1)};
 
-        if (io_.fills_buffer and buffer.is_bare_name_or_literal()) {
-            const ident_info info{make_ident_info(tc, buffer)};
+        if (const std::optional<place> filled{as_place(tc, buffer)}; filled) {
+            assert_not_read_only(buffer.tok(), "read into",
+                                 buffer.name_or_literal(), filled->info);
 
-            if (info.is_var()) {
-                assert_not_read_only(buffer.tok(), "read into",
-                                     buffer.name_or_literal(), info);
-
-                tc.record_use(ident_info::root_of(buffer.name_or_literal()),
-                              buffer.accessed_path(), use_kind::write);
-            }
+            tc.record_use(ident_info::root_of(buffer.name_or_literal()),
+                          buffer.accessed_path(), use_kind::write);
         }
     }
 
@@ -176,7 +176,7 @@ class stmt_builtin_io final : public stmt_call {
         for (size_t i{}; i < argument_count(); ++i) {
             const statement& arg{argument(i)};
 
-            if (i == 1 and io_.fills_buffer and arg.is_bare_name_or_literal()) {
+            if (i == 1 and io_.fills_buffer and arg.place_path() != nullptr) {
 
                 arg.visit_index_reads(var, reader);
             } else {
@@ -251,12 +251,10 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         // e.g. not '-b', a unary operator makes a value
-        if (buffer.is_bare_name_or_literal()) {
-            const ident_info info{make_ident_info(tc, buffer)};
+        if (const std::optional<place> array{as_place(tc, buffer)};
+            array and array->info.is_array()) {
 
-            if (info.is_var() and info.is_array()) {
-                return;
-            }
+            return;
         }
 
         throw compile_error{buffer.tok(),

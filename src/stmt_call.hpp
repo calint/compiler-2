@@ -509,12 +509,6 @@ struct call_site {
         return arg.is_expression() or not arg.get_unary_ops().is_empty();
     }
 
-    // the callee gets a copy, not the storage of a variable: an expression,
-    // an instance literal or call, or a name with unary operators
-    [[nodiscard]] static auto is_copied_value(const expr_any& arg) -> bool {
-        return not arg.is_name_or_literal() or is_computed_value(arg);
-    }
-
     // an instance literal or a call result, e.g. 'point{1, 2}' or 'mk(1, 2)'
     [[nodiscard]] static auto
     is_instance_temporary(const expr_any& arg, const stmt_def_func_param& param)
@@ -2198,28 +2192,28 @@ class stmt_call : public expression {
         const expr_any& arg{args_.at(index)};
 
         // e.g. 'a + 1', '-a' or 'point{1, 2}'
-        if (call_site::is_copied_value(arg)) {
+        if (arg.place_path() == nullptr) {
             throw_not_writable(index, arg,
                                std::format("{}, which is not a variable,",
                                            in_quotes(trimmed_source(arg))),
                                "");
         }
 
-        const ident_info info{make_ident_info(tc, arg)};
+        const std::optional<place> written{as_place(tc, arg)};
 
         // e.g. '2' or a 'let' constant
-        if (not info.is_var()) {
+        if (not written) {
             throw_not_writable(
                 index, arg,
                 std::format("constant {}", in_quotes(arg.name_or_literal())),
                 "");
         }
 
-        if (info.is_read_only()) {
+        if (written->info.is_read_only()) {
             throw_not_writable(
                 index, arg,
                 std::format("read-only {}", in_quotes(arg.name_or_literal())),
-                read_only_hint(info));
+                read_only_hint(written->info));
         }
     }
 
@@ -2299,12 +2293,8 @@ class stmt_call : public expression {
         for (size_t i{}; i < args_.size(); ++i) {
             const expr_any& arg{args_.at(i)};
 
-            if (call_site::is_copied_value(arg)) {
-                continue;
-            }
-
-            // constants pass their value
-            if (not make_ident_info(tc, arg).is_var()) {
+            // a value or a constant is passed as a copy
+            if (not as_place(tc, arg)) {
                 continue;
             }
 
@@ -2708,7 +2698,8 @@ class stmt_call : public expression {
         for (size_t i{}; i < args_.size(); ++i) {
             const expr_any& arg{args_.at(i)};
 
-            if (call_site::is_copied_value(arg)) {
+            // a value or a constant is passed as a copy
+            if (not as_place(tc, arg)) {
                 continue;
             }
 
@@ -2817,11 +2808,9 @@ class stmt_call : public expression {
         if (param.is_array()) {
             // an expression is not an array, nor is a name with a unary
             // operator, e.g. '-a'
-            const bool is_array_arg{
-                arg.is_name_or_literal() and
-                    not call_site::is_computed_value(arg) and
-                    make_ident_info(tc, arg).is_array(),
-            };
+            const std::optional<place> array{as_place(tc, arg)};
+
+            const bool is_array_arg{array and array->info.is_array()};
 
             // an element would give the parameter the whole array's
             // length, pass the array and a start index instead

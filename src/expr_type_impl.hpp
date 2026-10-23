@@ -261,6 +261,11 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
     close_brace_tk_.source_to(os);
 }
 
+// a copy is of its source, e.g. the 'p' of 'q = p'
+inline auto expr_type::place_path() const -> const stmt_identifier* {
+    return stmt_ident_ ? stmt_ident_->place_path() : nullptr;
+}
+
 inline auto expr_type::is_array_element() const -> bool {
     return stmt_ident_ and stmt_ident_->is_array_element();
 }

@@ -476,6 +476,14 @@ class expr_arith final : public expression {
         return exprs_.at(0)->name_or_literal();
     }
 
+    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
+        if (exprs_.size() != 1 or not uops_.is_empty()) {
+            return nullptr;
+        }
+
+        return exprs_.front()->place_path();
+    }
+
     [[nodiscard]] auto produces_boolean() const -> bool override {
         return uops_.is_empty() and exprs_.size() == 1 and
                exprs_.front()->produces_boolean();

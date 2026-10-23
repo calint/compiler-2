@@ -296,6 +296,15 @@ class expr_any final : public statement {
         return element(0).name_or_literal();
     }
 
+    // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
+    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
+        if (is_array_ and not is_identifier_) {
+            return nullptr;
+        }
+
+        return element(0).place_path();
+    }
+
     [[nodiscard]] auto tok() const -> const token& override {
         if (is_string()) {
             return string_tk_;
@@ -771,8 +780,8 @@ class expr_any final : public statement {
 
         // a whole array of 'bool' is bytes to a built-in, e.g. 'flags' of
         // 'write(1, flags)'
-        if (value.is_bare_name_or_literal() and
-            make_ident_info(tc, value).is_array()) {
+        if (const std::optional<place> array{as_place(tc, value)};
+            array and array->info.is_array()) {
 
             return;
         }
