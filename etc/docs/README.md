@@ -122,9 +122,10 @@ the layers above it:
 6. driver            program, main.cpp
 ```
 
-The backend calls back into the nodes in two places, through callbacks: the
-versions of 'machine::emit_most_efficient' and the 'address_emitter' of the
-bulk operations compile statements.
+The backend calls back into earlier layers through callbacks: the versions of
+'machine::emit_most_efficient' and the code of 'machine::emit_discarded'
+compile statements, as do the count and address emitters of the bulk
+operations; 'copy_bytes' asks 'toc' for a read-only label.
 
 Reading order, each file assumes the ones before it:
 
@@ -256,9 +257,9 @@ the longer of two versions after both are measured:
    [chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call),
    and the body of a function that no compile reached ([1.5](#15-checks));
    'toc::dry_run_scope' and 'machine::version_scope' put back what it
-   changed: the registers, the frame depth, the string constants and the use
-   of storage, and the routines, helpers and failure stubs it marked used
-   ('machine::mark_used') are dropped
+   changed: the registers, the deepest scope count, the string constants and
+   the use of storage, and the routines, helpers and failure stubs it marked
+   used ('machine::mark_used') are dropped
 2. 'machine::emit_most_efficient': two versions
    are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
@@ -894,9 +895,9 @@ calls were checked:
 
 1. the code is discarded
 2. string constants added meanwhile are removed
-3. the frame depth and the peak storage size are restored; the locals of the
-   body live in the callee's own frame, so the caller's frame capacity is not
-   checked against them
+3. the deepest scope count and the peak storage size are restored; the
+   locals of the body live in the callee's own frame, so the caller's frame
+   capacity is not checked against them
 4. a noinline call reached inside a dry run does not emit an instance of its
    function
 

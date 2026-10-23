@@ -6,7 +6,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <string>
 #include <string_view>
 
 #include "compile_error.hpp"
@@ -57,19 +56,13 @@ class stmt_const final : public statement {
             return;
         }
 
-        // the unary ops cannot prefix the quoted text as they do a number
-        if (constant_parser::is_character_literal(literal_tk_.text())) {
-            value_ = uops_.evaluate_constant(constant_parser::parse_character(
-                literal_tk_, literal_tk_.text()));
-
-            return;
-        }
-
         // a name starts with a letter or '_', e.g. the 'm' of 'i8[m]' where
         // 'm' is a variable
         const std::string_view text{literal_tk_.text()};
 
-        if (not starts_number(text)) {
+        if (not starts_number(text) and
+            not constant_parser::is_character_literal(text)) {
+
             if (tc.scopes().lookup(text).is_value()) {
                 throw compile_error{
                     literal_tk_, std::format("'{}' is not a constant", text)};

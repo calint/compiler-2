@@ -42,7 +42,8 @@ CLI_REPRODUCE_SOURCE() {
     rm -f diff.baz
     LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-reproduce-nopt.profraw" "$BIN" --reproduce-source 0015.baz --nopt >out 2>err
     [[ ! -e diff.baz ]]
-    # a source named 'diff.baz' is not overwritten
+    # a matching reproduction writes no 'diff.baz', so a source of that name
+    # stays
     cp 0015.baz diff.baz
     "$BIN" --reproduce-source diff.baz >out 2>err
     [[ ! -s err ]]

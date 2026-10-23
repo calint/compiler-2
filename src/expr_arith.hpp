@@ -255,8 +255,8 @@ class expr_arith final : public expression {
             return;
         }
 
-        // a single plain element in memory is compiled directly, without
-        // trying with and without a scratch register
+        // a single element in memory that 'is_compiled_in_place' is compiled
+        // once, without trying with and without a scratch register
         if (not dst.is_register() and is_compiled_in_place()) {
             do_compile(tc, indent, dst);
             return;

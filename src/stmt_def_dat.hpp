@@ -274,7 +274,7 @@ class stmt_def_dat final : public statement {
         if (value.is_array_identifier()) {
             const ident_info source{make_ident_info(tc, value.element(0))};
 
-            // e.g. the '5' of 't{5, 1}' for an array field
+            // e.g. the 'e' of 't{e, 1}' for an array field, 'e' not an array
             if (not source.is_array()) {
                 throw compile_error{value.tok(), "source must be an array"};
             }

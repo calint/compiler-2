@@ -205,7 +205,7 @@ class machine {
 
     // ends the call frame when it goes out of scope, an error leaves it too
     class call_frame_scope final {
-        std::reference_wrapper<machine> machine_;
+        machine& machine_;
 
       public:
         call_frame_scope(machine& backend, const token& call_site_tk,
@@ -220,7 +220,7 @@ class machine {
         auto operator=(const call_frame_scope&) -> call_frame_scope& = delete;
         auto operator=(call_frame_scope&&) -> call_frame_scope& = delete;
 
-        ~call_frame_scope() { machine_.get().end_call_frame(); }
+        ~call_frame_scope() { machine_.end_call_frame(); }
     };
 
   protected:
@@ -943,8 +943,6 @@ class machine {
         output.append(std::move(kept.lines));
     }
 
-    // the lines buffered so far, for backend tests that read what an emit
-    // adds with 'emitted_text'
     // the handlers that the code branches to, see 'mark_used'; before
     // 'emit_used_routines', a handler marks the routines it calls
     auto emit_used_failure_handlers(const bool with_line) -> void {
@@ -958,6 +956,8 @@ class machine {
         }
     }
 
+    // the lines buffered so far, for backend tests that read what an emit
+    // adds with 'emitted_text'
     [[nodiscard]] auto emitted_line_count() const -> size_t {
         return target_assembler().line_count();
     }

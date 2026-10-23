@@ -8,14 +8,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <functional>
 #include <ios>
 #include <iterator>
 #include <limits>
 #include <optional>
 #include <ostream>
 #include <print>
-#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>

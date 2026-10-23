@@ -101,8 +101,9 @@ class stmt_if_branch final : public statement {
     // statics
     //
 
-    // the whitespace before the condition, which a '{' does not start, e.g.
-    // 'if {x = 1}' lacks it
+    // an empty token where the condition starts, the branch's token holds the
+    // whitespace before it; a '{' there means the condition is missing, e.g.
+    // 'if {x = 1}'
     [[nodiscard]] static auto condition_start(tokenizer& tz) -> token {
         const token ws_tk{tz.next_whitespace_token()};
 

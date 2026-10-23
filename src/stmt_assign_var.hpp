@@ -58,7 +58,7 @@ class stmt_assign_var final : public statement {
                                             stmt_ident_.name_or_literal())};
         }
 
-        tc.record_use(ident_info::root_of(stmt_ident_.name_or_literal()),
+        tc.record_use(stmt_ident_.first_token().text(),
                       stmt_ident_.accessed_path(), use_kind::write);
 
         set_type(dst_info.type_ref());

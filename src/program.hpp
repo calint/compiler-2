@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <cassert>
 #include <cstddef>
 #include <filesystem>
 #include <format>
@@ -53,6 +52,9 @@ struct report_section {
 
         if (not title.empty()) {
             x.comment({}, 0, "{:>28}:", title);
+
+            // note: 28 is the length of the longest name, 'removed same target
+            //       branches', the entries below align with it
         }
 
         for (const report_entry& entry : entries) {
@@ -540,7 +542,6 @@ class program final {
         }
     }
 
-    // only the checks the user asked for have a handler
     static auto emit_read_only_data(toc& tc) -> void {
         // no section switches without strings
         if (tc.data().constants().empty()) {

@@ -81,10 +81,6 @@ class token final {
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
-    [[nodiscard]] auto has_whitespace_before() const -> bool {
-        return not ws_left_.empty();
-    }
-
     [[nodiscard]] auto is_empty() const -> bool {
         return ws_left_.empty() and text_.empty() and ws_right_.empty();
     }
@@ -142,12 +138,13 @@ class token final {
         std::string joined;
         joined.reserve(text_.size());
         for (size_t i{}; i < text_.size(); ++i) {
-            if (text_.at(i) != '\\' or i + 1 >= text_.size()) {
-                // note: +1 because a backslash needs a character after it
-
+            if (text_.at(i) != '\\') {
                 joined += text_.at(i);
                 continue;
             }
+
+            // note: the tokenizer reads a character after every backslash
+            assert(i + 1 < text_.size());
 
             if (text_.at(i + 1) == '\n') {
                 i += 1;

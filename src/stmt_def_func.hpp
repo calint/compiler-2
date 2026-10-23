@@ -553,29 +553,6 @@ class stmt_def_func final : public statement {
         x.comment(head_.name_tk, indent, "{}", signature);
     }
 
-    // the definition after its first token, without the body
-    auto source_signature_to(std::ostream& os) const -> void {
-        head_.noinline_tk.source_to(os);
-        head_.mut_tk.source_to(os);
-        head_.name_tk.source_to(os);
-        head_.method_dot_tk.source_to(os);
-        head_.method_name_tk.source_to(os);
-        head_.open_paren_tk.source_to(os);
-
-        // the implicit 'self' has no source and no delimiter after it
-        const size_t first_param{is_method() ? size_t{1} : size_t{0}};
-
-        source_delimited_to(os, params_ | std::views::drop(first_param),
-                            param_delims_tk_);
-
-        close_paren_tk_.source_to(os);
-
-        if (returns_) {
-            returns_->ident_tk.source_to(os);
-            returns_->type_tk.source_to(os);
-        }
-    }
-
     [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
 
   private:
@@ -962,6 +939,29 @@ class stmt_def_func final : public statement {
 
         returns_.emplace(type_tk, self_tk, &tp);
         set_type(tp);
+    }
+
+    // the definition after its first token, without the body
+    auto source_signature_to(std::ostream& os) const -> void {
+        head_.noinline_tk.source_to(os);
+        head_.mut_tk.source_to(os);
+        head_.name_tk.source_to(os);
+        head_.method_dot_tk.source_to(os);
+        head_.method_name_tk.source_to(os);
+        head_.open_paren_tk.source_to(os);
+
+        // the implicit 'self' has no source and no delimiter after it
+        const size_t first_param{is_method() ? size_t{1} : size_t{0}};
+
+        source_delimited_to(os, params_ | std::views::drop(first_param),
+                            param_delims_tk_);
+
+        close_paren_tk_.source_to(os);
+
+        if (returns_) {
+            returns_->ident_tk.source_to(os);
+            returns_->type_tk.source_to(os);
+        }
     }
 
     //

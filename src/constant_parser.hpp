@@ -28,7 +28,7 @@ class constant_parser final {
                str.ends_with('\'');
     }
 
-    // the value is the byte, e.g. 'a' is 97 and '\\xff' is 255
+    // the value is the byte, e.g. 'a' is 97 and '\xff' is 255
     [[nodiscard]] static auto parse_character(const token& src_loc_tk,
                                               const std::string_view str)
         -> int64_t {
@@ -131,7 +131,7 @@ class constant_parser final {
     // statics
     //
 
-    // e.g. '0x1f' and '0b101', after the optional sign of a number
+    // e.g. '0x1f' and '0b101'
     [[nodiscard]] static auto has_base_prefix(const std::string_view str)
         -> bool {
 
