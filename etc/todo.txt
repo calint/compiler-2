@@ -484,6 +484,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                binding type check asks 'place_path'; no change of output,
                also for the 342 round 12 probes of calls, values and
                generics
+            => 4.8.2 done (2026-10-23): 'call_site::assert_argument_types'
+               in 'stmt_call::compile' before the inline or noinline call;
+               'assert_binding_type' gone, 'noinline_call::assert_argument'
+               asserts; the bug is rejected in both, tests 1628, 1629; no
+               other output changes
+            => 4.8 done (2026-10-23)
        4.9. dry runs as one state value (class D, about 11 bugs, verdicts
             depend on call order or leak after a failure): what a version or
             dry run may change is restored by hand-written lists

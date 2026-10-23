@@ -450,6 +450,30 @@ struct call_site {
         return tc.make_ident_info(tk, name);
     }
 
+    // the type of each argument, one verdict for an inlined and a noinline
+    // call: a name or a typed constant has the type of its parameter, its
+    // storage or typed value is passed; an untyped constant is checked by its
+    // value and a computed value by its compile, e.g. 'a + 1' and '-a' widen
+    auto assert_argument_types(const toc& tc, const stmt_def_func& func) const
+        -> void {
+
+        for (const auto [arg, param] : std::views::zip(args, func.params())) {
+            if (arg.place_path() == nullptr) {
+                continue;
+            }
+
+            const ident_info info{make_ident_info(tc, arg)};
+
+            if (info.is_const() and not info.constant().is_typed()) {
+                continue;
+            }
+
+            if (not info.type_ref().is_same(param.get_type())) {
+                throw_parameter_type_mismatch(arg, param, info);
+            }
+        }
+    }
+
     // the result has the type of the destination, an operand widens a
     // narrower integer, see 'destination::as_operand'
     auto assert_result_type(const destination& dst,
@@ -1138,24 +1162,6 @@ class inline_call {
     // statics
     //
 
-    static auto assert_binding_type(const toc& tc, const expr_any& arg,
-                                    const stmt_def_func_param& param) -> void {
-
-        const ident_info info{make_ident_info(tc, arg)};
-
-        // an untyped constant, e.g. a literal, is checked by its value; a
-        // typed one has the rules of a variable of its type
-        if (info.is_const() and not info.constant().is_typed()) {
-            return;
-        }
-
-        if (info.type_ref().is_same(param.get_type())) {
-            return;
-        }
-
-        call_site::throw_parameter_type_mismatch(arg, param, info);
-    }
-
     // the inlined body reaches an argument through its storage, its constant
     // value or a scratch register holding its value
     [[nodiscard]] static auto
@@ -1163,11 +1169,7 @@ class inline_call {
                   const stmt_def_func_param& param,
                   std::vector<operand>& allocated_registers) -> param_binding {
 
-        // a binding uses the argument's storage or typed value, so its type
-        // must match
-        if (arg.place_path() != nullptr) {
-            assert_binding_type(tc, arg, param);
-        }
+        // note: 'call_site::assert_argument_types' checked the type
 
         const call_site::argument_plan plan{
             call_site::plan_argument(tc, arg, param),
@@ -1467,29 +1469,6 @@ class noinline_call {
 
         call_.uops.compile(x, indent, call_.tk, dst.operand(),
                            call_.uops_check);
-    }
-
-    // the callee reaches the result and arguments through their addresses
-    auto assert_call(const destination& dst, const stmt_def_func& func,
-                     const std::span<const noinline_arg> arguments) const
-        -> void {
-
-        // note: 'stmt_call::compile' checked the result, a result that is
-        //       not in memory or is widened goes through a temporary
-
-        if (func.returns()) {
-            assert(dst.operand().is_memory());
-            assert(dst.type_ref().is_same(func.get_type()));
-
-            // an array literal gives its call elements an element destination
-            assert(not dst.is_array());
-        }
-
-        for (const auto [arg, argument, param] :
-             std::views::zip(call_.args, arguments, func.params())) {
-
-            assert_argument(arg, argument.info, param);
-        }
     }
 
     // the result address comes first, then one address per argument
@@ -1802,7 +1781,7 @@ class noinline_call {
 
     // a noinline call passes addresses, a value without storage is passed
     // in a temporary of the parameter's type
-    static auto assert_argument(const expr_any& arg, const ident_info& info,
+    static auto assert_argument(const ident_info& info,
                                 const stmt_def_func_param& param) -> void {
 
         // note: a temporary is a variable
@@ -1813,8 +1792,32 @@ class noinline_call {
 
         assert(info.is_array() == param.is_array());
 
-        if (not info.type_ref().is_same(param.get_type())) {
-            call_site::throw_parameter_type_mismatch(arg, param, info);
+        // note: 'call_site::assert_argument_types' checked a variable, a
+        //       temporary has the type of its parameter
+
+        assert(info.type_ref().is_same(param.get_type()));
+    }
+
+    // the callee reaches the result and arguments through their addresses
+    static auto assert_call(const destination& dst, const stmt_def_func& func,
+                            const std::span<const noinline_arg> arguments)
+        -> void {
+
+        // note: 'stmt_call::compile' checked the result, a result that is
+        //       not in memory or is widened goes through a temporary
+
+        if (func.returns()) {
+            assert(dst.operand().is_memory());
+            assert(dst.type_ref().is_same(func.get_type()));
+
+            // an array literal gives its call elements an element destination
+            assert(not dst.is_array());
+        }
+
+        for (const auto [argument, param] :
+             std::views::zip(arguments, func.params())) {
+
+            assert_argument(argument.info, param);
         }
     }
 
@@ -2127,6 +2130,8 @@ class stmt_call : public expression {
         if (func.returns()) {
             call.assert_result_type(dst, func);
         }
+
+        call.assert_argument_types(tc, func);
 
         if (not func.is_inlined()) {
             noinline_call{call}.compile(tc, indent, dst, func);

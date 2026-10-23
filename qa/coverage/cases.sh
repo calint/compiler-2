@@ -5088,3 +5088,8 @@ SRC=1626 && COMPERR
 # parentheses group an operation: a unary operator, a binary operator, a
 # comparison, a 'not' or a connective, also around a whole value
 SRC=1627 && EXP=4 && RUN
+
+# a parameter bound to a computed argument passed on as a name has the type of
+# the parameter it is passed to, as a variable, inlined or 'noinline'
+SRC=1628 && COMPERR
+SRC=1629 && COMPERR
