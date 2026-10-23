@@ -966,21 +966,6 @@ class expr_bool_op final : public expression {
 
         const ident_info expr_info{make_scalar_ident_info(tc, *path)};
 
-        if (path->has_computed_address(expr_info)) {
-            const operand address{
-                path->compile_lea(tc, indent, expr.tok(), allocated_registers,
-                                  {
-                                      .reg_count{},
-                                      .known{expr_info.known()},
-                                      .address_register{},
-                                  }),
-            };
-
-            // e.g. '-a[i]'
-            return with_unary_ops(tc, indent, expr, address,
-                                  expr_info.type_ref(), allocated_registers);
-        }
-
         // a typed constant left side is a value of its type in a register
         if (is_lhs and is_typed_constant(tc, expr)) {
             machine& x{tc.machine()};
@@ -1014,8 +999,10 @@ class expr_bool_op final : public expression {
             return operand::imm(folded->value, expr_info.type_ref());
         }
 
-        return with_unary_ops(tc, indent, expr, expr_info.operand(),
-                              expr_info.type_ref(), allocated_registers);
+        // e.g. 'a', '-a[i]'
+        return path->compile_value_operand(
+            tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
+            tc.checks().overflow_options(), allocated_registers);
     }
 
     [[noreturn]] static auto
@@ -1065,28 +1052,6 @@ class expr_bool_op final : public expression {
         assert(folded and folded->is_typed());
 
         return operand::imm(folded->value, *folded->own_type);
-    }
-
-    // 'value' with the unary operators of 'expr' applied, in a scratch register
-    // when it has any
-    [[nodiscard]] static auto
-    with_unary_ops(toc& tc, const size_t indent, const expr_arith& expr,
-                   const operand& value, const type& value_type,
-                   std::vector<operand>& allocated_registers) -> operand {
-
-        if (expr.get_unary_ops().is_empty()) {
-            return value;
-        }
-
-        const operand reg{
-            expr_arith::compile_unary_to_scratch(
-                tc, indent, expr, value, value_type,
-                tc.checks().overflow_options()),
-        };
-
-        allocated_registers.emplace_back(reg);
-
-        return reg;
     }
 };
 

@@ -90,6 +90,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             register), written in 'expr_arith::emit_with_source',
             'expr_bool_op::resolve_expr' and the inline binding of a value;
             each keeps its policy; diff the assembly (after B.1)
+            => done (2026-10-23): 'stmt_identifier::compile_value_operand'
+               (storage or computed address, unary ops in a scratch register
+               of the caller's type and overflow check) serves the three;
+               each keeps its constant policy; 'compile_unary_to_scratch'
+               and 'with_unary_ops' gone; the comment 'src: operand' now
+               precedes the lea it heads (44 listings), no instruction
+               changed
        B.3. 'fold' is unchecked by its contract but 'expr_any::fold' checks
             narrowing: 'expr_any::fold' forwards, the callers that rely on
             the check call 'fold_checked'; a 'compile_checked' beside it

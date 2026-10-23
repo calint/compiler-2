@@ -511,6 +511,37 @@ class stmt_identifier final : public statement {
         return operand::mem(address, *parent_type);
     }
 
+    // the value of this path where 'info' resolves it to a variable: its
+    // storage or computed address, with unary ops a scratch register of
+    // 'register_type' that holds the result; the registers go to 'registers'
+    [[nodiscard]] auto
+    compile_value_operand(toc& tc, const size_t indent, const token& src_loc_tk,
+                          const ident_info& info, const type& register_type,
+                          const machine::runtime_check& overflow_check,
+                          std::vector<operand>& registers) const -> operand {
+
+        // note: a constant is folded by the caller, each by its own policy
+        assert(not info.is_const());
+
+        if (get_unary_ops().is_empty()) {
+            return get_lea_operand(tc, indent, info, registers);
+        }
+
+        const operand storage{get_lea_operand(tc, indent, info, registers)};
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register(src_loc_tk, indent, register_type),
+        };
+
+        registers.push_back(reg);
+        x.copy_value(src_loc_tk, indent, reg, storage);
+        get_unary_ops().compile(x, indent, src_loc_tk, reg, overflow_check);
+
+        return reg;
+    }
+
     // the index where a bulk operation starts, 0 for a whole array, empty when
     // computed at run time
     [[nodiscard]] auto constant_start_index(const toc& tc) const

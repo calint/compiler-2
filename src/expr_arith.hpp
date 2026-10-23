@@ -585,25 +585,6 @@ class expr_arith final : public expression {
         }
     }
 
-    // the caller frees the returned register
-    [[nodiscard]] static auto compile_unary_to_scratch(
-        toc& tc, const size_t indent, const statement& src,
-        const operand& src_operand, const type& register_type,
-        const machine::runtime_check& overflow_check) -> operand {
-
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register(src.tok(), indent, register_type),
-        };
-
-        x.copy_value(src.tok(), indent, reg, src_operand);
-
-        src.get_unary_ops().compile(x, indent, src.tok(), reg, overflow_check);
-
-        return reg;
-    }
-
   private:
     // e.g. 'b + 1 - 1' or 'b / 1 / 1' apply nothing
     auto apply_merged_constant(toc& tc, const size_t indent,
@@ -1444,29 +1425,25 @@ class expr_arith final : public expression {
             return;
         }
 
-        std::vector<operand> lea_registers;
+        // a register that holds the result of unary ops may be overwritten
+        const bool has_unary_ops{not name.get_unary_ops().is_empty()};
+
+        x.comment(src.tok(), indent,
+                  has_unary_ops ? "src: operand with unary ops"
+                                : "src: operand");
+
+        std::vector<operand> registers;
 
         const operand src_operand{
-            name.get_lea_operand(tc, indent, src_info, lea_registers),
+            name.compile_value_operand(tc, indent, src.tok(), src_info,
+                                       operand_type, tc.overflow_options(dst),
+                                       registers),
         };
 
-        if (src.get_unary_ops().is_empty()) {
-            x.comment(src.tok(), indent, "src: operand");
-            emit(src_operand, machine::factor_use::read_only);
-            x.free_scratch_registers(src.tok(), indent, lea_registers);
-            return;
-        }
+        emit(src_operand, has_unary_ops ? machine::factor_use::may_overwrite
+                                        : machine::factor_use::read_only);
 
-        x.comment(src.tok(), indent, "src: operand with unary ops");
-
-        const operand reg{
-            compile_unary_to_scratch(tc, indent, src, src_operand, operand_type,
-                                     tc.overflow_options(dst)),
-        };
-
-        emit(reg, machine::factor_use::may_overwrite);
-        x.free_scratch_register(src.tok(), indent, reg);
-        x.free_scratch_registers(src.tok(), indent, lea_registers);
+        x.free_scratch_registers(src.tok(), indent, registers);
     }
 
     // rejects a constant divisor or shift count like 'compile'; none for a

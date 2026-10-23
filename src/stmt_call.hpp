@@ -1268,17 +1268,11 @@ class inline_call {
                                 call_site::argument_target(tc, name));
         }
 
-        machine& x{tc.machine()};
-
         const operand reg{
-            x.alloc_scratch_register(arg.tok(), indent, param.get_type()),
+            name.compile_value_operand(
+                tc, indent, arg.tok(), arg_info, param.get_type(),
+                tc.checks().overflow_options(), allocated_registers),
         };
-
-        allocated_registers.push_back(reg);
-        x.copy_value(param.tok(), indent, reg, arg_info.operand());
-
-        arg.get_unary_ops().compile(x, indent, arg.tok(), reg,
-                                    tc.checks().overflow_options());
 
         return param_binding::make_register(param.name(), param.get_type(),
                                             reg);
