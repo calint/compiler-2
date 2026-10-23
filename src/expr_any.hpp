@@ -74,8 +74,8 @@ class stmt_array_size final : public statement {
 //   braced elements      'i8[]{1, 2}' or '{{1, 2}, {3, 4}}' of an array
 //   a copy of an array   'a' of 'var b = a', one 'expr_type' element
 //   a bare sized array   'i8[4]', no elements, every element is zero
-// the form is told by 'is_array', 'is_string', 'is_array_identifier' and
-// 'is_empty'
+// the form is told by 'is_array', 'is_string' and 'is_array_identifier', a
+// bare sized array is the array form without elements
 class expr_any final : public statement {
     using expr_variant = std::variant<expr_arith, expr_bool, expr_type>;
 
@@ -432,10 +432,6 @@ class expr_any final : public statement {
 
     [[nodiscard]] auto is_array_identifier() const -> bool {
         return is_array_ and is_identifier_;
-    }
-
-    [[nodiscard]] auto is_empty() const -> bool {
-        return elements_.empty() and not is_string();
     }
 
     [[nodiscard]] auto is_string() const -> bool {

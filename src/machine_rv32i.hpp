@@ -384,18 +384,10 @@ class machine_rv32i : public machine {
         free_named_register(src_loc_tk, indent, call_register);
     }
 
-    // a 'noinline' body saves the return address below 'sp', the frame base
-    // is commented like any named register
+    // a 'noinline' body saves the return address below 'sp'
     auto emit_frame_entry() -> void override {
-        comment(token{}, 0, "allocate named register {}",
-                frame_base_register());
-
         assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
         assembler_.sw(1, "ra", 0, "sp");
-    }
-
-    auto emit_frame_exit() -> void override {
-        comment(token{}, 0, "free named register {}", frame_base_register());
     }
 
     [[nodiscard]] auto register_index_of(const std::string_view name) const

@@ -6,6 +6,149 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[o] hard: design review (2026-10-23, four reviewers over nodes, calls,
+    tables and backends, claims spot-checked): the refactors toward a design a
+    reviewer judges clean; each step a pure refactor unless marked, measured
+    against the previous binary, a pause for a commit after each
+    A. dead code and comments that contradict the code (small, first)
+       A.1. 'expr_bool' always computes: 'expr_bool_op::name_or_literal',
+            'expr_bool::name_or_literal', 'is_expression_' with
+            'resolve_if_op_is_expression' and the constant branch of
+            'expr_bool::compile' ("e.g. '(true)'", rejected since 4.7.0) are
+            unreachable (0 hits over the tests)
+       A.2. the literal branch of 'expr_type::compile' (a literal is written
+            through 'plan_writes'), 'expr_any::is_empty', 'in_quotes(const
+            statement&)', the default 'statement::is_indexed'
+       A.3. comments: the virtual groups of 'statement' ('name_token' and
+            'produces_boolean' are overridden by fewer classes than listed),
+            the 'noinline_call' header ('assert_call' only asserts), the
+            'inline_call' steps (the widened result), the 'toc' facade rule
+            (README 7.6 has it right), the frame base comment only on rv32i
+       => A done (2026-10-23): 'expr_bool' and 'expr_bool_op' derive from
+          'expression' (a condition that is one name is an 'expr_arith' in a
+          value), the field, the resolver, both 'name_or_literal' and the
+          constant branch gone; 'expr_type::compile' asserts a copy;
+          'expr_any::is_empty', 'in_quotes(const statement&)' and the virtual
+          'emit_frame_exit' gone; the frame base comment in 'machine' for both
+          targets (x86_64 listings gain it, 108 files, no instruction
+          changed); the comments of the virtual groups, the call headers and
+          the facade fixed; the default 'statement::is_indexed' goes with B.1
+    B. the node queries
+       B.1. a name or literal operand is asked through the wrappers: nine
+            virtuals of 'statement' ('accessed_path', 'compile_lea',
+            'is_indexed', 'is_array_element', 'is_name_or_literal',
+            'name_or_literal', 'get_unary_ops', 'visit_index_reads',
+            'name_token') mean something only for 'stmt_identifier' and are
+            forwarded by 'expr_arith', 'expr_any', 'expr_type' under 12
+            asserts; answers differ by class ('name_token' is not forwarded,
+            so 'make_ident_info' records a wrapper's token; the default
+            'name_or_literal' answers a call with its name)
+            => design: 'operand_path() -> const stmt_identifier*' next to
+               'place_path' (the same leaf with unary ops); the nine become
+               members of 'stmt_identifier', callers ask the path;
+               'make_ident_info' takes a 'stmt_identifier'; 'list_operand'
+               holds the written place's path; two steps: the callers that
+               already have a path, then the virtuals go
+       B.2. one resolution of a name or literal operand (constant to an
+            immediate, computed address to a lea, unary ops in a scratch
+            register), written in 'expr_arith::emit_with_source',
+            'expr_bool_op::resolve_expr' and the inline binding of a value;
+            each keeps its policy; diff the assembly (after B.1)
+       B.3. 'fold' is unchecked by its contract but 'expr_any::fold' checks
+            narrowing: 'expr_any::fold' forwards, the callers that rely on
+            the check call 'fold_checked'; a 'compile_checked' beside it
+            replaces the hand-written "assert_not_narrowed, then compile"
+       B.4. 'produces_boolean' and 'compile_boolean' serve 'arrays_equal'
+            only: a name that says so
+    C. one value, one node
+       C.1. 'expr_any' holds a single value and four array forms told apart
+            by flags; an 'expr_array' node with the form as a variant for
+            the initializers, 'expr_any' a single value (a new class, plan
+            the call sites first)
+       C.2. 'expr_type': "exactly one of a copy, a call, a field list" as a
+            variant
+    D. built-ins
+       D.1. one catalog {name, value kind, statement factory, value
+            factory}: today the reserved list, 'builtin_value_type',
+            'assert_builtin_has_value', both factories and
+            'stmt_builtin_io::find' agree by hand; "'bool' has no conversion"
+            is decided twice
+       D.2. 'stmt_builtin_io' and 'stmt_builtin_exit' derive from
+            'stmt_call' for its argument list only ('builtin_call_tag', the
+            'is_func' guards): a 'call_arguments' member like
+            'bulk_operands', 'stmt_call' only user calls
+       D.3. a written buffer (the destination of 'array_copy', the buffer
+            of 'read') owns its parse check, its use record and its reads;
+            the index 1 hard-coded in four io methods goes (after D.2)
+    E. calls
+       E.1. what a callee reaches of the caller is mapped in four places
+            with two rules: 'callee_reach(tc, func)' {argument or global,
+            path extended by the use path, written} read by the effects,
+            the use record and both shared-storage checks; the effects keep
+            the 'mut' rule (no fixed point), said where the list is built
+       E.2. the temporaries of a call are decided three times on the inline
+            path and once more on the noinline path, made by two copies of
+            the same code; 'compile_with_bindings' has two modes by an empty
+            span: one 'make_argument_temporaries' that returns per argument
+            whether it is a temporary and its storage
+       E.3. the scope and nesting limits of calls in one helper (today in
+            'call_site', 'stmt_call' and 'noinline_call::dry_run_body')
+       E.4. the frame slots {result | parameter, in a register} from
+            'stmt_def_func', read by the call and by the body
+       E.5. optional, lower confidence: generic deduction by a trial parse
+            like 'var' (drops 'value_type', about 70 lines of token shapes);
+            messages of malformed arguments may change
+    F. tables
+       F.1. 'frame' holds the fields of five kinds under asserts: a function
+            part (bindings, result, parameters, path flag, body uses, its
+            own storage base) and a root part as optional members
+       F.2. the storage total is kept in 'storage_layout' and in the frames
+            and synced by hand: derived from the frames, 'storage_layout' no
+            longer writes into the frames (after F.1)
+       F.3. definition order visibility is written five times with
+            'exists'/'has' pairs and three spellings of "always visible": one
+            'ordered_table' with 'find_visible' and 'find_any'
+       F.4. array-ness has four encodings ('array_count' 0, 'is_array' with
+            'array_len' in 'var_info', 'ident_info', 'destination'): one
+            'array_shape' {none, sized n, unsized}
+       F.5. 'destination' as a variant {none, register, storage}, the open
+            item (after F.4)
+       F.6. small: 'is_pointer' as a placement, the compile worklist out of
+            'function_table', built-in types registered by the table with a
+            flag (no empty-token sentinel), 'generic_arg' kind as a variant,
+            'is_inlined_func' named 'is_compiled_in_place'
+       F.7. large, plan first: a binding stores its resolved root and steps
+            instead of the caller's text, the resolver walk returns the root
+            variable, 'storage_of' and 'make_ident_info' cannot disagree
+    G. backends
+       G.1. the fpga panic plan (below) as it stands, its text updated: one
+            handler override, not seven; it also removes
+            'failure_exit_codes_', 'exit_code_of' and 'emit_panic_exit'; the
+            invariant holds for failed checks, not the bare metal division
+            trap
+       G.2. the failure handlers emitted once in 'machine' (both backends
+            write the same shape, two 'line_report_emitted_' flags, the sd
+            card handler copied on x86_64) (after G.1)
+       G.3. '--checks=line' one value the backend reads, the 'with_line'
+            parameters (about 45) go (R11 A-2, after G.1)
+       G.4. the register contract of the built-in calls in 'machine' from
+            the argument and result registers of the backend, the
+            hard-coded register asserts go
+       G.5. the stack bound owned by the bare metal backend, the
+            unreachable overrides go
+       G.6. small: 'emit_data_array' takes a span, the comment marker in
+            'assembler', the bare metal memory size passed explicitly, a
+            'backend_held' flag in the register pool, one
+            'is_register_held'
+       G.7. optional: 'start'/'finish' as template methods; one traits
+            struct for the constant getters
+    => order: A, B.1, B.3, B.2, D, E, C, F.1-F.6, G.1-G.6, then F.7; B.4,
+       E.5 and G.7 when the rest is done
+    => judged fine by the reviewers: 'classify_term', the passes of
+       'plan_steps', 'write_plan', 'assert_not_written_later', 'bulk_operands',
+       the split of 'stmt_call' into its classes, 'dry_run_ledger',
+       'definition_checks', 'access_path', 'assignment_flow', the register
+       pool and report, the rv32i variants, the jump optimizer
 [o] hard: review round 12 and the refactors that remove its bug classes
     (step 4, the plan); X (codegen, 41k programs) and B (sanitizer fuzz, 1.4M
     runs) clean; bug history: r12 scratchpad bug-history.md

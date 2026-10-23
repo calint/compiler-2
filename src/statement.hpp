@@ -236,20 +236,22 @@ class stmt_identifier;
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow), 'visit_reads' (the expressions)
-//   a value        'fold', 'assert_not_narrowed', 'keeps_low_bits',
-//                  'get_unary_ops', 'is_expression', 'produces_boolean',
-//                  'compile_boolean': 'expr_arith', 'expr_any', 'expr_bool',
-//                  'expr_zero', 'stmt_builtin_convert',
-//                  'stmt_builtin_array_length', 'stmt_builtin_arrays_equal',
-//                  'stmt_call', 'stmt_identifier' ('assert_not_narrowed',
-//                  'fold', 'keeps_low_bits')
+//   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier' and
+//                  the built-ins with a value, forwarded by 'expr_arith' and
+//                  'expr_any'; 'assert_not_narrowed' and 'keeps_low_bits':
+//                  'stmt_identifier', 'stmt_call' and the built-ins,
+//                  forwarded by 'expr_arith' and 'expr_any';
+//                  'is_expression': 'expression', answered by what they hold
+//                  in 'expr_arith' and 'expr_any'; 'produces_boolean' and
+//                  'compile_boolean': 'stmt_builtin_arrays_equal', forwarded
+//                  by 'expr_arith'
 //   a place        'place_path', 'name_or_literal', 'is_name_or_literal',
-//                  'accessed_path',
-//                  'compile_lea', 'is_indexed', 'is_array_element',
-//                  'name_token', 'visit_index_reads': 'stmt_identifier', and
-//                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
-//                  'expr_bool' ('name_or_literal') and 'expr_zero'
-//                  ('is_name_or_literal', 'name_or_literal')
+//                  'accessed_path', 'compile_lea', 'is_indexed',
+//                  'is_array_element', 'get_unary_ops', 'visit_index_reads':
+//                  'stmt_identifier', forwarded by 'expr_arith', 'expr_any'
+//                  and 'expr_type' when they hold one ('place_path' also by
+//                  'expr_bool'); 'expr_zero' ('is_name_or_literal',
+//                  'name_or_literal'); 'name_token': 'stmt_identifier' only
 class statement {
     token token_;
     unary_ops uops_;
@@ -769,11 +771,6 @@ class statement {
             std::format("use of uninitialized variable {}", in_quotes(var))};
     }
 };
-
-// the one-line source of 'st' in a message, see 'in_quotes' of a source text
-[[nodiscard]] inline auto in_quotes(const statement& st) -> std::string {
-    return in_quotes(statement::trimmed_source(st));
-}
 
 //
 // what the symbol table tells about a statement that names a place

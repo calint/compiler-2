@@ -16,6 +16,7 @@
 
 #include "constant_arith.hpp"
 #include "expr_arith.hpp"
+#include "expression.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
@@ -77,7 +78,7 @@ struct branch_targets {
 // one operand of an 'expr_bool': a comparison 'a < b', a comparison of the
 // bytes of two instances or arrays, or the shorthand, the operand alone as
 // the condition, e.g. 'if a', which leaves 'op_' and 'rhs_' unused
-class expr_bool_op final : public statement {
+class expr_bool_op final : public expression {
     // e.g. the 'not' of 'if not a == b ...'
     std::vector<token> nots_;
     expr_arith lhs_;
@@ -86,7 +87,6 @@ class expr_bool_op final : public statement {
     token ws_post_op_;
     expr_arith rhs_;
     bool is_shorthand_{}; // e.g. if a ...
-    bool is_expression_{};
 
     // e.g. 'a == b' of two user type instances or two whole arrays, the bytes
     // are compared
@@ -94,7 +94,7 @@ class expr_bool_op final : public statement {
 
   public:
     expr_bool_op(toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()} {
+        : expression{tz.next_whitespace_token()} {
 
         set_type(tc.builtins().boolean());
 
@@ -116,7 +116,6 @@ class expr_bool_op final : public statement {
             tz.put_back_token(ws_pre_op_);
             ws_pre_op_ = {};
             is_shorthand_ = true;
-            resolve_if_op_is_expression();
             return;
         }
 
@@ -127,8 +126,6 @@ class expr_bool_op final : public statement {
         rhs_ = {tc, tz};
 
         classify_operands(tc);
-
-        resolve_if_op_is_expression();
     }
 
     expr_bool_op() = default;
@@ -153,16 +150,6 @@ class expr_bool_op final : public statement {
         std::print(os, "{}", source_text(op_));
         ws_post_op_.source_to(os);
         rhs_.source_to(os);
-    }
-
-    [[nodiscard]] auto is_expression() const -> bool override {
-        return is_expression_;
-    }
-
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        assert(not is_expression_);
-
-        return lhs_.name_or_literal();
     }
 
     // a condition that is one name, e.g. 'flag', not 'not flag' or 'a == b'
@@ -594,21 +581,6 @@ class expr_bool_op final : public statement {
                              action);
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
-    }
-
-    auto resolve_if_op_is_expression() -> void {
-        // a negated expression, a comparison and a shorthand condition on an
-        // expression are expressions
-        if (is_negated() or not is_shorthand_ or lhs_.is_expression()) {
-            is_expression_ = true;
-            return;
-        }
-
-        // a boolean value is read in place, a variable is tested
-        const std::string_view id{lhs_.name_or_literal()};
-
-        is_expression_ = id != reserved_names::true_value and
-                         id != reserved_names::false_value;
     }
 
     // the bytes are compared and the result is branched on as for a shorthand
@@ -1127,7 +1099,7 @@ class expr_bool_op final : public statement {
 // of a tree
 // note: a list branches at the first operand that decides it, which is the
 //       short-circuit of 'and' and 'or'
-class expr_bool final : public statement {
+class expr_bool final : public expression {
     using element = std::variant<expr_bool_op, expr_bool>;
 
     std::vector<element> bools_;
@@ -1141,14 +1113,15 @@ class expr_bool final : public statement {
     token close_paren_tk_;
 
   public:
-    expr_bool(toc& tc, const token tk, tokenizer& tz) : statement{tk} {
+    expr_bool(toc& tc, const token tk, tokenizer& tz) : expression{tk} {
         parse_list(tc, tz);
     }
 
     // e.g. '(a == b and c == d)' after its 'not's, the '(' has been read
     expr_bool(toc& tc, const token tk, tokenizer& tz, std::vector<token> nots,
               const token open_paren_tk)
-        : statement{tk}, nots_{std::move(nots)}, open_paren_tk_{open_paren_tk} {
+        : expression{tk}, nots_{std::move(nots)},
+          open_paren_tk_{open_paren_tk} {
 
         assert(not open_paren_tk_.is_empty());
 
@@ -1192,19 +1165,6 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        // e.g. '(true)'
-        if (not is_expression()) {
-            const ident_info src_info{make_ident_info(tc, *this)};
-
-            assert(src_info.is_const());
-
-            x.copy_value(
-                tok(), indent, dst.operand(),
-                operand::imm(src_info.constant().value, src_info.type_ref()));
-
-            return;
-        }
-
         // stored comparisons would change what later elements read; a
         // register that the list reads is the result of an inlined function
         if (not reaches_destination(tc, *this, dst)) {
@@ -1243,30 +1203,6 @@ class expr_bool final : public statement {
             .value{*value ? 1 : 0},
             .own_type{},
         };
-    }
-
-    [[nodiscard]] auto is_expression() const -> bool override {
-        if (bools_.size() > 1) {
-            return true;
-        }
-
-        // 'name_or_literal' cannot carry the negation
-        if (has_not()) {
-            return true;
-        }
-
-        assert(not bools_.empty());
-
-        return bools_.at(0).visit(
-            [](const auto& e) -> bool { return e.is_expression(); });
-    }
-
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        assert(bools_.size() == 1);
-
-        return bools_.at(0).visit([](const auto& e) -> std::string_view {
-            return e.name_or_literal();
-        });
     }
 
     [[nodiscard]] auto place_path() const -> const stmt_identifier* override {

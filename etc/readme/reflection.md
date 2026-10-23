@@ -124,14 +124,14 @@ I told it to refactor so that whole classes of bugs would become impossible.
 ### From exuberance to doubt
 
 For a while, there seemed to be no end to the bug reports. They came from using
-the language in ways nobody had thought of, but that it allowed. I asked the AI
+the language in ways nobody had thought of but that it allowed. I asked the AI
 whether it would be easier to start over from an empty directory, using the
-current code and tests as the specification, and rewrite it all.
+current code and tests as the specification, and rewrite everything.
 
-The ever-increasing convolution and complexity of the generated code worried
+The ever-increasing convolution and complexity of the code the AI wrote worried
 me.
 
-Then I decided to pause and refactor until the AI found the system in as good
+So I decided to pause and refactor until the AI found the system in as good a
 shape as it could envision.
 
 ### The sense of losing touch with the code

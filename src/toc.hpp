@@ -3123,8 +3123,8 @@ class toc final {
         return &tp;
     }
 
-    // the tables are read through these accessors, a change goes through a
-    // method of 'toc' because it keeps several of them consistent
+    // the tables are read through these const accessors, a change goes
+    // through a method of 'toc', which may combine tables (README 7.6)
     [[nodiscard]] auto builtins() const -> const builtin_types& {
         return builtins_;
     }

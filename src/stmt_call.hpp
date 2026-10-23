@@ -640,8 +640,9 @@ struct call_site {
 //
 // the steps:
 //
-//   1. 'compile': an instance literal or a call result argument is made in a
-//      temporary
+//   1. 'compile': a result narrower than the operand it widens into is
+//      computed in a register and widened ('compile_widened'), an instance
+//      literal or a call result argument is made in a temporary
 //   2. 'compile_to_destination': a memory destination may get its address in
 //      a register ('compile_with_result_address_register'), or unary
 //      operators may work on a scratch register
@@ -1405,8 +1406,10 @@ class inline_call {
 //   1. 'compile' and 'compile_arguments_and_call': a result or an argument
 //      that is not a variable in memory goes through a temporary, the result
 //      is copied and the unary ops applied after the call
-//   2. 'compile_with_arguments': the types are checked ('assert_call'), the
-//      errors that depend on this call, e.g. shared storage, are found by a
+//   2. 'compile_with_arguments': the arguments agree with the parameters,
+//      checked by 'call_site::assert_argument_types' before ('assert_call'
+//      asserts it), the errors that depend on this call, e.g. shared
+//      storage, are found by a
 //      dry run of the body as an inlined call ('dry_run_body', see
 //      'etc/docs/README.md' chapter 4), the addresses are written to
 //      the callee frame ('frame_slot_addresses', 'write_frame_slots') and the

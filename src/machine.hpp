@@ -1067,7 +1067,7 @@ class machine {
         assert(frame_base_reserved_);
         assert(registers_.scratch_count() == 0);
 
-        emit_frame_exit();
+        comment(token{}, 0, "free named register {}", frame_base_register());
         pop_allocation(frame_base_register());
 
         frame_base_reserved_ = false;
@@ -1088,6 +1088,9 @@ class machine {
         push_allocation(token{}, 0, frame_base_register(), true);
 
         frame_base_reserved_ = true;
+
+        comment(token{}, 0, "allocate named register {}",
+                frame_base_register());
 
         emit_frame_entry();
     }
@@ -1234,9 +1237,6 @@ class machine {
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default
     virtual auto emit_frame_entry() -> void {}
-
-    // the code before the frame base is released, none by default
-    virtual auto emit_frame_exit() -> void {}
 
     // the routines that the calls of 'sector_read' and 'sector_write' jump
     // to, each only when it is used

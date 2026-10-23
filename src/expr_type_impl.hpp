@@ -278,14 +278,12 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
         return;
     }
 
-    if (is_name_or_literal()) {
-        compile_identifier_copy(tc, indent, dst);
-        return;
-    }
+    // note: a literal is written in parts by the 'write_plan' of the value
+    //       that holds it, see 'expr_any::plan_writes'
 
-    write_plan plan;
-    plan_writes(tc, part_location{}, plan);
-    emit_write_plan(tc, indent, plan, dst);
+    assert(is_name_or_literal());
+
+    compile_identifier_copy(tc, indent, dst);
 }
 
 // e.g. 'f()' in '{f(), 3}' writes the field in place
