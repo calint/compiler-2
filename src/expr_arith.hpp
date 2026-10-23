@@ -255,10 +255,13 @@ class expr_arith final : public expression {
             return;
         }
 
+        // the steps compiled in place, which the clobber check reads
+        const std::vector<step> steps{plan_steps(tc, dst)};
+
         // a single element in memory that 'is_compiled_in_place' is compiled
         // once, without trying with and without a scratch register
         if (not dst.is_register() and is_compiled_in_place()) {
-            do_compile(tc, indent, dst);
+            compile_steps(tc, indent, dst, steps);
             return;
         }
 
@@ -266,7 +269,7 @@ class expr_arith final : public expression {
         // read; a register that the expression reads is the result of an
         // inlined function
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
-        if (destination_is_clobbered_before_read(tc, dst)) {
+        if (destination_is_clobbered_before_read(tc, dst, steps)) {
             if (dst.is_register()) {
                 compile_through_scratch_as(tc, indent, dst, dst.type_ref());
                 return;
@@ -279,7 +282,7 @@ class expr_arith final : public expression {
 
         // a register destination needs no scratch register
         if (dst.is_register()) {
-            do_compile(tc, indent, dst);
+            compile_steps(tc, indent, dst, steps);
             return;
         }
 
@@ -288,7 +291,8 @@ class expr_arith final : public expression {
         // a scratch register saves loads and stores of a memory destination
         // or costs a copy, which depends on the elements, so both are measured
         x.emit_most_efficient(
-            tok(), indent, [&] -> void { do_compile(tc, indent, dst); },
+            tok(), indent,
+            [&] -> void { compile_steps(tc, indent, dst, steps); },
             [&] -> void { compile_through_scratch(tc, indent, dst); });
     }
 
@@ -697,10 +701,8 @@ class expr_arith final : public expression {
 
     // a nested list is folded when it is compiled as an element:
     //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
-    auto compile_elements(toc& tc, const size_t indent,
-                          const destination& dst) const -> void {
-
-        const std::vector<step> steps{plan_steps(tc, dst)};
+    auto compile_elements(toc& tc, const size_t indent, const destination& dst,
+                          const std::span<const step> steps) const -> void {
 
         compile_first_step(tc, indent, dst, steps.front());
 
@@ -768,6 +770,19 @@ class expr_arith final : public expression {
         asm_op(tc, indent, s.op, dst, *s.element);
     }
 
+    // the steps that 'plan_steps' made for 'dst'
+    auto compile_steps(toc& tc, const size_t indent, const destination& dst,
+                       const std::span<const step> steps) const -> void {
+
+        compile_elements(tc, indent, dst, steps);
+
+        machine& x{tc.machine()};
+
+        // the unary ops of the list apply to its result, e.g. '-(a + b)'
+        uops_.compile(x, indent, tok(), dst.operand(),
+                      tc.overflow_options(dst));
+    }
+
     // the destination keeps its value until the whole expression is computed
     auto compile_through_scratch(toc& tc, const size_t indent,
                                  const destination& dst) const -> void {
@@ -804,48 +819,16 @@ class expr_arith final : public expression {
             x.alloc_scratch_register(tok(), indent, scratch_type),
         };
 
-        do_compile(tc, indent, dst.in_register(reg));
+        // note: the register may be wider than 'dst', so it has steps of its
+        //       own
+
+        const destination reg_dst{dst.in_register(reg)};
+
+        compile_steps(tc, indent, reg_dst, plan_steps(tc, reg_dst));
 
         x.copy_value(tok(), indent, dst.operand(), reg);
 
         x.free_scratch_register(tok(), indent, reg);
-    }
-
-    // a plain first element is copied before anything writes the destination;
-    // a negated one may move behind a leading constant: 'n = -n + 1'; a read
-    // under another name counts, e.g. 'p' of 'g = p * 2 + p' with 'p' bound
-    // to 'g'
-    [[nodiscard]] auto
-    destination_is_clobbered_before_read(const toc& tc,
-                                         const destination& dst) const -> bool {
-
-        const statement& first{*exprs_.front()};
-
-        const bool is_plain{
-            first.is_name_or_literal() and first.get_unary_ops().is_empty(),
-        };
-
-        if (not is_plain and reads_destination(tc, first, dst)) {
-            return true;
-        }
-
-        return std::ranges::any_of(
-            exprs_ | std::views::drop(1),
-            [&tc, &dst](const std::unique_ptr<statement>& e) -> bool {
-                return reads_destination(tc, *e, dst);
-            });
-    }
-
-    auto do_compile(toc& tc, const size_t indent, const destination& dst) const
-        -> void {
-
-        compile_elements(tc, indent, dst);
-
-        machine& x{tc.machine()};
-
-        // the unary ops of the list apply to its result, e.g. '-(a + b)'
-        uops_.compile(x, indent, tok(), dst.operand(),
-                      tc.overflow_options(dst));
     }
 
     // 'ws_before_op_tk' belongs to what follows the list
@@ -1341,6 +1324,38 @@ class expr_arith final : public expression {
         if (ch == '<' or ch == '>') {
             tz.skip_char();
         }
+    }
+
+    // the first step writes the destination, a later step that reads it
+    // would read that; a plain first element is copied before anything
+    // writes, a constant first step reads nothing; a read under another name
+    // counts, e.g. 'p' of 'g = p * 2 + p' with 'p' bound to 'g'
+    // note: the steps are those 'compile_steps' emits in place, e.g. 'n = -n
+    //       + 1' leads with the constant, then reads 'n'
+    [[nodiscard]] static auto
+    destination_is_clobbered_before_read(const toc& tc, const destination& dst,
+                                         const std::span<const step> steps)
+        -> bool {
+
+        const step& first{steps.front()};
+
+        // a constant or a plain name or literal
+        const bool reads_before_writing{
+            first.value or (first.element->is_name_or_literal() and
+                            first.element->get_unary_ops().is_empty()),
+        };
+
+        if (not reads_before_writing and
+            reads_destination(tc, *first.element, dst)) {
+
+            return true;
+        }
+
+        return std::ranges::any_of(
+            steps.subspan(1), [&tc, &dst](const step& s) -> bool {
+                return s.element != nullptr and
+                       reads_destination(tc, *s.element, dst);
+            });
     }
 
     // compiles 'src' into an operand the operation on 'dst' accepts, emits

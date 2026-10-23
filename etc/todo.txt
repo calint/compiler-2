@@ -240,7 +240,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                   order to decide
                => invariant: the steps checked are the steps emitted in
                   place
-               => expected: no change of verdict or code (measure)
+               => done (2026-10-23): 'compile_steps' emits the steps that
+                  'compile' planned and checked; verdicts unchanged; the
+                  check is now exact where the passes move constants to the
+                  end: 'b = 2 + b' is 'b + 2', compiled in place ('add
+                  qword [rbp], 2'), 2 instructions less in tests 0482 and
+                  0589 on x86_64; '0589.x86_64.folds' updated, and
+                  '0671.x86_64.folds', stale since an earlier change of the
+                  register of 'array_copy'
+            => 4.4 done (2026-10-23)
        4.5. a generic definition holds its whole signature (class G, about
             12 bugs): what a generic method of a generic type declares lives
             only in its per-instance copies ('generic_method_info' has no

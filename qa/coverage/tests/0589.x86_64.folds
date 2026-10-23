@@ -38,9 +38,7 @@
     mov qword [rbp + 16], r15
     neg qword [rbp + 16]
 === 42:     d = 3 + d # folds
-    mov r15, qword [rbp + 16]
-    add r15, 3
-    mov qword [rbp + 16], r15
+    add qword [rbp + 16], 3
 === 46:     d = 2 * b * 3 # folds
     mov r15, qword [rbp + 8]
     imul r15, 6
