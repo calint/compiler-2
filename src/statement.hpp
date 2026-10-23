@@ -241,9 +241,10 @@ class stmt_identifier;
 //                  'stmt_identifier', 'stmt_call' and the built-ins,
 //                  forwarded by 'expr_arith' and 'expr_any';
 //                  'is_expression': 'expression', answered by what they hold
-//                  in 'expr_arith' and 'expr_any'; 'produces_boolean' and
-//                  'compile_boolean': 'stmt_builtin_arrays_equal', forwarded
-//                  by 'expr_arith'
+//                  in 'expr_arith' and 'expr_any'
+//   a condition    'is_arrays_equal_call' and 'compile_arrays_equal':
+//                  'stmt_builtin_arrays_equal', forwarded by 'expr_arith',
+//                  so 'expr_bool' needs not include the built-in
 //   a place        'operand_path': 'stmt_identifier', forwarded by
 //                  'expr_arith', 'expr_any' and 'expr_type' when they hold
 //                  one; 'place_path' and 'as_place' derive from it, the
@@ -288,11 +289,13 @@ class statement {
         std::unreachable();
     }
 
-    virtual auto compile_boolean([[maybe_unused]] toc& tc,
-                                 [[maybe_unused]] const size_t indent,
-                                 [[maybe_unused]] const operand& dst,
-                                 [[maybe_unused]] const bool inverted) const
-        -> void {
+    // the result of a call to 'arrays_equal' stored in 'dst', negated when
+    // 'inverted', e.g. the shorthand 'ok = not arrays_equal(a, b, 4)'
+    virtual auto
+    compile_arrays_equal([[maybe_unused]] toc& tc,
+                         [[maybe_unused]] const size_t indent,
+                         [[maybe_unused]] const operand& dst,
+                         [[maybe_unused]] const bool inverted) const -> void {
 
         std::unreachable();
     }
@@ -312,6 +315,10 @@ class statement {
         return uops_;
     }
 
+    [[nodiscard]] virtual auto is_arrays_equal_call() const -> bool {
+        return false;
+    }
+
     // the value is computed, it is not a name or a constant read in place
     [[nodiscard]] virtual auto is_expression() const -> bool { return false; }
 
@@ -327,10 +334,6 @@ class statement {
     // the nodes that hold one forward it
     [[nodiscard]] virtual auto operand_path() const -> const stmt_identifier* {
         return nullptr;
-    }
-
-    [[nodiscard]] virtual auto produces_boolean() const -> bool {
-        return false;
     }
 
     virtual auto source_to(std::ostream& os) const -> void {

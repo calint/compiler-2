@@ -317,12 +317,12 @@ class expr_arith final : public expression {
         }
     }
 
-    auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
-                         const bool inverted) const -> void override {
+    auto compile_arrays_equal(toc& tc, const size_t indent, const operand& dst,
+                              const bool inverted) const -> void override {
 
-        assert(produces_boolean());
+        assert(is_arrays_equal_call());
 
-        exprs_.front()->compile_boolean(tc, indent, dst, inverted);
+        exprs_.front()->compile_arrays_equal(tc, indent, dst, inverted);
     }
 
     // an element wraps at the width as its register holds it; the first
@@ -395,6 +395,11 @@ class expr_arith final : public expression {
         return exprs_.at(0)->get_unary_ops();
     }
 
+    [[nodiscard]] auto is_arrays_equal_call() const -> bool override {
+        return uops_.is_empty() and exprs_.size() == 1 and
+               exprs_.front()->is_arrays_equal_call();
+    }
+
     [[nodiscard]] auto is_expression() const -> bool override {
         // unary operators apply to the computed list, e.g. '-(a + b)'
         if (not uops_.is_empty()) {
@@ -449,11 +454,6 @@ class expr_arith final : public expression {
         }
 
         return exprs_.front()->operand_path();
-    }
-
-    [[nodiscard]] auto produces_boolean() const -> bool override {
-        return uops_.is_empty() and exprs_.size() == 1 and
-               exprs_.front()->produces_boolean();
     }
 
     auto visit_call_effects(const toc& tc,

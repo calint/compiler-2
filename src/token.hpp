@@ -4,6 +4,7 @@
 #include <cassert>
 #include <charconv>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <memory>
 #include <optional>
@@ -40,12 +41,40 @@ inline constexpr std::array<std::string_view, 21> keywords{
     "self", "and",      "or",  "not",  "true",     "false", "include",
 };
 
+// the value a built-in function call has: none for a statement, a count at
+// the default type, or a 'bool'
+enum class builtin_value : uint8_t { none, count, boolean };
+
+struct builtin_function {
+    std::string_view name;
+    builtin_value value{};
+};
+
 // a variable or function with the name of a built-in function would be read
 // as a call of the built-in
-inline constexpr std::array<std::string_view, 8> builtin_functions{
-    "array_copy", "array_length", "arrays_equal", "read",
-    "write",      "sector_read",  "sector_write", "exit",
+inline constexpr std::array<builtin_function, 8> builtin_functions{
+    builtin_function{.name{"array_copy"}, .value{builtin_value::none}},
+    builtin_function{.name{"array_length"}, .value{builtin_value::count}},
+    builtin_function{.name{"arrays_equal"}, .value{builtin_value::boolean}},
+    builtin_function{.name{"read"}, .value{builtin_value::count}},
+    builtin_function{.name{"write"}, .value{builtin_value::count}},
+    builtin_function{.name{"sector_read"}, .value{builtin_value::none}},
+    builtin_function{.name{"sector_write"}, .value{builtin_value::none}},
+    builtin_function{.name{"exit"}, .value{builtin_value::none}},
 };
+
+// the built-in function named 'name', null for any other name
+[[nodiscard]] constexpr auto find_builtin_function(const std::string_view name)
+    -> const builtin_function* {
+
+    for (const builtin_function& fn : builtin_functions) {
+        if (fn.name == name) {
+            return &fn;
+        }
+    }
+
+    return nullptr;
+}
 
 } // namespace reserved_names
 

@@ -39,13 +39,12 @@
 inline auto assert_builtin_has_value(const token& tk, const tokenizer& tz)
     -> void {
 
-    const stmt_builtin_io::io_function* const io{
-        stmt_builtin_io::find(tk.text()),
+    const reserved_names::builtin_function* const fn{
+        reserved_names::find_builtin_function(tk.text()),
     };
 
     const bool has_no_value{
-        tk.is_text("exit") or tk.is_text("array_copy") or
-            (io != nullptr and not io->has_result()),
+        fn != nullptr and fn->value == reserved_names::builtin_value::none,
     };
 
     if (has_no_value and tz.peek_char_after_whitespace() == '(') {
@@ -57,8 +56,7 @@ inline auto assert_builtin_has_value(const token& tk, const tokenizer& tz)
 inline auto assert_builtin_without_type_args(const token& tk,
                                              const tokenizer& tz) -> void {
 
-    if (not std::ranges::contains(reserved_names::builtin_functions,
-                                  tk.text()) or
+    if (reserved_names::find_builtin_function(tk.text()) == nullptr or
         tz.peek_char_after_whitespace() != '<') {
 
         return;
@@ -90,21 +88,17 @@ inline auto assert_builtin_without_type_args(const token& tk,
         return nullptr;
     }
 
-    if (tk.is_text("array_length")) {
-        return &tc.builtins().default_type();
-    }
-
-    if (tk.is_text("arrays_equal")) {
-        return &tc.builtins().boolean();
-    }
-
-    // e.g. the count of 'read(0, buf, 4)'
-    const stmt_builtin_io::io_function* const io{
-        stmt_builtin_io::find(tk.text()),
+    const reserved_names::builtin_value value{
+        reserved_names::find_builtin_function(tk.text())->value,
     };
 
-    if (io != nullptr and io->has_result()) {
+    // e.g. the count of 'read(0, buf, 4)'
+    if (value == reserved_names::builtin_value::count) {
         return &tc.builtins().default_type();
+    }
+
+    if (value == reserved_names::builtin_value::boolean) {
+        return &tc.builtins().boolean();
     }
 
     return nullptr;

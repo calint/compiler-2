@@ -145,7 +145,7 @@ struct term {
         };
     }
 
-    if (std::ranges::contains(reserved_names::builtin_functions, text)) {
+    if (reserved_names::find_builtin_function(text) != nullptr) {
         return {
             .kind{term_kind::builtin_function},
             .named_type{},

@@ -48,8 +48,9 @@
 //   'noinline_call'   passes addresses to the body that is emitted once
 //   'constructor_call_tag'
 //                     selects the constructor of 'point.at(1, 2)'
-//   'builtin_call_tag'
-//                     selects the constructor of 'exit(0)'
+//   'builtin_arguments'
+//                     the arguments of a built-in that parses like a call,
+//                     e.g. 'exit(0)'
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -1965,9 +1966,130 @@ class noinline_call {
 // selects the constructor of 'stmt_call' for 'point.at(1, 2)'
 struct constructor_call_tag {};
 
-// selects the constructor of 'stmt_call' for a built-in that parses like a
-// call, e.g. 'exit(0)'
-struct builtin_call_tag {};
+// a string is in read-only data that a parameter would refer to
+inline auto assert_not_string_argument(tokenizer& tz) -> void {
+    if (tz.peek_char_after_whitespace() != '"') {
+        return;
+    }
+
+    throw compile_error{tz.next_token(), "a string is not an argument, it "
+                                         "would refer to read-only data"};
+}
+
+// a call outside a function would run before 'main'
+inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
+    if (not tc.scopes().is_in_func()) {
+        throw compile_error{
+            call_tk, "a global variable cannot be initialized with a call"};
+    }
+}
+
+// the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
+// 'write(1, buf, 4)'; each is a value at the default type, the built-in
+// checks their count and their kinds
+class builtin_arguments {
+    token open_paren_tk_;
+    std::vector<expr_any> args_;
+    std::vector<token> delims_tk_;
+    token close_paren_tk_;
+
+  public:
+    // the name of the built-in is read
+    builtin_arguments(toc& tc, tokenizer& tz)
+        : open_paren_tk_{tz.is_next_char_token('(')} {
+
+        if (open_paren_tk_.is_empty()) {
+            throw compile_error{tz, "expected '(' after function name"};
+        }
+
+        while (true) {
+            close_paren_tk_ = tz.is_next_char_token(')');
+
+            if (not close_paren_tk_.is_empty()) {
+                return;
+            }
+
+            assert_not_string_argument(tz);
+
+            args_.emplace_back(tc, tz, tc.builtins().default_type(),
+                               literal_typing::from_destination);
+
+            const token delim_tk{tz.is_next_char_token(',')};
+
+            if (not delim_tk.is_empty()) {
+                tz.assert_no_trailing_delimiter(delim_tk, ')', "a call");
+                delims_tk_.emplace_back(delim_tk);
+                continue;
+            }
+
+            // e.g. 'write(1, text n)' lacks the ','
+            close_paren_tk_ = tz.expect_char_token(
+                ')', "expected ',' or ')' after the argument");
+
+            return;
+        }
+    }
+
+    builtin_arguments() = default;
+
+    // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'; the argument
+    // at 'written_index' is storage the built-in writes, e.g. the buffer of
+    // 'read'
+    auto
+    assert_not_written_later(const toc& tc,
+                             const std::optional<size_t> written_index) const
+        -> void {
+
+        std::vector<list_operand> operands;
+        operands.reserve(args_.size());
+
+        for (size_t i{}; i < args_.size(); ++i) {
+            operands.push_back({
+                .node{&args_.at(i)},
+                .written_place{
+                    written_index == i ? args_.at(i).place_path() : nullptr,
+                },
+            });
+        }
+
+        ::assert_not_written_later(tc, operands, "argument");
+    }
+
+    [[nodiscard]] auto at(const size_t index) const -> const expr_any& {
+        return args_.at(index);
+    }
+
+    // e.g. '5' or 'n - 1' of a constant 'n', empty when computed at run time
+    [[nodiscard]] auto constant(const toc& tc, const size_t index) const
+        -> std::optional<int64_t> {
+
+        return args_.at(index).constant_value(tc);
+    }
+
+    [[nodiscard]] auto count() const -> size_t { return args_.size(); }
+
+    auto source_to(std::ostream& os) const -> void {
+        open_paren_tk_.source_to(os);
+        statement::source_delimited_to(os, args_, delims_tk_);
+        close_paren_tk_.source_to(os);
+    }
+
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const -> void {
+
+        for (const expr_any& e : args_) {
+            e.visit_call_effects(tc, visitor);
+        }
+    }
+
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void {
+
+        for (const expr_any& e : args_) {
+            e.visit_reads(var, reader);
+        }
+    }
+};
 
 // a call of a function, a method or a constructor
 //
@@ -1976,7 +2098,7 @@ struct builtin_call_tag {};
 // 'read_open_paren'), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), then the arguments
 // ('parse_arguments', each checked by 'assert_argument_usable' and
-// 'assert_argument_writable', or 'parse_builtin_arguments')
+// 'assert_argument_writable')
 //
 // compiling, in 'compile': no two arguments may share storage
 // ('assert_no_shared_storage'), then 'inline_call' or 'noinline_call'
@@ -2112,7 +2234,7 @@ class stmt_call : public expression {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        assert_in_func(tc);
+        assert_call_in_func(tc, tok());
 
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
         //       functions, are subclasses that override 'compile'
@@ -2171,18 +2293,13 @@ class stmt_call : public expression {
 
     // the calls in the arguments run first, then the body reads and writes
     // the globals it uses and may write an argument passed to a 'mut'
-    // parameter, its whole storage; a built-in that parses like a call has
-    // no body
+    // parameter, its whole storage
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
         -> void override {
 
         for (const expr_any& e : args_) {
             e.visit_call_effects(tc, visitor);
-        }
-
-        if (not tc.is_func(func_name_)) {
-            return;
         }
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
@@ -2253,46 +2370,6 @@ class stmt_call : public expression {
         }
 
         assert_not_written_later(tc, operands, "argument");
-    }
-
-  protected:
-    // a built-in has no definition, 'result_type' is the type of its value,
-    // 'void' if it has none
-    stmt_call(builtin_call_tag /*tag*/, toc& tc, unary_ops uops, const token tk,
-              tokenizer& tz, const type& result_type)
-        : expression{tk, std::move(uops)}, func_name_{tk.text()} {
-
-        open_paren_tk_ = tz.is_next_char_token('(');
-
-        set_type(result_type);
-
-        assert_open_paren_found(tz, "function name");
-
-        parse_builtin_arguments(tc, tz);
-    }
-
-    [[nodiscard]] auto argument(const size_t arg_index) const
-        -> const statement& {
-
-        return args_.at(arg_index);
-    }
-
-    // e.g. '5' or 'n - 1' of a constant 'n', empty when computed at run time
-    [[nodiscard]] auto argument_constant(const toc& tc,
-                                         const size_t arg_index) const
-        -> std::optional<int64_t> {
-
-        return args_.at(arg_index).constant_value(tc);
-    }
-
-    [[nodiscard]] auto argument_count() const -> size_t { return args_.size(); }
-
-    // a call outside a function would run before 'main'
-    auto assert_in_func(const toc& tc) const -> void {
-        if (not tc.scopes().is_in_func()) {
-            throw compile_error{
-                tok(), "a global variable cannot be initialized with a call"};
-        }
     }
 
   private:
@@ -2751,35 +2828,6 @@ class stmt_call : public expression {
 
     // a built-in has no parameter list, so any count of default type
     // arguments is parsed and the built-in checks the count
-    auto parse_builtin_arguments(toc& tc, tokenizer& tz) -> void {
-        while (true) {
-            close_paren_tk_ = tz.is_next_char_token(')');
-
-            if (not close_paren_tk_.is_empty()) {
-                return;
-            }
-
-            assert_not_string_argument(tz);
-
-            args_.emplace_back(tc, tz, tc.builtins().default_type(),
-                               literal_typing::from_destination);
-
-            const token delim_tk{tz.is_next_char_token(',')};
-
-            if (not delim_tk.is_empty()) {
-                tz.assert_no_trailing_delimiter(delim_tk, ')', "a call");
-                arg_delims_tk_.emplace_back(delim_tk);
-                continue;
-            }
-
-            // e.g. 'write(1, text n)' lacks the ','
-            close_paren_tk_ = tz.expect_char_token(
-                ')', "expected ',' or ')' after the argument");
-
-            return;
-        }
-    }
-
     // the name is read, a generic function has its type arguments before the
     // '(', e.g. 'convert<i8>(x)', and 'func_name_' becomes the name of its
     // instance; returns 'generic_call::deducing_args'
@@ -2973,16 +3021,6 @@ class stmt_call : public expression {
         if (const stmt_identifier* const name{arg.operand_path()}) {
             assert_not_whole_array(*name, make_ident_info(tc, *name));
         }
-    }
-
-    // a string is in read-only data that a parameter would refer to
-    static auto assert_not_string_argument(tokenizer& tz) -> void {
-        if (tz.peek_char_after_whitespace() != '"') {
-            return;
-        }
-
-        throw compile_error{tz.next_token(), "a string is not an argument, it "
-                                             "would refer to read-only data"};
     }
 
     // 'point.at' for the type named as written, e.g. an alias with constructors

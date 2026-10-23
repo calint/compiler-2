@@ -112,6 +112,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                change
        B.4. 'produces_boolean' and 'compile_boolean' serve 'arrays_equal'
             only: a name that says so
+            => done (2026-10-23): 'is_arrays_equal_call' and
+               'compile_arrays_equal'; a typed query like 'operand_path'
+               would need an out-of-line definition ('arrays_equal' includes
+               'bulk_operands', which reaches 'expr_bool') for one call site;
+               the virtuals are the decoupling, the header says so
     C. one value, one node
        C.1. 'expr_any' holds a single value and four array forms told apart
             by flags; an 'expr_array' node with the form as a variant for
@@ -125,10 +130,24 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'assert_builtin_has_value', both factories and
             'stmt_builtin_io::find' agree by hand; "'bool' has no conversion"
             is decided twice
+            => done (2026-10-23): 'reserved_names::builtin_functions' is the
+               catalog of {name, value} with 'find_builtin_function';
+               'assert_builtin_has_value' and 'builtin_value_type' read the
+               value, the io table asserts its 'has_result' against it; the
+               factories stay (each class takes its own arguments); the
+               'bool' conversion is decided once, 'builtin_value_type' only
+               declines it so the call parse reports it; no output change
        D.2. 'stmt_builtin_io' and 'stmt_builtin_exit' derive from
             'stmt_call' for its argument list only ('builtin_call_tag', the
             'is_func' guards): a 'call_arguments' member like
             'bulk_operands', 'stmt_call' only user calls
+            => done (2026-10-23): 'builtin_arguments' (in 'stmt_call.hpp',
+               beside the parse rules it shares: 'assert_not_string_argument'
+               and 'assert_call_in_func', now free functions) is a member of
+               'stmt_builtin_io' and 'stmt_builtin_exit', which derive from
+               'expression'; the tag, the protected constructor and
+               accessors, 'parse_builtin_arguments' and the 'is_func' guard
+               of 'visit_call_effects' gone; no output change
        D.3. a written buffer (the destination of 'array_copy', the buffer
             of 'read') owns its parse check, its use record and its reads;
             the index 1 hard-coded in four io methods goes (after D.2)

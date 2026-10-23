@@ -53,11 +53,11 @@ class stmt_builtin_arrays_equal final : public expression {
         // the destination is named in the source, the error is at its name
         assert_destination_type(dst.type_ref(), dst.error_token(tok()));
 
-        compile_boolean(tc, indent, dst.operand(), false);
+        compile_arrays_equal(tc, indent, dst.operand(), false);
     }
 
-    auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
-                         const bool inverted) const -> void override {
+    auto compile_arrays_equal(toc& tc, const size_t indent, const operand& dst,
+                              const bool inverted) const -> void override {
 
         operands_.assert_not_written_later(tc, false);
 
@@ -105,7 +105,7 @@ class stmt_builtin_arrays_equal final : public expression {
                        });
     }
 
-    [[nodiscard]] auto produces_boolean() const -> bool override {
+    [[nodiscard]] auto is_arrays_equal_call() const -> bool override {
         return true;
     }
 

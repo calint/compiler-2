@@ -3059,8 +3059,7 @@ class toc final {
     auto assert_valid_unqualified_name(const token& name_tk) const -> void {
         assert_valid_name(name_tk);
 
-        if (std::ranges::contains(reserved_names::builtin_functions,
-                                  name_tk.text())) {
+        if (reserved_names::find_builtin_function(name_tk.text()) != nullptr) {
 
             throw compile_error{name_tk,
                                 std::format("{} is a built-in function",

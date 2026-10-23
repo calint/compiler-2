@@ -22,7 +22,7 @@
 // 'read(fd, buf, count, start)' and 'write(fd, buf, count, start)', and the
 // sd card functions 'sector_read(sector, buf, start)' and
 // 'sector_write(sector, buf, start)' that transfer one sector
-class stmt_builtin_io final : public stmt_call {
+class stmt_builtin_io final : public expression {
   public:
     // what tells the functions apart, a sector function takes a sector in
     // place of the descriptor and has no count and no result
@@ -83,13 +83,14 @@ class stmt_builtin_io final : public stmt_call {
 
     // the entry of 'functions_' that the call names
     io_function io_;
+    builtin_arguments args_;
 
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
-        : stmt_call{builtin_call_tag{}, tc, std::move(uops), tk, tz,
-                    io.result_type(tc)},
-          io_{io} {
+        : expression{tk, std::move(uops)}, io_{io}, args_{tc, tz} {
+
+        set_type(io_.result_type(tc));
 
         if (io_.is_sector) {
             assert_target_has_sd_card(tc);
@@ -102,7 +103,7 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         // 'read' and 'sector_read' fill the buffer, the second argument
-        const statement& buffer{argument(1)};
+        const statement& buffer{args_.at(1)};
 
         if (const std::optional<place> filled{as_place(tc, buffer)}; filled) {
             const stmt_identifier& path{*filled->path};
@@ -119,13 +120,18 @@ class stmt_builtin_io final : public stmt_call {
     // overridden methods
     //
 
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        args_.source_to(os);
+    }
+
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        assert_in_func(tc);
+        assert_call_in_func(tc, tok());
 
         // e.g. the 'b' of 'read(0, b, n)' is written
-        assert_arguments_not_written_later(
+        args_.assert_not_written_later(
             tc, io_.fills_buffer ? std::optional<size_t>{1} : std::nullopt);
 
         machine& x{tc.machine()};
@@ -174,20 +180,25 @@ class stmt_builtin_io final : public stmt_call {
         x.free_named_registers(tok(), indent, args);
     }
 
+    // the count has the default type, like the result of a call
+    auto assert_not_narrowed([[maybe_unused]] const toc& tc,
+                             const type& dst_type) const -> void override {
+
+        assert_own_type_not_narrowed(dst_type);
+    }
+
     // 'read' and 'sector_read' write their buffer, e.g. 'b' of 'read(0, b)'
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
         -> void override {
 
-        for (size_t i{}; i < argument_count(); ++i) {
-            argument(i).visit_call_effects(tc, visitor);
-        }
+        args_.visit_call_effects(tc, visitor);
 
         if (not io_.fills_buffer) {
             return;
         }
 
-        const std::optional<place> filled{as_place(tc, argument(1))};
+        const std::optional<place> filled{as_place(tc, args_.at(1))};
 
         if (not filled) {
             return;
@@ -216,8 +227,8 @@ class stmt_builtin_io final : public stmt_call {
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
-        for (size_t i{}; i < argument_count(); ++i) {
-            const statement& arg{argument(i)};
+        for (size_t i{}; i < args_.count(); ++i) {
+            const statement& arg{args_.at(i)};
             const stmt_identifier* const path{arg.place_path()};
 
             if (i == 1 and io_.fills_buffer and path != nullptr) {
@@ -237,17 +248,22 @@ class stmt_builtin_io final : public stmt_call {
         -> const io_function* {
 
         // note: a user definition with the name of an io function is
-        //       rejected because the name is in the language-level list
+        //       rejected because the name is in the language-level list,
+        //       which also tells whether the call has a value
 
-        constexpr auto is_reserved{
-            [](const std::string_view fn) -> bool {
-                return std::ranges::contains(reserved_names::builtin_functions,
-                                             fn);
+        constexpr auto is_cataloged{
+            [](const io_function& io) -> bool {
+                const reserved_names::builtin_function* const fn{
+                    reserved_names::find_builtin_function(io.name),
+                };
+
+                return fn != nullptr and
+                       io.has_result() ==
+                           (fn->value == reserved_names::builtin_value::count);
             },
         };
 
-        static_assert(
-            std::ranges::all_of(functions_, is_reserved, &io_function::name));
+        static_assert(std::ranges::all_of(functions_, is_cataloged));
 
         for (const io_function& info : functions_) {
             if (info.name == name) {
@@ -265,7 +281,7 @@ class stmt_builtin_io final : public stmt_call {
         const size_t min_count{io_.min_arg_count};
         const size_t max_count{io_.max_arg_count};
 
-        if (argument_count() >= min_count and argument_count() <= max_count) {
+        if (args_.count() >= min_count and args_.count() <= max_count) {
             return;
         }
 
@@ -281,7 +297,7 @@ class stmt_builtin_io final : public stmt_call {
 
     // an address would bypass the bounds check, so only arrays are accepted
     [[nodiscard]] auto assert_array_buffer(const toc& tc) const -> place {
-        const statement& buffer{argument(1)};
+        const statement& buffer{args_.at(1)};
         const stmt_identifier* const path{buffer.operand_path()};
 
         // the start has one spelling, the last argument
@@ -320,10 +336,10 @@ class stmt_builtin_io final : public stmt_call {
             return;
         }
 
-        const size_t start_index{argument_count() - 1};
+        const size_t start_index{args_.count() - 1};
 
         const std::optional<int64_t> start{
-            has_start() ? argument_constant(tc, start_index) : int64_t{},
+            has_start() ? args_.constant(tc, start_index) : int64_t{},
         };
 
         assert_constant_range(
@@ -332,7 +348,7 @@ class stmt_builtin_io final : public stmt_call {
                 .start{start},
                 .count{*count},
                 .start_tk{
-                    has_start() ? std::optional{argument(start_index).tok()}
+                    has_start() ? std::optional{args_.at(start_index).tok()}
                                 : std::nullopt,
                 },
 
@@ -341,8 +357,8 @@ class stmt_builtin_io final : public stmt_call {
                 //       buffer when there is none
 
                 .count_tk{
-                    has_count() ? argument(2).tok()
-                                : argument(start_index).tok(),
+                    has_count() ? args_.at(2).tok()
+                                : args_.at(start_index).tok(),
                 },
                 .count_text{
                     has_count()
@@ -363,7 +379,7 @@ class stmt_builtin_io final : public stmt_call {
 
         const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
 
-        const statement& buffer{argument(1)};
+        const statement& buffer{args_.at(1)};
 
         if (sector_size_bytes % element_size_bytes != 0) {
             throw compile_error{
@@ -423,7 +439,7 @@ class stmt_builtin_io final : public stmt_call {
         const operand& buffer_reg{args.at(1)};
         const operand& count{args.at(2)};
 
-        argument(0).compile(tc, indent, destination::of_register(descriptor));
+        args_.at(0).compile(tc, indent, destination::of_register(descriptor));
 
         const ident_info& buffer_info{buffer.info};
 
@@ -494,7 +510,7 @@ class stmt_builtin_io final : public stmt_call {
                        const ident_info& buffer_info) const -> void {
 
         if (has_count()) {
-            argument(2).compile(tc, indent, destination::of_register(count));
+            args_.at(2).compile(tc, indent, destination::of_register(count));
             return;
         }
 
@@ -517,7 +533,7 @@ class stmt_builtin_io final : public stmt_call {
 
         machine& x{tc.machine()};
 
-        const statement& start_arg{argument(argument_count() - 1)};
+        const statement& start_arg{args_.at(args_.count() - 1)};
 
         const operand start{
             x.alloc_scratch_register(start_arg.tok(), indent,
@@ -546,7 +562,7 @@ class stmt_builtin_io final : public stmt_call {
         -> std::optional<int64_t> {
 
         if (has_count()) {
-            return argument_constant(tc, 2);
+            return args_.constant(tc, 2);
         }
 
         if (io_.is_sector) {
@@ -609,11 +625,11 @@ class stmt_builtin_io final : public stmt_call {
     // 'read(fd, buf, count, start)': the count and the start are optional,
     // a sector function has no count
     [[nodiscard]] auto has_count() const -> bool {
-        return not io_.is_sector and argument_count() >= 3;
+        return not io_.is_sector and args_.count() >= 3;
     }
 
     [[nodiscard]] auto has_start() const -> bool {
-        return argument_count() == io_.max_arg_count;
+        return args_.count() == io_.max_arg_count;
     }
 
     // see 'range_check', a sector function has the constant count of a sector
@@ -625,7 +641,7 @@ class stmt_builtin_io final : public stmt_call {
             return range_check::run_time;
         }
 
-        if (has_start() and not argument_constant(tc, argument_count() - 1)) {
+        if (has_start() and not args_.constant(tc, args_.count() - 1)) {
             return range_check::run_time;
         }
 

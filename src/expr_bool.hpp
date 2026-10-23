@@ -341,7 +341,7 @@ class expr_bool_op final : public expression {
                             "a 'bool' is compared only with a 'bool'"};
     }
 
-    // the result that 'compile_boolean' or 'resolve_memory_cmp' stored in
+    // the result that 'compile_arrays_equal' or 'resolve_memory_cmp' stored in
     // 'action.destination' is branched on using 'action.branch_on_true'
     auto branch_on_stored_result(toc& tc, const size_t indent,
                                  const machine::comparison_action& action) const
@@ -534,12 +534,12 @@ class expr_bool_op final : public expression {
                                const machine::comparison_action& action) const
         -> void {
 
-        if (lhs.produces_boolean() and not action.destination.is_empty()) {
+        if (lhs.is_arrays_equal_call() and not action.destination.is_empty()) {
             // note: only a 'bool' is assigned a boolean expression
             assert(lhs.get_type().is_same(action.destination.type_ref()));
 
-            lhs.compile_boolean(tc, indent + 1, action.destination,
-                                action.inverted);
+            lhs.compile_arrays_equal(tc, indent + 1, action.destination,
+                                     action.inverted);
 
             if (not action.target.empty()) {
                 branch_on_stored_result(tc, indent, action);

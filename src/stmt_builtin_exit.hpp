@@ -13,13 +13,16 @@
 
 // 'exit(code)' ends the program with 'code', the path after it is not
 // reached
-class stmt_builtin_exit final : public stmt_call {
+class stmt_builtin_exit final : public expression {
+    builtin_arguments args_;
+
   public:
     stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)
-        : stmt_call{builtin_call_tag{},       tc, {}, tk, tz,
-                    tc.builtins().void_type()} {
+        : expression{tk}, args_{tc, tz} {
 
-        if (argument_count() != 1) {
+        set_type(tc.builtins().void_type());
+
+        if (args_.count() != 1) {
             throw compile_error{tok(), std::format("{} takes {}",
                                                    in_quotes(tok().text()),
                                                    counted(1, "argument"))};
@@ -29,6 +32,11 @@ class stmt_builtin_exit final : public stmt_call {
     //
     // overridden methods
     //
+
+    auto source_to(std::ostream& os) const -> void override {
+        statement::source_to(os);
+        args_.source_to(os);
+    }
 
     auto compile(toc& tc, const size_t indent,
                  [[maybe_unused]] const destination& dst) const
@@ -50,7 +58,7 @@ class stmt_builtin_exit final : public stmt_call {
                                    tc.builtins().default_type()),
         };
 
-        argument(0).compile(tc, indent, destination::of_register(exit_code));
+        args_.at(0).compile(tc, indent, destination::of_register(exit_code));
 
         x.exit(tok(), indent, exit_code);
 
@@ -64,5 +72,18 @@ class stmt_builtin_exit final : public stmt_call {
     auto trace_assignment(assignment_flow& flow) const -> void override {
         assert_var_not_used(flow);
         flow.end_path();
+    }
+
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        args_.visit_call_effects(tc, visitor);
+    }
+
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
+
+        args_.visit_reads(var, reader);
     }
 };
