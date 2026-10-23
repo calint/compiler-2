@@ -498,7 +498,9 @@ checks:
   overflow runtime signed overflow of '+', '-', '*' and unary '-', a constant
            expression that overflows is rejected at compile time
   noub     all checks against undefined behavior: upper, lower, frame, alias,
-           division, shift, overlap, stack and overflow
+           division, shift, overlap, stack and overflow; a program accepted
+           with 'noub' has no undefined behavior, by default only 'alias' is
+           on
   -NAME    turns a check off after the others are applied, e.g.
            noub,-division or -alias (also when noub is given), +NAME is NAME
 

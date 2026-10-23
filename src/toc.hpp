@@ -1056,8 +1056,7 @@ class dry_run_ledger final {
     // 'scope_count' scopes: the kind counts as dry run with the height 0
     // while 'dry_run' runs, so the same kind reached inside returns, then the
     // levels and scopes reached below are its height and the enclosing dry
-    // run reaches them too; the height is kept only when the dry run ends
-    // without an error
+    // run reaches them too
     auto measure(const std::string_view kind, const size_t level,
                  const size_t scope_count,
                  const std::function_ref<void()> dry_run) -> void {
@@ -1077,17 +1076,11 @@ class dry_run_ledger final {
 
         heights_.insert_or_assign(std::string{kind}, dry_run_height{});
 
-        // a dry run that ends at an error that a caller drops, e.g. a version
-        // out of registers, leaves no height and no levels, so the other
-        // version checks the kind again instead of finding the height 0
-        try {
-            dry_run();
-        } catch (...) {
-            heights_.erase(heights_.find(kind));
-            deepest_level_ = enclosing_deepest;
-            deepest_scope_check_ = enclosing_scope_check;
-            throw;
-        }
+        // note: an error out of 'dry_run' ends the compile, see
+        //       'toc::dry_run_call_kind', so the height 0 never outlives a
+        //       failed dry run
+
+        dry_run();
 
         heights_.insert_or_assign(
             std::string{kind}, dry_run_height{

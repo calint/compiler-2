@@ -139,7 +139,7 @@ class Generator:
         return head
 
     def mix(self, text, value):
-        self.emit(f"acc = (acc * 31 + ({text})) & 0xffff")
+        self.emit(f"acc = (acc * 31 + {fl.group(text)}) & 0xffff")
         self.acc = (self.acc * 31 + value) & 0xffff
 
     def program(self):

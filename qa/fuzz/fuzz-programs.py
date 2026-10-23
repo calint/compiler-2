@@ -43,7 +43,7 @@ class Expr:
 
 
 def norm16(e):
-    return Expr(f"(({e.text}) & 0xffff) - 32768", 1 << 15)
+    return Expr(f"({fl.group(e.text)} & 0xffff) - 32768", 1 << 15)
 
 
 class Generator:
@@ -89,7 +89,7 @@ class Generator:
     def index(self, size):
         # sizes are powers of two, a mask keeps the index in range
         e = self.expr(1)
-        return f"({e.text}) & {size - 1}"
+        return f"{fl.group(e.text)} & {size - 1}"
 
     def expr(self, depth):
         rnd = self.rnd
@@ -104,20 +104,20 @@ class Generator:
             a, b = self.expr(depth - 1), self.expr(depth - 1)
             op = rnd.choice(["&", "|", "^"])
             bound = (1 << max(a.bound, b.bound).bit_length()) - 1
-            return Expr(f"({a.text}) {op} ({b.text})", bound)
+            return Expr(f"{fl.group(a.text)} {op} {fl.group(b.text)}", bound)
         if kind < 0.65:
             a = self.expr(depth - 1)
             b = self.expr(depth - 1)
             op = rnd.choice(["/", "%"])
-            return Expr(f"({a.text}) {op} (({b.text}) | 1)", a.bound)
+            return Expr(f"{fl.group(a.text)} {op} ({fl.group(b.text)} | 1)", a.bound)
         if kind < 0.75:
             a = self.expr(depth - 1)
             k = rnd.randint(0, 3)
             if rnd.random() < 0.5:
                 if a.bound * (1 << k) > LIMIT:
                     a = norm16(a)
-                return Expr(f"({a.text}) << {k}", a.bound * (1 << k))
-            return Expr(f"({a.text}) >> {k}", a.bound)
+                return Expr(f"{fl.group(a.text)} << {k}", a.bound * (1 << k))
+            return Expr(f"{fl.group(a.text)} >> {k}", a.bound)
         if kind < 0.8:
             a = self.expr(depth - 1)
             count = self.expr(depth - 1)
@@ -125,7 +125,7 @@ class Generator:
             if a.bound * 128 > LIMIT:
                 a = norm16(a)
             op = rnd.choice(["<<", ">>"])
-            return Expr(f"({a.text}) {op} (({count.text}) & 7)",
+            return Expr(f"{fl.group(a.text)} {op} ({fl.group(count.text)} & 7)",
                         a.bound * 128 if op == "<<" else a.bound)
         if kind < 0.87:
             a = self.expr(depth - 1)
@@ -133,20 +133,20 @@ class Generator:
             return Expr(f"i32({t}({a.text}))", 128 if t == "i8" else 1 << 15)
         if kind < 0.92:
             a = self.expr(depth - 1)
-            return Expr(f"-({a.text})", a.bound)
+            return Expr(f"-{fl.group(a.text)}", a.bound)
         if kind < 0.95:
             a = self.expr(depth - 1)
-            return Expr(f"~({a.text})", a.bound + 1)
+            return Expr(f"~{fl.group(a.text)}", a.bound + 1)
         return self.atom()
 
     def combine(self, a, op, b):
         if op == "*":
             while a.bound * b.bound > LIMIT:
                 a, b = (norm16(a), b) if a.bound >= b.bound else (a, norm16(b))
-            return Expr(f"({a.text}) * ({b.text})", a.bound * b.bound)
+            return Expr(f"{fl.group(a.text)} * {fl.group(b.text)}", a.bound * b.bound)
         if a.bound + b.bound > LIMIT:
             a, b = norm16(a), norm16(b)
-        return Expr(f"({a.text}) {op} ({b.text})", a.bound + b.bound)
+        return Expr(f"{fl.group(a.text)} {op} {fl.group(b.text)}", a.bound + b.bound)
 
     def assignable(self, e):
         if e.bound > VAR_BOUND:
@@ -157,13 +157,13 @@ class Generator:
         rnd = self.rnd
         r = rnd.random()
         if depth > 0 and r < 0.2:
-            return (f"({self.condition(depth - 1)}) "
+            return (f"{fl.group(self.condition(depth - 1))} "
                     f"{rnd.choice(['and', 'or'])} ({self.condition(depth - 1)})")
         if depth > 0 and r < 0.28:
             return f"not ({self.condition(depth - 1)})"
         a, b = self.expr(2), self.expr(2)
         op = rnd.choice(["==", "!=", "<", ">", "<=", ">="])
-        return f"({a.text}) {op} ({b.text})"
+        return f"{fl.group(a.text)} {op} {fl.group(b.text)}"
 
     # statements
 

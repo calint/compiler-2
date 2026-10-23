@@ -77,6 +77,10 @@ For a reviewer:
     - [7.6 'toc' is one facade over the tables](#76-toc-is-one-facade-over-the-tables)
     - [7.7 One translation unit](#77-one-translation-unit)
     - [7.8 The first error ends the compile](#78-the-first-error-ends-the-compile)
+- [8. Undefined behavior: what is rejected and what is checked](#8-undefined-behavior-what-is-rejected-and-what-is-checked)
+    - [8.1 The catalog](#81-the-catalog)
+    - [8.2 Without the run-time checks](#82-without-the-run-time-checks)
+    - [8.3 Known limits](#83-known-limits)
 
 ## 1. Architecture: from source to assembly and binary image
 
@@ -1391,3 +1395,58 @@ like any other, so a dry run puts nothing back at an error
 ('toc::dry_run_call_kind').
 
 Cost: one error per run.
+
+## 8. Undefined behavior: what is rejected and what is checked
+
+The goal is that every program the compiler accepts is free of undefined
+behavior: each case below is either rejected at compile time or, with its
+'--checks' option, checked at run time, so a result does not depend on the
+target, on whether a call is inlined or on which version of code is kept.
+
+### 8.1 The catalog
+
+| class | example | how | option | tests |
+|---|---|---|---|---|
+| uninitialized read | 'var x = x' | rejected (definite assignment, 'ub_assigned.hpp') | always | 0099, 1301-1303, 1367 |
+| a result or an argument sharing storage with another argument | 'p = f(p)' with 'f' writing its result before it reads 'p' | rejected ('stmt_call::assert_no_shared_storage', chapter 3) | 'alias', on by default | 0522-0524; '-alias': 0941 |
+| a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected (rule A, 'stmt_assign_var', the 'write_plan' of 'expr_type.hpp') | always | 1608-1612, 1634, 1635, 1644 |
+| evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an operand that a call in a later operand of the same list may write is rejected ('assert_not_written_later'); a destination that a call writes or reads is written last ('reaches_destination') | always | 1636-1642; accepted: 1630-1633, 1643 |
+| narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected; a conversion such as 'i8(w)' wraps on purpose | always | 0725, 0856, 0865, 1016-1022 |
+| a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('fold') | always | 0305, 0306 |
+| a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0995, 1002, 1010 |
+| array index out of bounds | 'a[i]' | run time | 'upper', 'lower' | 0302, 0303, 0307-0309, 0626, 0627, 1355 |
+| division by zero and 'MIN / -1' | 'a / b' | run time | 'division' | 0965-0967 |
+| shift count below zero or not below the width | 'a << n' | run time | 'shift' | 0975-0977 |
+| signed overflow | 'a + b' | run time | 'overflow' | 0988, 0989, 0994 |
+| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time | 'overlap' | 0981-0983 |
+| the variables of a noinline call past '--vars' | deep noinline recursion | run time | 'frame' | 0413, 0414, 0434 |
+| the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga; on x86_64 and rv32i the operating system stops the program | 'stack' | 0985-0987 |
+
+'noub' turns on every check of the table: 'upper', 'lower', 'frame',
+'alias', 'division', 'shift', 'overlap', 'stack' and 'overflow'.
+
+### 8.2 Without the run-time checks
+
+The goal holds under 'noub'. By default only 'alias' is on, so an accepted
+program can reach the run-time classes of the table; the defaults stay so
+for the size and the speed of the code (decided 2026-10-23). Measured on x86_64 without '--checks': a write past an
+array goes on silently, a division by zero stops the program with a floating
+point exception, a shift by 65 shifts by 1 because the machine masks the
+count to the width of the register (6 bits on x86_64, 5 on rv32i) and a
+signed overflow wraps, also a constant one. Such a result depends on the target, also because the
+default type is 'i64' on x86_64 and 'i32' on rv32i. With 'noub' each of them
+stops at a panic that names the check, e.g. 'panic: bounds'.
+
+### 8.3 Known limits
+
+- A call's effects treat every argument of a 'mut' parameter as written in
+  whole, whatever the body writes, so a recursive call needs no fixed point
+  of its summary; this rejects more than needed, it accepts no undefined
+  behavior.
+- Definite assignment does not count the writes of a call yet, e.g.
+  'init(res)' is a read of 'res' (V-3); a conservative rejection.
+- A cycle of noinline calls near the limit of nested dry runs has a verdict
+  that depends on where the cycle is entered
+  ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
+- A branch whose condition folds to false is not compiled, its compile-time
+  rules do not run ([1.5](#15-checks)).

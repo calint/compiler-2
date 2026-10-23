@@ -50,6 +50,23 @@ CRASH_SIGNALS = (signal.SIGSEGV, signal.SIGFPE, signal.SIGILL, signal.SIGBUS,
                  signal.SIGABRT)
 
 
+def group(text):
+    # 'text' as an operand: parentheses only around an operation, a single
+    # value in parentheses is rejected, e.g. '(x)'; a value with a unary
+    # operator keeps them, e.g. '(-3)'
+    depth = 0
+    for ch in text:
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+        elif ch == " " and depth == 0:
+            return f"({text})"
+    if text[:1] in "-~" or text.startswith("not "):
+        return f"({text})"
+    return text
+
+
 # crashes that are reported and known, the fuzzers skip them to find others
 KNOWN_CRASHES = ("assert_folded", "checked_number")
 

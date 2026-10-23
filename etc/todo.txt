@@ -504,18 +504,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                'version_scope', the dry run's in 'toc' by 'dry_run_scope';
                'reached_' is marked in a dry run on purpose (its body was
                checked), the uncalled check takes its list before it runs;
-               a version adds no string constant twice (probed); the hole
-               was 'dry_run_ledger::measure': an error that a caller drops
-               (a version out of registers, 'check_body') left the height 0
-               of the call kind cached and the deepest level and scope
-               check raised, so the other version skipped the dry run of
-               the body and its limits were checked with a wrong height
-            => done (2026-10-23): 'measure' erases the height and restores
-               both deepest values when 'dry_run' throws, the height is
-               kept only when the dry run ends without an error; an assert
-               that a kind is measured once; no change of output; no test,
-               a search did not find a program whose first version fails
-               inside a noinline dry run while the other succeeds
+               a version adds no string constant twice (probed); the
+               ledger keeps no height of a failed dry run either: an error
+               out of a dry run is a 'source' error ('emit_discarded'),
+               which nothing drops, and a dry run starts from the registers
+               of a noinline body, so the version around it cannot run out
+               inside it
+            => done (2026-10-23): an assert that a kind is measured once and
+               a note why the height 0 never outlives a failed dry run; the
+               try/catch first added for it was unreachable and is removed
+               (corrected during 4.13)
             => rejected: one 'compile_state' value over 'machine' and
                'toc', the machine compiles versions without knowing 'toc'
                and the two scopes already restore their own state
@@ -628,6 +626,32 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
              bug since 'create_unique_label'
        4.13. then items 2 (undefined behavior catalog) and 3 (runtime
              oracle) check that no class is left
+             => item 2 done (2026-10-23): chapter 8 of 'etc/docs/README.md',
+                the catalog (class, example, how, option, tests), the
+                behavior without the run-time checks measured on x86_64 (a
+                write past an array goes on, a division by zero traps, a
+                shift count is masked, an overflow wraps, also a constant
+                one) and the known limits
+             => item 3 done (2026-10-23, user chose a new fuzzer):
+                'qa/fuzz/fuzz-effects.py', a python model of calls writing
+                globals, a field of a global record and 'mut' arguments next
+                to the other operands of a statement (arguments, a list of
+                '+' and '-', comparison sides, parts, a global destination),
+                left to right, with the rejections in the order the compiler
+                finds them (a list's order, then each operand; a call's
+                shared storage, then its arguments); every program inlined
+                and 'noinline', both targets, '--checks=noub'; about 74%
+                accepted; 1200 programs clean; with 'assert_not_written_later'
+                turned off it reports 'effects-accept' on both targets; in
+                'fuzz-all.sh' and the fuzz README
+             => the fuzzers were checked against the parentheses rule of
+                4.7.0: 'fuzz-calls.py' and 'fuzz-programs.py' put single
+                values in parentheses, 'fuzzlib.group' adds them only around
+                an operation; the other model fuzzers, the alias fuzz,
+                'fuzz-constructs' and 'fuzz-reject' run clean
+             => decided (user, 2026-10-23): the defaults stay ('alias' only),
+                the goal holds under 'noub', said in '--help' and chapter 8
+             => 4.13 done (2026-10-23)
     5. done outside the refactors: F-1, a raw NUL in a literal broke the
        x86_64 assembly; 'machine::comment' passes the text through
        'printable' like messages (test 1593)
