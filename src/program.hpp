@@ -483,13 +483,19 @@ class program final {
     // the rules checked while compiling, e.g. a constant index in bounds,
     // hold in a function that no compile reached too, so whether a program is
     // accepted does not depend on its calls; this includes the instances that
-    // an alias of a generic type makes of its methods
+    // an alias of a generic type makes of its methods; the list is taken
+    // before the checks, a check marks the functions it calls as reached
+    // without checking them on their own
     static auto check_unreached_functions(toc& tc) -> void {
-        for (const stmt_def_func* const f : tc.funcs().defs()) {
-            if (tc.funcs().is_reached(*f)) {
-                continue;
-            }
+        std::vector<const stmt_def_func*> unreached;
 
+        for (const stmt_def_func* const f : tc.funcs().defs()) {
+            if (not tc.funcs().is_reached(*f)) {
+                unreached.push_back(f);
+            }
+        }
+
+        for (const stmt_def_func* const f : unreached) {
             f->check_body(tc, 0);
         }
     }

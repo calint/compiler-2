@@ -1,0 +1,4 @@
+
+1576.baz:9:13: use of uninitialized variable 'res'
+    read(0, res.buf)
+            ^~~

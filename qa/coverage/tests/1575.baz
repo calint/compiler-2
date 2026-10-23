@@ -1,0 +1,11 @@
+# a function reached only by the check of an uncalled function is checked on
+# its own, 'g<i8>' takes nothing from a call
+func g<T type>() {
+    g<T>()
+}
+
+func f(x) {
+    g<i8>()
+}
+
+func main() {}

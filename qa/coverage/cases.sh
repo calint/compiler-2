@@ -4904,3 +4904,22 @@ SRC=1570 && COMPERR
 
 # an array size is a number or a constant, a call is stored in a 'let' first
 SRC=1571 && COMPERR
+
+# a generic parameter is not named like a global variable defined before it,
+# which would hide it only in some places, e.g. 'x U' still names the type
+SRC=1572 && COMPERR
+
+# a generic parameter is not named like a global constant defined before it,
+# which would hide it only in some places, e.g. 'U(5)' still converts
+SRC=1573 && COMPERR
+
+# a generic parameter is not named like a global defined after it either, the
+# order of the definitions does not matter
+SRC=1574 && COMPERR
+
+# a function reached only by the check of an uncalled function is checked on
+# its own, 'g<i8>' takes nothing from a call
+SRC=1575 && COMPERR
+
+# 'read' fills its buffer without reading it, the result is set only in part
+SRC=1576 && COMPERR

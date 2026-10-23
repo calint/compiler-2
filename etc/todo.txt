@@ -15,8 +15,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             reads the global, 'x U' and 'U(x)' see the type
             => fix: 'toc::assert_generic_param_free' rejects a name that the
                root frame holds as a value ("generic parameter 'U' hides the
-               variable 'U' defined at 1:5"); not in the end-of-parse check,
-               a later global is not visible in the instance (R10 T-1)
+               variable 'U' defined at 1:5"); also at the end of the parse,
+               like a type, so the order of the definitions does not matter
        1.2. G-1: the check of an uncalled function marks the functions it
             reaches as reached, so they are not checked on their own;
             'func g<T type>() { g<T>() }' called from an uncalled 'f(x)' is

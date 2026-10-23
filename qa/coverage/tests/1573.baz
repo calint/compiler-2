@@ -1,0 +1,11 @@
+# a generic parameter is not named like a global constant defined before it,
+# which would hide it only in some places, e.g. 'U(5)' still converts
+let U = 3
+
+func f<U type>() res i8 {
+    res = U(5)
+}
+
+func main() {
+    exit(i64(f<i8>()))
+}

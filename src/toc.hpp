@@ -2422,6 +2422,39 @@ class definition_checks final {
                         name, name, where(type_tk))};
     }
 
+    // a generic parameter names its argument, a value of that name would hide
+    // it only in some places, e.g. 'U(5)' still converts after 'let U = 3'
+    auto assert_generic_param_not_value(const token& src_loc_tk,
+                                        const std::string_view name) const
+        -> void {
+
+        const name_meaning meaning{scopes_.get().lookup(name)};
+
+        if (not meaning.is_value()) {
+            return;
+        }
+
+        // note: a definition is parsed, bindings exist only while compiling
+        assert(not meaning.is_binding());
+
+        const frame& frm{scopes_.get().frames().at(meaning.frame_index)};
+
+        if (meaning.is_constant()) {
+            throw compile_error{
+                src_loc_tk,
+                std::format("generic parameter '{}' hides the constant '{}' "
+                            "defined at {}, use another name",
+                            name, name, where(frm.get_const(name).src_loc_tk))};
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format(
+                "generic parameter '{}' hides the variable '{}' defined at {}, "
+                "use another name",
+                name, name, where(frm.get_var_const_ref(name).src_loc_tk))};
+    }
+
     // a frame declares a variable or a constant of a name, not both
     auto assert_name_free(const token& src_loc_tk,
                           const std::string_view name) const -> void {
@@ -2936,14 +2969,15 @@ class toc final {
     auto assert_generic_param_free(const token& name_tk) const -> void {
         assert_valid_unqualified_name(name_tk);
         definitions_.assert_generic_param_not_type(name_tk, name_tk.text());
+        definitions_.assert_generic_param_not_value(name_tk, name_tk.text());
 
         definitions_.assert_generic_param_not_generic_type(name_tk,
                                                            name_tk.text());
     }
 
-    // the parse is over: a type defined after a generic definition is checked
-    // against its parameters too, so the order of the definitions does not
-    // matter
+    // the parse is over: a type or a global value defined after a generic
+    // definition is checked against its parameters too, so the order of the
+    // definitions does not matter
     auto assert_generic_params_free() const -> void {
         for (const token& param_tk : generics_.param_tokens()) {
             assert_generic_param_free(param_tk);

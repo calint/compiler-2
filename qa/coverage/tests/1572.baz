@@ -1,0 +1,11 @@
+# a generic parameter is not named like a global variable defined before it,
+# which would hide it only in some places, e.g. 'x U' still names the type
+var U = 100
+
+func f<U type>(x U) res int {
+    res = U
+}
+
+func main() {
+    exit(f(i8(7)))
+}

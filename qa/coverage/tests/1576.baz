@@ -1,0 +1,15 @@
+# 'read' fills its buffer without reading it, the result is set only in part
+type message {
+    count,
+    buf i8[4]
+}
+
+func get() res message {
+    res.count = 1
+    read(0, res.buf)
+}
+
+func main() {
+    var m = get()
+    exit(m.count)
+}
