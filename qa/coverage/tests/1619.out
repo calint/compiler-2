@@ -1,0 +1,4 @@
+
+1619.baz:2:21: result 'self' requires a constructor 'type.name'
+func f<T type>(x T) self {
+                    ^~~~

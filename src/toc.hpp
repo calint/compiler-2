@@ -2355,6 +2355,23 @@ class definition_checks final {
         }
     }
 
+    // a type parameter names its argument in the signature and the body, a
+    // name of the signature would name two things, e.g. 'x' of 'func
+    // f<x type>(x x)'; 'what' names the kind of 'name_tk'
+    auto assert_generic_param_apart(const token& param_tk, const token& name_tk,
+                                    const std::string_view what) const -> void {
+
+        if (name_tk.is_empty() or param_tk.text() != name_tk.text()) {
+            return;
+        }
+
+        throw compile_error{
+            param_tk,
+            std::format("generic parameter {} is also the name of the {} at "
+                        "{}, use another name",
+                        in_quotes(param_tk.text()), what, where(name_tk))};
+    }
+
     // a generic parameter of a definition cannot be the name of a generic
     // type; an instance names the generic type itself, e.g. 'text' names 'str'
     auto assert_generic_param_not_generic_type(
@@ -2968,6 +2985,13 @@ class toc final {
         if (is_compiling_) {
             var_comments_.comment(src_loc_tk, indent, var);
         }
+    }
+
+    // see 'definition_checks::assert_generic_param_apart'
+    auto assert_generic_param_apart(const token& param_tk, const token& name_tk,
+                                    const std::string_view what) const -> void {
+
+        definitions_.assert_generic_param_apart(param_tk, name_tk, what);
     }
 
     // a generic parameter is a name like the others, e.g. not a keyword

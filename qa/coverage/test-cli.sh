@@ -291,12 +291,14 @@ CLI_SOURCE_LINE_ENDS() {
 
 CLI_UNINSTANTIATED_GENERICS() {
     echo -n "cli uninstantiated generics: "
-    # 0851.baz: two generic functions without an instance
+    # 0851.baz: two generic functions and a method of a generic type without
+    # an instance
     "$BIN" 0851.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fq "uninstantiated generics:" gen.s
     grep -Eq '^; +untyped$' gen.s
     grep -Eq '^; +unknown_result$' gen.s
+    grep -Eq '^; +list.find$' gen.s
     echo ok
 }
 

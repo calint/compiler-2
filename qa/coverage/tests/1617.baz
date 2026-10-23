@@ -1,0 +1,8 @@
+# a type parameter is not named like the result
+func f<res type>(x res) res res {
+    res = x
+}
+
+func main() {
+    exit(f<i8>(1))
+}

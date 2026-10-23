@@ -134,6 +134,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                type and valued by 'fold_checked'; names classified by 4.2;
                type field sizes use the same function
             => invariant: one evaluator for every compile-time value
+            => regression (found 2026-10-23 by 'test-cli.sh', address
+               range): on rv32i a size folds at 'i32', so 'dat big =
+               i8[3000000000]' is rejected, the target accepts data up to
+               the address range; fix: fold a size at 'i64', a size counts
+               storage and is no value of the program, as 'stmt_const' did;
+               then restore 0734 and 0829 and remove the '.rv32i.out' files
+               of 0737-0739, 1322, 1323 and 1605
             => done (2026-10-23): 'stmt_const' replaced by 'stmt_array_size'
                in 'expr_any.hpp', an 'expr_any' at the default type parsed
                like an index and valued by 'constant_value'; the type field
@@ -311,6 +318,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                => rejected: running the rules on each instance and caching
                   the verdict, the verdict would still depend on whether an
                   instance exists
+            => 4.5.2-4.5.4 done (2026-10-23): 'assert_generic_signature'
+               runs the rules once in 'read_signature'; 'self' outside a
+               method shares 'func_head::assert_receiver_for_self' with
+               other functions; 'param_tokens' and the report read the
+               definitions; G-1, G-2, G-4 fixed, tests 1614-1619, 0851 and
+               'test-cli.sh' list 'list.find'
+            => 4.5 done (2026-10-23)
        4.6. one reachability fact (class R): whether a statement always
             leaves is known neither to the block compile (C-4: code after
             an always taken 'return' is compiled and recurses) nor to the

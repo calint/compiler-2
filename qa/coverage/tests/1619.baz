@@ -1,0 +1,5 @@
+# a generic function that is not a method has no 'self' result
+func f<T type>(x T) self {
+}
+
+func main() {}

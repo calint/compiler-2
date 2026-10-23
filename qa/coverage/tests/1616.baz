@@ -1,0 +1,8 @@
+# a type parameter is not named like a parameter, also when bound to a built-in
+func f<x type>(x x) res x {
+    res = x
+}
+
+func main() {
+    exit(f<i8>(1))
+}

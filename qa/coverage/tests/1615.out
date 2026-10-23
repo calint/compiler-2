@@ -1,0 +1,4 @@
+
+1615.baz:3:8: generic parameter 'f' is also the name of the function at 3:6, use another name
+func f<f type>(x f) res f {
+       ^

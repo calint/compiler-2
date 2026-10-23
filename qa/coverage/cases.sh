@@ -5040,3 +5040,23 @@ SRC=1612 && COMPERR
 
 # the remaining elements are zeroed after the listed ones, which read them first
 SRC=1613 && EXP=4 && RUN
+
+# a type parameter of a method of a generic type without an instance hides no
+# global defined after it
+SRC=1614 && COMPERR
+
+# a type parameter is not named like its function, also when bound to a user
+# type
+SRC=1615 && COMPERR
+
+# a type parameter is not named like a parameter, also when bound to a built-in
+SRC=1616 && COMPERR
+
+# a type parameter is not named like the result
+SRC=1617 && COMPERR
+
+# a type parameter of a method of a generic type is not named like the method
+SRC=1618 && COMPERR
+
+# a generic function that is not a method has no 'self' result
+SRC=1619 && COMPERR

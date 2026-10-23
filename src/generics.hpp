@@ -575,13 +575,21 @@ class generic_registry final {
         instantiated_funcs_.emplace(funcs_.get_const_ref(name).report_name);
     }
 
-    // the parameters of every generic function and generic type, e.g. 'T' of
-    // 'func f<T type>()' and 'n' of 'type list<T type, n>'
+    // the parameters of every generic definition, e.g. 'T' of 'func f<T
+    // type>()', 'U' of 'func box.f<U type>()' and 'n' of 'type list<T type,
+    // n>'; not those of the functions that instances of a generic type make
+    // of its methods, the definition holds them
     [[nodiscard]] auto param_tokens() const -> std::vector<token> {
         std::vector<token> tks;
 
         for (const generic_func_info& func : funcs_.values()) {
-            tks.append_range(func.signature.type_param_tks);
+            if (not func.receiver) {
+                tks.append_range(func.signature.type_param_tks);
+            }
+        }
+
+        for (const generic_method_info& method : methods_) {
+            tks.append_range(method.signature.type_param_tks);
         }
 
         for (const generic_type_info& type : types_.values()) {
@@ -594,19 +602,47 @@ class generic_registry final {
     }
 
     // the names of the generic functions without an instance, in the order of
-    // definition
+    // definition; a method of a generic type with type parameters of its own
+    // is one, also without an instance of its type, e.g. 'box.f' of 'func
+    // box.f<U type>()'
     [[nodiscard]] auto uninstantiated_func_names() const
         -> std::vector<std::string> {
 
-        std::vector<std::string> names;
+        struct named_definition {
+            size_t definition{};
+            std::string name;
+        };
+
+        std::vector<named_definition> generics;
 
         for (const generic_func_info& func : funcs_.values()) {
-            const std::string& name{func.report_name};
+            if (not func.receiver) {
+                generics.push_back({
+                    .definition{func.definition},
+                    .name{func.report_name},
+                });
+            }
+        }
 
-            if (not instantiated_funcs_.contains(name) and
-                not std::ranges::contains(names, name)) {
+        for (const generic_method_info& method : methods_) {
+            if (not method.signature.type_param_tks.empty()) {
+                generics.push_back({
+                    .definition{method.definition},
+                    .name{
+                        std::format("{}.{}", method.type_tk.text(),
+                                    method.method_name_tk.text()),
+                    },
+                });
+            }
+        }
 
-                names.push_back(name);
+        std::ranges::stable_sort(generics, {}, &named_definition::definition);
+
+        std::vector<std::string> names;
+
+        for (const named_definition& generic : generics) {
+            if (not instantiated_funcs_.contains(generic.name)) {
+                names.push_back(generic.name);
             }
         }
 

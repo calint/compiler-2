@@ -1,0 +1,13 @@
+# a type parameter is not named like its function, also when bound to a user
+# type
+func f<f type>(x f) res f {
+    res = x
+}
+
+type p { v }
+
+func main() {
+    var a = p{1}
+    var b = f<p>(a)
+    exit(b.v)
+}

@@ -75,6 +75,17 @@ struct func_head {
     // e.g. 'func text.print()' of the generic type 'text', read up to 'text'
     bool is_generic_type_method{};
 
+    // a constructor builds an instance of its receiver type, e.g. 'func
+    // point.at(x, y) self'
+    auto assert_receiver_for_self(const token& self_tk) const -> void {
+        if (is_generic_type_method or not method_dot_tk.is_empty()) {
+            return;
+        }
+
+        throw compile_error{self_tk,
+                            "result 'self' requires a constructor 'type.name'"};
+    }
+
     // kept as text, its instances are the functions
     [[nodiscard]] auto is_generic() const -> bool {
         return is_generic_type_method or not type_param_tks.empty();
@@ -922,10 +933,7 @@ class stmt_def_func final : public statement {
     auto set_constructor_result(const token& self_tk, const token& type_tk)
         -> void {
 
-        if (head_.method_dot_tk.is_empty()) {
-            throw compile_error{
-                self_tk, "result 'self' requires a constructor 'type.name'"};
-        }
+        head_.assert_receiver_for_self(self_tk);
 
         // one spelling, the type is already named before the '.'
         if (not type_tk.is_empty()) {
@@ -1380,6 +1388,70 @@ class stmt_def_func_generic final : public statement {
     // statics
     //
 
+    // the rules of a generic definition, checked once whether or not an
+    // instance is made: the type parameters hide nothing and are named apart
+    // from the signature, a constructor has a receiver and no type parameters
+    static auto assert_generic_signature(const toc& tc, const func_head& head,
+                                         const token& method_name_tk,
+                                         const generic_signature& signature)
+        -> void {
+
+        // e.g. 'to' of 'func text.to<T type>()' and of 'func
+        // tokenizer.to<T type>()', empty for a function
+        const token& method_tk{
+            method_name_tk.is_empty() ? head.method_name_tk : method_name_tk,
+        };
+
+        const bool is_method{not method_tk.is_empty()};
+
+        // e.g. 'f' of 'func f<T type>()'
+        const token& name_tk{is_method ? method_tk : head.name_tk};
+
+        for (const token& param_tk : signature.type_param_tks) {
+            // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
+            if (head.is_generic_type_method) {
+                tc.assert_method_type_param_free(param_tk, head.name_tk.text());
+            }
+
+            tc.assert_generic_param_free(param_tk);
+
+            tc.assert_generic_param_apart(param_tk, name_tk,
+                                          is_method ? "method" : "function");
+
+            for (const generic_signature_param& param : signature.params) {
+                tc.assert_generic_param_apart(param_tk, param.name_tk,
+                                              "parameter");
+            }
+
+            tc.assert_generic_param_apart(param_tk, signature.result_name_tk,
+                                          "result");
+        }
+
+        if (not signature.result_name_tk.is_text(reserved_names::self)) {
+            return;
+        }
+
+        head.assert_receiver_for_self(signature.result_name_tk);
+
+        // a constructor is called as 'point.at(...)', there is no place for
+        // type arguments
+        if (signature.type_param_tks.empty()) {
+            return;
+        }
+
+        const std::string report_name{
+            method_name_tk.is_empty()
+                ? head.name
+                : std::format("{}.{}", head.name_tk.text(),
+                              method_name_tk.text()),
+        };
+
+        throw compile_error{
+            signature.result_name_tk,
+            std::format("constructor {} cannot have type parameters",
+                        in_quotes(report_name))};
+    }
+
     // e.g. the '.print' of 'func text.print()'
     [[nodiscard]] static auto read_generic_type_method_name(tokenizer& tz)
         -> token {
@@ -1395,10 +1467,8 @@ class stmt_def_func_generic final : public statement {
     // the signature after the head, the '(' and the body must follow, else
     // the skip of the body would take the next definition, e.g. 'func g'
     // after 'func f<T type>(x T)'; the types are resolved when an instance is
-    // parsed, the type parameters are checked here, also those of a method of
-    // a generic type, e.g. 'U' of 'func text.to<U type>()' after
-    // 'method_name_tk'; 'tz' is after the head, or after the method name of a
-    // method of a generic type
+    // parsed; 'tz' is after the head, or after 'method_name_tk' of a method of
+    // a generic type, e.g. 'to' of 'func text.to<U type>()'
     [[nodiscard]] static auto
     read_signature(const toc& tc, const func_head& head,
                    const token& method_name_tk, tokenizer& tz)
@@ -1414,22 +1484,12 @@ class stmt_def_func_generic final : public statement {
         // e.g. the '<U type>(' of 'func text.to<U type>()' or the '(' of
         // 'func text.print()'
         if (head.is_generic_type_method) {
-            // e.g. 'n' of 'func box.f<n type>()' of 'type box<n>'
             if (tz.peek_char_after_whitespace() == '<') {
                 signature.type_param_tks = func_head::read_type_params(tz);
-
-                for (const token& param_tk : signature.type_param_tks) {
-                    tc.assert_method_type_param_free(param_tk,
-                                                     head.name_tk.text());
-                }
             }
 
             std::ignore =
                 tz.expect_char_token('(', "expected '(' after function name");
-        }
-
-        for (const token& param_tk : signature.type_param_tks) {
-            tc.assert_generic_param_free(param_tk);
         }
 
         const stmt_def_func_param::syntax_list list{
@@ -1448,21 +1508,7 @@ class stmt_def_func_generic final : public statement {
         signature.result_name_tk = result.name_tk;
         signature.result_type_tk = result.type_tk;
 
-        // a constructor is called as 'point.at(...)', there is no place for
-        // type arguments
-        if (not signature.type_param_tks.empty() and result.is_self()) {
-            const std::string report_name{
-                method_name_tk.is_empty()
-                    ? head.name
-                    : std::format("{}.{}", head.name_tk.text(),
-                                  method_name_tk.text()),
-            };
-
-            throw compile_error{
-                result.name_tk,
-                std::format("constructor {} cannot have type parameters",
-                            in_quotes(report_name))};
-        }
+        assert_generic_signature(tc, head, method_name_tk, signature);
 
         const token open_brace_tk{
             tz.expect_char_token('{', "expected '{' to begin block"),

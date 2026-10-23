@@ -1,0 +1,4 @@
+
+1617.baz:2:8: generic parameter 'res' is also the name of the result at 2:25, use another name
+func f<res type>(x res) res res {
+       ^~~

@@ -1,0 +1,4 @@
+
+1618.baz:4:14: generic parameter 'get' is also the name of the method at 4:10, use another name
+func box.get<get type>(x get) res get {
+             ^~~

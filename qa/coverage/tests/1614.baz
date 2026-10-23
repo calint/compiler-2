@@ -1,0 +1,13 @@
+# a type parameter of a method of a generic type without an instance hides no
+# global defined after it
+type box<n> { a i8[n] }
+
+func box.f<U type>(x U) res U {
+    res = x
+}
+
+var U = 1
+
+func main() {
+    exit(U)
+}

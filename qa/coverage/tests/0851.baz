@@ -8,5 +8,9 @@ func unknown_result<T type>(a T) res q {
 
 type list<T type> { items T[4] }
 
+# a method of a generic type without an alias is listed too
+func list.find<U type>(x U) res U {
+}
+
 func main() {
 }

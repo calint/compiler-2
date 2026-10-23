@@ -1,0 +1,4 @@
+
+1614.baz:5:12: generic parameter 'U' hides the variable 'U' defined at 9:5, use another name
+func box.f<U type>(x U) res U {
+           ^
