@@ -2164,6 +2164,56 @@ class stmt_call : public expression {
         assert_own_type_not_narrowed(dst_type);
     }
 
+    // the calls in the arguments run first, then the body reads and writes
+    // the globals it uses and may write an argument passed to a 'mut'
+    // parameter, its whole storage; a built-in that parses like a call has
+    // no body
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        for (const expr_any& e : args_) {
+            e.visit_call_effects(tc, visitor);
+        }
+
+        if (not tc.is_func(func_name_)) {
+            return;
+        }
+
+        const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
+
+        for (const body_uses::global_use& u : func.uses().globals()) {
+            visitor({
+                .call_tk{tok()},
+                .name{u.storage.root.name},
+                .storage{u.storage},
+                .is_write{u.is_written},
+            });
+        }
+
+        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+            if (param.is_read_only()) {
+                continue;
+            }
+
+            const std::optional<storage_path> target{
+                call_site::argument_target(tc, arg),
+            };
+
+            // note: a 'mut' argument is a variable, see
+            //       'assert_argument_writable'
+
+            assert(target);
+
+            visitor({
+                .call_tk{tok()},
+                .name{arg.name_or_literal()},
+                .storage{*target},
+                .is_write{true},
+            });
+        }
+    }
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 

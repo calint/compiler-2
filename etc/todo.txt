@@ -534,6 +534,69 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                 summary cannot disagree; an accepted statement gives one
                 result whether its calls are inline or noinline, on every
                 target
+             => state (2026-10-23, x86_64): 'f(arr[i], h(i))' with 'h'
+                incrementing 'i' is accepted (exit 10, must be rejected);
+                'gx = k + gw()' with 'gw' writing 'gx' exits 11 (left to
+                right gives 1, the in-place compile copies 'k' into 'gx'
+                before 'gw' writes it); 'i == h(i)' exits 2 (left to right
+                gives 1, 'i' is read after 'h' ran); the same inline and
+                noinline
+             => facts: a function or a method is defined before its calls,
+                so at compile time every callee's 'body_uses' is complete;
+                only the bindings of a recursive call are partial (the fixed
+                point of 1.3.3); a call node's 'visit_reads' reports its
+                arguments, not what its body reads or writes
+             => steps (step 0 above, the effect list of every statement,
+                is narrowed to what the checks read: the reads and writes
+                of an expression, where only a call or a built-in writes):
+                4.10.1. the effects of a call: 'stmt_call::visit_reads'
+                        also reports what the body reads, the globals and
+                        the parameters mapped to their argument places; a
+                        new 'statement::visit_writes' reports the writes of
+                        an expression: a call's globals and 'mut' argument
+                        places from 'body_uses', the buffer of 'read'; rule
+                        A and 'reads_destination' then see a call's body
+                        reads, which fixes the open item "a call in a value
+                        written in parts" and 'gx = k + gr()' with 'gr'
+                        reading 'gx'
+                4.10.2. one evaluation order check,
+                        'assert_not_written_later(tc, operands)': an
+                        operand that a later operand of the same list may
+                        write is rejected, "argument 1 'arr[i]' may be
+                        written by 'h(i)' in argument 2, use a temporary
+                        variable"; the lists: the arguments of a call and of
+                        a built-in, the elements of an arithmetic list, the
+                        two sides of a comparison; not across 'and' and
+                        'or', each side is computed before the next (C-1,
+                        C-3)
+                4.10.3. the destination: 'destination_is_clobbered_before_
+                        read' and the 'expr_bool' compile also count a later
+                        element that writes the destination, so 'gx = k +
+                        gw()' goes through a scratch register (C-2); rule A
+                        rejects a part whose call writes a part written
+                        before it, e.g. 'p = {1, gw()}' with 'gw' writing
+                        'p.x'
+                => tests per step, inline and noinline, x86_64 and rv32i;
+                   the measure shows code changes only where a scratch
+                   register is now needed
+                => 4.10.1 done (2026-10-23), with the destination part of
+                   4.10.3: 'call_effect' and 'statement::visit_call_effects'
+                   (forwarded by the nodes that hold expressions); a call
+                   reports the globals of its 'body_uses' and, as written,
+                   the whole storage of each argument of a 'mut' parameter
+                   (the per-parameter rule of a recursive call, it needs no
+                   fixed point); 'read' reports its buffer;
+                   'reaches_destination' (was 'reads_destination') and rule
+                   A count them; C-2 fixed on both targets ('gx = k + gw()'
+                   exits 1), a call reading the destination reads it first
+                   ('gx = k + gr()' exits 6), "the call of 'gx' reaches 'g',
+                   which has been written in the same statement"; tests
+                   1630-1635; no change of output of the suites
+                => later: definite assignment from the writes of a call
+                   (V-3, conservative, no undefined behavior) and the fixed
+                   point for recursive bindings
+                => rejected: loading a later-written operand into a register
+                   first (decided 1.2, it hides the order)
        4.11. decide after measuring:
              4.11.1. fixed-register constraints before operands (class X,
                      about 7 bugs, open R7 B-1): an operation that needs

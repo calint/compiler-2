@@ -21,3 +21,19 @@ using read_filter = std::optional<std::string_view>;
 using read_visitor = std::function_ref<void(
     const token& src_loc_tk, std::string_view read_text,
     const byte_range& accessed_bytes, const access_path& accessed_path)>;
+
+// what the body of a called function does to storage its caller names too: a
+// global it reads or writes, or an argument it writes through a 'mut'
+// parameter, e.g. the 'gx' that 'gw()' writes or the 'i' of 'h(i)'; the
+// storage is resolved, a caller's local of the same name does not shadow it
+struct call_effect {
+    // the call, where an error points
+    token call_tk;
+    // e.g. 'gx', the global or the argument as written
+    std::string_view name;
+    storage_path storage;
+    bool is_write{};
+};
+
+// receives each effect of a call, the calls in its arguments first
+using call_effect_visitor = std::function_ref<void(const call_effect& effect)>;

@@ -291,6 +291,10 @@ class expr_type final : public statement {
 
     [[nodiscard]] auto place_path() const -> const stmt_identifier* override;
 
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override;
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override;
 

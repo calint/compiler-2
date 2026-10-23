@@ -194,7 +194,8 @@ class stmt_assign_var final : public statement {
                         *dst_len, *src_len)};
     }
 
-    // 'item' reads none of the 'written' parts, under any name
+    // 'item' reads none of the 'written' parts, under any name, nor does a call
+    // in it read or write one
     auto assert_no_read_of_written_part(
         const toc& tc, const statement& item,
         const std::span<const written_place> written) const -> void {
@@ -235,6 +236,23 @@ class stmt_assign_var final : public statement {
                                     in_quotes(read_text))};
                 }
             });
+
+        // e.g. 'gr()' of 'g = {1, gr()}' with 'gr' reading 'g.x'
+        item.visit_call_effects(tc, [&](const call_effect& effect) -> void {
+            for (const written_place& place : written) {
+                if (not effect.storage.may_overlap(place.storage)) {
+                    continue;
+                }
+
+                throw compile_error{
+                    effect.call_tk,
+                    std::format("the call of {} reaches {}, which has been "
+                                "written in the same statement, use a "
+                                "temporary variable",
+                                in_quotes(effect.call_tk),
+                                in_quotes(effect.name))};
+            }
+        });
     }
 
     // the value is written part by part, so a part must not read what is

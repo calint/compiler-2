@@ -1,0 +1,4 @@
+
+1635.baz:9:13: the call of 'gx' reaches 'g', which has been written in the same statement, use a temporary variable
+    g = {7, gx()}
+            ^~

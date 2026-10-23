@@ -385,6 +385,14 @@ class statement {
         assert_var_not_used(flow);
     }
 
+    // reports what the bodies of the calls in this node read and write, in
+    // the order they are called, see 'call_effect'; a node that holds
+    // expressions forwards it
+    virtual auto
+    visit_call_effects([[maybe_unused]] const toc& tc,
+                       [[maybe_unused]] const call_effect_visitor visitor) const
+        -> void {}
+
     // reports the reads of the indexes in the path of a place, e.g. 'i' of
     // 'a[i].x', which are read also when the place is written
     virtual auto
@@ -824,12 +832,14 @@ inline auto assert_not_whole_array(const statement& st, const ident_info& info)
     return info;
 }
 
-// 'st' reads 'dst': any read of its root name, whatever its bytes, e.g. the
-// 'p.y' of 'p.x = p.y + 1'; under another name only bytes that overlap, e.g.
-// the 'p' of 'g = p + 1' with 'p' bound to 'g'; a register only under its own
-// name
-[[nodiscard]] inline auto reads_destination(const toc& tc, const statement& st,
-                                            const destination& dst) -> bool {
+// 'st' reads 'dst', or a call in it reads or writes it: any read of its root
+// name, whatever its bytes, e.g. the 'p.y' of 'p.x = p.y + 1'; under another
+// name only bytes that overlap, e.g. the 'p' of 'g = p + 1' with 'p' bound to
+// 'g'; a call by the storage its body reaches, e.g. 'gw()' writing 'gx' in
+// 'gx = k + gw()'; a register only under its own name
+[[nodiscard]] inline auto reaches_destination(const toc& tc,
+                                              const statement& st,
+                                              const destination& dst) -> bool {
 
     if (st.reads_var(dst.root_id())) {
         return true;
@@ -854,6 +864,12 @@ inline auto assert_not_whole_array(const statement& st, const ident_info& info)
                            is_read = true;
                        }
                    });
+
+    st.visit_call_effects(tc, [&](const call_effect& effect) -> void {
+        if (effect.storage.may_overlap(*dst.storage())) {
+            is_read = true;
+        }
+    });
 
     return is_read;
 }

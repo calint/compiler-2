@@ -439,6 +439,18 @@ class stmt_identifier final : public statement {
         return get_unary_ops().is_empty() ? this : nullptr;
     }
 
+    // a call in an index, e.g. the 'h(i)' of 'a[h(i)]'
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        for (const ident_elem& e : elems_) {
+            if (e.array_index_expr) {
+                e.array_index_expr->visit_call_effects(tc, visitor);
+            }
+        }
+    }
+
     // index expressions are read even when the path is written
     auto visit_index_reads(const read_filter var,
                            const read_visitor reader) const -> void override {

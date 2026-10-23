@@ -489,6 +489,15 @@ class expr_arith final : public expression {
                exprs_.front()->produces_boolean();
     }
 
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        for (const std::unique_ptr<statement>& e : exprs_) {
+            e->visit_call_effects(tc, visitor);
+        }
+    }
+
     auto visit_index_reads(const read_filter var,
                            const read_visitor reader) const -> void override {
 
@@ -1383,7 +1392,7 @@ class expr_arith final : public expression {
         };
 
         if (not reads_before_writing and
-            reads_destination(tc, *first.element, dst)) {
+            reaches_destination(tc, *first.element, dst)) {
 
             return true;
         }
@@ -1391,7 +1400,7 @@ class expr_arith final : public expression {
         return std::ranges::any_of(
             steps.subspan(1), [&tc, &dst](const step& s) -> bool {
                 return s.element != nullptr and
-                       reads_destination(tc, *s.element, dst);
+                       reaches_destination(tc, *s.element, dst);
             });
     }
 

@@ -107,6 +107,13 @@ class stmt_builtin_arrays_equal final : public expression {
         return true;
     }
 
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        operands_.visit_call_effects(tc, visitor);
+    }
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 

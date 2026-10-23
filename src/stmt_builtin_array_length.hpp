@@ -129,6 +129,13 @@ class stmt_builtin_array_length final : public expression {
         };
     }
 
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        stmt_ident_.visit_call_effects(tc, visitor);
+    }
+
     // the length is known at compile time so the value of an array is not
     // read; a name that is not an array, which 'compile' rejects, counts as
     // read, so a variable named in its own initializer is uninitialized, e.g.

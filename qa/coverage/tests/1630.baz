@@ -1,0 +1,12 @@
+# a call that writes the destination of the arithmetic it is in keeps the
+# destination unwritten until the value is computed
+var gx = 1
+func gw() res {
+    gx = 10
+    res = 1
+}
+func main() {
+    var k = 0
+    gx = k + gw()
+    exit(gx)
+}

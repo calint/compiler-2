@@ -168,6 +168,41 @@ class stmt_builtin_io final : public stmt_call {
         x.free_named_registers(tok(), indent, args);
     }
 
+    // 'read' and 'sector_read' write their buffer, e.g. 'b' of 'read(0, b)'
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        for (size_t i{}; i < argument_count(); ++i) {
+            argument(i).visit_call_effects(tc, visitor);
+        }
+
+        if (not io_.fills_buffer) {
+            return;
+        }
+
+        const statement& buffer{argument(1)};
+
+        if (not as_place(tc, buffer)) {
+            return;
+        }
+
+        const std::optional<storage_path> written{
+            tc.storage_of(ident_info::root_of(buffer.name_or_literal()),
+                          buffer.accessed_path()),
+        };
+
+        // note: a place is a variable, which has storage
+        assert(written);
+
+        visitor({
+            .call_tk{tok()},
+            .name{buffer.name_or_literal()},
+            .storage{*written},
+            .is_write{true},
+        });
+    }
+
     // the buffer that 'read' and 'sector_read' fill is written, only the
     // indexes in its path are read
     auto visit_reads(const read_filter var, const read_visitor reader) const

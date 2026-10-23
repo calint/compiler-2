@@ -1,0 +1,11 @@
+# a call that reads the destination of the arithmetic it is in reads it
+# before the statement writes it, also 'noinline'
+var gx = 1
+func noinline gr() res {
+    res = gx
+}
+func main() {
+    var k = 5
+    gx = k + gr()
+    exit(gx)
+}

@@ -164,6 +164,14 @@ class bulk_operands final {
         close_paren_tk_.source_to(os);
     }
 
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const -> void {
+
+        first_.visit_call_effects(tc, visitor);
+        second_.visit_call_effects(tc, visitor);
+        count_.visit_call_effects(tc, visitor);
+    }
+
     // for 'arrays_equal', which reads both arrays; 'array_copy' writes the
     // second
     auto visit_reads(const read_filter var, const read_visitor reader) const

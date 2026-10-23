@@ -446,6 +446,23 @@ inline auto expr_type::visit_reads(const read_filter var,
     }
 }
 
+inline auto
+expr_type::visit_call_effects(const toc& tc,
+                              const call_effect_visitor visitor) const -> void {
+
+    if (stmt_ident_) {
+        stmt_ident_->visit_call_effects(tc, visitor);
+    }
+
+    if (stmt_call_) {
+        stmt_call_->visit_call_effects(tc, visitor);
+    }
+
+    for (const std::unique_ptr<expr_any>& e : exprs_) {
+        e->visit_call_effects(tc, visitor);
+    }
+}
+
 inline auto expr_type::compile_lea(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,

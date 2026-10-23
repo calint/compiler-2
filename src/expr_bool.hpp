@@ -171,6 +171,14 @@ class expr_bool_op final : public statement {
         return arith == nullptr ? nullptr : arith->place_path();
     }
 
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        lhs_.visit_call_effects(tc, visitor);
+        rhs_.visit_call_effects(tc, visitor);
+    }
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
@@ -1183,7 +1191,7 @@ class expr_bool final : public statement {
 
         // stored comparisons would change what later elements read; a
         // register that the list reads is the result of an inlined function
-        if (not reads_destination(tc, *this, dst)) {
+        if (not reaches_destination(tc, *this, dst)) {
             compile_value(tc, indent, dst.operand());
             return;
         }
@@ -1254,6 +1262,17 @@ class expr_bool final : public statement {
             [](const auto& e) -> const stmt_identifier* {
                 return e.place_path();
             });
+    }
+
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override {
+
+        for (const element& e : bools_) {
+            e.visit([&tc, &visitor](const auto& item) -> void {
+                item.visit_call_effects(tc, visitor);
+            });
+        }
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const

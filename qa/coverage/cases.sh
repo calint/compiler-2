@@ -5093,3 +5093,18 @@ SRC=1627 && EXP=4 && RUN
 # the parameter it is passed to, as a variable, inlined or 'noinline'
 SRC=1628 && COMPERR
 SRC=1629 && COMPERR
+
+# a call that writes the destination of the arithmetic it is in keeps the
+# destination unwritten until the value is computed, inlined or 'noinline'
+SRC=1630 && EXP=1 && RUN
+SRC=1631 && EXP=1 && RUN
+
+# a call that reads the destination of the arithmetic it is in reads it before
+# the statement writes it, inlined or 'noinline'
+SRC=1632 && EXP=6 && RUN
+SRC=1633 && EXP=6 && RUN
+
+# a call in a value written in parts that reads a part written before it,
+# inlined or 'noinline'
+SRC=1634 && COMPERR
+SRC=1635 && COMPERR
