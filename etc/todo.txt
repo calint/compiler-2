@@ -499,6 +499,26 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                saves and restores it; caches are written only on commit
             => invariant: a field added to the state is restored by
                construction; a failed dry run leaves nothing
+            => evaluated (2026-10-23): the state is already grouped, the
+               machine's in one 'version_state' restored by
+               'version_scope', the dry run's in 'toc' by 'dry_run_scope';
+               'reached_' is marked in a dry run on purpose (its body was
+               checked), the uncalled check takes its list before it runs;
+               a version adds no string constant twice (probed); the hole
+               was 'dry_run_ledger::measure': an error that a caller drops
+               (a version out of registers, 'check_body') left the height 0
+               of the call kind cached and the deepest level and scope
+               check raised, so the other version skipped the dry run of
+               the body and its limits were checked with a wrong height
+            => done (2026-10-23): 'measure' erases the height and restores
+               both deepest values when 'dry_run' throws, the height is
+               kept only when the dry run ends without an error; an assert
+               that a kind is measured once; no change of output; no test,
+               a search did not find a program whose first version fails
+               inside a noinline dry run while the other succeeds
+            => rejected: one 'compile_state' value over 'machine' and
+               'toc', the machine compiles versions without knowing 'toc'
+               and the two scopes already restore their own state
        4.10. one effect summary (class E): item 1 above, 'body_uses' read by
              every check; removes C-1, C-2, C-3, V-3 and the open "a call in
              a value written in parts" item
