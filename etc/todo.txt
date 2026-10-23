@@ -75,6 +75,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                members, 'path_source_to', 'ident_elem::source_to' and the 11
                members that use an index expression; 'stmt_identifier.hpp'
                declares 'expr_any' and compiles alone; no output change
+            => step c done (2026-10-23): the eight forwarders gone from
+               'statement' and the wrappers ('get_unary_ops' stays); callers
+               ask 'operand_path'/'place_path' and the members of
+               'stmt_identifier'; 'make_ident_info' and 'list_operand' take
+               the path; 'assert_array_buffer' returns its 'place'; the wrong
+               assert of 'expr_arith::operand_path' (a list with its own
+               unary op, '-(-a)') returns null; errors point at the
+               identifier's token (0581, 0582, 1452); accepted (user): rv32i
+               spills '-(-(-a))' once more (0024, 0047, +4 instructions), the
+               list is a computed value now
        B.2. one resolution of a name or literal operand (constant to an
             immediate, computed address to a lea, unary ops in a scratch
             register), written in 'expr_arith::emit_with_source',
