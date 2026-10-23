@@ -838,18 +838,21 @@ class machine {
         return builtins_.get();
     }
 
-    // synthetic tokens and standalone backend calls have no source location
+    // synthetic tokens and standalone backend calls have no source location;
+    // the text may quote the source, e.g. a raw NUL that ends a line for nasm
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void {
 
+        const std::string line{printable(text)};
+
         if (src_loc_tk.at_line() == 0) {
-            target_assembler().comment(indent, text);
+            target_assembler().comment(indent, line);
             return;
         }
 
         const std::string location{locations_.for_comment(src_loc_tk)};
 
-        target_assembler().comment(indent, location, text);
+        target_assembler().comment(indent, location, line);
     }
 
     template <typename... args_t>

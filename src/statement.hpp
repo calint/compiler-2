@@ -562,18 +562,6 @@ class statement {
     // statics
     //
 
-    // a source text in a message, in quotes unless it holds a character
-    // literal, which brings its own, e.g. -'\xff'
-    [[nodiscard]] static auto quoted_source(const std::string_view text)
-        -> std::string {
-
-        if (text.contains('\'')) {
-            return std::string{text};
-        }
-
-        return std::format("'{}'", text);
-    }
-
     // 'items' with the delimiter tokens between them, e.g. 'x, y' of
     // 'f(x, y)'; a delimiter after the last item is the caller's
     template <std::ranges::forward_range Items>
@@ -766,6 +754,11 @@ class statement {
             src_loc_tk, std::format("use of uninitialized variable '{}'", var)};
     }
 };
+
+// the one-line source of 'st' in a message, see 'quoted' of a source text
+[[nodiscard]] inline auto quoted(const statement& st) -> std::string {
+    return quoted(statement::trimmed_source(st));
+}
 
 //
 // what the symbol table tells about a statement that names a place

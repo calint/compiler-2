@@ -141,6 +141,28 @@ class compile_error final : public std::exception {
     return result;
 }
 
+// a source text in a message, in quotes unless it holds a character literal,
+// which brings its own, e.g. -'\xff'; a message never puts quotes around
+// source text itself ('qa/lint/check-messages.sh')
+[[nodiscard]] inline auto quoted(const std::string_view source)
+    -> std::string {
+
+    if (source.contains('\'')) {
+        return std::string{source};
+    }
+
+    return std::format("'{}'", source);
+}
+
+// the token as the source writes it, a string with its double quotes
+[[nodiscard]] inline auto quoted(const token& tk) -> std::string {
+    if (tk.is_string()) {
+        return quoted(std::format("\"{}\"", tk.text()));
+    }
+
+    return quoted(tk.text());
+}
+
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'
 [[nodiscard]] inline auto counted(const size_t count,
                                   const std::string_view noun) -> std::string {

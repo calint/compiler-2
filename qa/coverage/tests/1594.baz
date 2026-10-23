@@ -1,0 +1,24 @@
+# a generic function may be named like a type, like a plain function, and is
+# called with deduced or explicit type arguments
+type p {
+    a,
+}
+
+func p<T type>(v T) res {
+    res = v.a + 10
+}
+
+func q<T type>(v mut T) {
+    v.a = v.a + 1
+}
+
+type q {
+    b,
+}
+
+func main() {
+    var v = p{5}
+    q(v)
+    q<p>(v)
+    exit(p(v) + p<p>(v))
+}

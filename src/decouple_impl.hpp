@@ -249,7 +249,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
         }
 
         // note: a function may be named like a type, e.g. 'point(3)'
-        if (not tp.is_builtin() and not tc.funcs().has(tk.text())) {
+        if (not tp.is_builtin() and not tc.is_func(tk.text())) {
             throw compile_error{
                 tk, std::format("'{}' is a type, not a function, an instance "
                                 "is made with '{}{{...}}'",
@@ -379,10 +379,12 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
     }
 
     // e.g. the 'i8' of 'i8 + 1' or the 'point' of '1 + point', a type that is
-    // not converted, made an instance of or called a method of
+    // not converted, made an instance of, called a method of or named like
+    // the generic function called
     if (const char next{tz.peek_char_after_whitespace()};
         tc.types().has(tk.text()) and not is_hidden_by_value(tc, tk.text()) and
-        next != '(' and next != '{' and next != '.') {
+        next != '(' and next != '{' and next != '.' and
+        not is_generic_call(tc, tk.text(), tz)) {
 
         throw compile_error{
             tk, std::format("'{}' is a type, not a value", tk.text())};

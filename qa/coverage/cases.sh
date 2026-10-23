@@ -4975,3 +4975,11 @@ SRC=1591 && COMPERR
 # a constructor of a generic type has no type parameters, also without an
 # instance of the type
 SRC=1592 && COMPERR
+
+# a raw control byte in a literal is echoed escaped in the assembly comments,
+# a raw NUL ends a line for nasm
+SRC=1593 && EXP=3 && RUN
+
+# a generic function may be named like a type, like a plain function, and is
+# called with deduced or explicit type arguments
+SRC=1594 && EXP=34 && RUN

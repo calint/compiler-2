@@ -6,6 +6,121 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[o] hard: review round 12 (bugs only), each a separate step with a failing
+    test first, both suites and the test outputs compared with the previous
+    binary; X (codegen, 41k programs) clean; B (sanitizer fuzz) pending
+    1. design: no undefined behavior through what a called body does
+       1.1. problem: the checks see what a statement names, not what a call
+            in it reads or writes; each check decides a call's effects
+            itself or not at all
+            1.1.1. C-1: argument order is not defined, 'f(arr[i], h(i))'
+                   with 'h' incrementing 'i' exits 10 inline and 20
+                   noinline; a bare name and an expression differ; the
+                   built-ins compile the count before the indexes
+            1.1.2. C-2: 'gx = k + gw()' with 'gw' writing 'gx' exits 11 on
+                   x86_64 and 2 on rv32i ('destination_is_clobbered_before_
+                   read' sees only the statement's reads)
+            1.1.3. C-3: 'i == h(i)' reads 'i' after 'h' wrote it, 'i + 0 ==
+                   h(i)' before ('resolve_cmp')
+            1.1.4. the open item "a call in a value written in parts reads,
+                   in its body, a part written before it" (below)
+            1.1.5. V-3, conservative: 'init(res)', 'res.set(v)' and 'foo
+                   res.a' count as a read of the whole place, "use of
+                   uninitialized variable 'res'"
+       1.2. decided (user, 2026-10-23): evaluation is left to right; an
+            argument or operand that a later call in the same statement may
+            write is rejected, e.g. "argument 1 'i' may be written by 'h' in
+            argument 2, use a temporary variable"
+       1.3. design: 'body_uses' already records per body the parameters and
+            globals it reads and writes, callees included, but only the
+            shared-storage check of a call reads it; it becomes the one
+            effect summary every check reads:
+            1.3.1. the evaluation order check (1.2) for call arguments,
+                   operands of arithmetic and comparisons, and built-in
+                   operands, one function used by all of them
+            1.3.2. rule A and 'destination_is_clobbered_before_read' add
+                   the reads and writes of a call's body (C-2, 1.1.4)
+            1.3.3. definite assignment: a binding use gets "written whole
+                   before any read", so 'init(res)' assigns (V-3); needs a
+                   fixed point for noinline recursion
+            => rejected: an overlap check per site (C-1, C-2, C-3 each),
+               the same decision made three times
+            => rejected: loading a later-written operand into a register
+               first, it hides the order instead of defining it
+            => invariant: an accepted statement gives one result whether
+               its calls are inline or noinline, on every target
+            => plan the steps (mechanical move of 'body_uses' queries
+               first, then each check) before code, wait for go-ahead
+    2. undefined behavior catalog in 'etc/docs/README.md': one row per
+       class (aliasing, uninitialized read, evaluation order, bounds,
+       overflow, division, stack depth of noinline recursion, what each
+       opt-out option allows) with how it is handled (rejected or checked
+       at run time) and the tests that cover it; a review round checks the
+       rows
+    3. runtime oracle: random programs with side-effecting calls, each
+       compiled inline and noinline, on x86_64 and rv32i; every accepted
+       program must give one result (extends the brute force of the
+       aliasing check, README 3); a script under 'qa/coverage', ask first
+    4. refactors (user, 2026-10-23: fix the design behind a bug, not the
+       bug); each step: tests of its bugs first, a mechanical move, then the
+       behavior change, both suites, measure against the previous binary
+       4.1. one name classifier: "what this name denotes here" is decided
+            at about 27 sites outside 'toc' ('decouple_impl.hpp',
+            'parse_lookahead.hpp', 'stmt_call.hpp', 'stmt_const.hpp', the
+            built-ins), each with its own subset of kinds and order
+            => design: 'toc::classify(name) -> name_kind', a variant {value,
+               constant, builtin type, user type, function, generic
+               function, built-in function, literal}, hiding applied once;
+               the parse sites ask the kind they need through three
+               functions 'expect_value', 'expect_callable', 'expect_array'
+               that give the one message per wrong kind ("'int' is a type,
+               not a value")
+            => removes: G-3 (point fix done: 'is_func' and 'is_generic_call'
+               in 'decouple_impl.hpp', test 1594), G-6, F-2, F-3, F-4, C-5
+            => invariant: a name gives the same verdict in every position
+               that asks the same kind
+       4.2. one written-part plan: the order in which a literal writes its
+            parts is decided twice, by 'compile_field_list' and
+            'zero_remaining_elements' and by 'list_written_parts', which
+            misses the zero fill (V-1: 'q = {{1}, q.a[3]}' reads 0)
+            => design: 'expr_type' builds once the list of parts in write
+               order, each a byte range and its value or "zero"; the compile
+               emits it, rule A checks it
+       4.3. one effect summary: item 1 above ('body_uses' read by every
+            check), removes C-1, C-2, C-3, V-3 and the open "a call in a
+            value written in parts" item
+       4.4. a generic definition holds its whole signature: what a generic
+            method of a generic type declares lives only in its per-instance
+            copies ('generic_method_info' has no type parameters), so the
+            definition rules run per instance
+            => design: the definition records type parameters, parameters
+               and result once; every rule on the definition (hiding, names
+               of its own signature, constructor rules) runs there once;
+               an instance only binds arguments
+            => removes: G-1 (missed hide check without an alias), G-2 (a
+               type parameter named like its function, rejected only when
+               bound to a built-in), G-4 (constructor message for a plain
+               function), the uninstantiated footer missing 'box.f'
+       4.5. one way to quote source in a message: 197 "'{}'" format sites,
+            two helpers ('statement::quoted_source',
+            'program::quoted_as_written'); a character literal is quoted
+            twice at about 11 of them (V-2, F-5)
+            => design: a type 'source_text' with a 'std::formatter' that
+               quotes once and escapes control bytes ('printable'); messages
+               format tokens through it, never "'{}'" around token text;
+               the formatter in 'compile_error.hpp' replaces both helpers
+            => also G-5: a type parameter in a message prints the type it
+               names
+       4.6. one reachability fact: whether a statement always leaves is
+            known neither to the block compile (C-4: code after an always
+            taken 'return' is compiled and recurses) nor to the return check
+            (open item "the return check ignores constant conditions")
+            => design: that item's 'constant_result' at parse time plus
+               'statement::always_leaves()', read by 'trace_assignment' and
+               by the block compile, which stops after it
+    5. done outside the refactors: F-1, a raw NUL in a literal broke the
+       x86_64 assembly; 'machine::comment' passes the text through
+       'printable' like messages (test 1593)
 [ ] easy: x86_64: 'threshold_for_rep_stos_size_bytes_' (32),
     'threshold_for_rep_movs_size_bytes_' (16) and
     'memory_counter_pressure_count_' (6) have no reason recorded (R8 X-10);
