@@ -53,9 +53,9 @@ class stmt_assign_var final : public statement {
         //       or 'mut', which takes no constant, so this is the only check
 
         if (dst_info.is_const()) {
-            throw compile_error{tok(),
-                                std::format("cannot assign to constant '{}'",
-                                            stmt_ident_.name_or_literal())};
+            throw compile_error{
+                tok(), std::format("cannot assign to constant {}",
+                                   in_quotes(stmt_ident_.name_or_literal()))};
         }
 
         tc.record_use(stmt_ident_.first_token().text(),
@@ -223,16 +223,16 @@ class stmt_assign_var final : public statement {
 
                         throw compile_error{
                             src_loc_tk,
-                            std::format("'{}' is read but has been "
+                            std::format("{} is read but has been "
                                         "overwritten in the same statement",
-                                        read_text)};
+                                        in_quotes(read_text))};
                     }
 
                     throw compile_error{
                         src_loc_tk,
-                        std::format("'{}' may have been overwritten in the "
+                        std::format("{} may have been overwritten in the "
                                     "same statement",
-                                    read_text)};
+                                    in_quotes(read_text))};
                 }
             });
     }

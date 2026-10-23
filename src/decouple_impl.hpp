@@ -65,8 +65,8 @@ inline auto assert_builtin_without_type_args(const token& tk,
     }
 
     throw compile_error{
-        tk, std::format("built-in function '{}' takes no type arguments",
-                        tk.text())};
+        tk, std::format("built-in function {} takes no type arguments",
+                        in_quotes(tk.text()))};
 }
 
 // the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)', none
@@ -118,8 +118,8 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
     // one
     if (tk.is_text("dat") or tk.is_text("func") or tk.is_text("type")) {
         throw compile_error{
-            tk, std::format("'{}' can only be declared in global scope",
-                            tk.text())};
+            tk, std::format("{} can only be declared in global scope",
+                            in_quotes(tk.text()))};
     }
 
     if (tk.is_text("include")) {
@@ -192,9 +192,9 @@ inline auto assert_no_type_args_for_plain_func(const toc& tc, const token& tk,
     }
 
     throw compile_error{
-        tk, std::format("function '{}' is not generic, it takes no type "
+        tk, std::format("function {} is not generic, it takes no type "
                         "arguments",
-                        tk.text())};
+                        in_quotes(tk.text()))};
 }
 
 // a call in an expression is a value, a function without a result has none
@@ -228,15 +228,15 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
         tz.peek_char_after_whitespace() == '{') {
 
         throw compile_error{
-            tk, std::format("'{}' names a value here, which hides the type "
-                            "'{}'",
-                            tk.text(), tk.text())};
+            tk, std::format("{} names a value here, which hides the type "
+                            "{}",
+                            in_quotes(tk.text()), in_quotes(tk.text()))};
     }
 
     // e.g. '1 (2)', a number is not called
     if (tk.is_number() and tz.peek_char_after_whitespace() == '(') {
-        throw compile_error{
-            tk, std::format("'{}' is a number, not a function", tk.text())};
+        throw compile_error{tk, std::format("{} is a number, not a function",
+                                            in_quotes(tk.text()))};
     }
 
     // e.g. 'bool(5)' or 'point(5)', only the integer types convert
@@ -251,9 +251,9 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
         // note: a function may be named like a type, e.g. 'point(3)'
         if (not tp.is_builtin() and not tc.is_func(tk.text())) {
             throw compile_error{
-                tk, std::format("'{}' is a type, not a function, an instance "
+                tk, std::format("{} is a type, not a function, an instance "
                                 "is made with '{}{{...}}'",
-                                tk.text(), tk.text())};
+                                in_quotes(tk.text()), tk.text())};
         }
     }
 
@@ -373,9 +373,9 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
     // as memory, which only a variable has
     if (is_record_literal(tc, tk, tz)) {
         throw compile_error{
-            tk, std::format("an instance literal of '{}' is not an operand "
+            tk, std::format("an instance literal of {} is not an operand "
                             "here, store it in a variable first",
-                            tk.text())};
+                            in_quotes(tk.text()))};
     }
 
     // e.g. the 'i8' of 'i8 + 1' or the 'point' of '1 + point', a type that is
@@ -387,7 +387,7 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
         not is_generic_call(tc, tk.text(), tz)) {
 
         throw compile_error{
-            tk, std::format("'{}' is a type, not a value", tk.text())};
+            tk, std::format("{} is a type, not a value", in_quotes(tk.text()))};
     }
 
     assert_builtin_without_type_args(tk, tz);

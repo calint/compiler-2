@@ -143,8 +143,8 @@ class compile_error final : public std::exception {
 
 // a source text in a message, in quotes unless it holds a character literal,
 // which brings its own, e.g. -'\xff'; a message never puts quotes around
-// source text itself ('qa/lint/check-messages.sh')
-[[nodiscard]] inline auto quoted(const std::string_view source)
+// source text itself ('qa/lint/check-messages.py')
+[[nodiscard]] inline auto in_quotes(const std::string_view source)
     -> std::string {
 
     if (source.contains('\'')) {
@@ -155,12 +155,12 @@ class compile_error final : public std::exception {
 }
 
 // the token as the source writes it, a string with its double quotes
-[[nodiscard]] inline auto quoted(const token& tk) -> std::string {
+[[nodiscard]] inline auto in_quotes(const token& tk) -> std::string {
     if (tk.is_string()) {
-        return quoted(std::format("\"{}\"", tk.text()));
+        return in_quotes(std::format("\"{}\"", tk.text()));
     }
 
-    return quoted(tk.text());
+    return in_quotes(tk.text());
 }
 
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'

@@ -123,8 +123,8 @@ class stmt_builtin_arrays_equal final : public expression {
 
         throw compile_error{
             src_loc_tk,
-            std::format("expected type '{}', got '{}'", dst_type.name(),
-                        get_type().name()),
+            std::format("expected type {}, got {}", in_quotes(dst_type.name()),
+                        in_quotes(get_type().name())),
         };
     }
 

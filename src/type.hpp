@@ -246,13 +246,13 @@ class type final {
 
         // e.g. the 'x' of 'true.x', like 'constant 'c' has no fields'
         if (is_builtin()) {
-            throw compile_error{src_loc_tk,
-                                std::format("type '{}' has no fields", name_)};
+            throw compile_error{src_loc_tk, std::format("type {} has no fields",
+                                                        in_quotes(name_))};
         }
 
-        throw compile_error{
-            src_loc_tk,
-            std::format("field '{}' not found in type '{}'", name, name_)};
+        throw compile_error{src_loc_tk,
+                            std::format("field {} not found in type {}",
+                                        in_quotes(name), in_quotes(name_))};
     }
 
     //

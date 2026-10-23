@@ -40,9 +40,10 @@ class stmt_builtin_foo final : public statement {
         ident_.assert_not_method();
 
         if (not ident_.is_array()) {
-            throw compile_error{ident_.tok(),
-                                std::format("'{}' is not an array",
-                                            statement::trimmed_source(ident_))};
+            throw compile_error{
+                ident_.tok(),
+                std::format("{} is not an array",
+                            in_quotes(statement::trimmed_source(ident_)))};
         }
 
         // e.g. 'foo arr, len' visits the first 'len' elements

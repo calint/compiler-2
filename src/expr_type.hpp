@@ -34,8 +34,8 @@ enum class literal_typing : uint8_t { written, from_destination };
     -> void {
 
     throw compile_error{
-        type_tk, std::format("the destination gives the type '{}', write '{}'",
-                             type_name, value)};
+        type_tk, std::format("the destination gives the type {}, write {}",
+                             in_quotes(type_name), in_quotes(value))};
 }
 
 // a part of an assigned value and where in the destination it is written,
@@ -203,8 +203,8 @@ class expr_type final : public statement {
         const token delimiter_tk{
             tz.expect_char_token(
                 ',', std::format("expected ',' followed by a value for field "
-                                 "'{}' in type '{}'",
-                                 next.name, tp.name())),
+                                 "{} in type {}",
+                                 in_quotes(next.name), in_quotes(tp.name()))),
         };
 
         expr_delims_tk_.emplace_back(delimiter_tk);

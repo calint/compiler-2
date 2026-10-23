@@ -1,0 +1,7 @@
+
+1597.baz:3:11: expected type 'i16', got 'i8'
+    res = U
+          ^
+1597.baz:7:13: instantiated by 'f<i8>'
+    var x = f<i8>()
+            ^

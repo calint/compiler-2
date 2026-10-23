@@ -598,22 +598,6 @@ class program final {
         throw compile_error{
             tk, std::format("expected a definition ('func', 'type', 'var', "
                             "'let' or 'dat'), got {}",
-                            quoted_as_written(tk))};
-    }
-
-    // the token quoted as the source writes it: a string keeps its double
-    // quotes and a character literal is in its own quotes
-    [[nodiscard]] static auto quoted_as_written(const token& tk)
-        -> std::string {
-
-        if (tk.is_string()) {
-            return std::format("'\"{}\"'", tk.text());
-        }
-
-        if (tk.text().starts_with('\'')) {
-            return std::string{tk.text()};
-        }
-
-        return std::format("'{}'", tk.text());
+                            in_quotes(tk))};
     }
 };

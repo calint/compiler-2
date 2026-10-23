@@ -1,0 +1,4 @@
+# a character literal in a message brings its own quotes
+func main() {
+    var n = array_length('a')
+}

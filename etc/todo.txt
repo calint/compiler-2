@@ -6,9 +6,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[o] hard: review round 12 (bugs only), each a separate step with a failing
-    test first, both suites and the test outputs compared with the previous
-    binary; X (codegen, 41k programs) clean; B (sanitizer fuzz) pending
+[o] hard: review round 12 and the refactors that remove its bug classes
+    (step 4, the plan); X (codegen, 41k programs) and B (sanitizer fuzz, 1.4M
+    runs) clean; bug history: r12 scratchpad bug-history.md
     1. design: no undefined behavior through what a called body does
        1.1. problem: the checks see what a statement names, not what a call
             in it reads or writes; each check decides a call's effects
@@ -61,63 +61,168 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        compiled inline and noinline, on x86_64 and rv32i; every accepted
        program must give one result (extends the brute force of the
        aliasing check, README 3); a script under 'qa/coverage', ask first
-    4. refactors (user, 2026-10-23: fix the design behind a bug, not the
-       bug); each step: tests of its bugs first, a mechanical move, then the
-       behavior change, both suites, measure against the previous binary
-       4.1. one name classifier: "what this name denotes here" is decided
-            at about 27 sites outside 'toc' ('decouple_impl.hpp',
-            'parse_lookahead.hpp', 'stmt_call.hpp', 'stmt_const.hpp', the
-            built-ins), each with its own subset of kinds and order
-            => design: 'toc::classify(name) -> name_kind', a variant {value,
-               constant, builtin type, user type, function, generic
-               function, built-in function, literal}, hiding applied once;
-               the parse sites ask the kind they need through three
-               functions 'expect_value', 'expect_callable', 'expect_array'
-               that give the one message per wrong kind ("'int' is a type,
-               not a value")
-            => removes: G-3 (point fix done: 'is_func' and 'is_generic_call'
-               in 'decouple_impl.hpp', test 1594), G-6, F-2, F-3, F-4, C-5
-            => invariant: a name gives the same verdict in every position
-               that asks the same kind
-       4.2. one written-part plan: the order in which a literal writes its
-            parts is decided twice, by 'compile_field_list' and
-            'zero_remaining_elements' and by 'list_written_parts', which
-            misses the zero fill (V-1: 'q = {{1}, q.a[3]}' reads 0)
-            => design: 'expr_type' builds once the list of parts in write
-               order, each a byte range and its value or "zero"; the compile
-               emits it, rule A checks it
-       4.3. one effect summary: item 1 above ('body_uses' read by every
-            check), removes C-1, C-2, C-3, V-3 and the open "a call in a
-            value written in parts" item
-       4.4. a generic definition holds its whole signature: what a generic
-            method of a generic type declares lives only in its per-instance
-            copies ('generic_method_info' has no type parameters), so the
-            definition rules run per instance
-            => design: the definition records type parameters, parameters
-               and result once; every rule on the definition (hiding, names
-               of its own signature, constructor rules) runs there once;
-               an instance only binds arguments
-            => removes: G-1 (missed hide check without an alias), G-2 (a
-               type parameter named like its function, rejected only when
-               bound to a built-in), G-4 (constructor message for a plain
-               function), the uninstantiated footer missing 'box.f'
-       4.5. one way to quote source in a message: 197 "'{}'" format sites,
-            two helpers ('statement::quoted_source',
-            'program::quoted_as_written'); a character literal is quoted
-            twice at about 11 of them (V-2, F-5)
+    4. refactors (user, 2026-10-23: stop the review rounds; remove whole
+       classes of bugs, the language is final; evaluation is left to right;
+       no undefined behavior); a bug history of about 190 bugs in 17
+       classes shows that each class is one decision made in several places
+       (the constant evaluators, merged into 'fold' on 2026-10-21, had about
+       40 bugs and none since); each step: tests of its bugs first, a
+       mechanical move, then the behavior change, both suites, measure
+       against the previous binary, pause for a commit
+       4.1. one way to quote source in a message (class Q, about 14 bugs, 3
+            broke the assembler): about 258 "'{}'" format sites, two helpers
+            ('statement::quoted_source', 'program::quoted_as_written'); a
+            character literal is quoted twice at about 11 of them (V-2, F-5)
             => design: a type 'source_text' with a 'std::formatter' that
                quotes once and escapes control bytes ('printable'); messages
                format tokens through it, never "'{}'" around token text;
                the formatter in 'compile_error.hpp' replaces both helpers
             => also G-5: a type parameter in a message prints the type it
                names
-       4.6. one reachability fact: whether a statement always leaves is
-            known neither to the block compile (C-4: code after an always
-            taken 'return' is compiled and recurses) nor to the return check
-            (open item "the return check ignores constant conditions")
+            => rejected: escaping in 'compile_error' only, a message would
+               still quote by hand and double the quotes
+            => done (2026-10-23): a function 'in_quotes' (string, token,
+               statement) instead of a type, it reads like the other message
+               helpers; named so that ADL does not find 'std::quoted'; the
+               185 format calls rewritten by a script; control bytes were
+               already escaped where messages and comments are printed;
+               'qa/lint/check-messages.py' rejects quotes around a
+               placeholder; 'quoted_as_written' and 'quoted_source' gone;
+               G-5 fixed; tests 1595-1597
+       4.2. one name classifier (class N, about 40 bugs): "what this name
+            denotes here" is decided at about 27 sites outside 'toc'
+            ('decouple_impl.hpp', 'parse_lookahead.hpp', 'stmt_call.hpp',
+            'stmt_const.hpp', 'stmt_identifier.hpp', 'stmt_def_func.hpp',
+            'stmt_def_type.hpp', the built-ins), each with its own subset of
+            kinds, order and hiding
+            => design: 'toc::classify(name) -> name_kind', a variant {value,
+               constant, builtin type, user type, function, generic
+               function, built-in function, literal}; it owns the hiding
+               rules of 'scope_stack::lookup' (visible globals, a later
+               constant, a value hiding a type); the parse sites ask the
+               kind they need through 'expect_value', 'expect_callable',
+               'expect_array', which give one message per wrong kind ("'int'
+               is a type, not a value")
+            => removes: G-3 (point fix done in 'decouple_impl.hpp', test
+               1594), G-6, F-2, F-3, F-4, C-5
+            => invariant: a name gives the same verdict in every position
+               that asks the same kind
+            => rejected: more predicates in 'parse_lookahead.hpp', the
+               current structure
+       4.3. array sizes through 'fold' (residual of class K, about 5 bugs):
+            'stmt_const' is a second evaluator with its own unary ops and a
+            literal or name only (R7 F-2, R9 F-2, R10 F-2, R12 F-4)
+            => design: the size is parsed as an expression at the default
+               type and valued by 'fold_checked'; names classified by 4.2;
+               type field sizes use the same function
+            => invariant: one evaluator for every compile-time value
+            => after 4.2
+       4.4. one written-part plan (class W, about 15 bugs, 4 silent wrong
+            values): the order in which a literal writes its parts is
+            decided by 'compile_field_list' and 'zero_remaining_elements'
+            and again by 'list_written_parts', which misses the zero fill
+            (V-1: 'q = {{1}, q.a[3]}' reads 0); a scalar in-place write is
+            decided by predicates apart from the emit
+            ('destination_is_clobbered_before_read' in 'expr_arith.hpp',
+            the one in 'expr_bool.hpp', 'statement::reads_destination')
+            => design: 'expr_type' builds once the list of parts in write
+               order, each a byte range and its value or "zero"; the
+               compile emits it, rule A checks it; 'expr_arith' and
+               'expr_bool' build their step list (in place or through a
+               scratch register) once, the compile emits it and the clobber
+               check reads it
+            => invariant: what is checked is what is emitted
+            => rejected: adding the zero fill to 'list_written_parts', the
+               order stays decided twice
+       4.5. a generic definition holds its whole signature (class G, about
+            12 bugs): what a generic method of a generic type declares lives
+            only in its per-instance copies ('generic_method_info' has no
+            type parameters, 'skip_signature' reads the head a second time),
+            so the definition rules run per instance
+            => design: the definition records type parameters, parameters
+               and result once; every rule on the definition (hiding, names
+               of its own signature, constructor rules) runs there once;
+               an instance only binds arguments
+            => removes: G-1, G-2, G-4, the uninstantiated footer missing
+               'box.f', the 'skip_signature' second reader
+            => invariant: a definition is accepted or rejected whether or
+               not it is instantiated
+       4.6. one reachability fact (class R): whether a statement always
+            leaves is known neither to the block compile (C-4: code after
+            an always taken 'return' is compiled and recurses) nor to the
+            return check (open item "the return check ignores constant
+            conditions")
             => design: that item's 'constant_result' at parse time plus
                'statement::always_leaves()', read by 'trace_assignment' and
                by the block compile, which stops after it
+       4.7. one place view (class P, about 15 bugs, 2 miscompiles): "is this
+            node storage read or passed in place" is decided by combined
+            predicates that ignore part of the syntax: 'is_name_or_literal'
+            (28 uses, "'-x' is one too"), 'name_or_literal' (77),
+            'is_expression', unary-op tests, 'is_computed_value' and
+            'is_copied_value' in 'stmt_call.hpp'
+            => design: 'statement::as_place() const ->
+               std::optional<place>', 'place' is {root token,
+               'access_path', index nodes}; empty for unary ops, a computed
+               value, a call, a method path, a literal or a constant; every
+               by-reference site asks it (call arguments, io and sector
+               buffers, 'array_copy', 'arrays_equal', 'array_length', 'foo',
+               comparison sides); everything else is a value through 'fold'
+               or the compile
+            => invariant: storage is read or passed in place only through a
+               'place'; a node with ops cannot produce one
+            => check first: 'as_identifier' (2026-10-19) stopped because
+               'identifier' also serves constants; a place excludes them
+       4.8. one argument plan (class A, about 10 bugs, inline and noinline
+            verdicts differ): argument passing is decided by 'bind_argument'
+            (inline) and by 'assert_argument', 'call_kind' and the
+            temporaries (noinline)
+            => design: the parse of a call gives each argument one mode
+               {place, computed value, constant, temporary instance} and its
+               type verdict; inline binding and the noinline call switch on
+               the mode; the writable, shared-storage and type checks read it
+            => invariant: inline and noinline see the same mode and type
+               verdict for an argument
+            => after 4.7
+       4.9. dry runs as one state value (class D, about 11 bugs, verdicts
+            depend on call order or leak after a failure): what a version or
+            dry run may change is restored by hand-written lists
+            ('machine::version_state', 'toc::dry_run_scope'); 'reached_' is
+            saved by neither; 'dry_run_ledger' is written during the dry run
+            => design: one 'compile_state' value holds all of it; one scope
+               saves and restores it; caches are written only on commit
+            => invariant: a field added to the state is restored by
+               construction; a failed dry run leaves nothing
+       4.10. one effect summary (class E): item 1 above, 'body_uses' read by
+             every check; removes C-1, C-2, C-3, V-3 and the open "a call in
+             a value written in parts" item
+             => step 0: one effect list per statement: a statement states
+                its reads and writes once, in evaluation order ({place,
+                read, write whole, write part}); 'visit_reads',
+                'trace_assignment' and 'record_use' become consumers of it;
+                today 'stmt_call', 'stmt_builtin_io' and
+                'stmt_builtin_array_copy' record writes for 'body_uses' but
+                not for definite assignment
+             => the evaluation order check reads the argument modes of 4.8
+             => invariant: aliasing, definite assignment and the body
+                summary cannot disagree; an accepted statement gives one
+                result whether its calls are inline or noinline, on every
+                target
+       4.11. decide after measuring:
+             4.11.1. fixed-register constraints before operands (class X,
+                     about 7 bugs, open R7 B-1): an operation that needs
+                     named registers declares its clobber set first and the
+                     operands compile under an exclusion; changes register
+                     choice, so measure and ask first
+             4.11.2. noinline heights and recursion from the call graph
+                     after the parse; may be covered by the fixed point of
+                     4.10
+       4.12. discarded: definition checks without a pseudo-call (class U),
+             the user decided on 2026-10-21 that the strict verdict is fine;
+             label uniqueness asserted on both targets (class L), no label
+             bug since 'create_unique_label'
+       4.13. then items 2 (undefined behavior catalog) and 3 (runtime
+             oracle) check that no class is left
     5. done outside the refactors: F-1, a raw NUL in a literal broke the
        x86_64 assembly; 'machine::comment' passes the text through
        'printable' like messages (test 1593)

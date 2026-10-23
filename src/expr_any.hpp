@@ -643,8 +643,8 @@ class expr_any final : public statement {
         const token delimiter_tk{
             tz.expect_char_token(
                 ',', std::format("expected ',' followed by initializer "
-                                 "for type '{}'",
-                                 tp.name())),
+                                 "for type {}",
+                                 in_quotes(tp.name()))),
         };
 
         element_delims_tk_.emplace_back(delimiter_tk);
@@ -675,8 +675,9 @@ class expr_any final : public statement {
 
         if (not literal_type.is_same(tp)) {
             throw compile_error{is_typed ? tk : open_bracket_tk_,
-                                std::format("expected type '{}', got '{}'",
-                                            tp.name(), literal_type.name())};
+                                std::format("expected type {}, got {}",
+                                            in_quotes(tp.name()),
+                                            in_quotes(literal_type.name()))};
         }
 
         if (is_typed) {
@@ -734,8 +735,9 @@ class expr_any final : public statement {
         }
 
         throw compile_error{value.tok(),
-                            std::format("expected type '{}', got '{}'",
-                                        tp.name(), value.get_type().name())};
+                            std::format("expected type {}, got {}",
+                                        in_quotes(tp.name()),
+                                        in_quotes(value.get_type().name()))};
     }
 
     // a built-in value whose only element is parsed, e.g. the zero value of
@@ -806,10 +808,13 @@ class expr_any final : public statement {
                 // note: compared by type, a type parameter names the type of
                 //       its argument
 
-                if (not tc.get_type_or_throw(tk).is_same(tp)) {
+                const type& named_type{tc.get_type_or_throw(tk)};
+
+                if (not named_type.is_same(tp)) {
                     throw compile_error{
-                        tk, std::format("expected type '{}', got '{}'",
-                                        tp.name(), tk.text())};
+                        tk, std::format("expected type {}, got {}",
+                                        in_quotes(tp.name()),
+                                        in_quotes(named_type.name()))};
                 }
 
                 throw_known_type(tk, tk.text(), "{}");

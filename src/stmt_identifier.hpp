@@ -59,8 +59,8 @@ inline auto assert_constant_index(const ident_info& array_info,
 
     throw compile_error{
         index_tk,
-        std::format("index {} is out of bounds for array '{}' of size {}",
-                    index, array_name, *array_len)};
+        std::format("index {} is out of bounds for array {} of size {}", index,
+                    in_quotes(array_name), *array_len)};
 }
 
 // the constant range of a bulk operation, 'count' elements from 'start', e.g.
@@ -124,8 +124,8 @@ inline auto assert_constant_range(const ident_info& array_info,
 
     throw compile_error{
         range.count_tk,
-        std::format("{}{} is past the end of array '{}' of size {}",
-                    range.count_text, from_index, range.array_name,
+        std::format("{}{} is past the end of array {} of size {}",
+                    range.count_text, from_index, in_quotes(range.array_name),
                     *array_len)};
 }
 
@@ -308,8 +308,9 @@ class stmt_identifier final : public statement {
         // of 'y = a'
         if (not src_type.is_builtin()) {
             throw compile_error{first_token(),
-                                std::format("expected type '{}', got '{}'",
-                                            dst_type.name(), src_type.name())};
+                                std::format("expected type {}, got {}",
+                                            in_quotes(dst_type.name()),
+                                            in_quotes(src_type.name()))};
         }
 
         if (src_type.size_bytes() <= dst_type.size_bytes()) {
@@ -472,8 +473,9 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compile_error{first_token(), std::format("'{}' is not an array",
-                                                       name_or_literal())};
+        throw compile_error{
+            first_token(),
+            std::format("{} is not an array", in_quotes(name_or_literal()))};
     }
 
     // a constant count of a bulk operation that starts at this path, see
@@ -597,8 +599,8 @@ class stmt_identifier final : public statement {
 
         throw compile_error{
             first_token(),
-            std::format("constant {} does not fit '{}', use '{}(...)'",
-                        statement::quoted_source(source), dst_type.name(),
+            std::format("constant {} does not fit {}, use '{}(...)'",
+                        in_quotes(source), in_quotes(dst_type.name()),
                         dst_type.name())};
     }
 
@@ -614,9 +616,9 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        throw compile_error{
-            src_loc_tk,
-            std::format("array '{}' must be indexed", path_as_string_)};
+        throw compile_error{src_loc_tk,
+                            std::format("array {} must be indexed",
+                                        in_quotes(path_as_string_))};
     }
 
     // the '[' of an element needs an array
@@ -634,9 +636,9 @@ class stmt_identifier final : public statement {
         if (tz.peek_char_after_whitespace() == '[' and
             not cur_ident_info.is_array()) {
 
-            throw compile_error{
-                src_loc_tk,
-                std::format("cannot index non-array '{}'", path_as_string_)};
+            throw compile_error{src_loc_tk,
+                                std::format("cannot index non-array {}",
+                                            in_quotes(path_as_string_))};
         }
     }
 
@@ -656,9 +658,10 @@ class stmt_identifier final : public statement {
 
         const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
 
-        throw compile_error{
-            name_tk, std::format("method '{}' not found in type '{}'",
-                                 name_tk.text(), info.type_ref().name())};
+        throw compile_error{name_tk,
+                            std::format("method {} not found in type {}",
+                                        in_quotes(name_tk.text()),
+                                        in_quotes(info.type_ref().name()))};
     }
 
     // a '.' followed by a field continues the path with that field, a method

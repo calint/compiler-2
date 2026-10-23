@@ -565,9 +565,9 @@ class expr_arith final : public expression {
 
         if (next_tk.is_text("and") or next_tk.is_text("or")) {
             throw compile_error{
-                next_tk, std::format("'{}' makes a condition, which is not an "
+                next_tk, std::format("{} makes a condition, which is not an "
                                      "operand here, store it in a 'bool' first",
-                                     next_tk.text())};
+                                     in_quotes(next_tk.text()))};
         }
     }
 
@@ -607,8 +607,8 @@ class expr_arith final : public expression {
             machine& x{tc.machine()};
 
             x.comment(tok(), indent,
-                      "src: folded constant '{}' is {} and changes nothing",
-                      folded_source, value);
+                      "src: folded constant {} is {} and changes nothing",
+                      in_quotes(folded_source), value);
 
             return;
         }
@@ -638,7 +638,8 @@ class expr_arith final : public expression {
         x.comment(tok(), indent, "{} {} {}", dst.name(), source_text(op),
                   value);
 
-        x.comment(tok(), indent, "src: folded constant '{}'", folded_source);
+        x.comment(tok(), indent, "src: folded constant {}",
+                  in_quotes(folded_source));
 
         const operand constant{
             folded_value::untyped(value).operand_at(dst.type_ref()),
@@ -1239,9 +1240,9 @@ class expr_arith final : public expression {
         };
 
         if (not operand_type.is_builtin()) {
-            throw compile_error{
-                term.tok(), std::format("an instance of '{}' is not a number",
-                                        operand_type.name())};
+            throw compile_error{term.tok(),
+                                std::format("an instance of {} is not a number",
+                                            in_quotes(operand_type.name()))};
         }
 
         if (not operand_type.is_bool()) {
@@ -1295,8 +1296,8 @@ class expr_arith final : public expression {
 
         x.comment(src_loc_tk, indent, "{} = {}", dst.name(), value);
 
-        x.comment(src_loc_tk, indent, "src: folded constant '{}'",
-                  folded_source);
+        x.comment(src_loc_tk, indent, "src: folded constant {}",
+                  in_quotes(folded_source));
 
         x.copy_value(src_loc_tk, indent, dst.operand(),
                      folded_value::untyped(value).operand_at(dst.type_ref()));
@@ -1361,8 +1362,8 @@ class expr_arith final : public expression {
             };
 
             if (folded) {
-                x.comment(src.tok(), indent, "src: folded constant '{}'",
-                          statement::trimmed_source(src));
+                x.comment(src.tok(), indent, "src: folded constant {}",
+                          in_quotes(statement::trimmed_source(src)));
 
                 emit(folded->operand_at(operand_type),
                      machine::factor_use::read_only);

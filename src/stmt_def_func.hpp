@@ -150,9 +150,10 @@ struct func_head {
             if (not param.is_type) {
                 throw compile_error{
                     param.name_tk,
-                    std::format("generic parameter '{}' of a function must "
+                    std::format("generic parameter {} of a function must "
                                 "have the kind 'type', e.g. '{} type'",
-                                param.name_tk.text(), param.name_tk.text())};
+                                in_quotes(param.name_tk.text()),
+                                param.name_tk.text())};
             }
 
             param_tks.emplace_back(param.name_tk);
@@ -180,9 +181,9 @@ struct func_head {
 
         if (receiver_type->is_builtin()) {
             throw compile_error{
-                name_tk, std::format("methods on built-in type '{}' are not "
+                name_tk, std::format("methods on built-in type {} are not "
                                      "supported",
-                                     receiver_type->name())};
+                                     in_quotes(receiver_type->name()))};
         }
 
         method_name_tk = read_method_name_token(tz);
@@ -544,8 +545,8 @@ class stmt_def_func final : public statement {
         // the signature of a generic definition names its parameters, the
         // instance names the arguments, e.g. 'pt.put<i16>'
         if (instance_) {
-            x.comment(head_.name_tk, indent, "{}, instance '{}'", signature,
-                      instance_->name);
+            x.comment(head_.name_tk, indent, "{}, instance {}", signature,
+                      in_quotes(instance_->name));
 
             return;
         }
@@ -709,8 +710,8 @@ class stmt_def_func final : public statement {
             if (param.name() == returns_->ident_tk.text()) {
                 throw compile_error{
                     returns_->ident_tk,
-                    std::format("result '{}' is named like a parameter",
-                                returns_->ident_tk.text()),
+                    std::format("result {} is named like a parameter",
+                                in_quotes(returns_->ident_tk.text())),
                 };
             }
         }
@@ -1472,8 +1473,8 @@ class stmt_def_func_generic final : public statement {
 
             throw compile_error{
                 result.name_tk,
-                std::format("constructor '{}' cannot have type parameters",
-                            report_name)};
+                std::format("constructor {} cannot have type parameters",
+                            in_quotes(report_name))};
         }
 
         const token open_brace_tk{

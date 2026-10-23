@@ -73,8 +73,8 @@ class constant_parser final {
                                 src_loc_tk.at_line()),
             };
 
-            throw compile_error{escape_tk,
-                                std::format("unsupported escape '{}'", body)};
+            throw compile_error{escape_tk, std::format("unsupported escape {}",
+                                                       in_quotes(body))};
         }
 
         return static_cast<unsigned char>(*decoded);
@@ -116,7 +116,8 @@ class constant_parser final {
 
         if (result.ec == std::errc::result_out_of_range) {
             throw compile_error{
-                src_loc_tk, std::format("constant '{}' is out of range", str)};
+                src_loc_tk,
+                std::format("constant {} is out of range", in_quotes(str))};
         }
 
         if (result.ec == std::errc{} and result.ptr == end) {

@@ -192,8 +192,8 @@ struct generic_call {
             return;
         }
 
-        throw compile_error{tz, std::format("expected argument {} ('{}')",
-                                            index + 1, param_name)};
+        throw compile_error{tz, std::format("expected argument {} ({})",
+                                            index + 1, in_quotes(param_name))};
     }
 
     // the type arguments of 'f(x)' for 'func f<T type>(s T)': a type parameter
@@ -212,10 +212,10 @@ struct generic_call {
         tokenizer scan{tz};
 
         if (scan.is_next_char_token('(').is_empty()) {
-            throw compile_error{name_tk,
-                                std::format("generic function '{}' needs type "
-                                            "arguments, e.g. '{}<...>'",
-                                            generic_name, name_tk.text())};
+            throw compile_error{
+                name_tk, std::format("generic function {} needs type "
+                                     "arguments, e.g. '{}<...>'",
+                                     in_quotes(generic_name), name_tk.text())};
         }
 
         deduction deduced;
@@ -243,9 +243,10 @@ struct generic_call {
             if (arg_type == nullptr) {
                 throw compile_error{
                     name_tk,
-                    std::format("cannot deduce '{}' of generic function '{}', "
+                    std::format("cannot deduce {} of generic function {}, "
                                 "write '{}<...>'",
-                                param_tk.text(), generic_name, name_tk.text())};
+                                in_quotes(param_tk.text()),
+                                in_quotes(generic_name), name_tk.text())};
             }
 
             deduced.type_args.push_back(arg_type);
@@ -376,8 +377,8 @@ struct generic_call {
 
         if (arg_tks.size() != param_tks.size()) {
             throw compile_error{
-                name_tk, std::format("generic function '{}' takes {}, got {}",
-                                     generic_name,
+                name_tk, std::format("generic function {} takes {}, got {}",
+                                     in_quotes(generic_name),
                                      counted(param_tks.size(), "type argument"),
                                      arg_tks.size())};
         }
@@ -481,9 +482,10 @@ struct call_site {
 
         throw compile_error{
             dst.error_token(tk),
-            std::format("expected type '{}', got '{}' from '{}', use '{}(...)'",
-                        dst.type_ref().name(), func.get_type().name(),
-                        func.name(), dst.type_ref().name()),
+            std::format("expected type {}, got {} from {}, use '{}(...)'",
+                        in_quotes(dst.type_ref().name()),
+                        in_quotes(func.get_type().name()),
+                        in_quotes(func.name()), dst.type_ref().name()),
         };
     }
 
@@ -601,10 +603,10 @@ struct call_site {
                                   const ident_info& info) -> void {
 
         throw compile_error{
-            arg.tok(),
-            std::format("expected type '{}' for parameter '{}', got '{}'",
-                        param.get_type().name(), param.name(),
-                        info.type_ref().name())};
+            arg.tok(), std::format("expected type {} for parameter {}, got {}",
+                                   in_quotes(param.get_type().name()),
+                                   in_quotes(param.name()),
+                                   in_quotes(info.type_ref().name()))};
     }
 
   private:
@@ -777,14 +779,14 @@ class inline_call {
         machine& x{tc.machine()};
 
         if (tc.make_ident_info(call_.tk, dst.name()).is_array()) {
-            x.comment(call_.tk, indent,
-                      "address of result element in array '{}'", dst.name());
+            x.comment(call_.tk, indent, "address of result element in array {}",
+                      in_quotes(dst.name()));
 
             return;
         }
 
-        x.comment(call_.tk, indent, "address of indexed result '{}'",
-                  dst.name());
+        x.comment(call_.tk, indent, "address of indexed result {}",
+                  in_quotes(dst.name()));
     }
 
     // the registers are freed before the exit label
@@ -887,8 +889,8 @@ class inline_call {
 
             address_registers.push_back(address);
 
-            x.comment(call_.tk, indent, "address of parameter '{}'",
-                      binding.from);
+            x.comment(call_.tk, indent, "address of parameter {}",
+                      in_quotes(binding.from));
 
             storage.lea = load_indexed_address(x, indent, address, storage.lea,
                                                keeps_displacement);
@@ -1480,10 +1482,9 @@ class noinline_call {
 
         const size_t arg_idx{slot_index - func.first_param_slot()};
 
-        x.comment(call_.tk, indent,
-                  "address of argument '{}' to parameter '{}'",
-                  statement::trimmed_source(call_.args.at(arg_idx)),
-                  func.params().at(arg_idx).name());
+        x.comment(call_.tk, indent, "address of argument {} to parameter {}",
+                  in_quotes(statement::trimmed_source(call_.args.at(arg_idx))),
+                  in_quotes(func.params().at(arg_idx).name()));
     }
 
     // an argument or a result that needs one goes through a temporary of the
@@ -2211,8 +2212,8 @@ class stmt_call : public expression {
         // e.g. 'a + 1', '-a' or 'point{1, 2}'
         if (call_site::is_copied_value(arg)) {
             throw_not_writable(index, arg,
-                               std::format("'{}', which is not a variable,",
-                                           trimmed_source(arg)),
+                               std::format("{}, which is not a variable,",
+                                           in_quotes(trimmed_source(arg))),
                                "");
         }
 
@@ -2221,14 +2222,15 @@ class stmt_call : public expression {
         // e.g. '2' or a 'let' constant
         if (not info.is_var()) {
             throw_not_writable(
-                index, arg, std::format("constant '{}'", arg.name_or_literal()),
+                index, arg,
+                std::format("constant {}", in_quotes(arg.name_or_literal())),
                 "");
         }
 
         if (info.is_read_only()) {
             throw_not_writable(
                 index, arg,
-                std::format("read-only '{}'", arg.name_or_literal()),
+                std::format("read-only {}", in_quotes(arg.name_or_literal())),
                 read_only_hint(info));
         }
     }
@@ -2271,9 +2273,9 @@ class stmt_call : public expression {
         // a constructor has no receiver, it builds its value
         if (func.is_constructor()) {
             throw compile_error{tok(),
-                                std::format("'{}' is a constructor, call it as "
+                                std::format("{} is a constructor, call it as "
                                             "'{}(...)'",
-                                            func_name_, func_name_)};
+                                            in_quotes(func_name_), func_name_)};
         }
 
         // only an element of an array can be the receiver, 'a[1].f()' but not
@@ -2281,8 +2283,8 @@ class stmt_call : public expression {
         if (receiver.is_array()) {
             throw compile_error{
                 receiver.first_token(),
-                std::format("receiver of method '{}' cannot be an array",
-                            func_name_)};
+                std::format("receiver of method {} cannot be an array",
+                            in_quotes(func_name_))};
         }
     }
 
@@ -2373,8 +2375,9 @@ class stmt_call : public expression {
             }
         }
 
-        throw compile_error{tz, std::format("'{}' takes {}", func_name_,
-                                            counted(param_count, "argument"))};
+        throw compile_error{tz,
+                            std::format("{} takes {}", in_quotes(func_name_),
+                                        counted(param_count, "argument"))};
     }
 
     // an argument that names the storage of an earlier one, unless both
@@ -2397,10 +2400,11 @@ class stmt_call : public expression {
             throw compile_error{
                 arg.tok(),
                 std::format(
-                    "{} '{}' may share storage with {} '{}'{}, {}",
-                    describe_argument(index), statement::trimmed_source(arg),
+                    "{} {} may share storage with {} {}{}, {}",
+                    describe_argument(index),
+                    in_quotes(statement::trimmed_source(arg)),
                     describe_argument(other.index),
-                    statement::trimmed_source(args_.at(other.index)),
+                    in_quotes(statement::trimmed_source(args_.at(other.index))),
                     shared_name_note(target.root.name), use_temporary_fix_)};
         }
     }
@@ -2431,11 +2435,12 @@ class stmt_call : public expression {
             }
 
             throw compile_error{
-                tok(), std::format("the result destination '{}' may share "
-                                   "storage with the global '{}' that '{}' "
+                tok(), std::format("the result destination {} may share "
+                                   "storage with the global {} that {} "
                                    "uses, {}",
-                                   dst.text(), global.storage.root.name,
-                                   func_name_, use_temporary_fix_)};
+                                   in_quotes(dst.text()),
+                                   in_quotes(global.storage.root.name),
+                                   in_quotes(func_name_), use_temporary_fix_)};
         }
 
         for (const reference& arg : args) {
@@ -2446,12 +2451,13 @@ class stmt_call : public expression {
 
                 throw compile_error{
                     args_.at(arg.index).tok(),
-                    std::format("{} '{}' may share storage with the global "
-                                "'{}' that '{}' uses, {}",
+                    std::format("{} {} may share storage with the global "
+                                "{} that {} uses, {}",
                                 describe_argument(arg.index),
-                                statement::trimmed_source(args_.at(arg.index)),
-                                global.storage.root.name, func_name_,
-                                use_temporary_fix_)};
+                                in_quotes(statement::trimmed_source(
+                                    args_.at(arg.index))),
+                                in_quotes(global.storage.root.name),
+                                in_quotes(func_name_), use_temporary_fix_)};
             }
         }
     }
@@ -2467,10 +2473,11 @@ class stmt_call : public expression {
 
         throw compile_error{
             args_.at(index).tok(),
-            std::format("{} '{}' may share storage with the "
-                        "result destination '{}'{}, {}",
+            std::format("{} {} may share storage with the "
+                        "result destination {}{}, {}",
                         describe_argument(index),
-                        statement::trimmed_source(args_.at(index)), dst.text(),
+                        in_quotes(statement::trimmed_source(args_.at(index))),
+                        in_quotes(dst.text()),
                         shared_name_note(target.root.name),
                         use_temporary_fix_)};
     }
@@ -2503,10 +2510,11 @@ class stmt_call : public expression {
         }
 
         if (not tc.is_func(func_name_)) {
-            throw compile_error{constructor_name_tk_,
-                                std::format("type '{}' has no constructor '{}'",
-                                            type_description(tc, tok()),
-                                            constructor_name_tk_.text())};
+            throw compile_error{
+                constructor_name_tk_,
+                std::format("type {} has no constructor {}",
+                            in_quotes(type_description(tc, tok())),
+                            in_quotes(constructor_name_tk_.text()))};
         }
 
         const stmt_def_func& func{
@@ -2516,8 +2524,8 @@ class stmt_call : public expression {
         if (not func.is_constructor()) {
             throw compile_error{
                 constructor_name_tk_,
-                std::format("'{}' is a method, call it on a value of type '{}'",
-                            func_name_, tok().text())};
+                std::format("{} is a method, call it on a value of type {}",
+                            in_quotes(func_name_), in_quotes(tok().text()))};
         }
 
         return func;
@@ -2576,8 +2584,9 @@ class stmt_call : public expression {
             // e.g. the ',' of 'f(a, b)'
             if (i != first) {
                 const std::string message{
-                    std::format("expected ',' before {} ('{}')",
-                                describe_argument(i), params.at(i).name()),
+                    std::format("expected ',' before {} ({})",
+                                describe_argument(i),
+                                in_quotes(params.at(i).name())),
                 };
 
                 const token delimiter_tk{tz.expect_char_token(',', message)};
@@ -2610,9 +2619,9 @@ class stmt_call : public expression {
         // to read a field of or to call a method on
         if (tz.peek_char() == '.') {
             throw compile_error{
-                tz, std::format("store the result of '{}' in a variable before "
+                tz, std::format("store the result of {} in a variable before "
                                 "reading a field or calling a method of it",
-                                func_name_)};
+                                in_quotes(func_name_))};
         }
 
         for (size_t i{}; i < args_.size(); ++i) {
@@ -2784,9 +2793,9 @@ class stmt_call : public expression {
                                              const stmt_def_func_param& param,
                                              const size_t index) const -> void {
 
-        throw compile_error{tz, std::format("expected {} ('{}')",
+        throw compile_error{tz, std::format("expected {} ({})",
                                             describe_argument(index),
-                                            param.name())};
+                                            in_quotes(param.name()))};
     }
 
     // 'what' names the argument, 'hint' says how to make it writable
@@ -2799,8 +2808,8 @@ class stmt_call : public expression {
         if (is_method() and index == 0) {
             throw compile_error{
                 arg.tok(),
-                std::format("{} cannot be the receiver of 'mut' method '{}'{}",
-                            what, func_name_, hint)};
+                std::format("{} cannot be the receiver of 'mut' method {}{}",
+                            what, in_quotes(func_name_), hint)};
         }
 
         throw compile_error{
@@ -2831,9 +2840,10 @@ class stmt_call : public expression {
             if (not is_array_arg) {
                 throw compile_error{
                     arg.tok(),
-                    std::format("'{}' is not an array, parameter '{}' takes "
+                    std::format("{} is not an array, parameter {} takes "
                                 "one",
-                                trimmed_source(arg), param.name())};
+                                in_quotes(trimmed_source(arg)),
+                                in_quotes(param.name()))};
             }
 
             return;
@@ -2879,9 +2889,9 @@ class stmt_call : public expression {
     [[nodiscard]] static auto recursion_message(const stmt_def_func& func)
         -> std::string {
 
-        return std::format("recursion of inlined function '{}' cannot be "
+        return std::format("recursion of inlined function {} cannot be "
                            "expanded at compile time, declare it 'noinline'",
-                           func.name());
+                           in_quotes(func.name()));
     }
 
     // e.g. " (both name 'g')", none for a variable the compiler added, whose
@@ -2893,7 +2903,7 @@ class stmt_call : public expression {
             return {};
         }
 
-        return std::format(" (both name '{}')", name);
+        return std::format(" (both name {})", in_quotes(name));
     }
 
     // the type as written, with the type it is bound to when that differs,

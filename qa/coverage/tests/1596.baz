@@ -1,0 +1,6 @@
+# a character literal in a message brings its own quotes, also as an argument
+func f(s i8[]) {}
+
+func main() {
+    f('a')
+}

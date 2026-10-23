@@ -60,7 +60,11 @@ class tokenizer final {
             return;
         }
 
-        throw compile_error{*this, std::format("unexpected '{}'", peek_char())};
+        const char delimiter{peek_char()};
+
+        throw compile_error{
+            *this, std::format("unexpected {}",
+                               in_quotes(std::string_view{&delimiter, 1}))};
     }
 
     // returns a token, which is a marker at the current position with empty
@@ -378,9 +382,9 @@ class tokenizer final {
                 string_tk.unsupported_escape(),
             }) {
 
-            throw compile_error{
-                *escape_tk,
-                std::format("unsupported escape '{}'", escape_tk->text())};
+            throw compile_error{*escape_tk,
+                                std::format("unsupported escape {}",
+                                            in_quotes(escape_tk->text()))};
         }
 
         return string_tk;

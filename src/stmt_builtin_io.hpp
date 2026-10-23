@@ -230,9 +230,10 @@ class stmt_builtin_io final : public stmt_call {
             max_count == min_count + 1 ? "or" : "to",
         };
 
-        throw compile_error{tok(), std::format("'{}' takes {} {} {} arguments",
-                                               tok().text(), min_count,
-                                               conjunction, max_count)};
+        throw compile_error{tok(),
+                            std::format("{} takes {} {} {} arguments",
+                                        in_quotes(tok().text()), min_count,
+                                        conjunction, max_count)};
     }
 
     // an address would bypass the bounds check, so only arrays are accepted
@@ -244,8 +245,9 @@ class stmt_builtin_io final : public stmt_call {
             throw compile_error{
                 buffer.tok(),
                 std::format("pass the array and the start as {} argument, "
-                            "e.g. '{}'",
-                            io_.is_sector ? "3rd" : "4th", usage_text())};
+                            "e.g. {}",
+                            io_.is_sector ? "3rd" : "4th",
+                            in_quotes(usage_text()))};
         }
 
         // e.g. not '-b', a unary operator makes a value
@@ -257,8 +259,9 @@ class stmt_builtin_io final : public stmt_call {
             }
         }
 
-        throw compile_error{buffer.tok(), std::format("'{}' is not an array",
-                                                      trimmed_source(buffer))};
+        throw compile_error{buffer.tok(),
+                            std::format("{} is not an array",
+                                        in_quotes(trimmed_source(buffer)))};
     }
 
     // a constant range past the end of the buffer is rejected like the range

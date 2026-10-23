@@ -89,8 +89,8 @@ struct generic_param {
         if (delimiter_tk.is_empty()) {
             throw compile_error{tz,
                                 std::format("expected ',' or '>' after generic "
-                                            "parameter '{}'",
-                                            param.name_tk.text())};
+                                            "parameter {}",
+                                            in_quotes(param.name_tk.text()))};
         }
 
         tz.assert_no_trailing_delimiter(delimiter_tk, '>', "parameters");
@@ -114,9 +114,9 @@ struct generic_param {
         for (const generic_param& param : declared) {
             if (param.name_tk.text() == name_tk.text()) {
                 throw compile_error{
-                    name_tk, std::format("generic parameter '{}' is declared "
+                    name_tk, std::format("generic parameter {} is declared "
                                          "twice",
-                                         name_tk.text())};
+                                         in_quotes(name_tk.text()))};
             }
         }
 
@@ -142,8 +142,8 @@ struct generic_param {
         if (not kind_tk.is_text("type")) {
             throw compile_error{
                 kind_tk,
-                std::format("expected 'type' after generic parameter '{}'",
-                            name_tk.text())};
+                std::format("expected 'type' after generic parameter {}",
+                            in_quotes(name_tk.text()))};
         }
 
         return true;

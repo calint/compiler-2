@@ -1119,8 +1119,8 @@ class assembler_rv32i final : public assembler {
 
         if (grown == jump_reach::far and jump.scratch.empty()) {
             throw unlocated_error{std::format(
-                "jump to '{}' exceeds 1 MiB and no scratch register is free",
-                jump.target)};
+                "jump to {} exceeds 1 MiB and no scratch register is free",
+                in_quotes(jump.target))};
         }
 
         const size_t skip_bytes{

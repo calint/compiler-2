@@ -96,8 +96,8 @@ class stmt_builtin_convert final : public expression {
         if (not arg_.get_type().is_builtin()) {
             throw compile_error{
                 arg_.tok(),
-                std::format("cannot convert a value of type '{}'",
-                            arg_.get_type().name()),
+                std::format("cannot convert a value of type {}",
+                            in_quotes(arg_.get_type().name())),
             };
         }
 

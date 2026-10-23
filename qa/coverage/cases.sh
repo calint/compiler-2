@@ -4983,3 +4983,12 @@ SRC=1593 && EXP=3 && RUN
 # a generic function may be named like a type, like a plain function, and is
 # called with deduced or explicit type arguments
 SRC=1594 && EXP=34 && RUN
+
+# a character literal in a message is not quoted again
+SRC=1595 && COMPERR
+
+# a character literal argument in a message is not quoted again
+SRC=1596 && COMPERR
+
+# a type parameter in a message names the type it is bound to
+SRC=1597 && COMPERR

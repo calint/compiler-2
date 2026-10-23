@@ -206,9 +206,9 @@ class expr_bool_op final : public statement {
 
         throw compile_error{
             lhs_.tok(),
-            std::format("{} of type '{}' is not a 'bool', compare it, e.g. {}",
-                        statement::quoted_source(source), lhs_type.name(),
-                        statement::quoted_source(comparison))};
+            std::format("{} of type {} is not a 'bool', compare it, e.g. {}",
+                        in_quotes(source), in_quotes(lhs_type.name()),
+                        in_quotes(comparison))};
     }
 
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,
@@ -392,11 +392,11 @@ class expr_bool_op final : public statement {
                                      const bool inverted) const -> std::string {
 
         if (inverted and is_shorthand_) {
-            return std::format(" '{}' inverted shorthand: ", list_op);
+            return std::format(" {} inverted shorthand: ", in_quotes(list_op));
         }
 
         if (inverted) {
-            return std::format(" '{}' inverted: ", list_op);
+            return std::format(" {} inverted: ", in_quotes(list_op));
         }
 
         if (is_shorthand_) {
@@ -644,8 +644,10 @@ class expr_bool_op final : public statement {
 
         throw compile_error{
             constant.tok(),
-            std::format("constant '{}' does not fit '{}' of type '{}'", value,
-                        statement::trimmed_source(typed), typed_type.name())};
+            std::format("constant {} does not fit {} of type {}",
+                        in_quotes(std::format("{}", value)),
+                        in_quotes(statement::trimmed_source(typed)),
+                        in_quotes(typed_type.name()))};
     }
 
     // an operator would compare a user type instance as its first field only
@@ -661,9 +663,10 @@ class expr_bool_op final : public statement {
         }
 
         throw compile_error{
-            side.tok(), std::format("store '{}' in a variable before comparing "
-                                    "it",
-                                    statement::trimmed_source(side))};
+            side.tok(),
+            std::format("store {} in a variable before comparing "
+                        "it",
+                        in_quotes(statement::trimmed_source(side)))};
     }
 
     // a condition tests a number, an instance would be tested as its first
@@ -674,9 +677,9 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        throw compile_error{
-            side.tok(), std::format("an instance of '{}' is not a condition",
-                                    side.get_type().name())};
+        throw compile_error{side.tok(),
+                            std::format("an instance of {} is not a condition",
+                                        in_quotes(side.get_type().name()))};
     }
 
     static auto assert_not_record(const expr_arith& side,
@@ -696,14 +699,14 @@ class expr_bool_op final : public statement {
         if (is_equality and not has_unary_ops) {
             throw compile_error{
                 side.tok(),
-                std::format("an instance of '{}' is compared only with an "
+                std::format("an instance of {} is compared only with an "
                             "instance of the same type",
-                            type_name)};
+                            in_quotes(type_name))};
         }
 
-        throw compile_error{
-            side.tok(),
-            std::format("an instance of '{}' is not a number", type_name)};
+        throw compile_error{side.tok(),
+                            std::format("an instance of {} is not a number",
+                                        in_quotes(type_name))};
     }
 
     // the backends compare at the width of 'lhs' which would truncate 'rhs'
@@ -739,10 +742,9 @@ class expr_bool_op final : public statement {
 
         if (not lhs_info.type_ref().is_same(rhs_info.type_ref())) {
             throw compile_error{
-                rhs.tok(),
-                std::format("cannot compare type '{}' with type '{}'",
-                            lhs_info.type_ref().name(),
-                            rhs_info.type_ref().name())};
+                rhs.tok(), std::format("cannot compare type {} with type {}",
+                                       in_quotes(lhs_info.type_ref().name()),
+                                       in_quotes(rhs_info.type_ref().name()))};
         }
 
         // a whole array is not compared as its first element
@@ -954,8 +956,8 @@ class expr_bool_op final : public statement {
 
             machine& x{tc.machine()};
 
-            x.comment(expr.tok(), indent, "src: folded constant '{}'",
-                      statement::trimmed_source(expr));
+            x.comment(expr.tok(), indent, "src: folded constant {}",
+                      in_quotes(statement::trimmed_source(expr)));
 
             // e.g. 'i16(300) + 1' is a value of type 'i16'
             if (folded->is_typed()) {
@@ -1027,14 +1029,15 @@ class expr_bool_op final : public statement {
                     const type& rhs_type) -> void {
 
         throw compile_error{
-            rhs.tok(),
-            std::format("'{}' of type '{}' is wider than '{}' of type '{}', "
-                        "swap the operands: '{} {} {}'",
-                        statement::trimmed_source(rhs), rhs_type.name(),
-                        statement::trimmed_source(lhs), lhs_type.name(),
-                        statement::trimmed_source(rhs),
-                        source_text(mirrored(op)),
-                        statement::trimmed_source(lhs))};
+            rhs.tok(), std::format("{} of type {} is wider than {} of type {}, "
+                                   "swap the operands: '{} {} {}'",
+                                   in_quotes(statement::trimmed_source(rhs)),
+                                   in_quotes(rhs_type.name()),
+                                   in_quotes(statement::trimmed_source(lhs)),
+                                   in_quotes(lhs_type.name()),
+                                   statement::trimmed_source(rhs),
+                                   source_text(mirrored(op)),
+                                   statement::trimmed_source(lhs))};
     }
 
     // the value compared with 0, matching types avoid narrowing before the

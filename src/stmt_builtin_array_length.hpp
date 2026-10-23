@@ -75,8 +75,8 @@ class stmt_builtin_array_length final : public expression {
         if (not src_info.is_var() or not src_info.is_array()) {
             throw compile_error{
                 stmt_ident_.first_token(),
-                std::format("'{}' is not an array",
-                            statement::trimmed_source(stmt_ident_))};
+                std::format("{} is not an array",
+                            in_quotes(statement::trimmed_source(stmt_ident_)))};
         }
 
         // unknown in a function checked without a call, whose code is

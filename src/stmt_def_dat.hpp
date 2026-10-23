@@ -202,8 +202,8 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        x.comment(el.src_loc_tk, 0, "pad {} '{}' of size {}", remaining_count,
-                  tp.name(), tp.size_bytes());
+        x.comment(el.src_loc_tk, 0, "pad {} {} of size {}", remaining_count,
+                  in_quotes(tp.name()), tp.size_bytes());
 
         x.emit_zero_data(multiply_storage_size(el.src_loc_tk, tp.size_bytes(),
                                                remaining_count));
@@ -356,7 +356,7 @@ class stmt_def_dat final : public statement {
 
         throw compile_error{
             value.tok(),
-            std::format("'{}' is not a constant, a 'dat' holds constants",
-                        statement::trimmed_source(value))};
+            std::format("{} is not a constant, a 'dat' holds constants",
+                        in_quotes(statement::trimmed_source(value)))};
     }
 };

@@ -40,8 +40,9 @@ class type_fields final {
             if (tp.has_field(fld.name())) {
                 throw compile_error{
                     fld.tok(),
-                    std::format("field '{}' is declared twice in type '{}'",
-                                fld.name(), name_tk.text())};
+                    std::format("field {} is declared twice in type {}",
+                                in_quotes(fld.name()),
+                                in_quotes(name_tk.text()))};
             }
 
             // a field without a type name has the default type, e.g. 'x' of
@@ -77,8 +78,8 @@ class type_fields final {
             const token delimiter_tk{
                 tz.expect_char_token(
                     ',', std::format("expected ',' followed by another field "
-                                     "in type '{}'",
-                                     name_tk.text())),
+                                     "in type {}",
+                                     in_quotes(name_tk.text()))),
             };
 
             field_delims_tk_.emplace_back(delimiter_tk);
@@ -139,8 +140,8 @@ inline auto assert_arg_count(const token& generic_tk,
     }
 
     throw compile_error{generic_tk,
-                        std::format("generic type '{}' takes {}, got {}",
-                                    generic_tk.text(),
+                        std::format("generic type {} takes {}, got {}",
+                                    in_quotes(generic_tk.text()),
                                     counted(generic.params.size(), "argument"),
                                     arg_tks.size())};
 }
@@ -152,16 +153,16 @@ inline auto assert_generic_type(const toc& tc, const token& generic_tk,
 
     if (tc.types().has(generic_tk.text())) {
         throw compile_error{generic_tk,
-                            std::format("'{}' is a type, not a generic type",
-                                        generic_tk.text())};
+                            std::format("{} is a type, not a generic type",
+                                        in_quotes(generic_tk.text()))};
     }
 
     if (not tc.generics().has_type(generic_tk.text())) {
         throw compile_error{
             generic_tk,
-            std::format("'{}' is not a generic type, a generic type is "
+            std::format("{} is not a generic type, a generic type is "
                         "defined before {}",
-                        generic_tk.text(), user)};
+                        in_quotes(generic_tk.text()), user)};
     }
 }
 
@@ -175,8 +176,8 @@ inline auto assert_generic_type(const toc& tc, const token& generic_tk,
     if (open_tk.is_empty()) {
         throw compile_error{
             generic_tk,
-            std::format("generic type '{}' needs arguments, e.g. '{}<...>'",
-                        generic_tk.text(), generic_tk.text())};
+            std::format("generic type {} needs arguments, e.g. '{}<...>'",
+                        in_quotes(generic_tk.text()), generic_tk.text())};
     }
 
     return generic_arg_tokens::parse(tz, open_tk);

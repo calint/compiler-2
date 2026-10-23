@@ -661,8 +661,8 @@ class statement {
         }
 
         throw compile_error{src_loc_tk,
-                            std::format("cannot {} read-only '{}'{}", action,
-                                        name, read_only_hint(info))};
+                            std::format("cannot {} read-only {}{}", action,
+                                        in_quotes(name), read_only_hint(info))};
     }
 
     // why the name cannot be written, e.g. ", 'x' is declared with 'let'"
@@ -672,7 +672,7 @@ class statement {
         const std::string_view root{info.root_id()};
 
         if (info.read_only_why() == read_only_cause::let) {
-            return std::format(", '{}' is declared with 'let'", root);
+            return std::format(", {} is declared with 'let'", in_quotes(root));
         }
 
         if (info.read_only_why() == read_only_cause::param) {
@@ -680,21 +680,23 @@ class statement {
                 return ", the method is not declared 'mut'";
             }
 
-            return std::format(", parameter '{}' is not declared 'mut'", root);
+            return std::format(", parameter {} is not declared 'mut'",
+                               in_quotes(root));
         }
 
         if (info.read_only_why() == read_only_cause::foo_element) {
-            return std::format(", '{}' is an element of a read-only array",
-                               root);
+            return std::format(", {} is an element of a read-only array",
+                               in_quotes(root));
         }
 
         if (info.read_only_why() == read_only_cause::foo_counter) {
-            return std::format(", '{}' is the counter of 'foo'", root);
+            return std::format(", {} is the counter of 'foo'", in_quotes(root));
         }
 
         assert(info.read_only_why() == read_only_cause::foo_length);
 
-        return std::format(", '{}' is the size of the array of 'foo'", root);
+        return std::format(", {} is the size of the array of 'foo'",
+                           in_quotes(root));
     }
 
     // shared by 'dat' and 'var' initializers, an 'unsized_array_count' takes
@@ -707,11 +709,11 @@ class statement {
         const size_t size_bytes{string_tk.string_size_bytes()};
 
         if (not element_type.is_same(string_element_type)) {
-            throw compile_error{string_tk,
-                                std::format("a string fills only an array of "
-                                            "'{}', not an array of '{}'",
-                                            string_element_type.name(),
-                                            element_type.name())};
+            throw compile_error{
+                string_tk, std::format("a string fills only an array of "
+                                       "{}, not an array of {}",
+                                       in_quotes(string_element_type.name()),
+                                       in_quotes(element_type.name()))};
         }
 
         // arrays of zero length are not allowed
@@ -741,9 +743,9 @@ class statement {
 
         throw compile_error{
             src_loc_tk,
-            std::format("'{}' of type '{}' is narrowed to '{}', use '{}(...)'",
-                        source, src_type.name(), dst_type.name(),
-                        dst_type.name())};
+            std::format("{} of type {} is narrowed to {}, use '{}(...)'",
+                        in_quotes(source), in_quotes(src_type.name()),
+                        in_quotes(dst_type.name()), dst_type.name())};
     }
 
     [[noreturn]] static auto throw_uninitialized(const token& src_loc_tk,
@@ -751,13 +753,14 @@ class statement {
         -> void {
 
         throw compile_error{
-            src_loc_tk, std::format("use of uninitialized variable '{}'", var)};
+            src_loc_tk,
+            std::format("use of uninitialized variable {}", in_quotes(var))};
     }
 };
 
-// the one-line source of 'st' in a message, see 'quoted' of a source text
-[[nodiscard]] inline auto quoted(const statement& st) -> std::string {
-    return quoted(statement::trimmed_source(st));
+// the one-line source of 'st' in a message, see 'in_quotes' of a source text
+[[nodiscard]] inline auto in_quotes(const statement& st) -> std::string {
+    return in_quotes(statement::trimmed_source(st));
 }
 
 //
@@ -788,8 +791,8 @@ inline auto assert_not_whole_array(const statement& st, const ident_info& info)
         return;
     }
 
-    throw compile_error{st.tok(), std::format("array '{}' must be indexed",
-                                              st.name_or_literal())};
+    throw compile_error{st.tok(), std::format("array {} must be indexed",
+                                              in_quotes(st.name_or_literal()))};
 }
 
 // a whole array is not read as its first element

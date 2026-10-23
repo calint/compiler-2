@@ -1,0 +1,8 @@
+# a type parameter in a message names the type it is bound to
+func f<U type>() res i16 {
+    res = U
+}
+
+func main() {
+    var x = f<i8>()
+}

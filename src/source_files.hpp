@@ -87,7 +87,7 @@ class source_files final {
 
         if (not fs.is_open()) {
             throw unlocated_error{
-                std::format("cannot open file '{}'", file_name)};
+                std::format("cannot open file {}", in_quotes(file_name))};
         }
 
         std::string contents;
@@ -100,16 +100,16 @@ class source_files final {
             contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
 
             if (contents.size() > max_source_size_bytes) {
-                throw unlocated_error{
-                    std::format("file '{}' is larger than {} B", file_name,
-                                max_source_size_bytes)};
+                throw unlocated_error{std::format("file {} is larger than {} B",
+                                                  in_quotes(file_name),
+                                                  max_source_size_bytes)};
             }
         }
 
         // a directory opens but cannot be read
         if (fs.bad()) {
             throw unlocated_error{
-                std::format("cannot read file '{}'", file_name)};
+                std::format("cannot read file {}", in_quotes(file_name))};
         }
 
         return contents;

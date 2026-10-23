@@ -1920,9 +1920,9 @@ class storage_layout final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("variable '{}' does not fit in the variable storage, "
+            std::format("variable {} does not fit in the variable storage, "
                         "see '--vars'",
-                        var.name)};
+                        in_quotes(var.name))};
     }
 
     // a local starts after the storage in use of the nearest frame with its own
@@ -2069,27 +2069,29 @@ class ident_resolver final {
         if (generics_.get().has_type(ident)) {
             throw compile_error{
                 src_loc_tk,
-                std::format("generic type '{}' is not a value, name an "
+                std::format("generic type {} is not a value, name an "
                             "instance first, e.g. 'type str = {}<...>'",
-                            ident, ident)};
+                            in_quotes(ident), ident)};
         }
 
         if (generics_.get().has_func(ident)) {
             throw compile_error{
                 src_loc_tk,
-                std::format("generic function '{}' needs type arguments, "
+                std::format("generic function {} needs type arguments, "
                             "e.g. '{}<...>'",
-                            ident, ident)};
+                            in_quotes(ident), ident)};
         }
 
         // a broken number, e.g. '0x' or '12_000'
         if (starts_number(ident)) {
             throw compile_error{
-                src_loc_tk, std::format("cannot parse constant '{}'", ident)};
+                src_loc_tk,
+                std::format("cannot parse constant {}", in_quotes(ident))};
         }
 
         throw compile_error{
-            src_loc_tk, std::format("cannot resolve identifier '{}'", ident)};
+            src_loc_tk,
+            std::format("cannot resolve identifier {}", in_quotes(ident))};
     }
 
   private:
@@ -2161,9 +2163,9 @@ class ident_resolver final {
             // a constant has no fields and no elements
             if (meaning.is_constant()) {
                 if (step.id.path().size() != 1) {
-                    throw compile_error{
-                        src_loc_tk, std::format("constant '{}' has no fields",
-                                                step.id.base())};
+                    throw compile_error{src_loc_tk,
+                                        std::format("constant {} has no fields",
+                                                    in_quotes(step.id.base()))};
                 }
 
                 return ident_info::make_const(
@@ -2340,9 +2342,9 @@ class definition_checks final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("generic parameter '{}' hides the generic type '{}' "
+            std::format("generic parameter {} hides the generic type {} "
                         "defined at {}, use another name",
-                        name, name,
+                        in_quotes(name), in_quotes(name),
                         where(generics_.get().get_type(name).src_loc_tk))};
     }
 
@@ -2361,9 +2363,10 @@ class definition_checks final {
             if (param.name_tk.text() == name) {
                 throw compile_error{
                     src_loc_tk,
-                    std::format("generic parameter '{}' is already declared "
-                                "by '{}' at {}",
-                                name, generic_type, where(param.name_tk))};
+                    std::format("generic parameter {} is already declared "
+                                "by {} at {}",
+                                in_quotes(name), in_quotes(generic_type),
+                                where(param.name_tk))};
             }
         }
     }
@@ -2387,9 +2390,9 @@ class definition_checks final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("generic parameter '{}' hides the type '{}' defined "
+            std::format("generic parameter {} hides the type {} defined "
                         "at {}, use another name",
-                        name, name, where(type_tk))};
+                        in_quotes(name), in_quotes(name), where(type_tk))};
     }
 
     // a generic parameter names its argument, a value of that name would hide
@@ -2412,17 +2415,19 @@ class definition_checks final {
         if (meaning.is_constant()) {
             throw compile_error{
                 src_loc_tk,
-                std::format("generic parameter '{}' hides the constant '{}' "
+                std::format("generic parameter {} hides the constant {} "
                             "defined at {}, use another name",
-                            name, name, where(frm.get_const(name).src_loc_tk))};
+                            in_quotes(name), in_quotes(name),
+                            where(frm.get_const(name).src_loc_tk))};
         }
 
         throw compile_error{
             src_loc_tk,
             std::format(
-                "generic parameter '{}' hides the variable '{}' defined at {}, "
+                "generic parameter {} hides the variable {} defined at {}, "
                 "use another name",
-                name, name, where(frm.get_var_const_ref(name).src_loc_tk))};
+                in_quotes(name), in_quotes(name),
+                where(frm.get_var_const_ref(name).src_loc_tk))};
     }
 
     // a frame declares a variable or a constant of a name, not both
@@ -2439,8 +2444,8 @@ class definition_checks final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("constant '{}' already defined in this block at {}",
-                        name, where(existing.src_loc_tk))};
+            std::format("constant {} already defined in this block at {}",
+                        in_quotes(name), where(existing.src_loc_tk))};
     }
 
     // a parameter may hide a constant of the generic instance in the same
@@ -2456,8 +2461,9 @@ class definition_checks final {
         const var_info& decl_var{scopes_.get().back().get_var_const_ref(name)};
 
         throw compile_error{src_loc_tk,
-                            std::format("variable '{}' already declared at {}",
-                                        name, where(decl_var.src_loc_tk))};
+                            std::format("variable {} already declared at {}",
+                                        in_quotes(name),
+                                        where(decl_var.src_loc_tk))};
     }
 
     // the body of a function is the block above its frame, a name declared
@@ -2487,8 +2493,9 @@ class definition_checks final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("{} '{}' hides the {} '{}' declared at {}", what, name,
-                        role, name, where(decl_var.src_loc_tk)),
+            std::format("{} {} hides the {} {} declared at {}", what,
+                        in_quotes(name), role, in_quotes(name),
+                        where(decl_var.src_loc_tk)),
         };
     }
 
@@ -2505,15 +2512,15 @@ class definition_checks final {
             assert(not type_tk.is_empty());
 
             throw compile_error{src_loc_tk,
-                                std::format("type '{}' already defined at {}",
-                                            name, where(type_tk))};
+                                std::format("type {} already defined at {}",
+                                            in_quotes(name), where(type_tk))};
         }
 
         if (generics_.get().exists_type(name)) {
             throw compile_error{
                 src_loc_tk,
-                std::format("type '{}' already defined as a generic type at {}",
-                            name,
+                std::format("type {} already defined as a generic type at {}",
+                            in_quotes(name),
                             where(generics_.get().get_type(name).src_loc_tk))};
         }
     }
@@ -2536,38 +2543,41 @@ class definition_checks final {
 
             throw compile_error{
                 src_loc_tk,
-                std::format("generic method '{}' clashes with the generic "
-                            "method '{}' defined at {}",
-                            generic_method, existing_generic_method,
+                std::format("generic method {} clashes with the generic "
+                            "method {} defined at {}",
+                            in_quotes(generic_method),
+                            in_quotes(existing_generic_method),
                             where(existing_tk))};
         }
 
         if (is_generic and is_existing_generic) {
             throw compile_error{
                 src_loc_tk,
-                std::format("generic method '{}' already defined at {}",
-                            generic_method, where(existing_tk))};
+                std::format("generic method {} already defined at {}",
+                            in_quotes(generic_method), where(existing_tk))};
         }
 
         if (is_generic) {
             throw compile_error{
                 src_loc_tk,
-                std::format("generic method '{}' clashes with the method "
-                            "'{}' defined at {}",
-                            generic_method, name, where(existing_tk))};
+                std::format("generic method {} clashes with the method "
+                            "{} defined at {}",
+                            in_quotes(generic_method), in_quotes(name),
+                            where(existing_tk))};
         }
 
         if (is_existing_generic) {
             throw compile_error{
                 src_loc_tk,
-                std::format("method '{}' clashes with the generic method "
-                            "'{}' defined at {}",
-                            name, existing_generic_method, where(existing_tk))};
+                std::format("method {} clashes with the generic method "
+                            "{} defined at {}",
+                            in_quotes(name), in_quotes(existing_generic_method),
+                            where(existing_tk))};
         }
 
         throw compile_error{src_loc_tk,
-                            std::format("function '{}' already defined at {}",
-                                        name, where(existing_tk))};
+                            std::format("function {} already defined at {}",
+                                        in_quotes(name), where(existing_tk))};
     }
 
     [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
@@ -2978,23 +2988,25 @@ class toc final {
         if (std::ranges::contains(reserved_names::builtin_functions,
                                   name_tk.text())) {
 
-            throw compile_error{
-                name_tk,
-                std::format("'{}' is a built-in function", name_tk.text())};
+            throw compile_error{name_tk,
+                                std::format("{} is a built-in function",
+                                            in_quotes(name_tk.text()))};
         }
 
         // a value would hide the type only in some places, e.g. 'i8(300)'
         // still converts after 'var i8 = 3'
         if (is_builtin_type_name(name_tk.text())) {
-            throw compile_error{name_tk, std::format("'{}' is a built-in type",
-                                                     name_tk.text())};
+            throw compile_error{name_tk,
+                                std::format("{} is a built-in type",
+                                            in_quotes(name_tk.text()))};
         }
 
         // e.g. 'U' bound to 'i8'
         if (const type* const builtin{builtin_value_type_named(name_tk)}) {
             throw compile_error{name_tk,
-                                std::format("'{}' names the built-in type '{}'",
-                                            name_tk.text(), builtin->name())};
+                                std::format("{} names the built-in type {}",
+                                            in_quotes(name_tk.text()),
+                                            in_quotes(builtin->name()))};
         }
     }
 
@@ -3184,13 +3196,13 @@ class toc final {
             if (generics_.has_type(name)) {
                 throw compile_error{
                     type_tk,
-                    std::format("generic type '{}' is not a type, name an "
+                    std::format("generic type {} is not a type, name an "
                                 "instance first, e.g. 'type str = {}<...>'",
-                                name, name)};
+                                in_quotes(name), name)};
             }
 
-            throw compile_error{type_tk,
-                                std::format("type '{}' not found", name)};
+            throw compile_error{
+                type_tk, std::format("type {} not found", in_quotes(name))};
         }
 
         const type& tp{types_.get(name)};
@@ -3198,7 +3210,8 @@ class toc final {
         // note: 'void' is the type of what has no value, it has no size
         if (tp.is_same(builtins_.void_type())) {
             throw compile_error{
-                type_tk, std::format("'{}' is not a type of a value", name)};
+                type_tk,
+                std::format("{} is not a type of a value", in_quotes(name))};
         }
 
         // the default type is the widest integer the target computes with,
@@ -3208,9 +3221,9 @@ class toc final {
         if (tp.is_builtin() and tp.size_bytes() > widest.size_bytes()) {
             throw compile_error{
                 type_tk,
-                std::format("'{}' is not available on this target, use '{}' "
+                std::format("{} is not available on this target, use {} "
                             "or 'int'",
-                            name, widest.name())};
+                            in_quotes(name), in_quotes(widest.name()))};
         }
 
         return tp;
@@ -3410,15 +3423,16 @@ class toc final {
         if (not is_identifier(name_tk)) {
             throw compile_error{
                 name_tk,
-                std::format("'{}' is not a valid name, a name starts with a "
+                std::format("{} is not a valid name, a name starts with a "
                             "letter or '_' and has only letters, digits and "
                             "'_'",
-                            name_tk.text())};
+                            in_quotes(name_tk.text()))};
         }
 
         if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {
             throw compile_error{
-                name_tk, std::format("'{}' is a keyword", name_tk.text())};
+                name_tk,
+                std::format("{} is a keyword", in_quotes(name_tk.text()))};
         }
     }
 
@@ -3486,8 +3500,8 @@ class toc final {
         -> const func_info& {
 
         if (not funcs_.has(name)) {
-            throw compile_error{src_loc_tk,
-                                std::format("function '{}' not found", name)};
+            throw compile_error{src_loc_tk, std::format("function {} not found",
+                                                        in_quotes(name))};
         }
 
         return funcs_.get(name);
@@ -3540,9 +3554,10 @@ class toc final {
 
     if (tc.constant_value_of(arg_tk)) {
         throw compile_error{
-            arg_tk, std::format("generic parameter '{}' of '{}' needs a "
-                                "type, got the constant '{}'",
-                                param_name, generic_name, arg_tk.text())};
+            arg_tk, std::format("generic parameter {} of {} needs a "
+                                "type, got the constant {}",
+                                in_quotes(param_name), in_quotes(generic_name),
+                                in_quotes(arg_tk.text()))};
     }
 
     return tc.get_type_or_throw(arg_tk);
@@ -3559,11 +3574,11 @@ class toc final {
     if (not value) {
         throw compile_error{
             arg_tk,
-            std::format("generic parameter '{}' of '{}' needs a "
-                        "constant, got {}'{}'",
-                        param_name, generic_name,
+            std::format("generic parameter {} of {} needs a "
+                        "constant, got {}{}",
+                        in_quotes(param_name), in_quotes(generic_name),
                         tc.types().has(arg_tk.text()) ? "the type " : "",
-                        arg_tk.text())};
+                        in_quotes(arg_tk.text()))};
     }
 
     return *value;
@@ -3586,9 +3601,9 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
 
         if (arg_tk.is_string()) {
             throw compile_error{
-                arg_tk, std::format("generic parameter '{}' of '{}' needs a "
+                arg_tk, std::format("generic parameter {} of {} needs a "
                                     "{}, got a string",
-                                    name, generic_name,
+                                    in_quotes(name), in_quotes(generic_name),
                                     param.is_type ? "type" : "constant")};
         }
 

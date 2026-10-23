@@ -1567,8 +1567,8 @@ class machine_rv32i : public machine {
         std::ofstream binary{binary_file_name_, std::ios::binary};
 
         if (not binary) {
-            throw unlocated_error{
-                std::format("cannot write file '{}'", binary_file_name_)};
+            throw unlocated_error{std::format("cannot write file {}",
+                                              in_quotes(binary_file_name_))};
         }
 
         assembler_.write_resolved(os, binary);
@@ -1577,8 +1577,8 @@ class machine_rv32i : public machine {
         binary.close();
 
         if (not binary) {
-            throw unlocated_error{
-                std::format("cannot write file '{}'", binary_file_name_)};
+            throw unlocated_error{std::format("cannot write file {}",
+                                              in_quotes(binary_file_name_))};
         }
     }
 

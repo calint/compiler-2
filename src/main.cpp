@@ -325,14 +325,14 @@ template <typename Name, size_t count>
     }
 
     if (arg.starts_with('-')) {
-        print_option_error(std::format("unknown option: '{}'", arg));
+        print_option_error(std::format("unknown option: {}", in_quotes(arg)));
         return false;
     }
 
     if (opts.src_file_given) {
-        print_option_error(
-            std::format("more than one source file: '{}' and '{}'",
-                        opts.src_file_name, arg));
+        print_option_error(std::format("more than one source file: {} and {}",
+                                       in_quotes(opts.src_file_name),
+                                       in_quotes(arg)));
 
         return false;
     }
@@ -371,8 +371,8 @@ template <typename Name, size_t count>
 
     if (not found) {
         print_option_error(
-            std::format("invalid --target: '{}', supported targets are: {}",
-                        value, joined_texts(target_names)));
+            std::format("invalid --target: {}, supported targets are: {}",
+                        in_quotes(value), joined_texts(target_names)));
 
         return false;
     }
@@ -431,8 +431,8 @@ template <typename Name, size_t count>
     }
 
     print_option_error(
-        std::format("invalid --versions: '{}', supported values are: {}", value,
-                    joined_texts(kept_version_names)));
+        std::format("invalid --versions: {}, supported values are: {}",
+                    in_quotes(value), joined_texts(kept_version_names)));
 
     return false;
 }
@@ -563,8 +563,8 @@ examples:
         if (opts.machine_target != target::x86_64 and
             is_source_file(binary, files)) {
 
-            throw option_error{
-                std::format("invalid --bin: '{}' is a source file", binary)};
+            throw option_error{std::format("invalid --bin: {} is a source file",
+                                           in_quotes(binary))};
         }
 
         if (opts.reproduce_source) {
@@ -659,30 +659,29 @@ auto check_reproduced_source(const program& prg, const source_files& files)
     };
 
     if (parsed.ec == std::errc::result_out_of_range) {
-        print_option_error(
-            std::format("invalid {}: '{}' is out of range", option, text));
+        print_option_error(std::format("invalid {}: {} is out of range", option,
+                                       in_quotes(text)));
 
         return std::nullopt;
     }
 
     if (parsed.ec != std::errc{} or parsed.ptr != digits_end) {
-        print_option_error(
-            std::format("invalid {}: '{}' is not a number", option, text));
+        print_option_error(std::format("invalid {}: {} is not a number", option,
+                                       in_quotes(text)));
 
         return std::nullopt;
     }
 
     if (parsed_size_bytes == 0) {
         print_option_error(
-            std::format("invalid {}: '{}' is zero", option, text));
+            std::format("invalid {}: {} is zero", option, in_quotes(text)));
 
         return std::nullopt;
     }
 
     if (parsed_size_bytes % alignment != 0) {
-        print_option_error(
-            std::format("invalid {}: '{}' is not a multiple of {}", option,
-                        text, alignment));
+        print_option_error(std::format("invalid {}: {} is not a multiple of {}",
+                                       option, in_quotes(text), alignment));
 
         return std::nullopt;
     }
@@ -710,8 +709,8 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 
         if (found == report_names.end()) {
             print_option_error(
-                std::format("invalid --report: '{}', supported reports are: {}",
-                            report, joined_texts(report_names)));
+                std::format("invalid --report: {}, supported reports are: {}",
+                            in_quotes(report), joined_texts(report_names)));
 
             return std::nullopt;
         }
@@ -786,9 +785,9 @@ constexpr std::array<check_name, 10> check_names{
 
             if (found == check_names.end()) {
                 print_option_error(std::format(
-                    "invalid --checks: '{}', supported checks are: {}, "
+                    "invalid --checks: {}, supported checks are: {}, "
                     "noub, each with a '+' or '-' prefix",
-                    written, joined_texts(check_names)));
+                    in_quotes(written), joined_texts(check_names)));
 
                 return std::nullopt;
             }
@@ -913,8 +912,9 @@ auto print_call_frames(const source_files& files,
             std::println(stderr, "{}:{}:{}: {}", printable(src_file_name),
                          frame.line, col, frame.reason);
         } else {
-            std::println(stderr, "{}:{}:{}: {} '{}'", printable(src_file_name),
-                         frame.line, col, frame.reason, printable(frame.text));
+            std::println(stderr, "{}:{}:{}: {} {}", printable(src_file_name),
+                         frame.line, col, frame.reason,
+                         in_quotes(printable(frame.text)));
         }
 
         print_source_line(src, frame.start_index, frame.end_index);

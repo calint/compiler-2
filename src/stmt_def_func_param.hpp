@@ -152,8 +152,8 @@ class stmt_def_func_param final : public statement {
 
             const token delimiter_tk{
                 tz.expect_char_token(
-                    ',', std::format("expected ',' or ')' after parameter '{}'",
-                                     previous.name_tk.text())),
+                    ',', std::format("expected ',' or ')' after parameter {}",
+                                     in_quotes(previous.name_tk.text()))),
             };
 
             tz.assert_no_trailing_delimiter(delimiter_tk, ')', "parameters");

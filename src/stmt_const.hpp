@@ -65,7 +65,8 @@ class stmt_const final : public statement {
 
             if (tc.scopes().lookup(text).is_value()) {
                 throw compile_error{
-                    literal_tk_, std::format("'{}' is not a constant", text)};
+                    literal_tk_,
+                    std::format("{} is not a constant", in_quotes(text))};
             }
 
             // e.g. 'i8[array_length(b)]'
@@ -75,13 +76,13 @@ class stmt_const final : public statement {
                 throw compile_error{
                     literal_tk_,
                     std::format("an array size is a number or a constant, not "
-                                "a call of '{}'",
-                                text)};
+                                "a call of {}",
+                                in_quotes(text))};
             }
 
             throw compile_error{
                 literal_tk_,
-                std::format("cannot resolve identifier '{}'", text)};
+                std::format("cannot resolve identifier {}", in_quotes(text))};
         }
 
         // the unary ops apply to the value like in an expression
@@ -91,7 +92,8 @@ class stmt_const final : public statement {
 
         if (not num.has_value()) {
             throw compile_error{
-                literal_tk_, std::format("cannot parse constant '{}'", text)};
+                literal_tk_,
+                std::format("cannot parse constant {}", in_quotes(text))};
         }
 
         value_ = uops_.evaluate_constant(*num);

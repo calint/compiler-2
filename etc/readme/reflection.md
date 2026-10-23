@@ -112,6 +112,15 @@ This is a relatively simple language. Are complex languages written in a
 flawless way by superior engineers or is AI going to scare them when unleashed
 on their code base?
 
+Given the way AI is finding bugs would not be possible manually. Once the
+fuzzing gave no further issues I thought the project was done. I was wrong.
+
+At about round 11 of Opus 5.5 bug hunting and fixing I gave up. I was facing
+generated text mass of description of issue after issue. Eventually I even
+skipped reading most of it.
+
+I told it to refactor so that whole classes of bugs should be impossible.
+
 ### The sense of losing touch with the code
 
 The pre-AI code and structure are still visible as the skeleton of the project.

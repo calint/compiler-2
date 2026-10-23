@@ -50,8 +50,9 @@ class bulk_operands final {
 
         if (open_paren_tk_.is_empty()) {
             throw compile_error{
-                tz, std::format("expected '(', '{}', '{}', 'count', and ')'",
-                                first_role_, second_role_)};
+                tz,
+                std::format("expected '(', {}, {}, 'count', and ')'",
+                            in_quotes(first_role_), in_quotes(second_role_))};
         }
 
         first_ = {tc, {}, tz.next_token(), tz};
@@ -59,8 +60,8 @@ class bulk_operands final {
         first_.assert_array_or_element();
 
         first_delim_tk_ = tz.expect_char_token(
-            ',', std::format("expected ',' followed by '{}' and 'count'",
-                             second_role_));
+            ',', std::format("expected ',' followed by {} and 'count'",
+                             in_quotes(second_role_)));
 
         second_ = {tc, {}, tz.next_token(), tz};
 
@@ -140,9 +141,10 @@ class bulk_operands final {
         if (not info.first.type_ref().is_same(info.second.type_ref())) {
             throw compile_error{
                 second_.tok(),
-                std::format("{} type '{}' does not match {} type '{}'",
-                            first_role_, info.first.type_ref().name(),
-                            second_role_, info.second.type_ref().name())};
+                std::format("{} type {} does not match {} type {}", first_role_,
+                            in_quotes(info.first.type_ref().name()),
+                            second_role_,
+                            in_quotes(info.second.type_ref().name()))};
         }
 
         return info;

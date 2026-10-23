@@ -52,15 +52,16 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // an array is copied from an array, a value of its element type is not one
     if (is_array_destination_ and is_typed_literal) {
         throw compile_error{
-            tok(), std::format("expected an array, got an instance of '{}'",
-                               tok().text())};
+            tok(), std::format("expected an array, got an instance of {}",
+                               in_quotes(tok().text()))};
     }
 
     // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal and not tc.get_type_or_throw(tok()).is_same(tp)) {
 
-        throw compile_error{tok(), std::format("expected type '{}', got '{}'",
-                                               tp.name(), tok().text())};
+        throw compile_error{tok(), std::format("expected type {}, got {}",
+                                               in_quotes(tp.name()),
+                                               in_quotes(tok().text()))};
     }
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
@@ -72,9 +73,9 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     if (is_bare) {
         // e.g. the '+' of 'point + 1', like 'p + 1' of a variable 'p'
         if (continues_expression(tz)) {
-            throw compile_error{
-                tok(), std::format("an instance of '{}' is not a number",
-                                   tok().text())};
+            throw compile_error{tok(),
+                                std::format("an instance of {} is not a number",
+                                            in_quotes(tok().text()))};
         }
 
         return;
@@ -90,17 +91,17 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     if (tz.peek_char() == '(') {
         throw compile_error{
             tz, std::format("a value in parentheses is a number, not {} of "
-                            "'{}'",
+                            "{}",
                             is_array_destination_ ? "an array" : "an instance",
-                            tp.name())};
+                            in_quotes(tp.name()))};
     }
 
     // e.g. the '-' of 'q = -p'
     if (tz.peek_char() == '-' or tz.peek_char() == '~') {
         throw compile_error{
-            tz, std::format("{} of '{}' is not a number",
+            tz, std::format("{} of {} is not a number",
                             is_array_destination_ ? "an array" : "an instance",
-                            tp.name())};
+                            in_quotes(tp.name()))};
     }
 
     parse_fields(tc, tz, tp);
@@ -111,8 +112,8 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
     open_brace_tk_ = tz.expect_char_token(
-        '{',
-        std::format("expected '{{' to begin a value of type '{}'", tp.name()));
+        '{', std::format("expected '{{' to begin a value of type {}",
+                         in_quotes(tp.name())));
 
     const std::span<const type_field> flds{tp.fields()};
 
@@ -131,8 +132,8 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 
             // the error is at the field that is too much
             // e.g. the 'z' of '{x, y, z}' for a type with two fields
-            throw compile_error{
-                tz, std::format("too many fields for type '{}'", tp.name())};
+            throw compile_error{tz, std::format("too many fields for type {}",
+                                                in_quotes(tp.name()))};
         }
 
         const type_field& tf{flds.at(index)};
@@ -186,8 +187,9 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
             throw compile_error{tok(), "source must be an array"};
         }
 
-        throw compile_error{tok(), std::format("expected type '{}', got '{}'",
-                                               tp.name(), value_type->name())};
+        throw compile_error{tok(), std::format("expected type {}, got {}",
+                                               in_quotes(tp.name()),
+                                               in_quotes(value_type->name()))};
     }
 
     call_or_identifier parsed{
@@ -209,8 +211,8 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     if (not tp.is_same(src_info.type_ref())) {
         throw compile_error{
             stmt_ident_->last_token(),
-            std::format("expected type '{}', got '{}'", tp.name(),
-                        src_info.type_ref().name()),
+            std::format("expected type {}, got {}", in_quotes(tp.name()),
+                        in_quotes(src_info.type_ref().name())),
         };
     }
 }
@@ -227,8 +229,9 @@ inline auto expr_type::assert_call_type(const type& tp) const -> void {
     }
 
     throw compile_error{tok(),
-                        std::format("expected return type '{}', got '{}'",
-                                    tp.name(), stmt_call_->get_type().name())};
+                        std::format("expected return type {}, got {}",
+                                    in_quotes(tp.name()),
+                                    in_quotes(stmt_call_->get_type().name()))};
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {
@@ -331,7 +334,7 @@ inline auto expr_type::compile_field_list(toc& tc, const size_t indent,
 
         written_bytes = field.offset + field.size_bytes;
 
-        x.comment(expr->tok(), indent, "copy field '{}'", field.name);
+        x.comment(expr->tok(), indent, "copy field {}", in_quotes(field.name));
 
         compile_field(tc, indent, *expr, field, dst.field(field));
     }

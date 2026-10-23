@@ -136,9 +136,9 @@ class initializer_declaration final {
 
         // e.g. an unsized array parameter
         if (info.is_length_unknown()) {
-            throw compile_error{tk,
-                                std::format("size of array '{}' is not known",
-                                            arith.name_or_literal())};
+            throw compile_error{
+                tk, std::format("size of array {} is not known",
+                                in_quotes(arith.name_or_literal()))};
         }
 
         array_count_ = info.array_len();
