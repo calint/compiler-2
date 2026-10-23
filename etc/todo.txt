@@ -454,7 +454,36 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                the mode; the writable, shared-storage and type checks read it
             => invariant: inline and noinline see the same mode and type
                verdict for an argument
-            => after 4.7
+            => bug (2026-10-23): 'f(y)' with 'f(x i16)' and 'y' an 'i8'
+               parameter of an inlined caller bound to a register (its call
+               passed 'a + 1') is rejected when 'f' is inlined, "expected
+               type 'i16' for parameter 'x', got 'i8'", and accepted when
+               'f' is 'noinline': the noinline call compiles 'y' into a
+               temporary of 'i16', which widens; with 'g(a)' instead, 'y'
+               names storage and both reject it
+            => steps:
+               4.8.1. mechanical: 'call_site::argument_plan' {the place, or
+                      an instance temporary, or a value} made by one
+                      'plan_argument' from 'as_place'; 'needs_temporary' is
+                      "no place and not an array"; 'bind_argument' splits
+                      on the plan ('bind_place': reference or storage;
+                      'bind_value': the expression, folded or in a register,
+                      a constant, a name bound to a register, a name with
+                      unary ops); 'is_computed_value' and the
+                      'is_reference' test go; no change of output
+               4.8.2. one type verdict, 'call_site::assert_argument_type',
+                      today's 'assert_binding_type' (a name or a typed
+                      constant has the parameter's type, an untyped
+                      constant is checked by its value, a computed value by
+                      its compile), run by 'stmt_call::compile' for each
+                      argument before the inline or noinline call; the
+                      type test of 'noinline_call::assert_argument' becomes
+                      an assert; the bug above is rejected in both
+            => 4.8.1 done (2026-10-23): 'argument_plan', 'plan_argument',
+               'bind_place', 'bind_value'; 'is_computed_value' gone, the
+               binding type check asks 'place_path'; no change of output,
+               also for the 342 round 12 probes of calls, values and
+               generics
        4.9. dry runs as one state value (class D, about 11 bugs, verdicts
             depend on call order or leak after a failure): what a version or
             dry run may change is restored by hand-written lists

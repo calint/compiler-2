@@ -385,6 +385,14 @@ struct noinline_arg {
 
 // what compiling a call needs of it, 'stmt_call' makes it for each compile
 struct call_site {
+    // how an argument reaches its parameter, the same for an inlined and a
+    // noinline call: the storage it names in place, or an instance literal or
+    // call result written to a temporary first, or else a value
+    struct argument_plan {
+        std::optional<place> storage;
+        bool is_instance_temporary{};
+    };
+
     // the function name, the code and the errors of the call are located at it
     token tk;
     // the receiver of a method is written before the name
@@ -503,12 +511,6 @@ struct call_site {
                              arg.accessed_path());
     }
 
-    // computed from the argument, e.g. 'x + 1' or '-x', so it has no storage
-    // the callee could reach
-    [[nodiscard]] static auto is_computed_value(const expr_any& arg) -> bool {
-        return arg.is_expression() or not arg.get_unary_ops().is_empty();
-    }
-
     // an instance literal or a call result, e.g. 'point{1, 2}' or 'mk(1, 2)'
     [[nodiscard]] static auto
     is_instance_temporary(const expr_any& arg, const stmt_def_func_param& param)
@@ -524,6 +526,23 @@ struct call_site {
         return result_type.is_builtin() and not result_type.is_bool() and
                dst_type.is_builtin() and not dst_type.is_bool() and
                result_type.size_bytes() < dst_type.size_bytes();
+    }
+
+    [[nodiscard]] static auto plan_argument(const toc& tc, const expr_any& arg,
+                                            const stmt_def_func_param& param)
+        -> argument_plan {
+
+        if (is_instance_temporary(arg, param)) {
+            return {
+                .storage{},
+                .is_instance_temporary{true},
+            };
+        }
+
+        return {
+            .storage{as_place(tc, arg)},
+            .is_instance_temporary{},
+        };
     }
 
     // 'dst' has another type than the result, after 'assert_result_type' a
@@ -1144,34 +1163,25 @@ class inline_call {
                   const stmt_def_func_param& param,
                   std::vector<operand>& allocated_registers) -> param_binding {
 
-        const bool is_reference{
-            not arg.is_expression() and arg.is_name_or_literal() and
-                arg.has_computed_address(
-                    tc.make_ident_info(arg.tok(), arg.name_or_literal())),
-        };
-
         // a binding uses the argument's storage or typed value, so its type
         // must match
-        if (not call_site::is_computed_value(arg)) {
+        if (arg.place_path() != nullptr) {
             assert_binding_type(tc, arg, param);
         }
 
-        if (is_reference and arg.get_unary_ops().is_empty()) {
-            return bind_reference(tc, indent, arg, param, allocated_registers);
+        const call_site::argument_plan plan{
+            call_site::plan_argument(tc, arg, param),
+        };
+
+        // note: 'compile' made the instance temporaries
+        assert(not plan.is_instance_temporary);
+
+        if (plan.storage) {
+            return bind_place(tc, indent, arg, *plan.storage, param,
+                              allocated_registers);
         }
 
-        // e.g. '-a[i]', a value computed like an expression that must fit
-        // the parameter like a name with unary operators
-        if (is_reference) {
-            arg.assert_not_narrowed(tc, param.get_type());
-            return bind_expression(tc, indent, arg, param, allocated_registers);
-        }
-
-        if (arg.is_expression()) {
-            return bind_expression(tc, indent, arg, param, allocated_registers);
-        }
-
-        return bind_plain_argument(tc, indent, arg, param, allocated_registers);
+        return bind_value(tc, indent, arg, param, allocated_registers);
     }
 
     // a constant lets the inlined body be decided at compile time
@@ -1203,7 +1213,22 @@ class inline_call {
                                             param.get_type(), reg);
     }
 
-    // an identifier or a constant, with or without unary operators
+    // an indexed argument keeps its computed address, any other storage is
+    // named by the binding
+    [[nodiscard]] static auto
+    bind_place(toc& tc, const size_t indent, const expr_any& arg,
+               const place& storage, const stmt_def_func_param& param,
+               std::vector<operand>& allocated_registers) -> param_binding {
+
+        if (arg.has_computed_address(storage.info)) {
+            return bind_reference(tc, indent, arg, param, allocated_registers);
+        }
+
+        return bind_storage(param, arg.name_or_literal(),
+                            call_site::argument_target(tc, arg));
+    }
+
+    // a constant, a name bound to a register or a name with unary operators
     [[nodiscard]] static auto
     bind_plain_argument(toc& tc, const size_t indent, const expr_any& arg,
                         const stmt_def_func_param& param,
@@ -1328,6 +1353,32 @@ class inline_call {
                                                .is_element{},
                                                .bound{bound},
                                            });
+    }
+
+    // a value is folded to a constant, computed into a scratch register or,
+    // for a name bound to a register, named by the binding
+    [[nodiscard]] static auto
+    bind_value(toc& tc, const size_t indent, const expr_any& arg,
+               const stmt_def_func_param& param,
+               std::vector<operand>& allocated_registers) -> param_binding {
+
+        // e.g. '-a[i]', a value computed like an expression that must fit
+        // the parameter like a name with unary operators
+        const bool is_indexed_name{
+            not arg.is_expression() and arg.is_name_or_literal() and
+                arg.has_computed_address(make_ident_info(tc, arg)),
+        };
+
+        if (is_indexed_name) {
+            arg.assert_not_narrowed(tc, param.get_type());
+            return bind_expression(tc, indent, arg, param, allocated_registers);
+        }
+
+        if (arg.is_expression()) {
+            return bind_expression(tc, indent, arg, param, allocated_registers);
+        }
+
+        return bind_plain_argument(tc, indent, arg, param, allocated_registers);
     }
 
     // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
@@ -1893,19 +1944,14 @@ class noinline_call {
                                               const stmt_def_func_param& param)
         -> bool {
 
-        if (param.is_array()) {
-            return false;
-        }
+        const call_site::argument_plan plan{
+            call_site::plan_argument(tc, arg, param),
+        };
 
-        if (call_site::is_instance_temporary(arg, param)) {
-            return true;
-        }
+        // note: an array argument is a place, see 'assert_argument_usable'
+        assert(not param.is_array() or plan.storage);
 
-        if (call_site::is_computed_value(arg)) {
-            return true;
-        }
-
-        return not make_ident_info(tc, arg).is_var();
+        return not plan.storage;
     }
 };
 
