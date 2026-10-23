@@ -2006,6 +2006,8 @@ class builtin_types final {
         return machine_.get().default_type();
     }
 
+    [[nodiscard]] auto i64() const -> const type& { return types_.get().i64; }
+
     [[nodiscard]] auto i8() const -> const type& { return types_.get().i8; }
 
     // the names of the builtin integer types

@@ -907,7 +907,9 @@ class expr_any final : public statement {
 };
 
 // e.g. 'i8[-]' is not an expression and 'i8[p]' with 'p' a parameter is not a
-// constant
+// constant; the size is parsed like an index, but it counts storage and is no
+// value of the program, so it folds at 'i64' on every target, e.g. 'dat d =
+// i8[3000000000]' on rv32i, which the address range limits
 inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
     : statement{tz.next_whitespace_token()} {
 
@@ -920,7 +922,10 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
     value_ = std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
                                         literal_typing::from_destination);
 
-    const std::optional<int64_t> folded{value_->constant_value(tc)};
+    const std::optional<int64_t> folded{
+        folded_value::value_of(
+            value_->fold(tc, tc.use_at(tc.builtins().i64()))),
+    };
 
     if (not folded) {
         throw compile_error{

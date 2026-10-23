@@ -1,6 +1,6 @@
 # rv32i: data beyond the 32-bit address range
 
-dat a = i32[1250000000]
+dat a = i8[5000000000]
 
 func main() {
 }

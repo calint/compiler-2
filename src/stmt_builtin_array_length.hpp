@@ -101,7 +101,7 @@ class stmt_builtin_array_length final : public expression {
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
-        if (not use.width_ref().is_same(tc.builtins().default_type())) {
+        if (use.width_ref().size_bytes() < get_type().size_bytes()) {
             return std::nullopt;
         }
 

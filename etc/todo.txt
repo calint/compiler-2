@@ -141,6 +141,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                storage and is no value of the program, as 'stmt_const' did;
                then restore 0734 and 0829 and remove the '.rv32i.out' files
                of 0737-0739, 1322, 1323 and 1605
+               => done (2026-10-23): the size is parsed at the default type
+                  like an index and folds at 'i64'; 'array_length' folds at
+                  any width at least its own (it folded at the default type
+                  only, its comment said "a narrower width stays unfolded");
+                  0734, 0829 restored, the '.rv32i.out' files gone except
+                  1605's ('i32' is the default type on rv32i); no change of
+                  code on any target
             => done (2026-10-23): 'stmt_const' replaced by 'stmt_array_size'
                in 'expr_any.hpp', an 'expr_any' at the default type parsed
                like an index and valued by 'constant_value'; the type field

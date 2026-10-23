@@ -149,7 +149,8 @@
 ## Tests
 
 - Enough: `qa/coverage/test-coverage.sh --target=x86_64` and
-  `--target=rv32i-fpga`.
+  `--target=rv32i-fpga`, and `qa/coverage/test-cli.sh`. The CLI tests cover
+  the options, the reports and the target limits; they take seconds.
 - Iterate with `./make.sh -O3 build` and `test-coverage.sh ... run` without
   `build`: its sanitizer and coverage build compiles about 66 times slower.
   The user runs the `build` and the full suite before committing; do not run
