@@ -266,10 +266,6 @@ inline auto expr_type::operand_path() const -> const stmt_identifier* {
     return stmt_ident_.get();
 }
 
-inline auto expr_type::is_array_element() const -> bool {
-    return stmt_ident_ and stmt_ident_->is_array_element();
-}
-
 inline auto expr_type::compile(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
@@ -281,7 +277,7 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
     // note: a literal is written in parts by the 'write_plan' of the value
     //       that holds it, see 'expr_any::plan_writes'
 
-    assert(is_name_or_literal());
+    assert(stmt_ident_ != nullptr);
 
     compile_identifier_copy(tc, indent, dst);
 }
@@ -359,7 +355,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     const type& dst_type{dst.type_ref()};
 
-    const ident_info src_info{make_ident_info(tc, *this)};
+    const ident_info src_info{make_ident_info(tc, *stmt_ident_)};
 
     // 'expr_type' validates the source type before entering here
     assert(dst_type.is_same(src_info.type_ref()));
@@ -376,7 +372,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     std::vector<operand> allocated_registers;
 
     const operand src_op{
-        get_lea_operand(tc, indent, src_info, allocated_registers),
+        stmt_ident_->get_lea_operand(tc, indent, src_info, allocated_registers),
     };
 
     const size_t size_bytes{
@@ -400,7 +396,8 @@ inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
 
     // the copy size comes from the source so it must match the field
     if (field.is_array() and src.is_array_identifier()) {
-        validate_array_assignment(src.tok(), field, make_ident_info(tc, src));
+        validate_array_assignment(src.tok(), field,
+                                  make_ident_info(tc, *src.operand_path()));
     }
 
     // note: like any value, an empty array field is zeroed, e.g. 'msg' of
@@ -459,32 +456,4 @@ expr_type::visit_call_effects(const toc& tc,
     for (const std::unique_ptr<expr_any>& e : exprs_) {
         e->visit_call_effects(tc, visitor);
     }
-}
-
-inline auto expr_type::compile_lea(toc& tc, const size_t indent,
-                                   const token& src_loc_tk,
-                                   std::vector<operand>& allocated_registers,
-                                   const lea_request& request) const
-    -> operand {
-
-    return stmt_ident_->compile_lea(tc, indent, src_loc_tk, allocated_registers,
-                                    request);
-}
-
-inline auto expr_type::name_or_literal() const -> std::string_view {
-    // note: only a copy is asked for its variable, a '{...}' value is not
-    assert(stmt_ident_);
-
-    return stmt_ident_->name_or_literal();
-}
-
-inline auto expr_type::accessed_path() const -> access_path {
-    // note: only a copy has an accessed path
-    assert(stmt_ident_);
-
-    return stmt_ident_->accessed_path();
-}
-
-inline auto expr_type::is_indexed() const -> bool {
-    return stmt_ident_ and stmt_ident_->is_indexed();
 }

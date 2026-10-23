@@ -272,7 +272,7 @@ class stmt_def_dat final : public statement {
 
         // e.g. 'dat b = a' copies the array 'a' at run time
         if (value.is_array_identifier()) {
-            const ident_info source{make_ident_info(tc, value.element(0))};
+            const ident_info source{make_ident_info(tc, *value.operand_path())};
 
             // e.g. the 'e' of 't{e, 1}' for an array field, 'e' not an array
             if (not source.is_array()) {

@@ -105,11 +105,13 @@ class stmt_builtin_io final : public stmt_call {
         const statement& buffer{argument(1)};
 
         if (const std::optional<place> filled{as_place(tc, buffer)}; filled) {
-            assert_not_read_only(buffer.tok(), "read into",
-                                 buffer.name_or_literal(), filled->info);
+            const stmt_identifier& path{*filled->path};
 
-            tc.record_use(ident_info::root_of(buffer.name_or_literal()),
-                          buffer.accessed_path(), use_kind::write);
+            assert_not_read_only(buffer.tok(), "read into",
+                                 path.name_or_literal(), filled->info);
+
+            tc.record_use(ident_info::root_of(path.name_or_literal()),
+                          path.accessed_path(), use_kind::write);
         }
     }
 
@@ -185,11 +187,13 @@ class stmt_builtin_io final : public stmt_call {
             return;
         }
 
-        const statement& buffer{argument(1)};
+        const std::optional<place> filled{as_place(tc, argument(1))};
 
-        if (not as_place(tc, buffer)) {
+        if (not filled) {
             return;
         }
+
+        const stmt_identifier& buffer{*filled->path};
 
         const std::optional<storage_path> written{
             tc.storage_of(ident_info::root_of(buffer.name_or_literal()),
@@ -214,10 +218,10 @@ class stmt_builtin_io final : public stmt_call {
 
         for (size_t i{}; i < argument_count(); ++i) {
             const statement& arg{argument(i)};
+            const stmt_identifier* const path{arg.place_path()};
 
-            if (i == 1 and io_.fills_buffer and arg.place_path() != nullptr) {
-
-                arg.visit_index_reads(var, reader);
+            if (i == 1 and io_.fills_buffer and path != nullptr) {
+                path->visit_index_reads(var, reader);
             } else {
                 arg.visit_reads(var, reader);
             }
@@ -276,11 +280,12 @@ class stmt_builtin_io final : public stmt_call {
     }
 
     // an address would bypass the bounds check, so only arrays are accepted
-    auto assert_array_buffer(const toc& tc) const -> void {
+    [[nodiscard]] auto assert_array_buffer(const toc& tc) const -> place {
         const statement& buffer{argument(1)};
+        const stmt_identifier* const path{buffer.operand_path()};
 
         // the start has one spelling, the last argument
-        if (buffer.is_array_element()) {
+        if (path != nullptr and path->is_array_element()) {
             throw compile_error{
                 buffer.tok(),
                 std::format("pass the array and the start as {} argument, "
@@ -290,10 +295,10 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         // e.g. not '-b', a unary operator makes a value
-        if (const std::optional<place> array{as_place(tc, buffer)};
+        if (std::optional<place> array{as_place(tc, buffer)};
             array and array->info.is_array()) {
 
-            return;
+            return std::move(*array);
         }
 
         throw compile_error{buffer.tok(),
@@ -304,9 +309,10 @@ class stmt_builtin_io final : public stmt_call {
     // a constant range past the end of the buffer is rejected like the range
     // of 'array_copy', e.g. 'write(1, a, 5)' of 'a = i8[4]', a run-time one is
     // left to the bounds check at run time
-    auto assert_constant_range_in_bounds(toc& tc,
-                                         const ident_info& buffer_info) const
+    auto assert_constant_range_in_bounds(toc& tc, const place& buffer) const
         -> void {
+
+        const ident_info& buffer_info{buffer.info};
 
         const std::optional<int64_t> count{constant_count(tc, buffer_info)};
 
@@ -343,7 +349,7 @@ class stmt_builtin_io final : public stmt_call {
                         ? std::format("count {}", *count)
                         : std::format("a sector of {} elements", *count),
                 },
-                .array_name{argument(1).name_or_literal()},
+                .array_name{buffer.path->name_or_literal()},
             });
     }
 
@@ -399,7 +405,7 @@ class stmt_builtin_io final : public stmt_call {
         const std::span<const std::string_view> registers) const
         -> std::vector<operand> {
 
-        assert_array_buffer(tc);
+        const place buffer{assert_array_buffer(tc)};
 
         machine& x{tc.machine()};
 
@@ -419,7 +425,7 @@ class stmt_builtin_io final : public stmt_call {
 
         argument(0).compile(tc, indent, destination::of_register(descriptor));
 
-        const ident_info buffer_info{make_ident_info(tc, argument(1))};
+        const ident_info& buffer_info{buffer.info};
 
         if (io_.is_sector) {
             assert_sector_buffer(tc, buffer_info);
@@ -435,7 +441,7 @@ class stmt_builtin_io final : public stmt_call {
             start = compile_start(tc, indent, count, buffer_info, check);
         }
 
-        assert_constant_range_in_bounds(tc, buffer_info);
+        assert_constant_range_in_bounds(tc, buffer);
 
         // a count with a start is checked by 'compile_start', a bare count by
         // 'compile_lea'
@@ -443,7 +449,7 @@ class stmt_builtin_io final : public stmt_call {
             has_count() and not has_start() and check == range_check::run_time,
         };
 
-        compile_buffer_address(tc, indent, buffer_reg, buffer_info,
+        compile_buffer_address(tc, indent, buffer_reg, buffer,
                                is_count_checked_by_lea ? count : operand{});
 
         const operand element_size_bytes{
@@ -459,23 +465,22 @@ class stmt_builtin_io final : public stmt_call {
     // the buffer register receives the address of the array, 'range' is the
     // count that a bare count check covers
     auto compile_buffer_address(toc& tc, const size_t indent,
-                                const operand& buffer_reg,
-                                const ident_info& buffer_info,
+                                const operand& buffer_reg, const place& buffer,
                                 const operand& range) const -> void {
 
         machine& x{tc.machine()};
 
-        const statement& buffer{argument(1)};
+        const stmt_identifier& path{*buffer.path};
 
         std::vector<operand> lea_registers;
 
         const operand buffer_lea{
-            buffer.compile_lea(tc, indent, buffer.tok(), lea_registers,
-                               {
-                                   .reg_count{range},
-                                   .known{buffer_info.known()},
-                                   .address_register{},
-                               }),
+            path.compile_lea(tc, indent, path.tok(), lea_registers,
+                             {
+                                 .reg_count{range},
+                                 .known{buffer.info.known()},
+                                 .address_register{},
+                             }),
         };
 
         x.address_of(tok(), indent, buffer_reg, buffer_lea);

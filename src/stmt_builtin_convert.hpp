@@ -183,11 +183,13 @@ class stmt_builtin_convert final : public expression {
             };
         }
 
-        if (arg_.is_expression()) {
+        const stmt_identifier* const path{arg_.operand_path()};
+
+        if (path == nullptr) {
             return std::nullopt;
         }
 
-        const ident_info info{make_ident_info(tc, arg_)};
+        const ident_info info{make_ident_info(tc, *path)};
 
         if (not info.is_const()) {
             return std::nullopt;

@@ -128,12 +128,21 @@ inline auto assert_constant_range(const ident_info& array_info,
                     *array_len)};
 }
 
+class expr_any;
+class stmt_identifier;
+
+[[nodiscard]] inline auto make_ident_info(const toc& tc,
+                                          const stmt_identifier& path)
+    -> ident_info;
+
+[[nodiscard]] inline auto make_scalar_ident_info(const toc& tc,
+                                                 const stmt_identifier& path)
+    -> ident_info;
+
 // a place: a variable, a field or an element named by a path, e.g.
 // 'w.rooms[i].items[j].x', also the receiver of a method call; the parse
 // resolves the type and the bytes of the root variable that the path reaches
 // ('accessed_bytes_', the whole array after a run-time index), the compile
-class expr_any;
-
 // resolves the names again in the current frames and builds one memory operand
 // ('compile_lea', see 'etc/docs/README.md' chapter 6); a path that names a
 // function or a constant has no storage
@@ -257,10 +266,6 @@ class stmt_identifier final : public statement {
         x.free_scratch_registers(tok(), indent, allocated_registers);
     }
 
-    [[nodiscard]] auto accessed_path() const -> access_path override {
-        return access_path_;
-    }
-
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
@@ -293,6 +298,158 @@ class stmt_identifier final : public statement {
                        src_type, dst_type);
     }
 
+    // a typed constant is a value of its type, so it wraps at the width of
+    // its use like a variable, e.g. '-p' of an 'i8' 'p' bound to -128 is -128
+    // at 'i8'
+    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
+        -> std::optional<folded_value> override {
+
+        const ident_info info{make_ident_info(tc, *this)};
+
+        if (not info.is_const()) {
+            return std::nullopt;
+        }
+
+        const folded_value& constant{info.constant()};
+
+        const int64_t value{
+            get_unary_ops().evaluate_at(constant.value, use.width_ref(),
+                                        use.checks_overflow),
+        };
+
+        return folded_value{
+            .value{constant_arith::wrap_to_width(value, use.width_ref())},
+            .own_type{constant.own_type},
+        };
+    }
+
+    // the low bytes are at the start address of the storage
+    [[nodiscard]] auto
+    keeps_low_bits([[maybe_unused]] const width_change change) const
+        -> bool override {
+
+        return true;
+    }
+
+    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
+        return this;
+    }
+
+    // a call in an index, e.g. the 'h(i)' of 'a[h(i)]'
+    auto visit_call_effects(const toc& tc,
+                            const call_effect_visitor visitor) const
+        -> void override;
+
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
+
+        // a path such as 'p.y' reads its root variable
+        if (not var or first_token().is_text(*var)) {
+            reader(first_token(), path_text(), accessed_bytes_, access_path_);
+        }
+
+        visit_index_reads(var, reader);
+    }
+
+    //
+    // class methods
+    //
+
+    // the fields and indexes from the root variable to what this path names,
+    // e.g. 'es[1].items[i]'
+    [[nodiscard]] auto accessed_path() const -> access_path {
+        return access_path_;
+    }
+
+    // the emitter of the address of this statement for a bulk operation,
+    // 'info' is what 'toc' resolved it to
+    // nothing is emitted here, the backend calls the returned emitter when it
+    // needs the address: the emitter builds it with 'compile_address', which
+    // passes it to the backend's 'use' while the scratch registers that built
+    // it are still allocated and frees them afterwards. it refers to its
+    // arguments, so it is only valid within the call that made it
+    [[nodiscard]] auto
+    address_emitter_of(toc& tc, const size_t indent, const token& src_loc_tk,
+                       const ident_info& info,
+                       const range_check check = range_check::run_time) const
+        -> machine::address_emitter {
+
+        return [this, &tc, indent, &src_loc_tk, &info, check](
+                   const operand& reg_count, const operand& address_register,
+                   const machine::address_use use) -> void {
+            const operand range_count{
+                check == range_check::run_time ? reg_count : operand{},
+            };
+
+            compile_address(tc, indent, src_loc_tk,
+                            {
+                                .reg_count{range_count},
+                                .known{info.known()},
+                                .address_register{address_register},
+                            },
+                            use);
+        };
+    }
+
+    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
+        return array_count_;
+    }
+
+    // an array or an element of one, where a bulk operation starts
+    auto assert_array_or_element() const -> void {
+        assert_not_method();
+
+        if (is_array_ or is_array_element()) {
+            return;
+        }
+
+        throw compile_error{
+            first_token(),
+            std::format("{} is not an array", in_quotes(name_or_literal()))};
+    }
+
+    // a constant count of a bulk operation that starts at this path, see
+    // 'assert_constant_range'
+    auto assert_count_in_bounds(const toc& tc, const token& count_tk,
+                                const int64_t count) const -> void;
+
+    // where only an array is expected, the path does not end at a method,
+    // e.g. 'array_length(a.m)'
+    auto assert_not_method() const -> void {
+        if (not is_method_receiver()) {
+            return;
+        }
+
+        throw compile_error{
+            method_name_tk_,
+            std::format("'{}.{}' is a method, expected an array",
+                        path_as_string_, method_name_tk_.text())};
+    }
+
+    // the address of this place from 'compile_lea': 'use' runs while the
+    // scratch registers that build it are still allocated, then they are
+    // freed
+    auto
+    compile_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                    const lea_request& request,
+                    const std::function_ref<void(const operand&)> use) const
+        -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(tok(), indent, statement::trimmed_source(*this));
+
+        std::vector<operand> allocated_registers;
+
+        const operand address{
+            compile_lea(tc, indent, tok(), allocated_registers, request),
+        };
+
+        use(address);
+
+        x.free_scratch_registers(src_loc_tk, indent, allocated_registers);
+    }
+
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
     // 'allocated_registers' receives the scratch registers of the indexing and
     // 'machine' says which scalings an operand can have
@@ -300,7 +457,7 @@ class stmt_identifier final : public statement {
                                    const token& src_loc_tk,
                                    std::vector<operand>& allocated_registers,
                                    const lea_request& request) const
-        -> operand override {
+        -> operand {
 
         const known_address* const known{known_in_path(request.known)};
 
@@ -354,122 +511,6 @@ class stmt_identifier final : public statement {
         return operand::mem(address, *parent_type);
     }
 
-    // a typed constant is a value of its type, so it wraps at the width of
-    // its use like a variable, e.g. '-p' of an 'i8' 'p' bound to -128 is -128
-    // at 'i8'
-    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
-        -> std::optional<folded_value> override {
-
-        const ident_info info{make_ident_info(tc, *this)};
-
-        if (not info.is_const()) {
-            return std::nullopt;
-        }
-
-        const folded_value& constant{info.constant()};
-
-        const int64_t value{
-            get_unary_ops().evaluate_at(constant.value, use.width_ref(),
-                                        use.checks_overflow),
-        };
-
-        return folded_value{
-            .value{constant_arith::wrap_to_width(value, use.width_ref())},
-            .own_type{constant.own_type},
-        };
-    }
-
-    [[nodiscard]] auto is_array_element() const -> bool override {
-        return not elems_.empty() and elems_.back().array_index_expr != nullptr;
-    }
-
-    [[nodiscard]] auto is_indexed() const -> bool override {
-        return is_indexed_;
-    }
-
-    [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return true;
-    }
-
-    // the low bytes are at the start address of the storage
-    [[nodiscard]] auto
-    keeps_low_bits([[maybe_unused]] const width_change change) const
-        -> bool override {
-
-        return true;
-    }
-
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        return path_as_string_;
-    }
-
-    [[nodiscard]] auto name_token() const -> const token& override {
-        return last_token();
-    }
-
-    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        return this;
-    }
-
-    // a call in an index, e.g. the 'h(i)' of 'a[h(i)]'
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override;
-
-    // index expressions are read even when the path is written
-    auto visit_index_reads(const read_filter var,
-                           const read_visitor reader) const -> void override;
-
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        // a path such as 'p.y' reads its root variable
-        if (not var or first_token().is_text(*var)) {
-            reader(first_token(), path_text(), accessed_bytes_, access_path_);
-        }
-
-        visit_index_reads(var, reader);
-    }
-
-    //
-    // class methods
-    //
-
-    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-        return array_count_;
-    }
-
-    // an array or an element of one, where a bulk operation starts
-    auto assert_array_or_element() const -> void {
-        assert_not_method();
-
-        if (is_array_ or is_array_element()) {
-            return;
-        }
-
-        throw compile_error{
-            first_token(),
-            std::format("{} is not an array", in_quotes(name_or_literal()))};
-    }
-
-    // a constant count of a bulk operation that starts at this path, see
-    // 'assert_constant_range'
-    auto assert_count_in_bounds(const toc& tc, const token& count_tk,
-                                const int64_t count) const -> void;
-
-    // where only an array is expected, the path does not end at a method,
-    // e.g. 'array_length(a.m)'
-    auto assert_not_method() const -> void {
-        if (not is_method_receiver()) {
-            return;
-        }
-
-        throw compile_error{
-            method_name_tk_,
-            std::format("'{}.{}' is a method, expected an array",
-                        path_as_string_, method_name_tk_.text())};
-    }
-
     // the index where a bulk operation starts, 0 for a whole array, empty when
     // computed at run time
     [[nodiscard]] auto constant_start_index(const toc& tc) const
@@ -479,12 +520,44 @@ class stmt_identifier final : public statement {
         return elems_.at(0).name_tk;
     }
 
+    // the operand of what 'info' resolves this statement to, a computed
+    // address goes into 'lea_registers'
+    [[nodiscard]] auto
+    get_lea_operand(toc& tc, const size_t indent, const ident_info& info,
+                    std::vector<operand>& lea_registers) const -> operand {
+
+        if (not has_computed_address(info)) {
+            return info.operand();
+        }
+
+        return compile_lea(tc, indent, tok(), lea_registers,
+                           {
+                               .reg_count{},
+                               .known{info.known()},
+                               .address_register{},
+                           });
+    }
+
+    // the address of what 'info' resolves this statement to is computed into
+    // a register: an indexed access, a pointer or a known address
+    [[nodiscard]] auto has_computed_address(const ident_info& info) const
+        -> bool {
+
+        return is_indexed() or info.is_address_computed();
+    }
+
     [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    [[nodiscard]] auto is_array_element() const -> bool {
+        return not elems_.empty() and elems_.back().array_index_expr != nullptr;
+    }
 
     // false when a run-time index leaves the element unknown
     [[nodiscard]] auto is_exact_access() const -> bool {
         return not access_path_.has_run_time_index();
     }
+
+    [[nodiscard]] auto is_indexed() const -> bool { return is_indexed_; }
 
     [[nodiscard]] auto is_method_receiver() const -> bool {
         return not method_name_tk_.is_empty();
@@ -501,6 +574,18 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto method_name_token() const -> const token& {
         return method_name_tk_;
+    }
+
+    // the text the resolver looks up: a name such as 'p.x', or a literal such
+    // as '3' or 'true', which resolve to constants
+    [[nodiscard]] auto name_or_literal() const -> std::string_view {
+        return path_as_string_;
+    }
+
+    // where the name an error is about is, the last name of the path, e.g.
+    // 'b' of 'a.b'
+    [[nodiscard]] auto name_token() const -> const token& {
+        return last_token();
     }
 
     // the path names a function, unless a variable, a parameter or a constant
@@ -533,6 +618,10 @@ class stmt_identifier final : public statement {
 
         flow.assign(accessed_bytes_);
     }
+
+    // index expressions are read even when the path is written
+    auto visit_index_reads(const read_filter var,
+                           const read_visitor reader) const -> void;
 
     //
     // statics
@@ -971,6 +1060,126 @@ class stmt_identifier final : public statement {
     }
 };
 
+// storage that a node names and that is read or passed in place, e.g. the
+// buffer 'b' of 'read(0, b)'; 'path' is a bare path of the node, 'info'
+// resolves it to a variable
+struct place {
+    const stmt_identifier* path{};
+    ident_info info;
+};
+
+// the identifier the path names, e.g. one element for 'ps[1]'
+[[nodiscard]] inline auto make_ident_info(const toc& tc,
+                                          const stmt_identifier& path)
+    -> ident_info {
+
+    // the name refers to the declared array, 'ps[1]' accesses one element
+    const ident_info declared{
+        tc.make_ident_info(path.tok(), path.name_or_literal()),
+    };
+
+    const bool is_element{path.is_array_element()};
+    ident_info info{ident_builder::as_element_if(is_element, declared)};
+
+    info.set_src_loc_tk(path.name_token());
+
+    return info;
+}
+
+inline auto assert_not_whole_array(const stmt_identifier& path,
+                                   const ident_info& info) -> void {
+
+    if (not info.is_array()) {
+        return;
+    }
+
+    throw compile_error{path.tok(),
+                        std::format("array {} must be indexed",
+                                    in_quotes(path.name_or_literal()))};
+}
+
+// a whole array is not read as its first element
+[[nodiscard]] inline auto make_scalar_ident_info(const toc& tc,
+                                                 const stmt_identifier& path)
+    -> ident_info {
+
+    ident_info info{make_ident_info(tc, path)};
+    assert_not_whole_array(path, info);
+    return info;
+}
+
+// an operand of a list that 'assert_not_written_later' checks, e.g. an
+// argument of a call
+struct list_operand {
+    const statement* node{};
+    // the storage the list writes when the operand is one, it reads only its
+    // indexes, e.g. the buffer of 'read' or the destination of 'array_copy';
+    // null when the operand is read
+    const stmt_identifier* written_place{};
+
+    auto visit_reads(const read_visitor reader) const -> void {
+        if (written_place != nullptr) {
+            written_place->visit_index_reads(std::nullopt, reader);
+            return;
+        }
+
+        node->visit_reads(std::nullopt, reader);
+    }
+};
+
+// 'earlier' reads nothing that 'write', an effect of a later operand,
+// reaches; 'operand' names an operand of the list in the message
+inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
+                                   const call_effect& write,
+                                   const std::string_view operand) -> void {
+
+    earlier.visit_reads([&](const token& src_loc_tk,
+                            const std::string_view read_text,
+                            [[maybe_unused]] const byte_range& accessed_bytes,
+                            const access_path& read_path) -> void {
+        const std::optional<storage_path> read{
+            tc.storage_of(src_loc_tk.text(), read_path),
+        };
+
+        if (not read or not read->may_overlap(write.storage)) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("{} may be written by the call of {} in a later {}, "
+                        "use a temporary variable",
+                        in_quotes(read_text), in_quotes(write.call_tk),
+                        operand)};
+    });
+}
+
+// evaluation is left to right, but the compile reads a name where it is
+// used, so a name that a later operand of the same list may write would read
+// the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
+// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'operand' names an operand
+// of the list in the message, e.g. "argument"
+// note: a call among the earlier operands has run before the later ones,
+//       only the names those read are checked
+inline auto
+assert_not_written_later(const toc& tc,
+                         const std::span<const list_operand> operands,
+                         const std::string_view operand) -> void {
+
+    for (size_t k{1}; k < operands.size(); ++k) {
+        operands.at(k).node->visit_call_effects(
+            tc, [&](const call_effect& effect) -> void {
+                if (not effect.is_write) {
+                    return;
+                }
+
+                for (const list_operand& earlier : operands.first(k)) {
+                    assert_not_read_before(tc, earlier, effect, operand);
+                }
+            });
+    }
+}
+
 // see the declaration in 'statement.hpp'
 inline auto statement::place_path() const -> const stmt_identifier* {
     const stmt_identifier* const path{operand_path()};
@@ -982,8 +1191,10 @@ inline auto statement::place_path() const -> const stmt_identifier* {
     return path;
 }
 
-// see the declaration in 'statement.hpp'
-inline auto as_place(const toc& tc, const statement& st)
+// the storage 'st' names in place, empty for a value: a node with operators
+// or unary ops, a call, a method path, a literal, a constant or a name bound
+// to a register
+[[nodiscard]] inline auto as_place(const toc& tc, const statement& st)
     -> std::optional<place> {
 
     const stmt_identifier* const path{st.place_path()};

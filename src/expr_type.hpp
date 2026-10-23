@@ -271,24 +271,6 @@ class expr_type final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override;
 
-    [[nodiscard]] auto accessed_path() const -> access_path override;
-
-    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
-                                   const token& src_loc_tk,
-                                   std::vector<operand>& allocated_registers,
-                                   const lea_request& request) const
-        -> operand override;
-
-    [[nodiscard]] auto is_array_element() const -> bool override;
-
-    [[nodiscard]] auto is_indexed() const -> bool override;
-
-    [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return stmt_ident_ != nullptr;
-    }
-
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override;
-
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override;
 
     auto visit_call_effects(const toc& tc,

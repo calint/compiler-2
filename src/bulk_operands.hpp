@@ -100,15 +100,15 @@ class bulk_operands final {
         const std::array<list_operand, 3> operands{
             list_operand{
                 .node{&first_},
-                .is_written_place{},
+                .written_place{},
             },
             list_operand{
                 .node{&second_},
-                .is_written_place{is_second_written},
+                .written_place{is_second_written ? &second_ : nullptr},
             },
             list_operand{
                 .node{&count_},
-                .is_written_place{},
+                .written_place{},
             },
         };
 

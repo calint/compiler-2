@@ -125,10 +125,10 @@ class initializer_declaration final {
 
   private:
     // e.g. 'var c = a' copies the whole array 'a'
-    auto deduce_array_copy(toc& tc, const token& tk, const expr_arith& arith)
-        -> void {
+    auto deduce_array_copy(toc& tc, const token& tk,
+                           const stmt_identifier& name) -> void {
 
-        const ident_info info{make_ident_info(tc, arith)};
+        const ident_info info{make_ident_info(tc, name)};
 
         if (not info.is_array()) {
             return;
@@ -136,9 +136,9 @@ class initializer_declaration final {
 
         // e.g. an unsized array parameter
         if (info.is_length_unknown()) {
-            throw compile_error{
-                tk, std::format("size of array {} is not known",
-                                in_quotes(arith.name_or_literal()))};
+            throw compile_error{tk,
+                                std::format("size of array {} is not known",
+                                            in_quotes(name.name_or_literal()))};
         }
 
         array_count_ = info.array_len();
@@ -224,13 +224,13 @@ class initializer_declaration final {
         // the first operand decides the width of an expression
         set_type(arith->get_type());
 
-        if (not arith->is_single_operand() or not arith->is_name_or_literal() or
-            not arith->get_unary_ops().is_empty()) {
+        const stmt_identifier* const name{arith->place_path()};
 
+        if (name == nullptr) {
             return;
         }
 
-        deduce_array_copy(tc, tk, *arith);
+        deduce_array_copy(tc, tk, *name);
     }
 
     auto set_type(const type& tp) -> void { type_ = &tp; }

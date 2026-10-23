@@ -217,15 +217,6 @@ class expr_any final : public statement {
         emit_write_plan(tc, indent, plan, dst);
     }
 
-    [[nodiscard]] auto accessed_path() const -> access_path override {
-
-        // note: only identifier arguments ask, and those are never arrays
-        assert(not is_array_);
-        assert(elements_.size() == 1);
-
-        return element(0).accessed_path();
-    }
-
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
 
@@ -234,16 +225,6 @@ class expr_any final : public statement {
         }
 
         element(0).assert_not_narrowed(tc, dst_type);
-    }
-
-    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
-                                   const token& src_loc_tk,
-                                   std::vector<operand>& allocated_registers,
-                                   const lea_request& request) const
-        -> operand override {
-
-        return element(0).compile_lea(tc, indent, src_loc_tk,
-                                      allocated_registers, request);
     }
 
     // a scalar folds as its value
@@ -262,14 +243,6 @@ class expr_any final : public statement {
         return element(0).get_unary_ops();
     }
 
-    [[nodiscard]] auto is_array_element() const -> bool override {
-        if (is_array_ or elements_.size() != 1) {
-            return false;
-        }
-
-        return element(0).is_array_element();
-    }
-
     [[nodiscard]] auto is_expression() const -> bool override {
         if (is_array_) {
             return true;
@@ -278,23 +251,8 @@ class expr_any final : public statement {
         return element(0).is_expression();
     }
 
-    [[nodiscard]] auto is_indexed() const -> bool override {
-        assert(not is_array_);
-
-        return element(0).is_indexed();
-    }
-
-    [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return element(0).is_name_or_literal();
-    }
-
     // only string and '{}' initializers leave 'elements_' empty, callers ask
     // arrays only when 'is_array_identifier' and arguments are never arrays
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        assert(not elements_.empty());
-
-        return element(0).name_or_literal();
-    }
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
@@ -324,15 +282,6 @@ class expr_any final : public statement {
         for (size_t i{}; i < elements_.size(); ++i) {
             element(i).visit_call_effects(tc, visitor);
         }
-    }
-
-    auto visit_index_reads(const read_filter var,
-                           const read_visitor reader) const -> void override {
-
-        assert(not is_array_);
-        assert(elements_.size() == 1);
-
-        element(0).visit_index_reads(var, reader);
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
@@ -779,7 +728,7 @@ class expr_any final : public statement {
     static auto assert_not_boolean_name(const toc& tc, const expr_arith& value,
                                         const type& tp) -> void {
 
-        if (not value.is_name_or_literal() or not value.get_type().is_bool()) {
+        if (value.operand_path() == nullptr or not value.get_type().is_bool()) {
             return;
         }
 

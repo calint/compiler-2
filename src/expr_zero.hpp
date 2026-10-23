@@ -44,12 +44,4 @@ class expr_zero final : public expression {
             .own_type{},
         };
     }
-
-    [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return true;
-    }
-
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        return get_type().is_bool() ? reserved_names::false_value : "0";
-    }
 };

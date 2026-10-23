@@ -20,6 +20,7 @@
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "statement.hpp"
+#include "stmt_identifier.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
 
@@ -451,11 +452,11 @@ class expr_bool_op final : public expression {
             const std::array<list_operand, 2> sides{
                 list_operand{
                     .node{&lhs_},
-                    .is_written_place{},
+                    .written_place{},
                 },
                 list_operand{
                     .node{&rhs_},
-                    .is_written_place{},
+                    .written_place{},
                 },
             };
 
@@ -583,8 +584,8 @@ class expr_bool_op final : public expression {
                             const machine::comparison_action& action) const
         -> void {
 
-        const statement& lhs{lhs_.identifier_statement()};
-        const statement& rhs{rhs_.identifier_statement()};
+        const stmt_identifier& lhs{lhs_.identifier()};
+        const stmt_identifier& rhs{rhs_.identifier()};
 
         const bool is_not_equal{op_ == machine::comparison_operator::not_equal};
 
@@ -652,7 +653,7 @@ class expr_bool_op final : public expression {
     static auto assert_instance_stored(const toc& tc, const expr_arith& side)
         -> void {
 
-        if (side.get_type().is_builtin() or side.is_name_or_literal() or
+        if (side.get_type().is_builtin() or side.operand_path() != nullptr or
             is_memory_operand(tc, side)) {
 
             return;
@@ -689,7 +690,8 @@ class expr_bool_op final : public expression {
 
         // e.g. the '-' of '-p == p' applies to a number
         const bool has_unary_ops{
-            side.is_name_or_literal() and not side.get_unary_ops().is_empty(),
+            side.operand_path() != nullptr and
+                not side.get_unary_ops().is_empty(),
         };
 
         if (is_equality and not has_unary_ops) {
@@ -732,7 +734,7 @@ class expr_bool_op final : public expression {
     // the bytes that both sides hold, they hold the same type and, as arrays,
     // the same number of elements; empty when an array length is not known
     [[nodiscard]] static auto
-    compared_size_bytes(const statement& lhs, const statement& rhs,
+    compared_size_bytes(const stmt_identifier& lhs, const stmt_identifier& rhs,
                         const ident_info& lhs_info, const ident_info& rhs_info)
         -> std::optional<size_t> {
 
@@ -778,8 +780,8 @@ class expr_bool_op final : public expression {
     // 'dst' is 1 when they are equal, negated when 'inverted'
     static auto compile_memory_equality(toc& tc, const size_t indent,
                                         const token& src_loc_tk,
-                                        const statement& lhs,
-                                        const statement& rhs,
+                                        const stmt_identifier& lhs,
+                                        const stmt_identifier& rhs,
                                         const operand& dst, const bool inverted)
         -> void {
 
@@ -875,7 +877,7 @@ class expr_bool_op final : public expression {
 
     // memory is compared, so a constant has nothing to compare
     [[nodiscard]] static auto
-    make_memory_operand_info(const toc& tc, const statement& identifier)
+    make_memory_operand_info(const toc& tc, const stmt_identifier& identifier)
         -> ident_info {
 
         ident_info info{make_ident_info(tc, identifier)};
@@ -932,13 +934,16 @@ class expr_bool_op final : public expression {
                  const bool is_lhs, std::vector<operand>& allocated_registers)
         -> operand {
 
+        // a computed value, or the zero value '{}', which has no name
+        const stmt_identifier* const path{expr.operand_path()};
+
         // the comparison needs its left operand in a register, 'compile'
         // folds a constant list into one copy
-        if (expr.is_expression() and is_lhs) {
+        if (path == nullptr and is_lhs) {
             return compile_to_scratch(tc, indent, expr, allocated_registers);
         }
 
-        if (expr.is_expression()) {
+        if (path == nullptr) {
             const std::optional<folded_value> folded{fold_side(tc, expr)};
 
             if (not folded) {
@@ -959,18 +964,16 @@ class expr_bool_op final : public expression {
             return operand::imm(folded->value, tc.builtins().default_type());
         }
 
-        const ident_info expr_info{make_scalar_ident_info(tc, expr)};
+        const ident_info expr_info{make_scalar_ident_info(tc, *path)};
 
-        if (expr.is_name_or_literal() and
-            expr.has_computed_address(expr_info)) {
-
+        if (path->has_computed_address(expr_info)) {
             const operand address{
-                expr.compile_lea(tc, indent, expr.tok(), allocated_registers,
-                                 {
-                                     .reg_count{},
-                                     .known{expr_info.known()},
-                                     .address_register{},
-                                 }),
+                path->compile_lea(tc, indent, expr.tok(), allocated_registers,
+                                  {
+                                      .reg_count{},
+                                      .known{expr_info.known()},
+                                      .address_register{},
+                                  }),
             };
 
             // e.g. '-a[i]'
@@ -1287,8 +1290,7 @@ class expr_bool final : public expression {
 
         const expr_arith* const arith{op->arithmetic()};
 
-        if (arith == nullptr or not arith->is_name_or_literal() or
-            arith->is_expression()) {
+        if (arith == nullptr or arith->operand_path() == nullptr) {
 
             return std::nullopt;
         }

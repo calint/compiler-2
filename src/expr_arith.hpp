@@ -23,6 +23,7 @@
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
@@ -307,12 +308,6 @@ class expr_arith final : public expression {
             [&] -> void { compile_through_scratch(tc, indent, dst); });
     }
 
-    [[nodiscard]] auto accessed_path() const -> access_path override {
-        assert(exprs_.size() == 1);
-
-        return exprs_.at(0)->accessed_path();
-    }
-
     // each element is computed at the width of the destination
     auto assert_not_narrowed(const toc& tc, const type& dst_type) const
         -> void override {
@@ -328,18 +323,6 @@ class expr_arith final : public expression {
         assert(produces_boolean());
 
         exprs_.front()->compile_boolean(tc, indent, dst, inverted);
-    }
-
-    [[nodiscard]] auto compile_lea(toc& tc, const size_t indent,
-                                   const token& src_loc_tk,
-                                   std::vector<operand>& allocated_registers,
-                                   const lea_request& request) const
-        -> operand override {
-
-        assert(exprs_.size() == 1);
-
-        return exprs_.at(0)->compile_lea(tc, indent, src_loc_tk,
-                                         allocated_registers, request);
     }
 
     // an element wraps at the width as its register holds it; the first
@@ -412,10 +395,6 @@ class expr_arith final : public expression {
         return exprs_.at(0)->get_unary_ops();
     }
 
-    [[nodiscard]] auto is_array_element() const -> bool override {
-        return exprs_.size() == 1 and exprs_.front()->is_array_element();
-    }
-
     [[nodiscard]] auto is_expression() const -> bool override {
         // unary operators apply to the computed list, e.g. '-(a + b)'
         if (not uops_.is_empty()) {
@@ -429,16 +408,6 @@ class expr_arith final : public expression {
 
         // several elements are combined by instructions
         return true;
-    }
-
-    [[nodiscard]] auto is_indexed() const -> bool override {
-        assert(exprs_.size() == 1);
-
-        return exprs_.at(0)->is_indexed();
-    }
-
-    [[nodiscard]] auto is_name_or_literal() const -> bool override {
-        return exprs_.size() == 1 and exprs_.at(0)->is_name_or_literal();
     }
 
     // '/', '%' and '>>' read the high bits of their operands. narrowed, a
@@ -472,21 +441,12 @@ class expr_arith final : public expression {
         return true;
     }
 
-    [[nodiscard]] auto name_or_literal() const -> std::string_view override {
-        assert(exprs_.size() == 1);
-
-        return exprs_.at(0)->name_or_literal();
-    }
-
-    // note: a list of one element has no unary ops of its own, '-(x)' is
-    //       rejected, see 'assert_parentheses_group'
-
+    // unary ops of the list apply to a computed value, e.g. the '-(-a)' of
+    // '-(-(-a))'; '-(x)' is rejected, see 'assert_parentheses_group'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        if (exprs_.size() != 1) {
+        if (exprs_.size() != 1 or not uops_.is_empty()) {
             return nullptr;
         }
-
-        assert(uops_.is_empty());
 
         return exprs_.front()->operand_path();
     }
@@ -503,14 +463,6 @@ class expr_arith final : public expression {
         for (const std::unique_ptr<statement>& e : exprs_) {
             e->visit_call_effects(tc, visitor);
         }
-    }
-
-    auto visit_index_reads(const read_filter var,
-                           const read_visitor reader) const -> void override {
-
-        assert(exprs_.size() == 1);
-
-        exprs_.at(0)->visit_index_reads(var, reader);
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
@@ -533,7 +485,7 @@ class expr_arith final : public expression {
         for (const std::unique_ptr<statement>& e : exprs_) {
             operands.push_back({
                 .node{e.get()},
-                .is_written_place{},
+                .written_place{},
             });
         }
 
@@ -582,11 +534,13 @@ class expr_arith final : public expression {
         return last.value;
     }
 
-    // the statement of an arithmetic that is only an identifier
-    [[nodiscard]] auto identifier_statement() const -> const statement& {
-        assert(is_name_or_literal());
+    // the identifier of an arithmetic that is only one
+    [[nodiscard]] auto identifier() const -> const stmt_identifier& {
+        const stmt_identifier* const path{operand_path()};
 
-        return *exprs_.front();
+        assert(path != nullptr);
+
+        return *path;
     }
 
     // one element without a unary op of its own, which parentheses would not
@@ -959,7 +913,7 @@ class expr_arith final : public expression {
 
         const statement& e{*exprs_.front()};
 
-        if (not e.is_name_or_literal()) {
+        if (e.operand_path() == nullptr) {
             return true;
         }
 
@@ -1071,8 +1025,8 @@ class expr_arith final : public expression {
 
         const statement& first_expr{*exprs_.front()};
 
-        if (first_expr.is_name_or_literal()) {
-            std::ignore = make_ident_info(tc, first_expr);
+        if (const stmt_identifier* const path{first_expr.operand_path()}) {
+            std::ignore = make_ident_info(tc, *path);
         }
 
         return first_expr.get_type();
@@ -1158,11 +1112,12 @@ class expr_arith final : public expression {
         if (not tc.checks_overflow(dst) and is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
-            const ident_info src_info{make_scalar_ident_info(tc, src)};
+            const stmt_identifier& name{*src.operand_path()};
+            const ident_info src_info{make_scalar_ident_info(tc, name)};
             std::vector<operand> lea_registers;
 
             const operand src_operand{
-                src.get_lea_operand(tc, indent, src_info, lea_registers),
+                name.get_lea_operand(tc, indent, src_info, lea_registers),
             };
 
             x.add_subtract(
@@ -1287,9 +1242,10 @@ class expr_arith final : public expression {
     // stored 'bool' is 0 or 1, arithmetic would make other values, so it is
     // converted
     static auto assert_number(const toc& tc, const statement& term) -> void {
+        const stmt_identifier* const path{term.operand_path()};
+
         const type& operand_type{
-            term.is_name_or_literal() ? make_ident_info(tc, term).type_ref()
-                                      : term.get_type(),
+            path ? make_ident_info(tc, *path).type_ref() : term.get_type(),
         };
 
         if (not operand_type.is_builtin()) {
@@ -1304,12 +1260,10 @@ class expr_arith final : public expression {
 
         // the conversion goes inside the unary operators, e.g. '-int(t)'; an
         // indexed name is not the whole operand, e.g. 'bs' of 'bs[1]'
-        const bool is_named{
-            term.is_name_or_literal() and not term.is_indexed(),
-        };
+        const bool is_named{path and not path->is_indexed()};
 
         const std::string_view converted{
-            is_named ? term.name_or_literal() : "...",
+            is_named ? path->name_or_literal() : "...",
         };
 
         // note: the list may be narrower than 'int', e.g. 'y + b' of an 'i8'
@@ -1361,7 +1315,7 @@ class expr_arith final : public expression {
                                       const destination& dst,
                                       const statement& first) -> void {
 
-        if (first.is_name_or_literal()) {
+        if (first.operand_path() != nullptr) {
             first.compile(tc, indent, dst);
             return;
         }
@@ -1411,8 +1365,7 @@ class expr_arith final : public expression {
 
         // a constant or a plain name or literal
         const bool reads_before_writing{
-            first.value or (first.element->is_name_or_literal() and
-                            first.element->get_unary_ops().is_empty()),
+            first.value or first.element->place_path() != nullptr,
         };
 
         if (not reads_before_writing and
@@ -1468,7 +1421,12 @@ class expr_arith final : public expression {
             return;
         }
 
-        const ident_info src_info{make_scalar_ident_info(tc, src)};
+        // note: a value that is not computed is a name or a literal, '{}' is a
+        //       whole value and folds before
+
+        const stmt_identifier& name{*src.operand_path()};
+
+        const ident_info src_info{make_scalar_ident_info(tc, name)};
 
         if (src_info.is_const()) {
             const std::optional<folded_value> folded{
@@ -1489,7 +1447,7 @@ class expr_arith final : public expression {
         std::vector<operand> lea_registers;
 
         const operand src_operand{
-            src.get_lea_operand(tc, indent, src_info, lea_registers),
+            name.get_lea_operand(tc, indent, src_info, lea_registers),
         };
 
         if (src.get_unary_ops().is_empty()) {
@@ -1605,8 +1563,8 @@ class expr_arith final : public expression {
     [[nodiscard]] static auto is_stored_value(const toc& tc,
                                               const statement& src) -> bool {
 
-        return not src.is_expression() and
-               not make_ident_info(tc, src).is_const();
+        const stmt_identifier* const path{src.operand_path()};
+        return path and not make_ident_info(tc, *path).is_const();
     }
 
     // pass 3: a subtracted or negated first element needs a negation so the

@@ -458,11 +458,13 @@ struct call_site {
         -> void {
 
         for (const auto [arg, param] : std::views::zip(args, func.params())) {
-            if (arg.place_path() == nullptr) {
+            const stmt_identifier* const path{arg.place_path()};
+
+            if (path == nullptr) {
                 continue;
             }
 
-            const ident_info info{make_ident_info(tc, arg)};
+            const ident_info info{make_ident_info(tc, *path)};
 
             if (info.is_const() and not info.constant().is_typed()) {
                 continue;
@@ -528,11 +530,11 @@ struct call_site {
     // the root variable and the bytes of it that the argument names, any
     // element of the array when it is the element of a 'foo'
     [[nodiscard]] static auto argument_target(const toc& tc,
-                                              const expr_any& arg)
+                                              const stmt_identifier& name)
         -> std::optional<storage_path> {
 
-        return tc.storage_of(ident_info::root_of(arg.name_or_literal()),
-                             arg.accessed_path());
+        return tc.storage_of(ident_info::root_of(name.name_or_literal()),
+                             name.accessed_path());
     }
 
     // an instance literal or a call result, e.g. 'point{1, 2}' or 'mk(1, 2)'
@@ -541,7 +543,7 @@ struct call_site {
         -> bool {
 
         return not param.get_type().is_builtin() and
-               not arg.is_name_or_literal();
+               arg.operand_path() == nullptr;
     }
 
     [[nodiscard]] static auto is_widened_integer(const type& result_type,
@@ -1199,8 +1201,8 @@ class inline_call {
         };
 
         if (folded) {
-            return param_binding::make_constant(
-                param.name_or_literal(), param.get_type(), folded->value);
+            return param_binding::make_constant(param.name(), param.get_type(),
+                                                folded->value);
         }
 
         machine& x{tc.machine()};
@@ -1212,8 +1214,8 @@ class inline_call {
         allocated_registers.push_back(reg);
         arg.compile(tc, indent, destination::of_register(reg));
 
-        return param_binding::make_register(param.name_or_literal(),
-                                            param.get_type(), reg);
+        return param_binding::make_register(param.name(), param.get_type(),
+                                            reg);
     }
 
     // an indexed argument keeps its computed address, any other storage is
@@ -1223,26 +1225,28 @@ class inline_call {
                const place& storage, const stmt_def_func_param& param,
                std::vector<operand>& allocated_registers) -> param_binding {
 
-        if (arg.has_computed_address(storage.info)) {
-            return bind_reference(tc, indent, arg, param, allocated_registers);
+        const stmt_identifier& name{*storage.path};
+
+        if (name.has_computed_address(storage.info)) {
+            return bind_reference(tc, indent, arg, name, param,
+                                  allocated_registers);
         }
 
-        return bind_storage(param, arg.name_or_literal(),
-                            call_site::argument_target(tc, arg));
+        return bind_storage(param, name.name_or_literal(),
+                            call_site::argument_target(tc, name));
     }
 
     // a constant, a name bound to a register or a name with unary operators
-    [[nodiscard]] static auto
-    bind_plain_argument(toc& tc, const size_t indent, const expr_any& arg,
-                        const stmt_def_func_param& param,
-                        std::vector<operand>& allocated_registers)
-        -> param_binding {
+    [[nodiscard]] static auto bind_plain_argument(
+        toc& tc, const size_t indent, const expr_any& arg,
+        const stmt_identifier& name, const stmt_def_func_param& param,
+        std::vector<operand>& allocated_registers) -> param_binding {
 
         // constants and unary ops pass a value, not storage, so the value
         // must fit the parameter
         arg.assert_not_narrowed(tc, param.get_type());
 
-        const ident_info arg_info{make_ident_info(tc, arg)};
+        const ident_info arg_info{make_ident_info(tc, name)};
 
         // a name is resolved in the callee where its own constants would
         // shadow the caller's, and the bound constant must be a plain integer,
@@ -1255,13 +1259,13 @@ class inline_call {
             // note: a constant name or literal folds
             assert(folded);
 
-            return param_binding::make_constant(
-                param.name_or_literal(), param.get_type(), folded->value);
+            return param_binding::make_constant(param.name(), param.get_type(),
+                                                folded->value);
         }
 
         if (arg.get_unary_ops().is_empty()) {
-            return bind_storage(param, arg.name_or_literal(),
-                                call_site::argument_target(tc, arg));
+            return bind_storage(param, name.name_or_literal(),
+                                call_site::argument_target(tc, name));
         }
 
         machine& x{tc.machine()};
@@ -1276,28 +1280,29 @@ class inline_call {
         arg.get_unary_ops().compile(x, indent, arg.tok(), reg,
                                     tc.checks().overflow_options());
 
-        return param_binding::make_register(param.name_or_literal(),
-                                            param.get_type(), reg);
+        return param_binding::make_register(param.name(), param.get_type(),
+                                            reg);
     }
 
     // an indexed argument keeps its computed address, e.g.
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
     [[nodiscard]] static auto
     bind_reference(toc& tc, const size_t indent, const expr_any& arg,
+                   const stmt_identifier& name,
                    const stmt_def_func_param& param,
                    std::vector<operand>& allocated_registers) -> param_binding {
 
-        const ident_info arg_info{make_ident_info(tc, arg)};
+        const ident_info arg_info{make_ident_info(tc, name)};
 
         std::vector<operand> regs_lea;
 
         const operand lea{
-            arg.compile_lea(tc, indent, arg.tok(), regs_lea,
-                            {
-                                .reg_count{},
-                                .known{arg_info.known()},
-                                .address_register{},
-                            }),
+            name.compile_lea(tc, indent, arg.tok(), regs_lea,
+                             {
+                                 .reg_count{},
+                                 .known{arg_info.known()},
+                                 .address_register{},
+                             }),
         };
 
         // the address registers stay allocated until the inlined body is
@@ -1305,12 +1310,12 @@ class inline_call {
         allocated_registers.append_range(regs_lea);
 
         return param_binding::make_storage(
-            param.name_or_literal(), param.get_type(),
+            param.name(), param.get_type(),
             {
-                .path{std::string{arg.name_or_literal()}},
+                .path{std::string{name.name_or_literal()}},
                 .lea{lea},
-                .is_element{arg.is_array_element()},
-                .bound{call_site::argument_target(tc, arg)},
+                .is_element{name.is_array_element()},
+                .bound{call_site::argument_target(tc, name)},
             });
     }
 
@@ -1348,8 +1353,7 @@ class inline_call {
     bind_storage(const stmt_def_func_param& param, const std::string_view path,
                  const std::optional<storage_path>& bound) -> param_binding {
 
-        return param_binding::make_storage(param.name_or_literal(),
-                                           param.get_type(),
+        return param_binding::make_storage(param.name(), param.get_type(),
                                            {
                                                .path{std::string{path}},
                                                .lea{},
@@ -1365,23 +1369,22 @@ class inline_call {
                const stmt_def_func_param& param,
                std::vector<operand>& allocated_registers) -> param_binding {
 
+        const stmt_identifier* const name{arg.operand_path()};
+
+        // a computed value, or the zero value '{}', which has no name
+        if (name == nullptr) {
+            return bind_expression(tc, indent, arg, param, allocated_registers);
+        }
+
         // e.g. '-a[i]', a value computed like an expression that must fit
         // the parameter like a name with unary operators
-        const bool is_indexed_name{
-            not arg.is_expression() and arg.is_name_or_literal() and
-                arg.has_computed_address(make_ident_info(tc, arg)),
-        };
-
-        if (is_indexed_name) {
+        if (name->has_computed_address(make_ident_info(tc, *name))) {
             arg.assert_not_narrowed(tc, param.get_type());
             return bind_expression(tc, indent, arg, param, allocated_registers);
         }
 
-        if (arg.is_expression()) {
-            return bind_expression(tc, indent, arg, param, allocated_registers);
-        }
-
-        return bind_plain_argument(tc, indent, arg, param, allocated_registers);
+        return bind_plain_argument(tc, indent, arg, *name, param,
+                                   allocated_registers);
     }
 
     // e.g. [s0 + t0 * 4 + 28] but not [t1 + 28]
@@ -1503,9 +1506,12 @@ class noinline_call {
                  std::views::iota(size_t{}), call_.args, func.params())) {
 
             if (not needs_temporary(tc, arg, param)) {
+                // note: an argument without a temporary is a place
+                const stmt_identifier& name{*arg.place_path()};
+
                 arguments.push_back({
-                    .info{make_ident_info(tc, arg)},
-                    .target{call_site::argument_target(tc, arg)},
+                    .info{make_ident_info(tc, name)},
+                    .target{call_site::argument_target(tc, name)},
                     .is_temporary{},
                 });
 
@@ -1729,8 +1735,9 @@ class noinline_call {
                 continue;
             }
 
-            addresses.push_back(arg.get_lea_operand(tc, indent, argument.info,
-                                                    address_registers));
+            // note: an argument without a temporary is a place
+            addresses.push_back(arg.place_path()->get_lea_operand(
+                tc, indent, argument.info, address_registers));
         }
 
         return addresses;
@@ -2200,18 +2207,20 @@ class stmt_call : public expression {
                 continue;
             }
 
-            const std::optional<storage_path> target{
-                call_site::argument_target(tc, arg),
-            };
-
             // note: a 'mut' argument is a variable, see
             //       'assert_argument_writable'
+
+            const stmt_identifier& name{*arg.place_path()};
+
+            const std::optional<storage_path> target{
+                call_site::argument_target(tc, name),
+            };
 
             assert(target);
 
             visitor({
                 .call_tk{tok()},
-                .name{arg.name_or_literal()},
+                .name{name.name_or_literal()},
                 .storage{*target},
                 .is_write{true},
             });
@@ -2243,7 +2252,9 @@ class stmt_call : public expression {
         for (size_t i{}; i < args_.size(); ++i) {
             operands.push_back({
                 .node{&args_.at(i)},
-                .is_written_place{written_index == i},
+                .written_place{
+                    written_index == i ? args_.at(i).place_path() : nullptr,
+                },
             });
         }
 
@@ -2331,17 +2342,20 @@ class stmt_call : public expression {
         const std::optional<place> written{as_place(tc, arg)};
 
         // e.g. '2' or a 'let' constant
+        // note: 'arg' is a path, see above
         if (not written) {
             throw_not_writable(
                 index, arg,
-                std::format("constant {}", in_quotes(arg.name_or_literal())),
+                std::format("constant {}",
+                            in_quotes(arg.place_path()->name_or_literal())),
                 "");
         }
 
         if (written->info.is_read_only()) {
             throw_not_writable(
                 index, arg,
-                std::format("read-only {}", in_quotes(arg.name_or_literal())),
+                std::format("read-only {}",
+                            in_quotes(written->path->name_or_literal())),
                 read_only_hint(written->info));
         }
     }
@@ -2423,12 +2437,14 @@ class stmt_call : public expression {
             const expr_any& arg{args_.at(i)};
 
             // a value or a constant is passed as a copy
-            if (not as_place(tc, arg)) {
+            const std::optional<place> passed{as_place(tc, arg)};
+
+            if (not passed) {
                 continue;
             }
 
             std::optional<storage_path> target{
-                call_site::argument_target(tc, arg),
+                call_site::argument_target(tc, *passed->path),
             };
 
             // note: a variable has storage
@@ -2828,16 +2844,20 @@ class stmt_call : public expression {
             const expr_any& arg{args_.at(i)};
 
             // a value or a constant is passed as a copy
-            if (not as_place(tc, arg)) {
+            const std::optional<place> passed{as_place(tc, arg)};
+
+            if (not passed) {
                 continue;
             }
 
+            const stmt_identifier& name{*passed->path};
+
             const std::string_view root{
-                ident_info::root_of(arg.name_or_literal()),
+                ident_info::root_of(name.name_or_literal()),
             };
 
             if (is_recursive) {
-                tc.record_use(root, arg.accessed_path(),
+                tc.record_use(root, name.accessed_path(),
                               func.param(i).is_read_only() ? use_kind::read
                                                            : use_kind::write);
 
@@ -2846,9 +2866,9 @@ class stmt_call : public expression {
 
             for (const body_uses::binding_use& u : callee.bindings()) {
                 if (u.param_index == i) {
-                    tc.record_use(root, arg.accessed_path().extended_by(u.path),
-                                  u.is_written ? use_kind::write
-                                               : use_kind::read);
+                    tc.record_use(
+                        root, name.accessed_path().extended_by(u.path),
+                        u.is_written ? use_kind::write : use_kind::read);
                 }
             }
         }
@@ -2956,8 +2976,8 @@ class stmt_call : public expression {
         }
 
         // the binding would make the parameter name the whole array
-        if (arg.is_name_or_literal()) {
-            assert_not_whole_array(arg, make_ident_info(tc, arg));
+        if (const stmt_identifier* const name{arg.operand_path()}) {
+            assert_not_whole_array(*name, make_ident_info(tc, *name));
         }
     }
 

@@ -178,7 +178,7 @@ class stmt_assign_var final : public statement {
             return;
         }
 
-        const ident_info src_info{make_ident_info(tc, expr_)};
+        const ident_info src_info{make_ident_info(tc, *expr_.place_path())};
 
         const std::optional<size_t> src_len{src_info.array_len()};
         const std::optional<size_t> dst_len{dst_info.array_len()};
