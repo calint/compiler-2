@@ -1,4 +1,4 @@
 
-0707.baz:3:9: cannot resolve identifier 'i8'
+0707.baz:3:9: 'i8' is a type, not a value
 dat x = i8 + 1
         ^~

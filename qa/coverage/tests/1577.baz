@@ -1,0 +1,5 @@
+# a statement does not start with a character literal
+func main() {
+    var x = 1
+    'a' = x
+}

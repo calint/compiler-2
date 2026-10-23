@@ -1,0 +1,11 @@
+# an assignment to a constant is rejected where it is parsed, before an error
+# that a later definition has
+let k = 1
+
+func set() {
+    k = 2
+}
+
+func main() {
+    exit(j)
+}

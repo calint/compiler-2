@@ -1,4 +1,4 @@
 
-1245.baz:3:13: cannot resolve identifier 'bool'
+1245.baz:3:13: 'bool' is a type, not a value
     var b = bool or true
             ^~~~

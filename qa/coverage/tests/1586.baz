@@ -1,0 +1,9 @@
+# a type is not an operand, also after an operator
+type point {
+    x,
+    y,
+}
+
+func main() {
+    var n = 1 + point
+}

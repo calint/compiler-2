@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "compile_error.hpp"
+#include "constant_parser.hpp"
 #include "decouple.hpp"
 #include "ident_info.hpp"
 #include "token.hpp"
@@ -166,8 +167,15 @@ class stmt_block final : public statement {
                                               const token tk)
         -> std::unique_ptr<statement> {
 
-        // e.g. the '2' of 'return 2', which takes no value
-        if (tk.is_string() or tk.is_number()) {
+        // e.g. the '2' of 'return 2', which takes no value, or ''a' = 1'
+        const bool is_value{
+            tk.is_string() or tk.is_number() or
+                constant_parser::is_character_literal(tk.text()) or
+                tk.is_text(reserved_names::true_value) or
+                tk.is_text(reserved_names::false_value),
+        };
+
+        if (is_value) {
             throw compile_error{tk, "expected a statement"};
         }
 

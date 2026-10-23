@@ -1,0 +1,4 @@
+
+1584.baz:8:13: 'point' is a type, not a function, an instance is made with 'point{...}'
+    var p = point(5)
+            ^~~~~

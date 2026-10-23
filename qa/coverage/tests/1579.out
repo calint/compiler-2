@@ -1,0 +1,4 @@
+
+1579.baz:4:10: constant -'\xff' does not fit 'i8', use 'i8(...)'
+    y = -'\xff'
+         ^~~~~~

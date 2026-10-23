@@ -2362,12 +2362,15 @@ class stmt_call : public expression {
             return;
         }
 
-        // e.g. 'f(1, 2,)' has no surplus argument
-        tokenizer probe{tz};
-        const token delimiter_tk{probe.is_next_char_token(',')};
+        // e.g. 'f(1, 2,)' has no surplus argument, the ',' of 'f(,)' follows
+        // no argument
+        if (param_count != 0) {
+            tokenizer probe{tz};
+            const token delimiter_tk{probe.is_next_char_token(',')};
 
-        if (not delimiter_tk.is_empty()) {
-            probe.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
+            if (not delimiter_tk.is_empty()) {
+                probe.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
+            }
         }
 
         throw compile_error{tz, std::format("'{}' takes {}", func_name_,
@@ -2393,13 +2396,12 @@ class stmt_call : public expression {
 
             throw compile_error{
                 arg.tok(),
-                std::format("{} '{}' may share storage with {} '{}' "
-                            "(both name '{}'), {}",
-                            describe_argument(index),
-                            statement::trimmed_source(arg),
-                            describe_argument(other.index),
-                            statement::trimmed_source(args_.at(other.index)),
-                            target.root.name, use_temporary_fix_)};
+                std::format(
+                    "{} '{}' may share storage with {} '{}'{}, {}",
+                    describe_argument(index), statement::trimmed_source(arg),
+                    describe_argument(other.index),
+                    statement::trimmed_source(args_.at(other.index)),
+                    shared_name_note(target.root.name), use_temporary_fix_)};
         }
     }
 
@@ -2466,10 +2468,11 @@ class stmt_call : public expression {
         throw compile_error{
             args_.at(index).tok(),
             std::format("{} '{}' may share storage with the "
-                        "result destination '{}' (both name '{}'), {}",
+                        "result destination '{}'{}, {}",
                         describe_argument(index),
                         statement::trimmed_source(args_.at(index)), dst.text(),
-                        target.root.name, use_temporary_fix_)};
+                        shared_name_note(target.root.name),
+                        use_temporary_fix_)};
     }
 
     // 'what' names what precedes the '(' in the error
@@ -2879,6 +2882,18 @@ class stmt_call : public expression {
         return std::format("recursion of inlined function '{}' cannot be "
                            "expanded at compile time, declare it 'noinline'",
                            func.name());
+    }
+
+    // e.g. " (both name 'g')", none for a variable the compiler added, whose
+    // name the source does not have
+    [[nodiscard]] static auto shared_name_note(const std::string_view name)
+        -> std::string {
+
+        if (toc::is_temporary_name(name)) {
+            return {};
+        }
+
+        return std::format(" (both name '{}')", name);
     }
 
     // the type as written, with the type it is bound to when that differs,

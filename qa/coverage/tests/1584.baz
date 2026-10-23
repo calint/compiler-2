@@ -1,0 +1,9 @@
+# a type is not called, an instance is made with '{...}'
+type point {
+    x,
+    y
+}
+
+func main() {
+    var p = point(5)
+}

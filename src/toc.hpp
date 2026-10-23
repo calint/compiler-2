@@ -3476,6 +3476,13 @@ class toc final {
                });
     }
 
+    // a name that 'temporary_name' made
+    [[nodiscard]] static auto is_temporary_name(const std::string_view name)
+        -> bool {
+
+        return name.contains('-');
+    }
+
     // the name of a variable the compiler adds, e.g. 'call-arg-12-0', it has a
     // '-' so no identifier of the source can have it; the offset of the token
     // tells the temporaries of calls in one block apart
@@ -3500,13 +3507,6 @@ class toc final {
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,
                                               const std::string_view name) const
         -> const func_info& {
-
-        // e.g. 'bool(5)', the other built-in types convert
-        if (name == builtins_.boolean().name()) {
-            throw compile_error{src_loc_tk,
-                                "'bool' has no conversion, compare instead, "
-                                "e.g. 'x != 0'"};
-        }
 
         if (not funcs_.has(name)) {
             throw compile_error{src_loc_tk,

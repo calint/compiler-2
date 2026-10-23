@@ -1,0 +1,5 @@
+# a built-in type of another type than the destination is not its zero value
+func main() {
+    var n = 0
+    n = bool
+}

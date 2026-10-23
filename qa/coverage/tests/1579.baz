@@ -1,0 +1,5 @@
+# a character literal with a unary operator is quoted once in the message
+func main() {
+    var y = i8(0)
+    y = -'\xff'
+}

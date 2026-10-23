@@ -1,0 +1,4 @@
+
+1588.baz:5:7: 'f' takes 0 arguments
+    f(,)
+      ^

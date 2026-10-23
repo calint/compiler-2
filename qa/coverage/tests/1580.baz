@@ -1,0 +1,6 @@
+# a character literal as a condition is quoted once in the message
+func main() {
+    if 'a' {
+        exit(1)
+    }
+}

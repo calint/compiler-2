@@ -803,6 +803,15 @@ class expr_any final : public statement {
 
         if (is_bare_builtin_type(tc, tk, tz)) {
             if (typing == literal_typing::from_destination) {
+                // note: compared by type, a type parameter names the type of
+                //       its argument
+
+                if (not tc.get_type_or_throw(tk).is_same(tp)) {
+                    throw compile_error{
+                        tk, std::format("expected type '{}', got '{}'",
+                                        tp.name(), tk.text())};
+                }
+
                 throw_known_type(tk, tk.text(), "{}");
             }
 

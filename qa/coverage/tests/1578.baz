@@ -1,0 +1,5 @@
+# a statement does not start with 'true' or 'false'
+func main() {
+    var b = false
+    true = b
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <format>
 #include <optional>
@@ -47,6 +48,15 @@ class stmt_assign_var final : public statement {
 
         assert_not_read_only(tok(), "assign to", stmt_ident_.name_or_literal(),
                              dst_info);
+
+        // note: a parameter that would name a constant argument is read-only
+        //       or 'mut', which takes no constant, so this is the only check
+
+        if (dst_info.is_const()) {
+            throw compile_error{tok(),
+                                std::format("cannot assign to constant '{}'",
+                                            stmt_ident_.name_or_literal())};
+        }
 
         tc.record_use(ident_info::root_of(stmt_ident_.name_or_literal()),
                       stmt_ident_.accessed_path(), use_kind::write);
@@ -108,8 +118,11 @@ class stmt_assign_var final : public statement {
 
         const ident_info var_info{make_ident_info(tc, stmt_ident_)};
 
-        // a parameter names its argument only here, e.g. a constant
-        assert_assignable(tc, var_info);
+        // note: the parse rejected a constant destination
+        assert(not var_info.is_const());
+
+        // an unsized array parameter has a size only here
+        assert_array_size_matches(tc, var_info);
 
         std::vector<operand> lea_registers;
 
@@ -156,17 +169,10 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
   private:
-    // the destination is not a constant and an array copy has the size of
-    // the destination; an unsized array parameter is checked when its call
-    // gives it a size
-    auto assert_assignable(const toc& tc, const ident_info& dst_info) const
-        -> void {
-
-        if (dst_info.is_const()) {
-            throw compile_error{tok(),
-                                std::format("cannot assign to constant '{}'",
-                                            stmt_ident_.name_or_literal())};
-        }
+    // an array copy has the size of the destination; an unsized array
+    // parameter is checked when its call gives it a size
+    auto assert_array_size_matches(const toc& tc,
+                                   const ident_info& dst_info) const -> void {
 
         if (not expr_.is_array_identifier()) {
             return;

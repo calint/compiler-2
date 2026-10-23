@@ -239,6 +239,24 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
             tk, std::format("'{}' is a number, not a function", tk.text())};
     }
 
+    // e.g. 'bool(5)' or 'point(5)', only the integer types convert
+    if (is_type_name_followed_by(tc, tk, tz, '(')) {
+        const type& tp{tc.types().get(tk.text())};
+
+        if (tp.is_bool()) {
+            throw compile_error{tk, "'bool' has no conversion, compare "
+                                    "instead, e.g. 'x != 0'"};
+        }
+
+        // note: a function may be named like a type, e.g. 'point(3)'
+        if (not tp.is_builtin() and not tc.funcs().has(tk.text())) {
+            throw compile_error{
+                tk, std::format("'{}' is a type, not a function, an instance "
+                                "is made with '{}{{...}}'",
+                                tk.text(), tk.text())};
+        }
+    }
+
     // e.g. 'foo(x)' or 'show<name>(x)', the call reads the type arguments
     if (tz.peek_char_after_whitespace() == '(' or
         is_generic_call(tc, tk.text(), tz)) {
@@ -358,6 +376,16 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
             tk, std::format("an instance literal of '{}' is not an operand "
                             "here, store it in a variable first",
                             tk.text())};
+    }
+
+    // e.g. the 'i8' of 'i8 + 1' or the 'point' of '1 + point', a type that is
+    // not converted, made an instance of or called a method of
+    if (const char next{tz.peek_char_after_whitespace()};
+        tc.types().has(tk.text()) and not is_hidden_by_value(tc, tk.text()) and
+        next != '(' and next != '{' and next != '.') {
+
+        throw compile_error{
+            tk, std::format("'{}' is a type, not a value", tk.text())};
     }
 
     assert_builtin_without_type_args(tk, tz);

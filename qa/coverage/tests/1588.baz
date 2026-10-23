@@ -1,0 +1,6 @@
+# the ',' of a call of a function without parameters is not a trailing one
+func f() {}
+
+func main() {
+    f(,)
+}

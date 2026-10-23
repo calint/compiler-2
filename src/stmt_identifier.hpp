@@ -17,7 +17,6 @@
 
 #include "compile_error.hpp"
 #include "constant_arith.hpp"
-#include "constant_parser.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
@@ -596,17 +595,11 @@ class stmt_identifier final : public statement {
 
         const std::string source{statement::trimmed_source(*this)};
 
-        // a character literal brings its own quotes, e.g. '\xff'
-        const std::string quoted{
-            constant_parser::is_character_literal(source)
-                ? source
-                : std::format("'{}'", source),
-        };
-
         throw compile_error{
             first_token(),
-            std::format("constant {} does not fit '{}', use '{}(...)'", quoted,
-                        dst_type.name(), dst_type.name())};
+            std::format("constant {} does not fit '{}', use '{}(...)'",
+                        statement::quoted_source(source), dst_type.name(),
+                        dst_type.name())};
     }
 
     // 'ps.x' does not mean 'ps[0].x'

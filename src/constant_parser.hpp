@@ -42,7 +42,14 @@ class constant_parser final {
             return static_cast<unsigned char>(body.at(0));
         }
 
-        if (not body.starts_with('\\')) {
+        // e.g. 'ab' or '\n\n'
+        const bool is_one_escape{
+            body.starts_with('\\') and
+                body.size() <= 1 + token::escape_length(body.substr(1)),
+        };
+        // note: 1 + for the backslash before the escape
+
+        if (not is_one_escape) {
             throw compile_error{
                 src_loc_tk,
                 std::format("character literal {} must contain one character",

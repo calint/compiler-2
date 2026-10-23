@@ -1,0 +1,9 @@
+# a type parameter bound to 'bool' has no conversion like 'bool'
+func f<T type>(v i8) res i8 {
+    var b = T(v)
+    res = 1
+}
+
+func main() {
+    exit(int(f<bool>(1)))
+}

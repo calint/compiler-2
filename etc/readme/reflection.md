@@ -107,6 +107,10 @@ to build the features.
 Right now I run a swarm of AI agents. They look for bugs and refactor the design
 until a human can read it easily.
 
+The amount of bugs, unresolved edge cases and inconsistencies it finds is scary.
+This is a relatively simple language. I don't dare think of what AI would find
+in a large project.
+
 ### The sense of losing touch with the code
 
 The pre-AI code and structure are still visible as the skeleton of the project.

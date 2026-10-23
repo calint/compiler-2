@@ -1,4 +1,4 @@
 
-0760.baz:4:13: cannot resolve identifier 'i8'
+0760.baz:4:13: 'i8' is a type, not a value
     var x = i8 + 1
             ^~

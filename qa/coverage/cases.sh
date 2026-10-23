@@ -4923,3 +4923,40 @@ SRC=1575 && COMPERR
 
 # 'read' fills its buffer without reading it, the result is set only in part
 SRC=1576 && COMPERR
+
+# a statement does not start with a character literal
+SRC=1577 && COMPERR
+
+# a statement does not start with 'true' or 'false'
+SRC=1578 && COMPERR
+
+# a character literal with a unary operator is quoted once in the message
+SRC=1579 && COMPERR
+
+# a character literal as a condition is quoted once in the message
+SRC=1580 && COMPERR
+
+# a character literal of two escapes holds more than one character
+SRC=1581 && COMPERR
+
+# an assignment to a constant is rejected where it is parsed, before an error
+# that a later definition has
+SRC=1582 && COMPERR
+
+# a type parameter bound to 'bool' has no conversion like 'bool'
+SRC=1583 && COMPERR
+
+# a type is not called, an instance is made with '{...}'
+SRC=1584 && COMPERR
+
+# a built-in type of another type than the destination is not its zero value
+SRC=1585 && COMPERR
+
+# a type is not an operand, also after an operator
+SRC=1586 && COMPERR
+
+# a result that is a variable the compiler added is not named in the message
+SRC=1587 && COMPERR
+
+# the ',' of a call of a function without parameters is not a trailing one
+SRC=1588 && COMPERR

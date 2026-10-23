@@ -1,0 +1,4 @@
+
+1581.baz:3:13: character literal '\n\n' must contain one character
+    var c = '\n\n'
+            ^~~~~~

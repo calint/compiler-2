@@ -203,12 +203,13 @@ class expr_bool_op final : public statement {
         }
 
         const std::string source{statement::trimmed_source(lhs_)};
+        const std::string comparison{std::format("{} != 0", source)};
 
         throw compile_error{
             lhs_.tok(),
-            std::format("'{}' of type '{}' is not a 'bool', compare it, e.g. "
-                        "'{} != 0'",
-                        source, lhs_type.name(), source)};
+            std::format("{} of type '{}' is not a 'bool', compare it, e.g. {}",
+                        statement::quoted_source(source), lhs_type.name(),
+                        statement::quoted_source(comparison))};
     }
 
     [[nodiscard]] auto compile_and(toc& tc, const size_t indent,

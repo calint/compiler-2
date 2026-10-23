@@ -1,0 +1,4 @@
+
+1586.baz:8:17: 'point' is a type, not a value
+    var n = 1 + point
+                ^~~~~

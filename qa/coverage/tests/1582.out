@@ -1,0 +1,4 @@
+
+1582.baz:6:5: cannot assign to constant 'k'
+    k = 2
+    ^

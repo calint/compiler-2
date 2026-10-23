@@ -1,0 +1,4 @@
+
+1580.baz:3:8: 'a' of type 'i32' is not a 'bool', compare it, e.g. 'a' != 0
+    if 'a' {
+       ^
