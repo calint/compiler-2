@@ -299,6 +299,14 @@ struct func_return_info {
     const type* type_ptr{};
 };
 
+// a slot of the frame of a noinline call: the address of the result, or of
+// the argument of the parameter at 'param_index'; the address of a receiver
+// may be passed in a register instead
+struct frame_slot {
+    std::optional<size_t> param_index;
+    bool is_in_register{};
+};
+
 class stmt_def_func final : public statement {
     func_head head_;
     std::vector<stmt_def_func_param> params_;
@@ -469,12 +477,6 @@ class stmt_def_func final : public statement {
         x.end_noinline_body();
     }
 
-    // the slots of a call are the result, when there is one, then the
-    // parameters
-    [[nodiscard]] auto first_param_slot() const -> size_t {
-        return returns_ ? size_t{1} : size_t{};
-    }
-
     // a suffix could collide with a method body, e.g. 'func.list.size' of
     // function 'list' and method 'list.size'
     [[nodiscard]] auto
@@ -484,9 +486,34 @@ class stmt_def_func final : public statement {
         return std::format("size.{}", body_label(array_lengths));
     }
 
-    // the address of that slot is passed in a register
-    [[nodiscard]] auto has_slot_register(const toc& tc) const -> bool {
-        return register_slot_index() and tc.has_slot_register();
+    // the slots of a noinline call, each the address of what it names: the
+    // result, when there is one, then the parameters
+    [[nodiscard]] auto frame_slots(const toc& tc) const
+        -> std::vector<frame_slot> {
+
+        std::vector<frame_slot> slots;
+
+        if (returns_) {
+            slots.push_back({
+                .param_index{},
+                .is_in_register{},
+            });
+        }
+
+        for (size_t i{}; i < params_.size(); ++i) {
+            slots.push_back({
+                .param_index{i},
+                .is_in_register{i == 0 and has_receiver_in_register(tc)},
+            });
+        }
+
+        return slots;
+    }
+
+    // the receiver of a method has its address in a register where the
+    // backend has one, not in a frame slot
+    [[nodiscard]] auto has_receiver_in_register(const toc& tc) const -> bool {
+        return is_method() and tc.has_slot_register();
     }
 
     // e.g. 'func point.at(x, y) self'
@@ -527,17 +554,6 @@ class stmt_def_func final : public statement {
 
     [[nodiscard]] auto params() const -> std::span<const stmt_def_func_param> {
         return params_;
-    }
-
-    // the slot of a call whose address may be passed in a register, the
-    // receiver of a method
-    [[nodiscard]] auto register_slot_index() const -> std::optional<size_t> {
-        if (not is_method()) {
-            return std::nullopt;
-        }
-
-        // note: the receiver is the first parameter
-        return first_param_slot();
     }
 
     [[nodiscard]] auto returns() const
@@ -597,8 +613,7 @@ class stmt_def_func final : public statement {
     // a noinline body reaches the result and the arguments through pointer
     // slots in its frame. the array lengths are those of the body instance,
     // empty where no call gives them: in the parse and in 'check_body'. the
-    // parameter of the slot at 'register_slot_index' is at 'address_register'
-    // instead of the frame, when given
+    // receiver is at 'address_register' instead of the frame, when given
     auto add_signature_vars(toc& tc, const size_t indent,
                             const var_access access,
                             const std::span<const size_t> array_lengths,
@@ -634,10 +649,11 @@ class stmt_def_func final : public statement {
 
             // the register is the address of the variable, it has no slot in
             // the frame
+            // note: an address register is given only for the receiver, see
+            //       'has_receiver_in_register'
+
             const bool is_in_register{
-                not address_register.is_empty() and
-                    register_slot_index() ==
-                        first_param_slot() + static_cast<size_t>(param_index),
+                not address_register.is_empty() and param_index == 0,
             };
 
             const at_pointer_register address_in_register{address_register};
@@ -799,7 +815,7 @@ class stmt_def_func final : public statement {
         // the register is held while the body runs
         operand slot_register;
 
-        if (has_slot_register(tc)) {
+        if (has_receiver_in_register(tc)) {
             slot_register = x.alloc_named_register(
                 tok(), indent + 1, x.slot_register(), tc.builtins().address());
         }

@@ -650,6 +650,28 @@ class stmt_identifier final : public statement {
         flow.assign(accessed_bytes_);
     }
 
+    // this path is written by 'action', e.g. "assign to" or "read into":
+    // a read-only name or a constant is rejected, the write is recorded in the
+    // uses of the function; 'src_loc_tk' is where an error points
+    auto record_write(toc& tc, const token& src_loc_tk,
+                      const std::string_view action,
+                      const ident_info& info) const -> void {
+
+        assert_not_read_only(src_loc_tk, action, path_as_string_, info);
+
+        // note: a parameter that would name a constant argument is read-only
+        //       or 'mut', which takes no constant, so this is the only check
+
+        if (info.is_const()) {
+            throw compile_error{src_loc_tk,
+                                std::format("cannot assign to constant {}",
+                                            in_quotes(path_as_string_))};
+        }
+
+        tc.record_use(ident_info::root_of(path_as_string_), accessed_path(),
+                      use_kind::write);
+    }
+
     // index expressions are read even when the path is written
     auto visit_index_reads(const read_filter var,
                            const read_visitor reader) const -> void;

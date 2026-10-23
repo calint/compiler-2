@@ -112,7 +112,9 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
     -> void {
 
-    open_brace_tk_ = tz.expect_char_token(
+    field_list& list{std::get<field_list>(value_)};
+
+    list.open_brace_tk = tz.expect_char_token(
         '{', std::format("expected '{{' to begin a value of type {}",
                          in_quotes(tp.name())));
 
@@ -120,14 +122,14 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 
     while (not at_closing_brace(tz)) {
         // each field adds one expression, e.g. the 'x' and the 'y' of '{x, y}'
-        const size_t index{exprs_.size()};
+        const size_t index{list.exprs.size()};
 
         if (index == flds.size()) {
             const token delimiter_tk{tz.is_next_char_token(',')};
 
             // a trailing ',' lets each field end its line the same way
             if (not delimiter_tk.is_empty() and at_closing_brace(tz)) {
-                expr_delims_tk_.emplace_back(delimiter_tk);
+                list.delims_tk.emplace_back(delimiter_tk);
                 break;
             }
 
@@ -154,7 +156,7 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
             tf.is_array() ? std::optional{tf.array_count} : std::nullopt,
         };
 
-        exprs_.emplace_back(std::make_unique<expr_any>(
+        list.exprs.emplace_back(std::make_unique<expr_any>(
             tc, tz, tf.type(), literal_typing::from_destination, array_count));
     }
 }
@@ -166,9 +168,9 @@ inline auto expr_type::operator=(expr_type&&) noexcept -> expr_type& = default;
 inline expr_type::~expr_type() = default;
 
 inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
-    : statement{receiver->first_token()}, stmt_ident_{std::move(receiver)} {
+    : statement{receiver->first_token()}, value_{std::move(receiver)} {
 
-    set_type(stmt_ident_->get_type());
+    set_type(operand_path()->get_type());
 }
 
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
@@ -198,20 +200,22 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
     };
 
     if (parsed.call) {
-        stmt_call_ = std::move(parsed.call);
+        value_ = std::move(parsed.call);
 
         assert_call_type(tp);
 
         return;
     }
 
-    stmt_ident_ = std::move(parsed.identifier);
+    const stmt_identifier& source{*parsed.identifier};
 
-    const ident_info src_info{make_ident_info(tc, *stmt_ident_)};
+    value_ = std::move(parsed.identifier);
+
+    const ident_info src_info{make_ident_info(tc, source)};
 
     if (not tp.is_same(src_info.type_ref())) {
         throw compile_error{
-            stmt_ident_->last_token(),
+            source.last_token(),
             std::format("expected type {}, got {}", in_quotes(tp.name()),
                         in_quotes(src_info.type_ref().name())),
         };
@@ -225,51 +229,59 @@ inline auto expr_type::assert_call_type(const type& tp) const -> void {
                             "an array cannot be assigned the result of a call"};
     }
 
-    if (tp.is_same(stmt_call_->get_type())) {
+    const type& result_type{call_source()->get_type()};
+
+    if (tp.is_same(result_type)) {
         return;
     }
 
-    throw compile_error{tok(),
-                        std::format("expected return type {}, got {}",
-                                    in_quotes(tp.name()),
-                                    in_quotes(stmt_call_->get_type().name()))};
+    throw compile_error{tok(), std::format("expected return type {}, got {}",
+                                           in_quotes(tp.name()),
+                                           in_quotes(result_type.name()))};
 }
 
 inline auto expr_type::source_to(std::ostream& os) const -> void {
-    if (stmt_call_) {
-        stmt_call_->source_to(os);
+    if (const stmt_call* const call{call_source()}) {
+        call->source_to(os);
         return;
     }
 
     // the token of the base statement is the first one of the identifier
-    if (stmt_ident_) {
-        stmt_ident_->source_to(os);
+    if (const stmt_identifier* const source{operand_path()}) {
+        source->source_to(os);
         return;
     }
 
     statement::source_to(os);
 
-    open_brace_tk_.source_to(os);
+    const field_list& list{std::get<field_list>(value_)};
+
+    list.open_brace_tk.source_to(os);
 
     const auto exprs{
-        exprs_ | std::views::transform([](const std::unique_ptr<expr_any>& e)
-                                           -> const expr_any& { return *e; }),
+        list.exprs |
+            std::views::transform([](const std::unique_ptr<expr_any>& e)
+                                      -> const expr_any& { return *e; }),
     };
 
-    source_delimited_to(os, exprs, expr_delims_tk_);
+    source_delimited_to(os, exprs, list.delims_tk);
 
-    close_brace_tk_.source_to(os);
+    list.close_brace_tk.source_to(os);
 }
 
 // a copy is of its source, e.g. the 'p' of 'q = p'
 inline auto expr_type::operand_path() const -> const stmt_identifier* {
-    return stmt_ident_.get();
+    const std::unique_ptr<stmt_identifier>* const source{
+        std::get_if<std::unique_ptr<stmt_identifier>>(&value_),
+    };
+
+    return source != nullptr ? source->get() : nullptr;
 }
 
 inline auto expr_type::compile(toc& tc, const size_t indent,
                                const destination& dst) const -> void {
 
-    if (stmt_call_) {
+    if (call_source() != nullptr) {
         compile_call_field(tc, indent, dst);
         return;
     }
@@ -277,7 +289,7 @@ inline auto expr_type::compile(toc& tc, const size_t indent,
     // note: a literal is written in parts by the 'write_plan' of the value
     //       that holds it, see 'expr_any::plan_writes'
 
-    assert(stmt_ident_ != nullptr);
+    assert(operand_path() != nullptr);
 
     compile_identifier_copy(tc, indent, dst);
 }
@@ -288,7 +300,7 @@ inline auto expr_type::compile_call_field(toc& tc, const size_t indent,
     -> void {
 
     zero_padding(tc, indent, dst.type_ref(), dst.operand());
-    stmt_call_->compile(tc, indent, dst);
+    call_source()->compile(tc, indent, dst);
 }
 
 // e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
@@ -297,7 +309,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
                                    write_plan& plan) const -> void {
 
     // a call or a copy writes the value at once
-    if (stmt_call_ or stmt_ident_) {
+    if (not is_literal()) {
         plan.push_back({
             .at{at},
             .action{
@@ -316,7 +328,9 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
     // bytes of the instance written so far, fields in order then padding
     size_t written_bytes{};
 
-    for (const auto [expr, field] : std::views::zip(exprs_, flds)) {
+    const field_list& list{std::get<field_list>(value_)};
+
+    for (const auto [expr, field] : std::views::zip(list.exprs, flds)) {
         plan_unwritten(at, "padding", written_bytes,
                        field.offset - written_bytes, {}, plan);
 
@@ -338,7 +352,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
 
     std::vector<access_path> unlisted;
 
-    for (const type_field& field : flds.subspan(exprs_.size())) {
+    for (const type_field& field : flds.subspan(list.exprs.size())) {
         unlisted.push_back(at.field(field).path());
     }
 
@@ -355,7 +369,9 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     const type& dst_type{dst.type_ref()};
 
-    const ident_info src_info{make_ident_info(tc, *stmt_ident_)};
+    const stmt_identifier& source{*operand_path()};
+
+    const ident_info src_info{make_ident_info(tc, source)};
 
     // 'expr_type' validates the source type before entering here
     assert(dst_type.is_same(src_info.type_ref()));
@@ -372,7 +388,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     std::vector<operand> allocated_registers;
 
     const operand src_op{
-        stmt_ident_->get_lea_operand(tc, indent, src_info, allocated_registers),
+        source.get_lea_operand(tc, indent, src_info, allocated_registers),
     };
 
     const size_t size_bytes{
@@ -428,15 +444,17 @@ inline auto expr_type::visit_reads(const read_filter var,
                                    const read_visitor reader) const -> void {
 
     // a copy or a call reads its source instead of the '{...}' items
-    if (stmt_ident_) {
-        stmt_ident_->visit_reads(var, reader);
+    if (const stmt_identifier* const source{operand_path()}) {
+        source->visit_reads(var, reader);
+        return;
     }
 
-    if (stmt_call_) {
-        stmt_call_->visit_reads(var, reader);
+    if (const stmt_call* const call{call_source()}) {
+        call->visit_reads(var, reader);
+        return;
     }
 
-    for (const std::unique_ptr<expr_any>& e : exprs_) {
+    for (const std::unique_ptr<expr_any>& e : field_values()) {
         e->visit_reads(var, reader);
     }
 }
@@ -445,15 +463,17 @@ inline auto
 expr_type::visit_call_effects(const toc& tc,
                               const call_effect_visitor visitor) const -> void {
 
-    if (stmt_ident_) {
-        stmt_ident_->visit_call_effects(tc, visitor);
+    if (const stmt_identifier* const source{operand_path()}) {
+        source->visit_call_effects(tc, visitor);
+        return;
     }
 
-    if (stmt_call_) {
-        stmt_call_->visit_call_effects(tc, visitor);
+    if (const stmt_call* const call{call_source()}) {
+        call->visit_call_effects(tc, visitor);
+        return;
     }
 
-    for (const std::unique_ptr<expr_any>& e : exprs_) {
+    for (const std::unique_ptr<expr_any>& e : field_values()) {
         e->visit_call_effects(tc, visitor);
     }
 }

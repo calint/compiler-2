@@ -1,4 +1,4 @@
 
 1050.baz:5:21: the array of 100 B is smaller than a sector of 512 B
     sector_write(0, bytes)
-                    ^
+                    ^~~~~

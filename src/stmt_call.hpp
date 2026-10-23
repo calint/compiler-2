@@ -477,6 +477,21 @@ struct call_site {
         }
     }
 
+    // an inlined call compiles its body in place, so nesting is limited
+    auto assert_inline_nesting(toc& tc, const stmt_def_func& func) const
+        -> void {
+
+        if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
+            throw inlining_limit_error(recursion_message(func));
+        }
+
+        // note: the chain does not depend on the arguments, see
+        //       'noinline_call::dry_run_body'
+
+        assert_scope_count(tc, tc.scopes().frames().size(),
+                           tc.scopes().noinline_dry_run_level() != 0);
+    }
+
     // the result has the type of the destination, an operand widens a
     // narrower integer, see 'destination::as_operand'
     auto assert_result_type(const destination& dst,
@@ -512,6 +527,84 @@ struct call_site {
         if (not func.returns() and not dst.is_empty()) {
             throw compile_error{tk, "function does not return a value"};
         }
+    }
+
+    // a body compiled 'scope_count' scopes deep; 'is_dry_run' when it checks
+    // the arguments of a noinline call, which the message says
+    auto assert_scope_count(toc& tc, const size_t scope_count,
+                            const bool is_dry_run) const -> void {
+
+        tc.reach_scope_check(scope_count);
+
+        if (scope_count < max_scope_count) {
+            return;
+        }
+
+        if (is_dry_run) {
+            throw compile_error{
+                tk,
+                std::format("inlined calls and blocks are nested too deep to "
+                            "check the arguments of a noinline call, the "
+                            "limit is {} scopes",
+                            max_scope_count),
+            };
+        }
+
+        throw inlining_limit_error(
+            std::format("inlined calls and blocks are nested too deep, the "
+                        "limit is {} scopes, declare a function 'noinline'",
+                        max_scope_count));
+    }
+
+    // the call is too deep to inline, e.g. a recursion that does not end at
+    // compile time
+    [[nodiscard]] auto inlining_limit_error(std::string message) const
+        -> compile_error {
+
+        compile_error error{tk, std::move(message)};
+        error.kind = compile_error::error_kind::inlining_limit;
+        return error;
+    }
+
+    // which arguments an inlined body reaches through a temporary of the
+    // call: an instance literal or a call result, e.g. 'point{1, 2}'
+    [[nodiscard]] auto instance_temporaries(const stmt_def_func& func) const
+        -> std::vector<bool> {
+
+        std::vector<bool> temporaries;
+        temporaries.reserve(args.size());
+
+        for (const auto [arg, param] : std::views::zip(args, func.params())) {
+            temporaries.push_back(is_instance_temporary(arg, param));
+        }
+
+        return temporaries;
+    }
+
+    // a variable of the current block that holds the argument at 'index',
+    // compiled into it
+    [[nodiscard]] auto
+    make_argument_temporary(toc& tc, const size_t indent, const size_t index,
+                            const stmt_def_func_param& param) const
+        -> noinline_arg {
+
+        const ident_info temporary{
+            add_temporary(tc, indent, temporary_argument_name(index),
+                          param.get_type()),
+        };
+
+        const std::optional<storage_path> target{
+            temporary_storage(tc, temporary.root_id()),
+        };
+
+        args.at(index).compile(tc, indent,
+                               destination::of_name(temporary, target));
+
+        return {
+            .info{temporary},
+            .target{target},
+            .is_temporary{true},
+        };
     }
 
     // unique per call and argument, an inlined body names it through the
@@ -572,6 +665,14 @@ struct call_site {
         };
     }
 
+    [[nodiscard]] static auto recursion_message(const stmt_def_func& func)
+        -> std::string {
+
+        return std::format("recursion of inlined function {} cannot be "
+                           "expanded at compile time, declare it 'noinline'",
+                           in_quotes(func.name()));
+    }
+
     // 'dst' has another type than the result, after 'assert_result_type' a
     // widening of an operand
     [[nodiscard]] static auto result_type_differs(const destination& dst,
@@ -587,20 +688,6 @@ struct call_site {
         -> std::optional<storage_path> {
 
         return tc.storage_of(name, access_path::whole_variable());
-    }
-
-    // the scopes ran out in the dry run of a noinline call, see
-    // 'noinline_call::dry_run_body'
-    [[noreturn]] static auto throw_dry_run_scope_limit(const token& src_loc_tk)
-        -> void {
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("inlined calls and blocks are nested too deep to check "
-                        "the arguments of a noinline call, the limit is {} "
-                        "scopes",
-                        max_scope_count),
-        };
     }
 
     [[noreturn]] static auto throw_noinline_nesting(const token& src_loc_tk)
@@ -659,9 +746,16 @@ struct call_site {
 // a 'noinline_call' runs step 3 as a dry run for the errors of its call
 class inline_call {
     call_site call_;
+    // one per argument: the body reaches it through the temporary of the call
+    // named by 'call_site::temporary_argument_name'
+    std::vector<bool> temporaries_;
 
   public:
-    explicit inline_call(call_site call) : call_{std::move(call)} {}
+    inline_call(call_site call, std::vector<bool> temporaries)
+        : call_{std::move(call)}, temporaries_{std::move(temporaries)} {
+
+        assert(temporaries_.size() == call_.args.size());
+    }
 
     // an instance literal or a call result is made in a variable of the
     // parameter's type that the body reaches through the binding of its
@@ -680,20 +774,11 @@ class inline_call {
             return;
         }
 
-        const bool has_instance_temporary{
-            std::ranges::any_of(std::views::zip(call_.args, func.params()),
-                                [](const auto& arg_and_param) -> bool {
-                                    return call_site::is_instance_temporary(
-                                        std::get<0>(arg_and_param),
-                                        std::get<1>(arg_and_param));
-                                }),
-        };
-
         // note: a block is a frame, which counts toward the nesting limit and
         //       the 'max scopes in use' report, so a call without temporaries
         //       enters none
 
-        if (not has_instance_temporary) {
+        if (not std::ranges::contains(temporaries_, true)) {
             compile_to_destination(tc, indent, dst, func);
             return;
         }
@@ -701,42 +786,27 @@ class inline_call {
         // the block frees the temporaries after the call
         const toc::frame_scope block{tc, frame::block()};
 
-        for (const auto [i, arg, param] : std::views::zip(
-                 std::views::iota(size_t{}), call_.args, func.params())) {
-
-            if (not call_site::is_instance_temporary(arg, param)) {
-                continue;
+        for (size_t i{}; i < temporaries_.size(); ++i) {
+            if (temporaries_.at(i)) {
+                std::ignore = call_.make_argument_temporary(
+                    tc, indent, i, func.params().at(i));
             }
-
-            const ident_info temporary_info{
-                call_.add_temporary(tc, indent,
-                                    call_.temporary_argument_name(i),
-                                    param.get_type()),
-            };
-
-            arg.compile(tc, indent,
-                        destination::of_name(
-                            temporary_info, call_site::temporary_storage(
-                                                tc, temporary_info.root_id())));
         }
 
         compile_to_destination(tc, indent, dst, func);
     }
 
-    // 'call_arguments' are those of a 'noinline' call that is only checked,
-    // the body sees an argument that went through a temporary as that
-    // temporary
-    auto compile_with_bindings(
-        toc& tc, const size_t indent, const destination& dst,
-        const stmt_def_func& func,
-        const std::span<const noinline_arg> call_arguments = {}) const -> void {
+    // the dry run of a 'noinline' call starts at this step, the call made its
+    // temporaries
+    auto compile_with_bindings(toc& tc, const size_t indent,
+                               const destination& dst,
+                               const stmt_def_func& func) const -> void {
 
         // scratch registers stay allocated until the inlined body is compiled
         std::vector<operand> allocated_registers;
 
         const std::vector<param_binding> bindings{
-            make_bindings(tc, indent, dst, func, call_arguments,
-                          allocated_registers),
+            make_bindings(tc, indent, dst, func, allocated_registers),
         };
 
         // the result binding has its own address choice in
@@ -991,7 +1061,7 @@ class inline_call {
         call_site narrow_call{call_};
         narrow_call.uops = {};
 
-        inline_call{narrow_call}.compile(
+        inline_call{narrow_call, temporaries_}.compile(
             tc, indent, destination::of_register(result), func);
 
         x.copy_value(call_.tk, indent, dst.operand(), result);
@@ -1111,12 +1181,8 @@ class inline_call {
     [[nodiscard]] auto
     make_bindings(toc& tc, const size_t indent, const destination& dst,
                   const stmt_def_func& func,
-                  const std::span<const noinline_arg> call_arguments,
                   std::vector<operand>& allocated_registers) const
         -> std::vector<param_binding> {
-
-        assert(call_arguments.empty() or
-               call_arguments.size() == call_.args.size());
 
         // note: the call checked the use and the type of the result before
         //       the body was entered
@@ -1135,16 +1201,10 @@ class inline_call {
         for (const auto [i, arg, param] : std::views::zip(
                  std::views::iota(size_t{}), call_.args, func.params())) {
 
-            // 'compile' of a 'noinline' call made the temporary, the dry run
-            // must not name the register of the caller that the body does not
-            // see
-            const bool is_call_temporary{
-                not call_arguments.empty() and
-                    call_arguments.at(i).is_temporary,
-            };
+            // note: the dry run of a 'noinline' call must not name the
+            //       register of the caller that the body does not see
 
-            if (is_call_temporary or
-                call_site::is_instance_temporary(arg, param)) {
+            if (temporaries_.at(i)) {
 
                 const std::string temporary{call_.temporary_argument_name(i)};
 
@@ -1179,7 +1239,7 @@ class inline_call {
             call_site::plan_argument(tc, arg, param),
         };
 
-        // note: 'compile' made the instance temporaries
+        // note: 'compile' made the instance temporaries, see 'temporaries_'
         assert(not plan.is_instance_temporary);
 
         if (plan.storage) {
@@ -1472,21 +1532,20 @@ class noinline_call {
                            call_.uops_check);
     }
 
-    // the result address comes first, then one address per argument
     auto comment_frame_slot(machine& x, const size_t indent,
                             const stmt_def_func& func,
-                            const size_t slot_index) const -> void {
+                            const frame_slot& slot) const -> void {
 
-        if (func.returns() and slot_index == 0) {
+        if (not slot.param_index) {
             x.comment(call_.tk, indent, "result address in callee frame");
             return;
         }
 
-        const size_t arg_idx{slot_index - func.first_param_slot()};
+        const size_t index{*slot.param_index};
 
         x.comment(call_.tk, indent, "address of argument {} to parameter {}",
-                  in_quotes(statement::trimmed_source(call_.args.at(arg_idx))),
-                  in_quotes(func.params().at(arg_idx).name()));
+                  in_quotes(statement::trimmed_source(call_.args.at(index))),
+                  in_quotes(func.params().at(index).name()));
     }
 
     // an argument or a result that needs one goes through a temporary of the
@@ -1513,23 +1572,8 @@ class noinline_call {
                 continue;
             }
 
-            const ident_info temporary{
-                call_.add_temporary(tc, indent,
-                                    call_.temporary_argument_name(i),
-                                    param.get_type()),
-            };
-
-            arguments.push_back({
-                .info{temporary},
-                .target{
-                    call_site::temporary_storage(tc, temporary.root_id()),
-                },
-                .is_temporary{true},
-            });
-
-            arg.compile(tc, indent,
-                        destination::of_name(arguments.back().info,
-                                             arguments.back().target));
+            arguments.push_back(
+                call_.make_argument_temporary(tc, indent, i, param));
         }
 
         if (has_result_temporary(dst, func)) {
@@ -1620,21 +1664,16 @@ class noinline_call {
             x.check_stack_capacity(call_.tk, indent);
         }
 
-        // the address of that slot is loaded after the registers are saved, a
-        // register that holds a value of the caller is not lost
-        const std::optional<size_t> register_slot{
-            func.has_slot_register(tc) ? func.register_slot_index()
-                                       : std::nullopt,
-        };
+        const std::vector<frame_slot> slots{func.frame_slots(tc)};
 
-        write_frame_slots(x, indent, func, frame_address, addresses,
-                          register_slot);
+        write_frame_slots(x, indent, func, frame_address, slots, addresses);
 
         x.free_scratch_registers(call_.tk, indent, address_registers);
 
-        x.call_function(
-            call_.tk, indent, func.body_label(array_lengths), frame_address,
-            register_slot ? addresses.at(*register_slot) : operand{});
+        // the address in a register is loaded after the registers are saved,
+        // a register that holds a value of the caller is not lost
+        x.call_function(call_.tk, indent, func.body_label(array_lengths),
+                        frame_address, register_address(slots, addresses));
     }
 
     // the body is compiled once for all callers, so the errors that depend on
@@ -1680,13 +1719,8 @@ class noinline_call {
             call_site::throw_noinline_nesting(call_.tk);
         }
 
-        const size_t scope_check{tc.scopes().frames().size() + below.scopes};
-
-        if (scope_check >= call_site::max_scope_count) {
-            call_site::throw_dry_run_scope_limit(call_.tk);
-        }
-
-        tc.reach_scope_check(scope_check);
+        call_.assert_scope_count(tc, tc.scopes().frames().size() + below.scopes,
+                                 true);
 
         // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
         //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
@@ -1700,10 +1734,17 @@ class noinline_call {
             return;
         }
 
-        const inline_call dry_run{call_};
+        std::vector<bool> temporaries;
+        temporaries.reserve(arguments.size());
+
+        for (const noinline_arg& argument : arguments) {
+            temporaries.push_back(argument.is_temporary);
+        }
+
+        const inline_call dry_run{call_, std::move(temporaries)};
 
         tc.dry_run_call_kind(*kind, level, [&] -> void {
-            dry_run.compile_with_bindings(tc, indent, dst, func, arguments);
+            dry_run.compile_with_bindings(tc, indent, dst, func);
         });
     }
 
@@ -1742,22 +1783,23 @@ class noinline_call {
     auto write_frame_slots(machine& x, const size_t indent,
                            const stmt_def_func& func,
                            const operand& frame_address,
-                           const std::vector<operand>& addresses,
-                           const std::optional<size_t> register_slot) const
+                           const std::span<const frame_slot> slots,
+                           const std::span<const operand> addresses) const
         -> void {
 
-        operand slot{frame_address};
+        operand slot_address{frame_address};
 
-        for (const auto [i, addr] : std::views::enumerate(addresses)) {
+        for (const auto [slot, addr] : std::views::zip(slots, addresses)) {
             // the callee finds it in a register, it has no slot
-            if (register_slot and std::cmp_equal(i, *register_slot)) {
+            if (slot.is_in_register) {
                 continue;
             }
 
-            comment_frame_slot(x, indent, func, static_cast<size_t>(i));
-            x.address_of(call_.tk, indent, slot, addr);
+            comment_frame_slot(x, indent, func, slot);
+            x.address_of(call_.tk, indent, slot_address, addr);
 
-            slot.increment_offset(address_offset(x.address_size_bytes()));
+            slot_address.increment_offset(
+                address_offset(x.address_size_bytes()));
         }
     }
 
@@ -1960,6 +2002,20 @@ class noinline_call {
         assert(not param.is_array() or plan.storage);
 
         return not plan.storage;
+    }
+
+    // the address the callee finds in a register, empty when none
+    [[nodiscard]] static auto
+    register_address(const std::span<const frame_slot> slots,
+                     const std::span<const operand> addresses) -> operand {
+
+        for (const auto [slot, addr] : std::views::zip(slots, addresses)) {
+            if (slot.is_in_register) {
+                return addr;
+            }
+        }
+
+        return {};
     }
 };
 
@@ -2265,14 +2321,15 @@ class stmt_call : public expression {
             return;
         }
 
-        assert_inline_nesting(tc, func);
+        call.assert_inline_nesting(tc, func);
 
         const bool is_recursion{tc.scopes().inlined_nesting(func.name()) != 0};
 
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same
         try {
-            inline_call{call}.compile(tc, indent, dst, func);
+            inline_call{call, call.instance_temporaries(func)}.compile(
+                tc, indent, dst, func);
         } catch (const compile_error& e) {
             if (not is_recursion or
                 e.kind != compile_error::error_kind::out_of_registers) {
@@ -2280,7 +2337,7 @@ class stmt_call : public expression {
                 throw;
             }
 
-            throw inlining_limit_error(recursion_message(func));
+            throw call.inlining_limit_error(call_site::recursion_message(func));
         }
     }
 
@@ -2429,37 +2486,6 @@ class stmt_call : public expression {
                             in_quotes(written->path->name_or_literal())),
                 read_only_hint(written->info));
         }
-    }
-
-    // an inlined call compiles its body in place, so nesting is limited
-    auto assert_inline_nesting(toc& tc, const stmt_def_func& func) const
-        -> void {
-
-        if (tc.scopes().inlined_nesting(func.name()) >=
-            call_site::max_inlined_nesting) {
-
-            throw inlining_limit_error(recursion_message(func));
-        }
-
-        const size_t scope_count{tc.scopes().frames().size()};
-
-        tc.reach_scope_check(scope_count);
-
-        if (scope_count < call_site::max_scope_count) {
-            return;
-        }
-
-        // note: the chain does not depend on the arguments, see
-        //       'noinline_call::dry_run_body'
-
-        if (tc.scopes().noinline_dry_run_level() != 0) {
-            call_site::throw_dry_run_scope_limit(tok());
-        }
-
-        throw inlining_limit_error(
-            std::format("inlined calls and blocks are nested too deep, the "
-                        "limit is {} scopes, declare a function 'noinline'",
-                        call_site::max_scope_count));
     }
 
     // the function is a method and the receiver is a value
@@ -2738,14 +2764,6 @@ class stmt_call : public expression {
     // the receiver is not counted as an argument
     [[nodiscard]] auto first_argument_index() const -> size_t {
         return is_method() ? 1 : 0;
-    }
-
-    [[nodiscard]] auto inlining_limit_error(std::string message) const
-        -> compile_error {
-
-        compile_error error{tok(), std::move(message)};
-        error.kind = compile_error::error_kind::inlining_limit;
-        return error;
     }
 
     [[nodiscard]] auto is_constructor() const -> bool {
@@ -3042,14 +3060,6 @@ class stmt_call : public expression {
                            constructor_name_tk.text());
 
         return name;
-    }
-
-    [[nodiscard]] static auto recursion_message(const stmt_def_func& func)
-        -> std::string {
-
-        return std::format("recursion of inlined function {} cannot be "
-                           "expanded at compile time, declare it 'noinline'",
-                           in_quotes(func.name()));
     }
 
     // e.g. " (both name 'g')", none for a variable the compiler added, whose

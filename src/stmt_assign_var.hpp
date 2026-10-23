@@ -46,20 +46,7 @@ class stmt_assign_var final : public statement {
 
         const ident_info dst_info{make_ident_info(tc, stmt_ident_)};
 
-        assert_not_read_only(tok(), "assign to", stmt_ident_.name_or_literal(),
-                             dst_info);
-
-        // note: a parameter that would name a constant argument is read-only
-        //       or 'mut', which takes no constant, so this is the only check
-
-        if (dst_info.is_const()) {
-            throw compile_error{
-                tok(), std::format("cannot assign to constant {}",
-                                   in_quotes(stmt_ident_.name_or_literal()))};
-        }
-
-        tc.record_use(stmt_ident_.first_token().text(),
-                      stmt_ident_.accessed_path(), use_kind::write);
+        stmt_ident_.record_write(tc, tok(), "assign to", dst_info);
 
         set_type(dst_info.type_ref());
 

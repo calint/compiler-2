@@ -222,16 +222,20 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
 //       through 'expr_any.hpp', so their definitions are incomplete here
 
 // a value of a user type or an array: a list of fields or elements '{...}',
-// the type name alone as its zero value, a copy of a name or a call; exactly
-// one of 'stmt_call_', 'stmt_ident_' and the list 'exprs_' is used
+// the type name alone as its zero value, a copy of a name or a call
 class expr_type final : public statement {
-    std::unique_ptr<stmt_identifier> stmt_ident_;
-    std::unique_ptr<stmt_call> stmt_call_;
+    // the fields of a literal, e.g. '{1, 2}' of 'point{1, 2}', none for the
+    // type name alone, e.g. 'point'
+    struct field_list {
+        token open_brace_tk;
+        std::vector<std::unique_ptr<expr_any>> exprs;
+        std::vector<token> delims_tk;
+        token close_brace_tk;
+    };
 
-    token open_brace_tk_;
-    std::vector<std::unique_ptr<expr_any>> exprs_;
-    std::vector<token> expr_delims_tk_;
-    token close_brace_tk_;
+    std::variant<field_list, std::unique_ptr<stmt_identifier>,
+                 std::unique_ptr<stmt_call>>
+        value_;
 
     // only a whole array destination may copy a whole array source
     bool is_array_destination_{};
@@ -288,12 +292,12 @@ class expr_type final : public statement {
     [[nodiscard]] auto field_values() const
         -> std::span<const std::unique_ptr<expr_any>> {
 
-        return exprs_;
+        return std::get<field_list>(value_).exprs;
     }
 
     // e.g. 'point{1, 2}' or 'point', not a copy of 'p' or of a call result
     [[nodiscard]] auto is_literal() const -> bool {
-        return stmt_ident_ == nullptr and stmt_call_ == nullptr;
+        return std::holds_alternative<field_list>(value_);
     }
 
     auto operator=(expr_type&&) noexcept -> expr_type&;
@@ -354,8 +358,18 @@ class expr_type final : public statement {
     // the '}' that ends the fields, when it is the next character, e.g. the '}'
     // of '{x, y}'
     [[nodiscard]] auto at_closing_brace(tokenizer& tz) -> bool {
-        close_brace_tk_ = tz.is_next_char_token('}');
-        return not close_brace_tk_.is_empty();
+        token& close_brace_tk{std::get<field_list>(value_).close_brace_tk};
+        close_brace_tk = tz.is_next_char_token('}');
+        return not close_brace_tk.is_empty();
+    }
+
+    // the call whose result is the value, null for a literal or a copy
+    [[nodiscard]] auto call_source() const -> const stmt_call* {
+        const std::unique_ptr<stmt_call>* const call{
+            std::get_if<std::unique_ptr<stmt_call>>(&value_),
+        };
+
+        return call != nullptr ? call->get() : nullptr;
     }
 
     auto compile_call_field(toc& tc, const size_t indent,
@@ -379,7 +393,7 @@ class expr_type final : public statement {
                                  in_quotes(next.name), in_quotes(tp.name()))),
         };
 
-        expr_delims_tk_.emplace_back(delimiter_tk);
+        std::get<field_list>(value_).delims_tk.emplace_back(delimiter_tk);
     }
 
     // creates an 'expr_any' for each field

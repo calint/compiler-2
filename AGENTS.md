@@ -26,11 +26,6 @@
 - Brace init everywhere: `.member{value}`, `bool enabled{};`.
 - Trailing comma in multiline initializers and returned structs, one member
   per line; tables of one-line rows keep rows.
-- clang-tidy `readability-trailing-comma` rejects every braced list that
-  ends on a later line without a comma: each nesting level
-  (`.action{zero_fill{...,},}`, `push_back({...,})`) and a single value
-  that does not fit on its line (`.alignment{\n f(x),\n}`); write the
-  commas before formatting, the formatter keeps them.
 - Explicit types; `auto` only for cumbersome ones (iterators).
 - Pointers: `const macro_use* const p{std::get_if<...>(r)};`.
 - Use `and`/`or`/`not` and `std::format("{}", v)` (not `std::to_string`).
@@ -44,8 +39,6 @@
   accept what it removes.
 - Around multiline statements and declarations; an attached comment stays
   with its statement.
-- After the `{` of a multiline signature, lambda head or condition; none
-  after the `{` of a one-line signature unless a comment starts the body.
 - Before a return only if the statements before it have blank lines between
   them.
 - Between switch branches (labels sharing a body stay grouped).
@@ -65,8 +58,8 @@
   may be longer.
 - Say why, never narrate the next line (`// get the loop label`,
   `// add aliases`); a data member may say what it holds.
-- No review stamps. The formatter writes the section banners
-  (`// statics`, `// class methods`), keep them.
+- The formatter writes the section banners (`// statics`, `// class methods`),
+  keep them.
 - Markers: `todo:` for work left; `note:` for a remark or annotation that
   the code relies on, e.g. why an `assert` holds or why a choice was made.
 - Magic numbers whose reason is not obvious (`subspan(1, n - 2)` over quotes):
@@ -155,8 +148,6 @@
   `build`: its sanitizer and coverage build compiles about 66 times slower.
   The user runs the `build` and the full suite before committing; do not run
   `build`.
-- New error test: check each `line:column` in its `.out` points at the token
-  where the error is detected (print the source line with a caret).
 - `UPDATE=1 qa/coverage/test-coverage.sh --target=x86_64 run` writes expected
   `.out` files; run for x86_64 and rv32i-fpga, then review the diff.
 - After every change to `roome/src/main.baz`, run `roome/qa/test.sh`. No

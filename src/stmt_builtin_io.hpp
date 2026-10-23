@@ -81,6 +81,9 @@ class stmt_builtin_io final : public expression {
         },
     };
 
+    // the buffer follows the descriptor or the sector
+    static constexpr size_t buffer_index_{1};
+
     // the entry of 'functions_' that the call names
     io_function io_;
     builtin_arguments args_;
@@ -97,22 +100,18 @@ class stmt_builtin_io final : public expression {
         }
 
         assert_argument_count();
+        assert_buffer_path();
 
         if (not io_.fills_buffer) {
             return;
         }
 
-        // 'read' and 'sector_read' fill the buffer, the second argument
-        const statement& buffer{args_.at(1)};
+        // 'read' and 'sector_read' fill the buffer
+        if (const std::optional<place> filled{as_place(tc, buffer_path())};
+            filled) {
 
-        if (const std::optional<place> filled{as_place(tc, buffer)}; filled) {
-            const stmt_identifier& path{*filled->path};
-
-            assert_not_read_only(buffer.tok(), "read into",
-                                 path.name_or_literal(), filled->info);
-
-            tc.record_use(ident_info::root_of(path.name_or_literal()),
-                          path.accessed_path(), use_kind::write);
+            buffer_path().record_write(tc, buffer_path().tok(), "read into",
+                                       filled->info);
         }
     }
 
@@ -132,7 +131,8 @@ class stmt_builtin_io final : public expression {
 
         // e.g. the 'b' of 'read(0, b, n)' is written
         args_.assert_not_written_later(
-            tc, io_.fills_buffer ? std::optional<size_t>{1} : std::nullopt);
+            tc, io_.fills_buffer ? std::optional<size_t>{buffer_index_}
+                                 : std::nullopt);
 
         machine& x{tc.machine()};
 
@@ -198,17 +198,13 @@ class stmt_builtin_io final : public expression {
             return;
         }
 
-        const std::optional<place> filled{as_place(tc, args_.at(1))};
-
-        if (not filled) {
+        if (not as_place(tc, buffer_path())) {
             return;
         }
 
-        const stmt_identifier& buffer{*filled->path};
-
         const std::optional<storage_path> written{
-            tc.storage_of(ident_info::root_of(buffer.name_or_literal()),
-                          buffer.accessed_path()),
+            tc.storage_of(ident_info::root_of(buffer_path().name_or_literal()),
+                          buffer_path().accessed_path()),
         };
 
         // note: a place is a variable, which has storage
@@ -216,7 +212,7 @@ class stmt_builtin_io final : public expression {
 
         visitor({
             .call_tk{tok()},
-            .name{buffer.name_or_literal()},
+            .name{buffer_path().name_or_literal()},
             .storage{*written},
             .is_write{true},
         });
@@ -228,13 +224,10 @@ class stmt_builtin_io final : public expression {
         -> void override {
 
         for (size_t i{}; i < args_.count(); ++i) {
-            const statement& arg{args_.at(i)};
-            const stmt_identifier* const path{arg.place_path()};
-
-            if (i == 1 and io_.fills_buffer and path != nullptr) {
-                path->visit_index_reads(var, reader);
+            if (i == buffer_index_ and io_.fills_buffer) {
+                buffer_path().visit_index_reads(var, reader);
             } else {
-                arg.visit_reads(var, reader);
+                args_.at(i).visit_reads(var, reader);
             }
         }
     }
@@ -297,13 +290,25 @@ class stmt_builtin_io final : public expression {
 
     // an address would bypass the bounds check, so only arrays are accepted
     [[nodiscard]] auto assert_array_buffer(const toc& tc) const -> place {
-        const statement& buffer{args_.at(1)};
-        const stmt_identifier* const path{buffer.operand_path()};
+        if (std::optional<place> array{as_place(tc, buffer_path())};
+            array and array->info.is_array()) {
+
+            return std::move(*array);
+        }
+
+        throw_not_an_array();
+    }
+
+    // the buffer is named by a path, the rest of 'assert_array_buffer' needs
+    // the types at compile time
+    auto assert_buffer_path() const -> void {
+        const statement& arg{args_.at(buffer_index_)};
+        const stmt_identifier* const path{arg.operand_path()};
 
         // the start has one spelling, the last argument
         if (path != nullptr and path->is_array_element()) {
             throw compile_error{
-                buffer.tok(),
+                arg.tok(),
                 std::format("pass the array and the start as {} argument, "
                             "e.g. {}",
                             io_.is_sector ? "3rd" : "4th",
@@ -311,15 +316,9 @@ class stmt_builtin_io final : public expression {
         }
 
         // e.g. not '-b', a unary operator makes a value
-        if (std::optional<place> array{as_place(tc, buffer)};
-            array and array->info.is_array()) {
-
-            return std::move(*array);
+        if (arg.place_path() == nullptr) {
+            throw_not_an_array();
         }
-
-        throw compile_error{buffer.tok(),
-                            std::format("{} is not an array",
-                                        in_quotes(trimmed_source(buffer)))};
     }
 
     // a constant range past the end of the buffer is rejected like the range
@@ -379,11 +378,9 @@ class stmt_builtin_io final : public expression {
 
         const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
 
-        const statement& buffer{args_.at(1)};
-
         if (sector_size_bytes % element_size_bytes != 0) {
             throw compile_error{
-                buffer.tok(),
+                buffer_path().tok(),
                 std::format("the element size {} B does not divide the "
                             "sector size {} B",
                             element_size_bytes, sector_size_bytes)};
@@ -400,7 +397,7 @@ class stmt_builtin_io final : public expression {
 
         if (buffer_size_bytes < sector_size_bytes) {
             throw compile_error{
-                buffer.tok(),
+                buffer_path().tok(),
                 std::format("the array of {} B is smaller than a sector of "
                             "{} B",
                             buffer_size_bytes, sector_size_bytes)};
@@ -413,6 +410,11 @@ class stmt_builtin_io final : public expression {
         if (x.sector_size_bytes() == 0) {
             throw compile_error{tok(), "the target has no sd card"};
         }
+    }
+
+    // the array the call transfers, a path since 'assert_buffer_path'
+    [[nodiscard]] auto buffer_path() const -> const stmt_identifier& {
+        return *args_.at(buffer_index_).place_path();
     }
 
     // the count and start are in elements, the byte count is computed last
@@ -646,6 +648,14 @@ class stmt_builtin_io final : public expression {
         }
 
         return range_check::compile_time;
+    }
+
+    [[noreturn]] auto throw_not_an_array() const -> void {
+        const statement& arg{args_.at(buffer_index_)};
+
+        throw compile_error{
+            arg.tok(),
+            std::format("{} is not an array", in_quotes(trimmed_source(arg)))};
     }
 
     // the call with all its arguments

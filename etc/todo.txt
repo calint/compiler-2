@@ -124,6 +124,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             the call sites first)
        C.2. 'expr_type': "exactly one of a copy, a call, a field list" as a
             variant
+            => done (2026-10-23): 'value_' is a variant of 'field_list',
+               the copied 'stmt_identifier' and the 'stmt_call';
+               'operand_path', 'call_source', 'field_values' and 'is_literal'
+               read it; no output change
     D. built-ins
        D.1. one catalog {name, value kind, statement factory, value
             factory}: today the reserved list, 'builtin_value_type',
@@ -151,6 +155,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        D.3. a written buffer (the destination of 'array_copy', the buffer
             of 'read') owns its parse check, its use record and its reads;
             the index 1 hard-coded in four io methods goes (after D.2)
+            => done (2026-10-23): 'stmt_identifier::record_write' (read-only
+               and constant rejected, the write recorded) serves the
+               assignment, 'array_copy' and the io buffer; the io buffer is
+               'buffer_path()' at 'buffer_index_', a path checked by the
+               constructor ('assert_buffer_path'), so the null branches of
+               the effects and reads go; read-only errors underline the name
+               (0663, 1049, 1050)
     E. calls
        E.1. what a callee reaches of the caller is mapped in four places
             with two rules: 'callee_reach(tc, func)' {argument or global,
@@ -162,10 +173,29 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             the same code; 'compile_with_bindings' has two modes by an empty
             span: one 'make_argument_temporaries' that returns per argument
             whether it is a temporary and its storage
+            => done (2026-10-23): 'inline_call' holds 'temporaries_' (one
+               per argument), from 'call_site::instance_temporaries' for an
+               inlined call and from the call's temporaries for the dry run;
+               'make_bindings' asks it, the empty-span mode gone;
+               'call_site::make_argument_temporary' is the one maker; no
+               output change
        E.3. the scope and nesting limits of calls in one helper (today in
             'call_site', 'stmt_call' and 'noinline_call::dry_run_body')
+            => done (2026-10-23): 'call_site' holds the limits and their
+               checks: 'assert_inline_nesting', 'assert_scope_count' (one
+               scope check, the dry-run message by flag), 'inlining_limit_error'
+               and 'recursion_message'; no output change
        E.4. the frame slots {result | parameter, in a register} from
             'stmt_def_func', read by the call and by the body
+            => done (2026-10-23): 'frame_slot' {param_index, is_in_register}
+               and 'stmt_def_func::frame_slots(tc)', read by the call
+               ('write_frame_slots', 'register_address');
+               'has_receiver_in_register' replaces 'first_param_slot',
+               'register_slot_index' and 'has_slot_register'; no output change
+            => E.1 deferred (2026-10-23): the record and the global check
+               map a use in two shapes (a root name with an access path, a
+               storage path); one 'callee_reach' would convert between them
+               for two of the four sites, the effects keep the 'mut' rule
        E.5. optional, lower confidence: generic deduction by a trial parse
             like 'var' (drops 'value_type', about 70 lines of token shapes);
             messages of malformed arguments may change
