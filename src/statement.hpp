@@ -243,8 +243,8 @@ enum class range_check : uint8_t { run_time, compile_time };
 //                  'fold', 'keeps_low_bits')
 //   a place        'name_or_literal', 'is_name_or_literal', 'accessed_path',
 //                  'compile_lea', 'is_indexed', 'is_array_element',
-//                  'name_token': 'stmt_identifier', and 'expr_arith',
-//                  'expr_any' and 'expr_type' that hold one;
+//                  'name_token', 'visit_index_reads': 'stmt_identifier', and
+//                  'expr_arith', 'expr_any' and 'expr_type' that hold one;
 //                  'expr_bool' ('name_or_literal') and 'expr_zero'
 //                  ('is_name_or_literal', 'name_or_literal')
 class statement {
@@ -373,6 +373,16 @@ class statement {
     // its assignments
     virtual auto trace_assignment(assignment_flow& flow) const -> void {
         assert_var_not_used(flow);
+    }
+
+    // reports the reads of the indexes in the path of a place, e.g. 'i' of
+    // 'a[i].x', which are read also when the place is written
+    virtual auto
+    visit_index_reads([[maybe_unused]] const read_filter var,
+                      [[maybe_unused]] const read_visitor reader) const
+        -> void {
+
+        std::unreachable();
     }
 
     // reports every read of 'var' in this statement, of every variable when

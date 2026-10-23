@@ -468,6 +468,14 @@ class expr_arith final : public expression {
                exprs_.front()->produces_boolean();
     }
 
+    auto visit_index_reads(const read_filter var,
+                           const read_visitor reader) const -> void override {
+
+        assert(exprs_.size() == 1);
+
+        exprs_.at(0)->visit_index_reads(var, reader);
+    }
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 

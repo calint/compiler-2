@@ -1,4 +1,4 @@
 
-1576.baz:9:13: use of uninitialized variable 'res'
-    read(0, res.buf)
-            ^~~
+1576.baz:7:12: function may return without setting its return value
+func get() res message {
+           ^~~

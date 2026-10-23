@@ -168,6 +168,23 @@ class stmt_builtin_io final : public stmt_call {
         x.free_named_registers(tok(), indent, args);
     }
 
+    // the buffer that 'read' and 'sector_read' fill is written, only the
+    // indexes in its path are read
+    auto visit_reads(const read_filter var, const read_visitor reader) const
+        -> void override {
+
+        for (size_t i{}; i < argument_count(); ++i) {
+            const statement& arg{argument(i)};
+
+            if (i == 1 and io_.fills_buffer and arg.is_bare_name_or_literal()) {
+
+                arg.visit_index_reads(var, reader);
+            } else {
+                arg.visit_reads(var, reader);
+            }
+        }
+    }
+
     //
     // statics
     //

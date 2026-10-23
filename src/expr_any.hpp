@@ -296,6 +296,15 @@ class expr_any final : public statement {
         return element(0).tok();
     }
 
+    auto visit_index_reads(const read_filter var,
+                           const read_visitor reader) const -> void override {
+
+        assert(not is_array_);
+        assert(elements_.size() == 1);
+
+        element(0).visit_index_reads(var, reader);
+    }
+
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
