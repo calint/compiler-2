@@ -381,7 +381,7 @@ class stmt_def_func final : public statement {
 
         for (const generic_arg& constant : instance_->constants) {
             tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
-                         folded_value::untyped(constant.value));
+                         folded_value::untyped(constant.constant()));
         }
     }
 
@@ -632,9 +632,14 @@ class stmt_def_func final : public statement {
                            .name{returns_->ident_tk.text()},
                            .type_ptr{&get_type()},
                            .src_loc_tk{returns_->ident_tk},
-                           .is_pointer{is_pointer},
-                           .array_len{},
-                           .placement{},
+                           .shape{},
+                           .placement{
+                               in_storage{
+                                   .offset{},
+                                   .base_register{},
+                                   .holds_address{is_pointer},
+                               },
+                           },
                            .foo_array{},
                        },
                        var_kind::result);
@@ -658,9 +663,15 @@ class stmt_def_func final : public statement {
 
             const at_pointer_register address_in_register{address_register};
 
+            const in_storage stored{
+                .offset{},
+                .base_register{},
+                .holds_address{is_pointer},
+            };
+
             const var_placement placement{
                 is_in_register ? var_placement{address_in_register}
-                               : var_placement{},
+                               : var_placement{stored},
             };
 
             tc.add_var(param.tok(), indent,
@@ -668,13 +679,14 @@ class stmt_def_func final : public statement {
                            .name{param.name()},
                            .type_ptr{&param.get_type()},
                            .src_loc_tk{param.tok()},
-                           .is_array{param.is_array()},
-                           .is_pointer{is_pointer and not is_in_register},
+                           .shape{
+                               param.is_array() ? array_shape::array(array_len)
+                                                : array_shape{},
+                           },
                            .read_only_why{
                                param.is_read_only() ? read_only_cause::param
                                                     : read_only_cause::none,
                            },
-                           .array_len{array_len},
                            .placement{placement},
                            .foo_array{},
                        },
@@ -1265,8 +1277,7 @@ class func_instantiator final {
             args.push_back({
                 .param_tk{param_tk},
                 .arg_tk{},
-                .type_ptr{type_arg},
-                .value{},
+                .value{type_arg},
             });
         }
 

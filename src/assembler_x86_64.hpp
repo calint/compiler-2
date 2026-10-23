@@ -149,6 +149,9 @@ class assembler_x86_64 final : public assembler {
     using argument = std::variant<std::string_view, memory, immediate>;
 
   private:
+    // starts the comment of a line, the text before it is code
+    static constexpr std::string_view comment_marker_{";"};
+
     struct op_info {
         std::string_view mnemonic;
         size_t operand_count{};
@@ -418,7 +421,7 @@ class assembler_x86_64 final : public assembler {
         -> size_t override {
 
         // note: the directives are added with size 0 by 'add_directive'
-        return code_before(text, ";").empty() ? 0 : 1;
+        return code_before(text, comment_marker_).empty() ? 0 : 1;
     }
 
     [[nodiscard]] auto unconditional_jump_mnemonic() const
@@ -472,7 +475,7 @@ class assembler_x86_64 final : public assembler {
     [[nodiscard]] static auto comment_start(const size_t indent)
         -> std::string {
 
-        std::string text{";"};
+        std::string text{comment_marker_};
 
         if (indent != 0) {
             text += "   ";

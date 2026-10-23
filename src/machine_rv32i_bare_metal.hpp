@@ -45,12 +45,15 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr std::string_view write_label_{".Lbaz_write"};
 
   public:
+    // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
+    // qemu 'virt' machine
     machine_rv32i_bare_metal(const builtin_type_set& builtins,
                              const source_files& files,
-                             const target_options& options)
+                             const target_options& options,
+                             const size_t memory_size_bytes)
         : machine_rv32i{builtins, files, options},
           stack_size_bytes_{options.stack_size_bytes},
-          memory_size_bytes_{options.memory_size_bytes} {
+          memory_size_bytes_{memory_size_bytes} {
 
         // note: the options are checked before the source is parsed, so an
         //       error in the source does not hide them

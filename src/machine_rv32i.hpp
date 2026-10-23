@@ -586,8 +586,6 @@ class machine_rv32i : public machine {
         : machine{builtins, files, options},
           binary_file_name_{options.binary_file_name} {}
 
-    using machine::emit_data_array;
-
     //
     // overridden methods
     //
@@ -1137,16 +1135,10 @@ class machine_rv32i : public machine {
 
     // the elements on one line, e.g. '.word 1, 2, 3'
     auto emit_data_array(const size_t element_size_bytes,
-                         const std::function_ref<bool(int64_t&)> next)
+                         const std::span<const int64_t> values)
         -> void override {
 
         assert_data_element_size(element_size_bytes);
-
-        std::vector<int64_t> values;
-        int64_t value{};
-        while (next(value)) {
-            values.push_back(value);
-        }
 
         assembler_.data(element_size_bytes, values);
     }

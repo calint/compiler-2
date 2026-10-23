@@ -3971,8 +3971,10 @@ struct front_end {
                        .name{name},
                        .type_ptr{&value_type},
                        .src_loc_tk{at},
-                       .is_array{array_len != 0},
-                       .array_len{array_len},
+                       .shape{
+                           array_len != 0 ? array_shape::array(array_len)
+                                          : array_shape{},
+                       },
                    },
                    var_kind::var);
 

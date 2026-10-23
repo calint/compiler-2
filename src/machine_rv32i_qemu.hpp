@@ -23,13 +23,16 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // the finisher takes the exit code in the upper 16 bits
     static constexpr int finisher_code_shift_{16};
     static constexpr int finisher_pass_{0x5555};
-    // note: 128 MiB, the memory of the 'virt' machine without '-m'
+
+    // note: 128 MiB, the memory of the 'virt' machine without '-m', fixed,
+    //       '--memory' is for 'rv32i-fpga'
+
     static constexpr size_t ram_size_bytes_{0x800'0000};
 
   public:
     machine_rv32i_qemu(const builtin_type_set& builtins,
                        const source_files& files, const target_options& options)
-        : machine_rv32i_bare_metal{builtins, files, with_ram_size(options)} {}
+        : machine_rv32i_bare_metal{builtins, files, options, ram_size_bytes_} {}
 
     //
     // overridden methods
@@ -120,18 +123,5 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
         assembler_rv32i& a{assembler()};
 
         a.lui(1, "a3", uart_upper_);
-    }
-
-    //
-    // statics
-    //
-
-    // the memory of the 'virt' machine is fixed, '--memory' is for
-    // 'rv32i-fpga'
-    [[nodiscard]] static auto with_ram_size(target_options options)
-        -> target_options {
-
-        options.memory_size_bytes = ram_size_bytes_;
-        return options;
     }
 };

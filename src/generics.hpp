@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -203,10 +204,20 @@ struct generic_arg {
     token param_tk;
     // e.g. 'i8' of 'list<i8, 8>', empty for a type argument of a function
     token arg_tk;
-    // null for a constant
-    const type* type_ptr{};
-    // the constant, unused for a type
-    int64_t value{};
+    // the type, or the value of a constant
+    std::variant<const type*, int64_t> value;
+
+    [[nodiscard]] auto constant() const -> int64_t {
+        return std::get<int64_t>(value);
+    }
+
+    [[nodiscard]] auto is_type() const -> bool {
+        return std::holds_alternative<const type*>(value);
+    }
+
+    [[nodiscard]] auto type_ref() const -> const type& {
+        return *std::get<const type*>(value);
+    }
 };
 
 // the two spellings of an instance: a function instance is a function named
@@ -248,8 +259,8 @@ generic_instance_text(const std::string_view generic_name,
             text += ", ";
         }
 
-        text += arg.type_ptr != nullptr ? std::string{arg.type_ptr->name()}
-                                        : std::format("{}", arg.value);
+        text += arg.is_type() ? std::string{arg.type_ref().name()}
+                              : std::format("{}", arg.constant());
     }
 
     text += '>';
@@ -350,7 +361,7 @@ struct generic_type_instance {
         std::vector<generic_arg> result;
 
         for (const generic_arg& arg : args) {
-            if (arg.type_ptr == nullptr) {
+            if (not arg.is_type()) {
                 result.push_back(arg);
             }
         }
@@ -371,7 +382,7 @@ struct generic_type_instance {
         std::vector<generic_arg> result;
 
         for (const generic_arg& arg : args) {
-            if (arg.type_ptr != nullptr) {
+            if (arg.is_type()) {
                 result.push_back(arg);
             }
         }

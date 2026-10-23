@@ -153,12 +153,12 @@ class stmt_def_dat final : public statement {
     static auto compile_data_elements(machine& x, const type& tp,
                                       const elem& el) -> void {
 
-        const auto values{
-            el.elems |
-                std::views::transform([](const elem& element) -> int64_t {
-                    return element.value;
-                }),
-        };
+        std::vector<int64_t> values;
+        values.reserve(el.elems.size());
+
+        for (const elem& element : el.elems) {
+            values.push_back(element.value);
+        }
 
         // e.g. 'dat a = i8[4]' lists no element
         if (not el.elems.empty()) {

@@ -643,9 +643,8 @@ class machine {
     virtual auto emit_data(const size_t element_size_bytes, const int64_t value)
         -> void = 0;
 
-    // 'next' gives the values one by one, false after the last
     virtual auto emit_data_array(const size_t element_size_bytes,
-                                 const std::function_ref<bool(int64_t&)> next)
+                                 const std::span<const int64_t> values)
         -> void = 0;
 
     // prints 'panic: NAME' of 'handler', with the line when 'with_line'
@@ -870,31 +869,6 @@ class machine {
         };
 
         comment(src_loc_tk, indent, std::string_view{text});
-    }
-
-    template <std::ranges::input_range values_t>
-    auto emit_data_array(const size_t element_size_bytes, values_t&& values)
-        -> void {
-
-        auto&& range{std::forward<values_t>(values)};
-        auto current{std::ranges::begin(range)};
-        const auto end{std::ranges::end(range)};
-
-        auto next{
-            [&](int64_t& value) -> bool {
-                if (current == end) {
-                    return false;
-                }
-
-                value = *current;
-                ++current;
-
-                return true;
-            },
-        };
-
-        emit_data_array(element_size_bytes,
-                        std::function_ref<bool(int64_t&)>{next});
     }
 
     // runs 'emit' for its checks, nothing it emits is kept and the registers

@@ -76,8 +76,52 @@ struct folded_value {
 };
 
 // the length that an array of unknown length is parsed and compiled with,
-// what it gives is discarded, see 'ident_info::is_length_unknown'
+// what it gives is discarded, see 'array_shape::is_length_unknown'
 inline constexpr size_t discarded_array_len{};
+
+// whether a name is an array and of how many elements: not an array, an
+// array of a length, or an unsized array parameter without one
+class array_shape final {
+    bool is_array_{};
+    std::optional<size_t> length_;
+
+  public:
+    // not an array
+    array_shape() = default;
+
+    // 1 for a name that is not an array, see 'discarded_array_len'
+    [[nodiscard]] auto element_count() const -> size_t {
+        return is_array_ ? length_.value_or(discarded_array_len) : 1;
+    }
+
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    // an unsized array parameter where no call gave it a length: in the parse
+    // and in the check of a function that nothing calls
+    [[nodiscard]] auto is_length_unknown() const -> bool {
+        return is_array_ and not length_;
+    }
+
+    // empty when not an array or not known
+    [[nodiscard]] auto length() const -> std::optional<size_t> {
+        return length_;
+    }
+
+    //
+    // statics
+    //
+
+    // an array, of unknown length when 'length' is empty
+    [[nodiscard]] static auto array(const std::optional<size_t> length)
+        -> array_shape {
+
+        return {true, length};
+    }
+
+  private:
+    array_shape(const bool is_array, const std::optional<size_t> length)
+        : is_array_{is_array}, length_{length} {}
+};
 
 // where a variable lives: in storage at an offset from a base register, at
 // the memory a register points to, or in a register without storage
@@ -87,6 +131,9 @@ struct in_storage {
     // the base of the frame that holds the storage, empty for the base the
     // name is resolved with, e.g. the variables base
     std::string_view base_register;
+    // the storage holds the address of the variable, e.g. a parameter of a
+    // noinline body
+    bool holds_address{};
 };
 
 // e.g. the element 'e' of a 'foo' or a parameter whose address the call
@@ -102,6 +149,14 @@ struct in_value_register {
 
 using var_placement =
     std::variant<in_storage, at_pointer_register, in_value_register>;
+
+// the storage of the variable holds its address, see 'in_storage'
+[[nodiscard]] inline auto holds_address(const var_placement& placement)
+    -> bool {
+
+    const in_storage* const stored{std::get_if<in_storage>(&placement)};
+    return stored != nullptr and stored->holds_address;
+}
 
 // the register of a variable in a register or at one, empty in storage
 [[nodiscard]] inline auto register_of(const var_placement& placement)
@@ -128,14 +183,10 @@ struct var_info {
     std::string name;
     const type* type_ptr{};
     token src_loc_tk;
-    bool is_array{};
-    bool is_pointer{};
+    array_shape shape;
     read_only_cause read_only_why{};
     // a variable the compiler adds, see 'toc::temporary_name'
     bool is_temporary{};
-    // the elements of an array, empty when not an array or not known, see
-    // 'ident_info::is_length_unknown'
-    std::optional<size_t> array_len;
     var_placement placement;
 
     // the array that the element 'e' of a 'foo' belongs to, empty unless this
@@ -158,20 +209,16 @@ struct known_address {
 // the accessors give what a kind does not have as empty, e.g. 'is_array' of a
 // constant is false
 class ident_info final {
-  public:
     // a variable or the storage that an argument names
     struct storage_part {
         ::operand operand;
         // the deepest address known from the calls, empty when none is
         std::optional<known_address> known;
-        // see 'var_info::array_len'
-        std::optional<size_t> array_len;
-        bool is_array{};
+        array_shape shape;
         bool is_pointer{};
         read_only_cause read_only_why{};
     };
 
-  private:
     // a variable or an argument whose value is held in a register
     struct register_part {
         ::operand reg;
@@ -190,8 +237,7 @@ class ident_info final {
 
   public:
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage == nullptr ? std::nullopt : storage->array_len;
+        return shape().length();
     }
 
     [[nodiscard]] auto constant() const -> const folded_value& {
@@ -205,7 +251,7 @@ class ident_info final {
 
     // 1 for a name that is not an array, see 'discarded_array_len'
     [[nodiscard]] auto element_count() const -> size_t {
-        return is_array() ? array_len().value_or(discarded_array_len) : 1;
+        return shape().element_count();
     }
 
     [[nodiscard]] auto has_known_address() const -> bool {
@@ -221,10 +267,7 @@ class ident_info final {
         return is_pointer() or has_known_address();
     }
 
-    [[nodiscard]] auto is_array() const -> bool {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage != nullptr and storage->is_array;
-    }
+    [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
 
     [[nodiscard]] auto is_const() const -> bool {
         return std::holds_alternative<folded_value>(part_);
@@ -234,10 +277,9 @@ class ident_info final {
         return std::holds_alternative<std::monostate>(part_);
     }
 
-    // an unsized array parameter where no call gave it a length: in the parse
-    // and in the check of a function that nothing calls
+    // see 'array_shape::is_length_unknown'
     [[nodiscard]] auto is_length_unknown() const -> bool {
-        return is_array() and not array_len();
+        return shape().is_length_unknown();
     }
 
     [[nodiscard]] auto is_pointer() const -> bool {
@@ -288,6 +330,12 @@ class ident_info final {
     }
 
     auto set_src_loc_tk(const token& tk) -> void { src_loc_tk_ = tk; }
+
+    // not an array when the name has no storage, e.g. a constant
+    [[nodiscard]] auto shape() const -> array_shape {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+        return storage == nullptr ? array_shape{} : storage->shape;
+    }
 
     // where the name is in the source, set by 'make_ident_info(tc, st)',
     // empty when resolved without a statement
@@ -420,10 +468,10 @@ struct value_use {
 // where 'compile' writes a value: nowhere for a statement, a register, or the
 // storage that a name of the source resolves to, e.g. 'p.x'; it is not changed
 // after it is made, a field or an element of it is a destination of its own
-class destination final {
-    enum class kind : uint8_t { none, reg, storage };
+// note: the kind follows from the members: storage when 'storage_' is set, a
+//       register when the operand is one, nowhere without a type
 
-    kind kind_{kind::none};
+class destination final {
     ::operand operand_;
     const type* type_ptr_{};
     // e.g. 'p.x', or the register, as the comments name it
@@ -436,17 +484,15 @@ class destination final {
     // the operand is the address, the name need not be resolved again, e.g.
     // an indexed element or a pointer that was loaded
     bool is_address_known_{};
-    bool is_array_{};
+    // an unsized one gets its length from the argument
+    array_shape shape_;
     // an operand of an operator, e.g. the 'g()' of 'w + g()', see 'as_operand'
     bool is_operand_{};
     // its arithmetic wraps on purpose, see 'as_wrapping'; otherwise the
     // overflow check is as '--checks' asks
     bool wraps_{};
-    // the elements of an array, an unsized one gets them from the argument,
-    // see 'var_info::array_len'
-    std::optional<size_t> array_len_;
-    // the root variable and the path of it that this names, set exactly when
-    // the kind is storage
+    // the root variable and the path of it that this names, set exactly for
+    // storage
     std::optional<storage_path> storage_;
 
     // what a resolved name adds when it is the destination of an assignment
@@ -461,7 +507,7 @@ class destination final {
     destination() = default;
 
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
-        return array_len_;
+        return shape_.length();
     }
 
     // a call result narrower than an operand widens into it like a variable,
@@ -493,8 +539,7 @@ class destination final {
             address_offset(index * type_ref().size_bytes()));
 
         result.is_address_known_ = true;
-        result.is_array_ = false;
-        result.array_len_ = std::nullopt;
+        result.shape_ = {};
         result.storage_->path.add_fixed_index(index);
         result.text_ += std::format("[{}]", index);
 
@@ -537,24 +582,24 @@ class destination final {
         return is_address_known_;
     }
 
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+    [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
 
-    [[nodiscard]] auto is_empty() const -> bool { return kind_ == kind::none; }
+    [[nodiscard]] auto is_empty() const -> bool { return type_ptr_ == nullptr; }
 
-    // see 'ident_info::is_length_unknown'
+    // see 'array_shape::is_length_unknown'
     [[nodiscard]] auto is_length_unknown() const -> bool {
-        return is_array_ and not array_len_;
+        return shape_.is_length_unknown();
     }
 
     [[nodiscard]] auto is_operand() const -> bool { return is_operand_; }
 
     [[nodiscard]] auto is_register() const -> bool {
-        return kind_ == kind::reg;
+        return not storage_ and operand_.is_register();
     }
 
     // storage named in the source, a variable or a temporary
     [[nodiscard]] auto is_storage() const -> bool {
-        return kind_ == kind::storage;
+        return storage_.has_value();
     }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
@@ -623,7 +668,6 @@ class destination final {
         assert(parts.storage.has_value() == info.is_var());
 
         destination result;
-        result.kind_ = info.is_register() ? kind::reg : kind::storage;
         result.operand_ = std::move(parts.address);
         result.type_ptr_ = &info.type_ref();
         result.name_ = info.id();
@@ -632,8 +676,7 @@ class destination final {
 
         result.is_address_known_ = parts.is_address_known;
 
-        result.is_array_ = info.is_array();
-        result.array_len_ = info.array_len();
+        result.shape_ = info.shape();
         result.storage_ = std::move(parts.storage);
 
         return result;
@@ -644,7 +687,6 @@ class destination final {
         assert(reg.is_register());
 
         destination result;
-        result.kind_ = kind::reg;
         result.operand_ = reg;
         result.type_ptr_ = &reg.type_ref();
         result.name_ = reg.base_register();

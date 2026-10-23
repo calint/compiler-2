@@ -441,8 +441,8 @@ struct call_site {
                        .name{name},
                        .type_ptr{&tpe},
                        .src_loc_tk{tk},
+                       .shape{},
                        .is_temporary{true},
-                       .array_len{},
                        .placement{},
                        .foo_array{},
                    },
@@ -1479,8 +1479,7 @@ class noinline_call {
         // field 'x' of 'v.x'
         std::optional<storage_path> target;
         bool is_pointer{};
-        bool is_array{};
-        std::optional<size_t> array_len;
+        array_shape shape;
     };
 
     call_site call_;
@@ -1887,8 +1886,7 @@ class noinline_call {
             items.push_back({
                 .target{dst.storage()},
                 .is_pointer{},
-                .is_array{},
-                .array_len{},
+                .shape{},
             });
         }
 
@@ -1896,8 +1894,7 @@ class noinline_call {
             items.push_back({
                 .target{argument.target},
                 .is_pointer{argument.info.is_pointer()},
-                .is_array{argument.info.is_array()},
-                .array_len{argument.info.array_len()},
+                .shape{argument.info.shape()},
             });
         }
 
@@ -1938,13 +1935,15 @@ class noinline_call {
         std::string part;
 
         // the body can reject an index by the length of its array
-        if (item.is_array) {
+        if (item.shape.is_array()) {
+            const std::optional<size_t> length{item.shape.length()};
+
             // note: an unsized array without a call is a parameter of a
             //       function checked as a noinline body, a pointer
 
-            assert(item.array_len);
+            assert(length);
 
-            part += std::format(" array {}", *item.array_len);
+            part += std::format(" array {}", *length);
         }
 
         // note: the result and the arguments are variables in memory

@@ -491,7 +491,7 @@ class program final {
         std::vector<const stmt_def_func*> unreached;
 
         for (const stmt_def_func* const f : tc.funcs().defs()) {
-            if (not tc.funcs().is_reached(*f)) {
+            if (not tc.compiled().is_reached(*f)) {
                 unreached.push_back(f);
             }
         }
@@ -534,8 +534,8 @@ class program final {
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
 
-        for (size_t i{}; i < tc.funcs().noinline_body_count(); ++i) {
-            const noinline_body body{tc.funcs().noinline_body_at(i)};
+        for (size_t i{}; i < tc.compiled().noinline_body_count(); ++i) {
+            const noinline_body body{tc.compiled().noinline_body_at(i)};
 
             body.func->emit_noinline_body(tc, body.array_lengths);
         }

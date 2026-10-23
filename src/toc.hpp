@@ -41,7 +41,8 @@
 //   'ident_path'    a name as its path of elements, e.g. 'p.x'
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
 //                   address
-//   tables          'type_table', 'function_table'
+//   tables          'type_table', 'compile_records' (the noinline bodies to
+//                   emit, the reached definitions), 'function_table'
 //   'dry_run_ledger' the heights of the checked dry runs of noinline calls
 //   'data_table'    the dats and the read-only constants
 //   options         'check_options', 'usage_statistics'
@@ -732,9 +733,7 @@ class ident_builder final {
             return info;
         }
 
-        ident_info::storage_part& storage{info.storage()};
-        storage.is_array = false;
-        storage.array_len = std::nullopt;
+        info.storage().shape = {};
 
         return info;
     }
@@ -754,8 +753,7 @@ class ident_builder final {
         type_path.emplace_back(tp);
 
         size_t offset{};
-        bool is_array{var.is_array};
-        std::optional<size_t> array_count{var.array_len};
+        array_shape shape{var.shape};
 
         for (const std::string& field_name : path | std::views::drop(1)) {
             // note: drop 1 because the first element is retrieved outside the
@@ -764,8 +762,10 @@ class ident_builder final {
             const type_field& tf{tp->field(src_loc_tk, field_name)};
             offset = sum_storage_size(offset, tf.offset);
             tp = tf.type_ptr;
-            is_array = tf.is_array();
-            array_count = tf.array_count;
+
+            shape = tf.is_array() ? array_shape::array(tf.array_count)
+                                  : array_shape{};
+
             type_path.emplace_back(tp);
         }
 
@@ -785,9 +785,10 @@ class ident_builder final {
                                     {
                                         .operand{op},
                                         .known{},
-                                        .array_len{array_count},
-                                        .is_array{is_array},
-                                        .is_pointer{var.is_pointer},
+                                        .shape{shape},
+                                        .is_pointer{
+                                            holds_address(var.placement),
+                                        },
                                         .read_only_why{var.read_only_why},
                                     });
     }
@@ -999,16 +1000,62 @@ class type_table final {
     }
 };
 
+// what a compile reached: the bodies of the noinline functions to emit, a
+// worklist that grows while they compile, and the definitions whose body ran
+class compile_records final {
+    std::vector<noinline_body> noinline_bodies_;
+    std::set<const stmt_def_func*> reached_;
+
+  public:
+    // a body is emitted once per array lengths
+    auto add_noinline_body(const stmt_def_func& func,
+                           std::vector<size_t> array_lengths) -> void {
+
+        const auto is_same_body = [&](const noinline_body& known) -> bool {
+            return known.func == &func and known.array_lengths == array_lengths;
+        };
+
+        if (std::ranges::any_of(noinline_bodies_, is_same_body)) {
+            return;
+        }
+
+        noinline_bodies_.push_back({
+            .func{&func},
+            .array_lengths{std::move(array_lengths)},
+        });
+    }
+
+    // a noinline body to emit or a function reached by a call
+    [[nodiscard]] auto is_empty() const -> bool {
+        return noinline_bodies_.empty() and reached_.empty();
+    }
+
+    [[nodiscard]] auto is_reached(const stmt_def_func& func) const -> bool {
+        return reached_.contains(&func);
+    }
+
+    auto mark_reached(const stmt_def_func& func) -> void {
+        reached_.insert(&func);
+    }
+
+    // a copy, the list grows while the bodies compile
+    [[nodiscard]] auto noinline_body_at(const size_t index) const
+        -> noinline_body {
+
+        return noinline_bodies_.at(index);
+    }
+
+    [[nodiscard]] auto noinline_body_count() const -> size_t {
+        return noinline_bodies_.size();
+    }
+};
+
 // the functions of the program: the defined ones and the instances of
-// generic ones, the bodies of noinline functions to compile and
-// the definitions a compile reached
+// generic ones
 class function_table final {
     lut<func_info> funcs_;
     std::vector<const stmt_def_func*> defs_;
     std::vector<std::shared_ptr<const stmt_def_func>> instances_;
-    std::vector<noinline_body> noinline_bodies_;
-    // the definitions whose body a compile reached
-    std::set<const stmt_def_func*> reached_;
     std::reference_wrapper<const definition_order> order_;
 
   public:
@@ -1036,24 +1083,6 @@ class function_table final {
         instances_.emplace_back(std::move(instance));
     }
 
-    // a body is emitted once per array lengths
-    auto add_noinline_body(const stmt_def_func& func,
-                           std::vector<size_t> array_lengths) -> void {
-
-        const auto is_same_body = [&](const noinline_body& known) -> bool {
-            return known.func == &func and known.array_lengths == array_lengths;
-        };
-
-        if (std::ranges::any_of(noinline_bodies_, is_same_body)) {
-            return;
-        }
-
-        noinline_bodies_.push_back({
-            .func{&func},
-            .array_lengths{std::move(array_lengths)},
-        });
-    }
-
     [[nodiscard]] auto defs() const -> std::span<const stmt_def_func* const> {
         return defs_;
     }
@@ -1075,30 +1104,6 @@ class function_table final {
     [[nodiscard]] auto has(const std::string_view name) const -> bool {
         return funcs_.has(name) and
                order_.get().is_visible(funcs_.get_const_ref(name).definition);
-    }
-
-    // a noinline body to emit or a function reached by a call
-    [[nodiscard]] auto has_compile_records() const -> bool {
-        return not noinline_bodies_.empty() or not reached_.empty();
-    }
-
-    [[nodiscard]] auto is_reached(const stmt_def_func& func) const -> bool {
-        return reached_.contains(&func);
-    }
-
-    auto mark_reached(const stmt_def_func& func) -> void {
-        reached_.insert(&func);
-    }
-
-    // a copy, the list grows while the bodies compile
-    [[nodiscard]] auto noinline_body_at(const size_t index) const
-        -> noinline_body {
-
-        return noinline_bodies_.at(index);
-    }
-
-    [[nodiscard]] auto noinline_body_count() const -> size_t {
-        return noinline_bodies_.size();
     }
 };
 
@@ -1920,7 +1925,7 @@ class storage_layout final {
     [[nodiscard]] auto var_storage_alignment(const var_info& var) const
         -> size_t {
 
-        if (var.is_pointer) {
+        if (holds_address(var.placement)) {
             return machine_.get().address_size_bytes();
         }
 
@@ -1931,13 +1936,12 @@ class storage_layout final {
                                               const var_info& var) const
         -> size_t {
 
-        if (var.is_pointer) {
+        if (holds_address(var.placement)) {
             return machine_.get().address_size_bytes();
         }
 
-        return multiply_storage_size(
-            src_loc_tk, var.type_ptr->size_bytes(),
-            var.is_array ? var.array_len.value_or(discarded_array_len) : 1);
+        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
+                                     var.shape.element_count());
     }
 
     [[nodiscard]] auto vars_capacity_bytes() const -> size_t {
@@ -2747,8 +2751,8 @@ class variable_comments final {
             std::format("{}: {}", var.name, name_info.type_ref().name()),
         };
 
-        if (var.array_len) {
-            text += std::format("[{}]", *var.array_len);
+        if (const std::optional<size_t> length{var.shape.length()}) {
+            text += std::format("[{}]", *length);
         }
 
         // the iterator 'e' is memory at its register, the counter 'i' is the
@@ -2778,6 +2782,7 @@ class toc final {
     scope_stack scopes_;
     data_table data_;
     function_table funcs_;
+    compile_records compiled_;
     generic_registry generics_;
     type_table types_;
     definition_checks definitions_;
@@ -3027,7 +3032,7 @@ class toc final {
             return;
         }
 
-        funcs_.add_noinline_body(func, std::move(array_lengths));
+        compiled_.add_noinline_body(func, std::move(array_lengths));
     }
 
     // identical strings share the label of the first one compiled
@@ -3170,7 +3175,7 @@ class toc final {
         scopes_.set_max_depth(0);
 
         // note: the parse compiles no call
-        assert(not funcs_.has_compile_records());
+        assert(compiled_.is_empty());
 
         is_compiling_ = true;
         storage_.begin_compile();
@@ -3228,6 +3233,10 @@ class toc final {
     // overflow
     [[nodiscard]] auto checks_overflow(const destination& dst) const -> bool {
         return overflow_options(dst).enabled;
+    }
+
+    [[nodiscard]] auto compiled() const -> const compile_records& {
+        return compiled_;
     }
 
     // a number or a constant
@@ -3423,7 +3432,7 @@ class toc final {
 
     // also in a dry run, the errors of the body were checked
     auto mark_func_reached(const stmt_def_func& func) -> void {
-        funcs_.mark_reached(func);
+        compiled_.mark_reached(func);
     }
 
     auto mark_generic_func_instantiated(const std::string_view name) -> void {
@@ -3775,14 +3784,12 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
             args.push_back({
                 .param_tk{param.name_tk},
                 .arg_tk{arg_tk},
-                .type_ptr{&resolve_type_arg(tc, generic_name, name, arg_tk)},
-                .value{},
+                .value{&resolve_type_arg(tc, generic_name, name, arg_tk)},
             });
         } else {
             args.push_back({
                 .param_tk{param.name_tk},
                 .arg_tk{arg_tk},
-                .type_ptr{},
                 .value{resolve_const_arg(tc, generic_name, name, arg_tk)},
             });
         }
@@ -3821,10 +3828,10 @@ class generic_scope final {
     // a type is located at its parameter, a constant at its argument
     auto add_args(const std::span<const generic_arg> args) -> void {
         for (const generic_arg& arg : args) {
-            if (arg.type_ptr != nullptr) {
-                add_type(arg.param_tk, arg.param_tk.text(), *arg.type_ptr);
+            if (arg.is_type()) {
+                add_type(arg.param_tk, arg.param_tk.text(), arg.type_ref());
             } else {
-                add_const(arg.arg_tk, arg.param_tk.text(), arg.value);
+                add_const(arg.arg_tk, arg.param_tk.text(), arg.constant());
             }
         }
     }

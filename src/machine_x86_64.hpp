@@ -229,8 +229,6 @@ class machine_x86_64 final : public machine {
                    const target_options& options = {})
         : machine{builtins, files, options} {}
 
-    using machine::emit_data_array;
-
     //
     // overridden methods
     //
@@ -682,14 +680,8 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_data_array(const size_t element_size_bytes,
-                         const std::function_ref<bool(int64_t&)> next)
+                         const std::span<const int64_t> values)
         -> void override {
-
-        std::vector<int64_t> values;
-        int64_t value{};
-        while (next(value)) {
-            values.push_back(value);
-        }
 
         assembler_.data(element_size_bytes, values);
     }

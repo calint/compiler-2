@@ -132,6 +132,9 @@ class assembler_rv32i final : public assembler {
     };
 
   private:
+    // starts the comment of a line, the text before it is code
+    static constexpr std::string_view comment_marker_{"#"};
+
     enum class jump_reach : uint8_t {
         // 'bcc target' within 4 KiB
         branch,
@@ -293,19 +296,20 @@ class assembler_rv32i final : public assembler {
         -> void override {
 
         if (text.empty()) {
-            add_text(indentation(indent) + "#");
+            add_text(indentation(indent) + std::string{comment_marker_});
             return;
         }
 
-        add_text(std::format("{}# {}", indentation(indent), text));
+        add_text(
+            std::format("{}{} {}", indentation(indent), comment_marker_, text));
     }
 
     // 'location' is the source the comment is about
     auto comment(const size_t indent, const std::string_view location,
                  const std::string_view text) -> void override {
 
-        add_text(
-            std::format("{}# [{}] {}", indentation(indent), location, text));
+        add_text(std::format("{}{} [{}] {}", indentation(indent),
+                             comment_marker_, location, text));
     }
 
     //
@@ -1506,7 +1510,7 @@ class assembler_rv32i final : public assembler {
     [[nodiscard]] static auto code_part(const std::string_view text)
         -> std::string_view {
 
-        return code_before(text, "#");
+        return code_before(text, comment_marker_);
     }
 
     [[nodiscard]] static auto data_directive(const size_t element_size_bytes)

@@ -236,19 +236,43 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        F.4. array-ness has four encodings ('array_count' 0, 'is_array' with
             'array_len' in 'var_info', 'ident_info', 'destination'): one
             'array_shape' {none, sized n, unsized}
+            => done (2026-10-23): 'array_shape' (not an array, an array of a
+               length, or unsized) in 'var_info', 'ident_info::storage_part',
+               'destination' and the noinline call kind; the pairs that could
+               disagree are gone (the rv32i test driver set a length 0 with
+               'is_array' false); the parse sentinel 'unsized_array_count' of
+               the declarations stays, it is a count being deduced; no output
+               change
        F.5. 'destination' as a variant {none, register, storage}, the open
             item (after F.4)
+            => done (2026-10-23), smaller than a variant: the 'kind_' enum
+               gone, the kind follows from the members ('storage_' set for
+               storage, a register operand otherwise, no type for none), so
+               it cannot disagree with them; no output change
        F.6. small: 'is_pointer' as a placement, the compile worklist out of
             'function_table', built-in types registered by the table with a
             flag (no empty-token sentinel), 'generic_arg' kind as a variant,
             'is_inlined_func' named 'is_compiled_in_place'
             => partly done (2026-10-23): built-in types registered by
                'type_table::add_builtin' with a flag ('is_builtin'), the
-               empty-token sentinel gone; 'is_compiled_in_place'; the rest
-               open
+               empty-token sentinel gone; 'is_compiled_in_place'
+            => rest done (2026-10-23): 'in_storage::holds_address' replaces
+               'var_info::is_pointer' (only storage holds an address);
+               'compile_records' holds the noinline bodies to emit and the
+               reached definitions, out of 'function_table'; 'generic_arg'
+               holds a variant of a type or a constant; no output change
        F.7. large, plan first: a binding stores its resolved root and steps
             instead of the caller's text, the resolver walk returns the root
             variable, 'storage_of' and 'make_ident_info' cannot disagree
+            => discarded (2026-10-23): the text and 'bound' are made at the
+               call from the same identifier ('name_or_literal' and
+               'argument_target') or destination ('name' and 'storage'), and
+               the resolver follows the text below the binding frame, which
+               are the caller's frames of the call, so they agree by
+               construction; they differ on purpose for the 'foo' element
+               'e' (the text reaches it through the iterator register,
+               'bound' is any element for the alias checks), which a stored
+               root would have to keep as two fields again
     G. backends
        G.1. the fpga panic plan (below) as it stands, its text updated: one
             handler override, not seven; it also removes
@@ -300,6 +324,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'assembler', the bare metal memory size passed explicitly, a
             'backend_held' flag in the register pool, one
             'is_register_held'
+            => done (2026-10-23): 'emit_data_array' takes a span (the
+               generator callback and its template wrapper gone); each
+               assembler names its 'comment_marker_' for the comments and for
+               'code_before'; 'machine_rv32i_bare_metal' takes the memory size
+               as a parameter, qemu passes its fixed size instead of
+               rewriting the options; no output change
             => register items deferred (2026-10-23): x86_64 'is_allocated'
                asks the allocations, rv32i 'is_register_allocated' also the
                protected registers ('is_unavailable'); one query would change

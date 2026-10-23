@@ -179,11 +179,11 @@ class stmt_builtin_foo final : public statement {
                 .name{"e"},
                 .type_ptr{&array_info.type_ref()},
                 .src_loc_tk{tok()},
+                .shape{},
                 .read_only_why{
                     array_info.is_read_only() ? read_only_cause::foo_element
                                               : read_only_cause::none,
                 },
-                .array_len{},
                 .placement{
                     iterator.is_empty()
                         ? var_placement{}
@@ -199,8 +199,8 @@ class stmt_builtin_foo final : public statement {
                        .name{"i"},
                        .type_ptr{&tc.builtins().default_type()},
                        .src_loc_tk{tok()},
+                       .shape{},
                        .read_only_why{read_only_cause::foo_counter},
-                       .array_len{},
                        .placement{
                            counter.is_empty()
                                ? var_placement{}
@@ -219,8 +219,8 @@ class stmt_builtin_foo final : public statement {
                            .name{"n"},
                            .type_ptr{&tc.builtins().default_type()},
                            .src_loc_tk{tok()},
+                           .shape{},
                            .read_only_why{read_only_cause::foo_length},
-                           .array_len{},
                            .placement{},
                            .foo_array{},
                        },

@@ -101,8 +101,9 @@ class initializer_declaration final {
             .name{name_tk.text()},
             .type_ptr{&tp},
             .src_loc_tk{name_tk},
-            .is_array{array_count.has_value()},
-            .array_len{array_count},
+            .shape{
+                array_count ? array_shape::array(*array_count) : array_shape{},
+            },
             .placement{},
             .foo_array{},
         };
