@@ -1,0 +1,11 @@
+# a call in a value written in parts that writes a part written before it
+type pt {x, y}
+var p = pt{1, 2}
+func gw() res {
+    p.x = 9
+    res = 3
+}
+func main() {
+    p = {1, gw()}
+    exit(p.x)
+}

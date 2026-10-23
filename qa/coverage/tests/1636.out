@@ -1,0 +1,4 @@
+
+1636.baz:15:16: 'i' may be written by the call of 'h' in a later argument, use a temporary variable
+    exit(f(arr[i], h(i)))
+               ^

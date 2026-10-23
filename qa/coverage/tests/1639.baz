@@ -1,0 +1,11 @@
+# a side of a comparison that a call on the other side may write is
+# rejected, also 'noinline'
+func noinline h(i mut) res {
+    i = i + 1
+    res = 0
+}
+func main() {
+    var i = 0
+    if i == h(i) exit(1)
+    exit(2)
+}

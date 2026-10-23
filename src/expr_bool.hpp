@@ -465,6 +465,22 @@ class expr_bool_op final : public statement {
             return compile_constant(tc, indent, *constant != inverted, action);
         }
 
+        // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
+        if (not is_shorthand_) {
+            const std::array<list_operand, 2> sides{
+                list_operand{
+                    .node{&lhs_},
+                    .is_written_place{},
+                },
+                list_operand{
+                    .node{&rhs_},
+                    .is_written_place{},
+                },
+            };
+
+            assert_not_written_later(tc, sides, "operand");
+        }
+
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
         if (not is_shorthand_ and fold_side(tc, lhs_) and

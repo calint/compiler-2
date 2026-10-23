@@ -5108,3 +5108,29 @@ SRC=1633 && EXP=6 && RUN
 # inlined or 'noinline'
 SRC=1634 && COMPERR
 SRC=1635 && COMPERR
+
+# an argument that a call in a later argument may write is rejected, evaluation
+# is left to right, inlined or 'noinline'
+SRC=1636 && COMPERR
+SRC=1637 && COMPERR
+
+# a side of a comparison that a call on the other side may write is rejected,
+# inlined or 'noinline'
+SRC=1638 && COMPERR
+SRC=1639 && COMPERR
+
+# an operand of arithmetic that a call in a later operand may write is
+# rejected, also the destination named again
+SRC=1640 && COMPERR
+
+# an array of 'arrays_equal' or the source of 'array_copy' that the call of the
+# count may write is rejected
+SRC=1641 && COMPERR
+SRC=1642 && COMPERR
+
+# the buffer that 'read' fills may be written by the call of its count, the
+# buffer is written after the count
+SRC=1643 && EXP=7 && RUN
+
+# a call in a value written in parts that writes a part written before it
+SRC=1644 && COMPERR

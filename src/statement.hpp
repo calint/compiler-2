@@ -832,6 +832,77 @@ inline auto assert_not_whole_array(const statement& st, const ident_info& info)
     return info;
 }
 
+// an operand of a list that 'assert_not_written_later' checks, e.g. an
+// argument of a call
+struct list_operand {
+    const statement* node{};
+    // the operand is storage the list writes, it reads only its indexes, e.g.
+    // the buffer of 'read' or the destination of 'array_copy'
+    bool is_written_place{};
+
+    auto visit_reads(const read_visitor reader) const -> void {
+        if (is_written_place) {
+            node->visit_index_reads(std::nullopt, reader);
+            return;
+        }
+
+        node->visit_reads(std::nullopt, reader);
+    }
+};
+
+// 'earlier' reads nothing that 'write', an effect of a later operand,
+// reaches; 'operand' names an operand of the list in the message
+inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
+                                   const call_effect& write,
+                                   const std::string_view operand) -> void {
+
+    earlier.visit_reads([&](const token& src_loc_tk,
+                            const std::string_view read_text,
+                            [[maybe_unused]] const byte_range& accessed_bytes,
+                            const access_path& read_path) -> void {
+        const std::optional<storage_path> read{
+            tc.storage_of(src_loc_tk.text(), read_path),
+        };
+
+        if (not read or not read->may_overlap(write.storage)) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("{} may be written by the call of {} in a later {}, "
+                        "use a temporary variable",
+                        in_quotes(read_text), in_quotes(write.call_tk),
+                        operand)};
+    });
+}
+
+// evaluation is left to right, but the compile reads a name where it is
+// used, so a name that a later operand of the same list may write would read
+// the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
+// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'operand' names an operand
+// of the list in the message, e.g. "argument"
+// note: a call among the earlier operands has run before the later ones,
+//       only the names those read are checked
+inline auto
+assert_not_written_later(const toc& tc,
+                         const std::span<const list_operand> operands,
+                         const std::string_view operand) -> void {
+
+    for (size_t k{1}; k < operands.size(); ++k) {
+        operands.at(k).node->visit_call_effects(
+            tc, [&](const call_effect& effect) -> void {
+                if (not effect.is_write) {
+                    return;
+                }
+
+                for (const list_operand& earlier : operands.first(k)) {
+                    assert_not_read_before(tc, earlier, effect, operand);
+                }
+            });
+    }
+}
+
 // 'st' reads 'dst', or a call in it reads or writes it: any read of its root
 // name, whatever its bytes, e.g. the 'p.y' of 'p.x = p.y + 1'; under another
 // name only bytes that overlap, e.g. the 'p' of 'g = p + 1' with 'p' bound to

@@ -2132,6 +2132,7 @@ class stmt_call : public expression {
         }
 
         call.assert_argument_types(tc, func);
+        assert_arguments_not_written_later(tc, std::nullopt);
 
         if (not func.is_inlined()) {
             noinline_call{call}.compile(tc, indent, dst, func);
@@ -2220,6 +2221,30 @@ class stmt_call : public expression {
         for (const expr_any& e : args_) {
             e.visit_reads(var, reader);
         }
+    }
+
+    //
+    // class methods
+    //
+
+    // e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'; the argument
+    // at 'written_index' is storage the call writes, e.g. the buffer of
+    // 'read'
+    auto assert_arguments_not_written_later(
+        const toc& tc, const std::optional<size_t> written_index) const
+        -> void {
+
+        std::vector<list_operand> operands;
+        operands.reserve(args_.size());
+
+        for (size_t i{}; i < args_.size(); ++i) {
+            operands.push_back({
+                .node{&args_.at(i)},
+                .is_written_place{written_index == i},
+            });
+        }
+
+        assert_not_written_later(tc, operands, "argument");
     }
 
   protected:

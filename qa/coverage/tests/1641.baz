@@ -1,0 +1,14 @@
+# an array of 'arrays_equal' that the call of its count may write is rejected
+var a = i8[4]
+
+func grow() res {
+    a[0] = 1
+    res = 4
+}
+
+func main() {
+    var b = i8[4]
+    if arrays_equal(a, b, grow()) {
+        exit(1)
+    }
+}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <format>
 #include <functional>
@@ -89,6 +90,29 @@ class bulk_operands final {
 
         first_.assert_count_in_bounds(tc, count_.tok(), *constant_count);
         second_.assert_count_in_bounds(tc, count_.tok(), *constant_count);
+    }
+
+    // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a';
+    // 'is_second_written' for the destination of a copy
+    auto assert_not_written_later(const toc& tc,
+                                  const bool is_second_written) const -> void {
+
+        const std::array<list_operand, 3> operands{
+            list_operand{
+                .node{&first_},
+                .is_written_place{},
+            },
+            list_operand{
+                .node{&second_},
+                .is_written_place{is_second_written},
+            },
+            list_operand{
+                .node{&count_},
+                .is_written_place{},
+            },
+        };
+
+        ::assert_not_written_later(tc, operands, "argument");
     }
 
     [[nodiscard]] auto count() const -> const expr_any& { return count_; }

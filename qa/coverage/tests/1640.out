@@ -1,0 +1,4 @@
+
+1640.baz:11:10: 'gx' may be written by the call of 'g' in a later operand, use a temporary variable
+    gx = gx + g()
+         ^~

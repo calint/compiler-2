@@ -59,6 +59,8 @@ class stmt_builtin_arrays_equal final : public expression {
     auto compile_boolean(toc& tc, const size_t indent, const operand& dst,
                          const bool inverted) const -> void override {
 
+        operands_.assert_not_written_later(tc, false);
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));

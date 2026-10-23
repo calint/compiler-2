@@ -1,0 +1,4 @@
+
+1638.baz:9:8: 'i' may be written by the call of 'h' in a later operand, use a temporary variable
+    if i == h(i) exit(1)
+       ^

@@ -1,0 +1,13 @@
+# an operand of arithmetic that a call in a later operand may write is
+# rejected, also the destination named again
+dat gx = 0
+
+func g() res {
+    gx = gx + 1
+    res = gx
+}
+
+func main() {
+    gx = gx + g()
+    exit(gx)
+}

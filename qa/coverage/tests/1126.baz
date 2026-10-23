@@ -9,8 +9,9 @@ func nested(source i8[], destination mut i8[]) count {
 func main() {
     var source = i8[]{1, 2, 3}
     var destination = i8[3]
+    var other = i8[3]
     array_copy(source, destination, nested(source, destination))
-    if not arrays_equal(source, destination, nested(source, destination)) {
+    if not arrays_equal(source, destination, nested(source, other)) {
         exit(1)
     }
     exit(destination[2])

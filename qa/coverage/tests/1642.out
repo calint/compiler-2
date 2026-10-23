@@ -1,0 +1,4 @@
+
+1642.baz:12:16: 'a' may be written by the call of 'grow' in a later argument, use a temporary variable
+    array_copy(a, b, grow())
+               ^

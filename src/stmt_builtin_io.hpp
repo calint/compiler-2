@@ -122,6 +122,10 @@ class stmt_builtin_io final : public stmt_call {
 
         assert_in_func(tc);
 
+        // e.g. the 'b' of 'read(0, b, n)' is written
+        assert_arguments_not_written_later(
+            tc, io_.fills_buffer ? std::optional<size_t>{1} : std::nullopt);
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));

@@ -1,0 +1,4 @@
+
+1641.baz:11:21: 'a' may be written by the call of 'grow' in a later argument, use a temporary variable
+    if arrays_equal(a, b, grow()) {
+                    ^

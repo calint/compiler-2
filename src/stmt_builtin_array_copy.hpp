@@ -57,6 +57,7 @@ class stmt_builtin_array_copy final : public statement {
 
         const bulk_operands::arrays_info arrays{operands_.resolve_arrays(tc)};
 
+        operands_.assert_not_written_later(tc, true);
         operands_.assert_constant_count_in_bounds(tc);
 
         // nothing is copied

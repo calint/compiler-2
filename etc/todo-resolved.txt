@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: aliasing: a call in a value written in parts reads, in its body,
+    a part written before it without an error, e.g. 'g = {1, gx()}' with
+    'gx' returning 'g.x' (inline and noinline); rule A sees only the reads
+    in the statement, a call would add the variables its body reads
+    (deferred by the aliasing plan, see etc/todo-resolved.txt)
+    => done (2026-10-23): round 12 step 4.10.1, a call reports what its body
+       reads and writes ('visit_call_effects'), rule A counts it, "the call
+       of 'gx' reaches 'g', which has been written in the same statement",
+       tests 1634, 1635
 [x] medium: review round 11 proposals, each a separate step with a failing
     test first for a bug, both suites and the test outputs compared with the
     previous binary

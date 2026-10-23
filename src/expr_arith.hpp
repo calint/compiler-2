@@ -264,6 +264,8 @@ class expr_arith final : public expression {
             return;
         }
 
+        assert_elements_not_written_later(tc);
+
         // the steps compiled in place, which the clobber check reads
         const std::vector<step> steps{plan_steps(tc, dst)};
 
@@ -518,6 +520,21 @@ class expr_arith final : public expression {
     // class methods
     //
 
+    // e.g. the 'gx' of 'gx + g()' with 'g' writing 'gx'
+    auto assert_elements_not_written_later(const toc& tc) const -> void {
+        std::vector<list_operand> operands;
+        operands.reserve(exprs_.size());
+
+        for (const std::unique_ptr<statement>& e : exprs_) {
+            operands.push_back({
+                .node{e.get()},
+                .is_written_place{},
+            });
+        }
+
+        assert_not_written_later(tc, operands, "operand");
+    }
+
     // compiles the list without its trailing added constant and returns that
     // constant, empty when the list is compiled whole by 'compile'
     //   'ix + 1'  =>  compiles 'ix', returns 1
@@ -529,6 +546,8 @@ class expr_arith final : public expression {
 
         // note: only an index expression asks, it has no unary ops of its own
         assert(uops_.is_empty());
+
+        assert_elements_not_written_later(tc);
 
         const std::vector<step> steps{plan_steps(tc, dst)};
 

@@ -592,6 +592,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                    ('gx = k + gr()' exits 6), "the call of 'gx' reaches 'g',
                    which has been written in the same statement"; tests
                    1630-1635; no change of output of the suites
+                => 4.10.2 done (2026-10-23): 'list_operand' and
+                   'assert_not_written_later' in 'statement.hpp': the reads
+                   of an earlier operand (a written place, the buffer of
+                   'read' or the destination of 'array_copy', reads only its
+                   indexes) against the writes of the calls in a later one;
+                   asked by the arguments of a call and of 'read', 'write',
+                   'array_copy' and 'arrays_equal', the elements of an
+                   arithmetic list and the sides of a comparison; C-1, C-3
+                   rejected inline and noinline, "'i' may be written by the
+                   call of 'h' in a later argument, use a temporary
+                   variable"; 1126 rewrote its 'arrays_equal' count to copy
+                   into another array (it compared the array its count
+                   wrote), its error unchanged; tests 1636-1643
+                => 4.10.3 done (2026-10-23): rule A counts a write by a
+                   call as well as a read since 4.10.1, 'p = {1, gw()}' with
+                   'gw' writing 'p.x' is rejected, test 1644
                 => later: definite assignment from the writes of a call
                    (V-3, conservative, no undefined behavior) and the fixed
                    point for recursive bindings
@@ -677,11 +693,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        matching blocks; one table {check, label, name, takes a line} in
        'machine', one virtual 'emit_failure_handler(label, name, with_line)'
        (round 7 X-3, R-4)
-[ ] medium: aliasing: a call in a value written in parts reads, in its body,
-    a part written before it without an error, e.g. 'g = {1, gx()}' with
-    'gx' returning 'g.x' (inline and noinline); rule A sees only the reads
-    in the statement, a call would add the variables its body reads
-    (deferred by the aliasing plan, see etc/todo-resolved.txt)
 [ ] medium: aliasing: 'destination' as a variant '{none, reg, storage}' with
     the operand and the 'storage_path' only in the storage kind; today the
     kind, an empty storage and an empty operand are kept consistent by

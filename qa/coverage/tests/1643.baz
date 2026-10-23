@@ -1,0 +1,13 @@
+# the buffer that 'read' fills may be written by the call of its count, the
+# buffer is written after the count
+var b = i8[4]
+
+func size() res {
+    b[0] = 7
+    res = 0
+}
+
+func main() {
+    var n = read(0, b, size())
+    exit(b[0] + n)
+}
