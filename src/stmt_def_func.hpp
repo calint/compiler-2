@@ -99,7 +99,7 @@ struct func_head {
 
         // a receiver names a type, e.g. 'point' of 'func point.at()', which
         // 'read_method_name' checks
-        if (tz.peek_char() == '.') {
+        if (tz.peek_char_after_whitespace() == '.') {
             toc::assert_valid_name(head.name_tk);
         } else {
             tc.assert_valid_unqualified_name(head.name_tk);
@@ -539,8 +539,18 @@ class stmt_def_func final : public statement {
         std::stringstream ss;
         source_signature_to(ss);
 
-        x.comment(head_.name_tk, indent, "{}",
-                  statement::trimmed_source(ss.view()));
+        const std::string signature{statement::trimmed_source(ss.view())};
+
+        // the signature of a generic definition names its parameters, the
+        // instance names the arguments, e.g. 'pt.put<i16>'
+        if (instance_) {
+            x.comment(head_.name_tk, indent, "{}, instance '{}'", signature,
+                      instance_->name);
+
+            return;
+        }
+
+        x.comment(head_.name_tk, indent, "{}", signature);
     }
 
     // the definition after its first token, without the body

@@ -1,0 +1,6 @@
+# a character literal that does not fit is quoted once in the message, it
+# brings its own quotes
+func main() {
+    var y = i8(0)
+    y = '\xff'
+}

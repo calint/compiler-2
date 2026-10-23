@@ -55,6 +55,8 @@ class stmt_def_func_param final : public statement {
                     : tz.next_token(),
             };
 
+            assert_no_type_arguments(tz, type_tk);
+
             const token open_bracket_tk{tz.is_next_char_token('[')};
 
             const token close_bracket_tk{

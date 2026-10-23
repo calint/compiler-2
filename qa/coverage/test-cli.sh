@@ -299,6 +299,20 @@ CLI_UNINSTANTIATED_GENERICS() {
     echo ok
 }
 
+CLI_INSTANCE_COMMENT() {
+    echo -n "cli comment of a generic instance: "
+    # the signature names the type parameter, the comment adds the instance
+    printf 'type pt {\n    x,\n}\n\n' >gen-instance.baz
+    printf 'func noinline pt.put<U type>(u U) res U {\n' >>gen-instance.baz
+    printf '    res = u\n}\n\nfunc main() {\n' >>gen-instance.baz
+    printf '    var p = pt{1}\n' >>gen-instance.baz
+    printf '    exit(int(p.put(i16(5))))\n}\n' >>gen-instance.baz
+    "$BIN" gen-instance.baz >gen.s 2>err
+    grep -Fq "noinline pt.put(u U) res U, instance 'pt.put<i16>'" gen.s
+    rm -f gen-instance.baz
+    echo ok
+}
+
 CLI_COMMENT_LOCATIONS() {
     echo -n "cli comment locations: "
     # 0906.baz includes 'include/cycle.baz'
@@ -690,6 +704,7 @@ CLI_ADDRESS_RANGE
 CLI_SOURCE_LINE_ENDS
 CLI_UNINSTANTIATED_GENERICS
 CLI_COMMENT_LOCATIONS
+CLI_INSTANCE_COMMENT
 CLI_CONTROL_BYTE_FILE_NAME
 CLI_VERSIONS
 CLI_PADDING_ZERO

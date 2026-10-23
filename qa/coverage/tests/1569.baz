@@ -1,0 +1,4 @@
+# 'bool' has no conversion, a comparison makes a 'bool'
+func main() {
+    var b = bool(5)
+}

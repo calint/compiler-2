@@ -2603,11 +2603,12 @@ class stmt_call : public expression {
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after arguments");
 
-        // e.g. the '.' of 'mk().y', a result has no storage to read a field of
+        // e.g. the '.' of 'mk().y' or 'mk().sum()', a result has no storage
+        // to read a field of or to call a method on
         if (tz.peek_char() == '.') {
             throw compile_error{
                 tz, std::format("store the result of '{}' in a variable before "
-                                "reading its field",
+                                "reading a field or calling a method of it",
                                 func_name_)};
         }
 

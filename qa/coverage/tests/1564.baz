@@ -1,0 +1,9 @@
+# the unary operators of an array size apply like in an expression, with or
+# without whitespace after them
+let n = 2
+
+func main() {
+    var a = i8[- - 4]
+    var b = i8[- -n]
+    exit(array_length(a) + array_length(b))
+}

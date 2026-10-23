@@ -133,11 +133,6 @@ class unary_ops final {
         }
     }
 
-    // the ops without whitespace, e.g. '--' of '- -x'
-    [[nodiscard]] auto to_string() const -> std::string_view {
-        return {ops_.begin(), ops_.end()};
-    }
-
   private:
     // true when a negation of the list is applied to 'minimum', the most
     // negative value of the width, which has no positive counterpart

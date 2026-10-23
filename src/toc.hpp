@@ -3467,6 +3467,13 @@ class toc final {
                                               const std::string_view name) const
         -> const func_info& {
 
+        // e.g. 'bool(5)', the other built-in types convert
+        if (name == builtins_.boolean().name()) {
+            throw compile_error{src_loc_tk,
+                                "'bool' has no conversion, compare instead, "
+                                "e.g. 'x != 0'"};
+        }
+
         if (not funcs_.has(name)) {
             throw compile_error{src_loc_tk,
                                 std::format("function '{}' not found", name)};

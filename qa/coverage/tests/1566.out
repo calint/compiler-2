@@ -1,0 +1,4 @@
+
+1566.baz:3:6: methods on built-in type 'i8' are not supported
+func i8
+     ^~

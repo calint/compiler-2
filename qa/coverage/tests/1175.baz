@@ -1,5 +1,5 @@
-# an array size with whitespace after its unary operator is rejected at the
-# operator
+# an array size reads its unary operators like an expression, whitespace
+# after them included, and a negative size is rejected
 
 type t { a i8[- 4] }
 

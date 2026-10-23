@@ -3698,8 +3698,8 @@ SRC=1173 && COMPERR
 # padding of the caret
 SRC=1174 && COMPERR
 
-# an array size with whitespace after its unary operator is rejected at the
-# operator
+# an array size reads its unary operators like an expression, whitespace
+# after them included, and a negative size is rejected
 SRC=1175 && COMPERR
 
 # a built-in type name followed by '==' is not a bare type, it is read as a
@@ -4877,3 +4877,30 @@ SRC=1561 && COMPERR
 # read like those of a function at the definition, also without an instance
 SRC=1562 && COMPERR
 SRC=1563 && COMPERR
+
+# the unary operators of an array size apply like in an expression, with or
+# without whitespace after them
+SRC=1564 && EXP=6 && RUN
+
+# a character literal that does not fit is quoted once in the message, it
+# brings its own quotes
+SRC=1565 && COMPERR
+
+# a receiver is read with the '.' on the next line, like where the '.' follows
+# the type, so a built-in type gets the message of a method
+SRC=1566 && COMPERR
+
+# a field or parameter type with type arguments is not a type, an instance is
+# named first
+SRC=1567 && COMPERR
+SRC=1568 && COMPERR
+
+# 'bool' has no conversion, a comparison makes a 'bool'
+SRC=1569 && COMPERR
+
+# a method of a call result is called on a variable, the result is stored
+# first, like for a field
+SRC=1570 && COMPERR
+
+# an array size is a number or a constant, a call is stored in a 'let' first
+SRC=1571 && COMPERR

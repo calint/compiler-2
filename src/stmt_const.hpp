@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <format>
@@ -32,7 +33,7 @@ class stmt_const final : public statement {
 
         set_type(tc.builtins().default_type());
 
-        if (literal_tk_.has_whitespace_before() or literal_tk_.is_string()) {
+        if (literal_tk_.is_string()) {
             throw compile_error{
                 tok(), "expected a constant value or a constant identifier"};
         }
@@ -74,35 +75,33 @@ class stmt_const final : public statement {
                     literal_tk_, std::format("'{}' is not a constant", text)};
             }
 
+            // e.g. 'i8[array_length(b)]'
+            if (std::ranges::contains(reserved_names::builtin_functions,
+                                      text)) {
+
+                throw compile_error{
+                    literal_tk_,
+                    std::format("an array size is a number or a constant, not "
+                                "a call of '{}'",
+                                text)};
+            }
+
             throw compile_error{
                 literal_tk_,
                 std::format("cannot resolve identifier '{}'", text)};
         }
 
-        // a lone '-' prefixes a decimal number as text so that the most
-        // negative value parses, other operators are applied to the value
-        const bool is_text_prefixed{
-            not constant_parser::has_base_prefix(literal_tk_.text()) and
-                (uops_.is_empty() or uops_.is_only_negated()),
-        };
-
-        const std::string num_str{
-            std::format("{}{}", is_text_prefixed ? uops_.to_string() : "",
-                        literal_tk_.text()),
-        };
-
+        // the unary ops apply to the value like in an expression
         const std::optional<int64_t> num{
-            constant_parser::parse_constant(literal_tk_, num_str),
+            constant_parser::parse_constant(literal_tk_, text),
         };
 
         if (not num.has_value()) {
-            throw compile_error{literal_tk_,
-                                std::format("cannot parse constant '{}{}'",
-                                            uops_.to_string(),
-                                            literal_tk_.text())};
+            throw compile_error{
+                literal_tk_, std::format("cannot parse constant '{}'", text)};
         }
 
-        value_ = is_text_prefixed ? *num : uops_.evaluate_constant(*num);
+        value_ = uops_.evaluate_constant(*num);
     }
 
     stmt_const() = default;

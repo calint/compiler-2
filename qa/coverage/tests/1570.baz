@@ -1,0 +1,17 @@
+# a method of a call result is called on a variable, the result is stored
+# first, like for a field
+type pt {
+    x,
+}
+
+func mk() res pt {
+    res = {1}
+}
+
+func pt.sum() res int {
+    res = self.x
+}
+
+func main() {
+    exit(mk().sum())
+}

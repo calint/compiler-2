@@ -20,14 +20,6 @@ class constant_parser final {
     // statics
     //
 
-    // e.g. '0x1f' and '0b101', after the optional sign of a number
-    [[nodiscard]] static auto has_base_prefix(const std::string_view str)
-        -> bool {
-
-        return str.starts_with("0x") or str.starts_with("0X") or
-               str.starts_with("0b") or str.starts_with("0B");
-    }
-
     // the tokenizer keeps the quotes in the text of a character literal
     [[nodiscard]] static auto is_character_literal(const std::string_view str)
         -> bool {
@@ -125,5 +117,18 @@ class constant_parser final {
         }
 
         return std::nullopt;
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    // e.g. '0x1f' and '0b101', after the optional sign of a number
+    [[nodiscard]] static auto has_base_prefix(const std::string_view str)
+        -> bool {
+
+        return str.starts_with("0x") or str.starts_with("0X") or
+               str.starts_with("0b") or str.starts_with("0B");
     }
 };

@@ -1,4 +1,4 @@
 
-1550.baz:9:17: store the result of 'mk' in a variable before reading its field
+1550.baz:9:17: store the result of 'mk' in a variable before reading a field or calling a method of it
     var z = mk().y
                 ^

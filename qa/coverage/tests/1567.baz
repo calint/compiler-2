@@ -1,0 +1,11 @@
+# a field type with type arguments is not a type, an instance is named first,
+# like the type of a parameter
+type box<T type> {
+    v T
+}
+
+type t {
+    w box<i8>,
+}
+
+func main() {}

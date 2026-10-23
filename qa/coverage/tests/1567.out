@@ -1,0 +1,4 @@
+
+1567.baz:8:7: 'box<...>' is not a type, name an instance first, e.g. 'type str = box<...>'
+    w box<i8>,
+      ^~~

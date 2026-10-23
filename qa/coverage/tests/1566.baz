@@ -1,0 +1,6 @@
+# a receiver is read with the '.' on the next line, like where the '.' follows
+# the type, so a built-in type gets the message of a method
+func i8
+    .at() {}
+
+func main() {}

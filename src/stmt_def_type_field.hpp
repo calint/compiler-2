@@ -32,6 +32,8 @@ class stmt_def_type_field final : public statement {
             type_tk_ = tz.next_token();
         }
 
+        assert_no_type_arguments(tz, type_tk_);
+
         open_bracket_tk_ = tz.is_next_char_token('[');
 
         if (open_bracket_tk_.is_empty()) {
