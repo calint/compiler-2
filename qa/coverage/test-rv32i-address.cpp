@@ -1,4 +1,5 @@
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 
@@ -137,6 +138,16 @@ auto unary_of(const char op) -> machine::arithmetic_operator {
 
 // the built-in types the checks give the backend and the front end
 const builtin_type_set test_builtins;
+
+// the files of the backend checks that compile no program, one empty file
+auto make_test_files() -> source_files {
+    source_files files;
+    files.add("test.baz", "");
+
+    return files;
+}
+
+const source_files test_files{make_test_files()};
 const type& integer64{test_builtins.i64};
 const type& integer{test_builtins.i32};
 const type& half{test_builtins.i16};
@@ -167,7 +178,7 @@ auto rejected_with(const action_t& action, const std::string_view text = {})
 
 // an RV32I backend whose output is captured, for checks of emitted text
 struct captured_rv32i {
-    machine_rv32i_linux backend{test_builtins};
+    machine_rv32i_linux backend{test_builtins, test_files};
     emitted_since output{backend, true};
 
     // the text that 'emit' adds, the output is empty again afterwards
@@ -183,7 +194,7 @@ struct captured_rv32i {
 
 // an x86_64 backend whose output is captured
 struct captured_x86_64 {
-    machine_x86_64 backend{test_builtins, {}};
+    machine_x86_64 backend{test_builtins, test_files};
     emitted_since output{backend};
 };
 
@@ -211,7 +222,7 @@ auto compiled_rv32i(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{test_builtins};
+    machine_rv32i_linux compiler{test_builtins, files};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -224,7 +235,7 @@ auto compiled_x86_64(const std::string_view source) -> std::string {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_x86_64 compiler{test_builtins, &files};
+    machine_x86_64 compiler{test_builtins, files};
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(output);
 
@@ -767,7 +778,7 @@ auto check_equal_size_choice() -> void {
     for (const assembler::jump_mode jumps :
          {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{test_builtins, {}, {.jumps{jumps}}};
+        machine_rv32i_linux backend{test_builtins, test_files, {.jumps{jumps}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -803,7 +814,7 @@ auto check_version_state_kept() -> void {
     for (const machine::kept_version kept :
          {machine::kept_version::smaller, machine::kept_version::last}) {
         std::ostringstream output;
-        machine_rv32i_linux backend{test_builtins, {}, {.kept{kept}}};
+        machine_rv32i_linux backend{test_builtins, test_files, {.kept{kept}}};
         backend.start();
 
         const operand result{operand::reg("a0", integer)};
@@ -845,7 +856,7 @@ auto check_version_state_kept() -> void {
 // the jump optimizer sees the jumps and labels that the backend emits
 auto check_backend_jump_optimization() -> void {
     std::ostringstream output;
-    machine_rv32i_linux backend{test_builtins, {}, {.jumps{assembler::jump_mode::optimized}}};
+    machine_rv32i_linux backend{test_builtins, test_files, {.jumps{assembler::jump_mode::optimized}}};
     backend.start();
 
     const operand left{operand::reg("a0", integer)};
@@ -940,7 +951,7 @@ auto check_variable_comments() -> void {
 // an RV32I backend over a source file, its comments carry source positions
 struct located_rv32i {
     source_files files;
-    machine_rv32i_linux backend{test_builtins, &files};
+    machine_rv32i_linux backend{test_builtins, files};
     emitted_since comments{backend};
 
     // 'value' on the second line, at column 5
@@ -1087,7 +1098,8 @@ func assert(ok bool) { if not ok exit(1) }
 func main() {
     var source = i32[4]{}
     var destination = i32[4]{}
-    assert(arrays_equal(source[2], destination[1], 2))
+    var count = 2
+    assert(arrays_equal(source[2], destination[1], count))
 }
 )baz")};
 
@@ -1108,7 +1120,8 @@ func main() {
           "compare 4-byte words", "compare optional 2-byte tail",
           "compare optional final byte", "all matched or empty: true",
           "mismatch: false"}) {
-        assert(assembly.contains(std::format("# {}\n", text)));
+        // the comments are located, e.g. '# [test.baz:6:12] mismatch: false'
+        assert(assembly.contains(std::format("] {}\n", text)));
     }
 }
 
@@ -2320,7 +2333,7 @@ auto check_scratch_register_pool() -> void {
 // by a constant ('+' here) never needs the routine
 auto check_multiply_divide_routines() -> void {
     for (const char operation : {'*', '/', '%', '+'}) {
-        machine_rv32i_linux backend{test_builtins};
+        machine_rv32i_linux backend{test_builtins, test_files};
         emitted_since output{backend};
 
         const auto computed = [&](const operand& dst, const operand& src) {
@@ -2458,7 +2471,7 @@ auto generate_noninline() -> void {
     // note: 2032 is where 'start' puts the variables base past 'dat'
     constexpr size_t variables_base_offset{2032};
 
-    machine_rv32i_linux backend{test_builtins};
+    machine_rv32i_linux backend{test_builtins, test_files};
     backend.start();
 
     hand_written(backend, "    addi sp, sp, -128\n    sw sp, 124(sp)");
@@ -2556,7 +2569,7 @@ auto generate_noninline() -> void {
 auto generate_frame_checks() -> void {
     constexpr int vars_size_bytes{256};
 
-    machine_rv32i_linux backend{test_builtins};
+    machine_rv32i_linux backend{test_builtins, test_files};
     backend.start();
 
     // 's3' is where the overflow handler continues
@@ -2623,7 +2636,7 @@ auto generate_long_loop() -> void {
     // note: 3 iterations of 'foo'
     constexpr int64_t iteration_count{3};
 
-    machine_rv32i_linux backend{test_builtins};
+    machine_rv32i_linux backend{test_builtins, test_files};
     backend.start();
     hand_written(backend, "    addi sp, sp, -16");
 
@@ -2666,7 +2679,7 @@ auto generate_long_loop() -> void {
 // jumps around padding of 8 KiB (needs 'j') and 1.08 MiB (needs 'jump'),
 // executed in every direction
 auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
-    machine_rv32i_linux backend{test_builtins, {}, {.jumps{jumps}}};
+    machine_rv32i_linux backend{test_builtins, test_files, {.jumps{jumps}}};
     backend.start();
 
     // the jumps are resolved over the backend's lines, so pad with 'xori' on
@@ -2775,7 +2788,7 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
     source_files files;
     files.add("test.baz", std::string{source});
 
-    machine_rv32i_linux compiler{test_builtins, {}, {.jumps{jumps}}};
+    machine_rv32i_linux compiler{test_builtins, files, {.jumps{jumps}}};
 
     program prg{compiler, files, vars_capacity_bytes, check_options{}};
     prg.build(std::cout);
@@ -2889,7 +2902,7 @@ auto generate_bounds_matrix(machine_rv32i& backend) -> void {
 }
 
 auto generate_bounds() -> void {
-    machine_rv32i_linux backend{test_builtins};
+    machine_rv32i_linux backend{test_builtins, test_files};
     hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
     generate_bounds_matrix(backend);
@@ -3868,7 +3881,7 @@ auto generate_runtime_program() -> void {
     source_files files;
     files.add("test.baz", "");
 
-    machine_rv32i_linux backend{test_builtins, &files};
+    machine_rv32i_linux backend{test_builtins, files};
 
     hand_written(backend, ".option norvc\n.option norelax\n.text\n.globl _start\n_start:");
 
@@ -3913,7 +3926,7 @@ auto generate_runtime_program() -> void {
         backend.exit(token{}, 1, operand::imm(0, integer));
     }
 
-    backend.emit_bounds_failure_handler(true);
+    backend.emit_used_failure_handlers(true);
     hand_written(backend, "failure:\n    li a0, 1\n    li a7, 93\n    ecall");
     backend.emit_used_routines();
     backend.begin_data(4);
@@ -3930,18 +3943,20 @@ auto generate_runtime_program() -> void {
 // frame is entered
 struct front_end {
     source_files files;
-    machine_x86_64 backend{test_builtins, &files};
+    machine_x86_64 backend{test_builtins, files};
     toc tc;
 
     // errors need a token with a line
     token at{0, {}, 0, {}, 0, {}, 1, false};
+    // the root frame, left before 'toc::assert_released'
+    std::optional<toc::frame_scope> root;
 
     explicit front_end(const size_t vars_capacity_bytes_in)
         : tc{backend, files, vars_capacity_bytes_in, check_options{}} {
 
         files.add("test.baz", "");
         tc.begin_compile();
-        tc.enter_block();
+        root.emplace(tc, frame::block());
     }
 
     // a scalar or an array of 'array_len' elements of 'value_type', its
@@ -3968,23 +3983,28 @@ struct front_end {
 auto check_storage_placement() -> void {
     front_end fe{64};
 
-    fe.tc.enter_block();
-    const int64_t first{fe.add_var("a", byte)};
-    const int64_t second{fe.add_var("b", integer)};
-    // 'a' takes one byte and 'b' starts at the next multiple of four
-    assert(second - first == 4);
-    fe.tc.exit_block();
+    int64_t first{};
+
+    {
+        const toc::frame_scope block{fe.tc, frame::block()};
+        first = fe.add_var("a", byte);
+        const int64_t second{fe.add_var("b", integer)};
+        // 'a' takes one byte and 'b' starts at the next multiple of four
+        assert(second - first == 4);
+    }
 
     assert(fe.tc.usage().max_vars_size_bytes == 8);
 
     // the space is reused by the next scope
-    fe.tc.enter_block();
-    const int64_t reused{fe.add_var("c", integer)};
-    assert(reused == first);
-    fe.tc.exit_block();
+    {
+        const toc::frame_scope block{fe.tc, frame::block()};
+        const int64_t reused{fe.add_var("c", integer)};
+        assert(reused == first);
+    }
+
     assert(fe.tc.usage().max_vars_size_bytes == 8);
 
-    fe.tc.exit_block();
+    fe.root.reset();
     fe.tc.assert_released();
 }
 
@@ -3993,7 +4013,11 @@ auto check_storage_placement() -> void {
 auto check_dry_run_leaves_no_trace() -> void {
     front_end fe{64};
 
-    fe.tc.enter_block();
+    std::optional<toc::frame_scope> block{
+        std::in_place,
+        fe.tc,
+        frame::block(),
+    };
     fe.add_var("a", integer);
     const usage_statistics before{fe.tc.usage()};
     const size_t constants_before{fe.tc.data().constants().size()};
@@ -4003,12 +4027,10 @@ auto check_dry_run_leaves_no_trace() -> void {
                          "does not fit in the variable storage"));
 
     fe.tc.dry_run([&] -> void {
-        fe.tc.enter_block();
-        fe.tc.enter_block();
+        const toc::frame_scope outer{fe.tc, frame::block()};
+        const toc::frame_scope inner{fe.tc, frame::block()};
         fe.add_var("big", integer64, 16);
         std::ignore = fe.tc.add_bytes_constant(token{}, "dry run only");
-        fe.tc.exit_block();
-        fe.tc.exit_block();
     });
 
     const usage_statistics after{fe.tc.usage()};
@@ -4020,8 +4042,8 @@ auto check_dry_run_leaves_no_trace() -> void {
     assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
                          "does not fit in the variable storage"));
 
-    fe.tc.exit_block();
-    fe.tc.exit_block();
+    block.reset();
+    fe.root.reset();
     fe.tc.assert_released();
 }
 
@@ -4031,16 +4053,27 @@ auto check_constant_scopes() -> void {
     front_end fe{64};
 
     fe.tc.add_const(token{}, 0, "global", folded_value::untyped(1));
-    fe.tc.enter_inlined_func("outer", {}, {});
-    fe.tc.add_const(token{}, 0, "outer_only", folded_value::untyped(2));
-    fe.tc.enter_inlined_func("inner", "path", {});
-    assert(fe.tc.scopes().lookup("global").is_constant());
-    assert(not fe.tc.scopes().lookup("outer_only").is_constant());
-    fe.tc.exit_func("inner");
-    assert(fe.tc.scopes().lookup("outer_only").is_constant());
-    fe.tc.exit_func("outer");
+    {
+        const toc::frame_scope outer{
+            fe.tc,
+            frame::inlined_func("outer", {}, {}),
+        };
+        fe.tc.add_const(token{}, 0, "outer_only", folded_value::untyped(2));
 
-    fe.tc.exit_block();
+        {
+            const toc::frame_scope inner{
+                fe.tc,
+                frame::inlined_func("inner", "path", {}),
+            };
+
+            assert(fe.tc.scopes().lookup("global").is_constant());
+            assert(not fe.tc.scopes().lookup("outer_only").is_constant());
+        }
+
+        assert(fe.tc.scopes().lookup("outer_only").is_constant());
+    }
+
+    fe.root.reset();
     fe.tc.assert_released();
 }
 

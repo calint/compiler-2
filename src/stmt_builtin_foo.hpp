@@ -57,13 +57,11 @@ class stmt_builtin_foo final : public statement {
         // block can name them
         const ident_info array_info{make_ident_info(tc, ident_)};
         const std::string label{tc.create_unique_label(tok(), "foo")};
-        tc.enter_foo(label);
+        const toc::frame_scope foo{tc, frame::foo(label)};
 
         add_loop_names(tc, 0, src_loc_tk, array_info, operand{}, operand{});
 
         code_ = {tc, tz};
-
-        tc.exit_foo(label);
     }
 
     stmt_builtin_foo() = default;
@@ -115,7 +113,7 @@ class stmt_builtin_foo final : public statement {
                           allocated_registers),
         };
 
-        tc.enter_foo(loop_label);
+        const toc::frame_scope foo{tc, frame::foo(loop_label)};
 
         const operand counter{
             declare_loop_names(tc, indent, array_info, reg_iter,
@@ -141,8 +139,6 @@ class stmt_builtin_foo final : public statement {
 
         x.free_scratch_registers(tok(), indent, allocated_registers);
         x.free_scratch_register(tok(), indent, reg_iter);
-
-        tc.exit_foo(loop_label);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

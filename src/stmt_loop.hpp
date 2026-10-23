@@ -21,9 +21,8 @@ class stmt_loop final : public statement {
         set_type(tc.builtins().void_type());
 
         const std::string label{tc.create_unique_label(tok(), "loop")};
-        tc.enter_loop(label);
+        const toc::frame_scope loop{tc, frame::loop(label)};
         code_ = {tc, tz};
-        tc.exit_loop(label);
     }
 
     stmt_loop() = default;
@@ -47,11 +46,10 @@ class stmt_loop final : public statement {
 
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(indent, label);
-        tc.enter_loop(label);
+        const toc::frame_scope loop{tc, frame::loop(label)};
         code_.compile(tc, indent, destination{});
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
-        tc.exit_loop(label);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

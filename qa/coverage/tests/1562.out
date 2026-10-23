@@ -1,0 +1,4 @@
+
+1562.baz:3:20: expected ',' or ')' after parameter 'x'
+func f<T type>(x T y) {}
+                   ^

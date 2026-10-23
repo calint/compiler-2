@@ -94,26 +94,14 @@ class expr_bool_op final : public statement {
     bool is_memory_comparison_{};
 
   public:
-    expr_bool_op(toc& tc, tokenizer& tz,
-                 std::unique_ptr<statement> first_expression = {})
-        : statement{first_expression ? tz.cur_position_token()
-                                     : tz.next_whitespace_token()} {
+    expr_bool_op(toc& tc, tokenizer& tz)
+        : statement{tz.next_whitespace_token()} {
 
         set_type(tc.builtins().boolean());
 
-        if (not first_expression) {
-            nots_ = parse_not_tokens(tz);
-        }
+        nots_ = parse_not_tokens(tz);
 
-        lhs_ = {tc, tz,
-                expr_arith::options{
-                    .uops{},
-                    .open_paren_tk{},
-                    .is_implied_subexpression{},
-                    .first_op_precedence{expr_arith::initial_precedence},
-                    .first_expression{std::move(first_expression)},
-                    .destination_type{},
-                }};
+        lhs_ = {tc, tz};
 
         ws_pre_op_ = tz.next_whitespace_token();
 
@@ -1124,13 +1112,8 @@ class expr_bool final : public statement {
     token close_paren_tk_;
 
   public:
-    // a caller might have supplied the first operand it already parsed, e.g.
-    // the 'bool' of 'var b = bool'
-    expr_bool(toc& tc, const token tk, tokenizer& tz,
-              std::unique_ptr<statement> first_expression = {})
-        : statement{tk} {
-
-        parse_list(tc, tz, std::move(first_expression));
+    expr_bool(toc& tc, const token tk, tokenizer& tz) : statement{tk} {
+        parse_list(tc, tz);
     }
 
     // e.g. '(a == b and c == d)' after its 'not's, the '(' has been read
@@ -1140,7 +1123,7 @@ class expr_bool final : public statement {
 
         assert(not open_paren_tk_.is_empty());
 
-        parse_list(tc, tz, {});
+        parse_list(tc, tz);
     }
 
     expr_bool() = default;
@@ -1179,7 +1162,7 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        // e.g. '(true)' or the bare type 'bool'
+        // e.g. '(true)'
         if (not is_expression()) {
             const ident_info src_info{make_ident_info(tc, *this)};
 
@@ -1580,35 +1563,20 @@ class expr_bool final : public statement {
 
     // the operands are joined by 'and' or by 'or', not by both, e.g.
     // 'a == 1 and b == 2 and c == 3'
-    auto parse_list(toc& tc, tokenizer& tz,
-                    std::unique_ptr<statement> first_expression) -> void {
-
+    auto parse_list(toc& tc, tokenizer& tz) -> void {
         const toc::parse_nesting_scope nesting{tc, tz};
 
         set_type(tc.builtins().boolean());
 
-        parse_operand(tc, tz, std::move(first_expression));
+        parse_element(tc, tz);
 
         while (const std::optional<token> op_tk{read_connective(tz)}) {
             assert_same_connective(*op_tk);
 
             ops_.emplace_back(*op_tk);
 
-            parse_operand(tc, tz, {});
+            parse_element(tc, tz);
         }
-    }
-
-    auto parse_operand(toc& tc, tokenizer& tz,
-                       std::unique_ptr<statement> already_parsed) -> void {
-
-        if (already_parsed) {
-            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz,
-                                std::move(already_parsed));
-
-            return;
-        }
-
-        parse_element(tc, tz);
     }
 
     // the 'and' or 'or' after an operand, none when the expression ends: an

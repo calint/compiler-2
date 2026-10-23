@@ -3,27 +3,27 @@ include "lib.baz"
 dat       str_uc = "u c "
 dat    str_exits = "exits: "
 
-let max_name_len = 32
-let max_description_len = 512
-let max_message_text_len = 512
-let max_note_len = 128
-let max_id_list_len = 128
-let max_rooms_len = 128
-let max_entities_len = 32
-let max_room_links_len = 16
-let max_link_names_len = 128
-let max_entity_messages_len = 8
-let max_objects_len = 1024
+let name_len = 32
+let description_len = 512
+let message_text_len = 512
+let note_len = 128
+let id_list_len = 128
+let rooms_len = 128
+let entities_len = 32
+let room_links_len = 16
+let link_names_len = 128
+let entity_messages_len = 8
+let objects_len = 1024
 
-type id_list = list<int, max_id_list_len>
+type id_list = list<int, id_list_len>
 
-type name = text<max_name_len>
+type name = text<name_len>
 
-type note = text<max_note_len>
+type note = text<note_len>
 
-type description = text<max_description_len>
+type description = text<description_len>
 
-type message_text = text<max_message_text_len>
+type message_text = text<message_text_len>
 
 dat str_told_u = " told u "
 dat str_said = " said "
@@ -38,7 +38,7 @@ type message {
     text message_text,
 }
 
-type messages = list<message, max_entity_messages_len>
+type messages = list<message, entity_messages_len>
 
 func mut messages.add(from, kind, text message_text) {
     let ix = self.reserve()
@@ -56,7 +56,7 @@ func entity.print() {
     out.print(self.name.array, self.name.len)
 }
 
-type entities = list<entity, max_entities_len>
+type entities = list<entity, entities_len>
 
 # the bare entity, the creation script makes the rest
 dat entities = entities {
@@ -92,7 +92,7 @@ func mut entities.add(nm name, room_id) entity_id {
     self.array[entity_id] = { nm, room_id }
 }
 
-type link_names = list<name, max_link_names_len>
+type link_names = list<name, link_names_len>
 
 dat link_names = link_names
 
@@ -101,7 +101,7 @@ type link {
     to,
 }
 
-type links = list<link, max_room_links_len>
+type links = list<link, room_links_len>
 
 func mut links.add(link_name_id, to) {
     let ix = self.reserve()
@@ -112,7 +112,7 @@ type object {
     name name,
 }
 
-type objects = list<object, max_objects_len>
+type objects = list<object, objects_len>
 
 func mut objects.add(name name) object_id {
     object_id = self.reserve()
@@ -186,7 +186,7 @@ func mut room.remove_entity(id) {
     self.entities.delete_index(found_ix)
 }
 
-type rooms = list<room, max_rooms_len>
+type rooms = list<room, rooms_len>
 
 # the bare room, the creation script makes the rest
 dat rooms = rooms {

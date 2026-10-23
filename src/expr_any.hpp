@@ -729,16 +729,11 @@ class expr_any final : public statement {
                                         tp.name(), value.get_type().name())};
     }
 
-    // a built-in value whose first element is parsed, e.g. the zero value of
-    // 'i8' or '{}', 'pos_tk' is where the value starts
+    // a built-in value whose only element is parsed, e.g. the zero value of
+    // 'i8', 'bool' or '{}'
     [[nodiscard]] static auto builtin_value(toc& tc, tokenizer& tz,
-                                            const token& pos_tk, const type& tp,
                                             std::unique_ptr<statement> first)
         -> expr_variant {
-
-        if (tp.is_bool()) {
-            return expr_bool{tc, pos_tk, tz, std::move(first)};
-        }
 
         return expr_arith{
             tc,
@@ -773,8 +768,6 @@ class expr_any final : public statement {
                              typing};
         }
 
-        const token pos_tk{tz.cur_position_token()};
-
         // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'
         if (const token open_brace_tk{tz.is_next_char_token('{')};
             not open_brace_tk.is_empty()) {
@@ -791,7 +784,7 @@ class expr_any final : public statement {
             }
 
             return builtin_value(
-                tc, tz, pos_tk, tp,
+                tc, tz,
                 std::make_unique<expr_zero>(tp, open_brace_tk, close_brace_tk));
         }
 
@@ -805,8 +798,7 @@ class expr_any final : public statement {
             }
 
             return builtin_value(
-                tc, tz, pos_tk, tp,
-                std::make_unique<stmt_builtin_convert>(tc, tk));
+                tc, tz, std::make_unique<stmt_builtin_convert>(tc, tk));
         }
 
         tz.put_back_token(tk);

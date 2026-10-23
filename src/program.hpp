@@ -241,17 +241,12 @@ class program final {
     std::vector<file_statements> file_statements_;
     std::set<std::filesystem::path> loaded_paths_;
     toc tc_; // table of contents
-    // where the program starts, checked when every definition is parsed
-    const stmt_def_func* main_func_{};
 
   public:
     // the main file is the first of 'files', the included ones are added
     program(machine& backend, source_files& files, const size_t vars_size_bytes,
             const check_options& checks)
         : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
-
-        // note: 'main' rejects a larger '--vars' as an option error
-        assert(vars_size_bytes <= backend.max_storage_bytes());
 
         // a built-in has no place in the source
         const token src_loc_tk;
@@ -270,17 +265,19 @@ class program final {
         tc_.add_type_alias(src_loc_tk, reserved_names::default_type_name,
                            tc_.builtins().default_type());
 
-        tc_.enter_block();
+        {
+            const toc::frame_scope root{tc_, frame::block()};
 
-        loaded_paths_.insert(identity_path(files.name(0)));
+            loaded_paths_.insert(identity_path(files.name(0)));
 
-        parse_files(0);
+            parse_files(0);
 
-        tc_.assert_generic_params_free();
+            tc_.assert_generic_params_free();
+        }
 
-        tc_.exit_block();
-
-        main_func_ = &checked_main(tc_);
+        // the program starts at 'main', its signature is checked where it is
+        // defined
+        std::ignore = tc_.get_main_or_throw();
     }
 
     auto build(std::ostream& os) -> void {
@@ -314,24 +311,21 @@ class program final {
 
   private:
     auto compile() -> void {
-        tc_.enter_block();
+        {
+            const toc::frame_scope root{tc_, frame::block()};
 
-        for (const std::unique_ptr<statement>& s : statements_) {
-            s->compile(tc_, 0, destination{});
+            for (const std::unique_ptr<statement>& s : statements_) {
+                s->compile(tc_, 0, destination{});
+            }
+
+            compile_main(tc_, tc_.get_main_or_throw());
+            compile_noinline_functions(tc_);
+            check_unreached_functions(tc_);
         }
-
-        assert(main_func_ != nullptr);
-
-        compile_main(tc_, *main_func_);
-        compile_noinline_functions(tc_);
-        check_unreached_functions(tc_);
-
-        tc_.exit_block();
-
-        emit_failure_handlers(tc_);
 
         machine& x{tc_.machine()};
 
+        x.emit_used_failure_handlers(tc_.checks().with_line);
         x.emit_used_routines();
 
         emit_read_only_data(tc_);
@@ -500,22 +494,6 @@ class program final {
         }
     }
 
-    // the program starts at 'main', checked once every definition is parsed
-    [[nodiscard]] static auto checked_main(const toc& tc)
-        -> const stmt_def_func& {
-
-        // e.g. 'func main<T type>()' is recorded as a generic function
-        if (tc.generics().has_func(reserved_names::main)) {
-            throw compile_error{
-                tc.generics().get_func(reserved_names::main).param_tks.front(),
-                "'main' cannot have type parameters"};
-        }
-
-        // note: 'stmt_def_func::assert_main_signature' checked the rest
-
-        return tc.get_main_or_throw();
-    }
-
     // the main function is compiled where the program starts
     static auto compile_main(toc& tc, const stmt_def_func& func_main) -> void {
         machine& x{tc.machine()};
@@ -530,9 +508,11 @@ class program final {
         x.comment({}, 0, "");
 
         x.label(0, reserved_names::main);
-        tc.enter_main();
-        func_main.compile_statements(tc, 0);
-        tc.exit_func(reserved_names::main);
+
+        {
+            const toc::frame_scope main{tc, frame::main_func()};
+            func_main.compile_statements(tc, 0);
+        }
 
         // code after an 'exit' or 'return' on every path would never run
         if (func_main.is_end_reachable()) {
@@ -555,50 +535,6 @@ class program final {
     }
 
     // only the checks the user asked for have a handler
-    static auto emit_failure_handlers(toc& tc) -> void {
-        const check_options& checks{tc.checks()};
-
-        machine& x{tc.machine()};
-
-        if (checks.frame) {
-            x.comment({}, 0, "frame overflow handler (--checks=frame)");
-            x.emit_frame_overflow_handler();
-        }
-
-        if (checks.division) {
-            x.comment({}, 0, "division failure handler (--checks=division)");
-            x.emit_division_failure_handler(checks.with_line);
-        }
-
-        if (checks.overlap) {
-            x.comment({}, 0, "overlap failure handler (--checks=overlap)");
-            x.emit_overlap_failure_handler(checks.with_line);
-        }
-
-        if (checks.overflow) {
-            x.comment({}, 0, "overflow failure handler (--checks=overflow)");
-            x.emit_overflow_failure_handler(checks.with_line);
-        }
-
-        if (checks.stack) {
-            x.comment({}, 0, "stack overflow handler (--checks=stack)");
-            x.emit_stack_overflow_handler();
-        }
-
-        if (checks.shift) {
-            x.comment({}, 0, "shift failure handler (--checks=shift)");
-            x.emit_shift_failure_handler(checks.with_line);
-        }
-
-        if (checks.is_bounds()) {
-            x.comment({}, 0,
-                      "bounds failure handler (--checks=upper or "
-                      "--checks=lower)");
-
-            x.emit_bounds_failure_handler(checks.with_line);
-        }
-    }
-
     static auto emit_read_only_data(toc& tc) -> void {
         // no section switches without strings
         if (tc.data().constants().empty()) {

@@ -130,14 +130,6 @@ class stmt_def_dat final : public statement {
 
         machine& x{tc.machine()};
 
-        const std::optional<std::string> size_error{
-            x.data_element_size_error(tp.size_bytes()),
-        };
-
-        if (size_error) {
-            throw compile_error{el.src_loc_tk, *size_error};
-        }
-
         if (not el.is_array) {
             x.comment(el.src_loc_tk, 0, "{}", tp.name());
 

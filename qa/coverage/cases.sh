@@ -4868,3 +4868,12 @@ SRC=1559 && COMPERR
 # a type parameter of a method of a generic type is not named like a
 # constant parameter of the type, see 1075 for a type parameter
 SRC=1560 && COMPERR
+
+# the type parameters of 'main' are rejected where it is defined, before a
+# later definition of 'main'
+SRC=1561 && COMPERR
+
+# the parameters of a generic function or of a method of a generic type are
+# read like those of a function at the definition, also without an instance
+SRC=1562 && COMPERR
+SRC=1563 && COMPERR

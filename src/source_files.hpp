@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -117,18 +118,16 @@ class source_files final {
 
 // where a token is in the source, as numbers or as text
 class source_locations final {
-    const source_files* files_{};
+    std::reference_wrapper<const source_files> files_;
 
   public:
-    // without files the tokens have no location
-    explicit source_locations(const source_files* const files)
-        : files_{files} {}
+    explicit source_locations(const source_files& files) : files_{files} {}
 
     // e.g. 'include/x.baz', as the messages of the compiler name it
     [[nodiscard]] auto file_name(const size_t file_ix) const
         -> std::string_view {
 
-        return files_->name(file_ix);
+        return files_.get().name(file_ix);
     }
 
     // the file is named relative to the directory of the main file, so the
@@ -137,11 +136,11 @@ class source_locations final {
         -> std::string {
 
         const std::filesystem::path main_dir{
-            std::filesystem::path{files_->name(0)}.parent_path(),
+            std::filesystem::path{files_.get().name(0)}.parent_path(),
         };
 
         const std::filesystem::path src_path{
-            files_->name(src_loc_tk.file_index()),
+            files_.get().name(src_loc_tk.file_index()),
         };
 
         const std::filesystem::path relative{
@@ -164,32 +163,31 @@ class source_locations final {
                            text(src_loc_tk, '.'));
     }
 
-    [[nodiscard]] auto has_source() const -> bool { return files_ != nullptr; }
-
     // human-readable source location, with the file name when the program
     // has more than one file
     [[nodiscard]] auto human_readable(const token& src_loc_tk) const
         -> std::string {
 
-        if (files_->count() == 1) {
+        if (files_.get().count() == 1) {
             return text(src_loc_tk, ':');
         }
 
-        return std::format("{}:{}",
-                           printable(files_->name(src_loc_tk.file_index())),
-                           text(src_loc_tk, ':'));
+        return std::format(
+            "{}:{}", printable(files_.get().name(src_loc_tk.file_index())),
+            text(src_loc_tk, ':'));
     }
 
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
         -> std::string_view {
 
-        return files_->text(src_loc_tk.file_index());
+        return files_.get().text(src_loc_tk.file_index());
     }
 
   private:
     [[nodiscard]] auto column(const token& src_loc_tk) const -> size_t {
-        return column_for_char_index(src_loc_tk.start_index(),
-                                     files_->text(src_loc_tk.file_index()));
+        return column_for_char_index(
+            src_loc_tk.start_index(),
+            files_.get().text(src_loc_tk.file_index()));
     }
 
     // 'line' and 'column' of the token, 'separator' between them

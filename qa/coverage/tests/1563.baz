@@ -1,0 +1,9 @@
+# the parameters of a method of a generic type are read like those of a
+# function at the definition, also when no alias makes an instance
+type box<T type> {
+    v T
+}
+
+func box.f(x, ) {}
+
+func main() {}

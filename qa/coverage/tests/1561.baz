@@ -1,0 +1,5 @@
+# the type parameters of 'main' are rejected where it is defined, before a
+# later definition of 'main'
+func main<T type>() {}
+
+func main() {}

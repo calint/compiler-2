@@ -1357,62 +1357,6 @@ class scope_stack final {
         return frames_.at(func_frame_index());
     }
 
-    auto enter_block() -> void {
-        frames_.push_back(frame::block());
-        track_depth();
-    }
-
-    auto enter_foo(const std::string_view name) -> void {
-        frames_.push_back(frame::foo(name));
-        track_depth();
-    }
-
-    // a function compiled in place, 'return' jumps to 'return_jmp_label'
-    auto enter_inlined_func(const std::string_view name,
-                            const std::string_view call_path,
-                            const std::string_view return_jmp_label) -> void {
-
-        frames_.push_back(frame::inlined_func(name, std::string{call_path},
-                                              std::string{return_jmp_label}));
-
-        track_depth();
-    }
-
-    auto enter_loop(const std::string_view name) -> void {
-        frames_.push_back(frame::loop(name));
-        track_depth();
-    }
-
-    auto enter_main() -> void {
-        frames_.push_back(frame::main_func());
-        track_depth();
-    }
-
-    // see 'frame::noinline_dry_run'
-    auto enter_noinline_dry_run(const std::string_view name,
-                                const std::string_view call_path,
-                                const std::string_view return_jmp_label)
-        -> void {
-
-        frames_.push_back(frame::noinline_dry_run(
-            name, std::string{call_path}, std::string{return_jmp_label}));
-
-        track_depth();
-    }
-
-    // a function with a body of its own, its variables are placed from
-    // 'storage_base_register' when not empty
-    auto enter_noinline_func(const std::string_view name,
-                             const std::string_view call_path,
-                             const std::string_view storage_base_register)
-        -> void {
-
-        frames_.push_back(frame::noinline_func(name, std::string{call_path},
-                                               storage_base_register));
-
-        track_depth();
-    }
-
     [[nodiscard]] auto frames() -> std::vector<frame>& { return frames_; }
 
     [[nodiscard]] auto frames() const -> const std::vector<frame>& {
@@ -1559,6 +1503,11 @@ class scope_stack final {
 
     auto pop() -> void { frames_.pop_back(); }
 
+    auto push(frame frm) -> void {
+        frames_.push_back(std::move(frm));
+        track_depth();
+    }
+
     // the globals that a function called in the body being parsed uses
     auto record_callee_globals(const body_uses& callee) -> void {
         for (const body_uses::global_use& u : callee.globals()) {
@@ -1701,7 +1650,16 @@ class storage_layout final {
     storage_layout(const ::machine& backend, scope_stack& scopes,
                    const data_table& data, const size_t vars_capacity_bytes)
         : machine_{backend}, scopes_{scopes}, data_{data},
-          vars_capacity_bytes_{vars_capacity_bytes} {}
+          vars_capacity_bytes_{vars_capacity_bytes} {
+
+        // the option is wrong, not the source
+        if (vars_capacity_bytes > backend.max_storage_bytes()) {
+            throw option_error{std::format(
+                "invalid --vars: {} B exceeds the {} B that the target "
+                "addresses",
+                vars_capacity_bytes, backend.max_storage_bytes())};
+        }
+    }
 
     // the storage of the dat 'var' is where the data table placed it, after
     // the dats before it; returns the bytes it takes with the padding before
@@ -1925,10 +1883,17 @@ class storage_layout final {
     auto add_allocated_size_bytes(const token& src_loc_tk,
                                   const size_t allocated_size_bytes) -> void {
 
-        vars_size_bytes_ = add_storage_size(src_loc_tk, vars_size_bytes_,
-                                            allocated_size_bytes);
+        // note: checked before it is stored, a frame popped by an error
+        //       releases only what it holds
 
-        assert_storage_fits_target(src_loc_tk);
+        const size_t total_bytes{
+            add_storage_size(src_loc_tk, vars_size_bytes_,
+                             allocated_size_bytes),
+        };
+
+        assert_storage_fits_target(src_loc_tk, total_bytes);
+
+        vars_size_bytes_ = total_bytes;
     }
 
     // the first variable after the dats starts past the padding that aligns it
@@ -1949,10 +1914,12 @@ class storage_layout final {
 
     // the declaration that takes the data and variables past what the target
     // addresses is the error, not the end of the build
-    auto assert_storage_fits_target(const token& src_loc_tk) const -> void {
+    auto assert_storage_fits_target(const token& src_loc_tk,
+                                    const size_t total_bytes) const -> void {
+
         const size_t max_bytes{machine_.get().max_storage_bytes()};
 
-        if (vars_size_bytes_ <= max_bytes) {
+        if (total_bytes <= max_bytes) {
             return;
         }
 
@@ -1960,7 +1927,7 @@ class storage_layout final {
             src_loc_tk,
             std::format("data and variables of {} B exceed the {} B that the "
                         "target addresses",
-                        vars_size_bytes_, max_bytes)};
+                        total_bytes, max_bytes)};
     }
 
     auto assert_vars_capacity(const token& src_loc_tk, const var_info& var,
@@ -2145,9 +2112,8 @@ class ident_resolver final {
                             ident, ident)};
         }
 
-        // a name starts with a letter or '_', so a digit starts a broken
-        // number, e.g. '0x' or '12_000'
-        if (ident.front() >= '0' and ident.front() <= '9') {
+        // a broken number, e.g. '0x' or '12_000'
+        if (starts_number(ident)) {
             throw compile_error{
                 src_loc_tk, std::format("cannot parse constant '{}'", ident)};
         }
@@ -2709,30 +2675,34 @@ class toc final {
         }
     };
 
-    // a version of code that fails leaves the frames it entered, so the other
-    // version is compiled in the frames of the caller, see
-    // 'emit_most_efficient'
-    class frame_depth_scope final {
+  public:
+    // a frame of the scope stack while it lives, also when an error unwinds,
+    // so a failed version or dry run leaves the frames of its caller, e.g.
+    // 'const toc::frame_scope loop{tc, frame::loop(label)};'
+    class frame_scope final {
         toc& tc_;
+        // the frames below this one, the frames are left in stack order
         size_t depth_;
 
       public:
-        explicit frame_depth_scope(toc& tc)
-            : tc_{tc}, depth_{tc.scopes_.frames().size()} {}
+        frame_scope(toc& tc, frame frm)
+            : tc_{tc}, depth_{tc.scopes_.frames().size()} {
 
-        frame_depth_scope(const frame_depth_scope&) = delete;
-        frame_depth_scope(frame_depth_scope&&) = delete;
-        auto operator=(const frame_depth_scope&) -> frame_depth_scope& = delete;
-        auto operator=(frame_depth_scope&&) -> frame_depth_scope& = delete;
+            tc_.scopes_.push(std::move(frm));
+        }
 
-        ~frame_depth_scope() {
-            while (tc_.scopes_.frames().size() > depth_) {
-                tc_.pop_frame();
-            }
+        frame_scope(const frame_scope&) = delete;
+        frame_scope(frame_scope&&) = delete;
+        auto operator=(const frame_scope&) -> frame_scope& = delete;
+        auto operator=(frame_scope&&) -> frame_scope& = delete;
+
+        ~frame_scope() {
+            assert(tc_.scopes_.frames().size() == depth_ + 1);
+
+            tc_.pop_frame();
         }
     };
 
-  public:
     // one level of nesting while it lives
     class parse_nesting_scope final {
         toc& tc_;
@@ -2760,7 +2730,7 @@ class toc final {
 
     toc(::machine& backend, const source_files& files,
         const size_t vars_capacity_bytes, const check_options& checks)
-        : machine_{backend}, locations_{&files}, scopes_{order_},
+        : machine_{backend}, locations_{files}, scopes_{order_},
           data_{backend.data_alignment()}, funcs_{order_}, generics_{order_},
           types_{order_},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
@@ -3069,6 +3039,22 @@ class toc final {
         return builtins_;
     }
 
+    // the location of 'src_loc_tk' and the call path of the inlined bodies
+    // around it, which keeps labels unique per call, e.g. '12.5.30.9' for
+    // 12:5 in a body inlined by the call at 30:9
+    [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
+        -> std::string {
+
+        const std::string_view call_path{scopes_.call_path()};
+
+        if (call_path.empty()) {
+            return source_location_for_use_in_label(src_loc_tk);
+        }
+
+        return std::format(
+            "{}.{}", source_location_for_use_in_label(src_loc_tk), call_path);
+    }
+
     // what '--checks' turned on
     [[nodiscard]] auto checks() const -> const check_options& {
         return checks_;
@@ -3106,12 +3092,7 @@ class toc final {
                                            const std::string_view prefix) const
         -> std::string {
 
-        const std::string_view call_path{scopes_.call_path()};
-        const std::string src_loc{source_location_for_use_in_label(src_loc_tk)};
-
-        return std::format("{}.{}{}", prefix, src_loc,
-                           call_path.empty() ? std::string{}
-                                             : std::format(".{}", call_path));
+        return std::format("{}.{}", prefix, call_path_at(src_loc_tk));
     }
 
     [[nodiscard]] auto current_definition() const -> size_t {
@@ -3128,10 +3109,7 @@ class toc final {
 
         ::machine& x{machine()};
 
-        x.emit_discarded([&] -> void {
-            const frame_depth_scope frames{*this};
-            compile();
-        });
+        x.emit_discarded(compile);
     }
 
     // the dry run of the kind of noinline call 'kind' at 'level', measured
@@ -3152,92 +3130,9 @@ class toc final {
         return dry_runs_;
     }
 
-    // 'machine::emit_most_efficient' of versions that compile statements
-    auto emit_most_efficient(const token& src_loc_tk, const size_t indent,
-                             const std::function_ref<void()> emit_first,
-                             const std::function_ref<void()> emit_second)
-        -> void {
-
-        ::machine& x{machine()};
-
-        x.emit_most_efficient(
-            src_loc_tk, indent,
-            [&] -> void {
-                const frame_depth_scope frames{*this};
-                emit_first();
-            },
-            [&] -> void {
-                const frame_depth_scope frames{*this};
-                emit_second();
-            });
-    }
-
-    auto enter_block() -> void { scopes_.enter_block(); }
-
-    auto enter_foo(const std::string_view name) -> void {
-        scopes_.enter_foo(name);
-    }
-
-    // a function compiled in place, 'return' jumps to 'return_jmp_label'
-    auto enter_inlined_func(const std::string_view name,
-                            const std::string_view call_path,
-                            const std::string_view return_jmp_label) -> void {
-
-        scopes_.enter_inlined_func(name, call_path, return_jmp_label);
-    }
-
-    auto enter_loop(const std::string_view name) -> void {
-        scopes_.enter_loop(name);
-    }
-
-    auto enter_main() -> void { scopes_.enter_main(); }
-
-    // see 'frame::noinline_dry_run'
-    auto enter_noinline_dry_run(const std::string_view name,
-                                const std::string_view call_path,
-                                const std::string_view return_jmp_label)
-        -> void {
-
-        scopes_.enter_noinline_dry_run(name, call_path, return_jmp_label);
-    }
-
-    // a function with a body of its own, its variables are placed from
-    // 'storage_base_register' when not empty
-    auto enter_noinline_func(const std::string_view name,
-                             const std::string_view call_path,
-                             const std::string_view storage_base_register)
-        -> void {
-
-        scopes_.enter_noinline_func(name, call_path, storage_base_register);
-    }
-
     // the type parameters of an enclosing instance are hidden until
     // 'exit_type_params'
     auto enter_type_params() -> void { types_.enter_params(); }
-
-    auto exit_block() -> void {
-        assert(scopes_.back().is_block());
-
-        pop_frame();
-    }
-
-    auto exit_foo([[maybe_unused]] const std::string_view name) -> void {
-        assert(scopes_.back().is_foo() and scopes_.back().is_name(name));
-
-        pop_frame();
-    }
-
-    auto exit_func([[maybe_unused]] const std::string_view name) -> void {
-        assert(scopes_.back().is_func() and scopes_.back().is_name(name));
-
-        pop_frame();
-    }
-
-    auto exit_loop([[maybe_unused]] const std::string_view name) -> void {
-        assert(scopes_.back().is_loop() and scopes_.back().is_name(name));
-
-        pop_frame();
-    }
 
     auto exit_type_params() -> void { types_.exit_params(); }
 
@@ -3404,13 +3299,6 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
-
-    [[nodiscard]] auto
-    source_location_for_use_in_label(const token& src_loc_tk) const
-        -> std::string {
-
-        return locations_.for_label(src_loc_tk);
-    }
 
     // the text of the file of the token
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
@@ -3607,6 +3495,13 @@ class toc final {
             scopes_.record_global(name);
         }
     }
+
+    [[nodiscard]] auto
+    source_location_for_use_in_label(const token& src_loc_tk) const
+        -> std::string {
+
+        return locations_.for_label(src_loc_tk);
+    }
 };
 
 //
@@ -3707,7 +3602,7 @@ class generic_scope final {
     toc& tc_;
     definition_order::instance_scope visible_;
     // the constants are in a block of their own
-    bool is_block_entered_{};
+    std::optional<toc::frame_scope> constants_block_;
 
   public:
     generic_scope(toc& tc, const size_t definition)
@@ -3722,10 +3617,7 @@ class generic_scope final {
     auto operator=(generic_scope&&) -> generic_scope& = delete;
 
     ~generic_scope() {
-        if (is_block_entered_) {
-            tc_.exit_block();
-        }
-
+        constants_block_.reset();
         tc_.exit_type_params();
     }
 
@@ -3756,9 +3648,8 @@ class generic_scope final {
     auto add_const(const token& src_loc_tk, const std::string_view name,
                    const int64_t value) -> void {
 
-        if (not is_block_entered_) {
-            tc_.enter_block();
-            is_block_entered_ = true;
+        if (not constants_block_) {
+            constants_block_.emplace(tc_, frame::block());
         }
 
         tc_.add_const(src_loc_tk, 0, name, folded_value::untyped(value));

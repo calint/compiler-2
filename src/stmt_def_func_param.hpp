@@ -108,8 +108,69 @@ class stmt_def_func_param final : public statement {
         }
     };
 
-    stmt_def_func_param(const toc& tc, tokenizer& tz)
-        : stmt_def_func_param{tc, syntax::read(tz)} {}
+    // the parameters of a signature up to its ')', e.g. 'a i32, b i32)'
+    struct syntax_list {
+        std::vector<syntax> params;
+        // the ',' between the parameters
+        std::vector<token> delimiter_tks;
+        token close_paren_tk;
+
+        //
+        // statics
+        //
+
+        // 'tz' is after the '('
+        [[nodiscard]] static auto read(tokenizer& tz) -> syntax_list {
+            syntax_list list;
+
+            list.close_paren_tk = tz.is_next_char_token(')');
+
+            while (list.close_paren_tk.is_empty()) {
+                if (not list.params.empty()) {
+                    list.delimiter_tks.push_back(
+                        read_delimiter(tz, list.params.back()));
+                }
+
+                list.params.push_back(syntax::read(tz));
+
+                list.close_paren_tk = tz.is_next_char_token(')');
+            }
+
+            return list;
+        }
+
+      private:
+        //
+        // statics
+        //
+
+        [[nodiscard]] static auto read_delimiter(tokenizer& tz,
+                                                 const syntax& previous)
+            -> token {
+
+            const token delimiter_tk{
+                tz.expect_char_token(
+                    ',', std::format("expected ',' or ')' after parameter '{}'",
+                                     previous.name_tk.text())),
+            };
+
+            tz.assert_no_trailing_delimiter(delimiter_tk, ')', "parameters");
+
+            return delimiter_tk;
+        }
+    };
+
+    stmt_def_func_param(const toc& tc, const syntax& tokens)
+        : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
+          type_tk_{tokens.type_tk}, open_bracket_tk_{tokens.open_bracket_tk},
+          close_bracket_tk_{tokens.close_bracket_tk},
+          is_read_only_{tokens.mut_tk.is_empty()} {
+
+        tc.assert_valid_unqualified_name(tok());
+
+        set_type(type_tk_.is_empty() ? tc.builtins().default_type()
+                                     : tc.get_type_or_throw(type_tk_));
+    }
 
     stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
         : statement{tk}, is_read_only_{is_read_only} {
@@ -142,17 +203,4 @@ class stmt_def_func_param final : public statement {
     [[nodiscard]] auto is_read_only() const -> bool { return is_read_only_; }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
-
-  private:
-    stmt_def_func_param(const toc& tc, const syntax& tokens)
-        : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
-          type_tk_{tokens.type_tk}, open_bracket_tk_{tokens.open_bracket_tk},
-          close_bracket_tk_{tokens.close_bracket_tk},
-          is_read_only_{tokens.mut_tk.is_empty()} {
-
-        tc.assert_valid_unqualified_name(tok());
-
-        set_type(type_tk_.is_empty() ? tc.builtins().default_type()
-                                     : tc.get_type_or_throw(type_tk_));
-    }
 };

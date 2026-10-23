@@ -1,9 +1,9 @@
-# generics that are never instantiated are listed in the footer, their bodies
-# are not checked
+# generics that are never instantiated are listed in the footer, the types of
+# their signatures and their bodies are not checked
 func untyped<T type>(a b) {
 }
 
-func missing_comma<T type>(a T b) {
+func unknown_result<T type>(a T) res q {
 }
 
 type list<T type> { items T[4] }

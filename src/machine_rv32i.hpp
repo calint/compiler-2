@@ -55,7 +55,7 @@
 //                'check_frame_capacity', 'check_stack_capacity', the overflow
 //                checks 'check_negate', 'check_multiply_result',
 //                'emit_checked_add_subtract'
-//   handlers     'emit_*_failure_handler', 'emit_named_failure_handler',
+//   handlers     'emit_failure_handler', 'emit_named_failure_handler',
 //                'emit_line_failure', 'emit_report_line_routine'
 //   calls        'call_function', the sector and i/o routine calls
 //   target hooks 'emit_read_call', 'emit_write_call',
@@ -454,14 +454,16 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
-    // the line in a0 and a jump to the handler of the check, with the line
-    // to the entry of the handler for the file of 'src_loc_tk'
+    // a jump to the handler of the check 'name', which is marked used; with
+    // the line, the line in a0 and a jump to the entry of the handler for the
+    // file of 'src_loc_tk'
     auto branch_to_failure(const token& src_loc_tk, const size_t indent,
                            const std::string_view name,
                            const std::string_view handler_label,
                            const bool with_line) -> void {
 
         if (not with_line) {
+            mark_used(name);
             branch(indent, handler_label);
             return;
         }
@@ -507,7 +509,8 @@ class machine_rv32i : public machine {
             for (const size_t file_ix :
                  failure_lines_of(name) | std::views::keys) {
 
-                label(0, failure_entry_label(handler_label, file_ix));
+                assembler_.label(0,
+                                 failure_entry_label(handler_label, file_ix));
 
                 emit_line_failure(
                     std::format(".Lbaz_{}_message_{}", label_name, file_ix),
@@ -521,7 +524,7 @@ class machine_rv32i : public machine {
             std::format(".Lbaz_{}_message", label_name),
         };
 
-        label(0, handler_label);
+        assembler_.label(0, handler_label);
 
         const std::string message{std::format("panic: {}", name)};
 
@@ -581,9 +584,8 @@ class machine_rv32i : public machine {
   public:
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
-    explicit machine_rv32i(const builtin_type_set& builtins,
-                           const source_files* const files = nullptr,
-                           const target_options& options = {})
+    machine_rv32i(const builtin_type_set& builtins, const source_files& files,
+                  const target_options& options = {})
         : machine{builtins, files, options},
           binary_file_name_{options.binary_file_name} {}
 
@@ -681,7 +683,7 @@ class machine_rv32i : public machine {
     auto begin_data(const size_t alignment) -> void override {
         assembler_.switch_section(section::data);
         assembler_.align(alignment);
-        label(0, data_label);
+        assembler_.label(0, data_label);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -851,7 +853,10 @@ class machine_rv32i : public machine {
                         start.base_register(), fits.reference);
 
         assembler_.label(indent, overflow.name);
-        branch(indent, frame_overflow_handler_label);
+
+        branch_to_failure(src_loc_tk, indent, "frame overflow",
+                          frame_overflow_handler_label, false);
+
         assembler_.label(indent, fits.name);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
@@ -899,7 +904,9 @@ class machine_rv32i : public machine {
         assembler_.bgeu(indent, lowest.base_register(), limit.base_register(),
                         fits.reference);
 
-        branch(indent, stack_overflow_handler_label);
+        branch_to_failure(src_loc_tk, indent, "stack overflow",
+                          stack_overflow_handler_label, false);
+
         assembler_.label(indent, fits.name);
         free_scratch_register(src_loc_tk, indent, lowest);
         free_scratch_register(src_loc_tk, indent, limit);
@@ -1090,20 +1097,6 @@ class machine_rv32i : public machine {
         return data_alignment_;
     }
 
-    [[nodiscard]] auto
-    data_element_size_error(const size_t element_size_bytes) const
-        -> std::optional<std::string> override {
-
-        if (element_size_bytes != byte_size_bytes_ and
-            element_size_bytes != half_size_bytes_ and
-            element_size_bytes != word_size_bytes_) {
-
-            return "RV32I data elements must be 1, 2, or 4 bytes";
-        }
-
-        return std::nullopt;
-    }
-
     [[nodiscard]] auto default_type() const -> const type& override {
         return builtin_type_i32();
     }
@@ -1139,11 +1132,6 @@ class machine_rv32i : public machine {
                                check);
     }
 
-    auto emit_bounds_failure_handler(const bool with_line) -> void override {
-        emit_named_failure_handler(bounds_failure_handler_label, "bounds",
-                                   with_line);
-    }
-
     auto emit_data(const size_t element_size_bytes, const int64_t value)
         -> void override {
 
@@ -1168,24 +1156,13 @@ class machine_rv32i : public machine {
         assembler_.data(element_size_bytes, values);
     }
 
-    auto emit_division_failure_handler(const bool with_line) -> void override {
-        emit_named_failure_handler(division_failure_handler_label, "division",
-                                   with_line);
-    }
+    auto emit_failure_handler(const failure_handler& handler,
+                              const bool with_line) -> void override {
 
-    auto emit_frame_overflow_handler() -> void override {
-        emit_named_failure_handler(frame_overflow_handler_label,
-                                   "frame overflow", false);
-    }
+        assert(handler.label != stack_overflow_handler_label or
+               is_stack_bounded());
 
-    auto emit_overflow_failure_handler(const bool with_line) -> void override {
-        emit_named_failure_handler(overflow_failure_handler_label, "overflow",
-                                   with_line);
-    }
-
-    auto emit_overlap_failure_handler(const bool with_line) -> void override {
-        emit_named_failure_handler(overlap_failure_handler_label, "overlap",
-                                   with_line);
+        emit_named_failure_handler(handler.label, handler.name, with_line);
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
@@ -1194,18 +1171,6 @@ class machine_rv32i : public machine {
         assert_data_element_size(element_size_bytes);
 
         assembler_.repeated_data(element_size_bytes, count, value);
-    }
-
-    auto emit_shift_failure_handler(const bool with_line) -> void override {
-        emit_named_failure_handler(shift_failure_handler_label, "shift",
-                                   with_line);
-    }
-
-    auto emit_stack_overflow_handler() -> void override {
-        assert(is_stack_bounded());
-
-        emit_named_failure_handler(stack_overflow_handler_label,
-                                   "stack overflow", false);
     }
 
     auto emit_string_constants(const std::span<const string_constant> strings)
@@ -1438,13 +1403,13 @@ class machine_rv32i : public machine {
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
 
-        label(0, data_end_label);
+        assembler_.label(0, data_end_label);
         // variables are zeroed when defined, so the image does not hold them
         assembler_.switch_section(section::bss);
         assembler_.align(alignment);
-        label(0, variables_label);
+        assembler_.label(0, variables_label);
         assembler_.zero(size_bytes);
-        label(0, variables_end_label);
+        assembler_.label(0, variables_end_label);
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -1516,7 +1481,7 @@ class machine_rv32i : public machine {
         assembler_.add_separator_newline();
         assembler_.switch_section(section::text);
         assembler_.globl("_start");
-        label(0, "_start");
+        assembler_.label(0, "_start");
         assembler_.add_separator_newline();
         reserve_variables_base();
         assembler_.la(0, variables_base_register_, variables_label);
@@ -4716,7 +4681,9 @@ class machine_rv32i : public machine {
         return helper_routine::multiply;
     }
 
-    // note: 'data_element_size_error' rejects other sizes
+    // note: 'toc::get_type_or_throw' rejects a type wider than the default
+    //       type
+
     static auto
     assert_data_element_size([[maybe_unused]] const size_t element_size_bytes)
         -> void {

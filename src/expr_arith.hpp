@@ -283,9 +283,11 @@ class expr_arith final : public expression {
             return;
         }
 
+        machine& x{tc.machine()};
+
         // a scratch register saves loads and stores of a memory destination
         // or costs a copy, which depends on the elements, so both are measured
-        tc.emit_most_efficient(
+        x.emit_most_efficient(
             tok(), indent, [&] -> void { do_compile(tc, indent, dst); },
             [&] -> void { compile_through_scratch(tc, indent, dst); });
     }
@@ -768,9 +770,11 @@ class expr_arith final : public expression {
             return;
         }
 
+        machine& x{tc.machine()};
+
         // a target without narrow register operations normalizes a narrow
         // register after each operation, a wide register needs only the store
-        tc.emit_most_efficient(
+        x.emit_most_efficient(
             tok(), indent,
             [&] -> void {
                 compile_through_scratch_as(tc, indent, dst, dst_type);

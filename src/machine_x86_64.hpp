@@ -45,7 +45,7 @@
 //                'check_copy_overlap', 'check_frame_capacity', each jumps to
 //                its handler, all but the frame check with a stub per line
 //                for '--checks=line'
-//   handlers     'emit_*_failure_handler', 'emit_line_panic_handler'
+//   handlers     'emit_failure_handler', 'emit_line_panic_handler'
 //   calls        'call_function', the system calls 'io_syscall' and 'exit',
 //                the sector routines 'emit_sector_routines'
 class machine_x86_64 final : public machine {
@@ -225,8 +225,7 @@ class machine_x86_64 final : public machine {
     assembler_x86_64 assembler_;
 
   public:
-    machine_x86_64(const builtin_type_set& builtins,
-                   const source_files* const files,
+    machine_x86_64(const builtin_type_set& builtins, const source_files& files,
                    const target_options& options = {})
         : machine{builtins, files, options} {}
 
@@ -433,6 +432,11 @@ class machine_x86_64 final : public machine {
 
         comment(src_loc_tk, indent, "frame capacity check begin");
 
+        const std::string failed{
+            failure_label("frame overflow", frame_overflow_handler_label,
+                          src_loc_tk, false),
+        };
+
         const operand start{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
@@ -448,7 +452,7 @@ class machine_x86_64 final : public machine {
             assembler_x86_64::memory::of_symbol(variables_label));
 
         cmp(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::b, frame_overflow_handler_label);
+        assembler_.jcc(indent, condition::b, failed);
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
         assembler_.instruction(indent, op::mov, to_argument(remaining),
@@ -456,7 +460,7 @@ class machine_x86_64 final : public machine {
                                    variables_end_label));
 
         cmp(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
+        assembler_.jcc(indent, condition::a, failed);
         emit_op(src_loc_tk, indent, op::sub, remaining, start);
 
         // note: the value of 'start' is no longer needed, its register is
@@ -464,7 +468,7 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent, start, frame_size_bytes);
         cmp(src_loc_tk, indent, start, remaining);
-        assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
+        assembler_.jcc(indent, condition::a, failed);
         free_scratch_register(src_loc_tk, indent, remaining);
         free_scratch_register(src_loc_tk, indent, start);
         comment(src_loc_tk, indent, "frame capacity check end");
@@ -680,11 +684,6 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rax");
     }
 
-    auto emit_bounds_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "bounds", failure_lines_of("bounds"),
-                                bounds_failure_handler_label);
-    }
-
     auto emit_data(const size_t element_size_bytes, const int64_t value)
         -> void override {
 
@@ -706,27 +705,14 @@ class machine_x86_64 final : public machine {
         assembler_.data(element_size_bytes, values);
     }
 
-    auto emit_division_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "division",
-                                failure_lines_of("division"),
-                                division_failure_handler_label);
-    }
+    auto emit_failure_handler(const failure_handler& handler,
+                              const bool with_line) -> void override {
 
-    auto emit_frame_overflow_handler() -> void override {
-        emit_line_panic_handler(false, "frame overflow", {},
-                                frame_overflow_handler_label);
-    }
+        // note: the stack is not bounded, see 'is_stack_bounded'
+        assert(handler.label != stack_overflow_handler_label);
 
-    auto emit_overflow_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "overflow",
-                                failure_lines_of("overflow"),
-                                overflow_failure_handler_label);
-    }
-
-    auto emit_overlap_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "overlap",
-                                failure_lines_of("overlap"),
-                                overlap_failure_handler_label);
+        emit_line_panic_handler(with_line, handler.name,
+                                failure_lines_of(handler.name), handler.label);
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
@@ -734,14 +720,6 @@ class machine_x86_64 final : public machine {
 
         assembler_.repeated_data(element_size_bytes, count, value);
     }
-
-    auto emit_shift_failure_handler(const bool with_line) -> void override {
-        emit_line_panic_handler(with_line, "shift", failure_lines_of("shift"),
-                                shift_failure_handler_label);
-    }
-
-    // note: the stack is not bounded, see 'is_stack_bounded'
-    auto emit_stack_overflow_handler() -> void override { std::unreachable(); }
 
     auto emit_string_constants(const std::span<const string_constant> strings)
         -> void override {
@@ -2092,13 +2070,14 @@ class machine_x86_64 final : public machine {
     }
 
     // the handler 'handler_label' to jump to, or with the line the stub of
-    // the line, which is marked used so the handler of 'name' emits it
+    // the line; marked used so the handler of 'name' is emitted
     [[nodiscard]] auto failure_label(const std::string_view name,
                                      const std::string_view handler_label,
                                      const token& src_loc_tk,
                                      const bool with_line) -> std::string {
 
         if (not with_line) {
+            mark_used(name);
             return std::string{handler_label};
         }
 

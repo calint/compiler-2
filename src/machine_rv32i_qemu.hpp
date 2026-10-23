@@ -28,8 +28,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
 
   public:
     machine_rv32i_qemu(const builtin_type_set& builtins,
-                       const source_files* const files,
-                       const target_options& options)
+                       const source_files& files, const target_options& options)
         : machine_rv32i_bare_metal{builtins, files, with_ram_size(options)} {}
 
     //

@@ -171,7 +171,7 @@ default_binary_file_name(const std::string_view src_file_name,
 
 [[nodiscard]] auto make_backend(const target machine_target,
                                 const builtin_type_set& builtins,
-                                const source_files* const files,
+                                const source_files& files,
                                 const machine::target_options& target_opts)
     -> std::unique_ptr<machine>;
 
@@ -547,16 +547,8 @@ examples:
         };
 
         const std::unique_ptr<machine> backend{
-            make_backend(opts.machine_target, builtins, &files, target_opts),
+            make_backend(opts.machine_target, builtins, files, target_opts),
         };
-
-        // the option is wrong, not the source
-        if (opts.vars_size_bytes > backend->max_storage_bytes()) {
-            throw option_error{std::format(
-                "invalid --vars: {} B exceeds the {} B that the target "
-                "addresses",
-                opts.vars_size_bytes, backend->max_storage_bytes())};
-        }
 
         // the checks the target cannot honor are off, e.g. 'rv32i-fpga' exits
         // with the code of the failure only and x86_64 has no stack bound
@@ -868,7 +860,7 @@ default_binary_file_name(const std::string_view src_file_name,
 
 [[nodiscard]] auto make_backend(const target machine_target,
                                 const builtin_type_set& builtins,
-                                const source_files* const files,
+                                const source_files& files,
                                 const machine::target_options& target_opts)
     -> std::unique_ptr<machine> {
 

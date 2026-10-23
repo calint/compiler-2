@@ -454,7 +454,7 @@ inline auto expr_type::compile_builtin_field(toc& tc, const size_t indent,
         },
     };
 
-    tc.emit_most_efficient(src.tok(), indent, compile_in_field, [&] -> void {
+    x.emit_most_efficient(src.tok(), indent, compile_in_field, [&] -> void {
         const operand reg{
             x.alloc_scratch_register(src.tok(), indent, dst.type_ref()),
         };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cassert>
 #include <cstddef>
@@ -340,6 +341,16 @@ class machine {
         int shift{};
     };
 
+    // the handler of a failed check prints 'panic: NAME' and exits; one that
+    // 'takes_line' prints the line of the failure with '--checks=line'
+    struct failure_handler {
+        std::string_view label;
+        std::string_view name;
+        // the comment above it in the listing
+        std::string_view comment;
+        bool takes_line{};
+    };
+
   private:
     using routine_uses = std::map<std::string, failure_lines, std::less<>>;
 
@@ -403,8 +414,8 @@ class machine {
     using jump_mode = assembler::jump_mode;
 
   public:
-    // 'files' locate the tokens of comments, backend tests may leave it null
-    machine(const builtin_type_set& builtins, const source_files* const files,
+    // 'files' locate the tokens of comments
+    machine(const builtin_type_set& builtins, const source_files& files,
             const target_options& options)
         : locations_{files}, builtins_{builtins}, jump_mode_{options.jumps},
           sd_card_file_name_{options.sd_card_file_name},
@@ -466,6 +477,56 @@ class machine {
     };
     static constexpr std::string_view frame_overflow_handler_label{
         "baz_frame_overflow",
+    };
+
+    // in the order they are emitted after the code
+    static constexpr std::array<failure_handler, 7> failure_handlers{
+        {
+            {
+                .label{frame_overflow_handler_label},
+                .name{"frame overflow"},
+                .comment{"frame overflow handler (--checks=frame)"},
+                .takes_line{false},
+            },
+            {
+                .label{division_failure_handler_label},
+                .name{"division"},
+                .comment{"division failure handler (--checks=division)"},
+                .takes_line{true},
+            },
+            {
+                .label{overlap_failure_handler_label},
+                .name{"overlap"},
+                .comment{"overlap failure handler (--checks=overlap)"},
+                .takes_line{true},
+            },
+            {
+                .label{overflow_failure_handler_label},
+                .name{"overflow"},
+                .comment{"overflow failure handler (--checks=overflow)"},
+                .takes_line{true},
+            },
+            {
+                .label{stack_overflow_handler_label},
+                .name{"stack overflow"},
+                .comment{"stack overflow handler (--checks=stack)"},
+                .takes_line{false},
+            },
+            {
+                .label{shift_failure_handler_label},
+                .name{"shift"},
+                .comment{"shift failure handler (--checks=shift)"},
+                .takes_line{true},
+            },
+            {
+                .label{bounds_failure_handler_label},
+                .name{"bounds"},
+                .comment{
+                    "bounds failure handler (--checks=upper or --checks=lower)",
+                },
+                .takes_line{true},
+            },
+        },
     };
 
     // a failed sector read or write jumps to it and exits with a panic message
@@ -581,14 +642,6 @@ class machine {
 
     [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
 
-    // why a backend cannot emit data elements of this size, none by default
-    [[nodiscard]] virtual auto data_element_size_error(
-        [[maybe_unused]] const size_t element_size_bytes) const
-        -> std::optional<std::string> {
-
-        return std::nullopt;
-    }
-
     [[nodiscard]] virtual auto default_type() const -> const type& = 0;
 
     virtual auto define_constant(const std::string_view name,
@@ -601,8 +654,6 @@ class machine {
                         const operand& divisor, const runtime_check& check)
         -> void = 0;
 
-    virtual auto emit_bounds_failure_handler(const bool with_line) -> void = 0;
-
     virtual auto emit_data(const size_t element_size_bytes, const int64_t value)
         -> void = 0;
 
@@ -611,29 +662,13 @@ class machine {
                                  const std::function_ref<bool(int64_t&)> next)
         -> void = 0;
 
-    // prints 'panic: division', with the line when 'with_line'
-    virtual auto emit_division_failure_handler(const bool with_line)
-        -> void = 0;
-
-    // prints 'panic: frame overflow'
-    virtual auto emit_frame_overflow_handler() -> void = 0;
-
-    // prints 'panic: overflow', with the line when 'with_line'
-    virtual auto emit_overflow_failure_handler(const bool with_line)
-        -> void = 0;
-
-    // prints 'panic: overlap', with the line when 'with_line'
-    virtual auto emit_overlap_failure_handler(const bool with_line) -> void = 0;
+    // prints 'panic: NAME' of 'handler', with the line when 'with_line'
+    virtual auto emit_failure_handler(const failure_handler& handler,
+                                      const bool with_line) -> void = 0;
 
     virtual auto emit_repeated_data(const size_t element_size_bytes,
                                     const size_t count, const int64_t value)
         -> void = 0;
-
-    // prints 'panic: shift', with the line when 'with_line'
-    virtual auto emit_shift_failure_handler(const bool with_line) -> void = 0;
-
-    // prints 'panic: stack overflow', only where 'is_stack_bounded'
-    virtual auto emit_stack_overflow_handler() -> void = 0;
 
     // leaves the read-only data section current
     virtual auto
@@ -828,7 +863,7 @@ class machine {
     auto comment(const token& src_loc_tk, const size_t indent,
                  const std::string_view text) -> void {
 
-        if (src_loc_tk.at_line() == 0 or not locations_.has_source()) {
+        if (src_loc_tk.at_line() == 0) {
             target_assembler().comment(indent, text);
             return;
         }
@@ -930,6 +965,19 @@ class machine {
 
     // the lines buffered so far, for backend tests that read what an emit
     // adds with 'emitted_text'
+    // the handlers that the code branches to, see 'mark_used'; before
+    // 'emit_used_routines', a handler marks the routines it calls
+    auto emit_used_failure_handlers(const bool with_line) -> void {
+        for (const failure_handler& handler : failure_handlers) {
+            if (not is_used(handler.name)) {
+                continue;
+            }
+
+            comment({}, 0, handler.comment);
+            emit_failure_handler(handler, with_line and handler.takes_line);
+        }
+    }
+
     [[nodiscard]] auto emitted_line_count() const -> size_t {
         return target_assembler().line_count();
     }
@@ -989,7 +1037,7 @@ class machine {
     [[nodiscard]] auto location_text(const token& src_loc_tk) const
         -> std::string {
 
-        if (src_loc_tk.at_line() == 0 or not locations_.has_source()) {
+        if (src_loc_tk.at_line() == 0) {
             return "-";
         }
 

@@ -39,15 +39,13 @@ class stmt_block final : public statement {
             throw compile_error{tz, "expected '{' to begin block"};
         }
 
-        tc.enter_block();
+        const toc::frame_scope block{tc, frame::block()};
 
         if (is_one_statement()) {
             parse_single_statement(tc, tz);
         } else {
             parse_statements(tc, tz);
         }
-
-        tc.exit_block();
     }
 
     stmt_block() = default;
@@ -75,13 +73,11 @@ class stmt_block final : public statement {
                  [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        tc.enter_block();
+        const toc::frame_scope block{tc, frame::block()};
 
         for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent + 1, destination{});
         }
-
-        tc.exit_block();
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

@@ -68,7 +68,7 @@ class stmt_const final : public statement {
         // 'm' is a variable
         const std::string_view text{literal_tk_.text()};
 
-        if (text.front() < '0' or text.front() > '9') {
+        if (not starts_number(text)) {
             if (tc.scopes().lookup(text).is_value()) {
                 throw compile_error{
                     literal_tk_, std::format("'{}' is not a constant", text)};

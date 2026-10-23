@@ -1,0 +1,5 @@
+# the parameters of a generic function are read like those of a function at
+# the definition, also when no call makes an instance
+func f<T type>(x T y) {}
+
+func main() {}

@@ -764,6 +764,31 @@ class stmt_def_func final : public statement {
         return array_lengths_path(array_lengths);
     }
 
+    // the body in the frame of the function; returns the size of the frame
+    [[nodiscard]] auto
+    compile_frame_body(toc& tc, const size_t indent,
+                       const std::span<const size_t> array_lengths,
+                       const operand& slot_register) const -> size_t {
+
+        machine& x{tc.machine()};
+
+        const toc::frame_scope body{
+            tc,
+            frame::noinline_func(name(), body_call_path(array_lengths),
+                                 x.frame_base_register()),
+        };
+
+        add_constants(tc, indent + 1);
+
+        add_signature_vars(tc, indent + 1, var_access::through_pointer,
+                           array_lengths, slot_register);
+
+        compile_statements(tc, indent);
+        x.return_function(indent + 1);
+
+        return tc.storage().peak_frame_size_bytes();
+    }
+
     // the body in a frame of its own at the frame base, which the caller
     // holds; returns the size of the frame
     [[nodiscard]] auto
@@ -773,9 +798,6 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        tc.enter_noinline_func(name(), body_call_path(array_lengths),
-                               x.frame_base_register());
-
         // the register is held while the body runs
         operand slot_register;
 
@@ -784,15 +806,9 @@ class stmt_def_func final : public statement {
                 tok(), indent + 1, x.slot_register(), tc.builtins().address());
         }
 
-        add_constants(tc, indent + 1);
-
-        add_signature_vars(tc, indent + 1, var_access::through_pointer,
-                           array_lengths, slot_register);
-
-        compile_statements(tc, indent);
-        x.return_function(indent + 1);
-        const size_t frame_size_bytes{tc.storage().peak_frame_size_bytes()};
-        tc.exit_func(name());
+        const size_t frame_size_bytes{
+            compile_frame_body(tc, indent, array_lengths, slot_register),
+        };
 
         if (not slot_register.is_empty()) {
             x.free_named_register(tok(), indent + 1, slot_register);
@@ -817,11 +833,11 @@ class stmt_def_func final : public statement {
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
-        if (is_inlined()) {
-            tc.enter_inlined_func(name(), {}, {});
-        } else {
-            tc.enter_noinline_func(name(), {}, {});
-        }
+        const toc::frame_scope body{
+            tc,
+            is_inlined() ? frame::inlined_func(name(), {}, {})
+                         : frame::noinline_func(name(), {}, {}),
+        };
 
         add_constants(tc, 0);
 
@@ -838,35 +854,20 @@ class stmt_def_func final : public statement {
         assert_sets_result();
 
         body_uses_ = tc.scopes().current_func_frame().body_uses_of_func();
-
-        tc.exit_func(name());
-    }
-
-    auto parse_param_delimiter(tokenizer& tz) -> void {
-        const token delimiter_tk{
-            tz.expect_char_token(
-                ',', std::format("expected ',' or ')' after parameter '{}'",
-                                 params_.back().tok().text())),
-        };
-
-        tz.assert_no_trailing_delimiter(delimiter_tk, ')', "parameters");
-
-        param_delims_tk_.emplace_back(delimiter_tk);
     }
 
     // e.g. 'a i32, b i32' up to the closing parenthesis
     auto parse_params(toc& tc, tokenizer& tz) -> void {
-        close_paren_tk_ = tz.is_next_char_token(')');
+        stmt_def_func_param::syntax_list list{
+            stmt_def_func_param::syntax_list::read(tz),
+        };
 
-        while (close_paren_tk_.is_empty()) {
-            if (not params_.empty()) {
-                parse_param_delimiter(tz);
-            }
-
-            params_.emplace_back(tc, tz);
-
-            close_paren_tk_ = tz.is_next_char_token(')');
+        for (const stmt_def_func_param::syntax& param : list.params) {
+            params_.emplace_back(tc, param);
         }
+
+        param_delims_tk_ = std::move(list.delimiter_tks);
+        close_paren_tk_ = list.close_paren_tk;
     }
 
     // 'name [type]' of the returned value, without a name the type is void
@@ -1334,33 +1335,19 @@ class func_instantiator final {
 
         signature_types types;
 
-        bool is_closed{not tz.is_next_char_token(')').is_empty()};
+        const stmt_def_func_param::syntax_list list{
+            stmt_def_func_param::syntax_list::read(tz),
+        };
 
-        while (not is_closed) {
-            // a malformed signature is reported when an instance is parsed,
-            // the types read so far are kept
-            if (not types.parameters.empty() and
-                tz.is_next_char_token(',').is_empty()) {
-
-                break;
-            }
-
-            const stmt_def_func_param::syntax param{
-                stmt_def_func_param::syntax::read(tz),
-            };
-
+        for (const stmt_def_func_param::syntax& param : list.params) {
             // an array is not the type itself
             types.parameters.push_back({
                 .name_tk{param.name_tk},
                 .type_name{param.is_array() ? "" : param.type_tk.text()},
             });
-
-            is_closed = not tz.is_next_char_token(')').is_empty();
         }
 
-        if (is_closed) {
-            types.result = func_result_syntax::read(tc, tz);
-        }
+        types.result = func_result_syntax::read(tc, tz);
 
         return types;
     }
@@ -1369,7 +1356,8 @@ class func_instantiator final {
 // a generic definition, kept as text for its instances, which
 // 'func_instantiator' makes
 class stmt_def_func_generic final : public statement {
-    // the text after 'func', errors in it are found when an instance is parsed
+    // the text after 'func', errors in the types of its signature and in its
+    // body are found when an instance is parsed
     std::string_view generic_text_;
 
   public:
@@ -1421,10 +1409,11 @@ class stmt_def_func_generic final : public statement {
     //
 
     // the '(' and the body must follow, else the skip of the body would take
-    // the next definition, e.g. 'func g' after 'func f<T type>(x T)'; other
-    // errors in the signature are found when an instance is parsed; 'tz' is
-    // after the head; returns the name of a method of a generic type, e.g.
-    // 'print' of 'func text.print()', empty for a generic function
+    // the next definition, e.g. 'func g' after 'func f<T type>(x T)'; the
+    // parameters are read for their syntax, the types are resolved when an
+    // instance is parsed; 'tz' is after the head; returns the name of a method
+    // of a generic type, e.g. 'print' of 'func text.print()', empty for a
+    // generic function
     [[nodiscard]] static auto skip_signature(const toc& tc,
                                              const func_head& head,
                                              tokenizer& tz) -> token {
@@ -1453,7 +1442,7 @@ class stmt_def_func_generic final : public statement {
                 tz.expect_char_token('(', "expected '(' after function name");
         }
 
-        tz.skip_to_expected_close_paren();
+        std::ignore = stmt_def_func_param::syntax_list::read(tz);
         std::ignore = func_result_syntax::read(tc, tz);
 
         const token open_brace_tk{
@@ -1471,6 +1460,13 @@ inline auto make_stmt_def_func(toc& tc, const token tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const func_head head{func_head::read(tc, tz)};
+
+    // no call gives 'main' type arguments, the rest of its signature is
+    // checked by 'stmt_def_func::assert_main_signature'
+    if (head.name == reserved_names::main and not head.type_param_tks.empty()) {
+        throw compile_error{head.type_param_tks.front(),
+                            "'main' cannot have type parameters"};
+    }
 
     // e.g. 'func text.print()' or 'func tokenizer.to<T type>()'
     if (head.is_generic()) {

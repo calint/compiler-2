@@ -49,6 +49,11 @@ inline constexpr std::array<std::string_view, 8> builtin_functions{
 
 } // namespace reserved_names
 
+// a digit starts a number, a name starts with a letter or '_'
+[[nodiscard]] inline auto starts_number(const std::string_view text) -> bool {
+    return not text.empty() and text.front() >= '0' and text.front() <= '9';
+}
+
 class token final {
     size_t file_ix_{};          // index of the source file of the token
     std::string_view ws_left_;  // whitespace left of token text
@@ -92,7 +97,7 @@ class token final {
 
     // a word that starts with a digit, e.g. '12' or '0x1f'
     [[nodiscard]] auto is_number() const -> bool {
-        return is_word() and text_.front() >= '0' and text_.front() <= '9';
+        return is_word() and starts_number(text_);
     }
 
     [[nodiscard]] auto is_string() const -> bool { return is_str_; }

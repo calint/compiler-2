@@ -46,7 +46,7 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
   public:
     machine_rv32i_bare_metal(const builtin_type_set& builtins,
-                             const source_files* const files,
+                             const source_files& files,
                              const target_options& options)
         : machine_rv32i{builtins, files, options},
           stack_size_bytes_{options.stack_size_bytes},

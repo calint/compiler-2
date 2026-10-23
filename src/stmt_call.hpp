@@ -679,7 +679,7 @@ class inline_call {
         }
 
         // the block frees the temporaries after the call
-        tc.enter_block();
+        const toc::frame_scope block{tc, frame::block()};
 
         for (const auto [i, arg, param] : std::views::zip(
                  std::views::iota(size_t{}), call_.args, func.params())) {
@@ -701,8 +701,6 @@ class inline_call {
         }
 
         compile_to_destination(tc, indent, dst, func);
-
-        tc.exit_block();
     }
 
     // 'call_arguments' are those of a 'noinline' call that is only checked,
@@ -799,16 +797,7 @@ class inline_call {
 
         // the body is inlined at every call, so its labels are named by the
         // call
-        const std::string_view call_path{tc.scopes().call_path()};
-
-        const std::string src_loc{
-            tc.source_location_for_use_in_label(call_.tk),
-        };
-
-        const std::string new_call_path{
-            call_path.empty() ? src_loc
-                              : std::format("{}.{}", src_loc, call_path),
-        };
+        const std::string new_call_path{tc.call_path_at(call_.tk)};
 
         const std::string call_label{
             std::format("{}.{}", func.body_label(), new_call_path),
@@ -821,12 +810,13 @@ class inline_call {
         x.label(indent, call_label);
 
         // note: a noinline function is compiled in place only in its dry run
-        if (func.is_inlined()) {
-            tc.enter_inlined_func(func.name(), new_call_path, ret_jmp_label);
-        } else {
-            tc.enter_noinline_dry_run(func.name(), new_call_path,
-                                      ret_jmp_label);
-        }
+        const toc::frame_scope body{
+            tc,
+            func.is_inlined()
+                ? frame::inlined_func(func.name(), new_call_path, ret_jmp_label)
+                : frame::noinline_dry_run(func.name(), new_call_path,
+                                          ret_jmp_label),
+        };
 
         const machine::call_frame_scope call_frame{
             x,
@@ -867,8 +857,6 @@ class inline_call {
         x.label(indent, ret_jmp_label);
 
         apply_unary_ops_to_result(tc, indent, func);
-
-        tc.exit_func(func.name());
     }
 
     // a new register per argument because the index register may belong to
@@ -931,7 +919,7 @@ class inline_call {
         if (not has_unary_ops and has_indexed_result and
             not x.has_indexed_addressing()) {
 
-            tc.emit_most_efficient(
+            x.emit_most_efficient(
                 call_.tk, indent,
                 [&] -> void { compile_with_bindings(tc, indent, dst, func); },
                 [&] -> void {
@@ -952,7 +940,7 @@ class inline_call {
 
         // unary ops on a memory result are a load, modify and store on a
         // load/store machine, a scratch register can be shorter
-        tc.emit_most_efficient(
+        x.emit_most_efficient(
             call_.tk, indent,
             [&] -> void { compile_with_bindings(tc, indent, dst, func); },
             [&] -> void {
@@ -1021,7 +1009,7 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        tc.emit_most_efficient(
+        x.emit_most_efficient(
             call_.tk, indent,
             [&] -> void { compile_body(tc, indent, func, bindings, {}); },
             [&] -> void {
@@ -1069,7 +1057,9 @@ class inline_call {
         const std::function_ref<void(bool keeps_displacement)> emit) const
         -> void {
 
-        tc.emit_most_efficient(
+        machine& x{tc.machine()};
+
+        x.emit_most_efficient(
             call_.tk, indent, [&] -> void { emit(false); },
             [&] -> void { emit(true); });
     }
@@ -1439,11 +1429,9 @@ class noinline_call {
         }
 
         // the block frees the temporaries after the call
-        tc.enter_block();
+        const toc::frame_scope block{tc, frame::block()};
 
         compile_arguments_and_call(tc, indent, dst, func);
-
-        tc.exit_block();
     }
 
   private:
@@ -2118,7 +2106,6 @@ class stmt_call : public expression {
 
         assert_inline_nesting(tc, func);
 
-        // note: read before the compile, a throw leaves its frames entered
         const bool is_recursion{tc.scopes().inlined_nesting(func.name()) != 0};
 
         // a recursion that does not end with constant arguments runs out of

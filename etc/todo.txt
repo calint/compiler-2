@@ -102,6 +102,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
              => design: 'constant_parser::starts_number' used by all three
        2.12. A-3: docs 1.1 names 4 of 61 headers
              => design: a layer table of all headers with the include rule
+       => done (2026-10-23): 2.1 to 2.12
+          2.1: one guard 'toc::frame_scope{tc, frame::...}' for every frame,
+          the 'enter_*'/'exit_*' methods and 'frame_depth_scope' are gone;
+          'storage_layout::add_allocated_size_bytes' checks the total
+          before storing it, the root frame popped by an error released
+          bytes it did not hold
+          2.2: 'machine::failure_handlers' table, one virtual
+          'emit_failure_handler', 'emit_used_failure_handlers' emits the
+          marked ones; the fpga exit codes are a table
+          2.6: 'stmt_def_func_param::syntax_list' reads every parameter
+          list, 'skip_to_expected_close_paren' is gone; 0851 keeps an
+          unknown result type instead of a missing ','
+          2.8: 'program::main_func_' is gone, 'compile' asks 'toc'
+          also: 'test-rv32i-address.cpp' failed since e2d53e2c (C-14 made
+          the constant range a compile-time check), it uses a run-time
+          count; the committed 0006.rv32i(-qemu).diff were stale
     3. decide (messages or rules):
        3.1. T-3: 'var point' hides the type in 'f<point>()' only when 'let'
        3.2. F-2 (R8 F-6): array size 'i8[- 4]' rejected, 'i8[- -4]' accepted

@@ -180,21 +180,22 @@ CLI_CHECKS_NOUB() {
 
 CLI_CHECKS_LIST() {
     echo -n "cli --checks list: "
-    "$BIN" 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower 0015.baz >out 2>err
+    # 1552.baz indexes at run time, a bounds check changes the code
+    "$BIN" 1552.baz >gen.s 2>err
+    "$BIN" --checks=upper,lower 1552.baz >out 2>err
     if cmp -s gen.s out; then
         echo "FAILED. --checks=upper,lower changed nothing"
         exit 1
     fi
-    "$BIN" --checks=upper,,lower, 0015.baz >gen.s 2>err
-    "$BIN" --checks=upper,lower 0015.baz >out 2>err
+    "$BIN" --checks=upper,,lower, 1552.baz >gen.s 2>err
+    "$BIN" --checks=upper,lower 1552.baz >out 2>err
     cmp -s gen.s out
     # a later option replaces the earlier ones, empty ones included
-    "$BIN" --checks=upper,lower --checks= 0015.baz >gen.s 2>err
-    "$BIN" 0015.baz >out 2>err
+    "$BIN" --checks=upper,lower --checks= 1552.baz >gen.s 2>err
+    "$BIN" 1552.baz >out 2>err
     cmp -s gen.s out
-    "$BIN" --checks=upper --checks=lower 0015.baz >gen.s 2>err
-    "$BIN" --checks=lower 0015.baz >out 2>err
+    "$BIN" --checks=upper --checks=lower 1552.baz >gen.s 2>err
+    "$BIN" --checks=lower 1552.baz >out 2>err
     cmp -s gen.s out
     echo ok
 }
@@ -294,7 +295,7 @@ CLI_UNINSTANTIATED_GENERICS() {
     [[ ! -s err ]]
     grep -Fq "uninstantiated generics:" gen.s
     grep -Eq '^; +untyped$' gen.s
-    grep -Eq '^; +missing_comma$' gen.s
+    grep -Eq '^; +unknown_result$' gen.s
     echo ok
 }
 

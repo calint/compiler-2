@@ -256,15 +256,13 @@ class initializer_declaration final {
             return;
         }
 
-        tc.enter_block();
+        const toc::frame_scope block{tc, frame::block()};
 
         tc.add_var(name_tk_, 0,
                    make_var_info(name_tk_, type_ref(), array_count_),
                    var_kind::var);
 
         parse();
-
-        tc.exit_block();
     }
 
     //

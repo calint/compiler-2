@@ -99,7 +99,7 @@ func mut tokenizer.next_name_or_say(question i8[]) res bool {
     res = false
     if not self.next_or_say(question) return
 
-    if self.len() > max_name_len {
+    if self.len() > name_len {
         out.print_all(str_name_too_long)
         return
     }

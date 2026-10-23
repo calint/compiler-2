@@ -1,0 +1,4 @@
+
+1561.baz:3:11: 'main' cannot have type parameters
+func main<T type>() {}
+          ^

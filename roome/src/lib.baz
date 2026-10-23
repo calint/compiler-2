@@ -261,9 +261,9 @@ func mut joiner.next(lead i8[]) {
     self.printed = true
 }
 
-let max_str_len = 1024
+let string_len = 1024
 
-type string = text<max_str_len>
+type string = text<string_len>
 
 type tokenizer {
     string string,
@@ -364,12 +364,12 @@ func mut tokenizer.next_or_say(msg i8[]) res bool {
 }
 
 # at most 9 digits so that every number fits 32 bits
-let max_number_digits = 9
+let number_digits_len = 9
 
 # the token as a decimal number into 'value', false when it is not one
 func noinline tokenizer.to_int(value mut) res bool {
     res = false
-    if self.is_empty() or self.len() > max_number_digits return
+    if self.is_empty() or self.len() > number_digits_len return
 
     value = 0
     var ix = self.start

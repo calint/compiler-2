@@ -105,6 +105,27 @@ assembler.hpp    buffers the lines, optimizes the jumps
 
 The build is one translation unit: 'main.cpp' includes the headers.
 
+The headers in layers, a header includes only headers of its own layer and of
+the layers above it:
+
+```text
+1. vocabulary        token, lut, compile_error, operand, type,
+                     constant_parser, constant_arith, source_files, ub_alias
+2. assembler         assembler, assembler_x86_64, assembler_rv32i
+3. backend           register_pool, machine, machine_x86_64, machine_rv32i,
+                     machine_rv32i_bare_metal, machine_rv32i_qemu,
+                     machine_rv32i_fpga, register_report
+4. names and checks  tokenizer, generics, ident_info, ub_reads, ub_assigned,
+                     toc
+5. nodes             statement, expression, unary_ops, parse_lookahead,
+                     decouple, decouple_impl, bulk_operands, expr_*, stmt_*
+6. driver            program, main.cpp
+```
+
+The backend calls back into the nodes in two places, through callbacks: the
+versions of 'machine::emit_most_efficient' and the 'address_emitter' of the
+bulk operations compile statements.
+
 Reading order, each file assumes the ones before it:
 
 ```text
@@ -161,8 +182,9 @@ Invariants the code relies on:
    compile for the array lengths of its arguments; the bodies are compiled
    after 'main', and compiling one can add more. Then each function that no
    compile reached is checked and emits nothing ([1.5](#15-checks)). Then the
-   failure handlers of the checks that are on, the routines and helpers the
-   code and the handlers marked used ('machine::emit_used_routines'), the
+   failure handlers that the code branches to
+   ('machine::emit_used_failure_handlers'), the routines and helpers the code
+   and the handlers marked used ('machine::emit_used_routines'), the
    read-only strings, the data and the variables.
 
 3. output ('machine::finish', 'write_assembly'): the buffered lines get their
@@ -237,7 +259,7 @@ the longer of two versions after both are measured:
    changed: the registers, the frame depth, the string constants and the use
    of storage, and the routines, helpers and failure stubs it marked used
    ('machine::mark_used') are dropped
-2. 'toc::emit_most_efficient' and 'machine::emit_most_efficient': two versions
+2. 'machine::emit_most_efficient': two versions
    are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
    scratch register, see [5.3](#53-state-each-version-starts-from-the-same-machine)
@@ -1040,8 +1062,8 @@ do not depend on the code around it.
 What a failed version entered must be left when its error unwinds:
 
 1. 'assembler::capture' drops the lines it captured
-2. 'toc::emit_most_efficient' pops the frames and their storage that an
-   inlined body entered back to the frames of the caller
+2. the 'toc::frame_scope' of each frame an inlined body entered pops it and
+   its storage, back to the frames of the caller
 3. the rv32i bulk registers of an array copy or comparison are left
    ('machine_rv32i::bulk_depth_scope')
 

@@ -1,0 +1,4 @@
+
+1563.baz:7:13: a trailing ',' is not allowed in parameters
+func box.f(x, ) {}
+            ^
