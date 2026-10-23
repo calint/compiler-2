@@ -1113,7 +1113,8 @@ class expr_arith final : public expression {
         // a negated operand is computed at the width of the destination so
         // the overflow check sees it
         emit_with_source(
-            tc, indent, src, dst, [&](const operand& term, const bool) -> void {
+            tc, indent, src, dst,
+            [&](const operand& term, const machine::factor_use) -> void {
                 x.add_subtract(src.tok(), indent, op, dst.operand(), term,
                                tc.overflow_options(dst));
             });
@@ -1126,11 +1127,11 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst,
-                         [&](const operand& value, const bool) -> void {
-                             x.bitwise(src.tok(), indent, op, dst.operand(),
-                                       value);
-                         });
+        emit_with_source(
+            tc, indent, src, dst,
+            [&](const operand& value, const machine::factor_use) -> void {
+                x.bitwise(src.tok(), indent, op, dst.operand(), value);
+            });
     }
 
     static auto asm_op_div(toc& tc, const size_t indent,
@@ -1139,16 +1140,16 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst,
-                         [&](const operand& divisor, const bool) -> void {
-                             if (divisor.is_immediate()) {
-                                 assert_divisor_not_zero(src.tok(),
-                                                         divisor.immediate());
-                             }
+        emit_with_source(
+            tc, indent, src, dst,
+            [&](const operand& divisor, const machine::factor_use) -> void {
+                if (divisor.is_immediate()) {
+                    assert_divisor_not_zero(src.tok(), divisor.immediate());
+                }
 
-                             x.divide(src.tok(), indent, op, dst.operand(),
-                                      divisor, tc.checks().division_options());
-                         });
+                x.divide(src.tok(), indent, op, dst.operand(), divisor,
+                         tc.checks().division_options());
+            });
     }
 
     // 'compile_first_element' copies identifiers itself
@@ -1172,12 +1173,7 @@ class expr_arith final : public expression {
         // a scratch register factor can be overwritten by the backend
         emit_with_source(
             tc, indent, src, dst,
-            [&](const operand& factor, const bool is_scratch) -> void {
-                const machine::factor_use use{
-                    is_scratch ? machine::factor_use::may_overwrite
-                               : machine::factor_use::read_only,
-                };
-
+            [&](const operand& factor, const machine::factor_use use) -> void {
                 x.multiply(src.tok(), indent, dst.operand(), factor, use,
                            tc.overflow_options(dst));
             });
@@ -1196,17 +1192,17 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        emit_with_source(tc, indent, src, dst,
-                         [&](const operand& count, const bool) -> void {
-                             if (count.is_immediate()) {
-                                 assert_shift_count_fits(src.tok(),
-                                                         count.immediate(),
-                                                         dst.type_ref());
-                             }
+        emit_with_source(
+            tc, indent, src, dst,
+            [&](const operand& count, const machine::factor_use) -> void {
+                if (count.is_immediate()) {
+                    assert_shift_count_fits(src.tok(), count.immediate(),
+                                            dst.type_ref());
+                }
 
-                             x.shift(src.tok(), indent, op, dst.operand(),
-                                     count, tc.checks().shift_options());
-                         });
+                x.shift(src.tok(), indent, op, dst.operand(), count,
+                        tc.checks().shift_options());
+            });
     }
 
     // a zero divisor traps on every target, so a constant one is an error like
@@ -1340,7 +1336,7 @@ class expr_arith final : public expression {
     static auto emit_with_source(
         toc& tc, const size_t indent, const statement& src,
         const destination& dst,
-        const std::function_ref<void(const operand&, bool is_scratch)> emit)
+        const std::function_ref<void(const operand&, machine::factor_use)> emit)
         -> void {
 
         machine& x{tc.machine()};
@@ -1357,7 +1353,8 @@ class expr_arith final : public expression {
                 x.comment(src.tok(), indent, "src: folded constant '{}'",
                           statement::trimmed_source(src));
 
-                emit(folded->operand_at(operand_type), false);
+                emit(folded->operand_at(operand_type),
+                     machine::factor_use::read_only);
 
                 return;
             }
@@ -1368,7 +1365,7 @@ class expr_arith final : public expression {
                 compile_to_scratch(tc, indent, src, dst),
             };
 
-            emit(reg, true);
+            emit(reg, machine::factor_use::may_overwrite);
             x.free_scratch_register(src.tok(), indent, reg);
 
             return;
@@ -1385,7 +1382,9 @@ class expr_arith final : public expression {
             assert(folded);
 
             x.comment(src.tok(), indent, "src: constant");
-            emit(folded->operand_at(operand_type), false);
+
+            emit(folded->operand_at(operand_type),
+                 machine::factor_use::read_only);
 
             return;
         }
@@ -1398,7 +1397,7 @@ class expr_arith final : public expression {
 
         if (src.get_unary_ops().is_empty()) {
             x.comment(src.tok(), indent, "src: operand");
-            emit(src_operand, false);
+            emit(src_operand, machine::factor_use::read_only);
             x.free_scratch_registers(src.tok(), indent, lea_registers);
             return;
         }
@@ -1410,7 +1409,7 @@ class expr_arith final : public expression {
                                      tc.overflow_options(dst)),
         };
 
-        emit(reg, true);
+        emit(reg, machine::factor_use::may_overwrite);
         x.free_scratch_register(src.tok(), indent, reg);
         x.free_scratch_registers(src.tok(), indent, lea_registers);
     }

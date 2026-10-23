@@ -832,7 +832,7 @@ class stmt_def_func final : public statement {
 
         add_signature_vars(tc, 0, var_access::direct, {}, {});
 
-        code_ = {tc, tz, true};
+        code_ = {tc, tz, block_braces::required};
 
         // checked here so that the error of an instance gets its frames, a
         // signature that 'main' cannot have first

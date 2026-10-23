@@ -108,7 +108,7 @@ class stmt_builtin_io final : public stmt_call {
                                      buffer.name_or_literal(), info);
 
                 tc.record_use(ident_info::root_of(buffer.name_or_literal()),
-                              buffer.accessed_path(), true);
+                              buffer.accessed_path(), use_kind::write);
             }
         }
     }

@@ -49,7 +49,7 @@ class stmt_assign_var final : public statement {
                              dst_info);
 
         tc.record_use(ident_info::root_of(stmt_ident_.name_or_literal()),
-                      stmt_ident_.accessed_path(), true);
+                      stmt_ident_.accessed_path(), use_kind::write);
 
         set_type(dst_info.type_ref());
 

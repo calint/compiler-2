@@ -2729,7 +2729,8 @@ class stmt_call : public expression {
 
             if (is_recursive) {
                 tc.record_use(root, arg.accessed_path(),
-                              not func.param(i).is_read_only());
+                              func.param(i).is_read_only() ? use_kind::read
+                                                           : use_kind::write);
 
                 continue;
             }
@@ -2737,7 +2738,8 @@ class stmt_call : public expression {
             for (const body_uses::binding_use& u : callee.bindings()) {
                 if (u.param_index == i) {
                     tc.record_use(root, arg.accessed_path().extended_by(u.path),
-                                  u.is_written);
+                                  u.is_written ? use_kind::write
+                                               : use_kind::read);
                 }
             }
         }

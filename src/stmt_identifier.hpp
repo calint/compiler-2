@@ -245,7 +245,7 @@ class stmt_identifier final : public statement {
         resolve_accessed_bytes(tc);
 
         tc.record_use(ident_info::root_of(path_as_string_), access_path_,
-                      false);
+                      use_kind::read);
     }
 
     stmt_identifier() = default;

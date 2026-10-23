@@ -81,6 +81,9 @@ struct noinline_body {
     std::vector<size_t> array_lengths;
 };
 
+// whether a use of a variable reads or writes it, see 'toc::record_use'
+enum class use_kind : uint8_t { read, write };
+
 // what a function body reaches that its callers name too: global variables
 // and data, its parameters and its result, each with the path below it and
 // whether it is written, also through the functions it calls; a call compares
@@ -3368,10 +3371,10 @@ class toc final {
     // a path in a function body whose root is 'name', see 'body_uses';
     // outside a function nothing is recorded
     auto record_use(const std::string_view name, const access_path& path,
-                    const bool is_written) -> void {
+                    const use_kind kind) -> void {
 
         if (scopes_.is_in_func()) {
-            scopes_.record_use(name, path, is_written);
+            scopes_.record_use(name, path, kind == use_kind::write);
         }
     }
 

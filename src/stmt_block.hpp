@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <ostream>
 #include <vector>
@@ -11,6 +12,9 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "ub_assigned.hpp"
+
+// whether a block may be one statement without braces, a function body may not
+enum class block_braces : uint8_t { optional, required };
 
 // a scope of statements, '{...}' or one statement without braces; its
 // declarations end with it, in 'toc' and in the definite-assignment walk,
@@ -23,7 +27,7 @@ class stmt_block final : public statement {
   public:
     // without '{' the block is one statement unless braces are required,
     // e.g. the 'exit(1)' of 'if a == 1 exit(1)'
-    stmt_block(toc& tc, tokenizer& tz, const bool braces_required = {})
+    stmt_block(toc& tc, tokenizer& tz, const block_braces braces = {})
         : statement{tz.cur_position_token()},
           open_brace_tk_{tz.is_next_char_token('{')} {
 
@@ -31,7 +35,7 @@ class stmt_block final : public statement {
 
         set_type(tc.builtins().void_type());
 
-        if (is_one_statement() and braces_required) {
+        if (is_one_statement() and braces == block_braces::required) {
             throw compile_error{tz, "expected '{' to begin block"};
         }
 

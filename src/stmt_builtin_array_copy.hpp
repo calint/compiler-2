@@ -33,7 +33,7 @@ class stmt_builtin_array_copy final : public statement {
                              make_ident_info(tc, dst));
 
         tc.record_use(ident_info::root_of(dst.name_or_literal()),
-                      dst.accessed_path(), true);
+                      dst.accessed_path(), use_kind::write);
     }
 
     stmt_builtin_array_copy() = default;

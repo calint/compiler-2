@@ -452,8 +452,8 @@ class machine_x86_64 final : public machine {
 
         // an absolute address reaches beyond the 2 GiB of 'rip' relative ones
         assembler_.instruction(indent, op::mov, to_argument(remaining),
-                               assembler_x86_64::immediate::of_expression(
-                                   variables_end_label, true));
+                               assembler_x86_64::immediate::of_qword_expression(
+                                   variables_end_label));
 
         cmp(src_loc_tk, indent, start, remaining);
         assembler_.jcc(indent, condition::a, frame_overflow_handler_label);
@@ -1959,8 +1959,8 @@ class machine_x86_64 final : public machine {
 
         assembler_.instruction(
             1, op::mov, "rdi",
-            assembler_x86_64::immediate::of_expression(
-                std::format("num_buffer + {}", newline_offset), true));
+            assembler_x86_64::immediate::of_qword_expression(
+                std::format("num_buffer + {}", newline_offset)));
 
         assembler_.instruction(
             1, op::mov, assembler_x86_64::memory::of_base("rdi", 1), newline);
@@ -1989,9 +1989,8 @@ class machine_x86_64 final : public machine {
         // the length is the end of the buffer minus the first digit
         assembler_.instruction(
             1, op::mov, "rdx",
-            assembler_x86_64::immediate::of_expression(
-                std::format("num_buffer + {}", number_buffer_size_bytes),
-                true));
+            assembler_x86_64::immediate::of_qword_expression(
+                std::format("num_buffer + {}", number_buffer_size_bytes)));
 
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);

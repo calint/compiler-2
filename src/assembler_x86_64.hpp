@@ -128,13 +128,19 @@ class assembler_x86_64 final : public assembler {
         // statics
         //
 
-        [[nodiscard]] static auto of_expression(const std::string_view text,
-                                                const bool strict_qword = {})
+        [[nodiscard]] static auto of_expression(const std::string_view text)
             -> immediate {
 
             immediate result;
             result.expression = text;
-            result.strict_qword = strict_qword;
+            return result;
+        }
+
+        [[nodiscard]] static auto
+        of_qword_expression(const std::string_view text) -> immediate {
+
+            immediate result{of_expression(text)};
+            result.strict_qword = true;
             return result;
         }
     };

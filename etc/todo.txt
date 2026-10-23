@@ -284,7 +284,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
            pattern (none in src) for a rule every caller follows
     => done (2026-10-23): 1-4 and 6-9; 7 is 'is_same' since clang-tidy
        forbids 'operator=='; 9 also removed 'conversion_type', its callers
-       call 'get_type_or_throw'; 12 discarded; left: 5, 10, 11
+       call 'get_type_or_throw'; 12 discarded; left: 5, 10
+    => 11 discarded (2026-10-23): 'is_comparison_next' does not count a lone
+       '=' or '!', so 'if (a) = 1' lost "expected '=='" for "'a' ... is not a
+       'bool'"; the one-line set in 'is_parenthesized_operand' is the
+       clearer rule
+    => 10 done (2026-10-23) where the arguments are mostly literals:
+       'block_braces', 'use_kind' for 'toc::record_use',
+       'immediate::of_qword_expression', the 'emit' callback of
+       'emit_with_source' passes 'machine::factor_use'; kept as bool where
+       the value is mostly computed: 'with_line', 'normalize', 'inverted',
+       'allow_end', 'named' and the local 'check_negative'
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------
