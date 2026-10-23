@@ -89,7 +89,7 @@ class stmt_builtin_convert final : public expression {
         : expression{tk, std::move(uops)},
           open_paren_tk_{tz.is_next_char_token('(')} {
 
-        set_type(conversion_type(tc, tk));
+        set_type(tc.get_type_or_throw(tk));
 
         arg_ = {tc, tz};
 
@@ -111,7 +111,7 @@ class stmt_builtin_convert final : public expression {
 
     // e.g. 'i8' in 'var x = i8' is 'i8(0)'
     stmt_builtin_convert(const toc& tc, const token tk) : expression{tk, {}} {
-        set_type(conversion_type(tc, tk));
+        set_type(tc.get_type_or_throw(tk));
     }
 
     stmt_builtin_convert() = default;
@@ -222,22 +222,6 @@ class stmt_builtin_convert final : public expression {
         -> void override {
 
         arg_.visit_reads(var, reader);
-    }
-
-    //
-    // statics
-    //
-
-    // the default type has no name of its own, e.g. 'i64' on x86_64 and 'i32'
-    // on rv32i
-    [[nodiscard]] static auto conversion_type(const toc& tc, const token& tk)
-        -> const type& {
-
-        if (tk.is_text("int")) {
-            return tc.builtins().default_type();
-        }
-
-        return tc.get_type_or_throw(tk);
     }
 
   private:

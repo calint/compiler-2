@@ -25,6 +25,10 @@ struct path_step {
     // the offset of a field in its parent, which identifies the field, or the
     // index of an element
     size_t number{};
+
+    [[nodiscard]] auto is_same(const path_step& other) const -> bool {
+        return kind == other.kind and number == other.number;
+    }
 };
 
 // where a variable is accessed: the path of fields and indexes from its root
@@ -74,13 +78,21 @@ struct access_path {
         });
     }
 
+    [[nodiscard]] auto is_same(const access_path& other) const -> bool {
+        return std::ranges::equal(
+            steps, other.steps,
+            [](const path_step& lhs, const path_step& rhs) -> bool {
+                return lhs.is_same(rhs);
+            });
+    }
+
     // false only when the bytes cannot be the same
     [[nodiscard]] auto overlaps(const access_path& other) const -> bool {
         return not are_disjoint(steps, other.steps);
     }
 
-    // equal for the same path, e.g. '[1].8[?]' is element 1, its field at
-    // offset 8 and an element of that at a run-time index
+    // e.g. '[1].8[?]' is element 1, its field at offset 8 and an element of
+    // that at a run-time index
     [[nodiscard]] auto text() const -> std::string {
         std::string result;
 

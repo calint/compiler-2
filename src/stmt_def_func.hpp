@@ -26,6 +26,7 @@
 #include "stmt_def_func_param.hpp"
 #include "toc.hpp"
 #include "token.hpp"
+#include "ub_assigned.hpp"
 
 //
 // a function definition, e.g. 'func f(x)', is the classes below, in reading
@@ -438,7 +439,7 @@ class stmt_def_func final : public statement {
                 (is_inlined() and (not params().empty() or returns())),
         };
 
-        tc.check_only([&] -> void {
+        tc.dry_run([&] -> void {
             machine& x{tc.machine()};
 
             const machine::call_frame_scope call_frame{
@@ -458,8 +459,6 @@ class stmt_def_func final : public statement {
             }
         });
     }
-
-    [[nodiscard]] auto code() const -> const stmt_block& { return code_; }
 
     // in place or in a body of its own, the function is reached
     auto compile_statements(toc& tc, const size_t indent) const -> void {
@@ -531,6 +530,15 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto is_constructor() const -> bool {
         return returns_.has_value() and
                returns_->ident_tk.is_text(reserved_names::self);
+    }
+
+    // uses the definite-assignment walk for its reachability only
+    [[nodiscard]] auto is_end_reachable() const -> bool {
+        assignment_flow flow{std::nullopt, tok(), 0};
+
+        code_.trace_assignment(flow);
+
+        return flow.is_reachable();
     }
 
     [[nodiscard]] auto is_inlined() const -> bool {
@@ -1229,12 +1237,7 @@ class func_instantiator final {
                         const std::span<const type* const> type_args,
                         const generic_frame& call_frame) -> void {
 
-        generic_scope scope{tc};
-
-        const definition_order::instance_scope visible{
-            tc.definition_order_ref(),
-            generic.definition,
-        };
+        generic_scope scope{tc, generic.definition};
 
         // e.g. 'text' names 'str' for 'func text.append<T type>(s T)'
         if (generic.receiver) {
@@ -1293,13 +1296,8 @@ class func_instantiator final {
                                       const generic_type_instance& receiver)
         -> void {
 
-        generic_scope scope{tc};
+        generic_scope scope{tc, method.definition};
         scope.add_receiver(receiver);
-
-        const definition_order::instance_scope visible{
-            tc.definition_order_ref(),
-            method.definition,
-        };
 
         tokenizer tz{tc.source_of(method.start_tk), method.start_tk};
 

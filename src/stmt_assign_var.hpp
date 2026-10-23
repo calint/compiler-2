@@ -117,10 +117,9 @@ class stmt_assign_var final : public statement {
             stmt_ident_.get_lea_operand(tc, indent, var_info, lea_registers),
         };
 
-        // an indexed element or a loaded pointer is written at the address
-        // computed here
+        // the destination is written at the address computed here
         const bool is_address_known{
-            stmt_ident_.is_indexed() or var_info.is_pointer(),
+            stmt_ident_.has_computed_address(var_info),
         };
 
         const destination var_dst{

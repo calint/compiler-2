@@ -4002,7 +4002,7 @@ auto check_dry_run_leaves_no_trace() -> void {
     assert(rejected_with([&] -> void { fe.add_var("big", integer64, 16); },
                          "does not fit in the variable storage"));
 
-    fe.tc.check_only([&] -> void {
+    fe.tc.dry_run([&] -> void {
         fe.tc.enter_block();
         fe.tc.enter_block();
         fe.add_var("big", integer64, 16);

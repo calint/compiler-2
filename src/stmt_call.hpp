@@ -1181,11 +1181,9 @@ class inline_call {
                   std::vector<operand>& allocated_registers) -> param_binding {
 
         const bool is_reference{
-            not arg.is_expression() and
-                (arg.is_indexed() or
-                 (arg.is_name_or_literal() and
-                  tc.make_ident_info(arg.tok(), arg.name_or_literal())
-                      .is_address_computed())),
+            not arg.is_expression() and arg.is_name_or_literal() and
+                arg.has_computed_address(
+                    tc.make_ident_info(arg.tok(), arg.name_or_literal())),
         };
 
         // a binding uses the argument's storage or typed value, so its type

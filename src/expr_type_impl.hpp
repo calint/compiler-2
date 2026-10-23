@@ -407,10 +407,9 @@ inline auto expr_type::write_builtin_field(toc& tc, const size_t indent,
     src.assert_not_narrowed(tc, field.type());
 
     // an indexed name has the address of its base, 'compile' adds the index
-    if (src.is_expression() or src.is_indexed() or
-        (src.is_name_or_literal() and
-         tc.make_ident_info(src.tok(), src.name_or_literal())
-             .is_address_computed())) {
+    if (src.is_expression() or (src.is_name_or_literal() and
+                                src.has_computed_address(tc.make_ident_info(
+                                    src.tok(), src.name_or_literal())))) {
 
         src.compile(tc, indent, dst);
         return;

@@ -253,8 +253,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           the branch to 'label_after_if' when the result is 'unknown' and
           the branch is not the last one without an 'else'
     7. S-5: 'access_path' equality is 'text() == text()' (toc.hpp, 2 sites)
-       => design: '= default' 'operator==' on 'path_step' and 'access_path';
-          'text()' stays for the dry-run key
+       => design: 'is_same' on 'path_step' and 'access_path', like
+          'root_variable::is_same'; 'text()' stays for the dry-run key
     8. T-7: 'ident_info::make_const' takes an 'elem' never read,
        'make_register' stores the register name as the element
        => design: drop the parameter, 'elem_path_' is the name (5 callers)
@@ -282,6 +282,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
         the front end must call the toc wrappers
         => proposed: discard; a passkey or 'friend class toc' is a new
            pattern (none in src) for a rule every caller follows
+    => done (2026-10-23): 1-4 and 6-9; 7 is 'is_same' since clang-tidy
+       forbids 'operator=='; 9 also removed 'conversion_type', its callers
+       call 'get_type_or_throw'; 12 discarded; left: 5, 10, 11
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------

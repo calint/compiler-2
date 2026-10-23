@@ -31,7 +31,6 @@
 #include "token.hpp"
 #include "tokenizer.hpp"
 #include "type.hpp"
-#include "ub_assigned.hpp"
 
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a
 // value only the name is written
@@ -214,30 +213,9 @@ class report_renderer final {
     }
 };
 
-// definite assignment: every path through a function with a return variable
-// sets it, and the paths that reach the end of a body
-class assignment_analysis final {
-  public:
-    //
-    // statics
-    //
-
-    // uses the definite-assignment walk for its reachability only
-    [[nodiscard]] static auto is_end_reachable(const stmt_def_func& func)
-        -> bool {
-
-        assignment_flow flow{std::nullopt, func.tok(), 0};
-
-        func.code().trace_assignment(flow);
-
-        return flow.is_reachable();
-    }
-};
-
 // the whole program: the constructor parses the main file and the files it
-// includes into 'statements_', in file order, and checks the definite
-// assignment of the results; 'build' compiles from the parsed statements,
-// 'main' first, see 'etc/docs/README.md' section 1.2
+// includes into 'statements_', in file order; 'build' compiles from the
+// parsed statements, 'main' first, see 'etc/docs/README.md' section 1.2
 class program final {
     // the statements of one file, in 'statements_'
     struct file_statements {
@@ -288,7 +266,8 @@ class program final {
         tc_.add_type(src_loc_tk, builtins.void_type);
 
         // the default type has a name of its own so that it is portable
-        tc_.add_type_alias(src_loc_tk, "int", tc_.builtins().default_type());
+        tc_.add_type_alias(src_loc_tk, reserved_names::default_type_name,
+                           tc_.builtins().default_type());
 
         tc_.enter_block();
 
@@ -555,7 +534,7 @@ class program final {
         tc.exit_func(reserved_names::main);
 
         // code after an 'exit' or 'return' on every path would never run
-        if (assignment_analysis::is_end_reachable(func_main)) {
+        if (func_main.is_end_reachable()) {
             x.end_main();
         }
     }

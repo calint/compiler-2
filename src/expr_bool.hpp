@@ -979,8 +979,8 @@ class expr_bool_op final : public statement {
 
         const ident_info expr_info{make_scalar_ident_info(tc, expr)};
 
-        if (expr.is_indexed() or
-            (expr.is_name_or_literal() and expr_info.is_address_computed())) {
+        if (expr.is_name_or_literal() and
+            expr.has_computed_address(expr_info)) {
 
             const operand address{
                 expr.compile_lea(tc, indent, expr.tok(), allocated_registers,

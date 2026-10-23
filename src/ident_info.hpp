@@ -337,19 +337,19 @@ class ident_info final {
     // statics
     //
 
-    [[nodiscard]] static auto
-    make_const(const std::string_view ident, const std::string_view elem,
-               const type& tp, const folded_value& constant) -> ident_info {
+    [[nodiscard]] static auto make_const(const std::string_view ident,
+                                         const type& tp,
+                                         const folded_value& constant)
+        -> ident_info {
 
         assert(not ident.empty());
-        assert(not elem.empty());
 
         // note: a typed constant has the type of its parameter
         assert(not constant.is_typed() or constant.own_type == &tp);
 
         ident_info info;
         info.id_ = ident;
-        info.elem_path_ = {std::string{elem}};
+        info.elem_path_ = {std::string{ident}};
         info.type_path_ = {&tp};
         info.part_ = constant;
 
@@ -367,7 +367,7 @@ class ident_info final {
 
         ident_info info;
         info.id_ = ident;
-        info.elem_path_ = {std::string{reg.base_register()}};
+        info.elem_path_ = {std::string{ident}};
         info.type_path_ = {&reg.type_ref()};
 
         info.part_ = register_part{
@@ -608,7 +608,7 @@ class destination final {
 
         return of_name(info, {
                                  .address{info.operand()},
-                                 .is_address_known{},
+                                 .is_address_known{info.has_known_address()},
                                  .storage{std::move(storage)},
                                  .text{info.id()},
                              });
@@ -630,8 +630,7 @@ class destination final {
         result.text_ = std::move(parts.text);
         result.src_loc_tk_ = info.src_loc_tk();
 
-        result.is_address_known_ =
-            parts.is_address_known or info.has_known_address();
+        result.is_address_known_ = parts.is_address_known;
 
         result.is_array_ = info.is_array();
         result.array_len_ = info.array_len();

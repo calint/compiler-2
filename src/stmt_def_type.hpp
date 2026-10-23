@@ -480,13 +480,8 @@ class stmt_def_type_alias final : public statement {
         };
 
         // the parameters name the arguments until the return
-        generic_scope scope{tc};
+        generic_scope scope{tc, generic.definition};
         scope.add_args(instance.args);
-
-        const definition_order::instance_scope visible{
-            tc.definition_order_ref(),
-            generic.definition,
-        };
 
         tokenizer generic_tz{tc.source_of(generic.start_tk), generic.start_tk};
 
@@ -564,13 +559,8 @@ class stmt_def_type_alias final : public statement {
                       const std::span<const generic_arg> args)
         -> std::vector<generic_arg> {
 
-        generic_scope scope{tc};
+        generic_scope scope{tc, generic.definition};
         scope.add_args(args);
-
-        const definition_order::instance_scope visible{
-            tc.definition_order_ref(),
-            generic.definition,
-        };
 
         const generic_type_info& base{
             tc.generics().get_type(generic.base_tk.text()),

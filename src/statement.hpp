@@ -481,15 +481,13 @@ class statement {
         return folded;
     }
 
-    // the operand of what 'info' resolves this statement to; an indexed
-    // access, a pointer or a known address is computed into 'lea_registers'
+    // the operand of what 'info' resolves this statement to, a computed
+    // address goes into 'lea_registers'
     [[nodiscard]] auto
     get_lea_operand(toc& tc, const size_t indent, const ident_info& info,
                     std::vector<operand>& lea_registers) const -> operand {
 
-        if (not is_indexed() and not info.has_known_address() and
-            not info.is_pointer()) {
-
+        if (not has_computed_address(info)) {
             return info.operand();
         }
 
@@ -505,6 +503,14 @@ class statement {
         assert(type_ != nullptr);
 
         return *type_;
+    }
+
+    // the address of what 'info' resolves this statement to is computed into
+    // a register: an indexed access, a pointer or a known address
+    [[nodiscard]] auto has_computed_address(const ident_info& info) const
+        -> bool {
+
+        return is_indexed() or info.is_address_computed();
     }
 
     // a name or a literal read in place, e.g. 'x' or '(x)', not '-x' or '-(x)'

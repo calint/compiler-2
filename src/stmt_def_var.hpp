@@ -20,7 +20,6 @@
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
-#include "stmt_builtin_convert.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -203,7 +202,7 @@ class initializer_declaration final {
 
         // e.g. 'var x = i8' is 'i8(0)'
         if (is_bare_builtin_type(tc, tk, tz)) {
-            set_type(stmt_builtin_convert::conversion_type(tc, tk));
+            set_type(tc.get_type_or_throw(tk));
             return;
         }
 

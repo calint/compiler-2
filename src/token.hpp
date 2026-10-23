@@ -26,6 +26,9 @@ inline constexpr std::string_view foo{"foo"};
 // the function the program starts in
 inline constexpr std::string_view main{"main"};
 
+// the name of the default type, e.g. 'i64' on x86_64 and 'i32' on rv32i
+inline constexpr std::string_view default_type_name{"int"};
+
 // the boolean values
 inline constexpr std::string_view true_value{"true"};
 inline constexpr std::string_view false_value{"false"};

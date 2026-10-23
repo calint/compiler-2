@@ -60,10 +60,11 @@ class stmt_if_branch final : public statement {
         return tc.create_unique_label(tok(), "if");
     }
 
+    // the condition and the code; the jump from the end of the code past the
+    // other branches is the caller's
     [[nodiscard]] auto
     compile_branch(toc& tc, const size_t indent,
-                   const std::string_view jmp_to_if_false_label,
-                   const std::string_view jmp_to_after_code_label) const
+                   const std::string_view jmp_to_if_false_label) const
         -> condition_result {
 
         const std::string if_label{begin_label(tc)};
@@ -93,17 +94,7 @@ class stmt_if_branch final : public statement {
         x.label(indent, jmp_to_if_true_label);
         code_.compile(tc, indent, destination{});
 
-        if (const_eval == condition_result::always_true) {
-            return const_eval;
-        }
-
-        // the last branch without an 'else' falls through to the code after
-        // the 'if'
-        if (not jmp_to_after_code_label.empty()) {
-            x.branch(indent, jmp_to_after_code_label);
-        }
-
-        return condition_result::unknown;
+        return const_eval;
     }
 
     //

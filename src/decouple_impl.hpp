@@ -95,7 +95,7 @@ inline auto assert_builtin_without_type_args(const token& tk,
 
     if (names_integer_type(tc, tk) and tz.peek_char_after_whitespace() == '(') {
 
-        return &stmt_builtin_convert::conversion_type(tc, tk);
+        return &tc.get_type_or_throw(tk);
     }
 
     return nullptr;

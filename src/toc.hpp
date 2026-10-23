@@ -112,10 +112,8 @@ class body_uses final {
     auto add_binding(const std::optional<size_t> param_index,
                      const access_path& path, const bool is_written) -> void {
 
-        const std::string path_text{path.text()};
-
         for (binding_use& u : bindings_) {
-            if (u.param_index == param_index and u.path.text() == path_text) {
+            if (u.param_index == param_index and u.path.is_same(path)) {
                 u.is_written = u.is_written or is_written;
                 return;
             }
@@ -131,11 +129,9 @@ class body_uses final {
     auto add_global(const storage_path& storage, const bool is_written)
         -> void {
 
-        const std::string path_text{storage.path.text()};
-
         for (global_use& u : globals_) {
             if (u.storage.root.is_same(storage.root) and
-                u.storage.path.text() == path_text) {
+                u.storage.path.is_same(storage.path)) {
 
                 u.is_written = u.is_written or is_written;
                 return;
@@ -2076,9 +2072,9 @@ class builtin_types final {
 
         const builtin_type_set& types{types_.get()};
 
-        return name == "int" or name == types.i8.name() or
-               name == types.i16.name() or name == types.i32.name() or
-               name == types.i64.name();
+        return name == reserved_names::default_type_name or
+               name == types.i8.name() or name == types.i16.name() or
+               name == types.i32.name() or name == types.i64.name();
     }
 
     [[nodiscard]] auto void_type() const -> const type& {
@@ -2170,20 +2166,17 @@ class ident_resolver final {
             };
             value) {
 
-            return ident_info::make_const(ident, id.str(),
-                                          builtins_.get().default_type(),
+            return ident_info::make_const(ident, builtins_.get().default_type(),
                                           folded_value::untyped(*value));
         }
 
         if (id.base() == reserved_names::true_value) {
-            return ident_info::make_const(ident, id.str(),
-                                          builtins_.get().boolean(),
+            return ident_info::make_const(ident, builtins_.get().boolean(),
                                           folded_value::untyped(1));
         }
 
         if (id.base() == reserved_names::false_value) {
-            return ident_info::make_const(ident, id.str(),
-                                          builtins_.get().boolean(),
+            return ident_info::make_const(ident, builtins_.get().boolean(),
                                           folded_value::untyped(0));
         }
 
@@ -2234,7 +2227,7 @@ class ident_resolver final {
                 }
 
                 return ident_info::make_const(
-                    ident, step.id.str(), builtins_.get().default_type(),
+                    ident, builtins_.get().default_type(),
                     frm.get_const(step.id.base()).constant);
             }
 
@@ -2302,8 +2295,8 @@ class ident_resolver final {
             // note: a built-in has no fields and no elements
             assert(is_single);
 
-            return ident_info::make_const(ident, binding.target_text(),
-                                          *binding.type_ptr, bound->constant);
+            return ident_info::make_const(ident, *binding.type_ptr,
+                                          bound->constant);
         }
 
         if (const bound_register* const reg{
@@ -2648,8 +2641,8 @@ class toc final {
     storage_layout storage_;
     check_options checks_;
     dry_run_ledger dry_runs_;
-    // above zero inside 'check_only', no noinline body is added there
-    size_t check_only_depth_{};
+    // above zero inside 'dry_run', no noinline body is added there
+    size_t dry_run_depth_{};
     // false while the program is parsed: the names are declared without
     // comments and without the capacity check of the storage
     bool is_compiling_{};
@@ -2674,7 +2667,7 @@ class toc final {
               kept_string_constant_count_{tc.data_.constant_count()},
               kept_storage_{tc.storage_.begin_dry_run()} {
 
-            ++tc_.check_only_depth_;
+            ++tc_.dry_run_depth_;
         }
 
         dry_run_scope(const dry_run_scope&) = delete;
@@ -2683,7 +2676,7 @@ class toc final {
         auto operator=(dry_run_scope&&) -> dry_run_scope& = delete;
 
         ~dry_run_scope() {
-            --tc_.check_only_depth_;
+            --tc_.dry_run_depth_;
             tc_.storage_.end_dry_run(kept_storage_);
             tc_.scopes_.set_max_depth(kept_max_frame_count_);
             tc_.data_.resize_constants(kept_string_constant_count_);
@@ -2872,7 +2865,7 @@ class toc final {
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<size_t> array_lengths) -> void {
 
-        if (check_only_depth_ != 0) {
+        if (dry_run_depth_ != 0) {
             return;
         }
 
@@ -3033,20 +3026,6 @@ class toc final {
         return builtins_;
     }
 
-    // runs 'compile' for its errors only: its output, string constants and
-    // use of storage leave no trace, also when 'compile' ends at an error it
-    // ignores, see 'stmt_def_func::check_body'
-    auto check_only(const std::function_ref<void()> compile) -> void {
-        const dry_run_scope dry_run{*this};
-
-        ::machine& x{machine()};
-
-        x.emit_discarded([&] -> void {
-            const frame_depth_scope frames{*this};
-            compile();
-        });
-    }
-
     // what '--checks' turned on
     [[nodiscard]] auto checks() const -> const check_options& {
         return checks_;
@@ -3098,22 +3077,32 @@ class toc final {
 
     [[nodiscard]] auto data() const -> const data_table& { return data_; }
 
-    [[nodiscard]] auto definition_order_ref() -> definition_order& {
-        return order_;
+    // runs 'compile' for its errors only: its output, string constants and
+    // use of storage leave no trace, also when 'compile' ends at an error it
+    // ignores, see 'stmt_def_func::check_body'
+    auto dry_run(const std::function_ref<void()> compile) -> void {
+        const dry_run_scope scope{*this};
+
+        ::machine& x{machine()};
+
+        x.emit_discarded([&] -> void {
+            const frame_depth_scope frames{*this};
+            compile();
+        });
     }
 
     // the dry run of the kind of noinline call 'kind' at 'level', measured
     // by 'dry_run_ledger::measure'
     //
     // note: an error out of 'dry_run' ends the compile, so nothing is put
-    //       back: 'check_only' makes every error a 'source' error and only
+    //       back: 'dry_run' makes every error a 'source' error and only
     //       'machine::compile_version' ('out_of_registers') and
     //       'stmt_def_func::check_body' (not 'source') drop an error
     auto dry_run_call_kind(const std::string_view kind, const size_t level,
-                           const std::function_ref<void()> dry_run) -> void {
+                           const std::function_ref<void()> compile) -> void {
 
         dry_runs_.measure(kind, level, scopes_.frames().size(),
-                          [&] -> void { check_only(dry_run); });
+                          [&] -> void { dry_run(compile); });
     }
 
     [[nodiscard]] auto dry_runs() const -> const dry_run_ledger& {
@@ -3289,6 +3278,14 @@ class toc final {
     // register
     [[nodiscard]] auto has_slot_register() const -> bool {
         return not machine_.get().slot_register().empty();
+    }
+
+    // an instance parse sees the definitions up to 'definition' while the
+    // result lives
+    [[nodiscard]] auto instance_visibility(const size_t definition)
+        -> definition_order::instance_scope {
+
+        return {order_, definition};
     }
 
     // a built-in type has no place in the source, e.g. 'i8' or 'int'
@@ -3661,14 +3658,20 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
 
 // while an instance of a generic definition is parsed, each parameter names
 // its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
-// parameters of an enclosing instance are hidden, all of it ends with the scope
+// parameters of an enclosing instance are hidden and only the definitions up
+// to the generic one are seen, all of it ends with the scope
 class generic_scope final {
     toc& tc_;
+    definition_order::instance_scope visible_;
     // the constants are in a block of their own
     bool is_block_entered_{};
 
   public:
-    explicit generic_scope(toc& tc) : tc_{tc} { tc_.enter_type_params(); }
+    generic_scope(toc& tc, const size_t definition)
+        : tc_{tc}, visible_{tc.instance_visibility(definition)} {
+
+        tc_.enter_type_params();
+    }
 
     generic_scope(const generic_scope&) = delete;
     generic_scope(generic_scope&&) = delete;

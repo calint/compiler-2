@@ -137,16 +137,20 @@ class stmt_if final : public statement {
                            : branches_.at(branch_index + 1).begin_label(tc),
         };
 
-        // the last branch without an 'else' continues after the 'if'
-        // without a jump
-        const std::string jmp_if_done{
-            is_last_branch and else_code_.is_empty() ? "" : label_after_if,
-        };
-
         // a condition that is constant true ends the chain at this branch
         const condition_result const_eval{
-            if_branch.compile_branch(tc, indent, jmp_if_false, jmp_if_done),
+            if_branch.compile_branch(tc, indent, jmp_if_false),
         };
+
+        // the last branch without an 'else' continues after the 'if'
+        // without a jump
+        const bool falls_through{is_last_branch and else_code_.is_empty()};
+
+        if (const_eval == condition_result::unknown and not falls_through) {
+            machine& x{tc.machine()};
+
+            x.branch(indent, label_after_if);
+        }
 
         return const_eval == condition_result::always_true;
     }

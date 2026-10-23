@@ -85,8 +85,8 @@ For a reviewer:
 ```text
 main.cpp         options, the backend for '--target', error printing
   |
-program.hpp      parse: every file, an included one before its includer
-  |              definite assignment of the results of the functions
+program.hpp      parse: every file, an included one before its includer,
+  |              and the definite assignment of the results
   |              compile: globals, 'main', noinline bodies, handlers,
   |              used routines, read-only data, data and variables
   |              report after the code
@@ -150,12 +150,11 @@ Invariants the code relies on:
    variables in 'toc' as it goes. Where a type or a size is learned from the
    initializer, the initializer is parsed, the tokenizer rewound and parsed
    again ('stmt_def_var::trial_parse'). A generic definition is kept as text
-   and parsed again for each instance ('generics.hpp').
+   and parsed again for each instance ('generics.hpp'). A function checks
+   when parsed that every path through it sets its result
+   ('stmt_def_func::assert_sets_result', 'ub_assigned.hpp').
 
-2. definite assignment ('assignment_analysis' in 'program.hpp'): every path
-   through a function with a result sets it, see 'ub_assigned.hpp'.
-
-3. compile ('program::build'): the statements are walked again with a fresh
+2. compile ('program::build'): the statements are walked again with a fresh
    scope stack in 'toc'. Global variables and data are declared again, then
    'main' is compiled where the program starts. An inlined call compiles the
    body of the callee in place ([1.3](#13-names-during-compile-frames-and-bindings)). A noinline call adds a body to
@@ -166,7 +165,7 @@ Invariants the code relies on:
    code and the handlers marked used ('machine::emit_used_routines'), the
    read-only strings, the data and the variables.
 
-4. output ('machine::finish', 'write_assembly'): the buffered lines get their
+3. output ('machine::finish', 'write_assembly'): the buffered lines get their
    jumps optimized, the assembly is written, the rv32i targets also write the
    binary image.
 
@@ -229,7 +228,7 @@ nowhere for a statement, a register, or the storage a resolved name is at.
 Some code is compiled and then dropped: a dry run only to be checked, and
 the longer of two versions after both are measured:
 
-1. 'toc::check_only' and 'machine::emit_discarded': the body of a noinline
+1. 'toc::dry_run' and 'machine::emit_discarded': the body of a noinline
    function compiled as if inlined with the arguments of a call, for the
    errors that depend on that call, see
    [chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call),
@@ -261,7 +260,7 @@ nothing calls, so whether a program is accepted does not depend on its
 calls. 'function_table' records the functions whose body a
 compile reached, in place, as a noinline body or in a dry run; after the
 noinline bodies, 'program::check_unreached_functions' compiles each other
-function like a noinline body under 'toc::check_only'
+function like a noinline body under 'toc::dry_run'
 ('stmt_def_func::check_body'). Its errors have no "called from" frame. An
 unsized array parameter has no length there ('ident_info::is_length_unknown'),
 so the rules that need the length are left to the calls: 's[7]' and
