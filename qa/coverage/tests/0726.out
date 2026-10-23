@@ -1,5 +1,5 @@
 
-0726.baz:14:41: cannot allocate register rdx because it holds a scratch value allocated at 13:33, simplify the expression
+0726.baz:14:41: cannot allocate register rdx because it holds a scratch value allocated at 13:33, compute a part of the expression with 'let' before it
                                 x = x / i
                                         ^
 

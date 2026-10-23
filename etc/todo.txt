@@ -636,6 +636,49 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
              4.11.2. noinline heights and recursion from the call graph
                      after the parse; may be covered by the fixed point of
                      4.10
+             => measured (2026-10-23): the premise of 4.11.1 is the code
+                today: an operation that needs named registers reserves them
+                ('alloc_named_register', 'reserve_named_register') before it
+                compiles its operands, and that is the cause of the class:
+                an operand that needs one of them is rejected, "register rcx
+                is always used by the operation at 8:5 ... compute the
+                operand with 'let'", e.g. 'array_copy(a, b, count << shift)'
+                (0727) and 'write(1, text, n / 2)' (1124) on x86_64; a named
+                register that holds a scratch value is rejected under
+                pressure, "cannot allocate register rdx because it holds a
+                scratch value" (0535, 0726, rv32i 0729); 10 test outputs
+                reject valid code this way, the verdict depends on the target
+             => proposed refactor (asked 2026-10-23): operands first, the
+                constraints at the operation: an operation compiles its
+                operands into ordinary scratch registers (the named ones stay
+                last resort), then at the instruction it saves the live
+                values its clobber set holds, moves the operands into the
+                named registers as one parallel move (a cycle through a free
+                register or 'xchg'), emits and restores; the version that
+                compiles an operand straight into its named register, as
+                today, is kept where it is free and no other operand needs
+                it, both measured by 'emit_most_efficient'; one helper per
+                backend for the parallel move and the save, the built-ins
+                and the division, shift and copy operations declare their
+                register needs as data
+             => removes: "always used by the operation" and "cannot allocate
+                register ... scratch value"; stays: running out of scratch
+                registers as a whole, and R7 B-1 (the address registers of
+                noinline arguments held until the frame is written, its own
+                refactor: write each slot when its address is computed)
+             => 4.11.2: not needed, 'dry_run_ledger' measures the heights at
+                the calls; the order dependence of a noinline cycle near the
+                limit stays documented
+             => decided (user, 2026-10-23): no operands-first form, it holds
+                a scratch register where the direct form needs none; a
+                register conflict stays a compile error that tells to make a
+                temporary with 'let': "register rcx is always used by the
+                operation at 8:5 ... compute the operand that needs it with
+                'let' before that operation" (as it was) and "cannot allocate
+                register rax because it holds a scratch value allocated at
+                18:73, compute a part of the expression with 'let' before
+                it" (was "simplify the expression"), 0535, 0726, 0729
+             => 4.11 done (2026-10-23)
        4.12. discarded: definition checks without a pseudo-call (class U),
              the user decided on 2026-10-21 that the strict verdict is fine;
              label uniqueness asserted on both targets (class L), no label

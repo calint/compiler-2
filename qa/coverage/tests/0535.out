@@ -1,5 +1,5 @@
 
-0535.baz:18:87: cannot allocate register rax because it holds a scratch value allocated at 18:73, simplify the expression
+0535.baz:18:87: cannot allocate register rax because it holds a scratch value allocated at 18:73, compute a part of the expression with 'let' before it
     var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n / 2)))))))))))))
                                                                                       ^
 

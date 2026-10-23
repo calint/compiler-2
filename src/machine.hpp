@@ -1846,8 +1846,8 @@ class machine {
                 register_error(
                     src_loc_tk,
                     std::format("cannot allocate register {} because it holds "
-                                "a scratch value allocated at {}, simplify the "
-                                "expression",
+                                "a scratch value allocated at {}, compute a "
+                                "part of the expression with 'let' before it",
                                 name, holder_location)),
             };
 
