@@ -1624,7 +1624,6 @@ class expr_bool final : public statement {
 
         // the connective after an operand, e.g. the 'and' of
         // 'a == 1 and b == 2'
-        const token pos_tk{tz.cur_position_token()};
         const token op_tk{tz.next_token()};
 
         if (op_tk.is_text("or") or op_tk.is_text("and")) {
@@ -1639,8 +1638,7 @@ class expr_bool final : public statement {
             throw compile_error{op_tk, "expected ')' to close expression"};
         }
 
-        // note: rewound by position, a string token cannot be put back
-        tz.rewind_to_position(pos_tk);
+        tz.put_back_token(op_tk);
 
         return std::nullopt;
     }

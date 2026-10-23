@@ -23,8 +23,9 @@ class unlocated_error final : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-// a command line option that the target rejects, e.g. a '--stack' larger than
-// its memory; 'main' reports it like the errors of the option parse
+// a command line option that is wrong only with the target or the sources,
+// e.g. a '--stack' larger than its memory; 'main' reports it like the errors
+// of the option parse
 class option_error final : public std::runtime_error {
   public:
     using std::runtime_error::runtime_error;
@@ -72,7 +73,7 @@ class compile_error final : public std::exception {
     size_t start_index{};
     size_t end_index{};
 
-    // innermost call first, each call inlined the one before it
+    // innermost first, see 'call_frame'
     std::vector<call_frame> call_frames;
 
     // more text for the user after the call frames, e.g. the use of registers

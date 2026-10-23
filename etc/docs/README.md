@@ -149,7 +149,7 @@ Invariants the code relies on:
    function, so the parse declares types, functions, constants and
    variables in 'toc' as it goes. Where a type or a size is learned from the
    initializer, the initializer is parsed, the tokenizer rewound and parsed
-   again ('stmt_def_var::trial_parse'). A generic definition is kept as text
+   again ('initializer_declaration::trial_parse'). A generic definition is kept as text
    and parsed again for each instance ('generics.hpp'). A function checks
    when parsed that every path through it sets its result
    ('stmt_def_func::assert_sets_result', 'ub_assigned.hpp').

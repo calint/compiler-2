@@ -809,8 +809,7 @@ class expr_any final : public statement {
                 std::make_unique<stmt_builtin_convert>(tc, tk));
         }
 
-        // note: rewound by position, a string token cannot be put back
-        tz.rewind_to_position(pos_tk);
+        tz.put_back_token(tk);
 
         // a generic call takes the type of a known destination for its
         // result, e.g. 'x = make()'

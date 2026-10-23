@@ -74,7 +74,7 @@ struct func_info {
     size_t definition{};
 };
 
-// a noinline body compiled for the array lengths of one kind of call
+// a noinline body compiled for the array lengths of its calls
 struct noinline_body {
     const stmt_def_func* func{};
     // one per array parameter, in parameter order
@@ -951,7 +951,7 @@ class function_table final {
         instances_.emplace_back(std::move(instance));
     }
 
-    // a body is emitted once per kind of call
+    // a body is emitted once per array lengths
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<size_t> array_lengths) -> void {
 
@@ -1026,11 +1026,11 @@ struct dry_run_height {
     size_t scopes{};
 };
 
-// the dry runs of noinline calls: the height of each kind of call checked and
+// the dry runs of noinline calls: the height of each call kind checked and
 // the deepest level and scope check reached in the dry run being checked, see
 // 'noinline_call::dry_run_body'
 class dry_run_ledger final {
-    // the dry-run levels below each kind of call dry run
+    // the dry-run levels below each call kind dry run
     std::map<std::string, dry_run_height, std::less<>> heights_;
     // the deepest level of noinline dry runs reached in the dry run being
     // checked
@@ -1039,7 +1039,7 @@ class dry_run_ledger final {
     size_t deepest_scope_check_{};
 
   public:
-    // none when the kind of call is not dry run yet
+    // none when the call kind is not dry run yet
     [[nodiscard]] auto height_of(const std::string_view kind) const
         -> std::optional<dry_run_height> {
 
@@ -2069,14 +2069,13 @@ class builtin_types final {
 
     [[nodiscard]] auto i8() const -> const type& { return types_.get().i8; }
 
-    // 'int' and the names of the builtin integer types
+    // the names of the builtin integer types
     [[nodiscard]] auto is_integer_name(const std::string_view name) const
         -> bool {
 
         const builtin_type_set& types{types_.get()};
 
-        return name == reserved_names::default_type_name or
-               name == types.i8.name() or name == types.i16.name() or
+        return name == types.i8.name() or name == types.i16.name() or
                name == types.i32.name() or name == types.i64.name();
     }
 
@@ -2863,7 +2862,7 @@ class toc final {
         generics_.add_type_instance(std::move(instance));
     }
 
-    // a body is emitted once per kind of call, for a call that is
+    // a body is emitted once per array lengths, for a call that is
     // compiled for real: a dry run leaves no trace, the call is compiled again
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<size_t> array_lengths) -> void {
@@ -3291,13 +3290,6 @@ class toc final {
         return {order_, definition};
     }
 
-    // a built-in type has no place in the source, e.g. 'i8' or 'int'
-    [[nodiscard]] auto is_builtin_type_name(const std::string_view name) const
-        -> bool {
-
-        return types_.exists(name) and types_.src_loc_tk_of(name).is_empty();
-    }
-
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs_.has(name) or generics_.has_func(name);
     }
@@ -3357,14 +3349,6 @@ class toc final {
     auto record_callee_globals(const body_uses& callee) -> void {
         if (scopes_.is_in_func()) {
             scopes_.record_callee_globals(callee);
-        }
-    }
-
-    // a global keeps the definition that declared it at the parse, the
-    // compile declares it again
-    auto record_if_global(const std::string_view name) -> void {
-        if (scopes_.frames().size() == 1) {
-            scopes_.record_global(name);
         }
     }
 
@@ -3562,10 +3546,25 @@ class toc final {
         return funcs_.get(name);
     }
 
+    // a built-in type has no place in the source, e.g. 'i8' or 'int'
+    [[nodiscard]] auto is_builtin_type_name(const std::string_view name) const
+        -> bool {
+
+        return types_.exists(name) and types_.src_loc_tk_of(name).is_empty();
+    }
+
     // the frames are pushed by 'scope_stack', popped here with their storage
     auto pop_frame() -> void {
         storage_.release_scope(scopes_.back(), scopes_.frames().size() == 1);
         scopes_.pop();
+    }
+
+    // a global keeps the definition that declared it at the parse, the
+    // compile declares it again
+    auto record_if_global(const std::string_view name) -> void {
+        if (scopes_.frames().size() == 1) {
+            scopes_.record_global(name);
+        }
     }
 };
 

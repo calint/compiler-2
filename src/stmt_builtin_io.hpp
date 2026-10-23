@@ -364,6 +364,10 @@ class stmt_builtin_io final : public stmt_call {
 
         const ident_info buffer_info{make_ident_info(tc, argument(1))};
 
+        if (io_.is_sector) {
+            assert_sector_buffer(tc, buffer_info);
+        }
+
         compile_count(tc, indent, count, buffer_info);
 
         const range_check check{range_check_of(tc, buffer_info)};
@@ -566,17 +570,6 @@ class stmt_builtin_io final : public stmt_call {
         return range_check::compile_time;
     }
 
-    [[nodiscard]] auto sector_element_count(toc& tc,
-                                            const ident_info& buffer_info) const
-        -> size_t {
-
-        assert_sector_buffer(tc, buffer_info);
-
-        const machine& x{tc.machine()};
-
-        return x.sector_size_bytes() / buffer_info.type_ref().size_bytes();
-    }
-
     // the call with all its arguments
     [[nodiscard]] auto usage_text() const -> std::string {
         if (io_.is_sector) {
@@ -584,5 +577,16 @@ class stmt_builtin_io final : public stmt_call {
         }
 
         return std::format("{}(fd, buf, count, start)", tok().text());
+    }
+
+    //
+    // statics
+    //
+
+    [[nodiscard]] static auto
+    sector_element_count(toc& tc, const ident_info& buffer_info) -> size_t {
+
+        const machine& x{tc.machine()};
+        return x.sector_size_bytes() / buffer_info.type_ref().size_bytes();
     }
 };

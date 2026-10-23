@@ -9,8 +9,8 @@
 #include "ub_alias.hpp"
 
 // the walk over the reads of a variable shared by the checks: each read hands
-// out its bytes for the definite assignment and the constructor order checks
-// and its path for the aliasing check
+// out its bytes for the definite assignment check and its path for the
+// aliasing checks
 
 // the variable whose reads 'visit_reads' reports, none for every variable
 using read_filter = std::optional<std::string_view>;

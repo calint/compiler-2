@@ -149,8 +149,8 @@ class initializer_declaration final {
         // note: the placeholder has the default type until the type is known
         set_type(tc.builtins().default_type());
 
-        // the name is visible like in the parse, e.g. 'i8' in 'var i8 = i8[2]'
-        // is the variable
+        // the name is visible like in the parse, e.g. 'point' in
+        // 'var point = point[2]' is the variable
         const type* element_type{};
 
         with_placeholder(tc, [&element_type, &tc, &tz] -> void {

@@ -86,10 +86,6 @@ class tokenizer final {
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
-    [[nodiscard]] auto is_eos() const -> bool {
-        return char_ix_ >= src_.size();
-    }
-
     [[nodiscard]] auto is_next_char(const char ch) -> bool {
         if (not is_peek_char(ch)) {
             return false;
@@ -395,6 +391,10 @@ class tokenizer final {
         }
 
         return string_tk;
+    }
+
+    [[nodiscard]] auto is_eos() const -> bool {
+        return char_ix_ >= src_.size();
     }
 
     [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {

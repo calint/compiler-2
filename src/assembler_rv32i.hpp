@@ -873,20 +873,13 @@ class assembler_rv32i final : public assembler {
     // statics
     //
 
-    // an 'li' constant that fits 'addi' or has no low part is one instruction
+    // the size of the expansion that 'write_code' encodes, so the layout and
+    // the image agree
     [[nodiscard]] static auto li_value_size_bytes(const int64_t value)
         -> size_t {
 
-        const uint32_t bits{static_cast<uint32_t>(value)};
-        const int32_t number{std::bit_cast<int32_t>(bits)};
-
-        if ((number >= immediate_min and number <= immediate_max) or
-            (bits & low_mask_) == 0) {
-
-            return one_instruction_bytes;
-        }
-
-        return two_instructions_bytes;
+        return load_immediate(zero_register_, value).size() *
+               one_instruction_bytes;
     }
 
     // directives and comments occupy no space, instructions are added

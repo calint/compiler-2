@@ -549,7 +549,6 @@ class machine_rv32i : public machine {
                           static_cast<size_t>(index) * word_size_bytes_, "sp");
         }
 
-        // restore sp before writing a possibly stack-relative destination
         if (stack_bytes != 0) {
             assembler_.addi(indent, "sp", "sp", stack_bytes);
         }
@@ -1248,8 +1247,11 @@ class machine_rv32i : public machine {
         // the report counts after resolving because grown jumps take more
         // instructions, a failing build writes nothing
         assembler_.resolve_jumps();
-        check_address_range(assembler_.memory_end_address());
-        check_memory_end(assembler_.memory_end_address());
+
+        const size_t memory_end_address{assembler_.memory_end_address()};
+
+        check_address_range(memory_end_address);
+        check_memory_end(memory_end_address);
     }
 
     auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
@@ -4007,8 +4009,8 @@ class machine_rv32i : public machine {
     }
 
     // the loop ends when its pointer reaches 'end', replacing a counter that
-    // costs a decrement in every iteration, 'address_of' avoids 'li' whose
-    // expansion for some values differs from the assembler's
+    // costs a decrement in every iteration, a size below 2 KiB takes one
+    // 'addi' through 'address_of'
     auto set_loop_end(const token& src_loc_tk, const size_t indent,
                       const operand& end, const operand& pointer,
                       const size_t size_bytes) -> void {
@@ -5527,7 +5529,7 @@ class machine_rv32i_linux final : public machine_rv32i {
     }
 
     // the routines take the sector in a0, the address in a1 and the size in
-    // a2, return through a7 and may change a0 and a3 to a6; an operating
+    // a2, return through a7 and may change a0 and a3 to a7; an operating
     // system transfers the sector of the image file
     // opens the image file at the first transfer and keeps its descriptor and
     // sector count in '.Lbaz_sd_card', a sector past the end, a failed open or

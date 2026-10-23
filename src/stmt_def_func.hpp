@@ -342,8 +342,9 @@ class stmt_def_func final : public statement {
         code_.source_to(os);
     }
 
-    // the body is compiled by its calls: in place when inlined, else once per
-    // kind of call ('compile_body')
+    // the body is compiled by its calls: in place by
+    // 'inline_call::compile_body', else once per array lengths by
+    // 'emit_noinline_body'
     auto compile([[maybe_unused]] toc& tc, [[maybe_unused]] const size_t indent,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
@@ -363,56 +364,6 @@ class stmt_def_func final : public statement {
             tc.add_const(head_.name_tk, indent, constant.param_tk.text(),
                          folded_value::untyped(constant.value));
         }
-    }
-
-    // the frames of what made the instance, see 'func_instance::frames'
-    auto add_instance_frames(compile_error& e) const -> void {
-        if (not instance_) {
-            return;
-        }
-
-        for (const generic_frame& frame : instance_->frames) {
-            e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
-        }
-    }
-
-    // no caller gives 'main' arguments or takes its result
-    auto assert_main_signature() const -> void {
-        if (name() != reserved_names::main) {
-            return;
-        }
-
-        if (not is_inlined()) {
-            throw compile_error{noinline_token(),
-                                "'main' cannot be declared 'noinline'"};
-        }
-
-        if (not params().empty()) {
-            throw compile_error{params().front().tok(),
-                                "'main' cannot have parameters"};
-        }
-
-        if (returns()) {
-            throw compile_error{returns()->ident_tk,
-                                "'main' cannot have a result"};
-        }
-    }
-
-    // every path through the body sets the result, also the end, which
-    // returns like a 'return' statement
-    auto assert_sets_result() const -> void {
-        if (not returns_) {
-            return;
-        }
-
-        assignment_flow flow{
-            returns_->ident_tk.text(),
-            returns_->ident_tk,
-            returns_->type_ptr->size_bytes(),
-        };
-
-        code_.trace_assignment(flow);
-        flow.assert_set_at_return();
     }
 
     // 'func' is a keyword so no user name or internal label starts with 'func.'
@@ -466,8 +417,9 @@ class stmt_def_func final : public statement {
         code_.compile(tc, indent, destination{});
     }
 
-    // the body of a noinline function for one kind of call, after 'main'; the
-    // lengths are those of the array arguments, one per array parameter
+    // the body of a noinline function for one set of array lengths, after
+    // 'main'; the lengths are those of the array arguments, one per array
+    // parameter
     auto emit_noinline_body(toc& tc,
                             const std::span<const size_t> array_lengths) const
         -> void {
@@ -556,10 +508,6 @@ class stmt_def_func final : public statement {
         return instance_ ? instance_->name : head_.name;
     }
 
-    [[nodiscard]] auto noinline_token() const -> const token& {
-        return head_.noinline_tk;
-    }
-
     [[nodiscard]] auto param(const size_t ix) const
         -> const stmt_def_func_param& {
 
@@ -621,6 +569,17 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
 
   private:
+    // the frames of what made the instance, see 'func_instance::frames'
+    auto add_instance_frames(compile_error& e) const -> void {
+        if (not instance_) {
+            return;
+        }
+
+        for (const generic_frame& frame : instance_->frames) {
+            e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
+        }
+    }
+
     // located at the method name for diagnostics
     auto add_self_param() -> void {
         const token self_tk{
@@ -714,6 +673,28 @@ class stmt_def_func final : public statement {
             std::ranges::count_if(params_, &stmt_def_func_param::is_array));
     }
 
+    // no caller gives 'main' arguments or takes its result
+    auto assert_main_signature() const -> void {
+        if (name() != reserved_names::main) {
+            return;
+        }
+
+        if (not is_inlined()) {
+            throw compile_error{head_.noinline_tk,
+                                "'main' cannot be declared 'noinline'"};
+        }
+
+        if (not params().empty()) {
+            throw compile_error{params().front().tok(),
+                                "'main' cannot have parameters"};
+        }
+
+        if (returns()) {
+            throw compile_error{returns()->ident_tk,
+                                "'main' cannot have a result"};
+        }
+    }
+
     // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
     auto assert_mut_has_receiver() const -> void {
         if (head_.mut_tk.is_empty() or is_method()) {
@@ -746,6 +727,23 @@ class stmt_def_func final : public statement {
                 };
             }
         }
+    }
+
+    // every path through the body sets the result, also the end, which
+    // returns like a 'return' statement
+    auto assert_sets_result() const -> void {
+        if (not returns_) {
+            return;
+        }
+
+        assignment_flow flow{
+            returns_->ident_tk.text(),
+            returns_->ident_tk,
+            returns_->type_ptr->size_bytes(),
+        };
+
+        code_.trace_assignment(flow);
+        flow.assert_set_at_return();
     }
 
     // keeps the labels of the body unique: the instances of one generic

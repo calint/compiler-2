@@ -6,6 +6,112 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] medium: review round 10 proposals, each a separate step with a failing
+    test first for a bug, both suites and the test outputs compared with the
+    previous binary
+    1. bugs (behavior change, a test per target first):
+       1.1. E-1: miscompile: 'expr_bool::compile' writes a register
+            destination that a later element reads, e.g. inlined
+            'res = x == 1 and res' gives true for res false
+            => fix: drop 'dst.is_register() or' at 'reads_destination', the
+               scratch path covers registers
+       1.2. B-1/B-2: rv32i aborts in 'validate_address': 'a[i + K]' folds
+            K * size above 4 GiB into the displacement; a 4 GiB dat passes
+            'assert_storage_fits_target'
+            => fix: the rv32i backend wraps a displacement to its 32-bit
+               value (addresses wrap); the storage check counts the vars
+               block from the first dat
+       1.3. T-1: 'scope_stack::lookup_below' checks the root inside its loop
+            without 'is_global_visible', a generic type instance sees a
+            constant defined after it
+            => fix: the loop covers the frames above the root
+       1.4. S-1: a nested last field leaves the enclosing padding unassigned,
+            'res.q = 1  res.a.y = 2' is "may return without setting"
+            => fix: the last field keeps the rest of the parent's range, like
+               the last element
+       1.5. C-1: 'arrays_equal(a[4], a, 0)' is rejected, 'array_copy' and
+            'write' accept it
+            => fix: a constant count 0 stores the constant result
+       1.6. F-1: 'var U = 2' in a generic with 'U' bound to 'i8' is accepted,
+            then 'U' reads as the variable and 'U(v)' as the type
+            => fix: 'assert_valid_unqualified_name' rejects a name that
+               'builtin_value_type_named' finds (the B-8 rule)
+       1.7. D-1: a failed write of stdout or of the image exits 0
+            => fix: check the stream after the write, throw 'unlocated_error'
+       1.8. D-2: 'source_locations::human_readable' writes the file name raw
+            (register detail, '--report=registers' comments)
+            => fix: 'printable' like 'for_comment'
+       1.9. T-2: a type parameter of a method of a generic type may repeat a
+            receiver parameter, e.g. 'box<n>' and 'box.f<n type>'
+            => fix: reject at the definition: "generic parameter 'n' is
+               already declared by 'box' at 1:10"
+    2. design (behavior-preserving unless noted):
+       2.1. A-1: toc scopes are entered and left by hand at about 16 sites,
+            an error leaves them entered and 'frame_depth_scope' sweeps up in
+            'toc::dry_run' and 'toc::emit_most_efficient'
+            => design: RAII guards 'toc::block_scope', 'loop_scope',
+               'foo_scope', 'func_scope' holding the name they check at
+               exit; 'frame_depth_scope' goes, 'toc::emit_most_efficient'
+               only forwards
+            => rejected: keep the pairs and the sweeper, two mechanisms for
+               one invariant
+       2.2. A-4: 'program::emit_failure_handlers' emits a handler per enabled
+            check, the machine emits routines per use; '--checks=noub'
+            emits seven handlers where one is reached
+            => design: the machine marks a handler used where it branches to
+               it, 'emit_used_routines' emits it, joined with the [p] table
+               item below (behavior: shorter output)
+       2.3. A-5: the label rule 'prefix.location[.call-path]' is built in
+            'toc::create_unique_label' and again in
+            'inline_call::compile_body'
+            => design: 'toc::call_path_at(tk)' used by both,
+               'source_location_for_use_in_label' private
+       2.4. A-6 (R9 D-9): '--vars' is checked in 'main' and asserted in
+            'program', '--stack' and '--memory' where the limits live
+            => design: the 'storage_layout' constructor throws the
+               'option_error', same message
+       2.5. A-7: 'machine' takes a nullable 'const source_files*' for the
+            backend tests only ('has_source', two branches)
+            => design: 'const source_files&', the tests build one empty file
+       2.6. G-1: generic parameters are read by 'read_signature_types' with
+            other rules than 'parse_params' (trailing ',', missing ',')
+            => design: one 'stmt_def_func_param::syntax::read_list' used by
+               both (errors earlier)
+       2.7. G-2: 'machine::data_element_size_error' is dead since B-1, the
+            type check rejects wider types first
+            => design: remove the virtual, the override and the check
+       2.8. G-3: 'main' type parameters are checked in
+            'program::checked_main', the rest in
+            'stmt_def_func::assert_main_signature'
+            => design: check them at the parse (error order)
+       2.9. E-2: a bool '{}' or 'bool' is an 'expr_bool' with a
+            'first_expression' path only for it; compiled as a condition
+            => design: the 'expr_arith' carrier like a bool name; the
+               'first_expression' parameters go (asm of bool zeros)
+       2.10. R-5 (R9 R-7): rv32i labels through 'machine::label' and
+             'assembler_.label' in one function
+             => design: 'assembler_.label' in the backend
+       2.11. F-4: "a digit starts a number" in 'stmt_const', 'toc' and
+             'token::is_number'
+             => design: 'constant_parser::starts_number' used by all three
+       2.12. A-3: docs 1.1 names 4 of 61 headers
+             => design: a layer table of all headers with the include rule
+    3. decide (messages or rules):
+       3.1. T-3: 'var point' hides the type in 'f<point>()' only when 'let'
+       3.2. F-2 (R8 F-6): array size 'i8[- 4]' rejected, 'i8[- -4]' accepted
+       3.3. B-3: '\xff' is 255 as a character, -1 in a string; the message
+            doubles the quotes
+       3.4. B-4: a constant overflow is rejected only with '--checks=overflow'
+       3.5. G-6 (R9 G-5): noinline generic instance comment without '<...>'
+       3.6. G-7, T-6, C-6: messages ('func i8' + '.at' on the next line,
+            'w box<i8>' field, 'bool(5)', 'mk().sum()', 'array_length' in a
+            size)
+       3.7. A-8 (R9 D-5): hard links: 'equivalent' in main, 'weakly_canonical'
+            in program
+       3.8. R8 X-10: the x86 thresholds 16, 32 and 6 have no reason
+       3.9. discard: C-3 (decided in R8 A-4), R-6 (named encodings by
+            design), X-1 'negated' placement (one caller), G-8 (the include
+            is used)
 [p] medium: low priority: generic function instances: the nesting limit
     counts the depth of the first use of an instance (H-2): its body is
     parsed inside the parse of that use, e.g. a body nested 70 levels used

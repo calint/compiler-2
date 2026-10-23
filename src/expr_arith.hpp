@@ -257,7 +257,7 @@ class expr_arith final : public expression {
 
         // a single plain element in memory is compiled directly, without
         // trying with and without a scratch register
-        if (not dst.is_register() and is_single_plain_element()) {
+        if (not dst.is_register() and is_compiled_in_place()) {
             do_compile(tc, indent, dst);
             return;
         }
@@ -883,6 +883,23 @@ class expr_arith final : public expression {
         return not close_paren_tk_.is_empty();
     }
 
+    // unary ops on a memory destination are a load, modify and store on a
+    // load/store machine where a scratch register can be shorter, other single
+    // elements such as calls are not compiled twice
+    [[nodiscard]] auto is_compiled_in_place() const -> bool {
+        if (exprs_.size() != 1) {
+            return false;
+        }
+
+        const statement& e{*exprs_.front()};
+
+        if (not e.is_name_or_literal()) {
+            return true;
+        }
+
+        return uops_.is_empty() and e.get_unary_ops().is_empty();
+    }
+
     // e.g. '(a + b)' vs 'a + b'
     [[nodiscard]] auto is_enclosed() const -> bool {
         return not open_paren_tk_.is_empty();
@@ -900,23 +917,6 @@ class expr_arith final : public expression {
                precedence != initial_precedence);
 
         return is_implied_subexpression_ and next_precedence < precedence;
-    }
-
-    // unary ops on a memory destination are a load, modify and store on a
-    // load/store machine where a scratch register can be shorter, other single
-    // elements such as calls are not compiled twice
-    [[nodiscard]] auto is_single_plain_element() const -> bool {
-        if (exprs_.size() != 1) {
-            return false;
-        }
-
-        const statement& e{*exprs_.front()};
-
-        if (not e.is_name_or_literal()) {
-            return true;
-        }
-
-        return uops_.is_empty() and e.get_unary_ops().is_empty();
     }
 
     // pass 0: one step per element with the constant value of the element
@@ -1320,7 +1320,6 @@ class expr_arith final : public expression {
         return reg;
     }
 
-    // constants have the default type like literals
     static auto consume_peeked_operator(tokenizer& tz) -> void {
         const char ch{tz.next_char()};
 

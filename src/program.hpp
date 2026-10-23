@@ -214,8 +214,9 @@ class report_renderer final {
 };
 
 // the whole program: the constructor parses the main file and the files it
-// includes into 'statements_', in file order; 'build' compiles from the
-// parsed statements, 'main' first, see 'etc/docs/README.md' section 1.2
+// includes into 'statements_', an included file before the file that
+// includes it; 'build' compiles from the parsed statements, 'main' first, see
+// 'etc/docs/README.md' section 1.2
 class program final {
     // the statements of one file, in 'statements_'
     struct file_statements {
@@ -539,7 +540,7 @@ class program final {
         }
     }
 
-    // each noinline function that is called has one body per kind of call,
+    // each noinline function that is called has one body per array lengths,
     // after 'main'; a function nothing calls leaves no code
     static auto compile_noinline_functions(toc& tc) -> void {
 

@@ -80,6 +80,16 @@ struct report_options {
     bool registers{};
 };
 
+struct report_name {
+    std::string_view text;
+    bool report_options::* member;
+};
+
+// the names of '--report', in the order of the usage text
+constexpr std::array<report_name, 1> report_names{
+    report_name{.text{"registers"}, .member{&report_options::registers}},
+};
+
 struct options {
     const char* src_file_name{"prog.baz"};
     bool src_file_given{};
@@ -162,7 +172,7 @@ default_binary_file_name(const std::string_view src_file_name,
 [[nodiscard]] auto make_backend(const target machine_target,
                                 const builtin_type_set& builtins,
                                 const source_files* const files,
-                                const machine::target_options& options)
+                                const machine::target_options& target_opts)
     -> std::unique_ptr<machine>;
 
 auto print_option_error(const std::string_view message) -> void;
@@ -695,15 +705,19 @@ auto check_reproduced_source(const program& prg, const source_files& files)
             continue;
         }
 
-        if (report == "registers") {
-            parsed.registers = true;
-        } else {
-            print_option_error(std::format("invalid --report: '{}', supported "
-                                           "reports are: registers",
-                                           report));
+        const auto* const found{
+            std::ranges::find(report_names, report, &report_name::text),
+        };
+
+        if (found == report_names.end()) {
+            print_option_error(
+                std::format("invalid --report: '{}', supported reports are: {}",
+                            report, joined_texts(report_names)));
 
             return std::nullopt;
         }
+
+        parsed.*found->member = true;
     }
 
     return parsed;
@@ -848,26 +862,28 @@ default_binary_file_name(const std::string_view src_file_name,
 [[nodiscard]] auto make_backend(const target machine_target,
                                 const builtin_type_set& builtins,
                                 const source_files* const files,
-                                const machine::target_options& options)
+                                const machine::target_options& target_opts)
     -> std::unique_ptr<machine> {
 
     // todo: x86_64 writes no binary, see etc/todo.txt
     if (machine_target == target::x86_64) {
-        return std::make_unique<machine_x86_64>(builtins, files, options);
+        return std::make_unique<machine_x86_64>(builtins, files, target_opts);
     }
 
     if (machine_target == target::rv32i) {
-        return std::make_unique<machine_rv32i_linux>(builtins, files, options);
+        return std::make_unique<machine_rv32i_linux>(builtins, files,
+                                                     target_opts);
     }
 
     if (machine_target == target::rv32i_qemu) {
-        return std::make_unique<machine_rv32i_qemu>(builtins, files, options);
+        return std::make_unique<machine_rv32i_qemu>(builtins, files,
+                                                    target_opts);
     }
 
     // the command line accepts only these four targets
     assert(machine_target == target::rv32i_fpga);
 
-    return std::make_unique<machine_rv32i_fpga>(builtins, files, options);
+    return std::make_unique<machine_rv32i_fpga>(builtins, files, target_opts);
 }
 
 // every command line error ends with the same hint

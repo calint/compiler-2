@@ -101,7 +101,7 @@ class stmt_builtin_foo final : public statement {
 
         const operand reg_iter{
             x.alloc_scratch_register(ident_.tok(), indent,
-                                     tc.builtins().default_type()),
+                                     tc.builtins().address()),
         };
 
         x.comment(ident_.tok(), indent, "initialize iterator e");
@@ -332,7 +332,6 @@ class stmt_builtin_foo final : public statement {
         machine& x{tc.machine()};
 
         if (not ident_.has_computed_address(array_info)) {
-
             x.address_of(tok(), indent, reg_iter, array_info.operand());
             return;
         }
