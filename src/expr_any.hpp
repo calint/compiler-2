@@ -233,7 +233,7 @@ class expr_any final : public statement {
 
         assert(not is_array_);
 
-        return fold_element(tc, 0, use);
+        return element(0).fold(tc, use);
     }
 
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
@@ -250,9 +250,6 @@ class expr_any final : public statement {
 
         return element(0).is_expression();
     }
-
-    // only string and '{}' initializers leave 'elements_' empty, callers ask
-    // arrays only when 'is_array_identifier' and arguments are never arrays
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
@@ -350,7 +347,7 @@ class expr_any final : public statement {
         -> std::optional<int64_t> {
 
         return folded_value::value_of(
-            fold(tc, tc.use_at(tc.builtins().default_type())));
+            fold_checked(tc, tc.use_at(tc.builtins().default_type())));
     }
 
     // every kind of element is a 'statement', the forwarding methods call its
@@ -887,7 +884,7 @@ inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
 
     const std::optional<int64_t> folded{
         folded_value::value_of(
-            value_->fold(tc, tc.use_at(tc.builtins().i64()))),
+            value_->fold_checked(tc, tc.use_at(tc.builtins().i64()))),
     };
 
     if (not folded) {

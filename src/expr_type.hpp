@@ -179,8 +179,7 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<value_write>(&step.action),
             }) {
 
-            value->item->assert_not_narrowed(tc, part_dst.type_ref());
-            value->item->compile(tc, indent, part_dst);
+            value->item->compile_checked(tc, indent, part_dst);
             continue;
         }
 

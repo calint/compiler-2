@@ -68,7 +68,8 @@ class initializer_declaration final {
         std::optional<folded_value> constant;
 
         with_placeholder(tc, [&] -> void {
-            constant = value.fold(tc, tc.use_at(tc.builtins().default_type()));
+            constant =
+                value.fold_checked(tc, tc.use_at(tc.builtins().default_type()));
         });
 
         return constant;

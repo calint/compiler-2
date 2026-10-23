@@ -1197,7 +1197,7 @@ class inline_call {
         -> param_binding {
 
         const std::optional<folded_value> folded{
-            arg.fold(tc, tc.use_at(param.get_type())),
+            arg.fold_checked(tc, tc.use_at(param.get_type())),
         };
 
         if (folded) {

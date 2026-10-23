@@ -94,6 +94,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             narrowing: 'expr_any::fold' forwards, the callers that rely on
             the check call 'fold_checked'; a 'compile_checked' beside it
             replaces the hand-written "assert_not_narrowed, then compile"
+            => done (2026-10-23): 'expr_any::fold' forwards unchecked; the
+               callers that relied on its check ask 'fold_checked' (the
+               constant argument of an inline call, the value of 'let'/'var',
+               'constant_value', the size of an array type); the bound name
+               of an inline call checks first and folds plain;
+               'statement::compile_checked' in 'expr_type' (a part) and
+               'expr_bool' (a side into its register); 'compile_to_scratch'
+               keeps its check before the register allocation; no output
+               change
        B.4. 'produces_boolean' and 'compile_boolean' serve 'arrays_equal'
             only: a name that says so
     C. one value, one node

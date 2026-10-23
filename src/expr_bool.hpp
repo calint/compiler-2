@@ -1045,10 +1045,8 @@ class expr_bool_op final : public expression {
         if (lhs.is_expression() and action.destination.is_register() and
             lhs.get_type().is_same(action.destination.type_ref())) {
 
-            lhs.assert_not_narrowed(tc, lhs.get_type());
-
-            lhs.compile(tc, indent + 1,
-                        destination::of_register(action.destination));
+            lhs.compile_checked(tc, indent + 1,
+                                destination::of_register(action.destination));
 
             return action.destination;
         }

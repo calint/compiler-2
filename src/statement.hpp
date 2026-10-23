@@ -399,6 +399,14 @@ class statement {
             });
     }
 
+    // the compile of a value that must fit 'dst', checked like 'fold_checked'
+    auto compile_checked(toc& tc, const size_t indent,
+                         const destination& dst) const -> void {
+
+        assert_not_narrowed(tc, dst.type_ref());
+        compile(tc, indent, dst);
+    }
+
     // the fold of a value that must fit where it is used, checked as its
     // compile is, so a folded value is rejected where a computed one is
     // note: the check follows the fold, which keeps the low bits of an
