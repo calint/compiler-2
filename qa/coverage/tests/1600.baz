@@ -1,0 +1,5 @@
+# the array of a built-in is not a type
+func main() {
+    var a = i8[4]
+    array_copy(i8, a, 1)
+}

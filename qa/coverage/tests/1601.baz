@@ -1,0 +1,7 @@
+# the array of a built-in is not a function
+func f() {}
+
+func main() {
+    foo f {
+    }
+}

@@ -4992,3 +4992,21 @@ SRC=1596 && COMPERR
 
 # a type parameter in a message names the type it is bound to
 SRC=1597 && COMPERR
+
+# a built-in type is a type, not a value, also before a '{'
+SRC=1598 && COMPERR
+
+# the array of a built-in is not a call
+SRC=1599 && COMPERR
+
+# the array of a built-in is not a type
+SRC=1600 && COMPERR
+
+# the array of 'foo' is not a function
+SRC=1601 && COMPERR
+
+# a number has no field
+SRC=1602 && COMPERR
+
+# a method that is not generic takes no type arguments
+SRC=1603 && COMPERR

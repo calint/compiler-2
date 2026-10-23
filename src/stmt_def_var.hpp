@@ -195,7 +195,9 @@ class initializer_declaration final {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
 
-        if (is_record_literal(tc, tk, tz) or is_bare_record_type(tc, tk, tz)) {
+        if (const term tm{classify_term(tc, tk, tz)};
+            tm.is(term_kind::record_literal) or tm.is(term_kind::record_type)) {
+
             set_type(tc.get_type_or_throw(tk));
             return;
         }
@@ -284,7 +286,11 @@ class initializer_declaration final {
         }
 
         const token tk{tz.next_token()};
-        const bool is_literal{is_array_literal(tc, tk, tz)};
+
+        const bool is_literal{
+            classify_term(tc, tk, tz).is(term_kind::array_literal),
+        };
+
         tz.put_back_token(tk);
 
         if (not is_literal) {

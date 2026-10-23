@@ -1,0 +1,4 @@
+
+1600.baz:4:16: 'i8' is a type, not an array
+    array_copy(i8, a, 1)
+               ^~

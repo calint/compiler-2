@@ -1,11 +1,15 @@
 #pragma once
 
-// what the next tokens are, decided before they are parsed: a type name or a
-// generic function name followed by a character has one meaning only, e.g.
-// 'point{' is a record literal and 'show<' a generic call; a variable, a
-// parameter or a constant of that name hides the type or the function
+// what the next tokens are, decided before they are parsed: 'classify_term'
+// is the one place that tells what a name denotes where it is used; a name
+// followed by a character has one meaning only, e.g. 'point{' is a record
+// literal and 'show<' a generic call
 
+#include <algorithm>
+#include <cstdint>
 #include <string_view>
+
+#include "constant_parser.hpp"
 
 #include "toc.hpp"
 #include "token.hpp"
@@ -19,76 +23,11 @@
     return tc.scopes().lookup(name).is_value();
 }
 
-// e.g. 'show<name>(x)', a generic function name followed by '<' has no other
-// meaning
-[[nodiscard]] inline auto is_generic_call(const toc& tc,
-                                          const std::string_view name,
-                                          const tokenizer& tz) -> bool {
-
-    return tc.generics().has_func(name) and not is_hidden_by_value(tc, name) and
-           tz.peek_char_after_whitespace() == '<';
-}
-
-[[nodiscard]] inline auto is_type_name_followed_by(const toc& tc,
-                                                   const token& tk,
-                                                   const tokenizer& tz,
-                                                   const char next) -> bool {
-
-    return tc.types().has(tk.text()) and
-           not is_hidden_by_value(tc, tk.text()) and
-           tz.peek_char_after_whitespace() == next;
-}
-
-// e.g. 'i8[]{1, 2}' or 'point[]{{1, 2}}', a type name followed by '[' has no
-// other meaning
-[[nodiscard]] inline auto is_array_literal(const toc& tc, const token& tk,
-                                           const tokenizer& tz) -> bool {
-
-    return is_type_name_followed_by(tc, tk, tz, '[');
-}
-
 // e.g. '[]{1, 2}' has the default type, no expression starts with '['
 [[nodiscard]] inline auto is_default_array_literal(const tokenizer& tz)
     -> bool {
 
     return tz.peek_char_after_whitespace() == '[';
-}
-
-// e.g. 'point.at(1, 2)', a type name followed by '.' has no other meaning
-[[nodiscard]] inline auto is_constructor_call(const toc& tc, const token& tk,
-                                              const tokenizer& tz) -> bool {
-
-    return is_type_name_followed_by(tc, tk, tz, '.');
-}
-
-// e.g. 'point{1, 2}', a user type name followed by '{' has no other meaning
-[[nodiscard]] inline auto is_record_literal(const toc& tc, const token& tk,
-                                            const tokenizer& tz) -> bool {
-
-    if (not is_type_name_followed_by(tc, tk, tz, '{')) {
-        return false;
-    }
-
-    return not tc.get_type_or_throw(tk).is_builtin();
-}
-
-// e.g. 'point' in 'var p = point' is 'point{}', a user type name not followed
-// by '{', '[', '.' or '(' has no other meaning, e.g. 'point(3)' calls a
-// function named like the type
-[[nodiscard]] inline auto is_bare_record_type(const toc& tc, const token& tk,
-                                              const tokenizer& tz) -> bool {
-
-    if (not tc.types().has(tk.text()) or is_hidden_by_value(tc, tk.text())) {
-        return false;
-    }
-
-    if (tc.get_type_or_throw(tk).is_builtin()) {
-        return false;
-    }
-
-    const char next{tz.peek_char_after_whitespace()};
-
-    return next != '{' and next != '[' and next != '.' and next != '(';
 }
 
 // an operator follows, which would continue the expression, e.g. the '+' of
@@ -106,6 +45,213 @@
     return next_tk.is_text("and") or next_tk.is_text("or");
 }
 
+// '{}' follows, the zero value of a typed destination
+[[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
+    tokenizer probe{tz};
+
+    return not probe.is_next_char_token('{').is_empty() and
+           probe.peek_char_after_whitespace() == '}';
+}
+
+// what the token at the start of a value or a statement is, see
+// 'classify_term'
+enum class term_kind : uint8_t {
+    // no token, e.g. the end of the source or a delimiter
+    none,
+    // e.g. "abc"
+    string,
+    // e.g. '12', 'a', 'true'
+    literal,
+    // e.g. 'array_length' or 'read'
+    builtin_function,
+    // a built-in type followed by '(', e.g. 'i8(x)', only the integer types
+    // convert
+    conversion,
+    // a built-in type that is not converted or the element type of an array
+    // literal, e.g. the 'i8' of 'var x = i8'
+    builtin_type,
+    // a type followed by '[', e.g. 'i8[]{1, 2}'
+    array_literal,
+    // a user type followed by '{', e.g. 'point{1, 2}'
+    record_literal,
+    // a user type followed by '.', e.g. 'point.at(1, 2)'
+    constructor_call,
+    // a user type alone, e.g. the 'point' of 'var p = point'
+    record_type,
+    // a name followed by '(', e.g. 'f(x)' or 'point(3)'
+    call,
+    // a generic function followed by '<' or '(', e.g. 'show<i8>(x)'
+    generic_call,
+    // a variable, a parameter or a constant, e.g. 'x' of 'x + 1'
+    value,
+    // a function that is not called, e.g. 'f' of 'f + 1' or 'f<i8>' of a
+    // function that is not generic
+    function_name,
+    // a keyword where a value is expected, e.g. 'else' of 'x = else'
+    keyword,
+    // a name that names nothing here
+    unknown,
+};
+
+// what 'classify_term' found
+struct term {
+    term_kind kind{term_kind::none};
+    // the type of a type kind, e.g. 'i8' for a type parameter bound to it
+    const type* named_type{};
+
+    [[nodiscard]] auto is(const term_kind other) const -> bool {
+        return kind == other;
+    }
+
+    // a user or built-in type that is not converted, called or made an
+    // instance of by a constructor
+    [[nodiscard]] auto is_bare_type() const -> bool {
+        return kind == term_kind::builtin_type or
+               kind == term_kind::record_type;
+    }
+};
+
+// what 'tk', with 'tz' after it, denotes where a value or a statement starts:
+// the one place of the rules of hiding: a variable, a parameter or a constant
+// hides a user type and a generic function of its name, a call 'f(...)'
+// still calls the function; built-in types, built-in functions and keywords
+// are reserved names, nothing hides them
+[[nodiscard]] inline auto classify_term(const toc& tc, const token& tk,
+                                        const tokenizer& tz) -> term {
+
+    if (tk.is_string()) {
+        return {
+            .kind{term_kind::string},
+            .named_type{},
+        };
+    }
+
+    if (tk.is_none()) {
+        return {
+            .kind{term_kind::none},
+            .named_type{},
+        };
+    }
+
+    const std::string_view text{tk.text()};
+
+    if (tk.is_number() or constant_parser::is_character_literal(text) or
+        text == reserved_names::true_value or
+        text == reserved_names::false_value) {
+
+        return {
+            .kind{term_kind::literal},
+            .named_type{},
+        };
+    }
+
+    if (std::ranges::contains(reserved_names::builtin_functions, text)) {
+        return {
+            .kind{term_kind::builtin_function},
+            .named_type{},
+        };
+    }
+
+    const char next{tz.peek_char_after_whitespace()};
+
+    if (tc.types().has(text) and tc.types().get(text).is_builtin()) {
+        const type* const builtin{&tc.types().get(text)};
+
+        if (next == '(') {
+            return {
+                .kind{term_kind::conversion},
+                .named_type{builtin},
+            };
+        }
+
+        if (next == '[') {
+            return {
+                .kind{term_kind::array_literal},
+                .named_type{builtin},
+            };
+        }
+
+        return {
+            .kind{term_kind::builtin_type},
+            .named_type{builtin},
+        };
+    }
+
+    const bool is_hidden{is_hidden_by_value(tc, text)};
+
+    if (not is_hidden and tc.generics().has_func(text) and
+        (next == '<' or next == '(')) {
+
+        return {
+            .kind{term_kind::generic_call},
+            .named_type{},
+        };
+    }
+
+    if (next == '(') {
+        return {
+            .kind{term_kind::call},
+            .named_type{},
+        };
+    }
+
+    if (is_hidden) {
+        return {
+            .kind{term_kind::value},
+            .named_type{},
+        };
+    }
+
+    if (not tc.types().has(text)) {
+        if (tc.is_func(text)) {
+            return {
+                .kind{term_kind::function_name},
+                .named_type{},
+            };
+        }
+
+        if (std::ranges::contains(reserved_names::keywords, text)) {
+            return {
+                .kind{term_kind::keyword},
+                .named_type{},
+            };
+        }
+
+        return {
+            .kind{term_kind::unknown},
+            .named_type{},
+        };
+    }
+
+    const type* const named{&tc.types().get(text)};
+
+    if (next == '{') {
+        return {
+            .kind{term_kind::record_literal},
+            .named_type{named},
+        };
+    }
+
+    if (next == '[') {
+        return {
+            .kind{term_kind::array_literal},
+            .named_type{named},
+        };
+    }
+
+    if (next == '.') {
+        return {
+            .kind{term_kind::constructor_call},
+            .named_type{named},
+        };
+    }
+
+    return {
+        .kind{term_kind::record_type},
+        .named_type{named},
+    };
+}
+
 // a call of a generic function without type arguments is the whole value,
 // e.g. 'make()' of 'b = make()', its result type is that of the destination
 [[nodiscard]] inline auto is_whole_generic_call(const toc& tc,
@@ -114,8 +260,7 @@
     tokenizer probe{tz};
     const token tk{probe.next_token()};
 
-    if (not tk.is_word() or not tc.generics().has_func(tk.text()) or
-        is_hidden_by_value(tc, tk.text()) or
+    if (not classify_term(tc, tk, probe).is(term_kind::generic_call) or
         probe.is_next_char_token('(').is_empty()) {
 
         return false;
@@ -126,35 +271,11 @@
     return not continues_expression(probe);
 }
 
-// '{}' follows, the zero value of a typed destination
-[[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
-    tokenizer probe{tz};
-
-    return not probe.is_next_char_token('{').is_empty() and
-           probe.peek_char_after_whitespace() == '}';
-}
-
-// e.g. 'i8' or a type parameter bound to it, a '(' after it makes a conversion
-[[nodiscard]] inline auto names_integer_type(const toc& tc, const token& tk)
-    -> bool {
-
-    const type* const tp{tc.builtin_value_type_named(tk)};
-    return tp != nullptr and not tp->is_bool();
-}
-
 // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
-// a builtin type name not followed by '(' or '[' has no other meaning
+// 'i8 + 1' or 'bool and true' continue an expression
 [[nodiscard]] inline auto is_bare_builtin_type(const toc& tc, const token& tk,
                                                const tokenizer& tz) -> bool {
 
-    if (tc.builtin_value_type_named(tk) == nullptr or
-        is_hidden_by_value(tc, tk.text())) {
-
-        return false;
-    }
-
-    const char next{tz.peek_char_after_whitespace()};
-
-    // e.g. 'i8 + 1' or 'bool and true' continue an expression
-    return next != '(' and next != '[' and not continues_expression(tz);
+    return classify_term(tc, tk, tz).is(term_kind::builtin_type) and
+           not continues_expression(tz);
 }

@@ -2112,14 +2112,27 @@ class ident_resolver final {
                                           folded_value::untyped(*value));
         }
 
-        if (id.base() == reserved_names::true_value) {
-            return ident_info::make_const(ident, builtins_.get().boolean(),
-                                          folded_value::untyped(1));
+        const bool is_bool_literal{
+            id.base() == reserved_names::true_value or
+                id.base() == reserved_names::false_value,
+        };
+
+        // e.g. '1.x' or 'true.x'; note: a character literal may hold a '.',
+        //       it was parsed whole above
+        if (id.path().size() > 1 and
+            (is_bool_literal or starts_number(id.base()))) {
+
+            throw compile_error{
+                src_loc_tk,
+                std::format("{} is a constant, it has no field {}",
+                            in_quotes(id.base()), in_quotes(id.path().at(1)))};
         }
 
-        if (id.base() == reserved_names::false_value) {
-            return ident_info::make_const(ident, builtins_.get().boolean(),
-                                          folded_value::untyped(0));
+        if (is_bool_literal) {
+            return ident_info::make_const(
+                ident, builtins_.get().boolean(),
+                folded_value::untyped(
+                    id.base() == reserved_names::true_value ? 1 : 0));
         }
 
         return ident_info::make_empty();

@@ -1,0 +1,4 @@
+
+1602.baz:3:15: '1' is a constant, it has no field 'x'
+    var x = 1.x
+              ^

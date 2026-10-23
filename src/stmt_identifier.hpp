@@ -582,6 +582,50 @@ class stmt_identifier final : public statement {
         flow.assign(accessed_bytes_);
     }
 
+    //
+    // statics
+    //
+
+    // the array of a built-in, e.g. the 'a' of 'array_length(a)' or of
+    // 'foo a', is a variable, a field or an element; a call, a type or a
+    // function has none
+    [[nodiscard]] static auto parse_array_argument(toc& tc, tokenizer& tz)
+        -> stmt_identifier {
+
+        const token tk{tz.next_token()};
+        const term tm{classify_term(tc, tk, tz)};
+
+        if (tm.is_bare_type() or tm.is(term_kind::array_literal) or
+            tm.is(term_kind::record_literal)) {
+
+            throw compile_error{
+                tk, std::format("{} is a type, not an array", in_quotes(tk))};
+        }
+
+        if (tm.is(term_kind::call) or tm.is(term_kind::generic_call) or
+            tm.is(term_kind::conversion) or
+            tm.is(term_kind::builtin_function) or
+            tm.is(term_kind::constructor_call)) {
+
+            throw compile_error{
+                tk, std::format("a call of {} is not an array, store its "
+                                "result in a variable first",
+                                in_quotes(tk))};
+        }
+
+        if (tm.is(term_kind::function_name)) {
+            throw compile_error{tk, std::format("{} is a function, not an "
+                                                "array",
+                                                in_quotes(tk))};
+        }
+
+        stmt_identifier array{tc, {}, tk, tz};
+
+        array.assert_not_method();
+
+        return array;
+    }
+
   private:
     // only signed types exist so a constant must fit the signed range
     auto assert_constant_fits(const ident_info& info,
@@ -728,8 +772,10 @@ class stmt_identifier final : public statement {
 
         // a method and a field may share a name, only the call has '(' or the
         // type arguments of a generic method
-        if (tz.peek_char_after_whitespace() == '(' or
-            is_generic_call(tc, method_name, tz)) {
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == '(' or
+            (next == '<' and tc.generics().has_func(method_name))) {
 
             return true;
         }

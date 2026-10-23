@@ -27,6 +27,7 @@
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "parse_lookahead.hpp"
 #include "stmt_def_func.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
@@ -143,26 +144,28 @@ struct generic_call {
         }
 
         const token tk{tz.next_token()};
-        const name_meaning meaning{tc.scopes().lookup(tk.text())};
-
-        // note: a constant does not tell its type, like a literal
-        if (meaning.is_constant()) {
-            return nullptr;
-        }
+        const term tm{classify_term(tc, tk, tz)};
 
         // e.g. 'show(nope)', an unknown name is reported as such, not as a
-        // type that cannot be deduced, and 'show(nope(1))' as a function
-        if (is_unknown_name(tc, tk)) {
-            if (tz.peek_char_after_whitespace() == '(') {
-                std::ignore = tc.get_func_return_type_or_throw(tk, tk.text());
-            }
-
+        // type that cannot be deduced
+        if (tm.is(term_kind::unknown)) {
             std::ignore = tc.make_ident_info(tk, tk.text());
         }
 
-        // e.g. 'point{1, 2}', a variable or a parameter hides the type
-        if (not meaning.is_var_or_binding()) {
-            return value_type(tc, tz, tk);
+        // e.g. 'show(nope(1))', reported as an unknown function
+        if (tm.is(term_kind::call) and not tc.is_func(tk.text()) and
+            not tc.types().has(tk.text())) {
+
+            std::ignore = tc.get_func_return_type_or_throw(tk, tk.text());
+        }
+
+        // note: a constant does not tell its type, like a literal
+        if (tc.scopes().lookup(tk.text()).is_constant()) {
+            return nullptr;
+        }
+
+        if (not tm.is(term_kind::value)) {
+            return value_type(tc, tz, tk, tm);
         }
 
         // note: read from the copy to find where the argument ends and its
@@ -255,32 +258,6 @@ struct generic_call {
         return deduced;
     }
 
-    // a name that names nothing: no value, type or function, no keyword or
-    // built-in; a number or a character literal is not a name
-    [[nodiscard]] static auto is_unknown_name(const toc& tc, const token& tk)
-        -> bool {
-
-        const std::string_view text{tk.text()};
-
-        if (not tk.is_word()) {
-            return false;
-        }
-
-        const char first{text.front()};
-
-        if (std::isalpha(static_cast<unsigned char>(first)) == 0 and
-            first != '_') {
-
-            return false;
-        }
-
-        return not tc.scopes().lookup(text).is_value() and
-               not tc.types().has(text) and not tc.is_func(text) and
-               not std::ranges::contains(reserved_names::keywords, text) and
-               not std::ranges::contains(reserved_names::builtin_functions,
-                                         text);
-    }
-
     // moves 'tz' from after the '(' to the argument at 'index', false when the
     // list ends before it
     [[nodiscard]] static auto skip_to_argument(tokenizer& tz,
@@ -301,23 +278,24 @@ struct generic_call {
     // function that is the whole argument, 'tk' is its first token and 'tz' is
     // after it
     [[nodiscard]] static auto value_type(toc& tc, tokenizer& tz,
-                                         const token& tk) -> const type* {
+                                         const token& tk, const term& tm)
+        -> const type* {
 
         const auto is_whole_argument = [&] -> bool {
             const char next{tz.peek_char_after_whitespace()};
             return next == ',' or next == ')';
         };
 
-        const bool is_type{tc.types().has(tk.text())};
-
         // e.g. 'point{1, 2}'
-        if (is_type and tz.peek_char_after_whitespace() == '{') {
+        if (tm.is(term_kind::record_literal)) {
             tz.skip_braced_block();
             return is_whole_argument() ? &tc.get_type_or_throw(tk) : nullptr;
         }
 
         // e.g. 'point.at(1, 2)'
-        if (is_type and not tz.is_next_char_token('.').is_empty()) {
+        if (tm.is(term_kind::constructor_call)) {
+            std::ignore = tz.is_next_char_token('.');
+
             // the type names the result, the constructor, e.g. 'at', does not
             std::ignore = tz.next_token();
 
@@ -345,12 +323,11 @@ struct generic_call {
 
         // e.g. 'mk(1, 2)', a generic function has no return type before it is
         // instantiated
-        if (not tc.is_func(tk.text()) or tc.generics().has_func(tk.text()) or
-            tz.is_next_char_token('(').is_empty()) {
-
+        if (not tm.is(term_kind::call) or not tc.funcs().has(tk.text())) {
             return nullptr;
         }
 
+        std::ignore = tz.is_next_char_token('(');
         tz.skip_to_close_paren();
 
         const type& return_type{
@@ -2016,6 +1993,17 @@ class stmt_call : public expression {
               std::format("{}.{}", receiver.get_type().name(),
                           receiver.method_name_token().text()),
           } {
+
+        // e.g. 'p.get<i8>()' where 'get' is not generic, the '<' is not an
+        // operator after a method name
+        if (not tc.generics().has_func(func_name_) and
+            tz.peek_char_after_whitespace() == '<') {
+
+            throw compile_error{
+                tok(), std::format("method {} is not generic, it takes no "
+                                   "type arguments",
+                                   in_quotes(func_name_))};
+        }
 
         const std::vector<size_t> deducing_args{
             read_generic_callee(tc, tz, expected_type),

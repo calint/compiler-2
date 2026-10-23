@@ -1,0 +1,13 @@
+# a method that is not generic takes no type arguments
+type pt {
+    x i8,
+}
+
+func pt.get() res i8 {
+    res = self.x
+}
+
+func main() {
+    var p = pt{1}
+    var x = p.get<i8>()
+}

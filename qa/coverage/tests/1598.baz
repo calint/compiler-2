@@ -1,0 +1,6 @@
+# a built-in type is a type, not a value, also before a '{'
+func main() {
+    var v = 1
+    if v == int {
+    }
+}

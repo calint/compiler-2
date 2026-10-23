@@ -37,8 +37,7 @@ class stmt_builtin_array_length final : public expression {
             throw compile_error{tz, "expected '(' followed by an identifier"};
         }
 
-        stmt_ident_ = {tc, {}, tz.next_token(), tz};
-        stmt_ident_.assert_not_method();
+        stmt_ident_ = stmt_identifier::parse_array_argument(tc, tz);
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the argument");

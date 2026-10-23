@@ -35,9 +35,7 @@ class stmt_builtin_foo final : public statement {
 
         set_type(tc.builtins().void_type());
 
-        ident_ = {tc, {}, tz.next_token(), tz};
-
-        ident_.assert_not_method();
+        ident_ = stmt_identifier::parse_array_argument(tc, tz);
 
         if (not ident_.is_array()) {
             throw compile_error{

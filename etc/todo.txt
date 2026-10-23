@@ -109,6 +109,24 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                that asks the same kind
             => rejected: more predicates in 'parse_lookahead.hpp', the
                current structure
+            => done (2026-10-23): 'classify_term(tc, tk, tz) -> term' in
+               'parse_lookahead.hpp' (it needs the character after the
+               name, so not in 'toc'): one 'term_kind' per form (literal,
+               built-in function, conversion, built-in type, array literal,
+               record literal, constructor call, record type, call, generic
+               call, value, function name, keyword, unknown); the expression
+               operand, the statement start, the destination literals, the
+               deduction lookahead and the arrays of the built-ins
+               ('stmt_identifier::parse_array_argument') read it; the
+               predicates 'is_generic_call', 'is_type_name_followed_by',
+               'is_array_literal', 'is_constructor_call',
+               'is_record_literal', 'is_bare_record_type',
+               'names_integer_type' and 'stmt_call::is_unknown_name' gone;
+               fixed F-3, C-5, G-6 (a method takes no type arguments, its
+               own check in the method call), F-2 (a literal with a path is
+               rejected in 'resolve_literal_or_empty'); G-3 holds without
+               its point fix; F-4 moves to 4.3, whose parse of the size as
+               an expression classifies the name; tests 1598-1603
        4.3. array sizes through 'fold' (residual of class K, about 5 bugs):
             'stmt_const' is a second evaluator with its own unary ops and a
             literal or name only (R7 F-2, R9 F-2, R10 F-2, R12 F-4)

@@ -43,11 +43,12 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     set_type(tp);
 
-    const bool is_bare{is_bare_record_type(tc, tok(), tz)};
+    const term tm{classify_term(tc, tok(), tz)};
+    const bool is_bare{tm.is(term_kind::record_type)};
 
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
-    const bool is_typed_literal{is_record_literal(tc, tok(), tz) or is_bare};
+    const bool is_typed_literal{tm.is(term_kind::record_literal) or is_bare};
 
     // an array is copied from an array, a value of its element type is not one
     if (is_array_destination_ and is_typed_literal) {

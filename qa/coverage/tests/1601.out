@@ -1,0 +1,4 @@
+
+1601.baz:5:9: 'f' is a function, not an array
+    foo f {
+        ^

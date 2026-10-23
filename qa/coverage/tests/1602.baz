@@ -1,0 +1,4 @@
+# a number has no field
+func main() {
+    var x = 1.x
+}

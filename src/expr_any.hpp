@@ -657,7 +657,10 @@ class expr_any final : public statement {
                             const literal_typing typing) -> void {
 
         const token tk{tz.next_token()};
-        const bool is_typed{is_array_literal(tc, tk, tz)};
+
+        const bool is_typed{
+            classify_term(tc, tk, tz).is(term_kind::array_literal),
+        };
 
         if (not is_typed) {
             tz.put_back_token(tk);

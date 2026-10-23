@@ -1,0 +1,4 @@
+
+1598.baz:4:13: 'int' is a type, not a value
+    if v == int {
+            ^~~

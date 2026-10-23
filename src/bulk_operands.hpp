@@ -55,7 +55,7 @@ class bulk_operands final {
                             in_quotes(first_role_), in_quotes(second_role_))};
         }
 
-        first_ = {tc, {}, tz.next_token(), tz};
+        first_ = stmt_identifier::parse_array_argument(tc, tz);
 
         first_.assert_array_or_element();
 
@@ -63,7 +63,7 @@ class bulk_operands final {
             ',', std::format("expected ',' followed by {} and 'count'",
                              in_quotes(second_role_)));
 
-        second_ = {tc, {}, tz.next_token(), tz};
+        second_ = stmt_identifier::parse_array_argument(tc, tz);
 
         second_.assert_array_or_element();
 

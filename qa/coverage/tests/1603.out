@@ -1,0 +1,4 @@
+
+1603.baz:12:15: method 'pt.get' is not generic, it takes no type arguments
+    var x = p.get<i8>()
+              ^~~
