@@ -1,16 +1,16 @@
 
 0840.baz:10:21: out of scratch registers, simplify the expression
-    res = a + (b + (c + (d + (e + (f + (v[1]))))))
+    res = a + (b + (c + (d + (e + (f + v[1])))))
                     ^
-0840.baz:19:36: called from 'leaf(v)'
-    res = a + (b + (c + (d + (e + (leaf(v))))))
-                                   ^~~~
-0840.baz:27:31: called from 'middle(v)'
-    res = a + (b + (c + (d + (middle(v)))))
-                              ^~~~~~
-0840.baz:36:38: called from 'top(v)'
-    var q = int(w) + (x + (y + (z + (top(v)))))
-                                     ^~~
+0840.baz:19:35: called from 'leaf(v)'
+    res = a + (b + (c + (d + (e + leaf(v)))))
+                                  ^~~~
+0840.baz:27:30: called from 'middle(v)'
+    res = a + (b + (c + (d + middle(v))))
+                             ^~~~~~
+0840.baz:36:37: called from 'top(v)'
+    var q = int(w) + (x + (y + (z + top(v))))
+                                    ^~~
 
 register use at the failure: 14 of 14 registers live
 
@@ -19,19 +19,19 @@ register use at the failure: 14 of 14 registers live
           r15 36:23
           r14 36:28
           r13 36:33
-          r12 36:38
-     4  top called at 36:38
+          r12 36:37
+     4  top called at 36:37
           r10 27:16
           r9 27:21
           r8 27:26
-          r11 27:31
-     5  middle called at 27:31
+          r11 27:30
+     5  middle called at 27:30
           rbx 19:16
           rdx 19:21
           rax 19:26
           rsi 19:31
-          rdi 19:36
-     1  leaf called at 19:36
+          rdi 19:35
+     1  leaf called at 19:35
           rcx 10:16
 
 these frames are not noinline, making one noinline starts its body with all 13

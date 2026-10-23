@@ -6,7 +6,7 @@ func wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
     var d = 4
     var e = 5
     var f = 6
-    res = a + (b + (c + (d + (e + (f + (v[1]))))))
+    res = a + (b + (c + (d + (e + (f + v[1])))))
 }
 
 func middle(v i32[]) res {
@@ -15,7 +15,7 @@ func middle(v i32[]) res {
     var c = 3
     var d = 4
     var e = 5
-    res = a + (b + (c + (d + (e + (wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf(v))))))
+    res = a + (b + (c + (d + (e + wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww_leaf(v)))))
 }
 
 func top(v i32[]) res {
@@ -23,7 +23,7 @@ func top(v i32[]) res {
     var b = 2
     var c = 3
     var d = 4
-    res = a + (b + (c + (d + (middle(v)))))
+    res = a + (b + (c + (d + middle(v))))
 }
 
 func main() {
@@ -32,6 +32,6 @@ func main() {
     var x = v[1]
     var y = v[2]
     var z = v[3]
-    var q = int(w) + (x + (y + (z + (top(v)))))
+    var q = int(w) + (x + (y + (z + top(v))))
     exit(0)
 }

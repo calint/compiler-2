@@ -1,0 +1,4 @@
+
+1620.baz:4:13: parentheses around a single value group nothing, write 'x'
+    var y = (x)
+            ^

@@ -1,0 +1,4 @@
+
+1622.baz:4:17: parentheses around a single value group nothing, write '(x + 1)'
+    var y = 2 * ((x + 1))
+                ^

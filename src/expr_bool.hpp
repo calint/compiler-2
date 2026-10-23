@@ -1127,6 +1127,7 @@ class expr_bool final : public statement {
         assert(not open_paren_tk_.is_empty());
 
         parse_list(tc, tz);
+        assert_parentheses_group();
     }
 
     expr_bool() = default;
@@ -1305,7 +1306,7 @@ class expr_bool final : public statement {
     }
 
     // the operand when the whole expression is a name or a literal, e.g. 'x'
-    // but not '(x)' or 'not x', else none and the expression is unchanged
+    // but not 'not x', else none and the expression is unchanged
     [[nodiscard]] auto release_name_or_literal() -> std::optional<expr_arith> {
         if (bools_.size() != 1 or has_not()) {
             return std::nullopt;
@@ -1329,6 +1330,38 @@ class expr_bool final : public statement {
     }
 
   private:
+    // parentheses group a connective, a comparison or a 'not', around one
+    // plain condition they mean nothing, e.g. '(flag)' is 'flag' and
+    // '((a or b))' is '(a or b)'
+    auto assert_parentheses_group() const -> void {
+        if (bools_.size() != 1) {
+            return;
+        }
+
+        const element& only{bools_.front()};
+
+        if (const expr_bool_op* const op{std::get_if<expr_bool_op>(&only)}) {
+            const expr_arith* const arith{op->arithmetic()};
+
+            if (arith == nullptr or not arith->is_one_plain_element()) {
+                return;
+            }
+        } else if (std::get<expr_bool>(only).has_not()) {
+            return;
+        }
+
+        const statement& value{
+            *only.visit(
+                [](const statement& e) -> const statement* { return &e; }),
+        };
+
+        throw compile_error{
+            open_paren_tk_,
+            std::format("parentheses around a single value group nothing, "
+                        "write {}",
+                        in_quotes(statement::trimmed_source(value)))};
+    }
+
     // e.g. 'a or b and c' is rejected, '(a or b) and c' is not
     auto assert_same_connective(const token& op_tk) const -> void {
         if (ops_.empty() or ops_.front().is_text(op_tk.text())) {

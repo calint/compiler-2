@@ -1,4 +1,4 @@
-# a value in parentheses is a number, not an array
+# parentheses around an array that is copied group nothing
 func main() {
     var a = i8[4]
     var x = (a)

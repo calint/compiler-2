@@ -1,0 +1,6 @@
+# parentheses around a single name group nothing
+func main() {
+    var x = 1
+    var y = (x)
+    exit(y)
+}

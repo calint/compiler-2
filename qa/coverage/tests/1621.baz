@@ -1,0 +1,7 @@
+# parentheses after a unary operator around a single name group nothing,
+# the operator applies to the name
+func main() {
+    var x = 1
+    var y = -(x)
+    exit(y)
+}

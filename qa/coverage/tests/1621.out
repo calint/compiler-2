@@ -1,0 +1,4 @@
+
+1621.baz:5:14: parentheses around a single value group nothing, write 'x'
+    var y = -(x)
+             ^

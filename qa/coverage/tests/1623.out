@@ -1,0 +1,4 @@
+
+1623.baz:7:10: parentheses around a single value group nothing, write 'f()'
+    exit((f()))
+         ^

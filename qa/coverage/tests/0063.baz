@@ -27,5 +27,5 @@ func main(){
     if 2 <= 1 exit(17)
 
     if 1 > 2 or not (x < y) exit(18)
-    if false or not (true) exit(19)
+    if false or not true exit(19)
 }

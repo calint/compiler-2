@@ -1,0 +1,7 @@
+# parentheses around a single condition group nothing
+func main() {
+    var b = true
+    if (b) {
+        exit(1)
+    }
+}

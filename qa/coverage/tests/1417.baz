@@ -1,4 +1,4 @@
-# an instance in parentheses is compared as memory
+# parentheses around an instance group nothing
 
 type point {x, y}
 

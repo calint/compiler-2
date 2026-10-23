@@ -532,7 +532,7 @@ class statement {
         return is_indexed() or info.is_address_computed();
     }
 
-    // a name or a literal read in place, e.g. 'x' or '(x)', not '-x' or '-(x)'
+    // a name or a literal read in place, e.g. 'x', not '-x'
     [[nodiscard]] auto is_bare_name_or_literal() const -> bool {
         return is_name_or_literal() and not is_expression() and
                get_unary_ops().is_empty();

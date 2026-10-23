@@ -1,5 +1,5 @@
 # a buffer with an operator is not an array, also when it names a 'let'
 func main() {
     let c = i8[4]
-    var n = read(0, -(c))
+    var n = read(0, -c)
 }

@@ -1,5 +1,5 @@
 # a parenthesized integer as a condition is rejected
 func main() {
     var n = i32(1)
-    if n == 2 or (n) exit(2)
+    if n == 2 or (n + 0) exit(2)
 }

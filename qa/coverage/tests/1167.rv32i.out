@@ -1,6 +1,6 @@
 
 1167.baz:6:158: out of scratch registers, simplify the expression
-    var b = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a))))))))))))))))))))))))))))))
+    var b = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + a)))))))))))))))))))))))))))))
                                                                                                                                                              ^
 1167.baz:11:5: called from
     f()

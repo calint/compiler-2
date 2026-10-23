@@ -1,0 +1,8 @@
+# parentheses around a single call group nothing
+func f() res {
+    res = 1
+}
+
+func main() {
+    exit((f()))
+}

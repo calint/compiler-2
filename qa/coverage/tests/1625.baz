@@ -1,0 +1,7 @@
+# parentheses after a 'not' around a single condition group nothing
+func main() {
+    var b = true
+    if not (b) {
+        exit(1)
+    }
+}

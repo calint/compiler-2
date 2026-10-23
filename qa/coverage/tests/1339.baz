@@ -1,23 +1,24 @@
-# a call in parentheses in a conversion to a wider type widens like any operand
+# a call in a conversion to a wider type widens like any operand, also
+# negated or complemented
 func g(x i8) res i8 {
     res = x
 }
 
 func main() {
     var v = i8(-128)
-    var a = i16((g(v)))
+    var a = i16(g(v))
     if a != -128 {
         exit(1)
     }
-    var b = i16(-(g(v)))
+    var b = i16(-g(v))
     if b != 128 {
         exit(2)
     }
-    var c = i16(~(g(v)))
+    var c = i16(~g(v))
     if c != 127 {
         exit(3)
     }
-    var d = int((g(v)))
+    var d = int(g(v))
     if d != -128 {
         exit(4)
     }

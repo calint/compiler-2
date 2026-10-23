@@ -19,7 +19,7 @@ func main() {
     source[63] = 64
     var target = i8[64]
 
-    var sum = a + (b + (c + (d + (e + (f + (g + (h + (i + (copy64(source, target))))))))))
+    var sum = a + (b + (c + (d + (e + (f + (g + (h + (i + copy64(source, target)))))))))
     if sum != 46 exit(1)
     if target[0] != 1 exit(2)
     if target[63] != 64 exit(3)

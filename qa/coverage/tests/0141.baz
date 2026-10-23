@@ -11,8 +11,8 @@ func main() {
     if not false assert(true) else assert(false)
     if false and false assert(false)
     if true and true assert(true) else assert(false)
-    if not (true) assert(false)
-    if not (false)  assert(true) else assert(false)
+    if not true assert(false)
+    if not false  assert(true) else assert(false)
     if not (true and false) assert(true) else assert(false)
     if not (false or true)  assert(false)
 

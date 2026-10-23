@@ -340,6 +340,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             => design: that item's 'constant_result' at parse time plus
                'statement::always_leaves()', read by 'trace_assignment' and
                by the block compile, which stops after it
+            => unsafe as written (2026-10-23): asked after the compile of a
+               statement, 'always_leaves(tc)' resolves names of inner blocks
+               in the outer scope, e.g. 'if c { var n = 5  if n == 0 return
+               }' in an inlined 'f(0)' with parameter 'n' would skip code
+               that runs; design B: one reachability class (a path ends,
+               branches merge, a loop reopens) driven by 'trace_assignment'
+               with parse-time constants and by the compile with what each
+               branch emitted; one chain rule in 'stmt_if'; the compile
+               asserts a parse-time result
+            => moved after 4.10 (2026-10-23): class R only rejects too much,
+               no undefined behavior; 4.7, 4.8 and 4.10 have miscompiles
        4.7. one place view (class P, about 15 bugs, 2 miscompiles): "is this
             node storage read or passed in place" is decided by combined
             predicates that ignore part of the syntax: 'is_name_or_literal'
@@ -358,6 +369,63 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                'place'; a node with ops cannot produce one
             => check first: 'as_identifier' (2026-10-19) stopped because
                'identifier' also serves constants; a place excludes them
+            => state (2026-10-23): about 40 sites ask "storage in place"
+               through 'is_name_or_literal', 'is_bare_name_or_literal',
+               'is_expression' plus unary ops, 'is_computed_value' and
+               'is_copied_value'; they disagree: '(x)' is the variable for
+               'read', 'write', an instance comparison, a 'mut' argument
+               ('g((a))' writes 'a') and an unsized array argument, but
+               "expected an identifier" for 'array_copy', 'array_length',
+               'arrays_equal' and "a value in parentheses is a number" for
+               an instance argument and an array copy; 'g(-a)' to 'mut' is
+               rejected; a constant passes each predicate and each site
+               adds its own 'is_var' check
+            => decided (user, 2026-10-23): parentheses that group nothing
+               are an error, "parentheses around a single value group
+               nothing, write 'x'"; '(x + 1)' around a whole value stays
+               allowed; so '(x)' never reaches a site
+            => 4.7.0 done (2026-10-23): 'expr_arith::assert_parentheses_group'
+               at the ')' of an enclosed list with one element without unary
+               ops ('is_first_plain_' recorded at the parse);
+               'expr_bool::assert_parentheses_group' for one condition
+               without a comparison, a 'not' or a connective; 30 tests
+               rewritten without the redundant parentheses or aimed at the
+               new error (1417, 1418, 1501), their code unchanged where the
+               parentheses were incidental; constant conditions such as
+               '(true)' now fold, 1 to 9 instructions less in 0063-0459;
+               tests 1620-1627; the tutorial says so
+            => design:
+               1. syntax: one virtual 'statement::place_path() const ->
+                  const stmt_identifier*', the identifier a node is when it
+                  is a bare place: 'stmt_identifier' itself unless it is a
+                  literal or a method path; 'expr_any', 'expr_arith' (one
+                  element, no unary ops, not enclosed), 'expr_bool' (a
+                  shorthand of one name) and 'expr_type' (a copy) forward;
+                  null for every other node
+               2. meaning: 'as_place(const toc&) -> std::optional<place>',
+                  'place' {the identifier, its 'ident_info'}, empty unless
+                  the name resolves to a variable, so a constant or a
+                  literal is never a place
+               3. every by-reference site asks 'as_place': call arguments
+                  ('argument_target', the binding of 'mut' and arrays,
+                  'is_instance_temporary'), 'read', 'write', the sector
+                  buffers, 'array_copy', 'array_length', 'arrays_equal',
+                  'foo', instance and array comparison sides, the copy of
+                  an instance or an array; one message per kind where a
+                  place is required ("'-a' is not a variable, ...")
+               4. remove 'is_bare_name_or_literal', 'is_computed_value',
+                  'is_copied_value' and the 'is_var' checks after them;
+                  'is_name_or_literal' and 'name_or_literal' stay only for
+                  the value sites (the operand of arithmetic, constants,
+                  messages) or go where 'as_place' covers them
+            => steps: tests of each form first ('(x)', '-x', a constant, a
+               literal, a method path, a call) at each site; a mechanical
+               step adding 'place_path' with an assert that it agrees with
+               the old predicates where they agree; then the sites one
+               file at a time, each a behavior step where a verdict changes
+            => invariant: storage is read or passed in place only through a
+               'place', and every site gives the same verdict for a form
+            => rejected: a fix per site (the history: 15 bugs in 9 rounds)
        4.8. one argument plan (class A, about 10 bugs, inline and noinline
             verdicts differ): argument passing is decided by 'bind_argument'
             (inline) and by 'assert_argument', 'call_kind' and the

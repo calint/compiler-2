@@ -121,6 +121,13 @@ skipped reading most of it.
 
 I told it to refactor so that whole classes of bugs should be impossible.
 
+### From exuberance to doubt
+
+For a while, seeing no end to the bug reports from using the language in ways
+which was not though of but allowed, I asked AI if it is easier to start from an
+empty directory using current code and tests as a specification and rewriting it
+all.
+
 ### The sense of losing touch with the code
 
 The pre-AI code and structure are still visible as the skeleton of the project.

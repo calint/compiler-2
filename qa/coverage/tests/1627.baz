@@ -1,0 +1,13 @@
+# parentheses group an operation: a unary operator, a binary operator, a
+# comparison, a 'not' or a connective, also around a whole value
+func main() {
+    var x = 2
+    var b = true
+    var c = false
+    var y = (-x) + -(x + 1) + (x * 3)
+    if (not b) or (x == 1) or (b and c) {
+        exit(1)
+    }
+    var z = (x + 1)
+    exit(y + z)
+}

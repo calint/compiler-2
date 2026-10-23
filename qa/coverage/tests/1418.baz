@@ -1,10 +1,10 @@
-# an array in parentheses is compared as memory, an element as a number
+# parentheses around an array group nothing
 
 func main() {
     var a = i8[2]
     var b = i8[2]
     b[1] = 2
-    if (a[1]) != b[1] and not ((a) == b) {
+    if not ((a) == b) {
         exit(1)
     }
 }

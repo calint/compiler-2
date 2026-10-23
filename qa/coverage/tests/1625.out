@@ -1,0 +1,4 @@
+
+1625.baz:4:12: parentheses around a single value group nothing, write 'b'
+    if not (b) {
+           ^

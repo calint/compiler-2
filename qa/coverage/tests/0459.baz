@@ -1,12 +1,12 @@
-# negated parenthesized constants are expressions
+# negated constants are expressions
 func assert(ok bool) { if not ok exit(1) }
 func main() {
-    var a = not (true)
+    var a = not (true == true)
     assert(not a)
-    var b = not (false)
+    var b = not false
     assert(b)
-    var c = not ((true))
+    var c = not true
     assert(not c)
-    var d = not (not (true))
+    var d = not (not true)
     assert(d)
 }

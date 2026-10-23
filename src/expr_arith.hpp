@@ -68,6 +68,11 @@ class expr_arith final : public expression {
     // elements, or a zero value, e.g. '{}', which is never enclosed
     bool is_first_enclosed_{};
 
+    // the first element has no unary op of its own, before it or before its
+    // '(', e.g. 'x', 'f(x)' or '(a + b)', not '-x' or '-(a + b)'; false for a
+    // first element given by the caller, see 'is_first_enclosed_'
+    bool is_first_plain_{};
+
     // an operation of the list being folded: an element, or merged constants
     // when 'element' is null
     struct step {
@@ -81,6 +86,8 @@ class expr_arith final : public expression {
     struct parsed_element {
         std::unique_ptr<statement> node;
         bool is_enclosed{};
+        // the element has unary ops, e.g. '-a' or '-(a + b)'
+        bool has_unary_ops{};
     };
 
     static constexpr uint8_t precedence_additive_{1};
@@ -142,6 +149,7 @@ class expr_arith final : public expression {
         } else {
             parsed_element first{parse_element(tc, tz, destination_type_)};
             is_first_enclosed_ = first.is_enclosed;
+            is_first_plain_ = not first.has_unary_ops;
             exprs_.emplace_back(std::move(first.node));
         }
 
@@ -157,6 +165,7 @@ class expr_arith final : public expression {
             // a sub-expression is closed by its ')'
             // e.g. '(a + b)'
             if (is_closed(tz)) {
+                assert_parentheses_group();
                 validate_arithmetic_operands(tc);
                 return;
             }
@@ -406,7 +415,7 @@ class expr_arith final : public expression {
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
-        // unary operators apply to the computed list, e.g. '-(a)'
+        // unary operators apply to the computed list, e.g. '-(a + b)'
         if (not uops_.is_empty()) {
             return true;
         }
@@ -537,6 +546,12 @@ class expr_arith final : public expression {
         assert(is_name_or_literal());
 
         return *exprs_.front();
+    }
+
+    // one element without a unary op of its own, which parentheses would not
+    // group, e.g. 'x', 'f(x)' or '(a + b)', not '-x' or '-(a + b)'
+    [[nodiscard]] auto is_one_plain_element() const -> bool {
+        return exprs_.size() == 1 and is_first_plain_;
     }
 
     // e.g. 'flag', 'p', 'f(x)' or '-i32(x)', a parenthesized list is
@@ -674,6 +689,20 @@ class expr_arith final : public expression {
         }
 
         x.bitwise(tok(), indent, op, dst.operand(), constant);
+    }
+
+    // parentheses group an operation, around one plain element they mean
+    // nothing, e.g. '(x)' is 'x' and '-(x)' is '-x'
+    auto assert_parentheses_group() const -> void {
+        if (not is_one_plain_element()) {
+            return;
+        }
+
+        throw compile_error{
+            open_paren_tk_,
+            std::format("parentheses around a single value group nothing, "
+                        "write {}",
+                        in_quotes(statement::trimmed_source(*exprs_.front())))};
     }
 
     // a narrow memory destination truncates when stored, which gives the same
@@ -1009,7 +1038,7 @@ class expr_arith final : public expression {
     }
 
     // the elements are operands of the operators of the list or of its unary
-    // ops, e.g. '-(a)'
+    // ops, e.g. '-(a + b)'
     auto validate_arithmetic_operands(const toc& tc) const -> void {
         if (ops_.empty() and uops_.is_empty()) {
             return;
@@ -1733,6 +1762,8 @@ class expr_arith final : public expression {
         if (const token open_paren_tk{tz.is_next_char_token('(')};
             not open_paren_tk.is_empty()) {
 
+            const bool has_unary_ops{not uo.is_empty()};
+
             std::unique_ptr<statement> enclosed{
                 std::make_unique<expr_arith>(
                     tc, tz,
@@ -1749,6 +1780,7 @@ class expr_arith final : public expression {
             return {
                 .node{std::move(enclosed)},
                 .is_enclosed{true},
+                .has_unary_ops{has_unary_ops},
             };
         }
 
@@ -1763,9 +1795,13 @@ class expr_arith final : public expression {
             assert_number(tc, *element);
         }
 
+        // note: the element read the unary ops that 'uo' saw and put back
+        const bool has_unary_ops{not uo.is_empty()};
+
         return {
             .node{std::move(element)},
             .is_enclosed{},
+            .has_unary_ops{has_unary_ops},
         };
     }
 

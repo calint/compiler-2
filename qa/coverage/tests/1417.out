@@ -1,0 +1,4 @@
+
+1417.baz:8:8: parentheses around a single value group nothing, write 'p'
+    if (p) == ((q)) {
+       ^

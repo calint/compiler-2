@@ -3,8 +3,8 @@ func assert(expr bool) { if not expr exit(1) }
 func main() {
     # test last element in a expr_bool when constant evaluated
     
-    if (false and true) or (true) assert(true) else assert(false)
-    if (false or true) and (false) assert(false) else assert(true)
+    if (false and true) or true assert(true) else assert(false)
+    if (false or true) and false assert(false) else assert(true)
 
     if (false and false) or not (true and (true and false)) assert(true) else assert(false)
     if (false or true) and not (false or (true and true)) assert(false) else assert(true)

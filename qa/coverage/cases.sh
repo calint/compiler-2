@@ -1389,7 +1389,7 @@ SRC=0457 && EXP=0 && RUN
 # constant nested lists as last elements branch to the enclosing true target
 SRC=0458 && EXP=0 && RUN
 
-# negated parenthesized constants are expressions
+# negated constants are expressions
 SRC=0459 && EXP=0 && RUN
 
 # an 'else' assignment does not cover an 'if' branch that skips the result
@@ -3381,7 +3381,7 @@ SRC=1082 && EXP=1 && RUN
 # a negated 'bool' is not 0 or 1, '-' and '~' are rejected like '+'
 SRC=1083 && COMPERR
 
-# the unary operators of a parenthesized 'bool' are rejected at the operand
+# the unary operators of a 'bool' are rejected at the operand
 SRC=1084 && COMPERR
 
 # a unary operator on the 'bool' result of a call is rejected
@@ -4301,7 +4301,8 @@ SRC=1336 && COMPERR
 # call that returns one
 SRC=1337 && EXP=3 && RUN
 
-# a call in parentheses in a conversion to a wider type widens like any operand
+# a call in a conversion to a wider type widens like any operand, also
+# negated or complemented
 SRC=1339 && EXP=0 && RUN
 
 # a conversion to a wider type applies the unary ops of a single call at the
@@ -4545,9 +4546,9 @@ SRC=1414 && COMPERR
 SRC=1415 && COMPERR
 SRC=1416 && EXP=0 && RUN
 
-# an instance or an array in parentheses is compared as memory
-SRC=1417 && EXP=0 && RUN
-SRC=1418 && EXP=1 && RUN
+# parentheses around an instance or an array group nothing
+SRC=1417 && COMPERR
+SRC=1418 && COMPERR
 
 # a generic function or method without a body does not take the next
 # definition as its body
@@ -4626,7 +4627,8 @@ SRC=1449 && COMPERR
 # a function named like a type is called in an initializer
 SRC=1450 && EXP=7 && RUN
 
-# a unary operator on a parenthesized name makes a value
+# a unary operator on a name of a buffer, an array or an instance makes a
+# value
 SRC=1451 && COMPERR
 SRC=1452 && COMPERR
 SRC=1453 && COMPERR
@@ -4707,8 +4709,8 @@ SRC=1497 && COMPERR
 SRC=1498 && COMPERR
 SRC=1499 && COMPERR
 
-# an array parameter with a size, an array in parentheses, a value hiding a
-# type before '{'
+# an array parameter with a size, parentheses around an array that is
+# copied, a value hiding a type before '{'
 SRC=1500 && COMPERR
 SRC=1501 && COMPERR
 SRC=1502 && COMPERR
@@ -5060,3 +5062,29 @@ SRC=1618 && COMPERR
 
 # a generic function that is not a method has no 'self' result
 SRC=1619 && COMPERR
+
+# parentheses around a single name group nothing
+SRC=1620 && COMPERR
+
+# parentheses after a unary operator around a single name group nothing, the
+# operator applies to the name
+SRC=1621 && COMPERR
+
+# parentheses around a parenthesized list group nothing
+SRC=1622 && COMPERR
+
+# parentheses around a single call group nothing
+SRC=1623 && COMPERR
+
+# parentheses around a single condition group nothing
+SRC=1624 && COMPERR
+
+# parentheses after a 'not' around a single condition group nothing
+SRC=1625 && COMPERR
+
+# parentheses around a parenthesized condition group nothing
+SRC=1626 && COMPERR
+
+# parentheses group an operation: a unary operator, a binary operator, a
+# comparison, a 'not' or a connective, also around a whole value
+SRC=1627 && EXP=4 && RUN

@@ -1,9 +1,9 @@
-# a unary operator on a parenthesized array makes a number, the array is not
+# a unary operator on an array makes a number, the array is not
 # compared as memory
 func main() {
     var a = i8[4]
     var b = i8[4]
-    if -(a) == b {
+    if -a == b {
         exit(1)
     }
 }

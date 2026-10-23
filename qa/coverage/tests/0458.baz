@@ -2,21 +2,21 @@
 func assert(ok bool) { if not ok exit(1) }
 func main() {
     var x = 1
-    var a = (x == 1 and (true)) or x == 5
+    var a = (x == 1 and true) or x == 5
     assert(a)
-    var b = (x == 2 or (false)) and x == 1
+    var b = (x == 2 or false) and x == 1
     assert(not b)
-    var c = not ((x == 1 and (true)) or x == 5)
+    var c = not ((x == 1 and true) or x == 5)
     assert(not c)
-    var d = (not (x == 2 or (false))) or x == 5
+    var d = (not (x == 2 or false)) or x == 5
     assert(d)
     var taken = 0
-    if (x == 1 and (true)) or x == 5 { taken = 1 } else { taken = 2 }
+    if (x == 1 and true) or x == 5 { taken = 1 } else { taken = 2 }
     assert(taken == 1)
-    if (x == 2 or (false)) and x == 1 { taken = 3 } else { taken = 4 }
+    if (x == 2 or false) and x == 1 { taken = 3 } else { taken = 4 }
     assert(taken == 4)
-    if not ((x == 1 and (true)) or x == 5) { taken = 5 } else { taken = 6 }
+    if not ((x == 1 and true) or x == 5) { taken = 5 } else { taken = 6 }
     assert(taken == 6)
-    if (not (x == 2 or (false))) or x == 5 { taken = 7 } else { taken = 8 }
+    if (not (x == 2 or false)) or x == 5 { taken = 7 } else { taken = 8 }
     assert(taken == 7)
 }

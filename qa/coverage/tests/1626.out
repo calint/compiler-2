@@ -1,0 +1,4 @@
+
+1626.baz:5:8: parentheses around a single value group nothing, write '(b or c)'
+    if ((b or c)) {
+       ^

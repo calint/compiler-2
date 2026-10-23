@@ -64,10 +64,6 @@ func main() {
     e = e * 2
     assert(5, e == -56)
 
-    var paren = (small) # is i8
-    paren = paren * 100
-    assert(6, paren == -44)
-
     var negated = -small # is i8
     negated = negated * 100
     assert(18, negated == 44)
@@ -87,7 +83,7 @@ func main() {
     sum = sum * 100
     assert(8, sum == -44)
 
-    var list = -(small) # is i8
+    var list = -(small + 0) # is i8
     list = list * 100
     assert(9, list == 44)
 

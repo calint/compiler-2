@@ -1,0 +1,4 @@
+
+1418.baz:7:13: parentheses around a single value group nothing, write 'a'
+    if not ((a) == b) {
+            ^

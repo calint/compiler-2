@@ -1,7 +1,7 @@
 
-1319.baz:4:159: out of scratch registers, simplify the expression
-var r = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a))))))))))))))))))))))))))))))
-                                                                                                                                                              ^
+1319.baz:4:158: out of scratch registers, simplify the expression
+var r = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + a)))))))))))))))))))))))))))))
+                                                                                                                                                             ^
 
 register use at the failure: 29 of 29 registers live
 

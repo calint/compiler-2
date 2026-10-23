@@ -1,0 +1,6 @@
+# parentheses around a parenthesized list group nothing
+func main() {
+    var x = 1
+    var y = 2 * ((x + 1))
+    exit(y)
+}

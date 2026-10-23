@@ -101,7 +101,8 @@ func arithmetic() {
     # and '^' binds tighter than '&'
 
     assert((one + one) << 3 == 16)
-    # parentheses group as usual
+    # parentheses group as usual, around a single value they group nothing
+    # and are an error, e.g. '(x)' is written 'x' and '-(x)' is written '-x'
 }
 
 #

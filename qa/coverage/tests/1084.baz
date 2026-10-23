@@ -1,5 +1,5 @@
-# the unary operators of a parenthesized 'bool' are rejected at the operand
+# the unary operators of a 'bool' are rejected at the operand
 
 func main() {
-    var b = ~(false)
+    var b = ~false
 }
