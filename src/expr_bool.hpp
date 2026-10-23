@@ -152,12 +152,6 @@ class expr_bool_op final : public expression {
         rhs_.source_to(os);
     }
 
-    // a condition that is one name, e.g. 'flag', not 'not flag' or 'a == b'
-    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
-        const expr_arith* const arith{arithmetic()};
-        return arith == nullptr ? nullptr : arith->place_path();
-    }
-
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
         -> void override {
@@ -1203,17 +1197,6 @@ class expr_bool final : public expression {
             .value{*value ? 1 : 0},
             .own_type{},
         };
-    }
-
-    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
-        if (bools_.size() != 1 or has_not()) {
-            return nullptr;
-        }
-
-        return bools_.front().visit(
-            [](const auto& e) -> const stmt_identifier* {
-                return e.place_path();
-            });
     }
 
     auto visit_call_effects(const toc& tc,

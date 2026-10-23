@@ -363,10 +363,10 @@ class statement {
         return token_;
     }
 
-    // the path of names, fields and indexes this node is, without unary ops,
-    // e.g. 'p.x' or 'a[i]', not '-x', 'x + 1' or 'f(x)'; a constant or a
-    // literal is a path too, 'as_place' tells storage
-    [[nodiscard]] virtual auto place_path() const -> const stmt_identifier* {
+    // the identifier a value is when it is one name or literal, its unary ops
+    // included, e.g. 'x', '-x', 'p.a[i]' or '3', not 'x + 1', 'f(x)' or '{}';
+    // the nodes that hold one forward it
+    [[nodiscard]] virtual auto operand_path() const -> const stmt_identifier* {
         return nullptr;
     }
 
@@ -551,6 +551,13 @@ class statement {
 
         return is_indexed() or info.is_address_computed();
     }
+
+    // the path of names, fields and indexes this node is, the operand path
+    // without unary ops, e.g. 'p.x' or 'a[i]', not '-x'; a constant or a
+    // literal is a path too, 'as_place' tells storage
+    // note: defined in 'stmt_identifier.hpp', where 'stmt_identifier' is
+    //       complete
+    [[nodiscard]] auto place_path() const -> const stmt_identifier*;
 
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
         bool is_read{};

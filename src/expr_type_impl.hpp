@@ -262,8 +262,8 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
 }
 
 // a copy is of its source, e.g. the 'p' of 'q = p'
-inline auto expr_type::place_path() const -> const stmt_identifier* {
-    return stmt_ident_ ? stmt_ident_->place_path() : nullptr;
+inline auto expr_type::operand_path() const -> const stmt_identifier* {
+    return stmt_ident_.get();
 }
 
 inline auto expr_type::is_array_element() const -> bool {

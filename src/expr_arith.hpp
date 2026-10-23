@@ -478,12 +478,17 @@ class expr_arith final : public expression {
         return exprs_.at(0)->name_or_literal();
     }
 
-    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
-        if (exprs_.size() != 1 or not uops_.is_empty()) {
+    // note: a list of one element has no unary ops of its own, '-(x)' is
+    //       rejected, see 'assert_parentheses_group'
+
+    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
+        if (exprs_.size() != 1) {
             return nullptr;
         }
 
-        return exprs_.front()->place_path();
+        assert(uops_.is_empty());
+
+        return exprs_.front()->operand_path();
     }
 
     [[nodiscard]] auto produces_boolean() const -> bool override {

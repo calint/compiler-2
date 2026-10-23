@@ -435,8 +435,8 @@ class stmt_identifier final : public statement {
         return last_token();
     }
 
-    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
-        return get_unary_ops().is_empty() ? this : nullptr;
+    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
+        return this;
     }
 
     // a call in an index, e.g. the 'h(i)' of 'a[h(i)]'
@@ -1288,6 +1288,17 @@ class stmt_identifier final : public statement {
                                      info.element_count());
     }
 };
+
+// see the declaration in 'statement.hpp'
+inline auto statement::place_path() const -> const stmt_identifier* {
+    const stmt_identifier* const path{operand_path()};
+
+    if (path == nullptr or not path->get_unary_ops().is_empty()) {
+        return nullptr;
+    }
+
+    return path;
+}
 
 // see the declaration in 'statement.hpp'
 inline auto as_place(const toc& tc, const statement& st)

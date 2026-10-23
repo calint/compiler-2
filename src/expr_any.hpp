@@ -297,12 +297,12 @@ class expr_any final : public statement {
     }
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
-    [[nodiscard]] auto place_path() const -> const stmt_identifier* override {
+    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
         if (is_array_ and not is_identifier_) {
             return nullptr;
         }
 
-        return element(0).place_path();
+        return element(0).operand_path();
     }
 
     [[nodiscard]] auto tok() const -> const token& override {

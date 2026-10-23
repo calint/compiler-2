@@ -49,6 +49,27 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                'make_ident_info' takes a 'stmt_identifier'; 'list_operand'
                holds the written place's path; two steps: the callers that
                already have a path, then the virtuals go
+            => step a done (2026-10-23): 'operand_path' (the identifier with
+               its unary ops) is the one forwarded virtual, 'place_path' is
+               derived from it, the 'expr_bool' overrides gone; no output
+               change
+            => blocked: the members cannot be called where they are needed,
+               'stmt_identifier.hpp' includes 'expr_any.hpp' (its indexes are
+               'expr_any'), which includes 'expr_arith.hpp' and
+               'expr_bool.hpp', so 'stmt_identifier' is incomplete in those;
+               the forwarding virtuals are how the cycle is broken today
+               (about 110 sites, 62 in a first count)
+            => options (asked 2026-10-23):
+               a. 'stmt_identifier' first: its indexes held through a
+                  forward-declared 'expr_any', the members that use them
+                  defined after 'expr_any' (a 'stmt_identifier_impl.hpp' like
+                  'expr_type_impl.hpp', a new file); then the plan as written,
+                  members on the identifier, type-checked, the virtuals gone
+               b. the base virtuals stay as the decoupling and only
+                  'stmt_identifier' implements them; the wrappers forward
+                  nothing, a caller asks the leaf 'operand_path()' returns
+                  (the answers can no longer differ by class); the type of a
+                  leaf is 'statement', not 'stmt_identifier'
        B.2. one resolution of a name or literal operand (constant to an
             immediate, computed address to a lea, unary ops in a scratch
             register), written in 'expr_arith::emit_with_source',

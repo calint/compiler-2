@@ -289,7 +289,7 @@ class expr_type final : public statement {
 
     [[nodiscard]] auto name_or_literal() const -> std::string_view override;
 
-    [[nodiscard]] auto place_path() const -> const stmt_identifier* override;
+    [[nodiscard]] auto operand_path() const -> const stmt_identifier* override;
 
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
