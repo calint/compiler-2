@@ -1376,7 +1376,10 @@ ones its callees need.
 
 'main.cpp' includes the headers, there is no build system and the compiler
 sees the whole program. The include cycles between the statement classes are
-broken in 'decouple.hpp', 'decouple_impl.hpp' and 'expr_type_impl.hpp'; for
+broken in 'decouple.hpp', 'decouple_impl.hpp', 'expr_type_impl.hpp' and
+'stmt_identifier_impl.hpp' (the members of 'stmt_identifier' that use its
+index expressions, so that the expressions can include 'stmt_identifier.hpp');
+for
 the same reason two headers define members of an earlier class: 'tokenizer.hpp'
 the 'compile_error' of a tokenizer, 'register_report.hpp'
 'machine::register_error' and 'machine::register_peak_report'. A forward

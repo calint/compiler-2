@@ -70,6 +70,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                   nothing, a caller asks the leaf 'operand_path()' returns
                   (the answers can no longer differ by class); the type of a
                   leaf is 'statement', not 'stmt_identifier'
+            => decided (user): a; the move done (2026-10-23):
+               'stmt_identifier_impl.hpp' holds the constructor, the special
+               members, 'path_source_to', 'ident_elem::source_to' and the 11
+               members that use an index expression; 'stmt_identifier.hpp'
+               declares 'expr_any' and compiles alone; no output change
        B.2. one resolution of a name or literal operand (constant to an
             immediate, computed address to a lea, unary ops in a scratch
             register), written in 'expr_arith::emit_with_source',

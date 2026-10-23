@@ -17,7 +17,6 @@
 
 #include "compile_error.hpp"
 #include "constant_arith.hpp"
-#include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
@@ -133,6 +132,8 @@ inline auto assert_constant_range(const ident_info& array_info,
 // 'w.rooms[i].items[j].x', also the receiver of a method call; the parse
 // resolves the type and the bytes of the root variable that the path reaches
 // ('accessed_bytes_', the whole array after a run-time index), the compile
+class expr_any;
+
 // resolves the names again in the current frames and builds one memory operand
 // ('compile_lea', see 'etc/docs/README.md' chapter 6); a path that names a
 // function or a constant has no storage
@@ -143,15 +144,7 @@ class stmt_identifier final : public statement {
         std::unique_ptr<expr_any> array_index_expr;
         token close_bracket_tk;
 
-        auto source_to(std::ostream& os) const -> void {
-            name_tk.source_to(os);
-
-            if (array_index_expr) {
-                open_bracket_tk.source_to(os);
-                array_index_expr->source_to(os);
-                close_bracket_tk.source_to(os);
-            }
-        }
+        auto source_to(std::ostream& os) const -> void;
     };
 
     // the scratch registers that the address of a path is built with
@@ -214,41 +207,20 @@ class stmt_identifier final : public statement {
     token method_name_tk_;
 
   public:
-    stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz)
-        : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
+    // a path of names, fields and indexes from 'tk', which is read
+    stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz);
 
-        // e.g. '"abc"' in 'array_copy("abc", b, 3)'
-        if (tk.is_string()) {
-            throw compile_error{tk, "expected an identifier"};
-        }
+    // note: 'expr_any' is incomplete here, the special members are defined in
+    //       'stmt_identifier_impl.hpp', where a 'unique_ptr' of it is complete
 
-        if (tk.is_none()) {
-            throw compile_error{tz, "expected an identifier"};
-        }
+    stmt_identifier();
 
-        token src_loc_tk{tk};
+    stmt_identifier(stmt_identifier&&) noexcept;
 
-        // a path of elements, e.g. 'rooms[i].entities[j].name'
-        while (true) {
-            assert_indexable(tc, tz, tk);
-            parse_element(tc, tz, tk);
+    stmt_identifier(const stmt_identifier&) = delete;
+    auto operator=(const stmt_identifier&) -> stmt_identifier& = delete;
 
-            if (not extends_path(tc, tz, tk, src_loc_tk)) {
-                break;
-            }
-        }
-
-        if (not names_function(tc)) {
-            resolve_type(tc, src_loc_tk);
-        }
-
-        resolve_accessed_bytes(tc);
-
-        tc.record_use(ident_info::root_of(path_as_string_), access_path_,
-                      use_kind::read);
-    }
-
-    stmt_identifier() = default;
+    ~stmt_identifier() override;
 
     //
     // overridden methods
@@ -442,25 +414,11 @@ class stmt_identifier final : public statement {
     // a call in an index, e.g. the 'h(i)' of 'a[h(i)]'
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
-        -> void override {
-
-        for (const ident_elem& e : elems_) {
-            if (e.array_index_expr) {
-                e.array_index_expr->visit_call_effects(tc, visitor);
-            }
-        }
-    }
+        -> void override;
 
     // index expressions are read even when the path is written
     auto visit_index_reads(const read_filter var,
-                           const read_visitor reader) const -> void override {
-
-        for (const ident_elem& e : elems_) {
-            if (e.array_index_expr) {
-                e.array_index_expr->visit_reads(var, reader);
-            }
-        }
-    }
+                           const read_visitor reader) const -> void override;
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
@@ -497,27 +455,7 @@ class stmt_identifier final : public statement {
     // a constant count of a bulk operation that starts at this path, see
     // 'assert_constant_range'
     auto assert_count_in_bounds(const toc& tc, const token& count_tk,
-                                const int64_t count) const -> void {
-
-        const ident_info array_info{
-            tc.make_ident_info(first_token(), path_as_string_),
-        };
-
-        assert_constant_range(
-            array_info,
-            {
-                .start{constant_start_index(tc)},
-                .count{count},
-                .start_tk{
-                    is_array_element()
-                        ? std::optional{elems_.back().array_index_expr->tok()}
-                        : std::nullopt,
-                },
-                .count_tk{count_tk},
-                .count_text{std::format("count {}", count)},
-                .array_name{path_as_string_},
-            });
-    }
+                                const int64_t count) const -> void;
 
     // where only an array is expected, the path does not end at a method,
     // e.g. 'array_length(a.m)'
@@ -535,14 +473,7 @@ class stmt_identifier final : public statement {
     // the index where a bulk operation starts, 0 for a whole array, empty when
     // computed at run time
     [[nodiscard]] auto constant_start_index(const toc& tc) const
-        -> std::optional<int64_t> {
-
-        if (not is_array_element()) {
-            return 0;
-        }
-
-        return elems_.back().array_index_expr->constant_value(tc);
-    }
+        -> std::optional<int64_t>;
 
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_.at(0).name_tk;
@@ -579,11 +510,9 @@ class stmt_identifier final : public statement {
         return tc.is_func(path_as_string_) and not is_hidden_by_value(tc, root);
     }
 
-    auto path_source_to(std::ostream& os) const -> void {
-        assert(not elems_.empty());
+    auto operator=(stmt_identifier&&) noexcept -> stmt_identifier&;
 
-        source_delimited_to(os, elems_, elem_delims_tk_);
-    }
+    auto path_source_to(std::ostream& os) const -> void;
 
     // the path as written, with indexes but without unary operators
     [[nodiscard]] auto path_text() const -> std::string {
@@ -841,114 +770,12 @@ class stmt_identifier final : public statement {
     // an unknown element leaves the whole array as the accessed range and
     // adds a run-time index to the path
     auto narrow_to_element(toc& tc, const expr_any& index_expr,
-                           const ident_info& array_info) -> void {
-
-        const std::optional<size_t> index{
-            in_range_constant_index(tc, index_expr, array_info),
-        };
-
-        const size_t element_size_bytes{array_info.type_ref().size_bytes()};
-
-        if (not index) {
-            access_path_.add_run_time_index();
-            return;
-        }
-
-        const size_t element_offset{*index * element_size_bytes};
-
-        // the last element keeps the padding after the array
-        // note: an index in range has a known length
-        const bool is_last_element{array_info.array_len() == *index + 1};
-
-        access_path_.add_fixed_index(*index);
-
-        narrow_accessed_bytes(element_offset,
-                              is_last_element
-                                  ? accessed_bytes_.size_bytes - element_offset
-                                  : element_size_bytes);
-    }
+                           const ident_info& array_info) -> void;
 
     // a path element with an optional '[index]'
-    auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void {
-        // e.g. the '[i]' of 'rooms[i]', none for 'name'
-        const token open_bracket_tk{tz.is_next_char_token('[')};
+    auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void;
 
-        if (open_bracket_tk.is_empty()) {
-            elems_.emplace_back(tk, token{}, nullptr, token{});
-            return;
-        }
-
-        is_indexed_ = true;
-
-        std::unique_ptr<expr_any> index_expr{
-            std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
-                                       literal_typing::from_destination),
-        };
-
-        const token close_bracket_tk{
-            tz.expect_char_token(
-                ']', "expected ']' to close array index expression"),
-        };
-
-        elems_.emplace_back(tk, open_bracket_tk, std::move(index_expr),
-                            close_bracket_tk);
-    }
-
-    auto resolve_accessed_bytes(toc& tc) -> void {
-        if (names_function(tc)) {
-            return;
-        }
-
-        std::string path;
-        const type* parent_type{};
-
-        for (const ident_elem& elem : elems_) {
-            const bool is_root{path.empty()};
-
-            if (not is_root) {
-                path.push_back('.');
-            }
-
-            path += elem.name_tk.text();
-
-            const ident_info info{tc.make_ident_info(elem.name_tk, path)};
-
-            if (is_root) {
-                accessed_bytes_ = root_range(info);
-            } else {
-                // a field covers its trailing padding so that assigning every
-                // field assigns the whole instance
-                const size_t field_offset{
-                    parent_type->field_offset(elem.name_tk,
-                                              elem.name_tk.text()),
-                };
-
-                access_path_.add_field(field_offset);
-
-                const size_t extent_bytes{
-                    parent_type->field_extent_bytes(elem.name_tk,
-                                                    elem.name_tk.text()),
-                };
-
-                // the last field keeps the padding after the instance that
-                // holds it, like the last element
-                const bool is_last_field{
-                    field_offset + extent_bytes == parent_type->size_bytes(),
-                };
-
-                narrow_accessed_bytes(
-                    field_offset,
-                    is_last_field ? accessed_bytes_.size_bytes - field_offset
-                                  : extent_bytes);
-            }
-
-            parent_type = &info.type_ref();
-
-            if (elem.array_index_expr) {
-                narrow_to_element(tc, *elem.array_index_expr, info);
-            }
-        }
-    }
+    auto resolve_accessed_bytes(toc& tc) -> void;
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {
@@ -983,68 +810,7 @@ class stmt_identifier final : public statement {
     add_index(toc& tc, const size_t indent, const token& src_loc_tk,
               path_registers& registers, const ident_elem& cur_elem,
               const ident_info& cur_info, const operand& reg_count,
-              const operand& address) -> operand {
-
-        machine& x{tc.machine()};
-
-        // a register kept by an earlier fold is reused since the fold already
-        // consumed its value
-        if (registers.index_register().is_empty()) {
-            // index expressions are parsed with the default type
-            registers.set_index_register(x.alloc_scratch_register(
-                src_loc_tk, indent, tc.builtins().default_type()));
-
-            registers.add(registers.index_register());
-        }
-
-        const operand& index_register{registers.index_register()};
-
-        int64_t addend_elements{
-            compile_checked_index(tc, indent, *cur_elem.array_index_expr,
-                                  index_register, cur_info.element_count(),
-                                  reg_count),
-        };
-
-        const size_t type_size{cur_info.type_ref().size_bytes()};
-
-        const token& index_tk{cur_elem.array_index_expr->tok()};
-
-        // a constant too far for the displacement is added to the index, the
-        // sum can still be an element, e.g. 'a[i - 9223372036854775806]'
-        if (not fits_address_offset(address.displacement(), addend_elements,
-                                    type_size)) {
-
-            x.comment(index_tk, indent, "index constant {} is added",
-                      addend_elements);
-
-            x.add_subtract(
-                src_loc_tk, indent, machine::arithmetic_operator::add,
-                index_register,
-                operand::imm(addend_elements, tc.builtins().default_type()));
-
-            addend_elements = 0;
-        } else if (addend_elements != 0) {
-            x.comment(index_tk, indent,
-                      "index constant {} goes into the displacement",
-                      addend_elements);
-        }
-
-        // a scale the addressing mode cannot encode is applied to the index
-        // register instead, leaving scale 1 in the operand
-        const bool is_encodable_scale{x.can_lower_index_scale(type_size)};
-
-        if (not is_encodable_scale) {
-            x.scale_index(src_loc_tk, indent, index_register, type_size);
-        }
-
-        return operand::mem(address.base_register(),
-                            index_register.base_register(),
-                            is_encodable_scale ? type_size : 1,
-                            add_address_offset(address.displacement(),
-                                               scaled_address_offset(
-                                                   addend_elements, type_size)),
-                            cur_info.type_ref());
-    }
+              const operand& address) -> operand;
 
     static auto check_array_bounds(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
@@ -1081,44 +847,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] static auto compile_checked_index(
         toc& tc, const size_t indent, const expr_any& index_expr,
         const operand& index_register, const size_t array_length,
-        const operand& range_count) -> int64_t {
-
-        machine& x{tc.machine()};
-
-        x.comment(index_expr.tok(), indent, "set array index");
-
-        const destination index_dst{
-            destination::of_register(index_register),
-        };
-
-        const machine::bounds_check_options checks{
-            tc.checks().bounds_options(),
-        };
-
-        if (not checks.upper and not checks.lower) {
-            const std::optional<int64_t> addend{
-                index_expr.compile_without_trailing_addend(tc, indent,
-                                                           index_dst),
-            };
-
-            if (addend) {
-                return *addend;
-            }
-        }
-
-        index_expr.compile(tc, indent, index_dst);
-
-        const machine::bounds_range checked{
-            range_count.is_empty()
-                ? machine::bounds_range::index(index_register, array_length)
-                : machine::bounds_range::range(index_register, range_count,
-                                               array_length),
-        };
-
-        check_array_bounds(tc, indent, index_expr.tok(), checked);
-
-        return 0;
-    }
+        const operand& range_count) -> int64_t;
 
     // the address after the element index, a constant index goes into the
     // displacement and any other one into an index register
@@ -1126,41 +855,7 @@ class stmt_identifier final : public statement {
         toc& tc, const size_t indent, const token& src_loc_tk,
         path_registers& registers, const ident_elem& cur_elem,
         const std::string_view path, const ident_info& cur_info,
-        const operand& range_count, const operand& address) -> operand {
-
-        const std::optional<int64_t> constant_index{
-            cur_elem.array_index_expr->constant_value(tc),
-        };
-
-        if (constant_index) {
-            assert_constant_index(cur_info, cur_elem.array_index_expr->tok(),
-                                  path, *constant_index,
-                                  not range_count.is_empty());
-        }
-
-        // with a range count the run-time check covers 'index + count'
-        if (constant_index and range_count.is_empty()) {
-            operand folded{address};
-
-            folded.increment_offset(
-                address_offset(static_cast<size_t>(*constant_index) *
-                               cur_info.type_ref().size_bytes()));
-
-            return folded;
-        }
-
-        // an operand holds one index, so an earlier one is folded first
-        operand base{address};
-
-        if (not address.index_register().empty()) {
-            base = operand::mem(fold_indexed_address(tc, indent, src_loc_tk,
-                                                     registers, address),
-                                cur_info.type_ref());
-        }
-
-        return add_index(tc, indent, cur_elem.array_index_expr->tok(),
-                         registers, cur_elem, cur_info, range_count, base);
-    }
+        const operand& range_count, const operand& address) -> operand;
 
     // computes 'address' into a register so another index can be added
     [[nodiscard]] static auto
@@ -1227,20 +922,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] static auto
     in_range_constant_index(const toc& tc, const expr_any& index_expr,
                             const ident_info& array_info)
-        -> std::optional<size_t> {
-
-        const std::optional<int64_t> index{index_expr.constant_value(tc)};
-
-        const std::optional<size_t> array_len{array_info.array_len()};
-
-        if (not index or *index < 0 or not array_len or
-            std::cmp_greater_equal(*index, *array_len)) {
-
-            return std::nullopt;
-        }
-
-        return static_cast<size_t>(*index);
-    }
+        -> std::optional<size_t>;
 
     [[nodiscard]] static auto
     load_pointer(toc& tc, const size_t indent, const token& src_loc_tk,

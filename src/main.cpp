@@ -34,6 +34,7 @@
 #include "program.hpp"
 #include "register_report.hpp" // IWYU pragma: keep
 #include "source_files.hpp"
+#include "stmt_identifier_impl.hpp" // IWYU pragma: keep
 #include "toc.hpp"
 #include "type.hpp"
 
