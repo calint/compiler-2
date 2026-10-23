@@ -1,0 +1,4 @@
+# an array size is an integer, not a 'bool'
+func main() {
+    var a = i8[true]
+}

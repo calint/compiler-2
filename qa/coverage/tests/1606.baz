@@ -1,0 +1,6 @@
+# an array size that names a function says so
+func f() {}
+
+func main() {
+    var a = i8[f]
+}

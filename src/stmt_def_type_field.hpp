@@ -5,8 +5,8 @@
 #include <string_view>
 
 #include "compile_error.hpp"
+#include "expr_any.hpp"
 #include "statement.hpp"
-#include "stmt_const.hpp"
 #include "toc.hpp"
 #include "token.hpp"
 
@@ -14,11 +14,11 @@ class stmt_def_type_field final : public statement {
     token type_tk_;
     token open_bracket_tk_;
     token close_bracket_tk_;
-    stmt_const array_count_const_;
+    stmt_array_size array_size_;
     size_t array_count_{};
 
   public:
-    stmt_def_type_field(const toc& tc, const token tk, tokenizer& tz)
+    stmt_def_type_field(toc& tc, const token tk, tokenizer& tz)
         : statement{tk} {
 
         set_type(tc.builtins().void_type());
@@ -40,8 +40,8 @@ class stmt_def_type_field final : public statement {
             return;
         }
 
-        array_count_const_ = {tc, tz};
-        array_count_ = array_count_const_.array_size();
+        array_size_ = {tc, tz};
+        array_count_ = array_size_.array_size();
 
         close_bracket_tk_ =
             tz.expect_char_token(']', "expected ']' after array size");
@@ -62,7 +62,7 @@ class stmt_def_type_field final : public statement {
 
         if (is_array()) {
             open_bracket_tk_.source_to(os);
-            array_count_const_.source_to(os);
+            array_size_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
     }

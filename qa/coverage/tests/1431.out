@@ -1,4 +1,4 @@
 
-1431.baz:4:16: expected a constant value or a constant identifier
+1431.baz:4:16: a string is not a number, it fills only an array of 'i8'
     var a = i8["4"]
-               ^
+               ^~~

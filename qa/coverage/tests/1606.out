@@ -1,0 +1,4 @@
+
+1606.baz:5:16: 'f' is a function, not a value, a call ends with '()'
+    var a = i8[f]
+               ^

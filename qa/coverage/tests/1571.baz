@@ -1,6 +1,6 @@
-# an array size is a number or a constant, a call is stored in a 'let'
-# first
+# an array size is a constant expression, a built-in that folds is one
 func main() {
     var b = i8[4]
-    var z = i8[array_length(b)]
+    var z = i8[array_length(b) + 1]
+    exit(array_length(z))
 }

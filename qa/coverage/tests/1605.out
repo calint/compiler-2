@@ -1,0 +1,4 @@
+
+1605.baz:3:16: expected type 'i64', got 'bool'
+    var a = i8[true]
+               ^

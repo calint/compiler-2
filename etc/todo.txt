@@ -134,7 +134,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                type and valued by 'fold_checked'; names classified by 4.2;
                type field sizes use the same function
             => invariant: one evaluator for every compile-time value
-            => after 4.2
+            => done (2026-10-23): 'stmt_const' replaced by 'stmt_array_size'
+               in 'expr_any.hpp', an 'expr_any' at the default type parsed
+               like an index and valued by 'constant_value'; the type field
+               reads it too; a size is any constant expression ('i8[n * 2]',
+               'i8[array_length(b) + 1]'); a name gives the verdict it gives
+               as an index (F-4); on rv32i a size of 2^31 or more is a
+               constant that does not fit 'i32', like an index (tests
+               0734, 0829 use 'i32' elements to keep reaching the address
+               limit; rv32i outputs of 0737-0739, 1322, 1323); a function
+               name as a value says "'f' is a function, not a value" in
+               'ident_resolver::resolve' (was "cannot resolve identifier");
+               tests 1604-1607, 1571 now accepted
        4.4. one written-part plan (class W, about 15 bugs, 4 silent wrong
             values): the order in which a literal writes its parts is
             decided by 'compile_field_list' and 'zero_remaining_elements'

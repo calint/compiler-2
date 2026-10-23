@@ -1,0 +1,4 @@
+# an array size that names a type says so
+func main() {
+    var a = i8[int]
+}

@@ -1,4 +1,0 @@
-
-1571.baz:5:16: an array size is a number or a constant, not a call of 'array_length'
-    var z = i8[array_length(b)]
-               ^~~~~~~~~~~~

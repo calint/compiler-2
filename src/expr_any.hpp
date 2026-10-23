@@ -23,10 +23,49 @@
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_builtin_convert.hpp"
-#include "stmt_const.hpp"
 #include "token.hpp"
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
+
+class expr_any;
+
+// the constant size of an array, e.g. the '4' of 'i8[4]' or the 'n * 2' of a
+// field 'i8[n * 2]': an expression at the default type, folded by 'fold' when
+// parsed and never compiled; empty for 'i8[]'
+// note: defined after 'expr_any', which holds one
+class stmt_array_size final : public statement {
+    std::unique_ptr<expr_any> value_;
+    int64_t folded_{};
+
+  public:
+    stmt_array_size(toc& tc, tokenizer& tz);
+
+    stmt_array_size();
+
+    stmt_array_size(stmt_array_size&&) noexcept;
+
+    stmt_array_size(const stmt_array_size&) = delete;
+    auto operator=(const stmt_array_size&) -> stmt_array_size& = delete;
+
+    ~stmt_array_size() override;
+
+    //
+    // overridden methods
+    //
+
+    auto source_to(std::ostream& os) const -> void override;
+
+    //
+    // class methods
+    //
+
+    // a written size of at least 1, e.g. the '4' of 'i8[4]'
+    [[nodiscard]] auto array_size() const -> size_t;
+
+    [[nodiscard]] auto has_value() const -> bool { return value_ != nullptr; }
+
+    auto operator=(stmt_array_size&&) noexcept -> stmt_array_size&;
+};
 
 // the value of an initializer, an argument or a field, parsed at the type of
 // its destination; one of five forms:
@@ -45,7 +84,7 @@ class expr_any final : public statement {
     // e.g. 'i8' of 'i8[3]{1, 2}', empty for '[3]{1, 2}'
     token element_type_tk_;
     token open_bracket_tk_;
-    stmt_const literal_count_const_;
+    stmt_array_size literal_size_;
     token close_bracket_tk_;
     token open_brace_tk_;
     token close_brace_tk_;
@@ -99,7 +138,7 @@ class expr_any final : public statement {
 
         if (open_brace_tk_.is_empty() and not open_bracket_tk_.is_empty()) {
             // e.g. 'var a = i8[4]' is 'i8[4]{}'
-            if (not literal_count_const_.has_value()) {
+            if (not literal_size_.has_value()) {
                 throw compile_error{
                     close_bracket_tk_,
                     std::format("an array needs a constant size, e.g. "
@@ -145,7 +184,7 @@ class expr_any final : public statement {
         if (not open_bracket_tk_.is_empty()) {
             element_type_tk_.source_to(os);
             open_bracket_tk_.source_to(os);
-            literal_count_const_.source_to(os);
+            literal_size_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
 
@@ -688,7 +727,7 @@ class expr_any final : public statement {
         }
 
         // e.g. the '4' of 'i8[4]', none for 'i8[]'
-        literal_count_const_ = {tc, tz};
+        literal_size_ = {tc, tz};
 
         close_bracket_tk_ =
             tz.expect_char_token(']', "expected ']' after array size");
@@ -702,11 +741,11 @@ class expr_any final : public statement {
                                                                     : "{}");
         }
 
-        if (not literal_count_const_.has_value()) {
+        if (not literal_size_.has_value()) {
             return;
         }
 
-        const size_t count{literal_count_const_.array_size()};
+        const size_t count{literal_size_.array_size()};
 
         // note: only a declaration names the array type, its size is the one
         //       of this literal
@@ -873,3 +912,60 @@ class expr_any final : public statement {
         return value;
     }
 };
+
+// e.g. 'i8[-]' is not an expression and 'i8[p]' with 'p' a parameter is not a
+// constant
+inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz)
+    : statement{tz.next_whitespace_token()} {
+
+    set_type(tc.builtins().default_type());
+
+    if (tz.is_peek_char(']')) {
+        return;
+    }
+
+    value_ = std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
+                                        literal_typing::from_destination);
+
+    const std::optional<int64_t> folded{value_->constant_value(tc)};
+
+    if (not folded) {
+        throw compile_error{
+            value_->tok(),
+            std::format("{} is not a constant",
+                        in_quotes(statement::trimmed_source(*value_)))};
+    }
+
+    folded_ = *folded;
+}
+
+inline stmt_array_size::stmt_array_size() = default;
+
+inline stmt_array_size::stmt_array_size(stmt_array_size&&) noexcept = default;
+
+inline auto stmt_array_size::operator=(stmt_array_size&&) noexcept
+    -> stmt_array_size& = default;
+
+inline stmt_array_size::~stmt_array_size() = default;
+
+inline auto stmt_array_size::source_to(std::ostream& os) const -> void {
+    statement::source_to(os);
+
+    if (value_) {
+        value_->source_to(os);
+    }
+}
+
+inline auto stmt_array_size::array_size() const -> size_t {
+    if (not value_) {
+        throw compile_error{tok(),
+                            "expected a constant array size greater than 0"};
+    }
+
+    if (folded_ < 1) {
+        throw compile_error{value_->tok(),
+                            "expected a constant array size greater than 0"};
+    }
+
+    return static_cast<size_t>(folded_);
+}

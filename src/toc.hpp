@@ -2029,6 +2029,7 @@ class builtin_types final {
 class ident_resolver final {
     std::reference_wrapper<const scope_stack> scopes_;
     std::reference_wrapper<const ::machine> machine_;
+    std::reference_wrapper<const function_table> funcs_;
     std::reference_wrapper<const generic_registry> generics_;
     std::reference_wrapper<const builtin_types> builtins_;
 
@@ -2050,10 +2051,11 @@ class ident_resolver final {
 
   public:
     ident_resolver(const scope_stack& scopes, const ::machine& backend,
+                   const function_table& funcs,
                    const generic_registry& generics,
                    const builtin_types& builtins)
-        : scopes_{scopes}, machine_{backend}, generics_{generics},
-          builtins_{builtins} {}
+        : scopes_{scopes}, machine_{backend}, funcs_{funcs},
+          generics_{generics}, builtins_{builtins} {}
 
     // the diagnostic names what an unresolved identifier is instead
     [[nodiscard]] auto resolve(const token& src_loc_tk,
@@ -2080,6 +2082,15 @@ class ident_resolver final {
                 std::format("generic function {} needs type arguments, "
                             "e.g. '{}<...>'",
                             in_quotes(ident), ident)};
+        }
+
+        // e.g. the 'f' of 'x = f + 1'
+        if (funcs_.get().has(ident)) {
+            throw compile_error{
+                src_loc_tk,
+                std::format("{} is a function, not a value, a call ends with "
+                            "'()'",
+                            in_quotes(ident))};
         }
 
         // a broken number, e.g. '0x' or '12_000'
@@ -2760,7 +2771,8 @@ class toc final {
           data_{backend.data_alignment()}, funcs_{order_}, generics_{order_},
           types_{order_},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
-          builtins_{backend}, resolver_{scopes_, backend, generics_, builtins_},
+          builtins_{backend},
+          resolver_{scopes_, backend, funcs_, generics_, builtins_},
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
           checks_{checks} {}

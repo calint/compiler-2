@@ -4902,8 +4902,8 @@ SRC=1569 && COMPERR
 # first, like for a field
 SRC=1570 && COMPERR
 
-# an array size is a number or a constant, a call is stored in a 'let' first
-SRC=1571 && COMPERR
+# an array size is a constant expression, a built-in that folds is one
+SRC=1571 && EXP=5 && RUN
 
 # a generic parameter is not named like a global variable defined before it,
 # which would hide it only in some places, e.g. 'x U' still names the type
@@ -5010,3 +5010,15 @@ SRC=1602 && COMPERR
 
 # a method that is not generic takes no type arguments
 SRC=1603 && COMPERR
+
+# an array size that names a type says so
+SRC=1604 && COMPERR
+
+# an array size is an integer, not a 'bool'
+SRC=1605 && COMPERR
+
+# an array size that names a function says so
+SRC=1606 && COMPERR
+
+# an array size is a constant expression, also in a field
+SRC=1607 && EXP=8 && RUN

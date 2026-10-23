@@ -1,0 +1,4 @@
+
+1323.baz:3:21: constant '0x7fffffffffffffed' does not fit 'i32', use 'i32(...)'
+type s {a i16, b i8[0x7fffffffffffffed]}
+                    ^~~~~~~~~~~~~~~~~~
