@@ -1,0 +1,11 @@
+# the condition of a parameter of an inlined function is not known where the
+# function is written, the result is not set on every path
+func f(x) res {
+    if x == 1 {
+        res = 2
+    }
+}
+
+func main() {
+    exit(f(1))
+}

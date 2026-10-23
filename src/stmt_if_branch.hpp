@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <format>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -19,6 +20,9 @@
 class stmt_if_branch final : public statement {
     expr_bool condition_;
     stmt_block code_;
+    // the value of the condition known where the 'if' is written, e.g. from
+    // literals and constants, empty when it depends on the run or on a call
+    std::optional<bool> parse_constant_;
 
   public:
     // e.g. 'a == b {x = 1}' of 'if a == b {x = 1} else {y = 2}', the condition
@@ -29,6 +33,7 @@ class stmt_if_branch final : public statement {
 
         set_type(tc.builtins().void_type());
         condition_.assert_boolean_operands();
+        parse_constant_ = condition_.constant_value(tc);
         code_ = {tc, tz};
     }
 
@@ -95,6 +100,10 @@ class stmt_if_branch final : public statement {
         code_.compile(tc, indent, destination{});
 
         return const_eval;
+    }
+
+    [[nodiscard]] auto parse_constant() const -> std::optional<bool> {
+        return parse_constant_;
     }
 
     //

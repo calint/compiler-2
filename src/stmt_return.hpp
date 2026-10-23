@@ -35,6 +35,8 @@ class stmt_return final : public statement {
 
         const frame& func_frm{tc.scopes().current_func_frame()};
 
+        tc.set_path_open(false);
+
         if (func_frm.is_main()) {
             x.exit(tok(), indent,
                    operand::imm(0, tc.builtins().default_type()));

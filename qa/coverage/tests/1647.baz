@@ -1,0 +1,13 @@
+# a branch whose condition is a constant false does not set the result on a
+# path, an 'else' after a constant true branch never runs
+func f(x) res {
+    if 1 == 2 {
+        res = 1
+    } else if x > 0 {
+        res = 2
+    }
+}
+
+func main() {
+    exit(f(1))
+}

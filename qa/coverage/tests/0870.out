@@ -2,6 +2,6 @@
 0870.baz:6:11: recursion of inlined function 'count' cannot be expanded at compile time, declare it 'noinline'
     res = count(n + 1) + 1
           ^~~~~
-0870.baz:10:10: called from 'count(0)'
-    exit(count(0))
+0870.baz:11:10: called from 'count(start)'
+    exit(count(start))
          ^~~~~

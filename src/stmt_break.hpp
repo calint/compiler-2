@@ -38,6 +38,7 @@ class stmt_break final : public statement {
         assert(loop);
 
         x.branch(indent, toc::end_label(loop->label));
+        tc.set_path_open(false);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

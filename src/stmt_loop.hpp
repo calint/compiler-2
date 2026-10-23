@@ -50,6 +50,11 @@ class stmt_loop final : public statement {
         code_.compile(tc, indent, destination{});
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
+
+        // note: the end is reached by a 'break', a loop without one is taken
+        //       as one that ends too
+
+        tc.set_path_open(true);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

@@ -315,8 +315,13 @@ is rejected at any call of it, whatever the order of the calls, except for a
 chain through a cycle of noinline calls
 ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
 
-A branch whose condition folds to false is not compiled, so the rules
-checked while compiling do not run in it: a constant argument of an inlined
+A branch whose condition folds to false is not compiled, nor is the code
+after a statement that leaves on every path, e.g. after the 'return' of 'if n
+> 5 return' in an inlined 'count(6)', which ends the expansion of a recursion
+with constant arguments; the function frame keeps whether the path is open
+('toc::is_path_open'), and 'stmt_if' joins its branches with the chain rule
+that the return check uses too, on the conditions known where the 'if' is
+written. So the rules checked while compiling do not run in such code: a constant argument of an inlined
 call decides it, e.g. 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards
 the division. The branch is parsed like any code, so the rules of the parse
 hold in it, e.g. the names, the types and 'break' in a loop. Checking it
@@ -1448,5 +1453,6 @@ stops at a panic that names the check, e.g. 'panic: bounds'.
 - A cycle of noinline calls near the limit of nested dry runs has a verdict
   that depends on where the cycle is entered
   ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
-- A branch whose condition folds to false is not compiled, its compile-time
-  rules do not run ([1.5](#15-checks)).
+- A branch whose condition folds to false and the code after a statement
+  that leaves on every path are not compiled, their compile-time rules do not
+  run ([1.5](#15-checks)).

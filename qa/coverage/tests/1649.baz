@@ -1,0 +1,27 @@
+# an 'if' whose every branch returns ends the path, the code after it is not
+# compiled; a constant false branch runs no code
+func f(x) res {
+    res = 1
+    if x > 0 {
+        return
+    } else {
+        return
+    }
+    res = 9
+}
+
+func g() res {
+    res = 3
+    if 1 == 2 {
+        res = 4
+    } else if 2 == 2 {
+        res = 5
+    } else {
+        res = 6
+    }
+}
+
+func main() {
+    var a = 2
+    exit(f(a) + g())
+}

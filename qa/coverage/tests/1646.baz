@@ -1,0 +1,11 @@
+# a result set only in a branch whose condition is a constant true is set on
+# every path
+func f() res {
+    if 1 == 1 {
+        res = 2
+    }
+}
+
+func main() {
+    exit(f())
+}

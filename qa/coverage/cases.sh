@@ -5134,3 +5134,23 @@ SRC=1643 && EXP=7 && RUN
 
 # a call in a value written in parts that writes a part written before it
 SRC=1644 && COMPERR
+
+# an inlined recursion ends at compile time where a constant argument makes its
+# 'return' always taken, the code after it is not compiled
+SRC=1645 && EXP=6 && RUN
+
+# a result set only in a branch whose condition is a constant true is set on
+# every path
+SRC=1646 && EXP=2 && RUN
+
+# a branch whose condition is a constant false does not set the result on a
+# path, an 'else' after a constant true branch never runs
+SRC=1647 && COMPERR
+
+# the condition of a parameter of an inlined function is not known where the
+# function is written, the result is not set on every path
+SRC=1648 && COMPERR
+
+# an 'if' whose every branch returns ends the path, the code after it is not
+# compiled; a constant false branch runs no code
+SRC=1649 && EXP=6 && RUN

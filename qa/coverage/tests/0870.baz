@@ -7,5 +7,6 @@ func count(n) res {
 }
 
 func main() {
-    exit(count(0))
+    var start = 0
+    exit(count(start))
 }

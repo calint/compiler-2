@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: the return check ignores constant conditions: 'if 1 == 1 {
+    res = 2 }' as the only assignment of 'res' is rejected ("function may
+    return without setting its return value") although 'compile' emits no
+    path past an always-true branch
+    => evaluated (2026-10-20), about 100 to 150 lines in 'expr_bool.hpp',
+       'stmt_if_branch.hpp' and 'stmt_if.hpp', medium risk:
+       1. 'trace_assignment' runs once per definition after the parse and
+          has no 'toc'; 'expr_bool' finds constness only while it compiles
+          ('compile_branch'), there is no pure query
+       2. an inlined body is compiled per call, 'if x == 1' is constant in
+          'f(1)' only, so the check can use only what is constant in the
+          definition: literals and 'let' constants
+       3. design: a pure 'expr_bool::constant_result(const toc&)' from the
+          existing folding ('side_constant', negations, 'and'/'or' with known
+          sides); 'stmt_if_branch' evaluates it at parse time and keeps it;
+          'stmt_if::trace_assignment' skips a branch known false and every
+          path after a branch known true
+       4. soundness: 'compile' asserts that a result known at parse time is
+          the one it finds, else the check could skip a path the code has
+          and accept an unset result
+       5. rejected: 'compile' using the pure fold too, one evaluator but a
+          rewiring of the most intricate part of 'expr_bool'
+       6. tests: always true as the only assignment, an always-false branch
+          that assigns, an 'else' after an always-true branch, a condition
+          on a parameter of an inlined function stays rejected
+    => done (2026-10-23): round 12 step 4.6, the trace follows the conditions
+       known at the parse with the chain rule of the compile, tests 1646-1648
 [x] medium: aliasing: a call in a value written in parts reads, in its body,
     a part written before it without an error, e.g. 'g = {1, gx()}' with
     'gx' returning 'g.x' (inline and noinline); rule A sees only the reads

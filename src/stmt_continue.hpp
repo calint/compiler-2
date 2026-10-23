@@ -39,6 +39,8 @@ class stmt_continue final : public statement {
         // note: the parse rejected a 'continue' outside a loop
         assert(loop);
 
+        tc.set_path_open(false);
+
         if (not loop->is_foo) {
             x.branch(indent, loop->label);
             return;

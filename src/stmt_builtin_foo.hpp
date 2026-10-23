@@ -136,6 +136,9 @@ class stmt_builtin_foo final : public statement {
 
         x.label(indent, end_label);
 
+        // note: the end is reached when the count runs out or at a 'break'
+        tc.set_path_open(true);
+
         x.free_scratch_registers(tok(), indent, allocated_registers);
         x.free_scratch_register(tok(), indent, reg_iter);
     }

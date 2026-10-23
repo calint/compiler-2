@@ -351,6 +351,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                asserts a parse-time result
             => moved after 4.10 (2026-10-23): class R only rejects too much,
                no undefined behavior; 4.7, 4.8 and 4.10 have miscompiles
+            => done (2026-10-23): design B without a class of its own, the
+               reachability of the trace stays in 'assignment_flow', of the
+               compile a flag of the function frame ('toc::is_path_open'),
+               an inlined call has its own frame so nothing is saved;
+               'return', 'break', 'continue' and 'exit' close it, a loop and
+               a 'foo' open it after their end, a block stops at a closed
+               path; 'stmt_if' joins its branches by one chain rule ('runs',
+               'ends_chain') on the results of the compile and, in the
+               trace, on the conditions known at the parse
+               ('stmt_if_branch::parse_constant'), the compile asserts that
+               it agrees; the compile takes the results of its branches, not
+               'expr_bool::constant_value', which stops at the first unknown
+               element ('x == 2 or true' compiles to true) and must not fold
+               more, 'h() or true' calls 'h'; C-4 fixed, 0870 passes a
+               variable now; tests 1645-1649; the code after an always
+               taken 'return' of an inlined call is gone (0465, 0475, 0595)
        4.7. one place view (class P, about 15 bugs, 2 miscompiles): "is this
             node storage read or passed in place" is decided by combined
             predicates that ignore part of the syntax: 'is_name_or_literal'
@@ -746,31 +762,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     would fold with a 'value_use' that does not check overflow, as its
     compile does since the policy is on the destination; changes the code of
     a 'var' (an optimization)
-[ ] medium: the return check ignores constant conditions: 'if 1 == 1 {
-    res = 2 }' as the only assignment of 'res' is rejected ("function may
-    return without setting its return value") although 'compile' emits no
-    path past an always-true branch
-    => evaluated (2026-10-20), about 100 to 150 lines in 'expr_bool.hpp',
-       'stmt_if_branch.hpp' and 'stmt_if.hpp', medium risk:
-       1. 'trace_assignment' runs once per definition after the parse and
-          has no 'toc'; 'expr_bool' finds constness only while it compiles
-          ('compile_branch'), there is no pure query
-       2. an inlined body is compiled per call, 'if x == 1' is constant in
-          'f(1)' only, so the check can use only what is constant in the
-          definition: literals and 'let' constants
-       3. design: a pure 'expr_bool::constant_result(const toc&)' from the
-          existing folding ('side_constant', negations, 'and'/'or' with known
-          sides); 'stmt_if_branch' evaluates it at parse time and keeps it;
-          'stmt_if::trace_assignment' skips a branch known false and every
-          path after a branch known true
-       4. soundness: 'compile' asserts that a result known at parse time is
-          the one it finds, else the check could skip a path the code has
-          and accept an unset result
-       5. rejected: 'compile' using the pure fold too, one evaluator but a
-          rewiring of the most intricate part of 'expr_bool'
-       6. tests: always true as the only assignment, an always-false branch
-          that assigns, an 'else' after an always-true branch, a condition
-          on a parameter of an inlined function stays rejected
 [ ] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,

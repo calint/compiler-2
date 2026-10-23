@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <format>
+#include <optional>
 #include <ostream>
 #include <ranges>
 #include <string>
@@ -85,34 +87,68 @@ class stmt_if final : public statement {
             create_label_else_branch(else_code_, if_label, label_after_if),
         };
 
-        bool branch_evaluated_to_true{};
-        for (size_t branch_index{}; branch_index < branches_.size();
-             ++branch_index) {
+        // the end of the 'if' is reached when a path that runs reaches it
+        bool reaches_end{};
+        bool reaches_else{true};
 
-            if (compile_branch_at(tc, indent, branch_index, label_else_branch,
-                                  label_after_if)) {
+        for (size_t i{}; i < branches_.size(); ++i) {
+            tc.set_path_open(true);
 
-                branch_evaluated_to_true = true;
+            const std::optional<bool> known{
+                known_of(compile_branch_at(tc, indent, i, label_else_branch,
+                                           label_after_if)),
+            };
+
+            // note: the compile knows at least what the parse knew, the
+            //       paths of the definite assignment follow the parse
+
+            assert(not branches_.at(i).parse_constant() or
+                   branches_.at(i).parse_constant() == known);
+
+            if (runs(known)) {
+                reaches_end = reaches_end or tc.is_path_open();
+            }
+
+            if (ends_chain(known)) {
+                reaches_else = false;
                 break;
             }
         }
 
         machine& x{tc.machine()};
 
-        // a branch that is constant true leaves no way to the 'else' code
-        if (not branch_evaluated_to_true and not else_code_.is_empty()) {
-            x.label(indent, label_else_branch);
-            else_code_.compile(tc, indent, destination{});
+        // an empty 'else' is the path that skips every branch
+        if (reaches_else) {
+            tc.set_path_open(true);
+
+            if (not else_code_.is_empty()) {
+                x.label(indent, label_else_branch);
+                else_code_.compile(tc, indent, destination{});
+            }
+
+            reaches_end = reaches_end or tc.is_path_open();
         }
+
+        tc.set_path_open(reaches_end);
 
         x.label(indent, label_after_if);
     }
 
+    // the paths that the conditions known where the 'if' is written leave,
+    // e.g. 'if 1 == 1 { res = 2 }' sets 'res' on every path
     auto trace_assignment(assignment_flow& flow) const -> void override {
         assignment_flow::path_merge paths{flow};
 
         for (const stmt_if_branch& branch : branches_) {
-            paths.trace(branch);
+            const std::optional<bool> known{branch.parse_constant()};
+
+            if (runs(known)) {
+                paths.trace(branch);
+            }
+
+            if (ends_chain(known)) {
+                return;
+            }
         }
 
         // an empty 'else' is the path that skips every branch
@@ -120,11 +156,12 @@ class stmt_if final : public statement {
     }
 
   private:
-    // true when the branch is a constant true condition
+    // the branch at 'branch_index', what it found of its condition
     [[nodiscard]] auto
     compile_branch_at(toc& tc, const size_t indent, const size_t branch_index,
                       const std::string_view label_else_branch,
-                      const std::string_view label_after_if) const -> bool {
+                      const std::string_view label_after_if) const
+        -> condition_result {
 
         const size_t branch_count{branches_.size()};
 
@@ -152,7 +189,7 @@ class stmt_if final : public statement {
             x.branch(indent, label_after_if);
         }
 
-        return const_eval == condition_result::always_true;
+        return const_eval;
     }
 
     // reads what follows a branch: 'else if' continues the chain, 'else' ends
@@ -196,5 +233,30 @@ class stmt_if final : public statement {
         }
 
         return std::format("{}.else", if_label);
+    }
+
+    [[nodiscard]] static auto ends_chain(const std::optional<bool> known)
+        -> bool {
+
+        return known == true;
+    }
+
+    // the value of a compiled condition, empty when it is computed at run time
+    [[nodiscard]] static auto known_of(const condition_result result)
+        -> std::optional<bool> {
+
+        if (result == condition_result::unknown) {
+            return std::nullopt;
+        }
+
+        return result == condition_result::always_true;
+    }
+
+    // the chain rule, the same for the compile and for the paths of the
+    // definite assignment: a branch whose condition is false does not run, one
+    // whose condition is true ends the chain, the later branches and the
+    // 'else' do not run
+    [[nodiscard]] static auto runs(const std::optional<bool> known) -> bool {
+        return known != false;
     }
 };

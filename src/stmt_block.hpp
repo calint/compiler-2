@@ -76,8 +76,14 @@ class stmt_block final : public statement {
 
         const toc::frame_scope block{tc, frame::block()};
 
+        // the statements after a 'return', 'break', 'continue' or 'exit' that
+        // every path takes do not run and are not compiled
         for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent + 1, destination{});
+
+            if (not tc.is_path_open()) {
+                break;
+            }
         }
     }
 

@@ -1,0 +1,11 @@
+# an inlined recursion ends at compile time where a constant argument makes its
+# 'return' always taken, the code after it is not compiled
+func count(n) res {
+    res = 0
+    if n > 5 return
+    res = count(n + 1) + 1
+}
+
+func main() {
+    exit(count(0))
+}

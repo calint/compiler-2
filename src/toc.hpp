@@ -348,6 +348,11 @@ class frame final {
     // the label to jump to when exiting an inlined function
     std::string func_ret_label_;
 
+    // a function frame while its body compiles: the code after the current
+    // statement runs on some path, a 'return' closes it, see
+    // 'toc::is_path_open'
+    bool is_path_open_{true};
+
     // the name of the result of a function frame, empty when it has none
     std::string result_name_;
 
@@ -485,6 +490,8 @@ class frame final {
         return type_ == frame_type::noinline_dry_run;
     }
 
+    [[nodiscard]] auto is_path_open() const -> bool { return is_path_open_; }
+
     [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
         return result_name_ == name;
     }
@@ -534,6 +541,8 @@ class frame final {
 
         dat_var_padding_bytes_ = size_bytes;
     }
+
+    auto set_path_open(const bool is_open) -> void { is_path_open_ = is_open; }
 
     [[nodiscard]] auto storage_base_register() const -> std::string_view {
         return storage_base_register_;
@@ -1563,6 +1572,11 @@ class scope_stack final {
     }
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
+
+    // see 'toc::is_path_open'
+    auto set_path_open(const bool is_open) -> void {
+        func_frame().set_path_open(is_open);
+    }
 
   private:
     [[nodiscard]] auto func_frame() -> frame& {
@@ -3307,6 +3321,15 @@ class toc final {
         return funcs_.has(name) or generics_.has_func(name);
     }
 
+    // the code after the current statement of the function being compiled
+    // runs on some path; 'return', 'break', 'continue' and 'exit' close it, the
+    // end of an 'if' is open when one of its paths is, a block stops compiling
+    // at a closed path, e.g. after the 'return' of 'if n == 0 return' in an
+    // inlined call with the constant argument 0
+    [[nodiscard]] auto is_path_open() const -> bool {
+        return scopes_.current_func_frame().is_path_open();
+    }
+
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
@@ -3383,6 +3406,10 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
+
+    auto set_path_open(const bool is_open) -> void {
+        scopes_.set_path_open(is_open);
+    }
 
     // the text of the file of the token
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
