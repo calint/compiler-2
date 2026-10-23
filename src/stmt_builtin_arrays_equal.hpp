@@ -72,13 +72,15 @@ class stmt_builtin_arrays_equal final : public expression {
         };
 
         const machine::address_emitter emit_lhs{
-            operands_.first().address_emitter_of(tc, indent, tok(),
-                                                 arrays.first),
+            operands_.first().address_emitter_of(
+                tc, indent, tok(), arrays.first,
+                operands_.range_check_of(tc, operands_.first())),
         };
 
         const machine::address_emitter emit_rhs{
-            operands_.second().address_emitter_of(tc, indent, tok(),
-                                                  arrays.second),
+            operands_.second().address_emitter_of(
+                tc, indent, tok(), arrays.second,
+                operands_.range_check_of(tc, operands_.second())),
         };
 
         x.arrays_equal(tok(), indent, arrays.first.type_ref().size_bytes(),

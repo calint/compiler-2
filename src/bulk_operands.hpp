@@ -111,6 +111,18 @@ class bulk_operands final {
         return first_;
     }
 
+    // 'array' is 'first' or 'second', see 'range_check'
+    [[nodiscard]] auto range_check_of(const toc& tc,
+                                      const stmt_identifier& array) const
+        -> range_check {
+
+        if (count_.constant_value(tc) and array.constant_start_index(tc)) {
+            return range_check::compile_time;
+        }
+
+        return range_check::run_time;
+    }
+
     // the elements are compared or copied as a whole, so their types match
     [[nodiscard]] auto resolve_arrays(toc& tc) const -> arrays_info {
         arrays_info info{

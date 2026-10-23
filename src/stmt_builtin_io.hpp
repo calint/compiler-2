@@ -366,19 +366,24 @@ class stmt_builtin_io final : public stmt_call {
 
         compile_count(tc, indent, count, buffer_info);
 
+        const range_check check{range_check_of(tc, buffer_info)};
+
         operand start;
 
         if (has_start()) {
-            start = compile_start(tc, indent, count, buffer_info);
+            start = compile_start(tc, indent, count, buffer_info, check);
         }
 
         assert_constant_range_in_bounds(tc, buffer_info);
 
         // a count with a start is checked by 'compile_start', a bare count by
         // 'compile_lea'
+        const bool is_count_checked_by_lea{
+            has_count() and not has_start() and check == range_check::run_time,
+        };
+
         compile_buffer_address(tc, indent, buffer_reg, buffer_info,
-                               has_count() and not has_start() ? count
-                                                               : operand{});
+                               is_count_checked_by_lea ? count : operand{});
 
         const operand element_size_bytes{
             operand::imm(buffer_info.type_ref().size_bytes(), type_default),
@@ -441,8 +446,8 @@ class stmt_builtin_io final : public stmt_call {
     // the start register stays allocated for the caller
     [[nodiscard]] auto compile_start(toc& tc, const size_t indent,
                                      const operand& count,
-                                     const ident_info& buffer_info) const
-        -> operand {
+                                     const ident_info& buffer_info,
+                                     const range_check check) const -> operand {
 
         machine& x{tc.machine()};
 
@@ -454,6 +459,10 @@ class stmt_builtin_io final : public stmt_call {
         };
 
         start_arg.compile(tc, indent, destination::of_register(start));
+
+        if (check == range_check::compile_time) {
+            return start;
+        }
 
         x.check_bounds(start_arg.tok(), indent,
                        machine::bounds_range::range(
@@ -539,6 +548,22 @@ class stmt_builtin_io final : public stmt_call {
 
     [[nodiscard]] auto has_start() const -> bool {
         return argument_count() == io_.max_arg_count;
+    }
+
+    // see 'range_check', a sector function has the constant count of a sector
+    [[nodiscard]] auto range_check_of(toc& tc,
+                                      const ident_info& buffer_info) const
+        -> range_check {
+
+        if (not constant_count(tc, buffer_info)) {
+            return range_check::run_time;
+        }
+
+        if (has_start() and not argument_constant(tc, argument_count() - 1)) {
+            return range_check::run_time;
+        }
+
+        return range_check::compile_time;
     }
 
     [[nodiscard]] auto sector_element_count(toc& tc,

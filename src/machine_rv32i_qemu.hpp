@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <format>
 #include <string_view>
 #include <utility>
 
@@ -95,6 +96,9 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // the stack follows the variables
     auto emit_stack_setup() -> void override {
         assembler_rv32i& a{assembler()};
+
+        a.comment(0, std::format("load stack pointer to '{}' + {} B",
+                                 variables_end_label, stack_size_bytes()));
 
         a.la(0, "sp", variables_end_label);
         a.li(0, "t0", stack_size_bytes());

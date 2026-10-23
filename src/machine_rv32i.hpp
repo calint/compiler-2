@@ -5514,8 +5514,9 @@ class machine_rv32i_linux final : public machine_rv32i {
     auto emit_divide_by_zero_trap() -> void override {
         assembler_rv32i& a{assembler()};
 
+        a.label(0, "1");
         a.ebreak(1);
-        a.j(1, "5b");
+        a.j(1, "1b");
     }
 
     auto emit_read_call(const size_t indent) -> void override {

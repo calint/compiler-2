@@ -223,6 +223,10 @@ class one_line_source final {
 // the width an expression is computed at compared with its own
 enum class width_change : uint8_t { narrowed, widened };
 
+// where the range of a bulk operation is checked: a constant count with a
+// constant start was checked at compile time, e.g. 'array_copy(a[1], b, 2)'
+enum class range_check : uint8_t { run_time, compile_time };
+
 // a node of the program: it parses itself in its constructor, writes its
 // source back ('source_to') and compiles; the virtuals in groups, with the
 // classes that override them, the default is 'std::unreachable()' where no
@@ -391,17 +395,22 @@ class statement {
     // passes it to the backend's 'use' while the scratch registers that built
     // it are still allocated and frees them afterwards. it refers to its
     // arguments, so it is only valid within the call that made it
-    [[nodiscard]] auto address_emitter_of(toc& tc, const size_t indent,
-                                          const token& src_loc_tk,
-                                          const ident_info& info) const
+    [[nodiscard]] auto
+    address_emitter_of(toc& tc, const size_t indent, const token& src_loc_tk,
+                       const ident_info& info,
+                       const range_check check = range_check::run_time) const
         -> machine::address_emitter {
 
-        return [this, &tc, indent, &src_loc_tk, &info](
+        return [this, &tc, indent, &src_loc_tk, &info, check](
                    const operand& reg_count, const operand& address_register,
                    const machine::address_use use) -> void {
+            const operand range_count{
+                check == range_check::run_time ? reg_count : operand{},
+            };
+
             compile_address(tc, indent, src_loc_tk,
                             {
-                                .reg_count{reg_count},
+                                .reg_count{range_count},
                                 .known{info.known()},
                                 .address_register{address_register},
                             },

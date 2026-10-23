@@ -100,6 +100,10 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
         // no operating system sets up a stack
         emit_stack_setup();
+
+        assembler_rv32i& a{assembler()};
+
+        a.add_separator_newline();
     }
 
   protected:
@@ -164,12 +168,16 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     virtual auto emit_exit_routine() -> void = 0;
 
     // waits for a byte and loads it into a4, may change only a4
+    // note: the read routine uses the labels '1', '3' and '4' around it, an
+    //       override may use '2'
     virtual auto emit_receive_byte() -> void = 0;
 
     virtual auto emit_stack_setup() -> void = 0;
 
     // waits until the uart is ready and sends the byte at a5, may change
     // only a4
+    // note: the write routine uses the labels '1' and '3' around it, an
+    //       override may use '2'
     virtual auto emit_transmit_byte() -> void = 0;
 
     // prepares a3 for 'emit_receive_byte' and 'emit_transmit_byte'

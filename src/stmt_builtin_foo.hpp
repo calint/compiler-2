@@ -247,7 +247,7 @@ class stmt_builtin_foo final : public statement {
     }
 
     // a count register is checked against the array size like the count of
-    // 'array_copy'
+    // 'array_copy', a constant count is checked at compile time
     [[nodiscard]] auto
     compile_limit(toc& tc, const size_t indent, const size_t array_len,
                   std::vector<operand>& allocated_registers) const -> operand {
@@ -258,6 +258,7 @@ class stmt_builtin_foo final : public statement {
 
         if (const std::optional<int64_t> count{count_.constant_value(tc)}) {
             ident_.assert_count_in_bounds(tc, count_.tok(), *count);
+            return operand::imm(*count, tc.builtins().default_type());
         }
 
         machine& x{tc.machine()};
@@ -358,6 +359,15 @@ class stmt_builtin_foo final : public statement {
                          const std::string_view end_label) const -> void {
 
         if (not has_count()) {
+            return;
+        }
+
+        // note: a constant count is not negative, see 'compile_limit'
+        if (limit.is_immediate()) {
+            if (limit.immediate() == 0) {
+                x.branch(indent, end_label);
+            }
+
             return;
         }
 

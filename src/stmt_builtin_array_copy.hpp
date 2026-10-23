@@ -82,13 +82,15 @@ class stmt_builtin_array_copy final : public statement {
         };
 
         const machine::address_emitter emit_src{
-            operands_.first().address_emitter_of(tc, indent, tok(),
-                                                 arrays.first),
+            operands_.first().address_emitter_of(
+                tc, indent, tok(), arrays.first,
+                operands_.range_check_of(tc, operands_.first())),
         };
 
         const machine::address_emitter emit_dst{
-            operands_.second().address_emitter_of(tc, indent, tok(),
-                                                  arrays.second),
+            operands_.second().address_emitter_of(
+                tc, indent, tok(), arrays.second,
+                operands_.range_check_of(tc, operands_.second())),
         };
 
         x.copy_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
@@ -125,10 +127,16 @@ class stmt_builtin_array_copy final : public statement {
 
         std::vector<operand> allocated_scratch_registers;
 
-        // the range checks compare 'start + count' in registers
+        const range_check src_check{operands_.range_check_of(tc, src)};
+        const range_check dst_check{operands_.range_check_of(tc, dst)};
+
+        // the range checks of a run-time start compare 'start + count' in
+        // registers
         operand count_register;
 
-        if (tc.checks().is_bounds()) {
+        if (tc.checks().is_bounds() and (src_check == range_check::run_time or
+                                         dst_check == range_check::run_time)) {
+
             count_register = x.alloc_scratch_register(
                 tok(), indent, tc.builtins().default_type());
 
@@ -141,16 +149,24 @@ class stmt_builtin_array_copy final : public statement {
                                destination::of_register(count_register));
         }
 
+        const operand src_count{
+            src_check == range_check::run_time ? count_register : operand{},
+        };
+
         x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
             src.compile_lea(tc, indent, src.first_token(),
                             allocated_scratch_registers,
                             {
-                                .reg_count{count_register},
+                                .reg_count{src_count},
                                 .known{arrays.first.known()},
                                 .address_register{},
                             }),
+        };
+
+        const operand dst_count{
+            dst_check == range_check::run_time ? count_register : operand{},
         };
 
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));
@@ -159,7 +175,7 @@ class stmt_builtin_array_copy final : public statement {
             dst.compile_lea(tc, indent, dst.first_token(),
                             allocated_scratch_registers,
                             {
-                                .reg_count{count_register},
+                                .reg_count{dst_count},
                                 .known{arrays.second.known()},
                                 .address_register{},
                             }),

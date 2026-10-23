@@ -4835,3 +4835,7 @@ SRC=1550 && COMPERR
 # a method of a generic type is checked for a valid name at its definition,
 # also when no alias makes an instance
 SRC=1551 && COMPERR
+
+# a constant count with a constant start is checked at compile time, its
+# range is not checked again at run time; a run-time start is, once
+SRC=1552 && DIFFPY

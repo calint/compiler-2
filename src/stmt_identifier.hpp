@@ -503,6 +503,18 @@ class stmt_identifier final : public statement {
                         path_as_string_, method_name_tk_.text())};
     }
 
+    // the index where a bulk operation starts, 0 for a whole array, empty when
+    // computed at run time
+    [[nodiscard]] auto constant_start_index(const toc& tc) const
+        -> std::optional<int64_t> {
+
+        if (not is_array_element()) {
+            return 0;
+        }
+
+        return elems_.back().array_index_expr->constant_value(tc);
+    }
+
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_.at(0).name_tk;
     }
@@ -645,18 +657,6 @@ class stmt_identifier final : public statement {
         throw compile_error{
             name_tk, std::format("method '{}' not found in type '{}'",
                                  name_tk.text(), info.type_ref().name())};
-    }
-
-    // the index where a bulk operation starts, 0 for a whole array, empty when
-    // computed at run time
-    [[nodiscard]] auto constant_start_index(const toc& tc) const
-        -> std::optional<int64_t> {
-
-        if (not is_array_element()) {
-            return 0;
-        }
-
-        return elems_.back().array_index_expr->constant_value(tc);
     }
 
     // a '.' followed by a field continues the path with that field, a method

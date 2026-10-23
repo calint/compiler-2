@@ -215,7 +215,6 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
                                  memory_size_bytes() & half_mask_));
 
         a.lui(0, "sp", memory_size_bytes() >> assembler_rv32i::lui_shift);
-        a.add_separator_newline();
     }
 
     auto emit_transmit_byte() -> void override {
