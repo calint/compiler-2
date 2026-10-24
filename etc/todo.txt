@@ -48,9 +48,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           '--checks=frame'); README 1.6 defines every usage entry;
           test-arena.py and test-rv32i-address.cpp follow; every listing's
           report line changes
-       A.4. ask: one statement prints its source once (N5): today 'var m =
-            f(x)' prints its source up to four times at two columns; every
-            listing changes
+       A.4. pending, low priority (user, 2026-10-24): one statement prints
+            its source once (N5); proposed rules: the statement line is the
+            only line with the whole source; a nested node prints its source
+            only when it is a strict part of the line above (e.g. the 'a * b'
+            computed in a scratch register); what a step adds is one line
+            saying what it is (placement, 'call NAME, inlined', folded
+            constant, kept version); the callee head, bindings, labels and
+            indentation stay; 'stmt_def_var' compiles its assignment without
+            its comment, 'expr_arith' drops the line of a one-element list,
+            '= expression' and 'src: folded constant' become additions;
+            comment lines only, every listing and the CLI comment checks
+            change; open: whether the scratch register lines stay
        A.5. an inlined call whose end the compile does not reach closes the
             caller's path (the open item below), after I.1
        A.6. a 'let' that folds is a constant of its type (user, 2026-10-24):
@@ -231,6 +240,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             after into 'func_receiver' {none, of_type, of_generic_type}
             (F1); 'is_method' named for its three meanings; one
             'report_name'
+       => F.1 done (2026-10-24): 'func_head::read' reads every head the
+          same way ('.method', '<T type>', '('); the receiver is resolved at
+          its '.' into 'func_head::receiver' {none, of_type, of_generic_type}
+          (same error order); 'is_generic_type_method' is a query,
+          'names_generic_type', 'read_generic_type_method_name' and the
+          kind branch of 'read_signature' go; 'head.name' is 'text.print'
+          for a generic type method, so 'assert_generic_signature' reports
+          'head.name'; 'define_method' takes the method name from the head;
+          the three meanings named apart: 'stmt_def_func::has_self_param',
+          'func_head::is_type_member' (also 'generic_func_info'), the
+          local one went with the merge; listings equal, 14 error cases of
+          'func text.' heads give the same messages
        F.2. 'type_instantiator' beside the alias, shaped like
             'func_instantiator'; one RAII 'generic_reparse'; one parser of
             '= name<args>' (F2)

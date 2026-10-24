@@ -478,7 +478,7 @@ struct generic_func_info {
     // the last definition the body sees, see 'definition_order'
     size_t definition{};
     // reached through its type wherever it is defined
-    bool is_method{};
+    bool is_type_member{};
 };
 
 // what a function made from a generic definition keeps of it
@@ -603,7 +603,7 @@ class generic_registry final {
 
         const generic_func_info& info{funcs_.get_const_ref(name)};
 
-        return info.is_method or order_.get().is_visible(info.definition);
+        return info.is_type_member or order_.get().is_visible(info.definition);
     }
 
     [[nodiscard]] auto has_type(const std::string_view name) const -> bool {
