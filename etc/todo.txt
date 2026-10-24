@@ -184,6 +184,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             is_temporary} made once by 'call_site' for a mode (inlined,
             noinline); 'inline_call' and 'noinline_call' hold it instead of
             'std::vector<bool>'; 'argument_form_of' called once per argument
+       => E.1 done (2026-10-24): 'call_site::argument_plan(tc, func,
+          call_mode)' makes one 'planned_argument' {form, is_temporary}
+          per argument, the temporary rule of each mode in one place;
+          'inline_call' and 'noinline_call' hold the plan; 'bind_argument'
+          takes the planned form (the wrong note about who made the
+          temporaries goes); 'noinline_call' reads the place from the plan,
+          not 'bare_path()'; 'make_argument_temporary' returns a
+          'call_temporary', the noinline side builds 'noinline_arg';
+          'argument_form_of' is called once per argument; listings equal,
+          call fuzzers clean
        E.2. the dry run of 'inline_call' explicit (S5): a public 'dry_run'
             asserts the mode, 'compile_with_bindings' private
        E.3. "result, then arguments" by name, not position (S2):
