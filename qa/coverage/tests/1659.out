@@ -1,0 +1,4 @@
+
+1659.baz:5:12: index -1 is out of bounds for array 'a' of size 4
+    exit(a[k])
+           ^

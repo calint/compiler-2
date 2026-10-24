@@ -1,0 +1,9 @@
+# a 'let' of a 'bool' is a constant 'bool', the 'if' folds
+func main() {
+    let b = true
+    let c = not b
+    if c {
+        exit(1)
+    }
+    exit(2)
+}

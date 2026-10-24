@@ -13,7 +13,8 @@
 #
 # with FUZZ_SPELLING=1 a program is built twice from one template whose
 # leaves are typed values: once with each leaf spelled as a constant
-# ('T(lit)', 'T(K)' of a 'let K', an inlined parameter bound to one) and once
+# ('T(lit)', 'T(K)' of a 'let K', 'K' of a 'let K = T(lit)', an inlined
+# parameter bound to one) and once
 # as a variable (a 'var', an inlined or noinline parameter bound to one). both
 # must end alike on both targets, with and without the overflow check: the
 # same exit code, the same panic or both rejected; a constant overflow or
@@ -444,7 +445,8 @@ class Leaf:
         bits = BITS[self.t]
         self.lit = self.v + rnd.choice([0, 0, 0, 1 << bits, -(1 << bits)])
         self.uops = rnd.choice(["", "", "-", "~", "--"])
-        self.const_spelling = rnd.choice(["conv", "let", "param"])
+        self.const_spelling = rnd.choice(["conv", "let", "typed_let",
+                                          "param"])
         self.var_spelling = rnd.choice(["var", "param"])
         # a 'let' has the default type, 'i32' on rv32i
         if self.const_spelling == "let" and not fits("i32", self.lit):
@@ -459,6 +461,8 @@ class Leaf:
             return f"{self.t}({self.lit})"
         if as_constant and self.const_spelling == "let":
             return f"{self.t}(K{self.index})"
+        if as_constant and self.const_spelling == "typed_let":
+            return f"K{self.index}"
         if not as_constant and self.var_spelling == "var":
             return f"c{self.index}"
         return f"p{self.index}"
@@ -493,7 +497,8 @@ class SpellingProgram:
         leaf = self.leaves[i]
         # note: an argument that is a name passes its storage and must have
         #       the type of the parameter, a conversion passes a value, so the
-        #       twin of 'i8(5)' is 'i8(c0)', not 'c0'
+        #       twin of 'i8(5)' is 'i8(c0)', not 'c0'; a typed constant has
+        #       the rules of a variable of its type, the twin of 'K0' is 'c0'
         if self.context == "argument" and not as_constant and \
                 leaf.const_spelling in ("conv", "let"):
             return f"{leaf.uops}{leaf.t}({leaf.spelled(False)})"
@@ -518,6 +523,8 @@ class SpellingProgram:
         for leaf in self.leaves:
             if as_constant and leaf.const_spelling == "let":
                 lines.append(f"let K{leaf.index} = {leaf.lit}")
+            if as_constant and leaf.const_spelling == "typed_let":
+                lines.append(f"let K{leaf.index} = {leaf.t}({leaf.lit})")
             if not as_constant:
                 lines.append(f"var c{leaf.index} = {leaf.t}({leaf.lit})")
         if self.context == "argument":

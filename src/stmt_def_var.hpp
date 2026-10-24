@@ -64,9 +64,17 @@ class initializer_declaration final {
         std::optional<folded_value> constant;
 
         with_placeholder(tc, [&] -> void {
-            constant =
-                value.fold_checked(tc, tc.use_at(tc.builtins().default_type()));
+            constant = value.fold_checked(tc, tc.use_at(type_ref()));
         });
+
+        // note: untyped only at the default type, e.g. 'let k = 5' fits any
+        //       integer where it is used; 'let b = true' is a 'bool'
+
+        if (constant and not constant->is_typed() and
+            not type_ref().is_same(tc.builtins().default_type())) {
+
+            constant->own_type = &type_ref();
+        }
 
         return constant;
     }
@@ -296,26 +304,26 @@ class initializer_declaration final {
     }
 };
 
-// a 'let' whose initializer folds to a constant of the default type, e.g.
-// 'let n = 2 * 3': nothing is stored, the name stands for the value
+// a 'let' whose initializer folds to a constant, e.g. 'let n = 2 * 3' or
+// 'let k = i8(3)': nothing is stored, the name stands for the value
 class stmt_def_const final : public statement {
     token name_tk_;
     token equals_tk_;
     expr_any initializer_;
-    // typed when the initializer is, e.g. 'let v = int(5)' is checked by type
-    // like a variable of 'int'
+    // typed when the initializer is, e.g. 'let v = i8(5)' is checked by type
+    // like a variable of 'i8'
     folded_value constant_;
 
   public:
     // the constant is declared during the parse so later statements can name
     // it, e.g. as an array size
     stmt_def_const(toc& tc, const token tk, const token name_tk,
-                   const token equals_tk, expr_any initializer,
+                   const token equals_tk, const type& tp, expr_any initializer,
                    const folded_value& constant)
         : statement{tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
           initializer_{std::move(initializer)}, constant_{constant} {
 
-        set_type(tc.builtins().default_type());
+        set_type(tp);
 
         tc.add_const(name_tk_, 0, name_tk_.text(), constant_);
     }
@@ -473,10 +481,9 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
 
     expr_any value{declaration.parse_value(tc, tz)};
 
-    // a constant has the default type and is not an array
+    // a constant is not an array
     const bool may_fold{
-        tk.is_text("let") and not declaration.shape().is_array() and
-            declaration.type_ref().is_same(tc.builtins().default_type()),
+        tk.is_text("let") and not declaration.shape().is_array(),
     };
 
     const std::optional<folded_value> constant{
@@ -485,6 +492,7 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
 
     if (constant) {
         return std::make_unique<stmt_def_const>(tc, tk, name_tk, equals_tk,
+                                                declaration.type_ref(),
                                                 std::move(value), *constant);
     }
 

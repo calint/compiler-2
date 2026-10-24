@@ -1,0 +1,6 @@
+# a 'let' of a typed constant index is checked at compile time
+func main() {
+    let k = i8(-1)
+    var a = i8[4]
+    exit(a[k])
+}

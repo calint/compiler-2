@@ -1,0 +1,7 @@
+# a 'let' of a typed value is a constant of its type, e.g. an array size
+func main() {
+    let k = i8(3)
+    let n = k + 2
+    var a = i8[n]
+    exit(array_length(a))
+}

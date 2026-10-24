@@ -31,6 +31,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             listing changes
        A.5. an inlined call whose end the compile does not reach closes the
             caller's path (the open item below), after I.1
+       A.6. a 'let' that folds is a constant of its type (user, 2026-10-24):
+            'let k = i8(3)' was a read-only variable, only a 'let' of the
+            default type folded, so 'let k = i64(3)' was a constant on x86_64
+            and a variable on rv32i
+       => A.6 done (2026-10-24): 'make_stmt_def_var' folds every non-array
+          'let' at its type; the constant is typed unless its type is the
+          default type ('let b = true' is a 'bool'); 'stmt_def_const' takes
+          the type; a frame constant reads at its own type; tests 1658-1660;
+          fuzz-exprs spells a leaf as 'K' of 'let K = T(lit)', its twin the
+          variable 'c'; a typed constant index is now rejected at compile
+          time, a folded 'if' on one makes the code after it unreached
     B. docs and comments that contradict the code
        B.1. README 1.7 (E2: array sizes fold, a typed 'let' is a variable,
             the comparison side has its own immediate rule); README 1.1

@@ -310,7 +310,8 @@ struct param_binding {
 
 struct const_info {
     token src_loc_tk; // the definition
-    // typed when the initializer of a 'let' is, e.g. 'let v = int(5)'
+    // typed when the initializer of a 'let' is or its type is not the
+    // default type, e.g. 'let v = int(5)' or 'let b = true'
     folded_value constant;
 };
 
@@ -2292,9 +2293,17 @@ class ident_resolver final {
                                                     in_quotes(step.id.base()))};
                 }
 
-                return ident_info::make_const(
-                    ident, builtins_.get().default_type(),
-                    frm.get_const(step.id.base()).constant);
+                const folded_value& constant{
+                    frm.get_const(step.id.base()).constant,
+                };
+
+                // an untyped constant reads at the default type
+                const type& constant_type{
+                    constant.is_typed() ? *constant.own_type
+                                        : builtins_.get().default_type(),
+                };
+
+                return ident_info::make_const(ident, constant_type, constant);
             }
 
             if (std::optional<ident_info> found{

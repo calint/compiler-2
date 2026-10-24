@@ -5182,3 +5182,12 @@ SRC=1656 && COMPERR
 # a loop whose 'break' folds away for a constant argument is not left, the
 # code after it is not compiled; the parse cannot tell and accepts it
 SRC=1657 && EXP=7 && RUN
+
+# a 'let' of a typed value is a constant of its type
+SRC=1658 && EXP=5 && RUN
+
+# an index that is a typed constant is checked at compile time
+SRC=1659 && COMPERR
+
+# a 'let' of a 'bool' is a constant 'bool'
+SRC=1660 && EXP=2 && RUN

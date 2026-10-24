@@ -371,12 +371,10 @@ kept ('ident_info', the alias of an inlined argument, the constant of a 'let'):
 
 - typed: it has the rules of a variable of its 'own_type': a conversion
   ('i8(300)', 'i16(k)'), a constant argument of an inlined call,
-  'array_length', a list led by one
+  'array_length', a list led by one, a 'let' of a type other than the
+  default type, e.g. 'let k = i8(3)' or 'let b = true'
 - untyped: a literal or a 'let' of untyped values, checked by its value where
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not
-
-A 'let' is a constant only when its value folds at the default type, e.g.
-'let k = 3'; 'let k = i8(3)' is a read-only variable of 'i8'.
 
 Where it is used is a 'value_use': the width the value is computed at and
 whether its arithmetic is checked for overflow, made by 'toc::use_of' from a
