@@ -203,8 +203,8 @@ Invariants the code relies on:
    'main' is compiled where the program starts. An inlined call compiles the
    body of the callee in place ([1.3](#13-names-during-compile-frames-and-bindings)). A noinline call adds a body to
    compile for the array lengths of its arguments; the bodies are compiled
-   after 'main', and compiling one can add more. Then each function that no
-   compile reached is checked and emits nothing ([1.5](#15-checks)). Then the
+   after 'main', and compiling one can add more. Then each function that
+   nothing compiled is checked and emits nothing ([1.5](#15-checks)). Then the
    failure handlers that the code branches to
    ('machine::emit_used_failure_handlers'), the routines and helpers the code
    and the handlers marked used ('machine::emit_used_routines'), the
@@ -277,7 +277,7 @@ the longer of two versions after both are measured:
    function compiled as if inlined with the arguments of a call, for the
    errors that depend on that call, see
    [chapter 4](#4-noinline-calls-the-body-dry-run-once-per-kind-of-call),
-   and the body of a function that no compile reached ([1.5](#15-checks));
+   and the body of a function that nothing compiled ([1.5](#15-checks));
    'toc::dry_run_scope' and 'machine::version_scope' put back what it
    changed: the registers, the deepest scope count, the string constants and
    the use of storage, and the routines, helpers and failure stubs it marked
@@ -302,9 +302,9 @@ the options, they build the option records of the machine methods.
 The rules checked while compiling, e.g. a constant index in bounds or a
 constant that fits its variable, hold in every function, also in one that
 nothing calls, so whether a program is accepted does not depend on its
-calls. 'compile_records' records the functions whose body a
-compile reached, in place, as a noinline body or in a dry run; after the
-noinline bodies, 'program::check_unreached_functions' compiles each other
+calls. 'compile_records' records the functions whose body was
+compiled, in place, as a noinline body or in a dry run; after the
+noinline bodies, 'program::check_uncompiled_functions' compiles each other
 function like a noinline body under 'toc::dry_run'
 ('stmt_def_func::check_body'). Its errors have no "called from" frame. An
 unsized array parameter has no length there ('ident_info::is_length_unknown'),

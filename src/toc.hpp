@@ -44,7 +44,7 @@
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
 //                   address
 //   tables          'type_table', 'compile_records' (the noinline bodies to
-//                   emit, the reached definitions), 'function_table'
+//                   emit, the compiled functions), 'function_table'
 //   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
 //                   of noinline calls
 //   'data_table'    the dats ('placed_dat') and the read-only constants
@@ -1011,11 +1011,12 @@ class type_table final {
     }
 };
 
-// what a compile reached: the bodies of the noinline functions to emit, a
-// worklist that grows while they compile, and the definitions whose body ran
+// what a compile made: the bodies of the noinline functions to emit, a
+// worklist that grows while they compile, and the functions whose body was
+// compiled, also in a dry run
 class compile_records final {
     std::vector<noinline_body> noinline_bodies_;
-    std::set<const stmt_def_func*> reached_;
+    std::set<const stmt_def_func*> compiled_funcs_;
 
   public:
     // a body is emitted once per array lengths
@@ -1036,17 +1037,17 @@ class compile_records final {
         });
     }
 
-    // a noinline body to emit or a function reached by a call
+    [[nodiscard]] auto is_compiled(const stmt_def_func& func) const -> bool {
+        return compiled_funcs_.contains(&func);
+    }
+
+    // a noinline body to emit or a compiled function
     [[nodiscard]] auto is_empty() const -> bool {
-        return noinline_bodies_.empty() and reached_.empty();
+        return noinline_bodies_.empty() and compiled_funcs_.empty();
     }
 
-    [[nodiscard]] auto is_reached(const stmt_def_func& func) const -> bool {
-        return reached_.contains(&func);
-    }
-
-    auto mark_reached(const stmt_def_func& func) -> void {
-        reached_.insert(&func);
+    auto mark_compiled(const stmt_def_func& func) -> void {
+        compiled_funcs_.insert(&func);
     }
 
     // a copy, the list grows while the bodies compile
@@ -3468,8 +3469,8 @@ class toc final {
     }
 
     // also in a dry run, the errors of the body were checked
-    auto mark_func_reached(const stmt_def_func& func) -> void {
-        compiled_.mark_reached(func);
+    auto mark_func_compiled(const stmt_def_func& func) -> void {
+        compiled_.mark_compiled(func);
     }
 
     auto mark_generic_func_instantiated(const std::string_view name) -> void {

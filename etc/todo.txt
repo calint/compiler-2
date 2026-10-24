@@ -136,6 +136,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           'var()'; listings equal
        D.2. "reached" for paths only, a function is "compiled" (S10:
             'mark_func_reached', 'check_unreached_functions')
+       => D.2 done (2026-10-24): 'compile_records::is_compiled',
+          'mark_compiled', 'compiled_funcs_'; 'toc::mark_func_compiled';
+          'program::check_uncompiled_functions'; the comments and README
+          1.2, 1.4, 1.5 say "compiled" (also in a dry run) for functions,
+          "reached" stays for paths; listings equal
        D.3. 'address_scope' -> 'operation_scope' (B6)
        D.4. "failure" for the path, "panic" for the message, one
             'machine::mark_failure' (B8)

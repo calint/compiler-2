@@ -305,7 +305,7 @@ class program final {
 
             compile_main(tc_, tc_.get_main_or_throw());
             compile_noinline_functions(tc_);
-            check_unreached_functions(tc_);
+            check_uncompiled_functions(tc_);
         }
 
         machine& x{tc_.machine()};
@@ -451,21 +451,21 @@ class program final {
     //
 
     // the rules checked while compiling, e.g. a constant index in bounds,
-    // hold in a function that no compile reached too, so whether a program is
-    // accepted does not depend on its calls; this includes the instances that
-    // an alias of a generic type makes of its methods; the list is taken
-    // before the checks, a check marks the functions it calls as reached
-    // without checking them on their own
-    static auto check_unreached_functions(toc& tc) -> void {
-        std::vector<const stmt_def_func*> unreached;
+    // hold in a function that nothing compiled too, so whether a program is
+    // accepted does not depend on its calls; this includes the instances
+    // that an alias of a generic type makes of its methods; the list is taken
+    // before the checks, a check compiles the functions it calls without
+    // checking them on their own
+    static auto check_uncompiled_functions(toc& tc) -> void {
+        std::vector<const stmt_def_func*> uncompiled;
 
         for (const stmt_def_func* const f : tc.funcs().defs()) {
-            if (not tc.compiled().is_reached(*f)) {
-                unreached.push_back(f);
+            if (not tc.compiled().is_compiled(*f)) {
+                uncompiled.push_back(f);
             }
         }
 
-        for (const stmt_def_func* const f : unreached) {
+        for (const stmt_def_func* const f : uncompiled) {
             f->check_body(tc, 0);
         }
     }

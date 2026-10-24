@@ -408,7 +408,7 @@ class stmt_def_func final : public statement {
                            name_with_lengths(array_lengths));
     }
 
-    // for the errors of a function that no compile reached, compiled like a
+    // for the errors of a function that nothing compiled, compiled like a
     // noinline body and discarded; an unsized array parameter has no length
     // ('ident_info::is_length_unknown'). an error that depends on the
     // arguments of a call, e.g. an inlined recursion that a constant argument
@@ -445,9 +445,9 @@ class stmt_def_func final : public statement {
         toc::throw_dry_run_error(std::move(*error));
     }
 
-    // in place or in a body of its own, the function is reached
+    // in place or in a body of its own, the function is compiled
     auto compile_statements(toc& tc, const size_t indent) const -> void {
-        tc.mark_func_reached(*this);
+        tc.mark_func_compiled(*this);
         code_.compile(tc, indent, destination{});
     }
 
