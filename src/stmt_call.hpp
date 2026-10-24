@@ -893,6 +893,13 @@ struct call_site {
 // 'dry_run' runs step 3 for the errors of a 'noinline_call', whose plan has
 // the noinline mode
 class inline_call {
+    // what the body names by its result and its parameters; the result has
+    // its own address choice in 'compile_to_destination'
+    struct call_bindings {
+        std::optional<param_binding> result;
+        std::vector<param_binding> arguments;
+    };
+
     call_site call_;
     // one per argument, for an inlined call or, in the dry run of a noinline
     // call, for that call
@@ -989,7 +996,7 @@ class inline_call {
 
     // the registers are freed before the exit label
     auto compile_body(toc& tc, const size_t indent, const stmt_def_func& func,
-                      const std::span<const param_binding> bindings_to_add,
+                      const call_bindings& bindings,
                       const std::span<const operand> registers_to_free) const
         -> void {
 
@@ -1034,16 +1041,26 @@ class inline_call {
         try {
             func.add_constants(tc, indent + 1);
 
-            // the body names the arguments and the result by the parameters
-            for (const param_binding& e : bindings_to_add) {
-                const bound_name* const named{
-                    std::get_if<bound_name>(&e.target),
-                };
+            const auto add_binding{
+                [&](const param_binding& e) -> void {
+                    const bound_name* const named{
+                        std::get_if<bound_name>(&e.target),
+                    };
 
-                x.comment_binding(call_.tk, indent + 1, e.from, e.target_text(),
-                                  named == nullptr ? operand{} : named->lea);
+                    x.comment_binding(
+                        call_.tk, indent + 1, e.from, e.target_text(),
+                        named == nullptr ? operand{} : named->lea);
 
-                tc.add_binding(e);
+                    tc.add_binding(e);
+                },
+            };
+
+            if (bindings.result) {
+                add_binding(*bindings.result);
+            }
+
+            for (const param_binding& e : bindings.arguments) {
+                add_binding(e);
             }
 
             // the result reaches the destination through the binding of 'res',
@@ -1066,16 +1083,13 @@ class inline_call {
     // an enclosing binding that is used after the call
     auto compile_body_with_address_registers(
         toc& tc, const size_t indent, const stmt_def_func& func,
-        std::vector<param_binding> bindings_to_add,
-        const size_t first_argument_binding,
-        const bool keeps_displacement) const -> void {
+        call_bindings bindings, const bool keeps_displacement) const -> void {
 
         machine& x{tc.machine()};
 
         std::vector<operand> address_registers;
 
-        for (param_binding& binding :
-             bindings_to_add | std::views::drop(first_argument_binding)) {
+        for (param_binding& binding : bindings.arguments) {
 
             if (not is_indexed_reference(binding)) {
                 continue;
@@ -1097,7 +1111,7 @@ class inline_call {
                                              keeps_displacement);
         }
 
-        compile_body(tc, indent, func, bindings_to_add, address_registers);
+        compile_body(tc, indent, func, bindings, address_registers);
     }
 
     auto compile_to_destination(toc& tc, const size_t indent,
@@ -1206,8 +1220,7 @@ class inline_call {
 
     auto compile_with_address_choice(
         toc& tc, const size_t indent, const stmt_def_func& func,
-        const std::vector<param_binding>& bindings,
-        const size_t first_argument_binding,
+        const call_bindings& bindings,
         const std::span<const operand> allocated_registers) const -> void {
 
         machine& x{tc.machine()};
@@ -1218,9 +1231,8 @@ class inline_call {
             [&] -> void {
                 emit_most_efficient_address(
                     tc, indent, [&](const bool keeps) -> void {
-                        compile_body_with_address_registers(
-                            tc, indent, func, bindings, first_argument_binding,
-                            keeps);
+                        compile_body_with_address_registers(tc, indent, func,
+                                                            bindings, keeps);
                     });
             });
 
@@ -1235,22 +1247,12 @@ class inline_call {
         // scratch registers stay allocated until the inlined body is compiled
         std::vector<operand> allocated_registers;
 
-        const std::vector<param_binding> bindings{
+        const call_bindings bindings{
             make_bindings(tc, indent, dst, func, allocated_registers),
         };
 
-        // the result binding has its own address choice in
-        // 'compile_to_destination'
-        // note: the result binding is made before those of the arguments,
-        //       which are the last 'call_.args.size()'
-        const size_t first_argument_binding{
-            bindings.size() - call_.args.size(),
-        };
-
         const bool has_indexed_argument{
-            std::ranges::any_of(bindings |
-                                    std::views::drop(first_argument_binding),
-                                is_indexed_reference),
+            std::ranges::any_of(bindings.arguments, is_indexed_reference),
         };
 
         const machine& x{tc.machine()};
@@ -1263,7 +1265,6 @@ class inline_call {
         }
 
         compile_with_address_choice(tc, indent, func, bindings,
-                                    first_argument_binding,
                                     allocated_registers);
     }
 
@@ -1335,20 +1336,20 @@ class inline_call {
     make_bindings(toc& tc, const size_t indent, const destination& dst,
                   const stmt_def_func& func,
                   std::vector<operand>& allocated_registers) const
-        -> std::vector<param_binding> {
+        -> call_bindings {
 
         // note: the call checked the use and the type of the result before
         //       the body was entered
 
         assert(func.returns().has_value() != dst.is_empty());
 
-        std::vector<param_binding> bindings;
+        call_bindings bindings;
 
         // the result names the destination, so the widths must agree
         if (const std::optional<func_return_info> ret{func.returns()}; ret) {
             assert(dst.type_ref().is_same(func.get_type()));
 
-            bindings.push_back(bind_result(dst, *ret));
+            bindings.result = bind_result(dst, *ret);
         }
 
         for (const auto [i, arg, param, planned] :
@@ -1362,14 +1363,14 @@ class inline_call {
 
                 const std::string temporary{call_.temporary_argument_name(i)};
 
-                bindings.push_back(
+                bindings.arguments.push_back(
                     bind_name(param, temporary, temporary,
                               call_site::temporary_storage(tc, temporary)));
 
                 continue;
             }
 
-            bindings.push_back(bind_argument(
+            bindings.arguments.push_back(bind_argument(
                 tc, indent, arg, param, planned.form, allocated_registers));
         }
 
@@ -1613,11 +1614,17 @@ class inline_call {
 class noinline_call {
     // what the call kind reads of the result or of an argument
     struct call_kind_item {
-        // the variable and the bytes of it, e.g. 'v' of the frame 2 and the
+        // the variable and the bytes of it, e.g. 'v' of the scope 2 and the
         // field 'x' of 'v.x'
         std::optional<storage_path> target;
         bool holds_address{};
         array_shape shape;
+    };
+
+    // a slot of the callee frame and the address it holds
+    struct addressed_slot {
+        frame_slot slot;
+        operand address;
     };
 
     call_site call_;
@@ -1758,7 +1765,7 @@ class noinline_call {
         // the registers stay allocated until the callee frame is populated
         std::vector<operand> address_registers;
 
-        const std::vector<operand> addresses{
+        const std::vector<addressed_slot> slots{
             frame_slot_addresses(tc, indent, dst, func, arguments,
                                  address_registers),
         };
@@ -1797,16 +1804,14 @@ class noinline_call {
             x.check_stack_capacity(call_.tk, indent);
         }
 
-        const std::vector<frame_slot> slots{func.frame_slots()};
-
-        write_frame_slots(x, indent, func, frame_address, slots, addresses);
+        write_frame_slots(x, indent, func, frame_address, slots);
 
         x.free_scratch_registers(call_.tk, indent, address_registers);
 
         // the address in a register is loaded after the registers are saved,
         // a register that holds a value of the caller is not lost
         x.call_function(call_.tk, indent, func.body_label(array_lengths),
-                        frame_address, register_address(slots, addresses));
+                        frame_address, register_address(slots));
     }
 
     // the body is compiled once for all callers, so the errors that depend on
@@ -1872,56 +1877,75 @@ class noinline_call {
         });
     }
 
-    // the result address precedes the argument addresses
+    // the address each slot of 'func' holds: the destination for the result,
+    // the argument for a parameter
     [[nodiscard]] auto
     frame_slot_addresses(toc& tc, const size_t indent, const destination& dst,
                          const stmt_def_func& func,
                          const std::span<const noinline_arg> arguments,
                          std::vector<operand>& address_registers) const
-        -> std::vector<operand> {
+        -> std::vector<addressed_slot> {
 
-        std::vector<operand> addresses;
+        std::vector<addressed_slot> slots;
 
-        if (func.returns()) {
-            addresses.push_back(dst.operand());
+        for (const frame_slot& slot : func.frame_slots()) {
+            const operand address{
+                slot_address_of(tc, indent, dst, slot, arguments,
+                                address_registers),
+            };
+
+            slots.push_back({
+                .slot{slot},
+                .address{address},
+            });
         }
 
-        for (const auto [planned, argument] :
-             std::views::zip(plan_.arguments, arguments)) {
+        return slots;
+    }
 
-            // a temporary is a plain variable, not indexed like its argument
-            if (argument.is_temporary) {
-                addresses.push_back(argument.info.operand());
-                continue;
-            }
+    // a temporary is a plain variable, not indexed like its argument
+    [[nodiscard]] auto
+    slot_address_of(toc& tc, const size_t indent, const destination& dst,
+                    const frame_slot& slot,
+                    const std::span<const noinline_arg> arguments,
+                    std::vector<operand>& address_registers) const -> operand {
 
-            const place& storage{std::get<place>(planned.form.form)};
-
-            addresses.push_back(storage.ident->get_lea_operand(
-                tc, indent, argument.info, address_registers));
+        if (not slot.param_index) {
+            return dst.operand();
         }
 
-        return addresses;
+        const size_t index{*slot.param_index};
+        const noinline_arg& argument{arguments.at(index)};
+
+        if (argument.is_temporary) {
+            return argument.info.operand();
+        }
+
+        const place& storage{
+            std::get<place>(plan_.arguments.at(index).form.form),
+        };
+
+        return storage.ident->get_lea_operand(tc, indent, argument.info,
+                                              address_registers);
     }
 
     // each slot holds an address, not the value stored at that address
     auto write_frame_slots(machine& x, const size_t indent,
                            const stmt_def_func& func,
                            const operand& frame_address,
-                           const std::span<const frame_slot> slots,
-                           const std::span<const operand> addresses) const
+                           const std::span<const addressed_slot> slots) const
         -> void {
 
         operand slot_address{frame_address};
 
-        for (const auto [slot, addr] : std::views::zip(slots, addresses)) {
+        for (const addressed_slot& addressed : slots) {
             // the callee finds it in a register, it has no slot
-            if (slot.is_in_register) {
+            if (addressed.slot.is_in_register) {
                 continue;
             }
 
-            comment_frame_slot(x, indent, func, slot);
-            x.address_of(call_.tk, indent, slot_address, addr);
+            comment_frame_slot(x, indent, func, addressed.slot);
+            x.address_of(call_.tk, indent, slot_address, addressed.address);
 
             slot_address.increment_offset(
                 address_offset(x.address_size_bytes()));
@@ -2115,12 +2139,11 @@ class noinline_call {
 
     // the address the callee finds in a register, empty when none
     [[nodiscard]] static auto
-    register_address(const std::span<const frame_slot> slots,
-                     const std::span<const operand> addresses) -> operand {
+    register_address(const std::span<const addressed_slot> slots) -> operand {
 
-        for (const auto [slot, addr] : std::views::zip(slots, addresses)) {
-            if (slot.is_in_register) {
-                return addr;
+        for (const addressed_slot& addressed : slots) {
+            if (addressed.slot.is_in_register) {
+                return addressed.address;
             }
         }
 

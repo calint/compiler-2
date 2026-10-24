@@ -206,6 +206,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        E.3. "result, then arguments" by name, not position (S2):
             'frame_slot_addresses' walks 'frame_slots' by 'param_index';
             'make_bindings' returns {result, arguments}
+       => E.3 done (2026-10-24): 'inline_call::make_bindings' returns
+          'call_bindings' {result, arguments}, 'first_argument_binding' and
+          its 'drop's go; 'frame_slot_addresses' walks 'func.frame_slots()'
+          and takes each address by 'param_index' ('slot_address_of'), one
+          'addressed_slot' list feeds 'write_frame_slots' and
+          'register_address', the zips and the order comment go; the
+          'call_kind' items stay, built and read in one function; listings
+          equal
        E.4. the checks that make both call paths accept the same in one
             'assert_call_accepted' (S6)
        E.5. optional, low: one 'assert_order_independent' for the
