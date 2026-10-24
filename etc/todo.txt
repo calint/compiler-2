@@ -181,9 +181,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
                (x86_64 encodes for nasm, rv32i writes '.ascii'), the
                backends no longer decode; 'data_table' keeps the key beside
                the bytes ('constant_keys_'); no listing changed
-            => next, ask: key the constants by their bytes, so '"A"' and
-               '"\x41"' or a string and equal init bytes share one label;
-               'constant_keys_' goes, listings may shrink
+            => keyed by bytes (user, 2026-10-24): 'data_table' compares
+               the bytes, 'constant_keys_' gone; no existing listing
+               changed; test 1654 (DIFF) and the CLI check
+               'CLI_SHARED_STRING_CONSTANT' (one label, two before)
        E.8. the generic error trace: 'generic_trace' with 'add_to(error)'
             held by type and function instances (three copies of
             "instantiated by"); 'generic_frame' and the error's
@@ -231,8 +232,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           gone; the parse-time 'constant_value' folds the right side only
           when the left side folds, as before; no listing changed
        F.3. 'stmt_def_dat::elem': {scalar, string, element list, field list}
+            => done (2026-10-24): 'elem::form' a variant of 'scalar',
+               'string', 'elements' and 'fields', each with what it needs;
+               'compile_data_rec' dispatches on it, 'compile_data_builtin'
+               and the flags gone; no listing changed
        F.4. 'stmt_builtin_io': 'io_arguments' {buffer, count, start} indexes
             made once, no 'args_.at(2)' and 'count() - 1'
+            => done (2026-10-24): 'optional_positions' {count, start}
+               made once by 'optional_positions_of' in the constructor (the
+               buffer stays 'buffer_index_'), 'has_count'/'has_start' and
+               the index arithmetic gone, 'compile_start' takes its index;
+               no listing changed
        F.5. 'argument_form' per call argument {instance temporary, place,
             constant, register name, value}, made once by 'call_site'; the
             seven 'bind_*', 'plan_argument', 'is_instance_temporary' and

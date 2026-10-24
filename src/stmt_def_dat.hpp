@@ -26,15 +26,61 @@
 // folded to the constants of the data section, a value that is not constant is
 // rejected
 class stmt_def_dat final : public statement {
-    // the folded initializer: a built-in value, the elements of an array, the
-    // fields of an instance or a string
+    // the folded initializer at the type it fills, e.g. '3', '"hi"',
+    // '{1, 2}' of an array or '{1, 2}' of an instance
     struct elem {
-        token src_loc_tk;
-        int64_t value{};
-        bool is_array{};
-        bool is_string{};
-        size_t array_count{};
-        std::vector<elem> elems;
+        // a value of a built-in type
+        struct scalar {
+            token src_loc_tk;
+            int64_t value{};
+        };
+
+        // an 'i8' array filled with the bytes of a string, the rest zero
+        struct string {
+            token string_tk;
+            size_t array_count{};
+        };
+
+        // the listed elements of an array, the rest zero
+        struct elements {
+            token src_loc_tk;
+            size_t array_count{};
+            std::vector<elem> items;
+        };
+
+        // the listed fields of an instance, the rest zero
+        struct fields {
+            token src_loc_tk;
+            std::vector<elem> values;
+        };
+
+        // note: a scalar until the definition folds its initializer
+        std::variant<scalar, string, elements, fields> form{scalar{}};
+
+        // the size of an array form, empty for a scalar or an instance
+        [[nodiscard]] auto array_count() const -> std::optional<size_t> {
+            if (const string* const str{std::get_if<string>(&form)}) {
+                return str->array_count;
+            }
+
+            if (const elements* const list{std::get_if<elements>(&form)}) {
+                return list->array_count;
+            }
+
+            return std::nullopt;
+        }
+
+        [[nodiscard]] auto tok() const -> const token& {
+            return std::visit(
+                [](const auto& f) -> const token& {
+                    if constexpr (requires { f.string_tk; }) {
+                        return f.string_tk;
+                    } else {
+                        return f.src_loc_tk;
+                    }
+                },
+                form);
+        }
     };
 
     token name_tk_;
@@ -112,9 +158,10 @@ class stmt_def_dat final : public statement {
 
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
+        const std::optional<size_t> array_count{root_elem_.array_count()};
+
         const array_shape shape{
-            root_elem_.is_array ? array_shape::array(root_elem_.array_count)
-                                : array_shape{},
+            array_count ? array_shape::array(array_count) : array_shape{},
         };
 
         return initializer_declaration::make_var_info(name_tk_, get_type(),
@@ -125,92 +172,92 @@ class stmt_def_dat final : public statement {
     // statics
     //
 
-    static auto compile_data_builtin(toc& tc, const type& tp, const elem& el)
-        -> void {
-
-        machine& x{tc.machine()};
-
-        if (not el.is_array) {
-            x.comment(el.src_loc_tk, 0, "{}", tp.name());
-
-            x.emit_data(tp.size_bytes(), el.value);
-
-            return;
-        }
-
-        x.comment(el.src_loc_tk, 0, "{}[{}]", tp.name(), el.array_count);
-
-        // only 'i8[]' can be initialized with a string
-        if (el.is_string) {
-            compile_data_string(x, tp, el);
-            return;
-        }
-
-        compile_data_elements(x, tp, el);
-    }
-
     // e.g. 'dat primes = []{2, 3, 5}'
     static auto compile_data_elements(machine& x, const type& tp,
-                                      const elem& el) -> void {
+                                      const elem::elements& list) -> void {
 
         std::vector<int64_t> values;
-        values.reserve(el.elems.size());
+        values.reserve(list.items.size());
 
-        for (const elem& element : el.elems) {
-            values.push_back(element.value);
+        for (const elem& item : list.items) {
+            values.push_back(std::get<elem::scalar>(item.form).value);
         }
 
         // e.g. 'dat a = i8[4]' lists no element
-        if (not el.elems.empty()) {
+        if (not values.empty()) {
             x.emit_data_array(tp.size_bytes(), values);
         }
 
         // the elements not listed are zero, as in a 'var'
-        if (el.array_count != el.elems.size()) {
+        if (list.array_count != values.size()) {
             x.emit_repeated_data(tp.size_bytes(),
-                                 el.array_count - el.elems.size(), 0);
+                                 list.array_count - values.size(), 0);
         }
     }
 
     static auto compile_data_rec(toc& tc, const type& tp, const elem& el)
         -> void {
 
-        // a built-in value, or the values of a built-in array
-        if (tp.is_builtin()) {
-            compile_data_builtin(tc, tp, el);
-            return;
-        }
-
-        if (not el.is_array) {
-            compile_data_record(tc, tp, el);
-            return;
-        }
-
         machine& x{tc.machine()};
 
-        x.comment(el.src_loc_tk, 0, "{}[{}]", tp.name(), el.array_count);
+        if (const elem::scalar* const value{
+                std::get_if<elem::scalar>(&el.form),
+            }) {
 
-        for (const auto [i, e] : std::views::enumerate(el.elems)) {
-            x.comment(e.src_loc_tk, 0, "[{}]", i);
-            compile_data_record(tc, tp, e);
+            x.comment(value->src_loc_tk, 0, "{}", tp.name());
+            x.emit_data(tp.size_bytes(), value->value);
+
+            return;
+        }
+
+        if (const elem::fields* const record{
+                std::get_if<elem::fields>(&el.form),
+            }) {
+
+            compile_data_record(tc, tp, *record);
+            return;
+        }
+
+        // only 'i8[]' can be initialized with a string
+        if (const elem::string* const str{
+                std::get_if<elem::string>(&el.form),
+            }) {
+
+            x.comment(str->string_tk, 0, "{}[{}]", tp.name(), str->array_count);
+            compile_data_string(x, tp, *str);
+            return;
+        }
+
+        const elem::elements& list{std::get<elem::elements>(el.form)};
+
+        x.comment(list.src_loc_tk, 0, "{}[{}]", tp.name(), list.array_count);
+
+        if (tp.is_builtin()) {
+            compile_data_elements(x, tp, list);
+            return;
+        }
+
+        for (const auto [i, e] : std::views::enumerate(list.items)) {
+            x.comment(e.tok(), 0, "[{}]", i);
+            compile_data_record(tc, tp, std::get<elem::fields>(e.form));
         }
 
         // zero out the remaining array elements
-        const size_t remaining_count{el.array_count - el.elems.size()};
+        const size_t remaining_count{list.array_count - list.items.size()};
 
         if (remaining_count == 0) {
             return;
         }
 
-        x.comment(el.src_loc_tk, 0, "pad {} {} of size {}", remaining_count,
+        x.comment(list.src_loc_tk, 0, "pad {} {} of size {}", remaining_count,
                   in_quotes(tp.name()), tp.size_bytes());
 
-        x.emit_zero_data(multiply_storage_size(el.src_loc_tk, tp.size_bytes(),
+        x.emit_zero_data(multiply_storage_size(list.src_loc_tk, tp.size_bytes(),
                                                remaining_count));
     }
 
-    static auto compile_data_record(toc& tc, const type& tp, const elem& el)
-        -> void {
+    static auto compile_data_record(toc& tc, const type& tp,
+                                    const elem::fields& record) -> void {
 
         machine& x{tc.machine()};
 
@@ -218,11 +265,11 @@ class stmt_def_dat final : public statement {
         size_t written_bytes{};
 
         const std::span<const type_field> flds{tp.fields()};
-        for (const auto [e, f] : std::views::zip(el.elems, flds)) {
+        for (const auto [e, f] : std::views::zip(record.values, flds)) {
             const size_t padding_bytes{f.offset - written_bytes};
 
             if (padding_bytes != 0) {
-                x.comment(e.src_loc_tk, 0, "padding {} B", padding_bytes);
+                x.comment(e.tok(), 0, "padding {} B", padding_bytes);
                 x.emit_zero_data(padding_bytes);
             }
 
@@ -239,25 +286,26 @@ class stmt_def_dat final : public statement {
         }
 
         const std::string_view what{
-            el.elems.size() == flds.size() ? "padding" : "remaining fields",
+            record.values.size() == flds.size() ? "padding"
+                                                : "remaining fields",
         };
 
-        x.comment(el.src_loc_tk, 0, "zero {}: {} B", what, size_bytes);
+        x.comment(record.src_loc_tk, 0, "zero {}: {} B", what, size_bytes);
         x.emit_zero_data(size_bytes);
     }
 
     // e.g. 'dat greeting = "hello"'
-    static auto compile_data_string(machine& x, const type& tp, const elem& el)
-        -> void {
+    static auto compile_data_string(machine& x, const type& tp,
+                                    const elem::string& str) -> void {
 
-        x.emit_string_data(el.src_loc_tk.string_bytes());
-        const size_t size_bytes{el.src_loc_tk.string_size_bytes()};
+        x.emit_string_data(str.string_tk.string_bytes());
+        const size_t size_bytes{str.string_tk.string_size_bytes()};
 
         // the bytes after the text are zero, as in a 'var'
-        if (size_bytes < el.array_count) {
-            x.comment(el.src_loc_tk, 0, "zero remaining array");
+        if (size_bytes < str.array_count) {
+            x.comment(str.string_tk, 0, "zero remaining array");
 
-            x.emit_repeated_data(tp.size_bytes(), el.array_count - size_bytes,
+            x.emit_repeated_data(tp.size_bytes(), str.array_count - size_bytes,
                                  0);
         }
     }
@@ -285,25 +333,31 @@ class stmt_def_dat final : public statement {
         // note: the declaration or the type of the field gave the size
         assert(value.array_count());
 
-        elem el{
+        // a string is emitted as it is written
+        if (value.is_string()) {
+            return {
+                .form{
+                    elem::string{
+                        .string_tk{value.array_token()},
+                        .array_count{*value.array_count()},
+                    },
+                },
+            };
+        }
+
+        elem::elements list{
             .src_loc_tk{value.array_token()},
-            .value{},
-            .is_array{true},
-            .is_string{value.is_string()},
             .array_count{*value.array_count()},
-            .elems{},
+            .items{},
         };
 
-        // a string is emitted as it is written
-        if (el.is_string) {
-            return el;
-        }
-
         for (size_t i{}; i < value.element_count(); ++i) {
-            el.elems.emplace_back(fold_element(tc, tp, value, i));
+            list.items.emplace_back(fold_element(tc, tp, value, i));
         }
 
-        return el;
+        return {
+            .form{std::move(list)},
+        };
     }
 
     [[nodiscard]] static auto fold_element(const toc& tc, const type& tp,
@@ -311,15 +365,6 @@ class stmt_def_dat final : public statement {
                                            const size_t index) -> elem {
 
         const statement& element{value.element(index)};
-
-        elem el{
-            .src_loc_tk{element.tok()},
-            .value{},
-            .is_array{},
-            .is_string{},
-            .array_count{},
-            .elems{},
-        };
 
         if (tp.is_builtin()) {
             const std::optional<int64_t> constant{
@@ -331,9 +376,14 @@ class stmt_def_dat final : public statement {
                 throw_not_constant(element);
             }
 
-            el.value = *constant;
-
-            return el;
+            return {
+                .form{
+                    elem::scalar{
+                        .src_loc_tk{element.tok()},
+                        .value{*constant},
+                    },
+                },
+            };
         }
 
         // e.g. 'dat p = q' copies the instance 'q' at run time
@@ -343,15 +393,22 @@ class stmt_def_dat final : public statement {
             throw_not_constant(record);
         }
 
+        elem::fields fields{
+            .src_loc_tk{element.tok()},
+            .values{},
+        };
+
         const std::span<const type_field> flds{tp.fields()};
 
         for (const auto [f, field_value] :
              std::views::zip(flds, record.field_values())) {
 
-            el.elems.emplace_back(fold(tc, f.type(), *field_value));
+            fields.values.emplace_back(fold(tc, f.type(), *field_value));
         }
 
-        return el;
+        return {
+            .form{std::move(fields)},
+        };
     }
 
     [[noreturn]] static auto throw_not_constant(const statement& value)

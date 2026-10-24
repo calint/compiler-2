@@ -1218,8 +1218,6 @@ struct placed_dat {
 class data_table final {
     std::vector<placed_dat> dats_;
     std::vector<machine::string_constant> constants_;
-    // the text each constant was added with, see 'add_constant'
-    std::vector<std::string> constant_keys_;
     size_t total_size_bytes_{};
     // the alignment of the data section of the machine and of the variables
     // after the dats
@@ -1229,18 +1227,16 @@ class data_table final {
     explicit data_table(const size_t data_alignment)
         : data_alignment_{data_alignment} {}
 
-    // the same 'key' shares the label of the first constant added, e.g. a
-    // string as written, so '"A"' and '"\x41"' are two constants
-    [[nodiscard]] auto add_constant(std::string label, std::string key,
-                                    std::string bytes) -> std::string {
+    // the same bytes share the label of the first constant added, e.g. the
+    // strings '"A"' and '"\x41"'
+    [[nodiscard]] auto add_constant(std::string label, std::string bytes)
+        -> std::string {
 
-        for (size_t i{}; i < constant_keys_.size(); ++i) {
-            if (constant_keys_.at(i) == key) {
-                return constants_.at(i).label;
+        for (const machine::string_constant& constant : constants_) {
+            if (constant.bytes == bytes) {
+                return constant.label;
             }
         }
-
-        constant_keys_.push_back(std::move(key));
 
         constants_.push_back({
             .label{std::move(label)},
@@ -1305,7 +1301,6 @@ class data_table final {
     // drops the constants added after the first 'count'
     auto resize_constants(const size_t count) -> void {
         constants_.resize(count);
-        constant_keys_.resize(count);
     }
 
     [[nodiscard]] auto total_size_bytes() const -> size_t {
@@ -2917,9 +2912,7 @@ class toc final {
                                           const std::string_view bytes)
         -> std::string {
 
-        return add_read_only_constant("init", src_loc_tk,
-                                      token::encode_string(bytes),
-                                      std::string{bytes});
+        return add_read_only_constant("init", src_loc_tk, std::string{bytes});
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
@@ -3038,7 +3031,6 @@ class toc final {
         -> std::string {
 
         return add_read_only_constant("str", string_tk,
-                                      std::string{string_tk.string_text()},
                                       string_tk.string_bytes());
     }
 
@@ -3649,15 +3641,15 @@ class toc final {
     }
 
   private:
-    // 'key' tells which constants share a label, see
-    // 'data_table::add_constant'
-    [[nodiscard]] auto
-    add_read_only_constant(const std::string_view kind, const token& src_loc_tk,
-                           std::string key, std::string bytes) -> std::string {
+    // the same bytes share a label, see 'data_table::add_constant'
+    [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
+                                              const token& src_loc_tk,
+                                              std::string bytes)
+        -> std::string {
 
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
         return data_.add_constant(create_unique_label(src_loc_tk, kind),
-                                  std::move(key), std::move(bytes));
+                                  std::move(bytes));
     }
 
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,

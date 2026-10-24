@@ -5168,3 +5168,7 @@ SRC=1652 && COMPERR
 # a call in an array argument of 'array_copy' that writes nothing the count
 # reads gives the left-to-right result
 SRC=1653 && EXP=8 && RUN
+
+# two strings with the same bytes share one read-only constant, however their
+# escapes spell them; above 16 B a string is copied from read-only data
+SRC=1654 && DIFF

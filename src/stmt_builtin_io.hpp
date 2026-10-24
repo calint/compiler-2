@@ -85,9 +85,18 @@ class stmt_builtin_io final : public expression {
     // the buffer follows the descriptor or the sector
     static constexpr size_t buffer_index_{1};
 
+    // where the optional arguments are, e.g. 2 and 3 of 'read(0, b, 4, 2)',
+    // or the start 2 of 'sector_read(s, b, 2)', which has no count
+    struct optional_positions {
+        std::optional<size_t> count;
+        std::optional<size_t> start;
+    };
+
     // the entry of 'functions_' that the call names
     io_function io_;
     builtin_arguments args_;
+    // made once from the count of the arguments
+    optional_positions at_;
 
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
@@ -101,6 +110,7 @@ class stmt_builtin_io final : public expression {
         }
 
         assert_argument_count();
+        at_ = optional_positions_of(io_, args_.count());
         assert_buffer_path();
 
         if (not io_.fills_buffer) {
@@ -335,10 +345,8 @@ class stmt_builtin_io final : public expression {
             return;
         }
 
-        const size_t start_index{args_.count() - 1};
-
         const std::optional<int64_t> start{
-            has_start() ? args_.constant(tc, start_index) : int64_t{},
+            at_.start ? args_.constant(tc, *at_.start) : int64_t{},
         };
 
         assert_constant_range(
@@ -347,8 +355,8 @@ class stmt_builtin_io final : public expression {
                 .start{start},
                 .count{*count},
                 .start_tk{
-                    has_start() ? std::optional{args_.at(start_index).tok()}
-                                : std::nullopt,
+                    at_.start ? std::optional{args_.at(*at_.start).tok()}
+                              : std::nullopt,
                 },
 
                 // note: a sector function has no count argument, an error
@@ -356,13 +364,13 @@ class stmt_builtin_io final : public expression {
                 //       buffer when there is none
 
                 .count_tk{
-                    has_count() ? args_.at(2).tok()
-                                : args_.at(start_index).tok(),
+                    at_.count
+                        ? args_.at(*at_.count).tok()
+                        : args_.at(at_.start.value_or(buffer_index_)).tok(),
                 },
                 .count_text{
-                    has_count()
-                        ? std::format("count {}", *count)
-                        : std::format("a sector of {} elements", *count),
+                    at_.count ? std::format("count {}", *count)
+                              : std::format("a sector of {} elements", *count),
                 },
                 .array_name{buffer.path->dotted_path()},
             });
@@ -482,8 +490,9 @@ class stmt_builtin_io final : public expression {
 
         operand start;
 
-        if (has_start()) {
-            start = compile_start(tc, indent, count, buffer_info, check);
+        if (at_.start) {
+            start = compile_start(tc, indent, *at_.start, count, buffer_info,
+                                  check);
         }
 
         assert_constant_range_in_bounds(tc, buffer);
@@ -491,7 +500,7 @@ class stmt_builtin_io final : public expression {
         // a count with a start is checked by 'compile_start', a bare count by
         // 'compile_lea'
         const bool is_count_checked_by_lea{
-            has_count() and not has_start() and check == range_check::run_time,
+            at_.count and not at_.start and check == range_check::run_time,
         };
 
         compile_buffer_address(tc, indent, buffer_reg, buffer,
@@ -539,8 +548,9 @@ class stmt_builtin_io final : public expression {
     auto compile_count(toc& tc, const size_t indent, const operand& count,
                        const ident_info& buffer_info) const -> void {
 
-        if (has_count()) {
-            args_.at(2).compile(tc, indent, destination::of_register(count));
+        if (at_.count) {
+            args_.at(*at_.count)
+                .compile(tc, indent, destination::of_register(count));
             return;
         }
 
@@ -557,13 +567,14 @@ class stmt_builtin_io final : public expression {
 
     // the start register stays allocated for the caller
     [[nodiscard]] auto compile_start(toc& tc, const size_t indent,
+                                     const size_t start_index,
                                      const operand& count,
                                      const ident_info& buffer_info,
                                      const range_check check) const -> operand {
 
         machine& x{tc.machine()};
 
-        const statement& start_arg{args_.at(args_.count() - 1)};
+        const statement& start_arg{args_.at(start_index)};
 
         const operand start{
             x.alloc_scratch_register(start_arg.tok(), indent,
@@ -591,8 +602,8 @@ class stmt_builtin_io final : public expression {
                                       const ident_info& buffer_info) const
         -> std::optional<int64_t> {
 
-        if (has_count()) {
-            return args_.constant(tc, 2);
+        if (at_.count) {
+            return args_.constant(tc, *at_.count);
         }
 
         if (io_.is_sector) {
@@ -616,7 +627,7 @@ class stmt_builtin_io final : public expression {
 
         machine& x{tc.machine()};
 
-        if (has_start()) {
+        if (at_.start) {
             x.multiply(tok(), indent, start, element_size_bytes,
                        machine::factor_use::read_only);
 
@@ -654,12 +665,20 @@ class stmt_builtin_io final : public expression {
 
     // 'read(fd, buf, count, start)': the count and the start are optional,
     // a sector function has no count
-    [[nodiscard]] auto has_count() const -> bool {
-        return not io_.is_sector and args_.count() >= 3;
-    }
+    [[nodiscard]] static auto optional_positions_of(const io_function& io,
+                                                    const size_t arg_count)
+        -> optional_positions {
 
-    [[nodiscard]] auto has_start() const -> bool {
-        return args_.count() == io_.max_arg_count;
+        const bool has_count{
+            not io.is_sector and arg_count > buffer_index_ + 1,
+        };
+
+        const bool has_start{arg_count == io.max_arg_count};
+
+        return {
+            .count{has_count ? std::optional{buffer_index_ + 1} : std::nullopt},
+            .start{has_start ? std::optional{arg_count - 1} : std::nullopt},
+        };
     }
 
     // see 'range_check', a sector function has the constant count of a sector
@@ -671,7 +690,7 @@ class stmt_builtin_io final : public expression {
             return range_check::run_time;
         }
 
-        if (has_start() and not args_.constant(tc, args_.count() - 1)) {
+        if (at_.start and not args_.constant(tc, *at_.start)) {
             return range_check::run_time;
         }
 

@@ -615,6 +615,18 @@ CLI_PADDING_ZERO_BY_TARGET() {
     echo ok
 }
 
+CLI_SHARED_STRING_CONSTANT() {
+    echo -n "cli strings with the same bytes share one constant: "
+    # 1654.baz: '"hello..."' and '"\x68ello..."' are one label on each target
+    "$BIN" --target=x86_64 1654.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(grep -c '^str\.' gen.s) -eq 1 ]]
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 1654.baz >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(grep -c '^str\.' gen.s) -eq 1 ]]
+    echo ok
+}
+
 CLI_OPTION_MESSAGES() {
     echo -n "cli option errors name their option: "
     local arg exit_code
@@ -712,5 +724,6 @@ CLI_CONTROL_BYTE_FILE_NAME
 CLI_VERSIONS
 CLI_PADDING_ZERO
 CLI_PADDING_ZERO_BY_TARGET
+CLI_SHARED_STRING_CONSTANT
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

@@ -1,0 +1,9 @@
+# two strings with the same bytes share one read-only constant, however their
+# escapes spell them; above 16 B a string is copied from read-only data
+
+func main() {
+    var a = "hello baz world!!!\n"
+    var b = "\x68ello baz world!!!\x0a"
+    write(1, a, 19)
+    write(1, b, 19)
+}

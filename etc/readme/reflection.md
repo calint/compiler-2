@@ -134,6 +134,9 @@ me.
 So I decided to pause and refactor until the AI found the system in as good a
 shape as it could envision.
 
+This process has taken far longer than the development of the features that
+thrashed the otherwise simple structure of the code. Maybe it was inevitable.
+
 ### The sense of losing touch with the code
 
 The pre-AI code and structure are still visible as the skeleton of the project.
