@@ -270,10 +270,6 @@ class statement {
 
     virtual ~statement() = default;
 
-    // the count of an array whose declaration does not give it: the
-    // initializer gives it, or the argument of an unsized parameter 's[]'
-    static constexpr size_t unsized_array_count{};
-
     //
     // virtual methods
     //
@@ -600,43 +596,6 @@ class statement {
 
         return std::format(", {} is the size of the array of 'foo'",
                            in_quotes(root));
-    }
-
-    // shared by 'dat' and 'var' initializers, an 'unsized_array_count' takes
-    // the size of the string
-    [[nodiscard]] static auto
-    string_array_count(const type& string_element_type, const token& string_tk,
-                       const type& element_type, const size_t array_count)
-        -> size_t {
-
-        const size_t size_bytes{string_tk.string_size_bytes()};
-
-        if (not element_type.is_same(string_element_type)) {
-            throw compile_error{
-                string_tk, std::format("a string fills only an array of "
-                                       "{}, not an array of {}",
-                                       in_quotes(string_element_type.name()),
-                                       in_quotes(element_type.name()))};
-        }
-
-        // arrays of zero length are not allowed
-        if (size_bytes == 0 and array_count == unsized_array_count) {
-            throw compile_error{
-                string_tk, "an empty string is not valid for an array with "
-                           "unspecified size"};
-        }
-
-        if (array_count != unsized_array_count and size_bytes > array_count) {
-            throw compile_error{
-                string_tk, std::format("string size {} overflows array size {}",
-                                       size_bytes, array_count)};
-        }
-
-        if (array_count == unsized_array_count) {
-            return size_bytes;
-        }
-
-        return array_count;
     }
 
     [[noreturn]] static auto throw_narrowed(const token& src_loc_tk,

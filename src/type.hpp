@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <format>
 #include <limits>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <string>
@@ -24,14 +25,17 @@ struct type_field {
     const type* type_ptr{}; // element type
     size_t offset{};        // offset relative to instance address
     size_t size_bytes{};    // total size in bytes of all elements
-    size_t array_count{};   // array size in elements, 0 when not an array
+    // array size in elements, empty when not an array
+    std::optional<size_t> array_count;
 
     // 1 for a field that is not an array
     [[nodiscard]] auto element_count() const -> size_t {
-        return is_array() ? array_count : 1;
+        return array_count.value_or(1);
     }
 
-    [[nodiscard]] auto is_array() const -> bool { return array_count != 0; }
+    [[nodiscard]] auto is_array() const -> bool {
+        return array_count.has_value();
+    }
 
     [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
 };
@@ -71,10 +75,11 @@ class type final {
     type() = default;
 
     // fields are placed at offsets aligned to their type and the size is
-    // rounded up so that array elements stay aligned; 'array_count' is 0 for
-    // a field that is not an array
+    // rounded up so that array elements stay aligned; 'array_count' is empty
+    // for a field that is not an array
     auto add_field(const token& src_loc_tk, const std::string_view name,
-                   const type& tp, const size_t array_count) -> void {
+                   const type& tp, const std::optional<size_t> array_count)
+        -> void {
 
         type_field field{
             .name{name},

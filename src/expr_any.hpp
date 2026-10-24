@@ -125,26 +125,26 @@ class expr_any final : public statement {
     std::variant<single_value, string_array, element_list, zero_array,
                  array_copy>
         form_;
-    // the size of an array form, 'unsized_array_count' until it is known
-    size_t array_count_{};
-    // e.g. an array parameter 's[]' gets its size from the argument
-    bool is_unsized_destination_{};
+    // what the destination gives, e.g. an array parameter 's[]' is an array
+    // of unknown length, its argument gives the length when it is compiled
+    array_shape destination_;
+    // the size of an array form: the length of the destination, else the size
+    // the literal gives, e.g. 3 of 'i8[]{1, 2, 3}'; empty until known
+    std::optional<size_t> array_count_;
 
   public:
-    // a single value, or with 'array_count' an array of that many elements,
-    // see 'unsized_array_count'; where 'typing' is 'written' a
-    // type or array may be written without '{}', e.g. 'var p = point' and
-    // 'var a = i8[4]'
+    // a single value, or an array when 'destination' is one; where 'typing' is
+    // 'written' a type or array may be written without '{}', e.g. 'var p =
+    // point' and 'var a = i8[4]'
     expr_any(toc& tc, tokenizer& tz, const type& tp,
-             const literal_typing typing,
-             const std::optional<size_t> array_count = std::nullopt)
-        : statement{tz.next_whitespace_token()},
-          array_count_{array_count.value_or(0)} {
+             const literal_typing typing, const array_shape destination = {})
+        : statement{tz.next_whitespace_token()}, destination_{destination},
+          array_count_{destination.length()} {
 
         set_type(tp);
 
         // the basic case, e.g. 'x + 1' or 'point{1, 2}'
-        if (not array_count) {
+        if (not destination.is_array()) {
             form_ = single_value{
                 .value{parse_variant(tc, tz, tp, typing)},
             };
@@ -153,8 +153,6 @@ class expr_any final : public statement {
         }
 
         // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
-
-        is_unsized_destination_ = array_count_ == unsized_array_count;
 
         // e.g. "hello" fills the start of an 'i8' array
         if (tz.is_peek_char('"')) {
@@ -285,7 +283,7 @@ class expr_any final : public statement {
 
         assert(not is_array() or is_array_identifier() or
                dst.is_length_unknown() ==
-                   (is_unsized_destination_ and not dst.array_len()));
+                   (destination_.is_length_unknown() and not dst.array_len()));
 
         write_plan plan;
         plan_writes(tc, part_location{}, dst.array_len(), plan);
@@ -372,7 +370,10 @@ class expr_any final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+    // empty when neither the destination nor the literal gives the size
+    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
+        return array_count_;
+    }
 
     // where an array is written: its element type, e.g. 'i8' of 'i8[]{1}', its
     // '[' when the type is the default one, its '{' when the destination gives
@@ -513,7 +514,7 @@ class expr_any final : public statement {
 
         // empty when the size is not known
         const std::optional<size_t> array_count{
-            is_unsized_destination_ ? unsized_count : array_count_,
+            destination_.is_length_unknown() ? unsized_count : array_count_,
         };
 
         if (const string_array* const str{std::get_if<string_array>(&form_)}) {
@@ -561,15 +562,13 @@ class expr_any final : public statement {
     auto assert_room_for_element(const tokenizer& tz,
                                  const element_list& list) const -> void {
 
-        if (array_count_ == unsized_array_count or
-            list.elements.size() != array_count_) {
-
+        if (not array_count_ or list.elements.size() != *array_count_) {
             return;
         }
 
         throw compile_error{tz, std::format("too many elements for array of "
                                             "size {}",
-                                            array_count_)};
+                                            *array_count_)};
     }
 
     // the little endian bytes of the elements, empty when an element is not a
@@ -674,7 +673,7 @@ class expr_any final : public statement {
         // note: only a declaration names the array type, its size is the one
         //       of this literal
 
-        assert(array_count_ == unsized_array_count or array_count_ == count);
+        assert(not array_count_ or *array_count_ == count);
 
         array_count_ = count;
 
@@ -708,7 +707,7 @@ class expr_any final : public statement {
             list.close_brace_tk = tz.is_next_char_token('}');
         }
 
-        if (array_count_ == unsized_array_count) {
+        if (not array_count_) {
             array_count_ = list.elements.size();
         }
     }
@@ -1031,6 +1030,43 @@ class expr_any final : public statement {
         }
 
         return value;
+    }
+
+    // the size of an 'i8' array that a string fills: 'array_count', or the
+    // size of the string when the destination gives none
+    [[nodiscard]] static auto
+    string_array_count(const type& string_element_type, const token& string_tk,
+                       const type& element_type,
+                       const std::optional<size_t> array_count) -> size_t {
+
+        const size_t size_bytes{string_tk.string_size_bytes()};
+
+        if (not element_type.is_same(string_element_type)) {
+            throw compile_error{
+                string_tk, std::format("a string fills only an array of "
+                                       "{}, not an array of {}",
+                                       in_quotes(string_element_type.name()),
+                                       in_quotes(element_type.name()))};
+        }
+
+        if (not array_count) {
+            // arrays of zero length are not allowed
+            if (size_bytes == 0) {
+                throw compile_error{string_tk,
+                                    "an empty string is not valid for an array "
+                                    "with unspecified size"};
+            }
+
+            return size_bytes;
+        }
+
+        if (size_bytes > *array_count) {
+            throw compile_error{
+                string_tk, std::format("string size {} overflows array size {}",
+                                       size_bytes, *array_count)};
+        }
+
+        return *array_count;
     }
 };
 

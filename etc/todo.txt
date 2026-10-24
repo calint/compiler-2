@@ -144,6 +144,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           by storage: 3 test listings change ('arr[2] = ~arr[1]' in place),
           instruction lines equal, verdicts equal, alias, effects and data
           fuzzers clean
+       => E.4 done (2026-10-24): 'statement::unsized_array_count' gone; the
+          'expr_any' constructor takes the 'array_shape' of the destination
+          ('destination_', the count of the literal 'array_count_' empty
+          until known, 'is_unsized_destination_' gone); 'stmt_identifier',
+          'initializer_declaration' and 'stmt_def_var' hold an
+          'array_shape'; 'type_field::array_count' and the field node hold
+          an optional (a field always has its length);
+          'string_array_count' moved into 'expr_any', its only user; no
+          listing changed
        E.5. built-in types: 'type_kind' {user, integer, boolean, empty},
             'type::is_integer()' ('is_integer_name' goes); toc registers the
             built-ins from 'builtin_type_set::all()' (not 'program');

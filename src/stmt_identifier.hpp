@@ -200,9 +200,8 @@ class stmt_identifier final : public statement {
     std::vector<ident_elem> elems_;
     std::vector<token> elem_delims_tk_;
     std::string dotted_path_;
-    // see 'var_info::array_len'
-    std::optional<size_t> array_count_;
-    bool is_array_{};
+    // of what the path names, not an array after an index
+    array_shape shape_;
     bool is_indexed_{};
 
     // bytes of the root variable accessed by this path, after a run-time index
@@ -392,15 +391,11 @@ class stmt_identifier final : public statement {
         };
     }
 
-    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-        return array_count_;
-    }
-
     // an array or an element of one, where a bulk operation starts
     auto assert_array_or_element() const -> void {
         assert_not_method();
 
-        if (is_array_ or is_array_element()) {
+        if (shape_.is_array() or is_array_element()) {
             return;
         }
 
@@ -588,7 +583,9 @@ class stmt_identifier final : public statement {
         return is_indexed() or info.is_address_computed();
     }
 
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+    [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
+
+    [[nodiscard]] auto shape() const -> array_shape { return shape_; }
 
     [[nodiscard]] auto is_array_element() const -> bool {
         return not elems_.empty() and elems_.back().array_index_expr != nullptr;
@@ -936,8 +933,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        is_array_ = info.is_array();
-        array_count_ = info.array_len();
+        shape_ = info.shape();
     }
 
     // the variable keeps the offset and covers its whole storage

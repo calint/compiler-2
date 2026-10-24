@@ -39,9 +39,9 @@ class initializer_declaration final {
     token name_tk_;
     name_in_initializer name_visibility_;
     const type* type_{};
-    // none when not an array, 'unsized_array_count' only while the
-    // initializer that gives the size is parsed
-    std::optional<size_t> array_count_;
+    // of unknown length only while the initializer that gives the length is
+    // parsed
+    array_shape shape_;
 
   public:
     // 'tz' is at the initializer, after the '='
@@ -52,11 +52,7 @@ class initializer_declaration final {
         deduce_declaration(tc, tz);
 
         // note: both deductions reject an array whose size is not known
-        assert(array_count_ != statement::unsized_array_count);
-    }
-
-    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-        return array_count_;
+        assert(not shape_.is_length_unknown());
     }
 
     // the folded 'value', read with the name in scope like its parse, so
@@ -80,11 +76,13 @@ class initializer_declaration final {
         expr_any value;
 
         with_placeholder(tc, [&] -> void {
-            value = {tc, tz, type_ref(), literal_typing::written, array_count_};
+            value = {tc, tz, type_ref(), literal_typing::written, shape_};
         });
 
         return value;
     }
+
+    [[nodiscard]] auto shape() const -> array_shape { return shape_; }
 
     [[nodiscard]] auto type_ref() const -> const type& { return *type_; }
 
@@ -94,16 +92,14 @@ class initializer_declaration final {
 
     // a variable, a 'var' or a 'dat', named by 'name_tk'
     [[nodiscard]] static auto
-    make_var_info(const token& name_tk, const type& tp,
-                  const std::optional<size_t> array_count) -> var_info {
+    make_var_info(const token& name_tk, const type& tp, const array_shape shape)
+        -> var_info {
 
         return {
             .name{name_tk.text()},
             .type_ptr{&tp},
             .src_loc_tk{name_tk},
-            .shape{
-                array_count ? array_shape::array(*array_count) : array_shape{},
-            },
+            .shape{shape},
             .placement{},
             .foo_array{},
         };
@@ -142,7 +138,7 @@ class initializer_declaration final {
                                                 in_quotes(name.dotted_path()))};
         }
 
-        array_count_ = info.array_len();
+        shape_ = info.shape();
     }
 
     // e.g. 'var s = "hi"' is an 'i8' array of 2
@@ -166,7 +162,7 @@ class initializer_declaration final {
             return;
         }
 
-        array_count_ = statement::unsized_array_count;
+        shape_ = array_shape::array(std::nullopt);
         set_type(*element_type);
 
         token bracket_tk;
@@ -174,15 +170,14 @@ class initializer_declaration final {
         trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
             // an unsized array, the initializer gives the count
             const expr_any initializer{tc, tz, type_ref(),
-                                       literal_typing::written,
-                                       statement::unsized_array_count};
+                                       literal_typing::written, shape_};
 
             // later statements read the size while parsing, e.g. 'var b = a'
-            array_count_ = initializer.array_count();
+            shape_ = array_shape::array(initializer.array_count());
             bracket_tk = initializer.open_bracket_token();
         });
 
-        if (array_count_ == statement::unsized_array_count) {
+        if (shape_.length().value_or(0) == 0) {
             // e.g. the '[' of 'var a = i8[]{}'
             // note: an empty string is rejected by 'string_array_count'
             assert(not bracket_tk.is_empty());
@@ -261,8 +256,7 @@ class initializer_declaration final {
 
         const toc::frame_scope block{tc, frame::block()};
 
-        tc.add_var(name_tk_, 0,
-                   make_var_info(name_tk_, type_ref(), array_count_),
+        tc.add_var(name_tk_, 0, make_var_info(name_tk_, type_ref(), shape_),
                    var_kind::var);
 
         parse();
@@ -370,8 +364,7 @@ class stmt_def_const final : public statement {
 // fold is a 'var' that is read-only once initialized
 class stmt_def_var final : public statement {
     token name_tk_;
-    // none when not an array
-    std::optional<size_t> array_count_;
+    array_shape shape_;
     token equals_tk_;
     stmt_assign_var assign_var_;
 
@@ -381,8 +374,8 @@ class stmt_def_var final : public statement {
     stmt_def_var(toc& tc, const token tk, const token name_tk,
                  tokenizer at_name, const token equals_tk,
                  const initializer_declaration& declaration, expr_any value)
-        : statement{tk}, name_tk_{name_tk},
-          array_count_{declaration.array_count()}, equals_tk_{equals_tk} {
+        : statement{tk}, name_tk_{name_tk}, shape_{declaration.shape()},
+          equals_tk_{equals_tk} {
 
         set_type(declaration.type_ref());
 
@@ -401,7 +394,7 @@ class stmt_def_var final : public statement {
         assert_var_not_used(
             name_tk_.text(),
             assigned_bytes{multiply_storage_size(
-                name_tk_, get_type().size_bytes(), array_count_.value_or(1))});
+                name_tk_, get_type().size_bytes(), shape_.element_count())});
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it
@@ -452,7 +445,7 @@ class stmt_def_var final : public statement {
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
         return initializer_declaration::make_var_info(name_tk_, get_type(),
-                                                      array_count_);
+                                                      shape_);
     }
 };
 
@@ -483,7 +476,7 @@ inline auto make_stmt_def_var(toc& tc, const token tk, tokenizer& tz)
 
     // a constant has the default type and is not an array
     const bool may_fold{
-        tk.is_text("let") and not declaration.array_count().has_value() and
+        tk.is_text("let") and not declaration.shape().is_array() and
             declaration.type_ref().is_same(tc.builtins().default_type()),
     };
 

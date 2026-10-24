@@ -53,15 +53,8 @@ class stmt_assign_var final : public statement {
 
         // the value is parsed as the type of the destination, which gives the
         // type of a literal, e.g. 'a = {1, 2}'
-        const std::optional<size_t> array_count{
-            stmt_ident_.is_array()
-                ? std::optional{stmt_ident_.array_count().value_or(
-                      unsized_array_count)}
-                : std::nullopt,
-        };
-
         expr_ = {tc, tz, dst_info.type_ref(), literal_typing::from_destination,
-                 array_count};
+                 stmt_ident_.shape()};
     }
 
     // the initializer of a declaration, parsed before the variable was

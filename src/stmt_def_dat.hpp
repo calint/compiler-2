@@ -112,13 +112,13 @@ class stmt_def_dat final : public statement {
 
   private:
     [[nodiscard]] auto make_var_info() const -> var_info {
-        const std::optional<size_t> array_count{
-            root_elem_.is_array ? std::optional{root_elem_.array_count}
-                                : std::nullopt,
+        const array_shape shape{
+            root_elem_.is_array ? array_shape::array(root_elem_.array_count)
+                                : array_shape{},
         };
 
         return initializer_declaration::make_var_info(name_tk_, get_type(),
-                                                      array_count);
+                                                      shape);
     }
 
     //
@@ -282,12 +282,15 @@ class stmt_def_dat final : public statement {
             throw_not_constant(value);
         }
 
+        // note: the declaration or the type of the field gave the size
+        assert(value.array_count());
+
         elem el{
             .src_loc_tk{value.array_token()},
             .value{},
             .is_array{true},
             .is_string{value.is_string()},
-            .array_count{value.array_count()},
+            .array_count{*value.array_count()},
             .elems{},
         };
 

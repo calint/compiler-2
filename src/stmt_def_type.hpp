@@ -52,9 +52,6 @@ class type_fields final {
                                        : tc.get_type_or_throw(fld.type_token()),
             };
 
-            // note: 'stmt_def_type_field' rejects an array size below 1
-            assert(fld.is_array() == (fld.array_count() != 0));
-
             tp.add_field(fld.tok(), fld.name(), fld_tp, fld.array_count());
         }
     }
@@ -125,7 +122,7 @@ inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
     for (const type_field& f : tp.fields()) {
         x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
                   f.offset, f.size_bytes, f.is_array() ? "yes" : "no",
-                  f.is_array() ? std::format("{}", f.array_count) : "");
+                  f.array_count ? std::format("{}", *f.array_count) : "");
     }
 
     x.comment({}, 0, "");

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <ostream>
 #include <string_view>
 
@@ -15,7 +16,8 @@ class stmt_def_type_field final : public statement {
     token open_bracket_tk_;
     token close_bracket_tk_;
     stmt_array_size array_size_;
-    size_t array_count_{};
+    // empty when not an array
+    std::optional<size_t> array_count_;
 
   public:
     stmt_def_type_field(toc& tc, const token tk, tokenizer& tz)
@@ -71,10 +73,12 @@ class stmt_def_type_field final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto array_count() const -> size_t { return array_count_; }
+    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
+        return array_count_;
+    }
 
     [[nodiscard]] auto is_array() const -> bool {
-        return not open_bracket_tk_.is_empty();
+        return array_count_.has_value();
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }

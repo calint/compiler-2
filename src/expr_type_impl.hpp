@@ -152,12 +152,12 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 
         // the value is parsed as the type of the field, so a nested '{...}'
         // is another 'expr_type'
-        const std::optional<size_t> array_count{
-            tf.is_array() ? std::optional{tf.array_count} : std::nullopt,
+        const array_shape shape{
+            tf.is_array() ? array_shape::array(tf.array_count) : array_shape{},
         };
 
         list.exprs.emplace_back(std::make_unique<expr_any>(
-            tc, tz, tf.type(), literal_typing::from_destination, array_count));
+            tc, tz, tf.type(), literal_typing::from_destination, shape));
     }
 }
 
@@ -410,9 +410,11 @@ inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
                                   const part_location& at, write_plan& plan)
     -> void {
 
+    const std::optional<size_t> field_count{field.array_count};
+
     // the copy size comes from the source so it must match the field
-    if (field.is_array() and src.is_array_identifier()) {
-        validate_array_assignment(src.tok(), field,
+    if (field_count and src.is_array_identifier()) {
+        validate_array_assignment(src.tok(), field.type(), *field_count,
                                   make_ident_info(tc, *src.operand_path()));
     }
 
@@ -425,7 +427,7 @@ inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
     }
 
     // one assignment fills an instance or copies a whole array identifier
-    if (not field.is_array() or src.is_array_identifier()) {
+    if (not field_count or src.is_array_identifier()) {
         src.as_expr_type().plan_writes(tc, at, plan);
         return;
     }
@@ -436,8 +438,8 @@ inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
         src.as_expr_type(i).plan_writes(tc, at.element(i), plan);
     }
 
-    plan_remaining_elements(src.tok(), at, field.type(), count,
-                            field.array_count, plan);
+    plan_remaining_elements(src.tok(), at, field.type(), count, *field_count,
+                            plan);
 }
 
 inline auto expr_type::visit_reads(const read_filter var,
