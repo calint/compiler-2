@@ -284,6 +284,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             to 'source' moves from 'machine::emit_discarded' to the front
             end, 'check_body' no longer relies on catching inside the lambda
        G.5. after F.5: the limits leave 'call_site' as 'call_limits'
+       => G.3-G.5 done (2026-10-24): G.3 reduced: the machine side is
+          'register_trace_scope' ('begin_trace_frame', 'end_trace_frame',
+          'current_trace_frame'), it records which call holds a register;
+          one 'call_scope' was not made: only the inlined call enters a
+          'toc' frame, a trace frame and an error frame together, and a
+          destructor cannot add to the exception that unwinds past it; G.4
+          'toc::dry_run' hands back 'std::optional<compile_error>',
+          'emit_discarded' only discards, 'toc::throw_dry_run_error' holds
+          the 'source' rule and its reason, 'check_body' decides on the
+          returned error; G.5 'call_limits' holds the three limits, their
+          checks and errors ('assert_noinline_level' new), 'call_site'
+          keeps what a call is; no output changed
     H. backends
        H.1. run-time routines keyed by their label (not display names or ad
             hoc strings); the line report becomes a routine (both

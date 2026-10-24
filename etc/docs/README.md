@@ -956,9 +956,9 @@ end.
 A noinline call inside a dry run nests another dry run, so a chain of calls
 nests one level per call ('scope_stack::noinline_dry_run_level'). The
 compiler recurses for each, so the levels are limited
-('call_site::max_noinline_dry_run_level', 100), and like the other inlining
+('call_limits::max_noinline_dry_run_level', 100), and like the other inlining
 limits the depth depends on the calls. The dry runs also share the scope limit
-of the inlined calls and blocks ('call_site::max_scope_count', 256). A
+of the inlined calls and blocks ('call_limits::max_scope_count', 256). A
 call kind keeps the number of levels its dry run reached below it and the
 scopes above it at its deepest check of the scope limit ('dry_run_height',
 'dry_run_ledger::height_of'), and a call that finds its kind dry run
@@ -1084,8 +1084,9 @@ What a failed version entered must be left when its error unwinds:
 3. the rv32i bulk registers of an array copy or comparison are left
    ('machine_rv32i::bulk_depth_scope')
 
-The registers that 'machine::address_scope' and the call frames that
-'machine::call_frame_scope' hold are left by their own scopes.
+The registers that 'machine::address_scope' holds and the frames of the
+register trace that 'machine::register_trace_scope' holds are left by their
+own scopes.
 
 ### 5.4 Testing the version that is dropped
 

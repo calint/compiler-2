@@ -385,6 +385,109 @@ struct noinline_arg {
     bool is_temporary;
 };
 
+// the limits on how deep the compile of calls nests, each a recursion of the
+// compiler: the scopes being compiled, the inlined calls of one function in
+// each other and the levels of noinline dry runs; the errors are located at
+// the call 'call_tk'
+class call_limits final {
+  public:
+    // a scope being compiled ('frame' in 'toc'): a block, a loop or a
+    // function body, inlined or the dry run of a noinline call
+    static constexpr size_t max_scope_count{256};
+
+    // a level is the dry run of a noinline call nested in the dry run of the
+    // call that reaches it, see 'noinline_call::dry_run_body'
+    static constexpr size_t max_noinline_dry_run_level{100};
+
+    // an inlined recursion ends at compile time when a constant argument
+    // makes its condition fold, otherwise it would expand without end
+    static constexpr size_t max_inlined_nesting{64};
+
+    // an inlined call compiles its body in place, so nesting is limited
+    static auto assert_inline_nesting(toc& tc, const token& call_tk,
+                                      const stmt_def_func& func) -> void {
+
+        if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
+            throw recursion_error(call_tk, func);
+        }
+
+        // note: the chain does not depend on the arguments, see
+        //       'noinline_call::dry_run_body'
+
+        assert_scope_count(tc, call_tk, tc.scopes().frames().size(),
+                           tc.scopes().noinline_dry_run_level() != 0);
+    }
+
+    // 'level' counts the dry runs of noinline calls in each other
+    static auto assert_noinline_level(const token& call_tk, const size_t level)
+        -> void {
+
+        if (level <= max_noinline_dry_run_level) {
+            return;
+        }
+
+        throw compile_error{
+            call_tk,
+            std::format("noinline calls are nested too deep to check their "
+                        "arguments, the limit is {} levels",
+                        max_noinline_dry_run_level),
+        };
+    }
+
+    // a body compiled 'scope_count' scopes deep; 'is_dry_run' when it checks
+    // the arguments of a noinline call, which the message says
+    static auto assert_scope_count(toc& tc, const token& call_tk,
+                                   const size_t scope_count,
+                                   const bool is_dry_run) -> void {
+
+        tc.reach_scope_check(scope_count);
+
+        if (scope_count < max_scope_count) {
+            return;
+        }
+
+        if (is_dry_run) {
+            throw compile_error{
+                call_tk,
+                std::format("inlined calls and blocks are nested too deep to "
+                            "check the arguments of a noinline call, the "
+                            "limit is {} scopes",
+                            max_scope_count),
+            };
+        }
+
+        throw inlining_limit_error(
+            call_tk,
+            std::format("inlined calls and blocks are nested too deep, the "
+                        "limit is {} scopes, declare a function 'noinline'",
+                        max_scope_count));
+    }
+
+    // an inlined recursion that constant arguments do not end
+    [[nodiscard]] static auto recursion_error(const token& call_tk,
+                                              const stmt_def_func& func)
+        -> compile_error {
+
+        return inlining_limit_error(
+            call_tk, std::format("recursion of inlined function {} cannot be "
+                                 "expanded at compile time, declare it "
+                                 "'noinline'",
+                                 in_quotes(func.name())));
+    }
+
+  private:
+    // the call is too deep to inline, e.g. a recursion that does not end at
+    // compile time
+    [[nodiscard]] static auto inlining_limit_error(const token& call_tk,
+                                                   std::string message)
+        -> compile_error {
+
+        compile_error error{call_tk, std::move(message)};
+        error.kind = compile_error::error_kind::inlining_limit;
+        return error;
+    }
+};
+
 // what compiling a call needs of it, 'stmt_call' makes it for each compile
 struct call_site {
     // how an argument reaches its parameter, decided at each compile because
@@ -439,19 +542,6 @@ struct call_site {
     // the overflow check of 'uops', that of the destination of the call,
     // e.g. none in the argument of a conversion
     machine::runtime_check uops_check;
-
-    // a scope being compiled ('frame' in 'toc'): a block, a loop or a
-    // function body, inlined or the dry run of a noinline call; each recurses
-    // in the compiler
-    static constexpr size_t max_scope_count{256};
-
-    // a level is the dry run of a noinline call nested in the dry run of the
-    // call that reaches it, see 'noinline_call::dry_run_body'
-    static constexpr size_t max_noinline_dry_run_level{100};
-
-    // an inlined recursion ends at compile time when a constant argument
-    // makes its condition fold, otherwise it would expand without end
-    static constexpr size_t max_inlined_nesting{64};
 
     // the error was found inside the inlined body, unless it is in the call
     // itself where the call is already the error location
@@ -508,21 +598,6 @@ struct call_site {
         }
     }
 
-    // an inlined call compiles its body in place, so nesting is limited
-    auto assert_inline_nesting(toc& tc, const stmt_def_func& func) const
-        -> void {
-
-        if (tc.scopes().inlined_nesting(func.name()) >= max_inlined_nesting) {
-            throw inlining_limit_error(recursion_message(func));
-        }
-
-        // note: the chain does not depend on the arguments, see
-        //       'noinline_call::dry_run_body'
-
-        assert_scope_count(tc, tc.scopes().frames().size(),
-                           tc.scopes().noinline_dry_run_level() != 0);
-    }
-
     // the result has the type of the destination, an operand widens a
     // narrower integer, see 'destination::as_operand'
     auto assert_result_type(const destination& dst,
@@ -558,43 +633,6 @@ struct call_site {
         if (not func.returns() and not dst.is_empty()) {
             throw compile_error{tk, "function does not return a value"};
         }
-    }
-
-    // a body compiled 'scope_count' scopes deep; 'is_dry_run' when it checks
-    // the arguments of a noinline call, which the message says
-    auto assert_scope_count(toc& tc, const size_t scope_count,
-                            const bool is_dry_run) const -> void {
-
-        tc.reach_scope_check(scope_count);
-
-        if (scope_count < max_scope_count) {
-            return;
-        }
-
-        if (is_dry_run) {
-            throw compile_error{
-                tk,
-                std::format("inlined calls and blocks are nested too deep to "
-                            "check the arguments of a noinline call, the "
-                            "limit is {} scopes",
-                            max_scope_count),
-            };
-        }
-
-        throw inlining_limit_error(
-            std::format("inlined calls and blocks are nested too deep, the "
-                        "limit is {} scopes, declare a function 'noinline'",
-                        max_scope_count));
-    }
-
-    // the call is too deep to inline, e.g. a recursion that does not end at
-    // compile time
-    [[nodiscard]] auto inlining_limit_error(std::string message) const
-        -> compile_error {
-
-        compile_error error{tk, std::move(message)};
-        error.kind = compile_error::error_kind::inlining_limit;
-        return error;
     }
 
     // which arguments an inlined body reaches through a temporary of the
@@ -754,14 +792,6 @@ struct call_site {
                result_type.size_bytes() < dst_type.size_bytes();
     }
 
-    [[nodiscard]] static auto recursion_message(const stmt_def_func& func)
-        -> std::string {
-
-        return std::format("recursion of inlined function {} cannot be "
-                           "expanded at compile time, declare it 'noinline'",
-                           in_quotes(func.name()));
-    }
-
     // 'dst' has another type than the result, after 'assert_result_type' a
     // widening of an operand
     [[nodiscard]] static auto result_type_differs(const destination& dst,
@@ -777,17 +807,6 @@ struct call_site {
         -> std::optional<storage_path> {
 
         return tc.storage_of(name, access_path::whole_variable());
-    }
-
-    [[noreturn]] static auto throw_noinline_nesting(const token& src_loc_tk)
-        -> void {
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("noinline calls are nested too deep to check their "
-                        "arguments, the limit is {} levels",
-                        max_noinline_dry_run_level),
-        };
     }
 
     [[noreturn]] static auto
@@ -988,7 +1007,7 @@ class inline_call {
                                           ret_jmp_label),
         };
 
-        const machine::call_frame_scope call_frame{
+        const machine::register_trace_scope trace_frame{
             x,
             call_.tk,
             std::string{func.name()},
@@ -1766,12 +1785,10 @@ class noinline_call {
         // e.g. a chain of noinline calls nests a dry run in each; a checked
         // call counts the levels and the scopes below it, so the verdict does
         // not depend on which calls were checked first
-        if (level + below.levels > call_site::max_noinline_dry_run_level) {
-            call_site::throw_noinline_nesting(call_.tk);
-        }
+        call_limits::assert_noinline_level(call_.tk, level + below.levels);
 
-        call_.assert_scope_count(tc, tc.scopes().frames().size() + below.scopes,
-                                 true);
+        call_limits::assert_scope_count(
+            tc, call_.tk, tc.scopes().frames().size() + below.scopes, true);
 
         // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
         //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
@@ -2357,7 +2374,7 @@ class stmt_call : public expression {
             return;
         }
 
-        call.assert_inline_nesting(tc, func);
+        call_limits::assert_inline_nesting(tc, call.tk, func);
 
         const bool is_recursion{tc.scopes().inlined_nesting(func.name()) != 0};
 
@@ -2373,7 +2390,7 @@ class stmt_call : public expression {
                 throw;
             }
 
-            throw call.inlining_limit_error(call_site::recursion_message(func));
+            throw call_limits::recursion_error(call.tk, func);
         }
     }
 

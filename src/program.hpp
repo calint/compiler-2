@@ -488,7 +488,7 @@ class program final {
     static auto compile_main(toc& tc, const stmt_def_func& func_main) -> void {
         machine& x{tc.machine()};
 
-        const machine::call_frame_scope call_frame{
+        const machine::register_trace_scope trace_frame{
             x,
             token{},
             std::string{reserved_names::main},

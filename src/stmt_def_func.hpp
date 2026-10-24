@@ -408,25 +408,27 @@ class stmt_def_func final : public statement {
                 (is_inlined() and (not params().empty() or returns())),
         };
 
-        tc.dry_run([&] -> void {
-            machine& x{tc.machine()};
+        std::optional<compile_error> error{
+            tc.dry_run([&] -> void {
+                machine& x{tc.machine()};
 
-            const machine::call_frame_scope call_frame{
-                x,
-                token{},
-                std::string{name()},
-                machine::frame_kind::noinline_body,
-            };
+                const machine::register_trace_scope trace_frame{
+                    x,
+                    token{},
+                    std::string{name()},
+                    machine::frame_kind::noinline_body,
+                };
 
-            try {
                 std::ignore = compile_in_frame(tc, indent, {});
-            } catch (compile_error& e) {
-                if (not takes_from_call or not e.depends_on_call()) {
-                    add_instance_trace(e);
-                    throw;
-                }
-            }
-        });
+            }),
+        };
+
+        if (not error or (takes_from_call and error->depends_on_call())) {
+            return;
+        }
+
+        add_instance_trace(*error);
+        toc::throw_dry_run_error(std::move(*error));
     }
 
     // in place or in a body of its own, the function is reached
@@ -447,7 +449,7 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        const machine::call_frame_scope call_frame{
+        const machine::register_trace_scope trace_frame{
             x,
             token{},
             std::string{name()},

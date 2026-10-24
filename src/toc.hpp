@@ -3266,28 +3266,50 @@ class toc final {
     [[nodiscard]] auto data() const -> const data_table& { return data_; }
 
     // runs 'compile' for its errors only: its output, string constants and
-    // use of storage leave no trace, also when 'compile' ends at an error it
-    // ignores, see 'stmt_def_func::check_body'
-    auto dry_run(const std::function_ref<void()> compile) -> void {
+    // use of storage leave no trace; the error it ends at, if any, is handed
+    // back, see 'throw_dry_run_error'
+    [[nodiscard]] auto dry_run(const std::function_ref<void()> compile)
+        -> std::optional<compile_error> {
+
         const dry_run_scope scope{*this};
 
         ::machine& x{machine()};
 
-        x.emit_discarded(compile);
+        try {
+            x.emit_discarded(compile);
+        } catch (compile_error& e) {
+            return std::move(e);
+        }
+
+        return std::nullopt;
     }
 
     // the dry run of the kind of noinline call 'kind' at 'level', measured
     // by 'dry_run_ledger::measure'
     //
-    // note: an error out of 'dry_run' ends the compile, so nothing is put
-    //       back: 'dry_run' makes every error a 'source' error and only
+    // note: an error out of the dry run ends the compile, so nothing is put
+    //       back: it is a 'source' error, which only
     //       'machine::compile_version' ('out_of_registers') and
-    //       'stmt_def_func::check_body' (not 'source') drop an error
+    //       'stmt_def_func::check_body' (not 'source') would drop
     auto dry_run_call_kind(const std::string_view kind, const size_t level,
                            const std::function_ref<void()> compile) -> void {
 
-        dry_runs_.measure(kind, level, scopes_.frames().size(),
-                          [&] -> void { dry_run(compile); });
+        dry_runs_.measure(kind, level, scopes_.frames().size(), [&] -> void {
+            if (std::optional<compile_error> error{dry_run(compile)}) {
+                throw_dry_run_error(std::move(*error));
+            }
+        });
+    }
+
+    // an error that ends a dry run is reported as an error of the source:
+    // the registers the run starts with do not depend on the code around it,
+    // so it is not one of a version there; the code stands for a noinline
+    // body, compiled for real when it is called, so it does not depend on the
+    // arguments of a call
+    [[noreturn]] static auto throw_dry_run_error(compile_error error) -> void {
+
+        error.kind = compile_error::error_kind::source;
+        throw error;
     }
 
     [[nodiscard]] auto dry_runs() const -> const dry_run_ledger& {

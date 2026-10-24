@@ -205,24 +205,28 @@ class machine {
         size_t alignment{};
     };
 
-    // ends the call frame when it goes out of scope, an error leaves it too
-    class call_frame_scope final {
+    // the registers allocated while it lives belong to the call it names in
+    // the register trace, see 'register_peak_report'; it ends the frame of
+    // the trace when it goes out of scope, an error leaves it too
+    class register_trace_scope final {
         machine& machine_;
 
       public:
-        call_frame_scope(machine& backend, const token& call_site_tk,
-                         std::string name, const frame_kind kind)
+        register_trace_scope(machine& backend, const token& call_site_tk,
+                             std::string name, const frame_kind kind)
             : machine_{backend} {
 
-            backend.begin_call_frame(call_site_tk, std::move(name), kind);
+            backend.begin_trace_frame(call_site_tk, std::move(name), kind);
         }
 
-        call_frame_scope(const call_frame_scope&) = delete;
-        call_frame_scope(call_frame_scope&&) = delete;
-        auto operator=(const call_frame_scope&) -> call_frame_scope& = delete;
-        auto operator=(call_frame_scope&&) -> call_frame_scope& = delete;
+        register_trace_scope(const register_trace_scope&) = delete;
+        register_trace_scope(register_trace_scope&&) = delete;
+        auto operator=(const register_trace_scope&)
+            -> register_trace_scope& = delete;
+        auto operator=(register_trace_scope&&)
+            -> register_trace_scope& = delete;
 
-        ~call_frame_scope() { machine_.end_call_frame(); }
+        ~register_trace_scope() { machine_.end_trace_frame(); }
     };
 
   protected:
@@ -935,18 +939,7 @@ class machine {
         state_.registers = noinline_body_pool();
         state_.frame_base_reserved = true;
 
-        try {
-            std::ignore = target_assembler().capture(emit);
-        } catch (compile_error& e) {
-            // note: the registers it starts with do not depend on the code
-            //       around it, so the error is not one of a version there;
-            //       discarded code stands for a noinline body, compiled for
-            //       real when it is called, so the error does not depend on
-            //       the arguments of a call
-
-            e.kind = compile_error::error_kind::source;
-            throw;
-        }
+        std::ignore = target_assembler().capture(emit);
     }
 
     // emits both versions and keeps the one with less code, the first on ties,
@@ -1770,11 +1763,11 @@ class machine {
         return result;
     }
 
-    // the registers allocated until 'end_call_frame' belong to the inlined call
-    // of 'name' made at 'call_site_tk', the first frame is the function being
-    // compiled and has no call site
-    auto begin_call_frame(const token& call_site_tk, std::string name,
-                          const frame_kind kind) -> void {
+    // the registers allocated until 'end_trace_frame' belong to the inlined
+    // call of 'name' made at 'call_site_tk', the first frame is the function
+    // being compiled and has no call site
+    auto begin_trace_frame(const token& call_site_tk, std::string name,
+                           const frame_kind kind) -> void {
 
         state_.trace.begin_frame(call_site_tk, std::move(name), kind);
     }
@@ -1803,11 +1796,11 @@ class machine {
     }
 
     // the call frame that allocations are made in
-    [[nodiscard]] auto current_call_frame() const -> size_t {
+    [[nodiscard]] auto current_trace_frame() const -> size_t {
         return state_.trace.current_frame();
     }
 
-    auto end_call_frame() -> void { state_.trace.end_frame(); }
+    auto end_trace_frame() -> void { state_.trace.end_frame(); }
 
     [[nodiscard]] auto is_scratch_register(const size_t index) const -> bool {
         return std::ranges::any_of(scratch_registers(),
@@ -1863,7 +1856,7 @@ class machine {
             .src_loc_tk{},
             .indent{},
             .named{true},
-            .frame{current_call_frame()},
+            .frame{current_trace_frame()},
         });
 
         return pool;
@@ -1896,7 +1889,7 @@ class machine {
             .src_loc_tk{src_loc_tk},
             .indent{indent},
             .named{named},
-            .frame{current_call_frame()},
+            .frame{current_trace_frame()},
         });
 
         state_.trace.record_allocation(state_.registers);
