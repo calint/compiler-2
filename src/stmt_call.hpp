@@ -548,12 +548,27 @@ struct call_site {
         }
     };
 
+  private:
     // how one argument reaches the body, decided once per compile of the call
     struct planned_argument {
         argument_form form;
         // reached through the temporary of the call named by
         // 'temporary_argument_name'
         bool is_temporary{};
+    };
+
+  public:
+    // the arguments of one compile of the call, for the body of 'mode'
+    struct call_plan {
+        call_mode mode{};
+        std::vector<planned_argument> arguments;
+
+        [[nodiscard]] auto has_temporaries() const -> bool {
+            return std::ranges::any_of(
+                arguments, [](const planned_argument& planned) -> bool {
+                    return planned.is_temporary;
+                });
+        }
     };
 
     // the function name, the code and the errors of the call are located at it
@@ -606,11 +621,14 @@ struct call_site {
     // storage, e.g. a literal or an expression, an array is only passed by
     // name
     [[nodiscard]] auto argument_plan(const toc& tc, const stmt_def_func& func,
-                                     const call_mode mode) const
-        -> std::vector<planned_argument> {
+                                     const call_mode mode) const -> call_plan {
 
-        std::vector<planned_argument> plan;
-        plan.reserve(args.size());
+        call_plan plan{
+            .mode{mode},
+            .arguments{},
+        };
+
+        plan.arguments.reserve(args.size());
 
         for (const auto [arg, param] : std::views::zip(args, func.params())) {
             argument_form form{argument_form_of(tc, arg, param)};
@@ -625,7 +643,7 @@ struct call_site {
                     : not form.is_place(),
             };
 
-            plan.push_back({
+            plan.arguments.push_back({
                 .form{std::move(form)},
                 .is_temporary{is_temporary},
             });
@@ -787,15 +805,6 @@ struct call_site {
         };
     }
 
-    [[nodiscard]] static auto
-    has_temporaries(const std::span<const planned_argument> plan) -> bool {
-
-        return std::ranges::any_of(plan,
-                                   [](const planned_argument& planned) -> bool {
-                                       return planned.is_temporary;
-                                   });
-    }
-
     // a block holds the temporaries of a call and frees them after it
     // note: a block is a scope, which counts toward the nesting limit and the
     //       'max scopes in use' report, so a call without temporaries enters
@@ -881,18 +890,19 @@ struct call_site {
 //   4. 'compile_body': the body under labels unique to the call, with the
 //      bindings added
 //
-// a 'noinline_call' runs step 3 as a dry run for the errors of its call
+// 'dry_run' runs step 3 for the errors of a 'noinline_call', whose plan has
+// the noinline mode
 class inline_call {
     call_site call_;
     // one per argument, for an inlined call or, in the dry run of a noinline
     // call, for that call
-    std::vector<call_site::planned_argument> plan_;
+    call_site::call_plan plan_;
 
   public:
-    inline_call(call_site call, std::vector<call_site::planned_argument> plan)
+    inline_call(call_site call, call_site::call_plan plan)
         : call_{std::move(call)}, plan_{std::move(plan)} {
 
-        assert(plan_.size() == call_.args.size());
+        assert(plan_.arguments.size() == call_.args.size());
     }
 
     // an instance literal or a call result is made in a variable of the
@@ -900,6 +910,8 @@ class inline_call {
     // parameter
     auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
+
+        assert(plan_.mode == call_site::call_mode::inlined);
 
         if (func.returns() and call_site::result_type_differs(dst, func)) {
             // note: 'call_site::assert_result_type' allows a type mismatch
@@ -913,9 +925,9 @@ class inline_call {
         }
 
         call_site::in_temporaries_block(
-            tc, call_site::has_temporaries(plan_), [&] -> void {
-                for (size_t i{}; i < plan_.size(); ++i) {
-                    if (plan_.at(i).is_temporary) {
+            tc, plan_.has_temporaries(), [&] -> void {
+                for (size_t i{}; i < plan_.arguments.size(); ++i) {
+                    if (plan_.arguments.at(i).is_temporary) {
                         std::ignore = call_.make_argument_temporary(
                             tc, indent, i, func.params().at(i));
                     }
@@ -925,45 +937,14 @@ class inline_call {
             });
     }
 
-    // the dry run of a 'noinline' call starts at this step, the call made its
-    // temporaries
-    auto compile_with_bindings(toc& tc, const size_t indent,
-                               const destination& dst,
-                               const stmt_def_func& func) const -> void {
+    // the errors of a 'noinline' call checked by compiling its body in place
+    // and discarding the code; the call made its temporaries
+    auto dry_run(toc& tc, const size_t indent, const destination& dst,
+                 const stmt_def_func& func) const -> void {
 
-        // scratch registers stay allocated until the inlined body is compiled
-        std::vector<operand> allocated_registers;
+        assert(plan_.mode == call_site::call_mode::noinline);
 
-        const std::vector<param_binding> bindings{
-            make_bindings(tc, indent, dst, func, allocated_registers),
-        };
-
-        // the result binding has its own address choice in
-        // 'compile_to_destination'
-        // note: the result binding is made before those of the arguments,
-        //       which are the last 'call_.args.size()'
-        const size_t first_argument_binding{
-            bindings.size() - call_.args.size(),
-        };
-
-        const bool has_indexed_argument{
-            std::ranges::any_of(bindings |
-                                    std::views::drop(first_argument_binding),
-                                is_indexed_reference),
-        };
-
-        const machine& x{tc.machine()};
-
-        // an access can use the indexed address as it is, so computing it
-        // into a register is not tried
-        if (not has_indexed_argument or x.has_indexed_addressing()) {
-            compile_body(tc, indent, func, bindings, allocated_registers);
-            return;
-        }
-
-        compile_with_address_choice(tc, indent, func, bindings,
-                                    first_argument_binding,
-                                    allocated_registers);
+        compile_with_bindings(tc, indent, dst, func);
     }
 
   private:
@@ -1028,10 +1009,14 @@ class inline_call {
 
         x.label(indent, call_label);
 
+        const bool is_inlined{plan_.mode == call_site::call_mode::inlined};
+
         // note: a noinline function is compiled in place only in its dry run
+        assert(is_inlined == func.is_inlined());
+
         const toc::scope_entry body{
             tc,
-            func.is_inlined()
+            is_inlined
                 ? scope::inlined_func(func.name(), new_call_path, ret_jmp_label)
                 : scope::noinline_dry_run(func.name(), new_call_path,
                                           ret_jmp_label),
@@ -1242,6 +1227,46 @@ class inline_call {
         x.free_scratch_registers(call_.tk, indent + 1, allocated_registers);
     }
 
+    // the dry run of a 'noinline' call starts at this step
+    auto compile_with_bindings(toc& tc, const size_t indent,
+                               const destination& dst,
+                               const stmt_def_func& func) const -> void {
+
+        // scratch registers stay allocated until the inlined body is compiled
+        std::vector<operand> allocated_registers;
+
+        const std::vector<param_binding> bindings{
+            make_bindings(tc, indent, dst, func, allocated_registers),
+        };
+
+        // the result binding has its own address choice in
+        // 'compile_to_destination'
+        // note: the result binding is made before those of the arguments,
+        //       which are the last 'call_.args.size()'
+        const size_t first_argument_binding{
+            bindings.size() - call_.args.size(),
+        };
+
+        const bool has_indexed_argument{
+            std::ranges::any_of(bindings |
+                                    std::views::drop(first_argument_binding),
+                                is_indexed_reference),
+        };
+
+        const machine& x{tc.machine()};
+
+        // an access can use the indexed address as it is, so computing it
+        // into a register is not tried
+        if (not has_indexed_argument or x.has_indexed_addressing()) {
+            compile_body(tc, indent, func, bindings, allocated_registers);
+            return;
+        }
+
+        compile_with_address_choice(tc, indent, func, bindings,
+                                    first_argument_binding,
+                                    allocated_registers);
+    }
+
     // a new register because the index register may belong to an enclosing
     // binding that is used after the call
     auto compile_with_result_address_register(
@@ -1328,7 +1353,7 @@ class inline_call {
 
         for (const auto [i, arg, param, planned] :
              std::views::zip(std::views::iota(size_t{}), call_.args,
-                             func.params(), plan_)) {
+                             func.params(), plan_.arguments)) {
 
             // note: the dry run of a 'noinline' call must not name the
             //       register of the caller that the body does not see
@@ -1597,13 +1622,14 @@ class noinline_call {
 
     call_site call_;
     // one per argument, a place is passed by its address
-    std::vector<call_site::planned_argument> plan_;
+    call_site::call_plan plan_;
 
   public:
-    noinline_call(call_site call, std::vector<call_site::planned_argument> plan)
+    noinline_call(call_site call, call_site::call_plan plan)
         : call_{std::move(call)}, plan_{std::move(plan)} {
 
-        assert(plan_.size() == call_.args.size());
+        assert(plan_.mode == call_site::call_mode::noinline);
+        assert(plan_.arguments.size() == call_.args.size());
     }
 
     // the callee reaches the result and the arguments through their addresses,
@@ -1614,8 +1640,7 @@ class noinline_call {
                  const stmt_def_func& func) const -> void {
 
         const bool has_temporaries{
-            has_result_temporary(dst, func) or
-                call_site::has_temporaries(plan_),
+            has_result_temporary(dst, func) or plan_.has_temporaries(),
         };
 
         call_site::in_temporaries_block(tc, has_temporaries, [&] -> void {
@@ -1659,7 +1684,7 @@ class noinline_call {
         std::vector<noinline_arg> arguments;
 
         for (const auto [i, param, planned] : std::views::zip(
-                 std::views::iota(size_t{}), func.params(), plan_)) {
+                 std::views::iota(size_t{}), func.params(), plan_.arguments)) {
 
             if (not planned.is_temporary) {
                 const place& storage{std::get<place>(planned.form.form)};
@@ -1843,7 +1868,7 @@ class noinline_call {
         const inline_call dry_run{call_, plan_};
 
         tc.dry_run_call_kind(*kind, level, [&] -> void {
-            dry_run.compile_with_bindings(tc, indent, dst, func);
+            dry_run.dry_run(tc, indent, dst, func);
         });
     }
 
@@ -1862,7 +1887,7 @@ class noinline_call {
         }
 
         for (const auto [planned, argument] :
-             std::views::zip(plan_, arguments)) {
+             std::views::zip(plan_.arguments, arguments)) {
 
             // a temporary is a plain variable, not indexed like its argument
             if (argument.is_temporary) {

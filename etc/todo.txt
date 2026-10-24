@@ -196,6 +196,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           call fuzzers clean
        E.2. the dry run of 'inline_call' explicit (S5): a public 'dry_run'
             asserts the mode, 'compile_with_bindings' private
+       => E.2 done (2026-10-24): 'call_site::argument_plan' returns a
+          'call_plan' {mode, arguments}; 'inline_call::compile' asserts the
+          inlined mode, the public 'dry_run' the noinline mode and calls the
+          now private 'compile_with_bindings'; 'compile_body' picks the
+          scope kind from the mode and asserts it agrees with
+          'func.is_inlined()'; 'noinline_call' asserts its mode; listings
+          equal
        E.3. "result, then arguments" by name, not position (S2):
             'frame_slot_addresses' walks 'frame_slots' by 'param_index';
             'make_bindings' returns {result, arguments}
