@@ -351,6 +351,9 @@ class machine {
         // the comment above it in the listing
         std::string_view comment;
         bool takes_line{};
+        // the status the program exits with, one per handler, the same on
+        // every target
+        int exit_code{};
     };
 
   private:
@@ -439,9 +442,8 @@ class machine {
     virtual ~machine() = default;
 
     // a failed check prints its message, the 'panic: ...' of its handler, to
-    // this descriptor and exits with this code
+    // this descriptor and exits with the code of its handler
     static constexpr int stderr_descriptor{2};
-    static constexpr int panic_exit_code{255};
 
     // the sector size of the sd card of every target that has one
     static constexpr size_t card_sector_size_bytes{512};
@@ -467,42 +469,49 @@ class machine {
         .name{"bounds"},
         .comment{"bounds failure handler (--checks=upper or --checks=lower)"},
         .takes_line{true},
+        .exit_code{255},
     };
     static constexpr failure_handler division_failure{
         .label{"baz_division_panic"},
         .name{"division"},
         .comment{"division failure handler (--checks=division)"},
         .takes_line{true},
+        .exit_code{253},
     };
     static constexpr failure_handler frame_overflow_failure{
         .label{"baz_frame_overflow"},
         .name{"frame overflow"},
         .comment{"frame overflow handler (--checks=frame)"},
         .takes_line{false},
+        .exit_code{254},
     };
     static constexpr failure_handler overflow_failure{
         .label{"baz_overflow_panic"},
         .name{"overflow"},
         .comment{"overflow failure handler (--checks=overflow)"},
         .takes_line{true},
+        .exit_code{249},
     };
     static constexpr failure_handler overlap_failure{
         .label{"baz_overlap_panic"},
         .name{"overlap"},
         .comment{"overlap failure handler (--checks=overlap)"},
         .takes_line{true},
+        .exit_code{251},
     };
     static constexpr failure_handler shift_failure{
         .label{"baz_shift_panic"},
         .name{"shift"},
         .comment{"shift failure handler (--checks=shift)"},
         .takes_line{true},
+        .exit_code{252},
     };
     static constexpr failure_handler stack_overflow_failure{
         .label{"baz_stack_overflow"},
         .name{"stack overflow"},
         .comment{"stack overflow handler (--checks=stack)"},
         .takes_line{false},
+        .exit_code{250},
     };
 
     // in the order they are emitted after the code
@@ -512,10 +521,29 @@ class machine {
         bounds_failure,
     };
 
-    // a failed sector read or write jumps to it and exits with a panic message
-    static constexpr std::string_view sd_card_handler_label{
-        "baz_sd_card_panic",
+    // a failed sector read or write jumps to it, the sector routines emit it,
+    // see 'emit_sector_routines'
+    static constexpr failure_handler sd_card_failure{
+        .label{"baz_sd_card_panic"},
+        .name{"sd card"},
+        .comment{"sd card failure handler (sector_read or sector_write)"},
+        .takes_line{false},
+        .exit_code{248},
     };
+
+    // a panic is told by its exit code alone, e.g. by a script
+    static_assert([] -> bool {
+        std::array<int, failure_handlers.size() + 1> codes{
+            sd_card_failure.exit_code,
+        };
+
+        for (size_t i{}; i < failure_handlers.size(); ++i) {
+            codes.at(i + 1) = failure_handlers.at(i).exit_code;
+        }
+
+        std::ranges::sort(codes);
+        return std::ranges::adjacent_find(codes) == codes.end();
+    }());
 
     //
     // virtual methods
@@ -1398,7 +1426,7 @@ class machine {
                                        const size_t file_ix) const
         -> std::string {
 
-        return std::format("panic: {} at {}:", name,
+        return std::format("{} at {}:", panic_message(name),
                            locations_.file_name(file_ix));
     }
 
@@ -1737,6 +1765,14 @@ class machine {
         assert(op == comparison_operator::greater_equal);
 
         return comparison_operator::less;
+    }
+
+    // e.g. 'panic: bounds'; the newline in front separates it from the output
+    // of the program, which may not end with one
+    [[nodiscard]] static auto panic_message(const std::string_view name)
+        -> std::string {
+
+        return std::format("\npanic: {}", name);
     }
 
   private:

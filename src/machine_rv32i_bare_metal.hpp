@@ -135,9 +135,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
                         memory_end_address, stack_size_bytes(), memory_bytes)};
     }
 
-    // no operating system catches a trap, the program exits like a panic
+    // no operating system catches a trap, the program exits with the code of
+    // the division panic
     auto emit_divide_by_zero_trap() -> void override {
-        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
+        exit(token{}, 1,
+             operand::imm(division_failure.exit_code, default_type()));
     }
 
     auto emit_read_call(const size_t indent) -> void override {

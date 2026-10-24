@@ -399,7 +399,7 @@ class machine_rv32i : public machine {
         assert(handler.label != stack_overflow_failure.label or
                is_stack_bounded());
 
-        emit_named_failure_handler(handler.label, handler.name, with_line);
+        emit_named_failure_handler(handler, with_line);
     }
 
     // a 'noinline' body saves the return address below 'sp'
@@ -529,14 +529,16 @@ class machine_rv32i : public machine {
         assembler_.call(indent, label, "a7");
     }
 
-    // the handler of a check that prints 'panic: NAME' then exits; with the
-    // line, one entry per file prints 'panic: NAME at FILE:' and the line
-    // number in a0, see 'branch_to_failure'
-    auto emit_named_failure_handler(const std::string_view handler_label,
-                                    const std::string_view name,
+    // the handler of a check that prints 'panic: NAME' then exits with its
+    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
+    // and the line number in a0, see 'branch_to_failure'
+    auto emit_named_failure_handler(const failure_handler& handler,
                                     const bool with_line) -> void {
 
         constexpr std::array<int64_t, 1> newline{'\n'};
+
+        const std::string_view name{handler.name};
+        const std::string_view handler_label{handler.label};
 
         std::string label_name{name};
         std::ranges::replace(label_name, ' ', '_');
@@ -550,7 +552,7 @@ class machine_rv32i : public machine {
 
                 emit_line_failure(
                     std::format(".Lbaz_{}_message_{}", label_name, file_ix),
-                    failure_message(name, file_ix));
+                    failure_message(name, file_ix), handler.exit_code);
             }
 
             return;
@@ -562,7 +564,7 @@ class machine_rv32i : public machine {
 
         assembler_.label(0, handler_label);
 
-        const std::string message{std::format("panic: {}", name)};
+        const std::string message{panic_message(name)};
 
         assembler_.li(1, "a0", stderr_descriptor);
         assembler_.la(1, "a1", message_label);
@@ -570,7 +572,7 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a2", message.size() + 1);
         emit_write_call(1);
 
-        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
+        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
@@ -3328,12 +3330,14 @@ class machine_rv32i : public machine {
                        swapped ? left.base_register() : right.base_register());
     }
 
-    // prints 'message' and the line number in a0, then exits, the digits are
-    // emitted once and shared by the handlers
+    // prints 'message' and the line number in a0, then exits with 'exit_code',
+    // the digits are emitted once and shared by the handlers
     auto emit_line_failure(const std::string_view message_label,
-                           const std::string_view message) -> void {
+                           const std::string_view message, const int exit_code)
+        -> void {
 
         assembler_.mv(1, "s2", "a0");
+        assembler_.li(1, "s3", exit_code);
         assembler_.li(1, "a0", stderr_descriptor);
         assembler_.la(1, "a1", message_label);
         assembler_.li(1, "a2", message.size());
@@ -3369,9 +3373,10 @@ class machine_rv32i : public machine {
         mark_lower_checked(range);
     }
 
-    // writes the line number of s2 in decimal, then exits: each power of ten
-    // of '.Lbaz_decimal_places' gives a digit by repeated subtraction,
-    // leading zeros are skipped and the last place always writes its digit
+    // writes the line number of s2 in decimal, then exits with the code in s3:
+    // each power of ten of '.Lbaz_decimal_places' gives a digit by repeated
+    // subtraction, leading zeros are skipped and the last place always writes
+    // its digit
     auto emit_report_line_routine() -> void {
         constexpr int digit_zero{'0'};
         constexpr int newline{'\n'};
@@ -3410,7 +3415,7 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a0", stderr_descriptor);
         emit_write_call(1);
 
-        exit(token{}, 1, operand::imm(panic_exit_code, default_type()));
+        exit(token{}, 1, make_register_operand("s3", default_type()));
 
         constexpr std::array<int64_t, 10> decimal_places{
             1000000000, 100000000, 10000000, 1000000, 100000,
@@ -5533,7 +5538,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.li(1, "a3", 0);
         a.li(1, "a7", syscall_openat_);
         a.ecall(1);
-        a.bltz(1, "a0", sd_card_handler_label);
+        a.bltz(1, "a0", sd_card_failure.label);
         a.la(1, "a3", sd_card_label_);
         a.sw(1, "a0", 0, "a3");
         // 'llseek' writes the size of the file at a3
@@ -5543,7 +5548,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.li(1, "a4", seek_end);
         a.li(1, "a7", syscall_llseek_);
         a.ecall(1);
-        a.bnez(1, "a0", sd_card_handler_label);
+        a.bnez(1, "a0", sd_card_failure.label);
         a.la(1, "a3", sd_card_label_);
         a.lw(1, "a4", size_low_offset, "a3");
         a.lw(1, "a0", size_high_offset, "a3");
@@ -5560,7 +5565,7 @@ class machine_rv32i_linux final : public machine_rv32i {
         restore_saved_registers(1, saved, stack_bytes);
         a.label(0, "2");
         a.lw(1, "a4", count_offset, "a3");
-        a.bgeu(1, "a0", "a4", sd_card_handler_label);
+        a.bgeu(1, "a0", "a4", sd_card_failure.label);
         // a0 the descriptor, a3 and a4 the low and high word of the offset
         a.lw(1, "a7", 0, "a3");
         a.slli(1, "a3", "a0", sector_shift);
@@ -5568,10 +5573,10 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.mv(1, "a0", "a7");
         a.mv(1, "a7", "a5");
         a.ecall(1);
-        a.bne(1, "a0", "a2", sd_card_handler_label);
+        a.bne(1, "a0", "a2", sd_card_failure.label);
         a.jr(1, "a6");
 
-        emit_named_failure_handler(sd_card_handler_label, "sd card", false);
+        emit_failure_handler(sd_card_failure, false);
 
         a.switch_section(section::data);
         a.align(word_size_bytes_);

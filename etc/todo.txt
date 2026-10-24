@@ -134,6 +134,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'type_field::array_count' (0 sentinel), 'stmt_def_var' and
             'initializer_declaration' (deduced count as optional); the
             sentinel stays inside the parse only
+       => E.1-E.3 done (2026-10-24): E.1 'stmt_identifier::storage(tc)',
+          'call_site::argument_target' gone; E.2 'ub_order.hpp' with the
+          header of the order checks, 'storage_read' and
+          'visit_storage_reads' shared by rule A, 'reaches_destination' and
+          'assert_not_read_before'; 'first_reach' not made (the callers
+          want every read, a bool, reads only), 'operands()' dropped with
+          the A.1 redecision; E.3 a register destination by name, storage
+          by storage: 3 test listings change ('arr[2] = ~arr[1]' in place),
+          instruction lines equal, verdicts equal, alias, effects and data
+          fuzzers clean
        E.5. built-in types: 'type_kind' {user, integer, boolean, empty},
             'type::is_integer()' ('is_integer_name' goes); toc registers the
             built-ins from 'builtin_type_set::all()' (not 'program');
@@ -196,6 +206,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             two calls in 'program'
        H.2. the sd card panic as a 'failure_handler' constant; the x86_64
             hand copy and 'sd_card_handler_label' go
+            => done (2026-10-24) with the panic exit codes, see
+               'etc/todo-resolved.txt'
        H.3. 'call_function' once in 'machine' with the slot register kept;
             the backends provide save, restore and the call (A.2)
             => done with A.2 (2026-10-24)

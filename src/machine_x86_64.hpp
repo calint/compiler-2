@@ -1153,8 +1153,8 @@ class machine_x86_64 final : public machine {
         // note: the stack is not bounded, see 'is_stack_bounded'
         assert(handler.label != stack_overflow_failure.label);
 
-        emit_line_panic_handler(with_line, handler.name,
-                                failure_lines_of(handler.name), handler.label);
+        emit_line_panic_handler(with_line, handler,
+                                failure_lines_of(handler.name));
     }
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size
@@ -1222,7 +1222,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // a negative result is '-errno', the open failed
         assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, sd_card_handler_label);
+        assembler_.jcc(1, condition::s, sd_card_failure.label);
         // keep the descriptor for later transfers
         assembler_.instruction(1, op::mov, descriptor, "rax");
         assembler_.comment(1, "the size of the file in sectors");
@@ -1234,7 +1234,7 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // a negative result is '-errno', the seek failed
         assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, sd_card_handler_label);
+        assembler_.jcc(1, condition::s, sd_card_failure.label);
         // bytes to whole sectors, a partial last sector is not counted
         assembler_.instruction(1, op::sar, "rax", sector_shift);
         assembler_.instruction(1, op::mov, sector_count, "rax");
@@ -1247,10 +1247,10 @@ class machine_x86_64 final : public machine {
         // zero extending 'edi' differs from 'rdi' when the upper half is set
         assembler_.instruction(1, op::mov, "eax", "edi");
         assembler_.instruction(1, op::cmp, "rax", "rdi");
-        assembler_.jcc(1, condition::ne, sd_card_handler_label);
+        assembler_.jcc(1, condition::ne, sd_card_failure.label);
         // a sector at or past the end of the file panics
         assembler_.instruction(1, op::cmp, "rdi", sector_count);
-        assembler_.jcc(1, condition::ae, sd_card_handler_label);
+        assembler_.jcc(1, condition::ae, sd_card_failure.label);
         // the byte offset, the fourth system call argument, goes in 'r10'
         assembler_.instruction(1, op::mov, "r10", "rdi");
         assembler_.instruction(1, op::sal, "r10", sector_shift);
@@ -1262,18 +1262,13 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
         // anything but the full size, an error or a short transfer, panics
         assembler_.instruction(1, op::cmp, "rax", "rdx");
-        assembler_.jcc(1, condition::ne, sd_card_handler_label);
+        assembler_.jcc(1, condition::ne, sd_card_failure.label);
         assembler_.instruction(1, op::ret);
 
         // the stack is not unwound because the program exits
-        assembler_.label(0, sd_card_handler_label);
-        emit_panic_message("msg_sd_card");
-        emit_panic_exit();
+        emit_failure_handler(sd_card_failure, false);
 
         assembler_.switch_section(section::rodata);
-        assembler_.label(0, "msg_sd_card");
-        assembler_.string_data("panic: sd card\\n");
-        assembler_.define_length("msg_sd_card_len", "msg_sd_card");
         assembler_.comment(0, "the file name ends with a zero byte");
         assembler_.label(0, "baz_sd_card_name");
 
@@ -1677,11 +1672,14 @@ class machine_x86_64 final : public machine {
 
     // the handler of a check: without the line it prints 'panic: NAME'; with
     // it, one stub per failure location sets rbp to the line and enters the
-    // entry of its file, which prints 'panic: NAME at FILE:' and the line
+    // entry of its file, which prints 'panic: NAME at FILE:', sets rbx to the
+    // exit code and enters the shared line report
     auto emit_line_panic_handler(const bool with_line,
-                                 const std::string_view name,
-                                 const failure_lines& lines_by_file,
-                                 const std::string_view handler_label) -> void {
+                                 const failure_handler& handler,
+                                 const failure_lines& lines_by_file) -> void {
+
+        const std::string_view name{handler.name};
+        const std::string_view handler_label{handler.label};
 
         // a label has no space, 'frame overflow' is 'msg_frame_overflow'
         std::string label_name{name};
@@ -1692,8 +1690,10 @@ class machine_x86_64 final : public machine {
 
             assembler_.label(0, handler_label);
             emit_panic_message(message_label);
-            emit_panic_exit();
-            emit_message_data(message_label, std::format("panic: {}\\n", name));
+            emit_panic_exit(handler.exit_code);
+
+            emit_message_data(message_label, token::encode_string(std::format(
+                                                 "{}\n", panic_message(name))));
 
             return;
         }
@@ -1713,6 +1713,7 @@ class machine_x86_64 final : public machine {
 
             assembler_.label(0, failure_entry_label(handler_label, file_ix));
             emit_panic_message(message_label);
+            assembler_.instruction(1, op::mov, "rbx", handler.exit_code);
             emit_report_line();
 
             // note: a backslash or a control byte of a path is written as an
@@ -1830,10 +1831,12 @@ class machine_x86_64 final : public machine {
         emit_narrowing_op(indent, code, dst_op, src_op);
     }
 
-    auto emit_panic_exit() -> void {
-        assembler_.comment(1, "exit with error code 255");
+    auto emit_panic_exit(const int exit_code) -> void {
+        assembler_.comment(1,
+                           std::format("exit with error code {}", exit_code));
+
         assembler_.instruction(1, op::mov, "rax", syscall_exit_);
-        assembler_.instruction(1, op::mov, "rdi", panic_exit_code);
+        assembler_.instruction(1, op::mov, "rdi", exit_code);
         assembler_.instruction(1, op::syscall);
     }
 
@@ -1854,8 +1857,8 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
     }
 
-    // prints the line number in 'rbp' and exits, the code is emitted once and
-    // shared by the handlers that report a line
+    // prints the line number in 'rbp' and exits with the code in 'rbx', the
+    // code is emitted once and shared by the handlers that report a line
     auto emit_report_line() -> void {
         constexpr std::string_view report_label{"baz_report_line"};
 
@@ -1917,7 +1920,10 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor);
         assembler_.instruction(1, op::syscall);
-        emit_panic_exit();
+        assembler_.comment(1, "exit with the error code in 'rbx'");
+        assembler_.instruction(1, op::mov, "rax", syscall_exit_);
+        assembler_.instruction(1, op::mov, "rdi", "rbx");
+        assembler_.instruction(1, op::syscall);
         assembler_.switch_section(section::bss);
         assembler_.label(0, "num_buffer");
         assembler_.reserve(number_buffer_size_bytes);

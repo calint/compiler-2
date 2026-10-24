@@ -1,6 +1,55 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: a panic exits with a code per failure, the same on every target
+    (user, 2026-10-24); today every panic exits 255 after its message
+    => design: 'machine::failure_handler' gains 'exit_code'; the codes of
+       the old rv32i-fpga scheme, which the fuzzers still use: overflow 249,
+       stack overflow 250, overlap 251, shift 252, division 253, frame
+       overflow 254, bounds 255, and the sd card 248; 'panic_exit_code'
+       goes; a handler without the line exits with its own code; the shared
+       line tail (x86_64 'baz_report_line', rv32i 'emit_report_line_routine')
+       exits with a code each file entry loads before it jumps there
+       (x86_64 'rbx', rv32i 's3', free in a handler, which runs after all
+       allocations); the bare-metal divide-by-zero trap exits 253 like the
+       division panic
+    => steps: 1. pure refactor: the sd card panic as the constant
+       'sd_card_failure' (H.2 moved ahead), no listing change; 2. the codes:
+       listings change (the exit line of each handler and one load per line
+       entry), the 85 'EXP=255' cases of 'qa/coverage/cases.sh' take the
+       code of the panic in their '.out' (a script, the diff reviewed),
+       'test-rv32i.sh' expects 255 for bounds (unchanged); 3. 'fuzzlib'
+       'outcome_x86' and 'outcome_fpga' take the code with the message
+       (the code then is checked too); README 8 gets the table of codes
+    => rejected: small codes (1 to 8), which programs use for their own
+       exits more often; the code alone without the message, the message
+       stays the readable part
+    => note: a program's own 'exit(253)' looks like a division panic by
+       its code, as 'exit(255)' looks like a panic today
+    => done (2026-10-24): as designed; the sd card panic is the constant
+       'sd_card_failure' (H.2 done, the x86_64 hand copy and
+       'sd_card_handler_label' gone, the listing gains two section lines);
+       a 'static_assert' keeps the codes distinct; 84 cases take the code of
+       their panic (43 stay 255, bounds), 1437 the division code 253 on bare
+       metal; 'fuzzlib' and 'fuzz-ub.py' take a panic when its message and
+       its code agree; README 8.2 has the table; also (user): a panic
+       message starts with a newline ('machine::panic_message'), on its own
+       line after the output of the program, 83 '.out' files gain the empty
+       line; all four targets, test-cli, test-rv32i and the fuzzers clean
+[x] easy: 'qa/fuzz/fuzz-exprs.py' reports about 25% mismatches on
+    rv32i-fpga (149 of 600, seed 7), already at 45f1f16f before round 13: a
+    panic ends 'fpga-emulator/osqa' with exit code 255 ('panic: shift',
+    rc 255) while 'fuzzlib.outcome_fpga' takes 249-254 as a panic, so a
+    panic reads as an exit; decide which side is right (the emulator, the
+    rv32i-fpga panic handler or the fuzzer) and check the 'expr-compile'
+    findings again after
+    => done (2026-10-24): the panic change of the item below left the
+       fuzzers behind; 'fuzzlib.outcome_fpga' reads 'panic: NAME' (with ' at
+       FILE:LINE' under '--checks=line') from the end of the uart output and
+       gives the code of 'PANIC_CODE' like 'outcome_x86', the fallback of
+       'fuzz-exprs.py' on 249-254 gone; 'build/baz-asan' was older than the
+       change and made 'fuzz-options.py' report it, rebuilt; exprs 3000,
+       options, calls, programs, data, compiler: 0 findings
 [x] medium: rv32i-fpga: a panic prints nothing and exits with a code per
     failure (249 to 255), '--checks=line' is turned off ('reports_line'); the
     smallest '--stack' (48 B) counts 16 B of line digits it never writes

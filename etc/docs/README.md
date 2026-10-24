@@ -1453,6 +1453,25 @@ signed overflow wraps, also a constant one. Such a result depends on the target,
 default type is 'i64' on x86_64 and 'i32' on rv32i. With 'noub' each of them
 stops at a panic that names the check, e.g. 'panic: bounds'.
 
+A panic prints its message on a line of its own after the output of the
+program, on standard error where there is one, on the uart of rv32i-fpga, and
+exits with the code of its check, the same on every target
+('machine::failure_handler'):
+
+| panic | exit code |
+| --- | --- |
+| sd card | 248 |
+| overflow | 249 |
+| stack overflow | 250 |
+| overlap | 251 |
+| shift | 252 |
+| division | 253 |
+| frame overflow | 254 |
+| bounds | 255 |
+
+An unchecked division by zero on a bare-metal target exits 253 without the
+message, x86_64 and rv32i linux stop with a signal.
+
 ### 8.3 Known limits
 
 - A call's effects treat every argument of a 'mut' parameter as written in

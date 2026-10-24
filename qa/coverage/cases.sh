@@ -1228,7 +1228,7 @@ SRC=0413 && EXP=0 && RUN
 SRC=0413 && EXP=0 && OPTS="--vars=0x40000 --checks=frame --reproduce-source" RUN
 
 # non-inline recursion: factorial results and caller-local preservation
-SRC=0413 && EXP=255 && RUN_ERR_OPTS "--vars=0x40 --checks=frame"
+SRC=0413 && EXP=254 && RUN_ERR_OPTS "--vars=0x40 --checks=frame"
 
 # non-inline user types: nested fields, reference mutation, copies and returns
 SRC=0414 && EXP=0 && RUN
@@ -1301,7 +1301,7 @@ SRC=0434 && EXP=0 && RUN
 SRC=0434 && EXP=0 && OPTS="--vars=0x40000 --checks=upper,lower,line,frame --reproduce-source" RUN
 
 # non-inline recursion, references, aggregate returns and large local frames
-SRC=0434 && EXP=255 && RUN_ERR_OPTS "--vars=0x1020 --checks=frame"
+SRC=0434 && EXP=254 && RUN_ERR_OPTS "--vars=0x1020 --checks=frame"
 
 # arrays with omitted element type use the target's default integer type
 SRC=0435 && EXP=0 && RUN
@@ -3008,48 +3008,48 @@ SRC=0964 && EXP=0 && RUN
 SRC=0965 && EXP=0 && RUN_ERR_OPTS "--checks=division"
 
 # --checks=division: zero divisor
-SRC=0966 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+SRC=0966 && EXP=253 && RUN_ERR_OPTS "--checks=division"
 
 # --checks=division: zero divisor of a remainder
-SRC=0967 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+SRC=0967 && EXP=253 && RUN_ERR_OPTS "--checks=division"
 
 # --checks=division: minimum divided by -1
-SRC=0968 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+SRC=0968 && EXP=253 && RUN_ERR_OPTS "--checks=division"
 
 # --checks=division: minimum of 'i8' divided by -1
-SRC=0969 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+SRC=0969 && EXP=253 && RUN_ERR_OPTS "--checks=division"
 
 if [[ $MACHINE == x86_64 ]]; then
     # --checks=division: minimum of 'i64' divided by -1, a trap of the hardware
-    SRC=0970 && EXP=255 && RUN_ERR_OPTS "--checks=division"
+    SRC=0970 && EXP=253 && RUN_ERR_OPTS "--checks=division"
 fi
 
 # --checks=division,line: zero divisor with the line, the fpga prints nothing
-SRC=0971 && EXP=255 && RUN_ERR_OPTS "--checks=division,line"
+SRC=0971 && EXP=253 && RUN_ERR_OPTS "--checks=division,line"
 
 # --checks=division,line: minimum divided by -1 with the line
-SRC=0972 && EXP=255 && RUN_ERR_OPTS "--checks=division,line"
+SRC=0972 && EXP=253 && RUN_ERR_OPTS "--checks=division,line"
 
 # --checks=upper,division,line: a bounds failure next to the division handler
 SRC=0973 && EXP=255 && RUN_ERR_OPTS "--checks=upper,division,line"
 
 # --checks=upper,division,line: the failing one of two divisions
-SRC=0974 && EXP=255 && RUN_ERR_OPTS "--checks=upper,division,line"
+SRC=0974 && EXP=253 && RUN_ERR_OPTS "--checks=upper,division,line"
 
 # --checks=shift: counts within the width pass
 SRC=0975 && EXP=0 && RUN_ERR_OPTS "--checks=shift"
 
 # --checks=shift: count not below the width
-SRC=0976 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+SRC=0976 && EXP=252 && RUN_ERR_OPTS "--checks=shift"
 
 # --checks=shift: negative count
-SRC=0977 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+SRC=0977 && EXP=252 && RUN_ERR_OPTS "--checks=shift"
 
 # --checks=shift: count not below the width of 'i32'
-SRC=0978 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+SRC=0978 && EXP=252 && RUN_ERR_OPTS "--checks=shift"
 
 # --checks=shift,line: count not below the width with the line
-SRC=0979 && EXP=255 && RUN_ERR_OPTS "--checks=shift,line"
+SRC=0979 && EXP=252 && RUN_ERR_OPTS "--checks=shift,line"
 
 # --checks=shift: constant count outside the width
 SRC=0980 && OPTS="--checks=shift" COMPERR
@@ -3058,13 +3058,13 @@ SRC=0980 && OPTS="--checks=shift" COMPERR
 SRC=0981 && EXP=0 && RUN_ERR_OPTS "--checks=overlap"
 
 # --checks=overlap: destination starts inside the source
-SRC=0982 && EXP=255 && RUN_ERR_OPTS "--checks=overlap"
+SRC=0982 && EXP=251 && RUN_ERR_OPTS "--checks=overlap"
 
 # --checks=overlap: destination starts inside the source, runtime count
-SRC=0983 && EXP=255 && RUN_ERR_OPTS "--checks=overlap"
+SRC=0983 && EXP=251 && RUN_ERR_OPTS "--checks=overlap"
 
 # --checks=overlap,line: overlapping copy with the line
-SRC=0984 && EXP=255 && RUN_ERR_OPTS "--checks=overlap,line"
+SRC=0984 && EXP=251 && RUN_ERR_OPTS "--checks=overlap,line"
 
 # --checks=stack: recursion that fits in the stack
 SRC=0985 && EXP=0 && OPTS="--checks=stack" RUN
@@ -3073,14 +3073,14 @@ SRC=0985 && EXP=0 && OPTS="--checks=stack" RUN
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=0986 && EXP=0 && OPTS="--checks=stack" RUN; fi
 
 # --checks=stack: recursion deeper than the stack panics
-if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=255 && RUN_ERR_OPTS "--stack=0x100 --checks=stack"; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=250 && RUN_ERR_OPTS "--stack=0x100 --checks=stack"; fi
 
 # --memory: the stack starts at the end of a smaller memory and fits, the
 # emulator has more memory
 if [[ $MACHINE == rv32i-fpga ]]; then SRC=0985 && EXP=0 && OPTS="--memory=0x20000 --stack=0x1000 --checks=stack" RUN; fi
 
 # --memory: recursion deeper than the stack of a smaller memory panics
-if [[ $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=255 && RUN_ERR_OPTS "--memory=0x20000 --stack=0x100 --checks=stack"; fi
+if [[ $MACHINE == rv32i-fpga ]]; then SRC=0986 && EXP=250 && RUN_ERR_OPTS "--memory=0x20000 --stack=0x100 --checks=stack"; fi
 
 # --checks=lower,stack: the check keeps the registers the call still uses
 SRC=0987 && EXP=0 && OPTS="--checks=lower,stack" RUN
@@ -3089,31 +3089,31 @@ SRC=0987 && EXP=0 && OPTS="--checks=lower,stack" RUN
 SRC=0988 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # --checks=overflow: signed overflow of each operation
-SRC=0989 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
-SRC=0990 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
-SRC=0991 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
-SRC=0992 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
-SRC=0993 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=0989 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
+SRC=0990 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
+SRC=0991 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
+SRC=0992 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
+SRC=0993 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # --checks=overflow,line: overflow with the line
-SRC=0994 && EXP=255 && RUN_ERR_OPTS "--checks=overflow,line"
+SRC=0994 && EXP=249 && RUN_ERR_OPTS "--checks=overflow,line"
 
 # --checks=overflow: constant expression that overflows
 SRC=0995 && OPTS="--checks=overflow" COMPERR
 
 # --checks=overflow: product by a constant and a narrow array element
-SRC=0996 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
-SRC=0997 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=0996 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
+SRC=0997 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # --checks=overflow: 64 bit only on x86_64
-if [[ $MACHINE == x86_64 ]]; then SRC=0998 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=0998 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"; fi
 
 # --checks=overflow: a bitwise operation with a constant that changes nothing
 SRC=0999 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # --checks=overflow: the negation of the minimum as an operand of a bitwise operation
-SRC=1000 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
-SRC=1001 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1000 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1001 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # --checks=overflow: the negation of the minimum of a typed constant is rejected
 SRC=1002 && OPTS="--checks=overflow" COMPERR
@@ -3131,8 +3131,8 @@ SRC=1005 && EXP=5 && RUN
 SRC=1006 && COMPERR
 
 # --checks=overflow: the negation of the minimum of a narrow type in a sum or difference
-SRC=1007 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
-SRC=1008 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1007 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1008 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # a built-in call needs a ',' between the arguments
 SRC=1009 && COMPERR
@@ -3169,7 +3169,7 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1018 && COMPERR; fi
 SRC=1019 && COMPERR
 
 # a variable declared from an expression has the type of its first element, the sum overflows as an i8
-SRC=1020 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1020 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # a comparison operand whose later element is wider than the first is narrowed
 SRC=1021 && COMPERR
@@ -3249,14 +3249,14 @@ if [[ $MACHINE != rv32i-qemu ]]; then SDCARD 5G && SRC=1044 && DIFF; fi
 if [[ $MACHINE != rv32i-qemu ]]; then SDCARD 1M && SRC=1045 && EXP=255 && RUN_ERR; fi
 
 # a sector past the end of the sd card image panics
-if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SDCARD 1M && SRC=1046 && EXP=255 && RUN_ERR; fi
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SDCARD 1M && SRC=1046 && EXP=248 && RUN_ERR; fi
 
 # a sector number is 32 bits, a larger one panics even when its low 32 bits
 # are a sector of the image
-if [[ $MACHINE == x86_64 ]]; then SDCARD 1M && SRC=1047 && EXP=255 && RUN_ERR; fi
+if [[ $MACHINE == x86_64 ]]; then SDCARD 1M && SRC=1047 && EXP=248 && RUN_ERR; fi
 
 # an sd card image that cannot be opened panics
-if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1048 && EXP=255 && RUN_ERR_OPTS "--sdcard=missing.img"; fi
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=1048 && EXP=248 && RUN_ERR_OPTS "--sdcard=missing.img"; fi
 
 # a sector is a whole number of elements of the buffer
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=1049 && COMPERR; fi
@@ -3875,7 +3875,7 @@ if [[ $MACHINE == rv32i* ]]; then SRC=1224 && EXP=3 && RUN; fi
 
 # --checks=shift: the count of a shift in an 'i8' expression is compared with
 # the width of 'i8' also when the expression is computed in a wider register
-SRC=1225 && EXP=255 && RUN_ERR_OPTS "--checks=shift"
+SRC=1225 && EXP=252 && RUN_ERR_OPTS "--checks=shift"
 
 # --checks=shift: a shift in the argument of a conversion to a narrower type
 # is checked against the width of the argument, in a register and in memory
@@ -3917,7 +3917,7 @@ SRC=1234 && EXP=40 && RUN
 
 # --checks=overflow: the negation of a conversion is checked at the width of
 # its destination at run time
-SRC=1235 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1235 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # the 'n' of a 'foo' over an unsized array parameter is the length of the
 # argument, also where a 'let' reads it
@@ -4357,7 +4357,7 @@ SRC=1351 && EXP=0 && RUN
 
 # --checks=overflow: the body of an inlined function called in the argument of
 # a conversion is checked, only the conversion's own arithmetic wraps
-SRC=1352 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1352 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # a folded conversion passed to an inlined function is a value of the type of
 # the parameter, its unary ops apply at that type
@@ -4475,14 +4475,14 @@ SRC=1380 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # the '-' of a conversion overflows at the width of its use under the
 # overflow check
-SRC=1381 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1381 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # the unary ops of a call in the argument of a conversion wrap under the
 # overflow check, as the argument's arithmetic does
 SRC=1382 && EXP=0 && OPTS="--checks=overflow" RUN
 
 # the arguments of a call in the argument of a conversion are checked
-SRC=1383 && EXP=255 && RUN_ERR_OPTS "--checks=overflow"
+SRC=1383 && EXP=249 && RUN_ERR_OPTS "--checks=overflow"
 
 # an instance is not a number: a whole value, an operand, an element of an
 # array of instances on every target, a 'bool' destination and an index
@@ -4589,10 +4589,10 @@ SRC=1435 && COMPERR
 SRC=1436 && COMPERR
 
 # an unchecked division by zero ends the program: x86_64 with SIGFPE, rv32i
-# with SIGTRAP, bare metal with the panic exit code
+# with SIGTRAP, bare metal with the exit code of the division panic
 if [[ $MACHINE == x86_64 ]]; then SRC=1437 && EXP=136 && RUN; fi
 if [[ $MACHINE == rv32i ]]; then SRC=1437 && EXP=133 && RUN; fi
-if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=1437 && EXP=255 && RUN; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=1437 && EXP=253 && RUN; fi
 
 # a built-in without a value used as one, a built-in value not used
 SRC=1438 && COMPERR

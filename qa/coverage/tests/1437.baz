@@ -1,5 +1,5 @@
 # an unchecked division by zero ends the program: linux with a signal, bare
-# metal with the panic exit code
+# metal with the exit code of the division panic
 
 func noinline divide(a, b) res {
     res = a / b

@@ -32,14 +32,21 @@ ENVIRONMENT = dict(
     ASAN_OPTIONS="exitcode=99:detect_leaks=0:abort_on_error=0",
     UBSAN_OPTIONS="halt_on_error=1:exitcode=98:print_stacktrace=1",
 )
-# exit codes of the panics of rv32i-fpga and the message of x86_64
+# the exit code of each panic, the same on every target; a panic prints a
+# newline and 'panic: NAME', on x86_64 on standard error, on rv32i-fpga on the
+# uart after the output of the program, with ' at FILE:LINE' under
+# '--checks=line'
 PANIC_CODE = {"overflow": 249, "stack overflow": 250, "overlap": 251,
               "shift": 252, "division": 253, "frame overflow": 254,
               "bounds": 255}
+# the exit code of 'panic: sd card', the outcome 'sdcard'
+SDCARD_EXIT = 248
 # the last line of the emulator when it stops at an illegal instruction or
 # address, on its standard output after the program's; it exits with the status
 # modulo 256
 CPU_ERROR = re.compile(rb"CPU error: (\d+)\n\Z")
+# the last line of a panic on rv32i-fpga, see 'PANIC_CODE'
+FPGA_PANIC = re.compile(rb"\npanic: ([a-z ]+?)(?: at [^\n]*)?\n\Z")
 # the emulator stops at the store of a sector number past the end of the image,
 # 13xx is a 'sw' and 4 the write and 5 the read sector address; x86_64 prints
 # 'panic: sd card' instead, both are the outcome 'sdcard'
@@ -239,12 +246,11 @@ def outcome_x86(result):
     if result.signal:
         return Outcome("signal", result.signal, result.stdout,
                        signal.Signals(result.signal).name)
-    if result.returncode == 255 and "panic: sd card" in result.stderr:
+    if result.returncode == SDCARD_EXIT and "panic: sd card" in result.stderr:
         return Outcome("sdcard", SDCARD_CODE, result.stdout, "sd card")
-    if result.returncode == 255:
-        for message, code in PANIC_CODE.items():
-            if f"panic: {message}" in result.stderr:
-                return Outcome("panic", code, result.stdout, message)
+    for message, code in PANIC_CODE.items():
+        if result.returncode == code and f"panic: {message}" in result.stderr:
+            return Outcome("panic", code, result.stdout, message)
     return Outcome("exit", result.returncode, result.stdout)
 
 
@@ -266,8 +272,10 @@ def outcome_fpga(result):
         return Outcome("cpu-error", int(cpu_error.group(1)),
                        result.stdout[:cpu_error.start()],
                        cpu_error.group(0).decode().strip())
-    if 249 <= result.returncode <= 254:
-        return Outcome("panic", result.returncode, result.stdout)
+    panic = FPGA_PANIC.search(result.stdout)
+    if panic and PANIC_CODE.get(panic.group(1).decode()) == result.returncode:
+        return Outcome("panic", result.returncode,
+                       result.stdout[:panic.start()], panic.group(1).decode())
     return Outcome("exit", result.returncode, result.stdout)
 
 

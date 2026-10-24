@@ -652,8 +652,6 @@ def run_target(work, source, target, options):
         return ("cpu-error", o.detail)
     if o.kind == "timeout":
         return ("timeout", "")
-    if o.code in (249, 250, 251, 252, 253, 254) and target != "x86_64":
-        return ("panic", o.code)
     return ("exit", o.code)
 
 

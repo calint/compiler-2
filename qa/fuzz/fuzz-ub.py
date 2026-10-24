@@ -40,8 +40,8 @@ COMPILER = os.path.join(ROOT, "baz")
 EMULATOR = os.path.join(ROOT, "fpga-emulator", "osqa")
 
 BITS = {"i8": 8, "i16": 16, "i32": 32, "i64": 64}
-# exit codes of a panic on rv32i-fpga
-FPGA_PANIC = {"overflow": 249, "stack": 250, "overlap": 251, "shift": 252,
+# the exit code of a panic, the same on every target
+PANIC_EXIT = {"overflow": 249, "stack": 250, "overlap": 251, "shift": 252,
               "division": 253, "frame": 254, "bounds": 255}
 # stderr of a panic on x86_64
 X86_PANIC = {"overflow": "panic: overflow", "overlap": "panic: overlap",
@@ -1376,10 +1376,10 @@ def compile_run(work, source, target):
             return ("timeout", "")
         if r.returncode < 0 or r.returncode == SIGSEGV:
             return ("panic", "signal")
-        if r.returncode == 255:
-            for kind, message in X86_PANIC.items():
-                if message in r.stderr:
-                    return ("panic", kind)
+        for kind, message in X86_PANIC.items():
+            if r.returncode == PANIC_EXIT[kind] and message in r.stderr:
+                return ("panic", kind)
+        if "panic: " in r.stderr:
             return ("panic", "unknown:" + r.stderr.strip())
         return ("exit", r.returncode)
     image = os.path.join(work, "f.bin")
@@ -1390,7 +1390,7 @@ def compile_run(work, source, target):
     r = run([EMULATOR, image, "/dev/null"], timeout=20)
     if r.returncode == TIMEOUT:
         return ("timeout", "")
-    for kind, code in FPGA_PANIC.items():
+    for kind, code in PANIC_EXIT.items():
         if r.returncode == code:
             return ("panic", kind)
     return ("exit", r.returncode)

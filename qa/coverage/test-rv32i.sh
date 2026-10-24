@@ -45,14 +45,15 @@ if [ "$status" -ne 133 ]; then
     exit 1
 fi
 printf 'rv32i arithmetic: division by zero trap: ok\n'
-# a failed bounds check prints 'panic: bounds at FILE:N' and exits with 255
+# a failed bounds check prints 'panic: bounds at FILE:N' on a line of its own
+# and exits with 255, the code of the bounds panic
 printf 'rv32i bounds: checking diagnostic line numbers\n'
 for line in 0 9 123 4294967295; do
     ld.lld -m elf32lriscv -e "bounds_line_$line" -o "$TEST_DIR/bounds" "$TEST_DIR/test.o"
     status=0
     qemu-riscv32 "$TEST_DIR/bounds" 2> "$TEST_DIR/err" || status=$?
     test "$status" -eq 255
-    printf 'panic: bounds at test.baz:%s\n' "$line" > "$TEST_DIR/expected"
+    printf '\npanic: bounds at test.baz:%s\n' "$line" > "$TEST_DIR/expected"
     cmp "$TEST_DIR/err" "$TEST_DIR/expected"
 done
 # the bounds matrix finishes without a failure
