@@ -652,69 +652,6 @@ struct call_site {
         return plan;
     }
 
-    // the type of each argument, one verdict for an inlined and a noinline
-    // call: a name or a typed constant has the type of its parameter, its
-    // storage or typed value is passed; an untyped constant is checked by its
-    // value and a computed value by its compile, e.g. 'a + 1' and '-a' widen
-    auto assert_argument_types(const toc& tc, const stmt_def_func& func) const
-        -> void {
-
-        for (const auto [arg, param] : std::views::zip(args, func.params())) {
-            const stmt_identifier* const ident{arg.bare_path()};
-
-            if (ident == nullptr) {
-                continue;
-            }
-
-            const ident_info info{make_ident_info(tc, *ident)};
-
-            if (info.is_const() and not info.constant().is_typed()) {
-                continue;
-            }
-
-            if (not info.type_ref().is_same(param.get_type())) {
-                throw_parameter_type_mismatch(arg, param, info);
-            }
-        }
-    }
-
-    // the result has the type of the destination, an operand widens a
-    // narrower integer, see 'destination::as_operand'
-    auto assert_result_type(const destination& dst,
-                            const stmt_def_func& func) const -> void {
-
-        if (not result_type_differs(dst, func)) {
-            return;
-        }
-
-        if (dst.is_operand() and
-            is_widened_integer(func.get_type(), dst.type_ref())) {
-
-            return;
-        }
-
-        throw compile_error{
-            dst.error_token(tk),
-            std::format("expected type {}, got {} from {}, use '{}(...)'",
-                        in_quotes(dst.type_ref().name()),
-                        in_quotes(func.get_type().name()),
-                        in_quotes(func.name()), dst.type_ref().name()),
-        };
-    }
-
-    // a result must be stored and a call without one cannot provide it
-    auto assert_result_use(const destination& dst,
-                           const stmt_def_func& func) const -> void {
-
-        if (func.returns() and dst.is_empty()) {
-            throw compile_error{tk, "return value is discarded"};
-        }
-
-        if (not func.returns() and not dst.is_empty()) {
-            throw compile_error{tk, "function does not return a value"};
-        }
-    }
-
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
     [[nodiscard]] auto
@@ -848,18 +785,6 @@ struct call_site {
         return tc.storage_of(name, access_path::whole_variable());
     }
 
-    [[noreturn]] static auto
-    throw_parameter_type_mismatch(const expr_any& arg,
-                                  const stmt_def_func_param& param,
-                                  const ident_info& info) -> void {
-
-        throw compile_error{
-            arg.tok(), std::format("expected type {} for parameter {}, got {}",
-                                   in_quotes(param.get_type().name()),
-                                   in_quotes(param.name()),
-                                   in_quotes(info.type_ref().name()))};
-    }
-
   private:
     [[nodiscard]] auto is_inside_call(const compile_error& e) const -> bool {
 
@@ -921,7 +846,7 @@ class inline_call {
         assert(plan_.mode == call_site::call_mode::inlined);
 
         if (func.returns() and call_site::result_type_differs(dst, func)) {
-            // note: 'call_site::assert_result_type' allows a type mismatch
+            // note: 'stmt_call::assert_result_type' allows a type mismatch
             //       only for an operand
 
             assert(dst.is_operand());
@@ -1390,7 +1315,7 @@ class inline_call {
                   const call_site::argument_form& argument,
                   std::vector<operand>& allocated_registers) -> param_binding {
 
-        // note: 'call_site::assert_argument_types' checked the type
+        // note: 'stmt_call::assert_argument_types' checked the type
 
         if (const place* const storage{std::get_if<place>(&argument.form)}) {
             const stmt_identifier& ident{*storage->ident};
@@ -1604,7 +1529,7 @@ class inline_call {
 //      that is not a variable in memory goes through a temporary, the result
 //      is copied and the unary ops applied after the call
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
-//      checked by 'call_site::assert_argument_types' before ('assert_call'
+//      checked by 'stmt_call::assert_argument_types' before ('assert_call'
 //      asserts it), the errors that depend on this call, e.g. shared
 //      storage, are found by a
 //      dry run of the body as an inlined call ('dry_run_body', see
@@ -1988,7 +1913,7 @@ class noinline_call {
 
         assert(info.is_array() == param.is_array());
 
-        // note: 'call_site::assert_argument_types' checked a variable, a
+        // note: 'stmt_call::assert_argument_types' checked a variable, a
         //       temporary has the type of its parameter
 
         assert(info.type_ref().is_same(param.get_type()));
@@ -2446,18 +2371,7 @@ class stmt_call : public expression {
 
         const stmt_def_func& func{tc.get_func_or_throw(tok(), func_name_)};
 
-        assert_no_shared_storage(tc, dst, func);
-
-        // the result is the call's own, an error in it has no call frame;
-        // checked here so that inlining does not change what is accepted
-        call.assert_result_use(dst, func);
-
-        if (func.returns()) {
-            call.assert_result_type(dst, func);
-        }
-
-        call.assert_argument_types(tc, func);
-        assert_arguments_not_written_later(tc, args_, std::nullopt);
+        assert_call_accepted(tc, dst, func);
 
         if (not func.is_inlined()) {
             noinline_call{
@@ -2570,6 +2484,32 @@ class stmt_call : public expression {
             expr_type{std::make_unique<stmt_identifier>(std::move(receiver))});
     }
 
+    // the type of each argument, one verdict for an inlined and a noinline
+    // call: a name or a typed constant has the type of its parameter, its
+    // storage or typed value is passed; an untyped constant is checked by its
+    // value and a computed value by its compile, e.g. 'a + 1' and '-a' widen
+    auto assert_argument_types(const toc& tc, const stmt_def_func& func) const
+        -> void {
+
+        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+            const stmt_identifier* const ident{arg.bare_path()};
+
+            if (ident == nullptr) {
+                continue;
+            }
+
+            const ident_info info{make_ident_info(tc, *ident)};
+
+            if (info.is_const() and not info.constant().is_typed()) {
+                continue;
+            }
+
+            if (not info.type_ref().is_same(param.get_type())) {
+                throw_parameter_type_mismatch(arg, param, info);
+            }
+        }
+    }
+
     // a callee that writes its parameter writes the variable of the caller:
     // an argument that is not a writable variable is rejected here, also in
     // a function that is never called, so inlining does not change what is
@@ -2611,6 +2551,23 @@ class stmt_call : public expression {
                             in_quotes(written->ident->dotted_path())),
                 read_only_hint(written->info));
         }
+    }
+
+    // checked before the inlined and the noinline paths split, so inlining
+    // does not change what is accepted; the result is the call's own, an
+    // error in it has no call frame
+    auto assert_call_accepted(const toc& tc, const destination& dst,
+                              const stmt_def_func& func) const -> void {
+
+        assert_no_shared_storage(tc, dst, func);
+        assert_result_use(dst, func);
+
+        if (func.returns()) {
+            assert_result_type(dst, func);
+        }
+
+        assert_argument_types(tc, func);
+        assert_arguments_not_written_later(tc, args_, std::nullopt);
     }
 
     // the function is a method and the receiver is a value
@@ -2829,6 +2786,43 @@ class stmt_call : public expression {
                         in_quotes(dst.text()),
                         shared_name_note(target.root.name),
                         use_temporary_fix_)};
+    }
+
+    // the result has the type of the destination, an operand widens a
+    // narrower integer, see 'destination::as_operand'
+    auto assert_result_type(const destination& dst,
+                            const stmt_def_func& func) const -> void {
+
+        if (not call_site::result_type_differs(dst, func)) {
+            return;
+        }
+
+        if (dst.is_operand() and
+            call_site::is_widened_integer(func.get_type(), dst.type_ref())) {
+
+            return;
+        }
+
+        throw compile_error{
+            dst.error_token(tok()),
+            std::format("expected type {}, got {} from {}, use '{}(...)'",
+                        in_quotes(dst.type_ref().name()),
+                        in_quotes(func.get_type().name()),
+                        in_quotes(func.name()), dst.type_ref().name()),
+        };
+    }
+
+    // a result must be stored and a call without one cannot provide it
+    auto assert_result_use(const destination& dst,
+                           const stmt_def_func& func) const -> void {
+
+        if (func.returns() and dst.is_empty()) {
+            throw compile_error{tok(), "return value is discarded"};
+        }
+
+        if (not func.returns() and not dst.is_empty()) {
+            throw compile_error{tok(), "function does not return a value"};
+        }
     }
 
     // the receiver of a method is written before the name
@@ -3209,6 +3203,18 @@ class stmt_call : public expression {
         }
 
         return std::format(" (both name {})", in_quotes(name));
+    }
+
+    [[noreturn]] static auto
+    throw_parameter_type_mismatch(const expr_any& arg,
+                                  const stmt_def_func_param& param,
+                                  const ident_info& info) -> void {
+
+        throw compile_error{
+            arg.tok(), std::format("expected type {} for parameter {}, got {}",
+                                   in_quotes(param.get_type().name()),
+                                   in_quotes(param.name()),
+                                   in_quotes(info.type_ref().name()))};
     }
 
     // the type as written, with the type it is bound to when that differs,

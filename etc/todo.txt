@@ -216,6 +216,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           equal
        E.4. the checks that make both call paths accept the same in one
             'assert_call_accepted' (S6)
+       => E.4 done (2026-10-24): 'assert_argument_types',
+          'assert_result_type', 'assert_result_use' and
+          'throw_parameter_type_mismatch' moved from 'call_site' to
+          'stmt_call'; 'stmt_call::assert_call_accepted' lists the five
+          checks made before the inlined and noinline paths split;
+          'call_site' keeps the data, the plan and the temporaries,
+          'result_type_differs' and 'is_widened_integer' stay its statics;
+          listings equal
        E.5. optional, low: one 'assert_order_independent' for the
             count-first rule (S9)
     F. front end
