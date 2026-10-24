@@ -359,11 +359,11 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
     }
 
     // e.g. 'p1 = p2'
-    if (const token equals_tk{tz.is_next_char_token('=')};
-        not equals_tk.is_empty()) {
+    if (const std::optional<token> equals_tk{tz.is_next_char_token('=')};
+        equals_tk) {
 
         return std::make_unique<stmt_assign_var>(
-            tc, tz, std::move(*parsed.identifier), equals_tk);
+            tc, tz, std::move(*parsed.identifier), *equals_tk);
     }
 
     throw compile_error{

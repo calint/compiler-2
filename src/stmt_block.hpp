@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <vector>
 
@@ -20,9 +21,10 @@ enum class block_braces : uint8_t { optional, required };
 // declarations end with it, in 'toc' and in the definite-assignment walk,
 // and each block is one level of the parse nesting limit
 class stmt_block final : public statement {
-    token open_brace_tk_;
+    // none for one statement without braces
+    std::optional<token> open_brace_tk_;
     std::vector<std::unique_ptr<statement>> statements_;
-    token close_brace_tk_;
+    std::optional<token> close_brace_tk_;
 
   public:
     // without '{' the block is one statement unless braces are required,
@@ -55,17 +57,13 @@ class stmt_block final : public statement {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        if (not is_one_statement()) {
-            open_brace_tk_.source_to(os);
-        }
+        token::source_to(os, open_brace_tk_);
 
         for (const std::unique_ptr<statement>& s : statements_) {
             s->source_to(os);
         }
 
-        if (not is_one_statement()) {
-            close_brace_tk_.source_to(os);
-        }
+        token::source_to(os, close_brace_tk_);
     }
 
     // a statement in a block has no destination, its value is not used
@@ -111,15 +109,16 @@ class stmt_block final : public statement {
 
   private:
     [[nodiscard]] auto is_one_statement() const -> bool {
-        return open_brace_tk_.is_empty();
+        return not open_brace_tk_;
     }
 
     // a block without braces is one statement, none at the end of the source
     auto parse_single_statement(toc& tc, tokenizer& tz) -> void {
-        close_brace_tk_ = tz.is_next_char_token('}');
+        if (const std::optional<token> close_brace_tk{
+                tz.is_next_char_token('}'),
+            }) {
 
-        if (not close_brace_tk_.is_empty()) {
-            throw compile_error{close_brace_tk_,
+            throw compile_error{*close_brace_tk,
                                 "unexpected '}' in single statement block"};
         }
 
@@ -140,15 +139,17 @@ class stmt_block final : public statement {
             // the '}' ends the block
             close_brace_tk_ = tz.is_next_char_token('}');
 
-            if (not close_brace_tk_.is_empty()) {
+            if (close_brace_tk_) {
                 return;
             }
 
             // a '{' starts a subblock, e.g. '{ { a = 1 } b = 2 }'
-            if (const token open_brace_tk{tz.is_next_char_token('{')};
-                not open_brace_tk.is_empty()) {
+            if (const std::optional<token> open_brace_tk{
+                    tz.is_next_char_token('{'),
+                };
+                open_brace_tk) {
 
-                tz.put_back_token(open_brace_tk);
+                tz.put_back_token(*open_brace_tk);
                 statements_.emplace_back(std::make_unique<stmt_block>(tc, tz));
                 continue;
             }

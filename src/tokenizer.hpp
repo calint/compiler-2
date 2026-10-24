@@ -79,13 +79,13 @@ class tokenizer final {
                                          const std::string_view message)
         -> token {
 
-        const token tk{is_next_char_token(ch)};
+        const std::optional<token> tk{is_next_char_token(ch)};
 
-        if (tk.is_empty()) {
+        if (not tk) {
             throw compile_error{*this, std::string{message}};
         }
 
-        return tk;
+        return *tk;
     }
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
@@ -100,12 +100,16 @@ class tokenizer final {
         return true;
     }
 
-    [[nodiscard]] auto is_next_char_token(const char ch) -> token {
+    // the token of 'ch' with the whitespace around it when 'ch' is next, the
+    // cursor stays when not
+    [[nodiscard]] auto is_next_char_token(const char ch)
+        -> std::optional<token> {
+
         const std::string_view ws_before{next_whitespace()};
 
         if (not is_peek_char(ch)) {
             move_back(ws_before.size());
-            return {};
+            return std::nullopt;
         }
 
         const size_t at_line{at_line_};
@@ -115,8 +119,8 @@ class tokenizer final {
         const size_t end_ix{char_ix_};
         const std::string_view ws_after{next_trailing_whitespace()};
 
-        return {file_ix_, ws_before, bgn_ix,  txt,
-                end_ix,   ws_after,  at_line, false};
+        return token{file_ix_, ws_before, bgn_ix,  txt,
+                     end_ix,   ws_after,  at_line, false};
     }
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
@@ -223,6 +227,16 @@ class tokenizer final {
         move_back(char_count);
     }
 
+    // the token of 'ch' that the caller saw next, e.g. by
+    // 'peek_char_after_whitespace'
+    [[nodiscard]] auto seen_char_token(const char ch) -> token {
+        const std::optional<token> tk{is_next_char_token(ch)};
+
+        assert(tk);
+
+        return *tk;
+    }
+
     // skips an argument of a call, up to the ',' or ')' that ends it
     // e.g. 'a + f(b, c), d)' stops at the ',' before 'd'
     auto skip_argument() -> void { skip_to_unnested(",)"); }
@@ -231,20 +245,18 @@ class tokenizer final {
     // character literals may contain braces
     // e.g. '{ a = { 1 } b = 2 }', the depth counts the braces that are open
     auto skip_braced_block() -> void {
-        const token open_tk{is_next_char_token('{')};
-
         // note: every caller has seen the '{'
-        assert(not open_tk.is_empty());
+        std::ignore = seen_char_token('{');
 
         size_t depth{1};
 
         while (true) {
-            if (not is_next_char_token('{').is_empty()) {
+            if (is_next_char_token('{')) {
                 ++depth;
                 continue;
             }
 
-            if (is_next_char_token('}').is_empty()) {
+            if (not is_next_char_token('}')) {
                 if (is_eos()) {
                     throw compile_error{*this, "expected '}' to end block"};
                 }

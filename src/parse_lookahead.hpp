@@ -50,7 +50,7 @@
 [[nodiscard]] inline auto is_zero_value(const tokenizer& tz) -> bool {
     tokenizer probe{tz};
 
-    return not probe.is_next_char_token('{').is_empty() and
+    return probe.is_next_char_token('{') and
            probe.peek_char_after_whitespace() == '}';
 }
 
@@ -260,7 +260,7 @@ struct term {
     const token tk{probe.next_token()};
 
     if (not classify_term(tc, tk, probe).is(term_kind::generic_call) or
-        probe.is_next_char_token('(').is_empty()) {
+        not probe.is_next_char_token('(')) {
 
         return false;
     }

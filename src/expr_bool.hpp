@@ -1160,9 +1160,9 @@ class expr_bool final : public expression {
     // the 'not's before the '(' of a parenthesized list, e.g. both of
     // 'not not (a == b and c == d)'
     std::vector<token> nots_;
-    // empty unless the list is parenthesized
-    token open_paren_tk_;
-    token close_paren_tk_;
+    // none unless the list is parenthesized
+    std::optional<token> open_paren_tk_;
+    std::optional<token> close_paren_tk_;
 
   public:
     expr_bool(toc& tc, const token tk, tokenizer& tz) : expression{tk} {
@@ -1174,8 +1174,6 @@ class expr_bool final : public expression {
               const token open_paren_tk)
         : expression{tk}, nots_{std::move(nots)},
           open_paren_tk_{open_paren_tk} {
-
-        assert(not open_paren_tk_.is_empty());
 
         parse_list(tc, tz);
         assert_parentheses_group();
@@ -1194,7 +1192,7 @@ class expr_bool final : public expression {
             not_tk.source_to(os);
         }
 
-        open_paren_tk_.source_to(os);
+        token::source_to(os, open_paren_tk_);
 
         const size_t element_count{bools_.size()};
         for (size_t i{}; i < element_count; ++i) {
@@ -1208,7 +1206,7 @@ class expr_bool final : public expression {
             }
         }
 
-        close_paren_tk_.source_to(os);
+        token::source_to(os, close_paren_tk_);
     }
 
     // the value of the list stored in 'dst', e.g. 'b = x < 3 and y'
@@ -1382,8 +1380,11 @@ class expr_bool final : public expression {
                 [](const statement& e) -> const statement* { return &e; }),
         };
 
+        // note: only a parenthesized list asks, see its constructor
+        assert(open_paren_tk_);
+
         throw compile_error{
-            open_paren_tk_,
+            *open_paren_tk_,
             std::format("parentheses around a single value group nothing, "
                         "write {}",
                         in_quotes(statement::trimmed_source(value)))};
@@ -1575,7 +1576,7 @@ class expr_bool final : public expression {
     [[nodiscard]] auto has_not() const -> bool { return not nots_.empty(); }
 
     [[nodiscard]] auto is_enclosed() const -> bool {
-        return not open_paren_tk_.is_empty();
+        return open_paren_tk_.has_value();
     }
 
     [[nodiscard]] auto is_negated() const -> bool {
@@ -1609,17 +1610,17 @@ class expr_bool final : public expression {
         const token pos_tk{tz.cur_position_token()};
         tz.put_back_token(ws_tk);
 
-        const token open_paren_tk{tz.is_next_char_token('(')};
+        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
 
         // e.g. '(t1 + t2) > 3' is a comparison with a parenthesized operand
-        if (open_paren_tk.is_empty() or is_parenthesized_operand(tz)) {
+        if (not open_paren_tk or is_parenthesized_operand(tz)) {
             tz.rewind_to_position(rewind_pos_tk);
             bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
             return;
         }
 
         bools_.emplace_back(std::in_place_type<expr_bool>, tc, pos_tk, tz,
-                            std::move(not_tks), open_paren_tk);
+                            std::move(not_tks), *open_paren_tk);
     }
 
     // the operands are joined by 'and' or by 'or', not by both, e.g.
@@ -1647,7 +1648,7 @@ class expr_bool final : public expression {
         if (is_enclosed()) {
             close_paren_tk_ = tz.is_next_char_token(')');
 
-            if (not close_paren_tk_.is_empty()) {
+            if (close_paren_tk_) {
                 return std::nullopt;
             }
         }

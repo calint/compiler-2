@@ -54,9 +54,7 @@ struct generic_param {
     [[nodiscard]] static auto parse(tokenizer& tz)
         -> std::vector<generic_param> {
 
-        const token open_tk{tz.is_next_char_token('<')};
-
-        assert(not open_tk.is_empty());
+        std::ignore = tz.seen_char_token('<');
 
         std::vector<generic_param> params;
 
@@ -81,20 +79,20 @@ struct generic_param {
                                               const generic_param& param)
         -> bool {
 
-        if (not tz.is_next_char_token('>').is_empty()) {
+        if (tz.is_next_char_token('>')) {
             return true;
         }
 
-        const token delimiter_tk{tz.is_next_char_token(',')};
+        const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
 
-        if (delimiter_tk.is_empty()) {
+        if (not delimiter_tk) {
             throw compile_error{tz,
                                 std::format("expected ',' or '>' after generic "
                                             "parameter {}",
                                             in_quotes(param.name_tk.text()))};
         }
 
-        tz.assert_no_trailing_delimiter(delimiter_tk, '>', "parameters");
+        tz.assert_no_trailing_delimiter(*delimiter_tk, '>', "parameters");
 
         return false;
     }
@@ -178,10 +176,10 @@ struct generic_arg_tokens {
             args.arg_tks.emplace_back(arg_tk);
             args.list_tks.emplace_back(arg_tk);
 
-            const token close_tk{tz.is_next_char_token('>')};
+            const std::optional<token> close_tk{tz.is_next_char_token('>')};
 
-            if (not close_tk.is_empty()) {
-                args.list_tks.emplace_back(close_tk);
+            if (close_tk) {
+                args.list_tks.emplace_back(*close_tk);
                 return args;
             }
 
@@ -359,9 +357,9 @@ struct generic_type_info {
     // where the definition continues after 'type', e.g. at 'list'
     token start_tk;
     std::vector<generic_param> params;
-    // e.g. 'list' of 'type text<size> = list<i8, size>', empty when
+    // e.g. 'list' of 'type text<size> = list<i8, size>', none when
     // the fields follow the parameters
-    token base_tk;
+    std::optional<token> base_tk;
     // e.g. 'i8' and 'size' of 'list<i8, size>'
     std::vector<token> base_arg_tks;
     // see 'definition_order'
@@ -444,10 +442,15 @@ struct generic_signature {
     // its own, e.g. 'U', not the parameters of the generic type 'box'
     std::vector<token> type_param_tks;
     std::vector<generic_signature_param> params;
-    // e.g. 'res', or 'self' of a constructor, empty without a result
-    token result_name_tk;
-    // empty for the default type
-    token result_type_tk;
+    // e.g. 'res', or 'self' of a constructor, none without a result
+    std::optional<token> result_name_tk;
+    // none for the default type
+    std::optional<token> result_type_tk;
+
+    // the result 'self' builds an instance of the receiver type
+    [[nodiscard]] auto is_constructor() const -> bool {
+        return result_name_tk and result_name_tk->is_text(reserved_names::self);
+    }
 };
 
 // a function with type parameters, e.g. 'func tokenizer.to<T type>()'. every

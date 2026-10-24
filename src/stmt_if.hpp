@@ -30,7 +30,8 @@ class stmt_if final : public statement {
     std::vector<stmt_if_branch> branches_;
     // one for each branch after the first, kept to reproduce the source
     std::vector<else_if_tokens> else_if_tokens_;
-    token else_tk_;
+    // none without an 'else', whose code is then empty
+    std::optional<token> else_tk_;
     stmt_block else_code_;
 
   public:
@@ -69,8 +70,8 @@ class stmt_if final : public statement {
         }
 
         // the 'else' code, also when it is empty
-        if (not else_tk_.is_empty()) {
-            else_tk_.source_to(os);
+        if (else_tk_) {
+            else_tk_->source_to(os);
             else_code_.source_to(os);
         }
     }

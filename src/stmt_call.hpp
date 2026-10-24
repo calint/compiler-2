@@ -94,13 +94,13 @@ struct generic_call {
           const std::string_view generic_name, const type* const expected_type)
         -> generic_call {
 
-        const token open_tk{tz.is_next_char_token('<')};
+        const std::optional<token> open_tk{tz.is_next_char_token('<')};
 
         std::vector<const type*> type_args;
         std::vector<token> generic_tks;
         std::vector<size_t> deducing_args;
 
-        if (open_tk.is_empty()) {
+        if (not open_tk) {
             deduction deduced{
                 deduced_type_arguments(tc, tz, name_tk, generic_name,
                                        expected_type),
@@ -110,7 +110,7 @@ struct generic_call {
             deducing_args = std::move(deduced.argument_indexes);
         } else {
             const generic_arg_tokens args{
-                generic_arg_tokens::parse(tz, open_tk),
+                generic_arg_tokens::parse(tz, *open_tk),
             };
 
             type_args =
@@ -216,7 +216,7 @@ struct generic_call {
         // the arguments are looked at ahead, the call reads them later
         tokenizer scan{tz};
 
-        if (scan.is_next_char_token('(').is_empty()) {
+        if (not scan.is_next_char_token('(')) {
             throw compile_error{
                 name_tk, std::format("generic function {} needs type "
                                      "arguments, e.g. '{}<...>'",
@@ -268,7 +268,7 @@ struct generic_call {
         for (size_t i{}; i < index; ++i) {
             tz.skip_argument();
 
-            if (tz.is_next_char_token(',').is_empty()) {
+            if (not tz.is_next_char_token(',')) {
                 return false;
             }
         }
@@ -301,7 +301,7 @@ struct generic_call {
             // the type names the result, the constructor, e.g. 'at', does not
             std::ignore = tz.next_token();
 
-            if (tz.is_next_char_token('(').is_empty()) {
+            if (not tz.is_next_char_token('(')) {
                 return nullptr;
             }
 
@@ -314,7 +314,7 @@ struct generic_call {
         if (const type* const builtin_type{builtin_value_type(tc, tk, tm)};
             builtin_type != nullptr) {
 
-            if (tz.is_next_char_token('(').is_empty()) {
+            if (not tz.is_next_char_token('(')) {
                 return nullptr;
             }
 
@@ -2127,16 +2127,16 @@ class builtin_arguments {
   public:
     // the name of the built-in is read
     builtin_arguments(toc& tc, tokenizer& tz)
-        : open_paren_tk_{tz.is_next_char_token('(')} {
-
-        if (open_paren_tk_.is_empty()) {
-            throw compile_error{tz, "expected '(' after function name"};
-        }
+        : open_paren_tk_{
+              tz.expect_char_token('(', "expected '(' after function name"),
+          } {
 
         while (true) {
-            close_paren_tk_ = tz.is_next_char_token(')');
+            if (const std::optional<token> close_paren_tk{
+                    tz.is_next_char_token(')'),
+                }) {
 
-            if (not close_paren_tk_.is_empty()) {
+                close_paren_tk_ = *close_paren_tk;
                 return;
             }
 
@@ -2145,11 +2145,11 @@ class builtin_arguments {
             args_.emplace_back(tc, tz, tc.builtins().default_type(),
                                literal_typing::from_destination);
 
-            const token delim_tk{tz.is_next_char_token(',')};
+            const std::optional<token> delim_tk{tz.is_next_char_token(',')};
 
-            if (not delim_tk.is_empty()) {
-                tz.assert_no_trailing_delimiter(delim_tk, ')', "a call");
-                delims_tk_.emplace_back(delim_tk);
+            if (delim_tk) {
+                tz.assert_no_trailing_delimiter(*delim_tk, ')', "a call");
+                delims_tk_.emplace_back(*delim_tk);
                 continue;
             }
 
@@ -2221,11 +2221,18 @@ class builtin_arguments {
 // ('assert_no_shared_storage'), then 'inline_call' or 'noinline_call'
 // compiles the call
 class stmt_call : public expression {
-    // e.g. the '.' in 'lst.add(x)', the receiver is the first argument
-    token method_dot_tk_;
+    // e.g. the '.' in 'lst.add(x)', the receiver is the first argument;
+    // none when the call is not a method call
+    std::optional<token> method_dot_tk_;
+
     // e.g. the '.' and 'at' in 'point.at(1, 2)', 'tok()' is the type
-    token constructor_dot_tk_;
-    token constructor_name_tk_;
+    struct constructor_tokens {
+        token dot_tk;
+        token name_tk;
+    };
+
+    // none when the call is not a constructor call
+    std::optional<constructor_tokens> constructor_;
     // e.g. '<', 'name' and '>' in 'tz.to<name>()'
     std::vector<token> generic_tks_;
     std::string func_name_;
@@ -2311,13 +2318,10 @@ class stmt_call : public expression {
     stmt_call(constructor_call_tag /*tag*/, toc& tc, unary_ops uops,
               const token type_tk, tokenizer& tz)
         : expression{type_tk, std::move(uops)},
-          constructor_dot_tk_{tz.is_next_char_token('.')},
-          constructor_name_tk_{tz.next_token()},
+          constructor_{read_constructor_tokens(tz)},
           func_name_{
-              constructor_function_name(tc, type_tk, constructor_name_tk_),
+              constructor_function_name(tc, type_tk, constructor_->name_tk),
           } {
-
-        assert(not constructor_dot_tk_.is_empty());
 
         const stmt_def_func& func{constructor_func(tc, tz)};
 
@@ -2625,10 +2629,14 @@ class stmt_call : public expression {
         // no argument
         if (param_count != 0) {
             tokenizer probe{tz};
-            const token delimiter_tk{probe.is_next_char_token(',')};
 
-            if (not delimiter_tk.is_empty()) {
-                probe.assert_no_trailing_delimiter(delimiter_tk, ')', "a call");
+            const std::optional<token> delimiter_tk{
+                probe.is_next_char_token(','),
+            };
+
+            if (delimiter_tk) {
+                probe.assert_no_trailing_delimiter(*delimiter_tk, ')',
+                                                   "a call");
             }
         }
 
@@ -2739,17 +2747,6 @@ class stmt_call : public expression {
                         use_temporary_fix_)};
     }
 
-    // 'what' names what precedes the '(' in the error
-    auto assert_open_paren_found(const tokenizer& tz,
-                                 const std::string_view what) const -> void {
-
-        if (not open_paren_tk_.is_empty()) {
-            return;
-        }
-
-        throw compile_error{tz, std::format("expected '(' after {}", what)};
-    }
-
     // the receiver of a method is written before the name
     [[nodiscard]] auto call_begin_token() const -> const token& {
         return is_method() ? args_.at(0).tok() : tok();
@@ -2761,26 +2758,30 @@ class stmt_call : public expression {
                                         const tokenizer& tz) const
         -> const stmt_def_func& {
 
-        if (not constructor_name_tk_.is_word()) {
-            throw compile_error{tz.position_of(constructor_name_tk_),
+        // note: only a constructor call asks
+        assert(constructor_);
+
+        const token& name_tk{constructor_->name_tk};
+
+        if (not name_tk.is_word()) {
+            throw compile_error{tz.position_of(name_tk),
                                 "expected constructor name after '.'"};
         }
 
         if (not tc.is_func(func_name_)) {
             throw compile_error{
-                constructor_name_tk_,
-                std::format("type {} has no constructor {}",
-                            in_quotes(type_description(tc, tok())),
-                            in_quotes(constructor_name_tk_.text()))};
+                name_tk, std::format("type {} has no constructor {}",
+                                     in_quotes(type_description(tc, tok())),
+                                     in_quotes(name_tk.text()))};
         }
 
         const stmt_def_func& func{
-            tc.get_func_or_throw(constructor_name_tk_, func_name_),
+            tc.get_func_or_throw(name_tk, func_name_),
         };
 
         if (not func.is_constructor()) {
             throw compile_error{
-                constructor_name_tk_,
+                name_tk,
                 std::format("{} is a method, call it on a value of type {}",
                             in_quotes(func_name_), in_quotes(tok().text()))};
         }
@@ -2804,11 +2805,11 @@ class stmt_call : public expression {
     }
 
     [[nodiscard]] auto is_constructor() const -> bool {
-        return not constructor_dot_tk_.is_empty();
+        return constructor_.has_value();
     }
 
     [[nodiscard]] auto is_method() const -> bool {
-        return not method_dot_tk_.is_empty();
+        return method_dot_tk_.has_value();
     }
 
     // a method receiver is already in 'args_', the parameter gives the type of
@@ -2908,11 +2909,15 @@ class stmt_call : public expression {
     auto read_open_paren(const toc& tc, tokenizer& tz,
                          const std::string_view what) -> void {
 
-        open_paren_tk_ = tz.is_next_char_token('(');
+        const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
 
         set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
 
-        assert_open_paren_found(tz, what);
+        if (not open_paren_tk) {
+            throw compile_error{tz, std::format("expected '(' after {}", what)};
+        }
+
+        open_paren_tk_ = *open_paren_tk;
     }
 
     // what the callee reaches through a parameter the caller reaches through
@@ -2986,10 +2991,10 @@ class stmt_call : public expression {
 
     // e.g. 'f', 'lst.add' or 'point.at'
     auto source_callee_to(std::ostream& os) const -> void {
-        if (is_constructor()) {
+        if (constructor_) {
             expression::source_to(os);
-            constructor_dot_tk_.source_to(os);
-            constructor_name_tk_.source_to(os);
+            constructor_->dot_tk.source_to(os);
+            constructor_->name_tk.source_to(os);
             return;
         }
 
@@ -3001,7 +3006,7 @@ class stmt_call : public expression {
 
         get_unary_ops().source_to(os);
         args_.front().source_to(os);
-        method_dot_tk_.source_to(os);
+        token::source_to(os, method_dot_tk_);
         tok().source_to(os);
         source_generic_to(os);
     }
@@ -3095,6 +3100,19 @@ class stmt_call : public expression {
                            constructor_name_tk.text());
 
         return name;
+    }
+
+    // the '.' and the name after a type, e.g. '.at' of 'point.at(1, 2)'
+    [[nodiscard]] static auto read_constructor_tokens(tokenizer& tz)
+        -> constructor_tokens {
+
+        // note: the parse saw the '.' after the type
+        const token dot_tk{tz.seen_char_token('.')};
+
+        return {
+            .dot_tk{dot_tk},
+            .name_tk{tz.next_token()},
+        };
     }
 
     // e.g. " (both name 'g')", none for a variable the compiler added, whose

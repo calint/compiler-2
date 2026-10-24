@@ -125,11 +125,11 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
         const size_t index{list.exprs.size()};
 
         if (index == flds.size()) {
-            const token delimiter_tk{tz.is_next_char_token(',')};
+            const std::optional<token> delimiter_tk{tz.is_next_char_token(',')};
 
             // a trailing ',' lets each field end its line the same way
-            if (not delimiter_tk.is_empty() and at_closing_brace(tz)) {
-                list.delims_tk.emplace_back(delimiter_tk);
+            if (delimiter_tk and at_closing_brace(tz)) {
+                list.delims_tk.emplace_back(*delimiter_tk);
                 break;
             }
 

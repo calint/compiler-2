@@ -110,12 +110,14 @@ class token final {
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
+    // no location, e.g. a 'token{}' of something the compiler made; a token
+    // the source may leave out is a 'std::optional<token>'
     [[nodiscard]] auto is_empty() const -> bool {
         return ws_left_.empty() and text_.empty() and ws_right_.empty();
     }
 
-    // no token here: the source ends or a delimiter follows; the string '""'
-    // is a token
+    // no word was read here: the source ends or a delimiter follows; the
+    // string '""' is a token
     [[nodiscard]] auto is_none() const -> bool {
         return text_.empty() and not is_str_;
     }
@@ -375,6 +377,16 @@ class token final {
                                        const size_t line) -> token {
 
         return synthetic(file_ix, "", index, line);
+    }
+
+    // an optional token of the syntax prints only when it was written, e.g.
+    // the '(' of 'i8(x)' but not of 'i8'
+    static auto source_to(std::ostream& os, const std::optional<token>& tk)
+        -> void {
+
+        if (tk) {
+            tk->source_to(os);
+        }
     }
 
     // a token the compiler makes, located at 'index' in the source, without

@@ -195,10 +195,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        K.2. 'stmt_builtin_io' checks before it emits (S8)
        K.3. ask, new file: 'builtin_arguments' beside 'bulk_operands' (N7.3);
             'reserved_names.hpp' (F10)
-    open questions: J.4 of round 13 (an absent token as
-    'std::optional<token>') was recorded "J.4 done" among the decisions but
-    not done, do it now?; A.1 (more constants); A.4, D.5, D.6, H.2, J.7 and
-    the new files of J.4, K.3
+    open questions: A.4, D.5, D.6, H.2, J.7 and the new files of J.4, K.3
+    (J.4 of round 13 and A.1 approved and done)
     order: B, C, A.1-A.3, D.1-D.4, E, I.1 then A.5, G, F, H.1, H.3, J.1-J.6,
     K.1-K.2, then the asked ones
     kept (reviewers, with reasons in r14): 'stmt_call.hpp' at 3k lines; the
@@ -602,6 +600,21 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        J.4. large, mechanical, decide: an absent token as
             'std::optional<token>' ('is_next_char_token', 65 calls; the
             optional syntax members), 'is_empty'/'is_none' apart
+       => J.4 done (2026-10-24, approved in round 14): 'is_next_char_token'
+          returns 'std::optional<token>'; a token the source may leave out
+          is an optional member ('stmt_block' braces, 'expr_arith' and
+          'expr_bool' parentheses, the bare conversion, the 'foo' count
+          delimiter, the 'else', a field's and a parameter's type, 'mut' and
+          brackets, the function head's 'noinline', 'mut', method and '(',
+          the result name and type, a generic type's base); a pair that is
+          present together is one optional struct ('stmt_identifier::
+          method_tokens', 'stmt_call::constructor_tokens'); a required one
+          is read by 'expect_char_token', one the caller saw by the new
+          'tokenizer::seen_char_token'; 'token::source_to(os, optional)'
+          prints one; 'is_empty' is left for no location, 'is_none' for no
+          word read; a field type that reads no word is put back (it held
+          the whitespace before '}'); listings and '--reproduce-source' of
+          every test equal, fuzz-compiler, reject, generics clean
        => J.1-J.3 done (2026-10-24): J.1 'parse_statement.hpp' (was
           'decouple_impl.hpp'), the grammar named for what it parses:
           'parse_statement' (moved from 'stmt_block' with its literal test),

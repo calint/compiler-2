@@ -25,7 +25,8 @@
 // 'n' the length of the array; the body may run zero times
 class stmt_builtin_foo final : public statement {
     stmt_identifier ident_;
-    token count_delim_tk_;
+    // the ',' before the count, none when every element is visited
+    std::optional<token> count_delim_tk_;
     expr_any count_;
     stmt_block code_;
 
@@ -73,8 +74,8 @@ class stmt_builtin_foo final : public statement {
         statement::source_to(os);
         ident_.source_to(os);
 
-        if (has_count()) {
-            count_delim_tk_.source_to(os);
+        if (count_delim_tk_) {
+            count_delim_tk_->source_to(os);
             count_.source_to(os);
         }
 
@@ -318,7 +319,7 @@ class stmt_builtin_foo final : public statement {
     }
 
     [[nodiscard]] auto has_count() const -> bool {
-        return not count_delim_tk_.is_empty();
+        return count_delim_tk_.has_value();
     }
 
     // an indexed or forwarded array needs its address computed

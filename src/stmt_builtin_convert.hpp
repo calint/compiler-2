@@ -56,7 +56,8 @@
 //       ops: in a scratch register of the argument's type
 //   3b  a narrower single operand with unary ops, e.g. 'i16(-g())': as row 1
 class stmt_builtin_convert final : public expression {
-    token open_paren_tk_;
+    // none in the bare form, e.g. the 'i8' of 'var x = i8'
+    std::optional<token> open_paren_tk_;
     expr_arith arg_;
     token close_paren_tk_;
 
@@ -124,11 +125,11 @@ class stmt_builtin_convert final : public expression {
         expression::source_to(os);
 
         // the bare form has no argument
-        if (open_paren_tk_.is_empty()) {
+        if (not open_paren_tk_) {
             return;
         }
 
-        open_paren_tk_.source_to(os);
+        open_paren_tk_->source_to(os);
         arg_.source_to(os);
         close_paren_tk_.source_to(os);
     }
@@ -176,7 +177,7 @@ class stmt_builtin_convert final : public expression {
         -> std::optional<folded_value> override {
 
         // the bare form has no argument, e.g. the 'i8' of 'var x = i8'
-        if (open_paren_tk_.is_empty()) {
+        if (not open_paren_tk_) {
             return folded_value{
                 .value{},
                 .own_type{&get_type()},

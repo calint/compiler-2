@@ -2471,7 +2471,7 @@ class definition_checks final {
     auto assert_generic_param_apart(const token& param_tk, const token& name_tk,
                                     const std::string_view what) const -> void {
 
-        if (name_tk.is_empty() or param_tk.text() != name_tk.text()) {
+        if (param_tk.text() != name_tk.text()) {
             return;
         }
 

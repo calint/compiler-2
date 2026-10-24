@@ -76,17 +76,14 @@ class expr_any final : public statement {
     // e.g. 'i8[3]' of 'i8[3]{1, 2}' or '[3]' at the default type, empty for
     // '{1, 2}', whose type and size the destination gives
     struct array_prefix {
-        token element_type_tk;
+        // none for the default type, e.g. '[2]{1, 2}'
+        std::optional<token> element_type_tk;
         token open_bracket_tk;
         stmt_array_size size;
         token close_bracket_tk;
 
         auto source_to(std::ostream& os) const -> void {
-            if (open_bracket_tk.is_empty()) {
-                return;
-            }
-
-            element_type_tk.source_to(os);
+            token::source_to(os, element_type_tk);
             open_bracket_tk.source_to(os);
             size.source_to(os);
             close_bracket_tk.source_to(os);
@@ -105,7 +102,8 @@ class expr_any final : public statement {
 
     // e.g. 'i8[]{1, 2}' or '{{1, 2}, {3, 4}}'
     struct element_list {
-        array_prefix prefix;
+        // none when the destination gives the type and the size
+        std::optional<array_prefix> prefix;
         token open_brace_tk;
         std::vector<expr_variant> elements;
         std::vector<token> delims_tk;
@@ -171,30 +169,32 @@ class expr_any final : public statement {
         // an array is initialized by a '{ ... }' or by the name of an array,
         // e.g. 'str.data'
 
-        array_prefix prefix{parse_array_prefix(tc, tz, tp, typing)};
+        std::optional<array_prefix> prefix{
+            parse_array_prefix(tc, tz, tp, typing),
+        };
 
-        const token open_brace_tk{tz.is_next_char_token('{')};
+        const std::optional<token> open_brace_tk{tz.is_next_char_token('{')};
 
-        if (open_brace_tk.is_empty() and
-            not prefix.open_bracket_tk.is_empty()) {
-
+        if (not open_brace_tk and prefix) {
             // e.g. 'var a = i8[4]' is 'i8[4]{}'
-            if (not prefix.size.has_value()) {
+            if (not prefix->size.has_value()) {
                 throw compile_error{
-                    prefix.close_bracket_tk,
+                    prefix->close_bracket_tk,
                     std::format("an array needs a constant size, e.g. "
                                 "'{}[4]'",
-                                prefix.element_type_tk.text())};
+                                prefix->element_type_tk
+                                    ? prefix->element_type_tk->text()
+                                    : "")};
             }
 
             form_ = zero_array{
-                .prefix{std::move(prefix)},
+                .prefix{std::move(*prefix)},
             };
 
             return;
         }
 
-        if (open_brace_tk.is_empty()) {
+        if (not open_brace_tk) {
             // 'expr_type' copies the whole array as bytes, 'expr_arith' would
             // read a single scalar
             // e.g. 'var b = a' copies the array 'a'
@@ -214,7 +214,7 @@ class expr_any final : public statement {
         // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}'
         element_list list{
             .prefix{std::move(prefix)},
-            .open_brace_tk{open_brace_tk},
+            .open_brace_tk{*open_brace_tk},
             .elements{},
             .delims_tk{},
             .close_brace_tk{},
@@ -260,7 +260,10 @@ class expr_any final : public statement {
             return;
         }
 
-        list->prefix.source_to(os);
+        if (list->prefix) {
+            list->prefix->source_to(os);
+        }
+
         list->open_brace_tk.source_to(os);
 
         const auto elements{
@@ -365,13 +368,11 @@ class expr_any final : public statement {
     // the type, else its value, e.g. a string
     [[nodiscard]] auto array_token() const -> const token& {
         if (const array_prefix* const prefix{array_prefix_of()}) {
-            if (not prefix->element_type_tk.is_empty()) {
-                return prefix->element_type_tk;
+            if (prefix->element_type_tk) {
+                return *prefix->element_type_tk;
             }
 
-            if (not prefix->open_bracket_tk.is_empty()) {
-                return prefix->open_bracket_tk;
-            }
+            return prefix->open_bracket_tk;
         }
 
         if (const element_list* const list{std::get_if<element_list>(&form_)}) {
@@ -479,10 +480,15 @@ class expr_any final : public statement {
         return std::holds_alternative<string_array>(form_);
     }
 
-    // e.g. the '[' of 'i8[]{}', empty without an array prefix
-    [[nodiscard]] auto open_bracket_token() const -> token {
+    // e.g. the '[' of 'i8[]{}', none without an array prefix
+    [[nodiscard]] auto open_bracket_token() const -> std::optional<token> {
         const array_prefix* const prefix{array_prefix_of()};
-        return prefix != nullptr ? prefix->open_bracket_tk : token{};
+
+        if (prefix == nullptr) {
+            return std::nullopt;
+        }
+
+        return prefix->open_bracket_tk;
     }
 
     // appends the steps that write the value at 'at'; 'unsized_count' is the
@@ -533,7 +539,7 @@ class expr_any final : public statement {
     // the prefix of an element list or a zero array, null for another form
     [[nodiscard]] auto array_prefix_of() const -> const array_prefix* {
         if (const element_list* const list{std::get_if<element_list>(&form_)}) {
-            return &list->prefix;
+            return list->prefix ? &*list->prefix : nullptr;
         }
 
         if (const zero_array* const zero{std::get_if<zero_array>(&form_)}) {
@@ -595,11 +601,11 @@ class expr_any final : public statement {
 
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
-    // the default type; empty when the destination gives both
+    // the default type; none when the destination gives both
     [[nodiscard]] auto parse_array_prefix(toc& tc, tokenizer& tz,
                                           const type& tp,
                                           const literal_typing typing)
-        -> array_prefix {
+        -> std::optional<array_prefix> {
 
         array_prefix prefix;
 
@@ -614,10 +620,11 @@ class expr_any final : public statement {
         }
 
         if (not is_typed and not is_default_array_literal(tz)) {
-            return prefix;
+            return std::nullopt;
         }
 
-        prefix.open_bracket_tk = tz.is_next_char_token('[');
+        // note: an array literal is a type name or nothing before a '['
+        prefix.open_bracket_tk = tz.seen_char_token('[');
 
         const type& literal_type{
             is_typed ? tc.get_type_or_throw(tk) : tc.builtins().default_type(),
@@ -669,16 +676,16 @@ class expr_any final : public statement {
     auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
                                element_list& list) -> void {
 
-        list.close_brace_tk = tz.is_next_char_token('}');
+        std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
 
-        while (list.close_brace_tk.is_empty()) {
+        while (not close_brace_tk) {
             if (not list.elements.empty()) {
                 parse_element_delimiter(tz, tp, list);
 
                 // a trailing ',' lets each element end its line the same way
-                list.close_brace_tk = tz.is_next_char_token('}');
+                close_brace_tk = tz.is_next_char_token('}');
 
-                if (not list.close_brace_tk.is_empty()) {
+                if (close_brace_tk) {
                     break;
                 }
             }
@@ -689,8 +696,10 @@ class expr_any final : public statement {
             list.elements.emplace_back(
                 parse_variant(tc, tz, tp, literal_typing::from_destination));
 
-            list.close_brace_tk = tz.is_next_char_token('}');
+            close_brace_tk = tz.is_next_char_token('}');
         }
+
+        list.close_brace_tk = *close_brace_tk;
 
         if (not array_count_) {
             array_count_ = list.elements.size();
@@ -927,8 +936,10 @@ class expr_any final : public statement {
         }
 
         // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'
-        if (const token open_brace_tk{tz.is_next_char_token('{')};
-            not open_brace_tk.is_empty()) {
+        if (const std::optional<token> open_brace_tk{
+                tz.is_next_char_token('{'),
+            };
+            open_brace_tk) {
 
             const token close_brace_tk{
                 tz.expect_char_token(
@@ -941,9 +952,9 @@ class expr_any final : public statement {
                     tz, "'{}' is a whole value, an operator cannot follow it"};
             }
 
-            return builtin_value(
-                tc, tz,
-                std::make_unique<expr_zero>(tp, open_brace_tk, close_brace_tk));
+            return builtin_value(tc, tz,
+                                 std::make_unique<expr_zero>(tp, *open_brace_tk,
+                                                             close_brace_tk));
         }
 
         // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is

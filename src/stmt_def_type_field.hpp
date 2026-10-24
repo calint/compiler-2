@@ -12,8 +12,10 @@
 #include "token.hpp"
 
 class stmt_def_type_field final : public statement {
-    token type_tk_;
-    token open_bracket_tk_;
+    // none for the default type
+    std::optional<token> type_tk_;
+    // none when not an array
+    std::optional<token> open_bracket_tk_;
     token close_bracket_tk_;
     stmt_array_size array_size_;
     // empty when not an array
@@ -29,16 +31,22 @@ class stmt_def_type_field final : public statement {
             throw compile_error{tk, "expected field name"};
         }
 
-        // e.g. 'tags[4]' has the default type
+        // e.g. 'tags[4]' and the 'x' of '{x, y}' have the default type
         if (tz.peek_char_after_whitespace() != '[') {
-            type_tk_ = tz.next_token();
+            const token type_tk{tz.next_token()};
+
+            if (type_tk.is_none()) {
+                tz.put_back_token(type_tk);
+            } else {
+                type_tk_ = type_tk;
+            }
         }
 
         assert_no_type_arguments(tz, type_tk_);
 
         open_bracket_tk_ = tz.is_next_char_token('[');
 
-        if (open_bracket_tk_.is_empty()) {
+        if (not open_bracket_tk_) {
             return;
         }
 
@@ -58,12 +66,10 @@ class stmt_def_type_field final : public statement {
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
 
-        if (not type_tk_.is_empty()) {
-            type_tk_.source_to(os);
-        }
+        token::source_to(os, type_tk_);
 
-        if (is_array()) {
-            open_bracket_tk_.source_to(os);
+        if (open_bracket_tk_) {
+            open_bracket_tk_->source_to(os);
             array_size_.source_to(os);
             close_bracket_tk_.source_to(os);
         }
@@ -83,9 +89,7 @@ class stmt_def_type_field final : public statement {
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 
-    [[nodiscard]] auto type_str() const -> std::string_view {
-        return type_tk_.text();
+    [[nodiscard]] auto type_token() const -> const std::optional<token>& {
+        return type_tk_;
     }
-
-    [[nodiscard]] auto type_token() const -> const token& { return type_tk_; }
 };

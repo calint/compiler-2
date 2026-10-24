@@ -52,8 +52,9 @@ class expr_arith final : public expression {
     std::vector<arithmetic_operator> ops_;
     std::vector<token> ws_before_ops_; // whitespace before each of 'ops_'
     unary_ops list_uops_;              // of the whole list, e.g. '~(a + b)'
-    token open_paren_tk_;              // of '(a + b)', empty when not enclosed
-    token close_paren_tk_;             // of '(a + b)', empty when not enclosed
+    // of '(a + b)', none when not enclosed
+    std::optional<token> open_paren_tk_;
+    std::optional<token> close_paren_tk_;
 
     // true when this list was created because of a higher-precedence operation
     //   1 + 2 * 3 + 4  => 1 + [2 * 3] + 4
@@ -105,9 +106,9 @@ class expr_arith final : public expression {
         // the unary ops of an enclosed list apply to all of it
         unary_ops uops;
 
-        // the '(' of an enclosed list, which ends with its ')', empty when not
+        // the '(' of an enclosed list, which ends with its ')', none when not
         // enclosed
-        token open_paren_tk;
+        std::optional<token> open_paren_tk;
 
         // a list that was created for an operation of a higher precedence
         bool is_implied_subexpression{};
@@ -231,9 +232,7 @@ class expr_arith final : public expression {
     auto source_to(std::ostream& os) const -> void override {
         list_uops_.source_to(os);
 
-        if (is_enclosed()) {
-            open_paren_tk_.source_to(os);
-        }
+        token::source_to(os, open_paren_tk_);
 
         expression::source_to(os); // whitespace
         exprs_.at(0)->source_to(os);
@@ -246,9 +245,7 @@ class expr_arith final : public expression {
             e->source_to(os);
         }
 
-        if (is_enclosed()) {
-            close_paren_tk_.source_to(os);
-        }
+        token::source_to(os, close_paren_tk_);
     }
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
@@ -674,8 +671,11 @@ class expr_arith final : public expression {
             return;
         }
 
+        // note: the ')' closed the list, see 'is_closed'
+        assert(open_paren_tk_);
+
         throw compile_error{
-            open_paren_tk_,
+            *open_paren_tk_,
             std::format("parentheses around a single value group nothing, "
                         "write {}",
                         in_quotes(statement::trimmed_source(*exprs_.front())))};
@@ -881,7 +881,7 @@ class expr_arith final : public expression {
 
         close_paren_tk_ = tz.is_next_char_token(')');
 
-        return not close_paren_tk_.is_empty();
+        return close_paren_tk_.has_value();
     }
 
     // unary ops on a memory destination are a load, modify and store on a
@@ -904,7 +904,7 @@ class expr_arith final : public expression {
 
     // e.g. '(a + b)' vs 'a + b'
     [[nodiscard]] auto is_enclosed() const -> bool {
-        return not open_paren_tk_.is_empty();
+        return open_paren_tk_.has_value();
     }
 
     // a sub-expression ends when the operator has a lower precedence than its
@@ -1736,8 +1736,10 @@ class expr_arith final : public expression {
         unary_ops uo{tz};
 
         // the unary ops apply to the whole sub-expression
-        if (const token open_paren_tk{tz.is_next_char_token('(')};
-            not open_paren_tk.is_empty()) {
+        if (const std::optional<token> open_paren_tk{
+                tz.is_next_char_token('('),
+            };
+            open_paren_tk) {
 
             const bool has_unary_ops{not uo.is_empty()};
 

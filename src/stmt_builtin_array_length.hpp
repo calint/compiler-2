@@ -29,13 +29,12 @@ class stmt_builtin_array_length final : public expression {
     stmt_builtin_array_length(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
         : expression{src_loc_tk, std::move(uops)},
-          open_paren_tk_{tz.is_next_char_token('(')} {
+          open_paren_tk_{
+              tz.expect_char_token('(',
+                                   "expected '(' followed by an identifier"),
+          } {
 
         set_type(tc.builtins().default_type());
-
-        if (open_paren_tk_.is_empty()) {
-            throw compile_error{tz, "expected '(' followed by an identifier"};
-        }
 
         stmt_ident_ = stmt_identifier::parse_array_argument(tc, tz);
 

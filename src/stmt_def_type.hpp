@@ -47,9 +47,11 @@ class type_fields final {
 
             // a field without a type name has the default type, e.g. 'x' of
             // 'type point { x, y }'
+            const std::optional<token>& fld_type_tk{fld.type_token()};
+
             const type& fld_tp{
-                fld.type_str().empty() ? tc.builtins().default_type()
-                                       : tc.get_type_or_throw(fld.type_token()),
+                fld_type_tk ? tc.get_type_or_throw(*fld_type_tk)
+                            : tc.builtins().default_type(),
             };
 
             tp.add_field(fld.tok(), fld.name(), fld_tp, fld.array_count());
@@ -103,8 +105,15 @@ class type_fields final {
   private:
     // e.g. the '}' of 'type point { x, y }', kept for 'source_to'
     auto is_next_close_brace(tokenizer& tz) -> bool {
-        close_brace_tk_ = tz.is_next_char_token('}');
-        return not close_brace_tk_.is_empty();
+        const std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
+
+        if (not close_brace_tk) {
+            return false;
+        }
+
+        close_brace_tk_ = *close_brace_tk;
+
+        return true;
     }
 };
 
@@ -168,16 +177,16 @@ inline auto assert_generic_type(const toc& tc, const token& generic_tk,
                                              const token& generic_tk)
     -> generic_arg_tokens {
 
-    const token open_tk{tz.is_next_char_token('<')};
+    const std::optional<token> open_tk{tz.is_next_char_token('<')};
 
-    if (open_tk.is_empty()) {
+    if (not open_tk) {
         throw compile_error{
             generic_tk,
             std::format("generic type {} needs arguments, e.g. '{}<...>'",
                         in_quotes(generic_tk.text()), generic_tk.text())};
     }
 
-    return generic_arg_tokens::parse(tz, open_tk);
+    return generic_arg_tokens::parse(tz, *open_tk);
 }
 
 // e.g. 'type point { x, y }'
@@ -191,7 +200,8 @@ class stmt_def_type final : public statement {
         : statement{tk}, name_tk_{name_tk} {
 
         // e.g. the '{' of 'type point { x, y }'
-        const token open_brace_tk{tz.is_next_char_token('{')};
+        // note: the definition is dispatched on the '{'
+        const token open_brace_tk{tz.seen_char_token('{')};
 
         fields_.parse(tc, tz, open_brace_tk, name_tk_);
 
@@ -266,7 +276,7 @@ class stmt_def_type_generic final : public statement {
                               std::vector<generic_param> params) -> void {
 
         // e.g. '=' and 'list' of '= list<i8, size>'
-        const token equals_tk{tz.is_next_char_token('=')};
+        const token equals_tk{tz.seen_char_token('=')};
         const token base_tk{tz.next_token()};
 
         // note: the '=' is the place when the source ends after it
@@ -325,7 +335,7 @@ class stmt_def_type_generic final : public statement {
                                 .src_loc_tk{name_tk_},
                                 .start_tk{start_tk_},
                                 .params{std::move(params)},
-                                .base_tk{},
+                                .base_tk{std::nullopt},
                                 .base_arg_tks{},
                                 .definition{tc.current_definition()},
                             });
@@ -391,7 +401,7 @@ class stmt_def_type_alias final : public statement {
     //   4. add 'str' and make the methods of 'list<i8, 8>' and 'text<8>'
     auto parse_alias(toc& tc, tokenizer& tz) -> void {
         // 'alias_tks_' keeps the tokens after the name for 'source_to'
-        const token equals_tk{tz.is_next_char_token('=')};
+        const token equals_tk{tz.seen_char_token('=')};
         alias_tks_.emplace_back(equals_tk);
 
         const token generic_tk{tz.next_token()};
@@ -488,10 +498,8 @@ class stmt_def_type_alias final : public statement {
         std::ignore = generic_tz.next_token();
         std::ignore = generic_param::parse(generic_tz);
 
-        const token open_brace_tk{generic_tz.is_next_char_token('{')};
-
         // note: 'define_generic' checked the '{' of a generic without a base
-        assert(not open_brace_tk.is_empty());
+        const token open_brace_tk{generic_tz.seen_char_token('{')};
 
         // only read to fill 'type_', not printed by 'source_to'
         type_fields fields;
@@ -512,7 +520,10 @@ class stmt_def_type_alias final : public statement {
             tc.generics().get_type(instance.generic_name),
         };
 
-        const token& base_tk{generic.base_tk};
+        // note: only a type with a base asks, see 'has_base'
+        assert(generic.base_tk);
+
+        const token& base_tk{*generic.base_tk};
 
         std::vector<generic_arg> base_args{
             resolve_base_args(tc, generic, instance.args),
@@ -542,9 +553,9 @@ class stmt_def_type_alias final : public statement {
                                        const generic_type_instance& instance)
         -> bool {
 
-        return not tc.generics()
-                       .get_type(instance.generic_name)
-                       .base_tk.is_empty();
+        return tc.generics()
+            .get_type(instance.generic_name)
+            .base_tk.has_value();
     }
 
     // the argument tokens of a base name the parameters of 'generic', e.g.
@@ -558,11 +569,14 @@ class stmt_def_type_alias final : public statement {
         generic_scope scope{tc, generic.definition};
         scope.add_args(args);
 
-        const generic_type_info& base{
-            tc.generics().get_type(generic.base_tk.text()),
-        };
+        // note: only a type with a base asks, see 'has_base'
+        assert(generic.base_tk);
 
-        return resolve_generic_args(tc, generic.base_tk.text(), base.params,
+        const std::string_view base_name{generic.base_tk->text()};
+
+        const generic_type_info& base{tc.generics().get_type(base_name)};
+
+        return resolve_generic_args(tc, base_name, base.params,
                                     generic.base_arg_tks);
     }
 };

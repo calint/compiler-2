@@ -150,6 +150,7 @@ class stmt_identifier;
 class stmt_identifier final : public statement {
     struct ident_elem {
         token name_tk;
+        // the brackets are read with 'array_index_expr', null without an index
         token open_bracket_tk;
         std::unique_ptr<expr_any> array_index_expr;
         token close_bracket_tk;
@@ -226,8 +227,13 @@ class stmt_identifier final : public statement {
     access_path access_path_;
 
     // e.g. '.add' in 'lst.add(x)', the path is the receiver
-    token method_dot_tk_;
-    token method_name_tk_;
+    struct method_tokens {
+        token dot_tk;
+        token name_tk;
+    };
+
+    // none when the path is not the receiver of a method call
+    std::optional<method_tokens> method_;
 
   public:
     // a path of names, fields and indexes from 'tk', which is read
@@ -426,14 +432,14 @@ class stmt_identifier final : public statement {
     // where only an array is expected, the path does not end at a method,
     // e.g. 'array_length(a.m)'
     auto assert_not_method() const -> void {
-        if (not is_method_receiver()) {
+        if (not method_) {
             return;
         }
 
         throw compile_error{
-            method_name_tk_,
+            method_->name_tk,
             std::format("'{}.{}' is a method, expected an array", dotted_path_,
-                        method_name_tk_.text())};
+                        method_->name_tk.text())};
     }
 
     // the address of this place from 'compile_lea': 'use' runs while the
@@ -598,7 +604,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto is_indexed() const -> bool { return is_indexed_; }
 
     [[nodiscard]] auto is_method_receiver() const -> bool {
-        return not method_name_tk_.is_empty();
+        return method_.has_value();
     }
 
     // the name at the end of the path, e.g. 'data' of 'q1.data'
@@ -607,11 +613,15 @@ class stmt_identifier final : public statement {
     }
 
     [[nodiscard]] auto method_dot_token() const -> const token& {
-        return method_dot_tk_;
+        assert(method_);
+
+        return method_->dot_tk;
     }
 
     [[nodiscard]] auto method_name_token() const -> const token& {
-        return method_name_tk_;
+        assert(method_);
+
+        return method_->name_tk;
     }
 
     // the path names a function, unless a variable, a parameter or a constant
@@ -830,9 +840,9 @@ class stmt_identifier final : public statement {
                                     token& src_loc_tk) -> bool {
 
         // e.g. the '.entities' of 'rooms[i].entities[j]'
-        const token dot_tk{tz.is_next_char_token('.')};
+        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
 
-        if (dot_tk.is_empty()) {
+        if (not dot_tk) {
             return false;
         }
 
@@ -847,15 +857,18 @@ class stmt_identifier final : public statement {
         // e.g. the '.add' of 'lst.add(1)'
         if (is_method_name(tc, tz, tk, next_tk)) {
             // the path so far is resolved as the receiver
-            method_dot_tk_ = dot_tk;
-            method_name_tk_ = next_tk;
+            method_ = {
+                .dot_tk{*dot_tk},
+                .name_tk{next_tk},
+            };
+
             return false;
         }
 
         assert_element_selected(tc, tk);
         assert_not_method_call(tc, tz, tk, next_tk);
 
-        elem_delims_tk_.emplace_back(dot_tk);
+        elem_delims_tk_.emplace_back(*dot_tk);
         src_loc_tk = tk;
         tk = next_tk;
         dotted_path_.push_back('.');

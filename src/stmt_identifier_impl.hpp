@@ -180,9 +180,9 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
                                            const token& tk) -> void {
 
     // e.g. the '[i]' of 'rooms[i]', none for 'name'
-    const token open_bracket_tk{tz.is_next_char_token('[')};
+    const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
 
-    if (open_bracket_tk.is_empty()) {
+    if (not open_bracket_tk) {
         elems_.emplace_back(tk, token{}, nullptr, token{});
         return;
     }
@@ -199,7 +199,7 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
                              "expected ']' to close array index expression"),
     };
 
-    elems_.emplace_back(tk, open_bracket_tk, std::move(index_expr),
+    elems_.emplace_back(tk, *open_bracket_tk, std::move(index_expr),
                         close_bracket_tk);
 }
 

@@ -173,7 +173,7 @@ class initializer_declaration final {
         shape_ = array_shape::array(std::nullopt);
         set_type(*element_type);
 
-        token bracket_tk;
+        std::optional<token> bracket_tk;
 
         trial_parse(tc, tz, [this, &tc, &tz, &bracket_tk] -> void {
             // an unsized array, the initializer gives the count
@@ -188,9 +188,9 @@ class initializer_declaration final {
         if (shape_.length().value_or(0) == 0) {
             // e.g. the '[' of 'var a = i8[]{}'
             // note: an empty string is rejected by 'string_array_count'
-            assert(not bracket_tk.is_empty());
+            assert(bracket_tk);
 
-            throw compile_error{bracket_tk, "an empty array needs a size"};
+            throw compile_error{*bracket_tk, "an empty array needs a size"};
         }
     }
 

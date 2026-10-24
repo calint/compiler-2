@@ -358,9 +358,15 @@ class expr_type final : public statement {
     // the '}' that ends the fields, when it is the next character, e.g. the '}'
     // of '{x, y}'
     [[nodiscard]] auto at_closing_brace(tokenizer& tz) -> bool {
-        token& close_brace_tk{std::get<field_list>(value_).close_brace_tk};
-        close_brace_tk = tz.is_next_char_token('}');
-        return not close_brace_tk.is_empty();
+        const std::optional<token> close_brace_tk{tz.is_next_char_token('}')};
+
+        if (not close_brace_tk) {
+            return false;
+        }
+
+        std::get<field_list>(value_).close_brace_tk = *close_brace_tk;
+
+        return true;
     }
 
     // the call whose result is the value, null for a literal or a copy

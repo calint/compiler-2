@@ -48,15 +48,13 @@ class bulk_operands final {
 
     bulk_operands(toc& tc, tokenizer& tz, const std::string_view first_role,
                   const std::string_view second_role)
-        : open_paren_tk_{tz.is_next_char_token('(')}, first_role_{first_role},
-          second_role_{second_role} {
-
-        if (open_paren_tk_.is_empty()) {
-            throw compile_error{
-                tz,
-                std::format("expected '(', {}, {}, 'count', and ')'",
-                            in_quotes(first_role_), in_quotes(second_role_))};
-        }
+        : open_paren_tk_{
+              tz.expect_char_token(
+                  '(',
+                  std::format("expected '(', {}, {}, 'count', and ')'",
+                              in_quotes(first_role), in_quotes(second_role))),
+          },
+          first_role_{first_role}, second_role_{second_role} {
 
         first_ = stmt_identifier::parse_array_argument(tc, tz);
 

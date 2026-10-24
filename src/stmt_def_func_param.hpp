@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <optional>
 #include <ostream>
 #include <string_view>
 
@@ -10,10 +11,12 @@
 #include "token.hpp"
 
 class stmt_def_func_param final : public statement {
-    token mut_tk_;
-    token type_tk_;
-    token open_bracket_tk_;
-    token close_bracket_tk_;
+    std::optional<token> mut_tk_;
+    // none for the default type
+    std::optional<token> type_tk_;
+    // none when not an array
+    std::optional<token> open_bracket_tk_;
+    std::optional<token> close_bracket_tk_;
 
     // not declared 'mut', so the body cannot write it and arguments sharing
     // storage are not a hazard
@@ -24,13 +27,15 @@ class stmt_def_func_param final : public statement {
     // resolved
     struct syntax {
         token name_tk;
-        token mut_tk;
-        token type_tk;
-        token open_bracket_tk;
-        token close_bracket_tk;
+        std::optional<token> mut_tk;
+        // none for the default type
+        std::optional<token> type_tk;
+        // none when not an array
+        std::optional<token> open_bracket_tk;
+        std::optional<token> close_bracket_tk;
 
         [[nodiscard]] auto is_array() const -> bool {
-            return not open_bracket_tk.is_empty();
+            return open_bracket_tk.has_value();
         }
 
         //
@@ -47,31 +52,30 @@ class stmt_def_func_param final : public statement {
                                     "expected a parameter name"};
             }
 
-            const token mut_tk{read_mut(tz)};
+            const std::optional<token> mut_tk{read_mut(tz)};
 
-            const token type_tk{
+            const std::optional<token> type_tk{
                 is_end_of_type(tz.peek_char_after_whitespace())
-                    ? token{}
-                    : tz.next_token(),
+                    ? std::nullopt
+                    : std::optional<token>{tz.next_token()},
             };
 
             assert_no_type_arguments(tz, type_tk);
 
-            const token open_bracket_tk{tz.is_next_char_token('[')};
+            const std::optional<token> open_bracket_tk{
+                tz.is_next_char_token('['),
+            };
 
-            const token close_bracket_tk{
-                open_bracket_tk.is_empty() ? token{}
-                                           : tz.is_next_char_token(']'),
+            const std::optional<token> close_bracket_tk{
+                open_bracket_tk ? tz.is_next_char_token(']') : std::nullopt,
             };
 
             // e.g. the '4' of 'a i8[4]', each size gets a body of its own
-            if (not open_bracket_tk.is_empty() and
-                close_bracket_tk.is_empty()) {
-
+            if (open_bracket_tk and not close_bracket_tk) {
                 throw compile_error{
                     tz, std::format("an array parameter takes arrays of any "
                                     "size, write '{}[]'",
-                                    type_tk.text())};
+                                    type_tk ? type_tk->text() : "")};
             }
 
             return {
@@ -93,20 +97,21 @@ class stmt_def_func_param final : public statement {
         }
 
         // 'mut' after the name allows the body to write the parameter
-        [[nodiscard]] static auto read_mut(tokenizer& tz) -> token {
-            token mut_tk;
+        [[nodiscard]] static auto read_mut(tokenizer& tz)
+            -> std::optional<token> {
 
-            if (not is_end_of_type(tz.peek_char_after_whitespace())) {
-                const token tk{tz.next_token()};
-
-                if (tk.is_text("mut")) {
-                    mut_tk = tk;
-                } else {
-                    tz.put_back_token(tk);
-                }
+            if (is_end_of_type(tz.peek_char_after_whitespace())) {
+                return std::nullopt;
             }
 
-            return mut_tk;
+            const token tk{tz.next_token()};
+
+            if (not tk.is_text("mut")) {
+                tz.put_back_token(tk);
+                return std::nullopt;
+            }
+
+            return tk;
         }
     };
 
@@ -125,9 +130,9 @@ class stmt_def_func_param final : public statement {
         [[nodiscard]] static auto read(tokenizer& tz) -> syntax_list {
             syntax_list list;
 
-            list.close_paren_tk = tz.is_next_char_token(')');
+            std::optional<token> close_paren_tk{tz.is_next_char_token(')')};
 
-            while (list.close_paren_tk.is_empty()) {
+            while (not close_paren_tk) {
                 if (not list.params.empty()) {
                     list.delimiter_tks.push_back(
                         read_delimiter(tz, list.params.back()));
@@ -135,8 +140,10 @@ class stmt_def_func_param final : public statement {
 
                 list.params.push_back(syntax::read(tz));
 
-                list.close_paren_tk = tz.is_next_char_token(')');
+                close_paren_tk = tz.is_next_char_token(')');
             }
+
+            list.close_paren_tk = *close_paren_tk;
 
             return list;
         }
@@ -166,12 +173,12 @@ class stmt_def_func_param final : public statement {
         : statement{tokens.name_tk}, mut_tk_{tokens.mut_tk},
           type_tk_{tokens.type_tk}, open_bracket_tk_{tokens.open_bracket_tk},
           close_bracket_tk_{tokens.close_bracket_tk},
-          is_read_only_{tokens.mut_tk.is_empty()} {
+          is_read_only_{not tokens.mut_tk} {
 
         tc.assert_valid_unqualified_name(tok());
 
-        set_type(type_tk_.is_empty() ? tc.builtins().default_type()
-                                     : tc.get_type_or_throw(type_tk_));
+        set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
+                          : tc.builtins().default_type());
     }
 
     stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
@@ -188,10 +195,10 @@ class stmt_def_func_param final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        mut_tk_.source_to(os);
-        type_tk_.source_to(os);
-        open_bracket_tk_.source_to(os);
-        close_bracket_tk_.source_to(os);
+        token::source_to(os, mut_tk_);
+        token::source_to(os, type_tk_);
+        token::source_to(os, open_bracket_tk_);
+        token::source_to(os, close_bracket_tk_);
     }
 
     //
@@ -199,7 +206,7 @@ class stmt_def_func_param final : public statement {
     //
 
     [[nodiscard]] auto is_array() const -> bool {
-        return not open_bracket_tk_.is_empty();
+        return open_bracket_tk_.has_value();
     }
 
     [[nodiscard]] auto is_read_only() const -> bool { return is_read_only_; }

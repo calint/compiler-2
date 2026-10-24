@@ -534,17 +534,18 @@ class statement {
 
     // e.g. 'box<i8>' as the type of a field or a parameter, an alias names
     // an instance, a type argument list never follows a type name there
-    static auto assert_no_type_arguments(tokenizer& tz, const token& type_tk)
+    static auto assert_no_type_arguments(tokenizer& tz,
+                                         const std::optional<token>& type_tk)
         -> void {
 
-        if (type_tk.is_empty() or tz.peek_char_after_whitespace() != '<') {
+        if (not type_tk or tz.peek_char_after_whitespace() != '<') {
             return;
         }
 
         throw compile_error{
-            type_tk, std::format("'{}<...>' is not a type, name an instance "
-                                 "first, e.g. 'type str = {}<...>'",
-                                 type_tk.text(), type_tk.text())};
+            *type_tk, std::format("'{}<...>' is not a type, name an instance "
+                                  "first, e.g. 'type str = {}<...>'",
+                                  type_tk->text(), type_tk->text())};
     }
 
     // read-only-ness is fixed where the name is declared, so one check at
