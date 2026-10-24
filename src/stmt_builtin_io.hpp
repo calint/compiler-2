@@ -17,6 +17,7 @@
 #include "operand.hpp"
 #include "stmt_call.hpp"
 #include "token.hpp"
+#include "ub_order.hpp"
 #include "unary_ops.hpp"
 
 // 'read(fd, buf, count, start)' and 'write(fd, buf, count, start)', and the
@@ -204,10 +205,7 @@ class stmt_builtin_io final : public expression {
             return;
         }
 
-        const std::optional<storage_path> written{
-            tc.storage_of(ident_info::root_of(buffer_path().dotted_path()),
-                          buffer_path().accessed_path()),
-        };
+        const std::optional<storage_path> written{buffer_path().storage(tc)};
 
         // note: a place is a variable, which has storage
         assert(written);

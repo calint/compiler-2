@@ -314,8 +314,7 @@ class stmt_builtin_foo final : public statement {
     [[nodiscard]] auto foo_array(const toc& tc) const
         -> std::optional<storage_path> {
 
-        return tc.storage_of(ident_.first_token().text(),
-                             ident_.accessed_path());
+        return ident_.storage(tc);
     }
 
     [[nodiscard]] auto has_count() const -> bool {

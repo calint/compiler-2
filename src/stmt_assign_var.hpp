@@ -20,6 +20,7 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "ub_assigned.hpp"
+#include "ub_order.hpp"
 #include "ub_reads.hpp"
 
 // 'dst = value' and the initializer of a declaration: the value is parsed as
@@ -97,8 +98,7 @@ class stmt_assign_var final : public statement {
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
         const std::optional<storage_path> dst_storage{
-            tc.storage_of(stmt_ident_.first_token().text(),
-                          stmt_ident_.accessed_path()),
+            stmt_ident_.storage(tc),
         };
 
         const ident_info var_info{make_ident_info(tc, stmt_ident_)};
@@ -187,42 +187,27 @@ class stmt_assign_var final : public statement {
         const toc& tc, const statement& item,
         const std::span<const written_place> written) const -> void {
 
-        item.visit_reads(
-            std::nullopt,
-            [&](const token& src_loc_tk, const std::string_view read_text,
-                [[maybe_unused]] const byte_range& accessed_bytes,
-                const access_path& read_path) -> void {
-                const std::optional<storage_path> read{
-                    tc.storage_of(src_loc_tk.text(), read_path),
-                };
-
-                // note: a constant or a value in a register is no storage
-                if (not read) {
-                    return;
+        visit_storage_reads(tc, item, [&](const storage_read& read) -> void {
+            for (const written_place& place : written) {
+                if (not read.storage.may_overlap(place.storage)) {
+                    continue;
                 }
 
-                for (const written_place& place : written) {
-                    if (not read->may_overlap(place.storage)) {
-                        continue;
-                    }
-
-                    if (is_certain_overwrite(src_loc_tk, *read, read_path,
-                                             place)) {
-
-                        throw compile_error{
-                            src_loc_tk,
-                            std::format("{} is read but has been "
-                                        "overwritten in the same statement",
-                                        in_quotes(read_text))};
-                    }
-
+                if (is_certain_overwrite(read, place)) {
                     throw compile_error{
-                        src_loc_tk,
-                        std::format("{} may have been overwritten in the "
-                                    "same statement",
-                                    in_quotes(read_text))};
+                        read.src_loc_tk,
+                        std::format("{} is read but has been overwritten in "
+                                    "the same statement",
+                                    in_quotes(read.read_text))};
                 }
-            });
+
+                throw compile_error{
+                    read.src_loc_tk,
+                    std::format("{} may have been overwritten in the same "
+                                "statement",
+                                in_quotes(read.read_text))};
+            }
+        });
 
         // e.g. 'gr()' of 'g = {1, gr()}' with 'gr' reading 'g.x'
         item.visit_call_effects(tc, [&](const call_effect& effect) -> void {
@@ -286,20 +271,18 @@ class stmt_assign_var final : public statement {
     // on either side, or none under the destination's name, which reaches
     // the bytes through the same binding, e.g. 'p.x' of 'p = {1, p.x}' with
     // 'p' bound to 'ps[i]'
-    [[nodiscard]] auto is_certain_overwrite(const token& read_tk,
-                                            const storage_path& read,
-                                            const access_path& read_path,
+    [[nodiscard]] auto is_certain_overwrite(const storage_read& read,
                                             const written_place& place) const
         -> bool {
 
-        if (not read.path.has_run_time_index() and
+        if (not read.storage.path.has_run_time_index() and
             not place.storage.path.has_run_time_index()) {
 
             return true;
         }
 
-        return read_tk.text() == stmt_ident_.first_token().text() and
-               not read_path.has_run_time_index() and
+        return read.src_loc_tk.text() == stmt_ident_.first_token().text() and
+               not read.read_path.has_run_time_index() and
                not place.path.has_run_time_index();
     }
 };

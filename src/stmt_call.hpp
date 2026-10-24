@@ -32,6 +32,7 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
+#include "ub_order.hpp"
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
@@ -620,16 +621,6 @@ struct call_site {
     //
     // statics
     //
-
-    // the root variable and the bytes of it that the argument names, any
-    // element of the array when it is the element of a 'foo'
-    [[nodiscard]] static auto argument_target(const toc& tc,
-                                              const stmt_identifier& name)
-        -> std::optional<storage_path> {
-
-        return tc.storage_of(ident_info::root_of(name.dotted_path()),
-                             name.accessed_path());
-    }
 
     // an instance literal or a call result, e.g. 'point{1, 2}' or 'mk(1, 2)'
     [[nodiscard]] static auto
@@ -1307,8 +1298,7 @@ class inline_call {
                                   allocated_registers);
         }
 
-        return bind_name(param, name.dotted_path(),
-                         call_site::argument_target(tc, name));
+        return bind_name(param, name.dotted_path(), name.storage(tc));
     }
 
     // a constant, a name bound to a register or a name with unary operators
@@ -1339,8 +1329,7 @@ class inline_call {
         }
 
         if (arg.get_unary_ops().is_empty()) {
-            return bind_name(param, name.dotted_path(),
-                             call_site::argument_target(tc, name));
+            return bind_name(param, name.dotted_path(), name.storage(tc));
         }
 
         const operand reg{
@@ -1384,7 +1373,7 @@ class inline_call {
                 .path{std::string{name.dotted_path()}},
                 .lea{lea},
                 .is_element{name.is_array_element()},
-                .bound{call_site::argument_target(tc, name)},
+                .bound{name.storage(tc)},
             });
     }
 
@@ -1564,7 +1553,7 @@ class noinline_call {
 
                 arguments.push_back({
                     .info{make_ident_info(tc, name)},
-                    .target{call_site::argument_target(tc, name)},
+                    .target{name.storage(tc)},
                     .is_temporary{},
                 });
 
@@ -2388,7 +2377,7 @@ class stmt_call : public expression {
             const stmt_identifier& name{*arg.place_path()};
 
             const std::optional<storage_path> target{
-                call_site::argument_target(tc, name),
+                name.storage(tc),
             };
 
             assert(target);
@@ -2522,7 +2511,7 @@ class stmt_call : public expression {
             }
 
             std::optional<storage_path> target{
-                call_site::argument_target(tc, *passed->path),
+                passed->path->storage(tc),
             };
 
             // note: a variable has storage

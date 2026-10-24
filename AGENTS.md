@@ -97,8 +97,6 @@
 
 - Cognitive simplicity over brevity and new syntax; some performance cost is
   fine.
-- Multi-pass designs (one rule per pass, with a before/after example comment)
-  over single-pass state machines.
 - Early returns, flat paths: `if`/`else` over two `if`s; no nested if/else
   inside an else.
 - Split nested calls into named steps.

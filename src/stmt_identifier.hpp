@@ -671,6 +671,14 @@ class stmt_identifier final : public statement {
                       use_kind::write);
     }
 
+    // the root variable and the path inside it that this names, see
+    // 'toc::storage_of'; empty when it holds no storage, e.g. a constant
+    [[nodiscard]] auto storage(const toc& tc) const
+        -> std::optional<storage_path> {
+
+        return tc.storage_of(first_token().text(), access_path_);
+    }
+
     // index expressions are read even when the path is written
     auto visit_index_reads(const read_filter var,
                            const read_visitor reader) const -> void;
@@ -1157,106 +1165,6 @@ inline auto assert_not_whole_array(const stmt_identifier& path,
     ident_info info{make_ident_info(tc, path)};
     assert_not_whole_array(path, info);
     return info;
-}
-
-// an operand of a list that 'assert_not_written_later' checks, e.g. an
-// argument of a call
-struct list_operand {
-    const statement* node{};
-    // the storage the list writes when the operand is one, it reads only its
-    // indexes, e.g. the buffer of 'read' or the destination of 'array_copy';
-    // null when the operand is read
-    const stmt_identifier* written_place{};
-
-    auto visit_reads(const read_visitor reader) const -> void {
-        if (written_place != nullptr) {
-            written_place->visit_index_reads(std::nullopt, reader);
-            return;
-        }
-
-        node->visit_reads(std::nullopt, reader);
-    }
-};
-
-// 'earlier' reads nothing that 'write', an effect of an operand computed
-// after it, reaches; 'writer' says where the call is in the message, e.g. "a
-// later argument"
-inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
-                                   const call_effect& write,
-                                   const std::string_view writer) -> void {
-
-    earlier.visit_reads([&](const token& src_loc_tk,
-                            const std::string_view read_text,
-                            [[maybe_unused]] const byte_range& accessed_bytes,
-                            const access_path& read_path) -> void {
-        const std::optional<storage_path> read{
-            tc.storage_of(src_loc_tk.text(), read_path),
-        };
-
-        if (not read or not read->may_overlap(write.storage)) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("{} may be written by the call of {} in {}, use a "
-                        "temporary variable",
-                        in_quotes(read_text), in_quotes(write.call_tk),
-                        writer)};
-    });
-}
-
-// evaluation is left to right, but the compile reads a name where it is
-// used, so a name that a later operand of the same list may write would read
-// the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
-// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'operand' names an operand
-// of the list in the message, e.g. "argument"
-// note: a call among the earlier operands has run before the later ones,
-//       only the names those read are checked
-inline auto
-assert_not_written_later(const toc& tc,
-                         const std::span<const list_operand> operands,
-                         const std::string_view operand) -> void {
-
-    const std::string writer{std::format("a later {}", operand)};
-
-    for (size_t k{1}; k < operands.size(); ++k) {
-        operands.at(k).node->visit_call_effects(
-            tc, [&](const call_effect& effect) -> void {
-                if (not effect.is_write) {
-                    return;
-                }
-
-                for (const list_operand& earlier : operands.first(k)) {
-                    assert_not_read_before(tc, earlier, effect, writer);
-                }
-            });
-    }
-}
-
-// a backend that computes 'computed_first' before 'computed_after', which come
-// earlier in the source, gives the left-to-right result only when no call in
-// 'computed_after' writes what 'computed_first' reads, e.g. the 'n' of
-// 'array_copy(a[g()], b, n)' with 'g' writing 'n'; 'writer' says where the
-// call is in the message
-inline auto
-assert_not_written_after(const toc& tc,
-                         const std::span<const list_operand> computed_first,
-                         const std::span<const list_operand> computed_after,
-                         const std::string_view writer) -> void {
-
-    for (const list_operand& after : computed_after) {
-        after.node->visit_call_effects(
-            tc, [&](const call_effect& effect) -> void {
-                if (not effect.is_write) {
-                    return;
-                }
-
-                for (const list_operand& first : computed_first) {
-                    assert_not_read_before(tc, first, effect, writer);
-                }
-            });
-    }
 }
 
 // see the declaration in 'statement.hpp'
