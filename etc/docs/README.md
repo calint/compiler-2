@@ -98,8 +98,8 @@ program.hpp      parse: every file, an included one before its includer,
 machine.hpp      one virtual method per operation the front end needs,
   |              e.g. 'add_subtract', 'copy', 'check_bounds'; allocates
   |              the registers ('register_pool')
-  |              machine_x86_64.hpp, machine_rv32i.hpp with its linux
-  |              target 'machine_rv32i_linux' and the bare-metal targets
+  |              machine_x86_64.hpp, machine_rv32i.hpp with its targets
+  |              machine_rv32i_linux.hpp and the bare-metal
   |              machine_rv32i_qemu.hpp and machine_rv32i_fpga.hpp
   v
 assembler.hpp    buffers the lines, optimizes the jumps
@@ -118,8 +118,8 @@ the layers above it:
                      constant_parser, constant_arith, source_files, ub_alias
 2. assembler         assembler, assembler_x86_64, assembler_rv32i
 3. backend           register_pool, machine, machine_x86_64, machine_rv32i,
-                     machine_rv32i_bare_metal, machine_rv32i_qemu,
-                     machine_rv32i_fpga, register_report
+                     machine_rv32i_linux, machine_rv32i_bare_metal,
+                     machine_rv32i_qemu, machine_rv32i_fpga, register_report
 4. names and checks  tokenizer, generics, ident_info, ub_reads, ub_assigned,
                      toc
 5. nodes             statement, expression, unary_ops, parse_lookahead,

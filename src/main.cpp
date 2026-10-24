@@ -29,6 +29,7 @@
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
 #include "machine_rv32i_fpga.hpp"
+#include "machine_rv32i_linux.hpp"
 #include "machine_rv32i_qemu.hpp"
 #include "machine_x86_64.hpp"
 #include "program.hpp"

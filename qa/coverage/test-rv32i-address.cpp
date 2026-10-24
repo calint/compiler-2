@@ -6,7 +6,7 @@
 #include "../../src/assembler_rv32i.hpp"
 #include "../../src/decouple_impl.hpp" // IWYU pragma: keep
 #include "../../src/expr_type_impl.hpp" // IWYU pragma: keep
-#include "../../src/machine_rv32i.hpp"
+#include "../../src/machine_rv32i_linux.hpp"
 #include "../../src/machine_x86_64.hpp"
 #include "../../src/program.hpp"
 #include "../../src/register_report.hpp" // IWYU pragma: keep
@@ -1278,12 +1278,12 @@ auto check_x86_syscall_register_saving() -> void {
 
             const std::array<std::function<void()>, 3> system_calls{
                 [&] {
-                    backend.read(token{}, 0, result, args.at(0), args.at(1),
-                                 args.at(2));
+                    backend.call_target(token{}, 0, machine::target_call::read,
+                                        args, result);
                 },
                 [&] {
-                    backend.write(token{}, 0, result, args.at(0), args.at(1),
-                                  args.at(2));
+                    backend.call_target(token{}, 0, machine::target_call::write,
+                                        args, result);
                 },
                 [&] { backend.invoke_syscall(0); },
             };
@@ -3830,13 +3830,13 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
     }
 
     const auto read = [&] {
-        backend.read(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
-                     io_args.at(2));
+        backend.call_target(token{}, 1, machine::target_call::read, io_args,
+                            io_args.at(0));
     };
 
     const auto write = [&] {
-        backend.write(token{}, 1, io_args.at(0), io_args.at(0), io_args.at(1),
-                      io_args.at(2));
+        backend.call_target(token{}, 1, machine::target_call::write, io_args,
+                            io_args.at(0));
     };
 
     // 6 bytes from stdin to 'buffer' and back to stdout
@@ -3868,9 +3868,14 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
     };
 
     assert(rejected_with([&] {
-        backend.read(source_tk, 1, operand::reg("a0", integer),
-                     operand::reg("a0", integer), operand::reg("a1", integer),
-                     operand::reg("a2", integer));
+        const std::array<operand, 3> args{
+            operand::reg("a0", integer),
+            operand::reg("a1", integer),
+            operand::reg("a2", integer),
+        };
+
+        backend.call_target(source_tk, 1, machine::target_call::read, args,
+                            operand::reg("a0", integer));
     }));
 
     backend.free_named_register(token{}, 0, held_syscall_register);

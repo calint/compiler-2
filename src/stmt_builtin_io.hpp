@@ -160,7 +160,7 @@ class stmt_builtin_io final : public expression {
         };
 
         if (io_.is_sector) {
-            emit_sector_call(x, indent, args);
+            x.call_target(tok(), indent, io_.function, args, operand{});
             x.free_named_registers(tok(), indent, args);
             return;
         }
@@ -177,7 +177,7 @@ class stmt_builtin_io final : public expression {
                                          tc.builtins().default_type()),
         };
 
-        emit_call(x, indent, result, args);
+        x.call_target(tok(), indent, io_.function, args, result);
 
         get_unary_ops().compile(x, indent, tok(), result,
                                 tc.overflow_options(dst));
@@ -639,28 +639,6 @@ class stmt_builtin_io final : public expression {
 
         x.multiply(tok(), indent, count, element_size_bytes,
                    machine::factor_use::read_only);
-    }
-
-    auto emit_call(machine& x, const size_t indent, const operand& result,
-                   const std::vector<operand>& args) const -> void {
-
-        if (io_.function == machine::target_call::read) {
-            x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-            return;
-        }
-
-        x.write(tok(), indent, result, args.at(0), args.at(1), args.at(2));
-    }
-
-    auto emit_sector_call(machine& x, const size_t indent,
-                          const std::vector<operand>& args) const -> void {
-
-        if (io_.function == machine::target_call::sector_read) {
-            x.sector_read(tok(), indent, args.at(0), args.at(1), args.at(2));
-            return;
-        }
-
-        x.sector_write(tok(), indent, args.at(0), args.at(1), args.at(2));
     }
 
     // 'read(fd, buf, count, start)': the count and the start are optional,

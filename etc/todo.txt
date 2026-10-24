@@ -331,6 +331,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'comment_variable' non-virtual (rv32i binding comments may gain
             the address)
        H.7. new file (ask): 'machine_rv32i_linux.hpp' beside its siblings
+       => H.5-H.7 done (2026-10-24): H.5 one public 'machine::call_target'
+          (the register assert once) and one protected virtual
+          'emit_target_call'; 'read', 'write', 'sector_read',
+          'sector_write' and 'call_sector_routine' as entry points gone, the
+          six asserts gone; 'registers_for_target_call' in 'machine' from
+          'target_call_register_names' (three argument registers and the
+          result), 'exit' stays separate; no listing changed; H.6 one
+          protected virtual 'address_text', 'comment_binding' and
+          'comment_variable' non-virtual in 'machine'; rv32i binding
+          comments gain '(lea: ...)' (89 listings per rv32i target, no
+          instruction), its 'address_text' prints an index; H.7
+          'machine_rv32i_linux.hpp' (a move), README file map
     I. expressions
        I.1. 'expr_type::plan_field' calls 'expr_any::plan_writes' (the
             element loop and remaining fill exist twice; nested instance

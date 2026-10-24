@@ -414,27 +414,6 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "frame capacity check end");
     }
 
-    auto comment_binding(const token& src_loc_tk, const size_t indent,
-                         const std::string_view from, const std::string_view to,
-                         const operand& address) -> void override {
-
-        if (address.is_empty()) {
-            comment(src_loc_tk, indent, "bind {} -> {}", from, to);
-            return;
-        }
-
-        comment(src_loc_tk, indent, "bind {} -> {} (lea: {})", from, to,
-                assembler_x86_64::address_text(to_address(address)));
-    }
-
-    auto comment_variable(const token& src_loc_tk, const size_t indent,
-                          const std::string_view text, const size_t size_bytes,
-                          const operand& address) -> void override {
-
-        comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, size_bytes,
-                assembler_x86_64::address_text(to_address(address)));
-    }
-
     auto compare_and_branch(const token& src_loc_tk, const size_t indent,
                             const operand& lhs, const operand& rhs,
                             const comparison_action& action) -> void override {
@@ -870,56 +849,10 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    auto read(const token& src_loc_tk, const size_t indent, const operand& dst,
-              const operand& descriptor, const operand& address,
-              const operand& count) -> void override {
-
-        assert_target_call_registers(target_call::read,
-                                     {&descriptor, &address, &count}, &dst);
-
-        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_read_);
-    }
-
     [[nodiscard]] auto register_display_name(const size_t index) const
         -> std::string override {
 
         return std::string{register_names_.at(index).qword};
-    }
-
-    [[nodiscard]] auto
-    registers_for_target_call(const target_call function) const
-        -> target_call_registers override {
-
-        static constexpr std::array<std::string_view, 3> io_args{
-            "rdi",
-            "rsi",
-            "rdx",
-        };
-
-        static constexpr std::array<std::string_view, 1> exit_args{"rdi"};
-
-        if (function == target_call::exit) {
-            return {
-                .arguments{exit_args},
-                .result{},
-            };
-        }
-
-        // the sector, the address and the size
-        if (function == target_call::sector_read or
-            function == target_call::sector_write) {
-
-            return {
-                .arguments{io_args},
-                .result{},
-            };
-        }
-
-        return {
-            .arguments{io_args},
-            .result{"rax"},
-        };
     }
 
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
@@ -1032,17 +965,6 @@ class machine_x86_64 final : public machine {
         return variables_base_register_;
     }
 
-    auto write(const token& src_loc_tk, const size_t indent, const operand& dst,
-               const operand& descriptor, const operand& address,
-               const operand& count) -> void override {
-
-        assert_target_call_registers(target_call::write,
-                                     {&descriptor, &address, &count}, &dst);
-
-        io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
-                   syscall_write_);
-    }
-
     auto write_assembly(std::ostream& os) -> void override {
         assembler_.write(os);
     }
@@ -1118,20 +1040,56 @@ class machine_x86_64 final : public machine {
         }
     }
 
+    [[nodiscard]] auto address_text(const operand& address) const
+        -> std::string override {
+
+        return assembler_x86_64::address_text(to_address(address));
+    }
+
+    // 'read' and 'write' are system calls, the sector functions routines
+    auto emit_target_call(const token& src_loc_tk, const size_t indent,
+                          const target_call function,
+                          const std::span<const operand> args,
+                          const operand& result) -> void override {
+
+        if (function == target_call::read) {
+            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
+                       args.at(2), syscall_read_);
+            return;
+        }
+
+        if (function == target_call::write) {
+            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
+                       args.at(2), syscall_write_);
+            return;
+        }
+
+        call_sector_routine(src_loc_tk, indent, args.at(0), args.at(1),
+                            args.at(2), function);
+    }
+
+    [[nodiscard]] auto target_call_register_names() const
+        -> const target_call_names& override {
+
+        static constexpr target_call_names names{
+            .arguments{"rdi", "rsi", "rdx"},
+            .result{"rax"},
+        };
+
+        return names;
+    }
+
     // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
     // arguments, the allocated ones are saved around the call
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
                              const operand& sector, const operand& address,
                              const operand& size, const target_call function)
-        -> void override {
+        -> void {
 
         for (const operand* value : {&sector, &address, &size}) {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == size_qword_);
         }
-
-        assert_target_call_registers(function, {&sector, &address, &size},
-                                     nullptr);
 
         static constexpr std::array<std::string_view, 4> clobbered{
             "rax",

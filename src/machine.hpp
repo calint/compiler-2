@@ -196,6 +196,16 @@ class machine {
         std::string_view result;
     };
 
+    // the registers of the calls the target provides, see
+    // 'registers_for_target_call'
+    struct target_call_names {
+        // the descriptor or sector, the address and the count or size; 'exit'
+        // takes the first
+        std::array<std::string_view, 3> arguments;
+        // the count that 'read' and 'write' return
+        std::string_view result;
+    };
+
     // bytes of an instance that no field covers, from its start, e.g. the 3 B
     // at offset 1 of 'type r { a i8, b i32 }'; 'alignment' is known for the
     // first byte
@@ -604,16 +614,6 @@ class machine {
         std::unreachable();
     }
 
-    virtual auto comment_binding(const token& src_loc_tk, const size_t indent,
-                                 const std::string_view from,
-                                 const std::string_view to,
-                                 const operand& address) -> void = 0;
-
-    virtual auto comment_variable(const token& src_loc_tk, const size_t indent,
-                                  const std::string_view text,
-                                  const size_t size_bytes,
-                                  const operand& address) -> void = 0;
-
     virtual auto compare_and_branch(const token& src_loc_tk,
                                     const size_t indent, const operand& lhs,
                                     const operand& rhs,
@@ -735,17 +735,9 @@ class machine {
                           const factor_use use, const runtime_check& check = {})
         -> void = 0;
 
-    virtual auto read(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const operand& descriptor,
-                      const operand& address, const operand& count) -> void = 0;
-
     // the name of a register in the output, for the use of registers
     [[nodiscard]] virtual auto register_display_name(size_t index) const
         -> std::string = 0;
-
-    [[nodiscard]] virtual auto
-    registers_for_target_call(const target_call function) const
-        -> target_call_registers = 0;
 
     virtual auto reserve_variables(const size_t alignment,
                                    const size_t size_bytes) -> void = 0;
@@ -780,11 +772,6 @@ class machine {
 
     [[nodiscard]] virtual auto variables_base_register() const
         -> std::string_view = 0;
-
-    virtual auto write(const token& src_loc_tk, const size_t indent,
-                       const operand& dst, const operand& descriptor,
-                       const operand& address, const operand& count)
-        -> void = 0;
 
     // writes the lines buffered from 'start'
     virtual auto write_assembly(std::ostream& os) -> void = 0;
@@ -979,6 +966,30 @@ class machine {
         emit_used_routines();
     }
 
+    // a parameter bound to what 'to' names, with the address the call
+    // computed when it did
+    auto comment_binding(const token& src_loc_tk, const size_t indent,
+                         const std::string_view from, const std::string_view to,
+                         const operand& address) -> void {
+
+        if (address.is_empty()) {
+            comment(src_loc_tk, indent, "bind {} -> {}", from, to);
+            return;
+        }
+
+        comment(src_loc_tk, indent, "bind {} -> {} (lea: {})", from, to,
+                address_text(address));
+    }
+
+    // e.g. 'x: i32 (4 B @ [rbp + 8])'
+    auto comment_variable(const token& src_loc_tk, const size_t indent,
+                          const std::string_view text, const size_t size_bytes,
+                          const operand& address) -> void {
+
+        comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, size_bytes,
+                address_text(address));
+    }
+
     // the lines buffered so far, for backend tests that read what an emit
     // adds with 'emitted_text'
     [[nodiscard]] auto emitted_line_count() const -> size_t {
@@ -1160,25 +1171,51 @@ class machine {
         return count;
     }
 
-    // reads the sd card sector, an unsigned 32 bit number, into the 'size'
-    // bytes at 'address', 'size' holds 'sector_size_bytes'; a sector past the
-    // end of the card panics where the target can tell
-    auto sector_read(const token& src_loc_tk, const size_t indent,
-                     const operand& sector, const operand& address,
-                     const operand& size) -> void {
+    // the registers of the arguments and the result of a call of 'function'
+    [[nodiscard]] auto
+    registers_for_target_call(const target_call function) const
+        -> target_call_registers {
 
-        call_sector_routine(src_loc_tk, indent, sector, address, size,
-                            target_call::sector_read);
+        const target_call_names& names{target_call_register_names()};
+
+        if (function == target_call::exit) {
+            return {
+                .arguments{std::span{names.arguments}.first(1)},
+                .result{},
+            };
+        }
+
+        if (function == target_call::sector_read or
+            function == target_call::sector_write) {
+
+            return {
+                .arguments{names.arguments},
+                .result{},
+            };
+        }
+
+        return {
+            .arguments{names.arguments},
+            .result{names.result},
+        };
     }
 
-    // writes the 'size' bytes at 'address' to the sd card sector, like
-    // 'sector_read'
-    auto sector_write(const token& src_loc_tk, const size_t indent,
-                      const operand& sector, const operand& address,
-                      const operand& size) -> void {
+    // a call of 'read', 'write', 'sector_read' or 'sector_write' with its
+    // arguments and its result in the registers of
+    // 'registers_for_target_call', 'result' empty for a sector function; a
+    // sector is an unsigned 32 bit number, the size of a sector transfer is
+    // 'sector_size_bytes', a sector past the end of the card panics where the
+    // target can tell
+    auto call_target(const token& src_loc_tk, const size_t indent,
+                     const target_call function,
+                     const std::span<const operand> args, const operand& result)
+        -> void {
 
-        call_sector_routine(src_loc_tk, indent, sector, address, size,
-                            target_call::sector_write);
+        // note: 'exit' is reached through 'exit', which takes any operand
+        assert(function != target_call::exit);
+
+        assert_target_call_registers(function, args, result);
+        emit_target_call(src_loc_tk, indent, function, args, result);
     }
 
     // a blank line that separates the code from the report
@@ -1242,13 +1279,19 @@ class machine {
     // virtual methods
     //
 
-    // calls the routine of 'function', 'sector_read' or 'sector_write', with
-    // the arguments in the registers of 'registers_for_target_call'
-    virtual auto call_sector_routine(const token& src_loc_tk,
-                                     const size_t indent, const operand& sector,
-                                     const operand& address,
-                                     const operand& size,
-                                     const target_call function) -> void = 0;
+    // a memory operand as the comments show it, e.g. 'rbp + 8'
+    [[nodiscard]] virtual auto address_text(const operand& address) const
+        -> std::string = 0;
+
+    // the registers 'registers_for_target_call' takes its answers from
+    [[nodiscard]] virtual auto target_call_register_names() const
+        -> const target_call_names& = 0;
+
+    // the call of 'call_target', its registers checked
+    virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,
+                                  const target_call function,
+                                  const std::span<const operand> args,
+                                  const operand& result) -> void = 0;
 
     // the call instruction of 'call_function'
     virtual auto emit_call(const size_t indent, const std::string_view label)
@@ -1308,12 +1351,11 @@ class machine {
     // class methods
     //
 
-    // the arguments of a call of 'function' and its result, when it has one,
-    // are in the registers 'registers_for_target_call' gives it
-    auto assert_target_call_registers(
-        const target_call function,
-        const std::initializer_list<const operand*> arguments,
-        const operand* const result) const -> void {
+    // the arguments of a call of 'function' and its result, empty when it has
+    // none, are in the registers 'registers_for_target_call' gives it
+    auto assert_target_call_registers(const target_call function,
+                                      const std::span<const operand> arguments,
+                                      const operand& result) const -> void {
 
         const target_call_registers registers{
             registers_for_target_call(function),
@@ -1324,16 +1366,15 @@ class machine {
         for (const auto [arg, name] :
              std::views::zip(arguments, registers.arguments)) {
 
-            assert(arg->is_register() and
-                   register_index_of(arg->base_register()) ==
+            assert(arg.is_register() and
+                   register_index_of(arg.base_register()) ==
                        register_index_of(name));
         }
 
-        assert((result == nullptr) == registers.result.empty());
+        assert(result.is_empty() == registers.result.empty());
 
-        assert(result == nullptr or
-               register_index_of(result->base_register()) ==
-                   register_index_of(registers.result));
+        assert(result.is_empty() or register_index_of(result.base_register()) ==
+                                        register_index_of(registers.result));
     }
 
     [[nodiscard]] auto builtin_type_i16() const -> const type& {
