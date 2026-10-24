@@ -62,6 +62,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             change; open: whether the scratch register lines stay
        A.5. an inlined call whose end the compile does not reach closes the
             caller's path (the open item below), after I.1
+       => A.5 done (2026-10-24): the function scope records a compiled
+          'return' ('toc::record_return'); 'toc::pop_scope' ends the
+          caller's path when an inlined body reaches neither its end nor a
+          'return'; 0072 (the end of 'main' after a call that exits) and
+          1657 (the code after 'spin(0)') lose the unreached code, exit
+          codes equal
        A.6. a 'let' that folds is a constant of its type (user, 2026-10-24):
             'let k = i8(3)' was a read-only variable, only a 'let' of the
             default type folded, so 'let k = i64(3)' was a constant on x86_64
@@ -791,10 +797,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     findings in qa/fuzz/findings ('gen-reject-*'); decide whether it is a
     register limit of a valid program (then the message and a smaller
     lowering) or a bug of a lowering that names a register it holds
-[ ] easy: an inlined call whose end the compile does not reach (e.g. a
-    'loop' whose 'break' folds away for a constant argument) does not close
-    the path of its caller, the code after the call is compiled though it
-    does not run; 'inline_call' could hand the closed path to the caller
 [o] hard: design review (2026-10-23, four reviewers over nodes, calls,
     tables and backends, claims spot-checked): the refactors toward a design a
     reviewer judges clean; each step a pure refactor unless marked, measured

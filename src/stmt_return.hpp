@@ -35,7 +35,7 @@ class stmt_return final : public statement {
 
         const scope& func_scp{tc.scopes().current_func_scope()};
 
-        tc.end_path();
+        tc.record_return();
 
         if (func_scp.is_main()) {
             x.exit(tok(), indent,

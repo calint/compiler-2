@@ -1,5 +1,6 @@
 # a loop whose 'break' folds away for a constant argument is not left, the
-# code after it is not compiled; the parse cannot tell and accepts it
+# code after it is not compiled, nor the code after the call; the parse
+# cannot tell and accepts it
 
 func spin(n) res {
     res = 0

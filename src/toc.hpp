@@ -354,6 +354,10 @@ class scope final {
         // on some path, see 'toc::is_reachable'
         bool is_reachable{true};
 
+        // a 'return' of the body was compiled, it jumps to the end of an
+        // inlined call, see 'toc::pop_scope'
+        bool is_left_by_return{};
+
         // the name of the result, empty when there is none
         std::string result_name;
 
@@ -485,11 +489,16 @@ class scope final {
         return type_ == scope_kind::block;
     }
 
-    // 'main' and a dry run are compiled in place like an inlined function
     [[nodiscard]] auto is_compiled_in_place() const -> bool {
         assert(is_func());
 
         return type_ != scope_kind::noinline_func;
+    }
+
+    // the end of the body of an inlined call is reached, by its last
+    // statement or by a 'return'
+    [[nodiscard]] auto is_end_reached() const -> bool {
+        return func_part().is_reachable or func_part().is_left_by_return;
     }
 
     [[nodiscard]] auto is_foo() const -> bool {
@@ -497,6 +506,11 @@ class scope final {
     }
 
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
+
+    // 'main' and a dry run are compiled in place like an inlined function
+    [[nodiscard]] auto is_inlined_func() const -> bool {
+        return type_ == scope_kind::inlined_func;
+    }
 
     [[nodiscard]] auto is_left_by_break() const -> bool {
         return is_left_by_break_;
@@ -533,6 +547,8 @@ class scope final {
     }
 
     auto mark_left_by_break() -> void { is_left_by_break_ = true; }
+
+    auto mark_left_by_return() -> void { func_part().is_left_by_return = true; }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
@@ -681,6 +697,7 @@ class scope final {
             .ret_label{std::move(return_label)},
             .bindings{},
             .is_reachable{true},
+            .is_left_by_return{},
             .result_name{},
             .param_names{},
             .uses{},
@@ -1651,6 +1668,10 @@ class scope_stack final {
         global_definitions_.try_emplace(std::string{name},
                                         order_.get().current());
     }
+
+    // a 'return' of the innermost function is compiled, see
+    // 'scope::is_end_reached'
+    auto record_return() -> void { func_scope().mark_left_by_return(); }
 
     // records 'storage' when its root is a global, a parameter or the result
     // of the body being parsed, see 'body_uses'; a local of the body is not
@@ -3372,7 +3393,7 @@ class toc final {
         return dry_runs_;
     }
 
-    // 'return', 'continue' and 'exit' leave the code after them unreached
+    // 'continue' and 'exit' leave the code after them unreached
     auto end_path() -> void { scopes_.set_reachable(false); }
 
     // the type parameters of an enclosing instance are hidden until
@@ -3554,6 +3575,13 @@ class toc final {
         if (scopes_.is_in_func()) {
             scopes_.record_callee_globals(callee);
         }
+    }
+
+    // a 'return' leaves the code after it unreached and reaches the end of an
+    // inlined call
+    auto record_return() -> void {
+        scopes_.record_return();
+        end_path();
     }
 
     // a path in a function body whose root is 'name', see 'body_uses';
@@ -3774,12 +3802,25 @@ class toc final {
     }
 
     // the scopes are pushed by 'scope_stack', popped here with their storage
+    // an inlined call whose body does not reach its end, e.g. a 'loop' whose
+    // 'break' folds away for a constant argument, leaves the code after the
+    // call unreached
     auto pop_scope() -> void {
         if (scopes_.all().size() == 1) {
             storage_.release_root();
         }
 
+        const scope& popped{scopes_.back()};
+
+        const bool ends_caller_path{
+            popped.is_inlined_func() and not popped.is_end_reached(),
+        };
+
         scopes_.pop();
+
+        if (ends_caller_path) {
+            end_path();
+        }
     }
 
     // a global keeps the definition that declared it at the parse, the

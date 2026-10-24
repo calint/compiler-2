@@ -346,8 +346,10 @@ of the parse walk ('assignment_flow'): the function scope keeps whether the
 current statement is reached ('toc::is_reachable'), 'toc::end_path' and
 'toc::record_break' end a path, 'toc::path_merge' joins the branches of an
 'if' with the same chain rule as the parse, 'toc::join_loop' and
-'toc::join_foo' end the loops ('scope::is_left_by_break'), and the end of
-'main' is emitted when the compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
+'toc::join_foo' end the loops ('scope::is_left_by_break'), an inlined call
+whose body reaches neither its end nor a 'return' leaves the code after the
+call unreached ('toc::pop_scope'), and the end of 'main' is emitted when the
+compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
 call decides it, e.g. 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards
 the division. The branch is parsed like any code, so the rules of the parse
 hold in it, e.g. the names, the types and 'break' in a loop. Checking it

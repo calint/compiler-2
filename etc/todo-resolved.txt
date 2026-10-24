@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: an inlined call whose end the compile does not reach (e.g. a
+    'loop' whose 'break' folds away for a constant argument) does not close
+    the path of its caller, the code after the call is compiled though it
+    does not run
+    => done (2026-10-24): A.5 of design review round 14, 'toc::pop_scope'
+       ends the caller's path when an inlined body reaches neither its end
+       nor a 'return' ('toc::record_return')
 [x] medium: a panic exits with a code per failure, the same on every target
     (user, 2026-10-24); today every panic exits 255 after its message
     => design: 'machine::failure_handler' gains 'exit_code'; the codes of

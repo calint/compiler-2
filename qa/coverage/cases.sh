@@ -5180,7 +5180,7 @@ SRC=1655 && COMPERR
 SRC=1656 && COMPERR
 
 # a loop whose 'break' folds away for a constant argument is not left, the
-# code after it is not compiled; the parse cannot tell and accepts it
+# code after it and after the call is not compiled; the parse cannot tell
 SRC=1657 && EXP=7 && RUN
 
 # a 'let' of a typed value is a constant of its type
