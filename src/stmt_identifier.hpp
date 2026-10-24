@@ -199,7 +199,7 @@ class stmt_identifier final : public statement {
 
     std::vector<ident_elem> elems_;
     std::vector<token> elem_delims_tk_;
-    std::string path_as_string_;
+    std::string dotted_path_;
     // see 'var_info::array_len'
     std::optional<size_t> array_count_;
     bool is_array_{};
@@ -385,7 +385,7 @@ class stmt_identifier final : public statement {
             compile_address(tc, indent, src_loc_tk,
                             {
                                 .reg_count{range_count},
-                                .known{info.known()},
+                                .address_by_call{info.address_by_call()},
                                 .address_register{address_register},
                             },
                             use);
@@ -406,7 +406,7 @@ class stmt_identifier final : public statement {
 
         throw compile_error{
             first_token(),
-            std::format("{} is not an array", in_quotes(name_or_literal()))};
+            std::format("{} is not an array", in_quotes(dotted_path()))};
     }
 
     // a constant count of a bulk operation that starts at this path, see
@@ -423,8 +423,8 @@ class stmt_identifier final : public statement {
 
         throw compile_error{
             method_name_tk_,
-            std::format("'{}.{}' is a method, expected an array",
-                        path_as_string_, method_name_tk_.text())};
+            std::format("'{}.{}' is a method, expected an array", dotted_path_,
+                        method_name_tk_.text())};
     }
 
     // the address of this place from 'compile_lea': 'use' runs while the
@@ -460,7 +460,9 @@ class stmt_identifier final : public statement {
                                    const lea_request& request) const
         -> operand {
 
-        const known_address* const known{known_in_path(request.known)};
+        const call_address* const by_call{
+            by_call_in_path(request.address_by_call),
+        };
 
         std::string path{elems_.front().name_tk.text()};
 
@@ -468,7 +470,7 @@ class stmt_identifier final : public statement {
 
         operand address{
             start_address(tc, indent, src_loc_tk, registers,
-                          known == nullptr ? operand{} : known->address,
+                          by_call == nullptr ? operand{} : by_call->address,
                           tc.make_ident_info(src_loc_tk, path)),
         };
 
@@ -548,6 +550,13 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
 
+    // the text the resolver looks up, the path without indexes, e.g. 'b.items'
+    // of 'b.items[i]', or a literal such as '3' or 'true', which resolve to
+    // constants
+    [[nodiscard]] auto dotted_path() const -> std::string_view {
+        return dotted_path_;
+    }
+
     [[nodiscard]] auto first_token() const -> const token& {
         return elems_.at(0).name_tk;
     }
@@ -565,13 +574,14 @@ class stmt_identifier final : public statement {
         return compile_lea(tc, indent, tok(), lea_registers,
                            {
                                .reg_count{},
-                               .known{info.known()},
+                               .address_by_call{info.address_by_call()},
                                .address_register{},
                            });
     }
 
     // the address of what 'info' resolves this statement to is computed into
-    // a register: an indexed access, a pointer or a known address
+    // a register: an indexed access, an address held in a slot or an address
+    // a call computed
     [[nodiscard]] auto has_computed_address(const ident_info& info) const
         -> bool {
 
@@ -608,23 +618,11 @@ class stmt_identifier final : public statement {
         return method_name_tk_;
     }
 
-    // the text the resolver looks up: a name such as 'p.x', or a literal such
-    // as '3' or 'true', which resolve to constants
-    [[nodiscard]] auto name_or_literal() const -> std::string_view {
-        return path_as_string_;
-    }
-
-    // where the name an error is about is, the last name of the path, e.g.
-    // 'b' of 'a.b'
-    [[nodiscard]] auto name_token() const -> const token& {
-        return last_token();
-    }
-
     // the path names a function, unless a variable, a parameter or a constant
     // of the same root is in scope, it shadows the function
     [[nodiscard]] auto names_function(const toc& tc) const -> bool {
-        const std::string_view root{ident_info::root_of(path_as_string_)};
-        return tc.is_func(path_as_string_) and not is_hidden_by_value(tc, root);
+        const std::string_view root{ident_info::root_of(dotted_path_)};
+        return tc.is_func(dotted_path_) and not is_hidden_by_value(tc, root);
     }
 
     auto operator=(stmt_identifier&&) noexcept -> stmt_identifier&;
@@ -658,7 +656,7 @@ class stmt_identifier final : public statement {
                       const std::string_view action,
                       const ident_info& info) const -> void {
 
-        assert_not_read_only(src_loc_tk, action, path_as_string_, info);
+        assert_not_read_only(src_loc_tk, action, dotted_path_, info);
 
         // note: a parameter that would name a constant argument is read-only
         //       or 'mut', which takes no constant, so this is the only check
@@ -666,10 +664,10 @@ class stmt_identifier final : public statement {
         if (info.is_const()) {
             throw compile_error{src_loc_tk,
                                 std::format("cannot assign to constant {}",
-                                            in_quotes(path_as_string_))};
+                                            in_quotes(dotted_path_))};
         }
 
-        tc.record_use(ident_info::root_of(path_as_string_), accessed_path(),
+        tc.record_use(ident_info::root_of(dotted_path_), accessed_path(),
                       use_kind::write);
     }
 
@@ -751,13 +749,12 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        if (not tc.make_ident_info(src_loc_tk, path_as_string_).is_array()) {
+        if (not tc.make_ident_info(src_loc_tk, dotted_path_).is_array()) {
             return;
         }
 
-        throw compile_error{src_loc_tk,
-                            std::format("array {} must be indexed",
-                                        in_quotes(path_as_string_))};
+        throw compile_error{src_loc_tk, std::format("array {} must be indexed",
+                                                    in_quotes(dotted_path_))};
     }
 
     // the '[' of an element needs an array
@@ -769,7 +766,7 @@ class stmt_identifier final : public statement {
         }
 
         const ident_info cur_ident_info{
-            tc.make_ident_info(src_loc_tk, path_as_string_),
+            tc.make_ident_info(src_loc_tk, dotted_path_),
         };
 
         if (tz.peek_char_after_whitespace() == '[' and
@@ -777,7 +774,7 @@ class stmt_identifier final : public statement {
 
             throw compile_error{src_loc_tk,
                                 std::format("cannot index non-array {}",
-                                            in_quotes(path_as_string_))};
+                                            in_quotes(dotted_path_))};
         }
     }
 
@@ -795,12 +792,29 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
+        const ident_info info{tc.make_ident_info(src_loc_tk, dotted_path_)};
 
         throw compile_error{name_tk,
                             std::format("method {} not found in type {}",
                                         in_quotes(name_tk.text()),
                                         in_quotes(info.type_ref().name()))};
+    }
+
+    // the address a call computed when it is of the root of this path, null
+    // when none did or it is before the path, e.g. in the argument that a
+    // parameter names
+    [[nodiscard]] auto
+    by_call_in_path(const std::optional<call_address>& by_call) const
+        -> const call_address* {
+
+        // note: the first binding met while resolving a path is its root, so a
+        //       call address is of the root or before the path
+
+        if (not by_call or by_call->trailing_count != elems_.size() - 1) {
+            return nullptr;
+        }
+
+        return &*by_call;
     }
 
     // a '.' followed by a field continues the path with that field, a method
@@ -838,8 +852,8 @@ class stmt_identifier final : public statement {
         elem_delims_tk_.emplace_back(dot_tk);
         src_loc_tk = tk;
         tk = next_tk;
-        path_as_string_.push_back('.');
-        path_as_string_ += tk.text();
+        dotted_path_.push_back('.');
+        dotted_path_ += tk.text();
 
         return true;
     }
@@ -853,7 +867,7 @@ class stmt_identifier final : public statement {
             return false;
         }
 
-        const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
+        const ident_info info{tc.make_ident_info(src_loc_tk, dotted_path_)};
 
         const type& path_type{info.type_ref()};
 
@@ -877,23 +891,6 @@ class stmt_identifier final : public statement {
 
         // without a field 'lst.clear = 1' reports the missing arguments
         return not path_type.has_field(name_tk.text());
-    }
-
-    // the known address when it is of the root of this path, null when none
-    // is known or it is before the path, e.g. in the argument that a
-    // parameter names
-    [[nodiscard]] auto
-    known_in_path(const std::optional<known_address>& known) const
-        -> const known_address* {
-
-        // note: the first binding met while resolving a path is its root, so a
-        //       known address is of the root or before the path
-
-        if (not known or known->trailing_count != elems_.size() - 1) {
-            return nullptr;
-        }
-
-        return &*known;
     }
 
     // note: after a run-time index the range stays the whole array
@@ -922,7 +919,7 @@ class stmt_identifier final : public statement {
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {
-        const ident_info info{tc.make_ident_info(src_loc_tk, path_as_string_)};
+        const ident_info info{tc.make_ident_info(src_loc_tk, dotted_path_)};
 
         set_type(info.type_ref());
 
@@ -1037,8 +1034,8 @@ class stmt_identifier final : public statement {
             return registers.address_register();
         }
 
-        // an owned base is a loaded pointer or an earlier fold target, reusing
-        // it keeps 'index_register' for the next index
+        // an owned base is a loaded held address or an earlier fold target,
+        // reusing it keeps 'index_register' for the next index
         for (const operand& r : registers.owned()) {
             // the frame register and the caller's registers are never owned,
             // so a match proves the base is private to this path
@@ -1068,26 +1065,27 @@ class stmt_identifier final : public statement {
         -> std::optional<size_t>;
 
     [[nodiscard]] static auto
-    load_pointer(toc& tc, const size_t indent, const token& src_loc_tk,
-                 path_registers& registers, const operand& pointer_slot)
+    load_held_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                      path_registers& registers, const operand& address_slot)
         -> operand {
 
         machine& x{tc.machine()};
 
-        const operand pointer_register{
+        const operand address_register{
             x.alloc_scratch_register(src_loc_tk, indent,
                                      tc.builtins().address()),
         };
 
-        registers.add(pointer_register);
+        registers.add(address_register);
 
-        x.copy_value(src_loc_tk, indent, pointer_register,
-                     operand::mem(pointer_slot, tc.builtins().address()));
+        x.copy_value(src_loc_tk, indent, address_register,
+                     operand::mem(address_slot, tc.builtins().address()));
 
-        return operand::mem(pointer_register, tc.builtins().address());
+        return operand::mem(address_register, tc.builtins().address());
     }
 
-    // an inlined argument's known address, a loaded pointer or the storage
+    // the address a call computed, the address a slot holds or the
+    // storage
     [[nodiscard]] static auto
     start_address(toc& tc, const size_t indent, const token& src_loc_tk,
                   path_registers& registers, const operand& known_operand,
@@ -1097,9 +1095,9 @@ class stmt_identifier final : public statement {
             return known_operand;
         }
 
-        if (storage.is_pointer()) {
-            return load_pointer(tc, indent, src_loc_tk, registers,
-                                storage.operand());
+        if (storage.holds_address()) {
+            return load_held_address(tc, indent, src_loc_tk, registers,
+                                     storage.operand());
         }
 
         return storage.operand();
@@ -1129,13 +1127,13 @@ struct place {
 
     // the name refers to the declared array, 'ps[1]' accesses one element
     const ident_info declared{
-        tc.make_ident_info(path.tok(), path.name_or_literal()),
+        tc.make_ident_info(path.tok(), path.dotted_path()),
     };
 
     const bool is_element{path.is_array_element()};
     ident_info info{ident_builder::as_element_if(is_element, declared)};
 
-    info.set_src_loc_tk(path.name_token());
+    info.set_src_loc_tk(path.last_token());
 
     return info;
 }
@@ -1147,9 +1145,8 @@ inline auto assert_not_whole_array(const stmt_identifier& path,
         return;
     }
 
-    throw compile_error{path.tok(),
-                        std::format("array {} must be indexed",
-                                    in_quotes(path.name_or_literal()))};
+    throw compile_error{path.tok(), std::format("array {} must be indexed",
+                                                in_quotes(path.dotted_path()))};
 }
 
 // a whole array is not read as its first element

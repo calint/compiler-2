@@ -49,7 +49,8 @@ class machine {
     // smaller, or to test the other version too, the first or the last
     enum class kept_version : uint8_t { smaller, first, last };
 
-    enum class builtin_function : uint8_t {
+    // a built-in the target provides as a system call or a routine
+    enum class target_call : uint8_t {
         read,
         write,
         exit,
@@ -84,7 +85,7 @@ class machine {
     // what the command line chooses for the target, a target reads what it
     // has, e.g. only the bare-metal ones a stack
     struct target_options {
-        assembler::jump_mode jumps{assembler::jump_mode::resolved};
+        assembler::jump_mode jumps{assembler::jump_mode::as_emitted};
         kept_version kept{kept_version::smaller};
         // the use of registers is kept for 'register_peak_report'
         bool register_report{};
@@ -187,7 +188,7 @@ class machine {
         std::string text;
     };
 
-    struct builtin_function_registers {
+    struct target_call_registers {
         // argument register names in parameter order
         std::span<const std::string_view> arguments;
 
@@ -722,8 +723,8 @@ class machine {
         -> std::string = 0;
 
     [[nodiscard]] virtual auto
-    registers_for_builtin_function(const builtin_function function) const
-        -> builtin_function_registers = 0;
+    registers_for_target_call(const target_call function) const
+        -> target_call_registers = 0;
 
     virtual auto reserve_variables(const size_t alignment,
                                    const size_t size_bytes) -> void = 0;
@@ -1163,7 +1164,7 @@ class machine {
                      const operand& size) -> void {
 
         call_sector_routine(src_loc_tk, indent, sector, address, size,
-                            builtin_function::sector_read);
+                            target_call::sector_read);
 
         mark_used("sector_read");
     }
@@ -1175,7 +1176,7 @@ class machine {
                       const operand& size) -> void {
 
         call_sector_routine(src_loc_tk, indent, sector, address, size,
-                            builtin_function::sector_write);
+                            target_call::sector_write);
 
         mark_used("sector_write");
     }
@@ -1242,12 +1243,12 @@ class machine {
     //
 
     // calls the routine of 'function', 'sector_read' or 'sector_write', with
-    // the arguments in the registers of 'registers_for_builtin_function'
-    virtual auto
-    call_sector_routine(const token& src_loc_tk, const size_t indent,
-                        const operand& sector, const operand& address,
-                        const operand& size, const builtin_function function)
-        -> void = 0;
+    // the arguments in the registers of 'registers_for_target_call'
+    virtual auto call_sector_routine(const token& src_loc_tk,
+                                     const size_t indent, const operand& sector,
+                                     const operand& address,
+                                     const operand& size,
+                                     const target_call function) -> void = 0;
 
     // the call instruction of 'call_function'
     virtual auto emit_call(const size_t indent, const std::string_view label)
@@ -1309,14 +1310,14 @@ class machine {
     //
 
     // the arguments of a call of 'function' and its result, when it has one,
-    // are in the registers 'registers_for_builtin_function' gives it
-    auto assert_builtin_registers(
-        const builtin_function function,
+    // are in the registers 'registers_for_target_call' gives it
+    auto assert_target_call_registers(
+        const target_call function,
         const std::initializer_list<const operand*> arguments,
         const operand* const result) const -> void {
 
-        const builtin_function_registers registers{
-            registers_for_builtin_function(function),
+        const target_call_registers registers{
+            registers_for_target_call(function),
         };
 
         assert(arguments.size() == registers.arguments.size());

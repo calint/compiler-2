@@ -187,7 +187,7 @@ class stmt_builtin_foo final : public statement {
                 .placement{
                     iterator.is_empty()
                         ? var_placement{}
-                        : var_placement{at_pointer_register{iterator}},
+                        : var_placement{at_address_register{iterator}},
                 },
                 .foo_array{array},
             },
@@ -337,12 +337,13 @@ class stmt_builtin_foo final : public statement {
         std::vector<operand> allocated_registers;
 
         const operand op{
-            ident_.compile_lea(tc, indent, tok(), allocated_registers,
-                               {
-                                   .reg_count{},
-                                   .known{array_info.known()},
-                                   .address_register{},
-                               }),
+            ident_.compile_lea(
+                tc, indent, tok(), allocated_registers,
+                {
+                    .reg_count{},
+                    .address_by_call{array_info.address_by_call()},
+                    .address_register{},
+                }),
         };
 
         x.address_of(tok(), indent, reg_iter, op);

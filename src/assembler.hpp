@@ -57,9 +57,8 @@
 
 class assembler {
   public:
-    // 'resolved' keeps the jumps as emitted, 'optimized' also removes and
-    // inverts jumps
-    enum class jump_mode : uint8_t { resolved, optimized };
+    // 'optimized' applies the jump optimizations listed above the class
+    enum class jump_mode : uint8_t { as_emitted, optimized };
 
   protected:
     struct jump_info {

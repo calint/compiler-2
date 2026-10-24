@@ -42,7 +42,7 @@ inline auto stmt_identifier::ident_elem::source_to(std::ostream& os) const
 
 inline stmt_identifier::stmt_identifier(toc& tc, unary_ops uops, token tk,
                                         tokenizer& tz)
-    : statement{tk, std::move(uops)}, path_as_string_{tk.text()} {
+    : statement{tk, std::move(uops)}, dotted_path_{tk.text()} {
 
     // e.g. '"abc"' in 'array_copy("abc", b, 3)'
     if (tk.is_string()) {
@@ -71,7 +71,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, unary_ops uops, token tk,
 
     resolve_accessed_bytes(tc);
 
-    tc.record_use(ident_info::root_of(path_as_string_), access_path_,
+    tc.record_use(ident_info::root_of(dotted_path_), access_path_,
                   use_kind::read);
 }
 
@@ -117,7 +117,7 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
     -> void {
 
     const ident_info array_info{
-        tc.make_ident_info(first_token(), path_as_string_),
+        tc.make_ident_info(first_token(), dotted_path_),
     };
 
     assert_constant_range(
@@ -132,7 +132,7 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
             },
             .count_tk{count_tk},
             .count_text{std::format("count {}", count)},
-            .array_name{path_as_string_},
+            .array_name{dotted_path_},
         });
 }
 

@@ -152,13 +152,13 @@ class stmt_builtin_array_copy final : public statement {
         x.comment(src.tok(), indent, statement::trimmed_source(src));
 
         const operand src_operand{
-            src.compile_lea(tc, indent, src.first_token(),
-                            allocated_scratch_registers,
-                            {
-                                .reg_count{src_count},
-                                .known{arrays.first.known()},
-                                .address_register{},
-                            }),
+            src.compile_lea(
+                tc, indent, src.first_token(), allocated_scratch_registers,
+                {
+                    .reg_count{src_count},
+                    .address_by_call{arrays.first.address_by_call()},
+                    .address_register{},
+                }),
         };
 
         const operand dst_count{
@@ -168,13 +168,13 @@ class stmt_builtin_array_copy final : public statement {
         x.comment(dst.tok(), indent, statement::trimmed_source(dst));
 
         const operand dst_operand{
-            dst.compile_lea(tc, indent, dst.first_token(),
-                            allocated_scratch_registers,
-                            {
-                                .reg_count{dst_count},
-                                .known{arrays.second.known()},
-                                .address_register{},
-                            }),
+            dst.compile_lea(
+                tc, indent, dst.first_token(), allocated_scratch_registers,
+                {
+                    .reg_count{dst_count},
+                    .address_by_call{arrays.second.address_by_call()},
+                    .address_register{},
+                }),
         };
 
         x.copy(tok(), indent, dst_operand, src_operand,

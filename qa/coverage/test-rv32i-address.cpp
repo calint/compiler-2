@@ -777,7 +777,7 @@ auto check_line_sizes() -> void {
 // scratch, in every jump mode
 auto check_equal_size_choice() -> void {
     for (const assembler::jump_mode jumps :
-         {assembler::jump_mode::resolved, assembler::jump_mode::optimized}) {
+         {assembler::jump_mode::as_emitted, assembler::jump_mode::optimized}) {
         std::ostringstream output;
         machine_rv32i_linux backend{test_builtins, test_files, {.jumps{jumps}}};
         backend.start();
@@ -1260,9 +1260,9 @@ auto check_x86_syscall_register_saving() -> void {
                     hold_scratch_registers(backend, scratch_count_to_r11, byte);
             }
 
-            const machine::builtin_function_registers contract{
-                backend.registers_for_builtin_function(
-                    machine::builtin_function::write),
+            const machine::target_call_registers contract{
+                backend.registers_for_target_call(
+                    machine::target_call::write),
             };
 
             std::vector<operand> args;
@@ -3821,7 +3821,7 @@ auto emit_io_tests(machine_rv32i& backend) -> void {
 
     std::vector<operand> io_args;
     for (const std::string_view name :
-         backend.registers_for_builtin_function(machine::builtin_function::read)
+         backend.registers_for_target_call(machine::target_call::read)
              .arguments) {
         io_args.push_back(
             backend.alloc_named_register(token{}, 0, name, integer));
@@ -4173,10 +4173,10 @@ auto main(const int argc, const char* argv[]) -> int {
         generate_long_loop();
     } else if (mode == "far-jumps" or mode == "far-jumps-optimized") {
         generate_far_jumps(mode == "far-jumps"
-                               ? assembler::jump_mode::resolved
+                               ? assembler::jump_mode::as_emitted
                                : assembler::jump_mode::optimized);
     } else if (mode == "far-foo" or mode == "far-foo-optimized") {
-        generate_far_foo(mode == "far-foo" ? assembler::jump_mode::resolved
+        generate_far_foo(mode == "far-foo" ? assembler::jump_mode::as_emitted
                                            : assembler::jump_mode::optimized);
     } else if (mode == "bounds-matrix") {
         generate_bounds();

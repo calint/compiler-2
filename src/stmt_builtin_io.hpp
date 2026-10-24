@@ -28,7 +28,7 @@ class stmt_builtin_io final : public expression {
     // place of the descriptor and has no count and no result
     struct io_function {
         std::string_view name;
-        machine::builtin_function function{};
+        machine::target_call function{};
         size_t min_arg_count{};
         size_t max_arg_count{};
         bool fills_buffer{};
@@ -49,7 +49,7 @@ class stmt_builtin_io final : public expression {
     static constexpr std::array<io_function, 4> functions_{
         io_function{
             .name{"read"},
-            .function{machine::builtin_function::read},
+            .function{machine::target_call::read},
             .min_arg_count{2},
             .max_arg_count{4},
             .fills_buffer{true},
@@ -57,7 +57,7 @@ class stmt_builtin_io final : public expression {
         },
         io_function{
             .name{"write"},
-            .function{machine::builtin_function::write},
+            .function{machine::target_call::write},
             .min_arg_count{2},
             .max_arg_count{4},
             .fills_buffer{false},
@@ -65,7 +65,7 @@ class stmt_builtin_io final : public expression {
         },
         io_function{
             .name{"sector_read"},
-            .function{machine::builtin_function::sector_read},
+            .function{machine::target_call::sector_read},
             .min_arg_count{2},
             .max_arg_count{3},
             .fills_buffer{true},
@@ -73,7 +73,7 @@ class stmt_builtin_io final : public expression {
         },
         io_function{
             .name{"sector_write"},
-            .function{machine::builtin_function::sector_write},
+            .function{machine::target_call::sector_write},
             .min_arg_count{2},
             .max_arg_count{3},
             .fills_buffer{false},
@@ -140,8 +140,8 @@ class stmt_builtin_io final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const machine::builtin_function_registers registers{
-            x.registers_for_builtin_function(io_.function),
+        const machine::target_call_registers registers{
+            x.registers_for_target_call(io_.function),
         };
 
         const std::vector<operand> args{
@@ -205,7 +205,7 @@ class stmt_builtin_io final : public expression {
         }
 
         const std::optional<storage_path> written{
-            tc.storage_of(ident_info::root_of(buffer_path().name_or_literal()),
+            tc.storage_of(ident_info::root_of(buffer_path().dotted_path()),
                           buffer_path().accessed_path()),
         };
 
@@ -214,7 +214,7 @@ class stmt_builtin_io final : public expression {
 
         visitor({
             .call_tk{tok()},
-            .name{buffer_path().name_or_literal()},
+            .name{buffer_path().dotted_path()},
             .storage{*written},
             .is_write{true},
         });
@@ -366,7 +366,7 @@ class stmt_builtin_io final : public expression {
                         ? std::format("count {}", *count)
                         : std::format("a sector of {} elements", *count),
                 },
-                .array_name{buffer.path->name_or_literal()},
+                .array_name{buffer.path->dotted_path()},
             });
     }
 
@@ -522,12 +522,13 @@ class stmt_builtin_io final : public expression {
         std::vector<operand> lea_registers;
 
         const operand buffer_lea{
-            path.compile_lea(tc, indent, path.tok(), lea_registers,
-                             {
-                                 .reg_count{range},
-                                 .known{buffer.info.known()},
-                                 .address_register{},
-                             }),
+            path.compile_lea(
+                tc, indent, path.tok(), lea_registers,
+                {
+                    .reg_count{range},
+                    .address_by_call{buffer.info.address_by_call()},
+                    .address_register{},
+                }),
         };
 
         x.address_of(tok(), indent, buffer_reg, buffer_lea);
@@ -634,7 +635,7 @@ class stmt_builtin_io final : public expression {
     auto emit_call(machine& x, const size_t indent, const operand& result,
                    const std::vector<operand>& args) const -> void {
 
-        if (io_.function == machine::builtin_function::read) {
+        if (io_.function == machine::target_call::read) {
             x.read(tok(), indent, result, args.at(0), args.at(1), args.at(2));
             return;
         }
@@ -645,7 +646,7 @@ class stmt_builtin_io final : public expression {
     auto emit_sector_call(machine& x, const size_t indent,
                           const std::vector<operand>& args) const -> void {
 
-        if (io_.function == machine::builtin_function::sector_read) {
+        if (io_.function == machine::target_call::sector_read) {
             x.sector_read(tok(), indent, args.at(0), args.at(1), args.at(2));
             return;
         }

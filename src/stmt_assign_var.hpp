@@ -118,7 +118,7 @@ class stmt_assign_var final : public statement {
         };
 
         // the destination is written at the address computed here
-        const bool is_address_known{
+        const bool is_final_address{
             stmt_ident_.has_computed_address(var_info),
         };
 
@@ -126,7 +126,7 @@ class stmt_assign_var final : public statement {
             destination::of_name(var_info,
                                  {
                                      .address{address},
-                                     .is_address_known{is_address_known},
+                                     .is_final_address{is_final_address},
                                      .storage{dst_storage},
                                      .text{stmt_ident_.path_text()},
                                  }),

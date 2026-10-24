@@ -98,6 +98,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        D.5. 'machine::builtin_function' (enum) beside the catalog struct
             'builtin_function': 'machine::target_call'
        D.6. 'jump_mode::resolved' means "as emitted": 'as_emitted'
+       => D done (2026-10-24): D.1 'holds_address' ('ident_info',
+          'call_kind_item'), 'at_address_register',
+          'var_access::through_address', 'load_held_address'; D.2
+          'call_address', 'address_by_call', 'has_address_by_call',
+          'destination::is_final_address'; the two 'of_name' overloads keep
+          their flags, they differ by the operand passed (a held address
+          passes its slot); D.3 'dotted_path', 'name_token' gone (it was
+          'last_token'); D.4 'bound_name', 'bind_name', 'make_name'; D.5
+          'machine::target_call', 'registers_for_target_call',
+          'target_call_registers', 'assert_target_call_registers'; D.6
+          'as_emitted'; C.2 decided (user): kept, as
+          'check_options::reports_line' with a comment
     E. one home per concept
        E.1. the storage of an identifier: 'stmt_identifier::storage(tc) ->
             optional<storage_path>' replaces the six 'tc.storage_of(<root>,

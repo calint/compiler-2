@@ -250,8 +250,8 @@ A noinline function has a body of its own and a frame in memory that holds the
 addresses of its result and arguments ('stmt_call.hpp', 'noinline_call').
 
 What resolution gives is an 'ident_info': a constant, a register or a
-variable with its memory operand and the deepest address known from the calls
-('known_address'). 'statement::compile' writes its value to a 'destination':
+variable with its memory operand and the deepest address an inlined call
+computed ('call_address'). 'statement::compile' writes its value to a 'destination':
 nowhere for a statement, a register, or the storage a resolved name is at.
 
 ### 1.4 Dry runs
@@ -1224,7 +1224,7 @@ count of a bulk operation, e.g. 'array_copy(a[i], b, n)', the check covers
 
 An argument with a run-time index is computed once at the call, the body of
 the inlined function reaches it through its parameter. The binding of the
-parameter keeps the operand ('bound_storage::lea'):
+parameter keeps the operand ('bound_name::lea'):
 
 ```text
 w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
@@ -1235,7 +1235,7 @@ w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
 ```
 
 A path in the body starts at that address instead of at the root variable
-('known_address'): its 'trailing_count' is the number of elements of the path
+('call_address'): its 'trailing_count' is the number of elements of the path
 after the parameter, 1 for the 'x' of 'self.x', so 'compile_lea' starts at the
 element the address belongs to and adds only the rest. The registers stay
 allocated until the body is compiled. On rv32i the body may instead use the
@@ -1257,7 +1257,8 @@ path's own ('fold_register'):
 
 ```text
 1. the register the caller loads the final address into anyway
-2. a base the path loaded itself, a pointer or an earlier fold
+2. a base the path loaded itself, an address held in a slot or an earlier
+   fold
 3. the index register being folded, the next index then gets a new one
 4. otherwise a new register
 ```

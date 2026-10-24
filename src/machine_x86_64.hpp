@@ -878,8 +878,8 @@ class machine_x86_64 final : public machine {
               const operand& descriptor, const operand& address,
               const operand& count) -> void override {
 
-        assert_builtin_registers(builtin_function::read,
-                                 {&descriptor, &address, &count}, &dst);
+        assert_target_call_registers(target_call::read,
+                                     {&descriptor, &address, &count}, &dst);
 
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
                    syscall_read_);
@@ -892,8 +892,8 @@ class machine_x86_64 final : public machine {
     }
 
     [[nodiscard]] auto
-    registers_for_builtin_function(const builtin_function function) const
-        -> builtin_function_registers override {
+    registers_for_target_call(const target_call function) const
+        -> target_call_registers override {
 
         static constexpr std::array<std::string_view, 3> io_args{
             "rdi",
@@ -903,7 +903,7 @@ class machine_x86_64 final : public machine {
 
         static constexpr std::array<std::string_view, 1> exit_args{"rdi"};
 
-        if (function == builtin_function::exit) {
+        if (function == target_call::exit) {
             return {
                 .arguments{exit_args},
                 .result{},
@@ -911,8 +911,8 @@ class machine_x86_64 final : public machine {
         }
 
         // the sector, the address and the size
-        if (function == builtin_function::sector_read or
-            function == builtin_function::sector_write) {
+        if (function == target_call::sector_read or
+            function == target_call::sector_write) {
 
             return {
                 .arguments{io_args},
@@ -1040,8 +1040,8 @@ class machine_x86_64 final : public machine {
                const operand& descriptor, const operand& address,
                const operand& count) -> void override {
 
-        assert_builtin_registers(builtin_function::write,
-                                 {&descriptor, &address, &count}, &dst);
+        assert_target_call_registers(target_call::write,
+                                     {&descriptor, &address, &count}, &dst);
 
         io_syscall(src_loc_tk, indent, dst, descriptor, address, count,
                    syscall_write_);
@@ -1112,15 +1112,16 @@ class machine_x86_64 final : public machine {
     // arguments, the allocated ones are saved around the call
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
                              const operand& sector, const operand& address,
-                             const operand& size,
-                             const builtin_function function) -> void override {
+                             const operand& size, const target_call function)
+        -> void override {
 
         for (const operand* value : {&sector, &address, &size}) {
             assert(value->is_register() and
                    value->type_ref().size_bytes() == size_qword_);
         }
 
-        assert_builtin_registers(function, {&sector, &address, &size}, nullptr);
+        assert_target_call_registers(function, {&sector, &address, &size},
+                                     nullptr);
 
         static constexpr std::array<std::string_view, 4> clobbered{
             "rax",
@@ -1130,8 +1131,8 @@ class machine_x86_64 final : public machine {
         };
 
         const std::string_view label{
-            function == builtin_function::sector_read ? sector_read_label_
-                                                      : sector_write_label_,
+            function == target_call::sector_read ? sector_read_label_
+                                                 : sector_write_label_,
         };
 
         comment(src_loc_tk, indent, "sector of the sd card");

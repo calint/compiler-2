@@ -1244,7 +1244,7 @@ class expr_arith final : public expression {
         const bool is_named{path and not path->is_indexed()};
 
         const std::string_view converted{
-            is_named ? path->name_or_literal() : "...",
+            is_named ? path->dotted_path() : "...",
         };
 
         // note: the list may be narrower than 'int', e.g. 'y + b' of an 'i8'

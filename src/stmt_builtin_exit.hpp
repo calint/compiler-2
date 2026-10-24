@@ -46,8 +46,8 @@ class stmt_builtin_exit final : public expression {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const machine::builtin_function_registers registers{
-            x.registers_for_builtin_function(machine::builtin_function::exit),
+        const machine::target_call_registers registers{
+            x.registers_for_target_call(machine::target_call::exit),
         };
 
         // note: the exit code is the only argument

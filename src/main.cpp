@@ -539,7 +539,7 @@ examples:
         const machine::target_options target_opts{
             .jumps{
                 opts.optimize_jumps ? assembler::jump_mode::optimized
-                                    : assembler::jump_mode::resolved,
+                                    : assembler::jump_mode::as_emitted,
             },
             .kept{opts.kept_version},
             .register_report{opts.reports.registers},
@@ -547,7 +547,7 @@ examples:
             .binary_file_name{binary},
             .stack_size_bytes{opts.stack_size_bytes},
             .memory_size_bytes{opts.memory_size_bytes},
-            .reports_line{opts.checks.with_line},
+            .reports_line{opts.checks.reports_line},
         };
 
         const std::unique_ptr<machine> backend{
@@ -735,7 +735,7 @@ constexpr std::array<check_name, 10> check_names{
     {
         {.text{"upper"}, .member{&check_options::bounds_upper}, .is_ub{true}},
         {.text{"lower"}, .member{&check_options::bounds_lower}, .is_ub{true}},
-        {.text{"line"}, .member{&check_options::with_line}, .is_ub{false}},
+        {.text{"line"}, .member{&check_options::reports_line}, .is_ub{false}},
         {.text{"frame"}, .member{&check_options::frame}, .is_ub{true}},
         {.text{"alias"}, .member{&check_options::alias}, .is_ub{true}},
         {.text{"division"}, .member{&check_options::division}, .is_ub{true}},

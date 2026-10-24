@@ -171,9 +171,11 @@ struct bound_register {
     std::string name;
 };
 
-// a parameter that names storage of the caller, e.g. 'p' of
-// 'f(world.rooms[i])', or the result that names the destination
-struct bound_storage {
+// a parameter that names a place of the caller by its path, resolved again in
+// the frames of the caller: storage, e.g. 'p' of 'f(world.rooms[i])', a name
+// held in a register, e.g. the counter 'i' of a 'foo', or the result that
+// names the destination
+struct bound_name {
     // e.g. 'world.rooms', resolved in the frames of the caller
     std::string path;
     // the address computed at the call, empty when the path finds it, e.g.
@@ -194,15 +196,15 @@ struct param_binding {
     std::string from;
     // the type of the parameter or the result
     const type* type_ptr{};
-    std::variant<bound_constant, bound_register, bound_storage> target;
+    std::variant<bound_constant, bound_register, bound_name> target;
 
     // the storage that the parameter names with 'path' inside it, empty when
     // its argument holds none, e.g. a constant or a value in a register
     [[nodiscard]] auto bound_storage_of(const access_path& path) const
         -> std::optional<storage_path> {
 
-        const bound_storage* const storage{
-            std::get_if<bound_storage>(&target),
+        const bound_name* const storage{
+            std::get_if<bound_name>(&target),
         };
 
         if (storage == nullptr or not storage->bound) {
@@ -233,7 +235,7 @@ struct param_binding {
             return reg->name;
         }
 
-        return std::get<bound_storage>(target).path;
+        return std::get<bound_name>(target).path;
     }
 
     //
@@ -262,6 +264,17 @@ struct param_binding {
         };
     }
 
+    [[nodiscard]] static auto make_name(const std::string_view name,
+                                        const type& param_type,
+                                        bound_name storage) -> param_binding {
+
+        return {
+            .from{std::string{name}},
+            .type_ptr{&param_type},
+            .target{std::move(storage)},
+        };
+    }
+
     [[nodiscard]] static auto
     make_register(const std::string_view name, const type& param_type,
                   const operand& reg, const std::string_view reg_name)
@@ -287,18 +300,6 @@ struct param_binding {
         -> param_binding {
 
         return make_register(name, param_type, reg, reg.base_register());
-    }
-
-    [[nodiscard]] static auto make_storage(const std::string_view name,
-                                           const type& param_type,
-                                           bound_storage storage)
-        -> param_binding {
-
-        return {
-            .from{std::string{name}},
-            .type_ptr{&param_type},
-            .target{std::move(storage)},
-        };
     }
 };
 
@@ -784,9 +785,9 @@ class ident_builder final {
                                     std::move(type_path),
                                     {
                                         .operand{op},
-                                        .known{},
+                                        .address_by_call{},
                                         .shape{shape},
-                                        .is_pointer{
+                                        .holds_address{
                                             holds_address(var.placement),
                                         },
                                         .read_only_why{var.read_only_why},
@@ -800,8 +801,8 @@ class ident_builder final {
                                         const int64_t offset,
                                         const type& value_type) -> operand {
 
-        if (const at_pointer_register* const pointed{
-                std::get_if<at_pointer_register>(&placement),
+        if (const at_address_register* const pointed{
+                std::get_if<at_address_register>(&placement),
             }) {
 
             return operand::mem(pointed->reg.base_register(), "", 1, offset,
@@ -827,16 +828,18 @@ class ident_builder final {
     static auto place_operand_from_lea(const token& src_loc_tk,
                                        ident_info& info) -> void {
 
-        const std::optional<known_address>& known{info.storage().known};
+        const std::optional<call_address>& by_call{
+            info.storage().address_by_call,
+        };
 
-        if (not known) {
+        if (not by_call) {
             return;
         }
 
-        const operand& lea{known->address};
+        const operand& lea{by_call->address};
 
         const size_t lea_index{
-            info.elem_path().size() - 1 - known->trailing_count,
+            info.elem_path().size() - 1 - by_call->trailing_count,
         };
 
         // example of resulting data structure:
@@ -856,7 +859,7 @@ class ident_builder final {
         // 'rooms[i]' is in a register and the fields after it are addressed
         // from that register
 
-        // the fields after the known address are at fixed offsets from it
+        // the fields after the call address are at fixed offsets from it
         const std::span<const std::string> elem_path_from_lea{
             std::span{info.elem_path()}.subspan(lea_index),
         };
@@ -878,7 +881,7 @@ class ident_builder final {
     //   res -> pt.x becomes pt.x
     //   pt.x -> p becomes p.x
     //   lnk.count -> world.room.link becomes world.room.link.count
-    [[nodiscard]] static auto replace_binding_base(const bound_storage& binding,
+    [[nodiscard]] static auto replace_binding_base(const bound_name& binding,
                                                    const ident_path& id)
         -> ident_path {
 
@@ -1309,7 +1312,8 @@ class data_table final {
 struct check_options {
     bool bounds_upper{};
     bool bounds_lower{};
-    bool with_line{};
+    // read by 'main' only, the machine has it as 'target_options::reports_line'
+    bool reports_line{};
     bool frame{};
     // on unless '--checks=-alias'
     bool alias{true};
@@ -2147,7 +2151,7 @@ class ident_resolver final {
 
         // the first address met is the deepest, outer bindings only rewrite
         // the base of the path
-        std::optional<known_address> known;
+        std::optional<call_address> address_by_call;
 
         // a binding to an element names the element, not the array holding it
         bool is_element{};
@@ -2281,7 +2285,7 @@ class ident_resolver final {
                 ident_info info{
                     resolve_var(src_loc_tk, ident, step.id,
                                 frm.get_var_const_ref(step.id.base()),
-                                step.known),
+                                step.address_by_call),
                 };
 
                 return ident_builder::as_element_if(step.is_element,
@@ -2317,7 +2321,8 @@ class ident_resolver final {
     [[nodiscard]] auto
     resolve_var(const token& src_loc_tk, const std::string_view ident,
                 const ident_path& id, const var_info& var,
-                const std::optional<known_address>& known) const -> ident_info {
+                const std::optional<call_address>& by_call) const
+        -> ident_info {
 
         if (const in_value_register* const in_register{
                 std::get_if<in_value_register>(&var.placement),
@@ -2333,7 +2338,7 @@ class ident_resolver final {
                 machine_.get().variables_base_register()),
         };
 
-        info.storage().known = known;
+        info.storage().address_by_call = by_call;
 
         if (not info.type_ref().is_builtin()) {
             return info;
@@ -2379,15 +2384,15 @@ class ident_resolver final {
             return ident_info::make_register(ident, reg->reg);
         }
 
-        const bound_storage& storage{std::get<bound_storage>(binding.target)};
+        const bound_name& storage{std::get<bound_name>(binding.target)};
 
         // a field path such as 'p.x' gets its array-ness from the field
         if (storage.is_element and is_single) {
             step.is_element = true;
         }
 
-        if (not step.known and not storage.lea.is_empty()) {
-            step.known = known_address{
+        if (not step.address_by_call and not storage.lea.is_empty()) {
+            step.address_by_call = call_address{
                 .address{storage.lea},
                 .trailing_count{step.id.path().size() - 1},
             };
@@ -3166,7 +3171,7 @@ class toc final {
     // the parse is over: its frames are popped and its use of storage is
     // forgotten, declarations comment where they are stored and the storage
     // capacity is checked, e.g. a parameter 'self' of a type larger than the
-    // vars section is a pointer once the body is compiled
+    // vars section holds an address once the body is compiled
     auto begin_compile() -> void {
         assert(not is_compiling_);
         assert(scopes_.is_empty());

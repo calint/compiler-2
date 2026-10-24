@@ -320,8 +320,8 @@ class stmt_def_func final : public statement {
     body_uses body_uses_;
 
     // how the body reaches the result and the parameters: a parsed body only
-    // names them, a compiled noinline body has pointers to them in its frame
-    enum class var_access : uint8_t { direct, through_pointer };
+    // names them, a compiled noinline body has their addresses in its frame
+    enum class var_access : uint8_t { direct, through_address };
 
   public:
     // a function of the user code, or an instance of a generic definition,
@@ -608,10 +608,11 @@ class stmt_def_func final : public statement {
                                            head_.mut_tk.is_empty()});
     }
 
-    // a noinline body reaches the result and the arguments through pointer
-    // slots in its frame. the array lengths are those of the body instance,
-    // empty where no call gives them: in the parse and in 'check_body'. the
-    // receiver is at 'address_register' instead of the frame, when given
+    // a noinline body reaches the result and the arguments through slots in
+    // its frame that hold their addresses. the array lengths are those of the
+    // body instance, empty where no call gives them: in the parse and in
+    // 'check_body'. the receiver is at 'address_register' instead of the frame,
+    // when given
     auto add_signature_vars(toc& tc, const size_t indent,
                             const var_access access,
                             const std::span<const size_t> array_lengths,
@@ -620,7 +621,7 @@ class stmt_def_func final : public statement {
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
 
-        const bool is_pointer{access == var_access::through_pointer};
+        const bool holds_address{access == var_access::through_address};
 
         size_t next_array_index{};
 
@@ -635,7 +636,7 @@ class stmt_def_func final : public statement {
                                in_storage{
                                    .offset{},
                                    .base_register{},
-                                   .holds_address{is_pointer},
+                                   .holds_address{holds_address},
                                },
                            },
                            .foo_array{},
@@ -659,12 +660,12 @@ class stmt_def_func final : public statement {
                 not address_register.is_empty() and param_index == 0,
             };
 
-            const at_pointer_register address_in_register{address_register};
+            const at_address_register address_in_register{address_register};
 
             const in_storage stored{
                 .offset{},
                 .base_register{},
-                .holds_address{is_pointer},
+                .holds_address{holds_address},
             };
 
             const var_placement placement{
@@ -804,7 +805,7 @@ class stmt_def_func final : public statement {
 
         add_constants(tc, indent + 1);
 
-        add_signature_vars(tc, indent + 1, var_access::through_pointer,
+        add_signature_vars(tc, indent + 1, var_access::through_address,
                            array_lengths, slot_register);
 
         compile_statements(tc, indent);

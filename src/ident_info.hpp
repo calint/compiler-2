@@ -4,7 +4,7 @@
 // ('var_info'), where 'compile' writes a value ('destination'), what a
 // caller asks of the address of an identifier ('lea_request'), why a name
 // cannot be written ('read_only_cause'), an address computed at an inlined
-// call ('known_address'), a value known at compile time ('folded_value'),
+// call ('call_address'), a value known at compile time ('folded_value'),
 // where a variable lives ('var_placement') and how a value is used
 // ('value_use')
 
@@ -138,7 +138,7 @@ struct in_storage {
 
 // e.g. the element 'e' of a 'foo' or a parameter whose address the call
 // passes in a register
-struct at_pointer_register {
+struct at_address_register {
     operand reg;
 };
 
@@ -148,7 +148,7 @@ struct in_value_register {
 };
 
 using var_placement =
-    std::variant<in_storage, at_pointer_register, in_value_register>;
+    std::variant<in_storage, at_address_register, in_value_register>;
 
 // the storage of the variable holds its address, see 'in_storage'
 [[nodiscard]] inline auto holds_address(const var_placement& placement)
@@ -162,8 +162,8 @@ using var_placement =
 [[nodiscard]] inline auto register_of(const var_placement& placement)
     -> operand {
 
-    if (const at_pointer_register* const pointed{
-            std::get_if<at_pointer_register>(&placement),
+    if (const at_address_register* const pointed{
+            std::get_if<at_address_register>(&placement),
         }) {
 
         return pointed->reg;
@@ -198,7 +198,7 @@ struct var_info {
 // '[rbp + r15 * 8 + 16]' for 'rooms[i]' of the argument 'world.rooms[i]';
 // 'trailing_count' is the elements of the path after it, e.g. 1 for the 'x'
 // of 'p.x' when 'p' names 'world.rooms[i]'
-struct known_address {
+struct call_address {
     operand address;
     size_t trailing_count{};
 };
@@ -212,10 +212,10 @@ class ident_info final {
     // a variable or the storage that an argument names
     struct storage_part {
         ::operand operand;
-        // the deepest address known from the calls, empty when none is
-        std::optional<known_address> known;
+        // the deepest address an inlined call computed, empty when none did
+        std::optional<call_address> address_by_call;
         array_shape shape;
-        bool is_pointer{};
+        bool holds_address{};
         read_only_cause read_only_why{};
     };
 
@@ -236,6 +236,11 @@ class ident_info final {
         part_;
 
   public:
+    [[nodiscard]] auto address_by_call() const -> std::optional<call_address> {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+        return storage == nullptr ? std::nullopt : storage->address_by_call;
+    }
+
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
         return shape().length();
     }
@@ -254,17 +259,22 @@ class ident_info final {
         return shape().element_count();
     }
 
-    [[nodiscard]] auto has_known_address() const -> bool {
-        return known().has_value();
+    [[nodiscard]] auto has_address_by_call() const -> bool {
+        return address_by_call().has_value();
+    }
+
+    [[nodiscard]] auto holds_address() const -> bool {
+        const storage_part* const storage{std::get_if<storage_part>(&part_)};
+        return storage != nullptr and storage->holds_address;
     }
 
     // e.g. 'p.x', the name as resolved
     [[nodiscard]] auto id() const -> const std::string& { return id_; }
 
-    // the root is a pointer, or an argument whose address an inlined call
-    // computed at run time
+    // the root holds an address, or is an argument whose address an inlined
+    // call computed at run time
     [[nodiscard]] auto is_address_computed() const -> bool {
-        return is_pointer() or has_known_address();
+        return holds_address() or has_address_by_call();
     }
 
     [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
@@ -282,11 +292,6 @@ class ident_info final {
         return shape().is_length_unknown();
     }
 
-    [[nodiscard]] auto is_pointer() const -> bool {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage != nullptr and storage->is_pointer;
-    }
-
     [[nodiscard]] auto is_read_only() const -> bool {
         return read_only_why() != read_only_cause::none;
     }
@@ -297,11 +302,6 @@ class ident_info final {
 
     [[nodiscard]] auto is_var() const -> bool {
         return std::holds_alternative<storage_part>(part_);
-    }
-
-    [[nodiscard]] auto known() const -> std::optional<known_address> {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage == nullptr ? std::nullopt : storage->known;
     }
 
     // the register that holds the value, or the storage operand, e.g.
@@ -482,8 +482,8 @@ class destination final {
     // where the name is in the source, empty when it is not
     token src_loc_tk_;
     // the operand is the address, the name need not be resolved again, e.g.
-    // an indexed element or a pointer that was loaded
-    bool is_address_known_{};
+    // an indexed element or an address loaded from a slot
+    bool is_final_address_{};
     // an unsized one gets its length from the argument
     array_shape shape_;
     // an operand of an operator, e.g. the 'g()' of 'w + g()', see 'as_operand'
@@ -498,7 +498,7 @@ class destination final {
     // what a resolved name adds when it is the destination of an assignment
     struct name_parts {
         ::operand address;
-        bool is_address_known{};
+        bool is_final_address{};
         std::optional<storage_path> storage;
         std::string text;
     };
@@ -538,7 +538,7 @@ class destination final {
         result.operand_.increment_offset(
             address_offset(index * type_ref().size_bytes()));
 
-        result.is_address_known_ = true;
+        result.is_final_address_ = true;
         result.shape_ = {};
         result.storage_->path.add_fixed_index(index);
         result.text_ += std::format("[{}]", index);
@@ -560,7 +560,7 @@ class destination final {
 
         destination result{*this};
         result.operand_ = operand_at(fld.offset, fld.type());
-        result.is_address_known_ = true;
+        result.is_final_address_ = true;
         result.name_ += std::format(".{}", fld.name);
         result.type_ptr_ = &fld.type();
         result.src_loc_tk_ = {};
@@ -578,13 +578,13 @@ class destination final {
         return result;
     }
 
-    [[nodiscard]] auto is_address_known() const -> bool {
-        return is_address_known_;
-    }
-
     [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
 
     [[nodiscard]] auto is_empty() const -> bool { return type_ptr_ == nullptr; }
+
+    [[nodiscard]] auto is_final_address() const -> bool {
+        return is_final_address_;
+    }
 
     // see 'array_shape::is_length_unknown'
     [[nodiscard]] auto is_length_unknown() const -> bool {
@@ -653,7 +653,7 @@ class destination final {
 
         return of_name(info, {
                                  .address{info.operand()},
-                                 .is_address_known{info.has_known_address()},
+                                 .is_final_address{info.has_address_by_call()},
                                  .storage{std::move(storage)},
                                  .text{info.id()},
                              });
@@ -674,7 +674,7 @@ class destination final {
         result.text_ = std::move(parts.text);
         result.src_loc_tk_ = info.src_loc_tk();
 
-        result.is_address_known_ = parts.is_address_known;
+        result.is_final_address_ = parts.is_final_address;
 
         result.shape_ = info.shape();
         result.storage_ = std::move(parts.storage);
@@ -700,8 +700,8 @@ struct lea_request {
     // the count of a span operation on an array, empty without one
     operand reg_count;
 
-    // the deepest address of the path known from the calls
-    std::optional<known_address> known;
+    // the deepest address of the path an inlined call computed
+    std::optional<call_address> address_by_call;
 
     // the register the caller prefers the address to start in
     operand address_register;
