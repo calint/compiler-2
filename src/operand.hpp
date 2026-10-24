@@ -182,6 +182,7 @@ class operand final {
     // the register the backend allocated, e.g. 'rax' for the operand 'eax',
     // empty when the operand does not own the register it names
     std::string allocation_register_;
+    // the register of a register operand, the base of a memory operand
     std::string base_register_;
     std::string index_register_;
     int64_t immediate_{};
@@ -196,7 +197,10 @@ class operand final {
         return allocation_register_;
     }
 
+    // the base of a memory operand, e.g. 'rbp' of '[rbp + 8]'
     [[nodiscard]] auto base_register() const -> const std::string& {
+        assert(is_memory());
+
         return base_register_;
     }
 
@@ -244,6 +248,13 @@ class operand final {
         return kind_ == kind::symbol;
     }
 
+    // the register of a register operand, e.g. 'rax'
+    [[nodiscard]] auto register_name() const -> const std::string& {
+        assert(is_register());
+
+        return base_register_;
+    }
+
     [[nodiscard]] auto scale() const -> uint64_t { return scale_; }
 
     auto set_allocation_register(const std::string_view name) -> void {
@@ -262,6 +273,19 @@ class operand final {
         assert(type_ptr_);
 
         return *type_ptr_;
+    }
+
+    // the register operand 'name', or a memory operand with 'name' as its base
+    // or index; a backend with more names for one register compares indexes
+    [[nodiscard]] auto uses_register(const std::string_view name) const
+        -> bool {
+
+        if (is_register()) {
+            return base_register_ == name;
+        }
+
+        return is_memory() and
+               (base_register_ == name or index_register_ == name);
     }
 
     //

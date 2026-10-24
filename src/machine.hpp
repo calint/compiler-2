@@ -351,11 +351,10 @@ class machine {
               saved_count_{backend.state_.registers.allocations().size()} {
 
             for (const operand* value : {&dst, &src}) {
-                if (value->is_register() or value->is_memory()) {
+                if (value->is_register()) {
+                    backend.protect_register(value->register_name());
+                } else if (value->is_memory()) {
                     backend.protect_register(value->base_register());
-                }
-
-                if (value->is_memory()) {
                     backend.protect_register(value->index_register());
                 }
             }
@@ -1124,7 +1123,7 @@ class machine {
 
         assert(reg.is_register());
 
-        operand result{make_register_operand(reg.base_register(), type_ref)};
+        operand result{make_register_operand(reg.register_name(), type_ref)};
 
         result.set_allocation_register(reg.allocation_register());
 
@@ -1369,13 +1368,13 @@ class machine {
              std::views::zip(arguments, registers.arguments)) {
 
             assert(arg.is_register() and
-                   register_index_of(arg.base_register()) ==
+                   register_index_of(arg.register_name()) ==
                        register_index_of(name));
         }
 
         assert(result.is_empty() == registers.result.empty());
 
-        assert(result.is_empty() or register_index_of(result.base_register()) ==
+        assert(result.is_empty() or register_index_of(result.register_name()) ==
                                         register_index_of(registers.result));
     }
 
@@ -1425,14 +1424,14 @@ class machine {
         if (plan.upper_covers_lower) {
             comment(src_loc_tk, indent,
                     "{} lower bound covered by the unsigned upper bound",
-                    range.checked.base_register());
+                    range.checked.register_name());
 
             return;
         }
 
         if (plan.count_known) {
             comment(src_loc_tk, indent, "count {} lower bound already checked",
-                    range.count.base_register());
+                    range.count.register_name());
         }
     }
 
@@ -1575,7 +1574,7 @@ class machine {
         const bool count_known{
             not range.count.is_empty() and
                 state_.registers.is_lower_checked(
-                    register_mask(range.count.base_register())),
+                    register_mask(range.count.register_name())),
         };
 
         return {
@@ -1786,8 +1785,8 @@ class machine {
     [[nodiscard]] static auto lower_checked_register(const bounds_range& range)
         -> std::string_view {
 
-        return range.count.is_empty() ? range.checked.base_register()
-                                      : range.count.base_register();
+        return range.count.is_empty() ? range.checked.register_name()
+                                      : range.count.register_name();
     }
 
     // the operator that is true when 'op' is false

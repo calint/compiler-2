@@ -1435,7 +1435,7 @@ class machine_x86_64 final : public machine {
                             const operand& left, const operand& right) -> void {
 
         const operand low_byte{
-            make_register_operand(left.base_register(), builtin_type_i8()),
+            make_register_operand(left.register_name(), builtin_type_i8()),
         };
 
         mov(src_loc_tk, indent, right, low_byte);
@@ -1587,8 +1587,8 @@ class machine_x86_64 final : public machine {
 
         if (is_unsigned_compare) {
             lea(src_loc_tk, indent, reg_top_idx,
-                operand::mem(range.count.base_register(),
-                             range.checked.base_register(), 1, 0,
+                operand::mem(range.count.register_name(),
+                             range.checked.register_name(), 1, 0,
                              builtin_type_i64()));
         } else {
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
@@ -2129,7 +2129,7 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
         };
 
-        const std::string_view sum{address.base_register()};
+        const std::string_view sum{address.register_name()};
         assembler_.instruction(indent, op::mov, sum, value.displacement());
 
         if (not value.base_register().empty()) {
@@ -2141,7 +2141,7 @@ class machine_x86_64 final : public machine {
             add_scaled_index(indent, sum, value);
         }
 
-        return operand::mem(address.base_register(), {}, 1, 0,
+        return operand::mem(address.register_name(), {}, 1, 0,
                             value.type_ref());
     }
 
@@ -2300,7 +2300,7 @@ class machine_x86_64 final : public machine {
             return reg;
         }
 
-        operand result{sized_register(reg.base_register(), size_bytes)};
+        operand result{sized_register(reg.register_name(), size_bytes)};
         result.set_allocation_register(reg.allocation_register());
 
         return result;
@@ -2548,7 +2548,7 @@ class machine_x86_64 final : public machine {
 
         if (lhs.is_register()) {
             return rhs.is_register() and
-                   lhs.base_register() == rhs.base_register();
+                   lhs.register_name() == rhs.register_name();
         }
 
         assert(not lhs.is_immediate());
@@ -2657,7 +2657,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (value.is_register()) {
-            return std::string_view{value.base_register()};
+            return std::string_view{value.register_name()};
         }
 
         assembler_x86_64::memory address{to_address(value)};

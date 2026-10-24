@@ -169,6 +169,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           the call traces ('call_frame', the register trace); listings equal
        D.6. ask, large: 'operand::register_name()' for a register operand,
             'base_register()' for memory only (B5, about 330 sites)
+       => D.6 done (2026-10-24, approved): 'operand::register_name()'
+          asserts a register operand, 'base_register()' a memory operand;
+          each call site classified by a scratch build that logged the
+          operand kind per 'std::source_location' over every suite and ten
+          fuzzers: 216 lines of register-only sites renamed, the memory ones
+          kept; the sites that took either ask the new
+          'operand::uses_register(name)' (the rv32i 'uses_register' wrapper
+          and its 'register_index' comparisons go), 'operation_scope'
+          protects by kind; listings equal, fuzzers clean with the asserts;
+          left: the other rv32i 'register_index' comparisons (B5 step 2)
     E. calls
        E.1. one argument plan per compile (S1): 'planned_argument' {form,
             is_temporary} made once by 'call_site' for a mode (inlined,

@@ -1280,7 +1280,7 @@ class inline_call {
                                   location.index_register(), location.scale(),
                                   0, location.type_ref()));
 
-        return operand::mem(dst.base_register(), {}, 1, location.displacement(),
+        return operand::mem(dst.register_name(), {}, 1, location.displacement(),
                             location.type_ref());
     }
 

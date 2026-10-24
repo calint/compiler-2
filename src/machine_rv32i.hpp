@@ -766,11 +766,11 @@ class machine_rv32i : public machine {
         };
 
         // a distinct base or nonzero residual offset still needs an add
-        if (register_index(value.base_register()) !=
+        if (register_index(value.register_name()) !=
                 register_index(lowered.base_register()) or
             lowered.displacement() != 0) {
 
-            assembler_.addi(indent, value.base_register(),
+            assembler_.addi(indent, value.register_name(),
                             lowered.base_register(), lowered.displacement());
         }
 
@@ -805,7 +805,7 @@ class machine_rv32i : public machine {
 
             comment(src_loc_tk, indent,
                     "{}: elements to bytes ({} bytes/element)",
-                    bulk.count().base_register(), element_size_bytes);
+                    bulk.count().register_name(), element_size_bytes);
 
             scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
         }
@@ -924,31 +924,31 @@ class machine_rv32i : public machine {
         //       from 's1' it follows the caller's frame, which passed this
         //       check
 
-        assembler_.la(indent, remaining.base_register(), variables_label);
+        assembler_.la(indent, remaining.register_name(), variables_label);
 
-        assembler_.bltu(indent, start.base_register(),
-                        remaining.base_register(), overflow.reference);
+        assembler_.bltu(indent, start.register_name(),
+                        remaining.register_name(), overflow.reference);
 
-        assembler_.la(indent, remaining.base_register(), variables_end_label);
+        assembler_.la(indent, remaining.register_name(), variables_end_label);
 
-        assembler_.bltu(indent, remaining.base_register(),
-                        start.base_register(), overflow.reference);
+        assembler_.bltu(indent, remaining.register_name(),
+                        start.register_name(), overflow.reference);
 
-        assembler_.sub(indent, remaining.base_register(),
-                       remaining.base_register(), start.base_register());
+        assembler_.sub(indent, remaining.register_name(),
+                       remaining.register_name(), start.register_name());
 
-        assembler_.lui(indent, start.base_register(),
+        assembler_.lui(indent, start.register_name(),
                        assembler_rv32i::immediate::of_symbol(
                            frame_size_bytes.symbol(),
                            assembler_rv32i::immediate::part::high));
 
-        assembler_.addi(indent, start.base_register(), start.base_register(),
+        assembler_.addi(indent, start.register_name(), start.register_name(),
                         assembler_rv32i::immediate::of_symbol(
                             frame_size_bytes.symbol(),
                             assembler_rv32i::immediate::part::low));
 
-        assembler_.bgeu(indent, remaining.base_register(),
-                        start.base_register(), fits.reference);
+        assembler_.bgeu(indent, remaining.register_name(),
+                        start.register_name(), fits.reference);
 
         assembler_.label(indent, overflow.name);
 
@@ -990,14 +990,14 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        emit_stack_limit_load(indent, limit.base_register());
+        emit_stack_limit_load(indent, limit.register_name());
 
         comment(src_loc_tk, indent, "lowest stack pointer the call reaches");
 
-        assembler_.addi(indent, lowest.base_register(), "sp",
+        assembler_.addi(indent, lowest.register_name(), "sp",
                         -static_cast<int64_t>(call_bytes));
 
-        assembler_.bgeu(indent, lowest.base_register(), limit.base_register(),
+        assembler_.bgeu(indent, lowest.register_name(), limit.register_name(),
                         fits.reference);
 
         branch_to_failure(src_loc_tk, indent, stack_overflow_failure);
@@ -1081,11 +1081,11 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.la(indent, pointer.base_register(), add_constant());
+        assembler_.la(indent, pointer.register_name(), add_constant());
 
         // read-only constants are word aligned so 'dst' limits the width
         copy(src_loc_tk, indent, dst,
-             operand::mem(pointer.base_register(), {}, 1, 0, dst.type_ref()),
+             operand::mem(pointer.register_name(), {}, 1, 0, dst.type_ref()),
              bytes.size(), width);
     }
 
@@ -1107,7 +1107,7 @@ class machine_rv32i : public machine {
         const bulk_operation& bulk{bulk_operations_.back()};
 
         comment(src_loc_tk, indent, "{}: elements to bytes ({} bytes/element)",
-                bulk.count().base_register(), element_size_bytes);
+                bulk.count().register_name(), element_size_bytes);
 
         scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
 
@@ -1512,8 +1512,8 @@ class machine_rv32i : public machine {
                              dst.type_ref().size_bytes());
             }
 
-            assembler_.sub(indent, loaded.value.base_register(), "zero",
-                           loaded.value.base_register());
+            assembler_.sub(indent, loaded.value.register_name(), "zero",
+                           loaded.value.register_name());
 
             store_operation_result(indent, dst, loaded.address, loaded.value,
                                    true);
@@ -1521,8 +1521,8 @@ class machine_rv32i : public machine {
             return;
         }
 
-        assembler_.xori(indent, loaded.value.base_register(),
-                        loaded.value.base_register(), -1);
+        assembler_.xori(indent, loaded.value.register_name(),
+                        loaded.value.register_name(), -1);
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
                                false);
@@ -1645,8 +1645,8 @@ class machine_rv32i : public machine {
     auto advance(const size_t indent, const operand& pointer,
                  const size_t size_bytes) -> void {
 
-        assembler_.addi(indent, pointer.base_register(),
-                        pointer.base_register(), size_bytes);
+        assembler_.addi(indent, pointer.register_name(),
+                        pointer.register_name(), size_bytes);
     }
 
     [[nodiscard]] auto alloc_compare_registers(
@@ -1666,7 +1666,7 @@ class machine_rv32i : public machine {
         };
 
         comment(src_loc_tk, indent, "{}: left value/result, {}: right value",
-                left.base_register(), right.base_register());
+                left.register_name(), right.register_name());
 
         comment(src_loc_tk, indent, "stop at first mismatch");
 
@@ -1688,9 +1688,9 @@ class machine_rv32i : public machine {
         const bulk_operation& bulk{bulk_operations_.back()};
 
         comment(src_loc_tk, indent, "{}: {}, {}: {}, {}: count",
-                bulk.pointer(0).base_register(), first_role,
-                bulk.pointer(1).base_register(), second_role,
-                count.base_register());
+                bulk.pointer(0).register_name(), first_role,
+                bulk.pointer(1).register_name(), second_role,
+                count.register_name());
 
         return count;
     }
@@ -1767,7 +1767,7 @@ class machine_rv32i : public machine {
 
         // the first argument would overwrite a source in 'a0', which is
         // allocated last, when every other register is taken
-        if (uses_register(source, "a0")) {
+        if (source.uses_register("a0")) {
             throw out_of_registers_error(src_loc_tk);
         }
 
@@ -1796,8 +1796,8 @@ class machine_rv32i : public machine {
 
         // variables and frames are based on 's0' and 's1', and the save area
         // moves sp
-        assert(not uses_register(dst, "sp"));
-        assert(not uses_register(source, "sp"));
+        assert(not dst.uses_register("sp"));
+        assert(not source.uses_register("sp"));
 
         // save caller values before argument setup overwrites a0 or a1
         const size_t stack_bytes{save_registers(indent, saved)};
@@ -1854,17 +1854,17 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.sub(indent, distance.base_register(), dst.base_register(),
-                       src.base_register());
+        assembler_.sub(indent, distance.register_name(), dst.register_name(),
+                       src.register_name());
 
         comment(src_loc_tk, indent, "the same range is not an overlap");
 
-        assembler_.beqz(indent, distance.base_register(), passed.reference);
+        assembler_.beqz(indent, distance.register_name(), passed.reference);
 
         comment(src_loc_tk, indent, "destination starts inside the source");
 
-        assembler_.bgeu(indent, distance.base_register(),
-                        count_bytes.base_register(), passed.reference);
+        assembler_.bgeu(indent, distance.register_name(),
+                        count_bytes.register_name(), passed.reference);
 
         free_scratch_register(src_loc_tk, indent, distance);
 
@@ -1939,13 +1939,13 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.slli(indent, extended.base_register(), value.base_register(),
+        assembler_.slli(indent, extended.register_name(), value.register_name(),
                         shift);
 
-        assembler_.srai(indent, extended.base_register(),
-                        extended.base_register(), shift);
+        assembler_.srai(indent, extended.register_name(),
+                        extended.register_name(), shift);
 
-        assembler_.beq(indent, extended.base_register(), value.base_register(),
+        assembler_.beq(indent, extended.register_name(), value.register_name(),
                        fits.reference);
 
         free_scratch_register(src_loc_tk, indent, extended);
@@ -1975,7 +1975,7 @@ class machine_rv32i : public machine {
         check_negative(index, false);
 
         // a negative count passes 'start + count' but spans the address space
-        check_negative(reg_count.base_register(), is_last);
+        check_negative(reg_count.register_name(), is_last);
     }
 
     // after the checked multiply helper: the flag is in 'a1', the product in
@@ -2034,9 +2034,9 @@ class machine_rv32i : public machine {
             constant_arith::signed_minimum(width_bytes * bits_per_byte),
         };
 
-        assembler_.li(indent, minimum.base_register(), minimum_value);
+        assembler_.li(indent, minimum.register_name(), minimum_value);
 
-        assembler_.bne(indent, value.base_register(), minimum.base_register(),
+        assembler_.bne(indent, value.register_name(), minimum.register_name(),
                        fits.reference);
 
         free_scratch_register(src_loc_tk, indent, minimum);
@@ -2062,9 +2062,9 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.li(indent, limit.base_register(), dst_type.size_bits());
+        assembler_.li(indent, limit.register_name(), dst_type.size_bits());
 
-        assembler_.bltu(indent, amount.base_register(), limit.base_register(),
+        assembler_.bltu(indent, amount.register_name(), limit.register_name(),
                         pass.reference);
 
         free_scratch_register(src_loc_tk, indent, limit);
@@ -2090,16 +2090,16 @@ class machine_rv32i : public machine {
             upper_bound_top(src_loc_tk, indent, range, limit, lower_checked),
         };
 
-        assembler_.li(indent, limit.base_register(), range.array_count);
+        assembler_.li(indent, limit.register_name(), range.array_count);
 
         if (range.allow_end) {
-            assembler_.bgeu(indent, limit.base_register(), top,
+            assembler_.bgeu(indent, limit.register_name(), top,
                             bounds_pass_.reference);
 
             return;
         }
 
-        assembler_.bltu(indent, top, limit.base_register(),
+        assembler_.bltu(indent, top, limit.register_name(),
                         bounds_pass_.reference);
     }
 
@@ -2195,15 +2195,15 @@ class machine_rv32i : public machine {
                         const operand& right) -> void {
 
         assembler_.load(indent, unsigned_load_op(width),
-                        registers.left.base_register(), left.displacement(),
+                        registers.left.register_name(), left.displacement(),
                         left.base_register());
 
         assembler_.load(indent, unsigned_load_op(width),
-                        registers.right.base_register(), right.displacement(),
+                        registers.right.register_name(), right.displacement(),
                         right.base_register());
 
-        assembler_.bne(indent, registers.left.base_register(),
-                       registers.right.base_register(), false_exit_.reference);
+        assembler_.bne(indent, registers.left.register_name(),
+                       registers.right.register_name(), false_exit_.reference);
     }
 
     // known size: the addresses are memory operands and the result of the
@@ -2315,8 +2315,8 @@ class machine_rv32i : public machine {
         advance(indent, left_pointer, loop.width);
         advance(indent, right_pointer, loop.width);
 
-        assembler_.bne(indent, left_pointer.base_register(),
-                       end.base_register(), chunk_loop_.reference);
+        assembler_.bne(indent, left_pointer.register_name(),
+                       end.register_name(), chunk_loop_.reference);
 
         if (loop.tail_size_bytes == 0) {
             return;
@@ -2451,22 +2451,15 @@ class machine_rv32i : public machine {
 
         // the output can hold an input unless doing so destroys the other
         // value or an address still needed to load it
-        const size_t output_register{
-            register_index(dst.base_register()),
-        };
-
         const bool reuse_destination{
-            dst.is_register() and output_register != 0 and
-                (not(other.is_register() or other.is_memory()) or
-                 output_register != register_index(other.base_register())) and
-                (not other.is_memory() or
-                 output_register != register_index(other.index_register())),
+            dst.is_register() and dst.register_name() != "zero" and
+                not other.uses_register(dst.register_name()),
         };
 
         // preserve the comparison width rather than narrowing to bool
         const operand value{
             reuse_destination
-                ? operand::reg(dst.base_register(), width_type)
+                ? operand::reg(dst.register_name(), width_type)
                 : alloc_scratch_register(src_loc_tk, indent, width_type),
         };
 
@@ -2529,18 +2522,18 @@ class machine_rv32i : public machine {
         };
 
         comment(src_loc_tk, indent, "operands share base {}",
-                left.base_register());
+                left.register_name());
 
-        assembler_.lui(indent, left.base_register(), lhs_parts.upper);
+        assembler_.lui(indent, left.register_name(), lhs_parts.upper);
 
-        assembler_.add(indent, left.base_register(), left.base_register(),
+        assembler_.add(indent, left.register_name(), left.register_name(),
                        lhs.base_register());
 
-        assembler_.load(indent, load_op(rhs.type_ref()), right.base_register(),
-                        rhs_parts.low, left.base_register());
+        assembler_.load(indent, load_op(rhs.type_ref()), right.register_name(),
+                        rhs_parts.low, left.register_name());
 
-        assembler_.load(indent, load_op(lhs.type_ref()), left.base_register(),
-                        lhs_parts.low, left.base_register());
+        assembler_.load(indent, load_op(lhs.type_ref()), left.register_name(),
+                        lhs_parts.low, left.register_name());
 
         return {left, right};
     }
@@ -2573,10 +2566,10 @@ class machine_rv32i : public machine {
                      const size_t width, const operand& from, const operand& to)
         -> void {
 
-        assembler_.load(indent, unsigned_load_op(width), value.base_register(),
+        assembler_.load(indent, unsigned_load_op(width), value.register_name(),
                         from.displacement(), from.base_register());
 
-        assembler_.store(indent, store_op(width), value.base_register(),
+        assembler_.store(indent, store_op(width), value.register_name(),
                          to.displacement(), to.base_register());
     }
 
@@ -2657,7 +2650,7 @@ class machine_rv32i : public machine {
         advance(indent, src_pointer, loop.width);
         advance(indent, dst_pointer, loop.width);
 
-        assembler_.bne(indent, src_pointer.base_register(), end.base_register(),
+        assembler_.bne(indent, src_pointer.register_name(), end.register_name(),
                        chunk_loop_.reference);
 
         if (loop.tail_size_bytes == 0) {
@@ -2746,19 +2739,19 @@ class machine_rv32i : public machine {
         };
 
         comment(src_loc_tk, indent, "source and destination share base {}",
-                base.base_register());
+                base.register_name());
 
-        assembler_.lui(indent, base.base_register(), src_parts.upper);
+        assembler_.lui(indent, base.register_name(), src_parts.upper);
 
-        assembler_.add(indent, base.base_register(), base.base_register(),
+        assembler_.add(indent, base.register_name(), base.register_name(),
                        src.base_register());
 
-        assembler_.load(indent, load_op(src.type_ref()), value.base_register(),
-                        src_parts.low, base.base_register());
+        assembler_.load(indent, load_op(src.type_ref()), value.register_name(),
+                        src_parts.low, base.register_name());
 
         assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
-                         value.base_register(), dst_parts.low,
-                         base.base_register());
+                         value.register_name(), dst_parts.low,
+                         base.register_name());
     }
 
     auto emit_arithmetic_helpers() -> void {
@@ -2884,7 +2877,7 @@ class machine_rv32i : public machine {
             immediate <= assembler_rv32i::immediate_max) {
 
             assembler_.immediate_op(indent, immediate_form(instruction),
-                                    left.base_register(), left.base_register(),
+                                    left.register_name(), left.register_name(),
                                     immediate);
 
             return;
@@ -2900,10 +2893,10 @@ class machine_rv32i : public machine {
                               : assembler_rv32i::immediate_max,
             };
 
-            assembler_.addi(indent, left.base_register(), left.base_register(),
+            assembler_.addi(indent, left.register_name(), left.register_name(),
                             first);
 
-            assembler_.addi(indent, left.base_register(), left.base_register(),
+            assembler_.addi(indent, left.register_name(), left.register_name(),
                             immediate - first);
 
             return;
@@ -2913,8 +2906,8 @@ class machine_rv32i : public machine {
             source_register(src_loc_tk, indent, src, constant),
         };
 
-        assembler_.register_op(indent, instruction, left.base_register(),
-                               left.base_register(), right.base_register());
+        assembler_.register_op(indent, instruction, left.register_name(),
+                               left.register_name(), right.register_name());
     }
 
     // sets 'result' to 1 when the comparison holds and to 0 otherwise
@@ -3018,8 +3011,8 @@ class machine_rv32i : public machine {
         // the first operand is 'result -/+ second', one register is enough
         // when the second operand is in a register of its own or small
         const bool is_register_source{
-            src.is_register() and register_index(src.base_register()) !=
-                                      register_index(value.base_register()),
+            src.is_register() and register_index(src.register_name()) !=
+                                      register_index(value.register_name()),
         };
 
         // note: above the minimum because an add negates the constant into an
@@ -3044,7 +3037,7 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.mv(indent, first.base_register(), value.base_register());
+        assembler_.mv(indent, first.register_name(), value.register_name());
 
         emit_binary_instruction(src_loc_tk, indent, instruction, src, value,
                                 constant);
@@ -3053,24 +3046,24 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.slt(indent, below.base_register(), value.base_register(),
-                       first.base_register());
+        assembler_.slt(indent, below.register_name(), value.register_name(),
+                       first.register_name());
 
         if (instruction == op::add) {
-            assembler_.sub(indent, first.base_register(), value.base_register(),
-                           first.base_register());
+            assembler_.sub(indent, first.register_name(), value.register_name(),
+                           first.register_name());
 
-            assembler_.slti(indent, first.base_register(),
-                            first.base_register(), 0);
+            assembler_.slti(indent, first.register_name(),
+                            first.register_name(), 0);
         } else {
-            assembler_.sub(indent, first.base_register(), first.base_register(),
-                           value.base_register());
+            assembler_.sub(indent, first.register_name(), first.register_name(),
+                           value.register_name());
 
-            assembler_.slt(indent, first.base_register(), "zero",
-                           first.base_register());
+            assembler_.slt(indent, first.register_name(), "zero",
+                           first.register_name());
         }
 
-        assembler_.beq(indent, below.base_register(), first.base_register(),
+        assembler_.beq(indent, below.register_name(), first.register_name(),
                        fits.reference);
 
         // the scope of the operation frees the registers, the instruction
@@ -3114,15 +3107,15 @@ class machine_rv32i : public machine {
         };
 
         if (constant.has_value()) {
-            assembler_.addi(indent, first.base_register(),
-                            value.base_register(),
+            assembler_.addi(indent, first.register_name(),
+                            value.register_name(),
                             is_add ? -*constant : *constant);
         } else if (is_add) {
-            assembler_.sub(indent, first.base_register(), value.base_register(),
-                           src.base_register());
+            assembler_.sub(indent, first.register_name(), value.register_name(),
+                           src.register_name());
         } else {
-            assembler_.add(indent, first.base_register(), value.base_register(),
-                           src.base_register());
+            assembler_.add(indent, first.register_name(), value.register_name(),
+                           src.register_name());
         }
 
         if (constant.has_value()) {
@@ -3130,7 +3123,7 @@ class machine_rv32i : public machine {
             const bool below_first{is_add ? *constant < 0 : *constant > 0};
 
             assembler_.branch(indent, below_first ? op::blt : op::bge,
-                              value.base_register(), first.base_register(),
+                              value.register_name(), first.register_name(),
                               fits.reference);
 
             fail_on_overflow(src_loc_tk, indent);
@@ -3140,19 +3133,19 @@ class machine_rv32i : public machine {
         }
 
         if (is_add) {
-            assembler_.bltz(indent, src.base_register(), below.reference);
+            assembler_.bltz(indent, src.register_name(), below.reference);
         } else {
-            assembler_.bgtz(indent, src.base_register(), below.reference);
+            assembler_.bgtz(indent, src.register_name(), below.reference);
         }
 
-        assembler_.branch(indent, op::bge, value.base_register(),
-                          first.base_register(), fits.reference);
+        assembler_.branch(indent, op::bge, value.register_name(),
+                          first.register_name(), fits.reference);
 
         assembler_.j(indent, failed.reference);
         assembler_.label(indent, below.name);
 
-        assembler_.branch(indent, op::blt, value.base_register(),
-                          first.base_register(), fits.reference);
+        assembler_.branch(indent, op::blt, value.register_name(),
+                          first.register_name(), fits.reference);
 
         assembler_.label(indent, failed.name);
         fail_on_overflow(src_loc_tk, indent);
@@ -3215,7 +3208,7 @@ class machine_rv32i : public machine {
                                        lhs, rhs, left, right),
         };
 
-        const std::string_view result{value.base_register()};
+        const std::string_view result{value.register_name()};
 
         emit_boolean_result(indent, operation, result, left, right, immediate,
                             action.inverted);
@@ -3251,7 +3244,7 @@ class machine_rv32i : public machine {
             };
 
             emit_jump(indent, branch_on_unequal ? op::bne : op::beq,
-                      left.base_register(), right.base_register(),
+                      left.register_name(), right.register_name(),
                       action.target);
 
             return;
@@ -3266,8 +3259,8 @@ class machine_rv32i : public machine {
         };
 
         emit_jump(indent, branch_on_greater_equal ? op::bge : op::blt,
-                  swapped ? right.base_register() : left.base_register(),
-                  swapped ? left.base_register() : right.base_register(),
+                  swapped ? right.register_name() : left.register_name(),
+                  swapped ? left.register_name() : right.register_name(),
                   action.target);
     }
 
@@ -3312,7 +3305,7 @@ class machine_rv32i : public machine {
 
         // encodable thresholds avoid materializing a constant register
         if (immediate.has_value()) {
-            assembler_.slti(indent, result, left.base_register(), *immediate);
+            assembler_.slti(indent, result, left.register_name(), *immediate);
             return;
         }
 
@@ -3320,8 +3313,8 @@ class machine_rv32i : public machine {
         const bool swapped{swaps_operands(operation)};
 
         assembler_.slt(indent, result,
-                       swapped ? right.base_register() : left.base_register(),
-                       swapped ? left.base_register() : right.base_register());
+                       swapped ? right.register_name() : left.register_name(),
+                       swapped ? left.register_name() : right.register_name());
     }
 
     // prints 'message' and the line number in a0, then exits with 'exit_code'
@@ -3355,7 +3348,7 @@ class machine_rv32i : public machine {
         comment_lower_bound(src_loc_tk, indent, range, plan);
 
         if (not plan.upper_covers_lower) {
-            check_lower_bounds(indent, range.checked.base_register(),
+            check_lower_bounds(indent, range.checked.register_name(),
                                plan.count_known ? operand{} : range.count,
                                is_last);
         }
@@ -3433,7 +3426,7 @@ class machine_rv32i : public machine {
                 : alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        std::string_view shifted{loaded.value.base_register()};
+        std::string_view shifted{loaded.value.register_name()};
         int pending_shift{};
 
         for (size_t bit{sequence.top}; bit != sequence.lowest;) {
@@ -3444,31 +3437,31 @@ class machine_rv32i : public machine {
                 continue;
             }
 
-            assembler_.slli(indent, partial.base_register(), shifted,
+            assembler_.slli(indent, partial.register_name(), shifted,
                             pending_shift);
 
             const std::string_view sum{
-                bit == sequence.lowest ? loaded.value.base_register()
-                                       : partial.base_register(),
+                bit == sequence.lowest ? loaded.value.register_name()
+                                       : partial.register_name(),
             };
 
             assembler_.register_op(
                 indent, sequence.digits.at(bit) < 0 ? op::sub : op::add, sum,
-                partial.base_register(), loaded.value.base_register());
+                partial.register_name(), loaded.value.register_name());
 
-            shifted = partial.base_register();
+            shifted = partial.register_name();
             pending_shift = 0;
         }
 
         // the zero bits below the lowest digit
         if (sequence.lowest != 0) {
-            assembler_.slli(indent, loaded.value.base_register(),
-                            loaded.value.base_register(), sequence.lowest);
+            assembler_.slli(indent, loaded.value.register_name(),
+                            loaded.value.register_name(), sequence.lowest);
         }
 
         if (sequence.negate) {
-            assembler_.sub(indent, loaded.value.base_register(), "zero",
-                           loaded.value.base_register());
+            assembler_.sub(indent, loaded.value.register_name(), "zero",
+                           loaded.value.register_name());
         }
     }
 
@@ -3481,23 +3474,23 @@ class machine_rv32i : public machine {
 
         // an immediate zero can be tested without transforming the input
         if (immediate.has_value() and *immediate == 0) {
-            return left.base_register();
+            return left.register_name();
         }
 
         // nonzero small constants fit directly in xori
         if (immediate.has_value()) {
-            assembler_.xori(indent, result, left.base_register(), *immediate);
+            assembler_.xori(indent, result, left.register_name(), *immediate);
             return result;
         }
 
         // an operand that is not tested directly is in a register other than
         // 'zero'
-        assert(register_index(left.base_register()) != 0 and
-               register_index(right.base_register()) != 0);
+        assert(left.register_name() != "zero" and
+               right.register_name() != "zero");
 
         // neither operand is zero and the constant did not fit
-        assembler_.xor_op(indent, result, left.base_register(),
-                          right.base_register());
+        assembler_.xor_op(indent, result, left.register_name(),
+                          right.register_name());
 
         return result;
     }
@@ -3509,11 +3502,11 @@ class machine_rv32i : public machine {
 
         // the register holds the value at the full width, as the comparisons
         // and the arithmetic of the narrow type read it
-        assembler_.slli(indent, value.base_register(), value.base_register(),
+        assembler_.slli(indent, value.register_name(), value.register_name(),
                         shift);
 
         assembler_.immediate_op(indent, extend_shift_op(dst_type),
-                                value.base_register(), value.base_register(),
+                                value.register_name(), value.register_name(),
                                 shift);
     }
 
@@ -3579,7 +3572,7 @@ class machine_rv32i : public machine {
             // restoring a register destination would discard the result
             const bool is_destination{
                 dst.is_register() and
-                    register_index(dst.base_register()) == register_index(name),
+                    register_index(dst.register_name()) == register_index(name),
             };
 
             if ((live & register_mask(name)) != 0 and not is_destination) {
@@ -3625,7 +3618,7 @@ class machine_rv32i : public machine {
         const operand second_argument{operand::reg("a1", default_type())};
 
         // note: 'call_arithmetic_helper' rejects a source in a0
-        assert(not uses_register(source, "a0"));
+        assert(not source.uses_register("a0"));
 
         copy_value(src_loc_tk, indent, first_argument, first_value);
         copy_value(src_loc_tk, indent, second_argument, source);
@@ -3641,21 +3634,21 @@ class machine_rv32i : public machine {
             };
 
             assembler_.load(indent, load_op(src.type_ref()),
-                            value.base_register(), lowered.displacement(),
+                            value.register_name(), lowered.displacement(),
                             lowered.base_register());
 
             return;
         }
 
-        if (src.is_register() and register_index(value.base_register()) ==
-                                      register_index(src.base_register())) {
+        if (src.is_register() and register_index(value.register_name()) ==
+                                      register_index(src.register_name())) {
 
             return;
         }
 
         // adding zero copies a register without changing its bits
         if (src.is_register()) {
-            assembler_.addi(indent, value.base_register(), src.base_register(),
+            assembler_.addi(indent, value.register_name(), src.register_name(),
                             0);
 
             return;
@@ -3717,7 +3710,7 @@ class machine_rv32i : public machine {
 
         const int64_t offset{address.displacement()};
 
-        const std::string& result_name{result.base_register()};
+        const std::string& result_name{result.register_name()};
 
         const address_offset_parts parts{split_address_offset(offset)};
 
@@ -3731,10 +3724,10 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.lui(indent, displacement.base_register(), parts.upper);
+        assembler_.lui(indent, displacement.register_name(), parts.upper);
 
         assembler_.add(indent, result_name, result_name,
-                       displacement.base_register());
+                       displacement.register_name());
 
         free_scratch_register(src_loc_tk, indent, displacement);
 
@@ -3747,7 +3740,7 @@ class machine_rv32i : public machine {
         -> operand {
 
         const std::string& base{address.base_register()};
-        const std::string& result_name{result.base_register()};
+        const std::string& result_name{result.register_name()};
 
         assembler_.slli(indent, result_name, address.index_register(),
                         std::countr_zero(address.scale()));
@@ -3765,7 +3758,7 @@ class machine_rv32i : public machine {
 
         const std::string& base{address.base_register()};
         const std::string& index{address.index_register()};
-        const std::string& result_name{result.base_register()};
+        const std::string& result_name{result.register_name()};
 
         // one add combines register inputs, even when result aliases either
         assembler_.add(indent, result_name, base, index);
@@ -3792,7 +3785,7 @@ class machine_rv32i : public machine {
             address_result_register(src_loc_tk, indent, address, dst),
         };
 
-        const std::string& result_name{result.base_register()};
+        const std::string& result_name{result.register_name()};
 
         // only the upper part; the memory instruction adds the low
         assembler_.lui(indent, result_name, parts.upper);
@@ -3804,7 +3797,7 @@ class machine_rv32i : public machine {
 
     // what an access through the register 'pointer' reads or writes
     [[nodiscard]] auto memory_at(const operand& pointer) const -> operand {
-        return operand::mem(pointer.base_register(), {}, 1, 0, default_type());
+        return operand::mem(pointer.register_name(), {}, 1, 0, default_type());
     }
 
     // the factor is a known constant, keep only the bits that fit in the
@@ -3877,7 +3870,7 @@ class machine_rv32i : public machine {
         -> operand {
 
         const bool restored{
-            std::ranges::find(saved, result.base_register()) != saved.end(),
+            std::ranges::find(saved, result.register_name()) != saved.end(),
         };
 
         if (not restored) {
@@ -3967,7 +3960,7 @@ class machine_rv32i : public machine {
                       const size_t size_bytes) -> void {
 
         address_of(src_loc_tk, indent, end,
-                   operand::mem(pointer.base_register(), {}, 1,
+                   operand::mem(pointer.register_name(), {}, 1,
                                 address_offset(size_bytes), default_type()));
     }
 
@@ -3981,13 +3974,13 @@ class machine_rv32i : public machine {
         if (operation == arithmetic_operator::shift_left and
             bits < register_bits_ and dst.is_register()) {
 
-            assembler_.slli(indent, loaded.value.base_register(),
-                            loaded.value.base_register(),
+            assembler_.slli(indent, loaded.value.register_name(),
+                            loaded.value.register_name(),
                             register_bits_ - bits + shift_count);
 
             assembler_.immediate_op(indent, extend_shift_op(dst.type_ref()),
-                                    loaded.value.base_register(),
-                                    loaded.value.base_register(),
+                                    loaded.value.register_name(),
+                                    loaded.value.register_name(),
                                     register_bits_ - bits);
 
             store_operation_result(indent, dst, loaded.address, loaded.value,
@@ -4000,8 +3993,8 @@ class machine_rv32i : public machine {
         const bool is_left{operation == arithmetic_operator::shift_left};
 
         assembler_.immediate_op(indent, is_left ? op::slli : op::srai,
-                                loaded.value.base_register(),
-                                loaded.value.base_register(), shift_count);
+                                loaded.value.register_name(),
+                                loaded.value.register_name(), shift_count);
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
                                is_left);
@@ -4024,8 +4017,8 @@ class machine_rv32i : public machine {
         const bool is_left{operation == arithmetic_operator::shift_left};
 
         assembler_.register_op(
-            indent, is_left ? op::sll : op::sra, loaded.value.base_register(),
-            loaded.value.base_register(), amount.base_register());
+            indent, is_left ? op::sll : op::sra, loaded.value.register_name(),
+            loaded.value.register_name(), amount.register_name());
 
         store_operation_result(indent, dst, loaded.address, loaded.value,
                                is_left);
@@ -4044,7 +4037,7 @@ class machine_rv32i : public machine {
         };
 
         if (constant.has_value()) {
-            assembler_.li(indent, right.base_register(), *constant);
+            assembler_.li(indent, right.register_name(), *constant);
             return right;
         }
 
@@ -4105,11 +4098,11 @@ class machine_rv32i : public machine {
             }
 
             if (p.needs_load) {
-                assembler_.li(indent, value.base_register(), p.value);
+                assembler_.li(indent, value.register_name(), p.value);
             }
 
             assembler_.store(indent, store_op(p.size_bytes),
-                             value.base_register(), displacement,
+                             value.register_name(), displacement,
                              address.base_register());
         }
     }
@@ -4134,7 +4127,7 @@ class machine_rv32i : public machine {
 
         const operand value{working_register(src_loc_tk, indent, dst)};
 
-        assembler_.li(indent, value.base_register(), constant);
+        assembler_.li(indent, value.register_name(), constant);
         store_operation_result(indent, dst, address, value, false);
     }
 
@@ -4144,7 +4137,7 @@ class machine_rv32i : public machine {
         const operand lowered{lower_address(src_loc_tk, indent, dst)};
 
         assembler_.store(indent, store_op(dst.type_ref().size_bytes()),
-                         value.base_register(), lowered.displacement(),
+                         value.register_name(), lowered.displacement(),
                          lowered.base_register());
     }
 
@@ -4155,7 +4148,7 @@ class machine_rv32i : public machine {
         const size_t width{dst.type_ref().size_bytes()};
 
         if (dst.is_memory()) {
-            assembler_.store(indent, store_op(width), value.base_register(),
+            assembler_.store(indent, store_op(width), value.register_name(),
                              address.displacement(), address.base_register());
         } else if (width < word_size_bytes_ and normalize) {
             extend_register(indent, dst.type_ref(), value);
@@ -4180,7 +4173,7 @@ class machine_rv32i : public machine {
 
             address_of(src_loc_tk, indent, pointer, lowered);
 
-            lowered = operand::mem(pointer.base_register(), {}, 1, 0,
+            lowered = operand::mem(pointer.register_name(), {}, 1, 0,
                                    address.type_ref());
         }
 
@@ -4194,7 +4187,7 @@ class machine_rv32i : public machine {
                     const bounds_range& range, const operand& limit,
                     const bool lower_checked) -> std::string {
 
-        const std::string_view index{range.checked.base_register()};
+        const std::string_view index{range.checked.register_name()};
         const operand& reg_count{range.count};
 
         // a negative index is left to the lower check, which has already
@@ -4212,11 +4205,11 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        const std::string& top{sum.base_register()};
+        const std::string& top{sum.register_name()};
 
         // after the lower checks both are below 2^31, so the sum cannot wrap
         if (lower_checked) {
-            assembler_.add(indent, top, index, reg_count.base_register());
+            assembler_.add(indent, top, index, reg_count.register_name());
             return top;
         }
 
@@ -4226,28 +4219,28 @@ class machine_rv32i : public machine {
             alloc_scratch_register(src_loc_tk, indent, default_type()),
         };
 
-        assembler_.srai(indent, high.base_register(), index, sign_shift_);
+        assembler_.srai(indent, high.register_name(), index, sign_shift_);
 
-        assembler_.srai(indent, limit.base_register(),
-                        reg_count.base_register(), sign_shift_);
+        assembler_.srai(indent, limit.register_name(),
+                        reg_count.register_name(), sign_shift_);
 
-        assembler_.add(indent, high.base_register(), high.base_register(),
-                       limit.base_register());
+        assembler_.add(indent, high.register_name(), high.register_name(),
+                       limit.register_name());
 
-        assembler_.add(indent, top, index, reg_count.base_register());
-        assembler_.sltu(indent, limit.base_register(), top, index);
+        assembler_.add(indent, top, index, reg_count.register_name());
+        assembler_.sltu(indent, limit.register_name(), top, index);
 
-        assembler_.add(indent, high.base_register(), high.base_register(),
-                       limit.base_register());
+        assembler_.add(indent, high.register_name(), high.register_name(),
+                       limit.register_name());
 
-        assembler_.bltz(indent, high.base_register(), bounds_pass_.reference);
-        assembler_.bgtz(indent, high.base_register(), bounds_fail_.reference);
+        assembler_.bltz(indent, high.register_name(), bounds_pass_.reference);
+        assembler_.bgtz(indent, high.register_name(), bounds_fail_.reference);
 
         return top;
     }
 
     auto walk_runtime_bytes(const runtime_walk& walk) -> void {
-        const std::string_view count{walk.count.base_register()};
+        const std::string_view count{walk.count.register_name()};
 
         comment(walk.src_loc_tk, walk.indent, "{}; skip if none",
                 describe_loop(walk.verb, 1));
@@ -4256,12 +4249,12 @@ class machine_rv32i : public machine {
 
         // 'count' becomes the end of the walk, which saves a decrement in
         // every iteration
-        assembler_.add(walk.indent, count, count, walk.src.base_register());
+        assembler_.add(walk.indent, count, count, walk.src.register_name());
 
         assembler_.label(walk.indent, chunk_loop_.name);
         walk_runtime_step(walk, 1);
 
-        assembler_.bne(walk.indent, walk.src.base_register(), count,
+        assembler_.bne(walk.indent, walk.src.register_name(), count,
                        chunk_loop_.reference);
 
         assembler_.label(walk.indent, walk_end_.name);
@@ -4272,21 +4265,21 @@ class machine_rv32i : public machine {
     auto walk_runtime_chunks(const runtime_walk& walk, const operand& chunks,
                              const size_t width) -> void {
 
-        const std::string_view count{walk.count.base_register()};
+        const std::string_view count{walk.count.register_name()};
 
         comment(walk.src_loc_tk, walk.indent,
                 "split bytes into chunks and tail; skip loop if none");
 
-        assembler_.andi(walk.indent, chunks.base_register(), count,
+        assembler_.andi(walk.indent, chunks.register_name(), count,
                         -static_cast<int64_t>(width));
 
         assembler_.andi(walk.indent, count, count, width - 1);
 
-        assembler_.beqz(walk.indent, chunks.base_register(),
+        assembler_.beqz(walk.indent, chunks.register_name(),
                         after_chunks_.reference);
 
-        assembler_.add(walk.indent, chunks.base_register(),
-                       chunks.base_register(), walk.src.base_register());
+        assembler_.add(walk.indent, chunks.register_name(),
+                       chunks.register_name(), walk.src.register_name());
 
         comment(walk.src_loc_tk, walk.indent, "{}",
                 describe_loop(walk.verb, width));
@@ -4294,8 +4287,8 @@ class machine_rv32i : public machine {
         assembler_.label(walk.indent, chunk_loop_.name);
         walk_runtime_step(walk, width);
 
-        assembler_.bne(walk.indent, walk.src.base_register(),
-                       chunks.base_register(), chunk_loop_.reference);
+        assembler_.bne(walk.indent, walk.src.register_name(),
+                       chunks.register_name(), chunk_loop_.reference);
 
         assembler_.label(walk.indent, after_chunks_.name);
     }
@@ -4331,9 +4324,9 @@ class machine_rv32i : public machine {
         };
 
         comment(walk.src_loc_tk, walk.indent, "{}: end of {}, {}: tail bytes",
-                chunks.base_register(),
+                chunks.register_name(),
                 start.width == word_size_bytes_ ? "words" : "halfwords",
-                walk.count.base_register());
+                walk.count.register_name());
 
         if (start.head_size_bytes != 0) {
             walk_runtime_head(walk, chunks, start.head_size_bytes);
@@ -4349,7 +4342,7 @@ class machine_rv32i : public machine {
     auto walk_runtime_head(const runtime_walk& walk, const operand& chunks,
                            const size_t head_size_bytes) -> void {
 
-        const std::string_view count{walk.count.base_register()};
+        const std::string_view count{walk.count.register_name()};
 
         comment(walk.src_loc_tk, walk.indent, "{} {} B head", walk.verb,
                 head_size_bytes);
@@ -4362,9 +4355,9 @@ class machine_rv32i : public machine {
         }
 
         if ((head_size_bytes & size_t{2}) != 0) {
-            assembler_.sltiu(walk.indent, chunks.base_register(), count, 2);
+            assembler_.sltiu(walk.indent, chunks.register_name(), count, 2);
 
-            assembler_.bnez(walk.indent, chunks.base_register(),
+            assembler_.bnez(walk.indent, chunks.register_name(),
                             after_head_.reference);
 
             walk_runtime_step(walk, 2);
@@ -4388,15 +4381,15 @@ class machine_rv32i : public machine {
     auto walk_runtime_tail(const runtime_walk& walk, const operand& chunks,
                            const size_t width) -> void {
 
-        const std::string_view count{walk.count.base_register()};
+        const std::string_view count{walk.count.register_name()};
 
         if (width == word_size_bytes_) {
             comment(walk.src_loc_tk, walk.indent, "{} optional 2-byte tail",
                     walk.verb);
 
-            assembler_.andi(walk.indent, chunks.base_register(), count, 2);
+            assembler_.andi(walk.indent, chunks.register_name(), count, 2);
 
-            assembler_.beqz(walk.indent, chunks.base_register(),
+            assembler_.beqz(walk.indent, chunks.register_name(),
                             after_halfword_.reference);
 
             walk_runtime_step(walk, 2);
@@ -4434,14 +4427,14 @@ class machine_rv32i : public machine {
         comment(src_loc_tk, indent, "all matched or empty: {}",
                 inverted ? "false" : "true");
 
-        assembler_.li(indent, registers.left.base_register(), inverted ? 0 : 1);
+        assembler_.li(indent, registers.left.register_name(), inverted ? 0 : 1);
         assembler_.j(indent, result_end_.reference);
         assembler_.label(indent, false_exit_.name);
 
         comment(src_loc_tk, indent, "mismatch: {}",
                 inverted ? "true" : "false");
 
-        assembler_.li(indent, registers.left.base_register(), inverted ? 1 : 0);
+        assembler_.li(indent, registers.left.register_name(), inverted ? 1 : 0);
         assembler_.label(indent, result_end_.name);
 
         if (not registers.left_is_result) {
@@ -4513,7 +4506,7 @@ class machine_rv32i : public machine {
         zero_access(indent, loop.width, memory_at(pointer));
         advance(indent, pointer, loop.width);
 
-        assembler_.bne(indent, pointer.base_register(), end.base_register(),
+        assembler_.bne(indent, pointer.register_name(), end.register_name(),
                        chunk_loop_.reference);
 
         if (loop.tail_size_bytes == 0) {
@@ -4699,18 +4692,15 @@ class machine_rv32i : public machine {
             return false;
         }
 
-        const size_t index{register_index(result.base_register())};
+        const std::string& name{result.register_name()};
 
         // 'zero' discards writes and 'sp' holds the stack
-        assert(index != register_index("zero") and
-               index != register_index("sp"));
+        assert(name != "zero" and name != "sp");
 
         // writing the left value into one of the operands' registers would
-        // destroy an address or the count before the walk is done with it; an
-        // operand without an index register has an empty name that matches none
-        return std::ranges::none_of(in_use, [index](const operand& o) -> bool {
-            return register_index(o.base_register()) == index or
-                   register_index(o.index_register()) == index;
+        // destroy an address or the count before the walk is done with it
+        return std::ranges::none_of(in_use, [&name](const operand& o) -> bool {
+            return o.uses_register(name);
         });
     }
 
@@ -4723,7 +4713,7 @@ class machine_rv32i : public machine {
             return false;
         }
 
-        const size_t dst_index{register_index(dst.base_register())};
+        const size_t dst_index{register_index(dst.register_name())};
 
         // zero discards writes, so it cannot hold the computed address
         assert(dst_index != 0);
@@ -5314,17 +5304,6 @@ class machine_rv32i : public machine {
         }
 
         return op::lbu;
-    }
-
-    // aliases and address registers carry the same argument dependencies
-    [[nodiscard]] static auto uses_register(const operand& value,
-                                            const std::string_view name)
-        -> bool {
-
-        return (value.is_register() or value.is_memory()) and
-               (register_index(value.base_register()) == register_index(name) or
-                (value.is_memory() and register_index(value.index_register()) ==
-                                           register_index(name)));
     }
 
     static auto validate_address(const operand& address) -> void {

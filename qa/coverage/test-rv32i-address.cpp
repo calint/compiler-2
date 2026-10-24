@@ -1034,7 +1034,7 @@ auto check_rv32i_scratch_order() -> void {
     for (const std::string_view name : order) {
         allocated.push_back(
             backend.alloc_scratch_register(located.location, 1, integer));
-        assert(allocated.back().base_register() == name);
+        assert(allocated.back().register_name() == name);
     }
 
     backend.free_scratch_registers(located.location, 1, allocated);
@@ -1204,7 +1204,7 @@ auto check_x86_scratch_registers() -> void {
         for (const std::string_view expected : order) {
             registers.push_back(
                 backend.alloc_scratch_register(source_tk, 0, integer64));
-            assert(registers.back().base_register() == expected);
+            assert(registers.back().register_name() == expected);
         }
 
         // scratch registers are exhausted after the last one
@@ -1229,11 +1229,11 @@ auto check_x86_scratch_registers() -> void {
 
         registers.push_back(
             backend.alloc_scratch_register(token{}, 0, integer64));
-        assert(registers.back().base_register() == "rdi");
+        assert(registers.back().register_name() == "rdi");
 
         registers.push_back(
             backend.alloc_scratch_register(token{}, 0, integer64));
-        assert(registers.back().base_register() == "rcx");
+        assert(registers.back().register_name() == "rcx");
 
         backend.free_scratch_registers(token{}, 0, registers);
         backend.assert_registers_free();
@@ -1440,7 +1440,7 @@ auto check_memory_comparison_tail() -> void {
         }
 
         const std::string assembly{rv32i.output.str()};
-        const std::string_view reg{result.base_register()};
+        const std::string_view reg{result.register_name()};
 
         for (const std::string_view load : {"lw", "lhu", "lbu"}) {
             assert(assembly.contains(std::format("{} {}, ", load, reg)));
@@ -1869,7 +1869,7 @@ auto check_address_lowering_in_destination() -> void {
         hold_scratch_registers(backend, rv32i_scratch_count, integer),
     };
 
-    assert(held.back().base_register() == "a0");
+    assert(held.back().register_name() == "a0");
     backend.free_scratch_register(token{}, 0, held.back());
     held.pop_back();
 
@@ -2292,7 +2292,7 @@ auto check_scratch_register_pool() -> void {
             const operand reg{
                 backend.alloc_scratch_register(token{}, 0, integer),
             };
-            const std::string_view name{reg.base_register()};
+            const std::string_view name{reg.register_name()};
 
             assert(name != "zero" and name != "sp");
             assert(reserved_count == 0 or name != "s0");
@@ -2324,7 +2324,7 @@ auto check_scratch_register_pool() -> void {
         const operand named{
             backend.alloc_named_register(token{}, 0, "ra", integer),
         };
-        assert(named.base_register() == "ra");
+        assert(named.register_name() == "ra");
         backend.free_named_register(token{}, 0, named);
         backend.assert_registers_free();
     }
@@ -3139,7 +3139,7 @@ auto emit_helper_call_register_preservation(machine_rv32i& backend) -> void {
         }
 
         for (const auto [index, reg] : std::views::enumerate(live)) {
-            emit_expect(backend, reg.base_register(), 101 + index, "a2");
+            emit_expect(backend, reg.register_name(), 101 + index, "a2");
         }
 
         // -17 * 3, -17 / 3 and -17 % 3

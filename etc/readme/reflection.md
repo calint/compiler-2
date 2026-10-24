@@ -2,10 +2,9 @@
 
 ## Why a language?
 
-It started as an experiment. It began with "hello world" in assembly on Linux,
-which is still in `etc/from`. I wanted to see how hard it is to build a usable
-language for the application I experiment with. I worked on it on and off,
-returning to it from time to time.
+It started as an experiment, with "hello world" in assembly on Linux, which is
+still in `etc/from`. I wanted to see how hard it is to build a usable language
+for the application I experiment with. I worked on it on and off.
 
 I wanted a language without the mistakes that older languages have to keep. I
 also wanted one without "foot guns". In a large project in production, those
@@ -14,8 +13,8 @@ exits with a failure, is worth the cost in performance.
 
 ## Why should I use this language?
 
-Don't. Instead, I would turn on the "no undefined behavior" flag of a
-performance language, such as C, C++ or Rust.
+Don't. I would use a performance language, such as C, C++ or Rust, with its
+checks for undefined behavior turned on.
 
 ## Why no pointers or references?
 
@@ -110,16 +109,16 @@ until a human can read it easily.
 The number of bugs, unresolved edge cases and inconsistencies they find is
 scary. This is a relatively simple language. Are complex languages written
 flawlessly by superior engineers, or will AI scare their authors when it is
-unleashed on their code bases?
+unleashed on their codebases?
 
 Finding bugs the way the AI does would not be possible by hand. Once fuzzing
 found no further issues, I thought the project was done. I was wrong.
 
-At about round 11 of bug hunting and fixing with Opus 5.5, I gave up. I was
-facing a mass of generated text describing issue after issue. Eventually I
-skipped reading most of it.
+At about round 11 of bug hunting and fixing with Opus 5.5, I was facing a mass
+of generated text describing issue after issue, and I stopped reading most of
+it.
 
-I told it to refactor so that whole classes of bugs would become impossible.
+So I told it to refactor so that whole classes of bugs would become impossible.
 
 ### From exuberance to doubt
 
@@ -135,7 +134,7 @@ So I decided to pause and refactor until the AI found the system in as good a
 shape as it could envision.
 
 This process has taken far longer than the development of the features that
-thrashed the otherwise simple structure of the code. Maybe it was inevitable.
+tangled the otherwise simple structure of the code. Maybe it was inevitable.
 
 ### The sense of losing touch with the code
 

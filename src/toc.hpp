@@ -308,7 +308,7 @@ struct param_binding {
                                             const operand& reg)
         -> param_binding {
 
-        return make_register(name, param_type, reg, reg.base_register());
+        return make_register(name, param_type, reg, reg.register_name());
     }
 };
 
@@ -816,7 +816,7 @@ class ident_builder final {
                 std::get_if<at_address_register>(&placement),
             }) {
 
-            return operand::mem(pointed->reg.base_register(), "", 1, offset,
+            return operand::mem(pointed->reg.register_name(), "", 1, offset,
                                 value_type);
         }
 
@@ -2779,7 +2779,7 @@ class variable_comments final {
         ::machine& x{machine_.get()};
 
         if (not reg.is_empty()) {
-            x.comment(src_loc_tk, indent, "{} ({})", text, reg.base_register());
+            x.comment(src_loc_tk, indent, "{} ({})", text, reg.register_name());
             return;
         }
 

@@ -375,7 +375,7 @@ class ident_info final {
             const ::operand& reg{std::get<register_part>(part_).reg};
 
             return paths_match and elem_path_.size() == 1 and
-                   reg.is_register() and not reg.base_register().empty() and
+                   reg.is_register() and not reg.register_name().empty() and
                    reg.index_register().empty() and reg.displacement() == 0;
         }
 
@@ -701,8 +701,8 @@ class destination final {
         destination result;
         result.operand_ = reg;
         result.type_ptr_ = &reg.type_ref();
-        result.name_ = reg.base_register();
-        result.text_ = reg.base_register();
+        result.name_ = reg.register_name();
+        result.text_ = reg.register_name();
 
         return result;
     }

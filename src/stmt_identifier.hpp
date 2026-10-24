@@ -1100,7 +1100,7 @@ class stmt_identifier final : public statement {
         for (const operand& r : registers.owned()) {
             // the frame register and the caller's registers are never owned,
             // so a match proves the base is private to this path
-            if (r.base_register() == address.base_register()) {
+            if (r.register_name() == address.base_register()) {
                 return r;
             }
         }

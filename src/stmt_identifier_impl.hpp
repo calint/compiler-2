@@ -303,7 +303,7 @@ inline auto stmt_identifier::add_index(toc& tc, const size_t indent,
     }
 
     return operand::mem(
-        address.base_register(), index_register.base_register(),
+        address.base_register(), index_register.register_name(),
         is_encodable_scale ? type_size : 1,
         add_address_offset(address.displacement(),
                            scaled_address_offset(addend_elements, type_size)),
