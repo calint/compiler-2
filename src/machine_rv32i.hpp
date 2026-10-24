@@ -563,16 +563,13 @@ class machine_rv32i : public machine {
     auto branch_to_failure(const token& src_loc_tk, const size_t indent,
                            const failure_handler& handler) -> void {
 
-        // e.g. a frame overflow reports no line, it is not at a statement
-        if (not reports_line() or not handler.takes_line) {
-            mark_used(handler.label);
+        if (not mark_failure(handler, src_loc_tk)) {
             branch(indent, handler.label);
             return;
         }
 
         comment(src_loc_tk, indent, "source line");
         assembler_.li(indent, "a0", src_loc_tk.at_line());
-        mark_used(handler.label, src_loc_tk);
 
         branch(indent,
                failure_entry_label(handler.label, src_loc_tk.file_index()));

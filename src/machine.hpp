@@ -1515,6 +1515,22 @@ class machine {
                    slot_address);
     }
 
+    // marks 'handler' used for the failure at 'src_loc_tk'; true when the
+    // failure reports its line, e.g. not a frame overflow, which is not at a
+    // statement
+    [[nodiscard]] auto mark_failure(const failure_handler& handler,
+                                    const token& src_loc_tk) -> bool {
+
+        if (not reports_line_ or not handler.takes_line) {
+            mark_used(handler.label);
+            return false;
+        }
+
+        mark_used(handler.label, src_loc_tk);
+
+        return true;
+    }
+
     // a passed lower bounds check leaves the checked register non-negative
     // until it is allocated again
     auto mark_lower_checked(const bounds_range& range) -> void {

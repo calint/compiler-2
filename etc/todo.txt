@@ -147,6 +147,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           "address scope"; listings equal
        D.4. "failure" for the path, "panic" for the message, one
             'machine::mark_failure' (B8)
+       => D.4 done (2026-10-24): 'machine::mark_failure(handler, tk)' marks
+          the use and says whether the line is reported, x86_64
+          'failure_label' and rv32i 'branch_to_failure' keep only the jump;
+          x86_64 'branch_to_bounds_failure', 'branch_to_overflow_failure',
+          'emit_failure_handler_body', 'emit_failure_exit',
+          'line_failure_label'; "panic" stays for the message
+          ('panic_message', 'emit_panic_message') and the handler labels;
+          listings equal
        D.5. ask, large: the 'toc' frame is a scope ('frame' -> 'scope',
             'frame_scope' -> 'scope_entry'), "frame" stays for memory (S4)
        D.6. ask, large: 'operand::register_name()' for a register operand,

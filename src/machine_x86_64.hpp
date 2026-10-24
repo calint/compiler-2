@@ -45,7 +45,7 @@
 //                'check_copy_overlap', 'check_frame_capacity', each jumps to
 //                its handler, all but the frame check with a stub per line
 //                for '--checks=line'
-//   handlers     'emit_failure_handler', 'emit_line_panic_handler'
+//   handlers     'emit_failure_handler', 'emit_failure_handler_body'
 //   calls        'call_function', the system calls 'io_syscall' and 'exit',
 //                the sector routines 'emit_sector_routines'
 class machine_x86_64 final : public machine {
@@ -1038,8 +1038,8 @@ class machine_x86_64 final : public machine {
         // note: the stack is not bounded, see 'is_stack_bounded'
         assert(handler.label != stack_overflow_failure.label);
 
-        emit_line_panic_handler(with_line, handler,
-                                failure_lines_of(handler.label));
+        emit_failure_handler_body(with_line, handler,
+                                  failure_lines_of(handler.label));
     }
 
     // 'read' and 'write' are system calls, the sector functions routines
@@ -1387,20 +1387,21 @@ class machine_x86_64 final : public machine {
     auto branch_on_overflow(const token& src_loc_tk, const size_t indent)
         -> void {
 
-        branch_to_overflow_panic(src_loc_tk, indent, condition::o);
+        branch_to_overflow_failure(src_loc_tk, indent, condition::o);
     }
 
     // a reported line goes through the stub of its line, which sets rbp for
     // the handler, so a passing check keeps rbp and loads nothing
-    auto branch_to_bounds_panic(const token& src_loc_tk, const size_t indent,
-                                const condition failed) -> void {
+    auto branch_to_bounds_failure(const token& src_loc_tk, const size_t indent,
+                                  const condition failed) -> void {
 
         assembler_.jcc(indent, failed,
                        failure_label(bounds_failure, src_loc_tk));
     }
 
-    auto branch_to_overflow_panic(const token& src_loc_tk, const size_t indent,
-                                  const condition failed) -> void {
+    auto branch_to_overflow_failure(const token& src_loc_tk,
+                                    const size_t indent, const condition failed)
+        -> void {
 
         assembler_.jcc(indent, failed,
                        failure_label(overflow_failure, src_loc_tk));
@@ -1440,7 +1441,7 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, right, low_byte);
         cmp(src_loc_tk, indent, right, left);
 
-        branch_to_overflow_panic(src_loc_tk, indent, condition::ne);
+        branch_to_overflow_failure(src_loc_tk, indent, condition::ne);
     }
 
     // the source in 'rsi', the destination in 'rdi' and the byte count in
@@ -1556,8 +1557,8 @@ class machine_x86_64 final : public machine {
         comment(src_loc_tk, indent, "shift check end");
     }
 
-    // branches to the panic when the range passes the array count, a range
-    // 'index + count' may end at it; a signed end that passes the signed
+    // branches to the failure handler when the range passes the array count, a
+    // range 'index + count' may end at it; a signed end that passes the signed
     // maximum is out of bounds, the unsigned compare sees it large
     auto check_upper_bound(const token& src_loc_tk, const size_t indent,
                            const bounds_range& range,
@@ -1571,7 +1572,7 @@ class machine_x86_64 final : public machine {
             cmp(src_loc_tk, indent, range.checked,
                 immediate(range.array_count));
 
-            branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds);
+            branch_to_bounds_failure(src_loc_tk, indent, out_of_bounds);
 
             return;
         }
@@ -1592,14 +1593,14 @@ class machine_x86_64 final : public machine {
         } else {
             mov(src_loc_tk, indent, reg_top_idx, range.checked);
             add(src_loc_tk, indent, reg_top_idx, range.count);
-            branch_to_bounds_panic(src_loc_tk, indent, condition::o);
+            branch_to_bounds_failure(src_loc_tk, indent, condition::o);
         }
 
         cmp(src_loc_tk, indent, reg_top_idx, immediate(range.array_count));
 
         free_scratch_register(src_loc_tk, indent, reg_top_idx);
 
-        branch_to_bounds_panic(src_loc_tk, indent, out_of_bounds);
+        branch_to_bounds_failure(src_loc_tk, indent, out_of_bounds);
     }
 
     auto cmp(const token& src_loc_tk, const size_t indent,
@@ -1634,32 +1635,22 @@ class machine_x86_64 final : public machine {
                                to_argument(src));
     }
 
-    // an immediate that does not fit the instruction goes through a register
-    auto emit_immediate_op(const token& src_loc_tk, const size_t indent,
-                           const op code, const operand& dst_op,
-                           const operand& src_op) -> void {
+    auto emit_failure_exit(const int exit_code) -> void {
+        assembler_.comment(1,
+                           std::format("exit with error code {}", exit_code));
 
-        if (not needs_immediate_register(code, dst_op, src_op)) {
-            emit(indent, code, dst_op, src_op);
-            return;
-        }
-
-        const operand reg{
-            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
-        };
-
-        emit(indent, op::mov, reg, src_op);
-        emit(indent, code, dst_op, reg);
-        free_scratch_register(src_loc_tk, indent, reg);
+        assembler_.instruction(1, op::mov, "rax", syscall_exit_);
+        assembler_.instruction(1, op::mov, "rdi", exit_code);
+        assembler_.instruction(1, op::syscall);
     }
 
     // the handler of a check: without the line it prints 'panic: NAME'; with
     // it, one stub per failure location sets rbp to the line and enters the
     // entry of its file, which prints 'panic: NAME at FILE:', sets rbx to the
     // exit code and enters the shared line report
-    auto emit_line_panic_handler(const bool with_line,
-                                 const failure_handler& handler,
-                                 const failure_lines& lines_by_file) -> void {
+    auto emit_failure_handler_body(const bool with_line,
+                                   const failure_handler& handler,
+                                   const failure_lines& lines_by_file) -> void {
 
         const std::string_view name{handler.name};
         const std::string_view handler_label{handler.label};
@@ -1673,7 +1664,7 @@ class machine_x86_64 final : public machine {
 
             assembler_.label(0, handler_label);
             emit_panic_message(message_label);
-            emit_panic_exit(handler.exit_code);
+            emit_failure_exit(handler.exit_code);
 
             emit_message_data(message_label, token::encode_string(std::format(
                                                  "{}\n", panic_message(name))));
@@ -1683,7 +1674,7 @@ class machine_x86_64 final : public machine {
 
         for (const auto& [file_ix, lines] : lines_by_file) {
             for (const size_t line : lines) {
-                assembler_.label(0, line_panic_label(name, file_ix, line));
+                assembler_.label(0, line_failure_label(name, file_ix, line));
                 assembler_.instruction(1, op::mov, "rbp", line);
                 assembler_.jmp(1, failure_entry_label(handler_label, file_ix));
             }
@@ -1707,6 +1698,25 @@ class machine_x86_64 final : public machine {
                 message_label,
                 token::encode_string(failure_message(name, file_ix)));
         }
+    }
+
+    // an immediate that does not fit the instruction goes through a register
+    auto emit_immediate_op(const token& src_loc_tk, const size_t indent,
+                           const op code, const operand& dst_op,
+                           const operand& src_op) -> void {
+
+        if (not needs_immediate_register(code, dst_op, src_op)) {
+            emit(indent, code, dst_op, src_op);
+            return;
+        }
+
+        const operand reg{
+            alloc_scratch_register(src_loc_tk, indent, builtin_type_i64()),
+        };
+
+        emit(indent, op::mov, reg, src_op);
+        emit(indent, code, dst_op, reg);
+        free_scratch_register(src_loc_tk, indent, reg);
     }
 
     // x86 has no memory to memory form, the source goes through a register of
@@ -1815,16 +1825,7 @@ class machine_x86_64 final : public machine {
         emit_narrowing_op(indent, code, dst_op, src_op);
     }
 
-    auto emit_panic_exit(const int exit_code) -> void {
-        assembler_.comment(1,
-                           std::format("exit with error code {}", exit_code));
-
-        assembler_.instruction(1, op::mov, "rax", syscall_exit_);
-        assembler_.instruction(1, op::mov, "rdi", exit_code);
-        assembler_.instruction(1, op::syscall);
-    }
-
-    // shared by the panic handlers, which run after all allocations
+    // shared by the failure handlers, which run after all allocations
     auto emit_panic_message(const std::string_view message_label) -> void {
         assembler_.comment(1, "print message to stderr");
         assembler_.instruction(1, op::mov, "rax", syscall_write_);
@@ -1992,21 +1993,16 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg_sx);
     }
 
-    // the handler 'handler_label' to jump to, or with the line the stub of
-    // the line; marked used so the handler of 'name' is emitted
+    // the handler to jump to, or with the line the stub of the line
     [[nodiscard]] auto failure_label(const failure_handler& handler,
                                      const token& src_loc_tk) -> std::string {
 
-        // e.g. a frame overflow reports no line, it is not at a statement
-        if (not reports_line() or not handler.takes_line) {
-            mark_used(handler.label);
+        if (not mark_failure(handler, src_loc_tk)) {
             return std::string{handler.label};
         }
 
-        mark_used(handler.label, src_loc_tk);
-
-        return line_panic_label(handler.name, src_loc_tk.file_index(),
-                                src_loc_tk.at_line());
+        return line_failure_label(handler.name, src_loc_tk.file_index(),
+                                  src_loc_tk.at_line());
     }
 
     auto idiv(const token& src_loc_tk, const size_t indent,
@@ -2350,7 +2346,7 @@ class machine_x86_64 final : public machine {
         }
 
         test(src_loc_tk, indent, value, value);
-        branch_to_bounds_panic(src_loc_tk, indent, condition::s);
+        branch_to_bounds_failure(src_loc_tk, indent, condition::s);
     }
 
     auto with_lowered_addresses(
@@ -2439,9 +2435,9 @@ class machine_x86_64 final : public machine {
 
     // a location in the main file has no file index, so the label stays the
     // same for a program of one file
-    [[nodiscard]] static auto line_panic_label(const std::string_view name,
-                                               const size_t file_ix,
-                                               const size_t line)
+    [[nodiscard]] static auto line_failure_label(const std::string_view name,
+                                                 const size_t file_ix,
+                                                 const size_t line)
         -> std::string {
 
         if (file_ix == 0) {
