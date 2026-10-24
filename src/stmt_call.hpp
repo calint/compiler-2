@@ -582,6 +582,28 @@ struct call_site {
         return temporaries;
     }
 
+    // which arguments a noinline body reaches through a temporary of the call:
+    // a value without storage, e.g. a literal or an expression; an array is
+    // only passed by name
+    [[nodiscard]] auto noinline_temporaries(const toc& tc,
+                                            const stmt_def_func& func) const
+        -> std::vector<bool> {
+
+        std::vector<bool> temporaries;
+        temporaries.reserve(args.size());
+
+        for (const auto [arg, param] : std::views::zip(args, func.params())) {
+            const argument_plan plan{plan_argument(tc, arg, param)};
+
+            // note: an array argument is a place, see 'assert_argument_usable'
+            assert(not param.is_array() or plan.storage);
+
+            temporaries.push_back(not plan.storage);
+        }
+
+        return temporaries;
+    }
+
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
     [[nodiscard]] auto
@@ -606,6 +628,24 @@ struct call_site {
             .target{target},
             .is_temporary{true},
         };
+    }
+
+    // a block holds the temporaries of a call and frees them after it
+    // note: a block is a frame, which counts toward the nesting limit and the
+    //       'max scopes in use' report, so a call without temporaries enters
+    //       none
+    static auto in_temporaries_block(toc& tc, const bool has_temporaries,
+                                     const std::function_ref<void()> compile)
+        -> void {
+
+        if (not has_temporaries) {
+            compile();
+            return;
+        }
+
+        const toc::frame_scope block{tc, frame::block()};
+
+        compile();
     }
 
     // unique per call and argument, an inlined body names it through the
@@ -765,26 +805,17 @@ class inline_call {
             return;
         }
 
-        // note: a block is a frame, which counts toward the nesting limit and
-        //       the 'max scopes in use' report, so a call without temporaries
-        //       enters none
+        call_site::in_temporaries_block(
+            tc, std::ranges::contains(temporaries_, true), [&] -> void {
+                for (size_t i{}; i < temporaries_.size(); ++i) {
+                    if (temporaries_.at(i)) {
+                        std::ignore = call_.make_argument_temporary(
+                            tc, indent, i, func.params().at(i));
+                    }
+                }
 
-        if (not std::ranges::contains(temporaries_, true)) {
-            compile_to_destination(tc, indent, dst, func);
-            return;
-        }
-
-        // the block frees the temporaries after the call
-        const toc::frame_scope block{tc, frame::block()};
-
-        for (size_t i{}; i < temporaries_.size(); ++i) {
-            if (temporaries_.at(i)) {
-                std::ignore = call_.make_argument_temporary(
-                    tc, indent, i, func.params().at(i));
-            }
-        }
-
-        compile_to_destination(tc, indent, dst, func);
+                compile_to_destination(tc, indent, dst, func);
+            });
     }
 
     // the dry run of a 'noinline' call starts at this step, the call made its
@@ -1472,9 +1503,16 @@ class noinline_call {
     };
 
     call_site call_;
+    // one per argument: the body reaches it through the temporary of the call
+    // named by 'call_site::temporary_argument_name'
+    std::vector<bool> temporaries_;
 
   public:
-    explicit noinline_call(call_site call) : call_{std::move(call)} {}
+    noinline_call(call_site call, std::vector<bool> temporaries)
+        : call_{std::move(call)}, temporaries_{std::move(temporaries)} {
+
+        assert(temporaries_.size() == call_.args.size());
+    }
 
     // the callee reaches the result and the arguments through their addresses,
     // a result destination or an argument that is not a variable in memory,
@@ -1483,30 +1521,14 @@ class noinline_call {
     auto compile(toc& tc, const size_t indent, const destination& dst,
                  const stmt_def_func& func) const -> void {
 
-        const bool has_argument_temporary{
-            std::ranges::any_of(std::views::zip(call_.args, func.params()),
-                                [&](const auto& arg_and_param) -> bool {
-                                    return needs_temporary(
-                                        tc, std::get<0>(arg_and_param),
-                                        std::get<1>(arg_and_param));
-                                }),
+        const bool has_temporaries{
+            has_result_temporary(dst, func) or
+                std::ranges::contains(temporaries_, true),
         };
 
-        // note: a block is a frame, which counts toward the nesting limit and
-        //       the 'max scopes in use' report, so a call without temporaries
-        //       enters none
-
-        if (not has_result_temporary(dst, func) and
-            not has_argument_temporary) {
-
+        call_site::in_temporaries_block(tc, has_temporaries, [&] -> void {
             compile_arguments_and_call(tc, indent, dst, func);
-            return;
-        }
-
-        // the block frees the temporaries after the call
-        const toc::frame_scope block{tc, frame::block()};
-
-        compile_arguments_and_call(tc, indent, dst, func);
+        });
     }
 
   private:
@@ -1547,7 +1569,7 @@ class noinline_call {
         for (const auto [i, arg, param] : std::views::zip(
                  std::views::iota(size_t{}), call_.args, func.params())) {
 
-            if (not needs_temporary(tc, arg, param)) {
+            if (not temporaries_.at(i)) {
                 // note: an argument without a temporary is a place
                 const stmt_identifier& name{*arg.place_path()};
 
@@ -1722,14 +1744,7 @@ class noinline_call {
             return;
         }
 
-        std::vector<bool> temporaries;
-        temporaries.reserve(arguments.size());
-
-        for (const noinline_arg& argument : arguments) {
-            temporaries.push_back(argument.is_temporary);
-        }
-
-        const inline_call dry_run{call_, std::move(temporaries)};
+        const inline_call dry_run{call_, temporaries_};
 
         tc.dry_run_call_kind(*kind, level, [&] -> void {
             dry_run.compile_with_bindings(tc, indent, dst, func);
@@ -1974,23 +1989,6 @@ class noinline_call {
         locals.push_back(root);
 
         return locals.size() - 1;
-    }
-
-    // a value without storage, e.g. a literal or an expression, an array is
-    // only passed by name
-    [[nodiscard]] static auto needs_temporary(const toc& tc,
-                                              const expr_any& arg,
-                                              const stmt_def_func_param& param)
-        -> bool {
-
-        const call_site::argument_plan plan{
-            call_site::plan_argument(tc, arg, param),
-        };
-
-        // note: an array argument is a place, see 'assert_argument_usable'
-        assert(not param.is_array() or plan.storage);
-
-        return not plan.storage;
     }
 
     // the address the callee finds in a register, empty when none
@@ -2313,7 +2311,8 @@ class stmt_call : public expression {
         assert_arguments_not_written_later(tc, args_, std::nullopt);
 
         if (not func.is_inlined()) {
-            noinline_call{call}.compile(tc, indent, dst, func);
+            noinline_call{call, call.noinline_temporaries(tc, func)}.compile(
+                tc, indent, dst, func);
             return;
         }
 

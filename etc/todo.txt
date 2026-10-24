@@ -210,6 +210,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             since E.2), one helper carries the block rule and its comment
        G.2. the body places its parameters from 'frame_slots' (E.4 planned
             the body side), the index test and its note go
+       => G.1-G.2 done (2026-10-24): G.1 'call_site::noinline_temporaries'
+          beside 'instance_temporaries' (the rule of 'needs_temporary',
+          which goes), 'noinline_call' holds its temporaries like
+          'inline_call', the dry run takes them as they are;
+          'call_site::in_temporaries_block' carries the block rule and its
+          note once; G.2 'add_signature_vars' walks 'frame_slots', a slot is
+          placed by 'placement_of' (in place when parsed, through the frame
+          slot or the slot register when compiled), the index test and its
+          note gone; no listing changed
        G.3. 'call_scope' enters the toc function frame and the machine call
             frame together and adds the error frame on unwind (four sites
             by hand today); the machine side renamed for what it records

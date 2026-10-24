@@ -514,6 +514,34 @@ class stmt_def_func final : public statement {
         return is_method();
     }
 
+    // a parsed body names its result and parameters in place, a compiled
+    // noinline body reaches each through the address in its frame slot, the
+    // receiver through the address in 'slot_register'
+    [[nodiscard]] static auto placement_of(const var_access access,
+                                           const frame_slot& slot,
+                                           const operand& slot_register)
+        -> var_placement {
+
+        if (access == var_access::direct) {
+            return in_storage{
+                .offset{},
+                .base_register{},
+                .holds_address{},
+            };
+        }
+
+        if (slot.is_in_register) {
+            assert(not slot_register.is_empty());
+            return at_address_register{slot_register};
+        }
+
+        return in_storage{
+            .offset{},
+            .base_register{},
+            .holds_address{true},
+        };
+    }
+
     // e.g. 'func point.at(x, y) self'
     [[nodiscard]] auto is_constructor() const -> bool {
         return returns_.has_value() and
@@ -608,69 +636,48 @@ class stmt_def_func final : public statement {
                                            head_.mut_tk.is_empty()});
     }
 
-    // a noinline body reaches the result and the arguments through slots in
-    // its frame that hold their addresses. the array lengths are those of the
-    // body instance, empty where no call gives them: in the parse and in
-    // 'check_body'. the receiver is at 'address_register' instead of the frame,
-    // when given
+    // the result and the parameters in the order of 'frame_slots', placed by
+    // 'placement_of'; the array lengths are those of the body instance, empty
+    // where no call gives them: in the parse and in 'check_body'
     auto add_signature_vars(toc& tc, const size_t indent,
                             const var_access access,
                             const std::span<const size_t> array_lengths,
-                            const operand& address_register) const -> void {
+                            const operand& slot_register) const -> void {
 
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
 
-        const bool holds_address{access == var_access::through_address};
-
         size_t next_array_index{};
 
-        if (returns_) {
-            tc.add_var(returns_->ident_tk, indent,
-                       {
-                           .name{returns_->ident_tk.text()},
-                           .type_ptr{&get_type()},
-                           .src_loc_tk{returns_->ident_tk},
-                           .shape{},
-                           .placement{
-                               in_storage{
-                                   .offset{},
-                                   .base_register{},
-                                   .holds_address{holds_address},
-                               },
-                           },
-                           .foo_array{},
-                       },
-                       var_kind::result);
-        }
+        for (const frame_slot& slot : frame_slots()) {
+            const var_placement placement{
+                placement_of(access, slot, slot_register),
+            };
 
-        for (const auto [param_index, param] : std::views::enumerate(params_)) {
+            if (not slot.param_index) {
+                // note: a slot without a parameter is the result
+                assert(returns_);
+
+                tc.add_var(returns_->ident_tk, indent,
+                           {
+                               .name{returns_->ident_tk.text()},
+                               .type_ptr{&get_type()},
+                               .src_loc_tk{returns_->ident_tk},
+                               .shape{},
+                               .placement{placement},
+                               .foo_array{},
+                           },
+                           var_kind::result);
+
+                continue;
+            }
+
+            const stmt_def_func_param& param{params_.at(*slot.param_index)};
+
             const std::optional<size_t> array_len{
                 param.is_array() and not array_lengths.empty()
                     ? std::optional{array_lengths.at(next_array_index++)}
                     : std::nullopt,
-            };
-
-            // the register is the address of the variable, it has no slot in
-            // the frame
-            // note: an address register is given only for the receiver, see
-            //       'has_receiver_in_register'
-
-            const bool is_in_register{
-                not address_register.is_empty() and param_index == 0,
-            };
-
-            const at_address_register address_in_register{address_register};
-
-            const in_storage stored{
-                .offset{},
-                .base_register{},
-                .holds_address{holds_address},
-            };
-
-            const var_placement placement{
-                is_in_register ? var_placement{address_in_register}
-                               : var_placement{stored},
             };
 
             tc.add_var(param.tok(), indent,
