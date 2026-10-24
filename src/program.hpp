@@ -485,13 +485,19 @@ class program final {
 
         x.label(0, reserved_names::main);
 
+        bool reaches_end{};
+
         {
             const toc::frame_scope main{tc, frame::main_func()};
             func_main.compile_statements(tc, 0);
+
+            // the compile knows the conditions it folded, e.g. with constant
+            // arguments of an inlined call
+            reaches_end = tc.is_path_open();
         }
 
         // code after an 'exit' or 'return' on every path would never run
-        if (func_main.is_end_reachable()) {
+        if (reaches_end) {
             x.end_main();
         }
     }

@@ -153,6 +153,16 @@ class Generator:
             return norm16(e).text
         return e.text
 
+    # a jump whose condition the parse folds to true leaves the code after it
+    # unreached, which the compiler rejects; 'v == v' of a variable keeps the
+    # parse from folding it and does not change its value
+    def jump_condition(self):
+        c = self.condition(1)
+        if not self.scalars:
+            return c
+        v = self.rnd.choice(self.scalars)
+        return f"({c}) and ({v} == {v})"
+
     def condition(self, depth=2):
         rnd = self.rnd
         r = rnd.random()
@@ -226,7 +236,7 @@ class Generator:
             self.indent -= 1
             self.emit("}")
         elif r < 0.84 and in_loop:
-            self.emit(f"if {self.condition(1)} {{")
+            self.emit(f"if {self.jump_condition()} {{")
             self.indent += 1
             self.emit(rnd.choice(["break", "continue"]))
             self.indent -= 1

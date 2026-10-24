@@ -374,6 +374,9 @@ class frame final {
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
+    // a 'loop' frame: a 'break' of it was compiled, so its end is reached
+    bool is_left_by_break_{};
+
     frame_type type_{frame_type::block};
     std::optional<function_part> func_;
     std::optional<storage_base> storage_;
@@ -483,9 +486,15 @@ class frame final {
 
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
 
+    [[nodiscard]] auto is_left_by_break() const -> bool {
+        return is_left_by_break_;
+    }
+
     [[nodiscard]] auto is_loop() const -> bool {
         return type_ == frame_type::loop;
     }
+
+    auto mark_left_by_break() -> void { is_left_by_break_ = true; }
 
     [[nodiscard]] auto is_main() const -> bool {
         return type_ == frame_type::main_func;
@@ -1484,6 +1493,19 @@ class scope_stack final {
         }
 
         return count;
+    }
+
+    // a 'break' of the innermost 'loop' or 'foo' is compiled, see
+    // 'frame::is_left_by_break'
+    auto mark_loop_left() -> void {
+        for (frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_loop() or frm.is_foo()) {
+                frm.mark_left_by_break();
+                return;
+            }
+        }
+
+        std::unreachable();
     }
 
     // the innermost 'loop' or 'foo' of the function, the target of a 'break'
@@ -3495,6 +3517,9 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
+
+    // a 'break' leaves the innermost loop, whose end is then reached
+    auto mark_loop_left() -> void { scopes_.mark_loop_left(); }
 
     auto set_path_open(const bool is_open) -> void {
         scopes_.set_path_open(is_open);

@@ -87,8 +87,10 @@ def decorate(program, rnd, allow_loop):
 
     wrappers = [("{", "}"), ("if true {", "}"), ("if 1 == 1 {", "} else {\n}")]
 
+    # note: the 'break' never runs and comes first, the body may end in an
+    #       'exit', after which a statement would be unreached
     if allow_loop:
-        wrappers.append(("loop {", "break\n}"))
+        wrappers.append(("loop {\nif 1 == 2 break", "}"))
 
     for _ in range(rnd.randint(0, 2)):
         opener, closer = rnd.choice(wrappers)

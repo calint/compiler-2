@@ -549,13 +549,11 @@ class stmt_def_func final : public statement {
                returns_->ident_tk.is_text(reserved_names::self);
     }
 
-    // uses the definite-assignment walk for its reachability only
-    [[nodiscard]] auto is_end_reachable() const -> bool {
+    // the definite-assignment walk without a variable, see
+    // 'stmt_block::trace_assignment'
+    auto assert_statements_reached() const -> void {
         assignment_flow flow{std::nullopt, tok(), 0};
-
         code_.trace_assignment(flow);
-
-        return flow.is_reachable();
     }
 
     [[nodiscard]] auto is_inlined() const -> bool {
@@ -880,6 +878,7 @@ class stmt_def_func final : public statement {
         // checked here so that the error of an instance gets its frames, a
         // signature that 'main' cannot have first
         assert_main_signature();
+        assert_statements_reached();
         assert_sets_result();
 
         body_uses_ = tc.scopes().current_func_frame().body_uses_of_func();

@@ -1,0 +1,15 @@
+# a statement after an 'if' whose every branch returns is not reached
+
+func f(x) res {
+    res = 1
+    if x > 0 {
+        return
+    } else {
+        return
+    }
+    res = 9
+}
+
+func main() {
+    exit(f(2))
+}

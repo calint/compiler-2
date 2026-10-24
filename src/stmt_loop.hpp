@@ -46,15 +46,21 @@ class stmt_loop final : public statement {
 
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(indent, label);
-        const toc::frame_scope loop{tc, frame::loop(label)};
-        code_.compile(tc, indent, destination{});
+
+        // the end is reached only by a 'break' that is compiled, the parse
+        // rejects code after a loop without one
+        bool is_left{};
+
+        {
+            const toc::frame_scope loop{tc, frame::loop(label)};
+            code_.compile(tc, indent, destination{});
+            is_left = tc.scopes().back().is_left_by_break();
+        }
+
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
 
-        // note: the end is reached by a 'break', a loop without one is taken
-        //       as one that ends too
-
-        tc.set_path_open(true);
+        tc.set_path_open(is_left);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

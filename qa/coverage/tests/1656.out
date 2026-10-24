@@ -1,0 +1,4 @@
+
+1656.baz:9:5: statement is not reached, the path before it does not continue
+    exit(1)
+    ^~~~

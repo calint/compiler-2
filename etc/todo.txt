@@ -214,6 +214,21 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'stmt_loop' records breaks), 'compile_main' asks the compile;
             decision needed: the compile today keeps the code after a 'loop'
             without 'break', the parse ends the path there
+            => done (2026-10-24, decided: code after a path that cannot
+               continue is a compile error): 'stmt_block::trace_assignment'
+               rejects a statement after a path end ("statement is not
+               reached, ..."), every function body is walked at its parse
+               ('assert_statements_reached'); the compile keeps its flag for
+               what only it knows, a loop is left when a compiled 'break'
+               marks its frame ('frame::is_left_by_break', the old "a loop
+               without one ends too" gone); 'compile_main' asks the compile,
+               'is_end_reachable' gone; no 'path_reach' class: the two walks
+               share the rules but not the knowledge (assigned bytes, folded
+               conditions), a shared class would only forward; tests 0122-0124
+               rewritten without dead code, 1649 split, 1655-1657 new; the
+               fuzz generators give a jump 'and (v == v)' so the parse does
+               not fold it, the reject fuzzer's loop wrapper breaks first;
+               README 1.5
     F. kinds told apart by flags become variants (the C.1 pattern)
        F.1. 'expr_bool_op': {shorthand, comparison {op, rhs, is_memory}};
             the unused 'op_'/'rhs_' of the shorthand go
@@ -426,6 +441,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     literals resolved by the resolver; 'expr_any' forms inside 'expr_any';
     'accessed_bytes_' beside 'access_path_'; the handler skeletons (G.2);
     both versions compiled (chapter 5)
+[ ] medium: 'qa/fuzz/fuzz-programs.py' (seeds 59, 61) finds programs that
+    are rejected with "cannot allocate register rdx because it holds a
+    scratch value allocated at L:C", the same location, e.g. inside 'res =
+    (acc0 & 0xffff) - 32768' of a deep expression; also with the binaries
+    of the morning of 2026-10-24, so older than round 13's later phases;
+    findings in qa/fuzz/findings ('gen-reject-*'); decide whether it is a
+    register limit of a valid program (then the message and a smaller
+    lowering) or a bug of a lowering that names a register it holds
+[ ] easy: an inlined call whose end the compile does not reach (e.g. a
+    'loop' whose 'break' folds away for a constant argument) does not close
+    the path of its caller, the code after the call is compiled though it
+    does not run; 'inline_call' could hand the closed path to the caller
 [o] hard: design review (2026-10-23, four reviewers over nodes, calls,
     tables and backends, claims spot-checked): the refactors toward a design a
     reviewer judges clean; each step a pure refactor unless marked, measured

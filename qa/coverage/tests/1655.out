@@ -1,0 +1,4 @@
+
+1655.baz:10:5: statement is not reached, the path before it does not continue
+    res = 9
+    ^~~

@@ -3,8 +3,9 @@
 func foozi(i) res {
     loop {
         if i == 3 continue
-        break
+        if i == 2 break
         res = i * 2
+        break
     }
 }
 

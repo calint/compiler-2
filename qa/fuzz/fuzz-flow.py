@@ -105,6 +105,16 @@ class Generator:
                 self.expr(names, depth - 1, allow_call),
                 self.expr(names, depth - 1, allow_call))
 
+    # a jump whose condition the parse folds to true leaves the code after it
+    # unreached, which the compiler rejects; 'v == v' of a variable keeps the
+    # parse from folding it and does not change its value
+    def jump_cond(self, names):
+        c = self.cond(names, 1, False)
+        if not names:
+            return c
+        v = ("var", self.rnd.choice(names))
+        return ("and", c, ("cmp", "==", v, v))
+
     def cond(self, names, depth, allow_call=True):
         rnd = self.rnd
         r = rnd.random()
@@ -237,12 +247,11 @@ class Generator:
         if r < 0.82:
             return ("let", self.fresh("k"), self.expr(names, 2, False))
         if r < 0.88 and in_loop:
-            return (rnd.choice(["break", "continue"]),
-                    self.cond(names, 1, False))
+            return (rnd.choice(["break", "continue"]), self.jump_cond(names))
         if r < 0.92 and in_function:
-            return ("return", self.cond(names, 1, False))
+            return ("return", self.jump_cond(names))
         if r < 0.94:
-            return ("exit", self.cond(names, 1, False), rnd.randint(1, 100))
+            return ("exit", self.jump_cond(names), rnd.randint(1, 100))
         if self.functions:
             f = rnd.choice(self.functions)
             call = ("call", f, [self.expr(names, 1, False) for _ in f.params])

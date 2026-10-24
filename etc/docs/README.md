@@ -320,13 +320,19 @@ is rejected at any call of it, whatever the order of the calls, except for a
 chain through a cycle of noinline calls
 ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
 
-A branch whose condition folds to false is not compiled, nor is the code
-after a statement that leaves on every path, e.g. after the 'return' of 'if n
-> 5 return' in an inlined 'count(6)', which ends the expansion of a recursion
-with constant arguments; the function frame keeps whether the path is open
-('toc::is_path_open'), and 'stmt_if' joins its branches with the chain rule
-that the return check uses too, on the conditions known where the 'if' is
-written. So the rules checked while compiling do not run in such code: a constant argument of an inlined
+A statement after a path that cannot continue is rejected at the parse: after
+'return', 'break', 'continue', 'exit', an 'if' that leaves on every path or a
+'loop' without 'break' ('stmt_block::trace_assignment', on the conditions known
+where the code is written). The compile knows more, the conditions that
+constant arguments of an inlined call decide: a branch whose condition folds
+to false is not compiled, nor is the code after a statement that leaves on
+every path, e.g. after the 'return' of 'if n > 5 return' in an inlined
+'count(6)', which ends the expansion of a recursion with constant arguments,
+or after a 'loop' whose 'break' folds away; the function frame keeps whether
+the path is open ('toc::is_path_open'), a loop is left when a 'break' of it is
+compiled ('frame::is_left_by_break'), 'stmt_if' joins its branches with the
+same chain rule as the parse, and the end of 'main' is emitted when the
+compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
 call decides it, e.g. 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards
 the division. The branch is parsed like any code, so the rules of the parse
 hold in it, e.g. the names, the types and 'break' in a loop. Checking it

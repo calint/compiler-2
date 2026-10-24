@@ -1,7 +1,7 @@
 # return skips the required result assignment
 
 func foozi(i) res {
-    return
+    if i == 2 return
     res = i * 2
 }
 

@@ -1,0 +1,10 @@
+# a statement after a 'loop' without 'break' is not reached
+
+func main() {
+    var i = 0
+    loop {
+        i = i + 1
+        if i == 5 exit(i)
+    }
+    exit(1)
+}

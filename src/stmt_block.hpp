@@ -90,13 +90,15 @@ class stmt_block final : public statement {
         const assignment_flow::block_scope scope{flow};
 
         for (const std::unique_ptr<statement>& s : statements_) {
-            s->trace_assignment(flow);
-
-            // statements after 'return', 'break', 'continue' or 'exit' never
-            // run
+            // e.g. a statement after 'return', 'break', 'continue', 'exit'
+            // or a 'loop' without 'break'
             if (not flow.is_reachable()) {
-                break;
+                throw compile_error{s->tok(),
+                                    "statement is not reached, the path "
+                                    "before it does not continue"};
             }
+
+            s->trace_assignment(flow);
         }
     }
 

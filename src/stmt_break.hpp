@@ -38,6 +38,7 @@ class stmt_break final : public statement {
         assert(loop);
 
         x.branch(indent, toc::end_label(loop->label));
+        tc.mark_loop_left();
         tc.set_path_open(false);
     }
 

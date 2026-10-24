@@ -1,0 +1,18 @@
+# a loop whose 'break' folds away for a constant argument is not left, the
+# code after it is not compiled; the parse cannot tell and accepts it
+
+func spin(n) res {
+    res = 0
+    var i = 0
+    loop {
+        i = i + 1
+        if n == 1 break
+        if i == 7 exit(i)
+    }
+    res = 1
+}
+
+func main() {
+    var r = spin(0)
+    exit(r)
+}

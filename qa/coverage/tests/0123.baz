@@ -2,8 +2,9 @@
 
 func foozi(i) res {
     loop {
-        break
+        if i == 2 break
         res = i * 2
+        break
     }
 }
 
