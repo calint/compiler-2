@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "compile_error.hpp"
-#include "constant_parser.hpp"
 #include "decouple.hpp"
 #include "ident_info.hpp"
 #include "token.hpp"
@@ -162,33 +161,5 @@ class stmt_block final : public statement {
 
             statements_.emplace_back(parse_statement(tc, tz, tk));
         }
-    }
-
-    //
-    // statics
-    //
-
-    // 'tk' is the first token of the statement
-    [[nodiscard]] static auto parse_statement(toc& tc, tokenizer& tz,
-                                              const token tk)
-        -> std::unique_ptr<statement> {
-
-        // e.g. the '2' of 'return 2', which takes no value, or ''a' = 1'
-        if (tk.is_string() or constant_parser::is_literal(tk)) {
-            throw compile_error{tk, "expected a statement"};
-        }
-
-        // note: in 'decouple_impl.hpp', the statements it makes include this
-        //       class, e.g. 'loop' and 'if'
-
-        if (std::unique_ptr<statement> built{
-                create_statement_in_stmt_block(tc, tz, tk),
-            }) {
-
-            return built;
-        }
-
-        // e.g. 'lst.add(1)'
-        return create_statement_of_identifier(tc, tz, tk);
     }
 };

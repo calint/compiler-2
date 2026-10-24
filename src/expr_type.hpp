@@ -14,6 +14,7 @@
 #include <variant>
 #include <vector>
 
+#include "access_path.hpp"
 #include "compile_error.hpp"
 #include "decouple.hpp"
 #include "ident_info.hpp"
@@ -22,7 +23,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_alias.hpp"
 #include "ub_reads.hpp"
 
 // whether a literal names its type, e.g. 'point{1, 2}': only where the name

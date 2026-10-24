@@ -421,35 +421,21 @@ class program final {
     [[nodiscard]] auto parse_include(open_file& file, const token& include_tk)
         -> std::optional<size_t> {
 
-        tokenizer& tz{file.tz};
-
-        const token path_tk{tz.next_token()};
-
-        if (not path_tk.is_string()) {
-            throw compile_error{
-                path_tk, "expected the file name in quotes after 'include'"};
-        }
-
-        // escapes are decoded like in any other string, e.g. '\x20'
-        const std::string name{path_tk.string_bytes()};
-
-        // e.g. a NUL would end the path early and a line end split the
-        // messages that name the file
-        if (std::ranges::any_of(name, is_control_char)) {
-            throw compile_error{path_tk,
-                                "the file name has a control character"};
-        }
+        std::unique_ptr<stmt_include> include{
+            std::make_unique<stmt_include>(include_tk, file.tz),
+        };
 
         // relative to the directory of the file with the 'include'
         const std::filesystem::path path{
             (std::filesystem::path{files_.get().name(file.file_ix)}
                  .parent_path() /
-             name)
+             include->file_name())
                 .lexically_normal(),
         };
 
-        file.parsed.emplace_back(
-            std::make_unique<stmt_include>(include_tk, path_tk));
+        const token path_tk{include->path_token()};
+
+        file.parsed.emplace_back(std::move(include));
 
         const bool is_new{loaded_paths_.insert(identity_path(path)).second};
 

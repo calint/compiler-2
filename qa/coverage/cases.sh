@@ -1187,7 +1187,7 @@ SRC=0402 && EXP=0 && RUN
 # reg_size.empty() and curr_info.is_array)
 SRC=0403 && EXP=0 && RUN
 
-# branch coverage: decouple_impl recursive assign for non-builtin fields
+# branch coverage: parse_statement recursive assign for non-builtin fields
 # targets compile_assign branch: if (not tf.type().is_built_in())
 # e.compile_assign(...)
 SRC=0404 && EXP=0 && RUN

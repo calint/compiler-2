@@ -18,6 +18,7 @@
 #include <variant>
 #include <vector>
 
+#include "access_path.hpp"
 #include "compile_error.hpp"
 #include "constant_parser.hpp"
 #include "generics.hpp"
@@ -27,7 +28,6 @@
 #include "operand.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_alias.hpp"
 
 //
 // the table of contents: what the names of the program are while it is parsed
@@ -366,9 +366,6 @@ class frame final {
     // the bytes of variable storage this frame uses
     size_t allocated_storage_size_bytes_{};
 
-    // the root frame: the padding between the dats and its variables
-    size_t dat_var_padding_bytes_{};
-
     lut<const_info> consts_;
 
     // variables declared in this frame
@@ -412,8 +409,7 @@ class frame final {
     }
 
     [[nodiscard]] auto allocated_storage_size_bytes() const -> size_t {
-        return sum_storage_size(allocated_storage_size_bytes_,
-                                dat_var_padding_bytes_);
+        return allocated_storage_size_bytes_;
     }
 
     [[nodiscard]] auto body_uses_of_func() const -> const body_uses& {
@@ -546,12 +542,6 @@ class frame final {
 
     auto restore_peak_storage_size_bytes(const size_t size_bytes) -> void {
         base().peak_size_bytes = size_bytes;
-    }
-
-    auto set_dat_var_padding_bytes(const size_t size_bytes) -> void {
-        assert(dat_var_padding_bytes_ == 0);
-
-        dat_var_padding_bytes_ = size_bytes;
     }
 
     auto set_path_open(const bool is_open) -> void {
@@ -1709,7 +1699,9 @@ class storage_layout final {
     std::reference_wrapper<const data_table> data_;
     size_t vars_capacity_bytes_;
     size_t max_vars_size_bytes_{};
-    bool dat_var_padding_applied_{};
+    // the padding between the dats and the variables, set when the first
+    // variable after the dats is placed, see 'apply_dat_var_padding'
+    std::optional<size_t> applied_padding_bytes_;
 
     // the parse declares names without checking the capacity, the compile
     // checks it where the declaration is compiled; the locals of a dry run
@@ -1753,8 +1745,8 @@ class storage_layout final {
         //       function bodies it reads, whose offsets are not used
 
         assert(capacity_unchecked_ or
-               sum_storage_size(vars_size_bytes(), dat.padding_bytes) ==
-                   dat.offset_bytes);
+               sum_storage_size(dats_and_vars_size_bytes(),
+                                dat.padding_bytes) == dat.offset_bytes);
 
         const size_t allocated_size_bytes{
             sum_storage_size(dat.padding_bytes,
@@ -1827,7 +1819,9 @@ class storage_layout final {
         return allocated_size_bytes;
     }
 
-    auto assert_released() const -> void { assert(vars_size_bytes() == 0); }
+    auto assert_released() const -> void {
+        assert(dats_and_vars_size_bytes() == 0);
+    }
 
     // the declarations from here on are checked against the capacity
     auto begin_compile() -> void { capacity_unchecked_ = false; }
@@ -1886,7 +1880,7 @@ class storage_layout final {
 
         const size_t root_size_bytes{
             sum_storage_size(location.base_offset,
-                             dat_var_padding_applied_
+                             applied_padding_bytes_
                                  ? 0
                                  : data_.get().dat_var_padding_bytes()),
         };
@@ -1918,11 +1912,11 @@ class storage_layout final {
 
     // the root frame applies the dat var padding again when it is entered
     // anew
-    auto release_root() -> void { dat_var_padding_applied_ = false; }
+    auto release_root() -> void { applied_padding_bytes_.reset(); }
 
     // the frames of the parse are popped, its use of storage is forgotten
     auto reset_usage() -> void {
-        assert(vars_size_bytes() == 0);
+        assert(dats_and_vars_size_bytes() == 0);
 
         max_vars_size_bytes_ = 0;
     }
@@ -1956,18 +1950,16 @@ class storage_layout final {
   private:
     // the first variable after the dats starts past the padding that aligns it
     auto apply_dat_var_padding(const token& src_loc_tk) -> void {
-        if (dat_var_padding_applied_) {
+        if (applied_padding_bytes_) {
             return;
         }
 
         const size_t padding_bytes{data_.get().dat_var_padding_bytes()};
 
-        std::ignore =
-            add_storage_size(src_loc_tk, vars_size_bytes(), padding_bytes);
+        std::ignore = add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
+                                       padding_bytes);
 
-        scopes_.get().front().set_dat_var_padding_bytes(padding_bytes);
-
-        dat_var_padding_applied_ = true;
+        applied_padding_bytes_ = padding_bytes;
     }
 
     // the declaration that takes the data and variables past what the target
@@ -1978,7 +1970,7 @@ class storage_layout final {
         -> void {
 
         const size_t total_bytes{
-            add_storage_size(src_loc_tk, vars_size_bytes(),
+            add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
                              allocated_size_bytes),
         };
 
@@ -2043,7 +2035,7 @@ class storage_layout final {
 
         return {
             .frame_index{},
-            .base_offset{vars_size_bytes()},
+            .base_offset{dats_and_vars_size_bytes()},
         };
     }
 
@@ -2053,7 +2045,7 @@ class storage_layout final {
 
     // bytes of variables, without the dats and the padding after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
-        return vars_size_bytes() - data_.get().total_size_bytes() -
+        return dats_and_vars_size_bytes() - data_.get().total_size_bytes() -
                data_.get().dat_var_padding_bytes();
     }
 
@@ -2076,9 +2068,10 @@ class storage_layout final {
         return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
     }
 
-    // the dats, the padding after them and the variables of every frame
-    [[nodiscard]] auto vars_size_bytes() const -> size_t {
-        size_t total_bytes{};
+    // the dats, the padding after them once applied and the variables of
+    // every frame
+    [[nodiscard]] auto dats_and_vars_size_bytes() const -> size_t {
+        size_t total_bytes{applied_padding_bytes_.value_or(0)};
 
         for (const frame& frm : std::as_const(scopes_.get()).frames()) {
             total_bytes = sum_storage_size(total_bytes,

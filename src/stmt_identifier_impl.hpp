@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "access_path.hpp"
 #include "compile_error.hpp"
 #include "expr_any.hpp"
 #include "ident_info.hpp"
@@ -24,7 +25,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "ub_alias.hpp"
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 

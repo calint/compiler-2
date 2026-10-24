@@ -1,4 +1,4 @@
-# branch coverage: decouple_impl recursive assign for non-builtin fields
+# branch coverage: parse_statement recursive assign for non-builtin fields
 # targets compile_assign branch:
 #   if (not tf.type().is_built_in()) e.compile_assign(...)
 

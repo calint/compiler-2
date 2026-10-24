@@ -384,6 +384,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        J.4. large, mechanical, decide: an absent token as
             'std::optional<token>' ('is_next_char_token', 65 calls; the
             optional syntax members), 'is_empty'/'is_none' apart
+       => J.1-J.3 done (2026-10-24): J.1 'parse_statement.hpp' (was
+          'decouple_impl.hpp'), the grammar named for what it parses:
+          'parse_statement' (moved from 'stmt_block' with its literal test),
+          'parse_keyword_statement', 'parse_name_statement', 'parse_operand';
+          'access_path.hpp' (was 'ub_alias.hpp'); J.2 'stmt_include' parses
+          its file name (string, decoded, no control character), 'program'
+          resolves the path and loads the file once; J.3 reduced: the padding
+          after the dats has one home, 'storage_layout::
+          applied_padding_bytes_' (the flag and the root frame's copy gone),
+          'vars_size_bytes' -> 'dats_and_vars_size_bytes'; not derived from
+          the frames: the parse places dats and locals interleaved, a live
+          padding would change its size checks; no output changed
     K. listings (output changes, no instruction changes)
        K.1. comments of a destination print the written text
             ('b.items[i] * 2', today 'b.items * 2' for 'i * 2')

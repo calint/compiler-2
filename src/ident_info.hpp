@@ -19,11 +19,11 @@
 #include <variant>
 #include <vector>
 
+#include "access_path.hpp"
 #include "constant_arith.hpp"
 #include "operand.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_alias.hpp"
 
 // why a name cannot be written, for the diagnostic; 'none' is writable
 enum class read_only_cause : uint8_t {

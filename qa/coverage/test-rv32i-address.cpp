@@ -4,7 +4,7 @@
 #include <stdexcept>
 
 #include "../../src/assembler_rv32i.hpp"
-#include "../../src/decouple_impl.hpp" // IWYU pragma: keep
+#include "../../src/parse_statement.hpp" // IWYU pragma: keep
 #include "../../src/expr_type_impl.hpp" // IWYU pragma: keep
 #include "../../src/machine_rv32i_linux.hpp"
 #include "../../src/machine_x86_64.hpp"

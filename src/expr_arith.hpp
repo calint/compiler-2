@@ -1764,7 +1764,7 @@ class expr_arith final : public expression {
         uo.put_back(tz);
 
         std::unique_ptr<statement> element{
-            create_statement_in_expr_arith(tc, tz, destination_type),
+            parse_operand(tc, tz, destination_type),
         };
 
         if (not uo.is_empty()) {

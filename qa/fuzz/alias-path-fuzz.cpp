@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "../../src/ub_alias.hpp"
+#include "../../src/access_path.hpp"
 
 namespace {
 

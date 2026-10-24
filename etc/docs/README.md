@@ -115,7 +115,7 @@ the layers above it:
 
 ```text
 1. vocabulary        token, lut, compile_error, operand, type,
-                     constant_parser, constant_arith, source_files, ub_alias
+                     constant_parser, constant_arith, source_files, access_path
 2. assembler         assembler, assembler_x86_64, assembler_rv32i
 3. backend           register_pool, machine, machine_x86_64, machine_rv32i,
                      machine_rv32i_linux, machine_rv32i_bare_metal,
@@ -123,7 +123,7 @@ the layers above it:
 4. names and checks  tokenizer, generics, ident_info, ub_reads, ub_assigned,
                      toc
 5. nodes             statement, expression, unary_ops, parse_lookahead,
-                     decouple, decouple_impl, stmt_identifier, ub_order,
+                     decouple, parse_statement, stmt_identifier, ub_order,
                      bulk_operands, expr_*, stmt_*
 6. driver            program, main.cpp
 ```
@@ -138,7 +138,7 @@ Reading order, each file assumes the ones before it:
 ```text
 1. main.cpp, program.hpp       the driver and the passes
 2. statement.hpp               the node interface every statement has
-3. stmt_block.hpp, decouple_impl.hpp
+3. stmt_block.hpp, parse_statement.hpp
                                a block and the statement it parses next
 4. stmt_if.hpp, stmt_loop.hpp  control flow, the simplest nodes
 5. stmt_def_var.hpp, stmt_assign_var.hpp
@@ -1385,7 +1385,7 @@ ones its callees need.
 
 'main.cpp' includes the headers, there is no build system and the compiler
 sees the whole program. The include cycles between the statement classes are
-broken in 'decouple.hpp', 'decouple_impl.hpp', 'expr_type_impl.hpp' and
+broken in 'decouple.hpp', 'parse_statement.hpp', 'expr_type_impl.hpp' and
 'stmt_identifier_impl.hpp' (the members of 'stmt_identifier' that use its
 index expressions, so that the expressions can include 'stmt_identifier.hpp');
 for

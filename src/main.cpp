@@ -24,7 +24,6 @@
 
 #include "assembler.hpp"
 #include "compile_error.hpp"
-#include "decouple_impl.hpp"  // IWYU pragma: keep
 #include "expr_type_impl.hpp" // IWYU pragma: keep
 #include "machine.hpp"
 #include "machine_rv32i.hpp"
@@ -32,6 +31,7 @@
 #include "machine_rv32i_linux.hpp"
 #include "machine_rv32i_qemu.hpp"
 #include "machine_x86_64.hpp"
+#include "parse_statement.hpp" // IWYU pragma: keep
 #include "program.hpp"
 #include "register_report.hpp" // IWYU pragma: keep
 #include "source_files.hpp"

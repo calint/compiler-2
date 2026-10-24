@@ -1,9 +1,10 @@
 #pragma once
 
-// the statement factories declared in 'decouple.hpp': they create the
-// statements of a block and the elements of an expression, and 'stmt_block'
-// and 'expr_arith', which call them, are included by those classes; the
-// definitions of the top level are made by 'program::parse_definition'
+// the statement grammar: a statement of a block ('parse_statement') and an
+// operand of an expression ('parse_operand'), declared in 'decouple.hpp'
+// because 'stmt_block' and 'expr_arith', which call them, are included by
+// the statements they make; the definitions of the top level are made by
+// 'program::parse_definition'
 
 #include <algorithm>
 #include <format>
@@ -11,6 +12,7 @@
 #include <utility>
 
 #include "compile_error.hpp"
+#include "constant_parser.hpp"
 #include "decouple.hpp"
 #include "parse_lookahead.hpp"
 #include "stmt_assign_var.hpp"
@@ -101,11 +103,8 @@ inline auto assert_builtin_without_type_args(const token& tk,
     return nullptr;
 }
 
-// every statement of a block that starts with a keyword or a built-in, null
-// for a name; called from 'stmt_block', which the statements with a block
-// include
-inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
-                                           const token tk)
+// a statement that starts with a keyword or a built-in, null for a name
+inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
 
     assert_builtin_without_type_args(tk, tz);
@@ -341,12 +340,11 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     };
 }
 
-// called from 'stmt_block'
-// a call as in an expression, e.g. 'f(x)', 'point.at(1, 2)' or 'lst.add(x)',
-// otherwise an assignment, e.g. 'p1 = p2'
+// a statement that starts with a name: a call as in an expression, e.g.
+// 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment, e.g.
+// 'p1 = p2'
 // note: 'unary_ops' not allowed before destination identifier
-inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
-                                           const token tk)
+inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
 
     // no destination: no type argument is deduced, and a discarded result is
@@ -373,10 +371,9 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
             "for function call"};
 }
 
-// called from 'expr_arith' to solve circular dependencies with function
-// calls
-inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
-                                           const type* const destination_type)
+// called from 'expr_arith', whose elements include it, e.g. a call
+inline auto parse_operand(toc& tc, tokenizer& tz,
+                          const type* const destination_type)
     -> std::unique_ptr<statement> {
 
     unary_ops uops{tz};
@@ -441,4 +438,20 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
     }
 
     return std::move(parsed.identifier);
+}
+
+inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)
+    -> std::unique_ptr<statement> {
+
+    // e.g. the '2' of 'return 2', which takes no value, or ''a' = 1'
+    if (tk.is_string() or constant_parser::is_literal(tk)) {
+        throw compile_error{tk, "expected a statement"};
+    }
+
+    if (std::unique_ptr<statement> built{parse_keyword_statement(tc, tz, tk)}) {
+        return built;
+    }
+
+    // e.g. 'lst.add(1)'
+    return parse_name_statement(tc, tz, tk);
 }

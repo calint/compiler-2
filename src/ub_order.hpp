@@ -7,13 +7,13 @@
 #include <string>
 #include <string_view>
 
+#include "access_path.hpp"
 #include "compile_error.hpp"
 #include "ident_info.hpp"
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
-#include "ub_alias.hpp"
 #include "ub_reads.hpp"
 
 // reads against writes: a statement is checked in the order its code runs, a
