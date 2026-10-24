@@ -168,10 +168,10 @@ class stmt_builtin_convert final : public expression {
     }
 
     // a constant of the type, which wraps at the width of its use: the
-    // constant argument converted, then the conversion's own unary ops apply
-    // at the width it is used at, at least that of the type, e.g. 'i16' for
-    // '-i8(-128)' in an 'i16' list, where under the overflow check a result
-    // that does not fit is an error
+    // argument folded like a list at W, where it wraps, narrowed to the type,
+    // then the conversion's own unary ops apply at the width it is used at,
+    // at least that of the type, e.g. 'i16' for '-i8(-128)' in an 'i16' list,
+    // where under the overflow check a result that does not fit is an error
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
@@ -183,20 +183,26 @@ class stmt_builtin_convert final : public expression {
             };
         }
 
-        const stmt_identifier* const path{arg_.operand_path()};
+        const value_use arg_use{
+            .width{&width_type()},
+            .checks_overflow{false},
+        };
 
-        if (path == nullptr) {
+        const std::optional<folded_value> arg{arg_.fold(tc, arg_use)};
+
+        if (not arg) {
             return std::nullopt;
         }
 
-        const ident_info info{make_ident_info(tc, *path)};
+        // note: an untyped constant converts whole, e.g. 'i32(0xfedc1234)' on
+        //       a target whose default type is 'i32', a list is a list at W
 
-        if (not info.is_const()) {
-            return std::nullopt;
+        if (arg->is_typed() or not arg_.is_single_operand()) {
+            arg_.assert_not_narrowed(tc, width_type());
         }
 
         const int64_t converted{
-            converted_constant(path->get_unary_ops(), info.constant().value),
+            constant_arith::wrap_to_width(arg->value, get_type()),
         };
 
         const type& use_width{use.width_ref()};
@@ -387,16 +393,6 @@ class stmt_builtin_convert final : public expression {
 
         x.copy_value(tok(), indent, dst.operand(), converted);
         x.free_scratch_register(tok(), indent, converted);
-    }
-
-    // the unary ops of the argument apply at its width, then the value is
-    // narrowed to the type
-    [[nodiscard]] auto converted_constant(const unary_ops& arg_uops,
-                                          const int64_t value) const
-        -> int64_t {
-
-        return constant_arith::wrap_to_width(arg_uops.evaluate_constant(value),
-                                             get_type());
     }
 
     [[nodiscard]] auto ops_place_for(const toc& tc,

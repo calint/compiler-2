@@ -19,6 +19,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             not a constant while 'int(3)' is (checked), 'i8(100 + 100)'
             copies -56 through a scratch register; more values fold, some
             programs rejected for a non-constant size are accepted
+       => A.1 done (2026-10-24): 'fold' folds 'arg_' at 'width_type()',
+          wrapping, checks it there with 'assert_not_narrowed' unless it is
+          one untyped constant (test 0091: 'i32(0xfedc1234)' on rv32i is
+          the spelling of a wide literal), then wraps to the type;
+          'converted_constant' gone; 7 listings shorter (x86_64 1558 ->
+          1529 instruction lines), values equal; fuzz-exprs spelling and
+          noub, fuzz-ub, constructs, calls, flow clean (fuzz-exprs with
+          '--checks=line' mismatches alike with the old binary, it models
+          the checks)
        A.2. binding comments print what was passed (N4): 'bound_name' gains
             the written text ('bind a -> copy[0]', today 'copy' for both
             'copy[0]' and 'copy[2]', checked); '(lea: ...)' -> '(address:

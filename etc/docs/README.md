@@ -385,8 +385,10 @@ wrapped to the width of its use; the unary ops apply by
 'unary_ops::evaluate_at', which rejects a negation of the minimum under the
 overflow check.
 
-'fold' does not check that the value fits, a conversion folds its argument at
-a narrower width on purpose; 'statement::fold_checked' adds the check of
+'fold' does not check that the value fits; a conversion folds its argument
+like a list at its width W, where it wraps, checks it there unless it is one
+untyped constant, which converts whole (e.g. 'i32(0xfedc1234)' on rv32i), and
+narrows the result to its type; 'statement::fold_checked' adds the check of
 'assert_not_narrowed' at the same width, so a folded comparison side or
 initializer is rejected where a computed one is. A constant reaches a
 destination only through the list that holds it ('expr_arith', the

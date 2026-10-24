@@ -5191,3 +5191,6 @@ SRC=1659 && COMPERR
 
 # a 'let' of a 'bool' is a constant 'bool'
 SRC=1660 && EXP=2 && RUN
+
+# a conversion folds its argument like a list at its width
+SRC=1661 && EXP=35 && RUN
