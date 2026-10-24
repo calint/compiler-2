@@ -248,6 +248,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             seven 'bind_*', 'plan_argument', 'is_instance_temporary' and
             'needs_temporary' read it; a table of forms with an example
             each above it; plan the cut against the tests of 'bind_value'
+            => done (2026-10-24): 'call_site::argument_form' {instance
+               temporary, place, computed, named value} with the table
+               above it, made by 'argument_form_of' per compile; read by
+               'instance_temporaries', 'noinline_temporaries' (a temporary
+               when not a place) and 'inline_call::bind_argument' (one
+               branch per form); 'argument_plan', 'plan_argument',
+               'is_instance_temporary', 'bind_place', 'bind_value' gone,
+               'bind_plain_argument' -> 'bind_named_value' with the
+               resolved name; the other readers of a place argument
+               ('assert_no_shared_storage', 'frame_slot_addresses', the
+               effects) keep 'place_path', they ask about storage only; no
+               listing changed
        F.6. optional, low: 'unary_ops' stores 'arithmetic_operator', the
             'assign' role leaves the backend enum
     G. calls
