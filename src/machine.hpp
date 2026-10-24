@@ -338,13 +338,14 @@ class machine {
     // registers allocated within the scope and restores what was protected.
     // it restores allocator bookkeeping only, not register values, and what
     // was allocated before the scope must not be freed within it
-    class address_scope final {
+    class operation_scope final {
         machine& machine_;
         uint32_t saved_mask_;
         size_t saved_count_;
 
       public:
-        address_scope(machine& backend, const operand& dst, const operand& src)
+        operation_scope(machine& backend, const operand& dst,
+                        const operand& src)
             : machine_{backend},
               saved_mask_{backend.state_.registers.unavailable_mask()},
               saved_count_{backend.state_.registers.allocations().size()} {
@@ -361,15 +362,15 @@ class machine {
         }
 
         // protects nothing, only frees what is allocated while it lives
-        explicit address_scope(machine& backend)
-            : address_scope{backend, operand{}, operand{}} {}
+        explicit operation_scope(machine& backend)
+            : operation_scope{backend, operand{}, operand{}} {}
 
-        address_scope(const address_scope&) = delete;
-        address_scope(address_scope&&) = delete;
-        auto operator=(const address_scope&) -> address_scope& = delete;
-        auto operator=(address_scope&&) -> address_scope& = delete;
+        operation_scope(const operation_scope&) = delete;
+        operation_scope(operation_scope&&) = delete;
+        auto operator=(const operation_scope&) -> operation_scope& = delete;
+        auto operator=(operation_scope&&) -> operation_scope& = delete;
 
-        ~address_scope() {
+        ~operation_scope() {
             register_pool& pool{machine_.state_.registers};
 
             while (pool.allocations().size() > saved_count_) {
@@ -902,7 +903,7 @@ class machine {
 
         // a far frame address is lowered through a scratch register, which
         // must not be the loaded slot register
-        const address_scope slot_kept{
+        const operation_scope slot_kept{
             *this,
             make_register_operand(slot_register(), default_type()),
             operand{},
@@ -1571,7 +1572,7 @@ class machine {
     }
 
     // keeps the register 'name' from being picked for scratch until the
-    // enclosing 'address_scope' ends
+    // enclosing 'operation_scope' ends
     auto protect_register(const std::string_view name) -> void {
         state_.registers.protect(register_mask(name));
     }

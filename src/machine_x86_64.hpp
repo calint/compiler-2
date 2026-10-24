@@ -2119,7 +2119,7 @@ class machine_x86_64 final : public machine {
                     element_size_bytes);
     }
 
-    // the register it allocates is freed by the 'address_scope' of the
+    // the register it allocates is freed by the 'operation_scope' of the
     // caller
     [[nodiscard]] auto lower_address(const token& src_loc_tk,
                                      const size_t indent, const operand& value)
@@ -2365,7 +2365,7 @@ class machine_x86_64 final : public machine {
         }
 
         // registers the operands refer to must not be picked for lowering
-        const address_scope scope{*this, dst, src};
+        const operation_scope scope{*this, dst, src};
 
         const operand lowered_dst{lower_address(src_loc_tk, indent, dst)};
         const operand lowered_src{lower_address(src_loc_tk, indent, src)};

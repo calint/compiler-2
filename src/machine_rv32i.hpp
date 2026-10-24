@@ -761,7 +761,7 @@ class machine_rv32i : public machine {
         assert(dst.is_register() or dst.is_memory());
         assert(dst.type_ref().size_bytes() == word_size_bytes_);
 
-        const address_scope scope{*this, dst, address};
+        const operation_scope scope{*this, dst, address};
         const operand value{working_register(src_loc_tk, indent, dst)};
 
         const operand lowered{
@@ -804,7 +804,7 @@ class machine_rv32i : public machine {
         const bulk_operation& bulk{bulk_operations_.back()};
         {
             // scaling the count must not pick the result registers
-            const address_scope scope{*this, request.dst, operand{}};
+            const operation_scope scope{*this, request.dst, operand{}};
 
             comment(src_loc_tk, indent,
                     "{}: elements to bytes ({} bytes/element)",
@@ -892,7 +892,7 @@ class machine_rv32i : public machine {
         assert(frame_address.index_register().empty());
         assert(frame_size_bytes.is_symbol());
 
-        const address_scope scope{*this, frame_address, frame_size_bytes};
+        const operation_scope scope{*this, frame_address, frame_size_bytes};
 
         // 'overflow' is where a frame outside of 'vars' and one too large for
         // it end up, 'fits' is after the jump to the handler
@@ -1049,7 +1049,7 @@ class machine_rv32i : public machine {
                     const std::function_ref<std::string()> add_constant)
         -> void override {
 
-        const address_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst, operand{}};
 
         const size_t width{bulk_width(access_alignment(dst, alignment))};
 
@@ -1138,7 +1138,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        const address_scope scope{*this, dst, src};
+        const operation_scope scope{*this, dst, src};
 
         const std::optional<int32_t> constant{
             narrowed_immediate(src, dst.type_ref()),
@@ -1289,7 +1289,7 @@ class machine_rv32i : public machine {
         // element sizes are limited by the variables that hold the arrays
         assert(element_size_bytes <= std::numeric_limits<uint32_t>::max());
 
-        const address_scope scope{*this, iterator, counter};
+        const operation_scope scope{*this, iterator, counter};
 
         add_subtract(src_loc_tk, indent, arithmetic_operator::add, iterator,
                      operand::imm(element_size_bytes, default_type()));
@@ -1449,7 +1449,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        const address_scope scope{*this, dst, count};
+        const operation_scope scope{*this, dst, count};
 
         const loaded_destination loaded{
             load_destination(src_loc_tk, indent, dst),
@@ -1503,7 +1503,7 @@ class machine_rv32i : public machine {
 
         assert(dst.is_register() or dst.is_memory());
 
-        const address_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst, operand{}};
 
         const loaded_destination loaded{
             load_destination(src_loc_tk, indent, dst),
@@ -1732,7 +1732,7 @@ class machine_rv32i : public machine {
             return;
         }
 
-        const address_scope scope{*this, dst, src};
+        const operation_scope scope{*this, dst, src};
 
         const loaded_destination loaded{
             load_destination(src_loc_tk, indent, dst),
@@ -1774,7 +1774,7 @@ class machine_rv32i : public machine {
             throw out_of_registers_error(src_loc_tk);
         }
 
-        const address_scope scope{*this, dst, source};
+        const operation_scope scope{*this, dst, source};
 
         const uint32_t live{registers().unavailable_mask()};
 
@@ -2221,9 +2221,9 @@ class machine_rv32i : public machine {
         const operand& right{memory.right};
         const operand& result{request.dst};
 
-        const address_scope operand_scope{*this, right, left};
+        const operation_scope operand_scope{*this, right, left};
 
-        const address_scope result_scope{*this, result, operand{}};
+        const operation_scope result_scope{*this, result, operand{}};
 
         const std::array<operand, 2> in_use{left, right};
 
@@ -2247,7 +2247,7 @@ class machine_rv32i : public machine {
         const operand& right{memory.right};
         const std::array<access_start, 2>& starts{memory.starts};
 
-        const address_scope walk_scope{*this};
+        const operation_scope walk_scope{*this};
 
         // a load pair and a branch per access beat the pointer setup of a loop
         // for small sizes
@@ -2275,7 +2275,7 @@ class machine_rv32i : public machine {
 
         if (loop.head_size_bytes != 0) {
             // a head pointer for a far offset is not needed by the loop
-            const address_scope head_scope{*this};
+            const operation_scope head_scope{*this};
 
             const operand left_at{
                 unrolled_address(src_loc_tk, indent, left,
@@ -2384,9 +2384,9 @@ class machine_rv32i : public machine {
         const operand& count{range.count};
         const operand& result{request.dst};
 
-        const address_scope operand_scope{*this, right, left};
+        const operation_scope operand_scope{*this, right, left};
 
-        const address_scope result_scope{*this, result, operand{}};
+        const operation_scope result_scope{*this, result, operand{}};
 
         const std::array<operand, 3> in_use{left, right, count};
 
@@ -2412,7 +2412,7 @@ class machine_rv32i : public machine {
         const operand& count{range.count};
         const std::array<access_start, 2>& starts{range.starts};
 
-        const address_scope walk_scope{*this};
+        const operation_scope walk_scope{*this};
 
         const operand left_at{memory_at(left)};
         const operand right_at{memory_at(right)};
@@ -2589,7 +2589,7 @@ class machine_rv32i : public machine {
                          const size_t size_bytes,
                          const std::array<access_start, 2>& starts) -> void {
 
-        const address_scope scope{*this, dst, src};
+        const operation_scope scope{*this, dst, src};
 
         const operand value{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -2620,7 +2620,7 @@ class machine_rv32i : public machine {
 
         if (loop.head_size_bytes != 0) {
             // a head pointer for a far offset is not needed by the loop
-            const address_scope head_scope{*this};
+            const operation_scope head_scope{*this};
 
             const operand from{
                 unrolled_address(src_loc_tk, indent, src, loop.head_size_bytes),
@@ -2698,7 +2698,7 @@ class machine_rv32i : public machine {
                             const std::array<access_start, 2>& starts,
                             const size_t alignment) -> void {
 
-        const address_scope scope{*this, dst, src};
+        const operation_scope scope{*this, dst, src};
 
         const operand value{
             alloc_scratch_register(src_loc_tk, indent, default_type()),
@@ -2955,12 +2955,12 @@ class machine_rv32i : public machine {
         }
     }
 
-    // the address scope frees its temporaries before the end comment
+    // the operation scope frees its temporaries before the end comment
     auto emit_bounds_check(const token& src_loc_tk, const size_t indent,
                            const bounds_range& range,
                            const bounds_check_options& options) -> void {
 
-        const address_scope scope{*this, range.checked, range.count};
+        const operation_scope scope{*this, range.checked, range.count};
 
         const bounds_plan plan{
             plan_bounds_check(options, range,
@@ -3162,15 +3162,15 @@ class machine_rv32i : public machine {
         assembler_.label(indent, fits.name);
     }
 
-    // the address scopes end on return, before the caller frees its registers
+    // the operation scopes end on return, before the caller frees its registers
     auto emit_comparison(const token& src_loc_tk, const size_t indent,
                          const operand& lhs, const operand& rhs,
                          const comparison_action& action) -> void {
 
-        const address_scope destination_scope{*this, action.destination,
-                                              operand{}};
+        const operation_scope destination_scope{*this, action.destination,
+                                                operand{}};
 
-        const address_scope scope{*this, lhs, rhs};
+        const operation_scope scope{*this, lhs, rhs};
 
         validate_scalar(src_loc_tk, lhs.type_ref());
         validate_scalar(src_loc_tk, rhs.type_ref());
@@ -3857,7 +3857,7 @@ class machine_rv32i : public machine {
                                 const uint32_t multiplier, const size_t bits)
         -> void {
 
-        const address_scope scope{*this, product, factor};
+        const operation_scope scope{*this, product, factor};
 
         // the original value stays here until the last add or sub, which
         // writes the result in its place so no copy is needed
@@ -4121,7 +4121,7 @@ class machine_rv32i : public machine {
                                const operand& dst, const int32_t constant)
         -> void {
 
-        const address_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst, operand{}};
 
         const operand address{
             dst.is_memory() ? lower_address(src_loc_tk, indent, dst)
@@ -4464,7 +4464,7 @@ class machine_rv32i : public machine {
                          const operand& dst, const size_t size_bytes,
                          const access_start& start) -> void {
 
-        const address_scope scope{*this, dst, operand{}};
+        const operation_scope scope{*this, dst, operand{}};
 
         const std::span<const access_start> starts{&start, 1};
 
@@ -4489,7 +4489,7 @@ class machine_rv32i : public machine {
 
         if (loop.head_size_bytes != 0) {
             // a head pointer for a far offset is not needed by the loop
-            const address_scope head_scope{*this};
+            const operation_scope head_scope{*this};
 
             const operand at{
                 unrolled_address(src_loc_tk, indent, dst, loop.head_size_bytes),

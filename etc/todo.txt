@@ -142,6 +142,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           1.2, 1.4, 1.5 say "compiled" (also in a dry run) for functions,
           "reached" stays for paths; listings equal
        D.3. 'address_scope' -> 'operation_scope' (B6)
+       => D.3 done (2026-10-24): 'machine::operation_scope' (41 uses in
+          machine.hpp and the backends, README 5.3), two comments that said
+          "address scope"; listings equal
        D.4. "failure" for the path, "panic" for the message, one
             'machine::mark_failure' (B8)
        D.5. ask, large: the 'toc' frame is a scope ('frame' -> 'scope',

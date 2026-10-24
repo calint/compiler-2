@@ -1126,7 +1126,7 @@ What a failed version entered must be left when its error unwinds:
 3. the rv32i bulk registers of an array copy or comparison are left
    ('machine_rv32i::bulk_depth_scope')
 
-The registers that 'machine::address_scope' holds and the frames of the
+The registers that 'machine::operation_scope' holds and the frames of the
 register trace that 'machine::register_trace_scope' holds are left by their
 own scopes.
 
