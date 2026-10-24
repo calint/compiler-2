@@ -357,6 +357,21 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             what 'compile' finds; the chain rule in one helper
        I.5. optional, low: instance padding by one gap function
             ('plan_unwritten' and 'zero_padding')
+       => I.1-I.4 done (2026-10-24): I.1 'plan_field' keeps the size check of
+          an array copy and calls 'expr_any::plan_writes', which writes an
+          instance, an array element by element with the rest zeroed, or a
+          copy at once; nested instance array fields gain '[i]' comment
+          lines (6 listings per target, no instruction);
+          'is_array_identifier' -> 'is_array_copy'; I.2 the forwards of
+          'get_unary_ops' in 'expr_arith' and 'expr_any' gone, the callers
+          ask 'operand_path()' or the new 'expr_arith::single_operand()';
+          'get_unary_ops' no longer virtual (13 virtuals, README 7.3);
+          'list_uops_'; I.3 'stmt_identifier::for_each_prefix' walks the
+          path for 'compile_lea' and 'resolve_accessed_bytes'
+          ('prefix_step'), the root is resolved once in 'compile_lea'; I.4
+          'constant_value' says it is what the parse can tell of the
+          compile's answer, one 'is_or_list' and 'is_short_circuit(value,
+          invert)' for both; I.5 left (optional, low)
     J. front end and tables
        J.1. file renames (ask): 'decouple_impl.hpp' -> 'parse_statement.hpp'
             (the statement grammar), its functions named for what they

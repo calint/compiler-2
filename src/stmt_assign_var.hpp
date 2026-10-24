@@ -154,7 +154,7 @@ class stmt_assign_var final : public statement {
     auto assert_array_size_matches(const toc& tc,
                                    const ident_info& dst_info) const -> void {
 
-        if (not expr_.is_array_identifier()) {
+        if (not expr_.is_array_copy()) {
             return;
         }
 

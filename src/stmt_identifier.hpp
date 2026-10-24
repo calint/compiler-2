@@ -157,6 +157,20 @@ class stmt_identifier final : public statement {
         auto source_to(std::ostream& os) const -> void;
     };
 
+    // one element of a walk of the path from its root, see 'for_each_prefix'
+    struct prefix_step {
+        const ident_elem* elem{};
+        // the path up to the element, e.g. 'w.rooms' of 'w.rooms[i].x'
+        std::string_view path;
+        // what 'path' resolves to
+        const ident_info* info{};
+        // the instance that holds the field, null for the root
+        const type* parent_type{};
+        // the offset of the field in 'parent_type', 0 for the root
+        size_t field_offset{};
+        bool is_last{};
+    };
+
     // the scratch registers that the address of a path is built with
     class path_registers final {
         std::reference_wrapper<std::vector<operand>> allocated_;
@@ -459,54 +473,40 @@ class stmt_identifier final : public statement {
             by_call_in_path(request.address_by_call),
         };
 
-        std::string path{elems_.front().name_tk.text()};
-
         path_registers registers{allocated_registers, request.address_register};
 
-        operand address{
-            start_address(tc, indent, src_loc_tk, registers,
-                          by_call == nullptr ? operand{} : by_call->address,
-                          tc.make_ident_info(src_loc_tk, path)),
-        };
+        operand address;
+        const type* value_type{};
 
-        const type* parent_type{};
+        for_each_prefix(tc, src_loc_tk, [&](const prefix_step& step) -> void {
+            const ident_info& cur_info{*step.info};
 
-        for (size_t elem_index{}; elem_index < elems_.size(); ++elem_index) {
-            const ident_elem& cur_elem{elems_.at(elem_index)};
-
-            // field offsets stay in the operand, not in the base register
-            if (elem_index != 0) {
-                path.push_back('.');
-                path += cur_elem.name_tk.text();
-
-                const size_t offset{
-                    parent_type->field_offset(cur_elem.name_tk,
-                                              cur_elem.name_tk.text()),
-                };
-
-                address.increment_offset(address_offset(offset));
+            if (step.parent_type == nullptr) {
+                address = start_address(tc, indent, src_loc_tk, registers,
+                                        by_call == nullptr ? operand{}
+                                                           : by_call->address,
+                                        cur_info);
+            } else {
+                // field offsets stay in the operand, not in the base register
+                address.increment_offset(address_offset(step.field_offset));
             }
 
-            const ident_info cur_info{tc.make_ident_info(src_loc_tk, path)};
-
-            parent_type = &cur_info.type_ref();
-
-            const bool is_last_elem{elem_index == elems_.size() - 1};
+            value_type = &cur_info.type_ref();
 
             // an unindexed element only needs a possible range bounds check
-            if (not cur_elem.array_index_expr) {
+            if (not step.elem->array_index_expr) {
                 check_unindexed_range(tc, indent, src_loc_tk, cur_info,
-                                      is_last_elem, request.reg_count);
-
-                continue;
+                                      step.is_last, request.reg_count);
+                return;
             }
 
             address = compile_indexed_element(
-                tc, indent, src_loc_tk, registers, cur_elem, path, cur_info,
-                is_last_elem ? request.reg_count : operand{}, address);
-        }
+                tc, indent, src_loc_tk, registers, *step.elem, step.path,
+                cur_info, step.is_last ? request.reg_count : operand{},
+                address);
+        });
 
-        return operand::mem(address, *parent_type);
+        return operand::mem(address, *value_type);
     }
 
     // the value of this path where 'info' resolves it to a variable: its
@@ -921,6 +921,48 @@ class stmt_identifier final : public statement {
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void;
 
     auto resolve_accessed_bytes(toc& tc) -> void;
+
+    // walks the elements from the root, each with the path up to it resolved,
+    // e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is located at
+    // 'src_loc_tk', at the name of each element when empty
+    auto for_each_prefix(
+        const toc& tc, const token& src_loc_tk,
+        const std::function_ref<void(const prefix_step&)> visit) const -> void {
+
+        std::string path;
+        const type* parent_type{};
+
+        for (size_t i{}; i < elems_.size(); ++i) {
+            const ident_elem& elem{elems_.at(i)};
+
+            size_t field_offset{};
+
+            if (parent_type != nullptr) {
+                path.push_back('.');
+
+                field_offset = parent_type->field_offset(elem.name_tk,
+                                                         elem.name_tk.text());
+            }
+
+            path += elem.name_tk.text();
+
+            const ident_info info{
+                tc.make_ident_info(
+                    src_loc_tk.is_empty() ? elem.name_tk : src_loc_tk, path),
+            };
+
+            visit({
+                .elem{&elem},
+                .path{path},
+                .info{&info},
+                .parent_type{parent_type},
+                .field_offset{field_offset},
+                .is_last{i == elems_.size() - 1},
+            });
+
+            parent_type = &info.type_ref();
+        }
+    }
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {

@@ -51,7 +51,7 @@ class expr_arith final : public expression {
     // operators between elements in the vector
     std::vector<arithmetic_operator> ops_;
     std::vector<token> ws_before_ops_; // whitespace before each of 'ops_'
-    unary_ops uops_;                   // of the whole list, e.g. '~(a + b)'
+    unary_ops list_uops_;              // of the whole list, e.g. '~(a + b)'
     token open_paren_tk_;              // of '(a + b)', empty when not enclosed
     token close_paren_tk_;             // of '(a + b)', empty when not enclosed
 
@@ -137,7 +137,7 @@ class expr_arith final : public expression {
     expr_arith(toc& tc, tokenizer& tz, options opts)
         : expression{opts.first_expression ? position_of(*opts.first_expression)
                                            : tz.cur_position_token()},
-          uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
+          list_uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{opts.is_implied_subexpression},
           destination_type_{opts.destination_type} {
 
@@ -229,7 +229,7 @@ class expr_arith final : public expression {
     //
 
     auto source_to(std::ostream& os) const -> void override {
-        uops_.source_to(os);
+        list_uops_.source_to(os);
 
         if (is_enclosed()) {
             open_paren_tk_.source_to(os);
@@ -378,7 +378,7 @@ class expr_arith final : public expression {
         }
 
         const int64_t result{
-            uops_.evaluate_at(*value, width_type, use.checks_overflow),
+            list_uops_.evaluate_at(*value, width_type, use.checks_overflow),
         };
 
         return folded_value{
@@ -387,23 +387,14 @@ class expr_arith final : public expression {
         };
     }
 
-    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        // note: the unary ops of a multi-element list are never asked for,
-        //       they are compiled with the list
-
-        assert(exprs_.size() == 1);
-
-        return exprs_.at(0)->get_unary_ops();
-    }
-
     [[nodiscard]] auto is_arrays_equal_call() const -> bool override {
-        return uops_.is_empty() and exprs_.size() == 1 and
+        return list_uops_.is_empty() and exprs_.size() == 1 and
                exprs_.front()->is_arrays_equal_call();
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
         // unary operators apply to the computed list, e.g. '-(a + b)'
-        if (not uops_.is_empty()) {
+        if (not list_uops_.is_empty()) {
             return true;
         }
 
@@ -450,7 +441,7 @@ class expr_arith final : public expression {
     // unary ops of the list apply to a computed value, e.g. the '-(-a)' of
     // '-(-(-a))'; '-(x)' is rejected, see 'assert_parentheses_group'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
-        if (exprs_.size() != 1 or not uops_.is_empty()) {
+        if (exprs_.size() != 1 or not list_uops_.is_empty()) {
             return nullptr;
         }
 
@@ -503,7 +494,7 @@ class expr_arith final : public expression {
         -> std::optional<int64_t> {
 
         // note: only an index expression asks, it has no unary ops of its own
-        assert(uops_.is_empty());
+        assert(list_uops_.is_empty());
 
         assert_elements_not_written_later(tc);
 
@@ -558,6 +549,13 @@ class expr_arith final : public expression {
         }
 
         return not is_first_enclosed_;
+    }
+
+    // the element of a list that 'is_single_operand', e.g. the 'f(x)' of
+    // 'i16(f(x))'
+    [[nodiscard]] auto single_operand() const -> const statement& {
+        assert(is_single_operand());
+        return *exprs_.front();
     }
 
     //
@@ -785,8 +783,8 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         // the unary ops of the list apply to its result, e.g. '-(a + b)'
-        uops_.compile(x, indent, tok(), dst.operand(),
-                      tc.overflow_options(dst));
+        list_uops_.compile(x, indent, tok(), dst.operand(),
+                           tc.overflow_options(dst));
     }
 
     // the destination keeps its value until the whole expression is computed
@@ -899,7 +897,8 @@ class expr_arith final : public expression {
             return true;
         }
 
-        return uops_.is_empty() and e.get_unary_ops().is_empty();
+        return list_uops_.is_empty() and
+               e.operand_path()->get_unary_ops().is_empty();
     }
 
     // e.g. '(a + b)' vs 'a + b'
@@ -1017,7 +1016,7 @@ class expr_arith final : public expression {
     // the elements are operands of the operators of the list or of its unary
     // ops, e.g. '-(a + b)'
     auto validate_arithmetic_operands(const toc& tc) const -> void {
-        if (ops_.empty() and uops_.is_empty()) {
+        if (ops_.empty() and list_uops_.is_empty()) {
             return;
         }
 
@@ -1520,7 +1519,7 @@ class expr_arith final : public expression {
                                                  const statement& src) -> bool {
 
         return is_stored_value(tc, src) and
-               src.get_unary_ops().is_only_negated();
+               src.operand_path()->get_unary_ops().is_only_negated();
     }
 
     // the constants of a run of the operator can be merged and moved to the

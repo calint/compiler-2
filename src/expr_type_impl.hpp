@@ -403,7 +403,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     x.free_scratch_registers(tok(), indent, allocated_registers);
 }
 
-// an instance field, or each element of an instance array field in turn
+// a field of an instance literal, its array size checked against a copy
 inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
                                   const type_field& field,
                                   const part_location& at, write_plan& plan)
@@ -412,33 +412,15 @@ inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
     const std::optional<size_t> field_count{field.array_count};
 
     // the copy size comes from the source so it must match the field
-    if (field_count and src.is_array_identifier()) {
+    if (field_count and src.is_array_copy()) {
         validate_array_assignment(src.tok(), field.type(), *field_count,
                                   make_ident_info(tc, *src.operand_path()));
     }
 
-    // note: like any value, an empty array field is zeroed, e.g. 'msg' of
-    //       'type msgpoint { msg i8[128], pt point }' given '{}'
-
-    if (field.type().is_builtin()) {
-        src.plan_writes(tc, at, std::nullopt, plan);
-        return;
-    }
-
-    // one assignment fills an instance or copies a whole array identifier
-    if (not field_count or src.is_array_identifier()) {
-        src.as_expr_type().plan_writes(tc, at, plan);
-        return;
-    }
-
-    const size_t count{src.element_count()};
-
-    for (size_t i{}; i < count; ++i) {
-        src.as_expr_type(i).plan_writes(tc, at.element(i), plan);
-    }
-
-    plan_remaining_elements(src.tok(), at, field.type(), count, *field_count,
-                            plan);
+    // like any value: an instance by its fields, an array element by element
+    // and the rest zeroed, e.g. 'msg' of 'type msgpoint { msg i8[128], pt
+    // point }' given '{}', a copy or a call at once
+    src.plan_writes(tc, at, std::nullopt, plan);
 }
 
 inline auto expr_type::visit_reads(const read_filter var,

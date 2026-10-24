@@ -195,7 +195,9 @@ class stmt_builtin_convert final : public expression {
             return std::nullopt;
         }
 
-        const int64_t converted{converted_constant(info.constant().value)};
+        const int64_t converted{
+            converted_constant(path->get_unary_ops(), info.constant().value),
+        };
         const type& use_width{use.width_ref()};
         const type& result_type{*wider(get_type(), use_width)};
 
@@ -388,11 +390,12 @@ class stmt_builtin_convert final : public expression {
 
     // the unary ops of the argument apply at its width, then the value is
     // narrowed to the type
-    [[nodiscard]] auto converted_constant(const int64_t value) const
+    [[nodiscard]] auto converted_constant(const unary_ops& arg_uops,
+                                          const int64_t value) const
         -> int64_t {
 
-        return constant_arith::wrap_to_width(
-            arg_.get_unary_ops().evaluate_constant(value), get_type());
+        return constant_arith::wrap_to_width(arg_uops.evaluate_constant(value),
+                                             get_type());
     }
 
     [[nodiscard]] auto ops_place_for(const toc& tc,
@@ -498,7 +501,7 @@ class stmt_builtin_convert final : public expression {
         // '/', '%', '>>' and calls are computed at the argument's width, a
         // call's result must also have its declared type
         if (arg_type.size_bytes() >= type_size_bytes or
-            arg_.get_unary_ops().is_empty()) {
+            arg_.single_operand().get_unary_ops().is_empty()) {
 
             return {
                 .where{computation_plan::place::scratch},

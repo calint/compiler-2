@@ -1326,7 +1326,7 @@ other, also not when they are 'noinline' ('etc/todo.txt' section 4).
 
 ### 7.3 One base class for every node
 
-'statement' has 14 virtual methods, each node overrides the ones it needs
+'statement' has 13 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
 capability, e.g. 'fold' is empty. Every node parses, writes its

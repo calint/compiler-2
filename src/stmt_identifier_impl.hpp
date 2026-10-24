@@ -208,54 +208,38 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
         return;
     }
 
-    std::string path;
-    const type* parent_type{};
+    for_each_prefix(tc, {}, [&](const prefix_step& step) -> void {
+        const ident_elem& elem{*step.elem};
 
-    for (const ident_elem& elem : elems_) {
-        const bool is_root{path.empty()};
-
-        if (not is_root) {
-            path.push_back('.');
-        }
-
-        path += elem.name_tk.text();
-
-        const ident_info info{tc.make_ident_info(elem.name_tk, path)};
-
-        if (is_root) {
-            accessed_bytes_ = root_range(info);
+        if (step.parent_type == nullptr) {
+            accessed_bytes_ = root_range(*step.info);
         } else {
             // a field covers its trailing padding so that assigning every
             // field assigns the whole instance
-            const size_t field_offset{
-                parent_type->field_offset(elem.name_tk, elem.name_tk.text()),
-            };
-
-            access_path_.add_field(field_offset);
+            access_path_.add_field(step.field_offset);
 
             const size_t extent_bytes{
-                parent_type->field_extent_bytes(elem.name_tk,
-                                                elem.name_tk.text()),
+                step.parent_type->field_extent_bytes(elem.name_tk,
+                                                     elem.name_tk.text()),
             };
 
             // the last field keeps the padding after the instance that
             // holds it, like the last element
             const bool is_last_field{
-                field_offset + extent_bytes == parent_type->size_bytes(),
+                step.field_offset + extent_bytes ==
+                    step.parent_type->size_bytes(),
             };
 
-            narrow_accessed_bytes(
-                field_offset, is_last_field
-                                  ? accessed_bytes_.size_bytes - field_offset
-                                  : extent_bytes);
+            narrow_accessed_bytes(step.field_offset,
+                                  is_last_field ? accessed_bytes_.size_bytes -
+                                                      step.field_offset
+                                                : extent_bytes);
         }
-
-        parent_type = &info.type_ref();
 
         if (elem.array_index_expr) {
-            narrow_to_element(tc, *elem.array_index_expr, info);
+            narrow_to_element(tc, *elem.array_index_expr, *step.info);
         }
-    }
+    });
 }
 
 inline auto stmt_identifier::add_index(toc& tc, const size_t indent,

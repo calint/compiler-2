@@ -1444,7 +1444,7 @@ class inline_call {
                                                 folded->value);
         }
 
-        if (arg.get_unary_ops().is_empty()) {
+        if (name.get_unary_ops().is_empty()) {
             return bind_name(param, name.dotted_path(), name.storage(tc));
         }
 

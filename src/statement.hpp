@@ -251,8 +251,7 @@ class stmt_identifier;
 //                  'expr_arith', 'expr_any' and 'expr_type' when they hold
 //                  one; 'place_path' and 'as_place' derive from it, the
 //                  path is then asked through the members of
-//                  'stmt_identifier'; 'get_unary_ops': forwarded by
-//                  'expr_arith' and 'expr_any'
+//                  'stmt_identifier'
 class statement {
     token token_;
     unary_ops uops_;
@@ -309,10 +308,6 @@ class statement {
         return std::nullopt;
     }
 
-    [[nodiscard]] virtual auto get_unary_ops() const -> const unary_ops& {
-        return uops_;
-    }
-
     [[nodiscard]] virtual auto is_arrays_equal_call() const -> bool {
         return false;
     }
@@ -367,6 +362,10 @@ class statement {
     //
     // class methods
     //
+
+    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& {
+        return uops_;
+    }
 
     // definite assignment: throws if the traced variable is read outside of
     // the assigned bytes

@@ -281,7 +281,7 @@ class expr_any final : public statement {
 
         // note: an unsized destination is the only array of unknown length
 
-        assert(not is_array() or is_array_identifier() or
+        assert(not is_array() or is_array_copy() or
                dst.is_length_unknown() ==
                    (destination_.is_length_unknown() and not dst.array_len()));
 
@@ -307,13 +307,6 @@ class expr_any final : public statement {
         assert(not is_array());
 
         return element(0).fold(tc, use);
-    }
-
-    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& override {
-        assert(not is_array());
-
-        // note: an 'expr_type' parses no unary ops, its 'unary_ops' are empty
-        return element(0).get_unary_ops();
     }
 
     [[nodiscard]] auto is_expression() const -> bool override {
@@ -486,7 +479,7 @@ class expr_any final : public statement {
         return not std::holds_alternative<single_value>(form_);
     }
 
-    [[nodiscard]] auto is_array_identifier() const -> bool {
+    [[nodiscard]] auto is_array_copy() const -> bool {
         return std::holds_alternative<array_copy>(form_);
     }
 
@@ -507,7 +500,7 @@ class expr_any final : public statement {
                      const std::optional<size_t> unsized_count,
                      write_plan& plan) const -> void {
 
-        if (not is_array() or is_array_identifier()) {
+        if (not is_array() or is_array_copy()) {
             plan_element(tc, 0, at, plan);
             return;
         }

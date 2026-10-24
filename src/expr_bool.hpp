@@ -775,9 +775,10 @@ class expr_bool_op final : public expression {
         const std::string_view type_name{side.get_type().name()};
 
         // e.g. the '-' of '-p == p' applies to a number
+        const stmt_identifier* const path{side.operand_path()};
+
         const bool has_unary_ops{
-            side.operand_path() != nullptr and
-                not side.get_unary_ops().is_empty(),
+            path != nullptr and not path->get_unary_ops().is_empty(),
         };
 
         if (is_equality and not has_unary_ops) {
@@ -927,7 +928,9 @@ class expr_bool_op final : public expression {
                (not action.destination.is_empty() and
                 action.destination.type_ref().is_bool()));
 
-        return not lhs.is_expression() and lhs.get_unary_ops().is_empty() and
+        // note: a value that is no expression is one name or literal
+        return not lhs.is_expression() and
+               lhs.operand_path()->get_unary_ops().is_empty() and
                lhs.get_type().is_bool() and not action.inverted and
                action.target.empty();
     }
@@ -1297,12 +1300,13 @@ class expr_bool final : public expression {
         }
     }
 
-    // decided at compile time only by constants before any run-time element,
-    // a later short-circuit still needs the earlier elements evaluated
+    // the value the parse can tell, the part of what 'compile' finds that
+    // needs no code: constants up to the one that decides the list; after a
+    // run-time element 'compile' may still decide it, see
+    // 'resolve_last_constant'
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
-        const bool is_or{not ops_.empty() and ops_.front().is_text("or")};
         const bool invert{is_negated()};
 
         for (const element& e : bools_) {
@@ -1316,13 +1320,15 @@ class expr_bool final : public expression {
                 return std::nullopt;
             }
 
-            // 'true' ends an 'or' list and 'false' ends an 'and' list
-            if (*value == is_or) {
+            if (is_short_circuit(*value, false)) {
                 return *value != invert;
             }
         }
 
-        return (not is_or) != invert;
+        // note: no element decided, so each is 'false' in an 'or' list and
+        //       'true' in an 'and' list
+
+        return (not is_or_list()) != invert;
     }
 
     // the operand when the whole expression is a name or a literal, e.g. 'x'
@@ -1396,7 +1402,7 @@ class expr_bool final : public expression {
                           const branch_targets& targets, const bool invert,
                           const operand& dst) const -> condition_result {
 
-        const bool is_or{is_effective_or(expr_index, invert)};
+        const bool is_or{is_or_list() != invert};
 
         if (std::holds_alternative<expr_bool>(bools_.at(expr_index))) {
             const expr_bool& nested_expr{
@@ -1515,8 +1521,7 @@ class expr_bool final : public expression {
                 continue;
             }
 
-            if (is_short_circuit(result_value(const_eval), expr_index,
-                                 invert)) {
+            if (is_short_circuit(result_value(const_eval), invert)) {
 
                 return const_eval;
             }
@@ -1567,13 +1572,6 @@ class expr_bool final : public expression {
     // true when a 'not' leads the list
     [[nodiscard]] auto has_not() const -> bool { return not nots_.empty(); }
 
-    // inversion swaps 'and' and 'or' according to De Morgan's laws
-    [[nodiscard]] auto is_effective_or(const size_t op_index,
-                                       const bool invert) const -> bool {
-
-        return ops_.at(op_index).is_text("or") != invert;
-    }
-
     [[nodiscard]] auto is_enclosed() const -> bool {
         return not open_paren_tk_.is_empty();
     }
@@ -1582,12 +1580,18 @@ class expr_bool final : public expression {
         return is_negated_by(nots_);
     }
 
-    // a constant false ends an 'and' list and a constant true ends an 'or' list
+    // inversion swaps 'and' and 'or' according to De Morgan's laws
+    // every operator of a list is the same, mixing them is rejected
+    [[nodiscard]] auto is_or_list() const -> bool {
+        return not ops_.empty() and ops_.front().is_text("or");
+    }
+
+    // a constant false ends an 'and' list and a constant true ends an 'or'
+    // list; 'invert' turns one into the other, see De Morgan's laws
     [[nodiscard]] auto is_short_circuit(const bool const_eval,
-                                        const size_t op_index,
                                         const bool invert) const -> bool {
 
-        return const_eval == is_effective_or(op_index, invert);
+        return const_eval == (is_or_list() != invert);
     }
 
     // a comparison or a parenthesized list, either may follow 'not'
@@ -1678,7 +1682,7 @@ class expr_bool final : public expression {
             return known_result(const_eval);
         }
 
-        if (is_short_circuit(const_eval, ops_.size() - 1, invert)) {
+        if (is_short_circuit(const_eval, invert)) {
             return known_result(const_eval);
         }
 
