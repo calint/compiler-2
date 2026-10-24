@@ -6,6 +6,7 @@
 #include <functional>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string_view>
 
 #include "compile_error.hpp"
@@ -94,6 +95,9 @@ class bulk_operands final {
 
     // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a';
     // 'is_second_written' for the destination of a copy
+    // note: the backends compute the count before the arrays, the range
+    //       checks of the starts need it; the list is accepted only when that
+    //       order and the source order give the same result
     auto assert_not_written_later(const toc& tc,
                                   const bool is_second_written) const -> void {
 
@@ -113,6 +117,14 @@ class bulk_operands final {
         };
 
         ::assert_not_written_later(tc, operands, "argument");
+
+        const std::span<const list_operand> arrays{
+            std::span{operands}.first(2),
+        };
+
+        ::assert_not_written_after(
+            tc, std::span{operands}.last(1), arrays,
+            "an array argument, the count is computed before the arrays");
     }
 
     [[nodiscard]] auto count() const -> const expr_any& { return count_; }

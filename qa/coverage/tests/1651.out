@@ -1,0 +1,4 @@
+
+1651.baz:13:32: 'n' may be written by the call of 'g' in an array argument, the count is computed before the arrays, use a temporary variable
+    if arrays_equal(a, b[g()], n) {
+                               ^

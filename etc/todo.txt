@@ -6,6 +6,226 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[o] hard: design review round 13 (2026-10-23, six reviewers: front end,
+    expressions, statements and calls, tables and checks, backends, a
+    newcomer tracing one program; findings in the session scratchpad r13,
+    spot-checked): toward a compiler a reviewer reads without strain; each
+    step a pure refactor unless marked, measured against the previous binary,
+    a pause for a commit after each phase
+    A. fixes first (failing test first, both targets, inline and noinline)
+       A.1. the checked order is not the emitted order for 'array_copy' and
+            'arrays_equal': both backends compile the count before the
+            addresses, the check assumes list order; 'array_copy(a[g()], b,
+            n)' with 'g' writing 'n' is accepted and copies with the old 'n'
+            (confirmed on x86_64, exits 0, left to right gives 3)
+            => design: the bulk machine operations call the emitters in
+               source order (first, second, count); the count register is
+               reserved before the addresses, filled last; 'list_operand'
+               states "the list is in the order the code computes it"
+            => rejected: compiling every operand with a call into a register
+               first (costs registers, hides the order again)
+       A.2. rv32i 'call_function' lowers a far frame address without keeping
+            the slot register 's11', x86_64 keeps it ('slot_kept'); a test
+            that holds the scratch registers before 's11' decides whether it
+            is reachable; the fix is H.3
+       => A done (2026-10-24): A.1 redecided (user): the count stays first
+          (the range checks of the starts need it, 'read'/'write' alike); a
+          list is accepted only when the emitted order and the source order
+          give the same result, 'assert_not_written_after' beside
+          'assert_not_written_later', used by 'bulk_operands' and
+          'stmt_builtin_io' (tests 1650-1653); A.2 with H.3:
+          'machine::call_function' is the one call sequence with the slot
+          register kept, the backends give 'save_call_registers',
+          'restore_call_registers', 'emit_call', 'is_stack_pointer'; no
+          listing changed
+    B. docs and comments that contradict the code
+       B.1. README: 7.3 "20 virtual methods" (14) and 'is_name_or_literal'
+            (gone); 1.7 'stmt_const'; 3.6 'list_written_parts' (now
+            'plan_writes'/'write_plan'); 1.5 'function_table' (now
+            'compile_records'); 4.3 "a pointer argument" (a parameter of a
+            noinline body passed on); 1.1 reading order without the
+            statement dispatch, 'stmt_assign_var', 'stmt_def_var'; the file
+            map without 'machine_rv32i_linux'
+       B.2. the virtual groups of 'statement': 'keeps_low_bits' (overridden
+            by 'stmt_identifier', 'stmt_builtin_convert', forwarded by
+            'expr_arith' only), 'visit_call_effects' in no group
+       B.3. 'ub_reads.hpp' header (the walk is 'statement::visit_reads'),
+            'toc::storage_of' ("bytes", it returns a path), 'stmt_call' "the
+            built-ins ... override 'compile'" and the built-in comment above
+            'read_generic_callee', the 'stmt_identifier' header (also every
+            literal, '3' or 'true'), 'machine_rv32i_linux::
+            emit_sector_routines' (two comments glued)
+       B.4. optional, new script (ask): 'qa/lint' check that every quoted
+            identifier of etc/docs/README.md exists in src/
+    C. leftovers
+       C.1. 'stmt_call::assert_arguments_not_written_later' duplicates
+            'builtin_arguments::assert_not_written_later', its only call
+            passes 'std::nullopt'; one function
+       C.2. 'check_options::with_line' is read only by main.cpp (G.3 moved
+            its use to 'target_options::reports_line'); main parses 'line'
+            into the target options
+       C.3. 'machine' access labels: 'emit_failure_handler' protected; the
+            request structs the front end builds public; the "empty slot
+            register" case goes (both backends name one),
+            'toc::has_slot_register' with it
+    D. one word for one idea (renames)
+       D.1. the slot holds an address: 'holds_address' throughout
+            ('ident_info::is_pointer', 'call_kind_item::is_pointer',
+            'var_access::through_pointer', 'at_pointer_register')
+       D.2. 'known_address' is computed at run time by a call:
+            'call_address', 'has_call_address';
+            'destination::is_address_known_' -> 'is_final_address_'; the two
+            'destination::of_name' overloads take the flag from one query
+            (check that they agree first)
+       D.3. 'stmt_identifier' texts: 'name_or_literal' -> 'dotted_path'
+            ('b.items', the resolver key), 'name_token' -> 'last_name_token'
+       D.4. 'bound_storage' also binds a name held in a register:
+            'bound_name', 'bind_name' (or the 'register_name' form of G.1)
+       D.5. 'machine::builtin_function' (enum) beside the catalog struct
+            'builtin_function': 'machine::target_call'
+       D.6. 'jump_mode::resolved' means "as emitted": 'as_emitted'
+    E. one home per concept
+       E.1. the storage of an identifier: 'stmt_identifier::storage(tc) ->
+            optional<storage_path>' replaces the six 'tc.storage_of(<root>,
+            accessed_path())' with three spellings of the root
+            ('first_token().text()', 'root_of(name_or_literal())', the read
+            token); 'call_site::argument_target' goes
+       E.2. reads against writes: one section (in 'stmt_identifier_impl.hpp',
+            or a new 'ub_order.hpp', ask) with 'visit_storage_reads' and
+            'first_reach'; rule A, 'reaches_destination' and
+            'assert_not_read_before' written on them; its header lists each
+            order check, the order it relies on and where that order is
+            emitted; each list owner has one 'operands()' read by both the
+            check and its compile
+       E.3. 'reaches_destination' mixes a by-name rule (a same-name read of
+            disjoint bytes counts) and a storage rule; split by destination
+            kind (register: name, storage: storage) or a 'note:' with the
+            program that needs the name rule; output may shrink, verdicts
+            unchanged, aliasing fuzzers
+       E.4. 'array_shape' everywhere F.4 did not reach: 'stmt_identifier'
+            ('is_array_' + 'array_count_'), the 'expr_any' constructor
+            (optional with a 0 sentinel, 'is_unsized_destination_'),
+            'type_field::array_count' (0 sentinel), 'stmt_def_var' and
+            'initializer_declaration' (deduced count as optional); the
+            sentinel stays inside the parse only
+       E.5. built-in types: 'type_kind' {user, integer, boolean, empty},
+            'type::is_integer()' ('is_integer_name' goes); toc registers the
+            built-ins from 'builtin_type_set::all()' (not 'program');
+            'builtin_types' -> 'builtin_roles'
+       E.6. literals: 'constant_parser::is_literal' and 'literal_value'
+            ('true'/'false' included), used by 'classify_term',
+            'stmt_block' and the resolver
+       E.7. strings reach the backend as bytes: the front end decodes once
+            ('token::string_bytes'), 'emit_string_data' takes bytes,
+            'add_bytes_constant' stops escaping bytes for the backends to
+            decode; the constant key stays the text in this step
+       E.8. the generic error trace: 'generic_trace' with 'add_to(error)'
+            held by type and function instances (three copies of
+            "instantiated by"); 'generic_frame' and the error's
+            'call_frame' one entry type; one 'generic_method_name'
+       E.9. one classification of a value term: 'classify_term' result
+            passed down to 'parse_call_or_identifier'; one
+            'parse_builtin_value' called by 'create_statement_in_expr_arith'
+            and the 'expr_type' constructor; messages may change where the
+            two preludes differ today
+       E.10. reachability, one model: 'path_reach' with the join rules used
+            by 'assignment_flow' and the compile ('stmt_if' merges with it,
+            'stmt_loop' records breaks), 'compile_main' asks the compile;
+            decision needed: the compile today keeps the code after a 'loop'
+            without 'break', the parse ends the path there
+    F. kinds told apart by flags become variants (the C.1 pattern)
+       F.1. 'expr_bool_op': {shorthand, comparison {op, rhs, is_memory}};
+            the unused 'op_'/'rhs_' of the shorthand go
+       F.2. a comparison side classified once ('comparison_side' {computed,
+            constant, stored}) instead of 20 'fold_side'/'is_typed_constant'
+            calls over six functions; after F.1
+       F.3. 'stmt_def_dat::elem': {scalar, string, element list, field list}
+       F.4. 'stmt_builtin_io': 'io_arguments' {buffer, count, start} indexes
+            made once, no 'args_.at(2)' and 'count() - 1'
+       F.5. 'argument_form' per call argument {instance temporary, place,
+            constant, register name, value}, made once by 'call_site'; the
+            seven 'bind_*', 'plan_argument', 'is_instance_temporary' and
+            'needs_temporary' read it; a table of forms with an example
+            each above it; plan the cut against the tests of 'bind_value'
+       F.6. optional, low: 'unary_ops' stores 'arithmetic_operator', the
+            'assign' role leaves the backend enum
+    G. calls
+       G.1. 'noinline_call' decides its temporaries once (as 'inline_call'
+            since E.2), one helper carries the block rule and its comment
+       G.2. the body places its parameters from 'frame_slots' (E.4 planned
+            the body side), the index test and its note go
+       G.3. 'call_scope' enters the toc function frame and the machine call
+            frame together and adds the error frame on unwind (four sites
+            by hand today); the machine side renamed for what it records
+            ('register_trace_scope')
+       G.4. 'toc::dry_run' hands back the verdict; the rewrite of an error
+            to 'source' moves from 'machine::emit_discarded' to the front
+            end, 'check_body' no longer relies on catching inside the lambda
+       G.5. after F.5: the limits leave 'call_site' as 'call_limits'
+    H. backends
+       H.1. run-time routines keyed by their label (not display names or ad
+            hoc strings); the line report becomes a routine (both
+            'line_report_emitted_' go, '--checks=line' listings change); one
+            'machine::emit_runtime()' (handlers, then routines) replaces the
+            two calls in 'program'
+       H.2. the sd card panic as a 'failure_handler' constant; the x86_64
+            hand copy and 'sd_card_handler_label' go
+       H.3. 'call_function' once in 'machine' with the slot register kept;
+            the backends provide save, restore and the call (A.2)
+            => done with A.2 (2026-10-24)
+       H.4. 'version_state state_' as the one member a version saves and
+            restores (five members listed three times today)
+       H.5. one 'machine::call_builtin' for read, write and the sector
+            calls: the register assert once (six copies), the register table
+            from two backend constants
+       H.6. one virtual 'address_text'; 'comment_binding' and
+            'comment_variable' non-virtual (rv32i binding comments may gain
+            the address)
+       H.7. new file (ask): 'machine_rv32i_linux.hpp' beside its siblings
+    I. expressions
+       I.1. 'expr_type::plan_field' calls 'expr_any::plan_writes' (the
+            element loop and remaining fill exist twice; nested instance
+            array fields gain '[i]' comment lines); 'is_array_identifier' ->
+            'is_array_copy'
+       I.2. the wrappers stop forwarding 'get_unary_ops' (answers for the
+            first element); callers ask 'operand_path()'; 'expr_arith::uops_'
+            -> 'list_uops_'
+       I.3. one 'for_each_prefix' walk for 'compile_lea' and
+            'resolve_accessed_bytes'
+       I.4. 'expr_bool::constant_value' says it is the parse-time subset of
+            what 'compile' finds; the chain rule in one helper
+       I.5. optional, low: instance padding by one gap function
+            ('plan_unwritten' and 'zero_padding')
+    J. front end and tables
+       J.1. file renames (ask): 'decouple_impl.hpp' -> 'parse_statement.hpp'
+            (the statement grammar), its functions named for what they
+            parse; the literal test of 'stmt_block::parse_statement' moves
+            in; 'ub_alias.hpp' -> 'access_path.hpp'
+       J.2. 'include' parsed by 'stmt_include', 'program' loads the file
+       J.3. the dats/variables padding derived from the root frame (three
+            places and a flag today); 'vars_size_bytes' named for what it
+            sums
+       J.4. large, mechanical, decide: an absent token as
+            'std::optional<token>' ('is_next_char_token', 65 calls; the
+            optional syntax members), 'is_empty'/'is_none' apart
+    K. listings (output changes, no instruction changes)
+       K.1. comments of a destination print the written text
+            ('b.items[i] * 2', today 'b.items * 2' for 'i * 2')
+       K.2. a parameter that holds an address prints 'address @ [rbx]', not
+            the type's size; the branch labels of an 'if' share its label;
+            the version comment names the version kept
+    => decided (user, 2026-10-23): A.1 source order; B.4, E.2 file, H.7,
+       J.1 approved; E.10 code after a path that cannot continue (a 'loop'
+       without 'break') is a compile error; J.4 done; K and the listing
+       changes accepted
+    order: A, B, C, D, E.1-E.4, F.1-F.2, G.1-G.2, H.1-H.4, E.5-E.9, F.3-F.5,
+    G.3-G.5, H.5-H.6, I, J, K, E.10; asks: A.1 design, B.4, E.2 file, E.10
+    decision, H.7, J.1, J.4, K
+    kept (reviewers, with reasons in r13): 'body_uses' beside 'call_effect'
+    (E.1 deferred); definite assignment by name text; 'toc' as facade;
+    literals resolved by the resolver; 'expr_any' forms inside 'expr_any';
+    'accessed_bytes_' beside 'access_path_'; the handler skeletons (G.2);
+    both versions compiled (chapter 5)
 [o] hard: design review (2026-10-23, four reviewers over nodes, calls,
     tables and backends, claims spot-checked): the refactors toward a design a
     reviewer judges clean; each step a pure refactor unless marked, measured

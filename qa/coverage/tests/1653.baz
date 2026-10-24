@@ -1,0 +1,17 @@
+# a call in an array argument of 'array_copy' that writes nothing the count
+# reads gives the left-to-right result
+var m = 1
+
+func g() res {
+    m = 3
+    res = 1
+}
+
+func main() {
+    var a = i8[4]
+    a[1] = 2
+    a[2] = 3
+    var b = i8[4]
+    array_copy(a[g()], b, 2)
+    exit(b[0] + b[1] + m)
+}

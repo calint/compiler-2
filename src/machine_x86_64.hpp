@@ -321,60 +321,6 @@ class machine_x86_64 final : public machine {
         assembler_.jmp(indent, target);
     }
 
-    auto call_function(const token& src_loc_tk, const size_t indent,
-                       const std::string_view label,
-                       const operand& frame_address,
-                       const operand& slot_address) -> void override {
-
-        assert(frame_address.is_memory());
-        assert(frame_address.index_register().empty());
-        assert(frame_address.base_register() != "rsp");
-
-        // the callee may use every register but the variables base, so only
-        // values live at the call need saving
-        std::vector<operand> saved;
-        for (const size_t index : registers_saved_by_call()) {
-            saved.push_back(qword_register(register_names_.at(index).qword));
-        }
-
-        record_noinline_call(src_loc_tk, label, saved.size());
-
-        if (not saved.empty()) {
-            comment(src_loc_tk, indent,
-                    "before call: save allocated registers");
-        }
-
-        for (const operand& reg : saved) {
-            push(indent, reg);
-        }
-
-        load_slot_address(src_loc_tk, indent, slot_address);
-
-        comment(src_loc_tk, indent, "set function frame base");
-
-        // a far frame address is lowered through a scratch register, which
-        // must not be the loaded slot register
-        const address_scope slot_kept{
-            *this,
-            make_register_operand(slot_register(), default_type()),
-            operand{},
-        };
-
-        lea(src_loc_tk, indent,
-            make_register_operand(frame_base_register(), default_type()),
-            frame_address);
-
-        assembler_.call(indent, label);
-
-        if (not saved.empty()) {
-            comment(src_loc_tk, indent, "after call: restore saved registers");
-        }
-
-        for (const operand& reg : saved | std::views::reverse) {
-            pop(indent, reg);
-        }
-    }
-
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
 
@@ -1172,8 +1118,6 @@ class machine_x86_64 final : public machine {
     // overridden methods
     //
 
-    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
-    // arguments, the allocated ones are saved around the call
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
                              const operand& sector, const operand& address,
                              const operand& size,
@@ -1202,6 +1146,14 @@ class machine_x86_64 final : public machine {
 
         with_saved_registers(indent, clobbered,
                              [&] -> void { assembler_.call(indent, label); });
+    }
+
+    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
+    // arguments, the allocated ones are saved around the call
+    auto emit_call(const size_t indent, const std::string_view label)
+        -> void override {
+
+        assembler_.call(indent, label);
     }
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size
@@ -1338,6 +1290,12 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::text);
     }
 
+    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
+        -> bool override {
+
+        return name == "rsp";
+    }
+
     // the index in 'register_names_' of a register of any size
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
@@ -1357,6 +1315,24 @@ class machine_x86_64 final : public machine {
         }
 
         std::unreachable();
+    }
+
+    auto restore_call_registers(const size_t indent,
+                                const std::span<const size_t> saved)
+        -> void override {
+
+        for (const size_t index : saved | std::views::reverse) {
+            pop(indent, qword_register(register_names_.at(index).qword));
+        }
+    }
+
+    auto save_call_registers(const size_t indent,
+                             const std::span<const size_t> saved)
+        -> void override {
+
+        for (const size_t index : saved) {
+            push(indent, qword_register(register_names_.at(index).qword));
+        }
     }
 
     [[nodiscard]] auto scratch_registers() const

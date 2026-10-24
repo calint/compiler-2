@@ -134,6 +134,8 @@ class stmt_builtin_io final : public expression {
             tc, io_.fills_buffer ? std::optional<size_t>{buffer_index_}
                                  : std::nullopt);
 
+        assert_count_not_written_by_buffer(tc);
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
@@ -366,6 +368,33 @@ class stmt_builtin_io final : public expression {
                 },
                 .array_name{buffer.path->name_or_literal()},
             });
+    }
+
+    // the count and the start are computed before the buffer, its range check
+    // needs them; the call is accepted only when that order and the source
+    // order give the same result, e.g. 'read(0, a[g()].buf, n)' with 'g'
+    // writing 'n' is rejected
+    auto assert_count_not_written_by_buffer(const toc& tc) const -> void {
+        std::vector<list_operand> computed_first;
+        computed_first.reserve(args_.count());
+
+        for (size_t i{buffer_index_ + 1}; i < args_.count(); ++i) {
+            computed_first.push_back({
+                .node{&args_.at(i)},
+                .written_place{},
+            });
+        }
+
+        const std::array<list_operand, 1> buffer{
+            list_operand{
+                .node{&args_.at(buffer_index_)},
+                .written_place{},
+            },
+        };
+
+        assert_not_written_after(tc, computed_first, buffer,
+                                 "the buffer argument, the count and the start "
+                                 "are computed before the buffer");
     }
 
     // a sector is a whole number of elements and fits in the array

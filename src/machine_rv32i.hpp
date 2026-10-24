@@ -365,7 +365,6 @@ class machine_rv32i : public machine {
     // overridden methods
     //
 
-    // the sector is in a0 where 'read' has the descriptor, there is no result
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
                              const operand& sector, const operand& address,
                              const operand& size,
@@ -386,16 +385,46 @@ class machine_rv32i : public machine {
         free_named_register(src_loc_tk, indent, call_register);
     }
 
+    // the sector is in a0 where 'read' has the descriptor, there is no result
+    auto emit_call(const size_t indent, const std::string_view label)
+        -> void override {
+
+        assembler_.call(indent, label);
+    }
+
     // a 'noinline' body saves the return address below 'sp'
     auto emit_frame_entry() -> void override {
         assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
         assembler_.sw(1, "ra", 0, "sp");
     }
 
+    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
+        -> bool override {
+
+        return register_index(name) == register_index("sp");
+    }
+
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
 
         return assembler_rv32i::register_number(name);
+    }
+
+    auto restore_call_registers(const size_t indent,
+                                const std::span<const size_t> saved)
+        -> void override {
+
+        const std::vector<std::string_view> names{register_names_of(saved)};
+
+        restore_saved_registers(indent, names,
+                                saved_registers_size_bytes(names.size()));
+    }
+
+    auto save_call_registers(const size_t indent,
+                             const std::span<const size_t> saved)
+        -> void override {
+
+        std::ignore = save_registers(indent, register_names_of(saved));
     }
 
     [[nodiscard]] auto scratch_registers() const
@@ -560,10 +589,7 @@ class machine_rv32i : public machine {
                         const std::span<const std::string_view> saved)
         -> size_t {
 
-        const size_t stack_bytes{
-            align_storage_size(saved.size() * word_size_bytes_,
-                               stack_alignment_),
-        };
+        const size_t stack_bytes{saved_registers_size_bytes(saved.size())};
 
         if (stack_bytes != 0) {
             assembler_.addi(indent, "sp", "sp",
@@ -576,6 +602,32 @@ class machine_rv32i : public machine {
         }
 
         return stack_bytes;
+    }
+
+    //
+    // statics
+    //
+
+    // the names of the register indexes 'indexes'
+    [[nodiscard]] static auto
+    register_names_of(const std::span<const size_t> indexes)
+        -> std::vector<std::string_view> {
+
+        std::vector<std::string_view> names;
+        names.reserve(indexes.size());
+
+        for (const size_t index : indexes) {
+            names.push_back(register_names_.at(index));
+        }
+
+        return names;
+    }
+
+    // the aligned stack area 'save_registers' allocates for 'count' registers
+    [[nodiscard]] static auto saved_registers_size_bytes(const size_t count)
+        -> size_t {
+
+        return align_storage_size(count * word_size_bytes_, stack_alignment_);
     }
 
   public:
@@ -706,50 +758,6 @@ class machine_rv32i : public machine {
         emit_jump(indent, op::j, {}, {}, target);
     }
 
-    auto call_function(const token& src_loc_tk, const size_t indent,
-                       const std::string_view label,
-                       const operand& frame_address,
-                       const operand& slot_address) -> void override {
-
-        assert(frame_address.is_memory());
-        assert(frame_address.index_register().empty());
-
-        assert(register_index(frame_address.base_register()) !=
-               register_index("sp"));
-
-        // the callee may use every register but the variables base, so only
-        // values live at the call need saving
-        std::vector<std::string_view> saved;
-        for (const size_t index : registers_saved_by_call()) {
-            saved.push_back(register_names_.at(index));
-        }
-
-        record_noinline_call(src_loc_tk, label, saved.size());
-
-        if (not saved.empty()) {
-            comment(src_loc_tk, indent,
-                    "before call: save allocated registers");
-        }
-
-        const size_t stack_bytes{save_registers(indent, saved)};
-
-        load_slot_address(src_loc_tk, indent, slot_address);
-
-        comment(src_loc_tk, indent, "set function frame base");
-
-        address_of(src_loc_tk, indent,
-                   make_register_operand(frame_base_register(), default_type()),
-                   frame_address);
-
-        assembler_.call(indent, label);
-
-        if (stack_bytes != 0) {
-            comment(src_loc_tk, indent, "after call: restore saved registers");
-        }
-
-        restore_saved_registers(indent, saved, stack_bytes);
-    }
-
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool override {
 
@@ -868,9 +876,8 @@ class machine_rv32i : public machine {
         const size_t saved_count{registers_saved_by_call().size()};
 
         const size_t call_bytes{
-            align_storage_size(saved_count * word_size_bytes_,
-                               stack_alignment_) +
-                frame_save_bytes_ + leaf_stack_bytes(),
+            saved_registers_size_bytes(saved_count) + frame_save_bytes_ +
+                leaf_stack_bytes(),
         };
 
         constexpr local_label fits{

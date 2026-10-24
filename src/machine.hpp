@@ -553,13 +553,6 @@ class machine {
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
 
-    // 'slot_address' is the address the callee finds in
-    // 'slot_register', empty when the register is not used
-    virtual auto call_function(const token& src_loc_tk, const size_t indent,
-                               const std::string_view label,
-                               const operand& frame_address,
-                               const operand& slot_address) -> void = 0;
-
     [[nodiscard]] virtual auto
     can_lower_index_scale(const size_t size_bytes) const -> bool = 0;
 
@@ -840,6 +833,54 @@ class machine {
     // the set the front end shares, made before the machine
     [[nodiscard]] auto builtin_types() const -> const builtin_type_set& {
         return builtins_.get();
+    }
+
+    // 'slot_address' is the address the callee finds in
+    // 'slot_register', empty when the register is not used
+    auto call_function(const token& src_loc_tk, const size_t indent,
+                       const std::string_view label,
+                       const operand& frame_address,
+                       const operand& slot_address) -> void {
+
+        assert(frame_address.is_memory());
+        assert(frame_address.index_register().empty());
+        assert(not is_stack_pointer(frame_address.base_register()));
+
+        // the callee may use every register but the variables base, so only
+        // values live at the call need saving
+        const std::vector<size_t> saved{registers_saved_by_call()};
+
+        record_noinline_call(src_loc_tk, label, saved.size());
+
+        if (not saved.empty()) {
+            comment(src_loc_tk, indent,
+                    "before call: save allocated registers");
+        }
+
+        save_call_registers(indent, saved);
+        load_slot_address(src_loc_tk, indent, slot_address);
+
+        comment(src_loc_tk, indent, "set function frame base");
+
+        // a far frame address is lowered through a scratch register, which
+        // must not be the loaded slot register
+        const address_scope slot_kept{
+            *this,
+            make_register_operand(slot_register(), default_type()),
+            operand{},
+        };
+
+        address_of(src_loc_tk, indent,
+                   make_register_operand(frame_base_register(), default_type()),
+                   frame_address);
+
+        emit_call(indent, label);
+
+        if (not saved.empty()) {
+            comment(src_loc_tk, indent, "after call: restore saved registers");
+        }
+
+        restore_call_registers(indent, saved);
     }
 
     // synthetic tokens and standalone backend calls have no source location;
@@ -1213,6 +1254,10 @@ class machine {
                         const operand& size, const builtin_function function)
         -> void = 0;
 
+    // the call instruction of 'call_function'
+    virtual auto emit_call(const size_t indent, const std::string_view label)
+        -> void = 0;
+
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default
     virtual auto emit_frame_entry() -> void {}
@@ -1222,11 +1267,26 @@ class machine {
     virtual auto emit_sector_routines(const bool read_used,
                                       const bool write_used) -> void = 0;
 
+    // the asserts of 'call_function': a frame is never addressed from the
+    // stack pointer
+    [[nodiscard]] virtual auto
+    is_stack_pointer(const std::string_view name) const -> bool = 0;
+
     // the index of the register 'name' in any of its sizes, empty for text
     // that names no register, e.g. a label
     [[nodiscard]] virtual auto
     register_index_of(const std::string_view name) const
         -> std::optional<size_t> = 0;
+
+    // puts back the registers 'save_call_registers' saved
+    virtual auto restore_call_registers(const size_t indent,
+                                        const std::span<const size_t> saved)
+        -> void = 0;
+
+    // saves the registers of the indexes 'saved' before a call
+    virtual auto save_call_registers(const size_t indent,
+                                     const std::span<const size_t> saved)
+        -> void = 0;
 
     // the registers 'alloc_scratch_register' picks from, in the order it tries
     // them

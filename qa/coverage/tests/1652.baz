@@ -1,0 +1,16 @@
+# the count of 'read' is computed before the buffer, a call in the buffer
+# argument that writes what the count reads is rejected
+type s { buf[4], }
+
+var n = 1
+
+func g() res {
+    n = 3
+    res = 0
+}
+
+func main() {
+    var a = s[2]
+    var k = read(0, a[g()].buf, n)
+    exit(k)
+}

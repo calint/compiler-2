@@ -5152,3 +5152,19 @@ SRC=1648 && COMPERR
 # an 'if' whose every branch returns ends the path, the code after it is not
 # compiled; a constant false branch runs no code
 SRC=1649 && EXP=6 && RUN
+
+# the count of 'array_copy' is computed before the arrays, a call in an array
+# argument that writes what the count reads is rejected
+SRC=1650 && COMPERR
+
+# the count of 'arrays_equal' is computed before the arrays, a call in an
+# array argument that writes what the count reads is rejected
+SRC=1651 && COMPERR
+
+# the count of 'read' is computed before the buffer, a call in the buffer
+# argument that writes what the count reads is rejected
+SRC=1652 && COMPERR
+
+# a call in an array argument of 'array_copy' that writes nothing the count
+# reads gives the left-to-right result
+SRC=1653 && EXP=8 && RUN

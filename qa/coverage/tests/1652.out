@@ -1,0 +1,4 @@
+
+1652.baz:14:33: 'n' may be written by the call of 'g' in the buffer argument, the count and the start are computed before the buffer, use a temporary variable
+    var k = read(0, a[g()].buf, n)
+                                ^

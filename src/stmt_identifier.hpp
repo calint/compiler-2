@@ -1180,11 +1180,12 @@ struct list_operand {
     }
 };
 
-// 'earlier' reads nothing that 'write', an effect of a later operand,
-// reaches; 'operand' names an operand of the list in the message
+// 'earlier' reads nothing that 'write', an effect of an operand computed
+// after it, reaches; 'writer' says where the call is in the message, e.g. "a
+// later argument"
 inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
                                    const call_effect& write,
-                                   const std::string_view operand) -> void {
+                                   const std::string_view writer) -> void {
 
     earlier.visit_reads([&](const token& src_loc_tk,
                             const std::string_view read_text,
@@ -1200,10 +1201,10 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
 
         throw compile_error{
             src_loc_tk,
-            std::format("{} may be written by the call of {} in a later {}, "
-                        "use a temporary variable",
+            std::format("{} may be written by the call of {} in {}, use a "
+                        "temporary variable",
                         in_quotes(read_text), in_quotes(write.call_tk),
-                        operand)};
+                        writer)};
     });
 }
 
@@ -1219,6 +1220,8 @@ assert_not_written_later(const toc& tc,
                          const std::span<const list_operand> operands,
                          const std::string_view operand) -> void {
 
+    const std::string writer{std::format("a later {}", operand)};
+
     for (size_t k{1}; k < operands.size(); ++k) {
         operands.at(k).node->visit_call_effects(
             tc, [&](const call_effect& effect) -> void {
@@ -1227,7 +1230,32 @@ assert_not_written_later(const toc& tc,
                 }
 
                 for (const list_operand& earlier : operands.first(k)) {
-                    assert_not_read_before(tc, earlier, effect, operand);
+                    assert_not_read_before(tc, earlier, effect, writer);
+                }
+            });
+    }
+}
+
+// a backend that computes 'computed_first' before 'computed_after', which come
+// earlier in the source, gives the left-to-right result only when no call in
+// 'computed_after' writes what 'computed_first' reads, e.g. the 'n' of
+// 'array_copy(a[g()], b, n)' with 'g' writing 'n'; 'writer' says where the
+// call is in the message
+inline auto
+assert_not_written_after(const toc& tc,
+                         const std::span<const list_operand> computed_first,
+                         const std::span<const list_operand> computed_after,
+                         const std::string_view writer) -> void {
+
+    for (const list_operand& after : computed_after) {
+        after.node->visit_call_effects(
+            tc, [&](const call_effect& effect) -> void {
+                if (not effect.is_write) {
+                    return;
+                }
+
+                for (const list_operand& first : computed_first) {
+                    assert_not_read_before(tc, first, effect, writer);
                 }
             });
     }
