@@ -1663,7 +1663,7 @@ class noinline_call {
             x.check_stack_capacity(call_.tk, indent);
         }
 
-        const std::vector<frame_slot> slots{func.frame_slots(tc)};
+        const std::vector<frame_slot> slots{func.frame_slots()};
 
         write_frame_slots(x, indent, func, frame_address, slots, addresses);
 
@@ -2039,6 +2039,27 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
     }
 }
 
+// e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'; the argument at
+// 'written_index' is storage the call writes, e.g. the buffer of 'read'
+inline auto assert_arguments_not_written_later(
+    const toc& tc, const std::span<const expr_any> args,
+    const std::optional<size_t> written_index) -> void {
+
+    std::vector<list_operand> operands;
+    operands.reserve(args.size());
+
+    for (size_t i{}; i < args.size(); ++i) {
+        operands.push_back({
+            .node{&args.at(i)},
+            .written_place{
+                written_index == i ? args.at(i).place_path() : nullptr,
+            },
+        });
+    }
+
+    assert_not_written_later(tc, operands, "argument");
+}
+
 // the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
 // 'write(1, buf, 4)'; each is a value at the default type, the built-in
 // checks their count and their kinds
@@ -2087,27 +2108,13 @@ class builtin_arguments {
 
     builtin_arguments() = default;
 
-    // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'; the argument
-    // at 'written_index' is storage the built-in writes, e.g. the buffer of
-    // 'read'
+    // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'
     auto
     assert_not_written_later(const toc& tc,
                              const std::optional<size_t> written_index) const
         -> void {
 
-        std::vector<list_operand> operands;
-        operands.reserve(args_.size());
-
-        for (size_t i{}; i < args_.size(); ++i) {
-            operands.push_back({
-                .node{&args_.at(i)},
-                .written_place{
-                    written_index == i ? args_.at(i).place_path() : nullptr,
-                },
-            });
-        }
-
-        ::assert_not_written_later(tc, operands, "argument");
+        assert_arguments_not_written_later(tc, args_, written_index);
     }
 
     [[nodiscard]] auto at(const size_t index) const -> const expr_any& {
@@ -2313,7 +2320,7 @@ class stmt_call : public expression {
         }
 
         call.assert_argument_types(tc, func);
-        assert_arguments_not_written_later(tc, std::nullopt);
+        assert_arguments_not_written_later(tc, args_, std::nullopt);
 
         if (not func.is_inlined()) {
             noinline_call{call}.compile(tc, indent, dst, func);
@@ -2400,32 +2407,6 @@ class stmt_call : public expression {
         for (const expr_any& e : args_) {
             e.visit_reads(var, reader);
         }
-    }
-
-    //
-    // class methods
-    //
-
-    // e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'; the argument
-    // at 'written_index' is storage the call writes, e.g. the buffer of
-    // 'read'
-    auto assert_arguments_not_written_later(
-        const toc& tc, const std::optional<size_t> written_index) const
-        -> void {
-
-        std::vector<list_operand> operands;
-        operands.reserve(args_.size());
-
-        for (size_t i{}; i < args_.size(); ++i) {
-            operands.push_back({
-                .node{&args_.at(i)},
-                .written_place{
-                    written_index == i ? args_.at(i).place_path() : nullptr,
-                },
-            });
-        }
-
-        assert_not_written_later(tc, operands, "argument");
     }
 
   private:

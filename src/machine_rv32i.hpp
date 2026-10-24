@@ -365,6 +365,7 @@ class machine_rv32i : public machine {
     // overridden methods
     //
 
+    // the sector is in a0 where 'read' has the descriptor, there is no result
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
                              const operand& sector, const operand& address,
                              const operand& size,
@@ -385,11 +386,19 @@ class machine_rv32i : public machine {
         free_named_register(src_loc_tk, indent, call_register);
     }
 
-    // the sector is in a0 where 'read' has the descriptor, there is no result
     auto emit_call(const size_t indent, const std::string_view label)
         -> void override {
 
         assembler_.call(indent, label);
+    }
+
+    auto emit_failure_handler(const failure_handler& handler,
+                              const bool with_line) -> void override {
+
+        assert(handler.label != stack_overflow_failure.label or
+               is_stack_bounded());
+
+        emit_named_failure_handler(handler.label, handler.name, with_line);
     }
 
     // a 'noinline' body saves the return address below 'sp'
@@ -1148,15 +1157,6 @@ class machine_rv32i : public machine {
         assert_data_element_size(element_size_bytes);
 
         assembler_.data(element_size_bytes, values);
-    }
-
-    auto emit_failure_handler(const failure_handler& handler,
-                              const bool with_line) -> void override {
-
-        assert(handler.label != stack_overflow_failure.label or
-               is_stack_bounded());
-
-        emit_named_failure_handler(handler.label, handler.name, with_line);
     }
 
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,

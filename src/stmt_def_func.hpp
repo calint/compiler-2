@@ -488,9 +488,7 @@ class stmt_def_func final : public statement {
 
     // the slots of a noinline call, each the address of what it names: the
     // result, when there is one, then the parameters
-    [[nodiscard]] auto frame_slots(const toc& tc) const
-        -> std::vector<frame_slot> {
-
+    [[nodiscard]] auto frame_slots() const -> std::vector<frame_slot> {
         std::vector<frame_slot> slots;
 
         if (returns_) {
@@ -503,17 +501,17 @@ class stmt_def_func final : public statement {
         for (size_t i{}; i < params_.size(); ++i) {
             slots.push_back({
                 .param_index{i},
-                .is_in_register{i == 0 and has_receiver_in_register(tc)},
+                .is_in_register{i == 0 and has_receiver_in_register()},
             });
         }
 
         return slots;
     }
 
-    // the receiver of a method has its address in a register where the
-    // backend has one, not in a frame slot
-    [[nodiscard]] auto has_receiver_in_register(const toc& tc) const -> bool {
-        return is_method() and tc.has_slot_register();
+    // the receiver of a method has its address in the slot register of the
+    // backend, not in a frame slot
+    [[nodiscard]] auto has_receiver_in_register() const -> bool {
+        return is_method();
     }
 
     // e.g. 'func point.at(x, y) self'
@@ -827,7 +825,7 @@ class stmt_def_func final : public statement {
         // the register is held while the body runs
         operand slot_register;
 
-        if (has_receiver_in_register(tc)) {
+        if (has_receiver_in_register()) {
             slot_register = x.alloc_named_register(
                 tok(), indent + 1, x.slot_register(), tc.builtins().address());
         }

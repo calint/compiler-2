@@ -632,16 +632,6 @@ class machine_x86_64 final : public machine {
         assembler_.data(element_size_bytes, values);
     }
 
-    auto emit_failure_handler(const failure_handler& handler,
-                              const bool with_line) -> void override {
-
-        // note: the stack is not bounded, see 'is_stack_bounded'
-        assert(handler.label != stack_overflow_failure.label);
-
-        emit_line_panic_handler(with_line, handler.name,
-                                failure_lines_of(handler.name), handler.label);
-    }
-
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
                             const int64_t value) -> void override {
 
@@ -1118,6 +1108,8 @@ class machine_x86_64 final : public machine {
     // overridden methods
     //
 
+    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
+    // arguments, the allocated ones are saved around the call
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
                              const operand& sector, const operand& address,
                              const operand& size,
@@ -1148,12 +1140,20 @@ class machine_x86_64 final : public machine {
                              [&] -> void { assembler_.call(indent, label); });
     }
 
-    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
-    // arguments, the allocated ones are saved around the call
     auto emit_call(const size_t indent, const std::string_view label)
         -> void override {
 
         assembler_.call(indent, label);
+    }
+
+    auto emit_failure_handler(const failure_handler& handler,
+                              const bool with_line) -> void override {
+
+        // note: the stack is not bounded, see 'is_stack_bounded'
+        assert(handler.label != stack_overflow_failure.label);
+
+        emit_line_panic_handler(with_line, handler.name,
+                                failure_lines_of(handler.name), handler.label);
     }
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size

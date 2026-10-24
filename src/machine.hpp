@@ -238,6 +238,27 @@ class machine {
     // the lines of the failures in each file, with '--checks=line'
     using failure_lines = std::map<size_t, std::set<size_t>>;
 
+    // the addresses and the result of a comparison of two arrays, 'alignment'
+    // is the alignment known for both
+    struct equality_request {
+        size_t alignment{};
+        address_emitter lhs;
+        address_emitter rhs;
+        operand dst;
+        bool inverted{};
+    };
+
+    // the addresses of a copy of elements, 'alignment' is the alignment known
+    // for both
+    struct copy_request {
+        size_t alignment{};
+        address_emitter src;
+        address_emitter dst;
+        // an enabled check makes a copy where the destination starts inside
+        // the source jump to the overlap failure handler
+        runtime_check overlap;
+    };
+
   private:
     // the indexes are those of the names of the backend, see
     // 'register_index_of'
@@ -299,27 +320,6 @@ class machine {
 
             pool.restore_unavailable(saved_mask_);
         }
-    };
-
-    // the addresses and the result of a comparison of two arrays, 'alignment'
-    // is the alignment known for both
-    struct equality_request {
-        size_t alignment{};
-        address_emitter lhs;
-        address_emitter rhs;
-        operand dst;
-        bool inverted{};
-    };
-
-    // the addresses of a copy of elements, 'alignment' is the alignment known
-    // for both
-    struct copy_request {
-        size_t alignment{};
-        address_emitter src;
-        address_emitter dst;
-        // an enabled check makes a copy where the destination starts inside
-        // the source jump to the overlap failure handler
-        runtime_check overlap;
     };
 
     // what a bounds check does about the lower bound, decided from its
@@ -640,10 +640,6 @@ class machine {
                                  const std::span<const int64_t> values)
         -> void = 0;
 
-    // prints 'panic: NAME' of 'handler', with the line when 'with_line'
-    virtual auto emit_failure_handler(const failure_handler& handler,
-                                      const bool with_line) -> void = 0;
-
     virtual auto emit_repeated_data(const size_t element_size_bytes,
                                     const size_t count, const int64_t value)
         -> void = 0;
@@ -746,8 +742,7 @@ class machine {
                        const operand& count, const runtime_check& check)
         -> void = 0;
 
-    // the register that carries the address of one slot of a call, empty when
-    // the backend passes every slot in the frame of the callee
+    // the register that carries the address of the receiver of a method call
     [[nodiscard]] virtual auto slot_register() const -> std::string_view = 0;
 
     virtual auto start() -> void = 0;
@@ -1257,6 +1252,10 @@ class machine {
     // the call instruction of 'call_function'
     virtual auto emit_call(const size_t indent, const std::string_view label)
         -> void = 0;
+
+    // prints 'panic: NAME' of 'handler', with the line when 'with_line'
+    virtual auto emit_failure_handler(const failure_handler& handler,
+                                      const bool with_line) -> void = 0;
 
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default

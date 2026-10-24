@@ -74,6 +74,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             request structs the front end builds public; the "empty slot
             register" case goes (both backends name one),
             'toc::has_slot_register' with it
+       => C done (2026-10-24): C.1 one free
+          'assert_arguments_not_written_later(tc, args, written_index)',
+          'builtin_arguments' forwards to it; C.3 'equality_request' and
+          'copy_request' public, 'emit_failure_handler' protected in
+          'machine' and both backends, 'slot_register' always names one,
+          'toc::has_slot_register' and the 'toc' parameter of
+          'frame_slots' gone; the comments of 'call_sector_routine' that
+          A.2 left above 'emit_call' moved back; C.2 waits for a decision
     D. one word for one idea (renames)
        D.1. the slot holds an address: 'holds_address' throughout
             ('ident_info::is_pointer', 'call_kind_item::is_pointer',

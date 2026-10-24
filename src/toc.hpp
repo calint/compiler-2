@@ -3386,12 +3386,6 @@ class toc final {
         return tp;
     }
 
-    // whether the backend passes the address of the receiver of a method in a
-    // register
-    [[nodiscard]] auto has_slot_register() const -> bool {
-        return not machine_.get().slot_register().empty();
-    }
-
     // an instance parse sees the definitions up to 'definition' while the
     // result lives
     [[nodiscard]] auto instance_visibility(const size_t definition)
