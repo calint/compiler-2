@@ -24,12 +24,12 @@
 //
 // generics: a generic definition is kept as text with its parameters, an
 // instance is that text parsed again in a 'generic_scope' (in 'toc.hpp')
-// where each parameter names its argument
+// where each parameter names its argument, see 'generic_reparse'
 //
 // e.g. 'type list<T type, capacity> {...}' is a 'generic_type_info', the alias
 // 'type str = list<i8, 8>' makes the 'generic_type_instance' 'list<i8, 8>'
 // with the 'generic_arg's 'T' 'i8' and 'capacity' 8, it parses the fields of
-// 'list' again as those of 'str' (see 'stmt_def_type_alias')
+// 'list' again as those of 'str' (see 'type_instantiator')
 //
 // e.g. 'func list.add(x)' is a 'generic_method_info', every instance of
 // 'list' parses it again as its own method, e.g. 'str.add'
@@ -354,9 +354,10 @@ class generic_trace final {
 struct generic_type_info {
     // e.g. 'list'
     token src_loc_tk;
-    // where the definition continues after 'type', e.g. at 'list'
-    token start_tk;
     std::vector<generic_param> params;
+    // where the fields begin, before their '{', none for a type with a base,
+    // whose fields are those of its base
+    std::optional<token> fields_tk;
     // e.g. 'list' of 'type text<size> = list<i8, size>', none when
     // the fields follow the parameters
     std::optional<token> base_tk;

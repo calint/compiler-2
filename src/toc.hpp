@@ -3995,3 +3995,28 @@ class generic_scope final {
         tc_.add_type_param(src_loc_tk, name, tpe);
     }
 };
+
+// a generic definition parsed again for an instance while it lives: its
+// parameters name the arguments the caller adds to 'scope()', 'tz()' reads
+// from 'start_tk', and the parse counts toward the nesting of the parse
+// that needs the instance
+class generic_reparse final {
+    generic_scope scope_;
+    tokenizer tz_;
+    toc::parse_nesting_scope nesting_;
+
+  public:
+    generic_reparse(toc& tc, const size_t definition, const token& start_tk)
+        : scope_{tc, definition}, tz_{tc.source_of(start_tk), start_tk},
+          nesting_{tc, tz_} {}
+
+    generic_reparse(const generic_reparse&) = delete;
+    generic_reparse(generic_reparse&&) = delete;
+    auto operator=(const generic_reparse&) -> generic_reparse& = delete;
+    auto operator=(generic_reparse&&) -> generic_reparse& = delete;
+    ~generic_reparse() = default;
+
+    [[nodiscard]] auto scope() -> generic_scope& { return scope_; }
+
+    [[nodiscard]] auto tz() -> tokenizer& { return tz_; }
+};

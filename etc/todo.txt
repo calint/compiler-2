@@ -261,6 +261,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        F.2. 'type_instantiator' beside the alias, shaped like
             'func_instantiator'; one RAII 'generic_reparse'; one parser of
             '= name<args>' (F2)
+       => F.2 done (2026-10-24): 'type_instantiator::instantiate' in
+          stmt_def_type.hpp beside the alias, its steps in its header like
+          'func_instantiator' (resolve the arguments, follow the bases,
+          parse the root fields, add the type and make the methods); the
+          alias keeps its tokens and calls it; 'generic_type_use::parse'
+          reads '= name<args>' with its checks for the based generic and the
+          alias; 'generic_type_info::fields_tk' (none for a type with a
+          base) replaces 'start_tk', the root parse starts at the '{';
+          'generic_reparse' (scope, tokenizer, nesting) at the three
+          re-parse sites; listings equal, 14 error cases equal
        F.3. one 'leading_value_type' lookahead for the 'var' deduction and
             the generic deduction (F3); supersedes E.5 of the 2026-10-23
             review (a trial parse for generics: rejected, an argument is

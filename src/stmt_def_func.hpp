@@ -1324,11 +1324,11 @@ class func_instantiator final {
                         const std::span<const type* const> type_args,
                         const generic_trace& call_trace) -> void {
 
-        generic_scope scope{tc, generic.definition};
+        generic_reparse reparse{tc, generic.definition, generic.start_tk};
 
         // e.g. 'text' names 'str' for 'func text.append<T type>(s T)'
         if (generic.receiver) {
-            scope.add_receiver(*generic.receiver);
+            reparse.scope().add_receiver(*generic.receiver);
         }
 
         // e.g. 'T' names 'name'
@@ -1344,12 +1344,9 @@ class func_instantiator final {
             });
         }
 
-        scope.add_args(args);
+        reparse.scope().add_args(args);
 
-        tokenizer tz{tc.source_of(generic.start_tk), generic.start_tk};
-
-        // note: the instance is parsed inside the parse that needs it
-        const toc::parse_nesting_scope nesting{tc, tz};
+        tokenizer& tz{reparse.tz()};
 
         const func_head head{func_head::read(tc, tz)};
 
@@ -1385,13 +1382,10 @@ class func_instantiator final {
                                       const generic_type_instance& receiver)
         -> void {
 
-        generic_scope scope{tc, method.definition};
-        scope.add_receiver(receiver);
+        generic_reparse reparse{tc, method.definition, method.start_tk};
+        reparse.scope().add_receiver(receiver);
 
-        tokenizer tz{tc.source_of(method.start_tk), method.start_tk};
-
-        // note: the instance is parsed inside the parse that needs it
-        const toc::parse_nesting_scope nesting{tc, tz};
+        tokenizer& tz{reparse.tz()};
 
         // note: 'text' names 'str' now, so the head is the method 'str.print'
         const func_head head{func_head::read(tc, tz)};
