@@ -341,11 +341,13 @@ constant arguments of an inlined call decide: a branch whose condition folds
 to false is not compiled, nor is the code after a statement that leaves on
 every path, e.g. after the 'return' of 'if n > 5 return' in an inlined
 'count(6)', which ends the expansion of a recursion with constant arguments,
-or after a 'loop' whose 'break' folds away; the function scope keeps whether
-the path is open ('toc::is_path_open'), a loop is left when a 'break' of it is
-compiled ('scope::is_left_by_break'), 'stmt_if' joins its branches with the
-same chain rule as the parse, and the end of 'main' is emitted when the
-compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
+or after a 'loop' whose 'break' folds away. The compile says it in the words
+of the parse walk ('assignment_flow'): the function scope keeps whether the
+current statement is reached ('toc::is_reachable'), 'toc::end_path' and
+'toc::record_break' end a path, 'toc::path_merge' joins the branches of an
+'if' with the same chain rule as the parse, 'toc::join_loop' and
+'toc::join_foo' end the loops ('scope::is_left_by_break'), and the end of
+'main' is emitted when the compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
 call decides it, e.g. 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards
 the division. The branch is parsed like any code, so the rules of the parse
 hold in it, e.g. the names, the types and 'break' in a loop. Checking it
@@ -1414,7 +1416,7 @@ functions, the generics, the data and the storage layout. A method of 'toc'
 changes state or combines tables, a question to one table goes through its
 const accessor, e.g. 'tc.scopes().lookup(name)'. The exception is a question
 the statements ask at every step, which has a 'toc' method that forwards it:
-'is_path_open', 'current_definition', 'source_of'.
+'is_reachable', 'current_definition', 'source_of'.
 
 'toc' is also the compile context: it carries the machine and whether the
 program is being parsed or compiled, and whether a dry run is active. A

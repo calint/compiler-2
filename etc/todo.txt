@@ -288,6 +288,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'is_reachable', 'record_break', a compile-side 'path_merge'
             guard used by 'stmt_if::compile' like 'trace_assignment'; ask:
             'assignment_flow' renamed for its second role (T3.3)
+       => I.1 done (2026-10-24): the compile says reachability in the
+          words of the parse walk: 'toc::is_reachable', 'end_path'
+          ('return', 'continue', 'exit'), 'record_break', 'join_loop',
+          'join_foo' and a 'toc::path_merge' guard that 'stmt_if::compile'
+          uses like 'trace_assignment'; 'set_path_open' and
+          'mark_loop_left' go, the scope keeps 'is_reachable'; README 1.5;
+          listings equal; the ask (rename 'assignment_flow' for its second
+          role, T3.3) stays open
     J. backends
        J.1. access labels: rv32i protected only what the targets use,
             x86_64 (final) has no protected non-overrides (B7)

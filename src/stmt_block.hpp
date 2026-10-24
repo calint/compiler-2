@@ -79,7 +79,7 @@ class stmt_block final : public statement {
         for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent + 1, destination{});
 
-            if (not tc.is_path_open()) {
+            if (not tc.is_reachable()) {
                 break;
             }
         }

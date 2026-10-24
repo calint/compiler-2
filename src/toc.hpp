@@ -63,7 +63,7 @@
 //                   method of 'toc' changes state or combines tables, a query
 //                   of one table goes through its const accessor, e.g.
 //                   'tc.scopes().current_func_scope()', except a query asked
-//                   at every step, e.g. 'is_path_open'
+//                   at every step, e.g. 'is_reachable'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
 //
@@ -351,8 +351,8 @@ class scope final {
         lut<param_binding> bindings;
 
         // while the body compiles: the code after the current statement runs
-        // on some path, a 'return' closes it, see 'toc::is_path_open'
-        bool is_path_open{true};
+        // on some path, see 'toc::is_reachable'
+        bool is_reachable{true};
 
         // the name of the result, empty when there is none
         std::string result_name;
@@ -518,8 +518,8 @@ class scope final {
         return type_ == scope_kind::noinline_dry_run;
     }
 
-    [[nodiscard]] auto is_path_open() const -> bool {
-        return func_part().is_path_open;
+    [[nodiscard]] auto is_reachable() const -> bool {
+        return func_part().is_reachable;
     }
 
     [[nodiscard]] auto is_result(const std::string_view name) const -> bool {
@@ -565,8 +565,8 @@ class scope final {
         base().peak_size_bytes = size_bytes;
     }
 
-    auto set_path_open(const bool is_open) -> void {
-        func_part().is_path_open = is_open;
+    auto set_reachable(const bool is_reachable_in) -> void {
+        func_part().is_reachable = is_reachable_in;
     }
 
     [[nodiscard]] auto storage_base_register() const -> std::string_view {
@@ -680,7 +680,7 @@ class scope final {
             .call_path{std::move(call_path)},
             .ret_label{std::move(return_label)},
             .bindings{},
-            .is_path_open{true},
+            .is_reachable{true},
             .result_name{},
             .param_names{},
             .uses{},
@@ -1608,19 +1608,6 @@ class scope_stack final {
         return {};
     }
 
-    // a 'break' of the innermost 'loop' or 'foo' is compiled, see
-    // 'scope::is_left_by_break'
-    auto mark_loop_left() -> void {
-        for (scope& scp : scopes_ | std::views::reverse) {
-            if (scp.is_loop() or scp.is_foo()) {
-                scp.mark_left_by_break();
-                return;
-            }
-        }
-
-        std::unreachable();
-    }
-
     [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
 
     // the dry runs of noinline calls nested here, see
@@ -1637,6 +1624,19 @@ class scope_stack final {
     auto push(scope scp) -> void {
         scopes_.push_back(std::move(scp));
         track_depth();
+    }
+
+    // a 'break' of the innermost 'loop' or 'foo' is compiled, see
+    // 'scope::is_left_by_break'
+    auto record_break() -> void {
+        for (scope& scp : scopes_ | std::views::reverse) {
+            if (scp.is_loop() or scp.is_foo()) {
+                scp.mark_left_by_break();
+                return;
+            }
+        }
+
+        std::unreachable();
     }
 
     // the globals that a function called in the body being parsed uses
@@ -1686,9 +1686,9 @@ class scope_stack final {
 
     auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
 
-    // see 'toc::is_path_open'
-    auto set_path_open(const bool is_open) -> void {
-        func_scope().set_path_open(is_open);
+    // see 'toc::is_reachable'
+    auto set_reachable(const bool is_reachable) -> void {
+        func_scope().set_reachable(is_reachable);
     }
 
   private:
@@ -2857,6 +2857,32 @@ class toc final {
     };
 
   public:
+    // the paths of an 'if' start at the 'if', its end is reached when one
+    // path that runs reaches it; set when the merge ends, also when an error
+    // unwinds, like 'assignment_flow::path_merge'
+    class path_merge final {
+        toc& tc_;
+        bool is_reachable_{};
+
+      public:
+        explicit path_merge(toc& tc) : tc_{tc} {}
+
+        path_merge(const path_merge&) = delete;
+        path_merge(path_merge&&) = delete;
+        auto operator=(const path_merge&) -> path_merge& = delete;
+        auto operator=(path_merge&&) -> path_merge& = delete;
+
+        ~path_merge() { tc_.scopes_.set_reachable(is_reachable_); }
+
+        // a path starts at the 'if'
+        auto begin_path() -> void { tc_.scopes_.set_reachable(true); }
+
+        // the path that ran ends here
+        auto join_path() -> void {
+            is_reachable_ = is_reachable_ or tc_.is_reachable();
+        }
+    };
+
     // a scope of the scope stack while it lives, also when an error unwinds,
     // so a failed version or dry run leaves the scopes of its caller, e.g.
     // 'const toc::scope_entry loop{tc, scope::loop(label)};'
@@ -3346,6 +3372,9 @@ class toc final {
         return dry_runs_;
     }
 
+    // 'return', 'continue' and 'exit' leave the code after them unreached
+    auto end_path() -> void { scopes_.set_reachable(false); }
+
     // the type parameters of an enclosing instance are hidden until
     // 'exit_type_params'
     auto enter_type_params() -> void { types_.enter_params(); }
@@ -3442,12 +3471,20 @@ class toc final {
     }
 
     // the code after the current statement of the function being compiled
-    // runs on some path; 'return', 'break', 'continue' and 'exit' close it, the
-    // end of an 'if' is open when one of its paths is, a block stops compiling
-    // at a closed path, e.g. after the 'return' of 'if n == 0 return' in an
-    // inlined call with the constant argument 0
-    [[nodiscard]] auto is_path_open() const -> bool {
-        return scopes_.current_func_scope().is_path_open();
+    // runs on some path, the words of 'assignment_flow': 'end_path',
+    // 'record_break', 'path_merge', 'join_loop', 'join_foo'; a block stops
+    // compiling at an unreached statement, e.g. after the 'return' of
+    // 'if n == 0 return' in an inlined call with the constant argument 0
+    [[nodiscard]] auto is_reachable() const -> bool {
+        return scopes_.current_func_scope().is_reachable();
+    }
+
+    // the end of a 'foo' is reached when the count runs out or at a 'break'
+    auto join_foo() -> void { scopes_.set_reachable(true); }
+
+    // the end of a 'loop' is reached only by a compiled 'break'
+    auto join_loop(const bool is_left_by_break) -> void {
+        scopes_.set_reachable(is_left_by_break);
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {
@@ -3480,10 +3517,6 @@ class toc final {
         generics_.mark_func_instantiated(name);
     }
 
-    // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
-    // reached
-    auto mark_loop_left() -> void { scopes_.mark_loop_left(); }
-
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
         return storage_.next_frame_address(builtins_.address());
@@ -3507,6 +3540,13 @@ class toc final {
     // noinline check repeats, see 'noinline_call::dry_run_body'
     auto reach_scope_check(const size_t scope_count) -> void {
         dry_runs_.reach_scope_check(scope_count);
+    }
+
+    // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
+    // reached, and the code after it unreached
+    auto record_break() -> void {
+        scopes_.record_break();
+        scopes_.set_reachable(false);
     }
 
     // the globals that a function called in the body uses
@@ -3534,10 +3574,6 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
-
-    auto set_path_open(const bool is_open) -> void {
-        scopes_.set_path_open(is_open);
-    }
 
     // the text of the file of the token
     [[nodiscard]] auto source_of(const token& src_loc_tk) const

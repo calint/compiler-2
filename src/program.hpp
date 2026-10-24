@@ -493,7 +493,7 @@ class program final {
 
             // the compile knows the conditions it folded, e.g. with constant
             // arguments of an inlined call
-            reaches_end = tc.is_path_open();
+            reaches_end = tc.is_reachable();
         }
 
         // code after an 'exit' or 'return' on every path would never run

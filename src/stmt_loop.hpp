@@ -60,7 +60,7 @@ class stmt_loop final : public statement {
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
 
-        tc.set_path_open(is_left);
+        tc.join_loop(is_left);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

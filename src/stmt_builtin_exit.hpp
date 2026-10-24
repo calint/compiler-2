@@ -64,7 +64,7 @@ class stmt_builtin_exit final : public expression {
 
         x.free_named_register(tok(), indent, exit_code);
 
-        tc.set_path_open(false);
+        tc.end_path();
     }
 
     // the program ends here, so this path never returns and cannot leave the

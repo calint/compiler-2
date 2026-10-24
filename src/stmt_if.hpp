@@ -88,12 +88,11 @@ class stmt_if final : public statement {
             create_label_else_branch(else_code_, if_label, label_after_if),
         };
 
-        // the end of the 'if' is reached when a path that runs reaches it
-        bool reaches_end{};
+        toc::path_merge paths{tc};
         bool reaches_else{true};
 
         for (size_t i{}; i < branches_.size(); ++i) {
-            tc.set_path_open(true);
+            paths.begin_path();
 
             const std::optional<bool> known{
                 known_of(compile_branch_at(tc, indent, i, if_label,
@@ -107,7 +106,7 @@ class stmt_if final : public statement {
                    branches_.at(i).parse_constant() == known);
 
             if (runs(known)) {
-                reaches_end = reaches_end or tc.is_path_open();
+                paths.join_path();
             }
 
             if (ends_chain(known)) {
@@ -120,17 +119,15 @@ class stmt_if final : public statement {
 
         // an empty 'else' is the path that skips every branch
         if (reaches_else) {
-            tc.set_path_open(true);
+            paths.begin_path();
 
             if (not else_code_.is_empty()) {
                 x.label(indent, label_else_branch);
                 else_code_.compile(tc, indent, destination{});
             }
 
-            reaches_end = reaches_end or tc.is_path_open();
+            paths.join_path();
         }
-
-        tc.set_path_open(reaches_end);
 
         x.label(indent, label_after_if);
     }
