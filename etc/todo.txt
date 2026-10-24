@@ -184,6 +184,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        F.2. a comparison side classified once ('comparison_side' {computed,
             constant, stored}) instead of 20 'fold_side'/'is_typed_constant'
             calls over six functions; after F.1
+       => F.1-F.2 done (2026-10-24): F.1 'expr_bool_op::comparison' {the
+          whitespace, 'op', 'rhs', 'is_memory'} in an optional, empty for a
+          shorthand (one alternative empty, an optional reads simpler than
+          a variant); 'operation()' gives a shorthand '!=' from the start,
+          the copy that patched it goes; F.2 'comparison_side' {node,
+          folded} made once by 'side_of' in 'compile_shorthand' and
+          'compile_comparison' (from 'compile_element'), read by the
+          constant, the mirroring, 'resolve_cmp', 'resolve_expr', the width
+          checks and 'typed_constant'; 'fold_side' and 'is_typed_constant'
+          gone; the parse-time 'constant_value' folds the right side only
+          when the left side folds, as before; no listing changed
        F.3. 'stmt_def_dat::elem': {scalar, string, element list, field list}
        F.4. 'stmt_builtin_io': 'io_arguments' {buffer, count, start} indexes
             made once, no 'args_.at(2)' and 'count() - 1'

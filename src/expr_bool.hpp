@@ -79,20 +79,38 @@ struct branch_targets {
 
 // one operand of an 'expr_bool': a comparison 'a < b', a comparison of the
 // bytes of two instances or arrays, or the shorthand, the operand alone as
-// the condition, e.g. 'if a', which leaves 'op_' and 'rhs_' unused
+// the condition, e.g. 'if a'
 class expr_bool_op final : public expression {
+    // the operator and the right side, e.g. '== b' of 'a == b'
+    struct comparison {
+        token ws_pre_op;
+        machine::comparison_operator op{machine::comparison_operator::equal};
+        token ws_post_op;
+        expr_arith rhs;
+        // e.g. 'a == b' of two user type instances or two whole arrays, the
+        // bytes are compared
+        bool is_memory{};
+    };
+
+    // a side with what it folds to, folded once where it is compiled: a typed
+    // constant is compared as a value of its type, e.g. 'i8(3)' or a constant
+    // argument of an inlined call, an untyped one as written, e.g. '3' or
+    // 'K + 1', and must fit the other side
+    struct comparison_side {
+        const expr_arith* node{};
+        // empty when computed or read at run time
+        std::optional<folded_value> folded;
+
+        [[nodiscard]] auto is_typed_constant() const -> bool {
+            return folded and folded->is_typed();
+        }
+    };
+
     // e.g. the 'not' of 'if not a == b ...'
     std::vector<token> nots_;
     expr_arith lhs_;
-    token ws_pre_op_;
-    machine::comparison_operator op_{machine::comparison_operator::equal};
-    token ws_post_op_;
-    expr_arith rhs_;
-    bool is_shorthand_{}; // e.g. if a ...
-
-    // e.g. 'a == b' of two user type instances or two whole arrays, the bytes
-    // are compared
-    bool is_memory_comparison_{};
+    // empty for a shorthand, the operand alone is the condition, e.g. 'if a'
+    std::optional<comparison> comparison_;
 
   public:
     expr_bool_op(toc& tc, tokenizer& tz)
@@ -104,30 +122,33 @@ class expr_bool_op final : public expression {
 
         lhs_ = {tc, tz};
 
-        ws_pre_op_ = tz.next_whitespace_token();
+        const token ws_pre_op{tz.next_whitespace_token()};
 
-        const std::optional<machine::comparison_operator> comparison{
+        const std::optional<machine::comparison_operator> op{
             parse_comparison_operator(tz),
         };
 
         // without an operator the operand is the condition, e.g. 'if a {...}'
-        if (not comparison) {
+        if (not op) {
             // note: the whitespace stays with what follows, so the operand
             //       alone reproduces its source, see 'release_name_or_literal'
 
-            tz.put_back_token(ws_pre_op_);
-            ws_pre_op_ = {};
-            is_shorthand_ = true;
+            tz.put_back_token(ws_pre_op);
             return;
         }
 
-        op_ = *comparison;
+        comparison cmp{
+            .ws_pre_op{ws_pre_op},
+            .op{*op},
+            .ws_post_op{tz.next_whitespace_token()},
+            .rhs{},
+            .is_memory{},
+        };
 
-        ws_post_op_ = tz.next_whitespace_token();
+        cmp.rhs = {tc, tz};
+        cmp.is_memory = classify_operands(tc, cmp);
 
-        rhs_ = {tc, tz};
-
-        classify_operands(tc);
+        comparison_ = std::move(cmp);
     }
 
     expr_bool_op() = default;
@@ -143,15 +164,15 @@ class expr_bool_op final : public expression {
         }
 
         lhs_.source_to(os);
-        ws_pre_op_.source_to(os);
 
-        if (is_shorthand_) {
+        if (not comparison_) {
             return;
         }
 
-        std::print(os, "{}", source_text(op_));
-        ws_post_op_.source_to(os);
-        rhs_.source_to(os);
+        comparison_->ws_pre_op.source_to(os);
+        std::print(os, "{}", source_text(comparison_->op));
+        comparison_->ws_post_op.source_to(os);
+        comparison_->rhs.source_to(os);
     }
 
     auto visit_call_effects(const toc& tc,
@@ -159,14 +180,20 @@ class expr_bool_op final : public expression {
         -> void override {
 
         lhs_.visit_call_effects(tc, visitor);
-        rhs_.visit_call_effects(tc, visitor);
+
+        if (comparison_) {
+            comparison_->rhs.visit_call_effects(tc, visitor);
+        }
     }
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
 
         lhs_.visit_reads(var, reader);
-        rhs_.visit_reads(var, reader);
+
+        if (comparison_) {
+            comparison_->rhs.visit_reads(var, reader);
+        }
     }
 
     //
@@ -175,7 +202,7 @@ class expr_bool_op final : public expression {
 
     // e.g. 'a + 1', null when negated or compared
     [[nodiscard]] auto arithmetic() const -> const expr_arith* {
-        if (not is_shorthand_ or not nots_.empty()) {
+        if (comparison_ or not nots_.empty()) {
             return nullptr;
         }
 
@@ -185,9 +212,9 @@ class expr_bool_op final : public expression {
     // a stored 'bool' is 0 or 1 and a condition is a 'bool', an integer is
     // compared first, e.g. 'n != 0', and not with a 'bool', e.g. 'b == 1'
     auto assert_boolean_operands() const -> void {
-        if (not is_shorthand_) {
-            assert_not_boolean_with_integer();
-            assert_boolean_equality_only();
+        if (comparison_) {
+            assert_not_boolean_with_integer(*comparison_);
+            assert_boolean_equality_only(comparison_->op);
             return;
         }
 
@@ -216,7 +243,7 @@ class expr_bool_op final : public expression {
 
         return compile_element(tc, indent, "and", inverted,
                                {
-                                   .operation{op_},
+                                   .operation{operation()},
                                    .inverted{inverted != is_negated()},
                                    .destination{dst},
                                    .target{jmp_to_if_false},
@@ -233,7 +260,7 @@ class expr_bool_op final : public expression {
 
         return compile_element(tc, indent, "or", inverted,
                                {
-                                   .operation{op_},
+                                   .operation{operation()},
                                    .inverted{inverted != is_negated()},
                                    .destination{dst},
                                    .target{jmp_to_if_true},
@@ -247,24 +274,18 @@ class expr_bool_op final : public expression {
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
-        const std::optional<folded_value> lhs_value{fold_side(tc, lhs_)};
+        const comparison_side lhs{side_of(tc, lhs_)};
 
-        if (not lhs_value) {
+        if (not comparison_) {
+            return constant_shorthand(lhs);
+        }
+
+        if (not lhs.folded) {
             return std::nullopt;
         }
 
-        if (is_shorthand_) {
-            return (lhs_value->value != 0) != is_negated();
-        }
-
-        const std::optional<folded_value> rhs_value{fold_side(tc, rhs_)};
-
-        if (not rhs_value) {
-            return std::nullopt;
-        }
-
-        return constant_arith::eval_constant(lhs_value->value, op_,
-                                             rhs_value->value) != is_negated();
+        return constant_comparison(lhs, comparison_->op,
+                                   side_of(tc, comparison_->rhs));
     }
 
     // takes the operand that 'arithmetic' points to
@@ -276,14 +297,11 @@ class expr_bool_op final : public expression {
 
   private:
     // e.g. 'a < b' of two 'bool's, which are not numbers
-    auto assert_boolean_equality_only() const -> void {
-        if (not lhs_.get_type().is_bool()) {
-            return;
-        }
+    auto
+    assert_boolean_equality_only(const machine::comparison_operator op) const
+        -> void {
 
-        if (op_ == machine::comparison_operator::equal or
-            op_ == machine::comparison_operator::not_equal) {
-
+        if (not lhs_.get_type().is_bool() or is_equality(op)) {
             return;
         }
 
@@ -291,52 +309,19 @@ class expr_bool_op final : public expression {
                             "a 'bool' is compared only with '==' or '!='"};
     }
 
-    // a comparison that folds is checked like one that is compiled
-    auto assert_folded_sides_fit(const toc& tc) const -> void {
-        if (is_shorthand_) {
-            return;
-        }
-
-        const bool is_lhs_typed{is_typed_constant(tc, lhs_)};
-        const bool is_rhs_typed{is_typed_constant(tc, rhs_)};
-
-        if (is_lhs_typed and not is_rhs_typed) {
-            assert_constant_fits(tc, lhs_, lhs_.get_type(), rhs_);
-            return;
-        }
-
-        if (is_rhs_typed and not is_lhs_typed) {
-            assert_constant_fits(tc, rhs_, rhs_.get_type(), lhs_);
-            return;
-        }
-
-        if (not is_rhs_typed) {
-            return;
-        }
-
-        const type& lhs_type{lhs_.get_type()};
-        const type& rhs_type{rhs_.get_type()};
-
-        if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
-            return;
-        }
-
-        throw_rhs_wider(lhs_, rhs_, op_, lhs_type, rhs_type);
-    }
-
     // e.g. 'b == 1' or '2 == b'
-    auto assert_not_boolean_with_integer() const -> void {
-        if (is_memory_comparison_) {
+    auto assert_not_boolean_with_integer(const comparison& cmp) const -> void {
+        if (cmp.is_memory) {
             return;
         }
 
         const bool is_lhs_bool{lhs_.get_type().is_bool()};
 
-        if (is_lhs_bool == rhs_.get_type().is_bool()) {
+        if (is_lhs_bool == cmp.rhs.get_type().is_bool()) {
             return;
         }
 
-        const expr_arith& boolean{is_lhs_bool ? lhs_ : rhs_};
+        const expr_arith& boolean{is_lhs_bool ? lhs_ : cmp.rhs};
 
         throw compile_error{boolean.tok(),
                             "a 'bool' is compared only with a 'bool'"};
@@ -362,33 +347,37 @@ class expr_bool_op final : public expression {
                              branch_action);
     }
 
-    // two instances or arrays are compared as memory, anything else as numbers
-    // e.g. 'p1 == p2' of instances, but 'p1 < p2' or 'p1 == 1' is rejected
-    auto classify_operands(const toc& tc) -> void {
-        const bool is_equality{
-            op_ == machine::comparison_operator::equal or
-                op_ == machine::comparison_operator::not_equal,
+    // two instances or arrays are compared as memory, anything else as
+    // numbers, e.g. 'p1 == p2' of instances, but 'p1 < p2' or 'p1 == 1' is
+    // rejected; true for memory
+    [[nodiscard]] auto classify_operands(const toc& tc,
+                                         const comparison& cmp) const -> bool {
+
+        const bool equality{is_equality(cmp.op)};
+
+        const bool is_memory{
+            equality and is_memory_operand(tc, lhs_) and
+                is_memory_operand(tc, cmp.rhs),
         };
 
-        is_memory_comparison_ = is_equality and is_memory_operand(tc, lhs_) and
-                                is_memory_operand(tc, rhs_);
-
-        if (is_equality) {
+        if (equality) {
             assert_instance_stored(tc, lhs_);
-            assert_instance_stored(tc, rhs_);
+            assert_instance_stored(tc, cmp.rhs);
         }
 
-        if (not is_memory_comparison_) {
-            assert_not_record(lhs_, is_equality);
-            assert_not_record(rhs_, is_equality);
+        if (not is_memory) {
+            assert_not_record(lhs_, equality);
+            assert_not_record(cmp.rhs, equality);
         }
+
+        return is_memory;
     }
 
     // a shorthand is named since its source shows no comparison with 0
     [[nodiscard]] auto comment_label(const std::string_view list_op,
                                      const bool inverted) const -> std::string {
 
-        if (inverted and is_shorthand_) {
+        if (inverted and not comparison_) {
             return std::format(" {} inverted shorthand: ", in_quotes(list_op));
         }
 
@@ -396,11 +385,68 @@ class expr_bool_op final : public expression {
             return std::format(" {} inverted: ", in_quotes(list_op));
         }
 
-        if (is_shorthand_) {
+        if (not comparison_) {
             return " shorthand: ";
         }
 
         return " ";
+    }
+
+    // the sides are classified once, a stored result needs no branch to the
+    // label that follows it ('stored_action')
+    [[nodiscard]] auto
+    compile_comparison(toc& tc, const size_t indent, const bool inverted,
+                       const comparison& cmp,
+                       const machine::comparison_action& action,
+                       const machine::comparison_action& stored_action) const
+        -> condition_result {
+
+        const comparison_side lhs{side_of(tc, lhs_)};
+        const comparison_side rhs{side_of(tc, cmp.rhs)};
+
+        if (const std::optional<bool> constant{
+                constant_comparison(lhs, cmp.op, rhs),
+            }) {
+
+            assert_folded_sides_fit(lhs, rhs, cmp.op);
+            return compile_constant(tc, indent, *constant != inverted, action);
+        }
+
+        // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
+        const std::array<list_operand, 2> sides{
+            list_operand{
+                .node{&lhs_},
+                .written_place{},
+            },
+            list_operand{
+                .node{&cmp.rhs},
+                .written_place{},
+            },
+        };
+
+        assert_not_written_later(tc, sides, "operand");
+
+        // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
+        // register copy, the width check then applies to the swapped sides
+        if (lhs.folded and not lhs.is_typed_constant()) {
+            machine::comparison_action mirrored_action{action};
+            mirrored_action.operation = mirrored(cmp.op);
+
+            const comparison_side& mirrored_lhs{rhs};
+            const comparison_side& mirrored_rhs{lhs};
+
+            resolve_cmp(tc, indent, mirrored_lhs, mirrored_rhs,
+                        mirrored_action);
+            return condition_result::unknown;
+        }
+
+        if (not cmp.is_memory) {
+            resolve_cmp(tc, indent, lhs, rhs, action);
+            return condition_result::unknown;
+        }
+
+        resolve_memory_cmp(tc, indent, cmp, stored_action);
+        return condition_result::unknown;
     }
 
     // a constant emits no comparison, only the short-circuit branch
@@ -441,47 +487,6 @@ class expr_bool_op final : public expression {
 
         x.label(indent, tc.create_cmp_label(tok()));
 
-        const std::optional<bool> constant{constant_value(tc)};
-
-        if (constant) {
-            assert_folded_sides_fit(tc);
-            return compile_constant(tc, indent, *constant != inverted, action);
-        }
-
-        // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
-        if (not is_shorthand_) {
-            const std::array<list_operand, 2> sides{
-                list_operand{
-                    .node{&lhs_},
-                    .written_place{},
-                },
-                list_operand{
-                    .node{&rhs_},
-                    .written_place{},
-                },
-            };
-
-            assert_not_written_later(tc, sides, "operand");
-        }
-
-        // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
-        // register copy, the width check then applies to the swapped sides
-        if (not is_shorthand_ and fold_side(tc, lhs_) and
-            not is_typed_constant(tc, lhs_)) {
-
-            machine::comparison_action mirrored_action{action};
-            mirrored_action.operation = mirrored(op_);
-
-            resolve_cmp(tc, indent, rhs_, lhs_, mirrored_action);
-
-            return condition_result::unknown;
-        }
-
-        if (not is_shorthand_ and not is_memory_comparison_) {
-            resolve_cmp(tc, indent, lhs_, rhs_, action);
-            return condition_result::unknown;
-        }
-
         // a stored result needs no branch to the label that follows it
         machine::comparison_action stored_action{action};
 
@@ -489,27 +494,71 @@ class expr_bool_op final : public expression {
             stored_action.target = {};
         }
 
-        if (is_memory_comparison_) {
-            resolve_memory_cmp(tc, indent, stored_action);
-            return condition_result::unknown;
+        if (not comparison_) {
+            return compile_shorthand(tc, indent, inverted, action,
+                                     stored_action);
+        }
+
+        return compile_comparison(tc, indent, inverted, *comparison_, action,
+                                  stored_action);
+    }
+
+    // the operand alone, compared with 0
+    [[nodiscard]] auto
+    compile_shorthand(toc& tc, const size_t indent, const bool inverted,
+                      const machine::comparison_action& action,
+                      const machine::comparison_action& stored_action) const
+        -> condition_result {
+
+        const comparison_side condition{side_of(tc, lhs_)};
+
+        if (const std::optional<bool> constant{constant_shorthand(condition)}) {
+            return compile_constant(tc, indent, *constant != inverted, action);
         }
 
         assert_not_instance_condition(lhs_);
-
-        machine::comparison_action shorthand_action{stored_action};
-        shorthand_action.operation = machine::comparison_operator::not_equal;
-
-        resolve_cmp_shorthand(tc, indent, lhs_, shorthand_action);
+        resolve_cmp_shorthand(tc, indent, condition, stored_action);
 
         return condition_result::unknown;
+    }
+
+    // the value of a comparison whose sides fold, empty otherwise
+    [[nodiscard]] auto constant_comparison(
+        const comparison_side& lhs, const machine::comparison_operator op,
+        const comparison_side& rhs) const -> std::optional<bool> {
+
+        if (not lhs.folded or not rhs.folded) {
+            return std::nullopt;
+        }
+
+        return constant_arith::eval_constant(lhs.folded->value, op,
+                                             rhs.folded->value) != is_negated();
+    }
+
+    // the value of a shorthand whose operand folds, empty otherwise
+    [[nodiscard]] auto
+    constant_shorthand(const comparison_side& condition) const
+        -> std::optional<bool> {
+
+        if (not condition.folded) {
+            return std::nullopt;
+        }
+
+        return (condition.folded->value != 0) != is_negated();
     }
 
     [[nodiscard]] auto is_negated() const -> bool {
         return is_negated_by(nots_);
     }
 
-    auto resolve_cmp(toc& tc, const size_t indent, const expr_arith& lhs,
-                     const expr_arith& rhs,
+    // a shorthand is a comparison with 0 by '!='
+    [[nodiscard]] auto operation() const -> machine::comparison_operator {
+        return comparison_ ? comparison_->op
+                           : machine::comparison_operator::not_equal;
+    }
+
+    auto resolve_cmp(toc& tc, const size_t indent, const comparison_side& lhs,
+                     const comparison_side& rhs,
                      const machine::comparison_action& action) const -> void {
 
         std::vector<operand> allocated_registers;
@@ -522,7 +571,7 @@ class expr_bool_op final : public expression {
             resolve_expr(tc, indent, rhs, false, allocated_registers),
         };
 
-        assert_rhs_fits_lhs(tc, lhs, rhs, action.operation, dst, src);
+        assert_rhs_fits_lhs(lhs, rhs, action.operation, dst, src);
 
         machine& x{tc.machine()};
 
@@ -531,9 +580,11 @@ class expr_bool_op final : public expression {
     }
 
     auto resolve_cmp_shorthand(toc& tc, const size_t indent,
-                               const expr_arith& lhs,
+                               const comparison_side& condition,
                                const machine::comparison_action& action) const
         -> void {
+
+        const expr_arith& lhs{*condition.node};
 
         if (lhs.is_arrays_equal_call() and not action.destination.is_empty()) {
             // note: only a 'bool' is assigned a boolean expression
@@ -557,7 +608,7 @@ class expr_bool_op final : public expression {
             machine& x{tc.machine()};
 
             const operand src{
-                resolve_expr(tc, indent, lhs, true, allocated_registers),
+                resolve_expr(tc, indent, condition, true, allocated_registers),
             };
 
             x.copy_value(tok(), indent, action.destination, src);
@@ -567,7 +618,8 @@ class expr_bool_op final : public expression {
         }
 
         const operand dst{
-            truth_test_operand(tc, indent, lhs, action, allocated_registers),
+            truth_test_operand(tc, indent, condition, action,
+                               allocated_registers),
         };
 
         machine& x{tc.machine()};
@@ -581,14 +633,16 @@ class expr_bool_op final : public expression {
 
     // the bytes are compared and the result is branched on as for a shorthand
     // condition
-    auto resolve_memory_cmp(toc& tc, const size_t indent,
+    auto resolve_memory_cmp(toc& tc, const size_t indent, const comparison& cmp,
                             const machine::comparison_action& action) const
         -> void {
 
         const stmt_identifier& lhs{lhs_.identifier()};
-        const stmt_identifier& rhs{rhs_.identifier()};
+        const stmt_identifier& rhs{cmp.rhs.identifier()};
 
-        const bool is_not_equal{op_ == machine::comparison_operator::not_equal};
+        const bool is_not_equal{
+            cmp.op == machine::comparison_operator::not_equal,
+        };
 
         if (not action.destination.is_empty()) {
             compile_memory_equality(tc, indent + 1, tok(), lhs, rhs,
@@ -626,26 +680,57 @@ class expr_bool_op final : public expression {
     //
 
     // 'constant' is compared at the width of 'typed', e.g. 1000 with an 'i8'
-    static auto assert_constant_fits(const toc& tc, const expr_arith& typed,
+    static auto assert_constant_fits(const expr_arith& typed,
                                      const type& typed_type,
-                                     const expr_arith& constant) -> void {
+                                     const comparison_side& constant) -> void {
 
-        const std::optional<folded_value> folded{fold_side(tc, constant)};
+        assert(constant.folded);
 
-        assert(folded);
-
-        const int64_t value{folded->value};
+        const int64_t value{constant.folded->value};
 
         if (constant_arith::fits_width(value, typed_type)) {
             return;
         }
 
         throw compile_error{
-            constant.tok(),
+            constant.node->tok(),
             std::format("constant {} does not fit {} of type {}",
                         in_quotes(std::format("{}", value)),
                         in_quotes(statement::trimmed_source(typed)),
                         in_quotes(typed_type.name()))};
+    }
+
+    // a comparison that folds is checked like one that is compiled
+    static auto assert_folded_sides_fit(const comparison_side& lhs,
+                                        const comparison_side& rhs,
+                                        const machine::comparison_operator op)
+        -> void {
+
+        const bool is_lhs_typed{lhs.is_typed_constant()};
+        const bool is_rhs_typed{rhs.is_typed_constant()};
+
+        if (is_lhs_typed and not is_rhs_typed) {
+            assert_constant_fits(*lhs.node, lhs.node->get_type(), rhs);
+            return;
+        }
+
+        if (is_rhs_typed and not is_lhs_typed) {
+            assert_constant_fits(*rhs.node, rhs.node->get_type(), lhs);
+            return;
+        }
+
+        if (not is_rhs_typed) {
+            return;
+        }
+
+        const type& lhs_type{lhs.node->get_type()};
+        const type& rhs_type{rhs.node->get_type()};
+
+        if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
+            return;
+        }
+
+        throw_rhs_wider(*lhs.node, *rhs.node, op, lhs_type, rhs_type);
     }
 
     // an operator would compare a user type instance as its first field only
@@ -709,8 +794,8 @@ class expr_bool_op final : public expression {
     }
 
     // the backends compare at the width of 'lhs' which would truncate 'rhs'
-    static auto assert_rhs_fits_lhs(toc& tc, const expr_arith& lhs,
-                                    const expr_arith& rhs,
+    static auto assert_rhs_fits_lhs(const comparison_side& lhs,
+                                    const comparison_side& rhs,
                                     const machine::comparison_operator op,
                                     const operand& lhs_op,
                                     const operand& rhs_op) -> void {
@@ -719,17 +804,17 @@ class expr_bool_op final : public expression {
 
         // a typed constant, e.g. an argument of an inlined call, is compared
         // as a variable of its type
-        if (not rhs_op.is_immediate() or is_typed_constant(tc, rhs)) {
+        if (not rhs_op.is_immediate() or rhs.is_typed_constant()) {
             const type& rhs_type{rhs_op.type_ref()};
 
             if (rhs_type.size_bytes() <= lhs_type.size_bytes()) {
                 return;
             }
 
-            throw_rhs_wider(lhs, rhs, op, lhs_type, rhs_type);
+            throw_rhs_wider(*lhs.node, *rhs.node, op, lhs_type, rhs_type);
         }
 
-        assert_constant_fits(tc, lhs, lhs_type, rhs);
+        assert_constant_fits(*lhs.node, lhs_type, rhs);
     }
 
     // the bytes that both sides hold, they hold the same type and, as arrays,
@@ -831,15 +916,6 @@ class expr_bool_op final : public expression {
         return reg;
     }
 
-    // a side computed at run time in a register of its own type, so a
-    // constant side folds at that width and is checked there, e.g. the '300'
-    // of 'e < i8(1) + 300' does not fit 'i8'
-    [[nodiscard]] static auto fold_side(const toc& tc, const expr_arith& side)
-        -> std::optional<folded_value> {
-
-        return side.fold_checked(tc, tc.use_at(side.get_type()));
-    }
-
     // a stored 'bool' is 0 or 1 so a plain one needs no comparison with 0,
     // inversion and branches keep the comparison which is shorter on x86
     [[nodiscard]] static auto
@@ -857,6 +933,13 @@ class expr_bool_op final : public expression {
     }
 
     // a user type instance or a whole array in storage, compared in place
+    [[nodiscard]] static auto is_equality(const machine::comparison_operator op)
+        -> bool {
+
+        return op == machine::comparison_operator::equal or
+               op == machine::comparison_operator::not_equal;
+    }
+
     [[nodiscard]] static auto is_memory_operand(const toc& tc,
                                                 const expr_arith& side)
         -> bool {
@@ -868,14 +951,6 @@ class expr_bool_op final : public expression {
     }
 
     // a typed constant side is compared as a variable of its type
-    [[nodiscard]] static auto is_typed_constant(const toc& tc,
-                                                const expr_arith& side)
-        -> bool {
-
-        const std::optional<folded_value> folded{fold_side(tc, side)};
-        return folded and folded->is_typed();
-    }
-
     // memory is compared, so a constant has nothing to compare
     [[nodiscard]] static auto
     make_memory_operand_info(const toc& tc, const stmt_identifier& identifier)
@@ -931,9 +1006,11 @@ class expr_bool_op final : public expression {
     }
 
     [[nodiscard]] static auto
-    resolve_expr(toc& tc, const size_t indent, const expr_arith& expr,
+    resolve_expr(toc& tc, const size_t indent, const comparison_side& side,
                  const bool is_lhs, std::vector<operand>& allocated_registers)
         -> operand {
+
+        const expr_arith& expr{*side.node};
 
         // a computed value, or the zero value '{}', which has no name
         const stmt_identifier* const path{expr.operand_path()};
@@ -945,7 +1022,7 @@ class expr_bool_op final : public expression {
         }
 
         if (path == nullptr) {
-            const std::optional<folded_value> folded{fold_side(tc, expr)};
+            const std::optional<folded_value>& folded{side.folded};
 
             if (not folded) {
                 return compile_to_scratch(tc, indent, expr,
@@ -968,7 +1045,7 @@ class expr_bool_op final : public expression {
         const ident_info expr_info{make_scalar_ident_info(tc, *path)};
 
         // a typed constant left side is a value of its type in a register
-        if (is_lhs and is_typed_constant(tc, expr)) {
+        if (is_lhs and side.is_typed_constant()) {
             machine& x{tc.machine()};
 
             const operand reg{
@@ -977,7 +1054,7 @@ class expr_bool_op final : public expression {
 
             allocated_registers.emplace_back(reg);
 
-            x.copy_value(expr.tok(), indent, reg, typed_constant(tc, expr));
+            x.copy_value(expr.tok(), indent, reg, typed_constant(side));
 
             return reg;
         }
@@ -985,25 +1062,35 @@ class expr_bool_op final : public expression {
         // a constant left side was mirrored onto the right
         assert(not expr_info.is_const() or not is_lhs);
 
-        if (is_typed_constant(tc, expr)) {
-            return typed_constant(tc, expr);
+        if (side.is_typed_constant()) {
+            return typed_constant(side);
         }
 
         // an untyped constant is compared as written, the caller checks that
         // it fits the left side
         if (expr_info.is_const()) {
-            const std::optional<folded_value> folded{fold_side(tc, expr)};
-
             // note: a constant name or literal folds
-            assert(folded);
+            assert(side.folded);
 
-            return operand::imm(folded->value, expr_info.type_ref());
+            return operand::imm(side.folded->value, expr_info.type_ref());
         }
 
         // e.g. 'a', '-a[i]'
         return path->compile_value_operand(
             tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
             tc.checks().overflow_options(), allocated_registers);
+    }
+
+    // a side computed at run time in a register of its own type, so a
+    // constant side folds at that width and is checked there, e.g. the '300'
+    // of 'e < i8(1) + 300' does not fit 'i8'
+    [[nodiscard]] static auto side_of(const toc& tc, const expr_arith& node)
+        -> comparison_side {
+
+        return {
+            .node{&node},
+            .folded{node.fold_checked(tc, tc.use_at(node.get_type()))},
+        };
     }
 
     [[noreturn]] static auto
@@ -1026,9 +1113,12 @@ class expr_bool_op final : public expression {
     // the value compared with 0, matching types avoid narrowing before the
     // in-place truth test
     [[nodiscard]] static auto
-    truth_test_operand(toc& tc, const size_t indent, const expr_arith& lhs,
+    truth_test_operand(toc& tc, const size_t indent,
+                       const comparison_side& condition,
                        const machine::comparison_action& action,
                        std::vector<operand>& allocated_registers) -> operand {
+
+        const expr_arith& lhs{*condition.node};
 
         if (lhs.is_expression() and action.destination.is_register() and
             lhs.get_type().is_same(action.destination.type_ref())) {
@@ -1039,20 +1129,16 @@ class expr_bool_op final : public expression {
             return action.destination;
         }
 
-        return resolve_expr(tc, indent, lhs, true, allocated_registers);
+        return resolve_expr(tc, indent, condition, true, allocated_registers);
     }
 
     // the value at the width of its type, e.g. -128 for '-i8(-128)'
-    [[nodiscard]] static auto typed_constant(const toc& tc,
-                                             const expr_arith& side)
+    [[nodiscard]] static auto typed_constant(const comparison_side& side)
         -> operand {
 
-        const std::optional<folded_value> folded{fold_side(tc, side)};
+        assert(side.folded and side.folded->is_typed());
 
-        // note: 'is_typed_constant' is asked of a constant, which folds
-        assert(folded and folded->is_typed());
-
-        return operand::imm(folded->value, *folded->own_type);
+        return operand::imm(side.folded->value, *side.folded->own_type);
     }
 };
 
