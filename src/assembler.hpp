@@ -189,6 +189,13 @@ class assembler {
         return captured;
     }
 
+    [[nodiscard]] auto defines_label(const std::string_view name) const
+        -> bool {
+
+        return std::ranges::any_of(
+            lines_, [&](const line& ln) -> bool { return ln.label == name; });
+    }
+
     auto end_body() -> void {
         assert(captures_.empty());
         assert(not bodies_.empty());

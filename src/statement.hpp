@@ -242,8 +242,8 @@ class stmt_identifier;
 //                  'stmt_call' and the built-ins, forwarded by 'expr_arith'
 //                  and 'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
 //                  'stmt_builtin_convert', forwarded by 'expr_arith';
-//                  'is_expression': 'expression', answered by what they hold
-//                  in 'expr_arith' and 'expr_any'
+//                  'is_expression': 'expression', answered by what it holds
+//                  in 'expr_arith'
 //   a condition    'is_arrays_equal_call' and 'compile_arrays_equal':
 //                  'stmt_builtin_arrays_equal', forwarded by 'expr_arith',
 //                  so 'expr_bool' needs not include the built-in
@@ -363,10 +363,6 @@ class statement {
     // class methods
     //
 
-    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& {
-        return uops_;
-    }
-
     // definite assignment: throws if the traced variable is read outside of
     // the assigned bytes
     auto assert_var_not_used(const assignment_flow& flow) const -> void {
@@ -427,6 +423,10 @@ class statement {
         assert(type_ != nullptr);
 
         return *type_;
+    }
+
+    [[nodiscard]] auto get_unary_ops() const -> const unary_ops& {
+        return uops_;
     }
 
     // the path of names, fields and indexes this node is, the operand path

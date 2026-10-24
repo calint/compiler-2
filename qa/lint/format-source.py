@@ -302,6 +302,21 @@ def declaration_lines(cursor, lines, start, end):
     ]
 
 
+def written_accesses(cursor):
+    # the access of the section each member is written in, for the members
+    # that have none of their own, e.g. a 'friend' or a 'static_assert'
+    access = "private" if class_keyword(cursor) == "class" else "public"
+    accesses = {}
+    for c in cursor.get_children():
+        if c.kind == K.CXX_ACCESS_SPEC_DECL:
+            access = ACCESS_NAMES[c.access_specifier]
+            continue
+
+        accesses[c.hash] = ACCESS_NAMES.get(c.access_specifier, access)
+
+    return accesses
+
+
 def trailing_note(gap):
     # the comment lines at the start of 'gap' when a blank line follows them
     count = 0
@@ -316,6 +331,7 @@ def trailing_note(gap):
 
 def class_members(cursor, lines, open_n, close_n):
     members = []
+    accesses = written_accesses(cursor)
     prev_end = open_n
     for c, start, end in member_cursors(cursor, open_n, close_n):
         # the lines between members belong to the next one, except the labels
@@ -340,7 +356,7 @@ def class_members(cursor, lines, open_n, close_n):
         members.append(
             member(
                 cursor=c,
-                access=ACCESS_NAMES[c.access_specifier],
+                access=accesses[c.hash],
                 lines=leading + declaration_lines(c, lines, start, end),
                 blank_before=blank_before,
             )

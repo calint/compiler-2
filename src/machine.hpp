@@ -42,7 +42,42 @@ struct runtime_check {
 // registers with the variables and frame bases, the trace of their use and
 // the routines, helpers and failure stubs the code uses; a backend supplies
 // the instructions, the names of its registers and the order it picks scratch
-// registers in
+// registers in; the public interface by group:
+//
+//   lifecycle      in the order 'program' calls it: 'start', 'end_main',
+//                  'begin_noinline_body' and 'end_noinline_body' for each
+//                  body, 'emit_runtime', 'emit_string_constants',
+//                  'begin_data', 'reserve_variables', 'finish',
+//                  'write_assembly'
+//   data           'data_alignment', 'define_constant', 'emit_data',
+//                  'emit_data_array', 'emit_repeated_data',
+//                  'emit_string_data', 'emit_zero_data', 'zero_padding'
+//   registers      'alloc_scratch_register', 'free_scratch_register(s)',
+//                  'free_named_register(s)', 'reserve_frame_base',
+//                  'release_frame_base', 'slot_register', 'register_view',
+//                  'reserve_variables_base' (a backend, in 'start')
+//   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
+//                  'unary', 'zero', 'copy', 'copy_value', 'copy_bytes',
+//                  'address_of', 'scale_index', 'store_boolean',
+//                  'memory_equal'
+//   control        'label', 'branch', 'compare_and_branch', 'call_function',
+//                  'call_target', 'return_function', 'exit'
+//   checks         'check_bounds', 'check_frame_capacity',
+//                  'check_stack_capacity'
+//   versions       'emit_most_efficient', 'emit_discarded'
+//   comments       'comment', 'comment_binding', 'comment_variable',
+//                  'comment_held_address'
+//   target         'default_type', 'builtin_types', 'address_size_bytes',
+//                  'has_indexed_addressing', 'is_stack_bounded',
+//                  'max_storage_bytes', 'sector_size_bytes',
+//                  'foo_counter_in_memory',
+//                  'max_padding_gaps_zeroed_one_by_one', 'frame_base_register',
+//                  'variables_base_register', 'variables_base_past_vars_bytes'
+//   reports        'register_peak_report', 'separate_report', 'statistics';
+//                  the queries of the register report are private, for
+//                  'register_reporter'
+//   backend tests  'assert_registers_free', 'emitted_line_count',
+//                  'emitted_text', 'release_variables_base'
 class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
@@ -196,16 +231,6 @@ class machine {
         std::string_view result;
     };
 
-    // the registers of the calls the target provides, see
-    // 'registers_for_target_call'
-    struct target_call_names {
-        // the descriptor or sector, the address and the count or size; 'exit'
-        // takes the first
-        std::array<std::string_view, 3> arguments;
-        // the count that 'read' and 'write' return
-        std::string_view result;
-    };
-
     // bytes of an instance that no field covers, from its start, e.g. the 3 B
     // at offset 1 of 'type r { a i8, b i32 }'; 'alignment' is known for the
     // first byte
@@ -253,6 +278,16 @@ class machine {
     // the lines of the failures in each file, with '--checks=line'
     using failure_lines = std::map<size_t, std::set<size_t>>;
 
+    // the registers of the calls the target provides, see
+    // 'registers_for_target_call'
+    struct target_call_names {
+        // the descriptor or sector, the address and the count or size; 'exit'
+        // takes the first
+        std::array<std::string_view, 3> arguments;
+        // the count that 'read' and 'write' return
+        std::string_view result;
+    };
+
     // the addresses and the result of a comparison of two arrays, 'alignment'
     // is the alignment known for both
     struct equality_request {
@@ -274,6 +309,29 @@ class machine {
         runtime_check overlap;
     };
 
+  private:
+    using routine_uses = std::map<std::string, failure_lines, std::less<>>;
+
+    // what compiling a version of code changes in the machine
+    struct version_state {
+        // the indexes are those of the names of the backend, see
+        // 'register_index_of'
+        register_pool registers;
+        bool frame_base_reserved{};
+        // the inlined calls being compiled and what the registers held
+        register_trace trace;
+        // the most scratch registers in use
+        size_t max_scratch_regs{};
+        // the routines, helpers and failure handlers the code uses, by label,
+        // each with the locations its failures report; emitted after the
+        // code, see 'mark_used'
+        routine_uses used_routines;
+    };
+
+    // saved before a version and put back after it, see 'version_scope'
+    version_state state_;
+
+  protected:
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
     // lowered. on exit, also while an exception unwinds, it frees the
@@ -365,8 +423,6 @@ class machine {
     };
 
   private:
-    using routine_uses = std::map<std::string, failure_lines, std::less<>>;
-
     source_locations locations_;
     std::reference_wrapper<const builtin_type_set> builtins_;
     assembler::jump_mode jump_mode_;
@@ -377,25 +433,6 @@ class machine {
     kept_version kept_version_{kept_version::smaller};
     // see 'target_options::reports_line'
     bool reports_line_{};
-
-    // what compiling a version of code changes in the machine
-    struct version_state {
-        // the indexes are those of the names of the backend, see
-        // 'register_index_of'
-        register_pool registers;
-        bool frame_base_reserved{};
-        // the inlined calls being compiled and what the registers held
-        register_trace trace;
-        // the most scratch registers in use
-        size_t max_scratch_regs{};
-        // the routines, helpers and failure handlers the code uses, by label,
-        // each with the locations its failures report; emitted after the
-        // code, see 'mark_used'
-        routine_uses used_routines;
-    };
-
-    // saved before a version and put back after it, see 'version_scope'
-    version_state state_;
 
     // the state before a version, put back when the scope ends, also when an
     // error unwinds; a version that is kept is given its end state again
@@ -549,6 +586,7 @@ class machine {
         }
 
         std::ranges::sort(codes);
+
         return std::ranges::adjacent_find(codes) == codes.end();
     }());
 
@@ -735,10 +773,6 @@ class machine {
                           const factor_use use, const runtime_check& check = {})
         -> void = 0;
 
-    // the name of a register in the output, for the use of registers
-    [[nodiscard]] virtual auto register_display_name(size_t index) const
-        -> std::string = 0;
-
     virtual auto reserve_variables(const size_t alignment,
                                    const size_t size_bytes) -> void = 0;
 
@@ -887,6 +921,24 @@ class machine {
         restore_call_registers(indent, saved);
     }
 
+    // a call of 'read', 'write', 'sector_read' or 'sector_write' with its
+    // arguments and its result in the registers of
+    // 'registers_for_target_call', 'result' empty for a sector function; a
+    // sector is an unsigned 32 bit number, the size of a sector transfer is
+    // 'sector_size_bytes', a sector past the end of the card panics where the
+    // target can tell
+    auto call_target(const token& src_loc_tk, const size_t indent,
+                     const target_call function,
+                     const std::span<const operand> args, const operand& result)
+        -> void {
+
+        // note: 'exit' is reached through 'exit', which takes any operand
+        assert(function != target_call::exit);
+
+        assert_target_call_registers(function, args, result);
+        emit_target_call(src_loc_tk, indent, function, args, result);
+    }
+
     // synthetic tokens and standalone backend calls have no source location;
     // the text may quote the source, e.g. a raw NUL that ends a line for nasm
     auto comment(const token& src_loc_tk, const size_t indent,
@@ -914,6 +966,40 @@ class machine {
         };
 
         comment(src_loc_tk, indent, std::string_view{text});
+    }
+
+    // a parameter bound to what 'to' names, with the address the call
+    // computed when it did
+    auto comment_binding(const token& src_loc_tk, const size_t indent,
+                         const std::string_view from, const std::string_view to,
+                         const operand& address) -> void {
+
+        if (address.is_empty()) {
+            comment(src_loc_tk, indent, "bind {} -> {}", from, to);
+            return;
+        }
+
+        comment(src_loc_tk, indent, "bind {} -> {} (lea: {})", from, to,
+                address_text(address));
+    }
+
+    // e.g. 'b: bag (address @ [rbx])', the slot holds the address of the
+    // variable, e.g. a parameter of a noinline body
+    auto comment_held_address(const token& src_loc_tk, const size_t indent,
+                              const std::string_view text,
+                              const operand& address) -> void {
+
+        comment(src_loc_tk, indent, "{} (address @ [{}])", text,
+                address_text(address));
+    }
+
+    // e.g. 'x: i32 (4 B @ [rbp + 8])'
+    auto comment_variable(const token& src_loc_tk, const size_t indent,
+                          const std::string_view text, const size_t size_bytes,
+                          const operand& address) -> void {
+
+        comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, size_bytes,
+                address_text(address));
     }
 
     // runs 'emit' for its checks, nothing it emits is kept and the registers
@@ -965,40 +1051,7 @@ class machine {
     auto emit_runtime() -> void {
         emit_used_failure_handlers();
         emit_used_routines();
-    }
-
-    // a parameter bound to what 'to' names, with the address the call
-    // computed when it did
-    auto comment_binding(const token& src_loc_tk, const size_t indent,
-                         const std::string_view from, const std::string_view to,
-                         const operand& address) -> void {
-
-        if (address.is_empty()) {
-            comment(src_loc_tk, indent, "bind {} -> {}", from, to);
-            return;
-        }
-
-        comment(src_loc_tk, indent, "bind {} -> {} (lea: {})", from, to,
-                address_text(address));
-    }
-
-    // e.g. 'b: bag (address @ [rbx])', the slot holds the address of the
-    // variable, e.g. a parameter of a noinline body
-    auto comment_held_address(const token& src_loc_tk, const size_t indent,
-                              const std::string_view text,
-                              const operand& address) -> void {
-
-        comment(src_loc_tk, indent, "{} (address @ [{}])", text,
-                address_text(address));
-    }
-
-    // e.g. 'x: i32 (4 B @ [rbp + 8])'
-    auto comment_variable(const token& src_loc_tk, const size_t indent,
-                          const std::string_view text, const size_t size_bytes,
-                          const operand& address) -> void {
-
-        comment(src_loc_tk, indent, "{} ({} B @ [{}])", text, size_bytes,
-                address_text(address));
+        assert_used_routines_emitted();
     }
 
     // the lines buffered so far, for backend tests that read what an emit
@@ -1059,32 +1112,6 @@ class machine {
         target_assembler().label(indent, name);
     }
 
-    [[nodiscard]] auto location_text(const token& src_loc_tk) const
-        -> std::string {
-
-        if (src_loc_tk.at_line() == 0) {
-            return "-";
-        }
-
-        return locations_.human_readable(src_loc_tk);
-    }
-
-    // a 'noinline' body holds the variables base and the frame base from its
-    // start
-    [[nodiscard]] auto noinline_body_register_count() const -> size_t {
-        size_t count{};
-
-        for (const std::string_view name : scratch_registers()) {
-            if (name != variables_base_register() and
-                name != frame_base_register()) {
-
-                ++count;
-            }
-        }
-
-        return count;
-    }
-
     // the use of registers at the busiest point of the build, as lines after
     // the code when asked for, else none; defined in 'register_report.hpp'
     [[nodiscard]] auto register_peak_report() const -> std::vector<std::string>;
@@ -1101,6 +1128,35 @@ class machine {
         result.set_allocation_register(reg.allocation_register());
 
         return result;
+    }
+
+    // the registers of the arguments and the result of a call of 'function'
+    [[nodiscard]] auto
+    registers_for_target_call(const target_call function) const
+        -> target_call_registers {
+
+        const target_call_names& names{target_call_register_names()};
+
+        if (function == target_call::exit) {
+            return {
+                .arguments{std::span{names.arguments}.first(1)},
+                .result{},
+            };
+        }
+
+        if (function == target_call::sector_read or
+            function == target_call::sector_write) {
+
+            return {
+                .arguments{names.arguments},
+                .result{},
+            };
+        }
+
+        return {
+            .arguments{names.arguments},
+            .result{names.result},
+        };
     }
 
     // the frame base is held while a 'noinline' body is compiled, which starts
@@ -1161,72 +1217,6 @@ class machine {
         multiply(src_loc_tk, indent, index,
                  operand::imm(element_size_bytes, default_type()),
                  factor_use::read_only);
-    }
-
-    // the scratch registers that can hold values beside the ones the backend
-    // holds itself in 'allocations', e.g. the variables base 's0' on rv32i
-    [[nodiscard]] auto scratch_register_count(
-        const std::span<const register_pool::allocation> allocations) const
-        -> size_t {
-
-        size_t count{scratch_registers().size()};
-
-        for (const register_pool::allocation& allocated : allocations) {
-            if (not register_trace::is_listed(allocated) and
-                is_scratch_register(allocated.index)) {
-
-                --count;
-            }
-        }
-
-        return count;
-    }
-
-    // the registers of the arguments and the result of a call of 'function'
-    [[nodiscard]] auto
-    registers_for_target_call(const target_call function) const
-        -> target_call_registers {
-
-        const target_call_names& names{target_call_register_names()};
-
-        if (function == target_call::exit) {
-            return {
-                .arguments{std::span{names.arguments}.first(1)},
-                .result{},
-            };
-        }
-
-        if (function == target_call::sector_read or
-            function == target_call::sector_write) {
-
-            return {
-                .arguments{names.arguments},
-                .result{},
-            };
-        }
-
-        return {
-            .arguments{names.arguments},
-            .result{names.result},
-        };
-    }
-
-    // a call of 'read', 'write', 'sector_read' or 'sector_write' with its
-    // arguments and its result in the registers of
-    // 'registers_for_target_call', 'result' empty for a sector function; a
-    // sector is an unsigned 32 bit number, the size of a sector transfer is
-    // 'sector_size_bytes', a sector past the end of the card panics where the
-    // target can tell
-    auto call_target(const token& src_loc_tk, const size_t indent,
-                     const target_call function,
-                     const std::span<const operand> args, const operand& result)
-        -> void {
-
-        // note: 'exit' is reached through 'exit', which takes any operand
-        assert(function != target_call::exit);
-
-        assert_target_call_registers(function, args, result);
-        emit_target_call(src_loc_tk, indent, function, args, result);
     }
 
     // a blank line that separates the code from the report
@@ -1294,16 +1284,6 @@ class machine {
     [[nodiscard]] virtual auto address_text(const operand& address) const
         -> std::string = 0;
 
-    // the registers 'registers_for_target_call' takes its answers from
-    [[nodiscard]] virtual auto target_call_register_names() const
-        -> const target_call_names& = 0;
-
-    // the call of 'call_target', its registers checked
-    virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                                  const target_call function,
-                                  const std::span<const operand> args,
-                                  const operand& result) -> void = 0;
-
     // the call instruction of 'call_function'
     virtual auto emit_call(const size_t indent, const std::string_view label)
         -> void = 0;
@@ -1315,6 +1295,12 @@ class machine {
     // the code at the start of a 'noinline' body after the frame base is
     // reserved, none by default
     virtual auto emit_frame_entry() -> void {}
+
+    // the call of 'call_target', its registers checked
+    virtual auto emit_target_call(const token& src_loc_tk, const size_t indent,
+                                  const target_call function,
+                                  const std::span<const operand> args,
+                                  const operand& result) -> void = 0;
 
     // the helpers and routines that the code marked used; a routine may mark
     // another one it calls, see 'emit_runtime'
@@ -1351,6 +1337,10 @@ class machine {
 
     [[nodiscard]] virtual auto target_assembler() const -> const assembler& = 0;
 
+    // the registers 'registers_for_target_call' takes its answers from
+    [[nodiscard]] virtual auto target_call_register_names() const
+        -> const target_call_names& = 0;
+
     // throws when a register of the target cannot hold a value of 'type_ref',
     // any type fits by default
     virtual auto
@@ -1386,6 +1376,25 @@ class machine {
 
         assert(result.is_empty() or register_index_of(result.base_register()) ==
                                         register_index_of(registers.result));
+    }
+
+    // a routine marked while another one is emitted is emitted only if a
+    // later step of 'emit_runtime' asks for it
+    auto assert_used_routines_emitted() const -> void {
+        for (const auto& [routine, uses] : state_.used_routines) {
+            // note: the code marks the handlers, they are emitted first and a
+            //       handler that reports lines is under the labels of its lines
+
+            const bool is_handler{
+                std::ranges::any_of(
+                    failure_handlers,
+                    [&](const failure_handler& handler) -> bool {
+                        return handler.label == routine;
+                    }),
+            };
+
+            assert(is_handler or target_assembler().defines_label(routine));
+        }
     }
 
     [[nodiscard]] auto builtin_type_i16() const -> const type& {
@@ -1801,7 +1810,23 @@ class machine {
         return std::format("\npanic: {}", name);
     }
 
+  public:
+    // the queries of the register report
+    friend class register_reporter;
+
   private:
+    //
+    // virtual methods
+    //
+
+    // the name of a register in the output, for the use of registers
+    [[nodiscard]] virtual auto register_display_name(size_t index) const
+        -> std::string = 0;
+
+    //
+    // class methods
+    //
+
     // the operand of a register handed out by 'alloc_named_register' or
     // 'alloc_scratch_register', which frees it by its allocation name
     [[nodiscard]] auto allocated_operand(const std::string_view register_name,
@@ -1884,6 +1909,16 @@ class machine {
                output.instruction_count_of(second->lines);
     }
 
+    [[nodiscard]] auto location_text(const token& src_loc_tk) const
+        -> std::string {
+
+        if (src_loc_tk.at_line() == 0) {
+            return "-";
+        }
+
+        return locations_.human_readable(src_loc_tk);
+    }
+
     // the backend's own registers, e.g. the variables base, and the frame
     // base that a 'noinline' body holds from its start
     [[nodiscard]] auto noinline_body_pool() const -> register_pool {
@@ -1912,6 +1947,22 @@ class machine {
         });
 
         return pool;
+    }
+
+    // a 'noinline' body holds the variables base and the frame base from its
+    // start
+    [[nodiscard]] auto noinline_body_register_count() const -> size_t {
+        size_t count{};
+
+        for (const std::string_view name : scratch_registers()) {
+            if (name != variables_base_register() and
+                name != frame_base_register()) {
+
+                ++count;
+            }
+        }
+
+        return count;
     }
 
     // the index of 'register_name', which names a register
@@ -2001,6 +2052,25 @@ class machine {
 
     auto restore_version_state(version_state state) -> void {
         state_ = std::move(state);
+    }
+
+    // the scratch registers that can hold values beside the ones the backend
+    // holds itself in 'allocations', e.g. the variables base 's0' on rv32i
+    [[nodiscard]] auto scratch_register_count(
+        const std::span<const register_pool::allocation> allocations) const
+        -> size_t {
+
+        size_t count{scratch_registers().size()};
+
+        for (const register_pool::allocation& allocated : allocations) {
+            if (not register_trace::is_listed(allocated) and
+                is_scratch_register(allocated.index)) {
+
+                --count;
+            }
+        }
+
+        return count;
     }
 
     // the version kept and why, at least one available, e.g. 'kept the second

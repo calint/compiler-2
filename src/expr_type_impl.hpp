@@ -390,10 +390,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
         source.get_lea_operand(tc, indent, src_info, allocated_registers),
     };
 
-    const size_t size_bytes{
-        multiply_storage_size(tok(), dst_type.size_bytes(),
-                              src_info.element_count()),
-    };
+    const size_t size_bytes{src_info.value_size_bytes(tok())};
 
     machine& x{tc.machine()};
 

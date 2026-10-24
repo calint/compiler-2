@@ -551,6 +551,7 @@ class stmt_builtin_io final : public expression {
         if (at_.count) {
             args_.at(*at_.count)
                 .compile(tc, indent, destination::of_register(count));
+
             return;
         }
 
@@ -641,24 +642,6 @@ class stmt_builtin_io final : public expression {
                    machine::factor_use::read_only);
     }
 
-    // 'read(fd, buf, count, start)': the count and the start are optional,
-    // a sector function has no count
-    [[nodiscard]] static auto optional_positions_of(const io_function& io,
-                                                    const size_t arg_count)
-        -> optional_positions {
-
-        const bool has_count{
-            not io.is_sector and arg_count > buffer_index_ + 1,
-        };
-
-        const bool has_start{arg_count == io.max_arg_count};
-
-        return {
-            .count{has_count ? std::optional{buffer_index_ + 1} : std::nullopt},
-            .start{has_start ? std::optional{arg_count - 1} : std::nullopt},
-        };
-    }
-
     // see 'range_check', a sector function has the constant count of a sector
     [[nodiscard]] auto range_check_of(toc& tc,
                                       const ident_info& buffer_info) const
@@ -695,6 +678,24 @@ class stmt_builtin_io final : public expression {
     //
     // statics
     //
+
+    // 'read(fd, buf, count, start)': the count and the start are optional,
+    // a sector function has no count
+    [[nodiscard]] static auto optional_positions_of(const io_function& io,
+                                                    const size_t arg_count)
+        -> optional_positions {
+
+        const bool has_count{
+            not io.is_sector and arg_count > buffer_index_ + 1,
+        };
+
+        const bool has_start{arg_count == io.max_arg_count};
+
+        return {
+            .count{has_count ? std::optional{buffer_index_ + 1} : std::nullopt},
+            .start{has_start ? std::optional{arg_count - 1} : std::nullopt},
+        };
+    }
 
     [[nodiscard]] static auto
     sector_element_count(toc& tc, const ident_info& buffer_info) -> size_t {

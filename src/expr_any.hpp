@@ -309,14 +309,6 @@ class expr_any final : public statement {
         return element(0).fold(tc, use);
     }
 
-    [[nodiscard]] auto is_expression() const -> bool override {
-        if (is_array()) {
-            return true;
-        }
-
-        return element(0).is_expression();
-    }
-
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override {
         if (const array_copy* const copy{std::get_if<array_copy>(&form_)}) {

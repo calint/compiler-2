@@ -497,6 +497,7 @@ class stmt_identifier final : public statement {
             if (not step.elem->array_index_expr) {
                 check_unindexed_range(tc, indent, src_loc_tk, cur_info,
                                       step.is_last, request.reg_count);
+
                 return;
             }
 
@@ -585,8 +586,6 @@ class stmt_identifier final : public statement {
 
     [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
 
-    [[nodiscard]] auto shape() const -> array_shape { return shape_; }
-
     [[nodiscard]] auto is_array_element() const -> bool {
         return not elems_.empty() and elems_.back().array_index_expr != nullptr;
     }
@@ -667,6 +666,8 @@ class stmt_identifier final : public statement {
         tc.record_use(ident_info::root_of(dotted_path_), accessed_path(),
                       use_kind::write);
     }
+
+    [[nodiscard]] auto shape() const -> array_shape { return shape_; }
 
     // the root variable and the path inside it that this names, see
     // 'toc::storage_of'; empty when it holds no storage, e.g. a constant
@@ -863,6 +864,48 @@ class stmt_identifier final : public statement {
         return true;
     }
 
+    // walks the elements from the root, each with the path up to it resolved,
+    // e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is located at
+    // 'src_loc_tk', at the name of each element when empty
+    auto for_each_prefix(
+        const toc& tc, const token& src_loc_tk,
+        const std::function_ref<void(const prefix_step&)> visit) const -> void {
+
+        std::string path;
+        const type* parent_type{};
+
+        for (size_t i{}; i < elems_.size(); ++i) {
+            const ident_elem& elem{elems_.at(i)};
+
+            size_t field_offset{};
+
+            if (parent_type != nullptr) {
+                path.push_back('.');
+
+                field_offset = parent_type->field_offset(elem.name_tk,
+                                                         elem.name_tk.text());
+            }
+
+            path += elem.name_tk.text();
+
+            const ident_info info{
+                tc.make_ident_info(
+                    src_loc_tk.is_empty() ? elem.name_tk : src_loc_tk, path),
+            };
+
+            visit({
+                .elem{&elem},
+                .path{path},
+                .info{&info},
+                .parent_type{parent_type},
+                .field_offset{field_offset},
+                .is_last{i == elems_.size() - 1},
+            });
+
+            parent_type = &info.type_ref();
+        }
+    }
+
     // 'name_tk' after the path so far names a method of the path's type
     [[nodiscard]] auto is_method_name(const toc& tc, tokenizer& tz,
                                       const token& src_loc_tk,
@@ -922,48 +965,6 @@ class stmt_identifier final : public statement {
 
     auto resolve_accessed_bytes(toc& tc) -> void;
 
-    // walks the elements from the root, each with the path up to it resolved,
-    // e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is located at
-    // 'src_loc_tk', at the name of each element when empty
-    auto for_each_prefix(
-        const toc& tc, const token& src_loc_tk,
-        const std::function_ref<void(const prefix_step&)> visit) const -> void {
-
-        std::string path;
-        const type* parent_type{};
-
-        for (size_t i{}; i < elems_.size(); ++i) {
-            const ident_elem& elem{elems_.at(i)};
-
-            size_t field_offset{};
-
-            if (parent_type != nullptr) {
-                path.push_back('.');
-
-                field_offset = parent_type->field_offset(elem.name_tk,
-                                                         elem.name_tk.text());
-            }
-
-            path += elem.name_tk.text();
-
-            const ident_info info{
-                tc.make_ident_info(
-                    src_loc_tk.is_empty() ? elem.name_tk : src_loc_tk, path),
-            };
-
-            visit({
-                .elem{&elem},
-                .path{path},
-                .info{&info},
-                .parent_type{parent_type},
-                .field_offset{field_offset},
-                .is_last{i == elems_.size() - 1},
-            });
-
-            parent_type = &info.type_ref();
-        }
-    }
-
     // the path is an array only while its last element is not indexed
     auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {
         const ident_info info{tc.make_ident_info(src_loc_tk, dotted_path_)};
@@ -982,7 +983,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto root_range(const ident_info& info) const -> byte_range {
         return {
             .offset{},
-            .size_bytes{storage_size_bytes(tok(), info)},
+            .size_bytes{info.value_size_bytes(tok())},
         };
     }
 
@@ -1147,14 +1148,6 @@ class stmt_identifier final : public statement {
         }
 
         return storage.operand();
-    }
-
-    [[nodiscard]] static auto storage_size_bytes(const token& src_loc_tk,
-                                                 const ident_info& info)
-        -> size_t {
-
-        return multiply_storage_size(src_loc_tk, info.type_ref().size_bytes(),
-                                     info.element_count());
     }
 };
 

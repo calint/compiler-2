@@ -95,6 +95,10 @@ program.hpp      parse: every file, an included one before its includer,
   |              used routines, read-only data, data and variables
   |              report after the code
   v
+nodes            statement.hpp, stmt_*.hpp, expr_*.hpp: a node parses
+  |              itself, then compiles through 'toc' (toc.hpp, the names
+  |              and the checks) into 'machine'
+  v
 machine.hpp      one virtual method per operation the front end needs,
   |              e.g. 'add_subtract', 'copy', 'check_bounds'; allocates
   |              the registers ('register_pool')
@@ -137,21 +141,30 @@ Reading order, each file assumes the ones before it:
 
 ```text
 1. main.cpp, program.hpp       the driver and the passes
-2. statement.hpp               the node interface every statement has
-3. stmt_block.hpp, parse_statement.hpp
+2. ident_info.hpp, operand.hpp, access_path.hpp, ub_reads.hpp, ub_assigned.hpp
+                               the vocabulary of the node signatures:
+                               'destination', 'ident_info', 'folded_value',
+                               'value_use', and the walks every node takes
+                               part in
+3. statement.hpp               the node interface every statement has
+4. tokenizer.hpp, parse_lookahead.hpp
+                               the tokens and 'classify_term', which every
+                               parse step asks first
+5. stmt_block.hpp, parse_statement.hpp
                                a block and the statement it parses next
-4. stmt_if.hpp, stmt_loop.hpp  control flow, the simplest nodes
-5. stmt_def_var.hpp, stmt_assign_var.hpp
+6. stmt_if.hpp, stmt_loop.hpp  control flow, the simplest nodes
+7. stmt_def_var.hpp, stmt_assign_var.hpp
                                a variable defined and assigned
-6. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
+8. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
                                values: arithmetic, conditions, instances
-7. stmt_identifier.hpp         a place: a name with fields and indexes
-8. stmt_def_func.hpp, stmt_call.hpp
-                               functions, inlined and noinline calls
-9. toc.hpp                     what the names are while compiling
-10. machine.hpp, machine_x86_64.hpp, assembler.hpp
+9. stmt_identifier.hpp         a place: a name with fields and indexes
+10. stmt_def_func.hpp, stmt_call.hpp, generics.hpp
+                               functions, inlined and noinline calls, the
+                               generic instances
+11. toc.hpp                    what the names are while compiling
+12. machine.hpp, machine_x86_64.hpp, assembler.hpp
                                the operations and one backend
-11. machine_rv32i.hpp, assembler_rv32i.hpp
+13. machine_rv32i.hpp, assembler_rv32i.hpp
                                the load/store backend and its image
 ```
 
@@ -350,17 +363,20 @@ optimizations, usage ('report_renderer' in 'program.hpp'), and with
 
 A constant follows the rules of a variable; only the code differs, an
 immediate instead of a load. One virtual, 'statement::fold', evaluates a value
-known at compile time. The exceptions are read at the parse from a literal or
-a constant name: array sizes ('stmt_array_size') and the constant arguments of a
-generic ('toc::constant_value_of'). The result of 'fold', 'folded_value', is
-stored as it is wherever a constant is kept ('ident_info', the alias of an
-inlined argument, the constant of a 'let'):
+known at compile time, also an array size ('stmt_array_size' folds at 'i64',
+e.g. 'i8[n * 2]'). The one exception is read at the parse from a literal or a
+constant name: the constant arguments of a generic ('toc::constant_value_of').
+The result of 'fold', 'folded_value', is stored as it is wherever a constant is
+kept ('ident_info', the alias of an inlined argument, the constant of a 'let'):
 
 - typed: it has the rules of a variable of its 'own_type': a conversion
   ('i8(300)', 'i16(k)'), a constant argument of an inlined call,
-  'array_length', a list led by one, a 'let' of one
+  'array_length', a list led by one
 - untyped: a literal or a 'let' of untyped values, checked by its value where
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not
+
+A 'let' is a constant only when its value folds at the default type, e.g.
+'let k = 3'; 'let k = i8(3)' is a read-only variable of 'i8'.
 
 Where it is used is a 'value_use': the width the value is computed at and
 whether its arithmetic is checked for overflow, made by 'toc::use_of' from a
@@ -377,6 +393,10 @@ a narrower width on purpose; 'statement::fold_checked' adds the check of
 initializer is rejected where a computed one is. A constant reaches a
 destination only through the list that holds it ('expr_arith', the
 immediate by 'folded_value::operand_at'); the nodes in a list never emit one.
+A comparison side has its own rule ('expr_bool_op::resolve_expr',
+'typed_constant'): the backend compares at the width of the left side, so an
+untyped constant on the right is checked to fit it ('assert_rhs_fits_lhs')
+and a typed one keeps its type.
 
 The result: a typed constant and a variable of the same type and value get the
 same verdict and the same result; an overflow or zero divisor certain at
@@ -1375,7 +1395,9 @@ checked at compile time (chapters 3 and 4).
 Every statement receives 'toc', which owns the scopes, the types, the
 functions, the generics, the data and the storage layout. A method of 'toc'
 changes state or combines tables, a question to one table goes through its
-const accessor, e.g. 'tc.scopes().lookup(name)'.
+const accessor, e.g. 'tc.scopes().lookup(name)'. The exception is a question
+the statements ask at every step, which has a 'toc' method that forwards it:
+'is_path_open', 'current_definition', 'source_of'.
 
 'toc' is also the compile context: it carries the machine and whether the
 program is being parsed or compiled, and whether a dry run is active. A

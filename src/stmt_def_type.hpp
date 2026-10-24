@@ -232,7 +232,7 @@ class stmt_def_type_generic final : public statement {
     // where the definition continues after 'type', an alias parses it again
     token start_tk_;
     token name_tk_;
-    // the text after 'type' of a generic definition, only its aliases parse it
+    // the text after 'type' of a generic definition, kept for 'source_to'
     std::string_view generic_text_;
 
   public:

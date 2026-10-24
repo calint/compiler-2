@@ -7,12 +7,11 @@
 #include "unary_ops.hpp"
 
 // the base of the nodes whose value is computed, not a name or a constant read
-// in place: calls, arithmetic, conditions and the built-ins with a value;
-// 'expr_any' derives from 'statement' because whether its value is computed
-// depends on what it holds, it answers 'is_expression' by it; a condition that
-// is one name or literal is an 'expr_arith' in a value ('release_name_or_
-// literal'); 'expr_type' derives from it too, an instance value is copied as
-// bytes, never computed
+// in place: calls, arithmetic, conditions and the built-ins with a value; a
+// condition that is one name or literal is an 'expr_arith' in a value
+// ('release_name_or_literal'); 'expr_any' and 'expr_type' derive from
+// 'statement': they are never an element of a list, the only place that asks
+// 'is_expression'
 class expression : public statement {
   public:
     explicit expression(const token tk, unary_ops uops = {})

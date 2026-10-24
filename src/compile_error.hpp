@@ -37,7 +37,11 @@ class compile_error final : public std::exception {
     // version of the same code may not run out
     // ('machine::emit_most_efficient'); both it and the limit of inlined calls
     // depend on the arguments of a call, so a function that nothing calls
-    // cannot be judged by them
+    // cannot be judged by them; the readers: 'machine::compile_version' drops
+    // 'out_of_registers', 'stmt_call' turns it into a recursion error in an
+    // inlined recursion, 'stmt_def_func::check_body' drops both when the body
+    // takes from a call; 'toc::throw_dry_run_error' resets the kind to
+    // 'source' so that none of them drops the error of a dry run
     enum class error_kind : uint8_t {
         source,
         out_of_registers,
@@ -61,6 +65,7 @@ class compile_error final : public std::exception {
         // 'text' found through 'src_loc_tk', e.g. a call or an instance
         [[nodiscard]] static auto at(const token& src_loc_tk, std::string text,
                                      std::string reason) -> call_frame {
+
             return {
                 .file_ix{src_loc_tk.file_index()},
                 .line{src_loc_tk.at_line()},

@@ -75,8 +75,9 @@ class stmt_block final : public statement {
 
         const toc::frame_scope block{tc, frame::block()};
 
-        // the statements after a 'return', 'break', 'continue' or 'exit' that
-        // every path takes do not run and are not compiled
+        // the parse rejects a statement after a path that does not continue;
+        // the compile stops after what it folds and the parse could not, e.g.
+        // an 'if' on a constant argument of an inlined call
         for (const std::unique_ptr<statement>& s : statements_) {
             s->compile(tc, indent + 1, destination{});
 

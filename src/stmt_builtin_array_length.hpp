@@ -39,6 +39,13 @@ class stmt_builtin_array_length final : public expression {
 
         stmt_ident_ = stmt_identifier::parse_array_argument(tc, tz);
 
+        if (not stmt_ident_.is_array()) {
+            throw compile_error{
+                stmt_ident_.first_token(),
+                std::format("{} is not an array",
+                            in_quotes(statement::trimmed_source(stmt_ident_)))};
+        }
+
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the argument");
     }
@@ -71,12 +78,8 @@ class stmt_builtin_array_length final : public expression {
 
         const ident_info src_info{make_ident_info(tc, stmt_ident_)};
 
-        if (not src_info.is_var() or not src_info.is_array()) {
-            throw compile_error{
-                stmt_ident_.first_token(),
-                std::format("{} is not an array",
-                            in_quotes(statement::trimmed_source(stmt_ident_)))};
-        }
+        // note: the parse rejected an argument that is not an array
+        assert(src_info.is_var() and src_info.is_array());
 
         // unknown in a function checked without a call, whose code is
         // discarded, e.g. the left side of 'array_length(a) * i', which an
@@ -107,10 +110,8 @@ class stmt_builtin_array_length final : public expression {
 
         const ident_info src_info{make_ident_info(tc, stmt_ident_)};
 
-        // 'compile' reports an argument that is not an array
-        if (not src_info.is_var() or not src_info.is_array()) {
-            return std::nullopt;
-        }
+        // note: the parse rejected an argument that is not an array
+        assert(src_info.is_var() and src_info.is_array());
 
         const std::optional<size_t> array_len{src_info.array_len()};
 
@@ -137,16 +138,9 @@ class stmt_builtin_array_length final : public expression {
     }
 
     // the length is known at compile time so the value of an array is not
-    // read; a name that is not an array, which 'compile' rejects, counts as
-    // read, so a variable named in its own initializer is uninitialized, e.g.
-    // the 'a' of 'let a = array_length(a)'
+    // read, only its indexes are
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
-
-        if (not stmt_ident_.is_array()) {
-            stmt_ident_.visit_reads(var, reader);
-            return;
-        }
 
         stmt_ident_.visit_index_reads(var, reader);
     }

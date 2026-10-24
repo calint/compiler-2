@@ -403,6 +403,10 @@ class call_limits final {
     // makes its condition fold, otherwise it would expand without end
     static constexpr size_t max_inlined_nesting{64};
 
+    //
+    // statics
+    //
+
     // an inlined call compiles its body in place, so nesting is limited
     static auto assert_inline_nesting(toc& tc, const token& call_tk,
                                       const stmt_def_func& func) -> void {
@@ -411,8 +415,9 @@ class call_limits final {
             throw recursion_error(call_tk, func);
         }
 
-        // note: the chain does not depend on the arguments, see
-        //       'noinline_call::dry_run_body'
+        // note: in the dry run of a noinline call the scopes count the chain
+        //       of noinline calls checked, so the error does not suggest
+        //       'noinline', see 'noinline_call::dry_run_body'
 
         assert_scope_count(tc, call_tk, tc.scopes().frames().size(),
                            tc.scopes().noinline_dry_run_level() != 0);
@@ -476,6 +481,10 @@ class call_limits final {
     }
 
   private:
+    //
+    // statics
+    //
+
     // the call is too deep to inline, e.g. a recursion that does not end at
     // compile time
     [[nodiscard]] static auto inlining_limit_error(const token& call_tk,
@@ -653,28 +662,6 @@ struct call_site {
         return temporaries;
     }
 
-    // which arguments a noinline body reaches through a temporary of the call:
-    // a value without storage, e.g. a literal or an expression; an array is
-    // only passed by name
-    [[nodiscard]] auto noinline_temporaries(const toc& tc,
-                                            const stmt_def_func& func) const
-        -> std::vector<bool> {
-
-        std::vector<bool> temporaries;
-        temporaries.reserve(args.size());
-
-        for (const auto [arg, param] : std::views::zip(args, func.params())) {
-            const bool is_place{argument_form_of(tc, arg, param).is_place()};
-
-            // note: an array argument is a place, see 'assert_argument_usable'
-            assert(not param.is_array() or is_place);
-
-            temporaries.push_back(not is_place);
-        }
-
-        return temporaries;
-    }
-
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
     [[nodiscard]] auto
@@ -701,22 +688,26 @@ struct call_site {
         };
     }
 
-    // a block holds the temporaries of a call and frees them after it
-    // note: a block is a frame, which counts toward the nesting limit and the
-    //       'max scopes in use' report, so a call without temporaries enters
-    //       none
-    static auto in_temporaries_block(toc& tc, const bool has_temporaries,
-                                     const std::function_ref<void()> compile)
-        -> void {
+    // which arguments a noinline body reaches through a temporary of the call:
+    // a value without storage, e.g. a literal or an expression; an array is
+    // only passed by name
+    [[nodiscard]] auto noinline_temporaries(const toc& tc,
+                                            const stmt_def_func& func) const
+        -> std::vector<bool> {
 
-        if (not has_temporaries) {
-            compile();
-            return;
+        std::vector<bool> temporaries;
+        temporaries.reserve(args.size());
+
+        for (const auto [arg, param] : std::views::zip(args, func.params())) {
+            const bool is_place{argument_form_of(tc, arg, param).is_place()};
+
+            // note: an array argument is a place, see 'assert_argument_usable'
+            assert(not param.is_array() or is_place);
+
+            temporaries.push_back(not is_place);
         }
 
-        const toc::frame_scope block{tc, frame::block()};
-
-        compile();
+        return temporaries;
     }
 
     // unique per call and argument, an inlined body names it through the
@@ -782,6 +773,24 @@ struct call_site {
                 },
             },
         };
+    }
+
+    // a block holds the temporaries of a call and frees them after it
+    // note: a block is a frame, which counts toward the nesting limit and the
+    //       'max scopes in use' report, so a call without temporaries enters
+    //       none
+    static auto in_temporaries_block(toc& tc, const bool has_temporaries,
+                                     const std::function_ref<void()> compile)
+        -> void {
+
+        if (not has_temporaries) {
+            compile();
+            return;
+        }
+
+        const toc::frame_scope block{tc, frame::block()};
+
+        compile();
     }
 
     [[nodiscard]] static auto is_widened_integer(const type& result_type,
@@ -2371,6 +2380,7 @@ class stmt_call : public expression {
         if (not func.is_inlined()) {
             noinline_call{call, call.noinline_temporaries(tc, func)}.compile(
                 tc, indent, dst, func);
+
             return;
         }
 

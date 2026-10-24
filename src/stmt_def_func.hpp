@@ -384,6 +384,13 @@ class stmt_def_func final : public statement {
         }
     }
 
+    // the definite-assignment walk without a variable, see
+    // 'stmt_block::trace_assignment'
+    auto assert_statements_reached() const -> void {
+        assignment_flow flow{std::nullopt, tok(), 0};
+        code_.trace_assignment(flow);
+    }
+
     // 'func' is a keyword so no user name or internal label starts with 'func.'
     // e.g. 'func.sum.len.4.8' for array lengths 4 and 8
     [[nodiscard]] auto
@@ -515,45 +522,10 @@ class stmt_def_func final : public statement {
         return is_method();
     }
 
-    // a parsed body names its result and parameters in place, a compiled
-    // noinline body reaches each through the address in its frame slot, the
-    // receiver through the address in 'slot_register'
-    [[nodiscard]] static auto placement_of(const var_access access,
-                                           const frame_slot& slot,
-                                           const operand& slot_register)
-        -> var_placement {
-
-        if (access == var_access::direct) {
-            return in_storage{
-                .offset{},
-                .base_register{},
-                .holds_address{},
-            };
-        }
-
-        if (slot.is_in_register) {
-            assert(not slot_register.is_empty());
-            return at_address_register{slot_register};
-        }
-
-        return in_storage{
-            .offset{},
-            .base_register{},
-            .holds_address{true},
-        };
-    }
-
     // e.g. 'func point.at(x, y) self'
     [[nodiscard]] auto is_constructor() const -> bool {
         return returns_.has_value() and
                returns_->ident_tk.is_text(reserved_names::self);
-    }
-
-    // the definite-assignment walk without a variable, see
-    // 'stmt_block::trace_assignment'
-    auto assert_statements_reached() const -> void {
-        assignment_flow flow{std::nullopt, tok(), 0};
-        code_.trace_assignment(flow);
     }
 
     [[nodiscard]] auto is_inlined() const -> bool {
@@ -606,6 +578,39 @@ class stmt_def_func final : public statement {
     }
 
     [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
+
+    //
+    // statics
+    //
+
+    // a parsed body names its result and parameters in place, a compiled
+    // noinline body reaches each through the address in its frame slot, the
+    // receiver through the address in 'slot_register'
+    [[nodiscard]] static auto placement_of(const var_access access,
+                                           const frame_slot& slot,
+                                           const operand& slot_register)
+        -> var_placement {
+
+        if (access == var_access::direct) {
+            return in_storage{
+                .offset{},
+                .base_register{},
+                .holds_address{},
+            };
+        }
+
+        if (slot.is_in_register) {
+            assert(not slot_register.is_empty());
+
+            return at_address_register{slot_register};
+        }
+
+        return in_storage{
+            .offset{},
+            .base_register{},
+            .holds_address{true},
+        };
+    }
 
   private:
     // the frames of what made the instance, see 'func_instance::trace'
@@ -1085,7 +1090,7 @@ class func_instantiator final {
                             const size_t definition) -> void {
 
         // note: the definition checked the type parameters and that it is no
-        //       constructor, see 'stmt_def_func_generic::skip_signature'
+        //       constructor, see 'assert_generic_signature'
 
         // e.g. 'text.append' for the instance 'str.append' of 'text'
         std::string report_name{

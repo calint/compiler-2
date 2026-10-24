@@ -96,24 +96,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // overridden methods
     //
 
-    // only the routines the program calls are emitted; the shared routines
-    // come first, they may use 'exit', e.g. the division by zero
-    auto emit_used_routines() -> void override {
-        machine_rv32i::emit_used_routines();
-
-        if (is_used(exit_label_)) {
-            emit_exit_routine();
-        }
-
-        if (is_used(read_label_)) {
-            emit_read_routine();
-        }
-
-        if (is_used(write_label_)) {
-            emit_write_routine();
-        }
-    }
-
     // the stack may not reach past the end of memory or into the variables,
     // how much of it is used at run time is checked only by
     // '--checks=stack', which checks no stack for 'main' itself
@@ -145,6 +127,24 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     auto emit_read_call(const size_t indent) -> void override {
         call_io_routine(indent, read_label_, read_clobbered_);
         mark_used(read_label_);
+    }
+
+    // only the routines the program calls are emitted; the shared routines
+    // come first, they may use 'exit', e.g. the division by zero
+    auto emit_used_routines() -> void override {
+        machine_rv32i::emit_used_routines();
+
+        if (is_used(exit_label_)) {
+            emit_exit_routine();
+        }
+
+        if (is_used(read_label_)) {
+            emit_read_routine();
+        }
+
+        if (is_used(write_label_)) {
+            emit_write_routine();
+        }
     }
 
     auto emit_write_call(const size_t indent) -> void override {

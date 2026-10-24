@@ -221,12 +221,12 @@ class type final {
         return kind_ == type_kind::boolean;
     }
 
-    [[nodiscard]] auto is_integer() const -> bool {
-        return kind_ == type_kind::integer;
-    }
-
     [[nodiscard]] auto is_builtin() const -> bool {
         return kind_ != type_kind::user;
+    }
+
+    [[nodiscard]] auto is_integer() const -> bool {
+        return kind_ == type_kind::integer;
     }
 
     // types are unique objects, a type is only the same as itself

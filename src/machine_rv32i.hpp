@@ -363,22 +363,6 @@ class machine_rv32i : public machine {
     // overridden methods
     //
 
-    // unused routines contribute no code
-    auto emit_used_routines() -> void override {
-        if (is_used(report_line_label_)) {
-            emit_report_line_routine();
-        }
-
-        emit_arithmetic_helpers();
-
-        const bool is_read_used{is_used(sector_read_label_)};
-        const bool is_write_used{is_used(sector_write_label_)};
-
-        if (is_read_used or is_write_used) {
-            emit_sector_routines(is_read_used, is_write_used);
-        }
-    }
-
     // e.g. 's0 + t0 * 4 + 28' of a variable at a run-time index
     [[nodiscard]] auto address_text(const operand& address) const
         -> std::string override {
@@ -409,6 +393,27 @@ class machine_rv32i : public machine {
         return text;
     }
 
+    auto emit_call(const size_t indent, const std::string_view label)
+        -> void override {
+
+        assembler_.call(indent, label);
+    }
+
+    auto emit_failure_handler(const failure_handler& handler,
+                              const bool with_line) -> void override {
+
+        assert(handler.label != stack_overflow_failure.label or
+               is_stack_bounded());
+
+        emit_named_failure_handler(handler, with_line);
+    }
+
+    // a 'noinline' body saves the return address below 'sp'
+    auto emit_frame_entry() -> void override {
+        assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
+        assembler_.sw(1, "ra", 0, "sp");
+    }
+
     // 'read' and 'write' are system calls or routines of the target, see
     // 'emit_read_call', the sector functions routines
     auto emit_target_call(const token& src_loc_tk, const size_t indent,
@@ -429,6 +434,7 @@ class machine_rv32i : public machine {
             }
 
             free_named_register(src_loc_tk, indent, call_register);
+
             return;
         }
 
@@ -436,56 +442,20 @@ class machine_rv32i : public machine {
                             args.at(2), function);
     }
 
-    [[nodiscard]] auto target_call_register_names() const
-        -> const target_call_names& override {
+    // unused routines contribute no code
+    auto emit_used_routines() -> void override {
+        if (is_used(report_line_label_)) {
+            emit_report_line_routine();
+        }
 
-        static constexpr target_call_names names{
-            .arguments{"a0", "a1", "a2"},
-            .result{"a0"},
-        };
+        emit_arithmetic_helpers();
 
-        return names;
-    }
+        const bool is_read_used{is_used(sector_read_label_)};
+        const bool is_write_used{is_used(sector_write_label_)};
 
-    // the sector is in a0 where 'read' has the descriptor, there is no result
-    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
-                             const operand& sector, const operand& address,
-                             const operand& size, const target_call function)
-        -> void {
-
-        const operand call_register{
-            reserve_call_register(src_loc_tk, indent, sector, address, size),
-        };
-
-        const std::string_view label{
-            function == target_call::sector_read ? sector_read_label_
-                                                 : sector_write_label_,
-        };
-
-        mark_used(label);
-        call_io_routine(indent, label, sector_clobbered_);
-        free_named_register(src_loc_tk, indent, call_register);
-    }
-
-    auto emit_call(const size_t indent, const std::string_view label)
-        -> void override {
-
-        assembler_.call(indent, label);
-    }
-
-    auto emit_failure_handler(const failure_handler& handler,
-                              const bool with_line) -> void override {
-
-        assert(handler.label != stack_overflow_failure.label or
-               is_stack_bounded());
-
-        emit_named_failure_handler(handler, with_line);
-    }
-
-    // a 'noinline' body saves the return address below 'sp'
-    auto emit_frame_entry() -> void override {
-        assembler_.addi(1, "sp", "sp", -frame_save_bytes_);
-        assembler_.sw(1, "ra", 0, "sp");
+        if (is_read_used or is_write_used) {
+            emit_sector_routines(is_read_used, is_write_used);
+        }
     }
 
     [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
@@ -531,6 +501,17 @@ class machine_rv32i : public machine {
         return assembler_;
     }
 
+    [[nodiscard]] auto target_call_register_names() const
+        -> const target_call_names& override {
+
+        static constexpr target_call_names names{
+            .arguments{"a0", "a1", "a2"},
+            .result{"a0"},
+        };
+
+        return names;
+    }
+
     auto validate_register_type(const token& src_loc_tk,
                                 const type& type_ref) const -> void override {
 
@@ -549,15 +530,15 @@ class machine_rv32i : public machine {
     // the divide helper found a zero divisor without '--checks=division'
     virtual auto emit_divide_by_zero_trap() -> void = 0;
 
-    // the routines that the calls of 'sector_read' and 'sector_write' jump
-    // to, each only when it is used
-    virtual auto emit_sector_routines(const bool read_used,
-                                      const bool write_used) -> void = 0;
-
     // a0 is the descriptor and receives the byte count, a1 is the address,
     // a2 the count and a7 is reserved; an override may change the registers
     // after a2 in the allocation order, see 'call_io_routine'
     virtual auto emit_read_call(const size_t indent) -> void = 0;
+
+    // the routines that the calls of 'sector_read' and 'sector_write' jump
+    // to, each only when it is used
+    virtual auto emit_sector_routines(const bool read_used,
+                                      const bool write_used) -> void = 0;
 
     // loads the lowest address the stack may reach into the register 'reg',
     // only a target that 'is_stack_bounded' is asked
@@ -612,6 +593,26 @@ class machine_rv32i : public machine {
                                     }));
 
         assembler_.call(indent, label, "a7");
+    }
+
+    // the sector is in a0 where 'read' has the descriptor, there is no result
+    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
+                             const operand& sector, const operand& address,
+                             const operand& size, const target_call function)
+        -> void {
+
+        const operand call_register{
+            reserve_call_register(src_loc_tk, indent, sector, address, size),
+        };
+
+        const std::string_view label{
+            function == target_call::sector_read ? sector_read_label_
+                                                 : sector_write_label_,
+        };
+
+        mark_used(label);
+        call_io_routine(indent, label, sector_clobbered_);
+        free_named_register(src_loc_tk, indent, call_register);
     }
 
     // the handler of a check that prints 'panic: NAME' then exits with its
@@ -1399,12 +1400,6 @@ class machine_rv32i : public machine {
         multiply_by_constant(src_loc_tk, indent, product, factor, *constant);
     }
 
-    [[nodiscard]] auto register_display_name(const size_t index) const
-        -> std::string override {
-
-        return std::string{register_names_.at(index)};
-    }
-
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
 
@@ -1603,6 +1598,20 @@ class machine_rv32i : public machine {
     }
 
   private:
+    //
+    // overridden methods
+    //
+
+    [[nodiscard]] auto register_display_name(const size_t index) const
+        -> std::string override {
+
+        return std::string{register_names_.at(index)};
+    }
+
+    //
+    // class methods
+    //
+
     // a direct offset from a word aligned base can prove more alignment than
     // the type does
     [[nodiscard]] auto access_alignment(const operand& address,

@@ -204,7 +204,10 @@ struct access_path {
 };
 
 // a variable: its name and the frame it is declared in, a callee's local of
-// the name of a variable of the caller is another variable
+// the name of a variable of the caller is another variable; 'frame_index' is
+// the index on the scope stack, so two roots compare only while the frames up
+// to it are unchanged: a root is kept no longer than its frame (a global,
+// index 0, always)
 struct root_variable {
     std::string name;
     size_t frame_index{};

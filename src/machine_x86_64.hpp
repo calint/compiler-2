@@ -849,12 +849,6 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    [[nodiscard]] auto register_display_name(const size_t index) const
-        -> std::string override {
-
-        return std::string{register_names_.at(index).qword};
-    }
-
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void override {
 
@@ -1026,6 +1020,52 @@ class machine_x86_64 final : public machine {
     // overridden methods
     //
 
+    [[nodiscard]] auto address_text(const operand& address) const
+        -> std::string override {
+
+        return assembler_x86_64::address_text(to_address(address));
+    }
+
+    auto emit_call(const size_t indent, const std::string_view label)
+        -> void override {
+
+        assembler_.call(indent, label);
+    }
+
+    auto emit_failure_handler(const failure_handler& handler,
+                              const bool with_line) -> void override {
+
+        // note: the stack is not bounded, see 'is_stack_bounded'
+        assert(handler.label != stack_overflow_failure.label);
+
+        emit_line_panic_handler(with_line, handler,
+                                failure_lines_of(handler.label));
+    }
+
+    // 'read' and 'write' are system calls, the sector functions routines
+    auto emit_target_call(const token& src_loc_tk, const size_t indent,
+                          const target_call function,
+                          const std::span<const operand> args,
+                          const operand& result) -> void override {
+
+        if (function == target_call::read) {
+            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
+                       args.at(2), syscall_read_);
+
+            return;
+        }
+
+        if (function == target_call::write) {
+            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
+                       args.at(2), syscall_write_);
+
+            return;
+        }
+
+        call_sector_routine(src_loc_tk, indent, args.at(0), args.at(1),
+                            args.at(2), function);
+    }
+
     // unused routines contribute no code
     auto emit_used_routines() -> void override {
         if (is_used(report_line_label_)) {
@@ -1040,32 +1080,63 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    [[nodiscard]] auto address_text(const operand& address) const
-        -> std::string override {
+    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
+        -> bool override {
 
-        return assembler_x86_64::address_text(to_address(address));
+        return name == "rsp";
     }
 
-    // 'read' and 'write' are system calls, the sector functions routines
-    auto emit_target_call(const token& src_loc_tk, const size_t indent,
-                          const target_call function,
-                          const std::span<const operand> args,
-                          const operand& result) -> void override {
+    // the index in 'register_names_' of a register of any size
+    [[nodiscard]] auto register_index_of(const std::string_view name) const
+        -> std::optional<size_t> override {
 
-        if (function == target_call::read) {
-            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
-                       args.at(2), syscall_read_);
-            return;
+        if (register_size_bytes(name) == 0) {
+            return std::nullopt;
         }
 
-        if (function == target_call::write) {
-            io_syscall(src_loc_tk, indent, result, args.at(0), args.at(1),
-                       args.at(2), syscall_write_);
-            return;
+        const std::string qword{sized_register_name(name, size_qword_)};
+
+        for (const auto [index, names] :
+             std::views::enumerate(register_names_)) {
+
+            if (names.qword == qword) {
+                return static_cast<size_t>(index);
+            }
         }
 
-        call_sector_routine(src_loc_tk, indent, args.at(0), args.at(1),
-                            args.at(2), function);
+        std::unreachable();
+    }
+
+    auto restore_call_registers(const size_t indent,
+                                const std::span<const size_t> saved)
+        -> void override {
+
+        for (const size_t index : saved | std::views::reverse) {
+            pop(indent, qword_register(register_names_.at(index).qword));
+        }
+    }
+
+    auto save_call_registers(const size_t indent,
+                             const std::span<const size_t> saved)
+        -> void override {
+
+        for (const size_t index : saved) {
+            push(indent, qword_register(register_names_.at(index).qword));
+        }
+    }
+
+    [[nodiscard]] auto scratch_registers() const
+        -> std::span<const std::string_view> override {
+
+        return scratch_registers_;
+    }
+
+    [[nodiscard]] auto target_assembler() -> assembler& override {
+        return assembler_;
+    }
+
+    [[nodiscard]] auto target_assembler() const -> const assembler& override {
+        return assembler_;
     }
 
     [[nodiscard]] auto target_call_register_names() const
@@ -1078,6 +1149,10 @@ class machine_x86_64 final : public machine {
 
         return names;
     }
+
+    //
+    // class methods
+    //
 
     // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
     // arguments, the allocated ones are saved around the call
@@ -1108,22 +1183,6 @@ class machine_x86_64 final : public machine {
 
         with_saved_registers(indent, clobbered,
                              [&] -> void { assembler_.call(indent, label); });
-    }
-
-    auto emit_call(const size_t indent, const std::string_view label)
-        -> void override {
-
-        assembler_.call(indent, label);
-    }
-
-    auto emit_failure_handler(const failure_handler& handler,
-                              const bool with_line) -> void override {
-
-        // note: the stack is not bounded, see 'is_stack_bounded'
-        assert(handler.label != stack_overflow_failure.label);
-
-        emit_line_panic_handler(with_line, handler,
-                                failure_lines_of(handler.label));
     }
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size
@@ -1255,66 +1314,21 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::text);
     }
 
-    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
-        -> bool override {
-
-        return name == "rsp";
-    }
-
-    // the index in 'register_names_' of a register of any size
-    [[nodiscard]] auto register_index_of(const std::string_view name) const
-        -> std::optional<size_t> override {
-
-        if (register_size_bytes(name) == 0) {
-            return std::nullopt;
-        }
-
-        const std::string qword{sized_register_name(name, size_qword_)};
-
-        for (const auto [index, names] :
-             std::views::enumerate(register_names_)) {
-
-            if (names.qword == qword) {
-                return static_cast<size_t>(index);
-            }
-        }
-
-        std::unreachable();
-    }
-
-    auto restore_call_registers(const size_t indent,
-                                const std::span<const size_t> saved)
-        -> void override {
-
-        for (const size_t index : saved | std::views::reverse) {
-            pop(indent, qword_register(register_names_.at(index).qword));
-        }
-    }
-
-    auto save_call_registers(const size_t indent,
-                             const std::span<const size_t> saved)
-        -> void override {
-
-        for (const size_t index : saved) {
-            push(indent, qword_register(register_names_.at(index).qword));
-        }
-    }
-
-    [[nodiscard]] auto scratch_registers() const
-        -> std::span<const std::string_view> override {
-
-        return scratch_registers_;
-    }
-
-    [[nodiscard]] auto target_assembler() -> assembler& override {
-        return assembler_;
-    }
-
-    [[nodiscard]] auto target_assembler() const -> const assembler& override {
-        return assembler_;
-    }
-
   private:
+    //
+    // overridden methods
+    //
+
+    [[nodiscard]] auto register_display_name(const size_t index) const
+        -> std::string override {
+
+        return std::string{register_names_.at(index).qword};
+    }
+
+    //
+    // class methods
+    //
+
     auto add(const token& src_loc_tk, const size_t indent, const operand& dst,
              const operand& src) -> void {
 

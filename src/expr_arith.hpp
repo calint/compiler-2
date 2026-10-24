@@ -555,6 +555,7 @@ class expr_arith final : public expression {
     // 'i16(f(x))'
     [[nodiscard]] auto single_operand() const -> const statement& {
         assert(is_single_operand());
+
         return *exprs_.front();
     }
 

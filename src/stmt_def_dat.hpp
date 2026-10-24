@@ -206,7 +206,6 @@ class stmt_def_dat final : public statement {
 
             x.comment(value->src_loc_tk, 0, "{}", tp.name());
             x.emit_data(tp.size_bytes(), value->value);
-
             return;
         }
 

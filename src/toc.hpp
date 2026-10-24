@@ -36,18 +36,22 @@
 //
 //   records         'func_info', 'noinline_body', 'body_uses' (what a body
 //                   reaches that its callers name too), 'param_binding' (what
-//                   a parameter of an inlined call stands for), 'const_info'
+//                   a parameter of an inlined call stands for, one of
+//                   'bound_constant', 'bound_register', 'bound_name'),
+//                   'const_info'
 //   'frame'         one scope: its constants, variables and parameter bindings
 //   'ident_path'    a name as its path of elements, e.g. 'p.x'
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
 //                   address
 //   tables          'type_table', 'compile_records' (the noinline bodies to
 //                   emit, the reached definitions), 'function_table'
-//   'dry_run_ledger' the heights of the checked dry runs of noinline calls
-//   'data_table'    the dats and the read-only constants
+//   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
+//                   of noinline calls
+//   'data_table'    the dats ('placed_dat') and the read-only constants
 //   options         'check_options', 'usage_statistics'
 //   'scope_stack'   the frames from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
+//                   ('name_meaning'), the target of 'break' ('loop_target')
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_roles' the types the front end needs by role
 //   'ident_resolver' resolves a name by walking the frames, following bindings
@@ -56,7 +60,8 @@
 //   'toc'           the facade the statements use, owns all of the above; a
 //                   method of 'toc' changes state or combines tables, a query
 //                   of one table goes through its const accessor, e.g.
-//                   'tc.scopes().current_func_frame()'
+//                   'tc.scopes().current_func_frame()', except a query asked
+//                   at every step, e.g. 'is_path_open'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
 //
@@ -374,7 +379,8 @@ class frame final {
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
-    // a 'loop' frame: a 'break' of it was compiled, so its end is reached
+    // a 'loop' or 'foo' frame: a 'break' of it was compiled, so its end is
+    // reached; only 'stmt_loop' reads it, a 'foo' always reaches its end
     bool is_left_by_break_{};
 
     frame_type type_{frame_type::block};
@@ -494,8 +500,6 @@ class frame final {
         return type_ == frame_type::loop;
     }
 
-    auto mark_left_by_break() -> void { is_left_by_break_ = true; }
-
     [[nodiscard]] auto is_main() const -> bool {
         return type_ == frame_type::main_func;
     }
@@ -521,6 +525,8 @@ class frame final {
 
         vars_.get_ref(name).read_only_why = cause;
     }
+
+    auto mark_left_by_break() -> void { is_left_by_break_ = true; }
 
     [[nodiscard]] auto name() const -> std::string_view { return name_; }
 
@@ -1495,19 +1501,6 @@ class scope_stack final {
         return count;
     }
 
-    // a 'break' of the innermost 'loop' or 'foo' is compiled, see
-    // 'frame::is_left_by_break'
-    auto mark_loop_left() -> void {
-        for (frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_loop() or frm.is_foo()) {
-                frm.mark_left_by_break();
-                return;
-            }
-        }
-
-        std::unreachable();
-    }
-
     // the innermost 'loop' or 'foo' of the function, the target of a 'break'
     // or a 'continue'
     [[nodiscard]] auto innermost_loop() const -> std::optional<loop_target> {
@@ -1607,6 +1600,19 @@ class scope_stack final {
         return {};
     }
 
+    // a 'break' of the innermost 'loop' or 'foo' is compiled, see
+    // 'frame::is_left_by_break'
+    auto mark_loop_left() -> void {
+        for (frame& frm : frames_ | std::views::reverse) {
+            if (frm.is_loop() or frm.is_foo()) {
+                frm.mark_left_by_break();
+                return;
+            }
+        }
+
+        std::unreachable();
+    }
+
     [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
 
     // the dry runs of noinline calls nested here, see
@@ -1638,9 +1644,9 @@ class scope_stack final {
                                         order_.get().current());
     }
 
-    // a path in the body being parsed whose root is 'name', recorded when it
-    // names a global, a parameter or the result, see 'body_uses'
-    // a local of the body is not named by the callers
+    // records 'storage' when its root is a global, a parameter or the result
+    // of the body being parsed, see 'body_uses'; a local of the body is not
+    // named by the callers
     auto record_storage_use(const storage_path& storage, const bool is_written)
         -> void {
 
@@ -1725,15 +1731,9 @@ class storage_layout final {
     // variable after the dats is placed, see 'apply_dat_var_padding'
     std::optional<size_t> applied_padding_bytes_;
 
-    // the parse declares names without checking the capacity, the compile
-    // checks it where the declaration is compiled; the locals of a dry run
-    // live in the callee's own frame
-    bool capacity_unchecked_{true};
-
   public:
     // what a dry run changes and 'end_dry_run' puts back
     struct dry_run_state {
-        bool capacity_unchecked;
         size_t max_vars_size_bytes;
         // the index of the frame, frames added meanwhile may move the frames
         std::optional<size_t> storage_frame_index;
@@ -1757,8 +1757,8 @@ class storage_layout final {
     // the storage of the dat 'var' is where the data table placed it, after
     // the dats before it; returns the bytes it takes with the padding before
     // it, the offset of its storage is set
-    [[nodiscard]] auto allocate_dat(const token& src_loc_tk, var_info& var)
-        -> size_t {
+    [[nodiscard]] auto allocate_dat(const token& src_loc_tk, var_info& var,
+                                    const bool checks_capacity) -> size_t {
 
         const placed_dat& dat{data_.get().get_dat(var.name)};
 
@@ -1766,7 +1766,7 @@ class storage_layout final {
         //       variables; the parse also places the variables of the
         //       function bodies it reads, whose offsets are not used
 
-        assert(capacity_unchecked_ or
+        assert(not checks_capacity or
                sum_storage_size(dats_and_vars_size_bytes(),
                                 dat.padding_bytes) == dat.offset_bytes);
 
@@ -1785,8 +1785,8 @@ class storage_layout final {
 
     // places 'var' in the innermost storage that has room and returns the
     // bytes it takes with the alignment padding, its storage is set
-    [[nodiscard]] auto allocate_var(const token& src_loc_tk, var_info& var)
-        -> size_t {
+    [[nodiscard]] auto allocate_var(const token& src_loc_tk, var_info& var,
+                                    const bool checks_capacity) -> size_t {
 
         const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
         const size_t var_alignment{var_storage_alignment(var)};
@@ -1806,7 +1806,9 @@ class storage_layout final {
             add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
         };
 
-        assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
+        if (checks_capacity) {
+            assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
+        }
 
         in_storage& stored{std::get<in_storage>(var.placement)};
 
@@ -1832,7 +1834,7 @@ class storage_layout final {
         //       the parse may place a variable before the dats; the frame
         //       holds the bytes after this returns
 
-        if (not capacity_unchecked_) {
+        if (checks_capacity) {
             max_vars_size_bytes_ = std::max(
                 sum_storage_size(used_vars_size_bytes(), allocated_size_bytes),
                 max_vars_size_bytes_);
@@ -1845,16 +1847,12 @@ class storage_layout final {
         assert(dats_and_vars_size_bytes() == 0);
     }
 
-    // the declarations from here on are checked against the capacity
-    auto begin_compile() -> void { capacity_unchecked_ = false; }
-
     auto begin_dry_run() -> dry_run_state {
         const std::optional<size_t> frame_index{
             find_storage_location().frame_index,
         };
 
         const dry_run_state saved{
-            .capacity_unchecked{capacity_unchecked_},
             .max_vars_size_bytes{max_vars_size_bytes_},
             .storage_frame_index{frame_index},
             .peak_storage_size_bytes{
@@ -1863,13 +1861,10 @@ class storage_layout final {
             },
         };
 
-        capacity_unchecked_ = true;
-
         return saved;
     }
 
     auto end_dry_run(const dry_run_state& saved) -> void {
-        capacity_unchecked_ = saved.capacity_unchecked;
         max_vars_size_bytes_ = saved.max_vars_size_bytes;
 
         if (saved.storage_frame_index) {
@@ -1961,8 +1956,7 @@ class storage_layout final {
             return machine_.get().address_size_bytes();
         }
 
-        return multiply_storage_size(src_loc_tk, var.type_ptr->size_bytes(),
-                                     var.shape.element_count());
+        return var.shape.value_size_bytes(src_loc_tk, *var.type_ptr);
     }
 
     [[nodiscard]] auto vars_capacity_bytes() const -> size_t {
@@ -2012,9 +2006,8 @@ class storage_layout final {
     auto assert_vars_capacity(const token& src_loc_tk, const var_info& var,
                               const size_t allocated_size_bytes) const -> void {
 
-        if (capacity_unchecked_ or
-            allocated_size_bytes <=
-                vars_capacity_bytes_ - used_vars_size_bytes()) {
+        if (allocated_size_bytes <=
+            vars_capacity_bytes_ - used_vars_size_bytes()) {
 
             return;
         }
@@ -2032,6 +2025,19 @@ class storage_layout final {
             std::format("variable {} does not fit in the variable storage, "
                         "see '--vars'",
                         in_quotes(var.name))};
+    }
+
+    // the dats, the padding after them once applied and the variables of
+    // every frame
+    [[nodiscard]] auto dats_and_vars_size_bytes() const -> size_t {
+        size_t total_bytes{applied_padding_bytes_.value_or(0)};
+
+        for (const frame& frm : std::as_const(scopes_.get()).frames()) {
+            total_bytes = sum_storage_size(total_bytes,
+                                           frm.allocated_storage_size_bytes());
+        }
+
+        return total_bytes;
     }
 
     // a local starts after the storage in use of the nearest frame with its own
@@ -2088,19 +2094,6 @@ class storage_layout final {
         };
 
         return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
-    }
-
-    // the dats, the padding after them once applied and the variables of
-    // every frame
-    [[nodiscard]] auto dats_and_vars_size_bytes() const -> size_t {
-        size_t total_bytes{applied_padding_bytes_.value_or(0)};
-
-        for (const frame& frm : std::as_const(scopes_.get()).frames()) {
-            total_bytes = sum_storage_size(total_bytes,
-                                           frm.allocated_storage_size_bytes());
-        }
-
-        return total_bytes;
     }
 };
 
@@ -2773,14 +2766,13 @@ class variable_comments final {
         if (holds_address(var.placement)) {
             x.comment_held_address(src_loc_tk, indent, text,
                                    name_info.operand());
+
             return;
         }
 
-        x.comment_variable(
-            src_loc_tk, indent, text,
-            multiply_storage_size(src_loc_tk, name_info.type_ref().size_bytes(),
-                                  name_info.element_count()),
-            name_info.operand());
+        x.comment_variable(src_loc_tk, indent, text,
+                           name_info.value_size_bytes(src_loc_tk),
+                           name_info.operand());
     }
 };
 
@@ -3090,9 +3082,11 @@ class toc final {
         size_t allocated_size_bytes{};
 
         if (kind == var_kind::dat) {
-            allocated_size_bytes = storage_.allocate_dat(src_loc_tk, var);
+            allocated_size_bytes = storage_.allocate_dat(
+                src_loc_tk, var, checks_storage_capacity());
         } else if (is_in_storage) {
-            allocated_size_bytes = storage_.allocate_var(src_loc_tk, var);
+            allocated_size_bytes = storage_.allocate_var(
+                src_loc_tk, var, checks_storage_capacity());
         }
 
         scopes_.back().add_var(var, allocated_size_bytes, kind);
@@ -3190,7 +3184,6 @@ class toc final {
         assert(compiled_.is_empty());
 
         is_compiling_ = true;
-        storage_.begin_compile();
     }
 
     // a top-level definition starts, see 'definition_order'
@@ -3245,6 +3238,13 @@ class toc final {
     // overflow
     [[nodiscard]] auto checks_overflow(const destination& dst) const -> bool {
         return overflow_options(dst).enabled;
+    }
+
+    // the parse declares names without checking the capacity, the compile
+    // checks it where the declaration is compiled; the locals of a dry run
+    // live in the callee's own frame
+    [[nodiscard]] auto checks_storage_capacity() const -> bool {
+        return is_compiling_ and dry_run_depth_ == 0;
     }
 
     [[nodiscard]] auto compiled() const -> const compile_records& {
@@ -3320,17 +3320,6 @@ class toc final {
                 throw_dry_run_error(std::move(*error));
             }
         });
-    }
-
-    // an error that ends a dry run is reported as an error of the source:
-    // the registers the run starts with do not depend on the code around it,
-    // so it is not one of a version there; the code stands for a noinline
-    // body, compiled for real when it is called, so it does not depend on the
-    // arguments of a call
-    [[noreturn]] static auto throw_dry_run_error(compile_error error) -> void {
-
-        error.kind = compile_error::error_kind::source;
-        throw error;
     }
 
     [[nodiscard]] auto dry_runs() const -> const dry_run_ledger& {
@@ -3467,6 +3456,10 @@ class toc final {
         generics_.mark_func_instantiated(name);
     }
 
+    // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
+    // reached
+    auto mark_loop_left() -> void { scopes_.mark_loop_left(); }
+
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
         return storage_.next_frame_address(builtins_.address());
@@ -3517,9 +3510,6 @@ class toc final {
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
-
-    // a 'break' leaves the innermost loop, whose end is then reached
-    auto mark_loop_left() -> void { scopes_.mark_loop_left(); }
 
     auto set_path_open(const bool is_open) -> void {
         scopes_.set_path_open(is_open);
@@ -3684,6 +3674,16 @@ class toc final {
         -> std::string {
 
         return std::format("{}-{}-{}", role, src_loc_tk.start_index(), index);
+    }
+
+    // an error that ends a dry run is reported as an error of the source:
+    // the registers the run starts with do not depend on the code around it,
+    // so it is not one of a version there; the dry run of a noinline call is
+    // the verdict of that call, which an enclosing check must not drop, and
+    // the dry run of 'check_body' is a body that takes nothing from a call
+    [[noreturn]] static auto throw_dry_run_error(compile_error error) -> void {
+        error.kind = compile_error::error_kind::source;
+        throw error;
     }
 
   private:

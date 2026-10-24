@@ -198,6 +198,7 @@ class stmt_builtin_convert final : public expression {
         const int64_t converted{
             converted_constant(path->get_unary_ops(), info.constant().value),
         };
+
         const type& use_width{use.width_ref()};
         const type& result_type{*wider(get_type(), use_width)};
 

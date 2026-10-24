@@ -38,7 +38,9 @@
 //                  earlier ones write nothing it reads
 //
 // the definite assignment ('ub_assigned.hpp') walks the statements in the same
-// order by name, it runs before 'toc' resolves the names
+// order by name, it runs before 'toc' resolves the names; the aliasing of the
+// arguments of a call is not an order: 'stmt_call::assert_no_shared_storage';
+// every check by the undefined behavior it rules out: README 8.1
 
 // a read resolved to the storage it reaches, e.g. 'p.x' with 'p' bound to
 // 'ps[i]' reaches the field 'x' of any element of 'ps'

@@ -393,8 +393,7 @@ class stmt_def_var final : public statement {
         // the newly defined variable is not yet assigned in its initialization
         assert_var_not_used(
             name_tk_.text(),
-            assigned_bytes{multiply_storage_size(
-                name_tk_, get_type().size_bytes(), shape_.element_count())});
+            assigned_bytes{shape_.value_size_bytes(name_tk_, get_type())});
 
         // marked after the initializer, which writes the variable; statements
         // parsed from here on cannot assign it

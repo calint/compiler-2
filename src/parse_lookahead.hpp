@@ -1,9 +1,10 @@
 #pragma once
 
 // what the next tokens are, decided before they are parsed: 'classify_term'
-// is the one place that tells what a name denotes where it is used; a name
+// tells what the first token of a value or a statement denotes; a name
 // followed by a character has one meaning only, e.g. 'point{' is a record
-// literal and 'show<' a generic call
+// literal and 'show<' a generic call; the name after a '.' is decided by
+// 'stmt_identifier::is_method_name', a function head by 'func_head'
 
 #include <algorithm>
 #include <cstdint>
@@ -111,8 +112,8 @@ struct term {
     }
 };
 
-// what 'tk', with 'tz' after it, denotes where a value or a statement starts:
-// the one place of the rules of hiding: a variable, a parameter or a constant
+// what 'tk', with 'tz' after it, denotes where a value or a statement starts;
+// the rules of hiding: a variable, a parameter or a constant
 // hides a user type and a generic function of its name, a call 'f(...)'
 // still calls the function; built-in types, built-in functions and keywords
 // are reserved names, nothing hides them

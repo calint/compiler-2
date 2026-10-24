@@ -107,6 +107,15 @@ class array_shape final {
         return length_;
     }
 
+    // the bytes of a value of elements of 'element_type'
+    [[nodiscard]] auto value_size_bytes(const token& src_loc_tk,
+                                        const type& element_type) const
+        -> size_t {
+
+        return multiply_storage_size(src_loc_tk, element_type.size_bytes(),
+                                     element_count());
+    }
+
     //
     // statics
     //
@@ -379,6 +388,13 @@ class ident_info final {
         }
 
         return paths_match and is_var();
+    }
+
+    // the bytes of the value, e.g. the whole array, not an address
+    [[nodiscard]] auto value_size_bytes(const token& src_loc_tk) const
+        -> size_t {
+
+        return shape().value_size_bytes(src_loc_tk, type_ref());
     }
 
     //

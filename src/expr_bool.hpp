@@ -437,6 +437,7 @@ class expr_bool_op final : public expression {
 
             resolve_cmp(tc, indent, mirrored_lhs, mirrored_rhs,
                         mirrored_action);
+
             return condition_result::unknown;
         }
 
@@ -446,6 +447,7 @@ class expr_bool_op final : public expression {
         }
 
         resolve_memory_cmp(tc, indent, cmp, stored_action);
+
         return condition_result::unknown;
     }
 
