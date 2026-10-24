@@ -6,15 +6,15 @@
 92d88
 <     j bool.15.14.end
 101d96
-<     j if.16.8.code
+<     j if.16.5.code
 130c125
 <     bne t0, t1, cmp.19.27
 ---
->     beq t0, t1, if.19.8.code
+>     beq t0, t1, if.19.5.code
 133d127
-<     j if.19.8.code
+<     j if.19.5.code
 154d147
-<     j if.19.8.code
+<     j if.19.5.code
 169d161
 <     j .Lbaz_exit
 186,189c178,181

@@ -402,6 +402,18 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        K.2. a parameter that holds an address prints 'address @ [rbx]', not
             the type's size; the branch labels of an 'if' share its label;
             the version comment names the version kept
+       => K done (2026-10-24): K.1 the comments of a destination print what
+          was written ('buf[i] = 45', was 'buf = 45'), a register
+          destination's 'text_' is its register; K.2 a slot that holds an
+          address prints 'b: bag (address @ [rbx])'
+          ('machine::comment_held_address'); the labels of an 'if' come from
+          its own, at the 'if' keyword: 'if.L', 'if.L.1' for the next
+          branch, each with '.code', 'if.L.else', 'if.L.end'
+          ('stmt_if::branch_label'); the version comment says 'kept the
+          first|second of two versions of A and B instructions, <reason>';
+          about 580 listings change per target, instruction lines and exit
+          codes equal; the '--nopt' diffs of 0006, the CLI jump test and
+          the driver's comment checks updated
     => decided (user, 2026-10-23): A.1 source order; B.4, E.2 file, H.7,
        J.1 approved; E.10 code after a path that cannot continue (a 'loop'
        without 'break') is a compile error; J.4 done; K and the listing

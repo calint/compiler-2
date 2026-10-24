@@ -802,9 +802,11 @@ auto check_equal_size_choice() -> void {
 
         // note: each choice is commented with the sizes of both versions
         assert(output.str().contains(
-            "# smaller of two versions of 1 and 1 instructions\n"
+            "# kept the first of two versions of 1 and 1 instructions, the "
+            "first of equal sizes\n"
             "li a0, 2047\n"
-            "# smaller of two versions of 2 and 1 instructions\n"
+            "# kept the second of two versions of 2 and 1 instructions, the "
+            "smaller\n"
             "addi a0, a1, 0\n"));
     }
 }
@@ -849,7 +851,8 @@ auto check_version_state_kept() -> void {
 
         assert(output.str().contains(".Lbaz_multiply:") == calls_multiply);
         assert(output.str().contains(
-            "# first of two versions, the second runs out of registers\n"
+            "# kept the first of two versions, the second runs out of "
+            "registers\n"
             "li a0, 1\n"));
     }
 }

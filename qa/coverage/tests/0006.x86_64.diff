@@ -5,14 +5,14 @@
 <     jne bool.15.14.end
 <     jmp bool.15.14.end
 72d67
-<     jmp if.16.8.code
+<     jmp if.16.5.code
 94,95c89
 <     jne cmp.19.27
-<     jmp if.19.8.code
+<     jmp if.19.5.code
 ---
->     je if.19.8.code
+>     je if.19.5.code
 106d99
-<     jmp if.19.8.code
+<     jmp if.19.5.code
 138,141c131,134
 < ;   removed jumps to next code: 0
 < ;    removed unreachable jumps: 0

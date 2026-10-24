@@ -131,11 +131,11 @@ CLI_JUMP_OPTIMIZATIONS() {
     raw=$(sed 's/^[[:space:]]*//' gen.s)
     optimized=$(sed 's/^[[:space:]]*//' out)
     # counts alone cannot prove the intended branches were transformed
-    [[ "$raw" == *$'jmp if.10.8.code\nif.10.8.code:'* ]]
-    [[ "$optimized" != *'jmp if.10.8.code'* ]]
-    [[ "$optimized" == *$'je if.10.5.end\nif.10.8.code:'* ]]
-    [[ "$raw" == *$'jne cmp.5.31\njmp if.5.8.code\ncmp.5.31:'* ]]
-    [[ "$optimized" == *$'je if.5.8.code\ncmp.5.31:'* ]]
+    [[ "$raw" == *$'jmp if.10.5.code\nif.10.5.code:'* ]]
+    [[ "$optimized" != *'jmp if.10.5.code'* ]]
+    [[ "$optimized" == *$'je if.10.5.end\nif.10.5.code:'* ]]
+    [[ "$raw" == *$'jne cmp.5.31\njmp if.5.5.code\ncmp.5.31:'* ]]
+    [[ "$optimized" == *$'je if.5.5.code\ncmp.5.31:'* ]]
     [[ "$optimized" == *';   removed jumps to next code: 2'* ]]
     [[ "$optimized" == *'; inverted branches over jumps: 1'* ]]
     [[ "$raw" == *';   removed jumps to next code: 0'* ]]

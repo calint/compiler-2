@@ -629,7 +629,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        x.comment(tok(), indent, "{} {} {}", dst.name(), source_text(op),
+        x.comment(tok(), indent, "{} {} {}", dst.text(), source_text(op),
                   value);
 
         x.comment(tok(), indent, "src: folded constant {}",
@@ -1044,7 +1044,7 @@ class expr_arith final : public expression {
         machine& x{tc.machine()};
 
         x.comment(src.tok(), indent,
-                  statement::trimmed_source(src, dst.name(), source_text(op)));
+                  statement::trimmed_source(src, dst.text(), source_text(op)));
 
         if (op == arithmetic_operator::assign) {
             asm_op_mov(tc, indent, dst, src);
@@ -1282,7 +1282,7 @@ class expr_arith final : public expression {
 
         machine& x{tc.machine()};
 
-        x.comment(src_loc_tk, indent, "{} = {}", dst.name(), value);
+        x.comment(src_loc_tk, indent, "{} = {}", dst.text(), value);
 
         x.comment(src_loc_tk, indent, "src: folded constant {}",
                   in_quotes(folded_source));

@@ -966,14 +966,14 @@ class inline_call {
         machine& x{tc.machine()};
 
         if (tc.make_ident_info(call_.tk, dst.name()).is_array()) {
-            x.comment(call_.tk, indent, "address of result element in array {}",
-                      in_quotes(dst.name()));
+            x.comment(call_.tk, indent, "address of result element {}",
+                      in_quotes(dst.text()));
 
             return;
         }
 
         x.comment(call_.tk, indent, "address of indexed result {}",
-                  in_quotes(dst.name()));
+                  in_quotes(dst.text()));
     }
 
     // the registers are freed before the exit label

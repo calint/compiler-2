@@ -2748,6 +2748,12 @@ class variable_comments final {
             return;
         }
 
+        if (holds_address(var.placement)) {
+            x.comment_held_address(src_loc_tk, indent, text,
+                                   name_info.operand());
+            return;
+        }
+
         x.comment_variable(
             src_loc_tk, indent, text,
             multiply_storage_size(src_loc_tk, name_info.type_ref().size_bytes(),

@@ -95,8 +95,8 @@ class stmt_if final : public statement {
             tc.set_path_open(true);
 
             const std::optional<bool> known{
-                known_of(compile_branch_at(tc, indent, i, label_else_branch,
-                                           label_after_if)),
+                known_of(compile_branch_at(tc, indent, i, if_label,
+                                           label_else_branch, label_after_if)),
             };
 
             // note: the compile knows at least what the parse knew, the
@@ -159,6 +159,7 @@ class stmt_if final : public statement {
     // the branch at 'branch_index', what it found of its condition
     [[nodiscard]] auto
     compile_branch_at(toc& tc, const size_t indent, const size_t branch_index,
+                      const std::string_view if_label,
                       const std::string_view label_else_branch,
                       const std::string_view label_after_if) const
         -> condition_result {
@@ -171,12 +172,13 @@ class stmt_if final : public statement {
         // a false condition continues at the next branch or the 'else'
         const std::string jmp_if_false{
             is_last_branch ? std::string{label_else_branch}
-                           : branches_.at(branch_index + 1).begin_label(tc),
+                           : branch_label(if_label, branch_index + 1),
         };
 
         // a condition that is constant true ends the chain at this branch
         const condition_result const_eval{
-            if_branch.compile_branch(tc, indent, jmp_if_false),
+            if_branch.compile_branch(
+                tc, indent, branch_label(if_label, branch_index), jmp_if_false),
         };
 
         // the last branch without an 'else' continues after the 'if'
@@ -223,6 +225,19 @@ class stmt_if final : public statement {
     //
     // statics
     //
+
+    // the label of a branch of the 'if' at 'if_label', the first branch is at
+    // it, e.g. 'if.9.9' and the 'else if' after it 'if.9.9.1'
+    [[nodiscard]] static auto branch_label(const std::string_view if_label,
+                                           const size_t branch_index)
+        -> std::string {
+
+        if (branch_index == 0) {
+            return std::string{if_label};
+        }
+
+        return std::format("{}.{}", if_label, branch_index);
+    }
 
     [[nodiscard]] static auto create_label_else_branch(
         const stmt_block& else_code, const std::string_view if_label,

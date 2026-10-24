@@ -474,10 +474,11 @@ struct value_use {
 class destination final {
     ::operand operand_;
     const type* type_ptr_{};
-    // e.g. 'p.x', or the register, as the comments name it
+    // the path without indexes, e.g. 'ps.x' of 'ps[i].x', the root and the
+    // binding of a result name it; the register of a register destination
     std::string name_;
-    // the destination as written, for a diagnostic, e.g. 'w.ps[0]'; a
-    // temporary has its name
+    // the destination as written, for the comments and the diagnostics, e.g.
+    // 'w.ps[0]'; a temporary has its name, a register its register
     std::string text_;
     // where the name is in the source, empty when it is not
     token src_loc_tk_;
@@ -690,6 +691,7 @@ class destination final {
         result.operand_ = reg;
         result.type_ptr_ = &reg.type_ref();
         result.name_ = reg.base_register();
+        result.text_ = reg.base_register();
 
         return result;
     }

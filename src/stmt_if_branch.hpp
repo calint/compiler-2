@@ -59,20 +59,13 @@ class stmt_if_branch final : public statement {
     // class methods
     //
 
-    // the label where the if branch begins evaluating the boolean
-    // expression
-    [[nodiscard]] auto begin_label(const toc& tc) const -> std::string {
-        return tc.create_unique_label(tok(), "if");
-    }
-
-    // the condition and the code; the jump from the end of the code past the
-    // other branches is the caller's
+    // the condition at 'if_label' and the code; the jump from the end of the
+    // code past the other branches is the caller's
     [[nodiscard]] auto
     compile_branch(toc& tc, const size_t indent,
+                   const std::string_view if_label,
                    const std::string_view jmp_to_if_false_label) const
         -> condition_result {
-
-        const std::string if_label{begin_label(tc)};
 
         const std::string jmp_to_if_true_label{
             std::format("{}.code", if_label),

@@ -950,7 +950,8 @@ class machine {
 
         const bool keeps_first{keeps_first_version(first, second)};
 
-        comment(src_loc_tk, indent, version_comment(first, second));
+        comment(src_loc_tk, indent,
+                version_comment(first, second, keeps_first));
 
         compiled_version& kept{keeps_first ? *first : *second};
 
@@ -978,6 +979,16 @@ class machine {
         }
 
         comment(src_loc_tk, indent, "bind {} -> {} (lea: {})", from, to,
+                address_text(address));
+    }
+
+    // e.g. 'b: bag (address @ [rbx])', the slot holds the address of the
+    // variable, e.g. a parameter of a noinline body
+    auto comment_held_address(const token& src_loc_tk, const size_t indent,
+                              const std::string_view text,
+                              const operand& address) -> void {
+
+        comment(src_loc_tk, indent, "{} (address @ [{}])", text,
                 address_text(address));
     }
 
@@ -1992,33 +2003,42 @@ class machine {
         state_ = std::move(state);
     }
 
-    // the choice between two versions, at least one available, e.g. 'smaller
-    // of two versions of 3 and 4 instructions'
+    // the version kept and why, at least one available, e.g. 'kept the second
+    // of two versions of 4 and 3 instructions, the smaller'
     [[nodiscard]] auto version_comment(const version_result& first,
-                                       const version_result& second) const
+                                       const version_result& second,
+                                       const bool keeps_first) const
         -> std::string {
 
         if (not second) {
-            return "first of two versions, the second runs out of registers";
+            return "kept the first of two versions, the second runs out of "
+                   "registers";
         }
 
         if (not first) {
-            return "second of two versions, the first runs out of registers";
-        }
-
-        std::string_view kept{"smaller"};
-
-        if (kept_version_ == kept_version::first) {
-            kept = "first";
-        } else if (kept_version_ == kept_version::last) {
-            kept = "last";
+            return "kept the second of two versions, the first runs out of "
+                   "registers";
         }
 
         const assembler& output{target_assembler()};
 
-        return std::format("{} of two versions of {} and {} instructions", kept,
-                           output.instruction_count_of(first->lines),
-                           output.instruction_count_of(second->lines));
+        const size_t first_count{output.instruction_count_of(first->lines)};
+        const size_t second_count{output.instruction_count_of(second->lines)};
+
+        std::string_view reason{"the smaller"};
+
+        if (kept_version_ == kept_version::first) {
+            reason = "as '--versions=first' asks";
+        } else if (kept_version_ == kept_version::last) {
+            reason = "as '--versions=last' asks";
+        } else if (first_count == second_count) {
+            reason = "the first of equal sizes";
+        }
+
+        return std::format("kept the {} of two versions of {} and {} "
+                           "instructions, {}",
+                           keeps_first ? "first" : "second", first_count,
+                           second_count, reason);
     }
 
     [[nodiscard]] auto version_state_now() const -> version_state {

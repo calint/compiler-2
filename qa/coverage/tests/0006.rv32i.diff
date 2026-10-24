@@ -6,15 +6,15 @@
 89d85
 <     j bool.15.14.end
 98d93
-<     j if.16.8.code
+<     j if.16.5.code
 128c123
 <     bne t0, t1, cmp.19.27
 ---
->     beq t0, t1, if.19.8.code
+>     beq t0, t1, if.19.5.code
 131d125
-<     j if.19.8.code
+<     j if.19.5.code
 152d145
-<     j if.19.8.code
+<     j if.19.5.code
 182,185c175,178
 < #   removed jumps to next code: 0
 < #    removed unreachable jumps: 0
