@@ -77,7 +77,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        => C done (2026-10-24): C.1 one free
           'assert_arguments_not_written_later(tc, args, written_index)',
           'builtin_arguments' forwards to it; C.3 'equality_request' and
-          'copy_request' public, 'emit_failure_handler' protected in
+          'copy_request' public (correction 2026-10-24: the formatter keeps
+          them protected, it lowers a type to the least access that names
+          it and the front end builds them without naming them; accepted
+          per AGENTS.md), 'emit_failure_handler' protected in
           'machine' and both backends, 'slot_register' always names one,
           'toc::has_slot_register' and the 'toc' parameter of
           'frame_slots' gone; the comments of 'call_sector_routine' that
@@ -242,6 +245,19 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             => done with A.2 (2026-10-24)
        H.4. 'version_state state_' as the one member a version saves and
             restores (five members listed three times today)
+       => H.1 and H.4 done (2026-10-24): H.1 each run-time routine is keyed
+          by its label (handlers 'handler.label', rv32i helpers
+          'helper_label' marked by 'call_arithmetic_helper', bare metal
+          'exit_label_'/'read_label_'/'write_label_', sector routines by
+          the backend that picks the label, the virtual
+          'emit_sector_routines' moved from 'machine' to 'machine_rv32i');
+          the line report is a routine marked by the handlers that jump to
+          it, both 'line_report_emitted_' gone (rv32i listings with a line
+          gain one 'j', x86_64 the jump is optimized away, the message data
+          moves); one public 'machine::emit_runtime()', the two emit
+          methods protected; H.4 'version_state state_' holds the five
+          members, save and restore copy it whole; tests, fuzzers and
+          clang-tidy clean
        H.5. one 'machine::call_builtin' for read, write and the sector
             calls: the register assert once (six copies), the register table
             from two backend constants

@@ -840,7 +840,7 @@ auto check_version_state_kept() -> void {
         backend.emit_most_efficient(token{}, 0, load, exhaust);
 
         // the helpers in use are emitted before the data
-        backend.emit_used_routines();
+        backend.emit_runtime();
         backend.begin_data(4);
         backend.finish();
         backend.write_assembly(output);
@@ -2388,7 +2388,7 @@ auto check_multiply_divide_routines() -> void {
         assert(not output.str().contains(".Lbaz_divide:"));
 
         backend.end_main();
-        backend.emit_used_routines();
+        backend.emit_runtime();
         backend.begin_data(4);
 
         const std::string assembly{output.str()};
@@ -3928,9 +3928,8 @@ auto generate_runtime_program() -> void {
         backend.exit(token{}, 1, operand::imm(0, integer));
     }
 
-    backend.emit_used_failure_handlers();
+    backend.emit_runtime();
     hand_written(backend, "failure:\n    li a0, 1\n    li a7, 93\n    ecall");
-    backend.emit_used_routines();
     backend.begin_data(4);
     hand_written(backend, "buffer: .zero 16\nbuffer_copy: .word 0\npointer: .word 0");
     backend.finish();

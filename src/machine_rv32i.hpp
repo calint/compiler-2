@@ -346,8 +346,6 @@ class machine_rv32i : public machine {
     // empty when no binary image is written
     std::string binary_file_name_;
     assembler_rv32i assembler_;
-    // the shared tail of the handlers that report a line was emitted
-    bool line_report_emitted_{};
     std::vector<bulk_operation> bulk_operations_;
 
   protected:
@@ -364,6 +362,22 @@ class machine_rv32i : public machine {
     //
     // overridden methods
     //
+
+    // unused routines contribute no code
+    auto emit_used_routines() -> void override {
+        if (is_used(report_line_label_)) {
+            emit_report_line_routine();
+        }
+
+        emit_arithmetic_helpers();
+
+        const bool is_read_used{is_used(sector_read_label_)};
+        const bool is_write_used{is_used(sector_write_label_)};
+
+        if (is_read_used or is_write_used) {
+            emit_sector_routines(is_read_used, is_write_used);
+        }
+    }
 
     // the sector is in a0 where 'read' has the descriptor, there is no result
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
@@ -383,6 +397,7 @@ class machine_rv32i : public machine {
                                                  : sector_write_label_,
         };
 
+        mark_used(label);
         call_io_routine(indent, label, sector_clobbered_);
         free_named_register(src_loc_tk, indent, call_register);
     }
@@ -469,6 +484,11 @@ class machine_rv32i : public machine {
     // the divide helper found a zero divisor without '--checks=division'
     virtual auto emit_divide_by_zero_trap() -> void = 0;
 
+    // the routines that the calls of 'sector_read' and 'sector_write' jump
+    // to, each only when it is used
+    virtual auto emit_sector_routines(const bool read_used,
+                                      const bool write_used) -> void = 0;
+
     // a0 is the descriptor and receives the byte count, a1 is the address,
     // a2 the count and a7 is reserved; an override may change the registers
     // after a2 in the allocation order, see 'call_io_routine'
@@ -499,14 +519,14 @@ class machine_rv32i : public machine {
 
         // e.g. a frame overflow reports no line, it is not at a statement
         if (not reports_line() or not handler.takes_line) {
-            mark_used(handler.name);
+            mark_used(handler.label);
             branch(indent, handler.label);
             return;
         }
 
         comment(src_loc_tk, indent, "source line");
         assembler_.li(indent, "a0", src_loc_tk.at_line());
-        mark_used(handler.name, src_loc_tk);
+        mark_used(handler.label, src_loc_tk);
 
         branch(indent,
                failure_entry_label(handler.label, src_loc_tk.file_index()));
@@ -545,7 +565,7 @@ class machine_rv32i : public machine {
 
         if (with_line) {
             for (const size_t file_ix :
-                 failure_lines_of(name) | std::views::keys) {
+                 failure_lines_of(handler_label) | std::views::keys) {
 
                 assembler_.label(0,
                                  failure_entry_label(handler_label, file_ix));
@@ -1135,8 +1155,6 @@ class machine_rv32i : public machine {
 
         assert(dst.is_register() or dst.is_memory());
 
-        mark_used("divide_helper");
-
         call_arithmetic_helper(src_loc_tk, indent, dst, divisor,
                                operation == arithmetic_operator::remainder
                                    ? helper_result::remainder
@@ -1184,11 +1202,6 @@ class machine_rv32i : public machine {
 
     auto emit_string_data(const std::string_view value) -> void override {
         assembler_.ascii(token::decode_string(value));
-    }
-
-    auto emit_used_routines() -> void override {
-        emit_arithmetic_helpers();
-        emit_used_sector_routines();
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {
@@ -1325,12 +1338,6 @@ class machine_rv32i : public machine {
 
         // variable factors use the shared run-time helper
         if (not constant.has_value() or is_checked_constant) {
-            if (check.enabled) {
-                mark_used("multiply_checked_helper");
-            } else {
-                mark_used("multiply_helper");
-            }
-
             const runtime_check no_division_check;
 
             call_arithmetic_helper(src_loc_tk, indent, product, factor,
@@ -1471,9 +1478,6 @@ class machine_rv32i : public machine {
     }
 
     auto start() -> void override {
-        // note: the parse emits no failure
-        assert(not line_report_emitted_);
-
         start_output();
 
         assembler_.option_norvc();
@@ -1786,6 +1790,8 @@ class machine_rv32i : public machine {
         const helper_routine routine{
             arithmetic_helper_routine(result_kind, overflow_check.enabled),
         };
+
+        mark_used(helper_label(routine));
 
         const std::span<const std::string_view> clobbered{
             helper_clobbers(routine),
@@ -2769,7 +2775,7 @@ class machine_rv32i : public machine {
 
     auto emit_arithmetic_helpers() -> void {
         // unused helpers contribute no code
-        if (is_used("multiply_helper")) {
+        if (is_used(helper_label(helper_routine::multiply))) {
             assembler_.label(0, helper_label(helper_routine::multiply));
             assembler_.mv(1, "a2", "a0");
             assembler_.li(1, "a0", 0);
@@ -2790,7 +2796,7 @@ class machine_rv32i : public machine {
         // sum, the multiplicand losing its top bit while multiplier bits
         // remain or a magnitude above the range of the sign leaves the flag
         // in a1 set, the sign is applied last
-        if (is_used("multiply_checked_helper")) {
+        if (is_used(helper_label(helper_routine::multiply_checked))) {
             // 'lui' of 2^31
             constexpr int sign_bit_upper{0x80000};
 
@@ -2835,7 +2841,7 @@ class machine_rv32i : public machine {
         }
 
         // divide and remainder share magnitude division and sign restoration
-        if (is_used("divide_helper")) {
+        if (is_used(helper_label(helper_routine::divide))) {
             // one quotient bit per step
             constexpr int divide_steps{32};
 
@@ -3330,8 +3336,8 @@ class machine_rv32i : public machine {
                        swapped ? left.base_register() : right.base_register());
     }
 
-    // prints 'message' and the line number in a0, then exits with 'exit_code',
-    // the digits are emitted once and shared by the handlers
+    // prints 'message' and the line number in a0, then exits with 'exit_code'
+    // through the line report routine
     auto emit_line_failure(const std::string_view message_label,
                            const std::string_view message, const int exit_code)
         -> void {
@@ -3343,12 +3349,8 @@ class machine_rv32i : public machine {
         assembler_.li(1, "a2", message.size());
         emit_write_call(1);
 
-        if (line_report_emitted_) {
-            assembler_.j(1, report_line_label_);
-        } else {
-            line_report_emitted_ = true;
-            emit_report_line_routine();
-        }
+        assembler_.j(1, report_line_label_);
+        mark_used(report_line_label_);
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);

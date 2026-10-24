@@ -326,8 +326,7 @@ class program final {
 
         machine& x{tc_.machine()};
 
-        x.emit_used_failure_handlers();
-        x.emit_used_routines();
+        x.emit_runtime();
 
         emit_read_only_data(tc_);
         emit_data_section();

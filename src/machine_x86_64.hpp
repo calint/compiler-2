@@ -91,6 +91,8 @@ class machine_x86_64 final : public machine {
     static constexpr int syscall_pwrite_{18};
     static constexpr std::string_view sector_read_label_{"baz_sector_read"};
     static constexpr std::string_view sector_write_label_{"baz_sector_write"};
+    // the routine that the handlers with a line jump to
+    static constexpr std::string_view report_line_label_{"baz_report_line"};
 
     struct register_names {
         std::string_view qword;
@@ -219,9 +221,6 @@ class machine_x86_64 final : public machine {
     size_t division_label_count_{};
     // numbers the labels of the checks of copy overlaps
     size_t overlap_label_count_{};
-    // the shared tail of the handlers that report a line was emitted
-    bool line_report_emitted_{};
-
     assembler_x86_64 assembler_;
 
   public:
@@ -655,8 +654,6 @@ class machine_x86_64 final : public machine {
         assembler_.string_data(
             token::encode_string(token::decode_string(value)));
     }
-
-    auto emit_used_routines() -> void override { emit_used_sector_routines(); }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {
         // note: an element is one byte, so the count is the size
@@ -1108,6 +1105,20 @@ class machine_x86_64 final : public machine {
     // overridden methods
     //
 
+    // unused routines contribute no code
+    auto emit_used_routines() -> void override {
+        if (is_used(report_line_label_)) {
+            emit_report_line_routine();
+        }
+
+        const bool is_read_used{is_used(sector_read_label_)};
+        const bool is_write_used{is_used(sector_write_label_)};
+
+        if (is_read_used or is_write_used) {
+            emit_sector_routines(is_read_used, is_write_used);
+        }
+    }
+
     // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
     // arguments, the allocated ones are saved around the call
     auto call_sector_routine(const token& src_loc_tk, const size_t indent,
@@ -1136,6 +1147,7 @@ class machine_x86_64 final : public machine {
         };
 
         comment(src_loc_tk, indent, "sector of the sd card");
+        mark_used(label);
 
         with_saved_registers(indent, clobbered,
                              [&] -> void { assembler_.call(indent, label); });
@@ -1154,14 +1166,14 @@ class machine_x86_64 final : public machine {
         assert(handler.label != stack_overflow_failure.label);
 
         emit_line_panic_handler(with_line, handler,
-                                failure_lines_of(handler.name));
+                                failure_lines_of(handler.label));
     }
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size
     // in 'rdx'; the image file is opened at the first transfer, a sector past
     // its end or outside 32 bits, a failed open or a short transfer panics
     auto emit_sector_routines(const bool read_used, const bool write_used)
-        -> void override {
+        -> void {
 
         // 'O_RDWR' and 'SEEK_END' of linux
         constexpr int read_write{2};
@@ -1714,7 +1726,8 @@ class machine_x86_64 final : public machine {
             assembler_.label(0, failure_entry_label(handler_label, file_ix));
             emit_panic_message(message_label);
             assembler_.instruction(1, op::mov, "rbx", handler.exit_code);
-            emit_report_line();
+            assembler_.jmp(1, report_line_label_);
+            mark_used(report_line_label_);
 
             // note: a backslash or a control byte of a path is written as an
             //       escape of a nasm string
@@ -1857,19 +1870,9 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::syscall);
     }
 
-    // prints the line number in 'rbp' and exits with the code in 'rbx', the
-    // code is emitted once and shared by the handlers that report a line
-    auto emit_report_line() -> void {
-        constexpr std::string_view report_label{"baz_report_line"};
-
-        if (line_report_emitted_) {
-            assembler_.jmp(1, report_label);
-            return;
-        }
-
-        line_report_emitted_ = true;
-
-        assembler_.label(0, report_label);
+    // prints the line number in 'rbp' and exits with the code in 'rbx'
+    auto emit_report_line_routine() -> void {
+        assembler_.label(0, report_line_label_);
 
         constexpr int newline{'\n'};
         constexpr int decimal_base{10};
@@ -1927,6 +1930,7 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::bss);
         assembler_.label(0, "num_buffer");
         assembler_.reserve(number_buffer_size_bytes);
+        assembler_.switch_section(section::text);
     }
 
     // idiv takes the divisor as a qword register or memory operand, 'rax'
@@ -2024,11 +2028,11 @@ class machine_x86_64 final : public machine {
 
         // e.g. a frame overflow reports no line, it is not at a statement
         if (not reports_line() or not handler.takes_line) {
-            mark_used(handler.name);
+            mark_used(handler.label);
             return std::string{handler.label};
         }
 
-        mark_used(handler.name, src_loc_tk);
+        mark_used(handler.label, src_loc_tk);
 
         return line_panic_label(handler.name, src_loc_tk.file_index(),
                                 src_loc_tk.at_line());

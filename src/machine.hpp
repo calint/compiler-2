@@ -260,12 +260,6 @@ class machine {
         runtime_check overlap;
     };
 
-  private:
-    // the indexes are those of the names of the backend, see
-    // 'register_index_of'
-    register_pool registers_;
-
-  protected:
     // keeps the registers of its operands, and the base and index registers
     // of memory operands, from being picked for scratch while an operation is
     // lowered. on exit, also while an exception unwinds, it frees the
@@ -280,8 +274,8 @@ class machine {
       public:
         address_scope(machine& backend, const operand& dst, const operand& src)
             : machine_{backend},
-              saved_mask_{backend.registers_.unavailable_mask()},
-              saved_count_{backend.registers_.allocations().size()} {
+              saved_mask_{backend.state_.registers.unavailable_mask()},
+              saved_count_{backend.state_.registers.allocations().size()} {
 
             for (const operand* value : {&dst, &src}) {
                 if (value->is_register() or value->is_memory()) {
@@ -304,7 +298,7 @@ class machine {
         auto operator=(address_scope&&) -> address_scope& = delete;
 
         ~address_scope() {
-            register_pool& pool{machine_.registers_};
+            register_pool& pool{machine_.state_.registers};
 
             while (pool.allocations().size() > saved_count_) {
                 // implicit releases need the allocation context for a balanced
@@ -362,33 +356,32 @@ class machine {
     source_locations locations_;
     std::reference_wrapper<const builtin_type_set> builtins_;
     assembler::jump_mode jump_mode_;
-    size_t usage_max_scratch_regs_{};
     // the image of the sd card on targets with an operating system
     std::string sd_card_file_name_;
 
-    // the inlined calls being compiled and what the registers held
-    register_trace trace_;
     bool variables_base_reserved_{};
-    bool frame_base_reserved_{};
     kept_version kept_version_{kept_version::smaller};
     // see 'target_options::reports_line'
     bool reports_line_{};
 
-    // the routines, helpers and failure handlers the code uses, by name, e.g.
-    // 'sector_read', each with the locations its failures report; emitted
-    // after the code, see 'mark_used'
-    routine_uses used_routines_;
-
-    // what compiling a version of code changes in the machine: the registers
-    // held, whether the frame base is among them, the trace of the calls, the
-    // most scratch registers in use and the routines used
+    // what compiling a version of code changes in the machine
     struct version_state {
+        // the indexes are those of the names of the backend, see
+        // 'register_index_of'
         register_pool registers;
         bool frame_base_reserved{};
+        // the inlined calls being compiled and what the registers held
         register_trace trace;
+        // the most scratch registers in use
         size_t max_scratch_regs{};
+        // the routines, helpers and failure handlers the code uses, by label,
+        // each with the locations its failures report; emitted after the
+        // code, see 'mark_used'
         routine_uses used_routines;
     };
+
+    // saved before a version and put back after it, see 'version_scope'
+    version_state state_;
 
     // the state before a version, put back when the scope ends, also when an
     // error unwinds; a version that is kept is given its end state again
@@ -430,7 +423,7 @@ class machine {
           kept_version_{options.kept}, reports_line_{options.reports_line} {
 
         if (options.register_report) {
-            trace_.enable();
+            state_.trace.enable();
         }
     }
 
@@ -680,11 +673,6 @@ class machine {
 
     virtual auto emit_string_data(const std::string_view value) -> void = 0;
 
-    // the helpers and routines that the code marked used, after the code and
-    // the failure handlers, which mark some, e.g. the 'exit' of a division
-    // by zero on bare metal; a routine may mark another one it calls
-    virtual auto emit_used_routines() -> void = 0;
-
     virtual auto emit_zero_data(const size_t size_bytes) -> void = 0;
 
     virtual auto end_main() -> void = 0;
@@ -823,7 +811,7 @@ class machine {
         validate_register_type(src_loc_tk, type_ref);
 
         for (const std::string_view register_name : scratch_registers()) {
-            if (registers_.is_unavailable(register_mask(register_name))) {
+            if (state_.registers.is_unavailable(register_mask(register_name))) {
                 continue;
             }
 
@@ -832,8 +820,8 @@ class machine {
 
             push_allocation(src_loc_tk, indent, register_name, false);
 
-            usage_max_scratch_regs_ =
-                std::max(usage_max_scratch_regs_, registers_.scratch_count());
+            state_.max_scratch_regs = std::max(
+                state_.max_scratch_regs, state_.registers.scratch_count());
 
             return allocated_operand(register_name, type_ref);
         }
@@ -844,9 +832,9 @@ class machine {
     // every operation freed what it allocated, also checked by backend tests
     // between their cases
     auto assert_registers_free() const -> void {
-        assert(registers_.is_empty());
-        assert(registers_.unavailable_mask() == 0);
-        assert(not frame_base_reserved_);
+        assert(state_.registers.is_empty());
+        assert(state_.registers.unavailable_mask() == 0);
+        assert(not state_.frame_base_reserved);
     }
 
     // the code emitted up to 'end_noinline_body' is a body of 'function'
@@ -943,8 +931,8 @@ class machine {
     auto emit_discarded(const std::function_ref<void()> emit) -> void {
         const version_scope discarded{*this};
 
-        registers_ = noinline_body_pool();
-        frame_base_reserved_ = true;
+        state_.registers = noinline_body_pool();
+        state_.frame_base_reserved = true;
 
         try {
             std::ignore = target_assembler().capture(emit);
@@ -990,17 +978,11 @@ class machine {
         output.append(std::move(kept.lines));
     }
 
-    // the handlers that the code branches to, see 'mark_used'; before
-    // 'emit_used_routines', a handler marks the routines it calls
-    auto emit_used_failure_handlers() -> void {
-        for (const failure_handler& handler : failure_handlers) {
-            if (not is_used(handler.name)) {
-                continue;
-            }
-
-            comment({}, 0, handler.comment);
-            emit_failure_handler(handler, reports_line_ and handler.takes_line);
-        }
+    // the code after the program: the handlers its checks branch to, then the
+    // routines that the code and the handlers call
+    auto emit_runtime() -> void {
+        emit_used_failure_handlers();
+        emit_used_routines();
     }
 
     // the lines buffered so far, for backend tests that read what an emit
@@ -1043,7 +1025,7 @@ class machine {
         comment(src_loc_tk, indent, "free scratch register {}",
                 reg.allocation_register());
 
-        assert(not registers_.top().named);
+        assert(not state_.registers.top().named);
 
         pop_allocation(reg.allocation_register());
     }
@@ -1108,13 +1090,13 @@ class machine {
     // the frame base is held while a 'noinline' body is compiled, which starts
     // and ends with no scratch register held
     auto release_frame_base() -> void {
-        assert(frame_base_reserved_);
-        assert(registers_.scratch_count() == 0);
+        assert(state_.frame_base_reserved);
+        assert(state_.registers.scratch_count() == 0);
 
         comment(token{}, 0, "free named register {}", frame_base_register());
         pop_allocation(frame_base_register());
 
-        frame_base_reserved_ = false;
+        state_.frame_base_reserved = false;
     }
 
     auto release_variables_base() -> void {
@@ -1126,12 +1108,12 @@ class machine {
     }
 
     auto reserve_frame_base() -> void {
-        assert(not frame_base_reserved_);
-        assert(registers_.scratch_count() == 0);
+        assert(not state_.frame_base_reserved);
+        assert(state_.registers.scratch_count() == 0);
 
         push_allocation(token{}, 0, frame_base_register(), true);
 
-        frame_base_reserved_ = true;
+        state_.frame_base_reserved = true;
 
         comment(token{}, 0, "allocate named register {}",
                 frame_base_register());
@@ -1193,8 +1175,6 @@ class machine {
 
         call_sector_routine(src_loc_tk, indent, sector, address, size,
                             target_call::sector_read);
-
-        mark_used("sector_read");
     }
 
     // writes the 'size' bytes at 'address' to the sd card sector, like
@@ -1205,8 +1185,6 @@ class machine {
 
         call_sector_routine(src_loc_tk, indent, sector, address, size,
                             target_call::sector_write);
-
-        mark_used("sector_write");
     }
 
     // a blank line that separates the code from the report
@@ -1222,7 +1200,7 @@ class machine {
         return {
             .optimizations{output.optimizations()},
             .noinline_functions{output.noinline_summaries()},
-            .max_scratch_registers{usage_max_scratch_regs_},
+            .max_scratch_registers{state_.max_scratch_regs},
             .instruction_count{output.instruction_count()},
         };
     }
@@ -1290,10 +1268,9 @@ class machine {
     // reserved, none by default
     virtual auto emit_frame_entry() -> void {}
 
-    // the routines that the calls of 'sector_read' and 'sector_write' jump
-    // to, each only when it is used
-    virtual auto emit_sector_routines(const bool read_used,
-                                      const bool write_used) -> void = 0;
+    // the helpers and routines that the code marked used; a routine may mark
+    // another one it calls, see 'emit_runtime'
+    virtual auto emit_used_routines() -> void = 0;
 
     // the asserts of 'call_function': a frame is never addressed from the
     // stack pointer
@@ -1403,13 +1380,16 @@ class machine {
         }
     }
 
-    // unused routines contribute no code
-    auto emit_used_sector_routines() -> void {
-        const bool is_read_used{is_used("sector_read")};
-        const bool is_write_used{is_used("sector_write")};
+    // the handlers that the code branches to, see 'mark_used'; before
+    // 'emit_used_routines', a handler marks the routines it calls
+    auto emit_used_failure_handlers() -> void {
+        for (const failure_handler& handler : failure_handlers) {
+            if (not is_used(handler.label)) {
+                continue;
+            }
 
-        if (is_read_used or is_write_used) {
-            emit_sector_routines(is_read_used, is_write_used);
+            comment({}, 0, handler.comment);
+            emit_failure_handler(handler, reports_line_ and handler.takes_line);
         }
     }
 
@@ -1417,8 +1397,8 @@ class machine {
     [[nodiscard]] auto failure_lines_of(const std::string_view routine) const
         -> failure_lines {
 
-        const auto it{used_routines_.find(routine)};
-        return it == used_routines_.end() ? failure_lines{} : it->second;
+        const auto it{state_.used_routines.find(routine)};
+        return it == state_.used_routines.end() ? failure_lines{} : it->second;
     }
 
     // e.g. 'panic: bounds at prog.baz:', the line follows
@@ -1450,11 +1430,11 @@ class machine {
     }
 
     [[nodiscard]] auto is_frame_base_reserved() const -> bool {
-        return frame_base_reserved_;
+        return state_.frame_base_reserved;
     }
 
     [[nodiscard]] auto is_used(const std::string_view routine) const -> bool {
-        return used_routines_.contains(routine);
+        return state_.used_routines.contains(routine);
     }
 
     [[nodiscard]] auto is_variables_base_reserved() const -> bool {
@@ -1482,14 +1462,14 @@ class machine {
     // a passed lower bounds check leaves the checked register non-negative
     // until it is allocated again
     auto mark_lower_checked(const bounds_range& range) -> void {
-        registers_.mark_lower_checked(
+        state_.registers.mark_lower_checked(
             register_mask(lower_checked_register(range)));
     }
 
     // the routine is emitted after the code; the use is version state, so a
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
-        used_routines_.try_emplace(std::string{routine});
+        state_.used_routines.try_emplace(std::string{routine});
     }
 
     // the failure at 'src_loc_tk' is reported by the handler of 'routine',
@@ -1497,8 +1477,8 @@ class machine {
     auto mark_used(const std::string_view routine, const token& src_loc_tk)
         -> void {
 
-        used_routines_[std::string{routine}][src_loc_tk.file_index()].insert(
-            src_loc_tk.at_line());
+        state_.used_routines[std::string{routine}][src_loc_tk.file_index()]
+            .insert(src_loc_tk.at_line());
     }
 
     [[nodiscard]] auto out_of_registers_error(const token& src_loc_tk) const
@@ -1522,7 +1502,7 @@ class machine {
 
         const bool count_known{
             not range.count.is_empty() and
-                registers_.is_lower_checked(
+                state_.registers.is_lower_checked(
                     register_mask(range.count.base_register())),
         };
 
@@ -1538,7 +1518,7 @@ class machine {
     // keeps the register 'name' from being picked for scratch until the
     // enclosing 'address_scope' ends
     auto protect_register(const std::string_view name) -> void {
-        registers_.protect(register_mask(name));
+        state_.registers.protect(register_mask(name));
     }
 
     // a call of the function with the body 'label' saves 'saved' registers
@@ -1546,7 +1526,7 @@ class machine {
                               const std::string_view label, const size_t saved)
         -> void {
 
-        trace_.record_noinline_call(call_site_tk, label, saved);
+        state_.trace.record_noinline_call(call_site_tk, label, saved);
     }
 
     // the mask of the register 'name' in the pool, 0 for text that names no
@@ -1559,7 +1539,7 @@ class machine {
     }
 
     [[nodiscard]] auto registers() const -> const register_pool& {
-        return registers_;
+        return state_.registers;
     }
 
     // the registers a 'noinline' call saves: the allocated ones but the
@@ -1571,7 +1551,7 @@ class machine {
 
         std::vector<size_t> saved;
         for (const register_pool::allocation& allocated :
-             registers_.allocations()) {
+             state_.registers.allocations()) {
 
             if (allocated.index != variables_base) {
                 saved.push_back(allocated.index);
@@ -1586,7 +1566,7 @@ class machine {
 
         comment(src_loc_tk, indent, "free named register {}", register_name);
 
-        assert(registers_.top().named);
+        assert(state_.registers.top().named);
 
         pop_allocation(register_name);
     }
@@ -1605,7 +1585,7 @@ class machine {
         comment(src_loc_tk, indent, "allocate named register {}",
                 register_name);
 
-        if (registers_.is_unavailable(register_mask(register_name))) {
+        if (state_.registers.is_unavailable(register_mask(register_name))) {
             throw register_in_use_error(src_loc_tk, register_name);
         }
 
@@ -1625,8 +1605,8 @@ class machine {
         // note: the parse emits no code, so it allocates no register and uses
         //       no routine
 
-        assert(usage_max_scratch_regs_ == 0);
-        assert(used_routines_.empty());
+        assert(state_.max_scratch_regs == 0);
+        assert(state_.used_routines.empty());
 
         output.comment(0, "");
         output.comment(0, "generated by baz");
@@ -1795,7 +1775,7 @@ class machine {
     auto begin_call_frame(const token& call_site_tk, std::string name,
                           const frame_kind kind) -> void {
 
-        trace_.begin_frame(call_site_tk, std::move(name), kind);
+        state_.trace.begin_frame(call_site_tk, std::move(name), kind);
     }
 
     // the lines of 'emit' with the state they end in, compiled from the
@@ -1823,10 +1803,10 @@ class machine {
 
     // the call frame that allocations are made in
     [[nodiscard]] auto current_call_frame() const -> size_t {
-        return trace_.current_frame();
+        return state_.trace.current_frame();
     }
 
-    auto end_call_frame() -> void { trace_.end_frame(); }
+    auto end_call_frame() -> void { state_.trace.end_frame(); }
 
     [[nodiscard]] auto is_scratch_register(const size_t index) const -> bool {
         return std::ranges::any_of(scratch_registers(),
@@ -1864,7 +1844,7 @@ class machine {
         register_pool pool;
 
         for (const register_pool::allocation& allocated :
-             registers_.allocations()) {
+             state_.registers.allocations()) {
 
             if (not register_trace::is_listed(allocated)) {
                 pool.push(allocated);
@@ -1901,7 +1881,7 @@ class machine {
 
     // registers are released in reverse order of allocation
     auto pop_allocation(const std::string_view register_name) -> void {
-        registers_.pop(pool_index(register_name));
+        state_.registers.pop(pool_index(register_name));
     }
 
     // named and scratch allocations share one stack, each is recorded for
@@ -1910,7 +1890,7 @@ class machine {
                          const std::string_view register_name, const bool named)
         -> void {
 
-        registers_.push({
+        state_.registers.push({
             .index{pool_index(register_name)},
             .src_loc_tk{src_loc_tk},
             .indent{indent},
@@ -1918,7 +1898,7 @@ class machine {
             .frame{current_call_frame()},
         });
 
-        trace_.record_allocation(registers_);
+        state_.trace.record_allocation(state_.registers);
     }
 
     // an error that the registers ran out or are held by a value, with how the
@@ -1937,7 +1917,7 @@ class machine {
         -> compile_error {
 
         const register_pool::allocation& holder{
-            registers_.holder_of(pool_index(name)),
+            state_.registers.holder_of(pool_index(name)),
         };
 
         // note: the registers that the backend holds without a place in the
@@ -1974,11 +1954,7 @@ class machine {
     }
 
     auto restore_version_state(version_state state) -> void {
-        registers_ = std::move(state.registers);
-        frame_base_reserved_ = state.frame_base_reserved;
-        trace_ = std::move(state.trace);
-        usage_max_scratch_regs_ = state.max_scratch_regs;
-        used_routines_ = std::move(state.used_routines);
+        state_ = std::move(state);
     }
 
     // the choice between two versions, at least one available, e.g. 'smaller
@@ -2011,12 +1987,6 @@ class machine {
     }
 
     [[nodiscard]] auto version_state_now() const -> version_state {
-        return {
-            .registers{registers_},
-            .frame_base_reserved{frame_base_reserved_},
-            .trace{trace_},
-            .max_scratch_regs{usage_max_scratch_regs_},
-            .used_routines{used_routines_},
-        };
+        return state_;
     }
 };

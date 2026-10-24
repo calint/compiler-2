@@ -524,11 +524,11 @@ inline auto machine::register_error(const token& src_loc_tk,
                                     std::string message) const
     -> compile_error {
 
-    return register_reporter{*this, trace_}.make_error(
-        src_loc_tk, std::move(message), registers_);
+    return register_reporter{*this, state_.trace}.make_error(
+        src_loc_tk, std::move(message), state_.registers);
 }
 
 // declared in 'machine'
 inline auto machine::register_peak_report() const -> std::vector<std::string> {
-    return register_reporter{*this, trace_}.peak_report();
+    return register_reporter{*this, state_.trace}.peak_report();
 }
