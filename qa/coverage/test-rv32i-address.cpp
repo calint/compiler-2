@@ -3960,14 +3960,14 @@ struct front_end {
     // errors need a token with a line
     token at{0, {}, 0, {}, 0, {}, 1, false};
     // the root frame, left before 'toc::assert_released'
-    std::optional<toc::frame_scope> root;
+    std::optional<toc::scope_entry> root;
 
     explicit front_end(const size_t vars_capacity_bytes_in)
         : tc{backend, files, vars_capacity_bytes_in, check_options{}} {
 
         files.add("test.baz", "");
         tc.begin_compile();
-        root.emplace(tc, frame::block());
+        root.emplace(tc, scope::block());
     }
 
     // a scalar or an array of 'array_len' elements of 'value_type', its
@@ -3999,7 +3999,7 @@ auto check_storage_placement() -> void {
     int64_t first{};
 
     {
-        const toc::frame_scope block{fe.tc, frame::block()};
+        const toc::scope_entry block{fe.tc, scope::block()};
         first = fe.add_var("a", byte);
         const int64_t second{fe.add_var("b", integer)};
         // 'a' takes one byte and 'b' starts at the next multiple of four
@@ -4010,7 +4010,7 @@ auto check_storage_placement() -> void {
 
     // the space is reused by the next scope
     {
-        const toc::frame_scope block{fe.tc, frame::block()};
+        const toc::scope_entry block{fe.tc, scope::block()};
         const int64_t reused{fe.add_var("c", integer)};
         assert(reused == first);
     }
@@ -4026,10 +4026,10 @@ auto check_storage_placement() -> void {
 auto check_dry_run_leaves_no_trace() -> void {
     front_end fe{64};
 
-    std::optional<toc::frame_scope> block{
+    std::optional<toc::scope_entry> block{
         std::in_place,
         fe.tc,
-        frame::block(),
+        scope::block(),
     };
     fe.add_var("a", integer);
     const usage_statistics before{fe.tc.usage()};
@@ -4040,8 +4040,8 @@ auto check_dry_run_leaves_no_trace() -> void {
                          "does not fit in the variable storage"));
 
     fe.tc.dry_run([&] -> void {
-        const toc::frame_scope outer{fe.tc, frame::block()};
-        const toc::frame_scope inner{fe.tc, frame::block()};
+        const toc::scope_entry outer{fe.tc, scope::block()};
+        const toc::scope_entry inner{fe.tc, scope::block()};
         fe.add_var("big", integer64, 16);
         std::ignore = fe.tc.add_bytes_constant(token{}, "dry run only");
     });
@@ -4067,16 +4067,16 @@ auto check_constant_scopes() -> void {
 
     fe.tc.add_const(token{}, 0, "global", folded_value::untyped(1));
     {
-        const toc::frame_scope outer{
+        const toc::scope_entry outer{
             fe.tc,
-            frame::inlined_func("outer", {}, {}),
+            scope::inlined_func("outer", {}, {}),
         };
         fe.tc.add_const(token{}, 0, "outer_only", folded_value::untyped(2));
 
         {
-            const toc::frame_scope inner{
+            const toc::scope_entry inner{
                 fe.tc,
-                frame::inlined_func("inner", "path", {}),
+                scope::inlined_func("inner", "path", {}),
             };
 
             assert(fe.tc.scopes().lookup("global").is_constant());

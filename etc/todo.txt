@@ -157,6 +157,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           listings equal
        D.5. ask, large: the 'toc' frame is a scope ('frame' -> 'scope',
             'frame_scope' -> 'scope_entry'), "frame" stays for memory (S4)
+       => D.5 done (2026-10-24, approved): 'frame' -> 'scope' with
+          'scope_kind', 'toc::frame_scope' -> 'scope_entry',
+          'scope_stack::scopes_' and 'all()', 'current_func_scope',
+          'func_scope', 'func_scope_index', 'scope_at', 'pop_scope',
+          'scope_index' ('root_variable', 'name_meaning',
+          'storage_location'), locals 'scp'/'func_scp' (38 declarations by
+          their libclang references); comments in the 'toc' sense and
+          README 1.3 (its anchor), 1.4, 2 say scope; "frame" stays for
+          memory (the noinline frame, its slots, base and capacity) and for
+          the call traces ('call_frame', the register trace); listings equal
        D.6. ask, large: 'operand::register_name()' for a register operand,
             'base_register()' for memory only (B5, about 330 sites)
     E. calls

@@ -24,7 +24,7 @@ For a reviewer:
 - [1. Architecture: from source to assembly and binary image](#1-architecture-from-source-to-assembly-and-binary-image)
     - [1.1 Pipeline](#11-pipeline)
     - [1.2 Passes](#12-passes)
-    - [1.3 Names during compile: frames and bindings](#13-names-during-compile-frames-and-bindings)
+    - [1.3 Names during compile: scopes and bindings](#13-names-during-compile-scopes-and-bindings)
     - [1.4 Dry runs](#14-dry-runs)
     - [1.5 Checks](#15-checks)
     - [1.6 Reports](#16-reports)
@@ -177,7 +177,7 @@ Invariants the code relies on:
    with operands; the backend lowers them to what the target encodes
 3. registers are freed in the reverse order of their allocation, an
    operation frees the registers it allocated before it returns
-4. a name is resolved again at every compile through the frames, an
+4. a name is resolved again at every compile through the scopes, an
    inlined parameter is bound to its argument, never a copy
 5. a 'destination' is not changed after it is made, a field or element
    of it is a destination of its own
@@ -201,7 +201,7 @@ Invariants the code relies on:
 2. compile ('program::build'): the statements are walked again with a fresh
    scope stack in 'toc'. Global variables and data are declared again, then
    'main' is compiled where the program starts. An inlined call compiles the
-   body of the callee in place ([1.3](#13-names-during-compile-frames-and-bindings)). A noinline call adds a body to
+   body of the callee in place ([1.3](#13-names-during-compile-scopes-and-bindings)). A noinline call adds a body to
    compile for the array lengths of its arguments; the bodies are compiled
    after 'main', and compiling one can add more. Then each function that
    nothing compiled is checked and emits nothing ([1.5](#15-checks)). Then the
@@ -214,17 +214,17 @@ Invariants the code relies on:
    jumps optimized, the assembly is written, the rv32i targets also write the
    binary image.
 
-### 1.3 Names during compile: frames and bindings
+### 1.3 Names during compile: scopes and bindings
 
-'toc' keeps a stack of frames: blocks, loops, 'foo' loops and functions. What
-a name means is decided by one rule, 'scope_stack::lookup': the frames of the
-innermost function from the innermost outwards, then the root frame that
-holds the globals; the first frame that declares the name decides. A frame
+'toc' keeps a stack of scopes: blocks, loops, 'foo' loops and functions. What
+a name means is decided by one rule, 'scope_stack::lookup': the scopes of the
+innermost function from the innermost outwards, then the root scope that
+holds the globals; the first scope that declares the name decides. A scope
 declares a variable or a constant of a name, not both, a second declaration is
-rejected. The body of a function is the block above its frame, a name declared
+rejected. The body of a function is the block above its scope, a name declared
 there that repeats a parameter or the result is rejected, a deeper block or a
 'foo' may hide it ('definition_checks::assert_not_hiding_signature'). In a
-function frame a parameter hides a constant of the generic instance, which is
+function scope a parameter hides a constant of the generic instance, which is
 the context of the definition. Every question about a name asks this lookup:
 the resolver ('ident_resolver'), the aliasing check, and the lookaheads of the
 parser, where a variable, a parameter or a constant hides a type or a generic
@@ -234,12 +234,12 @@ the constant; a built-in type, e.g. 'i8', names no value. A name followed by
 statement can resolve to another variable, register or constant each time it
 is compiled.
 
-An inlined call does not copy its arguments. It enters a function frame that
+An inlined call does not copy its arguments. It enters a function scope that
 maps each parameter name to the argument ('param_binding'), e.g. 'p' to
 'world.rooms[i]' with the address of that element computed once, '3' to the
 constant 3, or 'x' to a scratch register holding the value of an expression.
 The result name maps to the destination of the call. Resolving 'p.x' in the
-body follows the binding and continues the walk in the frames of the caller.
+body follows the binding and continues the walk in the scopes of the caller.
 The result has the type of the destination, except that a narrower integer
 widens into an operand of an operator, e.g. the 'g()' of 'w + g()'
 ('destination::as_operand'): an inlined result is made in a register of its
@@ -328,7 +328,7 @@ generic definition is a function like the others: a use of a generic function
 makes it, an alias of a generic type makes its methods, and an instance that
 nothing calls is checked too; a generic function that nothing instantiates is
 listed in the report ([1.6](#16-reports)). The limit of nested dry runs
-counts the levels and the frames below each call, so a chain that is too deep
+counts the levels and the scopes below each call, so a chain that is too deep
 is rejected at any call of it, whatever the order of the calls, except for a
 chain through a cycle of noinline calls
 ([4.3](#43-call-kind-dry-run-once-per-kind-of-call)).
@@ -341,9 +341,9 @@ constant arguments of an inlined call decide: a branch whose condition folds
 to false is not compiled, nor is the code after a statement that leaves on
 every path, e.g. after the 'return' of 'if n > 5 return' in an inlined
 'count(6)', which ends the expansion of a recursion with constant arguments,
-or after a 'loop' whose 'break' folds away; the function frame keeps whether
+or after a 'loop' whose 'break' folds away; the function scope keeps whether
 the path is open ('toc::is_path_open'), a loop is left when a 'break' of it is
-compiled ('frame::is_left_by_break'), 'stmt_if' joins its branches with the
+compiled ('scope::is_left_by_break'), 'stmt_if' joins its branches with the
 same chain rule as the parse, and the end of 'main' is emitted when the
 compile reaches it. So the rules checked while compiling do not run in such code: a constant argument of an inlined
 call decides it, e.g. 'if b != 0 { res = a / b }' in 'ratio(10, 0)' guards
@@ -1121,8 +1121,8 @@ do not depend on the code around it.
 What a failed version entered must be left when its error unwinds:
 
 1. 'assembler::capture' drops the lines it captured
-2. the 'toc::frame_scope' of each frame an inlined body entered pops it and
-   its storage, back to the frames of the caller
+2. the 'toc::scope_entry' of each scope an inlined body entered pops it and
+   its storage, back to the scopes of the caller
 3. the rv32i bulk registers of an array copy or comparison are left
    ('machine_rv32i::bulk_depth_scope')
 

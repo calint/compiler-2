@@ -41,7 +41,7 @@ class stmt_block final : public statement {
             throw compile_error{tz, "expected '{' to begin block"};
         }
 
-        const toc::frame_scope block{tc, frame::block()};
+        const toc::scope_entry block{tc, scope::block()};
 
         if (is_one_statement()) {
             parse_single_statement(tc, tz);
@@ -71,7 +71,7 @@ class stmt_block final : public statement {
                  [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        const toc::frame_scope block{tc, frame::block()};
+        const toc::scope_entry block{tc, scope::block()};
 
         // the parse rejects a statement after a path that does not continue;
         // the compile stops after what it folds and the parse could not, e.g.

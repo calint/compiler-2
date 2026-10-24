@@ -145,7 +145,7 @@ class stmt_identifier;
 // parse
 // resolves the type and the bytes of the root variable that the path reaches
 // ('accessed_bytes_', the whole array after a run-time index), the compile
-// resolves the names again in the current frames and builds one memory operand
+// resolves the names again in the current scopes and builds one memory operand
 // ('compile_lea', see 'etc/docs/README.md' chapter 6); a path that names a
 // function or a constant has no storage
 class stmt_identifier final : public statement {

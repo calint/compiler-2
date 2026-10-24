@@ -391,8 +391,8 @@ struct noinline_arg {
 // the call 'call_tk'
 class call_limits final {
   public:
-    // a scope being compiled ('frame' in 'toc'): a block, a loop or a
-    // function body, inlined or the dry run of a noinline call
+    // a scope being compiled: a block, a loop or a function body, inlined or
+    // the dry run of a noinline call
     static constexpr size_t max_scope_count{256};
 
     // a level is the dry run of a noinline call nested in the dry run of the
@@ -419,7 +419,7 @@ class call_limits final {
         //       of noinline calls checked, so the error does not suggest
         //       'noinline', see 'noinline_call::dry_run_body'
 
-        assert_scope_count(tc, call_tk, tc.scopes().frames().size(),
+        assert_scope_count(tc, call_tk, tc.scopes().all().size(),
                            tc.scopes().noinline_dry_run_level() != 0);
     }
 
@@ -776,7 +776,7 @@ struct call_site {
     }
 
     // a block holds the temporaries of a call and frees them after it
-    // note: a block is a frame, which counts toward the nesting limit and the
+    // note: a block is a scope, which counts toward the nesting limit and the
     //       'max scopes in use' report, so a call without temporaries enters
     //       none
     static auto in_temporaries_block(toc& tc, const bool has_temporaries,
@@ -788,7 +788,7 @@ struct call_site {
             return;
         }
 
-        const toc::frame_scope block{tc, frame::block()};
+        const toc::scope_entry block{tc, scope::block()};
 
         compile();
     }
@@ -1008,11 +1008,11 @@ class inline_call {
         x.label(indent, call_label);
 
         // note: a noinline function is compiled in place only in its dry run
-        const toc::frame_scope body{
+        const toc::scope_entry body{
             tc,
             func.is_inlined()
-                ? frame::inlined_func(func.name(), new_call_path, ret_jmp_label)
-                : frame::noinline_dry_run(func.name(), new_call_path,
+                ? scope::inlined_func(func.name(), new_call_path, ret_jmp_label)
+                : scope::noinline_dry_run(func.name(), new_call_path,
                                           ret_jmp_label),
         };
 
@@ -1803,7 +1803,7 @@ class noinline_call {
         call_limits::assert_noinline_level(call_.tk, level + below.levels);
 
         call_limits::assert_scope_count(
-            tc, call_.tk, tc.scopes().frames().size() + below.scopes, true);
+            tc, call_.tk, tc.scopes().all().size() + below.scopes, true);
 
         // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
         //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
@@ -2943,7 +2943,7 @@ class stmt_call : public expression {
         tc.record_callee_globals(callee);
 
         const bool is_recursive{
-            tc.scopes().current_func_frame().is_name(func.name()),
+            tc.scopes().current_func_scope().is_name(func.name()),
         };
 
         for (size_t i{}; i < args_.size(); ++i) {

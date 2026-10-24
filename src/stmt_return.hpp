@@ -11,7 +11,7 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
-// 'return' leaves the function where its frame says: 'main' exits with 0, an
+// 'return' leaves the function where its scope says: 'main' exits with 0, an
 // inlined body jumps to the end of its call, a noinline body returns
 class stmt_return final : public statement {
   public:
@@ -33,24 +33,24 @@ class stmt_return final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const frame& func_frm{tc.scopes().current_func_frame()};
+        const scope& func_scp{tc.scopes().current_func_scope()};
 
         tc.set_path_open(false);
 
-        if (func_frm.is_main()) {
+        if (func_scp.is_main()) {
             x.exit(tok(), indent,
                    operand::imm(0, tc.builtins().default_type()));
 
             return;
         }
 
-        if (not func_frm.is_compiled_in_place()) {
+        if (not func_scp.is_compiled_in_place()) {
             x.return_function(indent);
             return;
         }
 
         // an inlined body ends where the call continues
-        x.branch(indent, func_frm.func_ret_label());
+        x.branch(indent, func_scp.func_ret_label());
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

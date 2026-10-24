@@ -57,7 +57,7 @@ class stmt_builtin_foo final : public statement {
         // block can name them
         const ident_info array_info{make_ident_info(tc, ident_)};
         const std::string label{tc.create_unique_label(tok(), "foo")};
-        const toc::frame_scope foo{tc, frame::foo(label)};
+        const toc::scope_entry foo{tc, scope::foo(label)};
 
         add_loop_names(tc, 0, src_loc_tk, array_info, operand{}, operand{});
 
@@ -113,7 +113,7 @@ class stmt_builtin_foo final : public statement {
                           allocated_registers),
         };
 
-        const toc::frame_scope foo{tc, frame::foo(loop_label)};
+        const toc::scope_entry foo{tc, scope::foo(loop_label)};
 
         const operand counter{
             declare_loop_names(tc, indent, array_info, reg_iter,

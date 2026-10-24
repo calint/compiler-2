@@ -378,7 +378,7 @@ class stmt_def_func final : public statement {
     // class methods
     //
 
-    // the constant arguments of the generic type of a method, in the frame of
+    // the constant arguments of the generic type of a method, in the scope of
     // the body
     auto add_constants(toc& tc, const size_t indent) const -> void {
         if (not instance_) {
@@ -814,9 +814,9 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        const toc::frame_scope body{
+        const toc::scope_entry body{
             tc,
-            frame::noinline_func(name(), body_call_path(array_lengths),
+            scope::noinline_func(name(), body_call_path(array_lengths),
                                  x.frame_base_register()),
         };
 
@@ -875,10 +875,10 @@ class stmt_def_func final : public statement {
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
     auto parse_body(toc& tc, tokenizer& tz) -> void {
-        const toc::frame_scope body{
+        const toc::scope_entry body{
             tc,
-            is_inlined() ? frame::inlined_func(name(), {}, {})
-                         : frame::noinline_func(name(), {}, {}),
+            is_inlined() ? scope::inlined_func(name(), {}, {})
+                         : scope::noinline_func(name(), {}, {}),
         };
 
         add_constants(tc, 0);
@@ -896,7 +896,7 @@ class stmt_def_func final : public statement {
         assert_statements_reached();
         assert_sets_result();
 
-        body_uses_ = tc.scopes().current_func_frame().body_uses_of_func();
+        body_uses_ = tc.scopes().current_func_scope().body_uses_of_func();
     }
 
     // e.g. 'a i32, b i32' up to the closing parenthesis

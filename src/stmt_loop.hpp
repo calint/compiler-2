@@ -21,7 +21,7 @@ class stmt_loop final : public statement {
         set_type(tc.builtins().void_type());
 
         const std::string label{tc.create_unique_label(tok(), "loop")};
-        const toc::frame_scope loop{tc, frame::loop(label)};
+        const toc::scope_entry loop{tc, scope::loop(label)};
         code_ = {tc, tz};
     }
 
@@ -52,7 +52,7 @@ class stmt_loop final : public statement {
         bool is_left{};
 
         {
-            const toc::frame_scope loop{tc, frame::loop(label)};
+            const toc::scope_entry loop{tc, scope::loop(label)};
             code_.compile(tc, indent, destination{});
             is_left = tc.scopes().back().is_left_by_break();
         }

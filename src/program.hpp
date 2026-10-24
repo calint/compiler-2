@@ -251,7 +251,7 @@ class program final {
         : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
 
         {
-            const toc::frame_scope root{tc_, frame::block()};
+            const toc::scope_entry root{tc_, scope::block()};
 
             loaded_paths_.insert(identity_path(files.name(0)));
 
@@ -297,7 +297,7 @@ class program final {
   private:
     auto compile() -> void {
         {
-            const toc::frame_scope root{tc_, frame::block()};
+            const toc::scope_entry root{tc_, scope::block()};
 
             for (const std::unique_ptr<statement>& s : statements_) {
                 s->compile(tc_, 0, destination{});
@@ -488,7 +488,7 @@ class program final {
         bool reaches_end{};
 
         {
-            const toc::frame_scope main{tc, frame::main_func()};
+            const toc::scope_entry main{tc, scope::main_func()};
             func_main.compile_statements(tc, 0);
 
             // the compile knows the conditions it folded, e.g. with constant

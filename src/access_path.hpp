@@ -203,19 +203,19 @@ struct access_path {
     [[nodiscard]] static auto whole_variable() -> access_path { return {}; }
 };
 
-// a variable: its name and the frame it is declared in, a callee's local of
-// the name of a variable of the caller is another variable; 'frame_index' is
-// the index on the scope stack, so two roots compare only while the frames up
-// to it are unchanged: a root is kept no longer than its frame (a global,
+// a variable: its name and the scope it is declared in, a callee's local of
+// the name of a variable of the caller is another variable; 'scope_index' is
+// the index on the scope stack, so two roots compare only while the scopes up
+// to it are unchanged: a root is kept no longer than its scope (a global,
 // index 0, always)
 struct root_variable {
     std::string name;
-    size_t frame_index{};
+    size_t scope_index{};
 
-    [[nodiscard]] auto is_global() const -> bool { return frame_index == 0; }
+    [[nodiscard]] auto is_global() const -> bool { return scope_index == 0; }
 
     [[nodiscard]] auto is_same(const root_variable& other) const -> bool {
-        return name == other.name and frame_index == other.frame_index;
+        return name == other.name and scope_index == other.scope_index;
     }
 };
 

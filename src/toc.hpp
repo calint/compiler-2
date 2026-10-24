@@ -39,7 +39,9 @@
 //                   a parameter of an inlined call stands for, one of
 //                   'bound_constant', 'bound_register', 'bound_name'),
 //                   'const_info'
-//   'frame'         one scope: its constants, variables and parameter bindings
+//   'scope'         a block, a loop or a function being compiled: its
+//                   constants, variables and parameter bindings; "frame" is
+//                   memory, e.g. the frame of a noinline call
 //   'ident_path'    a name as its path of elements, e.g. 'p.x'
 //   'ident_builder' the 'ident_info' of a variable and of a path below a known
 //                   address
@@ -49,18 +51,18 @@
 //                   of noinline calls
 //   'data_table'    the dats ('placed_dat') and the read-only constants
 //   options         'check_options', 'usage_statistics'
-//   'scope_stack'   the frames from the globals to the innermost scope and
+//   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
 //                   ('name_meaning'), the target of 'break' ('loop_target')
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_roles' the types the front end needs by role
-//   'ident_resolver' resolves a name by walking the frames, following bindings
+//   'ident_resolver' resolves a name by walking the scopes, following bindings
 //   'definition_checks' the errors of a name defined twice
 //   'variable_comments' the comment of where a variable is stored
 //   'toc'           the facade the statements use, owns all of the above; a
 //                   method of 'toc' changes state or combines tables, a query
 //                   of one table goes through its const accessor, e.g.
-//                   'tc.scopes().current_func_frame()', except a query asked
+//                   'tc.scopes().current_func_scope()', except a query asked
 //                   at every step, e.g. 'is_path_open'
 //   generics        'resolve_generic_args' and 'generic_scope', the names of
 //                   the parameters of a generic instance
@@ -177,11 +179,11 @@ struct bound_register {
 };
 
 // a parameter that names a place of the caller by its path, resolved again in
-// the frames of the caller: storage, e.g. 'p' of 'f(world.rooms[i])', a name
+// the scopes of the caller: storage, e.g. 'p' of 'f(world.rooms[i])', a name
 // held in a register, e.g. the counter 'i' of a 'foo', or the result that
 // names the destination
 struct bound_name {
-    // e.g. 'world.rooms', resolved in the frames of the caller
+    // e.g. 'world.rooms', resolved in the scopes of the caller
     std::string dotted_path;
     // as written, for the comments, e.g. 'copy[2]' where 'path' is 'copy'
     std::string text;
@@ -321,11 +323,12 @@ struct const_info {
 // a parameter or the result
 enum class var_kind : uint8_t { var, dat, param, result };
 
-// one scope; the static functions make each kind, e.g. 'frame::block()'
-class frame final {
-    // a function frame is 'main_func', 'inlined_func', 'noinline_dry_run' or
+// a block, a loop or a function being compiled; the static functions make
+// each kind, e.g. 'scope::block()'
+class scope final {
+    // a function scope is 'main_func', 'inlined_func', 'noinline_dry_run' or
     // 'noinline_func', see the statics that make them
-    enum class frame_type : uint8_t {
+    enum class scope_kind : uint8_t {
         block,
         loop,
         foo,
@@ -335,7 +338,7 @@ class frame final {
         noinline_func,
     };
 
-    // what only a function frame has
+    // what only a function scope has
     struct function_part {
         // a unique path of source locations of the inlined call
         std::string call_path;
@@ -361,7 +364,7 @@ class frame final {
         body_uses uses;
     };
 
-    // a frame whose variables are placed from a base register of their own,
+    // a scope whose variables are placed from a base register of their own,
     // the body of a noinline function
     struct storage_base {
         std::string_view base_register;
@@ -371,22 +374,22 @@ class frame final {
     // optional name
     std::string_view name_;
 
-    // the bytes of variable storage this frame uses
+    // the bytes of variable storage this scope uses
     size_t allocated_storage_size_bytes_{};
 
     lut<const_info> consts_;
 
-    // variables declared in this frame
+    // variables declared in this scope
     lut<var_info> vars_;
 
     // true if var that is not dat has been added
     bool non_dat_var_has_been_added_{};
 
-    // a 'loop' or 'foo' frame: a 'break' of it was compiled, so its end is
+    // a 'loop' or 'foo' scope: a 'break' of it was compiled, so its end is
     // reached; only 'stmt_loop' reads it, a 'foo' always reaches its end
     bool is_left_by_break_{};
 
-    frame_type type_{frame_type::block};
+    scope_kind type_{scope_kind::block};
     std::optional<function_part> func_;
     std::optional<storage_base> storage_;
 
@@ -479,18 +482,18 @@ class frame final {
     }
 
     [[nodiscard]] auto is_block() const -> bool {
-        return type_ == frame_type::block;
+        return type_ == scope_kind::block;
     }
 
     // 'main' and a dry run are compiled in place like an inlined function
     [[nodiscard]] auto is_compiled_in_place() const -> bool {
         assert(is_func());
 
-        return type_ != frame_type::noinline_func;
+        return type_ != scope_kind::noinline_func;
     }
 
     [[nodiscard]] auto is_foo() const -> bool {
-        return type_ == frame_type::foo;
+        return type_ == scope_kind::foo;
     }
 
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
@@ -500,11 +503,11 @@ class frame final {
     }
 
     [[nodiscard]] auto is_loop() const -> bool {
-        return type_ == frame_type::loop;
+        return type_ == scope_kind::loop;
     }
 
     [[nodiscard]] auto is_main() const -> bool {
-        return type_ == frame_type::main_func;
+        return type_ == scope_kind::main_func;
     }
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
@@ -512,7 +515,7 @@ class frame final {
     }
 
     [[nodiscard]] auto is_noinline_dry_run() const -> bool {
-        return type_ == frame_type::noinline_dry_run;
+        return type_ == scope_kind::noinline_dry_run;
     }
 
     [[nodiscard]] auto is_path_open() const -> bool {
@@ -574,33 +577,33 @@ class frame final {
     // statics
     //
 
-    [[nodiscard]] static auto block() -> frame {
-        return {"", frame_type::block};
+    [[nodiscard]] static auto block() -> scope {
+        return {"", scope_kind::block};
     }
 
     // the body of a 'foo' named by its loop label
-    [[nodiscard]] static auto foo(const std::string_view name) -> frame {
-        return {name, frame_type::foo};
+    [[nodiscard]] static auto foo(const std::string_view name) -> scope {
+        return {name, scope_kind::foo};
     }
 
     // a function compiled in place, 'call_path' keeps its labels unique and
     // 'return' jumps to 'return_label'
     [[nodiscard]] static auto inlined_func(const std::string_view name,
                                            std::string call_path,
-                                           std::string return_label) -> frame {
+                                           std::string return_label) -> scope {
 
-        return function(name, frame_type::inlined_func, std::move(call_path),
+        return function(name, scope_kind::inlined_func, std::move(call_path),
                         std::move(return_label));
     }
 
     // the body of a loop named by its label
-    [[nodiscard]] static auto loop(const std::string_view name) -> frame {
-        return {name, frame_type::loop};
+    [[nodiscard]] static auto loop(const std::string_view name) -> scope {
+        return {name, scope_kind::loop};
     }
 
     // 'main' is compiled in place, 'return' exits the program
-    [[nodiscard]] static auto main_func() -> frame {
-        return function(reserved_names::main, frame_type::main_func, {}, {});
+    [[nodiscard]] static auto main_func() -> scope {
+        return function(reserved_names::main, scope_kind::main_func, {}, {});
     }
 
     // a noinline function compiled in place, the dry run for the errors of a
@@ -608,9 +611,9 @@ class frame final {
     [[nodiscard]] static auto noinline_dry_run(const std::string_view name,
                                                std::string call_path,
                                                std::string return_label)
-        -> frame {
+        -> scope {
 
-        return function(name, frame_type::noinline_dry_run,
+        return function(name, scope_kind::noinline_dry_run,
                         std::move(call_path), std::move(return_label));
     }
 
@@ -618,25 +621,25 @@ class frame final {
     // 'storage_base_register' when not empty
     [[nodiscard]] static auto
     noinline_func(const std::string_view name, std::string call_path,
-                  const std::string_view storage_base_register) -> frame {
+                  const std::string_view storage_base_register) -> scope {
 
-        frame frm{
-            function(name, frame_type::noinline_func, std::move(call_path), {}),
+        scope scp{
+            function(name, scope_kind::noinline_func, std::move(call_path), {}),
         };
 
         if (not storage_base_register.empty()) {
-            frm.storage_ = storage_base{
+            scp.storage_ = storage_base{
                 .base_register{storage_base_register},
                 .peak_size_bytes{},
             };
         }
 
-        return frm;
+        return scp;
     }
 
   private:
-    frame(const std::string_view name, const frame_type frm_type) noexcept
-        : name_{name}, type_{frm_type} {}
+    scope(const std::string_view name, const scope_kind kind) noexcept
+        : name_{name}, type_{kind} {}
 
     [[nodiscard]] auto base() -> storage_base& {
         assert(storage_);
@@ -667,13 +670,13 @@ class frame final {
     //
 
     [[nodiscard]] static auto function(const std::string_view name,
-                                       const frame_type frm_type,
+                                       const scope_kind kind,
                                        std::string call_path,
-                                       std::string return_label) -> frame {
+                                       std::string return_label) -> scope {
 
-        frame frm{name, frm_type};
+        scope scp{name, kind};
 
-        frm.func_ = function_part{
+        scp.func_ = function_part{
             .call_path{std::move(call_path)},
             .ret_label{std::move(return_label)},
             .bindings{},
@@ -683,7 +686,7 @@ class frame final {
             .uses{},
         };
 
-        return frm;
+        return scp;
     }
 };
 
@@ -1396,8 +1399,8 @@ struct name_meaning {
     enum class kind : uint8_t { none, variable, binding, constant };
 
     kind what{kind::none};
-    // the frame that declares the name
-    size_t frame_index{};
+    // the scope that declares the name
+    size_t scope_index{};
 
     [[nodiscard]] auto is_binding() const -> bool {
         return what == kind::binding;
@@ -1420,10 +1423,10 @@ struct name_meaning {
     }
 };
 
-// the frames of the scopes being compiled, from the root frame that holds the
-// globals to the innermost one
+// the scopes being compiled, from the root scope that holds the globals to the
+// innermost one
 class scope_stack final {
-    std::vector<frame> frames_;
+    std::vector<scope> scopes_;
     size_t max_depth_{};
     std::reference_wrapper<const definition_order> order_;
     // the definition of each global variable, data and constant, see
@@ -1433,6 +1436,12 @@ class scope_stack final {
   public:
     explicit scope_stack(const definition_order& order) : order_{order} {}
 
+    [[nodiscard]] auto all() -> std::vector<scope>& { return scopes_; }
+
+    [[nodiscard]] auto all() const -> const std::vector<scope>& {
+        return scopes_;
+    }
+
     // checked at the parse, which reaches the branches that are not compiled,
     // e.g. the 'break' of 'if 1 == 2 { break }'
     auto assert_in_loop(const token& src_loc_tk) const -> void {
@@ -1441,9 +1450,9 @@ class scope_stack final {
         }
     }
 
-    [[nodiscard]] auto back() -> frame& { return frames_.back(); }
+    [[nodiscard]] auto back() -> scope& { return scopes_.back(); }
 
-    [[nodiscard]] auto back() const -> const frame& { return frames_.back(); }
+    [[nodiscard]] auto back() const -> const scope& { return scopes_.back(); }
 
     // empty outside of a function, e.g. in the initializer of a global variable
     [[nodiscard]] auto call_path() const -> std::string_view {
@@ -1451,7 +1460,7 @@ class scope_stack final {
             return {};
         }
 
-        return current_func_frame().call_path();
+        return current_func_scope().call_path();
     }
 
     // the value of 'name' when it means a constant
@@ -1464,23 +1473,17 @@ class scope_stack final {
             return std::nullopt;
         }
 
-        return frames_.at(meaning.frame_index).get_const(name).constant.value;
+        return scopes_.at(meaning.scope_index).get_const(name).constant.value;
     }
 
-    // blocks and loops belong to the function frame below them
-    [[nodiscard]] auto current_func_frame() const -> const frame& {
-        return frames_.at(func_frame_index());
+    // blocks and loops belong to the function scope below them
+    [[nodiscard]] auto current_func_scope() const -> const scope& {
+        return scopes_.at(func_scope_index());
     }
 
-    [[nodiscard]] auto frames() -> std::vector<frame>& { return frames_; }
+    [[nodiscard]] auto front() -> scope& { return scopes_.front(); }
 
-    [[nodiscard]] auto frames() const -> const std::vector<frame>& {
-        return frames_;
-    }
-
-    [[nodiscard]] auto front() -> frame& { return frames_.front(); }
-
-    [[nodiscard]] auto front() const -> const frame& { return frames_.front(); }
+    [[nodiscard]] auto front() const -> const scope& { return scopes_.front(); }
 
     // how many times the inlined function 'name' is being compiled in place
     // by the current function body, inlined bodies are searched down to the
@@ -1489,16 +1492,16 @@ class scope_stack final {
         -> size_t {
 
         size_t count{};
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (not frm.is_func()) {
+        for (const scope& scp : scopes_ | std::views::reverse) {
+            if (not scp.is_func()) {
                 continue;
             }
 
-            if (not frm.is_compiled_in_place()) {
+            if (not scp.is_compiled_in_place()) {
                 break;
             }
 
-            if (frm.is_name(name)) {
+            if (scp.is_name(name)) {
                 ++count;
             }
         }
@@ -1509,15 +1512,15 @@ class scope_stack final {
     // the innermost 'loop' or 'foo' of the function, the target of a 'break'
     // or a 'continue'
     [[nodiscard]] auto innermost_loop() const -> std::optional<loop_target> {
-        for (const frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_loop() or frm.is_foo()) {
+        for (const scope& scp : scopes_ | std::views::reverse) {
+            if (scp.is_loop() or scp.is_foo()) {
                 return loop_target{
-                    .label{frm.name()},
-                    .is_foo{frm.is_foo()},
+                    .label{scp.name()},
+                    .is_foo{scp.is_foo()},
                 };
             }
 
-            if (frm.is_func()) {
+            if (scp.is_func()) {
                 return std::nullopt;
             }
         }
@@ -1525,25 +1528,25 @@ class scope_stack final {
         std::unreachable();
     }
 
-    [[nodiscard]] auto is_empty() const -> bool { return frames_.empty(); }
+    [[nodiscard]] auto is_empty() const -> bool { return scopes_.empty(); }
 
     // the initializer of a global variable is outside of any function
     [[nodiscard]] auto is_in_func() const -> bool {
         return std::ranges::any_of(
-            frames_, [](const frame& frm) -> bool { return frm.is_func(); });
+            scopes_, [](const scope& scp) -> bool { return scp.is_func(); });
     }
 
     // what 'name' means in the innermost scope
     [[nodiscard]] auto lookup(const std::string_view name) const
         -> name_meaning {
 
-        return lookup_below(name, frames_.size());
+        return lookup_below(name, scopes_.size());
     }
 
-    // what 'name' means to the frames below the index 'end', the one rule of
-    // what a name means: the frames of the innermost function from the
-    // innermost out, then the root frame. a frame declares a variable or a
-    // constant of a name, not both; in a function frame a parameter hides a
+    // what 'name' means to the scopes below the index 'end', the one rule of
+    // what a name means: the scopes of the innermost function from the
+    // innermost out, then the root scope. a scope declares a variable or a
+    // constant of a name, not both; in a function scope a parameter hides a
     // constant of the generic instance, which is the context of the definition
     [[nodiscard]] auto lookup_below(const std::string_view name,
                                     const size_t end) const -> name_meaning {
@@ -1553,35 +1556,35 @@ class scope_stack final {
         for (const size_t index :
              std::views::iota(size_t{1}, end) | std::views::reverse) {
 
-            const frame& frm{frames_.at(index)};
+            const scope& scp{scopes_.at(index)};
 
-            if (frm.has_var(name)) {
+            if (scp.has_var(name)) {
                 return {
                     .what{name_meaning::kind::variable},
-                    .frame_index{index},
+                    .scope_index{index},
                 };
             }
 
-            if (frm.is_func() and frm.has_binding(name)) {
+            if (scp.is_func() and scp.has_binding(name)) {
                 return {
                     .what{name_meaning::kind::binding},
-                    .frame_index{index},
+                    .scope_index{index},
                 };
             }
 
-            if (frm.has_const(name)) {
+            if (scp.has_const(name)) {
                 return {
                     .what{name_meaning::kind::constant},
-                    .frame_index{index},
+                    .scope_index{index},
                 };
             }
 
-            if (frm.is_func()) {
+            if (scp.is_func()) {
                 break;
             }
         }
 
-        const frame& root{frames_.front()};
+        const scope& root{scopes_.front()};
 
         // e.g. a global defined after the generic whose instance is parsed
         if (not is_global_visible(name)) {
@@ -1591,14 +1594,14 @@ class scope_stack final {
         if (root.has_var(name)) {
             return {
                 .what{name_meaning::kind::variable},
-                .frame_index{},
+                .scope_index{},
             };
         }
 
         if (root.has_const(name)) {
             return {
                 .what{name_meaning::kind::constant},
-                .frame_index{},
+                .scope_index{},
             };
         }
 
@@ -1606,11 +1609,11 @@ class scope_stack final {
     }
 
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
-    // 'frame::is_left_by_break'
+    // 'scope::is_left_by_break'
     auto mark_loop_left() -> void {
-        for (frame& frm : frames_ | std::views::reverse) {
-            if (frm.is_loop() or frm.is_foo()) {
-                frm.mark_left_by_break();
+        for (scope& scp : scopes_ | std::views::reverse) {
+            if (scp.is_loop() or scp.is_foo()) {
+                scp.mark_left_by_break();
                 return;
             }
         }
@@ -1621,29 +1624,29 @@ class scope_stack final {
     [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
 
     // the dry runs of noinline calls nested here, see
-    // 'frame::noinline_dry_run'
+    // 'scope::noinline_dry_run'
     [[nodiscard]] auto noinline_dry_run_level() const -> size_t {
         return static_cast<size_t>(
-            std::ranges::count_if(frames_, [](const frame& frm) -> bool {
-                return frm.is_noinline_dry_run();
+            std::ranges::count_if(scopes_, [](const scope& scp) -> bool {
+                return scp.is_noinline_dry_run();
             }));
     }
 
-    auto pop() -> void { frames_.pop_back(); }
+    auto pop() -> void { scopes_.pop_back(); }
 
-    auto push(frame frm) -> void {
-        frames_.push_back(std::move(frm));
+    auto push(scope scp) -> void {
+        scopes_.push_back(std::move(scp));
         track_depth();
     }
 
     // the globals that a function called in the body being parsed uses
     auto record_callee_globals(const body_uses& callee) -> void {
         for (const body_uses::global_use& u : callee.globals()) {
-            func_frame().body_uses_ref().add_global(u.storage, u.is_written);
+            func_scope().body_uses_ref().add_global(u.storage, u.is_written);
         }
     }
 
-    // a variable, data or constant of the root frame
+    // a variable, data or constant of the root scope
     auto record_global(const std::string_view name) -> void {
         global_definitions_.try_emplace(std::string{name},
                                         order_.get().current());
@@ -1655,14 +1658,14 @@ class scope_stack final {
     auto record_storage_use(const storage_path& storage, const bool is_written)
         -> void {
 
-        frame& func{func_frame()};
+        scope& func{func_scope()};
 
         if (storage.root.is_global()) {
             func.body_uses_ref().add_global(storage, is_written);
             return;
         }
 
-        if (storage.root.frame_index != func_frame_index()) {
+        if (storage.root.scope_index != func_scope_index()) {
             return;
         }
 
@@ -1685,17 +1688,17 @@ class scope_stack final {
 
     // see 'toc::is_path_open'
     auto set_path_open(const bool is_open) -> void {
-        func_frame().set_path_open(is_open);
+        func_scope().set_path_open(is_open);
     }
 
   private:
-    [[nodiscard]] auto func_frame() -> frame& {
-        return frames_.at(func_frame_index());
+    [[nodiscard]] auto func_scope() -> scope& {
+        return scopes_.at(func_scope_index());
     }
 
-    [[nodiscard]] auto func_frame_index() const -> size_t {
-        for (size_t i{frames_.size()}; i > 0; --i) {
-            if (frames_.at(i - 1).is_func()) {
+    [[nodiscard]] auto func_scope_index() const -> size_t {
+        for (size_t i{scopes_.size()}; i > 0; --i) {
+            if (scopes_.at(i - 1).is_func()) {
                 return i - 1;
             }
         }
@@ -1713,17 +1716,17 @@ class scope_stack final {
     }
 
     auto track_depth() -> void {
-        max_depth_ = std::max(frames_.size(), max_depth_);
+        max_depth_ = std::max(scopes_.size(), max_depth_);
     }
 };
 
 // where the variables are placed, after the dats that 'data_table' placed: the
-// frames that have a storage base of their own, the capacity of the section
-// and the target limits; the size in use is the sum of what the frames hold
+// scopes that have a storage base of their own, the capacity of the section
+// and the target limits; the size in use is the sum of what the scopes hold
 class storage_layout final {
-    // where a variable is placed, 'frame_index' is empty at the variables base
+    // where a variable is placed, 'scope_index' is empty at the variables base
     struct storage_location {
-        std::optional<size_t> frame_index;
+        std::optional<size_t> scope_index;
         size_t base_offset{};
     };
 
@@ -1744,8 +1747,8 @@ class storage_layout final {
     // what a dry run changes and 'end_dry_run' puts back
     struct dry_run_state {
         size_t max_body_vars_size_bytes;
-        // the index of the frame, frames added meanwhile may move the frames
-        std::optional<size_t> storage_frame_index;
+        // the index of the scope, scopes added meanwhile may move the scopes
+        std::optional<size_t> storage_scope_index;
         size_t peak_storage_size_bytes;
     };
 
@@ -1802,7 +1805,7 @@ class storage_layout final {
 
         apply_dat_var_padding(src_loc_tk);
 
-        // offsets are relative to the variables base or to the nearest frame
+        // offsets are relative to the variables base or to the nearest scope
         // with its own storage base, both are aligned
         const storage_location location{find_storage_location()};
         const size_t base_offset{location.base_offset};
@@ -1823,14 +1826,14 @@ class storage_layout final {
 
         stored.offset = address_offset(base_offset + padding_bytes);
 
-        if (location.frame_index) {
-            frame& storage_frame{
-                scopes_.get().frames().at(*location.frame_index),
+        if (location.scope_index) {
+            scope& storage_scope{
+                scopes_.get().all().at(*location.scope_index),
             };
 
-            stored.base_register = storage_frame.storage_base_register();
+            stored.base_register = storage_scope.storage_base_register();
 
-            storage_frame.record_storage_size_bytes(add_storage_size(
+            storage_scope.record_storage_size_bytes(add_storage_size(
                 src_loc_tk, base_offset, allocated_size_bytes));
         } else {
             stored.offset = add_address_offset(stored.offset,
@@ -1840,7 +1843,7 @@ class storage_layout final {
         assert_total_fits_target(src_loc_tk, allocated_size_bytes);
 
         // note: the parse forgets the peak and a dry run puts it back, and
-        //       the parse may place a variable before the dats; the frame
+        //       the parse may place a variable before the dats; the scope
         //       holds the bytes after this returns
 
         if (checks_capacity) {
@@ -1857,15 +1860,15 @@ class storage_layout final {
     }
 
     auto begin_dry_run() -> dry_run_state {
-        const std::optional<size_t> frame_index{
-            find_storage_location().frame_index,
+        const std::optional<size_t> scope_index{
+            find_storage_location().scope_index,
         };
 
         const dry_run_state saved{
             .max_body_vars_size_bytes{max_body_vars_size_bytes_},
-            .storage_frame_index{frame_index},
+            .storage_scope_index{scope_index},
             .peak_storage_size_bytes{
-                frame_index ? frame_at(*frame_index).peak_storage_size_bytes()
+                scope_index ? scope_at(*scope_index).peak_storage_size_bytes()
                             : 0,
             },
         };
@@ -1876,10 +1879,10 @@ class storage_layout final {
     auto end_dry_run(const dry_run_state& saved) -> void {
         max_body_vars_size_bytes_ = saved.max_body_vars_size_bytes;
 
-        if (saved.storage_frame_index) {
+        if (saved.storage_scope_index) {
             scopes_.get()
-                .frames()
-                .at(*saved.storage_frame_index)
+                .all()
+                .at(*saved.storage_scope_index)
                 .restore_peak_storage_size_bytes(saved.peak_storage_size_bytes);
         }
     }
@@ -1896,9 +1899,9 @@ class storage_layout final {
 
         const storage_location location{find_storage_location()};
 
-        if (location.frame_index) {
+        if (location.scope_index) {
             return operand::mem(
-                frame_at(*location.frame_index).storage_base_register(), {}, 1,
+                scope_at(*location.scope_index).storage_base_register(), {}, 1,
                 address_offset(
                     align_storage_size(location.base_offset, frame_alignment)),
                 address_type);
@@ -1926,21 +1929,21 @@ class storage_layout final {
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
-        const std::optional<size_t> frame_index{
-            find_storage_location().frame_index,
+        const std::optional<size_t> scope_index{
+            find_storage_location().scope_index,
         };
 
         // note: asked inside a noinline body, which has a storage base
-        assert(frame_index);
+        assert(scope_index);
 
-        return frame_at(*frame_index).peak_storage_size_bytes();
+        return scope_at(*scope_index).peak_storage_size_bytes();
     }
 
-    // the root frame applies the dat var padding again when it is entered
+    // the root scope applies the dat var padding again when it is entered
     // anew
     auto release_root() -> void { applied_padding_bytes_.reset(); }
 
-    // the frames of the parse are popped, its use of storage is forgotten
+    // the scopes of the parse are popped, its use of storage is forgotten
     auto reset_usage() -> void {
         assert(dats_and_vars_size_bytes() == 0);
 
@@ -1989,7 +1992,7 @@ class storage_layout final {
 
     // the declaration that takes the data and variables past what the target
     // addresses is the error, not the end of the build; checked before the
-    // frame holds the bytes
+    // scope holds the bytes
     auto assert_total_fits_target(const token& src_loc_tk,
                                   const size_t allocated_size_bytes) const
         -> void {
@@ -2037,47 +2040,47 @@ class storage_layout final {
     }
 
     // the dats, the padding after them once applied and the variables of
-    // every frame
+    // every scope
     [[nodiscard]] auto dats_and_vars_size_bytes() const -> size_t {
         size_t total_bytes{applied_padding_bytes_.value_or(0)};
 
-        for (const frame& frm : std::as_const(scopes_.get()).frames()) {
+        for (const scope& scp : std::as_const(scopes_.get()).all()) {
             total_bytes = sum_storage_size(total_bytes,
-                                           frm.allocated_storage_size_bytes());
+                                           scp.allocated_storage_size_bytes());
         }
 
         return total_bytes;
     }
 
-    // a local starts after the storage in use of the nearest frame with its own
-    // storage base and of the frames inside it, other variables start at the
+    // a local starts after the storage in use of the nearest scope with its own
+    // storage base and of the scopes inside it, other variables start at the
     // variables base
     [[nodiscard]] auto find_storage_location() const -> storage_location {
-        const std::vector<frame>& frames{std::as_const(scopes_.get()).frames()};
+        const std::vector<scope>& scopes{std::as_const(scopes_.get()).all()};
         size_t local_size_bytes{};
 
-        for (size_t i{frames.size()}; i != 0; --i) {
-            const frame& frm{frames.at(i - 1)};
+        for (size_t i{scopes.size()}; i != 0; --i) {
+            const scope& scp{scopes.at(i - 1)};
 
             local_size_bytes = sum_storage_size(
-                local_size_bytes, frm.allocated_storage_size_bytes());
+                local_size_bytes, scp.allocated_storage_size_bytes());
 
-            if (frm.has_storage_base()) {
+            if (scp.has_storage_base()) {
                 return {
-                    .frame_index{i - 1},
+                    .scope_index{i - 1},
                     .base_offset{local_size_bytes},
                 };
             }
         }
 
         return {
-            .frame_index{},
+            .scope_index{},
             .base_offset{dats_and_vars_size_bytes()},
         };
     }
 
-    [[nodiscard]] auto frame_at(const size_t index) const -> const frame& {
-        return std::as_const(scopes_.get()).frames().at(index);
+    [[nodiscard]] auto scope_at(const size_t index) const -> const scope& {
+        return std::as_const(scopes_.get()).all().at(index);
     }
 
     // bytes of variables, without the dats and the padding after them
@@ -2140,7 +2143,7 @@ class builtin_roles final {
 };
 
 // resolves a name to a variable, a register or a constant by
-// 'scope_stack::lookup_below', a binding is followed into the frames of the
+// 'scope_stack::lookup_below', a binding is followed into the scopes of the
 // caller
 class ident_resolver final {
     std::reference_wrapper<const scope_stack> scopes_;
@@ -2149,7 +2152,7 @@ class ident_resolver final {
     std::reference_wrapper<const generic_registry> generics_;
     std::reference_wrapper<const builtin_roles> builtins_;
 
-    // where the walk through the frames has got to
+    // where the walk through the scopes has got to
     struct walk {
         explicit walk(ident_path identifier) : id{std::move(identifier)} {}
 
@@ -2258,8 +2261,8 @@ class ident_resolver final {
         return ident_info::make_empty();
     }
 
-    // the root name of the identifier is looked up in the frames below 'end',
-    // a binding rewrites the identifier and the lookup goes on in the frames of
+    // the root name of the identifier is looked up in the scopes below 'end',
+    // a binding rewrites the identifier and the lookup goes on in the scopes of
     // the caller
     [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
                                         const std::string_view ident) const
@@ -2269,7 +2272,7 @@ class ident_resolver final {
 
         // e.g. 'lnks' of 'lnks[1].pos.y'
         walk step{ident_path{std::string{ident}}};
-        size_t end{scopes_.get().frames().size()};
+        size_t end{scopes_.get().all().size()};
 
         while (true) {
             const name_meaning meaning{
@@ -2280,12 +2283,12 @@ class ident_resolver final {
                 return resolve_literal_or_empty(src_loc_tk, ident, step.id);
             }
 
-            const frame& frm{scopes_.get().frames().at(meaning.frame_index)};
+            const scope& scp{scopes_.get().all().at(meaning.scope_index)};
 
             if (meaning.is_variable()) {
                 ident_info info{
                     resolve_var(src_loc_tk, ident, step.id,
-                                frm.get_var_const_ref(step.id.base()),
+                                scp.get_var_const_ref(step.id.base()),
                                 step.address_by_call),
                 };
 
@@ -2302,7 +2305,7 @@ class ident_resolver final {
                 }
 
                 const folded_value& constant{
-                    frm.get_const(step.id.base()).constant,
+                    scp.get_const(step.id.base()).constant,
                 };
 
                 // an untyped constant reads at the default type
@@ -2315,7 +2318,7 @@ class ident_resolver final {
             }
 
             if (std::optional<ident_info> found{
-                    follow_binding(frm.get_binding(step.id.base()), ident,
+                    follow_binding(scp.get_binding(step.id.base()), ident,
                                    step),
                 };
                 found) {
@@ -2323,7 +2326,7 @@ class ident_resolver final {
                 return *std::move(found);
             }
 
-            end = meaning.frame_index;
+            end = meaning.scope_index;
         }
     }
 
@@ -2569,7 +2572,7 @@ class definition_checks final {
         // note: a definition is parsed, bindings exist only while compiling
         assert(not meaning.is_binding());
 
-        const frame& frm{scopes_.get().frames().at(meaning.frame_index)};
+        const scope& scp{scopes_.get().all().at(meaning.scope_index)};
 
         if (meaning.is_constant()) {
             throw compile_error{
@@ -2577,7 +2580,7 @@ class definition_checks final {
                 std::format("generic parameter {} hides the constant {} "
                             "defined at {}, use another name",
                             in_quotes(name), in_quotes(name),
-                            where(frm.get_const(name).src_loc_tk))};
+                            where(scp.get_const(name).src_loc_tk))};
         }
 
         throw compile_error{
@@ -2586,10 +2589,10 @@ class definition_checks final {
                 "generic parameter {} hides the variable {} defined at {}, "
                 "use another name",
                 in_quotes(name), in_quotes(name),
-                where(frm.get_var_const_ref(name).src_loc_tk))};
+                where(scp.get_var_const_ref(name).src_loc_tk))};
     }
 
-    // a frame declares a variable or a constant of a name, not both
+    // a scope declares a variable or a constant of a name, not both
     auto assert_name_free(const token& src_loc_tk,
                           const std::string_view name) const -> void {
 
@@ -2608,7 +2611,7 @@ class definition_checks final {
     }
 
     // a parameter may hide a constant of the generic instance in the same
-    // function frame
+    // function scope
     auto assert_not_declared_in_scope(const token& src_loc_tk,
                                       const std::string_view name) const
         -> void {
@@ -2625,29 +2628,29 @@ class definition_checks final {
                                         where(decl_var.src_loc_tk))};
     }
 
-    // the body of a function is the block above its frame, a name declared
+    // the body of a function is the block above its scope, a name declared
     // there cannot repeat a parameter or the result; a deeper block may
     auto assert_not_hiding_signature(const token& src_loc_tk,
                                      const std::string_view what,
                                      const std::string_view name) const
         -> void {
 
-        const std::vector<frame>& frames{scopes_.get().frames()};
+        const std::vector<scope>& scopes{scopes_.get().all()};
 
-        if (frames.size() < 2 or not frames.back().is_block()) {
+        if (scopes.size() < 2 or not scopes.back().is_block()) {
             return;
         }
 
-        const frame& func_frm{frames.at(frames.size() - 2)};
+        const scope& func_scp{scopes.at(scopes.size() - 2)};
 
-        if (not func_frm.is_func() or not func_frm.has_var(name)) {
+        if (not func_scp.is_func() or not func_scp.has_var(name)) {
             return;
         }
 
-        const var_info& decl_var{func_frm.get_var_const_ref(name)};
+        const var_info& decl_var{func_scp.get_var_const_ref(name)};
 
         const std::string_view role{
-            func_frm.is_result(name) ? "result" : "parameter",
+            func_scp.is_result(name) ? "result" : "parameter",
         };
 
         throw compile_error{
@@ -2854,30 +2857,30 @@ class toc final {
     };
 
   public:
-    // a frame of the scope stack while it lives, also when an error unwinds,
-    // so a failed version or dry run leaves the frames of its caller, e.g.
-    // 'const toc::frame_scope loop{tc, frame::loop(label)};'
-    class frame_scope final {
+    // a scope of the scope stack while it lives, also when an error unwinds,
+    // so a failed version or dry run leaves the scopes of its caller, e.g.
+    // 'const toc::scope_entry loop{tc, scope::loop(label)};'
+    class scope_entry final {
         toc& tc_;
-        // the frames below this one, the frames are left in stack order
+        // the scopes below this one, the scopes are left in stack order
         size_t depth_;
 
       public:
-        frame_scope(toc& tc, frame frm)
-            : tc_{tc}, depth_{tc.scopes_.frames().size()} {
+        scope_entry(toc& tc, scope scp)
+            : tc_{tc}, depth_{tc.scopes_.all().size()} {
 
-            tc_.scopes_.push(std::move(frm));
+            tc_.scopes_.push(std::move(scp));
         }
 
-        frame_scope(const frame_scope&) = delete;
-        frame_scope(frame_scope&&) = delete;
-        auto operator=(const frame_scope&) -> frame_scope& = delete;
-        auto operator=(frame_scope&&) -> frame_scope& = delete;
+        scope_entry(const scope_entry&) = delete;
+        scope_entry(scope_entry&&) = delete;
+        auto operator=(const scope_entry&) -> scope_entry& = delete;
+        auto operator=(scope_entry&&) -> scope_entry& = delete;
 
-        ~frame_scope() {
-            assert(tc_.scopes_.frames().size() == depth_ + 1);
+        ~scope_entry() {
+            assert(tc_.scopes_.all().size() == depth_ + 1);
 
-            tc_.pop_frame();
+            tc_.pop_scope();
         }
     };
 
@@ -2977,7 +2980,7 @@ class toc final {
         definitions_.assert_name_free(var.src_loc_tk, var.name);
 
         // note: a 'dat' in a block is rejected when it is parsed
-        assert(scopes_.frames().size() == 1);
+        assert(scopes_.all().size() == 1);
 
         if (scopes_.front().has_non_dat_var_been_added()) {
             throw compile_error{dat_tk,
@@ -3186,7 +3189,7 @@ class toc final {
         }
     }
 
-    // the parse is over: its frames are popped and its use of storage is
+    // the parse is over: its scopes are popped and its use of storage is
     // forgotten, declarations comment where they are stored and the storage
     // capacity is checked, e.g. a parameter 'self' of a type larger than the
     // vars section holds an address once the body is compiled
@@ -3332,7 +3335,7 @@ class toc final {
     auto dry_run_call_kind(const std::string_view kind, const size_t level,
                            const std::function_ref<void()> compile) -> void {
 
-        dry_runs_.measure(kind, level, scopes_.frames().size(), [&] -> void {
+        dry_runs_.measure(kind, level, scopes_.all().size(), [&] -> void {
             if (std::optional<compile_error> error{dry_run(compile)}) {
                 throw_dry_run_error(std::move(*error));
             }
@@ -3444,7 +3447,7 @@ class toc final {
     // at a closed path, e.g. after the 'return' of 'if n == 0 return' in an
     // inlined call with the constant argument 0
     [[nodiscard]] auto is_path_open() const -> bool {
-        return scopes_.current_func_frame().is_path_open();
+        return scopes_.current_func_scope().is_path_open();
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {
@@ -3555,7 +3558,7 @@ class toc final {
 
         if (meaning.is_binding()) {
             const param_binding& binding{
-                scopes_.frames().at(meaning.frame_index).get_binding(name),
+                scopes_.all().at(meaning.scope_index).get_binding(name),
             };
 
             return binding.bound_storage_of(path);
@@ -3566,7 +3569,7 @@ class toc final {
         }
 
         const var_info& var{
-            scopes_.frames().at(meaning.frame_index).get_var_const_ref(name),
+            scopes_.all().at(meaning.scope_index).get_var_const_ref(name),
         };
 
         // note: the array was resolved to its root variable when the 'foo'
@@ -3584,7 +3587,7 @@ class toc final {
         return storage_path{
             .root{
                 .name{std::string{name}},
-                .frame_index{meaning.frame_index},
+                .scope_index{meaning.scope_index},
             },
             .path{path},
         };
@@ -3734,9 +3737,9 @@ class toc final {
         return types_.is_builtin(name);
     }
 
-    // the frames are pushed by 'scope_stack', popped here with their storage
-    auto pop_frame() -> void {
-        if (scopes_.frames().size() == 1) {
+    // the scopes are pushed by 'scope_stack', popped here with their storage
+    auto pop_scope() -> void {
+        if (scopes_.all().size() == 1) {
             storage_.release_root();
         }
 
@@ -3746,7 +3749,7 @@ class toc final {
     // a global keeps the definition that declared it at the parse, the
     // compile declares it again
     auto record_if_global(const std::string_view name) -> void {
-        if (scopes_.frames().size() == 1) {
+        if (scopes_.all().size() == 1) {
             scopes_.record_global(name);
         }
     }
@@ -3856,7 +3859,7 @@ class generic_scope final {
     toc& tc_;
     definition_order::instance_scope visible_;
     // the constants are in a block of their own
-    std::optional<toc::frame_scope> constants_block_;
+    std::optional<toc::scope_entry> constants_block_;
 
   public:
     generic_scope(toc& tc, const size_t definition)
@@ -3888,7 +3891,7 @@ class generic_scope final {
 
     // a method of an instance of a generic type sees the generic type as the
     // instance and its type arguments, e.g. 'list' names 'str' and 'T' names
-    // 'i8'; its constants are in the frame of the body
+    // 'i8'; its constants are in the scope of the body
     auto add_receiver(const generic_type_instance& instance) -> void {
         const generic_type_info& generic{
             tc_.generics().get_type(instance.generic_name),
@@ -3903,7 +3906,7 @@ class generic_scope final {
                    const int64_t value) -> void {
 
         if (not constants_block_) {
-            constants_block_.emplace(tc_, frame::block());
+            constants_block_.emplace(tc_, scope::block());
         }
 
         tc_.add_const(src_loc_tk, 0, name, folded_value::untyped(value));

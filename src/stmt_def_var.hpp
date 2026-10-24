@@ -263,7 +263,7 @@ class initializer_declaration final {
             return;
         }
 
-        const toc::frame_scope block{tc, frame::block()};
+        const toc::scope_entry block{tc, scope::block()};
 
         tc.add_var(name_tk_, 0, make_var_info(name_tk_, type_ref(), shape_),
                    var_kind::var);
