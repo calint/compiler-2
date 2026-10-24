@@ -313,10 +313,10 @@ class stmt_builtin_io final : public expression {
     // the types at compile time
     auto assert_buffer_path() const -> void {
         const statement& arg{args_.at(buffer_index_)};
-        const stmt_identifier* const path{arg.operand_path()};
+        const stmt_identifier* const ident{arg.operand_path()};
 
         // the start has one spelling, the last argument
-        if (path != nullptr and path->is_array_element()) {
+        if (ident != nullptr and ident->is_array_element()) {
             throw compile_error{
                 arg.tok(),
                 std::format("pass the array and the start as {} argument, "
@@ -326,7 +326,7 @@ class stmt_builtin_io final : public expression {
         }
 
         // e.g. not '-b', a unary operator makes a value
-        if (arg.place_path() == nullptr) {
+        if (arg.bare_path() == nullptr) {
             throw_not_an_array();
         }
     }
@@ -372,7 +372,7 @@ class stmt_builtin_io final : public expression {
                     at_.count ? std::format("count {}", *count)
                               : std::format("a sector of {} elements", *count),
                 },
-                .array_name{buffer.path->dotted_path()},
+                .array_name{buffer.ident->dotted_path()},
             });
     }
 
@@ -449,7 +449,7 @@ class stmt_builtin_io final : public expression {
 
     // the array the call transfers, a path since 'assert_buffer_path'
     [[nodiscard]] auto buffer_path() const -> const stmt_identifier& {
-        return *args_.at(buffer_index_).place_path();
+        return *args_.at(buffer_index_).bare_path();
     }
 
     // the count and start are in elements, the byte count is computed last
@@ -524,13 +524,13 @@ class stmt_builtin_io final : public expression {
 
         machine& x{tc.machine()};
 
-        const stmt_identifier& path{*buffer.path};
+        const stmt_identifier& ident{*buffer.ident};
 
         std::vector<operand> lea_registers;
 
         const operand buffer_lea{
-            path.compile_lea(
-                tc, indent, path.tok(), lea_registers,
+            ident.compile_lea(
+                tc, indent, ident.tok(), lea_registers,
                 {
                     .reg_count{range},
                     .address_by_call{buffer.info.address_by_call()},

@@ -206,15 +206,15 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
         return;
     }
 
-    const stmt_identifier& source{*parsed.identifier};
+    const stmt_identifier& ident{*parsed.identifier};
 
     value_ = std::move(parsed.identifier);
 
-    const ident_info src_info{make_ident_info(tc, source)};
+    const ident_info src_info{make_ident_info(tc, ident)};
 
     if (not tp.is_same(src_info.type_ref())) {
         throw compile_error{
-            source.last_token(),
+            ident.last_token(),
             std::format("expected type {}, got {}", in_quotes(tp.name()),
                         in_quotes(src_info.type_ref().name())),
         };
@@ -246,8 +246,8 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
     }
 
     // the token of the base statement is the first one of the identifier
-    if (const stmt_identifier* const source{operand_path()}) {
-        source->source_to(os);
+    if (const stmt_identifier* const ident{operand_path()}) {
+        ident->source_to(os);
         return;
     }
 
@@ -368,9 +368,9 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     const type& dst_type{dst.type_ref()};
 
-    const stmt_identifier& source{*operand_path()};
+    const stmt_identifier& ident{*operand_path()};
 
-    const ident_info src_info{make_ident_info(tc, source)};
+    const ident_info src_info{make_ident_info(tc, ident)};
 
     // 'expr_type' validates the source type before entering here
     assert(dst_type.is_same(src_info.type_ref()));
@@ -387,7 +387,7 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
     std::vector<operand> allocated_registers;
 
     const operand src_op{
-        source.get_lea_operand(tc, indent, src_info, allocated_registers),
+        ident.get_lea_operand(tc, indent, src_info, allocated_registers),
     };
 
     const size_t size_bytes{src_info.value_size_bytes(tok())};
@@ -424,8 +424,8 @@ inline auto expr_type::visit_reads(const read_filter var,
                                    const read_visitor reader) const -> void {
 
     // a copy or a call reads its source instead of the '{...}' items
-    if (const stmt_identifier* const source{operand_path()}) {
-        source->visit_reads(var, reader);
+    if (const stmt_identifier* const ident{operand_path()}) {
+        ident->visit_reads(var, reader);
         return;
     }
 
@@ -443,8 +443,8 @@ inline auto
 expr_type::visit_call_effects(const toc& tc,
                               const call_effect_visitor visitor) const -> void {
 
-    if (const stmt_identifier* const source{operand_path()}) {
-        source->visit_call_effects(tc, visitor);
+    if (const stmt_identifier* const ident{operand_path()}) {
+        ident->visit_call_effects(tc, visitor);
         return;
     }
 

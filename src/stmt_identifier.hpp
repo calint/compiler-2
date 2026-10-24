@@ -132,16 +132,17 @@ class expr_any;
 class stmt_identifier;
 
 [[nodiscard]] inline auto make_ident_info(const toc& tc,
-                                          const stmt_identifier& path)
+                                          const stmt_identifier& ident)
     -> ident_info;
 
 [[nodiscard]] inline auto make_scalar_ident_info(const toc& tc,
-                                                 const stmt_identifier& path)
+                                                 const stmt_identifier& ident)
     -> ident_info;
 
-// a place: a variable, a field or an element named by a path, e.g.
-// 'w.rooms[i].items[j].x', also the receiver of a method call and every
-// literal, e.g. '3' or 'true'; the parse
+// a path of names, fields and indexes, e.g. 'w.rooms[i].items[j].x', also the
+// receiver of a method call, or a literal, e.g. '3' or 'true'; it is a place
+// ('as_place') when it reaches storage: a variable, a field or an element; the
+// parse
 // resolves the type and the bytes of the root variable that the path reaches
 // ('accessed_bytes_', the whole array after a run-time index), the compile
 // resolves the names again in the current frames and builds one memory operand
@@ -1165,61 +1166,62 @@ class stmt_identifier final : public statement {
 };
 
 // storage that a node names and that is read or passed in place, e.g. the
-// buffer 'b' of 'read(0, b)'; 'path' is a bare path of the node, 'info'
+// buffer 'b' of 'read(0, b)'; 'ident' is the bare path of the node, 'info'
 // resolves it to a variable
 struct place {
-    const stmt_identifier* path{};
+    const stmt_identifier* ident{};
     ident_info info;
 };
 
 // the identifier the path names, e.g. one element for 'ps[1]'
 [[nodiscard]] inline auto make_ident_info(const toc& tc,
-                                          const stmt_identifier& path)
+                                          const stmt_identifier& ident)
     -> ident_info {
 
     // the name refers to the declared array, 'ps[1]' accesses one element
     const ident_info declared{
-        tc.make_ident_info(path.tok(), path.dotted_path()),
+        tc.make_ident_info(ident.tok(), ident.dotted_path()),
     };
 
-    const bool is_element{path.is_array_element()};
+    const bool is_element{ident.is_array_element()};
     ident_info info{ident_builder::as_element_if(is_element, declared)};
 
-    info.set_src_loc_tk(path.last_token());
+    info.set_src_loc_tk(ident.last_token());
 
     return info;
 }
 
-inline auto assert_not_whole_array(const stmt_identifier& path,
+inline auto assert_not_whole_array(const stmt_identifier& ident,
                                    const ident_info& info) -> void {
 
     if (not info.is_array()) {
         return;
     }
 
-    throw compile_error{path.tok(), std::format("array {} must be indexed",
-                                                in_quotes(path.dotted_path()))};
+    throw compile_error{ident.tok(),
+                        std::format("array {} must be indexed",
+                                    in_quotes(ident.dotted_path()))};
 }
 
 // a whole array is not read as its first element
 [[nodiscard]] inline auto make_scalar_ident_info(const toc& tc,
-                                                 const stmt_identifier& path)
+                                                 const stmt_identifier& ident)
     -> ident_info {
 
-    ident_info info{make_ident_info(tc, path)};
-    assert_not_whole_array(path, info);
+    ident_info info{make_ident_info(tc, ident)};
+    assert_not_whole_array(ident, info);
     return info;
 }
 
 // see the declaration in 'statement.hpp'
-inline auto statement::place_path() const -> const stmt_identifier* {
-    const stmt_identifier* const path{operand_path()};
+inline auto statement::bare_path() const -> const stmt_identifier* {
+    const stmt_identifier* const ident{operand_path()};
 
-    if (path == nullptr or not path->get_unary_ops().is_empty()) {
+    if (ident == nullptr or not ident->get_unary_ops().is_empty()) {
         return nullptr;
     }
 
-    return path;
+    return ident;
 }
 
 // the storage 'st' names in place, empty for a value: a node with operators
@@ -1228,20 +1230,20 @@ inline auto statement::place_path() const -> const stmt_identifier* {
 [[nodiscard]] inline auto as_place(const toc& tc, const statement& st)
     -> std::optional<place> {
 
-    const stmt_identifier* const path{st.place_path()};
+    const stmt_identifier* const ident{st.bare_path()};
 
-    if (path == nullptr or path->names_function(tc)) {
+    if (ident == nullptr or ident->names_function(tc)) {
         return std::nullopt;
     }
 
-    ident_info info{make_ident_info(tc, *path)};
+    ident_info info{make_ident_info(tc, *ident)};
 
     if (not info.is_var()) {
         return std::nullopt;
     }
 
     return place{
-        .path{path},
+        .ident{ident},
         .info{std::move(info)},
     };
 }

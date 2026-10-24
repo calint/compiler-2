@@ -173,15 +173,15 @@ struct generic_call {
         // note: read from the copy to find where the argument ends and its
         //       type, the call parses it again
 
-        const stmt_identifier si{tc, {}, tk, tz};
+        const stmt_identifier ident{tc, {}, tk, tz};
 
         const char next{tz.peek_char_after_whitespace()};
 
-        if (si.is_method_receiver() or (next != ',' and next != ')')) {
+        if (ident.is_method_receiver() or (next != ',' and next != ')')) {
             return nullptr;
         }
 
-        return &make_ident_info(tc, si).type_ref();
+        return &make_ident_info(tc, ident).type_ref();
     }
 
     // e.g. 'f(1)' of 'func f<T type>(a, x T)' lacks the argument that would
@@ -526,7 +526,7 @@ struct call_site {
         // a name that is no place: a constant, a name bound to a register, or
         // a name with unary operators, e.g. '-x'
         struct named_value {
-            const stmt_identifier* path{};
+            const stmt_identifier* ident{};
             ident_info info;
         };
 
@@ -589,13 +589,13 @@ struct call_site {
         -> void {
 
         for (const auto [arg, param] : std::views::zip(args, func.params())) {
-            const stmt_identifier* const path{arg.place_path()};
+            const stmt_identifier* const ident{arg.bare_path()};
 
-            if (path == nullptr) {
+            if (ident == nullptr) {
                 continue;
             }
 
-            const ident_info info{make_ident_info(tc, *path)};
+            const ident_info info{make_ident_info(tc, *ident)};
 
             if (info.is_const() and not info.constant().is_typed()) {
                 continue;
@@ -730,10 +730,10 @@ struct call_site {
                                                const stmt_def_func_param& param)
         -> argument_form {
 
-        const stmt_identifier* const name{arg.operand_path()};
+        const stmt_identifier* const ident{arg.operand_path()};
 
         // e.g. 'point{1, 2}' or 'mk(1, 2)'
-        if (not param.get_type().is_builtin() and name == nullptr) {
+        if (not param.get_type().is_builtin() and ident == nullptr) {
             return {
                 .form{argument_form::instance_temporary{}},
             };
@@ -746,16 +746,16 @@ struct call_site {
         }
 
         // a computed value, or the zero value '{}', which has no name
-        if (name == nullptr) {
+        if (ident == nullptr) {
             return {
                 .form{argument_form::computed{}},
             };
         }
 
-        ident_info info{make_ident_info(tc, *name)};
+        ident_info info{make_ident_info(tc, *ident)};
 
         // e.g. '-a[i]'
-        if (name->has_computed_address(info)) {
+        if (ident->has_computed_address(info)) {
             return {
                 .form{
                     argument_form::computed{
@@ -768,7 +768,7 @@ struct call_site {
         return {
             .form{
                 argument_form::named_value{
-                    .path{name},
+                    .ident{ident},
                     .info{std::move(info)},
                 },
             },
@@ -1030,13 +1030,12 @@ class inline_call {
 
             // the body names the arguments and the result by the parameters
             for (const param_binding& e : bindings_to_add) {
-                const bound_name* const storage{
+                const bound_name* const named{
                     std::get_if<bound_name>(&e.target),
                 };
 
                 x.comment_binding(call_.tk, indent + 1, e.from, e.target_text(),
-                                  storage == nullptr ? operand{}
-                                                     : storage->lea);
+                                  named == nullptr ? operand{} : named->lea);
 
                 tc.add_binding(e);
             }
@@ -1076,7 +1075,7 @@ class inline_call {
                 continue;
             }
 
-            bound_name& storage{std::get<bound_name>(binding.target)};
+            bound_name& named{std::get<bound_name>(binding.target)};
 
             const operand address{
                 x.alloc_scratch_register(call_.tk, indent,
@@ -1088,8 +1087,8 @@ class inline_call {
             x.comment(call_.tk, indent, "address of parameter {}",
                       in_quotes(binding.from));
 
-            storage.lea = load_indexed_address(x, indent, address, storage.lea,
-                                               keeps_displacement);
+            named.lea = load_indexed_address(x, indent, address, named.lea,
+                                             keeps_displacement);
         }
 
         compile_body(tc, indent, func, bindings_to_add, address_registers);
@@ -1348,16 +1347,16 @@ class inline_call {
         };
 
         if (const place* const storage{std::get_if<place>(&argument.form)}) {
-            const stmt_identifier& name{*storage->path};
+            const stmt_identifier& ident{*storage->ident};
 
             // an indexed argument keeps its computed address
-            if (name.has_computed_address(storage->info)) {
-                return bind_reference(tc, indent, arg, name, param,
+            if (ident.has_computed_address(storage->info)) {
+                return bind_reference(tc, indent, arg, ident, param,
                                       allocated_registers);
             }
 
-            return bind_name(param, name.dotted_path(), name.path_text(),
-                             name.storage(tc));
+            return bind_name(param, ident.dotted_path(), ident.path_text(),
+                             ident.storage(tc));
         }
 
         if (const call_site::argument_form::computed* const computed{
@@ -1419,7 +1418,7 @@ class inline_call {
 
         return param_binding::make_name(param.name(), param.get_type(),
                                         {
-                                            .path{std::string{path}},
+                                            .dotted_path{std::string{path}},
                                             .text{std::string{text}},
                                             .lea{},
                                             .is_element{},
@@ -1439,7 +1438,7 @@ class inline_call {
         // must fit the parameter
         arg.assert_not_narrowed(tc, param.get_type());
 
-        const stmt_identifier& name{*value.path};
+        const stmt_identifier& ident{*value.ident};
         const ident_info& arg_info{value.info};
 
         // a name is resolved in the callee where its own constants would
@@ -1457,13 +1456,13 @@ class inline_call {
                                                 folded->value);
         }
 
-        if (name.get_unary_ops().is_empty()) {
-            return bind_name(param, name.dotted_path(), name.path_text(),
-                             name.storage(tc));
+        if (ident.get_unary_ops().is_empty()) {
+            return bind_name(param, ident.dotted_path(), ident.path_text(),
+                             ident.storage(tc));
         }
 
         const operand reg{
-            name.compile_value_operand(
+            ident.compile_value_operand(
                 tc, indent, arg.tok(), arg_info, param.get_type(),
                 tc.checks().overflow_options(), allocated_registers),
         };
@@ -1476,21 +1475,21 @@ class inline_call {
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
     [[nodiscard]] static auto
     bind_reference(toc& tc, const size_t indent, const expr_any& arg,
-                   const stmt_identifier& name,
+                   const stmt_identifier& ident,
                    const stmt_def_func_param& param,
                    std::vector<operand>& allocated_registers) -> param_binding {
 
-        const ident_info arg_info{make_ident_info(tc, name)};
+        const ident_info arg_info{make_ident_info(tc, ident)};
 
         std::vector<operand> regs_lea;
 
         const operand lea{
-            name.compile_lea(tc, indent, arg.tok(), regs_lea,
-                             {
-                                 .reg_count{},
-                                 .address_by_call{arg_info.address_by_call()},
-                                 .address_register{},
-                             }),
+            ident.compile_lea(tc, indent, arg.tok(), regs_lea,
+                              {
+                                  .reg_count{},
+                                  .address_by_call{arg_info.address_by_call()},
+                                  .address_register{},
+                              }),
         };
 
         // the address registers stay allocated until the inlined body is
@@ -1500,11 +1499,11 @@ class inline_call {
         return param_binding::make_name(
             param.name(), param.get_type(),
             {
-                .path{std::string{name.dotted_path()}},
-                .text{name.path_text()},
+                .dotted_path{std::string{ident.dotted_path()}},
+                .text{ident.path_text()},
                 .lea{lea},
-                .is_element{name.is_array_element()},
-                .bound{name.storage(tc)},
+                .is_element{ident.is_array_element()},
+                .bound{ident.storage(tc)},
             });
     }
 
@@ -1530,7 +1529,7 @@ class inline_call {
         // a destination such as 'arr[1]' is not an array
         return param_binding::make_name(ret.ident_tk.text(), *ret.type_ptr,
                                         {
-                                            .path{dst.name()},
+                                            .dotted_path{dst.name()},
                                             .text{dst.text()},
                                             .lea{std::move(dst_lea)},
                                             .is_element{not dst.is_array()},
@@ -1542,12 +1541,12 @@ class inline_call {
     [[nodiscard]] static auto is_indexed_reference(const param_binding& binding)
         -> bool {
 
-        const bound_name* const storage{
+        const bound_name* const named{
             std::get_if<bound_name>(&binding.target),
         };
 
-        return storage != nullptr and storage->lea.is_memory() and
-               not storage->lea.index_register().empty();
+        return named != nullptr and named->lea.is_memory() and
+               not named->lea.index_register().empty();
     }
 };
 
@@ -1647,11 +1646,11 @@ class noinline_call {
 
             if (not temporaries_.at(i)) {
                 // note: an argument without a temporary is a place
-                const stmt_identifier& name{*arg.place_path()};
+                const stmt_identifier& ident{*arg.bare_path()};
 
                 arguments.push_back({
-                    .info{make_ident_info(tc, name)},
-                    .target{name.storage(tc)},
+                    .info{make_ident_info(tc, ident)},
+                    .target{ident.storage(tc)},
                     .is_temporary{},
                 });
 
@@ -1849,7 +1848,7 @@ class noinline_call {
             }
 
             // note: an argument without a temporary is a place
-            addresses.push_back(arg.place_path()->get_lea_operand(
+            addresses.push_back(arg.bare_path()->get_lea_operand(
                 tc, indent, argument.info, address_registers));
         }
 
@@ -2114,7 +2113,7 @@ inline auto assert_arguments_not_written_later(
         operands.push_back({
             .node{&args.at(i)},
             .written_place{
-                written_index == i ? args.at(i).place_path() : nullptr,
+                written_index == i ? args.at(i).bare_path() : nullptr,
             },
         });
     }
@@ -2452,17 +2451,17 @@ class stmt_call : public expression {
             // note: a 'mut' argument is a variable, see
             //       'assert_argument_writable'
 
-            const stmt_identifier& name{*arg.place_path()};
+            const stmt_identifier& ident{*arg.bare_path()};
 
             const std::optional<storage_path> target{
-                name.storage(tc),
+                ident.storage(tc),
             };
 
             assert(target);
 
             visitor({
                 .call_tk{tok()},
-                .name{name.dotted_path()},
+                .name{ident.dotted_path()},
                 .storage{*target},
                 .is_write{true},
             });
@@ -2508,7 +2507,7 @@ class stmt_call : public expression {
         const expr_any& arg{args_.at(index)};
 
         // e.g. 'a + 1', '-a' or 'point{1, 2}'
-        if (arg.place_path() == nullptr) {
+        if (arg.bare_path() == nullptr) {
             throw_not_writable(index, arg,
                                std::format("{}, which is not a variable,",
                                            in_quotes(trimmed_source(arg))),
@@ -2523,7 +2522,7 @@ class stmt_call : public expression {
             throw_not_writable(
                 index, arg,
                 std::format("constant {}",
-                            in_quotes(arg.place_path()->dotted_path())),
+                            in_quotes(arg.bare_path()->dotted_path())),
                 "");
         }
 
@@ -2531,7 +2530,7 @@ class stmt_call : public expression {
             throw_not_writable(
                 index, arg,
                 std::format("read-only {}",
-                            in_quotes(written->path->dotted_path())),
+                            in_quotes(written->ident->dotted_path())),
                 read_only_hint(written->info));
         }
     }
@@ -2589,7 +2588,7 @@ class stmt_call : public expression {
             }
 
             std::optional<storage_path> target{
-                passed->path->storage(tc),
+                passed->ident->storage(tc),
             };
 
             // note: a variable has storage
@@ -2957,14 +2956,14 @@ class stmt_call : public expression {
                 continue;
             }
 
-            const stmt_identifier& name{*passed->path};
+            const stmt_identifier& ident{*passed->ident};
 
             const std::string_view root{
-                ident_info::root_of(name.dotted_path()),
+                ident_info::root_of(ident.dotted_path()),
             };
 
             if (is_recursive) {
-                tc.record_use(root, name.accessed_path(),
+                tc.record_use(root, ident.accessed_path(),
                               func.param(i).is_read_only() ? use_kind::read
                                                            : use_kind::write);
 
@@ -2974,7 +2973,7 @@ class stmt_call : public expression {
             for (const body_uses::binding_use& u : callee.bindings()) {
                 if (u.param_index == i) {
                     tc.record_use(
-                        root, name.accessed_path().extended_by(u.path),
+                        root, ident.accessed_path().extended_by(u.path),
                         u.is_written ? use_kind::write : use_kind::read);
                 }
             }
@@ -3083,8 +3082,8 @@ class stmt_call : public expression {
         }
 
         // the binding would make the parameter name the whole array
-        if (const stmt_identifier* const name{arg.operand_path()}) {
-            assert_not_whole_array(*name, make_ident_info(tc, *name));
+        if (const stmt_identifier* const ident{arg.operand_path()}) {
+            assert_not_whole_array(*ident, make_ident_info(tc, *ident));
         }
     }
 

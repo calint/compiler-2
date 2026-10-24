@@ -219,7 +219,7 @@ struct call_address {
 // constant is false
 class ident_info final {
     // a variable or the storage that an argument names
-    struct storage_part {
+    struct var_part {
         ::operand operand;
         // the deepest address an inlined call computed, empty when none did
         std::optional<call_address> address_by_call;
@@ -241,13 +241,12 @@ class ident_info final {
     std::vector<const type*> type_path_;
     // a constant: a literal, a named constant or, typed, the value of an
     // argument of an inlined call, which has the type of its parameter
-    std::variant<std::monostate, folded_value, register_part, storage_part>
-        part_;
+    std::variant<std::monostate, folded_value, register_part, var_part> part_;
 
   public:
     [[nodiscard]] auto address_by_call() const -> std::optional<call_address> {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage == nullptr ? std::nullopt : storage->address_by_call;
+        const var_part* const var{std::get_if<var_part>(&part_)};
+        return var == nullptr ? std::nullopt : var->address_by_call;
     }
 
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
@@ -273,8 +272,8 @@ class ident_info final {
     }
 
     [[nodiscard]] auto holds_address() const -> bool {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage != nullptr and storage->holds_address;
+        const var_part* const var{std::get_if<var_part>(&part_)};
+        return var != nullptr and var->holds_address;
     }
 
     // e.g. 'p.x', the name as resolved
@@ -310,7 +309,7 @@ class ident_info final {
     }
 
     [[nodiscard]] auto is_var() const -> bool {
-        return std::holds_alternative<storage_part>(part_);
+        return std::holds_alternative<var_part>(part_);
     }
 
     // the register that holds the value, or the storage operand, e.g.
@@ -323,14 +322,12 @@ class ident_info final {
             return reg->reg;
         }
 
-        return std::get<storage_part>(part_).operand;
+        return std::get<var_part>(part_).operand;
     }
 
     [[nodiscard]] auto read_only_why() const -> read_only_cause {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-
-        return storage == nullptr ? read_only_cause::none
-                                  : storage->read_only_why;
+        const var_part* const var{std::get_if<var_part>(&part_)};
+        return var == nullptr ? read_only_cause::none : var->read_only_why;
     }
 
     // variable name without the field path
@@ -342,19 +339,14 @@ class ident_info final {
 
     // not an array when the name has no storage, e.g. a constant
     [[nodiscard]] auto shape() const -> array_shape {
-        const storage_part* const storage{std::get_if<storage_part>(&part_)};
-        return storage == nullptr ? array_shape{} : storage->shape;
+        const var_part* const var{std::get_if<var_part>(&part_)};
+        return var == nullptr ? array_shape{} : var->shape;
     }
 
     // where the name is in the source, set by 'make_ident_info(tc, st)',
     // empty when resolved without a statement
     [[nodiscard]] auto src_loc_tk() const -> const token& {
         return src_loc_tk_;
-    }
-
-    // the part of storage, for the resolver that completes it
-    [[nodiscard]] auto storage() -> storage_part& {
-        return std::get<storage_part>(part_);
     }
 
     // the type of each element of 'elem_path'
@@ -396,6 +388,9 @@ class ident_info final {
 
         return shape().value_size_bytes(src_loc_tk, type_ref());
     }
+
+    // the part of a variable, for the resolver that completes it
+    [[nodiscard]] auto var() -> var_part& { return std::get<var_part>(part_); }
 
     //
     // statics
@@ -444,7 +439,7 @@ class ident_info final {
     [[nodiscard]] static auto make_var(std::string ident,
                                        std::vector<std::string> elem_path,
                                        std::vector<const type*> type_path,
-                                       storage_part storage) -> ident_info {
+                                       var_part var) -> ident_info {
 
         assert(not ident.empty());
         assert(not elem_path.empty());
@@ -454,7 +449,7 @@ class ident_info final {
         info.id_ = std::move(ident);
         info.elem_path_ = std::move(elem_path);
         info.type_path_ = std::move(type_path);
-        info.part_ = std::move(storage);
+        info.part_ = std::move(var);
 
         return info;
     }

@@ -777,10 +777,10 @@ class expr_bool_op final : public expression {
         const std::string_view type_name{side.get_type().name()};
 
         // e.g. the '-' of '-p == p' applies to a number
-        const stmt_identifier* const path{side.operand_path()};
+        const stmt_identifier* const ident{side.operand_path()};
 
         const bool has_unary_ops{
-            path != nullptr and not path->get_unary_ops().is_empty(),
+            ident != nullptr and not ident->get_unary_ops().is_empty(),
         };
 
         if (is_equality and not has_unary_ops) {
@@ -1018,15 +1018,15 @@ class expr_bool_op final : public expression {
         const expr_arith& expr{*side.node};
 
         // a computed value, or the zero value '{}', which has no name
-        const stmt_identifier* const path{expr.operand_path()};
+        const stmt_identifier* const ident{expr.operand_path()};
 
         // the comparison needs its left operand in a register, 'compile'
         // folds a constant list into one copy
-        if (path == nullptr and is_lhs) {
+        if (ident == nullptr and is_lhs) {
             return compile_to_scratch(tc, indent, expr, allocated_registers);
         }
 
-        if (path == nullptr) {
+        if (ident == nullptr) {
             const std::optional<folded_value>& folded{side.folded};
 
             if (not folded) {
@@ -1047,7 +1047,7 @@ class expr_bool_op final : public expression {
             return operand::imm(folded->value, tc.builtins().default_type());
         }
 
-        const ident_info expr_info{make_scalar_ident_info(tc, *path)};
+        const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
 
         // a typed constant left side is a value of its type in a register
         if (is_lhs and side.is_typed_constant()) {
@@ -1081,7 +1081,7 @@ class expr_bool_op final : public expression {
         }
 
         // e.g. 'a', '-a[i]'
-        return path->compile_value_operand(
+        return ident->compile_value_operand(
             tc, indent, expr.tok(), expr_info, expr_info.type_ref(),
             tc.checks().overflow_options(), allocated_registers);
     }

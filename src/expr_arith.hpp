@@ -525,11 +525,11 @@ class expr_arith final : public expression {
 
     // the identifier of an arithmetic that is only one
     [[nodiscard]] auto identifier() const -> const stmt_identifier& {
-        const stmt_identifier* const path{operand_path()};
+        const stmt_identifier* const ident{operand_path()};
 
-        assert(path != nullptr);
+        assert(ident != nullptr);
 
-        return *path;
+        return *ident;
     }
 
     // one element without a unary op of its own, which parentheses would not
@@ -1007,8 +1007,8 @@ class expr_arith final : public expression {
 
         const statement& first_expr{*exprs_.front()};
 
-        if (const stmt_identifier* const path{first_expr.operand_path()}) {
-            std::ignore = make_ident_info(tc, *path);
+        if (const stmt_identifier* const ident{first_expr.operand_path()}) {
+            std::ignore = make_ident_info(tc, *ident);
         }
 
         return first_expr.get_type();
@@ -1094,12 +1094,12 @@ class expr_arith final : public expression {
         if (not tc.checks_overflow(dst) and is_negated_operand(tc, src)) {
             x.comment(src.tok(), indent, "src: negated operand");
 
-            const stmt_identifier& name{*src.operand_path()};
-            const ident_info src_info{make_scalar_ident_info(tc, name)};
+            const stmt_identifier& ident{*src.operand_path()};
+            const ident_info src_info{make_scalar_ident_info(tc, ident)};
             std::vector<operand> lea_registers;
 
             const operand src_operand{
-                name.get_lea_operand(tc, indent, src_info, lea_registers),
+                ident.get_lea_operand(tc, indent, src_info, lea_registers),
             };
 
             x.add_subtract(
@@ -1224,10 +1224,10 @@ class expr_arith final : public expression {
     // stored 'bool' is 0 or 1, arithmetic would make other values, so it is
     // converted
     static auto assert_number(const toc& tc, const statement& term) -> void {
-        const stmt_identifier* const path{term.operand_path()};
+        const stmt_identifier* const ident{term.operand_path()};
 
         const type& operand_type{
-            path ? make_ident_info(tc, *path).type_ref() : term.get_type(),
+            ident ? make_ident_info(tc, *ident).type_ref() : term.get_type(),
         };
 
         if (not operand_type.is_builtin()) {
@@ -1242,10 +1242,10 @@ class expr_arith final : public expression {
 
         // the conversion goes inside the unary operators, e.g. '-int(t)'; an
         // indexed name is not the whole operand, e.g. 'bs' of 'bs[1]'
-        const bool is_named{path and not path->is_indexed()};
+        const bool is_named{ident and not ident->is_indexed()};
 
         const std::string_view converted{
-            is_named ? path->dotted_path() : "...",
+            is_named ? ident->dotted_path() : "...",
         };
 
         // note: the list may be narrower than 'int', e.g. 'y + b' of an 'i8'
@@ -1347,7 +1347,7 @@ class expr_arith final : public expression {
 
         // a constant or a plain name or literal
         const bool reads_before_writing{
-            first.value or first.element->place_path() != nullptr,
+            first.value or first.element->bare_path() != nullptr,
         };
 
         if (not reads_before_writing and
@@ -1406,9 +1406,9 @@ class expr_arith final : public expression {
         // note: a value that is not computed is a name or a literal, '{}' is a
         //       whole value and folds before
 
-        const stmt_identifier& name{*src.operand_path()};
+        const stmt_identifier& ident{*src.operand_path()};
 
-        const ident_info src_info{make_scalar_ident_info(tc, name)};
+        const ident_info src_info{make_scalar_ident_info(tc, ident)};
 
         if (src_info.is_const()) {
             const std::optional<folded_value> folded{
@@ -1427,7 +1427,7 @@ class expr_arith final : public expression {
         }
 
         // a register that holds the result of unary ops may be overwritten
-        const bool has_unary_ops{not name.get_unary_ops().is_empty()};
+        const bool has_unary_ops{not ident.get_unary_ops().is_empty()};
 
         x.comment(src.tok(), indent,
                   has_unary_ops ? "src: operand with unary ops"
@@ -1436,9 +1436,9 @@ class expr_arith final : public expression {
         std::vector<operand> registers;
 
         const operand src_operand{
-            name.compile_value_operand(tc, indent, src.tok(), src_info,
-                                       operand_type, tc.overflow_options(dst),
-                                       registers),
+            ident.compile_value_operand(tc, indent, src.tok(), src_info,
+                                        operand_type, tc.overflow_options(dst),
+                                        registers),
         };
 
         emit(src_operand, has_unary_ops ? machine::factor_use::may_overwrite
@@ -1541,8 +1541,8 @@ class expr_arith final : public expression {
     [[nodiscard]] static auto is_stored_value(const toc& tc,
                                               const statement& src) -> bool {
 
-        const stmt_identifier* const path{src.operand_path()};
-        return path and not make_ident_info(tc, *path).is_const();
+        const stmt_identifier* const ident{src.operand_path()};
+        return ident and not make_ident_info(tc, *ident).is_const();
     }
 
     // pass 3: a subtracted or negated first element needs a negation so the

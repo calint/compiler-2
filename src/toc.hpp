@@ -182,7 +182,7 @@ struct bound_register {
 // names the destination
 struct bound_name {
     // e.g. 'world.rooms', resolved in the frames of the caller
-    std::string path;
+    std::string dotted_path;
     // as written, for the comments, e.g. 'copy[2]' where 'path' is 'copy'
     std::string text;
     // the address computed at the call, empty when the path finds it, e.g.
@@ -210,15 +210,15 @@ struct param_binding {
     [[nodiscard]] auto bound_storage_of(const access_path& path) const
         -> std::optional<storage_path> {
 
-        const bound_name* const storage{
+        const bound_name* const named{
             std::get_if<bound_name>(&target),
         };
 
-        if (storage == nullptr or not storage->bound) {
+        if (named == nullptr or not named->bound) {
             return std::nullopt;
         }
 
-        const storage_path& bound{*storage->bound};
+        const storage_path& bound{*named->bound};
 
         return storage_path{
             .root{bound.root},
@@ -273,12 +273,12 @@ struct param_binding {
 
     [[nodiscard]] static auto make_name(const std::string_view name,
                                         const type& param_type,
-                                        bound_name storage) -> param_binding {
+                                        bound_name named) -> param_binding {
 
         return {
             .from{std::string{name}},
             .type_ptr{&param_type},
-            .target{std::move(storage)},
+            .target{std::move(named)},
         };
     }
 
@@ -742,7 +742,7 @@ class ident_builder final {
             return info;
         }
 
-        info.storage().shape = {};
+        info.var().shape = {};
 
         return info;
     }
@@ -837,7 +837,7 @@ class ident_builder final {
                                        ident_info& info) -> void {
 
         const std::optional<call_address>& by_call{
-            info.storage().address_by_call,
+            info.var().address_by_call,
         };
 
         if (not by_call) {
@@ -877,7 +877,7 @@ class ident_builder final {
                                                          elem_path_from_lea),
         };
 
-        ::operand& element{info.storage().operand};
+        ::operand& element{info.var().operand};
         element = operand::mem(lea, info.type_ref());
 
         if (offset != 0) {
@@ -893,7 +893,7 @@ class ident_builder final {
                                                    const ident_path& id)
         -> ident_path {
 
-        ident_path target{binding.path};
+        ident_path target{binding.dotted_path};
 
         for (const std::string& s : id.path() | std::views::drop(1)) {
             target.append(s);
@@ -2346,7 +2346,7 @@ class ident_resolver final {
                 machine_.get().variables_base_register()),
         };
 
-        info.storage().address_by_call = by_call;
+        info.var().address_by_call = by_call;
 
         if (not info.type_ref().is_builtin()) {
             return info;
@@ -2392,16 +2392,16 @@ class ident_resolver final {
             return ident_info::make_register(ident, reg->reg);
         }
 
-        const bound_name& storage{std::get<bound_name>(binding.target)};
+        const bound_name& named{std::get<bound_name>(binding.target)};
 
         // a field path such as 'p.x' gets its array-ness from the field
-        if (storage.is_element and is_single) {
+        if (named.is_element and is_single) {
             step.is_element = true;
         }
 
-        if (not step.address_by_call and not storage.lea.is_empty()) {
+        if (not step.address_by_call and not named.lea.is_empty()) {
             step.address_by_call = call_address{
-                .address{storage.lea},
+                .address{named.lea},
                 .trailing_count{step.id.path().size() - 1},
             };
 
@@ -2409,7 +2409,7 @@ class ident_resolver final {
             //       path
         }
 
-        step.id = ident_builder::replace_binding_base(storage, step.id);
+        step.id = ident_builder::replace_binding_base(named, step.id);
 
         return std::nullopt;
     }
@@ -3446,6 +3446,10 @@ class toc final {
         return scopes_.current_func_frame().is_path_open();
     }
 
+    [[nodiscard]] auto layout() const -> const storage_layout& {
+        return storage_;
+    }
+
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
     [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
@@ -3536,10 +3540,6 @@ class toc final {
         -> std::string_view {
 
         return locations_.source_of(src_loc_tk);
-    }
-
-    [[nodiscard]] auto storage() const -> const storage_layout& {
-        return storage_;
     }
 
     // what 'name' names with 'path' inside it, as a root variable and the

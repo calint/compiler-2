@@ -828,7 +828,7 @@ class stmt_def_func final : public statement {
         compile_statements(tc, indent);
         x.return_function(indent + 1);
 
-        return tc.storage().peak_frame_size_bytes();
+        return tc.layout().peak_frame_size_bytes();
     }
 
     // the body in a frame of its own at the frame base, which the caller

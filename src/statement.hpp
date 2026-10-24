@@ -249,7 +249,7 @@ class stmt_identifier;
 //                  so 'expr_bool' needs not include the built-in
 //   a place        'operand_path': 'stmt_identifier', forwarded by
 //                  'expr_arith', 'expr_any' and 'expr_type' when they hold
-//                  one; 'place_path' and 'as_place' derive from it, the
+//                  one; 'bare_path' and 'as_place' derive from it, the
 //                  path is then asked through the members of
 //                  'stmt_identifier'
 class statement {
@@ -395,6 +395,13 @@ class statement {
             });
     }
 
+    // the path of names, fields and indexes this node is, the operand path
+    // without unary ops, e.g. 'p.x' or 'a[i]', not '-x'; a constant or a
+    // literal is a path too, 'as_place' tells storage
+    // note: defined in 'stmt_identifier.hpp', where 'stmt_identifier' is
+    //       complete
+    [[nodiscard]] auto bare_path() const -> const stmt_identifier*;
+
     // the compile of a value that must fit 'dst', checked like 'fold_checked'
     auto compile_checked(toc& tc, const size_t indent,
                          const destination& dst) const -> void {
@@ -428,13 +435,6 @@ class statement {
     [[nodiscard]] auto get_unary_ops() const -> const unary_ops& {
         return uops_;
     }
-
-    // the path of names, fields and indexes this node is, the operand path
-    // without unary ops, e.g. 'p.x' or 'a[i]', not '-x'; a constant or a
-    // literal is a path too, 'as_place' tells storage
-    // note: defined in 'stmt_identifier.hpp', where 'stmt_identifier' is
-    //       complete
-    [[nodiscard]] auto place_path() const -> const stmt_identifier*;
 
     [[nodiscard]] auto reads_var(const std::string_view var) const -> bool {
         bool is_read{};

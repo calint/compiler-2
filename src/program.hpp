@@ -332,7 +332,7 @@ class program final {
             dat.def->compile_data(tc_);
         }
 
-        x.reserve_variables(alignment, tc_.storage().vars_capacity_bytes());
+        x.reserve_variables(alignment, tc_.layout().vars_capacity_bytes());
     }
 
     // the index of the file in 'files_'

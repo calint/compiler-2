@@ -40,9 +40,9 @@ class stmt_assign_var final : public statement {
     };
 
   public:
-    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier si,
+    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier ident,
                     const token equals_tk)
-        : statement{si.tok()}, stmt_ident_{std::move(si)},
+        : statement{ident.tok()}, stmt_ident_{std::move(ident)},
           equals_tk_{equals_tk} {
 
         const ident_info dst_info{make_ident_info(tc, stmt_ident_)};
@@ -60,9 +60,9 @@ class stmt_assign_var final : public statement {
     // the initializer of a declaration, parsed before the variable was
     // declared; a new variable is writable, so the read-only check of an
     // assignment does not apply
-    stmt_assign_var(const toc& tc, stmt_identifier si, const token equals_tk,
+    stmt_assign_var(const toc& tc, stmt_identifier ident, const token equals_tk,
                     expr_any value)
-        : statement{si.tok()}, stmt_ident_{std::move(si)},
+        : statement{ident.tok()}, stmt_ident_{std::move(ident)},
           expr_{std::move(value)}, equals_tk_{equals_tk} {
 
         set_type(make_ident_info(tc, stmt_ident_).type_ref());
@@ -158,7 +158,7 @@ class stmt_assign_var final : public statement {
             return;
         }
 
-        const ident_info src_info{make_ident_info(tc, *expr_.place_path())};
+        const ident_info src_info{make_ident_info(tc, *expr_.bare_path())};
 
         const std::optional<size_t> src_len{src_info.array_len()};
         const std::optional<size_t> dst_len{dst_info.array_len()};

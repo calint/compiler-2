@@ -126,6 +126,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             the 'stmt_identifier' header says "a path"; 'bound_name::path'
             -> 'dotted_path'; 'toc::storage()' -> 'layout()';
             'ident_info::storage_part' -> 'var_part'
+       => D.1 done (2026-10-24): every 'stmt_identifier' local, parameter
+          and field named 'path', 'name', 'source' or 'si' is 'ident' (45
+          declarations, renamed by their libclang references, incl.
+          'place::ident' and 'named_value::ident'); 'place_path' ->
+          'bare_path'; the 'stmt_identifier' header: a path or a literal,
+          a place when it reaches storage; 'bound_name::dotted_path', its
+          locals 'named'; 'toc::layout()'; 'ident_info::var_part' with
+          'var()'; listings equal
        D.2. "reached" for paths only, a function is "compiled" (S10:
             'mark_func_reached', 'check_unreached_functions')
        D.3. 'address_scope' -> 'operation_scope' (B6)

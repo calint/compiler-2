@@ -319,24 +319,24 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     }
 
     // e.g. 'x', 'p.x', 'a[i]' or the literal '0x80'
-    stmt_identifier si{tc, {}, tk, tz};
+    stmt_identifier ident{tc, {}, tk, tz};
 
     // e.g. '-lst.size()' negates the result, not the receiver
-    if (si.is_method_receiver()) {
+    if (ident.is_method_receiver()) {
         return {
             .call{
-                std::make_unique<stmt_call>(tc, std::move(uops), std::move(si),
-                                            tz, expected_type),
+                std::make_unique<stmt_call>(
+                    tc, std::move(uops), std::move(ident), tz, expected_type),
             },
             .identifier{},
         };
     }
 
-    si.set_unary_ops(std::move(uops));
+    ident.set_unary_ops(std::move(uops));
 
     return {
         .call{},
-        .identifier{std::make_unique<stmt_identifier>(std::move(si))},
+        .identifier{std::make_unique<stmt_identifier>(std::move(ident))},
     };
 }
 
