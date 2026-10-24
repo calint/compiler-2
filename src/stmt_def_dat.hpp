@@ -250,7 +250,7 @@ class stmt_def_dat final : public statement {
     static auto compile_data_string(machine& x, const type& tp, const elem& el)
         -> void {
 
-        x.emit_string_data(el.src_loc_tk.string_text());
+        x.emit_string_data(el.src_loc_tk.string_bytes());
         const size_t size_bytes{el.src_loc_tk.string_size_bytes()};
 
         // the bytes after the text are zero, as in a 'var'

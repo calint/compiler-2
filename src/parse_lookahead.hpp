@@ -135,9 +135,7 @@ struct term {
 
     const std::string_view text{tk.text()};
 
-    if (tk.is_number() or constant_parser::is_character_literal(text) or
-        text == reserved_names::true_value or
-        text == reserved_names::false_value) {
+    if (constant_parser::is_literal(tk)) {
 
         return {
             .kind{term_kind::literal},

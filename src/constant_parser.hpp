@@ -13,12 +13,26 @@
 #include "compile_error.hpp"
 #include "token.hpp"
 
-// the value of a number or character literal as the tokenizer keeps its text
+// the literals and their values as the tokenizer keeps their text: a number,
+// a character, 'true' and 'false'
 class constant_parser final {
   public:
+    // the value of a literal, 'is_bool' for 'true' and 'false'
+    struct literal {
+        int64_t value{};
+        bool is_bool{};
+    };
+
     //
     // statics
     //
+
+    [[nodiscard]] static auto is_bool_literal(const std::string_view str)
+        -> bool {
+
+        return str == reserved_names::true_value or
+               str == reserved_names::false_value;
+    }
 
     // the tokenizer keeps the quotes in the text of a character literal
     [[nodiscard]] static auto is_character_literal(const std::string_view str)
@@ -26,6 +40,36 @@ class constant_parser final {
 
         return str.size() >= 2 and str.starts_with('\'') and
                str.ends_with('\'');
+    }
+
+    // e.g. '12', ''a'' or 'true'; a number may still be malformed, e.g. '12x'
+    [[nodiscard]] static auto is_literal(const token& tk) -> bool {
+        return tk.is_number() or is_character_literal(tk.text()) or
+               (not tk.is_string() and is_bool_literal(tk.text()));
+    }
+
+    // e.g. '0x10', ''a'' or 'true', empty for a text that is no literal
+    [[nodiscard]] static auto literal_value(const token& src_loc_tk,
+                                            const std::string_view str)
+        -> std::optional<literal> {
+
+        if (is_bool_literal(str)) {
+            return literal{
+                .value{str == reserved_names::true_value ? 1 : 0},
+                .is_bool{true},
+            };
+        }
+
+        const std::optional<int64_t> value{parse_constant(src_loc_tk, str)};
+
+        if (not value) {
+            return std::nullopt;
+        }
+
+        return literal{
+            .value{*value},
+            .is_bool{},
+        };
     }
 
     // the value is the byte, e.g. 'a' is 97 and '\xff' is 255

@@ -49,7 +49,7 @@
 //   'scope_stack'   the frames from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
 //   'storage_layout' where variables are placed and how much storage is used
-//   'builtin_types' the types the front end needs by role
+//   'builtin_roles' the types the front end needs by role
 //   'ident_resolver' resolves a name by walking the frames, following bindings
 //   'definition_checks' the errors of a name defined twice
 //   'variable_comments' the comment of where a variable is stored
@@ -1218,6 +1218,8 @@ struct placed_dat {
 class data_table final {
     std::vector<placed_dat> dats_;
     std::vector<machine::string_constant> constants_;
+    // the text each constant was added with, see 'add_constant'
+    std::vector<std::string> constant_keys_;
     size_t total_size_bytes_{};
     // the alignment of the data section of the machine and of the variables
     // after the dats
@@ -1227,19 +1229,22 @@ class data_table final {
     explicit data_table(const size_t data_alignment)
         : data_alignment_{data_alignment} {}
 
-    // identical text shares the label of the first constant added
-    [[nodiscard]] auto add_constant(std::string label, std::string text)
-        -> std::string {
+    // the same 'key' shares the label of the first constant added, e.g. a
+    // string as written, so '"A"' and '"\x41"' are two constants
+    [[nodiscard]] auto add_constant(std::string label, std::string key,
+                                    std::string bytes) -> std::string {
 
-        for (const machine::string_constant& constant : constants_) {
-            if (constant.text == text) {
-                return constant.label;
+        for (size_t i{}; i < constant_keys_.size(); ++i) {
+            if (constant_keys_.at(i) == key) {
+                return constants_.at(i).label;
             }
         }
 
+        constant_keys_.push_back(std::move(key));
+
         constants_.push_back({
             .label{std::move(label)},
-            .text{std::move(text)},
+            .bytes{std::move(bytes)},
         });
 
         return constants_.back().label;
@@ -1300,6 +1305,7 @@ class data_table final {
     // drops the constants added after the first 'count'
     auto resize_constants(const size_t count) -> void {
         constants_.resize(count);
+        constant_keys_.resize(count);
     }
 
     [[nodiscard]] auto total_size_bytes() const -> size_t {
@@ -2090,12 +2096,12 @@ class storage_layout final {
 
 // the types the front end needs by role: the builtin ones and the ones the
 // machine decides
-class builtin_types final {
+class builtin_roles final {
     std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<const builtin_type_set> types_;
 
   public:
-    explicit builtin_types(const ::machine& backend)
+    explicit builtin_roles(const ::machine& backend)
         : machine_{backend}, types_{backend.builtin_types()} {}
 
     [[nodiscard]] auto address() const -> const type& {
@@ -2116,16 +2122,6 @@ class builtin_types final {
 
     [[nodiscard]] auto i8() const -> const type& { return types_.get().i8; }
 
-    // the names of the builtin integer types
-    [[nodiscard]] auto is_integer_name(const std::string_view name) const
-        -> bool {
-
-        const builtin_type_set& types{types_.get()};
-
-        return name == types.i8.name() or name == types.i16.name() or
-               name == types.i32.name() or name == types.i64.name();
-    }
-
     [[nodiscard]] auto void_type() const -> const type& {
         return types_.get().void_type;
     }
@@ -2139,7 +2135,7 @@ class ident_resolver final {
     std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<const function_table> funcs_;
     std::reference_wrapper<const generic_registry> generics_;
-    std::reference_wrapper<const builtin_types> builtins_;
+    std::reference_wrapper<const builtin_roles> builtins_;
 
     // where the walk through the frames has got to
     struct walk {
@@ -2161,7 +2157,7 @@ class ident_resolver final {
     ident_resolver(const scope_stack& scopes, const ::machine& backend,
                    const function_table& funcs,
                    const generic_registry& generics,
-                   const builtin_types& builtins)
+                   const builtin_roles& builtins)
         : scopes_{scopes}, machine_{backend}, funcs_{funcs},
           generics_{generics}, builtins_{builtins} {}
 
@@ -2221,37 +2217,30 @@ class ident_resolver final {
                                                 const ident_path& id) const
         -> ident_info {
 
-        // e.g. '0x10'
-        if (const std::optional<int64_t> value{
-                constant_parser::parse_constant(src_loc_tk, id.str()),
+        // e.g. '0x10' or 'true'
+        if (const std::optional<constant_parser::literal> literal{
+                constant_parser::literal_value(src_loc_tk, id.str()),
+            }) {
+
+            const type& literal_type{
+                literal->is_bool ? builtins_.get().boolean()
+                                 : builtins_.get().default_type(),
             };
-            value) {
 
-            return ident_info::make_const(ident, builtins_.get().default_type(),
-                                          folded_value::untyped(*value));
+            return ident_info::make_const(
+                ident, literal_type, folded_value::untyped(literal->value));
         }
-
-        const bool is_bool_literal{
-            id.base() == reserved_names::true_value or
-                id.base() == reserved_names::false_value,
-        };
 
         // e.g. '1.x' or 'true.x'; note: a character literal may hold a '.',
         //       it was parsed whole above
         if (id.path().size() > 1 and
-            (is_bool_literal or starts_number(id.base()))) {
+            (constant_parser::is_bool_literal(id.base()) or
+             starts_number(id.base()))) {
 
             throw compile_error{
                 src_loc_tk,
                 std::format("{} is a constant, it has no field {}",
                             in_quotes(id.base()), in_quotes(id.path().at(1)))};
-        }
-
-        if (is_bool_literal) {
-            return ident_info::make_const(
-                ident, builtins_.get().boolean(),
-                folded_value::untyped(
-                    id.base() == reserved_names::true_value ? 1 : 0));
         }
 
         return ident_info::make_empty();
@@ -2791,7 +2780,7 @@ class toc final {
     generic_registry generics_;
     type_table types_;
     definition_checks definitions_;
-    builtin_types builtins_;
+    builtin_roles builtins_;
     ident_resolver resolver_;
     variable_comments var_comments_;
     storage_layout storage_;
@@ -2902,7 +2891,17 @@ class toc final {
           resolver_{scopes_, backend, funcs_, generics_, builtins_},
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
-          checks_{checks} {}
+          checks_{checks} {
+
+        // the built-in types are looked up by name like the defined ones
+        for (const type* const tp : backend.builtin_types().all()) {
+            types_.add_builtin(tp->name(), *tp);
+        }
+
+        // the default type has a name of its own so that it is portable
+        types_.add_builtin(reserved_names::default_type_name,
+                           builtins_.default_type());
+    }
 
     // the most levels of blocks and expressions inside each other, the parsers
     // recurse for each of them so the limit keeps the source from exhausting
@@ -2913,20 +2912,14 @@ class toc final {
         scopes_.back().add_binding(binding);
     }
 
-    // e.g. 'i8', or 'int' for the default type, before any definition
-    auto add_builtin_type(const std::string_view name, const type& tpe)
-        -> void {
-
-        types_.add_builtin(name, tpe);
-    }
-
     // e.g. the packed elements of a constant '{...}' initializer
     [[nodiscard]] auto add_bytes_constant(const token& src_loc_tk,
                                           const std::string_view bytes)
         -> std::string {
 
         return add_read_only_constant("init", src_loc_tk,
-                                      token::encode_string(bytes));
+                                      token::encode_string(bytes),
+                                      std::string{bytes});
     }
 
     auto add_const(const token& src_loc_tk, const size_t indent,
@@ -3045,7 +3038,8 @@ class toc final {
         -> std::string {
 
         return add_read_only_constant("str", string_tk,
-                                      string_tk.string_text());
+                                      std::string{string_tk.string_text()},
+                                      string_tk.string_bytes());
     }
 
     auto add_type(const token& src_loc_tk, const type& tpe) -> void {
@@ -3200,7 +3194,7 @@ class toc final {
 
         const type& tp{types_.get(tk.text())};
 
-        if (not tp.is_bool() and not builtins_.is_integer_name(tp.name())) {
+        if (not tp.is_bool() and not tp.is_integer()) {
             return nullptr;
         }
 
@@ -3209,7 +3203,7 @@ class toc final {
 
     // the tables are read through these const accessors, a change goes
     // through a method of 'toc', which may combine tables (README 7.6)
-    [[nodiscard]] auto builtins() const -> const builtin_types& {
+    [[nodiscard]] auto builtins() const -> const builtin_roles& {
         return builtins_;
     }
 
@@ -3655,13 +3649,15 @@ class toc final {
     }
 
   private:
-    [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
-                                              const token& src_loc_tk,
-                                              std::string text) -> std::string {
+    // 'key' tells which constants share a label, see
+    // 'data_table::add_constant'
+    [[nodiscard]] auto
+    add_read_only_constant(const std::string_view kind, const token& src_loc_tk,
+                           std::string key, std::string bytes) -> std::string {
 
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
         return data_.add_constant(create_unique_label(src_loc_tk, kind),
-                                  std::move(text));
+                                  std::move(key), std::move(bytes));
     }
 
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,

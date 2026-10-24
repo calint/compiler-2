@@ -311,7 +311,7 @@ struct generic_call {
         }
 
         // e.g. 'read(0, buf)', the value of a built-in
-        if (const type* const builtin_type{builtin_value_type(tc, tk, tz)};
+        if (const type* const builtin_type{builtin_value_type(tc, tk, tm)};
             builtin_type != nullptr) {
 
             if (tz.is_next_char_token('(').is_empty()) {

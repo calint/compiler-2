@@ -1,4 +1,4 @@
 
 1172.baz:8:9: expected type 'point', got 'bool'
-    p = arrays_equal(a, a)
+    p = arrays_equal(a, a, 2)
         ^~~~~~~~~~~~

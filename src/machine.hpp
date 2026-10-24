@@ -182,10 +182,10 @@ class machine {
         }
     };
 
-    // read-only bytes at 'label', 'text' keeps its escapes such as '\n'
+    // read-only bytes at 'label'
     struct string_constant {
         std::string label;
-        std::string text;
+        std::string bytes;
     };
 
     struct target_call_registers {
@@ -671,7 +671,8 @@ class machine {
     emit_string_constants(const std::span<const string_constant> strings)
         -> void = 0;
 
-    virtual auto emit_string_data(const std::string_view value) -> void = 0;
+    // the backend writes the bytes in the escapes of its assembler
+    virtual auto emit_string_data(const std::string_view bytes) -> void = 0;
 
     virtual auto emit_zero_data(const size_t size_bytes) -> void = 0;
 

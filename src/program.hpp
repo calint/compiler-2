@@ -250,22 +250,6 @@ class program final {
             const check_options& checks)
         : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
 
-        const builtin_type_set& builtins{backend.builtin_types()};
-
-        // the built-in types are looked up by name like the defined ones
-        const std::array<const type*, 6> builtin_types{
-            &builtins.i64, &builtins.i32,     &builtins.i16,
-            &builtins.i8,  &builtins.boolean, &builtins.void_type,
-        };
-
-        for (const type* const tpe : builtin_types) {
-            tc_.add_builtin_type(tpe->name(), *tpe);
-        }
-
-        // the default type has a name of its own so that it is portable
-        tc_.add_builtin_type(reserved_names::default_type_name,
-                             tc_.builtins().default_type());
-
         {
             const toc::frame_scope root{tc_, frame::block()};
 
@@ -447,7 +431,7 @@ class program final {
         }
 
         // escapes are decoded like in any other string, e.g. '\x20'
-        const std::string name{token::decode_string(path_tk.string_text())};
+        const std::string name{path_tk.string_bytes()};
 
         // e.g. a NUL would end the path early and a line end split the
         // messages that name the file

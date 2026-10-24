@@ -67,17 +67,14 @@ inline auto assert_builtin_without_type_args(const token& tk,
                         in_quotes(tk.text()))};
 }
 
-// the type of the value of the built-in at 'tk', e.g. 'i8' of 'i8(1)', none
-// when 'tk' names no built-in with a value; 'create_statement_in_expr_arith'
-// makes a statement for each
+// the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
+// of 'i8(1)', none when 'tk' names no built-in with a value;
+// 'parse_builtin_value' makes a statement for each
 [[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
-                                             const tokenizer& tz)
-    -> const type* {
-
-    const term tm{classify_term(tc, tk, tz)};
+                                             const term& tm) -> const type* {
 
     if (tm.is(term_kind::conversion)) {
-        if (not tc.builtins().is_integer_name(tm.named_type->name())) {
+        if (not tm.named_type->is_integer()) {
             return nullptr;
         }
 
@@ -174,7 +171,7 @@ inline auto create_statement_in_stmt_block(toc& tc, tokenizer& tz,
     }
 
     // e.g. 'arrays_equal(a, b, 4)' alone, its value is all it does
-    if (builtin_value_type(tc, tk, tz) != nullptr) {
+    if (builtin_value_type(tc, tk, classify_term(tc, tk, tz)) != nullptr) {
         throw compile_error{tk, "return value is discarded"};
     }
 
@@ -216,16 +213,53 @@ struct call_or_identifier {
     std::unique_ptr<stmt_identifier> identifier;
 };
 
-// parses what follows the token 'tk' as a call of a function, a generic
-// function, a constructor or a method, otherwise as an identifier, 'uops' go to
-// the call or the identifier and 'expected_type' is the type the call is
-// assigned to or null
+// a built-in with a value at 'tk', classified as 'tm', e.g. 'i8(x)',
+// 'array_length(a)' or 'read(0, b, n)', null when 'tk' names none; a built-in
+// without a value is rejected; 'uops' are taken only by a statement made
+inline auto parse_builtin_value(toc& tc, tokenizer& tz, const token& tk,
+                                const term& tm, unary_ops& uops)
+    -> std::unique_ptr<statement> {
+
+    assert_builtin_without_type_args(tk, tz);
+
+    const stmt_builtin_io::io_function* const io{
+        stmt_builtin_io::find(tk.text()),
+    };
+
+    if (io != nullptr and io->has_result()) {
+        return std::make_unique<stmt_builtin_io>(tc, *io, std::move(uops), tk,
+                                                 tz);
+    }
+
+    assert_builtin_has_value(tk, tz);
+
+    if (tk.is_text("array_length")) {
+        return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
+                                                           tk, tz);
+    }
+
+    if (tk.is_text("arrays_equal")) {
+        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
+                                                           tk, tz);
+    }
+
+    if (builtin_value_type(tc, tk, tm) != nullptr) {
+        return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
+                                                      tz);
+    }
+
+    return nullptr;
+}
+
+// parses what follows the token 'tk', classified as 'tm', as a call of a
+// function, a generic function, a constructor or a method, otherwise as an
+// identifier, 'uops' go to the call or the identifier and 'expected_type' is
+// the type the call is assigned to or null
 inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
-                                     unary_ops uops,
+                                     const term& tm, unary_ops uops,
                                      const type* const expected_type)
     -> call_or_identifier {
 
-    const term tm{classify_term(tc, tk, tz)};
     const char next{tz.peek_char_after_whitespace()};
 
     // e.g. 'point{1, 2}' after 'var point = 1', the value hides the type
@@ -318,7 +352,8 @@ inline auto create_statement_of_identifier(toc& tc, tokenizer& tz,
     // no destination: no type argument is deduced, and a discarded result is
     // rejected at compile time like any other call
     call_or_identifier parsed{
-        parse_call_or_identifier(tc, tz, tk, unary_ops{}, nullptr),
+        parse_call_or_identifier(tc, tz, tk, classify_term(tc, tk, tz),
+                                 unary_ops{}, nullptr),
     };
 
     if (parsed.call) {
@@ -389,36 +424,16 @@ inline auto create_statement_in_expr_arith(toc& tc, tokenizer& tz,
             tk, std::format("{} is a type, not a value", in_quotes(tk.text()))};
     }
 
-    assert_builtin_without_type_args(tk, tz);
+    if (std::unique_ptr<statement> builtin{
+            parse_builtin_value(tc, tz, tk, tm, uops),
+        }) {
 
-    const stmt_builtin_io::io_function* const io{
-        stmt_builtin_io::find(tk.text()),
-    };
-
-    if (io != nullptr and io->has_result()) {
-        return std::make_unique<stmt_builtin_io>(tc, *io, std::move(uops), tk,
-                                                 tz);
-    }
-
-    assert_builtin_has_value(tk, tz);
-
-    if (tk.is_text("array_length")) {
-        return std::make_unique<stmt_builtin_array_length>(tc, std::move(uops),
-                                                           tk, tz);
-    }
-
-    if (tk.is_text("arrays_equal")) {
-        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
-                                                           tk, tz);
-    }
-
-    if (builtin_value_type(tc, tk, tz) != nullptr) {
-        return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
-                                                      tz);
+        return builtin;
     }
 
     call_or_identifier parsed{
-        parse_call_or_identifier(tc, tz, tk, std::move(uops), destination_type),
+        parse_call_or_identifier(tc, tz, tk, tm, std::move(uops),
+                                 destination_type),
     };
 
     if (parsed.call) {

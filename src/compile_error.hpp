@@ -53,6 +53,23 @@ class compile_error final : public std::exception {
         size_t end_index{};
         std::string text;
         std::string reason;
+
+        //
+        // statics
+        //
+
+        // 'text' found through 'src_loc_tk', e.g. a call or an instance
+        [[nodiscard]] static auto at(const token& src_loc_tk, std::string text,
+                                     std::string reason) -> call_frame {
+            return {
+                .file_ix{src_loc_tk.file_index()},
+                .line{src_loc_tk.at_line()},
+                .start_index{src_loc_tk.start_index()},
+                .end_index{src_loc_tk.end_index()},
+                .text{std::move(text)},
+                .reason{std::move(reason)},
+            };
+        }
     };
 
     // a token without a place in the source, line 0, reports like a problem of
@@ -84,14 +101,8 @@ class compile_error final : public std::exception {
     auto add_call_frame(const token& call_tk, std::string text,
                         std::string reason = "called from") -> void {
 
-        call_frames.push_back({
-            .file_ix{call_tk.file_index()},
-            .line{call_tk.at_line()},
-            .start_index{call_tk.start_index()},
-            .end_index{call_tk.end_index()},
-            .text{std::move(text)},
-            .reason{std::move(reason)},
-        });
+        call_frames.push_back(
+            call_frame::at(call_tk, std::move(text), std::move(reason)));
     }
 
     // whether the error can be told only with the arguments of a call, see

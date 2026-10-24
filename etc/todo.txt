@@ -160,22 +160,54 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'type::is_integer()' ('is_integer_name' goes); toc registers the
             built-ins from 'builtin_type_set::all()' (not 'program');
             'builtin_types' -> 'builtin_roles'
+            => done (2026-10-24): 'type_kind' {user, integer, boolean,
+               empty}, 'type::is_integer()', 'is_integer_name' gone;
+               'builtin_type_set::all()' registered by the 'toc'
+               constructor, the list and 'add_builtin_type' gone from
+               'program'/'toc'; 'builtin_roles'; no listing changed
        E.6. literals: 'constant_parser::is_literal' and 'literal_value'
             ('true'/'false' included), used by 'classify_term',
             'stmt_block' and the resolver
+            => done (2026-10-24): 'constant_parser::is_literal',
+               'literal_value' (with 'literal' {value, is_bool}) and
+               'is_bool_literal'; 'classify_term', 'stmt_block' and
+               'resolve_literal_or_empty' use them; no output changed
        E.7. strings reach the backend as bytes: the front end decodes once
             ('token::string_bytes'), 'emit_string_data' takes bytes,
             'add_bytes_constant' stops escaping bytes for the backends to
             decode; the constant key stays the text in this step
+            => done (2026-10-24): 'token::string_bytes',
+               'machine::string_constant::bytes', 'emit_string_data(bytes)'
+               (x86_64 encodes for nasm, rv32i writes '.ascii'), the
+               backends no longer decode; 'data_table' keeps the key beside
+               the bytes ('constant_keys_'); no listing changed
+            => next, ask: key the constants by their bytes, so '"A"' and
+               '"\x41"' or a string and equal init bytes share one label;
+               'constant_keys_' goes, listings may shrink
        E.8. the generic error trace: 'generic_trace' with 'add_to(error)'
             held by type and function instances (three copies of
             "instantiated by"); 'generic_frame' and the error's
             'call_frame' one entry type; one 'generic_method_name'
+            => done (2026-10-24): 'generic_trace' (the error's
+               'call_frame's, 'add_to', 'inside') held by type and function
+               instances, 'generic_frame' and the three "instantiated by"
+               loops gone, 'compile_error::call_frame::at'; one
+               'method_name_of' for the five 'type.method' formats; no
+               output changed
        E.9. one classification of a value term: 'classify_term' result
             passed down to 'parse_call_or_identifier'; one
             'parse_builtin_value' called by 'create_statement_in_expr_arith'
             and the 'expr_type' constructor; messages may change where the
             two preludes differ today
+            => done (2026-10-24): 'parse_call_or_identifier' and
+               'builtin_value_type' take the 'term' their caller classified;
+               'parse_builtin_value' holds the prelude and the dispatch of
+               the built-ins with a value, used by
+               'create_statement_in_expr_arith' and by
+               'expr_type::parse_copy_source' (which rejects what it
+               makes); one message changed: a built-in in an instance
+               position reports a malformed argument before its type, test
+               1172 gets its count so it keeps testing the type
        E.10. reachability, one model: 'path_reach' with the join rules used
             by 'assignment_flow' and the compile ('stmt_if' merges with it,
             'stmt_loop' records breaks), 'compile_main' asks the compile;

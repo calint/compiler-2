@@ -199,8 +199,7 @@ struct func_head {
 
         method_name_tk = read_method_name_token(tz);
 
-        name =
-            std::format("{}.{}", receiver_type->name(), method_name_tk.text());
+        name = method_name_of(receiver_type->name(), method_name_tk.text());
     }
 
     // 'noinline' and 'mut' before the name; a word followed by '(' is read as
@@ -423,7 +422,7 @@ class stmt_def_func final : public statement {
                 std::ignore = compile_in_frame(tc, indent, {});
             } catch (compile_error& e) {
                 if (not takes_from_call or not e.depends_on_call()) {
-                    add_instance_frames(e);
+                    add_instance_trace(e);
                     throw;
                 }
             }
@@ -609,14 +608,10 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto uses() const -> const body_uses& { return body_uses_; }
 
   private:
-    // the frames of what made the instance, see 'func_instance::frames'
-    auto add_instance_frames(compile_error& e) const -> void {
-        if (not instance_) {
-            return;
-        }
-
-        for (const generic_frame& frame : instance_->frames) {
-            e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
+    // the frames of what made the instance, see 'func_instance::trace'
+    auto add_instance_trace(compile_error& e) const -> void {
+        if (instance_) {
+            instance_->trace.add_to(e);
         }
     }
 
@@ -1172,15 +1167,12 @@ class func_instantiator final {
 
         // an error in the instance reports the call that needed it, like the
         // frames of a generic type instance
-        const generic_frame call_frame{
-            .src_loc_tk{call_tk},
-            .text{name},
-        };
+        const generic_trace call_trace{call_tk, name};
 
         try {
-            parse_func_instance(tc, generic, name, type_args, call_frame);
+            parse_func_instance(tc, generic, name, type_args, call_trace);
         } catch (compile_error& e) {
-            e.add_call_frame(call_tk, name, "instantiated by");
+            call_trace.add_to(e);
             throw;
         }
 
@@ -1254,7 +1246,7 @@ class func_instantiator final {
         try {
             parse_method_instance(tc, method, receiver);
         } catch (compile_error& e) {
-            receiver.add_frames_to(e);
+            receiver.trace.add_to(e);
             throw;
         }
     }
@@ -1265,7 +1257,7 @@ class func_instantiator final {
     parse_func_instance(toc& tc, const generic_func_info& generic,
                         const std::string& name,
                         const std::span<const type* const> type_args,
-                        const generic_frame& call_frame) -> void {
+                        const generic_trace& call_trace) -> void {
 
         generic_scope scope{tc, generic.definition};
 
@@ -1300,7 +1292,7 @@ class func_instantiator final {
             .name{name},
             .generic_method{},
             .constants{},
-            .frames{call_frame},
+            .trace{call_trace},
         };
 
         // e.g. 'str.append<i8>' keeps 'text.append' and the constants of
@@ -1349,7 +1341,7 @@ class func_instantiator final {
             .name{head.name},
             .generic_method{receiver.method_name(head.method_name_tk.text())},
             .constants{receiver.constants()},
-            .frames{receiver.frames},
+            .trace{receiver.trace},
         };
 
         tc.add_func_instance(std::make_shared<stmt_def_func>(
@@ -1475,8 +1467,7 @@ class stmt_def_func_generic final : public statement {
         const std::string report_name{
             method_name_tk.is_empty()
                 ? head.name
-                : std::format("{}.{}", head.name_tk.text(),
-                              method_name_tk.text()),
+                : method_name_of(head.name_tk.text(), method_name_tk.text()),
         };
 
         throw compile_error{

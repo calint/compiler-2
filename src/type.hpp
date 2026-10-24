@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -51,9 +52,10 @@ struct byte_range {
     }
 };
 
-// 'boolean' is a builtin that machines treat differently from the integer
-// of its size
-enum class type_kind : uint8_t { user, builtin, boolean };
+// a type the source defines, or a built-in: an integer, the 'bool' that
+// machines treat differently from the integer of its size, or the 'void' of
+// no value
+enum class type_kind : uint8_t { user, integer, boolean, empty };
 
 // a built-in type or a user type with its fields at aligned offsets; the
 // size is rounded up so that the elements of an array stay aligned
@@ -219,6 +221,10 @@ class type final {
         return kind_ == type_kind::boolean;
     }
 
+    [[nodiscard]] auto is_integer() const -> bool {
+        return kind_ == type_kind::integer;
+    }
+
     [[nodiscard]] auto is_builtin() const -> bool {
         return kind_ != type_kind::user;
     }
@@ -298,10 +304,17 @@ class builtin_type_set final {
     auto operator=(builtin_type_set&&) -> builtin_type_set& = delete;
     ~builtin_type_set() = default;
 
-    const type void_type{"void", 0, type_kind::builtin};
+    const type void_type{"void", 0, type_kind::empty};
     const type boolean{"bool", sizeof(int8_t), type_kind::boolean};
-    const type i64{"i64", sizeof(int64_t), type_kind::builtin};
-    const type i32{"i32", sizeof(int32_t), type_kind::builtin};
-    const type i16{"i16", sizeof(int16_t), type_kind::builtin};
-    const type i8{"i8", sizeof(int8_t), type_kind::builtin};
+    const type i64{"i64", sizeof(int64_t), type_kind::integer};
+    const type i32{"i32", sizeof(int32_t), type_kind::integer};
+    const type i16{"i16", sizeof(int16_t), type_kind::integer};
+    const type i8{"i8", sizeof(int8_t), type_kind::integer};
+
+    static constexpr size_t type_count{6};
+
+    // every one, the source names them like the types it defines
+    [[nodiscard]] auto all() const -> std::array<const type*, type_count> {
+        return {&i64, &i32, &i16, &i8, &boolean, &void_type};
+    }
 };

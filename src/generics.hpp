@@ -37,7 +37,7 @@
 // e.g. 'func f<T type>(x T)' is a 'generic_func_info', a call 'f<i8>(x)' or
 // 'f(x)' parses it again as 'f<i8>' (see 'func_instantiator')
 //
-// an error in the text of an instance gets the 'generic_frame's that led to it
+// an error in the text of an instance gets the 'generic_trace' that led to it
 //
 
 // a parameter of a generic definition, e.g. 'T type' is a type and 'capacity'
@@ -311,12 +311,44 @@ class definition_order final {
     }
 };
 
-// an error in the generic code is reported with the instances that led to it,
-// e.g. 'list<i8, 8>' at the 'list' of 'type text<size> = list<i8, size>'
-struct generic_frame {
-    token src_loc_tk;
-    std::string text;
+// the instances of generic definitions that led to an error in generic code,
+// innermost first, e.g. 'list<i8, 8>' at the 'list' of 'type text<size> =
+// list<i8, size>', then 'type str = text<8>' at 'str'
+class generic_trace final {
+    std::vector<compile_error::call_frame> frames_;
+
+  public:
+    // the instance 'text' made at 'src_loc_tk'
+    generic_trace(const token& src_loc_tk, std::string text)
+        : frames_{
+              compile_error::call_frame::at(src_loc_tk, std::move(text),
+                                            "instantiated by"),
+          } {}
+
+    generic_trace() = default;
+
+    auto add_to(compile_error& e) const -> void {
+        e.call_frames.append_range(frames_);
+    }
+
+    // this instance made inside the instances of 'outer'
+    [[nodiscard]] auto inside(const generic_trace& outer) const
+        -> generic_trace {
+
+        generic_trace trace{*this};
+        trace.frames_.append_range(outer.frames_);
+        return trace;
+    }
 };
+
+// a method name as written, e.g. 'text.print' for the method 'print' of
+// 'text'
+[[nodiscard]] inline auto method_name_of(const std::string_view type_name,
+                                         const std::string_view method)
+    -> std::string {
+
+    return std::format("{}.{}", type_name, method);
+}
 
 // a type with parameters, e.g. 'type list<T type, capacity> {...}'. an alias
 // 'type str = list<i8, 8>' parses the fields again from 'start_tk' with the
@@ -348,13 +380,7 @@ struct generic_type_instance {
     std::vector<generic_arg> args;
     // e.g. 'list<i8, 8>' then 'type str = text<8>' for the base 'list', the
     // alias last
-    std::vector<generic_frame> frames;
-
-    auto add_frames_to(compile_error& e) const -> void {
-        for (const generic_frame& frame : frames) {
-            e.add_call_frame(frame.src_loc_tk, frame.text, "instantiated by");
-        }
-    }
+    generic_trace trace;
 
     // e.g. 'capacity' is 8
     [[nodiscard]] auto constants() const -> std::vector<generic_arg> {
@@ -374,7 +400,7 @@ struct generic_type_instance {
     [[nodiscard]] auto method_name(const std::string_view name) const
         -> std::string {
 
-        return std::format("{}.{}", generic_name, name);
+        return method_name_of(generic_name, name);
     }
 
     // e.g. 'T' is 'i8'
@@ -465,7 +491,7 @@ struct func_instance {
     std::vector<generic_arg> constants;
     // what made the instance, e.g. the call 'make<i8>' or the alias 'type str =
     // text<8>', for the errors that the check of an uncalled instance finds
-    std::vector<generic_frame> frames;
+    generic_trace trace;
 };
 
 // a method of a generic type, e.g. 'func text.print()', every instance of the
@@ -640,8 +666,8 @@ class generic_registry final {
                 generics.push_back({
                     .definition{method.definition},
                     .name{
-                        std::format("{}.{}", method.type_tk.text(),
-                                    method.method_name_tk.text()),
+                        method_name_of(method.type_tk.text(),
+                                       method.method_name_tk.text()),
                     },
                 });
             }

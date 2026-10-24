@@ -84,7 +84,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
 
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tok().is_none() and not is_typed_literal) {
-        parse_copy_source(tc, tz, tp);
+        parse_copy_source(tc, tz, tp, tm);
         return;
     }
 
@@ -175,28 +175,27 @@ inline expr_type::expr_type(std::unique_ptr<stmt_identifier> receiver)
 
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
 // 'o.pos = point.at(1, 2)'
-inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp)
-    -> void {
+inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
+                                         const term& tm) -> void {
 
-    assert_builtin_without_type_args(tok(), tz);
-
-    assert_builtin_has_value(tok(), tz);
+    unary_ops no_uops;
 
     // a built-in is not a function, its value is a scalar of a built-in type
-    if (const type* const value_type{builtin_value_type(tc, tok(), tz)};
-        value_type != nullptr) {
+    if (const std::unique_ptr<statement> builtin{
+            parse_builtin_value(tc, tz, tok(), tm, no_uops),
+        }) {
 
         if (is_array_destination_) {
             throw compile_error{tok(), "source must be an array"};
         }
 
-        throw compile_error{tok(), std::format("expected type {}, got {}",
-                                               in_quotes(tp.name()),
-                                               in_quotes(value_type->name()))};
+        throw compile_error{
+            tok(), std::format("expected type {}, got {}", in_quotes(tp.name()),
+                               in_quotes(builtin->get_type().name()))};
     }
 
     call_or_identifier parsed{
-        parse_call_or_identifier(tc, tz, tok(), unary_ops{}, &tp),
+        parse_call_or_identifier(tc, tz, tok(), tm, std::move(no_uops), &tp),
     };
 
     if (parsed.call) {

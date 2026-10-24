@@ -379,7 +379,8 @@ class expr_type final : public statement {
                                  const destination& dst) const -> void;
 
     // creates the 'stmt_call' or 'stmt_identifier'
-    auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp) -> void;
+    auto parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
+                           const term& tm) -> void;
 
     // the ',' before the value of the field 'next', e.g. the ',' of '{x, y}'
     // before the value of 'y'

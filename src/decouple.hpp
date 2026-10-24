@@ -17,6 +17,7 @@
 class toc;
 class tokenizer;
 class statement;
+struct term;
 class stmt_identifier;
 class stmt_call;
 class expr_any;
@@ -38,4 +39,4 @@ class type;
     -> std::unique_ptr<statement>;
 
 [[nodiscard]] auto builtin_value_type(const toc& tc, const token& tk,
-                                      const tokenizer& tz) -> const type*;
+                                      const term& tm) -> const type*;

@@ -877,7 +877,7 @@ class stmt_identifier final : public statement {
         const type& path_type{info.type_ref()};
 
         const std::string method_name{
-            std::format("{}.{}", path_type.name(), name_tk.text()),
+            method_name_of(path_type.name(), name_tk.text()),
         };
 
         if (not tc.is_func(method_name)) {

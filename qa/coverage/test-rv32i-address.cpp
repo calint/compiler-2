@@ -1523,13 +1523,15 @@ auto check_known_size_copy() -> void {
     }
 }
 
-// string data: the escapes of .baz strings become assembler escapes
+// string data: the bytes of .baz strings, decoded like the front end does,
+// are written with assembler escapes
 auto check_string_data_escapes() -> void {
     captured_rv32i rv32i;
     machine_rv32i& backend{rv32i.backend};
 
     const auto string_data = [&](const std::string_view text) -> std::string {
-        return rv32i.emitted([&] { backend.emit_string_data(text); });
+        return rv32i.emitted(
+            [&] { backend.emit_string_data(token::decode_string(text)); });
     };
 
     assert(string_data({}) == ".ascii \"\"\n");

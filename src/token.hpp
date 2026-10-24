@@ -157,8 +157,14 @@ class token final {
 
     [[nodiscard]] auto start_index() const -> size_t { return start_ix_; }
 
+    // the bytes of a string literal, its escapes decoded, e.g. '\n' is one
+    // byte
+    [[nodiscard]] auto string_bytes() const -> std::string {
+        return decode_string(string_text());
+    }
+
     [[nodiscard]] auto string_size_bytes() const -> size_t {
-        return decode_string(string_text()).size();
+        return string_bytes().size();
     }
 
     // string text with each backslash before a line end removed together

@@ -1196,12 +1196,12 @@ class machine_rv32i : public machine {
             // word alignment lets copies to aligned destinations use words
             assembler_.align(word_size_bytes_);
             assembler_.label(0, s.label);
-            emit_string_data(s.text);
+            emit_string_data(s.bytes);
         }
     }
 
-    auto emit_string_data(const std::string_view value) -> void override {
-        assembler_.ascii(token::decode_string(value));
+    auto emit_string_data(const std::string_view bytes) -> void override {
+        assembler_.ascii(bytes);
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {

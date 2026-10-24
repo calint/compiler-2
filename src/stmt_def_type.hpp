@@ -421,12 +421,10 @@ class stmt_def_type_alias final : public statement {
 
         // an error in the generic code names the alias, e.g. 'type str =
         // text<8>' at 'str'
-        const generic_frame alias_frame{
-            .src_loc_tk{name_tk_},
-            .text{
-                std::format("type {} = {}", name_tk_.text(),
-                            generic_instance_text(generic_tk.text(), args)),
-            },
+        const generic_trace alias_trace{
+            name_tk_,
+            std::format("type {} = {}", name_tk_.text(),
+                        generic_instance_text(generic_tk.text(), args)),
         };
 
         // step 2, the instance then its bases
@@ -435,7 +433,7 @@ class stmt_def_type_alias final : public statement {
                 .generic_name{generic_tk.text()},
                 .type_ptr{&type_},
                 .args{std::move(args)},
-                .frames{alias_frame},
+                .trace{alias_trace},
             },
         };
 
@@ -449,7 +447,7 @@ class stmt_def_type_alias final : public statement {
         } catch (compile_error& e) {
             // the frames name the instances that led to the error, the alias
             // last
-            instances.back().add_frames_to(e);
+            instances.back().trace.add_to(e);
             throw;
         }
 
@@ -522,20 +520,20 @@ class stmt_def_type_alias final : public statement {
 
         // an error in the base is reported with the arguments it got
         // e.g. 'list<i8, 8>' at the 'list' of 'list<i8, size>'
-        const generic_frame base_frame{
-            .src_loc_tk{base_tk},
-            .text{generic_instance_text(base_tk.text(), base_args)},
-        };
-
         // followed by the frames that lead to it, the alias last
-        std::vector<generic_frame> frames{base_frame};
-        frames.append_range(instance.frames);
+        const generic_trace trace{
+            generic_trace{
+                base_tk,
+                generic_instance_text(base_tk.text(), base_args),
+            }
+                .inside(instance.trace),
+        };
 
         return {
             .generic_name{base_tk.text()},
             .type_ptr{instance.type_ptr},
             .args{std::move(base_args)},
-            .frames{std::move(frames)},
+            .trace{trace},
         };
     }
 

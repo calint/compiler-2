@@ -784,7 +784,7 @@ class expr_any final : public statement {
                      const std::optional<size_t> array_count,
                      write_plan& plan) const -> void {
 
-        std::string bytes{token::decode_string(string_tk.string_text())};
+        std::string bytes{string_tk.string_bytes()};
 
         const size_t size_bytes{bytes.size()};
 
