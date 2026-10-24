@@ -32,6 +32,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             the written text ('bind a -> copy[0]', today 'copy' for both
             'copy[0]' and 'copy[2]', checked); '(lea: ...)' -> '(address:
             ...)' on both targets
+       => A.2 done (2026-10-24): 'bound_name::text' holds the argument as
+          written ('path_text', the temporary's name, 'destination::text'
+          for the result), 'target_text' prints it, the resolver keeps
+          'path'; 'bind a -> copy[0] (address: rbp)' on both targets; 88
+          x86_64 and 89 rv32i listings change in comments only, no
+          instruction changes; README 6.5 example
        A.3. the report entry 'max vars size' leaves out the noinline frames
             (N6, checked: 80 B reported, 152 B reached): name it for what it
             is and define each report entry in README 1.6

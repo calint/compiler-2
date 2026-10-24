@@ -1317,7 +1317,7 @@ class inline_call {
                 const std::string temporary{call_.temporary_argument_name(i)};
 
                 bindings.push_back(
-                    bind_name(param, temporary,
+                    bind_name(param, temporary, temporary,
                               call_site::temporary_storage(tc, temporary)));
 
                 continue;
@@ -1356,7 +1356,8 @@ class inline_call {
                                       allocated_registers);
             }
 
-            return bind_name(param, name.dotted_path(), name.storage(tc));
+            return bind_name(param, name.dotted_path(), name.path_text(),
+                             name.storage(tc));
         }
 
         if (const call_site::argument_form::computed* const computed{
@@ -1410,13 +1411,16 @@ class inline_call {
     }
 
     // a variable of the caller or a temporary of the call, named by 'path'
+    // and written as 'text'
     [[nodiscard]] static auto
     bind_name(const stmt_def_func_param& param, const std::string_view path,
+              const std::string_view text,
               const std::optional<storage_path>& bound) -> param_binding {
 
         return param_binding::make_name(param.name(), param.get_type(),
                                         {
                                             .path{std::string{path}},
+                                            .text{std::string{text}},
                                             .lea{},
                                             .is_element{},
                                             .bound{bound},
@@ -1454,7 +1458,8 @@ class inline_call {
         }
 
         if (name.get_unary_ops().is_empty()) {
-            return bind_name(param, name.dotted_path(), name.storage(tc));
+            return bind_name(param, name.dotted_path(), name.path_text(),
+                             name.storage(tc));
         }
 
         const operand reg{
@@ -1496,6 +1501,7 @@ class inline_call {
             param.name(), param.get_type(),
             {
                 .path{std::string{name.dotted_path()}},
+                .text{name.path_text()},
                 .lea{lea},
                 .is_element{name.is_array_element()},
                 .bound{name.storage(tc)},
@@ -1525,6 +1531,7 @@ class inline_call {
         return param_binding::make_name(ret.ident_tk.text(), *ret.type_ptr,
                                         {
                                             .path{dst.name()},
+                                            .text{dst.text()},
                                             .lea{std::move(dst_lea)},
                                             .is_element{not dst.is_array()},
                                             .bound{dst.storage()},

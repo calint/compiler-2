@@ -183,6 +183,8 @@ struct bound_register {
 struct bound_name {
     // e.g. 'world.rooms', resolved in the frames of the caller
     std::string path;
+    // as written, for the comments, e.g. 'copy[2]' where 'path' is 'copy'
+    std::string text;
     // the address computed at the call, empty when the path finds it, e.g.
     // '[rbp + r15 * 8 + 16]' for a run-time index
     operand lea;
@@ -240,7 +242,7 @@ struct param_binding {
             return reg->name;
         }
 
-        return std::get<bound_name>(target).path;
+        return std::get<bound_name>(target).text;
     }
 
     //

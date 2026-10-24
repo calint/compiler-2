@@ -979,7 +979,7 @@ class machine {
             return;
         }
 
-        comment(src_loc_tk, indent, "bind {} -> {} (lea: {})", from, to,
+        comment(src_loc_tk, indent, "bind {} -> {} (address: {})", from, to,
                 address_text(address));
     }
 

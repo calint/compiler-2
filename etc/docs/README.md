@@ -1252,13 +1252,14 @@ count of a bulk operation, e.g. 'array_copy(a[i], b, n)', the check covers
 
 An argument with a run-time index is computed once at the call, the body of
 the inlined function reaches it through its parameter. The binding of the
-parameter keeps the operand ('bound_name::lea'):
+parameter keeps the operand ('bound_name::lea') and, for the comment, the
+argument as written ('bound_name::text'):
 
 ```text
 w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
 
     ...                               r15 and r14 as in 6.2
-    bind self -> w.rooms.items (lea: r15 + r14)
+    bind self -> w.rooms[i].items[j] (address: r15 + r14)
     mov qword [r15 + r14 + 8], 8      'self.x'
 ```
 
