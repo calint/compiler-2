@@ -2292,7 +2292,7 @@ class stmt_call : public expression {
         assert_call_in_func(tc, tok());
 
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
-        //       functions, are subclasses that override 'compile'
+        //       functions, are nodes of their own ('stmt_builtin_*')
 
         const call_site call{site(tc.overflow_options(dst))};
 
@@ -2843,8 +2843,6 @@ class stmt_call : public expression {
         record_uses_of_call(tc, func);
     }
 
-    // a built-in has no parameter list, so any count of default type
-    // arguments is parsed and the built-in checks the count
     // the name is read, a generic function has its type arguments before the
     // '(', e.g. 'convert<i8>(x)', and 'func_name_' becomes the name of its
     // instance; returns 'generic_call::deducing_args'

@@ -98,8 +98,9 @@ program.hpp      parse: every file, an included one before its includer,
 machine.hpp      one virtual method per operation the front end needs,
   |              e.g. 'add_subtract', 'copy', 'check_bounds'; allocates
   |              the registers ('register_pool')
-  |              machine_x86_64.hpp, machine_rv32i.hpp and the bare-metal
-  |              targets machine_rv32i_qemu.hpp and machine_rv32i_fpga.hpp
+  |              machine_x86_64.hpp, machine_rv32i.hpp with its linux
+  |              target 'machine_rv32i_linux' and the bare-metal targets
+  |              machine_rv32i_qemu.hpp and machine_rv32i_fpga.hpp
   v
 assembler.hpp    buffers the lines, optimizes the jumps
                  assembler_x86_64.hpp: nasm text
@@ -136,17 +137,20 @@ Reading order, each file assumes the ones before it:
 ```text
 1. main.cpp, program.hpp       the driver and the passes
 2. statement.hpp               the node interface every statement has
-3. stmt_block.hpp, stmt_if.hpp, stmt_loop.hpp
-                               control flow, the simplest nodes
-4. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
+3. stmt_block.hpp, decouple_impl.hpp
+                               a block and the statement it parses next
+4. stmt_if.hpp, stmt_loop.hpp  control flow, the simplest nodes
+5. stmt_def_var.hpp, stmt_assign_var.hpp
+                               a variable defined and assigned
+6. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
                                values: arithmetic, conditions, instances
-5. stmt_identifier.hpp         a place: a name with fields and indexes
-6. stmt_def_func.hpp, stmt_call.hpp
+7. stmt_identifier.hpp         a place: a name with fields and indexes
+8. stmt_def_func.hpp, stmt_call.hpp
                                functions, inlined and noinline calls
-7. toc.hpp                     what the names are while compiling
-8. machine.hpp, machine_x86_64.hpp, assembler.hpp
+9. toc.hpp                     what the names are while compiling
+10. machine.hpp, machine_x86_64.hpp, assembler.hpp
                                the operations and one backend
-9. machine_rv32i.hpp, assembler_rv32i.hpp
+11. machine_rv32i.hpp, assembler_rv32i.hpp
                                the load/store backend and its image
 ```
 
@@ -284,7 +288,7 @@ the options, they build the option records of the machine methods.
 The rules checked while compiling, e.g. a constant index in bounds or a
 constant that fits its variable, hold in every function, also in one that
 nothing calls, so whether a program is accepted does not depend on its
-calls. 'function_table' records the functions whose body a
+calls. 'compile_records' records the functions whose body a
 compile reached, in place, as a noinline body or in a dry run; after the
 noinline bodies, 'program::check_unreached_functions' compiles each other
 function like a noinline body under 'toc::dry_run'
@@ -340,7 +344,7 @@ optimizations, usage ('report_renderer' in 'program.hpp'), and with
 A constant follows the rules of a variable; only the code differs, an
 immediate instead of a load. One virtual, 'statement::fold', evaluates a value
 known at compile time. The exceptions are read at the parse from a literal or
-a constant name: array sizes ('stmt_const') and the constant arguments of a
+a constant name: array sizes ('stmt_array_size') and the constant arguments of a
 generic ('toc::constant_value_of'). The result of 'fold', 'folded_value', is
 stored as it is wherever a constant is kept ('ident_info', the alias of an
 inlined argument, the constant of a 'let'):
@@ -789,7 +793,7 @@ root variable of its own.
 ### 3.6 A value written in parts
 
 A value is written part by part, in the order 'compile' writes it
-('list_written_parts'): a field list field by field, a braced array element by
+('plan_writes' makes a 'write_plan'): a field list field by field, a braced array element by
 element, a call or a copy at once. Each part has its path from the
 destination. Each read of a part is resolved to its root variable
 ('toc::storage_of'), so a parameter, the element 'e' of a 'foo' and the name
@@ -966,8 +970,10 @@ or rejected depending on which of its calls was checked first; storing the
 height of a cycle only once the outermost dry run of its call kinds ends
 would remove it.
 
-A pointer argument cannot tell which variable it names, so it gives no
-call kind: the dry run is skipped and no aliasing is reported for it.
+An argument that is a parameter of the enclosing noinline body holds an
+address and cannot tell which variable it names, so it gives no call kind:
+the dry run is skipped, the calls of the enclosing body are checked with
+their own arguments.
 
 ### 4.4 Temporaries
 
@@ -1317,12 +1323,12 @@ other, also not when they are 'noinline' ('etc/todo.txt' section 4).
 
 ### 7.3 One base class for every node
 
-'statement' has 20 virtual methods, each node overrides the ones it needs
+'statement' has 14 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
 capability, e.g. 'fold' is empty. Every node parses, writes its
 source back, compiles and takes part in the definite assignment walk. Code
-asks a node a few capability queries ('is_expression', 'is_name_or_literal',
+asks a node a few capability queries ('is_expression', 'operand_path',
 ...), no code switches on the kind of a node.
 
 Rejected: the nodes as a 'std::variant', a closed set gains nothing when

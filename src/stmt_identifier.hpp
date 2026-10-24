@@ -140,7 +140,8 @@ class stmt_identifier;
     -> ident_info;
 
 // a place: a variable, a field or an element named by a path, e.g.
-// 'w.rooms[i].items[j].x', also the receiver of a method call; the parse
+// 'w.rooms[i].items[j].x', also the receiver of a method call and every
+// literal, e.g. '3' or 'true'; the parse
 // resolves the type and the bytes of the root variable that the path reaches
 // ('accessed_bytes_', the whole array after a run-time index), the compile
 // resolves the names again in the current frames and builds one memory operand

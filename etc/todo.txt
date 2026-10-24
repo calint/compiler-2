@@ -57,6 +57,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             emit_sector_routines' (two comments glued)
        B.4. optional, new script (ask): 'qa/lint' check that every quoted
             identifier of etc/docs/README.md exists in src/
+       => B done (2026-10-24): README 1.1 (linux target, reading order
+          with the statement dispatch and the variable nodes), 1.5, 1.7,
+          3.6, 4.3, 7.3; the virtual groups of 'statement'; the B.3
+          comments, the orphan built-in comment above
+          'read_generic_callee' removed; 'qa/lint/check-readme-names.py'
+          reports a quoted code name of the README missing from src/
     C. leftovers
        C.1. 'stmt_call::assert_arguments_not_written_later' duplicates
             'builtin_arguments::assert_not_written_later', its only call

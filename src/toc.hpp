@@ -3505,10 +3505,10 @@ class toc final {
         return storage_;
     }
 
-    // what 'name' names with 'path' inside it, as a root variable and bytes
-    // of it, empty when it holds no storage, e.g. a constant. a parameter is
-    // followed to its argument and the element 'e' of a 'foo' is any element
-    // of the array it iterates
+    // what 'name' names with 'path' inside it, as a root variable and the
+    // path inside it, empty when it holds no storage, e.g. a constant. a
+    // parameter is followed to its argument and the element 'e' of a 'foo' is
+    // any element of the array it iterates
     [[nodiscard]] auto storage_of(const std::string_view name,
                                   const access_path& path) const
         -> std::optional<storage_path> {

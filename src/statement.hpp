@@ -234,12 +234,14 @@ class stmt_identifier;
 // other class reaches it
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
-//                  (control flow), 'visit_reads' (the expressions)
+//                  (control flow), 'visit_reads' and 'visit_call_effects'
+//                  (the nodes that hold expressions)
 //   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier' and
 //                  the built-ins with a value, forwarded by 'expr_arith' and
-//                  'expr_any'; 'assert_not_narrowed' and 'keeps_low_bits':
-//                  'stmt_identifier', 'stmt_call' and the built-ins,
-//                  forwarded by 'expr_arith' and 'expr_any';
+//                  'expr_any'; 'assert_not_narrowed': 'stmt_identifier',
+//                  'stmt_call' and the built-ins, forwarded by 'expr_arith'
+//                  and 'expr_any'; 'keeps_low_bits': 'stmt_identifier' and
+//                  'stmt_builtin_convert', forwarded by 'expr_arith';
 //                  'is_expression': 'expression', answered by what they hold
 //                  in 'expr_arith' and 'expr_any'
 //   a condition    'is_arrays_equal_call' and 'compile_arrays_equal':
