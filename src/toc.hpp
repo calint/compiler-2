@@ -1377,7 +1377,8 @@ struct check_options {
 // what the compile used, for the report
 struct usage_statistics {
     size_t max_scope_count{};
-    size_t max_vars_size_bytes{};
+    // see 'storage_layout::max_body_vars_size_bytes_'
+    size_t max_body_vars_size_bytes{};
     size_t dat_size_bytes{};
     size_t dat_var_padding_bytes{};
     std::vector<std::string> uninstantiated_generics;
@@ -1729,7 +1730,11 @@ class storage_layout final {
     std::reference_wrapper<scope_stack> scopes_;
     std::reference_wrapper<const data_table> data_;
     size_t vars_capacity_bytes_;
-    size_t max_vars_size_bytes_{};
+    // the most bytes of variables in use while one body is compiled: the
+    // globals with 'main' or with one noinline body, its inlined calls
+    // included; the frames of noinline calls stack at run time, which
+    // '--checks=frame' checks
+    size_t max_body_vars_size_bytes_{};
     // the padding between the dats and the variables, set when the first
     // variable after the dats is placed, see 'apply_dat_var_padding'
     std::optional<size_t> applied_padding_bytes_;
@@ -1737,7 +1742,7 @@ class storage_layout final {
   public:
     // what a dry run changes and 'end_dry_run' puts back
     struct dry_run_state {
-        size_t max_vars_size_bytes;
+        size_t max_body_vars_size_bytes;
         // the index of the frame, frames added meanwhile may move the frames
         std::optional<size_t> storage_frame_index;
         size_t peak_storage_size_bytes;
@@ -1838,9 +1843,9 @@ class storage_layout final {
         //       holds the bytes after this returns
 
         if (checks_capacity) {
-            max_vars_size_bytes_ = std::max(
+            max_body_vars_size_bytes_ = std::max(
                 sum_storage_size(used_vars_size_bytes(), allocated_size_bytes),
-                max_vars_size_bytes_);
+                max_body_vars_size_bytes_);
         }
 
         return allocated_size_bytes;
@@ -1856,7 +1861,7 @@ class storage_layout final {
         };
 
         const dry_run_state saved{
-            .max_vars_size_bytes{max_vars_size_bytes_},
+            .max_body_vars_size_bytes{max_body_vars_size_bytes_},
             .storage_frame_index{frame_index},
             .peak_storage_size_bytes{
                 frame_index ? frame_at(*frame_index).peak_storage_size_bytes()
@@ -1868,7 +1873,7 @@ class storage_layout final {
     }
 
     auto end_dry_run(const dry_run_state& saved) -> void {
-        max_vars_size_bytes_ = saved.max_vars_size_bytes;
+        max_body_vars_size_bytes_ = saved.max_body_vars_size_bytes;
 
         if (saved.storage_frame_index) {
             scopes_.get()
@@ -1878,8 +1883,8 @@ class storage_layout final {
         }
     }
 
-    [[nodiscard]] auto max_vars_size_bytes() const -> size_t {
-        return max_vars_size_bytes_;
+    [[nodiscard]] auto max_body_vars_size_bytes() const -> size_t {
+        return max_body_vars_size_bytes_;
     }
 
     // a callee frame starts aligned for any variable it holds
@@ -1938,7 +1943,7 @@ class storage_layout final {
     auto reset_usage() -> void {
         assert(dats_and_vars_size_bytes() == 0);
 
-        max_vars_size_bytes_ = 0;
+        max_body_vars_size_bytes_ = 0;
     }
 
     [[nodiscard]] auto var_storage_alignment(const var_info& var) const
@@ -3589,7 +3594,7 @@ class toc final {
     [[nodiscard]] auto usage() const -> usage_statistics {
         return {
             .max_scope_count{scopes_.max_depth()},
-            .max_vars_size_bytes{storage_.max_vars_size_bytes()},
+            .max_body_vars_size_bytes{storage_.max_body_vars_size_bytes()},
             .dat_size_bytes{data_.total_size_bytes()},
             .dat_var_padding_bytes{data_.dat_var_padding_bytes()},
             .uninstantiated_generics{generics_.uninstantiated_func_names()},

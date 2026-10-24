@@ -133,7 +133,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
         "production": [],
         "unoptimized": ["--checks=upper,lower,line", "--nopt"],
     }
-    # 1. Check only the 'max vars size' statistic of the report after the code.
+    # 1. Check only the 'max body vars size' statistic of the report after the code.
     # Vary the data prefix around alignment boundaries: neither data bytes nor
     # the padding before vars may contribute to the reported variable peak.
     # The inferred array also checks a data size learned from its initializer.
@@ -184,15 +184,15 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                 result = compile_source(directory, source, 4096, options)
                 context = (name, case, mode)
                 assert result.returncode == 0, (context, result.stderr)
-                # Statistics are NASM comments such as '; max vars size: 15 B'.
+                # Statistics are NASM comments such as '; max body vars size: 15 B'.
                 # Ignore alignment whitespace and other comment labels.
                 statistics = {}
                 for line in result.stdout.splitlines():
                     if line.startswith(";") and ":" in line:
                         label, value = line[1:].split(":", 1)
                         statistics[label.strip()] = value.strip()
-                assert statistics["max vars size"] == f"{expected_size} B", (context, statistics)
-            print(f"arena {name} max vars size: ok", flush=True)
+                assert statistics["max body vars size"] == f"{expected_size} B", (context, statistics)
+            print(f"arena {name} max body vars size: ok", flush=True)
 
     for count in (16, 17):
         source = f"func main() {{ var buffer = i8[{count}]{{}} }}\n"

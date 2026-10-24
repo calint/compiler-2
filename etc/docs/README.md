@@ -359,6 +359,22 @@ optimizations, usage ('report_renderer' in 'program.hpp'), and with
 '--report=registers' the use of registers at the busiest point
 ('register_report.hpp').
 
+The usage entries:
+
+```text
+max scratch registers in use   the most scratch registers held at once
+max scopes in use              the deepest nesting of scopes: the globals,
+                               functions, blocks, loops and inlined calls
+dat size                       the bytes of the 'dat' definitions
+dat var padding                the padding between the dats and the variables
+max body vars size             the most bytes of variables in use while one
+                               body is compiled: the globals with 'main' or
+                               with one noinline body, inlined calls included;
+                               the frames of noinline calls stack at run time,
+                               '--checks=frame' checks that they fit
+instructions                   the machine instructions of the code
+```
+
 ### 1.7 Values known at compile time
 
 A constant follows the rules of a variable; only the code differs, an

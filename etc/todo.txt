@@ -41,6 +41,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        A.3. the report entry 'max vars size' leaves out the noinline frames
             (N6, checked: 80 B reported, 152 B reached): name it for what it
             is and define each report entry in README 1.6
+       => A.3 done (2026-10-24): the entry is 'max body vars size',
+          'usage_statistics::max_body_vars_size_bytes' and the
+          'storage_layout' member say what it is (the globals with 'main'
+          or with one noinline body; noinline frames stack at run time,
+          '--checks=frame'); README 1.6 defines every usage entry;
+          test-arena.py and test-rv32i-address.cpp follow; every listing's
+          report line changes
        A.4. ask: one statement prints its source once (N5): today 'var m =
             f(x)' prints its source up to four times at two columns; every
             listing changes
@@ -663,6 +670,13 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     literals resolved by the resolver; 'expr_any' forms inside 'expr_any';
     'accessed_bytes_' beside 'access_path_'; the handler skeletons (G.2);
     both versions compiled (chapter 5)
+[ ] easy: 'qa/coverage/test-arena.py' large offset runtime: its panic harness
+    jumps to 'baz_bounds_panic', which a program compiled with
+    '--checks=line' does not define (the handler is under the labels of its
+    lines, e.g. 'baz_bounds_line_5'); nasm fails before the probe runs; the
+    harness should jump to a label the compile defines, or the mode without
+    'line' should test the panic (found 2026-10-24 running it for A.3 of
+    round 14, fails at HEAD too)
 [ ] medium: 'qa/fuzz/fuzz-programs.py' (seeds 59, 61) finds programs that
     are rejected with "cannot allocate register rdx because it holds a
     scratch value allocated at L:C", the same location, e.g. inside 'res =

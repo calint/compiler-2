@@ -4006,7 +4006,7 @@ auto check_storage_placement() -> void {
         assert(second - first == 4);
     }
 
-    assert(fe.tc.usage().max_vars_size_bytes == 8);
+    assert(fe.tc.usage().max_body_vars_size_bytes == 8);
 
     // the space is reused by the next scope
     {
@@ -4015,7 +4015,7 @@ auto check_storage_placement() -> void {
         assert(reused == first);
     }
 
-    assert(fe.tc.usage().max_vars_size_bytes == 8);
+    assert(fe.tc.usage().max_body_vars_size_bytes == 8);
 
     fe.root.reset();
     fe.tc.assert_released();
@@ -4047,7 +4047,7 @@ auto check_dry_run_leaves_no_trace() -> void {
     });
 
     const usage_statistics after{fe.tc.usage()};
-    assert(after.max_vars_size_bytes == before.max_vars_size_bytes);
+    assert(after.max_body_vars_size_bytes == before.max_body_vars_size_bytes);
     assert(after.max_scope_count == before.max_scope_count);
     assert(fe.tc.data().constants().size() == constants_before);
 

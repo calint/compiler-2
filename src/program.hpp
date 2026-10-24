@@ -203,8 +203,8 @@ class report_renderer final {
                     .value{std::format("{} B", usage.dat_var_padding_bytes)},
                 },
                 {
-                    .name{"max vars size"},
-                    .value{std::format("{} B", usage.max_vars_size_bytes)},
+                    .name{"max body vars size"},
+                    .value{std::format("{} B", usage.max_body_vars_size_bytes)},
                 },
                 {
                     .name{"instructions"},
