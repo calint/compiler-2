@@ -55,6 +55,10 @@ class machine_rv32i_bare_metal : public machine_rv32i {
           stack_size_bytes_{options.stack_size_bytes},
           memory_size_bytes_{memory_size_bytes} {
 
+        // note: no operating system stops a stack overflow, the table must
+        //       say so, see 'bare_metal_target'
+        assert(target.is_stack_bounded);
+
         // note: the options are checked before the source is parsed, so an
         //       error in the source does not hide them
 

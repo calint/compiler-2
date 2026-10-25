@@ -526,10 +526,13 @@ class machine_rv32i : public machine {
     }
 
     auto emit_variables_base_load() -> void override {
-        assembler_.la(0, variables_base_register_, variables_label);
+        const std::string_view base{variables_base_register()};
 
-        assembler_.addi(0, variables_base_register_, variables_base_register_,
-                        static_cast<int64_t>(variables_base_past_vars_bytes_));
+        assembler_.la(0, base, variables_label);
+
+        assembler_.addi(0, base, base,
+                        static_cast<int64_t>(
+                            variables_base_past_vars_bytes().value()));
     }
 
     auto finish_target() -> void override {
@@ -543,12 +546,6 @@ class machine_rv32i : public machine {
 
         check_address_range(memory_end_address);
         check_memory_end(memory_end_address);
-    }
-
-    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
-        -> bool override {
-
-        return register_index(name) == register_index("sp");
     }
 
     [[nodiscard]] auto register_index_of(const std::string_view name) const
@@ -580,17 +577,6 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto target_assembler() const -> const ::assembler& override {
         return assembler_;
-    }
-
-    [[nodiscard]] auto target_call_register_names() const
-        -> const target_call_names& override {
-
-        static constexpr target_call_names names{
-            .arguments{"a0", "a1", "a2"},
-            .result{"a0"},
-        };
-
-        return names;
     }
 
     auto validate_register_type(const token& src_loc_tk,
@@ -1488,13 +1474,18 @@ class machine_rv32i : public machine {
             .max_padding_gaps_zeroed_one_by_one{
                 max_padding_gaps_zeroed_one_by_one_,
             },
-            .sector_size_bytes{card_sector_size_bytes},
+            .has_sd_card{true},
             .is_stack_bounded{},
             .frame_base_register{"s1"},
+            .stack_pointer_register{"sp"},
             .variables_base_register{variables_base_register_},
             .slot_register{slot_register_},
             .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
             .scratch_registers{scratch_registers_},
+            .target_calls{
+                .arguments{"a0", "a1", "a2"},
+                .result{"a0"},
+            },
         };
     }
 
@@ -3491,7 +3482,7 @@ class machine_rv32i : public machine {
 
         const bool is_variables_base{
             is_variables_base_reserved() and
-                base == register_index(variables_base_register_),
+                base == register_index(variables_base_register()),
         };
 
         const bool is_frame_base{

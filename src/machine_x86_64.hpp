@@ -955,13 +955,18 @@ class machine_x86_64 final : public machine {
             .max_padding_gaps_zeroed_one_by_one{
                 max_padding_gaps_zeroed_one_by_one_,
             },
-            .sector_size_bytes{card_sector_size_bytes},
+            .has_sd_card{true},
             .is_stack_bounded{},
             .frame_base_register{"rbx"},
+            .stack_pointer_register{"rsp"},
             .variables_base_register{variables_base_register_},
             .slot_register{slot_register_},
             .variables_base_past_vars_bytes{std::nullopt},
             .scratch_registers{scratch_registers_},
+            .target_calls{
+                .arguments{"rdi", "rsi", "rdx"},
+                .result{"rax"},
+            },
         };
     }
 
@@ -1091,12 +1096,6 @@ class machine_x86_64 final : public machine {
                                assembler_x86_64::memory::of_symbol(data_label));
     }
 
-    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
-        -> bool override {
-
-        return name == "rsp";
-    }
-
     // the index in 'register_names_' of a register of any size
     [[nodiscard]] auto register_index_of(const std::string_view name) const
         -> std::optional<size_t> override {
@@ -1142,17 +1141,6 @@ class machine_x86_64 final : public machine {
 
     [[nodiscard]] auto target_assembler() const -> const assembler& override {
         return assembler_;
-    }
-
-    [[nodiscard]] auto target_call_register_names() const
-        -> const target_call_names& override {
-
-        static constexpr target_call_names names{
-            .arguments{"rdi", "rsi", "rdx"},
-            .result{"rax"},
-        };
-
-        return names;
     }
 
   private:

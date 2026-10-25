@@ -38,6 +38,16 @@ struct runtime_check {
     bool enabled{};
 };
 
+// the registers of the calls the target provides, see
+// 'registers_for_target_call'
+struct target_call_names {
+    // the descriptor or sector, the address and the count or size; 'exit'
+    // takes the first
+    std::array<std::string_view, 3> arguments;
+    // the count that 'read' and 'write' return
+    std::string_view result;
+};
+
 // the facts of a target that the shared code and the front end read, one
 // table per backend; a target that differs passes a copy with its change,
 // e.g. the qemu machine has no sd card
@@ -52,12 +62,13 @@ struct target_description {
     // above this count 'zero_padding' zeroes the whole instance, which is
     // then smaller than a zero per gap
     size_t max_padding_gaps_zeroed_one_by_one{};
-    // the size of a sector of the sd card, 0 when the target has no card
-    size_t sector_size_bytes{};
+    // the sector functions need it, a sector is 'card_sector_size_bytes'
+    bool has_sd_card{};
     // true where no operating system stops a program that overflows the
     // stack: calls check that the stack has room and a failure has a handler
     bool is_stack_bounded{};
     std::string_view frame_base_register;
+    std::string_view stack_pointer_register;
     std::string_view variables_base_register;
     // the register that carries the address of the receiver of a method call
     std::string_view slot_register;
@@ -67,6 +78,9 @@ struct target_description {
     // the registers 'alloc_scratch_register' picks from, in the order it
     // tries them
     std::span<const std::string_view> scratch_registers;
+    // the registers of the arguments and the result of 'read', 'write', the
+    // sector functions and 'exit'
+    target_call_names target_calls;
 };
 
 // what the front end emits through, and what every target shares: the
@@ -104,7 +118,7 @@ struct target_description {
 //   target         'default_type', 'address_size_bytes',
 //                  'has_indexed_addressing', 'can_lower_index_scale',
 //                  'is_stack_bounded',
-//                  'max_storage_bytes', 'sector_size_bytes',
+//                  'max_storage_bytes', 'has_sd_card', 'sector_size_bytes',
 //                  'foo_counter_in_memory',
 //                  'max_padding_gaps_zeroed_one_by_one', 'frame_base_register',
 //                  'variables_base_register', 'variables_base_past_vars_bytes'
@@ -307,16 +321,6 @@ class machine {
 
     // the lines of the failures in each file, with '--checks=line'
     using failure_lines = std::map<size_t, std::set<size_t>>;
-
-    // the registers of the calls the target provides, see
-    // 'registers_for_target_call'
-    struct target_call_names {
-        // the descriptor or sector, the address and the count or size; 'exit'
-        // takes the first
-        std::array<std::string_view, 3> arguments;
-        // the count that 'read' and 'write' return
-        std::string_view result;
-    };
 
     // the addresses and the result of a comparison of two arrays, 'alignment'
     // is the alignment known for both
@@ -1154,7 +1158,7 @@ class machine {
     registers_for_target_call(const target_call function) const
         -> target_call_registers {
 
-        const target_call_names& names{target_call_register_names()};
+        const target_call_names& names{target_.target_calls};
 
         if (function == target_call::exit) {
             return {
@@ -1238,8 +1242,23 @@ class machine {
                  factor_use::read_only);
     }
 
+    [[nodiscard]] auto has_sd_card() const -> bool {
+        return target_.has_sd_card;
+    }
+
+    // a register of any size that names the stack pointer
+    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
+        -> bool {
+
+        return register_index_of(name) ==
+               register_index_of(target_.stack_pointer_register);
+    }
+
+    // asked only of a target that has a card
     [[nodiscard]] auto sector_size_bytes() const -> size_t {
-        return target_.sector_size_bytes;
+        assert(target_.has_sd_card);
+
+        return card_sector_size_bytes;
     }
 
     // a blank line that separates the code from the report
@@ -1371,11 +1390,6 @@ class machine {
     // by default
     virtual auto finish_target() -> void {}
 
-    // the asserts of 'call_function': a frame is never addressed from the
-    // stack pointer
-    [[nodiscard]] virtual auto
-    is_stack_pointer(const std::string_view name) const -> bool = 0;
-
     // the index of the register 'name' in any of its sizes, empty for text
     // that names no register, e.g. a label
     [[nodiscard]] virtual auto
@@ -1396,10 +1410,6 @@ class machine {
     [[nodiscard]] virtual auto target_assembler() -> assembler& = 0;
 
     [[nodiscard]] virtual auto target_assembler() const -> const assembler& = 0;
-
-    // the registers 'registers_for_target_call' takes its answers from
-    [[nodiscard]] virtual auto target_call_register_names() const
-        -> const target_call_names& = 0;
 
     // throws when a register of the target cannot hold a value of 'type_ref',
     // any type fits by default

@@ -463,7 +463,7 @@ class stmt_builtin_io final : public statement {
     auto assert_target_has_sd_card(toc& tc) const -> void {
         const machine& x{tc.machine()};
 
-        if (x.sector_size_bytes() == 0) {
+        if (not x.has_sd_card()) {
             throw compile_error{tok(), "the target has no sd card"};
         }
     }

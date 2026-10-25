@@ -42,7 +42,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // the machine has no sd card, so the sector functions are rejected
     [[nodiscard]] static constexpr auto qemu_target() -> target_description {
         target_description target{bare_metal_target()};
-        target.sector_size_bytes = 0;
+        target.has_sd_card = false;
         return target;
     }
 
@@ -51,7 +51,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     // overridden methods
     //
 
-    // note: 'sector_size_bytes' is 0, so the sector functions are rejected
+    // note: 'has_sd_card' is false, so the sector functions are rejected
     auto emit_sector_routines([[maybe_unused]] const bool read_used,
                               [[maybe_unused]] const bool write_used)
         -> void override {
