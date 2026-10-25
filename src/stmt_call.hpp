@@ -524,9 +524,6 @@ class call_limits final {
 
 // what compiling a call needs of it, 'stmt_call' makes it for each compile
 struct call_site {
-    // how the body of the call is compiled, which decides the temporaries
-    enum class call_mode : uint8_t { inlined, noinline };
-
     // how an argument reaches its parameter, decided at each compile because
     // the bindings of the current scope decide it:
     //
@@ -575,9 +572,8 @@ struct call_site {
     };
 
   public:
-    // the arguments of one compile of the call, for the body of 'mode'
+    // the arguments of one compile of the call, for the body of its callee
     struct call_plan {
-        call_mode mode{};
         std::vector<planned_argument> arguments;
 
         [[nodiscard]] auto has_temporaries() const -> bool {
@@ -639,13 +635,8 @@ struct call_site {
     // call result, e.g. 'point{1, 2}'; a noinline body for a value without
     // storage, e.g. a literal or an expression, an array is only passed by
     // name
-    [[nodiscard]] auto argument_plan(const toc& tc, const call_mode mode) const
-        -> call_plan {
-
-        call_plan plan{
-            .mode{mode},
-            .arguments{},
-        };
+    [[nodiscard]] auto argument_plan(const toc& tc) const -> call_plan {
+        call_plan plan;
 
         plan.arguments.reserve(args.size());
 
@@ -656,7 +647,7 @@ struct call_site {
             assert(not param.is_array() or form.is_place());
 
             const bool is_temporary{
-                mode == call_mode::inlined
+                func->is_inlined()
                     ? std::holds_alternative<argument_form::instance_temporary>(
                           form.kind)
                     : not form.is_place(),
@@ -839,8 +830,8 @@ struct call_site {
 //   4. 'compile_body': the body under labels unique to the call, with the
 //      bindings added
 //
-// 'dry_run' runs step 3 for the errors of a 'noinline_call', whose plan has
-// the noinline mode
+// 'dry_run' runs step 3 for the errors of a 'noinline_call', whose callee is
+// noinline
 class inline_call {
     // what the body names by its result and its parameters; the result has
     // its own address choice in 'compile_to_destination'
@@ -867,7 +858,7 @@ class inline_call {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void {
 
-        assert(plan_.mode == call_site::call_mode::inlined);
+        assert(call_.func->is_inlined());
 
         if (call_.func->returns() and
             call_site::result_type_differs(dst, *call_.func)) {
@@ -899,7 +890,7 @@ class inline_call {
     auto dry_run(toc& tc, const size_t indent, const destination& dst) const
         -> void {
 
-        assert(plan_.mode == call_site::call_mode::noinline);
+        assert(not call_.func->is_inlined());
 
         compile_with_bindings(tc, indent, dst);
     }
@@ -961,10 +952,8 @@ class inline_call {
 
         x.label(indent, call_label);
 
-        const bool is_inlined{plan_.mode == call_site::call_mode::inlined};
-
         // note: a noinline function is compiled in place only in its dry run
-        assert(is_inlined == call_.func->is_inlined());
+        const bool is_inlined{call_.func->is_inlined()};
 
         const toc::scope_entry body{
             tc,
@@ -1561,7 +1550,7 @@ class noinline_call {
     noinline_call(call_site call, call_site::call_plan plan)
         : call_{std::move(call)}, plan_{std::move(plan)} {
 
-        assert(plan_.mode == call_site::call_mode::noinline);
+        assert(not call_.func->is_inlined());
         assert(plan_.arguments.size() == call_.args.size());
     }
 
@@ -2278,7 +2267,7 @@ class stmt_call : public statement {
 
         func_ = &tc.get_func_or_throw(tok(), func_name_);
 
-        parse_arguments(tc, tz, *func_, deducing_args);
+        parse_arguments(tc, tz, deducing_args);
     }
 
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
@@ -2310,11 +2299,11 @@ class stmt_call : public statement {
 
         func_ = &tc.get_func_or_throw(tok(), func_name_);
 
-        assert_method_receiver(*func_, receiver);
+        assert_method_receiver(receiver);
 
         add_receiver_argument(std::move(receiver));
 
-        parse_arguments(tc, tz, *func_, deducing_args);
+        parse_arguments(tc, tz, deducing_args);
     }
 
     // e.g. 'point.at(1, 2)' calls the constructor 'point.at', 'tz' is after
@@ -2333,7 +2322,7 @@ class stmt_call : public statement {
 
         read_open_paren(tc, tz, "constructor name");
 
-        parse_arguments(tc, tz, *func_, {});
+        parse_arguments(tc, tz, {});
     }
 
     stmt_call() = default;
@@ -2369,30 +2358,29 @@ class stmt_call : public statement {
 
         x.comment(tok(), indent, call.source);
 
-        const stmt_def_func& func{*func_};
+        assert_call_accepted(tc, dst);
 
-        assert_call_accepted(tc, dst, func);
-
-        if (not func.is_inlined()) {
+        if (not callee().is_inlined()) {
             noinline_call{
                 call,
-                call.argument_plan(tc, call_site::call_mode::noinline),
+                call.argument_plan(tc),
             }
                 .compile(tc, indent, dst);
 
             return;
         }
 
-        call_limits::assert_inline_nesting(tc, call.tk, func);
+        call_limits::assert_inline_nesting(tc, call.tk, callee());
 
-        const bool is_recursion{tc.scopes().inlined_nesting(func.name()) != 0};
+        const bool is_recursion{tc.scopes().inlined_nesting(callee().name()) !=
+                                0};
 
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same
         try {
             inline_call{
                 call,
-                call.argument_plan(tc, call_site::call_mode::inlined),
+                call.argument_plan(tc),
             }
                 .compile(tc, indent, dst);
         } catch (const compile_error& e) {
@@ -2402,7 +2390,7 @@ class stmt_call : public statement {
                 throw;
             }
 
-            throw call_limits::recursion_error(call.tk, func);
+            throw call_limits::recursion_error(call.tk, callee());
         }
     }
 
@@ -2424,9 +2412,7 @@ class stmt_call : public statement {
             e.visit_call_effects(tc, visitor);
         }
 
-        const stmt_def_func& func{*func_};
-
-        for (const body_uses::global_use& u : func.uses().globals()) {
+        for (const body_uses::global_use& u : callee().uses().globals()) {
             visitor({
                 .call_tk{tok()},
                 .name{u.storage.root.name},
@@ -2435,7 +2421,9 @@ class stmt_call : public statement {
             });
         }
 
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
+        for (const auto [arg, param] :
+             std::views::zip(args_, callee().params())) {
+
             if (param.is_read_only()) {
                 continue;
             }
@@ -2488,10 +2476,10 @@ class stmt_call : public statement {
     // call: a name or a typed constant has the type of its parameter, its
     // storage or typed value is passed; an untyped constant is checked by its
     // value and a computed value by its compile, e.g. 'a + 1' and '-a' widen
-    auto assert_argument_types(const toc& tc, const stmt_def_func& func) const
-        -> void {
+    auto assert_argument_types(const toc& tc) const -> void {
+        for (const auto [arg, param] :
+             std::views::zip(args_, callee().params())) {
 
-        for (const auto [arg, param] : std::views::zip(args_, func.params())) {
             const stmt_identifier* const ident{arg.bare_path()};
 
             if (ident == nullptr) {
@@ -2514,11 +2502,11 @@ class stmt_call : public statement {
     // an argument that is not a writable variable is rejected here, also in
     // a function that is never called, so inlining does not change what is
     // accepted
-    auto assert_argument_writable(const toc& tc, const size_t index,
-                                  const stmt_def_func& func) const -> void {
+    auto assert_argument_writable(const toc& tc, const size_t index) const
+        -> void {
 
         // a parameter without 'mut' takes any argument
-        if (func.param(index).is_read_only()) {
+        if (callee().param(index).is_read_only()) {
             return;
         }
 
@@ -2556,26 +2544,25 @@ class stmt_call : public statement {
     // checked before the inlined and the noinline paths split, so inlining
     // does not change what is accepted; the result is the call's own, an
     // error in it has no call frame
-    auto assert_call_accepted(const toc& tc, const destination& dst,
-                              const stmt_def_func& func) const -> void {
+    auto assert_call_accepted(const toc& tc, const destination& dst) const
+        -> void {
 
-        assert_no_shared_storage(tc, dst, func);
-        assert_result_use(dst, func);
+        assert_no_shared_storage(tc, dst);
+        assert_result_use(dst);
 
-        if (func.returns()) {
-            assert_result_type(dst, func);
+        if (callee().returns()) {
+            assert_result_type(dst);
         }
 
-        assert_argument_types(tc, func);
+        assert_argument_types(tc);
         assert_arguments_not_written_later(tc, args_, std::nullopt);
     }
 
     // the function is a method and the receiver is a value
-    auto assert_method_receiver(const stmt_def_func& func,
-                                const stmt_identifier& receiver) const -> void {
+    auto assert_method_receiver(const stmt_identifier& receiver) const -> void {
 
         // a constructor has no receiver, it builds its value
-        if (func.is_constructor()) {
+        if (callee().is_constructor()) {
             throw compile_error{tok(),
                                 std::format("{} is a constructor, call it as "
                                             "'{}(...)'",
@@ -2597,8 +2584,8 @@ class stmt_call : public statement {
     // parameters are read-only. the result destination is only compared with
     // '--checks=alias'. with it, a global that the callee uses counts as an
     // argument, see 'body_uses'
-    auto assert_no_shared_storage(const toc& tc, const destination& dst,
-                                  const stmt_def_func& func) const -> void {
+    auto assert_no_shared_storage(const toc& tc, const destination& dst) const
+        -> void {
 
         const bool is_result_checked{
             tc.checks().alias and dst.is_storage(),
@@ -2633,7 +2620,7 @@ class stmt_call : public statement {
                 assert_not_shared_with_result(i, *target, dst, result);
             }
 
-            const bool is_read_only{func.param(i).is_read_only()};
+            const bool is_read_only{callee().param(i).is_read_only()};
 
             assert_not_shared_with_earlier(references, i, *target,
                                            is_read_only);
@@ -2649,9 +2636,8 @@ class stmt_call : public statement {
             return;
         }
 
-        for (const body_uses::global_use& global : func.uses().globals()) {
-            assert_not_shared_with_global(func, global, references, dst,
-                                          result);
+        for (const body_uses::global_use& global : callee().uses().globals()) {
+            assert_not_shared_with_global(global, references, dst, result);
         }
     }
 
@@ -2719,7 +2705,7 @@ class stmt_call : public statement {
     // global it uses, or what it writes to the global may be what it reaches
     // through them, e.g. 'g = add_g()' where 'add_g' sets 'res' and reads 'g'
     auto assert_not_shared_with_global(
-        const stmt_def_func& func, const body_uses::global_use& global,
+        const body_uses::global_use& global,
         const std::span<const reference> args, const destination& dst,
         const std::optional<storage_path>& result) const -> void {
 
@@ -2735,7 +2721,7 @@ class stmt_call : public statement {
                    reached.may_overlap(global.storage);
         };
 
-        for (const body_uses::binding_use& u : func.uses().bindings()) {
+        for (const body_uses::binding_use& u : callee().uses().bindings()) {
             if (u.param_index or not result or not overlaps(*result, u)) {
                 continue;
             }
@@ -2750,7 +2736,7 @@ class stmt_call : public statement {
         }
 
         for (const reference& arg : args) {
-            for (const body_uses::binding_use& u : func.uses().bindings()) {
+            for (const body_uses::binding_use& u : callee().uses().bindings()) {
                 if (u.param_index != arg.index or not overlaps(arg.target, u)) {
                     continue;
                 }
@@ -2790,15 +2776,13 @@ class stmt_call : public statement {
 
     // the result has the type of the destination, an operand widens a
     // narrower integer, see 'destination::as_operand'
-    auto assert_result_type(const destination& dst,
-                            const stmt_def_func& func) const -> void {
-
-        if (not call_site::result_type_differs(dst, func)) {
+    auto assert_result_type(const destination& dst) const -> void {
+        if (not call_site::result_type_differs(dst, callee())) {
             return;
         }
 
-        if (dst.is_operand() and
-            call_site::is_widened_integer(func.result_type(), dst.type_ref())) {
+        if (dst.is_operand() and call_site::is_widened_integer(
+                                     callee().result_type(), dst.type_ref())) {
 
             return;
         }
@@ -2807,20 +2791,18 @@ class stmt_call : public statement {
             dst.error_token(tok()),
             std::format("expected type {}, got {} from {}, use '{}(...)'",
                         in_quotes(dst.type_ref().name()),
-                        in_quotes(func.result_type().name()),
-                        in_quotes(func.name()), dst.type_ref().name()),
+                        in_quotes(callee().result_type().name()),
+                        in_quotes(callee().name()), dst.type_ref().name()),
         };
     }
 
     // a result must be stored and a call without one cannot provide it
-    auto assert_result_use(const destination& dst,
-                           const stmt_def_func& func) const -> void {
-
-        if (func.returns() and dst.is_empty()) {
+    auto assert_result_use(const destination& dst) const -> void {
+        if (callee().returns() and dst.is_empty()) {
             throw compile_error{tok(), "return value is discarded"};
         }
 
-        if (not func.returns() and not dst.is_empty()) {
+        if (not callee().returns() and not dst.is_empty()) {
             throw compile_error{tok(), "function does not return a value"};
         }
     }
@@ -2829,6 +2811,9 @@ class stmt_call : public statement {
     [[nodiscard]] auto call_begin_token() const -> const token& {
         return is_method() ? args_.at(0).tok() : tok();
     }
+
+    // note: set at the parse before the arguments are parsed
+    [[nodiscard]] auto callee() const -> const stmt_def_func& { return *func_; }
 
     // the type names the constructor after the '.', e.g. 'at' of
     // 'point.at(1, 2)', a method of the type is not one
@@ -2893,10 +2878,10 @@ class stmt_call : public statement {
     // a method receiver is already in 'args_', the parameter gives the type of
     // a literal argument unless its type was deduced from it, see
     // 'generic_call::deducing_args'
-    auto parse_arguments(toc& tc, tokenizer& tz, const stmt_def_func& func,
+    auto parse_arguments(toc& tc, tokenizer& tz,
                          const std::span<const size_t> deducing_args) -> void {
 
-        const std::span<const stmt_def_func_param> params{func.params()};
+        const std::span<const stmt_def_func_param> params{callee().params()};
         const size_t first{args_.size()};
 
         args_.reserve(params.size());
@@ -2954,10 +2939,10 @@ class stmt_call : public statement {
 
         for (size_t i{}; i < args_.size(); ++i) {
             assert_argument_usable(tc, args_.at(i), params.at(i));
-            assert_argument_writable(tc, i, func);
+            assert_argument_writable(tc, i);
         }
 
-        record_uses_of_call(tc, func);
+        record_uses_of_call(tc);
     }
 
     // the name is read, a generic function has its type arguments before the
@@ -3002,7 +2987,7 @@ class stmt_call : public statement {
     // the argument, and the globals it uses are the caller's too; a call of
     // the function being parsed has no complete record yet, so a 'mut'
     // argument counts as written whole
-    auto record_uses_of_call(toc& tc, const stmt_def_func& func) const -> void {
+    auto record_uses_of_call(toc& tc) const -> void {
 
         // note: a call outside a function is rejected when it is compiled
 
@@ -3010,12 +2995,12 @@ class stmt_call : public statement {
             return;
         }
 
-        const body_uses& callee{func.uses()};
+        const body_uses& callee_uses{callee().uses()};
 
-        tc.record_callee_globals(callee);
+        tc.record_callee_globals(callee_uses);
 
         const bool is_recursive{
-            tc.scopes().current_func_scope().is_name(func.name()),
+            tc.scopes().current_func_scope().is_name(callee().name()),
         };
 
         for (size_t i{}; i < args_.size(); ++i) {
@@ -3036,13 +3021,14 @@ class stmt_call : public statement {
 
             if (is_recursive) {
                 tc.record_use(root, ident.accessed_path(),
-                              func.param(i).is_read_only() ? use_kind::read
-                                                           : use_kind::write);
+                              callee().param(i).is_read_only()
+                                  ? use_kind::read
+                                  : use_kind::write);
 
                 continue;
             }
 
-            for (const body_uses::binding_use& u : callee.bindings()) {
+            for (const body_uses::binding_use& u : callee_uses.bindings()) {
                 if (u.param_index == i) {
                     tc.record_use(
                         root, ident.accessed_path().extended_by(u.path),

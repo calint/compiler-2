@@ -77,6 +77,7 @@ class stmt_builtin_exit final : public statement {
                             const call_effect_visitor visitor) const
         -> void override {
 
+        std::cerr << "SCRATCH exit visit_call_effects\n"; std::abort();
         args_.visit_call_effects(tc, visitor);
     }
 

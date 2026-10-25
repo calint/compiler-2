@@ -963,7 +963,7 @@ class expr_arith final : public statement {
         const statement& first_expr{*exprs_.front()};
 
         if (const stmt_identifier* const ident{first_expr.operand_path()}) {
-            std::ignore = make_ident_info(tc, *ident);
+            try { std::ignore = make_ident_info(tc, *ident); } catch (...) { std::cerr << "SCRATCH type_of_first_element\n"; std::abort(); }
         }
 
         return first_expr.get_type();
@@ -1120,6 +1120,7 @@ class expr_arith final : public statement {
         const type& operand_type{
             ident ? make_ident_info(tc, *ident).type_ref() : term.get_type(),
         };
+        if (&operand_type != &term.get_type()) { std::cerr << "SCRATCH assert_number\n"; std::abort(); }
 
         if (not operand_type.is_builtin()) {
             throw compile_error{term.tok(),
