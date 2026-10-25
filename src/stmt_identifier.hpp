@@ -80,6 +80,10 @@ struct constant_range {
     std::string_view array_name;
 };
 
+// where the range of a bulk operation is checked: a constant count with a
+// constant start was checked at compile time, e.g. 'array_copy(a[1], b, 2)'
+enum class range_check : uint8_t { run_time, compile_time };
+
 // a constant range is known to be negative or to pass the end of the array,
 // e.g. 5 in 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time one is left to
 // the bounds check at run time
@@ -147,7 +151,7 @@ class stmt_identifier;
 // reaches ('accessed_bytes_', the whole array after a run-time index), the
 // compile resolves the names again in the current scopes and builds one memory
 // operand ('compile_lea', see 'etc/docs/README.md' chapter 6); a path that
-// names a function or a constant has no storage; the members that use
+// names a constant has no storage; the members that use
 // 'expr_any' (the constructor, the element parse, the index steps of the walk)
 // are in 'stmt_identifier_impl.hpp'
 class stmt_identifier final : public statement {

@@ -61,21 +61,43 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        B.1. 'call_site::call_mode' goes (S1): since round 15 D.2 it equals
             'func->is_inlined()' at every plan; 'argument_plan(tc)' reads the
             callee, the four asserts on the mode assert the callee
+       => B.1 done (2026-10-25): 'call_mode' and 'call_plan::mode' gone,
+          'argument_plan(tc)' keys the temporary rule on 'func->is_inlined()';
+          the asserts read the callee
        B.2. 'stmt_call' members read 'func_' (S2): the 10 members with a
             'func' parameter and the two locals; the statics given only
             '*call_.func' stay unless asked (see asks)
+       => B.2 done (2026-10-25): a private 'callee()' (set at the parse
+          before the arguments) read by the 10 members and the two former
+          locals; 'record_uses_of_call' names its local 'callee_uses'
        B.3. scratch builds first, then remove (S5, E5/F10): the
             'visit_call_effects' override of 'stmt_builtin_exit' (left from
             'expression'); the lookup in 'expr_arith::type_of_first_element'
             for an error the parse gives since round 14 F.2, 'assert_number'
             reads 'get_type()', the 'stmt_identifier' header sentence about
             functions
+       => B.3 done (2026-10-25): a scratch build that aborted in the
+          override, on a throw of the lookup and on a type differing in
+          'assert_number' passed both suites, the CLI tests, fuzz-reject 600,
+          fuzz-generics 300 and fuzz-exprs 1000; removed, the 'tc' that only
+          the lookup used goes from 'assert_number',
+          'validate_arithmetic_operands' and 'end_list'; note: the commit
+          07bcc6fd holds the scratch aborts, this step removes them
        B.4. small moves and access (S7, B6, T3, N6): 'range_check' beside
             'assert_constant_range'; 'machine::is_stack_pointer' protected,
             'free_scratch_registers' out of the front-end list;
             'ident_builder' helpers private, 'replace_binding_base' a member
             of 'ident_path'; 'deduce_array_copy' -> 'deduce_whole_array_copy'
+       => B.4 done (2026-10-25): as listed, 'ident_path::rebased';
+          'is_stack_pointer' private (only 'machine' calls it);
+          'free_scratch_registers' stays public for the rv32i backend test,
+          listed under backend tests; from A.2: 'checks_storage_capacity'
+          private, 'lut::put' asserts a new name
        B.5. 'call_or_identifier' a variant (F7): exactly one of the two
+       B.5. 'call_or_identifier' a variant (F7): exactly one of the two
+       => B.5 done (2026-10-25): the three callers use 'std::get_if' and
+          'std::get'; both suites, the CLI tests and clang-tidy clean for
+          phase B
     C. tables (toc)
        C.1. one origin per offset (T1): 'storage_location::base_offset'
             named for "from the frame base, or 'dat' at the root"; one

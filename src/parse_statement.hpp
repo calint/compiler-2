@@ -10,6 +10,7 @@
 #include <format>
 #include <memory>
 #include <utility>
+#include <variant>
 
 #include "compile_error.hpp"
 #include "constant_parser.hpp"
@@ -222,10 +223,8 @@ inline auto value_call(const toc& tc, std::unique_ptr<stmt_call> call)
 }
 
 // a call, or an identifier that is not the receiver of a method
-struct call_or_identifier {
-    std::unique_ptr<stmt_call> call;
-    std::unique_ptr<stmt_identifier> identifier;
-};
+using call_or_identifier =
+    std::variant<std::unique_ptr<stmt_call>, std::unique_ptr<stmt_identifier>>;
 
 // a built-in with a value at 'tk', classified as 'tm', e.g. 'i8(x)',
 // 'array_length(a)' or 'read(0, b, n)', null when 'tk' names none; a built-in
@@ -308,26 +307,16 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 
     // e.g. 'foo(x)' or 'show<name>(x)', the call reads the type arguments
     if (next == '(' or tm.is(term_kind::generic_call)) {
-        return {
-            .call{
-                std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
-                                            expected_type),
-            },
-            .identifier{},
-        };
+        return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
+                                           expected_type);
     }
 
     assert_no_type_args_for_plain_func(tk, tm, tz);
 
     // e.g. 'point.at(1, 2)'
     if (tm.is(term_kind::constructor_call)) {
-        return {
-            .call{
-                std::make_unique<stmt_call>(constructor_call_tag{}, tc,
-                                            std::move(uops), tk, tz),
-            },
-            .identifier{},
-        };
+        return std::make_unique<stmt_call>(constructor_call_tag{}, tc,
+                                           std::move(uops), tk, tz);
     }
 
     // e.g. the 'f' of 'x = f + 1'; the resolver tells a generic function
@@ -346,21 +335,13 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 
     // e.g. '-lst.size()' negates the result, not the receiver
     if (ident.is_method_receiver()) {
-        return {
-            .call{
-                std::make_unique<stmt_call>(
-                    tc, std::move(uops), std::move(ident), tz, expected_type),
-            },
-            .identifier{},
-        };
+        return std::make_unique<stmt_call>(tc, std::move(uops),
+                                           std::move(ident), tz, expected_type);
     }
 
     ident.set_unary_ops(std::move(uops));
 
-    return {
-        .call{},
-        .identifier{std::make_unique<stmt_identifier>(std::move(ident))},
-    };
+    return std::make_unique<stmt_identifier>(std::move(ident));
 }
 
 // a statement that starts with a name: a call as in an expression, e.g.
@@ -377,16 +358,23 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
                                  unary_ops{}, nullptr),
     };
 
-    if (parsed.call) {
-        return std::move(parsed.call);
+    if (std::unique_ptr<stmt_call>* const call{
+            std::get_if<std::unique_ptr<stmt_call>>(&parsed),
+        }) {
+
+        return std::move(*call);
     }
 
     // e.g. 'p1 = p2'
     if (const std::optional<token> equals_tk{tz.is_next_char_token('=')};
         equals_tk) {
 
-        return std::make_unique<stmt_assign_var>(
-            tc, tz, std::move(*parsed.identifier), *equals_tk);
+        stmt_identifier& dst{
+            *std::get<std::unique_ptr<stmt_identifier>>(parsed),
+        };
+
+        return std::make_unique<stmt_assign_var>(tc, tz, std::move(dst),
+                                                 *equals_tk);
     }
 
     throw compile_error{
@@ -456,11 +444,14 @@ inline auto parse_operand(toc& tc, tokenizer& tz,
                                  destination_type),
     };
 
-    if (parsed.call) {
-        return value_call(tc, std::move(parsed.call));
+    if (std::unique_ptr<stmt_call>* const call{
+            std::get_if<std::unique_ptr<stmt_call>>(&parsed),
+        }) {
+
+        return value_call(tc, std::move(*call));
     }
 
-    return std::move(parsed.identifier);
+    return std::move(std::get<std::unique_ptr<stmt_identifier>>(parsed));
 }
 
 inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)

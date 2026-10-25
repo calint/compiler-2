@@ -14,6 +14,7 @@
 #include <span>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -194,17 +195,24 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
         parse_call_or_identifier(tc, tz, tok(), tm, std::move(no_uops), &tp),
     };
 
-    if (parsed.call) {
-        value_ = std::move(parsed.call);
+    if (std::unique_ptr<stmt_call>* const call{
+            std::get_if<std::unique_ptr<stmt_call>>(&parsed),
+        }) {
+
+        value_ = std::move(*call);
 
         assert_call_type(tp);
 
         return;
     }
 
-    const stmt_identifier& ident{*parsed.identifier};
+    std::unique_ptr<stmt_identifier>& parsed_ident{
+        std::get<std::unique_ptr<stmt_identifier>>(parsed),
+    };
 
-    value_ = std::move(parsed.identifier);
+    const stmt_identifier& ident{*parsed_ident};
+
+    value_ = std::move(parsed_ident);
 
     const ident_info src_info{make_ident_info(tc, ident)};
 

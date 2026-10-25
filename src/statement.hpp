@@ -222,10 +222,6 @@ class one_line_source final {
 // the width an expression is computed at compared with its own
 enum class width_change : uint8_t { narrowed, widened };
 
-// where the range of a bulk operation is checked: a constant count with a
-// constant start was checked at compile time, e.g. 'array_copy(a[1], b, 2)'
-enum class range_check : uint8_t { run_time, compile_time };
-
 class stmt_identifier;
 
 // a node of the program: it parses itself in its constructor, writes its

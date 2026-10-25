@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -50,6 +51,8 @@ template <class T> class lut final {
     }
 
     auto put(std::string key, T data) -> void {
+        assert(not has(key));
+
         elems_.emplace_back(std::move(key), std::move(data));
     }
 

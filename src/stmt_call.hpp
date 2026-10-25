@@ -2372,8 +2372,9 @@ class stmt_call : public statement {
 
         call_limits::assert_inline_nesting(tc, call.tk, callee());
 
-        const bool is_recursion{tc.scopes().inlined_nesting(callee().name()) !=
-                                0};
+        const bool is_recursion{
+            tc.scopes().inlined_nesting(callee().name()) != 0,
+        };
 
         // a recursion that does not end with constant arguments runs out of
         // registers before it reaches the nesting limit, the advice is the same

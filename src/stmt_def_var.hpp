@@ -130,26 +130,6 @@ class initializer_declaration final {
     }
 
   private:
-    // e.g. 'var c = a' copies the whole array 'a'
-    auto deduce_array_copy(toc& tc, const token& tk,
-                           const stmt_identifier& ident) -> void {
-
-        const ident_info info{make_ident_info(tc, ident)};
-
-        if (not info.is_array()) {
-            return;
-        }
-
-        // e.g. an unsized array parameter
-        if (info.is_length_unknown()) {
-            throw compile_error{tk,
-                                std::format("size of array {} is not known",
-                                            in_quotes(ident.dotted_path()))};
-        }
-
-        shape_ = info.shape();
-    }
-
     // e.g. 'var s = "hi"' is an 'i8' array of 2
     auto deduce_declaration(toc& tc, tokenizer& tz) -> void {
         // note: the placeholder has the default type until the type is known
@@ -239,7 +219,27 @@ class initializer_declaration final {
             return;
         }
 
-        deduce_array_copy(tc, tk, *ident);
+        deduce_whole_array_copy(tc, tk, *ident);
+    }
+
+    // e.g. 'var c = a' copies the whole array 'a'
+    auto deduce_whole_array_copy(toc& tc, const token& tk,
+                                 const stmt_identifier& ident) -> void {
+
+        const ident_info info{make_ident_info(tc, ident)};
+
+        if (not info.is_array()) {
+            return;
+        }
+
+        // e.g. an unsized array parameter
+        if (info.is_length_unknown()) {
+            throw compile_error{tk,
+                                std::format("size of array {} is not known",
+                                            in_quotes(ident.dotted_path()))};
+        }
+
+        shape_ = info.shape();
     }
 
     auto set_type(const type& tp) -> void { type_ = &tp; }

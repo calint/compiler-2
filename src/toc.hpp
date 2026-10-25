@@ -1919,6 +1919,21 @@ class ident_path final {
         return path_;
     }
 
+    // the path with its base replaced by 'new_base', e.g. 'pt.x' with the base
+    // 'p' becomes 'p.x' and 'lnk.count' with 'world.room.link' becomes
+    // 'world.room.link.count'
+    [[nodiscard]] auto rebased(const std::string_view new_base) const
+        -> ident_path {
+
+        ident_path target{std::string{new_base}};
+
+        for (const std::string& s : path_ | std::views::drop(1)) {
+            target.append(s);
+        }
+
+        return target;
+    }
+
     [[nodiscard]] auto str() const -> const std::string& { return id_; }
 
   private:
@@ -1930,8 +1945,8 @@ class ident_path final {
     }
 };
 
-// builds the identifier info of a variable's path, finished: the address held
-// below a run-time index and the base of a parameter binding
+// builds the identifier info of a variable's path, finished, the address held
+// below a run-time index included; used by 'ident_resolver' only
 class ident_builder final {
   public:
     //
@@ -1998,6 +2013,11 @@ class ident_builder final {
                                         .read_only_why{var.read_only_why},
                                     });
     }
+
+  private:
+    //
+    // statics
+    //
 
     // the memory 'offset' bytes into a variable placed at 'placement', in
     // storage from its own base or else from 'base_register'
@@ -2074,23 +2094,6 @@ class ident_builder final {
         }
 
         return element;
-    }
-
-    // 'id' with the base replaced by what the parameter is bound to, e.g.
-    //   res -> pt.x becomes pt.x
-    //   pt.x -> p becomes p.x
-    //   lnk.count -> world.room.link becomes world.room.link.count
-    [[nodiscard]] static auto replace_binding_base(const bound_name& binding,
-                                                   const ident_path& id)
-        -> ident_path {
-
-        ident_path target{binding.dotted_path};
-
-        for (const std::string& s : id.path() | std::views::drop(1)) {
-            target.append(s);
-        }
-
-        return target;
     }
 };
 
@@ -2401,7 +2404,7 @@ class ident_resolver final {
             //       path
         }
 
-        step.id = ident_builder::replace_binding_base(named, step.id);
+        step.id = step.id.rebased(named.dotted_path);
 
         return std::nullopt;
     }
@@ -3314,11 +3317,6 @@ class toc final {
         return overflow_options(dst).enabled;
     }
 
-    // the locals of a dry run live in the callee's own frame
-    [[nodiscard]] auto checks_storage_capacity() const -> bool {
-        return dry_run_depth_ == 0;
-    }
-
     [[nodiscard]] auto compiled() const -> const compile_records& {
         return compiled_;
     }
@@ -3753,6 +3751,11 @@ class toc final {
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
         return data_.add_constant(create_unique_label(src_loc_tk, kind),
                                   std::move(bytes));
+    }
+
+    // the locals of a dry run live in the callee's own frame
+    [[nodiscard]] auto checks_storage_capacity() const -> bool {
+        return dry_run_depth_ == 0;
     }
 
     [[nodiscard]] auto get_func_info_or_throw(const token& src_loc_tk,

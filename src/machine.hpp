@@ -100,7 +100,7 @@ struct target_description {
 //   data           'data_alignment', 'define_constant', 'emit_data',
 //                  'emit_data_array', 'emit_repeated_data',
 //                  'emit_string_data', 'emit_zero_data', 'zero_padding'
-//   registers      'alloc_scratch_register', 'free_scratch_register(s)',
+//   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
 //                  'free_named_register(s)', 'reserve_frame_base',
 //                  'release_frame_base', 'slot_register', 'register_view',
@@ -129,7 +129,8 @@ struct target_description {
 //                  the queries of the register report are private, for
 //                  'register_reporter'
 //   backend tests  'assert_registers_free', 'emitted_line_count',
-//                  'emitted_text', 'release_variables_base'
+//                  'emitted_text', 'free_scratch_registers',
+//                  'release_variables_base'
 class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
@@ -1199,14 +1200,6 @@ class machine {
         return target_.is_stack_bounded;
     }
 
-    // a register of any size that names the stack pointer
-    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
-        -> bool {
-
-        return register_index_of(name) ==
-               register_index_of(target_.stack_pointer_register);
-    }
-
     auto label(const size_t indent, const std::string_view name) -> void {
         target_assembler().label(indent, name);
     }
@@ -2075,6 +2068,14 @@ class machine {
                                    [&](const std::string_view name) -> bool {
                                        return register_index_of(name) == index;
                                    });
+    }
+
+    // a register of any size that names the stack pointer
+    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
+        -> bool {
+
+        return register_index_of(name) ==
+               register_index_of(target_.stack_pointer_register);
     }
 
     // of two versions, at least one available, the one to keep

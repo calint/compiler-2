@@ -156,7 +156,7 @@ class expr_arith final : public statement {
 
         // the first element decides the width the list is computed at
         // e.g. 'x + 1' has the type of the variable 'x'
-        set_type(type_of_first_element(tc));
+        set_type(exprs_.front()->get_type());
 
         // a sub-expression starts at the precedence of the operator that
         // opened it
@@ -167,7 +167,7 @@ class expr_arith final : public statement {
             // e.g. '(a + b)'
             if (is_closed(tz)) {
                 assert_parentheses_group();
-                validate_arithmetic_operands(tc);
+                validate_arithmetic_operands();
                 return;
             }
 
@@ -180,7 +180,7 @@ class expr_arith final : public statement {
             };
 
             if (not next_op) {
-                end_list(tc, tz);
+                end_list(tz);
                 return;
             }
 
@@ -197,7 +197,7 @@ class expr_arith final : public statement {
             // a lower precedence returns to the parent list
             // e.g. the '-' of 'a + b * c - d' ends 'b * c'
             if (is_end_of_implied_subexpression(precedence, next_precedence)) {
-                end_list(tc, tz);
+                end_list(tz);
                 return;
             }
 
@@ -799,7 +799,7 @@ class expr_arith final : public statement {
     }
 
     // what follows the list is not read
-    auto end_list(const toc& tc, tokenizer& tz) const -> void {
+    auto end_list(tokenizer& tz) const -> void {
         // e.g. the '==' of '(x == 1) == b' or of 'x = 1 + (x < 1)', which
         // takes the condition for an arithmetic operand
         if (is_enclosed()) {
@@ -811,7 +811,7 @@ class expr_arith final : public statement {
                                 "expected ')' to close expression"};
         }
 
-        validate_arithmetic_operands(tc);
+        validate_arithmetic_operands();
     }
 
     // the first element is added in an additive list and a factor in a list
@@ -955,29 +955,15 @@ class expr_arith final : public statement {
         return steps;
     }
 
-    // a function name has no type, its lookup rejects it as a value, e.g. the
-    // 'make' of 'var x = make'
-    [[nodiscard]] auto type_of_first_element(const toc& tc) const
-        -> const type& {
-
-        const statement& first_expr{*exprs_.front()};
-
-        if (const stmt_identifier* const ident{first_expr.operand_path()}) {
-            try { std::ignore = make_ident_info(tc, *ident); } catch (...) { std::cerr << "SCRATCH type_of_first_element\n"; std::abort(); }
-        }
-
-        return first_expr.get_type();
-    }
-
     // the elements are operands of the operators of the list or of its unary
     // ops, e.g. '-(a + b)'
-    auto validate_arithmetic_operands(const toc& tc) const -> void {
+    auto validate_arithmetic_operands() const -> void {
         if (ops_.empty() and list_uops_.is_empty()) {
             return;
         }
 
         for (const std::unique_ptr<statement>& expr : exprs_) {
-            assert_number(tc, *expr);
+            assert_number(*expr);
         }
     }
 
@@ -1114,13 +1100,8 @@ class expr_arith final : public statement {
     // an operand of an operator is a number: an instance is not, and a
     // stored 'bool' is 0 or 1, arithmetic would make other values, so it is
     // converted
-    static auto assert_number(const toc& tc, const statement& term) -> void {
-        const stmt_identifier* const ident{term.operand_path()};
-
-        const type& operand_type{
-            ident ? make_ident_info(tc, *ident).type_ref() : term.get_type(),
-        };
-        if (&operand_type != &term.get_type()) { std::cerr << "SCRATCH assert_number\n"; std::abort(); }
+    static auto assert_number(const statement& term) -> void {
+        const type& operand_type{term.get_type()};
 
         if (not operand_type.is_builtin()) {
             throw compile_error{term.tok(),
@@ -1134,6 +1115,7 @@ class expr_arith final : public statement {
 
         // the conversion goes inside the unary operators, e.g. '-int(t)'; an
         // indexed name is not the whole operand, e.g. 'bs' of 'bs[1]'
+        const stmt_identifier* const ident{term.operand_path()};
         const bool is_named{ident and not ident->is_indexed()};
 
         const std::string_view converted{
@@ -1667,7 +1649,7 @@ class expr_arith final : public statement {
         };
 
         if (not uo.is_empty()) {
-            assert_number(tc, *element);
+            assert_number(*element);
         }
 
         // note: the element read the unary ops that 'uo' saw and put back
