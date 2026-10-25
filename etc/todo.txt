@@ -392,6 +392,19 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           is now in the operand's token; listings, errors and
           '--reproduce-source' equal on both suites; fuzz-exprs (default
           and spelling), reject, compiler clean
+       => F.8 step 3 done (2026-10-25): 'comparison_spellings' table beside
+          'comparison_operator' ('source_text' and the new 'comparison_of'
+          read it); 'expr_bool_op::comparison' holds 'op_tk' (the operator
+          with the whitespace before it), 'ws_pre_op' and 'ws_post_op' go,
+          the whitespace after the operator belongs to the right side;
+          'parse_comparison_operator' goes, a lone '=' or '!' is reported by
+          'assert_no_lone_operator_char' at the same place (tests 0166,
+          0167); 'expr_arith' is located past the whitespace
+          ('next_token_position', as its comment says), so a list after a
+          line comment is located at its first element: test 0529 listing
+          comments say 19:9 instead of 19:1, all other listings, errors and
+          '--reproduce-source' equal; fuzz-exprs (default and spelling),
+          reject, compiler, flow clean
     G. statements
        G.1. 'stmt_if' speaks 'condition_result' only (S5); 'known_of' goes
        => G.1 done (2026-10-25): 'stmt_if_branch::parse_constant_' is a

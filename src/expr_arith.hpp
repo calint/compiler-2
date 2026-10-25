@@ -135,7 +135,7 @@ class expr_arith final : public statement {
     // the list is located where its first element starts
     expr_arith(toc& tc, tokenizer& tz, options opts)
         : statement{opts.first_expression ? position_of(*opts.first_expression)
-                                          : tz.cur_position_token()},
+                                          : tz.next_token_position()},
           list_uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{opts.is_implied_subexpression},
           destination_type_{opts.destination_type} {

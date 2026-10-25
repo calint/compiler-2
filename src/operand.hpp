@@ -4,12 +4,14 @@
 // that the front end and the backend compute with
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -373,31 +375,45 @@ enum class comparison_operator : uint8_t {
     std::unreachable();
 }
 
+// the spelling of each comparison operator in the source
+struct comparison_spelling {
+    comparison_operator op;
+    std::string_view text;
+};
+
+inline constexpr auto comparison_spellings{
+    std::to_array<comparison_spelling>({
+        {.op{comparison_operator::equal}, .text{"=="}},
+        {.op{comparison_operator::not_equal}, .text{"!="}},
+        {.op{comparison_operator::less}, .text{"<"}},
+        {.op{comparison_operator::less_equal}, .text{"<="}},
+        {.op{comparison_operator::greater}, .text{">"}},
+        {.op{comparison_operator::greater_equal}, .text{">="}},
+    }),
+};
+
 // the operator as written in the source
 [[nodiscard]] inline auto source_text(const comparison_operator op)
     -> std::string_view {
 
-    if (op == comparison_operator::equal) {
-        return "==";
+    for (const comparison_spelling& spelling : comparison_spellings) {
+        if (spelling.op == op) {
+            return spelling.text;
+        }
     }
 
-    if (op == comparison_operator::not_equal) {
-        return "!=";
+    std::unreachable();
+}
+
+// the comparison 'text' spells, none for any other text
+[[nodiscard]] inline auto comparison_of(const std::string_view text)
+    -> std::optional<comparison_operator> {
+
+    for (const comparison_spelling& spelling : comparison_spellings) {
+        if (spelling.text == text) {
+            return spelling.op;
+        }
     }
 
-    if (op == comparison_operator::less) {
-        return "<";
-    }
-
-    if (op == comparison_operator::less_equal) {
-        return "<=";
-    }
-
-    if (op == comparison_operator::greater) {
-        return ">";
-    }
-
-    assert(op == comparison_operator::greater_equal);
-
-    return ">=";
+    return std::nullopt;
 }

@@ -6,7 +6,6 @@
 #include <format>
 #include <optional>
 #include <ostream>
-#include <print>
 #include <span>
 #include <string>
 #include <string_view>
@@ -83,9 +82,9 @@ struct branch_targets {
 class expr_bool_op final : public statement {
     // the operator and the right side, e.g. '== b' of 'a == b'
     struct comparison {
-        token ws_pre_op;
+        // the operator with the whitespace before it, 'op' is what it spells
+        token op_tk;
         comparison_operator op{comparison_operator::equal};
-        token ws_post_op;
         expr_arith rhs;
         // e.g. 'a == b' of two user type instances or two whole arrays, the
         // bytes are compared
@@ -122,25 +121,19 @@ class expr_bool_op final : public statement {
 
         lhs_ = {tc, tz};
 
-        const token ws_pre_op{tz.next_whitespace_token()};
-
         const std::optional<comparison_operator> op{
-            parse_comparison_operator(tz),
+            comparison_of(tz.peek_operator()),
         };
 
         // without an operator the operand is the condition, e.g. 'if a {...}'
         if (not op) {
-            // note: the whitespace stays with what follows, so the operand
-            //       alone reproduces its source, see 'release_name_or_literal'
-
-            tz.put_back_token(ws_pre_op);
+            assert_no_lone_operator_char(tz);
             return;
         }
 
         comparison cmp{
-            .ws_pre_op{ws_pre_op},
+            .op_tk{tz.seen_operator()},
             .op{*op},
-            .ws_post_op{tz.next_whitespace_token()},
             .rhs{},
             .is_memory{},
         };
@@ -169,9 +162,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        comparison_->ws_pre_op.source_to(os);
-        std::print(os, "{}", source_text(comparison_->op));
-        comparison_->ws_post_op.source_to(os);
+        comparison_->op_tk.source_to(os);
         comparison_->rhs.source_to(os);
     }
 
@@ -725,6 +716,20 @@ class expr_bool_op final : public statement {
                         in_quotes(statement::trimmed_source(side)))};
     }
 
+    // a '=' or '!' that is not part of a comparison, e.g. 'if a = b', is an
+    // error at it
+    static auto assert_no_lone_operator_char(const tokenizer& tz) -> void {
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == '=') {
+            throw compile_error{tz, "expected '=='"};
+        }
+
+        if (next == '!') {
+            throw compile_error{tz, "expected '!='"};
+        }
+    }
+
     // a condition tests a number, an instance would be tested as its first
     // field; checked when compiling since the initializer of a 'var' parses
     // its expression to learn the type, e.g. 'var b = a' copies the instance
@@ -1025,45 +1030,6 @@ class expr_bool_op final : public statement {
         assert(not info.is_const());
 
         return info;
-    }
-
-    // the comparison at the next characters, none for a shorthand condition
-    [[nodiscard]] static auto parse_comparison_operator(tokenizer& tz)
-        -> std::optional<comparison_operator> {
-
-        if (tz.is_next_char('=')) {
-            if (not tz.is_next_char('=')) {
-                // the error is at the '=' that is alone
-                tz.put_back_char('=');
-
-                throw compile_error{tz, "expected '=='"};
-            }
-
-            return comparison_operator::equal;
-        }
-
-        if (tz.is_next_char('!')) {
-            if (not tz.is_next_char('=')) {
-                // the error is at the '!' that is alone
-                tz.put_back_char('!');
-
-                throw compile_error{tz, "expected '!='"};
-            }
-
-            return comparison_operator::not_equal;
-        }
-
-        if (tz.is_next_char('<')) {
-            return tz.is_next_char('=') ? comparison_operator::less_equal
-                                        : comparison_operator::less;
-        }
-
-        if (tz.is_next_char('>')) {
-            return tz.is_next_char('=') ? comparison_operator::greater_equal
-                                        : comparison_operator::greater;
-        }
-
-        return std::nullopt;
     }
 
     // the right operand may be an immediate; an untyped constant is compared
