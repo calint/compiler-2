@@ -103,17 +103,40 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             named for "from the frame base, or 'dat' at the root"; one
             'offset_from_variables_base' holds the shift the three callers
             write by hand
+       => C.1 done (2026-10-25): 'storage_location::next_offset_bytes'
+          ("from the frame base or, at the root, from 'dat'");
+          'offset_from_variables_base' holds the shift, used by 'place_dat',
+          'allocate_var' and 'next_frame_address'; 'variables_base_shift_bytes'
+          folded into it
        C.2. a scope's bytes have one writer (T2): 'storage_layout::
             allocate_var' records the bytes as its last step, 'toc::add_var'
             loses the out-of-band number and the two "not yet" notes; the
             checks stay before the update
+       => C.2 done (2026-10-25): 'scope::add_storage_bytes' called by
+          'allocate_var' after its checks; 'scope::add_var(var, kind)'; the
+          body peak is read after the bytes are held, the "not yet" note goes
        C.3. the dat path (T7, N3.2): 'allocate_dat' -> 'place_dat'; the
             "dat before var" flag moves from every 'scope' to 'toc'
+       => C.3 done (2026-10-25): 'place_dat'; 'toc::is_global_var_declared_'
+          set by 'add_var' for a global that is not a dat; the dat branch of
+          'add_var' says it is the compile half of 'add_dat'
        C.4. one word for the deepest scope count (T6): 'peak_scope_count'
             in 'scope_stack', 'usage_statistics', 'dry_run_scope'; the call
             limit keeps 'max_scope_count'
+       => C.4 done, changed (2026-10-25): 'max_' names the measured peaks
+          ('max_body_vars_size_bytes', 'max_scratch_registers', the report's
+          "max ... in use") and the limits ('call_limits::max_*'), so a
+          'peak_' would break the pattern; the two words were "depth" and
+          "scope count": 'scope_stack' says 'max_scope_count',
+          'set_max_scope_count', 'track_scope_count', 'scope_entry'
+          'outer_scope_count_'; the limit stays qualified by 'call_limits'
        C.5. a 'static_assert' that the operator texts of the spelling tables
             are in 'tokenizer::operators_' (T5)
+       => C.5 done (2026-10-25): two 'static_assert's in 'tokenizer'
+          (operand.hpp, layer 1, included); a scratch copy without '%' fails
+          to compile; F.1 adds the unary table to it; both suites, the CLI
+          tests, clang-tidy, fuzz-reject 600, fuzz-data 300 and fuzz-calls
+          300 clean for phase C
     D. calls
        D.1. the argument temporaries kept as values (S4): 'inline_call'
             keeps what 'make_argument_temporary' returns and passes it to

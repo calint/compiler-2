@@ -391,9 +391,6 @@ class scope final {
     // variables declared in this scope
     lut<var_info> vars_;
 
-    // true if var that is not dat has been added
-    bool non_dat_var_has_been_added_{};
-
     // a 'loop' or 'foo' scope: a 'break' of it was compiled, so its end is
     // reached; only 'toc::join_loop' reads it, a 'foo' always reaches its end
     bool is_left_by_break_{};
@@ -411,12 +408,13 @@ class scope final {
         consts_.put(std::string{name}, ci);
     }
 
-    auto add_var(const var_info& var, const size_t allocated_size_bytes,
-                 const var_kind kind) -> void {
+    // the bytes that 'storage_layout::allocate_var' placed in this scope
+    auto add_storage_bytes(const size_t size_bytes) -> void {
+        allocated_storage_size_bytes_ =
+            sum_storage_size(allocated_storage_size_bytes_, size_bytes);
+    }
 
-        allocated_storage_size_bytes_ = sum_storage_size(
-            allocated_storage_size_bytes_, allocated_size_bytes);
-
+    auto add_var(const var_info& var, const var_kind kind) -> void {
         vars_.put(var.name, var);
 
         if (kind == var_kind::result) {
@@ -425,10 +423,6 @@ class scope final {
 
         if (kind == var_kind::param) {
             func_part().param_names.emplace_back(var.name);
-        }
-
-        if (kind != var_kind::dat) {
-            non_dat_var_has_been_added_ = true;
         }
     }
 
@@ -483,10 +477,6 @@ class scope final {
     }
 
     [[nodiscard]] auto has_frame() const -> bool { return frame_.has_value(); }
-
-    [[nodiscard]] auto has_non_dat_var_been_added() const -> bool {
-        return non_dat_var_has_been_added_;
-    }
 
     [[nodiscard]] auto has_var(const std::string_view name) const -> bool {
         return vars_.has(name);
@@ -1226,7 +1216,7 @@ struct name_meaning {
 // innermost one
 class scope_stack final {
     std::vector<scope> scopes_;
-    size_t max_depth_{};
+    size_t max_scope_count_{};
     std::reference_wrapper<const definition_order> order_;
     // the definition of each global variable, data and constant, see
     // 'definition_order'
@@ -1407,7 +1397,9 @@ class scope_stack final {
         return {};
     }
 
-    [[nodiscard]] auto max_depth() const -> size_t { return max_depth_; }
+    [[nodiscard]] auto max_scope_count() const -> size_t {
+        return max_scope_count_;
+    }
 
     // the dry runs of noinline calls nested here, see
     // 'scope::noinline_dry_run'
@@ -1422,7 +1414,7 @@ class scope_stack final {
 
     auto push(scope scp) -> void {
         scopes_.push_back(std::move(scp));
-        track_depth();
+        track_scope_count();
     }
 
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
@@ -1487,7 +1479,9 @@ class scope_stack final {
         }
     }
 
-    auto set_max_depth(const size_t depth) -> void { max_depth_ = depth; }
+    auto set_max_scope_count(const size_t count) -> void {
+        max_scope_count_ = count;
+    }
 
     // see 'toc::is_reachable'
     auto set_reachable(const bool is_reachable) -> void {
@@ -1518,8 +1512,8 @@ class scope_stack final {
                order_.get().is_visible(it->second);
     }
 
-    auto track_depth() -> void {
-        max_depth_ = std::max(scopes_.size(), max_depth_);
+    auto track_scope_count() -> void {
+        max_scope_count_ = std::max(scopes_.size(), max_scope_count_);
     }
 };
 
@@ -1527,10 +1521,12 @@ class scope_stack final {
 // scopes that have a frame of their own, the capacity of the section and the
 // target limits; the size in use is the sum of what the scopes hold
 class storage_layout final {
-    // where a variable is placed, 'scope_index' is empty at the variables base
+    // where the next variable is placed: 'next_offset_bytes' counts from the
+    // base of the frame of the scope 'scope_index' or, when it is empty, from
+    // 'dat'
     struct storage_location {
         std::optional<size_t> scope_index;
-        size_t base_offset{};
+        size_t next_offset_bytes{};
     };
 
     std::reference_wrapper<const ::machine> machine_;
@@ -1566,38 +1562,22 @@ class storage_layout final {
         }
     }
 
-    // the storage of the dat 'var' is where the data table placed it, before
-    // the variables; its offset is set, the scopes hold none of its bytes
-    auto allocate_dat(const token& src_loc_tk, var_info& var) const -> void {
-        const placed_dat& dat{data_.get().get_dat(var.name)};
-
-        // note: a 'dat' comes before any 'var', so no variable is placed yet
-        assert(used_vars_size_bytes() == 0);
-
-        std::get<in_storage>(var.placement).offset = add_address_offset(
-            address_offset(dat.offset_bytes), -variables_base_shift_bytes());
-
-        assert_total_fits_target(
-            src_loc_tk,
-            add_storage_size(src_loc_tk, dat.offset_bytes,
-                             var_storage_size_bytes(src_loc_tk, var)));
-    }
-
-    // places 'var' in the innermost storage that has room and returns the
-    // bytes it takes with the alignment padding, its storage is set
-    [[nodiscard]] auto allocate_var(const token& src_loc_tk, var_info& var,
-                                    const bool checks_capacity) -> size_t {
+    // places 'var' in the innermost storage that has room, its storage is
+    // set and the innermost scope holds the bytes it takes with the alignment
+    // padding
+    auto allocate_var(const token& src_loc_tk, var_info& var,
+                      const bool checks_capacity) -> void {
 
         const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
         const size_t var_alignment{var_storage_alignment(var)};
 
-        // offsets are relative to the variables base or to the base of the
-        // nearest frame, both are aligned
+        // note: a frame base and 'dat' are both aligned
         const storage_location location{find_storage_location()};
-        const size_t base_offset{location.base_offset};
+        const size_t next_offset_bytes{location.next_offset_bytes};
 
         const size_t padding_bytes{
-            align_storage_size(base_offset, var_alignment) - base_offset,
+            align_storage_size(next_offset_bytes, var_alignment) -
+                next_offset_bytes,
         };
 
         const size_t allocated_size_bytes{
@@ -1610,34 +1590,31 @@ class storage_layout final {
 
         in_storage& stored{std::get<in_storage>(var.placement)};
 
-        stored.offset = address_offset(base_offset + padding_bytes);
+        const size_t offset_bytes{next_offset_bytes + padding_bytes};
 
         if (location.scope_index) {
             scope& frame_scope{
                 scopes_.get().all().at(*location.scope_index),
             };
 
+            stored.offset = address_offset(offset_bytes);
             stored.base_register = frame_scope.frame_base_register();
 
             frame_scope.record_frame_size_bytes(add_storage_size(
-                src_loc_tk, base_offset, allocated_size_bytes));
+                src_loc_tk, next_offset_bytes, allocated_size_bytes));
         } else {
-            stored.offset = add_address_offset(stored.offset,
-                                               -variables_base_shift_bytes());
+            stored.offset = offset_from_variables_base(offset_bytes);
         }
 
         assert_total_fits_target(
             src_loc_tk, add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
                                          allocated_size_bytes));
 
-        // note: a dry run puts the peak back ('end_dry_run'); the scope holds
-        //       the bytes after this returns
+        scopes_.get().back().add_storage_bytes(allocated_size_bytes);
 
-        max_body_vars_size_bytes_ = std::max(
-            sum_storage_size(used_vars_size_bytes(), allocated_size_bytes),
-            max_body_vars_size_bytes_);
-
-        return allocated_size_bytes;
+        // note: a dry run puts the peak back ('end_dry_run')
+        max_body_vars_size_bytes_ =
+            std::max(used_vars_size_bytes(), max_body_vars_size_bytes_);
     }
 
     auto assert_released() const -> void {
@@ -1684,26 +1661,19 @@ class storage_layout final {
 
         const storage_location location{find_storage_location()};
 
+        const size_t aligned_offset_bytes{
+            align_storage_size(location.next_offset_bytes, frame_alignment),
+        };
+
         if (location.scope_index) {
             return operand::mem(
                 scope_at(*location.scope_index).frame_base_register(), {}, 1,
-                address_offset(
-                    align_storage_size(location.base_offset, frame_alignment)),
-                address_type);
+                address_offset(aligned_offset_bytes), address_type);
         }
 
-        const size_t aligned_size_bytes{
-            align_storage_size(location.base_offset, frame_alignment),
-        };
-
-        const int64_t offset_from_dat{address_offset(aligned_size_bytes)};
-
-        const int64_t offset_from_base{
-            add_address_offset(offset_from_dat, -variables_base_shift_bytes()),
-        };
-
         return operand::mem(machine_.get().variables_base_register(), {}, 1,
-                            offset_from_base, address_type);
+                            offset_from_variables_base(aligned_offset_bytes),
+                            address_type);
     }
 
     [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
@@ -1715,6 +1685,23 @@ class storage_layout final {
         assert(scope_index);
 
         return scope_at(*scope_index).peak_frame_size_bytes();
+    }
+
+    // the storage of the dat 'var' is where the data table placed it, before
+    // the variables; its offset is set, the scopes hold none of its bytes
+    auto place_dat(const token& src_loc_tk, var_info& var) const -> void {
+        const placed_dat& dat{data_.get().get_dat(var.name)};
+
+        // note: a 'dat' comes before any 'var', so no variable is placed yet
+        assert(used_vars_size_bytes() == 0);
+
+        std::get<in_storage>(var.placement).offset =
+            offset_from_variables_base(dat.offset_bytes);
+
+        assert_total_fits_target(
+            src_loc_tk,
+            add_storage_size(src_loc_tk, dat.offset_bytes,
+                             var_storage_size_bytes(src_loc_tk, var)));
     }
 
     [[nodiscard]] auto var_storage_alignment(const var_info& var) const
@@ -1807,15 +1794,39 @@ class storage_layout final {
             if (scp.has_frame()) {
                 return {
                     .scope_index{i - 1},
-                    .base_offset{local_size_bytes},
+                    .next_offset_bytes{local_size_bytes},
                 };
             }
         }
 
         return {
             .scope_index{},
-            .base_offset{dats_and_vars_size_bytes()},
+            .next_offset_bytes{dats_and_vars_size_bytes()},
         };
+    }
+
+    // the operand offset of storage 'offset_from_dat' bytes past 'dat': the
+    // variables base is 'dat' unless the target puts it past 'vars', which
+    // makes the dats negative and the variables start below the base
+    [[nodiscard]] auto
+    offset_from_variables_base(const size_t offset_from_dat) const -> int64_t {
+
+        const int64_t offset{address_offset(offset_from_dat)};
+
+        const std::optional<size_t> past_vars_bytes{
+            machine_.get().variables_base_past_vars_bytes(),
+        };
+
+        if (not past_vars_bytes) {
+            return offset;
+        }
+
+        const int64_t shift{
+            address_offset(
+                sum_storage_size(vars_start_bytes(), *past_vars_bytes)),
+        };
+
+        return add_address_offset(offset, -shift);
     }
 
     [[nodiscard]] auto scope_at(const size_t index) const -> const scope& {
@@ -1832,21 +1843,6 @@ class storage_layout final {
         }
 
         return total_bytes;
-    }
-
-    // offsets count from 'dat', a base register past 'vars' makes the dats
-    // negative and the variables start below the base
-    [[nodiscard]] auto variables_base_shift_bytes() const -> int64_t {
-        const std::optional<size_t> past_vars_bytes{
-            machine_.get().variables_base_past_vars_bytes(),
-        };
-
-        if (not past_vars_bytes) {
-            return 0;
-        }
-
-        return address_offset(
-            sum_storage_size(vars_start_bytes(), *past_vars_bytes));
     }
 
     // the variables start after the dats and the padding that aligns them;
@@ -2811,6 +2807,8 @@ class toc final {
     // false while the program is parsed: the names are declared without
     // storage and without comments
     bool is_compiling_{};
+    // a global that is not a 'dat' was declared, a 'dat' after it is rejected
+    bool is_global_var_declared_{};
     // the parsers recurse on the one stack, e.g. a generic instance is parsed
     // inside the parse that needs it, so the levels are counted once for all
     // of them, see 'parse_nesting_scope'
@@ -2828,7 +2826,7 @@ class toc final {
 
       public:
         explicit dry_run_scope(toc& tc)
-            : tc_{tc}, kept_max_scope_count_{tc.scopes_.max_depth()},
+            : tc_{tc}, kept_max_scope_count_{tc.scopes_.max_scope_count()},
               kept_string_constant_count_{tc.data_.constant_count()},
               kept_storage_{tc.storage_.begin_dry_run()} {
 
@@ -2843,7 +2841,7 @@ class toc final {
         ~dry_run_scope() {
             --tc_.dry_run_depth_;
             tc_.storage_.end_dry_run(kept_storage_);
-            tc_.scopes_.set_max_depth(kept_max_scope_count_);
+            tc_.scopes_.set_max_scope_count(kept_max_scope_count_);
             tc_.data_.resize_constants(kept_string_constant_count_);
         }
     };
@@ -2883,12 +2881,12 @@ class toc final {
     class scope_entry final {
         toc& tc_;
         // the scopes below this one, the scopes are left in stack order
-        size_t depth_;
+        size_t outer_scope_count_;
         std::optional<::machine::register_trace_scope> trace_frame_;
 
       public:
         scope_entry(toc& tc, scope scp, const token& call_site_tk = {})
-            : tc_{tc}, depth_{tc.scopes_.all().size()} {
+            : tc_{tc}, outer_scope_count_{tc.scopes_.all().size()} {
 
             if (tc.is_compiling_ and scp.is_func()) {
                 trace_frame_.emplace(
@@ -2907,7 +2905,7 @@ class toc final {
         auto operator=(scope_entry&&) -> scope_entry& = delete;
 
         ~scope_entry() {
-            assert(tc_.scopes_.all().size() == depth_ + 1);
+            assert(tc_.scopes_.all().size() == outer_scope_count_ + 1);
 
             tc_.pop_scope();
         }
@@ -3013,7 +3011,7 @@ class toc final {
         // note: a 'dat' in a block is rejected when it is parsed
         assert(scopes_.all().size() == 1);
 
-        if (scopes_.front().has_non_dat_var_been_added()) {
+        if (is_global_var_declared_) {
             throw compile_error{dat_tk,
                                 "'dat' can only be declared before any 'var'"};
         }
@@ -3131,18 +3129,20 @@ class toc final {
             std::holds_alternative<in_storage>(var.placement),
         };
 
-        size_t allocated_size_bytes{};
-
+        // note: a 'dat' here is the compile half of 'add_dat'
         if (is_compiling_ and kind == var_kind::dat) {
-            storage_.allocate_dat(src_loc_tk, var);
+            storage_.place_dat(src_loc_tk, var);
         } else if (is_compiling_ and is_in_storage) {
-            allocated_size_bytes = storage_.allocate_var(
-                src_loc_tk, var, checks_storage_capacity());
+            storage_.allocate_var(src_loc_tk, var, checks_storage_capacity());
         }
 
-        scopes_.back().add_var(var, allocated_size_bytes, kind);
+        scopes_.back().add_var(var, kind);
 
         record_if_global(var.name);
+
+        if (scopes_.all().size() == 1 and kind != var_kind::dat) {
+            is_global_var_declared_ = true;
+        }
 
         if (is_compiling_) {
             var_comments_.comment(src_loc_tk, indent, var);
@@ -3231,7 +3231,7 @@ class toc final {
 
         // note: the parse declared the names without storage
         storage_.assert_released();
-        scopes_.set_max_depth(0);
+        scopes_.set_max_scope_count(0);
 
         // note: the parse compiles no call
         assert(compiled_.is_empty());
@@ -3632,7 +3632,7 @@ class toc final {
 
     [[nodiscard]] auto usage() const -> usage_statistics {
         return {
-            .max_scope_count{scopes_.max_depth()},
+            .max_scope_count{scopes_.max_scope_count()},
             .max_body_vars_size_bytes{storage_.max_body_vars_size_bytes()},
             .dat_size_bytes{data_.total_size_bytes()},
             .dat_var_padding_bytes{data_.dat_var_padding_bytes()},

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
@@ -12,6 +13,7 @@
 
 #include "compile_error.hpp"
 #include "constant_parser.hpp"
+#include "operand.hpp"
 #include "token.hpp"
 
 // reads the tokens of one source file, keeping the whitespace and comments
@@ -31,6 +33,18 @@ class tokenizer final {
         "<<", ">>", "<=", ">=", "==", "!=", "+", "-", "*",
         "/",  "%",  "&",  "|",  "^",  "<",  ">", "~",
     };
+
+    // note: the operators are the texts of the spelling tables and the unary
+    //       '~', so a text missing here would end an expression silently
+
+    static_assert(std::ranges::all_of(
+        arithmetic_spellings, [](const arithmetic_spelling& spelling) -> bool {
+            return std::ranges::contains(operators_, spelling.text);
+        }));
+    static_assert(std::ranges::all_of(
+        comparison_spellings, [](const comparison_spelling& spelling) -> bool {
+            return std::ranges::contains(operators_, spelling.text);
+        }));
 
   public:
     tokenizer(const size_t file_ix, const std::string_view src)
