@@ -31,7 +31,7 @@ class type_fields final {
     token close_brace_tk_;
 
   public:
-    auto add_to(toc& tc, type& tp, const token& name_tk) const -> void {
+    auto add_to(type& tp, const token& name_tk) const -> void {
         tp.set_name(name_tk.text());
 
         for (const stmt_def_type_field& fld : fields_) {
@@ -45,16 +45,8 @@ class type_fields final {
                                 in_quotes(name_tk.text()))};
             }
 
-            // a field without a type name has the default type, e.g. 'x' of
-            // 'type point { x, y }'
-            const std::optional<token>& fld_type_tk{fld.type_token()};
-
-            const type& fld_tp{
-                fld_type_tk ? tc.get_type_or_throw(*fld_type_tk)
-                            : tc.builtins().default_type(),
-            };
-
-            tp.add_field(fld.tok(), fld.name(), fld_tp, fld.array_count());
+            tp.add_field(fld.tok(), fld.name(), fld.get_type(),
+                         fld.array_count());
         }
     }
 
@@ -247,7 +239,7 @@ class stmt_def_type final : public statement {
 
         fields_.parse(tc, tz, open_brace_tk, name_tk_);
 
-        fields_.add_to(tc, type_, name_tk_);
+        fields_.add_to(type_, name_tk_);
 
         tc.add_type(name_tk_, type_);
     }
@@ -527,7 +519,7 @@ class type_instantiator final {
         // only read to fill 'type_', not printed by 'source_to'
         type_fields fields;
         fields.parse(tc, generic_tz, open_brace_tk, alias_tk);
-        fields.add_to(tc, tp, alias_tk);
+        fields.add_to(tp, alias_tk);
     }
 
     // the argument tokens of a base name the parameters of 'generic', e.g.

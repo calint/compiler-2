@@ -38,8 +38,6 @@ class stmt_if final : public statement {
     stmt_if(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
-        set_type(tc.builtins().void_type());
-
         // 'if a == b {x = 1} else if c == d {y = 2} else {z = 3}' breaks down
         // into the branches 'a == b {x = 1}' and 'c == d {y = 2}' and an
         // optional 'else' block, the 'if' token has been read
@@ -94,15 +92,15 @@ class stmt_if final : public statement {
         for (size_t i{}; i < branches_.size(); ++i) {
             paths.begin_path();
 
-            const std::optional<bool> known{
-                known_of(compile_branch_at(tc, indent, i, if_label,
-                                           label_else_branch, label_after_if)),
+            const condition_result known{
+                compile_branch_at(tc, indent, i, if_label, label_else_branch,
+                                  label_after_if),
             };
 
             // note: the compile knows at least what the parse knew, the
             //       paths of the definite assignment follow the parse
 
-            assert(not branches_.at(i).parse_constant() or
+            assert(not is_known(branches_.at(i).parse_constant()) or
                    branches_.at(i).parse_constant() == known);
 
             if (runs(known)) {
@@ -138,7 +136,7 @@ class stmt_if final : public statement {
         assignment_flow::path_merge paths{flow};
 
         for (const stmt_if_branch& branch : branches_) {
-            const std::optional<bool> known{branch.parse_constant()};
+            const condition_result known{branch.parse_constant()};
 
             if (runs(known)) {
                 paths.trace(branch);
@@ -248,28 +246,15 @@ class stmt_if final : public statement {
         return std::format("{}.else", if_label);
     }
 
-    [[nodiscard]] static auto ends_chain(const std::optional<bool> known)
-        -> bool {
-
-        return known == true;
-    }
-
-    // the value of a compiled condition, empty when it is computed at run time
-    [[nodiscard]] static auto known_of(const condition_result result)
-        -> std::optional<bool> {
-
-        if (result == condition_result::unknown) {
-            return std::nullopt;
-        }
-
-        return result == condition_result::always_true;
+    [[nodiscard]] static auto ends_chain(const condition_result known) -> bool {
+        return known == condition_result::always_true;
     }
 
     // the chain rule, the same for the compile and for the paths of the
     // definite assignment: a branch whose condition is false does not run, one
     // whose condition is true ends the chain, the later branches and the
     // 'else' do not run
-    [[nodiscard]] static auto runs(const std::optional<bool> known) -> bool {
-        return known != false;
+    [[nodiscard]] static auto runs(const condition_result known) -> bool {
+        return known != condition_result::always_false;
     }
 };

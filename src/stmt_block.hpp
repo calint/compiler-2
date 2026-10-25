@@ -35,8 +35,6 @@ class stmt_block final : public statement {
 
         const toc::parse_nesting_scope nesting{tc, tz};
 
-        set_type(tc.builtins().void_type());
-
         if (is_one_statement() and braces == block_braces::required) {
             throw compile_error{tz, "expected '{' to begin block"};
         }

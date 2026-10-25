@@ -18,8 +18,6 @@ class stmt_loop final : public statement {
     stmt_loop(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
-        set_type(tc.builtins().void_type());
-
         const std::string label{tc.create_unique_label(tok(), "loop")};
         const toc::scope_entry loop{tc, scope::loop(label)};
         code_ = {tc, tz};
@@ -47,20 +45,17 @@ class stmt_loop final : public statement {
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(indent, label);
 
-        // the end is reached only by a 'break' that is compiled, the parse
-        // rejects code after a loop without one
-        bool is_left{};
-
         {
             const toc::scope_entry loop{tc, scope::loop(label)};
             code_.compile(tc, indent, destination{});
-            is_left = tc.scopes().back().is_left_by_break();
+
+            // the end is reached only by a 'break' that is compiled, the parse
+            // rejects code after a loop without one
+            tc.join_loop();
         }
 
         x.branch(indent, label);
         x.label(indent, toc::end_label(label));
-
-        tc.join_loop(is_left);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

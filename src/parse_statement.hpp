@@ -142,7 +142,7 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
     }
 
     if (tk.is_text("return")) {
-        return std::make_unique<stmt_return>(tc, tk);
+        return std::make_unique<stmt_return>(tk);
     }
 
     if (tk.is_text("array_copy")) {

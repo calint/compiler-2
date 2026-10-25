@@ -392,7 +392,7 @@ class scope final {
     bool non_dat_var_has_been_added_{};
 
     // a 'loop' or 'foo' scope: a 'break' of it was compiled, so its end is
-    // reached; only 'stmt_loop' reads it, a 'foo' always reaches its end
+    // reached; only 'toc::join_loop' reads it, a 'foo' always reaches its end
     bool is_left_by_break_{};
 
     scope_kind kind_{scope_kind::block};
@@ -3489,9 +3489,14 @@ class toc final {
     // the end of a 'foo' is reached when the count runs out or at a 'break'
     auto join_foo() -> void { scopes_.set_reachable(true); }
 
-    // the end of a 'loop' is reached only by a compiled 'break'
-    auto join_loop(const bool is_left_by_break) -> void {
-        scopes_.set_reachable(is_left_by_break);
+    // the end of a 'loop' is reached only by a compiled 'break'; called as
+    // the last step inside the loop's scope
+    auto join_loop() -> void {
+        const scope& loop{scopes_.back()};
+
+        assert(loop.is_loop());
+
+        scopes_.set_reachable(loop.is_left_by_break());
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {

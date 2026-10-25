@@ -21,8 +21,9 @@ class stmt_if_branch final : public statement {
     expr_bool condition_;
     stmt_block code_;
     // the value of the condition known where the 'if' is written, e.g. from
-    // literals and constants, empty when it depends on the run or on a call
-    std::optional<bool> parse_constant_;
+    // literals and constants, 'unknown' when it depends on the run or on a
+    // call
+    condition_result parse_constant_{condition_result::unknown};
 
   public:
     // e.g. 'a == b {x = 1}' of 'if a == b {x = 1} else {y = 2}', the condition
@@ -31,9 +32,12 @@ class stmt_if_branch final : public statement {
         : statement{tz.next_whitespace_token()},
           condition_{tc, condition_start(tz), tz} {
 
-        set_type(tc.builtins().void_type());
         condition_.assert_boolean_operands();
-        parse_constant_ = condition_.constant_value(tc);
+
+        if (const std::optional<bool> constant{condition_.constant_value(tc)}) {
+            parse_constant_ = known_result(*constant);
+        }
+
         code_ = {tc, tz};
     }
 
@@ -95,7 +99,7 @@ class stmt_if_branch final : public statement {
         return const_eval;
     }
 
-    [[nodiscard]] auto parse_constant() const -> std::optional<bool> {
+    [[nodiscard]] auto parse_constant() const -> condition_result {
         return parse_constant_;
     }
 

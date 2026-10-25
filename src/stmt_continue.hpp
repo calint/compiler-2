@@ -17,7 +17,6 @@ class stmt_continue final : public statement {
         : statement{src_loc_tk} {
 
         tc.scopes().assert_in_loop(src_loc_tk);
-        set_type(tc.builtins().void_type());
     }
 
     stmt_continue() = default;

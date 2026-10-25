@@ -794,7 +794,7 @@ struct call_site {
                                                   const stmt_def_func& func)
         -> bool {
 
-        return not dst.type_ref().is_same(func.get_type());
+        return not dst.type_ref().is_same(func.result_type());
     }
 
     // a temporary of the call is a root variable of its own
@@ -1125,7 +1125,8 @@ class inline_call {
         machine& x{tc.machine()};
 
         const operand result{
-            x.alloc_scratch_register(call_.tk, indent, call_.func->get_type()),
+            x.alloc_scratch_register(call_.tk, indent,
+                                     call_.func->result_type()),
         };
 
         call_site narrow_call{call_};
@@ -1287,7 +1288,7 @@ class inline_call {
         if (const std::optional<func_return_info> ret{call_.func->returns()};
             ret) {
 
-            assert(dst.type_ref().is_same(call_.func->get_type()));
+            assert(dst.type_ref().is_same(call_.func->result_type()));
 
             bindings.result = bind_result(dst, *ret);
         }
@@ -1654,7 +1655,7 @@ class noinline_call {
             const ident_info result_info{
                 call_.add_temporary(
                     tc, indent, toc::temporary_name(call_.tk, "call-result", 0),
-                    call_.func->get_type()),
+                    call_.func->result_type()),
             };
 
             compile_with_arguments(
@@ -1904,7 +1905,7 @@ class noinline_call {
 
         if (func.returns()) {
             assert(dst.operand().is_memory());
-            assert(dst.type_ref().is_same(func.get_type()));
+            assert(dst.type_ref().is_same(func.result_type()));
 
             // an array literal gives its call elements an element destination
             assert(not dst.is_array());
@@ -2797,7 +2798,7 @@ class stmt_call : public statement {
         }
 
         if (dst.is_operand() and
-            call_site::is_widened_integer(func.get_type(), dst.type_ref())) {
+            call_site::is_widened_integer(func.result_type(), dst.type_ref())) {
 
             return;
         }
@@ -2806,7 +2807,7 @@ class stmt_call : public statement {
             dst.error_token(tok()),
             std::format("expected type {}, got {} from {}, use '{}(...)'",
                         in_quotes(dst.type_ref().name()),
-                        in_quotes(func.get_type().name()),
+                        in_quotes(func.result_type().name()),
                         in_quotes(func.name()), dst.type_ref().name()),
         };
     }

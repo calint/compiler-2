@@ -266,14 +266,32 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             '--reproduce-source' of every test is the check
     G. statements
        G.1. 'stmt_if' speaks 'condition_result' only (S5); 'known_of' goes
+       => G.1 done (2026-10-25): 'stmt_if_branch::parse_constant_' is a
+          'condition_result'; 'runs' and 'ends_chain' take one; listings
+          equal
        G.2. 'get_type' means the type of a value or a declared name (S6):
             the 11 nodes without a value stop setting 'void' (a scratch
             build first), 'stmt_def_func::result_type()'
+       => G.2 done (2026-10-25): 11 nodes no longer set 'void'; with the
+          assert of 'get_type' on, the four suites, the CLI tests and eight
+          fuzzers found no caller; 'stmt_return' loses its 'tc' parameter;
+          'stmt_def_func::result_type()' is the callee's type at every use
+          (a scratch compile with 'get_type' deleted in 'stmt_def_func'
+          found none left)
        G.3. a field resolves its type in its node like a parameter (S7); the
             parameter keeps its 'syntax' as one member; error order of an
             unknown type against a duplicate field checked
+       => G.3 done for the field (2026-10-25): 'stmt_def_type_field'
+          resolves its type when parsed, 'type_fields::add_to' reads it and
+          loses 'tc', 'type_token' goes; no test output changed; the
+          parameter keeps its copied tokens: a 'syntax' member would repeat
+          the name the node holds and the implicit 'self' has none
        G.4. 'toc::join_loop()' reads the loop scope itself (T7); the local
             and extra block in 'stmt_loop' go
+       => G.4 done (2026-10-25): 'join_loop()' asserts the loop scope and
+          reads its 'is_left_by_break'; 'stmt_loop' calls it last inside the
+          scope; 'record_break' still marks a 'foo', which stops a 'break'
+          from marking an outer loop; listings equal
     H. backends
        H.1. the lifecycle as template methods (B1, the open half of round
             13 G.7): 'start', 'end_main', 'finish' non-virtual in 'machine'

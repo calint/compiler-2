@@ -34,8 +34,6 @@ class stmt_builtin_foo final : public statement {
     stmt_builtin_foo(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
-        set_type(tc.builtins().void_type());
-
         ident_ = stmt_identifier::parse_array_argument(tc, tz);
 
         if (not ident_.is_array()) {

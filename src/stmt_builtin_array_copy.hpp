@@ -26,8 +26,6 @@ class stmt_builtin_array_copy final : public statement {
     stmt_builtin_array_copy(toc& tc, const token src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, operands_{tc, tz, "source", "destination"} {
 
-        set_type(tc.builtins().void_type());
-
         const stmt_identifier& dst{operands_.second()};
 
         dst.record_write(tc, dst.tok(), "copy into", make_ident_info(tc, dst));

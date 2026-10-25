@@ -15,7 +15,6 @@ class stmt_break final : public statement {
   public:
     stmt_break(const toc& tc, const token src_loc_tk) : statement{src_loc_tk} {
         tc.scopes().assert_in_loop(src_loc_tk);
-        set_type(tc.builtins().void_type());
     }
 
     stmt_break() = default;

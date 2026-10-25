@@ -11,6 +11,8 @@
 #include "toc.hpp"
 #include "token.hpp"
 
+// a field 'name [type][[size]]' of a type, its type resolved when parsed like
+// a parameter's, the default type when none is written
 class stmt_def_type_field final : public statement {
     // none for the default type
     std::optional<token> type_tk_;
@@ -24,8 +26,6 @@ class stmt_def_type_field final : public statement {
   public:
     stmt_def_type_field(toc& tc, const token tk, tokenizer& tz)
         : statement{tk} {
-
-        set_type(tc.builtins().void_type());
 
         if (not tk.is_word()) {
             throw compile_error{tk, "expected field name"};
@@ -43,6 +43,9 @@ class stmt_def_type_field final : public statement {
         }
 
         assert_no_type_arguments(tz, type_tk_);
+
+        set_type(type_tk_ ? tc.get_type_or_throw(*type_tk_)
+                          : tc.builtins().default_type());
 
         open_bracket_tk_ = tz.is_next_char_token('[');
 
@@ -96,8 +99,4 @@ class stmt_def_type_field final : public statement {
     }
 
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
-
-    [[nodiscard]] auto type_token() const -> const std::optional<token>& {
-        return type_tk_;
-    }
 };

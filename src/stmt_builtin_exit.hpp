@@ -21,8 +21,6 @@ class stmt_builtin_exit final : public statement {
     stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)
         : statement{tk}, args_{tc, tz} {
 
-        set_type(tc.builtins().void_type());
-
         if (args_.count() != 1) {
             throw compile_error{tok(), std::format("{} takes {}",
                                                    in_quotes(tok().text()),

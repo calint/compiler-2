@@ -615,6 +615,11 @@ class stmt_def_func final : public statement {
         return params_;
     }
 
+    // the type of the result, 'void' without one; the node's type
+    [[nodiscard]] auto result_type() const -> const type& {
+        return statement::get_type();
+    }
+
     [[nodiscard]] auto returns() const
         -> const std::optional<func_return_info>& {
 
@@ -726,7 +731,7 @@ class stmt_def_func final : public statement {
                 tc.add_var(returns_->ident_tk, indent,
                            {
                                .name{returns_->ident_tk.text()},
-                               .type_ptr{&get_type()},
+                               .type_ptr{&result_type()},
                                .src_loc_tk{returns_->ident_tk},
                                .shape{},
                                .placement{placement},
@@ -1032,8 +1037,8 @@ class stmt_def_func final : public statement {
         // see 'definition_order'
         const bool is_ordered{not instance_ and not head_.is_type_member()};
 
-        tc.add_func(head_.name_tk, std::string{name()}, statement::get_type(),
-                    *this, generic_method, is_ordered);
+        tc.add_func(head_.name_tk, std::string{name()}, result_type(), *this,
+                    generic_method, is_ordered);
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'
