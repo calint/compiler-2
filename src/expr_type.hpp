@@ -507,33 +507,4 @@ class expr_type final : public statement {
 
         return gaps;
     }
-
-    // appends the steps that write 'src' of the field at 'at'
-    static auto plan_field(const toc& tc, const expr_any& src,
-                           const type_field& field, const part_location& at,
-                           write_plan& plan) -> void;
-
-    // 'field_count' elements of 'element_type' are copied from 'src_info'
-    static auto validate_array_assignment(const token& src_loc_tk,
-                                          const type& element_type,
-                                          const size_t field_count,
-                                          const ident_info& src_info) -> void {
-
-        if (not src_info.is_array()) {
-            throw compile_error{src_loc_tk, "source must be an array"};
-        }
-
-        // 'expr_any' validates the source element type before entering here
-        assert(element_type.is_same(src_info.type_ref()));
-
-        const std::optional<size_t> src_len{src_info.array_len()};
-
-        if (src_len and field_count != *src_len) {
-            throw compile_error{
-                src_loc_tk,
-                std::format("destination array size {} does not match source "
-                            "size {}",
-                            field_count, *src_len)};
-        }
-    }
 };

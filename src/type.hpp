@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
@@ -16,8 +17,104 @@
 #include <vector>
 
 #include "compile_error.hpp"
-#include "operand.hpp"
 #include "token.hpp"
+
+// what the storage size functions below accept
+namespace storage_limits {
+
+// every sum, product and aligned size of storage is checked against it, so
+// the offsets stay in the signed 64-bit range
+inline constexpr size_t max_size_bytes{
+    static_cast<size_t>(std::numeric_limits<int64_t>::max()) - 16,
+};
+
+// note: -16, the largest alignment (the stack's), so that a size within the
+//       limit rounded up to an alignment stays in the signed 64-bit range
+
+} // namespace storage_limits
+
+[[nodiscard]] inline auto add_storage_size(const token& src_loc_tk,
+                                           const size_t base,
+                                           const size_t size_bytes) -> size_t {
+
+    if (size_bytes > storage_limits::max_size_bytes or
+        base > storage_limits::max_size_bytes - size_bytes) {
+
+        throw compile_error{src_loc_tk,
+                            "storage size exceeds signed 64-bit range"};
+    }
+
+    return base + size_bytes;
+}
+
+[[nodiscard]] inline auto multiply_storage_size(const token& src_loc_tk,
+                                                const size_t size_bytes,
+                                                const size_t count) -> size_t {
+
+    if (count != 0 and size_bytes > storage_limits::max_size_bytes / count) {
+        throw compile_error{src_loc_tk,
+                            "storage size exceeds signed 64-bit range"};
+    }
+
+    return size_bytes * count;
+}
+
+// the sum of sizes that 'add_storage_size' or 'multiply_storage_size' already
+// accepted, in a place with no source location
+[[nodiscard]] inline auto sum_storage_size(const size_t base,
+                                           const size_t size_bytes) -> size_t {
+
+    assert(size_bytes <= storage_limits::max_size_bytes);
+    assert(base <= storage_limits::max_size_bytes - size_bytes);
+
+    return base + size_bytes;
+}
+
+// the bytes that round 'size_bytes' up to a multiple of 'alignment', a power
+// of two
+[[nodiscard]] inline auto alignment_padding_bytes(const size_t size_bytes,
+                                                  const size_t alignment)
+    -> size_t {
+
+    assert(std::has_single_bit(alignment));
+
+    return (alignment - (size_bytes % alignment)) % alignment;
+}
+
+// rounds 'size_bytes' up to a multiple of 'alignment', a power of two
+[[nodiscard]] inline auto align_storage_size(const size_t size_bytes,
+                                             const size_t alignment) -> size_t {
+
+    return sum_storage_size(size_bytes,
+                            alignment_padding_bytes(size_bytes, alignment));
+}
+
+// 'align_storage_size' of a size that the source gives, which the padding may
+// take past the limit, e.g. the end of the fields of a type
+[[nodiscard]] inline auto checked_align_storage_size(const token& src_loc_tk,
+                                                     const size_t size_bytes,
+                                                     const size_t alignment)
+    -> size_t {
+
+    return add_storage_size(src_loc_tk, size_bytes,
+                            alignment_padding_bytes(size_bytes, alignment));
+}
+
+// the alignment known at 'offset' bytes from an address aligned to
+// 'alignment'
+[[nodiscard]] inline auto offset_alignment(const size_t offset,
+                                           const size_t alignment) -> size_t {
+
+    if (offset == 0) {
+        return alignment;
+    }
+
+    const unsigned trailing_zeros{
+        static_cast<unsigned>(std::countr_zero(offset)),
+    };
+
+    return std::min(alignment, size_t{1} << trailing_zeros);
+}
 
 class type;
 

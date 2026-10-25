@@ -120,8 +120,9 @@ class assigned_bytes final {
     }
 };
 
-// definite-assignment walk of one variable through a function body; the
-// statements report what they do ('declare', 'assign', 'end_path',
+// definite-assignment walk of one variable through a function body, also the
+// walk of which statements are reached ('reachability_only', no variable);
+// the statements report what they do ('declare', 'assign', 'end_path',
 // 'record_break') and the rules that join paths are here: a block scopes
 // its declarations ('block_scope'), 'trace_loop' and 'trace_foo' trace a body,
 // 'path_merge' joins the paths of an 'if'
@@ -278,6 +279,18 @@ class assignment_flow final {
         }
 
         return var_;
+    }
+
+    //
+    // statics
+    //
+
+    // a walk that traces no variable and answers only which statements are
+    // reached, e.g. the error of a statement after a 'return'
+    [[nodiscard]] static auto reachability_only(const token& src_loc_tk)
+        -> assignment_flow {
+
+        return {std::nullopt, src_loc_tk, 0};
     }
 
   private:

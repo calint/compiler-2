@@ -99,8 +99,8 @@ namespace {
 // ----------------------------------------------------------------------------
 
 // the operator of the machine for an operator written as a character
-auto op_of(const char op) -> machine::arithmetic_operator {
-    using arithmetic_operator = machine::arithmetic_operator;
+auto op_of(const char op) -> arithmetic_operator {
+    using arithmetic_operator = arithmetic_operator;
 
     if (op == '+') {
         return arithmetic_operator::add;
@@ -132,9 +132,9 @@ auto op_of(const char op) -> machine::arithmetic_operator {
     return arithmetic_operator::shift_right;
 }
 
-auto unary_of(const char op) -> machine::arithmetic_operator {
-    return op == '-' ? machine::arithmetic_operator::negate
-                     : machine::arithmetic_operator::complement;
+auto unary_of(const char op) -> arithmetic_operator {
+    return op == '-' ? arithmetic_operator::negate
+                     : arithmetic_operator::complement;
 }
 
 // the built-in types the checks give the backend and the front end
@@ -224,7 +224,8 @@ auto compiled_rv32i(const std::string_view source) -> std::string {
     files.add("test.baz", std::string{source});
 
     machine_rv32i_linux compiler{test_builtins, files};
-    program prg{compiler, files, vars_capacity_bytes, check_options{}};
+    program prg{compiler, test_builtins, files, vars_capacity_bytes,
+                check_options{}};
     prg.build(output);
 
     return output.str();
@@ -237,7 +238,8 @@ auto compiled_x86_64(const std::string_view source) -> std::string {
     files.add("test.baz", std::string{source});
 
     machine_x86_64 compiler{test_builtins, files};
-    program prg{compiler, files, vars_capacity_bytes, check_options{}};
+    program prg{compiler, test_builtins, files, vars_capacity_bytes,
+                check_options{}};
     prg.build(output);
 
     return output.str();
@@ -871,7 +873,7 @@ auto check_backend_jump_optimization() -> void {
         backend.compare_and_branch(
             token{}, 0, left, right,
             {
-                .operation{machine::comparison_operator::not_equal},
+                .operation{comparison_operator::not_equal},
                 .target{target},
                 .branch_on_true{true},
             });
@@ -2047,7 +2049,7 @@ auto check_comparison_selection() -> void {
         hold_scratch_registers(backend, rv32i_scratch_count, integer),
     };
 
-    using comparison = machine::comparison_operator;
+    using comparison = comparison_operator;
 
     const operand a0{operand::reg("a0", integer)};
     const operand a1{operand::reg("a1", integer)};
@@ -2697,7 +2699,7 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
         }
     };
 
-    const auto branch_if = [&](const machine::comparison_operator operation,
+    const auto branch_if = [&](const comparison_operator operation,
                                const std::string_view target) -> void {
         // note: 15 is the iterator after 3 iterations of 4 and 1
         backend.compare_and_branch(token{}, 1, operand::reg("s2", integer),
@@ -2730,11 +2732,11 @@ auto generate_far_jumps(const assembler::jump_mode jumps) -> void {
         backend.foo_advance_iteration(token{}, 1, iterator, counter, 4,
                                       operand::imm(3, integer), loop_label);
 
-        branch_if(machine::comparison_operator::not_equal, "far_failure");
+        branch_if(comparison_operator::not_equal, "far_failure");
 
         const std::string taken_label{std::format("far_taken_{}", count)};
 
-        branch_if(machine::comparison_operator::equal, taken_label);
+        branch_if(comparison_operator::equal, taken_label);
         padding(count);
         backend.exit(token{}, 1, operand::imm(2, integer));
         backend.label(0, taken_label);
@@ -2796,7 +2798,8 @@ auto generate_far_foo(const assembler::jump_mode jumps) -> void {
 
     machine_rv32i_linux compiler{test_builtins, files, {.jumps{jumps}}};
 
-    program prg{compiler, files, vars_capacity_bytes, check_options{}};
+    program prg{compiler, test_builtins, files, vars_capacity_bytes,
+                check_options{}};
     prg.build(std::cout);
 }
 
@@ -3291,7 +3294,7 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
             shared_address ? operand::mem("a0", {}, 1, 4, integer)
                            : operand::reg("a1", integer),
             {
-                .operation{machine::comparison_operator::less},
+                .operation{comparison_operator::less},
                 .destination{operand::reg("a0", boolean)},
             });
 
@@ -3301,9 +3304,9 @@ auto emit_memory_comparison_tests(machine_rv32i& backend) -> void {
 }
 
 // whether 'operation' holds between 'lhs' and 'rhs'
-auto holds(const machine::comparison_operator operation, const int32_t lhs,
+auto holds(const comparison_operator operation, const int32_t lhs,
            const int32_t rhs) -> bool {
-    using comparison = machine::comparison_operator;
+    using comparison = comparison_operator;
 
     if (operation == comparison::equal) {
         return lhs == rhs;
@@ -3342,7 +3345,7 @@ struct comparison_layout {
 // every comparison operator against the value -7, inverted or not, branching
 // on true or on false, in every layout of operands and result
 auto emit_comparison_matrix(machine_rv32i& backend) -> void {
-    using comparison = machine::comparison_operator;
+    using comparison = comparison_operator;
 
     constexpr std::array layouts{
         comparison_layout{
@@ -3963,7 +3966,8 @@ struct front_end {
     std::optional<toc::scope_entry> root;
 
     explicit front_end(const size_t vars_capacity_bytes_in)
-        : tc{backend, files, vars_capacity_bytes_in, check_options{}} {
+        : tc{backend, test_builtins, files, vars_capacity_bytes_in,
+             check_options{}} {
 
         files.add("test.baz", "");
         tc.begin_compile();

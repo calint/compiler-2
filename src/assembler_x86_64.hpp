@@ -8,6 +8,7 @@
 #include <format>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <string>
@@ -303,23 +304,33 @@ class assembler_x86_64 final : public assembler {
                              condition_suffix(cc), argument_text(dst)));
     }
 
-    // 'text' keeps its escapes such as '\n', nasm interprets them in
-    // backquoted strings
-    auto string_data(const std::string_view text) -> void {
-        std::string line{"db `"};
-        for (const auto [i, part] :
-             std::views::enumerate(text | std::views::split('`'))) {
+    // 'bytes' as a nasm backquoted string, whose escapes nasm reads, e.g.
+    // '\n'; a byte that is not printable is a hex escape, not '\01', which
+    // nasm reads as one octal escape with the digits after it
+    auto string_data(const std::string_view bytes) -> void {
+        std::string text;
 
-            if (i != 0) {
-                line += "\\`";
+        for (const char c : bytes) {
+            if (c == '\\' or c == '"' or c == '`') {
+                text += '\\';
+                text += c;
+                continue;
             }
 
-            line += std::string_view{part};
+            if (const std::optional<std::string_view> named{named_escape(c)}) {
+                text += *named;
+                continue;
+            }
+
+            if (c >= ' ' and c <= '~') {
+                text += c;
+                continue;
+            }
+
+            text += std::format("\\x{:02x}", static_cast<unsigned char>(c));
         }
 
-        line += '`';
-
-        add_directive(std::move(line));
+        add_directive(std::format("db `{}`", text));
     }
 
     // sizes only count in code, so code must be in the text section
@@ -596,6 +607,26 @@ class assembler_x86_64 final : public assembler {
         static_assert(infos.size() == op_count_);
 
         return infos.at(std::to_underlying(code));
+    }
+
+    // the escape of a line end or a tab, which reads better than its hex
+    // escape
+    [[nodiscard]] static auto named_escape(const char ch)
+        -> std::optional<std::string_view> {
+
+        switch (ch) {
+        case '\n':
+            return "\\n";
+
+        case '\r':
+            return "\\r";
+
+        case '\t':
+            return "\\t";
+
+        default:
+            return std::nullopt;
+        }
     }
 
     [[nodiscard]] static auto section_directive(const section which)

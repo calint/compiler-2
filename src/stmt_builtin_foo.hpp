@@ -368,15 +368,14 @@ class stmt_builtin_foo final : public statement {
             return;
         }
 
-        x.compare_and_branch(
-            count_.tok(), indent, limit,
-            operand::imm(0, tc.builtins().default_type()),
-            {
-                .operation{machine::comparison_operator::less_equal},
-                .inverted{},
-                .destination{},
-                .target{end_label},
-                .branch_on_true{true},
-            });
+        x.compare_and_branch(count_.tok(), indent, limit,
+                             operand::imm(0, tc.builtins().default_type()),
+                             {
+                                 .operation{comparison_operator::less_equal},
+                                 .inverted{},
+                                 .destination{},
+                                 .target{end_label},
+                                 .branch_on_true{true},
+                             });
     }
 };

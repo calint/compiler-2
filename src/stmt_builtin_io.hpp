@@ -147,6 +147,8 @@ class stmt_builtin_io final : public expression {
 
         assert_count_not_written_by_buffer(tc);
 
+        const place buffer{assert_buffer(tc)};
+
         machine& x{tc.machine()};
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
@@ -156,7 +158,7 @@ class stmt_builtin_io final : public expression {
         };
 
         const std::vector<operand> args{
-            compile_array_arguments(tc, indent, registers.arguments),
+            compile_arguments(tc, indent, registers.arguments, buffer),
         };
 
         if (io_.is_sector) {
@@ -309,6 +311,21 @@ class stmt_builtin_io final : public expression {
         throw_not_an_array();
     }
 
+    // the buffer an array, of whole sectors for a sector function, and a
+    // constant range in its bounds: every verdict that needs no code, made
+    // before the arguments are compiled
+    [[nodiscard]] auto assert_buffer(toc& tc) const -> place {
+        const place buffer{assert_array_buffer(tc)};
+
+        if (io_.is_sector) {
+            assert_sector_buffer(tc, buffer.info);
+        }
+
+        assert_constant_range_in_bounds(tc, buffer);
+
+        return buffer;
+    }
+
     // the buffer is named by a path, the rest of 'assert_array_buffer' needs
     // the types at compile time
     auto assert_buffer_path() const -> void {
@@ -452,13 +469,13 @@ class stmt_builtin_io final : public expression {
         return *args_.at(buffer_index_).bare_path();
     }
 
-    // the count and start are in elements, the byte count is computed last
-    [[nodiscard]] auto compile_array_arguments(
-        toc& tc, const size_t indent,
-        const std::span<const std::string_view> registers) const
-        -> std::vector<operand> {
-
-        const place buffer{assert_array_buffer(tc)};
+    // every argument into the registers of the call in the order the target
+    // takes them; the count and start are in elements, the byte count is
+    // computed last
+    [[nodiscard]] auto
+    compile_arguments(toc& tc, const size_t indent,
+                      const std::span<const std::string_view> registers,
+                      const place& buffer) const -> std::vector<operand> {
 
         machine& x{tc.machine()};
 
@@ -480,10 +497,6 @@ class stmt_builtin_io final : public expression {
 
         const ident_info& buffer_info{buffer.info};
 
-        if (io_.is_sector) {
-            assert_sector_buffer(tc, buffer_info);
-        }
-
         compile_count(tc, indent, count, buffer_info);
 
         const range_check check{range_check_of(tc, buffer_info)};
@@ -494,8 +507,6 @@ class stmt_builtin_io final : public expression {
             start = compile_start(tc, indent, *at_.start, count, buffer_info,
                                   check);
         }
-
-        assert_constant_range_in_bounds(tc, buffer);
 
         // a count with a start is checked by 'compile_start', a bare count by
         // 'compile_lea'
@@ -632,8 +643,8 @@ class stmt_builtin_io final : public expression {
             x.multiply(tok(), indent, start, element_size_bytes,
                        machine::factor_use::read_only);
 
-            x.add_subtract(tok(), indent, machine::arithmetic_operator::add,
-                           buffer_reg, start);
+            x.add_subtract(tok(), indent, arithmetic_operator::add, buffer_reg,
+                           start);
 
             x.free_scratch_register(tok(), indent, start);
         }

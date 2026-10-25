@@ -22,6 +22,7 @@
 #include "statement.hpp"
 #include "stmt_identifier.hpp"
 #include "token.hpp"
+#include "type.hpp"
 #include "ub_order.hpp"
 #include "ub_reads.hpp"
 
@@ -84,7 +85,7 @@ class expr_bool_op final : public expression {
     // the operator and the right side, e.g. '== b' of 'a == b'
     struct comparison {
         token ws_pre_op;
-        machine::comparison_operator op{machine::comparison_operator::equal};
+        comparison_operator op{comparison_operator::equal};
         token ws_post_op;
         expr_arith rhs;
         // e.g. 'a == b' of two user type instances or two whole arrays, the
@@ -124,7 +125,7 @@ class expr_bool_op final : public expression {
 
         const token ws_pre_op{tz.next_whitespace_token()};
 
-        const std::optional<machine::comparison_operator> op{
+        const std::optional<comparison_operator> op{
             parse_comparison_operator(tz),
         };
 
@@ -297,8 +298,7 @@ class expr_bool_op final : public expression {
 
   private:
     // e.g. 'a < b' of two 'bool's, which are not numbers
-    auto
-    assert_boolean_equality_only(const machine::comparison_operator op) const
+    auto assert_boolean_equality_only(const comparison_operator op) const
         -> void {
 
         if (not lhs_.get_type().is_bool() or is_equality(op)) {
@@ -336,7 +336,7 @@ class expr_bool_op final : public expression {
         machine::comparison_action branch_action{action};
 
         // the stored result has the inversion applied
-        branch_action.operation = machine::comparison_operator::not_equal;
+        branch_action.operation = comparison_operator::not_equal;
         branch_action.destination = {};
         branch_action.inverted = false;
 
@@ -525,9 +525,10 @@ class expr_bool_op final : public expression {
     }
 
     // the value of a comparison whose sides fold, empty otherwise
-    [[nodiscard]] auto constant_comparison(
-        const comparison_side& lhs, const machine::comparison_operator op,
-        const comparison_side& rhs) const -> std::optional<bool> {
+    [[nodiscard]] auto constant_comparison(const comparison_side& lhs,
+                                           const comparison_operator op,
+                                           const comparison_side& rhs) const
+        -> std::optional<bool> {
 
         if (not lhs.folded or not rhs.folded) {
             return std::nullopt;
@@ -554,9 +555,8 @@ class expr_bool_op final : public expression {
     }
 
     // a shorthand is a comparison with 0 by '!='
-    [[nodiscard]] auto operation() const -> machine::comparison_operator {
-        return comparison_ ? comparison_->op
-                           : machine::comparison_operator::not_equal;
+    [[nodiscard]] auto operation() const -> comparison_operator {
+        return comparison_ ? comparison_->op : comparison_operator::not_equal;
     }
 
     auto resolve_cmp(toc& tc, const size_t indent, const comparison_side& lhs,
@@ -643,7 +643,7 @@ class expr_bool_op final : public expression {
         const stmt_identifier& rhs{cmp.rhs.identifier()};
 
         const bool is_not_equal{
-            cmp.op == machine::comparison_operator::not_equal,
+            cmp.op == comparison_operator::not_equal,
         };
 
         if (not action.destination.is_empty()) {
@@ -668,7 +668,7 @@ class expr_bool_op final : public expression {
                                 is_not_equal);
 
         machine::comparison_action branch_action{action};
-        branch_action.operation = machine::comparison_operator::not_equal;
+        branch_action.operation = comparison_operator::not_equal;
 
         x.compare_and_branch(tok(), indent, result,
                              operand::imm(0, tc.builtins().default_type()),
@@ -705,8 +705,7 @@ class expr_bool_op final : public expression {
     // a comparison that folds is checked like one that is compiled
     static auto assert_folded_sides_fit(const comparison_side& lhs,
                                         const comparison_side& rhs,
-                                        const machine::comparison_operator op)
-        -> void {
+                                        const comparison_operator op) -> void {
 
         const bool is_lhs_typed{lhs.is_typed_constant()};
         const bool is_rhs_typed{rhs.is_typed_constant()};
@@ -799,7 +798,7 @@ class expr_bool_op final : public expression {
     // the backends compare at the width of 'lhs' which would truncate 'rhs'
     static auto assert_rhs_fits_lhs(const comparison_side& lhs,
                                     const comparison_side& rhs,
-                                    const machine::comparison_operator op,
+                                    const comparison_operator op,
                                     const operand& lhs_op,
                                     const operand& rhs_op) -> void {
 
@@ -938,11 +937,11 @@ class expr_bool_op final : public expression {
     }
 
     // a user type instance or a whole array in storage, compared in place
-    [[nodiscard]] static auto is_equality(const machine::comparison_operator op)
+    [[nodiscard]] static auto is_equality(const comparison_operator op)
         -> bool {
 
-        return op == machine::comparison_operator::equal or
-               op == machine::comparison_operator::not_equal;
+        return op == comparison_operator::equal or
+               op == comparison_operator::not_equal;
     }
 
     [[nodiscard]] static auto is_memory_operand(const toc& tc,
@@ -971,7 +970,7 @@ class expr_bool_op final : public expression {
 
     // the comparison at the next characters, none for a shorthand condition
     [[nodiscard]] static auto parse_comparison_operator(tokenizer& tz)
-        -> std::optional<machine::comparison_operator> {
+        -> std::optional<comparison_operator> {
 
         if (tz.is_next_char('=')) {
             if (not tz.is_next_char('=')) {
@@ -981,7 +980,7 @@ class expr_bool_op final : public expression {
                 throw compile_error{tz, "expected '=='"};
             }
 
-            return machine::comparison_operator::equal;
+            return comparison_operator::equal;
         }
 
         if (tz.is_next_char('!')) {
@@ -992,19 +991,17 @@ class expr_bool_op final : public expression {
                 throw compile_error{tz, "expected '!='"};
             }
 
-            return machine::comparison_operator::not_equal;
+            return comparison_operator::not_equal;
         }
 
         if (tz.is_next_char('<')) {
-            return tz.is_next_char('=')
-                       ? machine::comparison_operator::less_equal
-                       : machine::comparison_operator::less;
+            return tz.is_next_char('=') ? comparison_operator::less_equal
+                                        : comparison_operator::less;
         }
 
         if (tz.is_next_char('>')) {
-            return tz.is_next_char('=')
-                       ? machine::comparison_operator::greater_equal
-                       : machine::comparison_operator::greater;
+            return tz.is_next_char('=') ? comparison_operator::greater_equal
+                                        : comparison_operator::greater;
         }
 
         return std::nullopt;
@@ -1098,10 +1095,11 @@ class expr_bool_op final : public expression {
         };
     }
 
-    [[noreturn]] static auto
-    throw_rhs_wider(const expr_arith& lhs, const expr_arith& rhs,
-                    const machine::comparison_operator op, const type& lhs_type,
-                    const type& rhs_type) -> void {
+    [[noreturn]] static auto throw_rhs_wider(const expr_arith& lhs,
+                                             const expr_arith& rhs,
+                                             const comparison_operator op,
+                                             const type& lhs_type,
+                                             const type& rhs_type) -> void {
 
         throw compile_error{
             rhs.tok(), std::format("{} of type {} is wider than {} of type {}, "

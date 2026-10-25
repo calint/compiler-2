@@ -32,15 +32,18 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
   public:
     machine_rv32i_qemu(const builtin_type_set& builtins,
                        const source_files& files, const target_options& options)
-        : machine_rv32i_bare_metal{builtins, files, options, ram_size_bytes_} {}
+        : machine_rv32i_bare_metal{builtins, files, options, ram_size_bytes_,
+                                   qemu_target()} {}
 
     //
-    // overridden methods
+    // statics
     //
 
     // the machine has no sd card, so the sector functions are rejected
-    [[nodiscard]] auto sector_size_bytes() const -> size_t override {
-        return 0;
+    [[nodiscard]] static constexpr auto qemu_target() -> target_description {
+        target_description target{bare_metal_target()};
+        target.sector_size_bytes = 0;
+        return target;
     }
 
   protected:

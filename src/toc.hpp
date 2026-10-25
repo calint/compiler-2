@@ -1790,17 +1790,15 @@ class storage_layout final {
     // the storage of the dat 'var' is where the data table placed it, after
     // the dats before it; returns the bytes it takes with the padding before
     // it, the offset of its storage is set
-    [[nodiscard]] auto allocate_dat(const token& src_loc_tk, var_info& var,
-                                    const bool checks_capacity) -> size_t {
+    [[nodiscard]] auto allocate_dat(const token& src_loc_tk, var_info& var)
+        -> size_t {
 
         const placed_dat& dat{data_.get().get_dat(var.name)};
 
-        // note: the compile pass places the dats in order and before the
-        //       variables; the parse also places the variables of the
-        //       function bodies it reads, whose offsets are not used
+        // note: the compile places the dats in order and before the
+        //       variables, the parse places nothing
 
-        assert(not checks_capacity or
-               sum_storage_size(dats_and_vars_size_bytes(),
+        assert(sum_storage_size(dats_and_vars_size_bytes(),
                                 dat.padding_bytes) == dat.offset_bytes);
 
         const size_t allocated_size_bytes{
@@ -1863,9 +1861,8 @@ class storage_layout final {
 
         assert_total_fits_target(src_loc_tk, allocated_size_bytes);
 
-        // note: the parse forgets the peak and a dry run puts it back, and
-        //       the parse may place a variable before the dats; the scope
-        //       holds the bytes after this returns
+        // note: a dry run puts the peak back; the scope holds the bytes after
+        //       this returns
 
         if (checks_capacity) {
             max_body_vars_size_bytes_ = std::max(
@@ -1963,13 +1960,6 @@ class storage_layout final {
     // the root scope applies the dat var padding again when it is entered
     // anew
     auto release_root() -> void { applied_padding_bytes_.reset(); }
-
-    // the scopes of the parse are popped, its use of storage is forgotten
-    auto reset_usage() -> void {
-        assert(dats_and_vars_size_bytes() == 0);
-
-        max_body_vars_size_bytes_ = 0;
-    }
 
     [[nodiscard]] auto var_storage_alignment(const var_info& var) const
         -> size_t {
@@ -2137,8 +2127,8 @@ class builtin_roles final {
     std::reference_wrapper<const builtin_type_set> types_;
 
   public:
-    explicit builtin_roles(const ::machine& backend)
-        : machine_{backend}, types_{backend.builtin_types()} {}
+    builtin_roles(const ::machine& backend, const builtin_type_set& types)
+        : machine_{backend}, types_{types} {}
 
     [[nodiscard]] auto address() const -> const type& {
         return machine_.get().address_size_bytes() == sizeof(int32_t)
@@ -2163,9 +2153,11 @@ class builtin_roles final {
     }
 };
 
-// resolves a name to a variable, a register or a constant by
-// 'scope_stack::lookup_below', a binding is followed into the scopes of the
-// caller
+// resolves a name by 'scope_stack::lookup_below' to its operand, a variable,
+// a register or a constant ('resolve'), and to the storage it reaches
+// ('resolve_storage'); a binding is followed into the scopes of the caller;
+// an element is the walk's to tell for a binding to one, 'make_ident_info'
+// tells it for an index of the path itself
 class ident_resolver final {
     std::reference_wrapper<const scope_stack> scopes_;
     std::reference_wrapper<const ::machine> machine_;
@@ -2243,6 +2235,53 @@ class ident_resolver final {
         throw compile_error{
             src_loc_tk,
             std::format("cannot resolve identifier {}", in_quotes(ident))};
+    }
+
+    // what 'name' names with 'path' inside it, as a root variable and the
+    // path inside it, empty when it holds no storage, e.g. a constant. a
+    // parameter is followed to its argument and the element 'e' of a 'foo' is
+    // any element of the array it iterates
+    [[nodiscard]] auto resolve_storage(const std::string_view name,
+                                       const access_path& path) const
+        -> std::optional<storage_path> {
+
+        const name_meaning meaning{scopes_.get().lookup(name)};
+
+        if (meaning.is_binding()) {
+            const param_binding& binding{
+                scopes_.get().all().at(meaning.scope_index).get_binding(name),
+            };
+
+            return binding.bound_storage_of(path);
+        }
+
+        if (not meaning.is_variable()) {
+            return std::nullopt;
+        }
+
+        const var_info& var{
+            scopes_.get().all().at(meaning.scope_index).get_var_const_ref(name),
+        };
+
+        // note: the array was resolved to its root variable when the 'foo'
+        //       was made, the callee of a call in the 'foo' does not see 'e'
+
+        if (var.foo_array) {
+            return var.foo_array->any_element(path);
+        }
+
+        // a value in a register has no storage, e.g. the counter 'i' of a 'foo'
+        if (std::holds_alternative<in_value_register>(var.placement)) {
+            return std::nullopt;
+        }
+
+        return storage_path{
+            .root{
+                .name{std::string{name}},
+                .scope_index{meaning.scope_index},
+            },
+            .path{path},
+        };
     }
 
   private:
@@ -2956,20 +2995,22 @@ class toc final {
         ~parse_nesting_scope() { --tc_.parse_nesting_; }
     };
 
-    toc(::machine& backend, const source_files& files,
-        const size_t vars_capacity_bytes, const check_options& checks)
+    // 'builtins' are the types of the language, shared with the machine
+    toc(::machine& backend, const builtin_type_set& builtins,
+        const source_files& files, const size_t vars_capacity_bytes,
+        const check_options& checks)
         : machine_{backend}, locations_{files}, scopes_{order_},
           data_{backend.data_alignment()}, funcs_{order_}, generics_{order_},
           types_{order_},
           definitions_{scopes_, funcs_, types_, generics_, locations_},
-          builtins_{backend},
+          builtins_{backend, builtins},
           resolver_{scopes_, backend, funcs_, generics_, builtins_},
           var_comments_{backend, resolver_},
           storage_{backend, scopes_, data_, vars_capacity_bytes},
           checks_{checks} {
 
         // the built-in types are looked up by name like the defined ones
-        for (const type* const tp : backend.builtin_types().all()) {
+        for (const type* const tp : builtins.all()) {
             types_.add_builtin(tp->name(), *tp);
         }
 
@@ -3141,17 +3182,17 @@ class toc final {
                                                      var.name);
         }
 
-        // a variable in a register or at one has no storage
+        // a variable in a register or at one has no storage; the parse only
+        // declares the names, the compile places them
         const bool is_in_storage{
             std::holds_alternative<in_storage>(var.placement),
         };
 
         size_t allocated_size_bytes{};
 
-        if (kind == var_kind::dat) {
-            allocated_size_bytes = storage_.allocate_dat(
-                src_loc_tk, var, checks_storage_capacity());
-        } else if (is_in_storage) {
+        if (is_compiling_ and kind == var_kind::dat) {
+            allocated_size_bytes = storage_.allocate_dat(src_loc_tk, var);
+        } else if (is_compiling_ and is_in_storage) {
             allocated_size_bytes = storage_.allocate_var(
                 src_loc_tk, var, checks_storage_capacity());
         }
@@ -3236,15 +3277,17 @@ class toc final {
         }
     }
 
-    // the parse is over: its scopes are popped and its use of storage is
-    // forgotten, declarations comment where they are stored and the storage
-    // capacity is checked, e.g. a parameter 'self' of a type larger than the
-    // vars section holds an address once the body is compiled
+    // the parse is over: its scopes are popped, it declared the names
+    // without storage; from here on the declarations are placed, comment
+    // where they are stored and the storage capacity is checked, e.g. a
+    // parameter 'self' of a type larger than the vars section holds an
+    // address once the body is compiled
     auto begin_compile() -> void {
         assert(not is_compiling_);
         assert(scopes_.is_empty());
 
-        storage_.reset_usage();
+        // note: the parse declared the names without storage
+        storage_.assert_released();
         scopes_.set_max_depth(0);
 
         // note: the parse compiles no call
@@ -3282,7 +3325,25 @@ class toc final {
 
     // the location of 'src_loc_tk' and the call path of the inlined bodies
     // around it, which keeps labels unique per call, e.g. '12.5.30.9' for
-    // 12:5 in a body inlined by the call at 30:9
+    // 12:5 in a body inlined by the call at 30:9; the labels of a listing:
+    //
+    //   if.L.C         an 'if' at line L, column C; '.N' its branch N,
+    //                  '.code', '.else', '.end' ('stmt_if::branch_label')
+    //   cmp.L.C        a condition ('create_cmp_label')
+    //   bool.L.C.end   the end of a condition stored as a value
+    //   loop.L.C       a 'loop', '.end' ('end_label')
+    //   foo.L.C        a 'foo', '.continue' ('continue_label'), '.end'
+    //   init.L.C       the read-only bytes of a constant '{...}', 'str.L.C' of
+    //                  a string ('add_read_only_constant')
+    //   func.NAME.L.C  a body inlined by the call at L:C, '.end'
+    //   func.NAME      a noinline body, 'func.NAME.len.4' for array lengths,
+    //                  'size.func.NAME' its frame size; 'f<i8>' is 'f..i8'
+    //                  ('stmt_def_func::body_label', 'label_name')
+    //   baz_NAME       a routine of the runtime or a failure handler, e.g.
+    //                  'baz_bounds_panic', '.Lbaz_NAME' a local one on rv32i
+    //
+    // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13; a
+    // location in an included file is 'fN.L.C' ('source_files::for_label')
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
         -> std::string {
 
@@ -3610,51 +3671,12 @@ class toc final {
         return locations_.source_of(src_loc_tk);
     }
 
-    // what 'name' names with 'path' inside it, as a root variable and the
-    // path inside it, empty when it holds no storage, e.g. a constant. a
-    // parameter is followed to its argument and the element 'e' of a 'foo' is
-    // any element of the array it iterates
+    // see 'ident_resolver::resolve_storage'
     [[nodiscard]] auto storage_of(const std::string_view name,
                                   const access_path& path) const
         -> std::optional<storage_path> {
 
-        const name_meaning meaning{scopes_.lookup(name)};
-
-        if (meaning.is_binding()) {
-            const param_binding& binding{
-                scopes_.all().at(meaning.scope_index).get_binding(name),
-            };
-
-            return binding.bound_storage_of(path);
-        }
-
-        if (not meaning.is_variable()) {
-            return std::nullopt;
-        }
-
-        const var_info& var{
-            scopes_.all().at(meaning.scope_index).get_var_const_ref(name),
-        };
-
-        // note: the array was resolved to its root variable when the 'foo'
-        //       was made, the callee of a call in the 'foo' does not see 'e'
-
-        if (var.foo_array) {
-            return var.foo_array->any_element(path);
-        }
-
-        // a value in a register has no storage, e.g. the counter 'i' of a 'foo'
-        if (std::holds_alternative<in_value_register>(var.placement)) {
-            return std::nullopt;
-        }
-
-        return storage_path{
-            .root{
-                .name{std::string{name}},
-                .scope_index{meaning.scope_index},
-            },
-            .path{path},
-        };
+        return resolver_.resolve_storage(name, path);
     }
 
     [[nodiscard]] auto types() const -> const type_table& { return types_; }

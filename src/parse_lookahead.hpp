@@ -79,8 +79,11 @@ enum class term_kind : uint8_t {
     constructor_call,
     // a user type alone, e.g. the 'point' of 'var p = point'
     record_type,
-    // a name followed by '(', e.g. 'f(x)' or 'point(3)'
+    // a name followed by '(', e.g. 'f(x)' or 'point(3)' of a function 'point'
     call,
+    // a user type followed by '(' with no function of its name, e.g.
+    // 'point(5)', which is an error where a value is expected
+    type_called,
     // a generic function followed by '<' or '(', e.g. 'show<i8>(x)'
     generic_call,
     // a variable, a parameter or a constant, e.g. 'x' of 'x + 1'
@@ -97,7 +100,12 @@ enum class term_kind : uint8_t {
 // what 'classify_term' found
 struct term {
     term_kind kind{term_kind::none};
-    // the type of a type kind, e.g. 'i8' for a type parameter bound to it
+    // the type of a type kind, e.g. 'i8' for a type parameter bound to it;
+    // set for 'conversion', 'builtin_type', 'array_literal', 'record_literal',
+    // 'constructor_call', 'record_type' and 'type_called', null otherwise
+    // note: what the name means; a value of the type is asked for by
+    //       'toc::get_type_or_throw', which also rejects 'void' and a type
+    //       wider than the target computes, e.g. 'i64' on rv32i
     const type* named_type{};
 
     [[nodiscard]] auto is(const term_kind other) const -> bool {
@@ -188,6 +196,16 @@ struct term {
     }
 
     if (next == '(') {
+        // note: a function may be named like a type, e.g. 'point(3)'
+        if (not is_hidden and tc.types().has(text) and
+            not tc.funcs().has(text)) {
+
+            return {
+                .kind{term_kind::type_called},
+                .named_type{&tc.types().get(text)},
+            };
+        }
+
         return {
             .kind{term_kind::call},
             .named_type{},

@@ -196,6 +196,10 @@ class initializer_declaration final {
     }
 
     // e.g. the array 'a'
+    // note: the type of a whole initializer, e.g. 'bool' for 'a < b' and the
+    //       first operand for 'a + 1', so the initializer is parsed; a generic
+    //       argument tells its type only as a whole term, see
+    //       'generic_call::value_type'
     auto deduce_from_initializer(toc& tc, tokenizer& tz) -> void {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};

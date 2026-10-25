@@ -283,8 +283,7 @@ inline auto stmt_identifier::add_index(toc& tc, const size_t indent,
                   addend_elements);
 
         x.add_subtract(
-            src_loc_tk, indent, machine::arithmetic_operator::add,
-            index_register,
+            src_loc_tk, indent, arithmetic_operator::add, index_register,
             operand::imm(addend_elements, tc.builtins().default_type()));
 
         addend_elements = 0;

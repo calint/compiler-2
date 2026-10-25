@@ -14,6 +14,7 @@
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
+#include "type.hpp"
 #include "ub_reads.hpp"
 
 // e.g. 'array_copy(a[1], b[0], n)' copies 'n' elements of 'a' into 'b'; the

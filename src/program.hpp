@@ -19,6 +19,7 @@
 #include "compile_error.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
+#include "parse_statement.hpp"
 #include "source_files.hpp"
 #include "statement.hpp"
 #include "stmt_def_dat.hpp"
@@ -246,9 +247,11 @@ class program final {
 
   public:
     // the main file is the first of 'files', the included ones are added
-    program(machine& backend, source_files& files, const size_t vars_size_bytes,
+    program(machine& backend, const builtin_type_set& builtins,
+            source_files& files, const size_t vars_size_bytes,
             const check_options& checks)
-        : files_{files}, tc_{backend, files, vars_size_bytes, checks} {
+        : files_{files},
+          tc_{backend, builtins, files, vars_size_bytes, checks} {
 
         {
             const toc::scope_entry root{tc_, scope::block()};
@@ -541,37 +544,5 @@ class program final {
         };
 
         return error ? name.lexically_normal() : path;
-    }
-
-    // only definitions are allowed at the top level
-    [[nodiscard]] static auto parse_definition(toc& tc, tokenizer& tz,
-                                               const token& tk)
-        -> std::unique_ptr<statement> {
-
-        if (tk.is_text("func")) {
-            return make_stmt_def_func(tc, tk, tz);
-        }
-
-        if (tk.is_text("type")) {
-            return make_stmt_def_type(tc, tk, tz);
-        }
-
-        if (tk.is_text("var") or tk.is_text("let")) {
-            return make_stmt_def_var(tc, tk, tz);
-        }
-
-        if (tk.is_text("dat")) {
-            return std::make_unique<stmt_def_dat>(tc, tk, tz);
-        }
-
-        if (tk.is_text("include")) {
-            throw compile_error{
-                tk, "'include' must be before the definitions of the file"};
-        }
-
-        throw compile_error{
-            tk, std::format("expected a definition ('func', 'type', 'var', "
-                            "'let' or 'dat'), got {}",
-                            in_quotes(tk))};
     }
 };

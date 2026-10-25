@@ -45,7 +45,7 @@
 //       list needs a scratch register
 //
 class expr_arith final : public expression {
-    using arithmetic_operator = machine::arithmetic_operator;
+    using arithmetic_operator = arithmetic_operator;
 
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     // operators between elements in the vector
@@ -485,12 +485,15 @@ class expr_arith final : public expression {
     // constant, empty when the list is compiled whole by 'compile'
     //   'ix + 1'  =>  compiles 'ix', returns 1
     //   'ix - 2'  =>  compiles 'ix', returns -2
+    // only an index asks, into a fresh register of the default type, so of
+    // what 'compile' does it needs the order check and the plan: a constant
+    // index folds before, the register is no storage that an element could
+    // read, and an index has no unary ops of its own
     [[nodiscard]] auto
     compile_without_trailing_addend(toc& tc, const size_t indent,
                                     const destination& dst) const
         -> std::optional<int64_t> {
 
-        // note: only an index expression asks, it has no unary ops of its own
         assert(list_uops_.is_empty());
 
         assert_elements_not_written_later(tc);
@@ -499,26 +502,16 @@ class expr_arith final : public expression {
 
         const step& last{steps.back()};
 
+        // note: 2 steps are the least with something to add the constant to
+
         if (steps.size() < 2 or last.element != nullptr or
             last.op != arithmetic_operator::add) {
 
             return std::nullopt;
         }
 
-        // note: 2 steps are the least with something to add the constant to
-
-        compile_first_step(tc, indent, dst, steps.front());
-
-        const std::span<const step> middle_steps{
-            std::span{steps}.subspan(1, steps.size() - 2),
-        };
-
-        // note: the 1 skips the first step compiled above and the 2 also
-        //       leaves out the trailing constant
-
-        for (const step& s : middle_steps) {
-            compile_step(tc, indent, dst, s);
-        }
+        compile_elements(tc, indent, dst,
+                         std::span{steps}.first(steps.size() - 1));
 
         return last.value;
     }
@@ -750,8 +743,8 @@ class expr_arith final : public expression {
         if (first.op == arithmetic_operator::subtract) {
             machine& x{tc.machine()};
 
-            x.unary(tok(), indent, machine::arithmetic_operator::negate,
-                    dst.operand(), tc.overflow_options(dst));
+            x.unary(tok(), indent, arithmetic_operator::negate, dst.operand(),
+                    tc.overflow_options(dst));
         }
     }
 
@@ -768,6 +761,13 @@ class expr_arith final : public expression {
         if (s.value and (s.element == nullptr or is_checked_constant)) {
             apply_merged_constant(tc, indent, s.op, dst, *s.value,
                                   s.folded_source);
+
+            return;
+        }
+
+        if (s.value) {
+            asm_op_constant_element(tc, indent, s.op, dst, *s.element,
+                                    *s.value);
 
             return;
         }
@@ -1137,6 +1137,58 @@ class expr_arith final : public expression {
             });
     }
 
+    // a constant element that the merging passes keep in place, its value
+    // folded by 'make_steps': a divisor or a shift count, e.g. 'x / 3' or
+    // 'x << k'
+    static auto asm_op_constant_element(toc& tc, const size_t indent,
+                                        const arithmetic_operator op,
+                                        const destination& dst,
+                                        const statement& src,
+                                        const int64_t value) -> void {
+
+        machine& x{tc.machine()};
+
+        x.comment(src.tok(), indent,
+                  statement::trimmed_source(src, dst.text(), source_text(op)));
+
+        if (src.is_expression()) {
+            x.comment(src.tok(), indent, "src: folded constant {}",
+                      in_quotes(statement::trimmed_source(src)));
+        } else {
+            x.comment(src.tok(), indent, "src: constant");
+        }
+
+        const operand constant{
+            folded_value::untyped(value).operand_at(dst.type_ref()),
+        };
+
+        if (op == arithmetic_operator::divide or
+            op == arithmetic_operator::remainder) {
+
+            assert_divisor_not_zero(src.tok(), constant.immediate());
+
+            x.divide(src.tok(), indent, op, dst.operand(), constant,
+                     tc.checks().division_options());
+
+            return;
+        }
+
+        // note: the merging passes regroup or merge every other operator
+        assert(op == arithmetic_operator::shift_left or
+               op == arithmetic_operator::shift_right);
+
+        // note: a count wider than the value is rejected as narrowed also in
+        //       the argument of a conversion
+
+        src.assert_not_narrowed(tc, dst.type_ref());
+
+        assert_shift_count_fits(src.tok(), constant.immediate(),
+                                dst.type_ref());
+
+        x.shift(src.tok(), indent, op, dst.operand(), constant,
+                tc.checks().shift_options());
+    }
+
     static auto asm_op_div(toc& tc, const size_t indent,
                            const arithmetic_operator op, const destination& dst,
                            const statement& src) -> void {
@@ -1146,10 +1198,6 @@ class expr_arith final : public expression {
         emit_with_source(
             tc, indent, src, dst,
             [&](const operand& divisor, const machine::factor_use) -> void {
-                if (divisor.is_immediate()) {
-                    assert_divisor_not_zero(src.tok(), divisor.immediate());
-                }
-
                 x.divide(src.tok(), indent, op, dst.operand(), divisor,
                          tc.checks().division_options());
             });
@@ -1198,11 +1246,6 @@ class expr_arith final : public expression {
         emit_with_source(
             tc, indent, src, dst,
             [&](const operand& count, const machine::factor_use) -> void {
-                if (count.is_immediate()) {
-                    assert_shift_count_fits(src.tok(), count.immediate(),
-                                            dst.type_ref());
-                }
-
                 x.shift(src.tok(), indent, op, dst.operand(), count,
                         tc.checks().shift_options());
             });
@@ -1375,21 +1418,11 @@ class expr_arith final : public expression {
 
         const type& operand_type{dst.type_ref()};
 
+        // note: a constant element is a constant step, its value folded by
+        //       'make_steps', see 'asm_op_constant_element'
+
         if (src.is_expression()) {
-            // e.g. 'a / (1 + 1)'
-            const std::optional<folded_value> folded{
-                src.fold(tc, tc.use_of(dst)),
-            };
-
-            if (folded) {
-                x.comment(src.tok(), indent, "src: folded constant {}",
-                          in_quotes(statement::trimmed_source(src)));
-
-                emit(folded->operand_at(operand_type),
-                     machine::factor_use::read_only);
-
-                return;
-            }
+            assert(not src.fold(tc, tc.use_of(dst)));
 
             x.comment(src.tok(), indent, "src: expression");
 
@@ -1410,21 +1443,7 @@ class expr_arith final : public expression {
 
         const ident_info src_info{make_scalar_ident_info(tc, ident)};
 
-        if (src_info.is_const()) {
-            const std::optional<folded_value> folded{
-                src.fold(tc, tc.use_of(dst)),
-            };
-
-            // note: a constant name or literal folds
-            assert(folded);
-
-            x.comment(src.tok(), indent, "src: constant");
-
-            emit(folded->operand_at(operand_type),
-                 machine::factor_use::read_only);
-
-            return;
-        }
+        assert(not src_info.is_const());
 
         // a register that holds the result of unary ops may be overwritten
         const bool has_unary_ops{not ident.get_unary_ops().is_empty()};

@@ -279,6 +279,9 @@ struct generic_call {
     // the type of an instance literal, a constructor call or a call of a
     // function that is the whole argument, 'tk' is its first token and 'tz' is
     // after it
+    // note: an argument is parsed at the type of its parameter, so it is read
+    //       here without a parse, unlike a 'var' initializer, see
+    //       'initializer_declaration::deduce_from_initializer'
     [[nodiscard]] static auto value_type(toc& tc, tokenizer& tz,
                                          const token& tk, const term& tm)
         -> const type* {

@@ -60,7 +60,8 @@
 //   calls        'call_function', the sector and i/o routine calls
 //   target hooks 'emit_read_call', 'emit_write_call',
 //                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
-//                'check_memory_end'
+//                'check_memory_end'; the protected section is what the
+//                targets build on
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
     using op = assembler_rv32i::op;
@@ -210,14 +211,19 @@ class machine_rv32i : public machine {
     //         run-time count checks the head against the count and selects the
     //         tail by its low bits
 
-    // a numeric local label as defined and as a branch refers to it
+    // a numeric local label as defined and as a branch refers to it; '1f'
+    // means the next '1:' in the emitted text, so the numbers repeat across
+    // operations under one rule: a numeric label is referenced only inside
+    // the operation that defines it, and nothing emitted between a reference
+    // and its label defines a numeric label, e.g. a 'branch_to_failure'
+    // inside a walk emits none
     struct local_label {
         std::string_view name;
         std::string_view reference;
     };
 
-    // every local label of the bulk operations, listed together so none is
-    // used twice
+    // the local labels of the bulk operations, the other operations define
+    // theirs where they use them
     static constexpr local_label chunk_loop_{
         .name{"1"},
         .reference{"1b"},
@@ -349,6 +355,13 @@ class machine_rv32i : public machine {
     std::vector<bulk_operation> bulk_operations_;
 
   protected:
+    // a target that differs from 'rv32i_target' passes its own table
+    machine_rv32i(const builtin_type_set& builtins, const source_files& files,
+                  const target_options& options,
+                  const target_description& target)
+        : machine{builtins, files, options, target},
+          binary_file_name_{options.binary_file_name} {}
+
     static constexpr size_t word_size_bytes_{4};
     static constexpr size_t register_bits_{
         std::numeric_limits<uint32_t>::digits,
@@ -487,12 +500,6 @@ class machine_rv32i : public machine {
         std::ignore = save_registers(indent, register_names_of(saved));
     }
 
-    [[nodiscard]] auto scratch_registers() const
-        -> std::span<const std::string_view> override {
-
-        return scratch_registers_;
-    }
-
     [[nodiscard]] auto target_assembler() -> ::assembler& override {
         return assembler_;
     }
@@ -558,23 +565,6 @@ class machine_rv32i : public machine {
 
     [[nodiscard]] auto assembler() -> assembler_rv32i& { return assembler_; }
 
-    // a jump to 'handler', which is marked used; with the line, the line in
-    // a0 and a jump to the entry of the handler for the file of 'src_loc_tk'
-    auto branch_to_failure(const token& src_loc_tk, const size_t indent,
-                           const failure_handler& handler) -> void {
-
-        if (not mark_failure(handler, src_loc_tk)) {
-            branch(indent, handler.label);
-            return;
-        }
-
-        comment(src_loc_tk, indent, "source line");
-        assembler_.li(indent, "a0", src_loc_tk.at_line());
-
-        branch(indent,
-               failure_entry_label(handler.label, src_loc_tk.file_index()));
-    }
-
     // i/o routines replacing system calls return through a7 and change only
     // 'clobbered' besides a0, which are free at the call, so like a system
     // call it saves nothing
@@ -590,78 +580,6 @@ class machine_rv32i : public machine {
                                     }));
 
         assembler_.call(indent, label, "a7");
-    }
-
-    // the sector is in a0 where 'read' has the descriptor, there is no result
-    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
-                             const operand& sector, const operand& address,
-                             const operand& size, const target_call function)
-        -> void {
-
-        const operand call_register{
-            reserve_call_register(src_loc_tk, indent, sector, address, size),
-        };
-
-        const std::string_view label{
-            function == target_call::sector_read ? sector_read_label_
-                                                 : sector_write_label_,
-        };
-
-        mark_used(label);
-        call_io_routine(indent, label, sector_clobbered_);
-        free_named_register(src_loc_tk, indent, call_register);
-    }
-
-    // the handler of a check that prints 'panic: NAME' then exits with its
-    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
-    // and the line number in a0, see 'branch_to_failure'
-    auto emit_named_failure_handler(const failure_handler& handler,
-                                    const bool with_line) -> void {
-
-        constexpr std::array<int64_t, 1> newline{'\n'};
-
-        const std::string_view name{handler.name};
-        const std::string_view handler_label{handler.label};
-
-        std::string label_name{name};
-        std::ranges::replace(label_name, ' ', '_');
-
-        if (with_line) {
-            for (const size_t file_ix :
-                 failure_lines_of(handler_label) | std::views::keys) {
-
-                assembler_.label(0,
-                                 failure_entry_label(handler_label, file_ix));
-
-                emit_line_failure(
-                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
-                    failure_message(name, file_ix), handler.exit_code);
-            }
-
-            return;
-        }
-
-        const std::string message_label{
-            std::format(".Lbaz_{}_message", label_name),
-        };
-
-        assembler_.label(0, handler_label);
-
-        const std::string message{panic_message(name)};
-
-        assembler_.li(1, "a0", stderr_descriptor);
-        assembler_.la(1, "a1", message_label);
-        // the newline follows the message text
-        assembler_.li(1, "a2", message.size() + 1);
-        emit_write_call(1);
-
-        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
-
-        assembler_.switch_section(section::rodata);
-        assembler_.label(0, message_label);
-        assembler_.ascii(message);
-        assembler_.data(1, newline);
-        assembler_.switch_section(section::text);
     }
 
     auto restore_saved_registers(const size_t indent,
@@ -699,39 +617,12 @@ class machine_rv32i : public machine {
         return stack_bytes;
     }
 
-    //
-    // statics
-    //
-
-    // the names of the register indexes 'indexes'
-    [[nodiscard]] static auto
-    register_names_of(const std::span<const size_t> indexes)
-        -> std::vector<std::string_view> {
-
-        std::vector<std::string_view> names;
-        names.reserve(indexes.size());
-
-        for (const size_t index : indexes) {
-            names.push_back(register_names_.at(index));
-        }
-
-        return names;
-    }
-
-    // the aligned stack area 'save_registers' allocates for 'count' registers
-    [[nodiscard]] static auto saved_registers_size_bytes(const size_t count)
-        -> size_t {
-
-        return align_storage_size(count * word_size_bytes_, stack_alignment_);
-    }
-
   public:
     // 'binary_file_name' receives the image of the resolved output, backend
     // tests without complete programs leave it empty
     machine_rv32i(const builtin_type_set& builtins, const source_files& files,
                   const target_options& options = {})
-        : machine{builtins, files, options},
-          binary_file_name_{options.binary_file_name} {}
+        : machine_rv32i{builtins, files, options, rv32i_target()} {}
 
     //
     // overridden methods
@@ -777,10 +668,6 @@ class machine_rv32i : public machine {
         if (dst.is_memory()) {
             copy_value(src_loc_tk, indent, dst, value);
         }
-    }
-
-    [[nodiscard]] auto address_size_bytes() const -> size_t override {
-        return word_size_bytes_;
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -1172,10 +1059,6 @@ class machine_rv32i : public machine {
         }
     }
 
-    [[nodiscard]] auto data_alignment() const -> size_t override {
-        return data_alignment_;
-    }
-
     [[nodiscard]] auto default_type() const -> const type& override {
         return builtin_type_i32();
     }
@@ -1309,17 +1192,6 @@ class machine_rv32i : public machine {
         return false;
     }
 
-    [[nodiscard]] auto frame_base_register() const
-        -> std::string_view override {
-
-        return "s1";
-    }
-
-    // a load or store adds only an immediate to its base register
-    [[nodiscard]] auto has_indexed_addressing() const -> bool override {
-        return false;
-    }
-
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
@@ -1332,16 +1204,6 @@ class machine_rv32i : public machine {
         assert(index != register_names_.size());
 
         return operand::reg(register_names_.at(index), value_type);
-    }
-
-    [[nodiscard]] auto max_padding_gaps_zeroed_one_by_one() const
-        -> size_t override {
-
-        return max_padding_gaps_zeroed_one_by_one_;
-    }
-
-    [[nodiscard]] auto max_storage_bytes() const -> size_t override {
-        return assembler_rv32i::address_space_bytes;
     }
 
     // every known size is compared from the address operands, small ones
@@ -1463,10 +1325,6 @@ class machine_rv32i : public machine {
                           check);
     }
 
-    [[nodiscard]] auto slot_register() const -> std::string_view override {
-        return slot_register_;
-    }
-
     auto start() -> void override {
         start_output();
 
@@ -1528,18 +1386,6 @@ class machine_rv32i : public machine {
                                false);
     }
 
-    [[nodiscard]] auto variables_base_past_vars_bytes() const
-        -> std::optional<size_t> override {
-
-        return variables_base_past_vars_bytes_;
-    }
-
-    [[nodiscard]] auto variables_base_register() const
-        -> std::string_view override {
-
-        return variables_base_register_;
-    }
-
     // a named binary image is written together with the assembly source
     auto write_assembly(std::ostream& os) -> void override {
         if (binary_file_name_.empty()) {
@@ -1592,6 +1438,26 @@ class machine_rv32i : public machine {
         };
 
         return helper_save_bytes + line_digits_bytes_;
+    }
+
+    // see 'machine::target_description'
+    [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
+        return {
+            .address_size_bytes{word_size_bytes_},
+            .data_alignment{data_alignment_},
+            .max_storage_bytes{assembler_rv32i::address_space_bytes},
+            .has_indexed_addressing{false},
+            .max_padding_gaps_zeroed_one_by_one{
+                max_padding_gaps_zeroed_one_by_one_,
+            },
+            .sector_size_bytes{card_sector_size_bytes},
+            .is_stack_bounded{},
+            .frame_base_register{"s1"},
+            .variables_base_register{variables_base_register_},
+            .slot_register{slot_register_},
+            .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
+            .scratch_registers{scratch_registers_},
+        };
     }
 
   private:
@@ -1749,6 +1615,23 @@ class machine_rv32i : public machine {
             needs_normalize(instruction, dst, src, constant));
     }
 
+    // a jump to 'handler', which is marked used; with the line, the line in
+    // a0 and a jump to the entry of the handler for the file of 'src_loc_tk'
+    auto branch_to_failure(const token& src_loc_tk, const size_t indent,
+                           const failure_handler& handler) -> void {
+
+        if (not mark_failure(handler, src_loc_tk)) {
+            branch(indent, handler.label);
+            return;
+        }
+
+        comment(src_loc_tk, indent, "source line");
+        assembler_.li(indent, "a0", src_loc_tk.at_line());
+
+        branch(indent,
+               failure_entry_label(handler.label, src_loc_tk.file_index()));
+    }
+
     // a missing address would leave the loop width unproven
     [[nodiscard]] auto bulk_starts() const -> std::array<access_start, 2> {
         const bulk_operation& bulk{bulk_operations_.back()};
@@ -1784,6 +1667,10 @@ class machine_rv32i : public machine {
         const std::span<const std::string_view> clobbered{
             helper_clobbers(routine),
         };
+
+        // note: not 'machine::with_saved_registers': the live registers
+        //       include the operands the scope protects, and the saved ones
+        //       are restored before the result reaches a memory destination
 
         const std::vector<std::string_view> saved{
             live_clobbered(live, clobbered, dst),
@@ -1834,6 +1721,26 @@ class machine_rv32i : public machine {
 
         // memory destinations need their original address registers back
         copy_value(src_loc_tk, indent, dst, kept);
+    }
+
+    // the sector is in a0 where 'read' has the descriptor, there is no result
+    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
+                             const operand& sector, const operand& address,
+                             const operand& size, const target_call function)
+        -> void {
+
+        const operand call_register{
+            reserve_call_register(src_loc_tk, indent, sector, address, size),
+        };
+
+        const std::string_view label{
+            function == target_call::sector_read ? sector_read_label_
+                                                 : sector_write_label_,
+        };
+
+        mark_used(label);
+        call_io_routine(indent, label, sector_clobbered_);
+        free_named_register(src_loc_tk, indent, call_register);
     }
 
     // a distance from the source to the destination that is not zero and below
@@ -3354,6 +3261,58 @@ class machine_rv32i : public machine {
         }
 
         mark_lower_checked(range);
+    }
+
+    // the handler of a check that prints 'panic: NAME' then exits with its
+    // code; with the line, one entry per file prints 'panic: NAME at FILE:'
+    // and the line number in a0, see 'branch_to_failure'
+    auto emit_named_failure_handler(const failure_handler& handler,
+                                    const bool with_line) -> void {
+
+        constexpr std::array<int64_t, 1> newline{'\n'};
+
+        const std::string_view name{handler.name};
+        const std::string_view handler_label{handler.label};
+
+        std::string label_name{name};
+        std::ranges::replace(label_name, ' ', '_');
+
+        if (with_line) {
+            for (const size_t file_ix :
+                 failure_lines_of(handler_label) | std::views::keys) {
+
+                assembler_.label(0,
+                                 failure_entry_label(handler_label, file_ix));
+
+                emit_line_failure(
+                    std::format(".Lbaz_{}_message_{}", label_name, file_ix),
+                    failure_message(name, file_ix), handler.exit_code);
+            }
+
+            return;
+        }
+
+        const std::string message_label{
+            std::format(".Lbaz_{}_message", label_name),
+        };
+
+        assembler_.label(0, handler_label);
+
+        const std::string message{panic_message(name)};
+
+        assembler_.li(1, "a0", stderr_descriptor);
+        assembler_.la(1, "a1", message_label);
+        // the newline follows the message text
+        assembler_.li(1, "a2", message.size() + 1);
+        emit_write_call(1);
+
+        exit(token{}, 1, operand::imm(handler.exit_code, default_type()));
+
+        assembler_.switch_section(section::rodata);
+        assembler_.label(0, message_label);
+        assembler_.ascii(message);
+        assembler_.data(1, newline);
+        assembler_.switch_section(section::text);
     }
 
     // writes the line number of s2 in decimal, then exits with the code in s3:
@@ -5149,6 +5108,21 @@ class machine_rv32i : public machine {
             register_names_.size());
     }
 
+    // the names of the register indexes 'indexes'
+    [[nodiscard]] static auto
+    register_names_of(const std::span<const size_t> indexes)
+        -> std::vector<std::string_view> {
+
+        std::vector<std::string_view> names;
+        names.reserve(indexes.size());
+
+        for (const size_t index : indexes) {
+            names.push_back(register_names_.at(index));
+        }
+
+        return names;
+    }
+
     // a narrow register gets high bits from a wider, immediate or
     // differently extended source
     [[nodiscard]] static auto register_needs_extension(const type& dst_type,
@@ -5183,6 +5157,13 @@ class machine_rv32i : public machine {
                same_register(left.index_register(), right.index_register()) and
                left.scale() == right.scale() and
                left.displacement() == right.displacement();
+    }
+
+    // the aligned stack area 'save_registers' allocates for 'count' registers
+    [[nodiscard]] static auto saved_registers_size_bytes(const size_t count)
+        -> size_t {
+
+        return align_storage_size(count * word_size_bytes_, stack_alignment_);
     }
 
     // a memory copy between two addresses of one base register without index

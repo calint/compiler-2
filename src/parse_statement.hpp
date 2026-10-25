@@ -1,10 +1,10 @@
 #pragma once
 
-// the statement grammar: a statement of a block ('parse_statement') and an
-// operand of an expression ('parse_operand'), declared in 'decouple.hpp'
-// because 'stmt_block' and 'expr_arith', which call them, are included by
-// the statements they make; the definitions of the top level are made by
-// 'program::parse_definition'
+// the grammar: a definition of the top level ('parse_definition'), a
+// statement of a block ('parse_statement') and an operand of an expression
+// ('parse_operand'), the last two declared in 'decouple.hpp' because
+// 'stmt_block' and 'expr_arith', which call them, are included by the
+// statements they make; 'program' keeps the files and their includes
 
 #include <algorithm>
 #include <format>
@@ -26,6 +26,9 @@
 #include "stmt_builtin_io.hpp"
 #include "stmt_call.hpp"
 #include "stmt_continue.hpp"
+#include "stmt_def_dat.hpp"
+#include "stmt_def_func.hpp"
+#include "stmt_def_type.hpp"
 #include "stmt_def_var.hpp"
 #include "stmt_identifier.hpp"
 #include "stmt_if.hpp"
@@ -282,11 +285,8 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                                 "instead, e.g. 'x != 0'"};
     }
 
-    // e.g. 'point(5)'; note: a function may be named like a type, e.g.
-    // 'point(3)'
-    if (tm.is(term_kind::call) and tc.types().has(tk.text()) and
-        not is_hidden_by_value(tc, tk.text()) and
-        not tc.funcs().has(tk.text())) {
+    // e.g. 'point(5)'
+    if (tm.is(term_kind::type_called)) {
 
         throw compile_error{
             tk, std::format("{} is a type, not a function, an instance "
@@ -454,4 +454,37 @@ inline auto parse_statement(toc& tc, tokenizer& tz, const token tk)
 
     // e.g. 'lst.add(1)'
     return parse_name_statement(tc, tz, tk);
+}
+
+// a definition of the top level, 'tk' is its first token; only definitions
+// are allowed there
+[[nodiscard]] inline auto parse_definition(toc& tc, tokenizer& tz,
+                                           const token& tk)
+    -> std::unique_ptr<statement> {
+
+    if (tk.is_text("func")) {
+        return make_stmt_def_func(tc, tk, tz);
+    }
+
+    if (tk.is_text("type")) {
+        return make_stmt_def_type(tc, tk, tz);
+    }
+
+    if (tk.is_text("var") or tk.is_text("let")) {
+        return make_stmt_def_var(tc, tk, tz);
+    }
+
+    if (tk.is_text("dat")) {
+        return std::make_unique<stmt_def_dat>(tc, tk, tz);
+    }
+
+    if (tk.is_text("include")) {
+        throw compile_error{
+            tk, "'include' must be before the definitions of the file"};
+    }
+
+    throw compile_error{
+        tk, std::format("expected a definition ('func', 'type', 'var', "
+                        "'let' or 'dat'), got {}",
+                        in_quotes(tk))};
 }

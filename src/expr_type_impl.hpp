@@ -346,7 +346,10 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
             .covered{},
         });
 
-        plan_field(tc, *expr, field, at.field(field), plan);
+        // like any value: an instance by its fields, an array element by
+        // element and the rest zeroed, a copy or a call at once; an array
+        // copy is checked against the field
+        expr->plan_writes(tc, at.field(field), std::nullopt, plan);
     }
 
     std::vector<access_path> unlisted;
@@ -380,9 +383,10 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
         throw compile_error{tok(), "source must not be an array"};
     }
 
-    if (is_array_destination_ and not src_info.is_array()) {
-        throw compile_error{tok(), "source must be an array"};
-    }
+    // note: 'expr_any::plan_writes' checked an array copy, the plan of every
+    //       value is made before it is compiled
+
+    assert(not is_array_destination_ or src_info.is_array());
 
     std::vector<operand> allocated_registers;
 
@@ -398,26 +402,6 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
            dst_type.alignment());
 
     x.free_scratch_registers(tok(), indent, allocated_registers);
-}
-
-// a field of an instance literal, its array size checked against a copy
-inline auto expr_type::plan_field(const toc& tc, const expr_any& src,
-                                  const type_field& field,
-                                  const part_location& at, write_plan& plan)
-    -> void {
-
-    const std::optional<size_t> field_count{field.array_count};
-
-    // the copy size comes from the source so it must match the field
-    if (field_count and src.is_array_copy()) {
-        validate_array_assignment(src.tok(), field.type(), *field_count,
-                                  make_ident_info(tc, *src.operand_path()));
-    }
-
-    // like any value: an instance by its fields, an array element by element
-    // and the rest zeroed, e.g. 'msg' of 'type msgpoint { msg i8[128], pt
-    // point }' given '{}', a copy or a call at once
-    src.plan_writes(tc, at, std::nullopt, plan);
 }
 
 inline auto expr_type::visit_reads(const read_filter var,

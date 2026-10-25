@@ -431,7 +431,7 @@ class stmt_def_func final : public statement {
     // the definite-assignment walk without a variable, see
     // 'stmt_block::trace_assignment'
     auto assert_statements_reached() const -> void {
-        assignment_flow flow{std::nullopt, tok(), 0};
+        assignment_flow flow{assignment_flow::reachability_only(tok())};
         code_.trace_assignment(flow);
     }
 

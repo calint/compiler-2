@@ -38,6 +38,37 @@ struct runtime_check {
     bool enabled{};
 };
 
+// the facts of a target that the shared code and the front end read, one
+// table per backend; a target that differs passes a copy with its change,
+// e.g. the qemu machine has no sd card
+struct target_description {
+    size_t address_size_bytes{};
+    size_t data_alignment{};
+    // the most bytes of data and variables the target can address
+    size_t max_storage_bytes{};
+    // whether an access can add an index register to a base register, else
+    // an indexed address is computed into a register by separate instructions
+    bool has_indexed_addressing{};
+    // above this count 'zero_padding' zeroes the whole instance, which is
+    // then smaller than a zero per gap
+    size_t max_padding_gaps_zeroed_one_by_one{};
+    // the size of a sector of the sd card, 0 when the target has no card
+    size_t sector_size_bytes{};
+    // true where no operating system stops a program that overflows the
+    // stack: calls check that the stack has room and a failure has a handler
+    bool is_stack_bounded{};
+    std::string_view frame_base_register;
+    std::string_view variables_base_register;
+    // the register that carries the address of the receiver of a method call
+    std::string_view slot_register;
+    // empty when the variables base register points at 'dat', else how far
+    // past the 'vars' label it points
+    std::optional<size_t> variables_base_past_vars_bytes;
+    // the registers 'alloc_scratch_register' picks from, in the order it
+    // tries them
+    std::span<const std::string_view> scratch_registers;
+};
+
 // what the front end emits through, and what every target shares: the
 // registers with the variables and frame bases, the trace of their use and
 // the routines, helpers and failure stubs the code uses; a backend supplies
@@ -67,7 +98,7 @@ struct runtime_check {
 //   versions       'emit_most_efficient', 'emit_discarded'
 //   comments       'comment', 'comment_binding', 'comment_variable',
 //                  'comment_held_address'
-//   target         'default_type', 'builtin_types', 'address_size_bytes',
+//   target         'default_type', 'address_size_bytes',
 //                  'has_indexed_addressing', 'is_stack_bounded',
 //                  'max_storage_bytes', 'sector_size_bytes',
 //                  'foo_counter_in_memory',
@@ -101,11 +132,6 @@ class machine {
     // may be built in, empty when the backend has none to offer
     using address_emitter = std::function<void(
         const operand& count, const operand& preferred, address_use use)>;
-
-    // at namespace scope, the front end computes with them too
-    using arithmetic_operator = ::arithmetic_operator;
-
-    using comparison_operator = ::comparison_operator;
 
     // whether an operation may overwrite a register operand, e.g. a scratch
     // register that holds a factor and is freed after the operation
@@ -423,6 +449,7 @@ class machine {
     };
 
   private:
+    target_description target_;
     source_locations locations_;
     std::reference_wrapper<const builtin_type_set> builtins_;
     assembler::jump_mode jump_mode_;
@@ -468,8 +495,9 @@ class machine {
   public:
     // 'files' locate the tokens of comments
     machine(const builtin_type_set& builtins, const source_files& files,
-            const target_options& options)
-        : locations_{files}, builtins_{builtins}, jump_mode_{options.jumps},
+            const target_options& options, const target_description& target)
+        : target_{target}, locations_{files}, builtins_{builtins},
+          jump_mode_{options.jumps},
           sd_card_file_name_{options.sd_card_file_name},
           kept_version_{options.kept}, reports_line_{options.reports_line} {
 
@@ -606,8 +634,6 @@ class machine {
                             const operand& dst, const operand& address)
         -> void = 0;
 
-    [[nodiscard]] virtual auto address_size_bytes() const -> size_t = 0;
-
     // 'emit_count' compiles the element count into the register it is given,
     // the elements of both arrays are compared at the width 'alignment' allows
     // and the result, 1 when they are equal, goes to 'dst'
@@ -683,8 +709,6 @@ class machine {
     virtual auto copy_value(const token& src_loc_tk, const size_t indent,
                             const operand& dst, const operand& src) -> void = 0;
 
-    [[nodiscard]] virtual auto data_alignment() const -> size_t = 0;
-
     [[nodiscard]] virtual auto default_type() const -> const type& = 0;
 
     virtual auto define_constant(const std::string_view name,
@@ -737,30 +761,9 @@ class machine {
     // register, decided when the loop starts
     [[nodiscard]] virtual auto foo_counter_in_memory() const -> bool = 0;
 
-    [[nodiscard]] virtual auto frame_base_register() const
-        -> std::string_view = 0;
-
-    // whether an access can add an index register to a base register, else an
-    // indexed address is computed into a register by separate instructions
-    [[nodiscard]] virtual auto has_indexed_addressing() const -> bool = 0;
-
-    // true where no operating system stops a program that overflows the
-    // stack: calls check that the stack has room and a failure has a handler
-    [[nodiscard]] virtual auto is_stack_bounded() const -> bool {
-        return false;
-    }
-
     [[nodiscard]] virtual auto
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
-
-    // above this count 'zero_padding' zeroes the whole instance, which is then
-    // smaller than a zero per gap
-    [[nodiscard]] virtual auto max_padding_gaps_zeroed_one_by_one() const
-        -> size_t = 0;
-
-    // the most bytes of data and variables the target can address
-    [[nodiscard]] virtual auto max_storage_bytes() const -> size_t = 0;
 
     // compares 'size_bytes' of two arrays and puts 1 into the destination of
     // the request when they are equal
@@ -778,11 +781,6 @@ class machine {
 
     virtual auto return_function(const size_t indent) -> void = 0;
 
-    // the size of a sector of the sd card, 0 when the target has no card
-    [[nodiscard]] virtual auto sector_size_bytes() const -> size_t {
-        return card_sector_size_bytes;
-    }
-
     // an enabled check makes a count below zero or not below the width of the
     // type of 'dst' jump to the shift failure handler
     virtual auto shift(const token& src_loc_tk, const size_t indent,
@@ -790,22 +788,11 @@ class machine {
                        const operand& count, const runtime_check& check)
         -> void = 0;
 
-    // the register that carries the address of the receiver of a method call
-    [[nodiscard]] virtual auto slot_register() const -> std::string_view = 0;
-
     virtual auto start() -> void = 0;
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
                        const runtime_check& check = {}) -> void = 0;
-
-    // empty when the variables base register points at 'dat', else how far
-    // past the 'vars' label it points
-    [[nodiscard]] virtual auto variables_base_past_vars_bytes() const
-        -> std::optional<size_t> = 0;
-
-    [[nodiscard]] virtual auto variables_base_register() const
-        -> std::string_view = 0;
 
     // writes the lines buffered from 'start'
     virtual auto write_assembly(std::ostream& os) -> void = 0;
@@ -817,6 +804,10 @@ class machine {
     //
     // class methods
     //
+
+    [[nodiscard]] auto address_size_bytes() const -> size_t {
+        return target_.address_size_bytes;
+    }
 
     // a register that an instruction or the calling convention fixes, held
     // until 'free_named_register'
@@ -866,11 +857,6 @@ class machine {
     // the code emitted up to 'end_noinline_body' is a body of 'function'
     auto begin_noinline_body(std::string function, std::string label) -> void {
         target_assembler().begin_body(std::move(function), std::move(label));
-    }
-
-    // the set the front end shares, made before the machine
-    [[nodiscard]] auto builtin_types() const -> const builtin_type_set& {
-        return builtins_.get();
     }
 
     // 'slot_address' is the address the callee finds in
@@ -1002,6 +988,10 @@ class machine {
                 address_text(address));
     }
 
+    [[nodiscard]] auto data_alignment() const -> size_t {
+        return target_.data_alignment;
+    }
+
     // runs 'emit' for its checks, nothing it emits is kept and the registers
     // it used are not counted. it starts with the registers that the body of
     // a 'noinline' function holds, the body it stands for, so the registers
@@ -1069,6 +1059,10 @@ class machine {
 
     auto end_noinline_body() -> void { target_assembler().end_body(); }
 
+    [[nodiscard]] auto frame_base_register() const -> std::string_view {
+        return target_.frame_base_register;
+    }
+
     auto free_named_register(const token& src_loc_tk, const size_t indent,
                              const operand& reg) -> void {
 
@@ -1108,8 +1102,24 @@ class machine {
         }
     }
 
+    [[nodiscard]] auto has_indexed_addressing() const -> bool {
+        return target_.has_indexed_addressing;
+    }
+
+    [[nodiscard]] auto is_stack_bounded() const -> bool {
+        return target_.is_stack_bounded;
+    }
+
     auto label(const size_t indent, const std::string_view name) -> void {
         target_assembler().label(indent, name);
+    }
+
+    [[nodiscard]] auto max_padding_gaps_zeroed_one_by_one() const -> size_t {
+        return target_.max_padding_gaps_zeroed_one_by_one;
+    }
+
+    [[nodiscard]] auto max_storage_bytes() const -> size_t {
+        return target_.max_storage_bytes;
     }
 
     // the use of registers at the busiest point of the build, as lines after
@@ -1219,9 +1229,17 @@ class machine {
                  factor_use::read_only);
     }
 
+    [[nodiscard]] auto sector_size_bytes() const -> size_t {
+        return target_.sector_size_bytes;
+    }
+
     // a blank line that separates the code from the report
     auto separate_report() -> void {
         target_assembler().add_separator_newline();
+    }
+
+    [[nodiscard]] auto slot_register() const -> std::string_view {
+        return target_.slot_register;
     }
 
     // what the output measured, for the report of the front end, valid after
@@ -1243,6 +1261,16 @@ class machine {
 
         copy_value(src_loc_tk, indent, dst,
                    operand::imm(value ? 1 : 0, default_type()));
+    }
+
+    [[nodiscard]] auto variables_base_past_vars_bytes() const
+        -> std::optional<size_t> {
+
+        return target_.variables_base_past_vars_bytes;
+    }
+
+    [[nodiscard]] auto variables_base_register() const -> std::string_view {
+        return target_.variables_base_register;
     }
 
     // the padding of the instance of 'size_bytes' at 'dst', zeroed gap by gap
@@ -1326,11 +1354,6 @@ class machine {
     virtual auto save_call_registers(const size_t indent,
                                      const std::span<const size_t> saved)
         -> void = 0;
-
-    // the registers 'alloc_scratch_register' picks from, in the order it tries
-    // them
-    [[nodiscard]] virtual auto scratch_registers() const
-        -> std::span<const std::string_view> = 0;
 
     // the assembler the target writes its output with
     [[nodiscard]] virtual auto target_assembler() -> assembler& = 0;
@@ -1663,6 +1686,13 @@ class machine {
         push_allocation(src_loc_tk, indent, register_name, true);
     }
 
+    // see 'target_description::scratch_registers'
+    [[nodiscard]] auto scratch_registers() const
+        -> std::span<const std::string_view> {
+
+        return target_.scratch_registers;
+    }
+
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
         return sd_card_file_name_;
     }
@@ -1683,6 +1713,31 @@ class machine {
         output.comment(0, "generated by baz");
         output.comment(0, "");
         output.add_separator_newline();
+    }
+
+    // 'emit' changes the registers 'clobbered', the allocated ones among them
+    // are saved before and restored after, in the order of 'clobbered', e.g.
+    // around a system call
+    auto with_saved_registers(const size_t indent,
+                              const std::span<const std::string_view> clobbered,
+                              const std::function_ref<void()> emit) -> void {
+
+        std::vector<size_t> saved;
+
+        for (const std::string_view name : clobbered) {
+            const std::optional<size_t> index{register_index_of(name)};
+
+            if (index and
+                std::ranges::contains(state_.registers.allocations(), index,
+                                      &register_pool::allocation::index)) {
+
+                saved.push_back(*index);
+            }
+        }
+
+        save_call_registers(indent, saved);
+        emit();
+        restore_call_registers(indent, saved);
     }
 
     //

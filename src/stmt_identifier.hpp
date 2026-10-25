@@ -712,8 +712,8 @@ class stmt_identifier final : public statement {
                 tk, std::format("{} is a type, not an array", in_quotes(tk))};
         }
 
-        if (tm.is(term_kind::call) or tm.is(term_kind::generic_call) or
-            tm.is(term_kind::conversion) or
+        if (tm.is(term_kind::call) or tm.is(term_kind::type_called) or
+            tm.is(term_kind::generic_call) or tm.is(term_kind::conversion) or
             tm.is(term_kind::builtin_function) or
             tm.is(term_kind::constructor_call)) {
 

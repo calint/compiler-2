@@ -55,8 +55,8 @@ class unary_ops final {
 
         for (const char o : ops_ | std::views::reverse) {
             x.unary(src_loc_tk, indent,
-                    o == '-' ? machine::arithmetic_operator::negate
-                             : machine::arithmetic_operator::complement,
+                    o == '-' ? arithmetic_operator::negate
+                             : arithmetic_operator::complement,
                     dst, check);
         }
     }

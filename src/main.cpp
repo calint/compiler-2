@@ -560,7 +560,7 @@ examples:
         check_options checks{opts.checks};
         checks.stack = checks.stack and backend->is_stack_bounded();
 
-        program prg{*backend, files, opts.vars_size_bytes, checks};
+        program prg{*backend, builtins, files, opts.vars_size_bytes, checks};
 
         // the image would replace a source file, the parse read the includes;
         // x86_64 writes no image

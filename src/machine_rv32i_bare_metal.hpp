@@ -45,13 +45,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr std::string_view write_label_{".Lbaz_write"};
 
   public:
-    // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
-    // qemu 'virt' machine
-    machine_rv32i_bare_metal(const builtin_type_set& builtins,
-                             const source_files& files,
-                             const target_options& options,
-                             const size_t memory_size_bytes)
-        : machine_rv32i{builtins, files, options},
+    machine_rv32i_bare_metal(
+        const builtin_type_set& builtins, const source_files& files,
+        const target_options& options, const size_t memory_size_bytes,
+        const target_description& target = bare_metal_target())
+        : machine_rv32i{builtins, files, options, target},
           stack_size_bytes_{options.stack_size_bytes},
           memory_size_bytes_{memory_size_bytes} {
 
@@ -75,11 +73,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         mark_used(exit_label_);
     }
 
-    // no operating system stops a program that overflows the stack
-    [[nodiscard]] auto is_stack_bounded() const -> bool override {
-        return true;
-    }
-
     auto start() -> void override {
         machine_rv32i::start();
 
@@ -89,6 +82,22 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         assembler_rv32i& a{assembler()};
 
         a.add_separator_newline();
+    }
+
+    //
+    // statics
+    //
+
+    // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
+    // qemu 'virt' machine
+    // no operating system stops a stack overflow, see
+    // 'target_description::is_stack_bounded'
+    [[nodiscard]] static constexpr auto bare_metal_target()
+        -> target_description {
+
+        target_description target{rv32i_target()};
+        target.is_stack_bounded = true;
+        return target;
     }
 
   protected:

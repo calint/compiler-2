@@ -7,18 +7,19 @@
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "operand.hpp"
+#include "statement.hpp"
 #include "stmt_call.hpp"
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
 // 'exit(code)' ends the program with 'code', the path after it is not
 // reached
-class stmt_builtin_exit final : public expression {
+class stmt_builtin_exit final : public statement {
     builtin_arguments args_;
 
   public:
     stmt_builtin_exit(toc& tc, const token tk, tokenizer& tz)
-        : expression{tk}, args_{tc, tz} {
+        : statement{tk}, args_{tc, tz} {
 
         set_type(tc.builtins().void_type());
 

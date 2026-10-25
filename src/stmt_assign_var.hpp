@@ -101,9 +101,6 @@ class stmt_assign_var final : public statement {
         // note: the parse rejected a constant destination
         assert(not var_info.is_const());
 
-        // an unsized array parameter has a size only here
-        assert_array_size_matches(tc, var_info);
-
         std::vector<operand> lea_registers;
 
         const operand address{
@@ -149,31 +146,6 @@ class stmt_assign_var final : public statement {
     [[nodiscard]] auto expression() const -> const expr_any& { return expr_; }
 
   private:
-    // an array copy has the size of the destination; an unsized array
-    // parameter is checked when its call gives it a size
-    auto assert_array_size_matches(const toc& tc,
-                                   const ident_info& dst_info) const -> void {
-
-        if (not expr_.is_array_copy()) {
-            return;
-        }
-
-        const ident_info src_info{make_ident_info(tc, *expr_.bare_path())};
-
-        const std::optional<size_t> src_len{src_info.array_len()};
-        const std::optional<size_t> dst_len{dst_info.array_len()};
-
-        if (not src_len or not dst_len or *src_len == *dst_len) {
-            return;
-        }
-
-        throw compile_error{
-            expr_.tok(),
-            std::format("destination array size {} does not match source "
-                        "size {}",
-                        *dst_len, *src_len)};
-    }
-
     // 'item' reads none of the 'written' parts, under any name, nor does a call
     // in it read or write one
     auto assert_no_read_of_written_part(

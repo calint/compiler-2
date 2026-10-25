@@ -28,6 +28,7 @@ For a reviewer:
     - [1.4 Dry runs](#14-dry-runs)
     - [1.5 Checks](#15-checks)
     - [1.6 Reports](#16-reports)
+    - [1.6.1 Reading a listing](#161-reading-a-listing)
     - [1.7 Values known at compile time](#17-values-known-at-compile-time)
 - [2. Generic types: how 'type' with parameters becomes real types](#2-generic-types-how-type-with-parameters-becomes-real-types)
     - [2.1 The three kinds of 'type'](#21-the-three-kinds-of-type)
@@ -151,7 +152,8 @@ Reading order, each file assumes the ones before it:
                                the tokens and 'classify_term', which every
                                parse step asks first
 5. stmt_block.hpp, parse_statement.hpp
-                               a block and the statement it parses next
+                               a block, the statement it parses next and
+                               the definitions of the top level
 6. stmt_if.hpp, stmt_loop.hpp  control flow, the simplest nodes
 7. stmt_def_var.hpp, stmt_assign_var.hpp
                                a variable defined and assigned
@@ -378,6 +380,30 @@ max body vars size             the most bytes of variables in use while one
                                '--checks=frame' checks that they fit
 instructions                   the machine instructions of the code
 ```
+
+### 1.6.1 Reading a listing
+
+Each construct emits a comment with its source and location, then its code
+under labels named by where it is written and by the inlined calls around
+it ('toc::call_path_at'), so a label is unique per call path:
+
+```text
+if.L.C         an 'if' at line L, column C; '.N' its branch N, '.code',
+               '.else', '.end'
+cmp.L.C        a condition
+bool.L.C.end   the end of a condition stored as a value
+loop.L.C       a 'loop', '.end'
+foo.L.C        a 'foo', '.continue', '.end'
+init.L.C       the read-only bytes of a constant '{...}', 'str.L.C' of a string
+func.NAME.L.C  a body inlined by the call at L:C, '.end'
+func.NAME      a noinline body, 'func.NAME.len.4' for array lengths,
+               'size.func.NAME' its frame size; 'f<i8>' is 'f..i8'
+baz_NAME       a routine of the runtime or a failure handler, e.g.
+               'baz_bounds_panic', '.Lbaz_NAME' a local one on rv32i
+```
+
+E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at
+36:13. A location in an included file is 'fN.L.C', N the index of the file.
 
 ### 1.7 Values known at compile time
 

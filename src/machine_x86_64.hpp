@@ -226,7 +226,7 @@ class machine_x86_64 final : public machine {
   public:
     machine_x86_64(const builtin_type_set& builtins, const source_files& files,
                    const target_options& options = {})
-        : machine{builtins, files, options} {}
+        : machine{builtins, files, options, x86_64_target()} {}
 
     //
     // overridden methods
@@ -261,10 +261,6 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         lea_into(src_loc_tk, indent, dst, address);
-    }
-
-    [[nodiscard]] auto address_size_bytes() const -> size_t override {
-        return size_qword_;
     }
 
     auto arrays_equal(const token& src_loc_tk, const size_t indent,
@@ -557,10 +553,6 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, dst, src);
     }
 
-    [[nodiscard]] auto data_alignment() const -> size_t override {
-        return data_alignment_;
-    }
-
     [[nodiscard]] auto default_type() const -> const type& override {
         return builtin_type_i64();
     }
@@ -626,11 +618,8 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    // the escapes of the source are not those of nasm, e.g. nasm reads '\01'
-    // as one octal escape and '\`' would end the string, so the bytes are
-    // written with the escapes both read the same
     auto emit_string_data(const std::string_view bytes) -> void override {
-        assembler_.string_data(token::encode_string(bytes));
+        assembler_.string_data(bytes);
     }
 
     auto emit_zero_data(const size_t size_bytes) -> void override {
@@ -682,17 +671,6 @@ class machine_x86_64 final : public machine {
         return registers().scratch_count() >= memory_counter_pressure_count_;
     }
 
-    [[nodiscard]] auto frame_base_register() const
-        -> std::string_view override {
-
-        return "rbx";
-    }
-
-    // e.g. '[rbx + rcx * 8 + 16]'
-    [[nodiscard]] auto has_indexed_addressing() const -> bool override {
-        return true;
-    }
-
     [[nodiscard]] auto make_register_operand(const std::string_view name,
                                              const type& value_type) const
         -> operand override {
@@ -707,16 +685,6 @@ class machine_x86_64 final : public machine {
 
         return operand::reg(sized_register_name(name, value_type.size_bytes()),
                             value_type);
-    }
-
-    [[nodiscard]] auto max_padding_gaps_zeroed_one_by_one() const
-        -> size_t override {
-
-        return max_padding_gaps_zeroed_one_by_one_;
-    }
-
-    [[nodiscard]] auto max_storage_bytes() const -> size_t override {
-        return user_address_space_bytes_;
     }
 
     auto memory_equal(const token& src_loc_tk, const size_t indent,
@@ -906,10 +874,6 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rcx");
     }
 
-    [[nodiscard]] auto slot_register() const -> std::string_view override {
-        return slot_register_;
-    }
-
     auto start() -> void override {
         start_output();
 
@@ -945,18 +909,6 @@ class machine_x86_64 final : public machine {
         if (check.enabled) {
             branch_on_overflow(src_loc_tk, indent);
         }
-    }
-
-    [[nodiscard]] auto variables_base_past_vars_bytes() const
-        -> std::optional<size_t> override {
-
-        return std::nullopt;
-    }
-
-    [[nodiscard]] auto variables_base_register() const
-        -> std::string_view override {
-
-        return variables_base_register_;
     }
 
     auto write_assembly(std::ostream& os) -> void override {
@@ -1013,6 +965,30 @@ class machine_x86_64 final : public machine {
 
         with_saved_registers(indent, clobbered,
                              [&] -> void { syscall(indent); });
+    }
+
+    //
+    // statics
+    //
+
+    // see 'machine::target_description'
+    [[nodiscard]] static constexpr auto x86_64_target() -> target_description {
+        return {
+            .address_size_bytes{size_qword_},
+            .data_alignment{data_alignment_},
+            .max_storage_bytes{user_address_space_bytes_},
+            .has_indexed_addressing{true},
+            .max_padding_gaps_zeroed_one_by_one{
+                max_padding_gaps_zeroed_one_by_one_,
+            },
+            .sector_size_bytes{card_sector_size_bytes},
+            .is_stack_bounded{},
+            .frame_base_register{"rbx"},
+            .variables_base_register{variables_base_register_},
+            .slot_register{slot_register_},
+            .variables_base_past_vars_bytes{std::nullopt},
+            .scratch_registers{scratch_registers_},
+        };
     }
 
   protected:
@@ -1125,12 +1101,6 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    [[nodiscard]] auto scratch_registers() const
-        -> std::span<const std::string_view> override {
-
-        return scratch_registers_;
-    }
-
     [[nodiscard]] auto target_assembler() -> assembler& override {
         return assembler_;
     }
@@ -1148,170 +1118,6 @@ class machine_x86_64 final : public machine {
         };
 
         return names;
-    }
-
-    //
-    // class methods
-    //
-
-    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
-    // arguments, the allocated ones are saved around the call
-    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
-                             const operand& sector, const operand& address,
-                             const operand& size, const target_call function)
-        -> void {
-
-        for (const operand* value : {&sector, &address, &size}) {
-            assert(value->is_register() and
-                   value->type_ref().size_bytes() == size_qword_);
-        }
-
-        static constexpr std::array<std::string_view, 4> clobbered{
-            "rax",
-            "rcx",
-            "r10",
-            "r11",
-        };
-
-        const std::string_view label{
-            function == target_call::sector_read ? sector_read_label_
-                                                 : sector_write_label_,
-        };
-
-        comment(src_loc_tk, indent, "sector of the sd card");
-        mark_used(label);
-
-        with_saved_registers(indent, clobbered,
-                             [&] -> void { assembler_.call(indent, label); });
-    }
-
-    // the routines take the sector in 'rdi', the address in 'rsi' and the size
-    // in 'rdx'; the image file is opened at the first transfer, a sector past
-    // its end or outside 32 bits, a failed open or a short transfer panics
-    auto emit_sector_routines(const bool read_used, const bool write_used)
-        -> void {
-
-        // 'O_RDWR' and 'SEEK_END' of linux
-        constexpr int read_write{2};
-        constexpr int seek_end{2};
-        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes)};
-
-        // the descriptor is -1 until the file is opened
-        constexpr std::array<int64_t, 1> not_opened{-1};
-
-        constexpr std::array<int64_t, 1> zero_value{0};
-
-        // the open file descriptor, a qword in '.data'
-        const assembler_x86_64::memory descriptor{
-            assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor",
-                                                size_qword_),
-        };
-
-        // the file size in whole sectors, set once at open
-        const assembler_x86_64::memory sector_count{
-            assembler_x86_64::memory::of_symbol("baz_sd_card_sectors",
-                                                size_qword_),
-        };
-
-        assembler_.add_separator_newline();
-
-        // the read entry selects 'pread64' and joins the shared body
-        if (read_used) {
-            assembler_.label(0, sector_read_label_);
-            assembler_.instruction(1, op::mov, "eax", syscall_pread_);
-            assembler_.jmp(1, "baz_sector_transfer");
-        }
-
-        // the write entry selects 'pwrite64' and falls through into the body
-        if (write_used) {
-            assembler_.label(0, sector_write_label_);
-            assembler_.instruction(1, op::mov, "eax", syscall_pwrite_);
-        }
-
-        assembler_.label(0, "baz_sector_transfer");
-        assembler_.comment(1, "the system call is kept on the stack");
-        // 'rax' is reused by 'open' and 'lseek', so the number is saved
-        assembler_.instruction(1, op::push, "rax");
-        // a descriptor of 0 or more means the file is already open
-        assembler_.instruction(1, op::cmp, descriptor, 0);
-        assembler_.jcc(1, condition::ge, "baz_sector_opened");
-        // first transfer: save the arguments, 'open' and 'lseek' clobber them
-        assembler_.instruction(1, op::push, "rdi");
-        assembler_.instruction(1, op::push, "rsi");
-        assembler_.instruction(1, op::push, "rdx");
-        // open(name, 'O_RDWR')
-        assembler_.instruction(1, op::mov, "eax", syscall_open_);
-
-        assembler_.instruction(
-            1, op::lea, "rdi",
-            assembler_x86_64::memory::of_symbol("baz_sd_card_name"));
-
-        assembler_.instruction(1, op::mov, "esi", read_write);
-        assembler_.instruction(1, op::syscall);
-        // a negative result is '-errno', the open failed
-        assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, sd_card_failure.label);
-        // keep the descriptor for later transfers
-        assembler_.instruction(1, op::mov, descriptor, "rax");
-        assembler_.comment(1, "the size of the file in sectors");
-        // lseek(descriptor, 0, 'SEEK_END') returns the file size in bytes
-        assembler_.instruction(1, op::mov, "rdi", "rax");
-        assembler_.instruction(1, op::xor_op, "esi", "esi");
-        assembler_.instruction(1, op::mov, "edx", seek_end);
-        assembler_.instruction(1, op::mov, "eax", syscall_lseek_);
-        assembler_.instruction(1, op::syscall);
-        // a negative result is '-errno', the seek failed
-        assembler_.instruction(1, op::test, "rax", "rax");
-        assembler_.jcc(1, condition::s, sd_card_failure.label);
-        // bytes to whole sectors, a partial last sector is not counted
-        assembler_.instruction(1, op::sar, "rax", sector_shift);
-        assembler_.instruction(1, op::mov, sector_count, "rax");
-        assembler_.instruction(1, op::pop, "rdx");
-        assembler_.instruction(1, op::pop, "rsi");
-        assembler_.instruction(1, op::pop, "rdi");
-        // here the file is open and only the system call is on the stack
-        assembler_.label(0, "baz_sector_opened");
-        assembler_.comment(1, "the sector is an unsigned 32 bit number");
-        // zero extending 'edi' differs from 'rdi' when the upper half is set
-        assembler_.instruction(1, op::mov, "eax", "edi");
-        assembler_.instruction(1, op::cmp, "rax", "rdi");
-        assembler_.jcc(1, condition::ne, sd_card_failure.label);
-        // a sector at or past the end of the file panics
-        assembler_.instruction(1, op::cmp, "rdi", sector_count);
-        assembler_.jcc(1, condition::ae, sd_card_failure.label);
-        // the byte offset, the fourth system call argument, goes in 'r10'
-        assembler_.instruction(1, op::mov, "r10", "rdi");
-        assembler_.instruction(1, op::sal, "r10", sector_shift);
-        // the descriptor replaces the sector as the first argument
-        assembler_.instruction(1, op::mov, "rdi", descriptor);
-        // the saved system call number, which also balances the stack
-        assembler_.instruction(1, op::pop, "rax");
-        // pread64 or pwrite64(descriptor, address 'rsi', size 'rdx', offset)
-        assembler_.instruction(1, op::syscall);
-        // anything but the full size, an error or a short transfer, panics
-        assembler_.instruction(1, op::cmp, "rax", "rdx");
-        assembler_.jcc(1, condition::ne, sd_card_failure.label);
-        assembler_.instruction(1, op::ret);
-
-        // the stack is not unwound because the program exits
-        emit_failure_handler(sd_card_failure, false);
-
-        assembler_.switch_section(section::rodata);
-        assembler_.comment(0, "the file name ends with a zero byte");
-        assembler_.label(0, "baz_sd_card_name");
-
-        assembler_.string_data(token::encode_string(sd_card_file_name()));
-
-        assembler_.data(size_byte_, zero_value);
-
-        // writable state, qword aligned for the 64 bit accesses
-        assembler_.switch_section(section::data);
-        assembler_.align(size_qword_);
-        assembler_.label(0, "baz_sd_card_descriptor");
-        assembler_.data(size_qword_, not_opened);
-        assembler_.label(0, "baz_sd_card_sectors");
-        assembler_.data(size_qword_, zero_value);
-        assembler_.switch_section(section::text);
     }
 
   private:
@@ -1427,6 +1233,37 @@ class machine_x86_64 final : public machine {
         default:
             std::unreachable();
         }
+    }
+
+    // the routine changes 'rax', 'rcx', 'r10' and 'r11' besides the
+    // arguments, the allocated ones are saved around the call
+    auto call_sector_routine(const token& src_loc_tk, const size_t indent,
+                             const operand& sector, const operand& address,
+                             const operand& size, const target_call function)
+        -> void {
+
+        for (const operand* value : {&sector, &address, &size}) {
+            assert(value->is_register() and
+                   value->type_ref().size_bytes() == size_qword_);
+        }
+
+        static constexpr std::array<std::string_view, 4> clobbered{
+            "rax",
+            "rcx",
+            "r10",
+            "r11",
+        };
+
+        const std::string_view label{
+            function == target_call::sector_read ? sector_read_label_
+                                                 : sector_write_label_,
+        };
+
+        comment(src_loc_tk, indent, "sector of the sd card");
+        mark_used(label);
+
+        with_saved_registers(indent, clobbered,
+                             [&] -> void { assembler_.call(indent, label); });
     }
 
     // 'left' holds the product of two bytes in a register of the default
@@ -1666,8 +1503,8 @@ class machine_x86_64 final : public machine {
             emit_panic_message(message_label);
             emit_failure_exit(handler.exit_code);
 
-            emit_message_data(message_label, token::encode_string(std::format(
-                                                 "{}\n", panic_message(name))));
+            emit_message_data(message_label,
+                              std::format("{}\n", panic_message(name)));
 
             return;
         }
@@ -1694,9 +1531,7 @@ class machine_x86_64 final : public machine {
             // note: a backslash or a control byte of a path is written as an
             //       escape of a nasm string
 
-            emit_message_data(
-                message_label,
-                token::encode_string(failure_message(name, file_ix)));
+            emit_message_data(message_label, failure_message(name, file_ix));
         }
     }
 
@@ -1748,11 +1583,11 @@ class machine_x86_64 final : public machine {
 
     // the text of a message in read-only data with its length
     auto emit_message_data(const std::string_view message_label,
-                           const std::string_view text) -> void {
+                           const std::string_view bytes) -> void {
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
-        assembler_.string_data(text);
+        assembler_.string_data(bytes);
 
         assembler_.define_length(std::format("{}_len", message_label),
                                  message_label);
@@ -1905,6 +1740,135 @@ class machine_x86_64 final : public machine {
         assembler_.switch_section(section::text);
     }
 
+    // the routines take the sector in 'rdi', the address in 'rsi' and the size
+    // in 'rdx'; the image file is opened at the first transfer, a sector past
+    // its end or outside 32 bits, a failed open or a short transfer panics
+    auto emit_sector_routines(const bool read_used, const bool write_used)
+        -> void {
+
+        // 'O_RDWR' and 'SEEK_END' of linux
+        constexpr int read_write{2};
+        constexpr int seek_end{2};
+        constexpr int sector_shift{std::countr_zero(card_sector_size_bytes)};
+
+        // the descriptor is -1 until the file is opened
+        constexpr std::array<int64_t, 1> not_opened{-1};
+
+        constexpr std::array<int64_t, 1> zero_value{0};
+
+        // the open file descriptor, a qword in '.data'
+        const assembler_x86_64::memory descriptor{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_descriptor",
+                                                size_qword_),
+        };
+
+        // the file size in whole sectors, set once at open
+        const assembler_x86_64::memory sector_count{
+            assembler_x86_64::memory::of_symbol("baz_sd_card_sectors",
+                                                size_qword_),
+        };
+
+        assembler_.add_separator_newline();
+
+        // the read entry selects 'pread64' and joins the shared body
+        if (read_used) {
+            assembler_.label(0, sector_read_label_);
+            assembler_.instruction(1, op::mov, "eax", syscall_pread_);
+            assembler_.jmp(1, "baz_sector_transfer");
+        }
+
+        // the write entry selects 'pwrite64' and falls through into the body
+        if (write_used) {
+            assembler_.label(0, sector_write_label_);
+            assembler_.instruction(1, op::mov, "eax", syscall_pwrite_);
+        }
+
+        assembler_.label(0, "baz_sector_transfer");
+        assembler_.comment(1, "the system call is kept on the stack");
+        // 'rax' is reused by 'open' and 'lseek', so the number is saved
+        assembler_.instruction(1, op::push, "rax");
+        // a descriptor of 0 or more means the file is already open
+        assembler_.instruction(1, op::cmp, descriptor, 0);
+        assembler_.jcc(1, condition::ge, "baz_sector_opened");
+        // first transfer: save the arguments, 'open' and 'lseek' clobber them
+        assembler_.instruction(1, op::push, "rdi");
+        assembler_.instruction(1, op::push, "rsi");
+        assembler_.instruction(1, op::push, "rdx");
+        // open(name, 'O_RDWR')
+        assembler_.instruction(1, op::mov, "eax", syscall_open_);
+
+        assembler_.instruction(
+            1, op::lea, "rdi",
+            assembler_x86_64::memory::of_symbol("baz_sd_card_name"));
+
+        assembler_.instruction(1, op::mov, "esi", read_write);
+        assembler_.instruction(1, op::syscall);
+        // a negative result is '-errno', the open failed
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::s, sd_card_failure.label);
+        // keep the descriptor for later transfers
+        assembler_.instruction(1, op::mov, descriptor, "rax");
+        assembler_.comment(1, "the size of the file in sectors");
+        // lseek(descriptor, 0, 'SEEK_END') returns the file size in bytes
+        assembler_.instruction(1, op::mov, "rdi", "rax");
+        assembler_.instruction(1, op::xor_op, "esi", "esi");
+        assembler_.instruction(1, op::mov, "edx", seek_end);
+        assembler_.instruction(1, op::mov, "eax", syscall_lseek_);
+        assembler_.instruction(1, op::syscall);
+        // a negative result is '-errno', the seek failed
+        assembler_.instruction(1, op::test, "rax", "rax");
+        assembler_.jcc(1, condition::s, sd_card_failure.label);
+        // bytes to whole sectors, a partial last sector is not counted
+        assembler_.instruction(1, op::sar, "rax", sector_shift);
+        assembler_.instruction(1, op::mov, sector_count, "rax");
+        assembler_.instruction(1, op::pop, "rdx");
+        assembler_.instruction(1, op::pop, "rsi");
+        assembler_.instruction(1, op::pop, "rdi");
+        // here the file is open and only the system call is on the stack
+        assembler_.label(0, "baz_sector_opened");
+        assembler_.comment(1, "the sector is an unsigned 32 bit number");
+        // zero extending 'edi' differs from 'rdi' when the upper half is set
+        assembler_.instruction(1, op::mov, "eax", "edi");
+        assembler_.instruction(1, op::cmp, "rax", "rdi");
+        assembler_.jcc(1, condition::ne, sd_card_failure.label);
+        // a sector at or past the end of the file panics
+        assembler_.instruction(1, op::cmp, "rdi", sector_count);
+        assembler_.jcc(1, condition::ae, sd_card_failure.label);
+        // the byte offset, the fourth system call argument, goes in 'r10'
+        assembler_.instruction(1, op::mov, "r10", "rdi");
+        assembler_.instruction(1, op::sal, "r10", sector_shift);
+        // the descriptor replaces the sector as the first argument
+        assembler_.instruction(1, op::mov, "rdi", descriptor);
+        // the saved system call number, which also balances the stack
+        assembler_.instruction(1, op::pop, "rax");
+        // pread64 or pwrite64(descriptor, address 'rsi', size 'rdx', offset)
+        assembler_.instruction(1, op::syscall);
+        // anything but the full size, an error or a short transfer, panics
+        assembler_.instruction(1, op::cmp, "rax", "rdx");
+        assembler_.jcc(1, condition::ne, sd_card_failure.label);
+        assembler_.instruction(1, op::ret);
+
+        // the stack is not unwound because the program exits
+        emit_failure_handler(sd_card_failure, false);
+
+        assembler_.switch_section(section::rodata);
+        assembler_.comment(0, "the file name ends with a zero byte");
+        assembler_.label(0, "baz_sd_card_name");
+
+        assembler_.string_data(sd_card_file_name());
+
+        assembler_.data(size_byte_, zero_value);
+
+        // writable state, qword aligned for the 64 bit accesses
+        assembler_.switch_section(section::data);
+        assembler_.align(size_qword_);
+        assembler_.label(0, "baz_sd_card_descriptor");
+        assembler_.data(size_qword_, not_opened);
+        assembler_.label(0, "baz_sd_card_sectors");
+        assembler_.data(size_qword_, zero_value);
+        assembler_.switch_section(section::text);
+    }
+
     // idiv takes the divisor as a qword register or memory operand, 'rax'
     // holds the dividend, 'rdx' is free until it is extended
     auto emit_signed_divide(const token& src_loc_tk, const size_t indent,
@@ -2040,15 +2004,6 @@ class machine_x86_64 final : public machine {
 
         mov(src_loc_tk, indent, dst, immediate(syscall_number));
         invoke_syscall(indent);
-    }
-
-    [[nodiscard]] auto is_allocated(const std::string_view name) const -> bool {
-        assert(register_size_bytes(name) != 0);
-
-        const std::optional<size_t> index{register_index_of(name)};
-
-        return std::ranges::contains(registers().allocations(), index,
-                                     &register_pool::allocation::index);
     }
 
     auto lea(const token& src_loc_tk, const size_t indent, const operand& dst,
@@ -2367,27 +2322,6 @@ class machine_x86_64 final : public machine {
         const operand lowered_src{lower_address(src_loc_tk, indent, src)};
 
         emit(lowered_dst, lowered_src);
-    }
-
-    // 'emit' changes the registers 'clobbered', the allocated ones are pushed
-    // before and popped after
-    auto with_saved_registers(const size_t indent,
-                              const std::span<const std::string_view> clobbered,
-                              const std::function_ref<void()> emit) -> void {
-
-        std::vector<operand> saved;
-        for (const std::string_view name : clobbered) {
-            if (is_allocated(name)) {
-                saved.push_back(qword_register(name));
-                push(indent, saved.back());
-            }
-        }
-
-        emit();
-
-        for (const operand& reg : saved | std::views::reverse) {
-            pop(indent, reg);
-        }
     }
 
     auto xor_op(const token& src_loc_tk, const size_t indent,

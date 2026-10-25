@@ -241,6 +241,10 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           listings equal
        E.5. optional, low: one 'assert_order_independent' for the
             count-first rule (S9)
+       => E.5 discarded (2026-10-24, user agreed): the check is shared
+          already ('assert_not_written_after', named with the 'array_copy'
+          count in the 'ub_order.hpp' header); only two comments and two
+          message texts repeat the reason
     F. front end
        F.1. every function head read the same way, the receiver resolved
             after into 'func_receiver' {none, of_type, of_generic_type}
@@ -275,30 +279,105 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             the generic deduction (F3); supersedes E.5 of the 2026-10-23
             review (a trial parse for generics: rejected, an argument is
             parsed at its parameter's type); messages may change
+       => F.3 discarded (2026-10-24): the two deductions answer different
+          questions: a 'var' initializer has the type of the whole value
+          ('bool' for a comparison, the first operand otherwise), only a
+          parse tells it; a generic argument names its type only as a whole
+          term and is parsed at its parameter's type, so a trial parse would
+          type its literals differently (E.5 of 2026-10-23, rejected); a
+          shared lookahead would cover two early cases of the 'var' path
+          only; the two functions now name each other and say why they
+          differ
        F.4. 'classify_term' carries the decision: callers use
             'tm.named_type', 'term_kind::type_called' (F4)
+       => F.4 done, reduced (2026-10-24): 'term_kind::type_called' for
+          'point(5)' with no function 'point', so the hiding rule stays in
+          'classify_term' and 'parse_call_or_identifier' asks the kind; the
+          second look-up by token is not redundant: 'get_type_or_throw'
+          also rejects 'void' and a type wider than the target (tests 1006,
+          0732, 1537 on rv32i), so the call sites keep it and
+          'term::named_type' says so; listings and errors equal
        F.5. 'encode_string' leaves 'token' for 'assembler_x86_64', which
             takes bytes like rv32i's 'ascii' (F6)
+       => F.5 done (2026-10-24): 'assembler_x86_64::string_data' takes bytes
+          like 'assembler_rv32i::ascii' and writes the nasm escapes in one
+          place (with the '`' escape it added before); 'encode_string' and
+          'named_escape' leave 'token', the four machine sites pass bytes;
+          listings equal
        F.6. 'parse_definition' moves into parse_statement.hpp (F7);
             'source_locations::for_error' (F9)
+       => F.6 done (2026-10-24): 'parse_definition' is a free function in
+          parse_statement.hpp beside 'parse_statement', its header names the
+          three entries of the grammar; 'program' keeps the files and the
+          includes; README 1.1 reading order; a move, listings equal
        F.7. optional, low: 'tokenizer::peek_token' for inspect-only
             lookahead (F8)
+       => F.7 discarded (2026-10-24): most inspect-only sites classify the
+          token, and 'classify_term' needs the tokenizer after it, so a
+          'peek_token' would return the probe too and the sites would read
+          about the same; the read-and-put-back form stays
     G. expressions
        G.1. a constant step of an arithmetic list emitted by one function,
             no second fold (E3)
+       => G.1 done (2026-10-24): 'compile_step' sends a step with a value
+          to the constant path: a merged or checked regroupable constant to
+          'apply_merged_constant', a constant element the passes keep in
+          place (a divisor or a shift count, asserted) to
+          'asm_op_constant_element', which uses the value 'make_steps'
+          folded, with the zero divisor and shift count checks once;
+          'emit_with_source' loses its two re-fold branches (a scratch
+          build aborting in them passed every suite and the expression
+          fuzzers) and the immediate checks of its lambdas; comments kept,
+          listings equal
        G.2. the rules of an array copy in 'expr_any::plan_writes' (E4)
+       => G.2 done (2026-10-24): the 'array_copy' branch of
+          'expr_any::plan_writes' checks the copy ('assert_array_copy_fits':
+          the source is an array of the destination's length when both are
+          known), as the list branch checks its elements;
+          'validate_array_assignment', 'assert_array_size_matches' and
+          'expr_type::plan_field' go, 'compile_identifier_copy' asserts;
+          'stmt_def_dat' keeps its constant-only rule; listings and 12
+          error cases equal
        G.3. the "one element" facts of 'expr_arith' derived from the element,
             the two construction flags go (E6)
+       => G.3 discarded (2026-10-24): deriving 'is_first_enclosed_' needs to
+          tell an enclosed 'expr_arith' from any element, which without RTTI
+          means a new virtual on 'statement' for one class's question; the
+          two flags are set in the one path that parses the first element
+          and their comments say what a first element given by the caller
+          leaves them as
        G.4. 'compile_without_trailing_addend' reuses 'compile_elements' (E9)
+       => G.4 done (2026-10-24): 'compile_without_trailing_addend' calls
+          'compile_elements' on all steps but the trailing constant; its
+          comment lists what 'compile' does that an index does not need and
+          why; listings equal with and without the bounds checks
     H. tables
        H.1. 'ident_resolver::resolve_storage' (T4), 'toc::storage_of'
             forwards
+       => H.1 done (2026-10-24): 'ident_resolver::resolve_storage' beside
+          'resolve' answers the storage a name reaches (the binding, the
+          'foo' element and the register rules), 'toc::storage_of'
+          forwards; the resolver header names both answers and where an
+          element is decided; listings equal
        H.2. ask, behavior: the parse declares names without placing storage
             (T2); target-size errors move to the compile (verdict equal,
             which of two errors comes first may change); then J.3's padding
             from the root frame
+       => H.2 done (2026-10-24, picked as recommended): 'toc::add_var'
+          places storage only when compiling, the parse declares the names;
+          the 'allocate_dat' assert holds always (its 'checks_capacity'
+          parameter goes), 'reset_usage' goes, the parse notes go; test
+          0740 (two dats past the signed 64-bit range) now reports the
+          range overflow at the second dat first, which is what the test
+          is named for; listings otherwise equal; J.3's padding from the
+          root scope is now possible (not done)
        H.3. the label forms in one section with a table (N3, T10), README
             "reading a listing"
+       => H.3 done, reduced (2026-10-24): the table of the label forms
+          with one example each above 'toc::call_path_at' and in README
+          1.6.1 "Reading a listing"; the builders stay beside their
+          constructs (moving them to one section is a judgment the review
+          rated medium); T10's statics move not done (low value)
     I. control flow
        I.1. one vocabulary for reachability (S3, T3): 'toc::end_path',
             'is_reachable', 'record_break', a compile-side 'path_merge'
@@ -311,25 +390,89 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           uses like 'trace_assignment'; 'set_path_open' and
           'mark_loop_left' go, the scope keeps 'is_reachable'; README 1.5;
           listings equal; the ask (rename 'assignment_flow' for its second
-          role, T3.3) stays open
+          role, T3.3) done reduced (2026-10-24, picked as recommended): the
+          class header names its second role and the reachability walk is
+          made by 'assignment_flow::reachability_only'; renaming the class
+          and 'trace_assignment' across every statement was judged not worth
+          the churn
     J. backends
        J.1. access labels: rv32i protected only what the targets use,
             x86_64 (final) has no protected non-overrides (B7)
+       => J.1 done (2026-10-24): 'branch_to_failure', 'call_sector_routine',
+          'emit_named_failure_handler', 'register_names_of' and
+          'saved_registers_size_bytes' of rv32i and 'call_sector_routine',
+          'emit_sector_routines' of the final x86_64 are private, moved by
+          their libclang extents; the rv32i protected section is the
+          target contract, its header says so; listings equal
        J.2. 'toc' gets the built-in types from 'main', not the machine (B12)
+       => J.2 done (2026-10-24): 'main' passes the 'builtin_type_set' to
+          'program' and 'toc' next to the machine, 'builtin_roles' takes it;
+          'machine::builtin_types()' goes, the machine keeps its reference
+          for the sized types; the backend test follows; listings equal
        J.3. one 'machine::with_saved_registers' for the three ways (B10)
+       => J.3 done, reduced (2026-10-24): 'machine::with_saved_registers'
+          saves the allocated registers among those clobbered through the
+          'save_call_registers'/'restore_call_registers' virtuals, x86_64's
+          own copy and its 'is_allocated' go (syscalls and sector calls);
+          the rv32i helper call keeps its way, now with a note: its live
+          mask includes the operands the scope protects and it restores
+          before a memory destination gets the result, so folding it in
+          would change what it saves; listings equal
        J.4. the storage size arithmetic moves to 'type.hpp'; the
             'machine::' operator aliases go (B11); ask: 'operators.hpp'
+       => J.4 done (2026-10-24): 'storage_limits' and the storage size
+          functions (add, multiply, sum, padding, align, checked align,
+          offset alignment) are in type.hpp, which no longer includes
+          operand.hpp; operand.hpp keeps the address offset arithmetic and
+          the operators; the 'machine::arithmetic_operator' and
+          'comparison_operator' aliases go, 43 sites use the bare names;
+          no 'operators.hpp' (a new file, AGENTS.md); listings equal
        J.5. the rv32i numeric label rule stated once, the list complete
             (B9)
+       => J.5 done, reduced (2026-10-24): the rule is stated once at
+          'machine_rv32i::local_label' (a numeric label is referenced only
+          inside the operation that defines it, nothing emitted between the
+          reference and the label defines one, so the numbers repeat across
+          operations); the class list says it holds the bulk operations'
+          labels, its "none is used twice" claim was false; the
+          function-local constants stay beside their use
        J.6. the target description as one constexpr table (B3, the open
             G.7)
+       => J.6 done (2026-10-24): 'target_description' in machine.hpp holds
+          the facts of a target (sizes, alignment, address space, indexed
+          addressing, padding rule, sd card sector size, stack bound, the
+          base, slot and scratch registers); the machine takes it and its
+          twelve getters are plain reads; one 'static constexpr' table per
+          backend ('x86_64_target', 'rv32i_target'), bare metal and qemu
+          pass a copy with their change ('bare_metal_target' bounds the
+          stack, 'qemu_target' has no card); 24 one-line overrides go;
+          'default_type' and the behavior queries stay virtual; listings
+          equal
        J.7. ask, large move: 'machine_rv32i::memory_walk' nested class for
             the 1,600 lines of walks (B2)
+       => J.7 discarded (2026-10-24, picked as recommended): a large
+          move inside one file with no change of design; the walks use the
+          registers, the assembler and the checks of 'machine_rv32i', so a
+          nested class would hold a reference to its machine and forward
+          most calls; AGENTS.md keeps large headers whole; the class header
+          already lists the walks by group
     K. built-ins
        K.1. 'stmt_builtin_exit' derives from 'statement' (N7.1)
+       => K.1 done (2026-10-24): 'stmt_builtin_exit' derives from
+          'statement', it has no value, like 'array_copy'; listings equal
        K.2. 'stmt_builtin_io' checks before it emits (S8)
+       => K.2 done (2026-10-24): 'stmt_builtin_io::assert_buffer' makes the
+          verdicts that need no code (an array, whole sectors, a constant
+          range in bounds) before 'compile_arguments' emits;
+          'compile_array_arguments', named for one argument, goes; listings
+          equal
        K.3. ask, new file: 'builtin_arguments' beside 'bulk_operands' (N7.3);
             'reserved_names.hpp' (F10)
+       => K.3 discarded (2026-10-24, picked as recommended): AGENTS.md
+          asks for a new file only when the code cannot be placed near its
+          use; 'builtin_arguments' uses 'assert_not_string_argument' and
+          'assert_call_in_func' of stmt_call.hpp, so it stays there, and
+          'reserved_names' is the vocabulary of the tokens in token.hpp
     open questions: A.4, D.5, D.6, H.2, J.7 and the new files of J.4, K.3
     (J.4 of round 13 and A.1 approved and done)
     order: B, C, A.1-A.3, D.1-D.4, E, I.1 then A.5, G, F, H.1, H.3, J.1-J.6,

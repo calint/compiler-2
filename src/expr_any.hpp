@@ -498,15 +498,21 @@ class expr_any final : public statement {
                      const std::optional<size_t> unsized_count,
                      write_plan& plan) const -> void {
 
-        if (not is_array() or is_array_copy()) {
-            plan_element(tc, 0, at, plan);
-            return;
-        }
-
         // empty when the size is not known
         const std::optional<size_t> array_count{
             destination_.is_length_unknown() ? unsized_count : array_count_,
         };
+
+        if (is_array_copy()) {
+            assert_array_copy_fits(tc, array_count);
+            plan_element(tc, 0, at, plan);
+            return;
+        }
+
+        if (not is_array()) {
+            plan_element(tc, 0, at, plan);
+            return;
+        }
 
         if (const string_array* const str{std::get_if<string_array>(&form_)}) {
             plan_string(str->string_tk, at, array_count, plan);
@@ -547,6 +553,30 @@ class expr_any final : public statement {
         }
 
         return nullptr;
+    }
+
+    // the copy size comes from the source, so it is an array of the length of
+    // the destination, 'array_count' when known
+    auto assert_array_copy_fits(const toc& tc,
+                                const std::optional<size_t> array_count) const
+        -> void {
+
+        const ident_info src_info{make_ident_info(tc, *operand_path())};
+
+        if (not src_info.is_array()) {
+            throw compile_error{tok(), "source must be an array"};
+        }
+
+        const std::optional<size_t> src_len{src_info.array_len()};
+
+        if (not array_count or not src_len or *array_count == *src_len) {
+            return;
+        }
+
+        throw compile_error{
+            tok(), std::format("destination array size {} does not match "
+                               "source size {}",
+                               *array_count, *src_len)};
     }
 
     // the remaining count would wrap around past the array size
