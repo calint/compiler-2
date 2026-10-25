@@ -142,10 +142,25 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'call_temporary' goes; 'slot_address_of' stops reading 'plan_'
             by index; 'argument_form' is the variant, so 'planned.form' is
             it; the 'place' locals named 'storage' renamed
+       => D.1 done (2026-10-25): 'noinline_arg' holds the place's path
+          (null for a temporary), 'is_temporary()' derived;
+          'make_argument_temporary' returns one, 'call_temporary' goes;
+          'slot_address_of' reads the argument only; 'argument_form::form'
+          is 'kind' (kept a struct: its tags are named
+          'argument_form::computed' at the use sites); listings equal
        D.2. the call holds its callee (S2): 'stmt_call::func_' set at the
             parse, 'call_site::func'; the lookups by name in 'compile' and
             'visit_call_effects' and 22 'func' parameters of 'inline_call'
             and 'noinline_call' go
+       => D.2 done (2026-10-25): 'stmt_call::func_' set by each
+          constructor; 'call_site::func' (a pointer, never null; a
+          reference member is against the lint); a scratch build that
+          aborted where the compile's lookup gave another function passed
+          the four suites, the CLI tests and fuzz-generics, methods, calls,
+          compiler and reject; the 19 methods of 'inline_call',
+          'noinline_call' and 'call_site' lost their 'func' parameter (a
+          libclang script), the statics keep theirs; 'slot_address_of' is
+          static; listings equal
        D.3. scratch registers held by one front-end type (N1):
             'machine::held_registers' beside 'operation_scope' replaces the
             'std::vector<operand>&' holders (six names), frees in its
