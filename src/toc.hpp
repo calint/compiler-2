@@ -2729,7 +2729,7 @@ class definition_checks final {
     }
 
     [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
-        return locations_.get().human_readable(src_loc_tk);
+        return locations_.get().for_message(src_loc_tk);
     }
 };
 
@@ -3211,7 +3211,7 @@ class toc final {
         }
 
         // e.g. 'U' bound to 'i8'
-        if (const type* const builtin{builtin_value_type_named(name_tk)}) {
+        if (const type* const builtin{builtin_scalar_named(name_tk)}) {
             throw compile_error{name_tk,
                                 std::format("{} names the built-in type {}",
                                             in_quotes(name_tk.text()),
@@ -3240,24 +3240,6 @@ class toc final {
 
     // a top-level definition starts, see 'definition_order'
     auto begin_definition() -> void { order_.begin_definition(); }
-
-    // the built-in integer or 'bool' type that 'tk' names, also through a
-    // type parameter, e.g. 'U' bound to 'i8'; null for any other token
-    [[nodiscard]] auto builtin_value_type_named(const token& tk) const
-        -> const type* {
-
-        if (not tk.is_word() or not types_.has(tk.text())) {
-            return nullptr;
-        }
-
-        const type& tp{types_.get(tk.text())};
-
-        if (not tp.is_bool() and not tp.is_integer()) {
-            return nullptr;
-        }
-
-        return &tp;
-    }
 
     // the tables are read through these const accessors, a change goes
     // through a method of 'toc', which may combine tables (README 7.6)
@@ -3750,6 +3732,24 @@ class toc final {
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
         return data_.add_constant(create_unique_label(src_loc_tk, kind),
                                   std::move(bytes));
+    }
+
+    // the built-in integer or 'bool' type that 'tk' names, also through a
+    // type parameter, e.g. 'U' bound to 'i8'; null for any other token
+    [[nodiscard]] auto builtin_scalar_named(const token& tk) const
+        -> const type* {
+
+        if (not tk.is_word() or not types_.has(tk.text())) {
+            return nullptr;
+        }
+
+        const type& tp{types_.get(tk.text())};
+
+        if (not tp.is_bool() and not tp.is_integer()) {
+            return nullptr;
+        }
+
+        return &tp;
     }
 
     // the locals of a dry run live in the callee's own frame

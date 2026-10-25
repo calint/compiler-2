@@ -370,7 +370,7 @@ class stmt_def_const final : public statement {
     // the value is folded, nothing is read at run time
     auto visit_reads([[maybe_unused]] const read_filter var,
                      [[maybe_unused]] const read_visitor reader) const
-        -> void override {}
+        -> void override { std::cerr << "SCRATCH const visit_reads\n"; std::abort(); }
 };
 
 // e.g. 'var x = i32(0)', the initializer gives the type; a 'let' that does not
@@ -398,7 +398,7 @@ class stmt_def_var final : public statement {
 
         assign_var_ = {
             tc,
-            stmt_identifier{tc, {}, name_tk_, at_name},
+            stmt_identifier{tc, name_tk_, at_name},
             equals_tk_,
             std::move(value),
         };

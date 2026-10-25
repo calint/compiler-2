@@ -380,7 +380,7 @@ class stmt_identifier final : public statement {
 
   public:
     // a path of names, fields and indexes from 'tk', which is read
-    stmt_identifier(toc& tc, unary_ops uops, token tk, tokenizer& tz);
+    stmt_identifier(toc& tc, token tk, tokenizer& tz);
 
     // note: 'expr_any' is incomplete here, the special members are defined in
     //       'stmt_identifier_impl.hpp', where a 'unique_ptr' of it is complete
@@ -857,7 +857,7 @@ class stmt_identifier final : public statement {
                                                 in_quotes(tk))};
         }
 
-        stmt_identifier array{tc, {}, tk, tz};
+        stmt_identifier array{tc, tk, tz};
 
         array.assert_not_method();
 

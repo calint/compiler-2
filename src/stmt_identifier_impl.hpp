@@ -40,9 +40,8 @@ inline auto stmt_identifier::ident_elem::source_to(std::ostream& os) const
     }
 }
 
-inline stmt_identifier::stmt_identifier(toc& tc, unary_ops uops, token tk,
-                                        tokenizer& tz)
-    : statement{tk, std::move(uops)}, dotted_path_{tk.text()} {
+inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
+    : statement{tk}, dotted_path_{tk.text()} {
 
     // e.g. '"abc"' in 'array_copy("abc", b, 3)'
     if (tk.is_string()) {

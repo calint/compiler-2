@@ -191,7 +191,7 @@ struct generic_call {
         // note: read from the copy to find where the argument ends and its
         //       type, the call parses it again
 
-        const stmt_identifier ident{tc, {}, tk, tz};
+        const stmt_identifier ident{tc, tk, tz};
 
         const char next{tz.peek_char_after_whitespace()};
 
@@ -664,14 +664,13 @@ struct call_site {
 
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
-    [[nodiscard]] auto
-    make_argument_temporary(toc& tc, const size_t indent, const size_t index,
-                            const stmt_def_func_param& param) const
+    [[nodiscard]] auto make_argument_temporary(toc& tc, const size_t indent,
+                                               const size_t index) const
         -> noinline_arg {
 
         const ident_info temporary{
             add_temporary(tc, indent, temporary_argument_name(index),
-                          param.get_type()),
+                          func->param(index).get_type()),
         };
 
         const std::optional<storage_path> target{
@@ -882,8 +881,8 @@ class inline_call {
             tc, plan_.has_temporaries(), [&] -> void {
                 for (size_t i{}; i < plan_.arguments.size(); ++i) {
                     if (plan_.arguments.at(i).is_temporary) {
-                        std::ignore = call_.make_argument_temporary(
-                            tc, indent, i, call_.func->params().at(i));
+                        std::ignore =
+                            call_.make_argument_temporary(tc, indent, i);
                     }
                 }
 
@@ -1619,13 +1618,12 @@ class noinline_call {
 
         std::vector<noinline_arg> arguments;
 
-        for (const auto [i, param, planned] :
-             std::views::zip(std::views::iota(size_t{}), call_.func->params(),
-                             plan_.arguments)) {
+        for (const auto [i, planned] :
+             std::views::zip(std::views::iota(size_t{}), plan_.arguments)) {
 
             if (planned.is_temporary) {
                 arguments.push_back(
-                    call_.make_argument_temporary(tc, indent, i, param));
+                    call_.make_argument_temporary(tc, indent, i));
 
                 continue;
             }

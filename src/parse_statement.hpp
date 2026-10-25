@@ -82,6 +82,11 @@ inline auto assert_builtin_without_type_args(const token& tk,
                         in_quotes(tk.text()))};
 }
 
+// e.g. 'i8(x)'; 'bool' has no conversion
+[[nodiscard]] inline auto is_integer_conversion(const term& tm) -> bool {
+    return tm.is(term_kind::conversion) and tm.named_type->is_integer();
+}
+
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
 // 'parse_builtin_value' makes a statement for each
@@ -89,7 +94,7 @@ inline auto assert_builtin_without_type_args(const token& tk,
                                              const term& tm) -> const type* {
 
     if (tm.is(term_kind::conversion)) {
-        if (not tm.named_type->is_integer()) {
+        if (not is_integer_conversion(tm)) {
             return nullptr;
         }
 
@@ -256,7 +261,7 @@ inline auto parse_builtin_value(toc& tc, tokenizer& tz, const token& tk,
                                                            tk, tz);
     }
 
-    if (builtin_value_type(tc, tk, tm) != nullptr) {
+    if (is_integer_conversion(tm)) {
         return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
                                                       tz);
     }
@@ -331,13 +336,16 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
     }
 
     // e.g. 'x', 'p.x', 'a[i]' or the literal '0x80'
-    stmt_identifier ident{tc, {}, tk, tz};
+    stmt_identifier ident{tc, tk, tz};
 
     // e.g. '-lst.size()' negates the result, not the receiver
     if (ident.is_method_receiver()) {
         return std::make_unique<stmt_call>(tc, std::move(uops),
                                            std::move(ident), tz, expected_type);
     }
+
+    // note: the ops are the identifier's only now, a receiver's go to its
+    //       call
 
     ident.set_unary_ops(std::move(uops));
 

@@ -189,8 +189,9 @@ class expr_arith final : public statement {
 
     // the list is located where its first element starts
     expr_arith(toc& tc, tokenizer& tz, options opts)
-        : statement{opts.first_expression ? position_of(*opts.first_expression)
-                                          : tz.next_token_position()},
+        : statement{opts.first_expression
+                        ? start_marker_of(*opts.first_expression)
+                        : tz.next_token_position()},
           list_uops_{std::move(opts.uops)}, open_paren_tk_{opts.open_paren_tk},
           is_implied_subexpression_{opts.is_implied_subexpression},
           destination_type_{opts.destination_type} {
@@ -1707,12 +1708,6 @@ class expr_arith final : public statement {
         };
     }
 
-    // a marker at the start of 'element', without its whitespace
-    [[nodiscard]] static auto position_of(const statement& element) -> token {
-        const token& tk{element.tok()};
-        return token::position(tk.file_index(), tk.start_index(), tk.at_line());
-    }
-
     // higher value higher precedence
     [[nodiscard]] static auto precedence_for_op(const arithmetic_operator op)
         -> uint8_t {
@@ -1746,5 +1741,13 @@ class expr_arith final : public statement {
                op == arithmetic_operator::shift_right);
 
         return precedence_shift_;
+    }
+
+    // a marker at the start of 'element', without its whitespace
+    [[nodiscard]] static auto start_marker_of(const statement& element)
+        -> token {
+
+        const token& tk{element.tok()};
+        return token::position(tk.file_index(), tk.start_index(), tk.at_line());
     }
 };

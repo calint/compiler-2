@@ -2121,7 +2121,7 @@ class machine {
             return "-";
         }
 
-        return locations_.human_readable(src_loc_tk);
+        return locations_.for_message(src_loc_tk);
     }
 
     // the backend's own registers, e.g. the variables base, and the frame

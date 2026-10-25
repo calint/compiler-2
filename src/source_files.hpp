@@ -174,9 +174,9 @@ class source_locations final {
                            text(src_loc_tk, '.'));
     }
 
-    // human-readable source location, with the file name when the program
+    // a source location for a message, with the file name when the program
     // has more than one file
-    [[nodiscard]] auto human_readable(const token& src_loc_tk) const
+    [[nodiscard]] auto for_message(const token& src_loc_tk) const
         -> std::string {
 
         if (files_.get().count() == 1) {

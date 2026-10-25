@@ -575,8 +575,7 @@ class stmt_def_func final : public statement {
 
     // e.g. 'func point.at(x, y) self'
     [[nodiscard]] auto is_constructor() const -> bool {
-        return result_.has_value() and
-               result_->name_tk.is_text(reserved_names::self);
+        return result_ and result_->is_self();
     }
 
     [[nodiscard]] auto is_inlined() const -> bool {
@@ -921,7 +920,7 @@ class stmt_def_func final : public statement {
 
         add_constants(tc, 0);
 
-        // note: 'parse_returns' only creates a return with a name
+        // note: 'parse_result' only keeps a result with a name
         assert(not result_ or result_->name_tk.is_word());
 
         add_signature_vars(tc, 0, var_access::direct, {}, {});
@@ -951,8 +950,8 @@ class stmt_def_func final : public statement {
         close_paren_tk_ = list.close_paren_tk;
     }
 
-    // 'name [type]' of the returned value, without a name the type is void
-    auto parse_returns(toc& tc, tokenizer& tz) -> void {
+    // the result 'name [type]', without one the type is 'void'
+    auto parse_result(toc& tc, tokenizer& tz) -> void {
         const std::optional<func_result> read_result{
             func_result::read(tc, tz),
         };
@@ -992,7 +991,7 @@ class stmt_def_func final : public statement {
 
         parse_params(tc, tz);
 
-        parse_returns(tc, tz);
+        parse_result(tc, tz);
 
         assert_result_not_named_like_param();
 
