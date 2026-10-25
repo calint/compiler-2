@@ -24,7 +24,10 @@
 
 // e.g. 'dat x = i32(0)': the initializer is parsed like the one of a 'var' and
 // folded to the constants of the data section, a value that is not constant is
-// rejected
+// rejected; it is folded at the parse into its own 'elem' tree rather than
+// laid out by the 'write_plan' of a 'var', which is made at compile time and
+// packs constant elements into bytes, where the data keeps typed lines, e.g.
+// 'dd 2, 3, 5, 7'
 class stmt_def_dat final : public statement {
     // the folded initializer at the type it fills, e.g. '3', '"hi"',
     // '{1, 2}' of an array or '{1, 2}' of an instance

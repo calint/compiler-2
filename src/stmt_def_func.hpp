@@ -36,8 +36,7 @@
 //   'make_stmt_def_func'     reads the head and picks the statement (last in
 //                            the file, it uses the others)
 //   'func_head'              'func [noinline] [mut] name[.method] [<T type>] ('
-//   'func_result_syntax'     the tokens of the result 'name [type]'
-//   'func_return_info'       the result of a function, its name and type
+//   'func_result'            the result 'name [type]' as written
 //   'stmt_def_func'          a function, of the user code or an instance
 //   'func_instantiator'      records the generic definitions and makes their
 //                            instances, each a 'stmt_def_func'
@@ -280,9 +279,10 @@ struct func_head {
     //
 };
 
-// the tokens of the result 'name [type]' after the parameters, before the type
-// is resolved; a generic definition keeps them in its 'generic_signature'
-struct func_result_syntax {
+// the result 'name [type]' as written after the parameters, e.g. 'res i8';
+// its type is the node's ('stmt_def_func::result_type'); a generic definition
+// keeps it in its 'generic_signature'
+struct func_result {
     // e.g. 'res', or 'self' of a constructor
     token name_tk;
     // none for the default type
@@ -299,7 +299,7 @@ struct func_result_syntax {
 
     // 'tz' is after the ')' of the parameters; none without a result
     [[nodiscard]] static auto read(const toc& tc, tokenizer& tz)
-        -> std::optional<func_result_syntax> {
+        -> std::optional<func_result> {
 
         const token name_tk{tz.next_token()};
 
@@ -321,25 +321,17 @@ struct func_result_syntax {
         if (not tc.types().has(type_tk.text()) and not is_type_before_body) {
             tz.put_back_token(type_tk);
 
-            return func_result_syntax{
+            return func_result{
                 .name_tk{name_tk},
                 .type_tk{std::nullopt},
             };
         }
 
-        return func_result_syntax{
+        return func_result{
             .name_tk{name_tk},
             .type_tk{type_tk},
         };
     }
-};
-
-// the result of a function, e.g. 'res i8': its name and its type
-struct func_return_info {
-    // none for the default type and for 'self'
-    std::optional<token> type_tk;
-    token ident_tk;
-    const type* type_ptr{};
 };
 
 // a slot of the frame of a noinline call: the address of the result, or of
@@ -373,7 +365,7 @@ class stmt_def_func final : public statement {
     std::vector<stmt_def_func_param> params_;
     std::vector<token> param_delims_tk_;
     token close_paren_tk_;
-    std::optional<func_return_info> returns_;
+    std::optional<func_result> result_;
     stmt_block code_;
     // the definition parsed again with the parameters naming the arguments
     std::optional<func_instance> instance_;
@@ -474,7 +466,7 @@ class stmt_def_func final : public statement {
     auto check_body(toc& tc, const size_t indent) const -> void {
         const bool takes_from_call{
             array_param_count() != 0 or
-                (is_inlined() and (not params().empty() or returns())),
+                (is_inlined() and (not params().empty() or has_result())),
         };
 
         std::optional<compile_error> error{
@@ -549,7 +541,7 @@ class stmt_def_func final : public statement {
     [[nodiscard]] auto frame_slots() const -> std::vector<frame_slot> {
         std::vector<frame_slot> slots;
 
-        if (returns_) {
+        if (result_) {
             slots.push_back({
                 .param_index{},
                 .is_in_register{},
@@ -572,6 +564,10 @@ class stmt_def_func final : public statement {
         return has_self_param();
     }
 
+    [[nodiscard]] auto has_result() const -> bool {
+        return result_.has_value();
+    }
+
     // a method of a type, a constructor builds its 'self' instead
     [[nodiscard]] auto has_self_param() const -> bool {
         return head_.method_dot_tk and not is_constructor();
@@ -579,8 +575,8 @@ class stmt_def_func final : public statement {
 
     // e.g. 'func point.at(x, y) self'
     [[nodiscard]] auto is_constructor() const -> bool {
-        return returns_.has_value() and
-               returns_->ident_tk.is_text(reserved_names::self);
+        return result_.has_value() and
+               result_->name_tk.is_text(reserved_names::self);
     }
 
     [[nodiscard]] auto is_inlined() const -> bool {
@@ -603,15 +599,13 @@ class stmt_def_func final : public statement {
         return params_;
     }
 
+    [[nodiscard]] auto result() const -> const std::optional<func_result>& {
+        return result_;
+    }
+
     // the type of the result, 'void' without one; the node's type
     [[nodiscard]] auto result_type() const -> const type& {
         return statement::get_type();
-    }
-
-    [[nodiscard]] auto returns() const
-        -> const std::optional<func_return_info>& {
-
-        return returns_;
     }
 
     auto source_def_comment_to(machine& x, const size_t indent) const -> void {
@@ -714,13 +708,13 @@ class stmt_def_func final : public statement {
 
             if (not slot.param_index) {
                 // note: a slot without a parameter is the result
-                assert(returns_);
+                assert(result_);
 
-                tc.add_var(returns_->ident_tk, indent,
+                tc.add_var(result_->name_tk, indent,
                            {
-                               .name{returns_->ident_tk.text()},
+                               .name{result_->name_tk.text()},
                                .type_ptr{&result_type()},
-                               .src_loc_tk{returns_->ident_tk},
+                               .src_loc_tk{result_->name_tk},
                                .shape{},
                                .placement{placement},
                                .foo_array{},
@@ -779,8 +773,8 @@ class stmt_def_func final : public statement {
                                 "'main' cannot have parameters"};
         }
 
-        if (returns()) {
-            throw compile_error{returns()->ident_tk,
+        if (result_) {
+            throw compile_error{result_->name_tk,
                                 "'main' cannot have a result"};
         }
     }
@@ -804,16 +798,16 @@ class stmt_def_func final : public statement {
     // the result is declared before the parameters, slot 0 is the result,
     // so the duplicate is found here at the result
     auto assert_result_not_named_like_param() const -> void {
-        if (not returns_) {
+        if (not result_) {
             return;
         }
 
         for (const stmt_def_func_param& param : params_) {
-            if (param.name() == returns_->ident_tk.text()) {
+            if (param.name() == result_->name_tk.text()) {
                 throw compile_error{
-                    returns_->ident_tk,
+                    result_->name_tk,
                     std::format("result {} is named like a parameter",
-                                in_quotes(returns_->ident_tk.text())),
+                                in_quotes(result_->name_tk.text())),
                 };
             }
         }
@@ -822,14 +816,14 @@ class stmt_def_func final : public statement {
     // every path through the body sets the result, also the end, which
     // returns like a 'return' statement
     auto assert_sets_result() const -> void {
-        if (not returns_) {
+        if (not result_) {
             return;
         }
 
         assignment_flow flow{
-            returns_->ident_tk.text(),
-            returns_->ident_tk,
-            returns_->type_ptr->size_bytes(),
+            result_->name_tk.text(),
+            result_->name_tk,
+            result_type().size_bytes(),
         };
 
         code_.trace_assignment(flow);
@@ -928,7 +922,7 @@ class stmt_def_func final : public statement {
         add_constants(tc, 0);
 
         // note: 'parse_returns' only creates a return with a name
-        assert(not returns_ or returns_->ident_tk.is_word());
+        assert(not result_ or result_->name_tk.is_word());
 
         add_signature_vars(tc, 0, var_access::direct, {}, {});
 
@@ -959,8 +953,8 @@ class stmt_def_func final : public statement {
 
     // 'name [type]' of the returned value, without a name the type is void
     auto parse_returns(toc& tc, tokenizer& tz) -> void {
-        const std::optional<func_result_syntax> read_result{
-            func_result_syntax::read(tc, tz),
+        const std::optional<func_result> read_result{
+            func_result::read(tc, tz),
         };
 
         if (not read_result) {
@@ -968,7 +962,7 @@ class stmt_def_func final : public statement {
             return;
         }
 
-        const func_result_syntax& result{*read_result};
+        const func_result& result{*read_result};
 
         // a name before the body is the result, 'self' names the value a
         // constructor builds
@@ -986,7 +980,7 @@ class stmt_def_func final : public statement {
                            : tc.builtins().default_type(),
         };
 
-        returns_.emplace(result.type_tk, result.name_tk, &tp);
+        result_ = result;
         set_type(tp);
     }
 
@@ -1038,7 +1032,11 @@ class stmt_def_func final : public statement {
 
         const type& tp{*head_.receiver_type()};
 
-        returns_.emplace(type_tk, self_tk, &tp);
+        result_ = func_result{
+            .name_tk{self_tk},
+            .type_tk{std::nullopt},
+        };
+
         set_type(tp);
     }
 
@@ -1059,9 +1057,9 @@ class stmt_def_func final : public statement {
 
         close_paren_tk_.source_to(os);
 
-        if (returns_) {
-            returns_->ident_tk.source_to(os);
-            token::source_to(os, returns_->type_tk);
+        if (result_) {
+            result_->name_tk.source_to(os);
+            token::source_to(os, result_->type_tk);
         }
     }
 
@@ -1559,8 +1557,8 @@ class stmt_def_func_generic final : public statement {
             });
         }
 
-        if (const std::optional<func_result_syntax> result{
-                func_result_syntax::read(tc, tz),
+        if (const std::optional<func_result> result{
+                func_result::read(tc, tz),
             }) {
 
             signature.result_name_tk = result->name_tk;

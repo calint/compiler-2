@@ -735,8 +735,6 @@ class machine {
     virtual auto copy_value(const token& src_loc_tk, const size_t indent,
                             const operand& dst, const operand& src) -> void = 0;
 
-    [[nodiscard]] virtual auto default_type() const -> const type& = 0;
-
     // an enabled check makes a zero divisor, and the minimum of the type of
     // 'dst' divided by -1, jump to the division failure handler
     virtual auto divide(const token& src_loc_tk, const size_t indent,
@@ -1013,6 +1011,17 @@ class machine {
 
     [[nodiscard]] auto data_alignment() const -> size_t {
         return target_.data_alignment;
+    }
+
+    // the integer of the width of an address, also the type of an address in
+    // a register
+    [[nodiscard]] auto default_type() const -> const type& {
+        // note: the targets have 4 or 8 byte addresses ('target_description')
+        assert(address_size_bytes() == sizeof(int32_t) or
+               address_size_bytes() == sizeof(int64_t));
+
+        return address_size_bytes() == sizeof(int32_t) ? builtins_.get().i32
+                                                       : builtins_.get().i64;
     }
 
     // a frame size, limited by the variables that hold the frames

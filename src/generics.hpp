@@ -186,6 +186,17 @@ struct generic_arg_tokens {
                 return args;
             }
 
+            // e.g. the '[' of 'f<i32[]>(a)', 'a T[]' takes an array of 'T'
+            if (const std::optional<token> bracket_tk{
+                    tz.is_next_char_token('['),
+                }) {
+
+                throw compile_error{*bracket_tk,
+                                    "a type argument is a type name, not an "
+                                    "array, an array parameter is written "
+                                    "'a T[]'"};
+            }
+
             const token delim_tk{
                 tz.expect_char_token(
                     ',', "expected ',' or '>' after generic argument"),

@@ -1863,10 +1863,9 @@ class builtin_roles final {
     builtin_roles(const ::machine& backend, const builtin_type_set& types)
         : machine_{backend}, types_{types} {}
 
+    // note: the same type as 'default_type', the word of the target
     [[nodiscard]] auto address() const -> const type& {
-        return machine_.get().address_size_bytes() == sizeof(int32_t)
-                   ? types_.get().i32
-                   : types_.get().i64;
+        return machine_.get().default_type();
     }
 
     [[nodiscard]] auto boolean() const -> const type& {

@@ -5215,3 +5215,6 @@ SRC=1667 && COMPERR
 
 # a bare user type is a zero instance, a '~' after it is not an operator
 SRC=1668 && COMPERR
+
+# a type argument is a type name, an array parameter is written 'a T[]'
+SRC=1669 && COMPERR

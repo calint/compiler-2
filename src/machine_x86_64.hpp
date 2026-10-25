@@ -461,10 +461,6 @@ class machine_x86_64 final : public machine {
         mov(src_loc_tk, indent, dst, src);
     }
 
-    [[nodiscard]] auto default_type() const -> const type& override {
-        return builtin_type_i64();
-    }
-
     auto divide(const token& src_loc_tk, const size_t indent,
                 const arithmetic_operator operation, const operand& dst,
                 const operand& divisor, const runtime_check& check)

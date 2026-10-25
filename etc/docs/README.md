@@ -433,6 +433,13 @@ kept ('ident_info', the alias of an inlined argument, the constant of a 'let'):
 - untyped: a literal or a 'let' of untyped values, checked by its value where
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not
 
+The default type ('int') is 'i64' on x86_64 and 'i32' on rv32i, the width of
+a register. A variable or a parameter without a type has it, so a program
+that mixes it with a type of fixed width can be accepted on one target and
+rejected on the other, e.g. 'a[i] <= lim' with 'a' an 'i32[]' and 'lim'
+untyped is a narrowing on x86_64 only; a portable program writes the type,
+e.g. 'lim i32'.
+
 Where it is used is a 'value_use': the width the value is computed at and
 whether its arithmetic is checked for overflow, made by 'toc::use_of' from a
 destination or by 'toc::use_at' for a value without one (a comparison side,
@@ -1556,6 +1563,8 @@ The goal is that every program the compiler accepts is free of undefined
 behavior: each case below is either rejected at compile time or, with its
 '--checks' option, checked at run time, so a result does not depend on the
 target, on whether a call is inlined or on which version of code is kept.
+Whether a program is accepted can depend on the target through the default
+type, see 1.7.
 
 ### 8.1 The catalog
 

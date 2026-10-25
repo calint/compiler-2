@@ -306,24 +306,52 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           README 1.7 and 8 say it now, and a section 3 item for the language
           question (one default type, or a target-neutral rule for untyped
           values)
+          => ask 1 done (2026-10-25): README 1.7 (the default type per
+             target, an example, a portable program writes the type) and
+             8 (acceptance can depend on the target through it); a section 3
+             item for the language question
        2. E2 against S kept 3: a dat lays out its literal with its own
           'elem' walk instead of the 'write_plan' (about 200 lines; data
           listings change, bytes must stay equal); recommended: a scratch
           check that the plan's offsets fit data directives, then decide
+          => ask 2 discarded (2026-10-25): the plan of a literal is in
+             offset order, but it packs constant elements into one
+             'bytes_write' where the data keeps typed lines ('dd 2, 3, 5, 7'
+             would become bytes unless a special case unpacks them), and a
+             dat folds and checks its values at the parse while the plan is
+             made at compile time, which moves its errors; the reason is in
+             the 'stmt_def_dat' class comment; the scratch build was not
+             needed for this
        3. S3, rename: "result" for a function's result ('returns_',
           'func_return_info', 'returns()' -> 'result()', 'has_result()'),
           the type held once; medium churn; recommended: yes, rename then
           drop the type pointer
+          => ask 3 done (2026-10-25): 'func_return_info' goes, the node
+             keeps 'std::optional<func_result> result_' ('func_result_syntax'
+             renamed, its comment says the type is the node's);
+             'result()', 'has_result()' (was 'returns()'), 'result_type()'
+             the one home of the type; 'bind_result' takes the result and its
+             type; the uses that need the tokens check the optional itself
        4. B3 against round 15 kept 1: 'default_type()' non-virtual from the
           target table, the same fact as 'builtin_roles::address';
           recommended: yes
+          => ask 4 done (2026-10-25): 'machine::default_type()' non-virtual,
+             the integer of the width of an address (asserted 4 or 8 bytes),
+             the two overrides go; 'builtin_roles::address' returns it
        5. N7, the message: "a type argument is a type name, an array
           parameter is written 'a T[]'" at the '[' (one message, a test);
           recommended: yes
+          => ask 5 done (2026-10-25): 'generic_arg_tokens::parse' reports
+             at the '[', test 1669
        6. T4 rename of the register trace's "frame" to "call";
           recommended: no, A.6 is enough
+          => ask 6 not done (2026-10-25, as recommended)
        7. S2 statics ('assert_call', 'call_kind', 'array_argument_lengths',
           'has_result_temporary') as members; recommended: no
+          => ask 7 not done (2026-10-25, as recommended); both suites, the
+             CLI tests, test-rv32i, clang-tidy, check-messages,
+             check-readme-names, fuzz-calls 300 and fuzz-generics 300 clean;
+             round 16 complete
     not planned (low confidence, the gain unclear): E6 one operand kind,
     T9 'operand' as a variant, F8 one built-in dispatcher, F9 line lookup
     out of main, B4 stack placement enum, N3.3 dat found by id
@@ -583,6 +611,15 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 3. new features
 --------------------------------------------------------------------------------
+[ ] medium: language: whether a program is accepted depends on the target
+    through the default type ('int' is 'i64' on x86_64 and 'i32' on rv32i):
+    an untyped variable or parameter mixed with a fixed width, e.g. 'a[i] <=
+    lim' with 'a' an 'i32[]', or 'array_copy' from an untyped dat to an
+    'i32' array, is rejected on x86_64 only (round 16 N4, 2026-10-25); the
+    goal "a result never depends on the target" (AGENTS.md) holds for the
+    results, README 1.7 and 8 say it; options: one default type on every
+    target, or a target-neutral rule for an untyped value (e.g. judged as
+    the widest default); a language question
 [ ] easy: variable argument count in read/write might be confusing, consider
     requiring all arguments
 [ ] easy: should 'if str == "abc"' be supported?

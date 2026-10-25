@@ -866,7 +866,7 @@ class inline_call {
 
         assert(call_.func->is_inlined());
 
-        if (call_.func->returns() and
+        if (call_.func->has_result() and
             call_site::result_type_differs(dst, *call_.func)) {
             // note: 'stmt_call::assert_result_type' allows a type mismatch
             //       only for an operand
@@ -907,12 +907,15 @@ class inline_call {
             return;
         }
 
-        assert(call_.func->returns());
+        const std::optional<func_result>& result{call_.func->result()};
 
-        const func_return_info& return_info{*call_.func->returns()};
+        // note: unary ops apply to a value, 'assert_result_use' rejects a
+        //       call without one
+
+        assert(result);
 
         const ident_info ret_info{
-            tc.resolve_declared(call_.tk, return_info.ident_tk.text()),
+            tc.resolve_declared(call_.tk, result->name_tk.text()),
         };
 
         machine& x{tc.machine()};
@@ -1264,17 +1267,18 @@ class inline_call {
         // note: the call checked the use and the type of the result before
         //       the body was entered
 
-        assert(call_.func->returns().has_value() != dst.is_empty());
+        assert(call_.func->has_result() != dst.is_empty());
 
         call_bindings bindings;
 
         // the result names the destination, so the widths must agree
-        if (const std::optional<func_return_info> ret{call_.func->returns()};
-            ret) {
+        if (const std::optional<func_result>& result{call_.func->result()};
+            result) {
 
             assert(dst.type_ref().is_same(call_.func->result_type()));
 
-            bindings.result = bind_result(dst, *ret);
+            bindings.result =
+                bind_result(dst, *result, call_.func->result_type());
         }
 
         for (const auto [i, arg, param, planned] :
@@ -1477,8 +1481,11 @@ class inline_call {
 
     // the result name of the function refers to the destination
     [[nodiscard]] static auto bind_result(const destination& dst,
-                                          const func_return_info& ret)
+                                          const func_result& result,
+                                          const type& result_type)
         -> param_binding {
+
+        const std::string_view name{result.name_tk.text()};
 
         // e.g. the scratch register of an expression, or a parameter that
         // stands for one
@@ -1486,8 +1493,8 @@ class inline_call {
             // note: a register has no address to keep
             assert(not dst.is_final_address());
 
-            return param_binding::make_register(
-                ret.ident_tk.text(), *ret.type_ptr, dst.operand(), dst.name());
+            return param_binding::make_register(name, result_type,
+                                                dst.operand(), dst.name());
         }
 
         operand dst_lea{
@@ -1495,7 +1502,7 @@ class inline_call {
         };
 
         // a destination such as 'arr[1]' is not an array
-        return param_binding::make_name(ret.ident_tk.text(), *ret.type_ptr,
+        return param_binding::make_name(name, result_type,
                                         {
                                             .dotted_path{dst.name()},
                                             .text{dst.text()},
@@ -1901,7 +1908,7 @@ class noinline_call {
         // note: 'stmt_call::compile' checked the result, a result that is
         //       not in memory or is widened goes through a temporary
 
-        if (func.returns()) {
+        if (func.has_result()) {
             assert(dst.operand().is_memory());
             assert(dst.type_ref().is_same(func.result_type()));
 
@@ -1932,7 +1939,7 @@ class noinline_call {
         // note: a destination that holds an address is resolved to it before,
         //       and the result is not an array, see 'assert_call'
 
-        if (func.returns()) {
+        if (func.has_result()) {
             items.push_back({
                 .target{dst.storage()},
                 .holds_address{},
@@ -2017,8 +2024,9 @@ class noinline_call {
                                                    const stmt_def_func& func)
         -> bool {
 
-        return func.returns() and (not dst.operand().is_memory() or
-                                   call_site::result_type_differs(dst, func));
+        return func.has_result() and
+               (not dst.operand().is_memory() or
+                call_site::result_type_differs(dst, func));
     }
 
     // the index of 'root' among the locals met so far, added when it is new
@@ -2559,7 +2567,7 @@ class stmt_call : public statement {
         assert_no_shared_storage(tc, dst);
         assert_result_use(dst);
 
-        if (callee().returns()) {
+        if (callee().has_result()) {
             assert_result_type(dst);
         }
 
@@ -2807,11 +2815,11 @@ class stmt_call : public statement {
 
     // a result must be stored and a call without one cannot provide it
     auto assert_result_use(const destination& dst) const -> void {
-        if (callee().returns() and dst.is_empty()) {
+        if (callee().has_result() and dst.is_empty()) {
             throw compile_error{tok(), "return value is discarded"};
         }
 
-        if (not callee().returns() and not dst.is_empty()) {
+        if (not callee().has_result() and not dst.is_empty()) {
             throw compile_error{tok(), "function does not return a value"};
         }
     }
