@@ -34,9 +34,7 @@
 // an operator follows, which would continue the expression, e.g. the '+' of
 // 'x + 1' or the 'and' of 'b and c'
 [[nodiscard]] inline auto continues_expression(const tokenizer& tz) -> bool {
-    const char next{tz.peek_char_after_whitespace()};
-
-    if (std::string_view{"+-*/%&|^<>=!"}.contains(next)) {
+    if (not tz.peek_operator().empty()) {
         return true;
     }
 

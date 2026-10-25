@@ -321,58 +321,60 @@ enum class comparison_operator : uint8_t {
     return op;
 }
 
+// the spelling of each binary arithmetic operator in the source
+struct arithmetic_spelling {
+    arithmetic_operator op;
+    std::string_view text;
+};
+
+inline constexpr auto arithmetic_spellings{
+    std::to_array<arithmetic_spelling>({
+        {.op{arithmetic_operator::add}, .text{"+"}},
+        {.op{arithmetic_operator::subtract}, .text{"-"}},
+        {.op{arithmetic_operator::multiply}, .text{"*"}},
+        {.op{arithmetic_operator::divide}, .text{"/"}},
+        {.op{arithmetic_operator::remainder}, .text{"%"}},
+        {.op{arithmetic_operator::bit_and}, .text{"&"}},
+        {.op{arithmetic_operator::bit_or}, .text{"|"}},
+        {.op{arithmetic_operator::bit_xor}, .text{"^"}},
+        {.op{arithmetic_operator::shift_left}, .text{"<<"}},
+        {.op{arithmetic_operator::shift_right}, .text{">>"}},
+    }),
+};
+
 // the operator as written in the source, 'assign' as the '=' of a copy
 [[nodiscard]] inline auto source_text(const arithmetic_operator op)
     -> std::string_view {
 
-    if (op == arithmetic_operator::add) {
-        return "+";
-    }
-
-    if (op == arithmetic_operator::subtract or
-        op == arithmetic_operator::negate) {
-
+    if (op == arithmetic_operator::negate) {
         return "-";
-    }
-
-    if (op == arithmetic_operator::multiply) {
-        return "*";
-    }
-
-    if (op == arithmetic_operator::divide) {
-        return "/";
-    }
-
-    if (op == arithmetic_operator::remainder) {
-        return "%";
-    }
-
-    if (op == arithmetic_operator::bit_and) {
-        return "&";
-    }
-
-    if (op == arithmetic_operator::bit_or) {
-        return "|";
-    }
-
-    if (op == arithmetic_operator::bit_xor) {
-        return "^";
-    }
-
-    if (op == arithmetic_operator::shift_left) {
-        return "<<";
-    }
-
-    if (op == arithmetic_operator::shift_right) {
-        return ">>";
     }
 
     if (op == arithmetic_operator::assign) {
         return "=";
     }
 
+    for (const arithmetic_spelling& spelling : arithmetic_spellings) {
+        if (spelling.op == op) {
+            return spelling.text;
+        }
+    }
+
     // note: 'complement' is a unary operator, 'unary_ops' writes it
     std::unreachable();
+}
+
+// the binary arithmetic operator 'text' spells, none for any other text
+[[nodiscard]] inline auto binary_operator_of(const std::string_view text)
+    -> std::optional<arithmetic_operator> {
+
+    for (const arithmetic_spelling& spelling : arithmetic_spellings) {
+        if (spelling.text == text) {
+            return spelling.op;
+        }
+    }
+
+    return std::nullopt;
 }
 
 // the spelling of each comparison operator in the source

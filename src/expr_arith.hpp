@@ -9,7 +9,6 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <print>
 #include <ranges>
 #include <span>
 #include <string>
@@ -48,8 +47,9 @@ class expr_arith final : public statement {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     // operators between elements in the vector
     std::vector<arithmetic_operator> ops_;
-    std::vector<token> ws_before_ops_; // whitespace before each of 'ops_'
-    unary_ops list_uops_;              // of the whole list, e.g. '~(a + b)'
+    // the token of each of 'ops_' with the whitespace before it
+    std::vector<token> op_tks_;
+    unary_ops list_uops_; // of the whole list, e.g. '~(a + b)'
     // of '(a + b)', none when not enclosed
     std::optional<token> open_paren_tk_;
     std::optional<token> close_paren_tk_;
@@ -172,19 +172,17 @@ class expr_arith final : public statement {
             }
 
             // an operator may start the next line after the trailing
-            // whitespace of the previous element
-            const token ws_before_op_tk{tz.next_whitespace_token()};
-
-            // no operator also ends a list in function arguments at ',' or ')'
+            // whitespace of the previous element; no operator also ends a
+            // list in function arguments at ',' or ')'
             // e.g. the ',' of 'f(a + b, c)'
-            const std::optional<arithmetic_operator> next_op{peek_operator(tz)};
+            const std::optional<arithmetic_operator> next_op{
+                binary_operator_of(tz.peek_operator()),
+            };
 
             if (not next_op) {
-                end_list(tc, tz, ws_before_op_tk);
+                end_list(tc, tz);
                 return;
             }
-
-            ops_.emplace_back(*next_op);
 
             const uint8_t next_precedence{precedence_for_op(*next_op)};
 
@@ -192,17 +190,14 @@ class expr_arith final : public statement {
             // follows, so parse that as a sub-expression
             // e.g. the '*' of 'a + b * c' groups 'b * c'
             if (next_precedence > precedence) {
-                open_implied_subexpression(tc, tz, next_precedence,
-                                           ws_before_op_tk);
-
+                open_implied_subexpression(tc, tz, next_precedence);
                 continue;
             }
 
             // a lower precedence returns to the parent list
             // e.g. the '-' of 'a + b * c - d' ends 'b * c'
             if (is_end_of_implied_subexpression(precedence, next_precedence)) {
-                ops_.pop_back();
-                end_list(tc, tz, ws_before_op_tk);
+                end_list(tc, tz);
                 return;
             }
 
@@ -210,9 +205,8 @@ class expr_arith final : public statement {
             // e.g. the '-' of 'a + b - c'
             precedence = next_precedence;
 
-            // the whitespace is kept to reproduce the source
-            ws_before_ops_.emplace_back(ws_before_op_tk);
-            consume_peeked_operator(tz);
+            ops_.emplace_back(*next_op);
+            op_tks_.emplace_back(tz.seen_operator());
 
             exprs_.emplace_back(parse_element(tc, tz, destination_type_).node);
         }
@@ -234,12 +228,10 @@ class expr_arith final : public statement {
 
         statement::source_to(os); // whitespace
         exprs_.at(0)->source_to(os);
-        for (const auto [ws, o, e] : std::views::zip(
-                 ws_before_ops_, ops_, exprs_ | std::views::drop(1))) {
+        for (const auto [op_tk, e] :
+             std::views::zip(op_tks_, exprs_ | std::views::drop(1))) {
 
-            ws.source_to(os);
-            std::print(os, "{}", source_text(o));
-
+            op_tk.source_to(os);
             e->source_to(os);
         }
 
@@ -530,7 +522,7 @@ class expr_arith final : public statement {
     // a comparison, 'and' or 'or' after a number, e.g. the '>' of 'int(a > 2)'
     // or the 'and' of '(t and f) == f'
     static auto assert_no_condition_next(const tokenizer& tz) -> void {
-        if (is_comparison_next(tz)) {
+        if (comparison_of(tz.peek_operator())) {
             tokenizer probe{tz};
 
             throw compile_error{probe.next_token(),
@@ -805,12 +797,8 @@ class expr_arith final : public statement {
                        machine::factor_use::read_only);
     }
 
-    // 'ws_before_op_tk' belongs to what follows the list
-    auto end_list(const toc& tc, tokenizer& tz,
-                  const token& ws_before_op_tk) const -> void {
-
-        tz.put_back_token(ws_before_op_tk);
-
+    // what follows the list is not read
+    auto end_list(const toc& tc, tokenizer& tz) const -> void {
         // e.g. the '==' of '(x == 1) == b' or of 'x = 1 + (x < 1)', which
         // takes the condition for an arithmetic operand
         if (is_enclosed()) {
@@ -923,13 +911,10 @@ class expr_arith final : public statement {
     // operator with the higher precedence
     //   a + b * c  ->  [a] + [b * c]
     auto open_implied_subexpression(toc& tc, tokenizer& tz,
-                                    const uint8_t next_precedence,
-                                    const token& ws_before_op_tk) -> void {
+                                    const uint8_t next_precedence) -> void {
 
-        // the operator is parsed by the sub-expression before its second
-        // element
-        ops_.pop_back();
-        tz.put_back_token(ws_before_op_tk);
+        // note: the operator is read by the sub-expression before its second
+        //       element
 
         std::unique_ptr<statement> last_elem_in_list{std::move(exprs_.back())};
 
@@ -1234,16 +1219,6 @@ class expr_arith final : public statement {
         return folded_value::untyped(value).operand_at(dst.type_ref());
     }
 
-    static auto consume_peeked_operator(tokenizer& tz) -> void {
-        const char ch{tz.next_char()};
-
-        // 'peek_operator' recognized a shift by both of its characters
-        // e.g. the second '<' of 'a << 2'
-        if (ch == '<' or ch == '>') {
-            tz.skip_char();
-        }
-    }
-
     // the first step writes the destination, a later step that reads it
     // would read that; a plain first element is copied before anything
     // writes, a constant first step reads nothing; a read under another name
@@ -1427,23 +1402,6 @@ class expr_arith final : public statement {
         assert(op == arithmetic_operator::bit_and);
 
         return -1;
-    }
-
-    // a comparison operator, '<' and '>' are not shifts where an arithmetic
-    // list ends
-    [[nodiscard]] static auto is_comparison_next(const tokenizer& tz) -> bool {
-        tokenizer probe{tz};
-        std::ignore = probe.next_whitespace_token();
-
-        if (probe.is_next_char('<') or probe.is_next_char('>')) {
-            return true;
-        }
-
-        if (not probe.is_next_char('=') and not probe.is_next_char('!')) {
-            return false;
-        }
-
-        return probe.is_next_char('=');
     }
 
     // a lone negation folds into add/sub: 'a - -b' is 'a + b'
@@ -1718,54 +1676,6 @@ class expr_arith final : public statement {
             .is_enclosed{},
             .has_unary_ops{has_unary_ops},
         };
-    }
-
-    // the operator at the next character, not consumed
-    [[nodiscard]] static auto peek_operator(tokenizer& tz)
-        -> std::optional<arithmetic_operator> {
-
-        if (tz.is_peek_char('+')) {
-            return arithmetic_operator::add;
-        }
-
-        if (tz.is_peek_char('-')) {
-            return arithmetic_operator::subtract;
-        }
-
-        if (tz.is_peek_char('*')) {
-            return arithmetic_operator::multiply;
-        }
-
-        if (tz.is_peek_char('/')) {
-            return arithmetic_operator::divide;
-        }
-
-        if (tz.is_peek_char('%')) {
-            return arithmetic_operator::remainder;
-        }
-
-        if (tz.is_peek_char('&')) {
-            return arithmetic_operator::bit_and;
-        }
-
-        if (tz.is_peek_char('|')) {
-            return arithmetic_operator::bit_or;
-        }
-
-        if (tz.is_peek_char('^')) {
-            return arithmetic_operator::bit_xor;
-        }
-
-        // shifts are two characters stored as one
-        if (tz.is_peek_char('<') and tz.is_peek_char2('<')) {
-            return arithmetic_operator::shift_left;
-        }
-
-        if (tz.is_peek_char('>') and tz.is_peek_char2('>')) {
-            return arithmetic_operator::shift_right;
-        }
-
-        return std::nullopt;
     }
 
     // a marker at the start of 'element', without its whitespace
