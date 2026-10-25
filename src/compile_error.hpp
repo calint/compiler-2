@@ -217,3 +217,9 @@ class compile_error final : public std::exception {
                         std::format("expected type {}, got {}",
                                     in_quotes(expected), in_quotes(got))};
 }
+
+// an enclosed list met 'next_tk', which is not its ')', e.g. the 'exit' of
+// 'x = (1 + 2 exit(x)'
+[[noreturn]] inline auto throw_unclosed_list(const token& next_tk) -> void {
+    throw compile_error{next_tk, "expected ')' to close expression"};
+}

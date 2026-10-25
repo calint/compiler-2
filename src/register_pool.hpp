@@ -16,7 +16,9 @@
 
 // the registers of a machine that hold a value: named ones are fixed by an
 // instruction or the calling convention, scratch ones are picked by the
-// machine, all are freed in the reverse order of allocation. a register is
+// machine, and the backend holds some for itself (the variables base, the
+// frame base of a noinline body), which are named too; all are freed in the
+// reverse order of allocation. a register is
 // 'unavailable' while it is allocated and while an operation protects the
 // registers of its operands. the machine names the registers, the pool counts
 // them by their index in the names of the machine and by masks of 1 << index
@@ -28,6 +30,8 @@ class register_pool final {
         token src_loc_tk;
         size_t indent{};
         bool named{};
+        // held by the backend itself, not asked for by a source location
+        bool is_backend_own{};
         // the index of the inlined call that allocated it, see
         // 'register_trace::frame'
         size_t frame{};
@@ -245,16 +249,11 @@ class register_trace final {
     // statics
     //
 
-    // the registers of a backend that no source location asked for are left
-    // out of the report
+    // the registers the backend holds itself are left out of the report
     [[nodiscard]] static auto
     is_listed(const register_pool::allocation& allocated) -> bool {
 
-        const bool held_by_backend{
-            allocated.named and allocated.src_loc_tk.at_line() == 0,
-        };
-
-        return not held_by_backend;
+        return not allocated.is_backend_own;
     }
 
   private:

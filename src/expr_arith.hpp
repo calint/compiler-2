@@ -221,7 +221,7 @@ class expr_arith final : public statement {
         while (true) {
             // a sub-expression is closed by its ')'
             // e.g. '(a + b)'
-            if (is_closed(tz)) {
+            if (read_close_paren(tz)) {
                 assert_parentheses_group();
                 validate_arithmetic_operands();
                 return;
@@ -858,9 +858,7 @@ class expr_arith final : public statement {
             assert_no_condition_next(tz);
 
             // an enclosed list ends with its ')'
-            // e.g. the 'exit' of 'x = (1 + 2 exit(x)'
-            throw compile_error{tz.next_token(),
-                                "expected ')' to close expression"};
+            throw_unclosed_list(tz.next_token());
         }
 
         validate_arithmetic_operands();
@@ -881,17 +879,6 @@ class expr_arith final : public statement {
         }
 
         return is_regroupable(first) ? first : arithmetic_operator::assign;
-    }
-
-    // a sub-expression is enclosed in parentheses
-    [[nodiscard]] auto is_closed(tokenizer& tz) -> bool {
-        if (not is_enclosed()) {
-            return false;
-        }
-
-        close_paren_tk_ = tz.is_next_char_token(')');
-
-        return close_paren_tk_.has_value();
     }
 
     // unary ops on a memory destination are a load, modify and store on a
@@ -1001,6 +988,17 @@ class expr_arith final : public statement {
         lead_with_constant(tc, steps);
 
         return steps;
+    }
+
+    // the ')' of an enclosed list is next: read it, e.g. '(a + b)'
+    [[nodiscard]] auto read_close_paren(tokenizer& tz) -> bool {
+        if (not is_enclosed()) {
+            return false;
+        }
+
+        close_paren_tk_ = tz.is_next_char_token(')');
+
+        return close_paren_tk_.has_value();
     }
 
     // the elements are operands of the operators of the list or of its unary

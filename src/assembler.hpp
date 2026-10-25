@@ -107,6 +107,7 @@ class assembler {
     };
 
     // the bodies of one noinline function, valid once jumps are resolved
+    // (on rv32i 'resolve_jumps')
     struct function_summary {
         std::string function;
         size_t body_count{};
@@ -241,7 +242,7 @@ class assembler {
     }
 
     // machine instructions, so pseudo instructions count as the ones they
-    // expand to, valid once jumps are resolved
+    // expand to, valid once jumps are resolved (on rv32i 'resolve_jumps')
     [[nodiscard]] auto instruction_count() const -> size_t {
         return instructions_in(code_size());
     }
@@ -341,19 +342,6 @@ class assembler {
         }
 
         return text;
-    }
-
-    // writes the lines as they are, far jumps are left to the caller
-    auto write(std::ostream& os) -> void {
-        assert(captures_.empty());
-
-        for (const line& l : lines_) {
-            if (not l.removed) {
-                std::println(os, "{}", l.text);
-            }
-        }
-
-        lines_.clear();
     }
 
   protected:

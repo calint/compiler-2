@@ -1,6 +1,13 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: design: 'func_info::type_ptr' repeats the return type of
+    'func_info::def', every entry has a definition since the built-ins left
+    'function_table'; 'get_func_return_type_or_throw' could read the
+    definition and 'add_func' lose the parameter
+    => done (2026-10-25): round 17 D.1; the '--memory' note that stood
+       here belonged to the resolved item about fpga's '--memory' and
+       went
 [x] hard: design review round 16 (2026-10-25, six reviewers: front end F,
     expressions E, statements and calls S, tables and checks T, backends B, a
     newcomer N tracing one program; findings in the session scratchpad r16,

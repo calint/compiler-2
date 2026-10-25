@@ -57,30 +57,40 @@ struct branch_targets {
     return result == condition_result::always_true;
 }
 
-// the 'not's that lead a condition, e.g. both of 'not not a == b'
-[[nodiscard]] inline auto parse_not_tokens(tokenizer& tz)
-    -> std::vector<token> {
+// the 'not's that lead a condition, e.g. both of 'not not a == b', like
+// 'unary_ops' of a value; each is a token with the whitespace before it
+class condition_nots final {
+    std::vector<token> nots_;
 
-    std::vector<token> nots;
+  public:
+    explicit condition_nots(tokenizer& tz) {
+        while (true) {
+            const token tk{tz.next_token()};
 
-    while (true) {
-        const token tk{tz.next_token()};
+            if (not tk.is_text("not")) {
+                tz.put_back_token(tk);
+                return;
+            }
 
-        if (not tk.is_text("not")) {
-            tz.put_back_token(tk);
-            return nots;
+            nots_.emplace_back(tk);
         }
-
-        nots.emplace_back(tk);
     }
-}
 
-// true when the 'not's make an odd count
-[[nodiscard]] inline auto is_negated_by(const std::span<const token> nots)
-    -> bool {
+    condition_nots() = default;
 
-    return nots.size() % 2 == 1;
-}
+    [[nodiscard]] auto is_empty() const -> bool { return nots_.empty(); }
+
+    // an odd count negates
+    [[nodiscard]] auto is_negated() const -> bool {
+        return nots_.size() % 2 == 1;
+    }
+
+    auto source_to(std::ostream& os) const -> void {
+        for (const token& not_tk : nots_) {
+            not_tk.source_to(os);
+        }
+    }
+};
 
 // one operand of an 'expr_bool': a comparison 'a < b', a comparison of the
 // bytes of two instances or arrays, or the shorthand, the operand alone as
@@ -112,7 +122,7 @@ class expr_bool_op final : public statement {
     };
 
     // e.g. the 'not' of 'if not a == b ...'
-    std::vector<token> nots_;
+    condition_nots nots_;
     expr_arith lhs_;
     // empty for a shorthand, the operand alone is the condition, e.g. 'if a'
     std::optional<comparison> comparison_;
@@ -123,7 +133,7 @@ class expr_bool_op final : public statement {
 
         set_type(tc.builtins().boolean());
 
-        nots_ = parse_not_tokens(tz);
+        nots_ = condition_nots{tz};
 
         lhs_ = {tc, tz};
 
@@ -158,10 +168,7 @@ class expr_bool_op final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        for (const token& e : nots_) {
-            e.source_to(os);
-        }
-
+        nots_.source_to(os);
         lhs_.source_to(os);
 
         if (not comparison_) {
@@ -199,7 +206,7 @@ class expr_bool_op final : public statement {
 
     // e.g. 'a + 1', null when negated or compared
     [[nodiscard]] auto arithmetic() const -> const expr_arith* {
-        if (comparison_ or not nots_.empty()) {
+        if (comparison_ or not nots_.is_empty()) {
             return nullptr;
         }
 
@@ -519,9 +526,7 @@ class expr_bool_op final : public statement {
         return condition_result::unknown;
     }
 
-    [[nodiscard]] auto is_negated() const -> bool {
-        return is_negated_by(nots_);
-    }
+    [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }
 
     // a shorthand is a comparison with 0 by '!='
     [[nodiscard]] auto operation() const -> comparison_operator {
@@ -1145,7 +1150,7 @@ class expr_bool final : public statement {
     std::vector<spelled_operator<connective>> ops_;
     // the 'not's before the '(' of a parenthesized list, e.g. both of
     // 'not not (a == b and c == d)'
-    std::vector<token> nots_;
+    condition_nots nots_;
     // none unless the list is parenthesized
     std::optional<token> open_paren_tk_;
     std::optional<token> close_paren_tk_;
@@ -1156,7 +1161,7 @@ class expr_bool final : public statement {
     }
 
     // e.g. '(a == b and c == d)' after its 'not's, the '(' has been read
-    expr_bool(toc& tc, const token tk, tokenizer& tz, std::vector<token> nots,
+    expr_bool(toc& tc, const token tk, tokenizer& tz, condition_nots nots,
               const token open_paren_tk)
         : statement{tk}, nots_{std::move(nots)}, open_paren_tk_{open_paren_tk} {
 
@@ -1172,11 +1177,7 @@ class expr_bool final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-
-        for (const token& not_tk : nots_) {
-            not_tk.source_to(os);
-        }
-
+        nots_.source_to(os);
         token::source_to(os, open_paren_tk_);
 
         const size_t element_count{bools_.size()};
@@ -1578,15 +1579,13 @@ class expr_bool final : public statement {
     }
 
     // true when a 'not' leads the list
-    [[nodiscard]] auto has_not() const -> bool { return not nots_.empty(); }
+    [[nodiscard]] auto has_not() const -> bool { return not nots_.is_empty(); }
 
     [[nodiscard]] auto is_enclosed() const -> bool {
         return open_paren_tk_.has_value();
     }
 
-    [[nodiscard]] auto is_negated() const -> bool {
-        return is_negated_by(nots_);
-    }
+    [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }
 
     // note: every operator of a list is the same, mixing them is rejected
     [[nodiscard]] auto is_or_list() const -> bool {
@@ -1617,7 +1616,7 @@ class expr_bool final : public statement {
         }
 
         // the 'not's before a parenthesis, e.g. 'not not (a == b)'
-        std::vector<token> not_tks{parse_not_tokens(tz)};
+        condition_nots nots{tz};
 
         // the list is located at its '(', which keeps the whitespace before it
         const token pos_tk{tz.next_token_position()};
@@ -1628,7 +1627,7 @@ class expr_bool final : public statement {
         assert(open_paren_tk);
 
         bools_.emplace_back(std::in_place_type<expr_bool>, tc, pos_tk, tz,
-                            std::move(not_tks), *open_paren_tk);
+                            std::move(nots), *open_paren_tk);
     }
 
     // the operands are joined by 'and' or by 'or', not by both, e.g.
@@ -1640,9 +1639,14 @@ class expr_bool final : public statement {
 
         parse_element(tc, tz);
 
-        while (const std::optional<spelled_operator<connective>> next{
-            read_connective(tz),
-        }) {
+        while (not read_close_paren(tz)) {
+            const std::optional<spelled_operator<connective>> next{
+                read_connective(tz),
+            };
+
+            if (not next) {
+                return;
+            }
 
             assert_same_connective(*next);
 
@@ -1652,19 +1656,21 @@ class expr_bool final : public statement {
         }
     }
 
-    // the 'and' or 'or' after an operand, none when the expression ends: an
-    // enclosed expression ends with its ')'
+    // the ')' of an enclosed list is next: read it, e.g. '(a == 1 or b == 2)'
+    [[nodiscard]] auto read_close_paren(tokenizer& tz) -> bool {
+        if (not is_enclosed()) {
+            return false;
+        }
+
+        close_paren_tk_ = tz.is_next_char_token(')');
+
+        return close_paren_tk_.has_value();
+    }
+
+    // the 'and' or 'or' after an operand, none when the expression ends; an
+    // enclosed expression first reads its ')' ('read_close_paren')
     [[nodiscard]] auto read_connective(tokenizer& tz)
         -> std::optional<spelled_operator<connective>> {
-
-        // e.g. '(a == 1 or b == 2)'
-        if (is_enclosed()) {
-            close_paren_tk_ = tz.is_next_char_token(')');
-
-            if (close_paren_tk_) {
-                return std::nullopt;
-            }
-        }
 
         // the connective after an operand, e.g. the 'and' of
         // 'a == 1 and b == 2'
@@ -1682,7 +1688,7 @@ class expr_bool final : public statement {
         // e.g. the 'exit' of 'if a == 1 exit(1)', or of '(a == 1 exit(1)'
         // which lacks its ')'
         if (is_enclosed()) {
-            throw compile_error{op_tk, "expected ')' to close expression"};
+            throw_unclosed_list(op_tk);
         }
 
         tz.put_back_token(op_tk);
@@ -1727,7 +1733,7 @@ class expr_bool final : public statement {
     [[nodiscard]] static auto is_list_next(const tokenizer& tz) -> bool {
         tokenizer probe{tz};
 
-        std::ignore = parse_not_tokens(probe);
+        std::ignore = condition_nots{probe};
 
         return probe.is_next_char_token('(') and
                not is_parenthesized_operand(probe);

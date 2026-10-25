@@ -78,7 +78,6 @@ class stmt_def_func;
 struct func_info {
     token src_loc_tk;           // the definition
     const stmt_def_func* def{}; // never null
-    const type* type_ptr{};     // return type or void
     // e.g. 'text.size' for the instance 'str.size', empty if not an instance
     // of a method of a generic type
     std::string generic_method;
@@ -871,7 +870,7 @@ class function_table final {
     explicit function_table(const definition_order& order) : order_{order} {}
 
     // the name has been checked
-    auto add(const token& src_loc_tk, std::string name, const type& return_type,
+    auto add(const token& src_loc_tk, std::string name,
              const stmt_def_func& func_def, std::string generic_method,
              const size_t definition) -> void {
 
@@ -879,7 +878,6 @@ class function_table final {
                    {
                        .src_loc_tk{src_loc_tk},
                        .def{&func_def},
-                       .type_ptr{&return_type},
                        .generic_method{std::move(generic_method)},
                        .definition{definition},
                    });
@@ -3045,13 +3043,13 @@ class toc final {
 
     // see 'definition_order'
     auto add_func(const token& src_loc_tk, std::string name,
-                  const type& return_type, const stmt_def_func& func_def,
-                  std::string generic_method, const bool is_ordered) -> void {
+                  const stmt_def_func& func_def, std::string generic_method,
+                  const bool is_ordered) -> void {
 
         definitions_.assert_function_not_defined(src_loc_tk, name,
                                                  generic_method);
 
-        funcs_.add(src_loc_tk, std::move(name), return_type, func_def,
+        funcs_.add(src_loc_tk, std::move(name), func_def,
                    std::move(generic_method),
                    is_ordered ? order_.current() : 0);
     }
@@ -3412,14 +3410,6 @@ class toc final {
         -> const stmt_def_func& {
 
         return *get_func_info_or_throw(src_loc_tk, name).def;
-    }
-
-    [[nodiscard]] auto
-    get_func_return_type_or_throw(const token& src_loc_tk,
-                                  const std::string_view name) const
-        -> const type& {
-
-        return *get_func_info_or_throw(src_loc_tk, name).type_ptr;
     }
 
     // no token names a missing 'main'

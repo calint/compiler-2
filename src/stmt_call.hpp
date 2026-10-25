@@ -176,7 +176,7 @@ struct generic_call {
         if (tm.is(term_kind::call) and not tc.is_func(tk.text()) and
             not tc.types().has(tk.text())) {
 
-            std::ignore = tc.get_func_return_type_or_throw(tk, tk.text());
+            std::ignore = tc.get_func_or_throw(tk, tk.text());
         }
 
         // note: a constant does not tell its type, like a literal
@@ -354,7 +354,7 @@ struct generic_call {
         tz.skip_to_close_paren();
 
         const type& return_type{
-            tc.get_func_return_type_or_throw(tk, tk.text()),
+            tc.get_func_or_throw(tk, tk.text()).result_type(),
         };
 
         return is_whole_argument() and
@@ -2214,7 +2214,7 @@ class builtin_arguments {
 // a call of a function, a method or a constructor
 //
 // parsing, in the constructors: the callee and its '('
-// ('read_generic_callee', a generic function through 'generic_call', and
+// ('read_callee', a generic function through 'generic_call', and
 // 'read_open_paren'), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), then the arguments
 // ('parse_arguments', each checked by 'assert_argument_usable' and
@@ -2266,10 +2266,10 @@ class stmt_call : public statement {
         : statement{tk, std::move(uops)}, func_name_{tk.text()} {
 
         const std::vector<size_t> deducing_args{
-            read_generic_callee(tc, tz, expected_type),
+            read_callee(tc, tz, expected_type),
         };
 
-        read_open_paren(tc, tz, "function name");
+        read_open_paren(tz, "function name");
 
         // note: a call of 'main' can only be in 'main' or after it, in a
         //       function that nothing calls, since names are defined before use
@@ -2277,8 +2277,6 @@ class stmt_call : public statement {
         if (func_name_ == reserved_names::main) {
             throw compile_error{tok(), "'main' cannot be called"};
         }
-
-        func_ = &tc.get_func_or_throw(tok(), func_name_);
 
         parse_arguments(tc, tz, deducing_args);
     }
@@ -2305,12 +2303,10 @@ class stmt_call : public statement {
         }
 
         const std::vector<size_t> deducing_args{
-            read_generic_callee(tc, tz, expected_type),
+            read_callee(tc, tz, expected_type),
         };
 
-        read_open_paren(tc, tz, "method name");
-
-        func_ = &tc.get_func_or_throw(tok(), func_name_);
+        read_open_paren(tz, "method name");
 
         assert_method_receiver(receiver);
 
@@ -2333,7 +2329,7 @@ class stmt_call : public statement {
         // note: 'func_instantiator::define_func' rejects a generic constructor
         assert(not tc.generics().has_func(func_name_));
 
-        read_open_paren(tc, tz, "constructor name");
+        read_open_paren(tz, "constructor name");
 
         parse_arguments(tc, tz, {});
     }
@@ -2964,12 +2960,14 @@ class stmt_call : public statement {
 
     // the name is read, a generic function has its type arguments before the
     // '(', e.g. 'convert<i8>(x)', and 'func_name_' becomes the name of its
-    // instance; returns 'generic_call::deducing_args'
-    [[nodiscard]] auto read_generic_callee(toc& tc, tokenizer& tz,
-                                           const type* const expected_type)
+    // instance; then the callee is resolved, an unknown one is an error here;
+    // returns 'generic_call::deducing_args'
+    [[nodiscard]] auto read_callee(toc& tc, tokenizer& tz,
+                                   const type* const expected_type)
         -> std::vector<size_t> {
 
         if (not tc.generics().has_func(func_name_)) {
+            func_ = &tc.get_func_or_throw(tok(), func_name_);
             return {};
         }
 
@@ -2980,18 +2978,18 @@ class stmt_call : public statement {
         func_name_ = std::move(generic.func_name);
         generic_tks_ = std::move(generic.generic_tks);
 
+        func_ = &tc.get_func_or_throw(tok(), func_name_);
+
         return std::move(generic.deducing_args);
     }
 
-    // the type is the return type of the callee, 'what' names the callee in
-    // the error of a missing '('
-    // note: an unknown callee is reported before a missing '('
-    auto read_open_paren(const toc& tc, tokenizer& tz,
-                         const std::string_view what) -> void {
-
+    // the type is the result type of the callee, resolved before, so an
+    // unknown callee is reported before a missing '('; 'what' names the
+    // callee in that error
+    auto read_open_paren(tokenizer& tz, const std::string_view what) -> void {
         const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
 
-        set_type(tc.get_func_return_type_or_throw(tok(), func_name_));
+        set_type(callee().result_type());
 
         if (not open_paren_tk) {
             throw compile_error{tz, std::format("expected '(' after {}", what)};

@@ -505,8 +505,6 @@ class stmt_def_func final : public statement {
 
         machine& x{tc.machine()};
 
-        x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
-
         x.comment({}, 0, "");
         source_def_comment_to(x, 0);
 
@@ -514,17 +512,13 @@ class stmt_def_func final : public statement {
             x.comment({}, 0, "array parameter lengths: {:n}", array_lengths);
         }
 
-        x.label(0, body_label(array_lengths));
-
-        x.reserve_frame_base();
+        x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
 
         const size_t frame_size_bytes{compile_in_frame(tc, 0, array_lengths)};
 
-        x.release_frame_base();
+        x.end_noinline_body();
 
         x.define_constant(frame_size_label(array_lengths), frame_size_bytes);
-
-        x.end_noinline_body();
     }
 
     // a suffix could collide with a method body, e.g. 'func.list.size' of
@@ -1011,8 +1005,8 @@ class stmt_def_func final : public statement {
         // see 'definition_order'
         const bool is_ordered{not instance_ and not head_.is_type_member()};
 
-        tc.add_func(head_.name_tk, std::string{name()}, result_type(), *this,
-                    generic_method, is_ordered);
+        tc.add_func(head_.name_tk, std::string{name()}, *this, generic_method,
+                    is_ordered);
     }
 
     // e.g. 'func point.at(x, y) self' builds a 'point'

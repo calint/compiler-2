@@ -102,8 +102,7 @@ struct target_description {
 //                  'emit_string_data', 'emit_zero_data', 'zero_padding'
 //   registers      'alloc_scratch_register', 'free_scratch_register',
 //                  'held_registers' (what a front-end step holds),
-//                  'free_named_register(s)', 'reserve_frame_base',
-//                  'release_frame_base', 'slot_register', 'register_view',
+//                  'free_named_register(s)', 'slot_register', 'register_view',
 //                  'alloc_named_register', 'make_register_operand',
 //                  'registers_for_target_call', 'reserve_variables_base' (in
 //                  'start' and the backend tests)
@@ -131,7 +130,8 @@ struct target_description {
 //                  'register_reporter'
 //   backend tests  'assert_registers_free', 'emitted_line_count',
 //                  'emitted_text', 'free_scratch_registers',
-//                  'release_variables_base'
+//                  'release_variables_base', 'reserve_frame_base',
+//                  'release_frame_base' (in a body the begin and end pair)
 class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
@@ -883,9 +883,15 @@ class machine {
         output.label(0, data_label);
     }
 
-    // the code emitted up to 'end_noinline_body' is a body of 'function'
-    auto begin_noinline_body(std::string function, std::string label) -> void {
-        target_assembler().begin_body(std::move(function), std::move(label));
+    // the code emitted up to 'end_noinline_body' is a body of 'function':
+    // its 'body_label', the frame base held and the entry code
+    // ('emit_frame_entry'), whose exit is 'return_function'
+    auto begin_noinline_body(std::string function,
+                             const std::string& body_label) -> void {
+
+        target_assembler().begin_body(std::move(function), body_label);
+        label(0, body_label);
+        reserve_frame_base();
     }
 
     // 'slot_address' is the address the callee finds in
@@ -1153,7 +1159,11 @@ class machine {
         return target_assembler().text_from(first_line);
     }
 
-    auto end_noinline_body() -> void { target_assembler().end_body(); }
+    // releases the frame base and ends the body
+    auto end_noinline_body() -> void {
+        release_frame_base();
+        target_assembler().end_body();
+    }
 
     // releases the variables base, optimizes the jumps and asserts that the
     // registers are balanced, then the target's last steps; called once at
@@ -1298,7 +1308,7 @@ class machine {
         assert(not state_.frame_base_reserved);
         assert(state_.registers.scratch_count() == 0);
 
-        push_allocation(token{}, 0, frame_base_register(), true);
+        push_backend_allocation(frame_base_register());
 
         state_.frame_base_reserved = true;
 
@@ -1328,8 +1338,10 @@ class machine {
     auto reserve_variables_base() -> void {
         assert(not variables_base_reserved_);
 
-        reserve_named_register(token{}, 0, variables_base_register(),
-                               default_type());
+        comment(token{}, 0, "allocate named register {}",
+                variables_base_register());
+
+        push_backend_allocation(variables_base_register());
 
         variables_base_reserved_ = true;
     }
@@ -1468,7 +1480,7 @@ class machine {
                                       const bool with_line) -> void = 0;
 
     // the code at the start of a 'noinline' body after the frame base is
-    // reserved, none by default
+    // reserved, none by default; 'return_function' is its exit
     virtual auto emit_frame_entry() -> void {}
 
     // the call of 'call_target', its registers checked
@@ -2140,7 +2152,7 @@ class machine {
         for (const register_pool::allocation& allocated :
              state_.registers.allocations()) {
 
-            if (not register_trace::is_listed(allocated)) {
+            if (allocated.is_backend_own) {
                 pool.push(allocated);
             }
         }
@@ -2156,6 +2168,7 @@ class machine {
             .src_loc_tk{},
             .indent{},
             .named{true},
+            .is_backend_own{true},
             .frame{current_trace_frame()},
         });
 
@@ -2205,6 +2218,21 @@ class machine {
             .src_loc_tk{src_loc_tk},
             .indent{indent},
             .named{named},
+            .is_backend_own{},
+            .frame{current_trace_frame()},
+        });
+
+        state_.trace.record_allocation(state_.registers);
+    }
+
+    // a register the backend holds itself, which no source location asked for
+    auto push_backend_allocation(const std::string_view register_name) -> void {
+        state_.registers.push({
+            .index{pool_index(register_name)},
+            .src_loc_tk{},
+            .indent{},
+            .named{true},
+            .is_backend_own{true},
             .frame{current_trace_frame()},
         });
 
@@ -2276,7 +2304,7 @@ class machine {
         size_t count{scratch_registers().size()};
 
         for (const register_pool::allocation& allocated : allocations) {
-            if (not register_trace::is_listed(allocated) and
+            if (allocated.is_backend_own and
                 is_scratch_register(allocated.index)) {
 
                 --count;

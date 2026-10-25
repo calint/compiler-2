@@ -271,6 +271,9 @@ class assembler_rv32i final : public assembler {
     };
 
     std::vector<record> records_;
+    // the jumps have been grown to reach their targets ('resolve_jumps'),
+    // the image layout and the text are then final
+    bool jumps_resolved_{};
 
   public:
     static constexpr std::array<std::string_view, 32> register_names{
@@ -670,8 +673,11 @@ class assembler_rv32i final : public assembler {
 
     // the address after the bss section, valid once jumps are resolved
     [[nodiscard]] auto memory_end_address() const -> size_t {
+        assert(jumps_resolved_);
+
         const image_layout image{layout_image()};
         const size_t bss{section_index(section::bss)};
+
         return image.bases.at(bss) + image.sizes.at(bss);
     }
 
@@ -733,6 +739,8 @@ class assembler_rv32i final : public assembler {
         while (grown) {
             grown = grow_out_of_reach(labels);
         }
+
+        jumps_resolved_ = true;
     }
 
     // a branch grown until it reaches 'target'
@@ -863,12 +871,16 @@ class assembler_rv32i final : public assembler {
     }
 
     auto write_resolved(std::ostream& os) -> void {
+        assert(jumps_resolved_);
+
         write_text(os);
         clear();
     }
 
     // 'binary' receives the sections as one image from address zero
     auto write_resolved(std::ostream& os, std::ostream& binary) -> void {
+        assert(jumps_resolved_);
+
         write_text(os);
         write_image(binary);
         clear();
@@ -1031,6 +1043,7 @@ class assembler_rv32i final : public assembler {
     auto clear() -> void {
         lines().clear();
         records_.clear();
+        jumps_resolved_ = false;
     }
 
     [[nodiscard]] auto collect_symbols(const image_layout& image) const

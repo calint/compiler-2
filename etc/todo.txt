@@ -124,17 +124,51 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'get_func_return_type_or_throw' goes, 'stmt_call' resolves
             'func_' first and reads 'callee().result_type()'; the misplaced
             "=> found" note about '--memory' goes from that item
+       => D.1 done (2026-10-25): 'func_info::type_ptr', the
+          'return_type' parameters and 'get_func_return_type_or_throw' go;
+          'stmt_call' resolves the callee in 'read_callee' (was
+          'read_generic_callee', which also needed it for clang-tidy), then
+          'read_open_paren' sets 'callee().result_type()'; error order kept;
+          the item moved to resolved with a note about the '--memory' text
        D.2. the ')' that ends a parenthesized list read by one named step in
             'expr_arith' and 'expr_bool' (F1)
+       => D.2 done (2026-10-25): 'read_close_paren' in both ('is_closed'
+          renamed), called first in each loop; 'read_connective' reads only
+          a connective; 'throw_unclosed_list' in compile_error.hpp
        D.3. the leading 'not's as a class beside 'unary_ops' (F2)
+       D.3. the leading 'not's as a class beside 'unary_ops' (F2)
+       => D.3 done (2026-10-25): 'condition_nots' in expr_bool.hpp (parse,
+          'is_empty', 'is_negated', 'source_to'), held by 'expr_bool_op' and
+          'expr_bool'; 'parse_not_tokens' and 'is_negated_by' go
        D.4. the backend's own registers (variables base, frame base) by a
             holder kind in 'allocation', the pool answers it, not the report
             predicate (T1); a scratch assert first that the two bases are the
             only named allocations without a location
+       => D.4 done (2026-10-25): 'allocation::is_backend_own', set by
+          'push_backend_allocation' (the frame base, the variables base) and
+          the frame base of 'noinline_body_pool'; 'is_listed' reads it,
+          'noinline_body_pool' and 'scratch_register_count' ask it; a scratch
+          assert that the flag equals "named without a location" held in
+          both suites and the CLI tests and failed only in the rv32i backend
+          test, whose driver allocates named registers with an empty token,
+          which the old rule took for the backend's own (the case the finding
+          warned of); that test passes with the new rule
        D.5. a noinline body opened and closed by one pair in 'machine', the
             rv32i entry code out of 'reserve_frame_base' (B1)
+       => D.5 done (2026-10-25): 'begin_noinline_body' places the body
+          label, holds the frame base and emits the entry,
+          'end_noinline_body' releases it and ends the body; the comments
+          come before the pair and 'define_constant' after it (no size, the
+          listing is equal); 'reserve_frame_base' and 'release_frame_base'
+          listed under backend tests; 'emit_frame_entry' names its exit
        D.6. 'assembler::write' moves to 'assembler_x86_64', rv32i records
             that its jumps are resolved (B2)
+       => D.6 done (2026-10-25): 'write' in 'assembler_x86_64';
+          'assembler_rv32i::jumps_resolved_' set by 'resolve_jumps', asserted
+          by 'write_resolved' and 'memory_end_address', reset by 'clear';
+          both suites, the CLI tests, test-rv32i, clang-tidy,
+          check-messages, fuzz-reject, generics, methods, exprs, calls and
+          options clean for phase D
     E. asks
        1. E2, medium move: the constant passes of 'expr_arith' into a helper
           class in the same file ('arith_steps': 'step', the passes in order
@@ -306,14 +340,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     keep adding virtuals
     => 2026-10-19: 24 -> 20 by the design clarity item, which weighed the
        'std::variant' and rejected it, see 'etc/todo-resolved.txt'
-[ ] easy: design: 'func_info::type_ptr' repeats the return type of
-    'func_info::def', every entry has a definition since the built-ins left
-    'function_table'; 'get_func_return_type_or_throw' could read the
-    definition and 'add_func' lose the parameter
-    => found (2026-10-22): not behavior-preserving, main.cpp checks
-       '--memory' for every target and only fpga uses it; decide first
-       whether '--memory' with another target is an error (today the range
-       is checked for all)
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------

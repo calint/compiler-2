@@ -9,6 +9,8 @@
 #include <functional>
 #include <limits>
 #include <optional>
+#include <ostream>
+#include <print>
 #include <ranges>
 #include <span>
 #include <string>
@@ -357,6 +359,19 @@ class assembler_x86_64 final : public assembler {
         set_code_section(which == section::text);
 
         add_directive(std::string{section_directive(which)});
+    }
+
+    // writes the lines as they are, nasm resolves the jump distances
+    auto write(std::ostream& os) -> void {
+        assert(not is_capturing());
+
+        for (const line& l : lines()) {
+            if (not l.removed) {
+                std::println(os, "{}", l.text);
+            }
+        }
+
+        lines().clear();
     }
 
     //
