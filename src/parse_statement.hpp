@@ -305,7 +305,7 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
                             in_quotes(tk.text()), tk.text())};
     }
 
-    // e.g. 'foo(x)' or 'show<name>(x)', the call reads the type arguments
+    // e.g. 'f(x)' or 'show<name>(x)', the call reads the type arguments
     if (next == '(' or tm.is(term_kind::generic_call)) {
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
                                            expected_type);

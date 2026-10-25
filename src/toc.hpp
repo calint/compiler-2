@@ -2095,8 +2095,8 @@ class ident_builder final {
 // resolves a name by 'scope_stack::lookup_below' to its operand, a variable,
 // a register or a constant ('resolve'), and to the storage it reaches
 // ('resolve_storage'); a binding is followed into the scopes of the caller;
-// an element is the walk's to tell for a binding to one, 'make_ident_info'
-// tells it for an index of the path itself
+// a binding to an element gives the element ('as_element'), an index written
+// in the path itself is handled by the free 'make_ident_info'
 class ident_resolver final {
     std::reference_wrapper<const scope_stack> scopes_;
     std::reference_wrapper<const ::machine> machine_;

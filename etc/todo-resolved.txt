@@ -1,6 +1,366 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review round 16 (2026-10-25, six reviewers: front end F,
+    expressions E, statements and calls S, tables and checks T, backends B, a
+    newcomer N tracing one program; findings in the session scratchpad r16,
+    the claims spot-checked: B1, S1, T1, E1, E4, N1, N4 confirmed with the
+    current binary): each step a pure refactor unless marked, measured
+    against the previous binary, a pause for a commit after each phase
+    A. docs and comments (no code change)
+       A.1. five comments in 'machine' on the wrong function since round 15
+            H.4 (B1): 'begin_noinline_body', 'emit_discarded',
+            'emit_runtime', 'emitted_line_count' get theirs back;
+            'zero_padding' keeps one comment
+       => A.1 done (2026-10-25): the four comments back on their
+          functions, 'zero_padding' one comment naming 'dst_type'
+       A.2. comments elsewhere (E7, F10, T8, F6, S5): 'expr_bool' the comment
+            of 'is_memory_operand' above 'is_equality', the stray line above
+            'make_memory_operand_info'; toc.hpp:3284 'source_files::for_label'
+            -> 'source_locations::for_label'; README 1469 "no storage check
+            while parsing"; 'dry_run_depth_' names the capacity check too; the
+            'frame_part' local named 'storage'; 'lut' says why linear for the
+            program-wide tables; the stale '// whitespace' of 'expr_arith'
+            and the rule of who prints the whitespace before a value written
+            once; the 'statement' group comment gives the real rules of
+            'visit_call_effects' (a value) and 'visit_reads'
+       => A.2 done (2026-10-25): all listed; the whitespace rule in the
+          'statement' class comment, the 'expr_arith' line a 'note:'; the
+          'checks_storage_capacity' access and the 'lut::put' assert are code,
+          moved to B.4
+       A.3. README 2.11 "where in the code" for generics like 6.8 (N2):
+            'func_instantiator', 'type_instantiator', 'generic_call',
+            'generic_reparse', 'generic_scope', 'generic_registry',
+            'generic_trace' with their files; the generics.hpp header names
+            the files; reading order step 10 names stmt_def_type.hpp
+       => A.3 done (2026-10-25): README 2.11 and step 10; the generics.hpp
+          header names the instantiators, 'generic_call' and their files
+       A.4. a dat in README 1.2 or 6.6 (N3.1): placed by the parse in
+            'data_table' (why "before any 'var'"), declared again by the
+            compile like a global, its bytes by 'emit_data_section'
+       => A.4 done (2026-10-25): a paragraph at the start of README 6.6
+       A.5. the label prefixes (B7): 'baz_*' against '.Lbaz_*' stated once
+            in the 'machine' class comment, or the reason the rv32i routines
+            are local; no renames
+       => A.5 done (2026-10-25): the label table of 'call_path_at' (the
+          one list of label forms) states the rule as it is; no reason for
+          the rv32i '.L' routines is recorded, none invented
+       A.6. "frame" in 'toc' (T4): the map limits the claim to 'scope' and
+            'storage_layout'; the register trace and 'call_frame' use it for
+            a call level (the rename: see the asks)
+       => A.6 done (2026-10-25)
+       A.7. README 2.10.2: a type argument is a type name, not an array, 'a
+            T[]' takes an array (N7, the docs half)
+       => A.7 done (2026-10-25)
+    B. leftovers and dead code
+       B.1. 'call_site::call_mode' goes (S1): since round 15 D.2 it equals
+            'func->is_inlined()' at every plan; 'argument_plan(tc)' reads the
+            callee, the four asserts on the mode assert the callee
+       => B.1 done (2026-10-25): 'call_mode' and 'call_plan::mode' gone,
+          'argument_plan(tc)' keys the temporary rule on 'func->is_inlined()';
+          the asserts read the callee
+       B.2. 'stmt_call' members read 'func_' (S2): the 10 members with a
+            'func' parameter and the two locals; the statics given only
+            '*call_.func' stay unless asked (see asks)
+       => B.2 done (2026-10-25): a private 'callee()' (set at the parse
+          before the arguments) read by the 10 members and the two former
+          locals; 'record_uses_of_call' names its local 'callee_uses'
+       B.3. scratch builds first, then remove (S5, E5/F10): the
+            'visit_call_effects' override of 'stmt_builtin_exit' (left from
+            'expression'); the lookup in 'expr_arith::type_of_first_element'
+            for an error the parse gives since round 14 F.2, 'assert_number'
+            reads 'get_type()', the 'stmt_identifier' header sentence about
+            functions
+       => B.3 done (2026-10-25): a scratch build that aborted in the
+          override, on a throw of the lookup and on a type differing in
+          'assert_number' passed both suites, the CLI tests, fuzz-reject 600,
+          fuzz-generics 300 and fuzz-exprs 1000; removed, the 'tc' that only
+          the lookup used goes from 'assert_number',
+          'validate_arithmetic_operands' and 'end_list'; note: the commit
+          07bcc6fd holds the scratch aborts, this step removes them
+       B.4. small moves and access (S7, B6, T3, N6): 'range_check' beside
+            'assert_constant_range'; 'machine::is_stack_pointer' protected,
+            'free_scratch_registers' out of the front-end list;
+            'ident_builder' helpers private, 'replace_binding_base' a member
+            of 'ident_path'; 'deduce_array_copy' -> 'deduce_whole_array_copy'
+       => B.4 done (2026-10-25): as listed, 'ident_path::rebased';
+          'is_stack_pointer' private (only 'machine' calls it);
+          'free_scratch_registers' stays public for the rv32i backend test,
+          listed under backend tests; from A.2: 'checks_storage_capacity'
+          private, 'lut::put' asserts a new name
+       B.5. 'call_or_identifier' a variant (F7): exactly one of the two
+       B.5. 'call_or_identifier' a variant (F7): exactly one of the two
+       => B.5 done (2026-10-25): the three callers use 'std::get_if' and
+          'std::get'; both suites, the CLI tests and clang-tidy clean for
+          phase B
+    C. tables (toc)
+       C.1. one origin per offset (T1): 'storage_location::base_offset'
+            named for "from the frame base, or 'dat' at the root"; one
+            'offset_from_variables_base' holds the shift the three callers
+            write by hand
+       => C.1 done (2026-10-25): 'storage_location::next_offset_bytes'
+          ("from the frame base or, at the root, from 'dat'");
+          'offset_from_variables_base' holds the shift, used by 'place_dat',
+          'allocate_var' and 'next_frame_address'; 'variables_base_shift_bytes'
+          folded into it
+       C.2. a scope's bytes have one writer (T2): 'storage_layout::
+            allocate_var' records the bytes as its last step, 'toc::add_var'
+            loses the out-of-band number and the two "not yet" notes; the
+            checks stay before the update
+       => C.2 done (2026-10-25): 'scope::add_storage_bytes' called by
+          'allocate_var' after its checks; 'scope::add_var(var, kind)'; the
+          body peak is read after the bytes are held, the "not yet" note goes
+       C.3. the dat path (T7, N3.2): 'allocate_dat' -> 'place_dat'; the
+            "dat before var" flag moves from every 'scope' to 'toc'
+       => C.3 done (2026-10-25): 'place_dat'; 'toc::is_global_var_declared_'
+          set by 'add_var' for a global that is not a dat; the dat branch of
+          'add_var' says it is the compile half of 'add_dat'
+       C.4. one word for the deepest scope count (T6): 'peak_scope_count'
+            in 'scope_stack', 'usage_statistics', 'dry_run_scope'; the call
+            limit keeps 'max_scope_count'
+       => C.4 done, changed (2026-10-25): 'max_' names the measured peaks
+          ('max_body_vars_size_bytes', 'max_scratch_registers', the report's
+          "max ... in use") and the limits ('call_limits::max_*'), so a
+          'peak_' would break the pattern; the two words were "depth" and
+          "scope count": 'scope_stack' says 'max_scope_count',
+          'set_max_scope_count', 'track_scope_count', 'scope_entry'
+          'outer_scope_count_'; the limit stays qualified by 'call_limits'
+       C.5. a 'static_assert' that the operator texts of the spelling tables
+            are in 'tokenizer::operators_' (T5)
+       => C.5 done (2026-10-25): two 'static_assert's in 'tokenizer'
+          (operand.hpp, layer 1, included); a scratch copy without '%' fails
+          to compile; F.1 adds the unary table to it; both suites, the CLI
+          tests, clang-tidy, fuzz-reject 600, fuzz-data 300 and fuzz-calls
+          300 clean for phase C
+    D. calls
+       D.1. the argument temporaries kept as values (S4): 'inline_call'
+            keeps what 'make_argument_temporary' returns and passes it to
+            'make_bindings', 'dry_run' takes the span the noinline call
+            holds; the name stays the label, no longer the link
+       => D.1 reduced (2026-10-25): the name is the link by design, an
+          inlined recursion declares the temporary again at each level and
+          the binding resolves it by name in the caller's scope; keeping the
+          handle would add a parameter to five functions in two shapes (an
+          optional per argument inlined, the noinline arguments in the dry
+          run) to save one storage lookup; done instead: a 'note:' in
+          'make_bindings' that a temporary is bound by the name
+          'make_argument_temporary' gave it, and
+          'call_site::temporary_result_name' beside
+          'temporary_argument_name'
+       D.2. 'compile_in_frame' and 'compile_frame_body' one function, or
+            names that say the split (S6)
+       => D.2 done (2026-10-25): one 'compile_in_frame', the header table
+          names it; both suites, the CLI tests, clang-tidy and fuzz-calls 300
+          clean for phase D
+    E. expressions
+       E.1. a step says what it is (E1): 'is_merged' is also true for a
+            constant kept in place under '--checks=overflow' ('a * 3' gets
+            "src: folded constant '* 3'" at the list, 'a / 3' "src:
+            constant" at the element); a 'step_kind' {computed,
+            constant_element, merged}, or a 'has_fixed_role()' predicate;
+            'step_value' goes; listings equal unless the comment is made
+            honest (then the one comment line changes, ask)
+       => E.1 done (2026-10-25): 'has_fixed_role(step)' (a constant
+          element whose operator the passes do not regroup) replaces the
+          'is_merged' flag and the 'is_checked_constant' local; the old flag's
+          other case was asserted unreachable, so it is equivalent; the
+          'step_value' parameter goes; the comment of '* 3' under the
+          overflow check stays (not asked)
+       E.2. the condition's mode as a type (N1, listings change with
+            '--nopt'): 'condition_target' a variant {branch_targets,
+            stored_into}; 'branch_required' and the equal-labels convention
+            go; a stored condition stops emitting the two jumps to the next
+            label that the optimizer removes today; the report name "removed
+            same target branches" and 'same_outcome_branches' one word
+       => E.2 done, changed (2026-10-25): the variant does not fit: a
+          nested list inside a stored condition branches to two labels and
+          stores into 'dst' at once, so branch and store are not exclusive;
+          the store-only case is "both outcomes at one label":
+          'branch_targets::is_stored_only()' names it, the last element of
+          such a condition branches nowhere (the scalar path takes the
+          'stored_action' like the other two, the final 'jmp' goes); the
+          optimized code is equal, '--nopt' loses the two dead jumps (test
+          0006 diffs, 37 -> 35 and 52 -> 50 instructions), the report counts
+          of removed jumps drop; 'same_outcome_branches' ->
+          'same_target_branches' like the report
+       E.3. 'expr_bool' inversion with one name per scope (E4, listing
+            change): 'outer_inverted' and 'inverted'; the label of an element
+            names its connective: 'not (a and b and c)' prints "'or'
+            inverted" for 'c' too, not "'and' inverted"
+       => E.3 done (2026-10-25): 'compile_rec' and 'compile_with_label'
+          take 'outer_inverted', the list's own inversion is 'inverted'
+          throughout; 'compile_branch_if_false' takes the connective
+          ('joined_by(inverted)') for its label; no test listing has the
+          label
+       E.4. one assert per rule (E3): 'assert_count_fits',
+            'assert_string_fits' called by the parse (known length) and the
+            plan (unsized); 'throw_type_mismatch' for the 8 "expected type"
+            sites
+       => E.4 done, reduced (2026-10-25): 'throw_type_mismatch' in
+          compile_error.hpp for the 8 sites; the parse and the plan keep
+          their checks (the tokens and conditions differ: the parse checks
+          before the next element at the tokenizer), one message function
+          each ('too_many_elements', 'string_overflows') with a comment that
+          the parse checks a known length and the plan an unsized one;
+          "source must be an array" stays at its three sites (two messages,
+          one in the dat walk of the E2 ask)
+       E.5. 'expr_arith::options' named constructors (F5): 'plain',
+            'enclosed', 'implied', 'after'
+       => E.5 done (2026-10-25): the four statics; both suites, the CLI
+          tests, clang-tidy, check-messages, fuzz-exprs 2000, fuzz-flow 300,
+          fuzz-data 300, fuzz-reject 600, fuzz-ub 200 and fuzz-options clean
+          for phase E
+    F. front end
+       F.1. an operator as read is one holder (F1, and the open todo item
+            'arithmetic_operator::assign'): '{token, op}' for arithmetic,
+            comparison and unary ('unary_spellings'); 'expr_arith' one
+            vector, not two parallel; the connectives 'and'/'or' as an enum
+            read once; 'source_text' loses its special cases; the 'assign'
+            role leaves the backend enum (an empty op is "copied"); the two
+            walks of 'unary_ops' one
+       => F.1 done, reduced (2026-10-25): 'spelled_operator<Op>' {tk, op}
+          in token.hpp holds an operator as read: 'expr_arith::ops_' (one
+          vector, 'op_tks_' gone), 'unary_ops' (with 'unary_spellings' and
+          'unary_operator_of' in operand.hpp, the three 'is_text' tests and
+          'is_unary' gone, 'evaluate_at' and 'evaluate_constant' one walk
+          'evaluate'), 'expr_bool::ops_' ('connective' and 'connective_of',
+          used by the four sites); 'source_text' lost the 'negate' special
+          case; the tokenizer asserts the unary table too; the comparison
+          struct already held both and stays; the 'assign' half discarded:
+          it is the op of a list's first step, which the merge passes and
+          the folded-source comments read as not regroupable, an optional
+          in its place would add a dereference to about 20 uses for one
+          marker; the enum comment says the methods never take it
+       F.2. "an operator is next" asked by name (F2): binary and unary
+            questions on the tokens; 'is_parenthesized_operand' keeps the
+            lone '='/'!' with its reason; 'continues_expression' asks the
+            binary one ('var x = i8 ~1' then says "unexpected '~'", a test)
+       => F.2 done (2026-10-25): 'tokenizer::is_binary_operator_next' and
+          'is_unary_operator_next'; 'is_parenthesized_operand' is the binary
+          one or a lone '='/'!'; 'expr_type' asks the unary one;
+          'continues_expression' the binary one: 'var x = i8 ~1' and 'var q
+          = p ~1' report "unexpected '~'" at the '~' (were "'i8' is a type,
+          not a value" and "an instance of 'p' is not a number"), tests 1667
+          and 1668
+       F.3. no read, put back and read again (F3): 'parse_operand' takes the
+            'unary_ops' read; 'expr_bool_op' takes its 'not's;
+            'unary_ops::put_back' and the whitespace dance go
+       => F.3 done (2026-10-25): 'parse_operand' takes the 'unary_ops' the
+          element read ('decouple.hpp' declares 'unary_ops');
+          'expr_bool::parse_element' decides on a probe ('is_list_next')
+          whether a list follows, so a comparison reads its 'not's once and
+          the list reads them for itself: 'rewind_to_position' there, the
+          whitespace dance and 'unary_ops::put_back' go; the token order is
+          unchanged
+       F.4. the path parse resolves each prefix once (F4): the checks take
+            the resolved prefix, 'src_loc_tk' of the loop goes
+       => F.4 done (2026-10-25): the loop resolves the prefix once per
+          name ('std::optional<ident_info> prefix'), 'assert_indexable',
+          'assert_element_selected', 'assert_not_method_call',
+          'read_continuation', 'is_method_name' and 'resolve_type' take it
+          (four became static); both suites, the CLI tests, clang-tidy,
+          fuzz-reject 600, fuzz-generics 300, fuzz-exprs 2000,
+          fuzz-constructs and fuzz-methods 300 clean for phase F
+    G. backends
+       G.1. one section vocabulary (B2): 'assembler::section' {code,
+            read_only, data, variables} and a non-virtual 'switch_section'
+            that keeps the code-size rule; the 'begin_*_section' steps and
+            both 'set_code_section' calls go
+       => G.1 reduced (2026-10-25): one enum does not fit: x86_64 has a
+          section rv32i lacks (the '.bss' of its number buffer, apart from
+          the variables) and rv32i indexes its image tables by its enum, so a
+          shared enum needs a value one target never uses or moves the buffer
+          (listings and the variables layout 'baz.ld' asserts); done: the
+          'assembler' header states the split (the three sections 'machine'
+          asks for, each subclass's own enum, the code-size rule in every
+          'switch_section')
+       G.2. the register tables read in one place (B5): the constants that
+            only fill a table sit in it; 'emit_variables_base_load' and
+            'far_jump_register' read the getters
+       => G.2 done (2026-10-25): the variables base and slot registers are
+          literals in 'x86_64_target' and 'rv32i_target' (the slot's reason
+          moved with it), their constants go; 'emit_variables_base_load' and
+          'far_jump_register' read the getters; the scratch arrays stay named
+          (a span needs storage); the class comments point at the tables
+       G.3. the bulk operations named by what is known (N5): 'copy' ->
+            'copy_block', 'copy_bytes' -> 'store_bytes', 'arrays_equal' ->
+            'equal_elements' beside 'memory_equal' or 'equal_block'; the map
+            groups "constant size / run-time count"
+       => G.3 done (2026-10-25): 'copy_block', 'store_bytes',
+          'equal_elements' ('memory_equal' kept), in the backends, the
+          callers, the rv32i backend test and README; the 'machine' map
+          groups the bulk operations by a constant size and a run-time
+          count; both suites, the CLI tests, test-rv32i and clang-tidy clean
+          for phase G
+    asks:
+       1. N4, the design goal: the default type is 'i64' on x86_64 and
+          'i32' on rv32i, so a program mixing it with a fixed width is
+          accepted on one target and rejected on the other (two reproduced:
+          'a[i] <= lim' and 'array_copy' from an untyped dat); README 8 and
+          AGENTS.md say a result never depends on the target; recommended:
+          README 1.7 and 8 say it now, and a section 3 item for the language
+          question (one default type, or a target-neutral rule for untyped
+          values)
+          => ask 1 done (2026-10-25): README 1.7 (the default type per
+             target, an example, a portable program writes the type) and
+             8 (acceptance can depend on the target through it); a section 3
+             item for the language question
+       2. E2 against S kept 3: a dat lays out its literal with its own
+          'elem' walk instead of the 'write_plan' (about 200 lines; data
+          listings change, bytes must stay equal); recommended: a scratch
+          check that the plan's offsets fit data directives, then decide
+          => ask 2 discarded (2026-10-25): the plan of a literal is in
+             offset order, but it packs constant elements into one
+             'bytes_write' where the data keeps typed lines ('dd 2, 3, 5, 7'
+             would become bytes unless a special case unpacks them), and a
+             dat folds and checks its values at the parse while the plan is
+             made at compile time, which moves its errors; the reason is in
+             the 'stmt_def_dat' class comment; the scratch build was not
+             needed for this
+       3. S3, rename: "result" for a function's result ('returns_',
+          'func_return_info', 'returns()' -> 'result()', 'has_result()'),
+          the type held once; medium churn; recommended: yes, rename then
+          drop the type pointer
+          => ask 3 done (2026-10-25): 'func_return_info' goes, the node
+             keeps 'std::optional<func_result> result_' ('func_result_syntax'
+             renamed, its comment says the type is the node's);
+             'result()', 'has_result()' (was 'returns()'), 'result_type()'
+             the one home of the type; 'bind_result' takes the result and its
+             type; the uses that need the tokens check the optional itself
+       4. B3 against round 15 kept 1: 'default_type()' non-virtual from the
+          target table, the same fact as 'builtin_roles::address';
+          recommended: yes
+          => ask 4 done (2026-10-25): 'machine::default_type()' non-virtual,
+             the integer of the width of an address (asserted 4 or 8 bytes),
+             the two overrides go; 'builtin_roles::address' returns it
+       5. N7, the message: "a type argument is a type name, an array
+          parameter is written 'a T[]'" at the '[' (one message, a test);
+          recommended: yes
+          => ask 5 done (2026-10-25): 'generic_arg_tokens::parse' reports
+             at the '[', test 1669
+       6. T4 rename of the register trace's "frame" to "call";
+          recommended: no, A.6 is enough
+          => ask 6 not done (2026-10-25, as recommended)
+       7. S2 statics ('assert_call', 'call_kind', 'array_argument_lengths',
+          'has_result_temporary') as members; recommended: no
+          => ask 7 not done (2026-10-25, as recommended); both suites, the
+             CLI tests, test-rv32i, clang-tidy, check-messages,
+             check-readme-names, fuzz-calls 300 and fuzz-generics 300 clean;
+             round 16 complete
+    not planned (low confidence, the gain unclear): E6 one operand kind,
+    T9 'operand' as a variant, F8 one built-in dispatcher, F9 line lookup
+    out of main, B4 stack placement enum, N3.3 dat found by id
+    order: A, B, C, D, F, E, G, then the asks
+    kept (reviewers, with reasons in r16): 'address_emitter' callback;
+    'has_receiver_in_register' forwarder; three ways built-ins read
+    arguments; two body walks in 'parse_body'; 'scope' mixing parse and
+    compile state; 'array_len()' beside 'array_shape::length()'; the two
+    path merges; 'ident_path' string and parts; the character set of
+    'is_parenthesized_operand'; 'bulk_operands' count first; manual scratch
+    register pairs; 'array_copy' two paths; 'seen_operator' without trailing
+    whitespace; 'tokenizer' probe copies
+    => done (2026-10-25): every phase A-G and the asks handled, each step
+       with its note above; committed
 [-] easy: low priority: 'arithmetic_operator::assign' (operand.hpp) is not
     an operation: 'expr_arith' uses it as the operator of the first element
     and 'source_text' prints it as '='; the role leaves the enum (round 13

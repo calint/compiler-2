@@ -35,7 +35,9 @@
 //   'assert_not_written_after'
 //                  where a backend computes an operand before ones that come
 //                  earlier in the source, e.g. the count of 'array_copy', the
-//                  earlier ones write nothing it reads
+//                  earlier ones write nothing it reads; the io built-ins
+//                  compute the count before the buffer the same way
+//                  ('stmt_builtin_io::assert_count_not_written_by_buffer')
 //
 // the definite assignment ('ub_assigned.hpp') walks the statements in the same
 // order by name, it runs before 'toc' resolves the names; the aliasing of the

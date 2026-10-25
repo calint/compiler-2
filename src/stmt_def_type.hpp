@@ -23,6 +23,22 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 
+//
+// a type definition, e.g. 'type point { x, y }', is the classes below, in
+// reading order:
+//
+//   'type_fields'            the braces, fields and delimiters of a body
+//   'comment_type_layout', 'assert_arg_count', 'assert_generic_type',
+//   'parse_generic_args'     the free helpers of the two classes after them
+//   'generic_type_use'       the generic type named after an '='
+//   'stmt_def_type'          a plain type, 'type point { x, y }'
+//   'stmt_def_type_generic'  a generic definition, kept as text
+//   'type_instantiator'      makes the instance of a generic type
+//   'stmt_def_type_alias'    'type str = text<8>', an instance
+//   'make_stmt_def_type'     reads the name and picks the statement (last in
+//                            the file, it uses the others)
+//
+
 // the braces, fields and delimiters of 'type point { x, y }'
 class type_fields final {
     token open_brace_tk_;
@@ -129,6 +145,7 @@ inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
     x.comment({}, 0, "");
 }
 
+// a generic type is given one argument for each of its parameters
 inline auto assert_arg_count(const token& generic_tk,
                              const generic_type_info& generic,
                              const std::span<const token> arg_tks) -> void {

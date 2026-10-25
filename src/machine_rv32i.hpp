@@ -89,6 +89,8 @@ class machine_rv32i : public machine {
 
     static constexpr size_t max_padding_gaps_zeroed_one_by_one_{8};
 
+    // what a sector routine may change besides a0, free at the call, see
+    // 'call_io_routine'
     static constexpr std::array<std::string_view, 4> sector_clobbered_{
         "a3",
         "a4",
@@ -650,7 +652,9 @@ class machine_rv32i : public machine {
     virtual auto emit_read_call(const size_t indent) -> void = 0;
 
     // the routines that the calls of 'sector_read' and 'sector_write' jump
-    // to, each only when it is used
+    // to, each only when it is used; a routine takes the sector in a0, the
+    // address in a1 and the size in a2, returns through a7 and changes only
+    // a0 and 'sector_clobbered_'
     virtual auto emit_sector_routines(const bool read_used,
                                       const bool write_used) -> void = 0;
 

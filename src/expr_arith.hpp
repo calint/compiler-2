@@ -1413,9 +1413,6 @@ class expr_arith final : public statement {
         return constant_arith::apply_operation(lhs, op, rhs, width_type);
     }
 
-    // the constants of a run of the operator can be merged and moved to the
-    // end of the run, '-' is the add of a negated value; not '/', '%' and
-    // shifts, whose operands have fixed roles
     // a constant element whose operator the passes do not regroup, a divisor
     // or a shift count; a regroupable constant element is merged, or kept as
     // it is under the overflow check, where the passes are off, and is then
@@ -1455,6 +1452,9 @@ class expr_arith final : public statement {
                src.operand_path()->get_unary_ops().is_only_negated();
     }
 
+    // the constants of a run of the operator can be merged and moved to the
+    // end of the run, '-' is the add of a negated value; not '/', '%' and
+    // shifts, whose operands have fixed roles
     [[nodiscard]] static auto is_regroupable(const arithmetic_operator op)
         -> bool {
 

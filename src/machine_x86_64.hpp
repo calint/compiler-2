@@ -38,9 +38,8 @@
 //   operations   'emit_op' chooses the form of an instruction,
 //                'with_lowered_addresses' fits an operand into one,
 //                'multiply_by_constant', 'emit_signed_divide', 'shift'
-//   memory       'copy_block', 'store_bytes', 'zero' unrolled or with 'rep',
-//   the
-//                bulk operations with 'rsi', 'rdi' and 'rcx'
+//   memory       'copy_block', 'store_bytes', 'zero' unrolled or with
+//                'rep', the bulk operations with 'rsi', 'rdi' and 'rcx'
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
 //   checks       'check_bounds', 'check_divisor', 'check_shift_count',
 //                'check_copy_overlap', 'check_frame_capacity', each jumps to

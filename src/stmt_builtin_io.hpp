@@ -473,9 +473,11 @@ class stmt_builtin_io final : public statement {
         return *args_.at(buffer_index_).bare_path();
     }
 
-    // every argument into the registers of the call in the order the target
-    // takes them; the count and start are in elements, the byte count is
-    // computed last
+    // every argument into the register of the call the target takes it in,
+    // computed in the order descriptor, count, start, buffer address, then
+    // the byte count; the count and start are in elements
+    // note: the count before the buffer is safe by
+    //       'assert_count_not_written_by_buffer'
     [[nodiscard]] auto
     compile_arguments(toc& tc, const size_t indent,
                       const std::span<const std::string_view> registers,

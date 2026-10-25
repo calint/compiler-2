@@ -1539,9 +1539,9 @@ class inline_call {
 //      asserts it); the errors that depend on this call, e.g. shared
 //      storage, are found by a dry run of the body as an inlined call
 //      ('dry_run_body', see 'etc/docs/README.md' chapter 4)
-//   3. the addresses are written to the callee frame
-//      ('frame_slot_addresses', 'write_frame_slots') and the function is
-//      called
+//   3. the addresses are written to the callee frame ('populate_frame':
+//      'frame_slot_addresses', 'write_frame_slots' and the frame and stack
+//      checks) and the function is called
 class noinline_call {
     // what the call kind reads of the result or of an argument
     struct call_kind_item {
@@ -2221,7 +2221,7 @@ class builtin_arguments {
 // 'read_open_paren'), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), then the arguments
 // ('parse_arguments', each checked by 'assert_argument_usable' and
-// 'assert_argument_writable')
+// 'assert_argument_writable'), then 'record_uses_of_call'
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
@@ -2421,6 +2421,9 @@ class stmt_call : public statement {
     // the calls in the arguments run first, then the body reads and writes
     // the globals it uses and may write an argument passed to a 'mut'
     // parameter, its whole storage
+    // note: per parameter as the signature says, like the record of a
+    //       recursive call ('record_uses_of_call'), so no fixed point over
+    //       the bodies is needed
     auto visit_call_effects(const toc& tc,
                             const call_effect_visitor visitor) const
         -> void override {

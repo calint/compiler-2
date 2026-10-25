@@ -75,12 +75,11 @@ class machine_rv32i_linux final : public machine_rv32i {
         a.ecall(indent);
     }
 
-    // the routines take the sector in a0, the address in a1 and the size in
-    // a2, return through a7 and may change a0 and a3 to a7. an operating
-    // system transfers the sectors of the image file: the image file is
-    // opened at the first transfer, its descriptor and sector count
-    // kept in '.Lbaz_sd_card', a sector past the end, a failed open or
-    // a short transfer panics
+    // the registers as 'machine_rv32i::emit_sector_routines' says; an
+    // operating system transfers the sectors of the image file: the image file
+    // is opened at the first transfer, its descriptor and sector count kept in
+    // '.Lbaz_sd_card', a sector past the end, a failed open or a short transfer
+    // panics
     auto emit_sector_routines(const bool read_used, const bool write_used)
         -> void override {
 

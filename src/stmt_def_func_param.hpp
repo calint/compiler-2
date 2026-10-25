@@ -10,6 +10,8 @@
 #include "toc.hpp"
 #include "token.hpp"
 
+// a parameter 'name [mut] [type][[]]', or the implicit 'self' of a method,
+// which has no source
 class stmt_def_func_param final : public statement {
     std::optional<token> mut_tk_;
     // none for the default type
@@ -181,6 +183,7 @@ class stmt_def_func_param final : public statement {
                           : tc.builtins().default_type());
     }
 
+    // the implicit 'self' ('stmt_def_func::add_self_param')
     stmt_def_func_param(const token tk, const type& tp, const bool is_read_only)
         : statement{tk}, is_read_only_{is_read_only} {
 

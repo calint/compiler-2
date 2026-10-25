@@ -1592,6 +1592,7 @@ class expr_bool final : public statement {
         return is_negated_by(nots_);
     }
 
+    // note: every operator of a list is the same, mixing them is rejected
     [[nodiscard]] auto is_or_list() const -> bool {
         return not ops_.empty() and ops_.front().op == connective::logical_or;
     }
@@ -1604,8 +1605,6 @@ class expr_bool final : public statement {
         return const_eval == (is_or_list() != inverted);
     }
 
-    // inversion swaps 'and' and 'or' according to De Morgan's laws
-    // every operator of a list is the same, mixing them is rejected
     // the connective of the list after 'inverted', see De Morgan's laws
     [[nodiscard]] auto joined_by(const bool inverted) const -> connective {
         return is_or_list() != inverted ? connective::logical_or

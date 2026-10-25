@@ -8,12 +8,13 @@
 #include "token.hpp"
 #include "type.hpp"
 
-// the types of 'statement::visit_reads', the walk over the reads of a
-// variable shared by the checks: each read hands out its bytes for the
-// definite assignment check and its path for the aliasing checks, and of
-// 'statement::visit_call_effects', what the calls of a statement do; the
-// types only, the checks are in 'ub_assigned.hpp', 'ub_order.hpp' and
-// 'stmt_call.hpp'
+// the types of two walks shared by the checks, the checks are in
+// 'ub_assigned.hpp', 'ub_order.hpp' and 'stmt_call.hpp':
+//   the reads ('statement::visit_reads'): each read of a variable hands out
+//   its bytes for the definite assignment check and its path for the
+//   aliasing checks
+//   the calls ('statement::visit_call_effects'): what the calls of a
+//   statement read and write, see 'call_effect'
 
 // the variable whose reads 'visit_reads' reports, none for every variable
 using read_filter = std::optional<std::string_view>;

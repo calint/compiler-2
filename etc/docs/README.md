@@ -155,7 +155,9 @@ Reading order, each file assumes the ones before it:
 5. stmt_block.hpp, parse_statement.hpp
                                a block, the statement it parses next and
                                the definitions of the top level
-6. stmt_if.hpp, stmt_loop.hpp  control flow, the simplest nodes
+6. stmt_if.hpp, stmt_loop.hpp, stmt_builtin_foo.hpp
+                               control flow, the simplest nodes; 'foo'
+                               loops over an array
 7. stmt_def_var.hpp, stmt_assign_var.hpp
                                a variable defined and assigned
 8. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
@@ -164,6 +166,11 @@ Reading order, each file assumes the ones before it:
                                a path of names, fields and indexes, or a
                                literal; the index steps of the walk are in
                                the _impl file
+   stmt_builtin_*.hpp          the built-ins: conversion, io, array copy
+                               and compare, exit, which 'parse_statement'
+                               dispatches
+   ub_order.hpp                the order checks, why code may compute an
+                               operand before one written earlier
 10. stmt_def_func.hpp, stmt_call.hpp, generics.hpp, stmt_def_type.hpp
                                functions, inlined and noinline calls, the
                                generic instances (2.11)
@@ -402,14 +409,31 @@ init.L.C       the read-only bytes of a constant '{...}', 'str.L.C' of a string
 func.NAME.L.C  a body inlined by the call at L:C, '.end'
 func.NAME      a noinline body, 'func.NAME.len.4' for array lengths,
                'size.func.NAME' its frame size; 'f<i8>' is 'f..i8'
-baz_NAME       a routine of the runtime or a failure handler, e.g.
-               'baz_bounds_panic', '.Lbaz_NAME' a local one on rv32i
+baz_NAME       a failure handler, and a routine of the x86_64 runtime,
+               e.g. 'baz_bounds_panic'
+.Lbaz_NAME     a routine of the rv32i runtime; numbered, a jump target
+               inside one operation, e.g. '.Lbaz_equal.0'
 ```
 
 E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at
 36:13. Inside a noinline body for array lengths every label ends in the
 lengths, e.g. 'loop.14.5.len.3'. A location in an included file is 'fN.L.C',
 N the index of the file.
+
+The comment lines say what was compiled and how:
+
+```text
+bind x -> 3            a parameter of an inlined body names its argument
+src: operand           an operand read as it is stored; 'src: constant', 'src:
+                       folded constant' a value known at compile time,
+                       'src: expression' one computed first
+copy field 'x'         a part of an instance literal
+zero padding: 4 B      the bytes no field writes
+allocate scratch register -> r15, free scratch register r15
+                       the registers a step holds
+kept the second of two versions of 6 and 4 instructions, the smaller
+                       the version kept of code compiled two ways (5)
+```
 
 The variables the compiler adds are named by the byte offset of the call in
 its file, not by its line: 'call-arg-OFFSET-I' holds argument I,

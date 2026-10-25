@@ -339,8 +339,8 @@ class statement {
     }
 
     // reports what the bodies of the calls in this node read and write, in
-    // the order they are called, see 'call_effect'; a node that holds
-    // expressions forwards it
+    // the order they are called, see 'call_effect'; asked of a value, the
+    // nodes that hold one forward it
     virtual auto
     visit_call_effects([[maybe_unused]] const toc& tc,
                        [[maybe_unused]] const call_effect_visitor visitor) const

@@ -1300,6 +1300,8 @@ class machine {
         emit_frame_entry();
     }
 
+    // ends the data at 'dat.end', then the zeroed variables from 'vars' to
+    // 'vars.end'
     auto reserve_variables(const size_t alignment, const size_t size_bytes)
         -> void {
 

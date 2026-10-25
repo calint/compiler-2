@@ -93,8 +93,7 @@ class tokenizer final {
                                in_quotes(std::string_view{&delimiter, 1}))};
     }
 
-    // returns a token, which is a marker at the current position with empty
-    // name and whitespace
+    // a marker at the cursor, without text or whitespace
     [[nodiscard]] auto cur_position_token() const -> token {
         return token::position(file_ix_, char_ix_, at_line_);
     }
@@ -116,8 +115,6 @@ class tokenizer final {
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
-    // the operator after the whitespace without reading it, e.g. the '<<' of
-    // ' << 2'; empty when none is next
     // a binary operator or a comparison follows, e.g. the '+' of 'x + 1'
     [[nodiscard]] auto is_binary_operator_next() const -> bool {
         const std::string_view text{peek_operator()};
@@ -188,6 +185,8 @@ class tokenizer final {
         return probe.cur_position_token();
     }
 
+    // the whitespace before a value, as the own token of a wrapper node (see
+    // 'statement')
     [[nodiscard]] auto next_whitespace_token() -> token {
         const std::string_view ws_before{next_whitespace()};
 
@@ -209,6 +208,8 @@ class tokenizer final {
         return probe.peek_char();
     }
 
+    // the operator after the whitespace without reading it, e.g. the '<<' of
+    // ' << 2'; empty when none is next
     [[nodiscard]] auto peek_operator() const -> std::string_view {
         tokenizer probe{*this};
 

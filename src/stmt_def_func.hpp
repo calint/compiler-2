@@ -357,8 +357,8 @@ struct frame_slot {
 //   'emit_noinline_body'                     addresses in the frame
 //   and 'check_body'                         ('compile_in_frame')
 //
-// 'check_body' compiles an inlined function that nothing called like a
-// noinline body; 'toc' keeps the address of the definition, so it is not
+// 'check_body' compiles a function that nothing compiled like a noinline
+// body; 'toc' keeps the address of the definition, so it is not
 // copied or moved
 class stmt_def_func final : public statement {
     func_head head_;
