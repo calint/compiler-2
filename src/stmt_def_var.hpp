@@ -27,6 +27,18 @@
 #include "ub_assigned.hpp"
 #include "ub_reads.hpp"
 
+//
+// a definition with an initializer, the types below in reading order:
+//
+//   'name_in_initializer'    whether the name is seen in its initializer
+//   'initializer_declaration'
+//                            the part 'var', 'let' and 'dat' share: the type
+//                            or size from the initializer
+//   'stmt_def_const'         a 'let' that folds, a constant
+//   'stmt_def_var'           a 'var' or a 'let' that is a variable
+//   'make_stmt_def_var'      reads the keyword and picks the statement
+//
+
 // whether the name of a definition is visible in its initializer: a 'var' that
 // reads itself is rejected as uninitialized, a 'dat' may be named like its
 // type, e.g. 'dat point = point{1, 2}'

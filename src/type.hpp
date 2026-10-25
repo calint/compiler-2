@@ -19,6 +19,18 @@
 #include "compile_error.hpp"
 #include "token.hpp"
 
+//
+// a type and its storage, the types and functions below in reading order:
+//
+//   'storage_limits', 'add_storage_size' and the other size functions
+//                            sizes and alignments, checked against the limit
+//   'array_shape'            not an array, or an array of a length
+//   'type_field', 'byte_range', 'padding_gap', 'type_kind'
+//                            the parts of a type
+//   'type'                   a built-in or user type with its fields
+//   'builtin_type_set'       the built-in types of a compile
+//
+
 // what the storage size functions below accept
 namespace storage_limits {
 

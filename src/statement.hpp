@@ -277,6 +277,9 @@ class statement {
     assert_not_narrowed([[maybe_unused]] const toc& tc,
                         [[maybe_unused]] const type& dst_type) const -> void {}
 
+    // may run more than once (each inlined call, both versions of
+    // 'machine::emit_most_efficient', dry runs, 'check_body'), what it adds to
+    // 'toc' is the same each time, see 'toc'
     virtual auto compile([[maybe_unused]] toc& tc,
                          [[maybe_unused]] const size_t indent,
                          [[maybe_unused]] const destination& dst) const

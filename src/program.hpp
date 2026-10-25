@@ -32,6 +32,17 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 
+//
+// the compile of a program, the types below in reading order:
+//
+//   'report_entry', 'report_section', 'report_renderer'
+//                            the '--report' text
+//   'program'                parses the source, compiles 'main', the
+//                            noinline bodies it reaches and the functions
+//                            nothing compiled ('check_body'), writes the
+//                            output
+//
+
 // a line of a report section, e.g. 'removed unreachable jumps: 0', without a
 // value only the name is written
 struct report_entry {

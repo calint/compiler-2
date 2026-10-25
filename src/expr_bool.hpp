@@ -24,6 +24,18 @@
 #include "ub_order.hpp"
 #include "ub_reads.hpp"
 
+//
+// a condition, e.g. 'a < b and not c', is the types below, in reading order:
+//
+//   'condition_result', 'branch_targets'
+//                            what a compiled condition found out and where it
+//                            continues
+//   'condition_nots'         the leading 'not's
+//   'expr_bool_op'           one comparison or the shorthand, an operand alone
+//   'expr_bool'              a list joined by 'and' or by 'or', its elements
+//                            comparisons or parenthesized lists
+//
+
 // what compiling a condition found out about its value without running it
 enum class condition_result : uint8_t { unknown, always_false, always_true };
 

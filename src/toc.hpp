@@ -2795,6 +2795,48 @@ class variable_comments final {
     }
 };
 
+// the context of every node: the names, their storage, the machine and the
+// phase; the program is parsed first ('is_compiling_' false: the names are
+// declared without storage and without comments), then compiled
+// ('begin_compile'); the formatter sorts the methods by name, so by phase:
+//
+//   parse          'add_type', 'add_type_param', 'add_func',
+//                  'add_func_instance', 'add_generic_func',
+//                  'add_generic_method', 'add_generic_type',
+//                  'add_generic_type_instance', 'add_dat',
+//                  'mark_generic_func_instantiated', 'enter_type_params',
+//                  'exit_type_params', 'assert_generic_param_apart',
+//                  'assert_generic_param_free', 'assert_generic_params_free',
+//                  'assert_valid_unqualified_name', 'begin_definition',
+//                  'current_definition', 'instance_visibility',
+//                  'constant_value_of', 'record_use',
+//                  'record_callee_globals', 'parse_nesting_scope'
+//   compile        'add_binding', 'add_bytes_constant', 'add_string_constant',
+//                  'add_noinline_body', 'mark_func_compiled', 'dry_run',
+//                  'dry_run_call_kind', 'reach_dry_run_level',
+//                  'reach_scope_check', 'call_path_at', 'create_cmp_label',
+//                  'create_unique_label', 'next_frame_address', 'storage_of',
+//                  the reachability ('is_reachable', 'end_path',
+//                  'record_break', 'record_return', 'join_loop', 'join_foo',
+//                  'path_merge')
+//   both           'add_var' and 'add_const' (placed and commented only while
+//                  compiling), 'make_var_read_only', 'scope_entry',
+//                  'resolve_declared', 'get_func_or_throw',
+//                  'get_main_or_throw', 'get_type_or_throw', 'is_func',
+//                  'use_of', 'use_at', 'overflow_options', 'checks_overflow',
+//                  'source_of'
+//   tables         'builtins', 'checks', 'compiled', 'data', 'dry_runs',
+//                  'funcs', 'generics', 'layout', 'machine', 'scopes',
+//                  'types', 'usage'
+//
+// a statement may be compiled more than once (each inlined call, both
+// versions of 'emit_most_efficient', dry runs, 'check_body'), so what a
+// compile adds here is the same each time: a constant is kept once by its
+// bytes ('add_read_only_constant'), a noinline body once
+// ('add_noinline_body'), a compiled function is a set
+// ('mark_func_compiled'), the scopes and their variables are popped
+// ('scope_entry'), and a dry run puts back the scope count, the constant
+// count and the storage peak ('dry_run_scope')
 class toc final {
     std::reference_wrapper<::machine> machine_;
     source_locations locations_;
@@ -3093,6 +3135,8 @@ class toc final {
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<size_t> array_lengths) -> void {
 
+        assert(is_compiling_);
+
         if (dry_run_depth_ != 0) {
             return;
         }
@@ -3356,6 +3400,8 @@ class toc final {
     [[nodiscard]] auto dry_run(const std::function_ref<void()> compile)
         -> std::optional<compile_error> {
 
+        assert(is_compiling_);
+
         const dry_run_scope scope{*this};
 
         ::machine& x{machine()};
@@ -3518,6 +3564,8 @@ class toc final {
 
     // also in a dry run, the errors of the body were checked
     auto mark_func_compiled(const stmt_def_func& func) -> void {
+        assert(is_compiling_);
+
         compiled_.mark_compiled(func);
     }
 

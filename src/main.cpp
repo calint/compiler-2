@@ -1,3 +1,6 @@
+// the driver: reads the options, makes the backend that '--target' names,
+// compiles the program and writes the output, or prints the first error with
+// its source line
 #include <algorithm>
 #include <array>
 #include <cassert>

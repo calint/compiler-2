@@ -28,6 +28,18 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+//
+// a path of names, fields and indexes, or a literal; the types and functions
+// below in reading order:
+//
+//   'assert_constant_index', 'constant_range', 'range_check',
+//   'assert_constant_range'  the constant checks of an index and a range
+//   'stmt_identifier'        the path node; its members that use 'expr_any'
+//                            are in 'stmt_identifier_impl.hpp'
+//   'place', 'make_ident_info', 'make_scalar_ident_info', 'as_place',
+//   'assert_not_whole_array' what a value names when it is a place
+//
+
 // a constant index out of bounds is always a bug; an unsized array parameter
 // without a length rejects only a negative index; 'allow_end' accepts the end,
 // where a range of a zero count starts

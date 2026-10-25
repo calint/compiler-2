@@ -1,6 +1,213 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review round 17 (2026-10-25, a check round, six reviewers:
+    front end F, expressions E, statements and calls S, tables and checks T,
+    backends B, a newcomer N; findings in the session scratchpad r17, each
+    marked structural or local: 10 structural, 27 local; spot-checked: E1
+    reproduced with '--nopt', S1's misplaced todo note, B1, T1 read): each
+    step a pure refactor unless marked, a pause for a commit after each phase
+    verdict: the structural findings are small (each under about 40 lines,
+    E2 the one medium move) and none is a concept without a home of the size
+    rounds 13-14 found; two are leftovers of round 16 (E1, E4); recommended:
+    do this round, then stop the design rounds and hunt bugs
+    A. comments and docs (no code change)
+       A.1. stacked or stale comments: above 'has_fixed_role' and
+            'joined_by' (E4, round 16); 'statement::visit_call_effects' says
+            the old rule (S3); tokenizer.hpp:119, expr_bool.hpp:1607 (F6);
+            the four of S9; the 'ident_resolver' header sentence and the
+            'ub_reads.hpp' header (T5); 'reserve_variables' ends the data at
+            'dat.end', the broken x86_64 map line (B5); a comment calls 'foo'
+            a function (N6)
+       => A.1 done (2026-10-25): all listed; the stacked comments of E4
+          and 'peek_operator' were round 16 inserts above an existing
+          signature (the formatter sorts by name, the inserted function took
+          the comment); 'is_or_list' keeps its rule as a 'note:'; the broken
+          x86_64 map line was the G.3 rename's reflow; also from F6:
+          'cur_position_token' and 'next_whitespace_token' comments
+       A.2. reasons the code relies on: why a 'mut' argument counts as
+            written whole (S6); the argument order of
+            'stmt_builtin_io::compile_arguments' that
+            'assert_count_not_written_by_buffer' needs (N2); the clobber
+            contract of the sector routines beside their bodies (B4)
+       => A.2 done (2026-10-25): a 'note:' on 'visit_call_effects' (per
+          parameter as the signature says, like a recursive call's record,
+          no fixed point); 'compile_arguments' names its order and the check
+          that makes the count before the buffer safe, 'ub_order.hpp' lists
+          it under 'assert_not_written_after'; 'emit_sector_routines' states
+          the register contract, 'sector_clobbered_' says what it is, the
+          linux comment points to it
+       A.3. maps: 'stmt_def_type.hpp' gets a reading-order map like
+            'stmt_def_func.hpp' (S8); README 1.1 reading order names the
+            built-ins and 'ub_order', 1.6.1 the comment lines (N5);
+            'expr_type' header names its second role, the source of a whole
+            array copy (E3, the header half)
+       => A.3 done (2026-10-25): the 'stmt_def_type.hpp' map and an
+          'assert_arg_count' comment; README reading order steps 6 and 9
+          name 'stmt_builtin_foo.hpp', the built-ins and 'ub_order.hpp';
+          1.6.1 a table of the comment lines and the label prefixes as in
+          round 16 A.5; the 'expr_type' header names its second role (E3)
+    B. leftovers and names
+       B.1. round 16 rename leftovers: 'parse_returns', 'is_constructor'
+            beside 'is_self' (S4); 'make_argument_temporary' loses the
+            parameter the call site holds (S7)
+       => B.1 done (2026-10-25): 'parse_result', its note says result;
+          'is_constructor' is 'result_ and result_->is_self()';
+          'make_argument_temporary(tc, indent, index)' reads the callee's
+          parameter
+       B.2. 'stmt_identifier' constructor loses the unary ops every caller
+            leaves empty (F3); 'parse_builtin_value' takes them by value
+            (F4); the two "built-in value type" functions and the
+            conversion picked by elimination (F5, N1), 'builtin_value_type_named'
+            private (T5); two 'position_of'; 'human_readable' ->
+            'for_message' (F5)
+       => B.2 done, reduced (2026-10-25): the 'stmt_identifier'
+          constructor takes no unary ops, the one 'set_unary_ops' caller says
+          why it comes after the parse; 'is_integer_conversion(tm)' names the
+          conversion branch; 'toc::builtin_scalar_named' (private),
+          'expr_arith::start_marker_of', 'source_locations::for_message';
+          F4 kept: taking the ops by value needs the caller to classify the
+          built-in first (the one dispatcher, not planned), the comment
+          states the contract
+       B.3. scratch build first, then remove: 'stmt_def_const::visit_reads'
+            (S5)
+       => B.3 done (2026-10-25): a scratch build that aborted in it passed
+          both suites, the CLI tests, fuzz-reject 600, fuzz-flow 300,
+          fuzz-constructs, fuzz-ub 200 and fuzz-effects 300; removed
+       B.4. a compiler-added variable marked once, 'var_info::is_temporary'
+            or the '-' in its name (T2); 'scope_stack' answers the root
+            question itself, 'front()' goes (T3); the resolver walk without
+            the out-parameter (T4)
+       => B.4 done (2026-10-25): 'var_info::is_temporary()' reads the name
+          ('temporary_name' and 'is_temporary_name' free beside 'var_info'),
+          the flag goes; 'scope_stack::count', 'is_at_root', 'at', the
+          mutable 'all()' and 'front()' go; the resolver 'walk' holds 'end'
+          and 'follow_binding' returns 'std::variant<ident_info, walk>'
+       B.5. the label of a handler's name made in one place, the one-word
+            assumption asserted (B3); four builtin accessors (B6, low, only
+            if one place reads better)
+       => B.5 done, reduced (2026-10-25): 'failure_handler::symbol()' used
+          by both message labels and 'line_failure_label'; B6 kept: the
+          x86_64 sites read better with 'builtin_type_i64()' than with a
+          size; both suites, the CLI tests, test-rv32i, clang-tidy,
+          fuzz-calls, fuzz-generics, fuzz-reject and fuzz-methods clean for
+          phase B
+    C. round 16 follow-up (listings change under '--nopt')
+       C.1. a stored condition whose last element folds branches nowhere too
+            (E1): 'compile_last_element' resolves the target once (empty when
+            stored only), one 'comparison_action', 'stored_action' and
+            'branch_required' go, 'compile_constant' and
+            'resolve_last_constant' branch only to a target; test 0006 and
+            the report counts may change
+       => C.1 done (2026-10-25): 'compile_last_element' resolves its two
+          targets once (empty when stored only, the 'machine' encoding of no
+          branch); 'compile_branch_if_false' takes the target alone,
+          'compile_element' one action, 'stored_action' and
+          'branch_required' go; 'compile_constant' and
+          'resolve_last_constant' branch only to a target; under '--nopt'
+          'var b = x < 3 and 1 == 2' (and '== 1', and an 'or' decided by a
+          constant) end without the jump; no test listing changed, run test
+          1670 added; both suites, the CLI tests and clang-tidy clean
+       C.2. 'unary_ops' one entry that evaluates and wraps to the width of
+            its use (E5, low; only if the two callers read better)
+       => C.2 kept (2026-10-25): 'expr_arith' folds at its own
+          'width_type', not at the use's width, so a 'fold(v, use)' serves
+          one caller; the two entries stay
+    D. small structural
+       D.1. the callee's result type held once (S1, the open section 1 item
+            "'func_info::type_ptr'"): 'func_info' loses 'type_ptr',
+            'get_func_return_type_or_throw' goes, 'stmt_call' resolves
+            'func_' first and reads 'callee().result_type()'; the misplaced
+            "=> found" note about '--memory' goes from that item
+       => D.1 done (2026-10-25): 'func_info::type_ptr', the
+          'return_type' parameters and 'get_func_return_type_or_throw' go;
+          'stmt_call' resolves the callee in 'read_callee' (was
+          'read_generic_callee', which also needed it for clang-tidy), then
+          'read_open_paren' sets 'callee().result_type()'; error order kept;
+          the item moved to resolved with a note about the '--memory' text
+       D.2. the ')' that ends a parenthesized list read by one named step in
+            'expr_arith' and 'expr_bool' (F1)
+       => D.2 done (2026-10-25): 'read_close_paren' in both ('is_closed'
+          renamed), called first in each loop; 'read_connective' reads only
+          a connective; 'throw_unclosed_list' in compile_error.hpp
+       D.3. the leading 'not's as a class beside 'unary_ops' (F2)
+       D.3. the leading 'not's as a class beside 'unary_ops' (F2)
+       => D.3 done (2026-10-25): 'condition_nots' in expr_bool.hpp (parse,
+          'is_empty', 'is_negated', 'source_to'), held by 'expr_bool_op' and
+          'expr_bool'; 'parse_not_tokens' and 'is_negated_by' go
+       D.4. the backend's own registers (variables base, frame base) by a
+            holder kind in 'allocation', the pool answers it, not the report
+            predicate (T1); a scratch assert first that the two bases are the
+            only named allocations without a location
+       => D.4 done (2026-10-25): 'allocation::is_backend_own', set by
+          'push_backend_allocation' (the frame base, the variables base) and
+          the frame base of 'noinline_body_pool'; 'is_listed' reads it,
+          'noinline_body_pool' and 'scratch_register_count' ask it; a scratch
+          assert that the flag equals "named without a location" held in
+          both suites and the CLI tests and failed only in the rv32i backend
+          test, whose driver allocates named registers with an empty token,
+          which the old rule took for the backend's own (the case the finding
+          warned of); that test passes with the new rule
+       D.5. a noinline body opened and closed by one pair in 'machine', the
+            rv32i entry code out of 'reserve_frame_base' (B1)
+       => D.5 done (2026-10-25): 'begin_noinline_body' places the body
+          label, holds the frame base and emits the entry,
+          'end_noinline_body' releases it and ends the body; the comments
+          come before the pair and 'define_constant' after it (no size, the
+          listing is equal); 'reserve_frame_base' and 'release_frame_base'
+          listed under backend tests; 'emit_frame_entry' names its exit
+       D.6. 'assembler::write' moves to 'assembler_x86_64', rv32i records
+            that its jumps are resolved (B2)
+       => D.6 done (2026-10-25): 'write' in 'assembler_x86_64';
+          'assembler_rv32i::jumps_resolved_' set by 'resolve_jumps', asserted
+          by 'write_resolved' and 'memory_end_address', reset by 'clear';
+          both suites, the CLI tests, test-rv32i, clang-tidy,
+          check-messages, fuzz-reject, generics, methods, exprs, calls and
+          options clean for phase D
+    E. asks
+       1. E2, medium move: the constant passes of 'expr_arith' into a helper
+          class in the same file ('arith_steps': 'step', the passes in order
+          1-3, 'is_regroupable', 'has_fixed_role'; invariant: a step without
+          an element is a merged constant); recommended: yes
+          => ask 1 done (2026-10-25): 'arith_steps' before 'expr_arith':
+             'step', 'plan' (passes 1-3 in order, pass 3 asks the
+             'is_negated_operand' callback of 'expr_arith' about the step
+             that leads after passes 1 and 2), 'has_fixed_role',
+             'identity_of', 'is_merged', 'is_regroupable', the passes private;
+             'same_run' reads 'is_same_run_op' (equal, or '+' and '-') instead
+             of the parse's precedence table, equal for the regroupable
+             operators; the four 'element' null tests read 'is_merged'; a
+             move, listings equal
+       2. S2, behavior: "a call outside a function" rejected at the parse
+          where it is known; the error of a global call with a bad argument
+          changes order; recommended: yes, with a test
+          => ask 2 done (2026-10-25): 'read_open_paren' checks it after the
+             callee is resolved and before the arguments, the io built-in in
+             its constructor; 'record_uses_of_call' asserts; the message
+             says "a call runs only inside a function, not in the initializer
+             of a global" (the old one said "global variable", wrong for a
+             'dat': test 1142 had the dat's "not a constant" message, it now
+             gets the call message at the parse); tests 0877, 1142, 1436
+             changed, 1671 added
+       3. N3: 'foo' passes an empty operand for two meanings ("while
+          parsing" for the element, "in memory" for the index); a named
+          state; recommended: yes if small
+          => ask 3 done (2026-10-25): 'add_loop_names' takes two
+             'var_placement's; the parse passes empty placements, the compile
+             'at_address_register' and 'in_value_register' or an empty one for
+             a counter in memory; the two 'is_empty' branches go
+       4. N4, listing: every '[i]' element comment is placed at the first
+          element; recommended: yes, the comment at its element
+          => ask 4 done (2026-10-25): the "[i]" comment takes the token of
+             element i; no test listing holds an element list; both suites,
+             the CLI tests, test-rv32i, clang-tidy, check-messages,
+             fuzz-reject, exprs, data, constructs, flow and programs clean;
+             round 17 complete
+    order: A, B, C, D, then the asks
+    kept (reviewers, with reasons in r17): see the "considered and kept"
+    lists of r17 ({F,E,S,T,B,N}.md)
+    => done (2026-10-25): phases A-D and the four asks handled, each step
+       with its note above; committed
 [x] easy: design: 'func_info::type_ptr' repeats the return type of
     'func_info::def', every entry has a definition since the built-ins left
     'function_table'; 'get_func_return_type_or_throw' could read the

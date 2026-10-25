@@ -25,6 +25,20 @@
 #include "type.hpp"
 #include "ub_reads.hpp"
 
+//
+// a value of a user type or an array and how it is written in parts, the
+// types below in reading order:
+//
+//   'literal_typing'         whether a literal names its type
+//   'part_step', 'part_location'
+//                            a part of a destination, a field or an element
+//   'value_write', 'bytes_write', 'zero_fill', 'write_comment', 'write_step',
+//   'write_plan', 'emit_write_plan'
+//                            the steps that write a value in parts, read by
+//                            the compile and by the aliasing check
+//   'expr_type'              a literal, a type name alone, a copy or a call
+//
+
 // whether a literal names its type, e.g. 'point{1, 2}': only where the name
 // decides the type, elsewhere the destination gives it, e.g. '{1, 2}'
 enum class literal_typing : uint8_t { written, from_destination };
