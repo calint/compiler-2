@@ -1119,8 +1119,20 @@ class machine {
         return target_.has_indexed_addressing;
     }
 
+    [[nodiscard]] auto has_sd_card() const -> bool {
+        return target_.has_sd_card;
+    }
+
     [[nodiscard]] auto is_stack_bounded() const -> bool {
         return target_.is_stack_bounded;
+    }
+
+    // a register of any size that names the stack pointer
+    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
+        -> bool {
+
+        return register_index_of(name) ==
+               register_index_of(target_.stack_pointer_register);
     }
 
     auto label(const size_t indent, const std::string_view name) -> void {
@@ -1240,18 +1252,6 @@ class machine {
         multiply(src_loc_tk, indent, index,
                  operand::imm(element_size_bytes, default_type()),
                  factor_use::read_only);
-    }
-
-    [[nodiscard]] auto has_sd_card() const -> bool {
-        return target_.has_sd_card;
-    }
-
-    // a register of any size that names the stack pointer
-    [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
-        -> bool {
-
-        return register_index_of(name) ==
-               register_index_of(target_.stack_pointer_register);
     }
 
     // asked only of a target that has a card

@@ -1,2 +1,4 @@
-Sun Oct 25 01:00:53 PM +07 2026
-Sun Oct 25 01:01:27 PM +07 2026
+Sun Oct 25 01:16:29 PM +07 2026
+/home/c/w/compiler-2/qa/lint/../../src/machine_rv32i.hpp:535:34: error: unchecked access to optional value [bugprone-unchecked-optional-access,-warnings-as-errors]
+  535 |             static_cast<int64_t>(variables_base_past_vars_bytes().value()));
+      |                                  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
