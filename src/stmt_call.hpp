@@ -811,9 +811,13 @@ struct call_site {
         // note: a recursive call is checked inside its own body, so an error
         //       can be located after the call
 
-        return e.file_ix == begin_tk.file_index() and
-               e.start_index >= begin_tk.start_index() and
-               e.start_index <= close_paren_tk.end_index();
+        if (not e.where) {
+            return false;
+        }
+
+        return e.where->file_ix == begin_tk.file_index() and
+               e.where->start_index >= begin_tk.start_index() and
+               e.where->start_index <= close_paren_tk.end_index();
     }
 };
 

@@ -1220,7 +1220,7 @@ index      checked against the array size at compile time
 run-time   the index is computed into a register and becomes the index of
 index      the operand, with the element size as the scale; an operand that
            already has an index is folded into a register first
-           ('fold_indexed_address')
+           ('path_address::fold_indexed_address')
 ```
 
 The example below has
@@ -1338,9 +1338,9 @@ addresses its locals from its frame base, 'rbx' or 's1'.
 
 ### 6.7 Registers
 
-The scratch registers of a path ('path_registers') are the caller's until the
-path allocates its own. A fold may overwrite only registers that are the
-path's own ('fold_register'):
+The scratch registers of a path ('stmt_identifier::path_address') are the
+caller's until the path allocates its own. A fold may overwrite only
+registers that are the path's own ('path_address::fold_register'):
 
 ```text
 1. the register the caller loads the final address into anyway
@@ -1357,11 +1357,10 @@ allocation.
 
 ```text
 stmt_identifier::compile_lea          the walk of 6.2
-stmt_identifier::compile_indexed_element
-                                      a constant or a run-time index (_impl)
-stmt_identifier::add_index            the index register and the scale
+path_address::indexed_element         a constant or a run-time index (_impl)
+path_address::add_index               the index register and the scale
                                       (_impl)
-stmt_identifier::fold_indexed_address the second index
+path_address::fold_indexed_address    the second index
 stmt_identifier::compile_checked_index
                                       the bounds check and the '+ c' of 6.4
                                       (_impl)

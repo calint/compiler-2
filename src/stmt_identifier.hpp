@@ -13,6 +13,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "compile_error.hpp"
@@ -150,12 +151,26 @@ class stmt_identifier;
 // 'expr_any' (the constructor, the element parse, the index steps of the walk)
 // are in 'stmt_identifier_impl.hpp'
 class stmt_identifier final : public statement {
+    // e.g. the '[i]' of 'rooms[i]'
+    struct index_part {
+        token open_bracket_tk;
+        std::unique_ptr<expr_any> expr; // never null
+        token close_bracket_tk;
+    };
+
     struct ident_elem {
         token name_tk;
-        // the brackets are read with 'array_index_expr', null without an index
-        token open_bracket_tk;
-        std::unique_ptr<expr_any> array_index_expr;
-        token close_bracket_tk;
+        // none without an index, e.g. 'name'
+        std::optional<index_part> index;
+
+        // the index of an indexed element
+        [[nodiscard]] auto index_expr() const -> const expr_any& {
+            if (not index) {
+                std::unreachable();
+            }
+
+            return *index->expr;
+        }
 
         auto source_to(std::ostream& os) const -> void;
     };
@@ -174,11 +189,14 @@ class stmt_identifier final : public statement {
         bool is_last{};
     };
 
-    // the scratch registers that the address of a path is built with
-    class path_registers final {
+    // builds the memory operand of a path one element at a time, with the
+    // scratch registers it allocates; the registers from 'owned_from_' on are
+    // the path's own and may be overwritten, the earlier ones are the caller's
+    class path_address final {
+        std::reference_wrapper<toc> tc_;
+        size_t indent_;
+        token src_loc_tk_;
         std::reference_wrapper<std::vector<operand>> allocated_;
-        // the registers from here on were allocated for this path and may be
-        // overwritten, the earlier ones are the caller's
         size_t owned_from_;
         // where the caller prefers the address, empty without a preference
         operand address_register_;
@@ -186,31 +204,140 @@ class stmt_identifier final : public statement {
         operand index_register_;
 
       public:
-        path_registers(std::vector<operand>& allocated,
-                       operand address_register)
-            : allocated_{allocated}, owned_from_{allocated.size()},
+        path_address(toc& tc, const size_t indent, const token& src_loc_tk,
+                     std::vector<operand>& allocated, operand address_register)
+            : tc_{tc}, indent_{indent}, src_loc_tk_{src_loc_tk},
+              allocated_{allocated}, owned_from_{allocated.size()},
               address_register_{std::move(address_register)} {}
 
-        auto add(const operand& reg) -> void {
-            allocated_.get().push_back(reg);
+        // the range of an unindexed array is checked once, at the last element
+        auto check_unindexed_range(const ident_info& cur_info,
+                                   const bool is_last_elem,
+                                   const operand& reg_count) const -> void {
+
+            if (not cur_info.is_array() or reg_count.is_empty()) {
+                return;
+            }
+
+            // note: an array before the last element is indexed
+            assert(is_last_elem);
+
+            check_array_bounds(tc_, indent_, src_loc_tk_,
+                               machine::bounds_range::count_alone(
+                                   reg_count, cur_info.element_count()));
         }
 
-        [[nodiscard]] auto address_register() const -> const operand& {
-            return address_register_;
+        // the address after the element index, a constant index goes into the
+        // displacement and any other one into an index register
+        [[nodiscard]] auto indexed_element(const ident_elem& cur_elem,
+                                           std::string_view path,
+                                           const ident_info& cur_info,
+                                           const operand& range_count,
+                                           const operand& address) -> operand;
+
+        // the address a call computed, the address a slot holds or the
+        // storage
+        [[nodiscard]] auto start(const operand& known_operand,
+                                 const ident_info& storage) -> operand {
+
+            if (not known_operand.is_empty()) {
+                return known_operand;
+            }
+
+            if (storage.holds_address()) {
+                return load_held_address(storage.operand());
+            }
+
+            return storage.operand();
         }
 
-        auto forget_index_register() -> void { index_register_ = {}; }
+      private:
+        // adds the element index of 'cur_elem' to 'address', which has no
+        // index yet, keeping its base and displacement
+        [[nodiscard]] auto add_index(const ident_elem& cur_elem,
+                                     const ident_info& cur_info,
+                                     const operand& reg_count,
+                                     const operand& address) -> operand;
 
-        [[nodiscard]] auto index_register() const -> const operand& {
-            return index_register_;
+        // computes 'address' into a register so another index can be added
+        [[nodiscard]] auto fold_indexed_address(const operand& address)
+            -> operand {
+
+            machine& x{tc_.get().machine()};
+
+            operand target{
+                fold_register(address),
+            };
+
+            if (target.is_empty()) {
+                target = x.alloc_scratch_register(
+                    src_loc_tk_, indent_, tc_.get().builtins().address());
+
+                allocated_.get().push_back(target);
+            }
+
+            x.address_of(src_loc_tk_, indent_, target, address);
+
+            return target;
+        }
+
+        // picks a register that 'lea target, [address]' may overwrite, or
+        // empty when a new one must be allocated
+        // note: only 'address' refers to an owned register and the fold
+        //       replaces 'address', so an owned base is dead once 'lea' has
+        //       read it
+        [[nodiscard]] auto fold_register(const operand& address) -> operand {
+            // the caller loads the final address into it anyway, so it is free
+            // until then and folding there may save the final move
+            if (not address_register_.is_empty()) {
+                return address_register_;
+            }
+
+            // an owned base is a loaded held address or an earlier fold
+            // target, reusing it keeps 'index_register_' for the next index
+            for (const operand& r : owned()) {
+                // the frame register and the caller's registers are never
+                // owned, so a match proves the base is private to this path
+                if (r.register_name() == address.base_register()) {
+                    return r;
+                }
+            }
+
+            // the base must survive, so without an index register a new one is
+            // needed
+            if (index_register_.is_empty()) {
+                return {};
+            }
+
+            // 'lea' may write the index register it reads, the next index then
+            // gets its own register so it never overwrites the new base
+            const operand folded_into{index_register_};
+            index_register_ = {};
+
+            return folded_into;
+        }
+
+        [[nodiscard]] auto load_held_address(const operand& address_slot)
+            -> operand {
+
+            toc& tc{tc_.get()};
+            machine& x{tc.machine()};
+
+            const operand address_register{
+                x.alloc_scratch_register(src_loc_tk_, indent_,
+                                         tc.builtins().address()),
+            };
+
+            allocated_.get().push_back(address_register);
+
+            x.copy_value(src_loc_tk_, indent_, address_register,
+                         operand::mem(address_slot, tc.builtins().address()));
+
+            return operand::mem(address_register, tc.builtins().address());
         }
 
         [[nodiscard]] auto owned() const -> std::span<const operand> {
             return std::span{allocated_.get()}.subspan(owned_from_);
-        }
-
-        auto set_index_register(const operand& reg) -> void {
-            index_register_ = reg;
         }
     };
 
@@ -219,7 +346,6 @@ class stmt_identifier final : public statement {
     std::string dotted_path_;
     // of what the path names, not an array after an index
     array_shape shape_;
-    bool is_indexed_{};
 
     // bytes of the root variable accessed by this path, after a run-time index
     // the whole array
@@ -236,6 +362,17 @@ class stmt_identifier final : public statement {
 
     // none when the path is not the receiver of a method call
     std::optional<method_tokens> method_;
+
+    // e.g. the '.x' of 'p.x'
+    struct path_field {
+        token dot_tk;
+        token name_tk;
+    };
+
+    struct path_end {};
+
+    // what follows an element of the path, see 'read_continuation'
+    using path_continuation = std::variant<path_end, path_field, method_tokens>;
 
   public:
     // a path of names, fields and indexes from 'tk', which is read
@@ -481,7 +618,8 @@ class stmt_identifier final : public statement {
             by_call_in_path(request.address_by_call),
         };
 
-        path_registers registers{allocated_registers, request.address_register};
+        path_address builder{tc, indent, src_loc_tk, allocated_registers,
+                             request.address_register};
 
         operand address;
         const type* value_type{};
@@ -490,8 +628,7 @@ class stmt_identifier final : public statement {
             const ident_info& cur_info{*step.info};
 
             if (step.parent_type == nullptr) {
-                address = start_address(tc, indent, src_loc_tk, registers,
-                                        by_call == nullptr ? operand{}
+                address = builder.start(by_call == nullptr ? operand{}
                                                            : by_call->address,
                                         cur_info);
             } else {
@@ -502,17 +639,16 @@ class stmt_identifier final : public statement {
             value_type = &cur_info.type_ref();
 
             // an unindexed element only needs a possible range bounds check
-            if (not step.elem->array_index_expr) {
-                check_unindexed_range(tc, indent, src_loc_tk, cur_info,
-                                      step.is_last, request.reg_count);
+            if (not step.elem->index) {
+                builder.check_unindexed_range(cur_info, step.is_last,
+                                              request.reg_count);
 
                 return;
             }
 
-            address = compile_indexed_element(
-                tc, indent, src_loc_tk, registers, *step.elem, step.path,
-                cur_info, step.is_last ? request.reg_count : operand{},
-                address);
+            address = builder.indexed_element(
+                *step.elem, step.path, cur_info,
+                step.is_last ? request.reg_count : operand{}, address);
         });
 
         return operand::mem(address, *value_type);
@@ -595,7 +731,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
 
     [[nodiscard]] auto is_array_element() const -> bool {
-        return not elems_.empty() and elems_.back().array_index_expr != nullptr;
+        return not elems_.empty() and elems_.back().index.has_value();
     }
 
     // false when a run-time index leaves the element unknown
@@ -603,7 +739,11 @@ class stmt_identifier final : public statement {
         return not access_path_.has_run_time_index();
     }
 
-    [[nodiscard]] auto is_indexed() const -> bool { return is_indexed_; }
+    [[nodiscard]] auto is_indexed() const -> bool {
+        return std::ranges::any_of(elems_, [](const ident_elem& e) -> bool {
+            return e.index.has_value();
+        });
+    }
 
     [[nodiscard]] auto is_method_receiver() const -> bool {
         return method_.has_value();
@@ -624,13 +764,6 @@ class stmt_identifier final : public statement {
         assert(method_);
 
         return method_->name_tk;
-    }
-
-    // the path names a function, unless a variable, a parameter or a constant
-    // of the same root is in scope, it shadows the function
-    [[nodiscard]] auto names_function(const toc& tc) const -> bool {
-        const std::string_view root{ident_info::root_of(dotted_path_)};
-        return tc.is_func(dotted_path_) and not is_hidden_by_value(tc, root);
     }
 
     auto operator=(stmt_identifier&&) noexcept -> stmt_identifier&;
@@ -763,7 +896,7 @@ class stmt_identifier final : public statement {
     auto assert_element_selected(const toc& tc, const token& src_loc_tk) const
         -> void {
 
-        if (elems_.back().array_index_expr or names_function(tc)) {
+        if (elems_.back().index) {
             return;
         }
 
@@ -778,10 +911,6 @@ class stmt_identifier final : public statement {
     // the '[' of an element needs an array
     auto assert_indexable(const toc& tc, tokenizer& tz,
                           const token& src_loc_tk) const -> void {
-
-        if (names_function(tc)) {
-            return;
-        }
 
         const ident_info cur_ident_info{
             tc.resolve_declared(src_loc_tk, dotted_path_),
@@ -801,10 +930,6 @@ class stmt_identifier final : public statement {
     auto assert_not_method_call(const toc& tc, tokenizer& tz,
                                 const token& src_loc_tk,
                                 const token& name_tk) const -> void {
-
-        if (names_function(tc)) {
-            return;
-        }
 
         if (tz.peek_char_after_whitespace() != '(') {
             return;
@@ -835,55 +960,11 @@ class stmt_identifier final : public statement {
         return &*by_call;
     }
 
-    // a '.' followed by a field continues the path with that field, a method
-    // name ends it with the path as the receiver; 'tk' becomes the field and
-    // 'src_loc_tk' the token before it
-    [[nodiscard]] auto extends_path(toc& tc, tokenizer& tz, token& tk,
-                                    token& src_loc_tk) -> bool {
-
-        // e.g. the '.entities' of 'rooms[i].entities[j]'
-        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
-
-        if (not dot_tk) {
-            return false;
-        }
-
-        const token next_tk{tz.next_token()};
-
-        // e.g. 'p..x', a path may go on after whitespace and line ends
-        if (not next_tk.is_word()) {
-            throw compile_error{tz.position_of(next_tk),
-                                "expected a field name after '.'"};
-        }
-
-        // e.g. the '.add' of 'lst.add(1)'
-        if (is_method_name(tc, tz, tk, next_tk)) {
-            // the path so far is resolved as the receiver
-            method_ = {
-                .dot_tk{*dot_tk},
-                .name_tk{next_tk},
-            };
-
-            return false;
-        }
-
-        assert_element_selected(tc, tk);
-        assert_not_method_call(tc, tz, tk, next_tk);
-
-        elem_delims_tk_.emplace_back(*dot_tk);
-        src_loc_tk = tk;
-        tk = next_tk;
-        dotted_path_.push_back('.');
-        dotted_path_ += tk.text();
-
-        return true;
-    }
-
     // walks the elements from the root, each with the path up to it resolved,
     // e.g. 'w', 'w.rooms' and 'w.rooms.items'; a resolve error is located at
-    // 'src_loc_tk', at the name of each element when empty
+    // 'src_loc_tk', at the name of each element when none
     auto for_each_prefix(
-        const toc& tc, const token& src_loc_tk,
+        const toc& tc, const std::optional<token>& src_loc_tk,
         const std::function_ref<void(const prefix_step&)> visit) const -> void {
 
         std::string path;
@@ -904,8 +985,7 @@ class stmt_identifier final : public statement {
             path += elem.name_tk.text();
 
             const ident_info info{
-                tc.resolve_declared(
-                    src_loc_tk.is_empty() ? elem.name_tk : src_loc_tk, path),
+                tc.resolve_declared(src_loc_tk.value_or(elem.name_tk), path),
             };
 
             visit({
@@ -925,10 +1005,6 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto is_method_name(const toc& tc, tokenizer& tz,
                                       const token& src_loc_tk,
                                       const token& name_tk) const -> bool {
-
-        if (names_function(tc)) {
-            return false;
-        }
 
         const ident_info info{tc.resolve_declared(src_loc_tk, dotted_path_)};
 
@@ -978,6 +1054,42 @@ class stmt_identifier final : public statement {
     // a path element with an optional '[index]'
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void;
 
+    // what follows the path read so far, ending at 'tk': nothing, a '.' and a
+    // field, or a '.' and a method name, which ends the path as its receiver;
+    // reads the '.' and the name
+    [[nodiscard]] auto read_continuation(const toc& tc, tokenizer& tz,
+                                         const token& tk) const
+        -> path_continuation {
+
+        // e.g. the '.entities' of 'rooms[i].entities[j]'
+        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
+
+        if (not dot_tk) {
+            return path_end{};
+        }
+
+        const token next_tk{tz.next_token()};
+
+        // e.g. 'p..x', a path may go on after whitespace and line ends
+        if (not next_tk.is_word()) {
+            throw compile_error{tz.position_of(next_tk),
+                                "expected a field name after '.'"};
+        }
+
+        // e.g. the '.add' of 'lst.add(1)'
+        if (is_method_name(tc, tz, tk, next_tk)) {
+            return method_tokens{
+                .dot_tk{*dot_tk},
+                .name_tk{next_tk},
+            };
+        }
+
+        return path_field{
+            .dot_tk{*dot_tk},
+            .name_tk{next_tk},
+        };
+    }
+
     auto resolve_accessed_bytes(toc& tc) -> void;
 
     // the path is an array only while its last element is not indexed
@@ -987,7 +1099,7 @@ class stmt_identifier final : public statement {
         set_type(info.type_ref());
 
         // an indexed element is technically no longer an array but an element
-        if (elems_.back().array_index_expr != nullptr) {
+        if (elems_.back().index.has_value()) {
             return;
         }
 
@@ -1006,14 +1118,6 @@ class stmt_identifier final : public statement {
     // statics
     //
 
-    // adds the element index of 'cur_elem' to 'address', which has no index
-    // yet, keeping its base and displacement
-    [[nodiscard]] static auto
-    add_index(toc& tc, const size_t indent, const token& src_loc_tk,
-              path_registers& registers, const ident_elem& cur_elem,
-              const ident_info& cur_info, const operand& reg_count,
-              const operand& address) -> operand;
-
     static auto check_array_bounds(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
                                    const machine::bounds_range& range) -> void {
@@ -1021,25 +1125,6 @@ class stmt_identifier final : public statement {
         machine& x{tc.machine()};
 
         x.check_bounds(src_loc_tk, indent, range, tc.checks().bounds_options());
-    }
-
-    // the range of an unindexed array is checked once, at the last element
-    static auto check_unindexed_range(toc& tc, const size_t indent,
-                                      const token& src_loc_tk,
-                                      const ident_info& cur_info,
-                                      const bool is_last_elem,
-                                      const operand& reg_count) -> void {
-
-        if (not cur_info.is_array() or reg_count.is_empty()) {
-            return;
-        }
-
-        // note: an array before the last element is indexed
-        assert(is_last_elem);
-
-        check_array_bounds(tc, indent, src_loc_tk,
-                           machine::bounds_range::count_alone(
-                               reg_count, cur_info.element_count()));
     }
 
     // the index goes into 'index_register', returns the constant a trailing
@@ -1051,119 +1136,11 @@ class stmt_identifier final : public statement {
         const operand& index_register, const size_t array_length,
         const operand& range_count) -> int64_t;
 
-    // the address after the element index, a constant index goes into the
-    // displacement and any other one into an index register
-    [[nodiscard]] static auto compile_indexed_element(
-        toc& tc, const size_t indent, const token& src_loc_tk,
-        path_registers& registers, const ident_elem& cur_elem,
-        const std::string_view path, const ident_info& cur_info,
-        const operand& range_count, const operand& address) -> operand;
-
-    // computes 'address' into a register so another index can be added
-    [[nodiscard]] static auto
-    fold_indexed_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                         path_registers& registers, const operand& address)
-        -> operand {
-
-        machine& x{tc.machine()};
-
-        operand target{
-            fold_register(registers, address),
-        };
-
-        if (target.is_empty()) {
-            target = x.alloc_scratch_register(src_loc_tk, indent,
-                                              tc.builtins().address());
-
-            registers.add(target);
-        }
-
-        x.address_of(src_loc_tk, indent, target, address);
-
-        return target;
-    }
-
-    // picks a register that 'lea target, [address]' may overwrite, or empty
-    // when a new one must be allocated
-    // note: only 'address' refers to an owned register and the fold replaces
-    //       'address', so an owned base is dead once 'lea' has read it
-    [[nodiscard]] static auto fold_register(path_registers& registers,
-                                            const operand& address) -> operand {
-
-        // the caller loads the final address into it anyway, so it is free
-        // until then and folding there may save the final move
-        if (not registers.address_register().is_empty()) {
-            return registers.address_register();
-        }
-
-        // an owned base is a loaded held address or an earlier fold target,
-        // reusing it keeps 'index_register' for the next index
-        for (const operand& r : registers.owned()) {
-            // the frame register and the caller's registers are never owned,
-            // so a match proves the base is private to this path
-            if (r.register_name() == address.base_register()) {
-                return r;
-            }
-        }
-
-        // the base must survive, so without an index register a new one is
-        // needed
-        if (registers.index_register().is_empty()) {
-            return {};
-        }
-
-        // 'lea' may write the index register it reads, the next index then
-        // gets its own register so it never overwrites the new base
-        const operand folded_into{registers.index_register()};
-        registers.forget_index_register();
-
-        return folded_into;
-    }
-
     // empty when the index is computed at run time or is out of range
     [[nodiscard]] static auto
     in_range_constant_index(const toc& tc, const expr_any& index_expr,
                             const ident_info& array_info)
         -> std::optional<size_t>;
-
-    [[nodiscard]] static auto
-    load_held_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                      path_registers& registers, const operand& address_slot)
-        -> operand {
-
-        machine& x{tc.machine()};
-
-        const operand address_register{
-            x.alloc_scratch_register(src_loc_tk, indent,
-                                     tc.builtins().address()),
-        };
-
-        registers.add(address_register);
-
-        x.copy_value(src_loc_tk, indent, address_register,
-                     operand::mem(address_slot, tc.builtins().address()));
-
-        return operand::mem(address_register, tc.builtins().address());
-    }
-
-    // the address a call computed, the address a slot holds or the
-    // storage
-    [[nodiscard]] static auto
-    start_address(toc& tc, const size_t indent, const token& src_loc_tk,
-                  path_registers& registers, const operand& known_operand,
-                  const ident_info& storage) -> operand {
-
-        if (not known_operand.is_empty()) {
-            return known_operand;
-        }
-
-        if (storage.holds_address()) {
-            return load_held_address(tc, indent, src_loc_tk, registers,
-                                     storage.operand());
-        }
-
-        return storage.operand();
-    }
 };
 
 // storage that a node names and that is read or passed in place, e.g. the
@@ -1234,7 +1211,7 @@ inline auto statement::bare_path() const -> const stmt_identifier* {
 
     const stmt_identifier* const ident{st.bare_path()};
 
-    if (ident == nullptr or ident->names_function(tc)) {
+    if (ident == nullptr) {
         return std::nullopt;
     }
 

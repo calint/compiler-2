@@ -242,24 +242,77 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        F.1. absent tokens as 'std::optional' where round 13 J.4 missed them
             (F9): the index part of 'ident_elem', 'is_indexed' derived,
             'for_each_prefix', 'generic_arg::arg_tk'
+       => F.1 done (2026-10-25): 'ident_elem::index' an optional
+          'index_part' {brackets, expression never null}; 'is_indexed()'
+          derived from the elements; 'for_each_prefix' takes an optional
+          token; 'generic_arg::arg_tk' optional, asserted for a constant;
+          listings and '--reproduce-source' equal on every test
+          (amended with F.3: 'ident_elem::index_expr()' reads the index of an
+          indexed element, the lint asks for the check)
        F.2. behavior, one message: a path naming a function is rejected at
             the parse (F3); a scratch build that aborts where
             'names_function' is still true first; the seven guards and
             'names_function' go; 'var x = f.y' gets the resolver's message
+       => F.2 done (2026-10-25): 'parse_call_or_identifier' rejects
+          'term_kind::function_name' with the resolver's message, except a
+          generic function, which the resolver reports as needing type
+          arguments (test 0792); 'names_function' and its seven guards go;
+          a path naming a function with fields, e.g. 'noop.x' or
+          'make.y = 2', now gets the function message instead of "cannot
+          resolve identifier" (test 0692 updated); listings otherwise
+          equal; reject, compiler, generics, calls, methods fuzzers clean
        F.3. an error location as a type (F6): 'source_span', the error holds
             'std::optional<source_span>' (empty only for 'file_level'),
             'call_frame' holds one, 'source_locations::for_error' formats it
             and main prints through it; error output byte-equal
+       => F.3 done (2026-10-25): 'source_span' {file, line, bytes} with
+          'source_span::at'; 'compile_error::where' optional, empty for
+          'file_level'; 'call_frame::where'; 'source_locations::for_error'
+          formats 'file:line:column' for the error and its frames;
+          'is_inside_call' reads the span; a scratch build that aborted on
+          an error built from a token without a place ran the four suites,
+          the CLI tests and five fuzzers without one, but the backend test
+          builds such errors, so the constructor keeps the rule "no place,
+          no span" and says so; error output byte-equal on every test
        F.4. one escape walk (F7): 'token::escape_at' used by the string and
             character readers, one throw site for an unsupported escape
+       => F.4 done (2026-10-25): 'token::escape_at' {size, decoded,
+          is_continuation} is the escape grammar for 'string_text',
+          'unsupported_escape', 'decode_string' and 'parse_character'; the
+          two throw sites stay, their locations differ (a string marks the
+          whole escape, a character literal its backslash) and the output
+          is byte-equal; the tokenizer's own loop only skips a character
+          after a backslash and stays
        F.5. where a built-in may stand is a column of the catalog (F5):
             'builtin_use' {statement, value, either}; the discard rule reads
             it instead of following from dispatch order
+       => F.5 done (2026-10-25): 'reserved_names::builtin_use' {statement,
+          value, either} in each catalog row, a 'static_assert' ties it to
+          'builtin_value'; 'assert_builtin_has_value' reads it; the discard
+          check runs before the io dispatch and exempts 'either' by name
+          ('is_builtin_used_either_way'), so the rule no longer depends on
+          the order; the io table's 'static_assert' checks the column;
+          listings equal
        F.6. the address builder of 'stmt_identifier' as a nested class
             'path_address' (F2) holding the context its 5-9 parameter
             statics repeat; a move with shorter signatures
+       => F.6 done (2026-10-25): 'stmt_identifier::path_address' holds
+          'tc', 'indent', the location, the registers and the index register
+          ('path_registers' goes); 'start', 'check_unindexed_range',
+          'indexed_element' public, 'add_index', 'fold_indexed_address',
+          'fold_register', 'load_held_address' private; the statics that
+          need no registers ('check_array_bounds', 'compile_checked_index',
+          'in_range_constant_index') stay on the node; README 6.7, 6.8;
+          listings equal
        F.7. the path loop (F4): 'read_continuation' returns a variant {end,
             field, method}; the method tokens read by 'stmt_call' itself
+       => F.7 done in part (2026-10-25): 'read_continuation' (const)
+          returns 'path_continuation', a variant {path_end, path_field,
+          method_tokens}; the constructor loop applies a field and stops at
+          the end or at a method; 'extends_path', its out-parameters and
+          its side effect go; the method tokens stay with the receiver,
+          moving them to 'stmt_call' would move the error of
+          'array_length(a.m)'; listings and '--reproduce-source' equal
        F.8. ask, large: operators as tokens (F1): 'tokenizer::
             is_next_operator', each parser maps the text to its enum; the
             whitespace-only tokens and 'put_back_char' go;

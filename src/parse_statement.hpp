@@ -49,12 +49,21 @@ inline auto assert_builtin_has_value(const token& tk, const tokenizer& tz)
     };
 
     const bool has_no_value{
-        fn != nullptr and fn->value == reserved_names::builtin_value::none,
+        fn != nullptr and fn->use == reserved_names::builtin_use::statement,
     };
 
     if (has_no_value and tz.peek_char_after_whitespace() == '(') {
         throw compile_error{tk, "function does not return a value"};
     }
+}
+
+// a call of the built-in at 'tk' may stand alone or in a value, e.g. 'read'
+[[nodiscard]] inline auto is_builtin_used_either_way(const token& tk) -> bool {
+    const reserved_names::builtin_function* const fn{
+        reserved_names::find_builtin_function(tk.text()),
+    };
+
+    return fn != nullptr and fn->use == reserved_names::builtin_use::either;
 }
 
 // a built-in is not generic, e.g. 'read<i8>(0, buf)'
@@ -161,6 +170,14 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_builtin_exit>(tc, tk, tz);
     }
 
+    // e.g. 'arrays_equal(a, b, 4)' or 'i8(x)' alone, its value is all it
+    // does; 'read' and 'write' may stand alone ('builtin_use::either')
+    if (builtin_value_type(tc, tk, classify_term(tc, tk, tz)) != nullptr and
+        not is_builtin_used_either_way(tk)) {
+
+        throw compile_error{tk, "return value is discarded"};
+    }
+
     if (const stmt_builtin_io::io_function* const io{
             stmt_builtin_io::find(tk.text()),
         }) {
@@ -170,11 +187,6 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
 
     if (tk.is_text(reserved_names::foo)) {
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
-    }
-
-    // e.g. 'arrays_equal(a, b, 4)' alone, its value is all it does
-    if (builtin_value_type(tc, tk, classify_term(tc, tk, tz)) != nullptr) {
-        throw compile_error{tk, "return value is discarded"};
     }
 
     return nullptr;
@@ -316,6 +328,17 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
             },
             .identifier{},
         };
+    }
+
+    // e.g. the 'f' of 'x = f + 1'; the resolver tells a generic function
+    // that it needs type arguments
+    if (tm.is(term_kind::function_name) and
+        not tc.generics().has_func(tk.text())) {
+
+        throw compile_error{
+            tk, std::format("{} is a function, not a value, a call ends with "
+                            "'()'",
+                            in_quotes(tk.text()))};
     }
 
     // e.g. 'x', 'p.x', 'a[i]' or the literal '0x80'

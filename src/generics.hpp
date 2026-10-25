@@ -200,8 +200,8 @@ struct generic_arg_tokens {
 struct generic_arg {
     // e.g. 'T' of 'type list<T type, capacity>'
     token param_tk;
-    // e.g. 'i8' of 'list<i8, 8>', empty for a type argument of a function
-    token arg_tk;
+    // e.g. 'i8' of 'list<i8, 8>', none for a type argument of a function
+    std::optional<token> arg_tk;
     // the type, or the value of a constant
     std::variant<const type*, int64_t> value;
 

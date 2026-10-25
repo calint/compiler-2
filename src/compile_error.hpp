@@ -1,9 +1,11 @@
 #pragma once
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <format>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -31,6 +33,30 @@ class option_error final : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
+// where in the source: the file, the line and the bytes of a token
+struct source_span {
+    size_t file_ix{};
+    size_t line{};
+    size_t start_index{};
+    size_t end_index{};
+
+    //
+    // statics
+    //
+
+    // 'src_loc_tk' has a place in the source, line 0 is a token without one
+    [[nodiscard]] static auto at(const token& src_loc_tk) -> source_span {
+        assert(src_loc_tk.at_line() != 0);
+
+        return {
+            .file_ix{src_loc_tk.file_index()},
+            .line{src_loc_tk.at_line()},
+            .start_index{src_loc_tk.start_index()},
+            .end_index{src_loc_tk.end_index()},
+        };
+    }
+};
+
 class compile_error final : public std::exception {
   public:
     // running out of scratch registers depends on the code compiled, another
@@ -51,10 +77,7 @@ class compile_error final : public std::exception {
     // a place the error was found through: an inlined call or the instance of
     // a generic definition
     struct call_frame {
-        size_t file_ix{};
-        size_t line{};
-        size_t start_index{};
-        size_t end_index{};
+        source_span where;
         std::string text;
         std::string reason;
 
@@ -67,22 +90,22 @@ class compile_error final : public std::exception {
                                      std::string reason) -> call_frame {
 
             return {
-                .file_ix{src_loc_tk.file_index()},
-                .line{src_loc_tk.at_line()},
-                .start_index{src_loc_tk.start_index()},
-                .end_index{src_loc_tk.end_index()},
+                .where{source_span::at(src_loc_tk)},
                 .text{std::move(text)},
                 .reason{std::move(reason)},
             };
         }
     };
 
-    // a token without a place in the source, line 0, reports like a problem of
-    // the whole file
+    // a token without a place, e.g. of a backend test, gives an error without
+    // one like 'file_level'; the compiler always passes a token of the source
     compile_error(const token& src_loc_tk, std::string message)
-        : msg{std::move(message)}, file_ix{src_loc_tk.file_index()},
-          line{src_loc_tk.at_line()}, start_index{src_loc_tk.start_index()},
-          end_index{src_loc_tk.end_index()} {}
+        : msg{std::move(message)} {
+
+        if (src_loc_tk.at_line() != 0) {
+            where = source_span::at(src_loc_tk);
+        }
+    }
 
     // defined in 'tokenizer.hpp', the error is at the start of the token that
     // was found instead of the expected one, past the whitespace and comments
@@ -90,10 +113,8 @@ class compile_error final : public std::exception {
     compile_error(const tokenizer& tz, std::string message);
 
     std::string msg;
-    size_t file_ix{};
-    size_t line{};
-    size_t start_index{};
-    size_t end_index{};
+    // none for a problem of the whole file ('file_level')
+    std::optional<source_span> where;
 
     // innermost first, see 'call_frame'
     std::vector<call_frame> call_frames;
@@ -120,8 +141,8 @@ class compile_error final : public std::exception {
     // statics
     //
 
-    // a problem of the whole file, e.g. a missing 'main', has line 0 and no
-    // position, every other exception points at the token that caused it
+    // a problem of the whole file, e.g. a missing 'main', has no place, every
+    // other error points at the token that caused it
     [[nodiscard]] static auto file_level(std::string message) -> compile_error {
         return compile_error{std::move(message)};
     }

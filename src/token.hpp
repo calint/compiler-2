@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <charconv>
@@ -45,23 +46,68 @@ inline constexpr std::array<std::string_view, 21> keywords{
 // the default type, or a 'bool'
 enum class builtin_value : uint8_t { none, count, boolean };
 
+// where a call of a built-in may stand: alone as a statement, in a value, or
+// either, e.g. 'read' whose count may be dropped
+enum class builtin_use : uint8_t { statement, value, either };
+
 struct builtin_function {
     std::string_view name;
     builtin_value value{};
+    builtin_use use{};
 };
 
 // a variable or function with the name of a built-in function would be read
 // as a call of the built-in
 inline constexpr std::array<builtin_function, 8> builtin_functions{
-    builtin_function{.name{"array_copy"}, .value{builtin_value::none}},
-    builtin_function{.name{"array_length"}, .value{builtin_value::count}},
-    builtin_function{.name{"arrays_equal"}, .value{builtin_value::boolean}},
-    builtin_function{.name{"read"}, .value{builtin_value::count}},
-    builtin_function{.name{"write"}, .value{builtin_value::count}},
-    builtin_function{.name{"sector_read"}, .value{builtin_value::none}},
-    builtin_function{.name{"sector_write"}, .value{builtin_value::none}},
-    builtin_function{.name{"exit"}, .value{builtin_value::none}},
+    builtin_function{
+        .name{"array_copy"},
+        .value{builtin_value::none},
+        .use{builtin_use::statement},
+    },
+    builtin_function{
+        .name{"array_length"},
+        .value{builtin_value::count},
+        .use{builtin_use::value},
+    },
+    builtin_function{
+        .name{"arrays_equal"},
+        .value{builtin_value::boolean},
+        .use{builtin_use::value},
+    },
+    builtin_function{
+        .name{"read"},
+        .value{builtin_value::count},
+        .use{builtin_use::either},
+    },
+    builtin_function{
+        .name{"write"},
+        .value{builtin_value::count},
+        .use{builtin_use::either},
+    },
+    builtin_function{
+        .name{"sector_read"},
+        .value{builtin_value::none},
+        .use{builtin_use::statement},
+    },
+    builtin_function{
+        .name{"sector_write"},
+        .value{builtin_value::none},
+        .use{builtin_use::statement},
+    },
+    builtin_function{
+        .name{"exit"},
+        .value{builtin_value::none},
+        .use{builtin_use::statement},
+    },
 };
+
+// only a statement has no value
+static_assert(std::ranges::all_of(builtin_functions,
+                                  [](const builtin_function& fn) -> bool {
+                                      return (fn.value ==
+                                              builtin_value::none) ==
+                                             (fn.use == builtin_use::statement);
+                                  }));
 
 // the built-in function named 'name', null for any other name
 [[nodiscard]] constexpr auto find_builtin_function(const std::string_view name)
@@ -92,6 +138,15 @@ class token final {
     std::string_view ws_right_; // whitespace right of token text
     size_t at_line_{};          // line number in the source
     bool is_str_{};             // true if the text is a string literal
+
+    // what a backslash in string or character text starts, see 'escape_at'
+    struct escape {
+        // the characters after the backslash
+        size_t size{};
+        // empty for a continuation or an unsupported escape
+        std::optional<char> decoded;
+        bool is_continuation{};
+    };
 
   public:
     token(const size_t file_ix, const std::string_view ws_left,
@@ -183,27 +238,16 @@ class token final {
             // note: the tokenizer reads a character after every backslash
             assert(i + 1 < text_.size());
 
-            if (text_.at(i + 1) == '\n') {
-                i += 1;
-                // note: 1 skips the backslash, the loop skips the line end
+            const escape esc{escape_at(text_, i)};
 
-                continue;
-            }
-
-            // crlf line ends
-            if (text_.substr(i + 1).starts_with("\r\n")) {
-                i += 2;
-                // note: 2 skips '\' and '\r', the loop skips the '\n'
-
-                continue;
-            }
-
-            // keep the pair so an escaped backslash is not taken as a
+            // keep an escape whole so an escaped backslash is not taken as a
             // continuation
-            joined += text_.at(i);
-            joined += text_.at(i + 1);
-            i += 1;
-            // note: 1 skips the backslash, the loop skips the escaped char
+            if (not esc.is_continuation) {
+                joined += text_.substr(i, 1 + esc.size);
+            }
+
+            i += esc.size;
+            // note: the loop skips the last character of the escape
         }
 
         return joined;
@@ -225,25 +269,22 @@ class token final {
                 continue;
             }
 
-            const std::string_view escape{text_.substr(i + 1)};
-            // note: +1 because the escape follows the backslash
+            const escape esc{escape_at(text_, i)};
 
-            // a backslash before a line end continues the string
-            if (escape.starts_with('\n') or escape.starts_with("\r\n")) {
+            // the line end of a continuation is counted by the loop
+            if (esc.is_continuation) {
                 continue;
             }
 
-            const size_t escape_size{escape_length(escape)};
-
-            if (not decode_escape(escape.substr(0, escape_size))) {
+            if (not esc.decoded) {
                 const size_t backslash_index{start_ix_ + 1 + i};
                 // note: +1 because the text starts after the opening quote
 
-                return synthetic(file_ix_, text_.substr(i, 1 + escape_size),
+                return synthetic(file_ix_, text_.substr(i, 1 + esc.size),
                                  backslash_index, line);
             }
 
-            i += escape_size;
+            i += esc.size;
         }
 
         return std::nullopt;
@@ -319,19 +360,53 @@ class token final {
                 continue;
             }
 
-            const size_t escape_size{escape_length(text.substr(i + 1))};
+            const escape esc{escape_at(text, i)};
 
-            const std::optional<char> decoded{
-                decode_escape(text.substr(i + 1, escape_size)),
-            };
+            assert(esc.decoded);
 
-            assert(decoded);
-
-            bytes += *decoded;
-            i += escape_size;
+            bytes += *esc.decoded;
+            i += esc.size;
         }
 
         return bytes;
+    }
+
+    // the escape whose backslash is at 'backslash_index' of 'text': a line
+    // continuation, a backslash before a line end, or a character escape,
+    // decoded unless unsupported; 'size' counts the characters after the
+    // backslash, e.g. 3 for '\x41' and 2 for a crlf continuation
+    [[nodiscard]] static auto escape_at(const std::string_view text,
+                                        const size_t backslash_index)
+        -> escape {
+
+        assert(text.at(backslash_index) == '\\');
+
+        const std::string_view after{text.substr(backslash_index + 1)};
+        // note: +1 because the escape follows the backslash
+
+        if (after.starts_with('\n')) {
+            return {
+                .size{1},
+                .decoded{},
+                .is_continuation{true},
+            };
+        }
+
+        if (after.starts_with("\r\n")) {
+            return {
+                .size{2},
+                .decoded{},
+                .is_continuation{true},
+            };
+        }
+
+        const size_t size{escape_length(after)};
+
+        return {
+            .size{size},
+            .decoded{decode_escape(after.substr(0, size))},
+            .is_continuation{},
+        };
     }
 
     // the characters after a backslash that make up its escape: a hex escape

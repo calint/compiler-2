@@ -152,6 +152,17 @@ class source_locations final {
                            text(src_loc_tk, ':'));
     }
 
+    // where an error is, 'file:line:column', always with the file name
+    [[nodiscard]] auto for_error(const source_span& where) const
+        -> std::string {
+
+        const std::string_view src{files_.get().text(where.file_ix)};
+
+        return std::format(
+            "{}:{}:{}", printable(files_.get().name(where.file_ix)), where.line,
+            column_for_char_index(where.start_index, src));
+    }
+
     // the location in the main file has no file name, a label stays the same
     // for a program of one file
     [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {

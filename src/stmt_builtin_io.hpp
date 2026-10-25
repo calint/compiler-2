@@ -262,9 +262,13 @@ class stmt_builtin_io final : public statement {
                     reserved_names::find_builtin_function(io.name),
                 };
 
+                // note: a call with a count may also stand alone
                 return fn != nullptr and
                        io.has_result() ==
-                           (fn->value == reserved_names::builtin_value::count);
+                           (fn->value ==
+                            reserved_names::builtin_value::count) and
+                       io.has_result() ==
+                           (fn->use == reserved_names::builtin_use::either);
             },
         };
 

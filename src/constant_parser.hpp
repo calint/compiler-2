@@ -100,8 +100,7 @@ class constant_parser final {
                             str)};
         }
 
-        const std::optional<char> decoded{token::decode_escape(body.substr(1))};
-        // note: +1 because the escape starts after the backslash
+        const std::optional<char> decoded{token::escape_at(body, 0).decoded};
 
         if (not decoded) {
             // note: the tokenizer checks a literal as it reads it, so

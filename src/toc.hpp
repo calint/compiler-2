@@ -3911,7 +3911,10 @@ class generic_scope final {
             if (arg.is_type()) {
                 add_type(arg.param_tk, arg.param_tk.text(), arg.type_ref());
             } else {
-                add_const(arg.arg_tk, arg.param_tk.text(), arg.constant());
+                // note: a constant argument is always written
+                assert(arg.arg_tk);
+
+                add_const(*arg.arg_tk, arg.param_tk.text(), arg.constant());
             }
         }
     }

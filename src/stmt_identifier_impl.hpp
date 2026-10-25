@@ -33,10 +33,10 @@ inline auto stmt_identifier::ident_elem::source_to(std::ostream& os) const
 
     name_tk.source_to(os);
 
-    if (array_index_expr) {
-        open_bracket_tk.source_to(os);
-        array_index_expr->source_to(os);
-        close_bracket_tk.source_to(os);
+    if (index) {
+        index->open_bracket_tk.source_to(os);
+        index->expr->source_to(os);
+        index->close_bracket_tk.source_to(os);
     }
 }
 
@@ -60,14 +60,38 @@ inline stmt_identifier::stmt_identifier(toc& tc, unary_ops uops, token tk,
         assert_indexable(tc, tz, tk);
         parse_element(tc, tz, tk);
 
-        if (not extends_path(tc, tz, tk, src_loc_tk)) {
+        const path_continuation next{read_continuation(tc, tz, tk)};
+
+        // the path so far is resolved as the receiver
+        if (const method_tokens* const method{
+                std::get_if<method_tokens>(&next),
+            }) {
+
+            method_ = *method;
             break;
         }
+
+        const path_field* const field{std::get_if<path_field>(&next)};
+
+        if (field == nullptr) {
+            break;
+        }
+
+        assert_element_selected(tc, tk);
+        assert_not_method_call(tc, tz, tk, field->name_tk);
+
+        elem_delims_tk_.emplace_back(field->dot_tk);
+        src_loc_tk = tk;
+        tk = field->name_tk;
+        dotted_path_.push_back('.');
+        dotted_path_ += tk.text();
     }
 
-    if (not names_function(tc)) {
-        resolve_type(tc, src_loc_tk);
-    }
+    // note: a function name is rejected before a path is parsed
+    //       ('parse_call_or_identifier', 'parse_array_argument'), the name of
+    //       a generic function by the resolver here
+
+    resolve_type(tc, src_loc_tk);
 
     resolve_accessed_bytes(tc);
 
@@ -94,8 +118,8 @@ inline auto stmt_identifier::visit_call_effects(
     const toc& tc, const call_effect_visitor visitor) const -> void {
 
     for (const ident_elem& e : elems_) {
-        if (e.array_index_expr) {
-            e.array_index_expr->visit_call_effects(tc, visitor);
+        if (e.index) {
+            e.index_expr().visit_call_effects(tc, visitor);
         }
     }
 }
@@ -105,8 +129,8 @@ inline auto stmt_identifier::visit_index_reads(const read_filter var,
     -> void {
 
     for (const ident_elem& e : elems_) {
-        if (e.array_index_expr) {
-            e.array_index_expr->visit_reads(var, reader);
+        if (e.index) {
+            e.index_expr().visit_reads(var, reader);
         }
     }
 }
@@ -127,7 +151,7 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
             .count{count},
             .start_tk{
                 is_array_element()
-                    ? std::optional{elems_.back().array_index_expr->tok()}
+                    ? std::optional{elems_.back().index_expr().tok()}
                     : std::nullopt,
             },
             .count_tk{count_tk},
@@ -143,7 +167,7 @@ inline auto stmt_identifier::constant_start_index(const toc& tc) const
         return 0;
     }
 
-    return elems_.back().array_index_expr->constant_value(tc);
+    return elems_.back().index_expr().constant_value(tc);
 }
 
 inline auto stmt_identifier::narrow_to_element(toc& tc,
@@ -183,11 +207,13 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
     const std::optional<token> open_bracket_tk{tz.is_next_char_token('[')};
 
     if (not open_bracket_tk) {
-        elems_.emplace_back(tk, token{}, nullptr, token{});
+        elems_.push_back({
+            .name_tk{tk},
+            .index{},
+        });
+
         return;
     }
-
-    is_indexed_ = true;
 
     std::unique_ptr<expr_any> index_expr{
         std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
@@ -199,16 +225,20 @@ inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
                              "expected ']' to close array index expression"),
     };
 
-    elems_.emplace_back(tk, *open_bracket_tk, std::move(index_expr),
-                        close_bracket_tk);
+    elems_.push_back({
+        .name_tk{tk},
+        .index{
+            index_part{
+                .open_bracket_tk{*open_bracket_tk},
+                .expr{std::move(index_expr)},
+                .close_bracket_tk{close_bracket_tk},
+            },
+        },
+    });
 }
 
 inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
-    if (names_function(tc)) {
-        return;
-    }
-
-    for_each_prefix(tc, {}, [&](const prefix_step& step) -> void {
+    for_each_prefix(tc, std::nullopt, [&](const prefix_step& step) -> void {
         const ident_elem& elem{*step.elem};
 
         if (step.parent_type == nullptr) {
@@ -236,43 +266,43 @@ inline auto stmt_identifier::resolve_accessed_bytes(toc& tc) -> void {
                                                 : extent_bytes);
         }
 
-        if (elem.array_index_expr) {
-            narrow_to_element(tc, *elem.array_index_expr, *step.info);
+        if (elem.index) {
+            narrow_to_element(tc, elem.index_expr(), *step.info);
         }
     });
 }
 
-inline auto stmt_identifier::add_index(toc& tc, const size_t indent,
-                                       const token& src_loc_tk,
-                                       path_registers& registers,
-                                       const ident_elem& cur_elem,
-                                       const ident_info& cur_info,
-                                       const operand& reg_count,
-                                       const operand& address) -> operand {
+inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
+                                                     const ident_info& cur_info,
+                                                     const operand& reg_count,
+                                                     const operand& address)
+    -> operand {
+
+    toc& tc{tc_.get()};
+    const size_t indent{indent_};
 
     machine& x{tc.machine()};
 
+    const token& index_tk{cur_elem.index_expr().tok()};
+
     // a register kept by an earlier fold is reused since the fold already
     // consumed its value
-    if (registers.index_register().is_empty()) {
+    if (index_register_.is_empty()) {
         // index expressions are parsed with the default type
-        registers.set_index_register(x.alloc_scratch_register(
-            src_loc_tk, indent, tc.builtins().default_type()));
+        index_register_ = x.alloc_scratch_register(
+            index_tk, indent, tc.builtins().default_type());
 
-        registers.add(registers.index_register());
+        allocated_.get().push_back(index_register_);
     }
 
-    const operand& index_register{registers.index_register()};
+    const operand& index_register{index_register_};
 
     int64_t addend_elements{
-        compile_checked_index(tc, indent, *cur_elem.array_index_expr,
-                              index_register, cur_info.element_count(),
-                              reg_count),
+        compile_checked_index(tc, indent, cur_elem.index_expr(), index_register,
+                              cur_info.element_count(), reg_count),
     };
 
     const size_t type_size{cur_info.type_ref().size_bytes()};
-
-    const token& index_tk{cur_elem.array_index_expr->tok()};
 
     // a constant too far for the displacement is added to the index, the
     // sum can still be an element, e.g. 'a[i - 9223372036854775806]'
@@ -283,7 +313,7 @@ inline auto stmt_identifier::add_index(toc& tc, const size_t indent,
                   addend_elements);
 
         x.add_subtract(
-            src_loc_tk, indent, arithmetic_operator::add, index_register,
+            index_tk, indent, arithmetic_operator::add, index_register,
             operand::imm(addend_elements, tc.builtins().default_type()));
 
         addend_elements = 0;
@@ -298,7 +328,7 @@ inline auto stmt_identifier::add_index(toc& tc, const size_t indent,
     const bool is_encodable_scale{x.can_lower_index_scale(type_size)};
 
     if (not is_encodable_scale) {
-        x.scale_index(src_loc_tk, indent, index_register, type_size);
+        x.scale_index(index_tk, indent, index_register, type_size);
     }
 
     return operand::mem(
@@ -350,18 +380,17 @@ inline auto stmt_identifier::compile_checked_index(
     return 0;
 }
 
-inline auto stmt_identifier::compile_indexed_element(
-    toc& tc, const size_t indent, const token& src_loc_tk,
-    path_registers& registers, const ident_elem& cur_elem,
-    const std::string_view path, const ident_info& cur_info,
-    const operand& range_count, const operand& address) -> operand {
+inline auto stmt_identifier::path_address::indexed_element(
+    const ident_elem& cur_elem, const std::string_view path,
+    const ident_info& cur_info, const operand& range_count,
+    const operand& address) -> operand {
 
     const std::optional<int64_t> constant_index{
-        cur_elem.array_index_expr->constant_value(tc),
+        cur_elem.index_expr().constant_value(tc_),
     };
 
     if (constant_index) {
-        assert_constant_index(cur_info, cur_elem.array_index_expr->tok(), path,
+        assert_constant_index(cur_info, cur_elem.index_expr().tok(), path,
                               *constant_index, not range_count.is_empty());
     }
 
@@ -380,13 +409,10 @@ inline auto stmt_identifier::compile_indexed_element(
     operand base{address};
 
     if (not address.index_register().empty()) {
-        base = operand::mem(
-            fold_indexed_address(tc, indent, src_loc_tk, registers, address),
-            cur_info.type_ref());
+        base = operand::mem(fold_indexed_address(address), cur_info.type_ref());
     }
 
-    return add_index(tc, indent, cur_elem.array_index_expr->tok(), registers,
-                     cur_elem, cur_info, range_count, base);
+    return add_index(cur_elem, cur_info, range_count, base);
 }
 
 inline auto stmt_identifier::in_range_constant_index(

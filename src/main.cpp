@@ -196,10 +196,9 @@ struct source_line {
 [[nodiscard]] auto trimmed_line_at(std::string_view src, size_t index)
     -> std::string_view;
 
-auto print_source_error(const source_files& files, const size_t file_ix,
-                        const size_t line, const size_t start_index,
-                        const size_t end_index, const std::string_view message)
-    -> void;
+auto print_source_error(const source_files& files,
+                        const std::optional<source_span>& where,
+                        std::string_view message) -> void;
 
 auto print_source_line(std::string_view src, size_t start_index,
                        size_t end_index) -> void;
@@ -606,8 +605,7 @@ examples:
 auto print_compiler_error(const source_files& files, const compile_error& e)
     -> void {
 
-    print_source_error(files, e.file_ix, e.line, e.start_index, e.end_index,
-                       e.msg);
+    print_source_error(files, e.where, e.msg);
 
     print_call_frames(files, e.call_frames);
 
@@ -905,23 +903,22 @@ auto print_call_frames(const source_files& files,
                        const std::span<const compile_error::call_frame> frames)
     -> void {
 
-    for (const compile_error::call_frame& frame : frames) {
-        const std::string_view src_file_name{files.name(frame.file_ix)};
-        const std::string_view src{files.text(frame.file_ix)};
+    const source_locations locations{files};
 
-        const size_t col{column_for_char_index(frame.start_index, src)};
+    for (const compile_error::call_frame& frame : frames) {
+        const source_span& where{frame.where};
+        const std::string_view src{files.text(where.file_ix)};
 
         // the source line shows a call that is the whole line
-        if (frame.text == trimmed_line_at(src, frame.start_index)) {
-            std::println(stderr, "{}:{}:{}: {}", printable(src_file_name),
-                         frame.line, col, frame.reason);
+        if (frame.text == trimmed_line_at(src, where.start_index)) {
+            std::println(stderr, "{}: {}", locations.for_error(where),
+                         frame.reason);
         } else {
-            std::println(stderr, "{}:{}:{}: {} {}", printable(src_file_name),
-                         frame.line, col, frame.reason,
-                         in_quotes(printable(frame.text)));
+            std::println(stderr, "{}: {} {}", locations.for_error(where),
+                         frame.reason, in_quotes(printable(frame.text)));
         }
 
-        print_source_line(src, frame.start_index, frame.end_index);
+        print_source_line(src, where.start_index, where.end_index);
     }
 }
 
@@ -963,29 +960,26 @@ auto print_call_frames(const source_files& files,
     return line.substr(first, line.find_last_not_of(whitespace) - first + 1);
 }
 
-// 'line' and 'start_index' locate the error, the column is derived from them,
-// line 0 is a problem of the whole file
-auto print_source_error(const source_files& files, const size_t file_ix,
-                        const size_t line, const size_t start_index,
-                        const size_t end_index, const std::string_view message)
-    -> void {
+// an error without a place is a problem of the whole program, reported at the
+// main file
+auto print_source_error(const source_files& files,
+                        const std::optional<source_span>& where,
+                        const std::string_view message) -> void {
 
-    const std::string_view src_file_name{files.name(file_ix)};
-    const std::string_view src{files.text(file_ix)};
-
-    if (line == 0) {
-        std::println(stderr, "\n{}: {}", printable(src_file_name),
+    if (not where) {
+        std::println(stderr, "\n{}: {}", printable(files.name(0)),
                      printable(message));
 
         return;
     }
 
-    const size_t col{column_for_char_index(start_index, src)};
+    const source_locations locations{files};
 
-    std::println(stderr, "\n{}:{}:{}: {}", printable(src_file_name), line, col,
+    std::println(stderr, "\n{}: {}", locations.for_error(*where),
                  printable(message));
 
-    print_source_line(src, start_index, end_index);
+    print_source_line(files.text(where->file_ix), where->start_index,
+                      where->end_index);
 }
 
 // the bytes after the first one of a multi-byte UTF-8 character
