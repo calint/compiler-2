@@ -645,13 +645,6 @@ class machine_x86_64 final : public machine {
         syscall(indent);
     }
 
-    // releases the variables base, optimizes the jumps and asserts that the
-    // registers are balanced; called once at the end of the compile pass
-    auto finish() -> void override {
-        finish_registers();
-        finish_output();
-    }
-
     auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
                                const operand& iterator, const operand& counter,
                                const size_t element_size_bytes,
@@ -874,25 +867,6 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rcx");
     }
 
-    auto start() -> void override {
-        start_output();
-
-        assembler_.default_rel();
-        assembler_.add_separator_newline();
-
-        assembler_.switch_section(section::text);
-        assembler_.bits64();
-        assembler_.global("_start");
-        assembler_.label(0, "_start");
-        assembler_.add_separator_newline();
-        reserve_variables_base();
-
-        assembler_.instruction(0, op::lea, variables_base_register_,
-                               assembler_x86_64::memory::of_symbol(data_label));
-
-        assembler_.add_separator_newline();
-    }
-
     auto unary(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
                const runtime_check& check = {}) -> void override {
@@ -1008,6 +982,17 @@ class machine_x86_64 final : public machine {
         assembler_.call(indent, label);
     }
 
+    auto emit_entry() -> void override {
+        assembler_.default_rel();
+        assembler_.add_separator_newline();
+
+        assembler_.switch_section(section::text);
+        assembler_.bits64();
+        assembler_.global("_start");
+        assembler_.label(0, "_start");
+        assembler_.add_separator_newline();
+    }
+
     // the handler of a check: without the line it prints 'panic: NAME'; with
     // it, one stub per failure location sets rbp to the line and enters the
     // entry of its file, which prints 'panic: NAME at FILE:', sets rbx to the
@@ -1099,6 +1084,11 @@ class machine_x86_64 final : public machine {
         if (is_read_used or is_write_used) {
             emit_sector_routines(is_read_used, is_write_used);
         }
+    }
+
+    auto emit_variables_base_load() -> void override {
+        assembler_.instruction(0, op::lea, variables_base_register_,
+                               assembler_x86_64::memory::of_symbol(data_label));
     }
 
     [[nodiscard]] auto is_stack_pointer(const std::string_view name) const

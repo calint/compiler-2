@@ -75,17 +75,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
         mark_used(exit_label_);
     }
 
-    auto start() -> void override {
-        machine_rv32i::start();
-
-        // no operating system sets up a stack
-        emit_stack_setup();
-
-        assembler_rv32i& a{assembler()};
-
-        a.add_separator_newline();
-    }
-
     //
     // statics
     //
@@ -136,6 +125,15 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     auto emit_read_call(const size_t indent) -> void override {
         call_io_routine(indent, read_label_, read_clobbered_);
         mark_used(read_label_);
+    }
+
+    // no operating system sets up a stack
+    auto emit_target_setup() -> void override {
+        emit_stack_setup();
+
+        assembler_rv32i& a{assembler()};
+
+        a.add_separator_newline();
     }
 
     // only the routines the program calls are emitted; the shared routines

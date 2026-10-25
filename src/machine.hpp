@@ -87,8 +87,8 @@ struct target_description {
 //                  'free_named_register(s)', 'reserve_frame_base',
 //                  'release_frame_base', 'slot_register', 'register_view',
 //                  'alloc_named_register', 'make_register_operand',
-//                  'registers_for_target_call', 'reserve_variables_base' (a
-//                  backend, in 'start')
+//                  'registers_for_target_call', 'reserve_variables_base' (in
+//                  'start' and the backend tests)
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'copy', 'copy_value', 'copy_bytes',
 //                  'copy_elements', 'arrays_equal', 'address_of',
@@ -751,8 +751,6 @@ class machine {
     virtual auto exit(const token& src_loc_tk, const size_t indent,
                       const operand& exit_code) -> void = 0;
 
-    virtual auto finish() -> void = 0;
-
     // 'limit' is the constant array size or a register holding a count,
     // 'counter' is a register or a memory operand
     virtual auto
@@ -791,8 +789,6 @@ class machine {
                        const arithmetic_operator operation, const operand& dst,
                        const operand& count, const runtime_check& check)
         -> void = 0;
-
-    virtual auto start() -> void = 0;
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
@@ -1063,6 +1059,15 @@ class machine {
 
     auto end_noinline_body() -> void { target_assembler().end_body(); }
 
+    // releases the variables base, optimizes the jumps and asserts that the
+    // registers are balanced, then the target's last steps; called once at
+    // the end of the compile pass
+    auto finish() -> void {
+        finish_registers();
+        finish_output();
+        finish_target();
+    }
+
     [[nodiscard]] auto frame_base_register() const -> std::string_view {
         return target_.frame_base_register;
     }
@@ -1246,6 +1251,21 @@ class machine {
         return target_.slot_register;
     }
 
+    // the header, the entry of the program and the variables base, held until
+    // 'finish', then the target's own setup
+    auto start() -> void {
+        start_output();
+        emit_entry();
+        reserve_variables_base();
+        emit_variables_base_load();
+
+        assembler& output{target_assembler()};
+
+        output.add_separator_newline();
+
+        emit_target_setup();
+    }
+
     // what the output measured, for the report of the front end, valid after
     // 'finish'
     [[nodiscard]] auto statistics() const -> output_statistics {
@@ -1320,6 +1340,9 @@ class machine {
     virtual auto emit_call(const size_t indent, const std::string_view label)
         -> void = 0;
 
+    // the entry of the program, e.g. its section and '_start'
+    virtual auto emit_entry() -> void = 0;
+
     // prints 'panic: NAME' of 'handler', with the line when 'with_line'
     virtual auto emit_failure_handler(const failure_handler& handler,
                                       const bool with_line) -> void = 0;
@@ -1334,9 +1357,19 @@ class machine {
                                   const std::span<const operand> args,
                                   const operand& result) -> void = 0;
 
+    // the setup a target needs before 'main', none by default
+    virtual auto emit_target_setup() -> void {}
+
     // the helpers and routines that the code marked used; a routine may mark
     // another one it calls, see 'emit_runtime'
     virtual auto emit_used_routines() -> void = 0;
+
+    // the variables base register gets its address, after it is reserved
+    virtual auto emit_variables_base_load() -> void = 0;
+
+    // the checks and fixups of the output after the jumps are optimized, none
+    // by default
+    virtual auto finish_target() -> void {}
 
     // the asserts of 'call_function': a frame is never addressed from the
     // stack pointer
@@ -1494,25 +1527,6 @@ class machine {
 
         return std::format("{} at {}:", panic_message(name),
                            locations_.file_name(file_ix));
-    }
-
-    // the optional jump optimization
-    auto finish_output() -> void {
-        assembler& output{target_assembler()};
-
-        if (jump_mode_ == jump_mode::optimized) {
-            output.optimize_jumps();
-        }
-    }
-
-    // releases the variables base that 'start' reserved, backend tests that
-    // do not start hold none, and asserts that every register is free
-    auto finish_registers() -> void {
-        if (variables_base_reserved_) {
-            release_variables_base();
-        }
-
-        assert_registers_free();
     }
 
     [[nodiscard]] auto is_frame_base_reserved() const -> bool {
@@ -1703,24 +1717,6 @@ class machine {
 
     [[nodiscard]] auto sd_card_file_name() const -> std::string_view {
         return sd_card_file_name_;
-    }
-
-    auto start_output() -> void {
-        assembler& output{target_assembler()};
-
-        // note: the parse declares names without emitting
-        assert(output.is_empty());
-
-        // note: the parse emits no code, so it allocates no register and uses
-        //       no routine
-
-        assert(state_.max_scratch_regs == 0);
-        assert(state_.used_routines.empty());
-
-        output.comment(0, "");
-        output.comment(0, "generated by baz");
-        output.comment(0, "");
-        output.add_separator_newline();
     }
 
     // 'emit' changes the registers 'clobbered', the allocated ones among them
@@ -1958,6 +1954,25 @@ class machine {
 
     auto end_trace_frame() -> void { state_.trace.end_frame(); }
 
+    // the optional jump optimization
+    auto finish_output() -> void {
+        assembler& output{target_assembler()};
+
+        if (jump_mode_ == jump_mode::optimized) {
+            output.optimize_jumps();
+        }
+    }
+
+    // releases the variables base that 'start' reserved, backend tests that
+    // do not start hold none, and asserts that every register is free
+    auto finish_registers() -> void {
+        if (variables_base_reserved_) {
+            release_variables_base();
+        }
+
+        assert_registers_free();
+    }
+
     [[nodiscard]] auto is_scratch_register(const size_t index) const -> bool {
         return std::ranges::any_of(scratch_registers(),
                                    [&](const std::string_view name) -> bool {
@@ -2150,6 +2165,24 @@ class machine {
         }
 
         return count;
+    }
+
+    auto start_output() -> void {
+        assembler& output{target_assembler()};
+
+        // note: the parse declares names without emitting
+        assert(output.is_empty());
+
+        // note: the parse emits no code, so it allocates no register and uses
+        //       no routine
+
+        assert(state_.max_scratch_regs == 0);
+        assert(state_.used_routines.empty());
+
+        output.comment(0, "");
+        output.comment(0, "generated by baz");
+        output.comment(0, "");
+        output.add_separator_newline();
     }
 
     // the version kept and why, at least one available, e.g. 'kept the second

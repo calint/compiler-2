@@ -351,6 +351,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             with the order written once; protected steps per backend;
             'start_output', 'finish_output', 'finish_registers',
             'reserve_variables_base' private
+       => H.1 done (2026-10-25): 'machine::start' (header, 'emit_entry',
+          the variables base reserved, 'emit_variables_base_load', a
+          separator, 'emit_target_setup') and 'machine::finish' (registers,
+          jump optimization, 'finish_target') are non-virtual; the hooks are
+          protected; bare metal sets up its stack in 'emit_target_setup',
+          rv32i resolves its jumps and checks the memory in 'finish_target';
+          'start_output', 'finish_output', 'finish_registers' private;
+          'reserve_variables_base' stays public for the backend test;
+          'end_main' stays virtual: x86_64 adds a separator after the exit
+          and rv32i does not, one more hook would only carry that line;
+          listings equal
        H.2. the rest of 'target_description' (B4): 'has_sd_card' instead of
             the 0 sentinel; rv32i reads its bases only through the table;
             the target call registers and the stack pointer in the table;

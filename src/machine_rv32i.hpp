@@ -61,8 +61,8 @@
 //   target hooks 'emit_read_call', 'emit_write_call',
 //                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
 //                'emit_sector_routines', 'check_memory_end', and the machine
-//                virtuals 'exit', 'start' and 'emit_used_routines'; the
-//                protected section is what the targets build on
+//                virtuals 'exit', 'emit_target_setup' and 'emit_used_routines';
+//                the protected section is what the targets build on
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
     using op = assembler_rv32i::op;
@@ -413,6 +413,16 @@ class machine_rv32i : public machine {
         assembler_.call(indent, label);
     }
 
+    auto emit_entry() -> void override {
+        assembler_.option_norvc();
+        assembler_.option_norelax();
+        assembler_.add_separator_newline();
+        assembler_.switch_section(section::text);
+        assembler_.globl("_start");
+        assembler_.label(0, "_start");
+        assembler_.add_separator_newline();
+    }
+
     // the handler of a check that prints 'panic: NAME' then exits with its
     // code; with the line, one entry per file prints 'panic: NAME at FILE:'
     // and the line number in a0, see 'branch_to_failure'
@@ -513,6 +523,26 @@ class machine_rv32i : public machine {
         if (is_read_used or is_write_used) {
             emit_sector_routines(is_read_used, is_write_used);
         }
+    }
+
+    auto emit_variables_base_load() -> void override {
+        assembler_.la(0, variables_base_register_, variables_label);
+
+        assembler_.addi(0, variables_base_register_, variables_base_register_,
+                        static_cast<int64_t>(variables_base_past_vars_bytes_));
+    }
+
+    auto finish_target() -> void override {
+        assert(bulk_operations_.empty());
+
+        // the report counts after resolving because grown jumps take more
+        // instructions, a failing build writes nothing
+        assembler_.resolve_jumps();
+
+        const size_t memory_end_address{assembler_.memory_end_address()};
+
+        check_address_range(memory_end_address);
+        check_memory_end(memory_end_address);
     }
 
     [[nodiscard]] auto is_stack_pointer(const std::string_view name) const
@@ -1186,23 +1216,6 @@ class machine_rv32i : public machine {
         exit(token{}, 1, operand::imm(0, default_type()));
     }
 
-    auto finish() -> void override {
-        finish_registers();
-
-        assert(bulk_operations_.empty());
-
-        finish_output();
-
-        // the report counts after resolving because grown jumps take more
-        // instructions, a failing build writes nothing
-        assembler_.resolve_jumps();
-
-        const size_t memory_end_address{assembler_.memory_end_address()};
-
-        check_address_range(memory_end_address);
-        check_memory_end(memory_end_address);
-    }
-
     auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
                                const operand& iterator, const operand& counter,
                                const size_t element_size_bytes,
@@ -1367,25 +1380,6 @@ class machine_rv32i : public machine {
 
         shift_by_register(src_loc_tk, indent, operation, dst, count, loaded,
                           check);
-    }
-
-    auto start() -> void override {
-        start_output();
-
-        assembler_.option_norvc();
-        assembler_.option_norelax();
-        assembler_.add_separator_newline();
-        assembler_.switch_section(section::text);
-        assembler_.globl("_start");
-        assembler_.label(0, "_start");
-        assembler_.add_separator_newline();
-        reserve_variables_base();
-        assembler_.la(0, variables_base_register_, variables_label);
-
-        assembler_.addi(0, variables_base_register_, variables_base_register_,
-                        static_cast<int64_t>(variables_base_past_vars_bytes_));
-
-        assembler_.add_separator_newline();
     }
 
     auto unary(const token& src_loc_tk, const size_t indent,
