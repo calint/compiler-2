@@ -1142,7 +1142,7 @@ class expr_bool final : public statement {
 
     std::vector<element> bools_;
     // the 'and' or 'or' between the elements of 'bools_'
-    std::vector<token> ops_;
+    std::vector<spelled_operator<connective>> ops_;
     // the 'not's before the '(' of a parenthesized list, e.g. both of
     // 'not not (a == b and c == d)'
     std::vector<token> nots_;
@@ -1187,7 +1187,7 @@ class expr_bool final : public statement {
             if (i < element_count - 1) {
                 // note: -1 because there is one operator fewer than elements
 
-                ops_.at(i).source_to(os);
+                ops_.at(i).tk.source_to(os);
             }
         }
 
@@ -1376,12 +1376,15 @@ class expr_bool final : public statement {
     }
 
     // e.g. 'a or b and c' is rejected, '(a or b) and c' is not
-    auto assert_same_connective(const token& op_tk) const -> void {
-        if (ops_.empty() or ops_.front().is_text(op_tk.text())) {
+    auto assert_same_connective(const spelled_operator<connective>& next) const
+        -> void {
+
+        if (ops_.empty() or ops_.front().op == next.op) {
             return;
         }
 
-        throw compile_error{op_tk, "mixing 'and' and 'or' without parentheses"};
+        throw compile_error{next.tk,
+                            "mixing 'and' and 'or' without parentheses"};
     }
 
     // an element that does not decide the list continues at the next element
@@ -1573,7 +1576,7 @@ class expr_bool final : public statement {
     // inversion swaps 'and' and 'or' according to De Morgan's laws
     // every operator of a list is the same, mixing them is rejected
     [[nodiscard]] auto is_or_list() const -> bool {
-        return not ops_.empty() and ops_.front().is_text("or");
+        return not ops_.empty() and ops_.front().op == connective::logical_or;
     }
 
     // a constant false ends an 'and' list and a constant true ends an 'or'
@@ -1586,25 +1589,23 @@ class expr_bool final : public statement {
 
     // a comparison or a parenthesized list, either may follow 'not'
     auto parse_element(toc& tc, tokenizer& tz) -> void {
-        // a comparison is parsed from before the 'not's, it reads them itself
-        const token rewind_pos_tk{tz.cur_position_token()};
+        // a comparison reads its 'not's itself, e.g. '(t1 + t2) > 3' is a
+        // comparison with a parenthesized operand
+        if (not is_list_next(tz)) {
+            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
+            return;
+        }
 
         // the 'not's before a parenthesis, e.g. 'not not (a == b)'
         std::vector<token> not_tks{parse_not_tokens(tz)};
 
         // the list is located at its '(', which keeps the whitespace before it
-        const token ws_tk{tz.next_whitespace_token()};
-        const token pos_tk{tz.cur_position_token()};
-        tz.put_back_token(ws_tk);
+        const token pos_tk{tz.next_token_position()};
 
         const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
 
-        // e.g. '(t1 + t2) > 3' is a comparison with a parenthesized operand
-        if (not open_paren_tk or is_parenthesized_operand(tz)) {
-            tz.rewind_to_position(rewind_pos_tk);
-            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
-            return;
-        }
+        // note: 'is_list_next' saw the '('
+        assert(open_paren_tk);
 
         bools_.emplace_back(std::in_place_type<expr_bool>, tc, pos_tk, tz,
                             std::move(not_tks), *open_paren_tk);
@@ -1619,10 +1620,13 @@ class expr_bool final : public statement {
 
         parse_element(tc, tz);
 
-        while (const std::optional<token> op_tk{read_connective(tz)}) {
-            assert_same_connective(*op_tk);
+        while (const std::optional<spelled_operator<connective>> next{
+            read_connective(tz),
+        }) {
 
-            ops_.emplace_back(*op_tk);
+            assert_same_connective(*next);
+
+            ops_.push_back(*next);
 
             parse_element(tc, tz);
         }
@@ -1630,7 +1634,9 @@ class expr_bool final : public statement {
 
     // the 'and' or 'or' after an operand, none when the expression ends: an
     // enclosed expression ends with its ')'
-    [[nodiscard]] auto read_connective(tokenizer& tz) -> std::optional<token> {
+    [[nodiscard]] auto read_connective(tokenizer& tz)
+        -> std::optional<spelled_operator<connective>> {
+
         // e.g. '(a == 1 or b == 2)'
         if (is_enclosed()) {
             close_paren_tk_ = tz.is_next_char_token(')');
@@ -1644,8 +1650,11 @@ class expr_bool final : public statement {
         // 'a == 1 and b == 2'
         const token op_tk{tz.next_token()};
 
-        if (op_tk.is_text("or") or op_tk.is_text("and")) {
-            return op_tk;
+        if (const std::optional<connective> op{connective_of(op_tk)}) {
+            return spelled_operator<connective>{
+                .tk{op_tk},
+                .op{*op},
+            };
         }
 
         // anything else ends the expression, an enclosed one needs its ')'
@@ -1693,16 +1702,32 @@ class expr_bool final : public statement {
     // statics
     //
 
-    // an operator after the ')' that closes the '(' just read makes the
-    // parentheses part of an operand, decided on a copy before anything is
-    // parsed
+    // a parenthesized list follows its 'not's, decided on a copy
+    [[nodiscard]] static auto is_list_next(const tokenizer& tz) -> bool {
+        tokenizer probe{tz};
+
+        std::ignore = parse_not_tokens(probe);
+
+        return probe.is_next_char_token('(') and
+               not is_parenthesized_operand(probe);
+    }
+
+    // a binary operator or a comparison after the ')' that closes the '('
+    // just read makes the parentheses part of an operand, decided on a copy
+    // before anything is parsed; a lone '=' or '!' too, so the comparison
+    // reports it ('assert_no_lone_operator_char')
     [[nodiscard]] static auto is_parenthesized_operand(const tokenizer& tz)
         -> bool {
 
         tokenizer after_paren{tz};
         after_paren.skip_to_close_paren();
 
-        return std::string_view{"<>=!+-*/%&|^"}.contains(
-            after_paren.peek_char_after_whitespace());
+        if (after_paren.is_binary_operator_next()) {
+            return true;
+        }
+
+        const char next{after_paren.peek_char_after_whitespace()};
+
+        return next == '=' or next == '!';
     }
 };

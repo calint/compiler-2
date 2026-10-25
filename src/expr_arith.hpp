@@ -45,10 +45,8 @@
 //
 class expr_arith final : public statement {
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
-    // operators between elements in the vector
-    std::vector<arithmetic_operator> ops_;
-    // the token of each of 'ops_' with the whitespace before it
-    std::vector<token> op_tks_;
+    // the operators between the elements
+    std::vector<spelled_operator<arithmetic_operator>> ops_;
     unary_ops list_uops_; // of the whole list, e.g. '~(a + b)'
     // of '(a + b)', none when not enclosed
     std::optional<token> open_paren_tk_;
@@ -205,8 +203,10 @@ class expr_arith final : public statement {
             // e.g. the '-' of 'a + b - c'
             precedence = next_precedence;
 
-            ops_.emplace_back(*next_op);
-            op_tks_.emplace_back(tz.seen_operator());
+            ops_.push_back({
+                .tk{tz.seen_operator()},
+                .op{*next_op},
+            });
 
             exprs_.emplace_back(parse_element(tc, tz, destination_type_).node);
         }
@@ -229,10 +229,10 @@ class expr_arith final : public statement {
         // note: an empty position, the first element prints the whitespace
         statement::source_to(os);
         exprs_.at(0)->source_to(os);
-        for (const auto [op_tk, e] :
-             std::views::zip(op_tks_, exprs_ | std::views::drop(1))) {
+        for (const auto [o, e] :
+             std::views::zip(ops_, exprs_ | std::views::drop(1))) {
 
-            op_tk.source_to(os);
+            o.tk.source_to(os);
             e->source_to(os);
         }
 
@@ -351,14 +351,14 @@ class expr_arith final : public statement {
                 return std::nullopt;
             }
 
-            if (use.checks_overflow and
-                constant_arith::overflows_width(*value, o, *rhs, width_type)) {
+            if (use.checks_overflow and constant_arith::overflows_width(
+                                            *value, o.op, *rhs, width_type)) {
 
                 throw compile_error{e->tok(),
                                     "constant expression overflows the type"};
             }
 
-            value = fold_operation(tc, *value, o, *e, *rhs, width_type);
+            value = fold_operation(tc, *value, o.op, *e, *rhs, width_type);
         }
 
         if (not value) {
@@ -387,7 +387,9 @@ class expr_arith final : public statement {
     [[nodiscard]] auto keeps_low_bits(const width_change change) const
         -> bool override {
 
-        for (const arithmetic_operator o : ops_) {
+        for (const spelled_operator<arithmetic_operator>& spelled : ops_) {
+            const arithmetic_operator o{spelled.op};
+
             if (o == arithmetic_operator::divide or
                 o == arithmetic_operator::remainder or
                 o == arithmetic_operator::shift_right) {
@@ -534,7 +536,7 @@ class expr_arith final : public statement {
         tokenizer probe{tz};
         const token next_tk{probe.next_token()};
 
-        if (next_tk.is_text("and") or next_tk.is_text("or")) {
+        if (connective_of(next_tk)) {
             throw compile_error{
                 next_tk, std::format("{} makes a condition, which is not an "
                                      "operand here, store it in a 'bool' first",
@@ -822,7 +824,7 @@ class expr_arith final : public statement {
             return arithmetic_operator::assign;
         }
 
-        const arithmetic_operator first{ops_.front()};
+        const arithmetic_operator first{ops_.front().op};
 
         if (first == arithmetic_operator::subtract) {
             return arithmetic_operator::add;
@@ -887,7 +889,9 @@ class expr_arith final : public statement {
         std::vector<step> steps;
 
         for (size_t i{}; i < exprs_.size(); ++i) {
-            const arithmetic_operator op{i == 0 ? first_op() : ops_.at(i - 1)};
+            const arithmetic_operator op{
+                i == 0 ? first_op() : ops_.at(i - 1).op,
+            };
             // note: -1 because the first expression has no operator before it
 
             const statement& e{*exprs_.at(i)};
@@ -1613,13 +1617,13 @@ class expr_arith final : public statement {
         // '-(a + b)' negates the list, so its unary ops come before the '('
         unary_ops uo{tz};
 
+        const bool has_unary_ops{not uo.is_empty()};
+
         // the unary ops apply to the whole sub-expression
         if (const std::optional<token> open_paren_tk{
                 tz.is_next_char_token('('),
             };
             open_paren_tk) {
-
-            const bool has_unary_ops{not uo.is_empty()};
 
             std::unique_ptr<statement> enclosed{
                 std::make_unique<expr_arith>(
@@ -1641,19 +1645,14 @@ class expr_arith final : public statement {
             };
         }
 
-        // the element reads its own unary ops: '[-a] + b'
-        uo.put_back(tz);
-
+        // the element holds its own unary ops: '[-a] + b'
         std::unique_ptr<statement> element{
-            parse_operand(tc, tz, destination_type),
+            parse_operand(tc, tz, std::move(uo), destination_type),
         };
 
-        if (not uo.is_empty()) {
+        if (has_unary_ops) {
             assert_number(*element);
         }
-
-        // note: the element read the unary ops that 'uo' saw and put back
-        const bool has_unary_ops{not uo.is_empty()};
 
         return {
             .node{std::move(element)},

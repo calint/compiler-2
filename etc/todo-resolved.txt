@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: low priority: 'arithmetic_operator::assign' (operand.hpp) is not
+    an operation: 'expr_arith' uses it as the operator of the first element
+    and 'source_text' prints it as '='; the role leaves the enum (round 13
+    F.6, the half not done)
+    => discarded (2026-10-25): see round 16 F.1, the 'assign' half; the enum
+       comment says the methods never take it
 [x] hard: design review round 15 (2026-10-25, six reviewers: front end F,
     expressions E, statements and calls S, tables and checks T, backends B, a
     newcomer N tracing one program; findings in the session scratchpad r15,

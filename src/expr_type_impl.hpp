@@ -99,7 +99,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     }
 
     // e.g. the '-' of 'q = -p'
-    if (tz.peek_char() == '-' or tz.peek_char() == '~') {
+    if (tz.is_unary_operator_next()) {
         throw compile_error{
             tz, std::format("{} of {} is not a number",
                             is_array_destination_ ? "an array" : "an instance",

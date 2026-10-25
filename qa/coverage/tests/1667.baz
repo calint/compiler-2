@@ -1,0 +1,5 @@
+# a bare type is a zero value, a '~' after it is a prefix, not an operator
+
+func main() {
+    var x = i8 ~1
+}

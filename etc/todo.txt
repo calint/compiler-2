@@ -189,15 +189,49 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             read once; 'source_text' loses its special cases; the 'assign'
             role leaves the backend enum (an empty op is "copied"); the two
             walks of 'unary_ops' one
+       => F.1 done, reduced (2026-10-25): 'spelled_operator<Op>' {tk, op}
+          in token.hpp holds an operator as read: 'expr_arith::ops_' (one
+          vector, 'op_tks_' gone), 'unary_ops' (with 'unary_spellings' and
+          'unary_operator_of' in operand.hpp, the three 'is_text' tests and
+          'is_unary' gone, 'evaluate_at' and 'evaluate_constant' one walk
+          'evaluate'), 'expr_bool::ops_' ('connective' and 'connective_of',
+          used by the four sites); 'source_text' lost the 'negate' special
+          case; the tokenizer asserts the unary table too; the comparison
+          struct already held both and stays; the 'assign' half discarded:
+          it is the op of a list's first step, which the merge passes and
+          the folded-source comments read as not regroupable, an optional
+          in its place would add a dereference to about 20 uses for one
+          marker; the enum comment says the methods never take it
        F.2. "an operator is next" asked by name (F2): binary and unary
             questions on the tokens; 'is_parenthesized_operand' keeps the
             lone '='/'!' with its reason; 'continues_expression' asks the
             binary one ('var x = i8 ~1' then says "unexpected '~'", a test)
+       => F.2 done (2026-10-25): 'tokenizer::is_binary_operator_next' and
+          'is_unary_operator_next'; 'is_parenthesized_operand' is the binary
+          one or a lone '='/'!'; 'expr_type' asks the unary one;
+          'continues_expression' the binary one: 'var x = i8 ~1' and 'var q
+          = p ~1' report "unexpected '~'" at the '~' (were "'i8' is a type,
+          not a value" and "an instance of 'p' is not a number"), tests 1667
+          and 1668
        F.3. no read, put back and read again (F3): 'parse_operand' takes the
             'unary_ops' read; 'expr_bool_op' takes its 'not's;
             'unary_ops::put_back' and the whitespace dance go
+       => F.3 done (2026-10-25): 'parse_operand' takes the 'unary_ops' the
+          element read ('decouple.hpp' declares 'unary_ops');
+          'expr_bool::parse_element' decides on a probe ('is_list_next')
+          whether a list follows, so a comparison reads its 'not's once and
+          the list reads them for itself: 'rewind_to_position' there, the
+          whitespace dance and 'unary_ops::put_back' go; the token order is
+          unchanged
        F.4. the path parse resolves each prefix once (F4): the checks take
             the resolved prefix, 'src_loc_tk' of the loop goes
+       => F.4 done (2026-10-25): the loop resolves the prefix once per
+          name ('std::optional<ident_info> prefix'), 'assert_indexable',
+          'assert_element_selected', 'assert_not_method_call',
+          'read_continuation', 'is_method_name' and 'resolve_type' take it
+          (four became static); both suites, the CLI tests, clang-tidy,
+          fuzz-reject 600, fuzz-generics 300, fuzz-exprs 2000,
+          fuzz-constructs and fuzz-methods 300 clean for phase F
     G. backends
        G.1. one section vocabulary (B2): 'assembler::section' {code,
             read_only, data, variables} and a non-virtual 'switch_section'
@@ -249,10 +283,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     'is_parenthesized_operand'; 'bulk_operands' count first; manual scratch
     register pairs; 'array_copy' two paths; 'seen_operator' without trailing
     whitespace; 'tokenizer' probe copies
-[ ] easy: low priority: 'arithmetic_operator::assign' (operand.hpp) is not
-    an operation: 'expr_arith' uses it as the operator of the first element
-    and 'source_text' prints it as '='; the role leaves the enum (round 13
-    F.6, the half not done)
 [ ] medium: low priority: generic deduction by a trial parse like 'var'
     (drops the token shapes of 'value_type', about 70 lines); messages of
     malformed arguments may change (design review 2026-10-23 E.5, optional,

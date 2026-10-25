@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <ostream>
 #include <ranges>
 #include <string_view>
@@ -18,12 +19,18 @@
 // evaluated, the innermost first; each op is a token with the whitespace
 // before it, the whitespace before the operand belongs to the operand
 class unary_ops final {
-    std::vector<token> ops_;
+    std::vector<spelled_operator<arithmetic_operator>> ops_;
 
   public:
     explicit unary_ops(tokenizer& tz) {
-        while (is_unary(tz.peek_operator())) {
-            ops_.emplace_back(tz.seen_operator());
+        while (const std::optional<arithmetic_operator> op{
+            unary_operator_of(tz.peek_operator()),
+        }) {
+
+            ops_.push_back({
+                .tk{tz.seen_operator()},
+                .op{*op},
+            });
         }
     }
 
@@ -34,11 +41,10 @@ class unary_ops final {
                  const operand& dst, const machine::runtime_check& check) const
         -> void {
 
-        for (const token& op_tk : ops_ | std::views::reverse) {
-            x.unary(src_loc_tk, indent,
-                    op_tk.is_text("-") ? arithmetic_operator::negate
-                                       : arithmetic_operator::complement,
-                    dst, check);
+        for (const spelled_operator<arithmetic_operator>& o :
+             ops_ | std::views::reverse) {
+
+            x.unary(src_loc_tk, indent, o.op, dst, check);
         }
     }
 
@@ -49,79 +55,56 @@ class unary_ops final {
                                    const bool checks_overflow) const
         -> int64_t {
 
-        if (checks_overflow and
-            negation_overflows(
-                v, constant_arith::signed_minimum(width.size_bits()))) {
-
-            throw compile_error{ops_.front(),
-                                "constant expression overflows the type"};
+        if (not checks_overflow) {
+            return evaluate(v, std::nullopt);
         }
 
-        return evaluate_constant(v);
+        return evaluate(v, constant_arith::signed_minimum(width.size_bits()));
     }
 
-    [[nodiscard]] auto evaluate_constant(int64_t v) const -> int64_t {
-        for (const token& op_tk : ops_ | std::views::reverse) {
-            if (op_tk.is_text("~")) {
-                v = static_cast<int64_t>(~static_cast<uint64_t>(v));
-                continue;
-            }
-
-            // unsigned negation wraps like the run-time instruction
-            v = static_cast<int64_t>(-static_cast<uint64_t>(v));
-        }
-
-        return v;
+    [[nodiscard]] auto evaluate_constant(const int64_t v) const -> int64_t {
+        return evaluate(v, std::nullopt);
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }
 
     [[nodiscard]] auto is_only_negated() const -> bool {
-        return ops_.size() == 1 and ops_.back().is_text("-");
-    }
-
-    // the last token read is put back first
-    auto put_back(tokenizer& tz) const -> void {
-        for (const token& op_tk : ops_ | std::views::reverse) {
-            tz.put_back_token(op_tk);
-        }
+        return ops_.size() == 1 and
+               ops_.back().op == arithmetic_operator::negate;
     }
 
     auto source_to(std::ostream& os) const -> void {
-        for (const token& op_tk : ops_) {
-            op_tk.source_to(os);
+        for (const spelled_operator<arithmetic_operator>& o : ops_) {
+            o.tk.source_to(os);
         }
     }
 
   private:
-    // true when a negation of the list is applied to 'minimum', the most
-    // negative value of the width, which has no positive counterpart
-    [[nodiscard]] auto negation_overflows(int64_t v,
-                                          const int64_t minimum) const -> bool {
+    // the ops applied to 'v', the innermost first; a negation of
+    // 'overflow_minimum', the most negative value of the width, which has no
+    // positive counterpart, is an error at the ops
+    [[nodiscard]] auto
+    evaluate(int64_t v, const std::optional<int64_t> overflow_minimum) const
+        -> int64_t {
 
-        for (const token& op_tk : ops_ | std::views::reverse) {
-            if (op_tk.is_text("~")) {
+        for (const spelled_operator<arithmetic_operator>& o :
+             ops_ | std::views::reverse) {
+
+            if (o.op == arithmetic_operator::complement) {
                 v = static_cast<int64_t>(~static_cast<uint64_t>(v));
                 continue;
             }
 
-            if (v == minimum) {
-                return true;
+            if (overflow_minimum and v == *overflow_minimum) {
+                throw compile_error{ops_.front().tk,
+                                    "constant expression overflows the type"};
             }
 
-            // unsigned negation wraps, a minimum wider than 'minimum' is
-            // negated too
+            // unsigned negation wraps like the run-time instruction, a
+            // minimum wider than 'overflow_minimum' is negated too
             v = static_cast<int64_t>(-static_cast<uint64_t>(v));
         }
 
-        return false;
-    }
-
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto is_unary(const std::string_view text) -> bool {
-        return text == "-" or text == "~";
+        return v;
     }
 };

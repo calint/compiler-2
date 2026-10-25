@@ -889,14 +889,14 @@ class stmt_identifier final : public statement {
     }
 
     // 'ps.x' does not mean 'ps[0].x'
-    auto assert_element_selected(const toc& tc, const token& src_loc_tk) const
-        -> void {
+    auto assert_element_selected(const ident_info& prefix,
+                                 const token& src_loc_tk) const -> void {
 
         if (elems_.back().index) {
             return;
         }
 
-        if (not tc.resolve_declared(src_loc_tk, dotted_path_).is_array()) {
+        if (not prefix.is_array()) {
             return;
         }
 
@@ -905,38 +905,15 @@ class stmt_identifier final : public statement {
     }
 
     // the '[' of an element needs an array
-    auto assert_indexable(const toc& tc, tokenizer& tz,
+    auto assert_indexable(const ident_info& prefix, tokenizer& tz,
                           const token& src_loc_tk) const -> void {
 
-        const ident_info cur_ident_info{
-            tc.resolve_declared(src_loc_tk, dotted_path_),
-        };
-
-        if (tz.peek_char_after_whitespace() == '[' and
-            not cur_ident_info.is_array()) {
+        if (tz.peek_char_after_whitespace() == '[' and not prefix.is_array()) {
 
             throw compile_error{src_loc_tk,
                                 std::format("cannot index non-array {}",
                                             in_quotes(dotted_path_))};
         }
-    }
-
-    // without a method 'T.m' a following '(' would otherwise be reported as a
-    // missing field
-    auto assert_not_method_call(const toc& tc, tokenizer& tz,
-                                const token& src_loc_tk,
-                                const token& name_tk) const -> void {
-
-        if (tz.peek_char_after_whitespace() != '(') {
-            return;
-        }
-
-        const ident_info info{tc.resolve_declared(src_loc_tk, dotted_path_)};
-
-        throw compile_error{name_tk,
-                            std::format("method {} not found in type {}",
-                                        in_quotes(name_tk.text()),
-                                        in_quotes(info.type_ref().name()))};
     }
 
     // the address a call computed when it is of the root of this path, null
@@ -997,37 +974,6 @@ class stmt_identifier final : public statement {
         }
     }
 
-    // 'name_tk' after the path so far names a method of the path's type
-    [[nodiscard]] auto is_method_name(const toc& tc, tokenizer& tz,
-                                      const token& src_loc_tk,
-                                      const token& name_tk) const -> bool {
-
-        const ident_info info{tc.resolve_declared(src_loc_tk, dotted_path_)};
-
-        const type& path_type{info.type_ref()};
-
-        const std::string method_name{
-            method_name_of(path_type.name(), name_tk.text()),
-        };
-
-        if (not tc.is_func(method_name)) {
-            return false;
-        }
-
-        // a method and a field may share a name, only the call has '(' or the
-        // type arguments of a generic method
-        const char next{tz.peek_char_after_whitespace()};
-
-        if (next == '(' or
-            (next == '<' and tc.generics().has_func(method_name))) {
-
-            return true;
-        }
-
-        // without a field 'lst.clear = 1' reports the missing arguments
-        return not path_type.has_field(name_tk.text());
-    }
-
     // note: after a run-time index the range stays the whole array
     auto narrow_accessed_bytes(const size_t offset, const size_t size_bytes_in)
         -> void {
@@ -1050,48 +996,10 @@ class stmt_identifier final : public statement {
     // a path element with an optional '[index]'
     auto parse_element(toc& tc, tokenizer& tz, const token& tk) -> void;
 
-    // what follows the path read so far, ending at 'tk': nothing, a '.' and a
-    // field, or a '.' and a method name, which ends the path as its receiver;
-    // reads the '.' and the name
-    [[nodiscard]] auto read_continuation(const toc& tc, tokenizer& tz,
-                                         const token& tk) const
-        -> path_continuation {
-
-        // e.g. the '.entities' of 'rooms[i].entities[j]'
-        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
-
-        if (not dot_tk) {
-            return path_end{};
-        }
-
-        const token next_tk{tz.next_token()};
-
-        // e.g. 'p..x', a path may go on after whitespace and line ends
-        if (not next_tk.is_word()) {
-            throw compile_error{tz.position_of(next_tk),
-                                "expected a field name after '.'"};
-        }
-
-        // e.g. the '.add' of 'lst.add(1)'
-        if (is_method_name(tc, tz, tk, next_tk)) {
-            return method_tokens{
-                .dot_tk{*dot_tk},
-                .name_tk{next_tk},
-            };
-        }
-
-        return path_field{
-            .dot_tk{*dot_tk},
-            .name_tk{next_tk},
-        };
-    }
-
     auto resolve_accessed_bytes(toc& tc) -> void;
 
     // the path is an array only while its last element is not indexed
-    auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {
-        const ident_info info{tc.resolve_declared(src_loc_tk, dotted_path_)};
-
+    auto resolve_type(const ident_info& info) -> void {
         set_type(info.type_ref());
 
         // an indexed element is technically no longer an array but an element
@@ -1113,6 +1021,21 @@ class stmt_identifier final : public statement {
     //
     // statics
     //
+
+    // without a method 'T.m' a following '(' would otherwise be reported as a
+    // missing field
+    static auto assert_not_method_call(const ident_info& prefix, tokenizer& tz,
+                                       const token& name_tk) -> void {
+
+        if (tz.peek_char_after_whitespace() != '(') {
+            return;
+        }
+
+        throw compile_error{name_tk,
+                            std::format("method {} not found in type {}",
+                                        in_quotes(name_tk.text()),
+                                        in_quotes(prefix.type_ref().name()))};
+    }
 
     static auto check_array_bounds(toc& tc, const size_t indent,
                                    const token& src_loc_tk,
@@ -1137,6 +1060,71 @@ class stmt_identifier final : public statement {
     in_range_constant_index(const toc& tc, const expr_any& index_expr,
                             const ident_info& array_info)
         -> std::optional<size_t>;
+
+    // 'name_tk' after the path so far names a method of the path's type
+    [[nodiscard]] static auto is_method_name(const toc& tc, tokenizer& tz,
+                                             const ident_info& prefix,
+                                             const token& name_tk) -> bool {
+
+        const type& path_type{prefix.type_ref()};
+
+        const std::string method_name{
+            method_name_of(path_type.name(), name_tk.text()),
+        };
+
+        if (not tc.is_func(method_name)) {
+            return false;
+        }
+
+        // a method and a field may share a name, only the call has '(' or the
+        // type arguments of a generic method
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next == '(' or
+            (next == '<' and tc.generics().has_func(method_name))) {
+
+            return true;
+        }
+
+        // without a field 'lst.clear = 1' reports the missing arguments
+        return not path_type.has_field(name_tk.text());
+    }
+
+    // what follows the path read so far, resolved as 'prefix': nothing, a '.'
+    // and a field, or a '.' and a method name, which ends the path as its
+    // receiver; reads the '.' and the name
+    [[nodiscard]] static auto read_continuation(const toc& tc, tokenizer& tz,
+                                                const ident_info& prefix)
+        -> path_continuation {
+
+        // e.g. the '.entities' of 'rooms[i].entities[j]'
+        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
+
+        if (not dot_tk) {
+            return path_end{};
+        }
+
+        const token next_tk{tz.next_token()};
+
+        // e.g. 'p..x', a path may go on after whitespace and line ends
+        if (not next_tk.is_word()) {
+            throw compile_error{tz.position_of(next_tk),
+                                "expected a field name after '.'"};
+        }
+
+        // e.g. the '.add' of 'lst.add(1)'
+        if (is_method_name(tc, tz, prefix, next_tk)) {
+            return method_tokens{
+                .dot_tk{*dot_tk},
+                .name_tk{next_tk},
+            };
+        }
+
+        return path_field{
+            .dot_tk{*dot_tk},
+            .name_tk{next_tk},
+        };
+    }
 };
 
 // storage that a node names and that is read or passed in place, e.g. the

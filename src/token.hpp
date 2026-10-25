@@ -470,3 +470,28 @@ class token final {
         return static_cast<char>(decoded);
     }
 };
+
+// an operator as read, its token with the whitespace before it and what it
+// spells, e.g. the '<<' of 'a << 2'
+template <class Op> struct spelled_operator {
+    token tk;
+    Op op;
+};
+
+// what joins the comparisons of a condition
+enum class connective : uint8_t { logical_and, logical_or };
+
+// the connective 'tk' spells, none for any other token
+[[nodiscard]] inline auto connective_of(const token& tk)
+    -> std::optional<connective> {
+
+    if (tk.is_text("and")) {
+        return connective::logical_and;
+    }
+
+    if (tk.is_text("or")) {
+        return connective::logical_or;
+    }
+
+    return std::nullopt;
+}

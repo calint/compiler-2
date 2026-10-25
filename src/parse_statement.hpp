@@ -383,11 +383,10 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
 }
 
 // called from 'expr_arith', whose elements include it, e.g. a call
-inline auto parse_operand(toc& tc, tokenizer& tz,
+inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
                           const type* const destination_type)
     -> std::unique_ptr<statement> {
 
-    unary_ops uops{tz};
     const token tk{tz.next_token()};
 
     // array destinations parse strings in 'expr_any'

@@ -1,0 +1,8 @@
+# a bare user type is a zero instance, a '~' after it is a prefix, not an
+# operator
+
+type p { x i8 }
+
+func main() {
+    var q = p ~1
+}

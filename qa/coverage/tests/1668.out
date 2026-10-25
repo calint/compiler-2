@@ -1,0 +1,4 @@
+
+1668.baz:7:15: unexpected '~'
+    var q = p ~1
+              ^

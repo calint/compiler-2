@@ -5209,3 +5209,9 @@ SRC=1665 && COMPERR
 
 # a '{}' is a whole value, a '!' after it is not an operator
 SRC=1666 && COMPERR
+
+# a bare type is a zero value, a '~' after it is a prefix, not an operator
+SRC=1667 && COMPERR
+
+# a bare user type is a zero instance, a '~' after it is not an operator
+SRC=1668 && COMPERR

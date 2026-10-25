@@ -34,11 +34,15 @@ class tokenizer final {
         "/",  "%",  "&",  "|",  "^",  "<",  ">", "~",
     };
 
-    // note: the operators are the texts of the spelling tables and the unary
-    //       '~', so a text missing here would end an expression silently
+    // note: the operators are the texts of the spelling tables, so a text
+    //       missing here would end an expression silently
 
     static_assert(std::ranges::all_of(
         arithmetic_spellings, [](const arithmetic_spelling& spelling) -> bool {
+            return std::ranges::contains(operators_, spelling.text);
+        }));
+    static_assert(std::ranges::all_of(
+        unary_spellings, [](const arithmetic_spelling& spelling) -> bool {
             return std::ranges::contains(operators_, spelling.text);
         }));
     static_assert(std::ranges::all_of(
@@ -112,6 +116,14 @@ class tokenizer final {
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
+    // the operator after the whitespace without reading it, e.g. the '<<' of
+    // ' << 2'; empty when none is next
+    // a binary operator or a comparison follows, e.g. the '+' of 'x + 1'
+    [[nodiscard]] auto is_binary_operator_next() const -> bool {
+        const std::string_view text{peek_operator()};
+        return binary_operator_of(text) or comparison_of(text);
+    }
+
     // the token of 'ch' with the whitespace around it when 'ch' is next, the
     // cursor stays when not
     [[nodiscard]] auto is_next_char_token(const char ch)
@@ -137,6 +149,11 @@ class tokenizer final {
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
         return not is_eos() and src_.at(char_ix_) == ch;
+    }
+
+    // a prefix operator follows, e.g. the '-' of '-x'
+    [[nodiscard]] auto is_unary_operator_next() const -> bool {
+        return unary_operator_of(peek_operator()).has_value();
     }
 
     // e.g. '  # note\n  x = 1' gives the token 'x' with the whitespace and
@@ -192,8 +209,6 @@ class tokenizer final {
         return probe.peek_char();
     }
 
-    // the operator after the whitespace without reading it, e.g. the '<<' of
-    // ' << 2'; empty when none is next
     [[nodiscard]] auto peek_operator() const -> std::string_view {
         tokenizer probe{*this};
 

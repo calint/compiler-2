@@ -22,10 +22,12 @@ class stmt_identifier;
 class stmt_call;
 class expr_any;
 class type;
+class unary_ops;
 
-// an element of an arithmetic expression; 'destination_type' is the type a
-// generic call takes for its result, null when not known
-[[nodiscard]] auto parse_operand(toc& tc, tokenizer& tz,
+// an element of an arithmetic expression after its unary ops 'uops', which
+// the caller read; 'destination_type' is the type a generic call takes for its
+// result, null when not known
+[[nodiscard]] auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
                                  const type* destination_type)
     -> std::unique_ptr<statement>;
 

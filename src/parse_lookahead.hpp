@@ -31,17 +31,17 @@
     return tz.peek_char_after_whitespace() == '[';
 }
 
-// an operator follows, which would continue the expression, e.g. the '+' of
-// 'x + 1' or the 'and' of 'b and c'
+// a binary operator or a connective follows, which would continue the
+// expression, e.g. the '+' of 'x + 1' or the 'and' of 'b and c'
 [[nodiscard]] inline auto continues_expression(const tokenizer& tz) -> bool {
-    if (not tz.peek_operator().empty()) {
+    if (tz.is_binary_operator_next()) {
         return true;
     }
 
     tokenizer probe{tz};
     const token next_tk{probe.next_token()};
 
-    return next_tk.is_text("and") or next_tk.is_text("or");
+    return connective_of(next_tk).has_value();
 }
 
 // '{}' follows, the zero value of a typed destination

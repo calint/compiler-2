@@ -282,7 +282,8 @@ enum class arithmetic_operator : uint8_t {
     bit_xor,
     shift_left,
     shift_right,
-    // the first element of a list that is neither added nor multiplied
+    // not taken by the methods: the op of the first element of a list that is
+    // neither added nor multiplied, copied with '=' ('expr_arith')
     assign,
     negate,
     complement,
@@ -342,13 +343,17 @@ inline constexpr auto arithmetic_spellings{
     }),
 };
 
+// the prefix operators of an operand
+inline constexpr auto unary_spellings{
+    std::to_array<arithmetic_spelling>({
+        {.op{arithmetic_operator::negate}, .text{"-"}},
+        {.op{arithmetic_operator::complement}, .text{"~"}},
+    }),
+};
+
 // the operator as written in the source, 'assign' as the '=' of a copy
 [[nodiscard]] inline auto source_text(const arithmetic_operator op)
     -> std::string_view {
-
-    if (op == arithmetic_operator::negate) {
-        return "-";
-    }
 
     if (op == arithmetic_operator::assign) {
         return "=";
@@ -360,7 +365,12 @@ inline constexpr auto arithmetic_spellings{
         }
     }
 
-    // note: 'complement' is a unary operator, 'unary_ops' writes it
+    for (const arithmetic_spelling& spelling : unary_spellings) {
+        if (spelling.op == op) {
+            return spelling.text;
+        }
+    }
+
     std::unreachable();
 }
 
@@ -369,6 +379,19 @@ inline constexpr auto arithmetic_spellings{
     -> std::optional<arithmetic_operator> {
 
     for (const arithmetic_spelling& spelling : arithmetic_spellings) {
+        if (spelling.text == text) {
+            return spelling.op;
+        }
+    }
+
+    return std::nullopt;
+}
+
+// the prefix operator 'text' spells, none for any other text
+[[nodiscard]] inline auto unary_operator_of(const std::string_view text)
+    -> std::optional<arithmetic_operator> {
+
+    for (const arithmetic_spelling& spelling : unary_spellings) {
         if (spelling.text == text) {
             return spelling.op;
         }

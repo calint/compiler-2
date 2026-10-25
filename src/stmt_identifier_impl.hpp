@@ -53,14 +53,17 @@ inline stmt_identifier::stmt_identifier(toc& tc, unary_ops uops, token tk,
         throw compile_error{tz, "expected an identifier"};
     }
 
-    token src_loc_tk{tk};
+    // the path read so far, resolved at its last name
+    std::optional<ident_info> prefix;
 
     // a path of elements, e.g. 'rooms[i].entities[j].name'
     while (true) {
-        assert_indexable(tc, tz, tk);
+        prefix.emplace(tc.resolve_declared(tk, dotted_path_));
+
+        assert_indexable(*prefix, tz, tk);
         parse_element(tc, tz, tk);
 
-        const path_continuation next{read_continuation(tc, tz, tk)};
+        const path_continuation next{read_continuation(tc, tz, *prefix)};
 
         // the path so far is resolved as the receiver
         if (const method_tokens* const method{
@@ -77,11 +80,10 @@ inline stmt_identifier::stmt_identifier(toc& tc, unary_ops uops, token tk,
             break;
         }
 
-        assert_element_selected(tc, tk);
-        assert_not_method_call(tc, tz, tk, field->name_tk);
+        assert_element_selected(*prefix, tk);
+        assert_not_method_call(*prefix, tz, field->name_tk);
 
         elem_delims_tk_.emplace_back(field->dot_tk);
-        src_loc_tk = tk;
         tk = field->name_tk;
         dotted_path_.push_back('.');
         dotted_path_ += tk.text();
@@ -91,7 +93,7 @@ inline stmt_identifier::stmt_identifier(toc& tc, unary_ops uops, token tk,
     //       ('parse_call_or_identifier', 'parse_array_argument'), the name of
     //       a generic function by the resolver here
 
-    resolve_type(tc, src_loc_tk);
+    resolve_type(*prefix);
 
     resolve_accessed_bytes(tc);
 
