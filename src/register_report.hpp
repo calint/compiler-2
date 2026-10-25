@@ -333,7 +333,7 @@ class register_reporter final {
             uses.at(allocated.frame)
                 .registers.push_back(register_text(allocated));
 
-            if (allocated.named) {
+            if (allocated.holder == register_pool::holder_kind::named) {
                 ++named;
             }
         }
@@ -426,7 +426,8 @@ class register_reporter final {
         return std::format(
             "{} {}{}", machine_.get().register_display_name(allocated.index),
             machine_.get().location_text(allocated.src_loc_tk),
-            allocated.named ? " (named)" : "");
+            allocated.holder == register_pool::holder_kind::named ? " (named)"
+                                                                  : "");
     }
 
     //

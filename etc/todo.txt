@@ -76,12 +76,37 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             backend} (I4, M2; round 17 D.4 chose a second bool, the enum was
             the better of its two designs); the bare 'true'/'false' at call
             sites named (M5)
+       => B.1 done, M5 reduced (2026-10-25): 'register_pool::holder_kind'
+          {scratch, named, backend} replaces the two bools; 'push_allocation'
+          takes the kind, the report and the pool compare it; the "no
+          location" assert of 'register_in_use_error' asks the kind; the other
+          literal sites of M5 have the parameter named a few lines away or a
+          comment above, kept
        B.2. 'func_head' holds a method as one optional part (I2)
+       B.2. 'func_head' holds a method as one optional part (I2)
+       => B.2 done (2026-10-25): 'std::optional<method_part> method' (dot,
+          name, receiver of a type or of a generic type), 'receiver_of_type'
+          holds a reference; 'receiver_none' and the seven name asserts go
        B.3. 'var_access' and 'slot_register' as one mode value (I3)
+       B.3. 'var_access' and 'slot_register' as one mode value (I3)
+       => B.3 done (2026-10-25): 'var_access' is 'std::variant<names_only,
+          through_frame>', 'through_frame' holds the optional slot register;
+          the empty operand of the parse goes
        B.4. the bounded-stack operations in 'machine_rv32i_bare_metal', the
             only class that reaches them (I5)
+       => B.4 reduced (2026-10-25): moving 'check_stack_capacity' would make
+          six private members of 'machine_rv32i' protected (the assembler,
+          'local_label', 'branch_to_failure', 'frame_save_bytes_',
+          'saved_registers_size_bytes', 'registers_saved_by_call'), more than
+          the assert it removes; done: 'emit_variables_base_load' reads its
+          own constant, the unreachable branch goes
        B.5. never-null pointers in aggregates as references or
             'std::reference_wrapper' where the aggregate allows it (I7)
+       => B.5 discarded (2026-10-25): about 110 uses would gain '.get()';
+          every initializer names these members with an address and none of
+          the structs is default-constructed, so the invariant holds in
+          practice; both suites, the CLI tests, test-rv32i, clang-tidy and
+          fuzz-methods, generics, calls, reject clean for phase B
     C. the operand contract (the central change)
        C.1. 'visit_reads' and 'visit_call_effects' without an empty default
             (X2): each value node says what it reads and calls, a leaf says

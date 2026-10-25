@@ -570,17 +570,10 @@ class machine_rv32i : public machine {
     auto emit_variables_base_load() -> void override {
         const std::string_view base{variables_base_register()};
 
-        const std::optional<size_t> past_vars_bytes{
-            variables_base_past_vars_bytes(),
-        };
-
-        // note: the rv32i table sets it, see 'rv32i_target'
-        if (not past_vars_bytes) {
-            std::unreachable();
-        }
-
         assembler_.la(0, base, variables_label);
-        assembler_.addi(0, base, base, static_cast<int64_t>(*past_vars_bytes));
+
+        assembler_.addi(0, base, base,
+                        static_cast<int64_t>(variables_base_past_vars_bytes_));
     }
 
     auto finish_target() -> void override {

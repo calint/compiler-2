@@ -449,10 +449,12 @@ class machine {
                 // trace
                 const register_pool::allocation entry{pool.top()};
 
-                machine_.comment(entry.src_loc_tk, entry.indent,
-                                 "free {} register {}",
-                                 entry.named ? "named" : "scratch",
-                                 machine_.register_display_name(entry.index));
+                machine_.comment(
+                    entry.src_loc_tk, entry.indent, "free {} register {}",
+                    entry.holder == register_pool::holder_kind::scratch
+                        ? "scratch"
+                        : "named",
+                    machine_.register_display_name(entry.index));
 
                 pool.pop(entry.index);
             }
@@ -854,7 +856,8 @@ class machine {
             comment(src_loc_tk, indent, "allocate scratch register -> {}",
                     register_name);
 
-            push_allocation(src_loc_tk, indent, register_name, false);
+            push_allocation(src_loc_tk, indent, register_name,
+                            register_pool::holder_kind::scratch);
 
             state_.max_scratch_regs = std::max(
                 state_.max_scratch_regs, state_.registers.scratch_count());
@@ -1203,7 +1206,8 @@ class machine {
         comment(src_loc_tk, indent, "free scratch register {}",
                 reg.allocation_register());
 
-        assert(not state_.registers.top().named);
+        assert(state_.registers.top().holder ==
+               register_pool::holder_kind::scratch);
 
         pop_allocation(reg.allocation_register());
     }
@@ -1805,7 +1809,8 @@ class machine {
 
         comment(src_loc_tk, indent, "free named register {}", register_name);
 
-        assert(state_.registers.top().named);
+        assert(state_.registers.top().holder !=
+               register_pool::holder_kind::scratch);
 
         pop_allocation(register_name);
     }
@@ -1828,7 +1833,8 @@ class machine {
             throw register_in_use_error(src_loc_tk, register_name);
         }
 
-        push_allocation(src_loc_tk, indent, register_name, true);
+        push_allocation(src_loc_tk, indent, register_name,
+                        register_pool::holder_kind::named);
     }
 
     // see 'target_description::scratch_registers'
@@ -2152,7 +2158,7 @@ class machine {
         for (const register_pool::allocation& allocated :
              state_.registers.allocations()) {
 
-            if (allocated.is_backend_own) {
+            if (allocated.holder == register_pool::holder_kind::backend) {
                 pool.push(allocated);
             }
         }
@@ -2167,8 +2173,7 @@ class machine {
             .index{frame_base_index},
             .src_loc_tk{},
             .indent{},
-            .named{true},
-            .is_backend_own{true},
+            .holder{register_pool::holder_kind::backend},
             .frame{current_trace_frame()},
         });
 
@@ -2210,15 +2215,14 @@ class machine {
     // named and scratch allocations share one stack, each is recorded for
     // the report of the use of registers
     auto push_allocation(const token& src_loc_tk, const size_t indent,
-                         const std::string_view register_name, const bool named)
-        -> void {
+                         const std::string_view register_name,
+                         const register_pool::holder_kind holder) -> void {
 
         state_.registers.push({
             .index{pool_index(register_name)},
             .src_loc_tk{src_loc_tk},
             .indent{indent},
-            .named{named},
-            .is_backend_own{},
+            .holder{holder},
             .frame{current_trace_frame()},
         });
 
@@ -2231,8 +2235,7 @@ class machine {
             .index{pool_index(register_name)},
             .src_loc_tk{},
             .indent{},
-            .named{true},
-            .is_backend_own{true},
+            .holder{register_pool::holder_kind::backend},
             .frame{current_trace_frame()},
         });
 
@@ -2254,18 +2257,18 @@ class machine {
                                              const std::string_view name) const
         -> compile_error {
 
-        const register_pool::allocation& holder{
+        const register_pool::allocation& allocated{
             state_.registers.holder_of(pool_index(name)),
         };
 
-        // note: the registers that the backend holds without a place in the
-        //       source, e.g. the variables base, are needed by no instruction
+        // note: the registers that the backend holds itself, e.g. the
+        //       variables base, are needed by no instruction
 
-        assert(holder.src_loc_tk.at_line() != 0);
+        assert(allocated.holder != register_pool::holder_kind::backend);
 
-        const std::string holder_location{location_text(holder.src_loc_tk)};
+        const std::string holder_location{location_text(allocated.src_loc_tk)};
 
-        if (not holder.named) {
+        if (allocated.holder == register_pool::holder_kind::scratch) {
             compile_error error{
                 register_error(
                     src_loc_tk,
@@ -2304,7 +2307,7 @@ class machine {
         size_t count{scratch_registers().size()};
 
         for (const register_pool::allocation& allocated : allocations) {
-            if (allocated.is_backend_own and
+            if (allocated.holder == register_pool::holder_kind::backend and
                 is_scratch_register(allocated.index)) {
 
                 --count;

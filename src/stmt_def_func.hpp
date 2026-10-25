@@ -58,16 +58,22 @@
 // e.g. 'text' names 'str' and 'func text.print()' is the function 'str.print'
 struct func_head {
   private:
-    // what 'name_tk' names before the '.' of a method
-    struct receiver_none {};
-
+    // what 'name_tk' names before the '.' of a method: a type
     struct receiver_of_type {
-        const type* tp{};
+        std::reference_wrapper<const type> tp;
     };
 
     // e.g. 'text' of 'func text.print()', each instance of 'text' reads the
     // head again from 'start_tk', where 'text' names a type
     struct receiver_of_generic_type {};
+
+    // the '.' and the name of a method, e.g. '.add' of 'func list.add(x)',
+    // and what 'name_tk' names before it
+    struct method_part {
+        token dot_tk;
+        token name_tk;
+        std::variant<receiver_of_type, receiver_of_generic_type> receiver;
+    };
 
   public:
     // where the definition continues after 'func', an instance starts here
@@ -77,11 +83,7 @@ struct func_head {
     // e.g. 'f', or the receiver type of a method, e.g. 'list' of 'list.add'
     token name_tk;
     // none for a function
-    std::optional<token> method_dot_tk;
-    std::optional<token> method_name_tk;
-
-    std::variant<receiver_none, receiver_of_type, receiver_of_generic_type>
-        receiver;
+    std::optional<method_part> method;
 
     // e.g. 'f' or 'list.add', the receiver named as the type it is bound to,
     // e.g. 'str.print' for 'text.print' when 'text' names 'str'
@@ -109,22 +111,27 @@ struct func_head {
 
     // e.g. 'func text.print()' of the generic type 'text'
     [[nodiscard]] auto is_generic_type_method() const -> bool {
-        return std::holds_alternative<receiver_of_generic_type>(receiver);
+        return method and std::holds_alternative<receiver_of_generic_type>(
+                              method->receiver);
     }
 
     // reached through its type wherever it is defined, e.g. 'list.add' or
     // the constructor 'point.at'
     [[nodiscard]] auto is_type_member() const -> bool {
-        return method_dot_tk.has_value();
+        return method.has_value();
     }
 
     // the type of 'name_tk' of a method of a type, null otherwise
     [[nodiscard]] auto receiver_type() const -> const type* {
+        if (not method) {
+            return nullptr;
+        }
+
         const receiver_of_type* const of_type{
-            std::get_if<receiver_of_type>(&receiver),
+            std::get_if<receiver_of_type>(&method->receiver),
         };
 
-        return of_type == nullptr ? nullptr : of_type->tp;
+        return of_type == nullptr ? nullptr : &of_type->tp.get();
     }
 
     //
@@ -205,17 +212,22 @@ struct func_head {
     // parameter 'self' and whose constructor builds a 'self', or a generic
     // type, whose instances get the method; the name of a method of a type
     // is that of the type it names, e.g. 'str.print' where 'text' names 'str'
-    auto read_method_name(const toc& tc, tokenizer& tz) -> void {
+    auto read_method_name(const toc& tc, tokenizer& tz, const token& dot_tk)
+        -> void {
+
         // e.g. the 'text' of 'func text.print()'; in an instance 'text' names
         // a type
         if (tc.generics().has_type(name_tk.text()) and
             not tc.types().has(name_tk.text())) {
 
-            receiver = receiver_of_generic_type{};
-
             const token read_name_tk{read_method_name_token(tz)};
 
-            method_name_tk = read_name_tk;
+            method = method_part{
+                .dot_tk{dot_tk},
+                .name_tk{read_name_tk},
+                .receiver{receiver_of_generic_type{}},
+            };
+
             name = method_name_of(name_tk.text(), read_name_tk.text());
 
             return;
@@ -230,13 +242,18 @@ struct func_head {
                                      in_quotes(receiver_tp.name()))};
         }
 
-        receiver = receiver_of_type{
-            .tp{&receiver_tp},
-        };
-
         const token read_name_tk{read_method_name_token(tz)};
 
-        method_name_tk = read_name_tk;
+        method = method_part{
+            .dot_tk{dot_tk},
+            .name_tk{read_name_tk},
+            .receiver{
+                receiver_of_type{
+                    .tp{receiver_tp},
+                },
+            },
+        };
+
         name = method_name_of(receiver_tp.name(), read_name_tk.text());
     }
 
@@ -264,13 +281,13 @@ struct func_head {
             return;
         }
 
-        method_dot_tk = tz.is_next_char_token('.');
+        const std::optional<token> dot_tk{tz.is_next_char_token('.')};
 
-        if (not method_dot_tk) {
+        if (not dot_tk) {
             return;
         }
 
-        read_method_name(tc, tz);
+        read_method_name(tc, tz, *dot_tk);
         open_paren_tk = tz.is_next_char_token('(');
     }
 
@@ -374,7 +391,14 @@ class stmt_def_func final : public statement {
 
     // how the body reaches the result and the parameters: a parsed body only
     // names them, a compiled noinline body has their addresses in its frame
-    enum class var_access : uint8_t { direct, through_address };
+    // and the receiver's in 'slot_register' when it is passed in a register
+    struct names_only {};
+
+    struct through_frame {
+        std::optional<operand> slot_register;
+    };
+
+    using var_access = std::variant<names_only, through_frame>;
 
   public:
     // a function of the user code, or an instance of a generic definition,
@@ -564,7 +588,7 @@ class stmt_def_func final : public statement {
 
     // a method of a type, a constructor builds its 'self' instead
     [[nodiscard]] auto has_self_param() const -> bool {
-        return head_.method_dot_tk and not is_constructor();
+        return head_.method and not is_constructor();
     }
 
     // e.g. 'func point.at(x, y) self'
@@ -627,13 +651,14 @@ class stmt_def_func final : public statement {
 
     // a parsed body names its result and parameters in place, a compiled
     // noinline body reaches each through the address in its frame slot, the
-    // receiver through the address in 'slot_register'
-    [[nodiscard]] static auto placement_of(const var_access access,
-                                           const frame_slot& slot,
-                                           const operand& slot_register)
+    // receiver through the address in the slot register
+    [[nodiscard]] static auto placement_of(const var_access& access,
+                                           const frame_slot& slot)
         -> var_placement {
 
-        if (access == var_access::direct) {
+        const through_frame* const frame{std::get_if<through_frame>(&access)};
+
+        if (frame == nullptr) {
             return in_storage{
                 .offset{},
                 .base_register{},
@@ -642,9 +667,12 @@ class stmt_def_func final : public statement {
         }
 
         if (slot.is_in_register) {
-            assert(not slot_register.is_empty());
+            // note: 'compile_in_frame' holds the slot register for a receiver
+            //       in a register
 
-            return at_address_register{slot_register};
+            assert(frame->slot_register);
+
+            return at_address_register{*frame->slot_register};
         }
 
         return in_storage{
@@ -665,13 +693,13 @@ class stmt_def_func final : public statement {
     // located at the method name for diagnostics
     auto add_self_param() -> void {
         // note: a method has its name after the '.'
-        assert(head_.method_name_tk);
+        assert(head_.method);
 
         const token self_tk{
-            token::synthetic(head_.method_name_tk->file_index(),
+            token::synthetic(head_.method->name_tk.file_index(),
                              reserved_names::self,
-                             head_.method_name_tk->start_index(),
-                             head_.method_name_tk->at_line()),
+                             head_.method->name_tk.start_index(),
+                             head_.method->name_tk.at_line()),
         };
 
         assert(head_.receiver_type() != nullptr);
@@ -685,9 +713,9 @@ class stmt_def_func final : public statement {
     // 'placement_of'; the array lengths are those of the body instance, empty
     // where no call gives them: in the parse and in 'check_body'
     auto add_signature_vars(toc& tc, const size_t indent,
-                            const var_access access,
-                            const std::span<const size_t> array_lengths,
-                            const operand& slot_register) const -> void {
+                            const var_access& access,
+                            const std::span<const size_t> array_lengths) const
+        -> void {
 
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
@@ -696,7 +724,7 @@ class stmt_def_func final : public statement {
 
         for (const frame_slot& slot : frame_slots()) {
             const var_placement placement{
-                placement_of(access, slot, slot_register),
+                placement_of(access, slot),
             };
 
             if (not slot.param_index) {
@@ -851,7 +879,7 @@ class stmt_def_func final : public statement {
         machine& x{tc.machine()};
 
         // the register is held while the body runs
-        operand slot_register;
+        std::optional<operand> slot_register;
 
         if (has_receiver_in_register()) {
             slot_register = x.alloc_named_register(
@@ -860,16 +888,19 @@ class stmt_def_func final : public statement {
 
         add_constants(tc, indent + 1);
 
-        add_signature_vars(tc, indent + 1, var_access::through_address,
-                           array_lengths, slot_register);
+        add_signature_vars(tc, indent + 1,
+                           through_frame{
+                               .slot_register{slot_register},
+                           },
+                           array_lengths);
 
         compile_statements(tc, indent);
         x.return_function(indent + 1);
 
         const size_t frame_size_bytes{tc.layout().peak_frame_size_bytes()};
 
-        if (not slot_register.is_empty()) {
-            x.free_named_register(tok(), indent + 1, slot_register);
+        if (slot_register) {
+            x.free_named_register(tok(), indent + 1, *slot_register);
         }
 
         return frame_size_bytes;
@@ -917,7 +948,7 @@ class stmt_def_func final : public statement {
         // note: 'parse_result' only keeps a result with a name
         assert(not result_ or result_->name_tk.is_word());
 
-        add_signature_vars(tc, 0, var_access::direct, {}, {});
+        add_signature_vars(tc, 0, names_only{}, {});
 
         code_ = {tc, tz, block_braces::required};
 
@@ -1038,8 +1069,12 @@ class stmt_def_func final : public statement {
         token::source_to(os, head_.noinline_tk);
         token::source_to(os, head_.mut_tk);
         head_.name_tk.source_to(os);
-        token::source_to(os, head_.method_dot_tk);
-        token::source_to(os, head_.method_name_tk);
+
+        if (head_.method) {
+            head_.method->dot_tk.source_to(os);
+            head_.method->name_tk.source_to(os);
+        }
+
         token::source_to(os, head_.open_paren_tk);
 
         // the implicit 'self' has no source and no delimiter after it
@@ -1146,9 +1181,9 @@ class func_instantiator final {
 
         if (receiver) {
             // note: the head of an instance names the receiver type
-            assert(head.method_name_tk);
+            assert(head.method);
 
-            report_name = receiver->method_name(head.method_name_tk->text());
+            report_name = receiver->method_name(head.method->name_tk.text());
         }
 
         // note: the definition checked that the '(' follows
@@ -1176,11 +1211,11 @@ class func_instantiator final {
                               const func_head& head,
                               const generic_signature& signature) -> void {
 
-        assert(head.method_name_tk);
+        assert(head.method);
 
         const generic_method_info method{
             .type_tk{head.name_tk},
-            .method_name_tk{*head.method_name_tk},
+            .method_name_tk{head.method->name_tk},
             .func_tk{func_tk},
             .start_tk{head.start_tk},
             .signature{signature},
@@ -1359,10 +1394,10 @@ class func_instantiator final {
         // 'text<8>', like the instance of a method without type parameters
         if (generic.receiver) {
             // note: the head of an instance names the receiver type
-            assert(head.method_name_tk);
+            assert(head.method);
 
             instance.generic_method =
-                generic.receiver->method_name(head.method_name_tk->text());
+                generic.receiver->method_name(head.method->name_tk.text());
 
             instance.constants = generic.receiver->constants();
         }
@@ -1389,7 +1424,7 @@ class func_instantiator final {
         const func_head head{func_head::read(tc, tz)};
 
         assert(not head.is_generic_type_method());
-        assert(head.method_name_tk);
+        assert(head.method);
 
         if (not method.signature.type_param_tks.empty()) {
             define_func(tc, method.func_tk, head, method.signature, receiver,
@@ -1400,7 +1435,7 @@ class func_instantiator final {
 
         func_instance instance{
             .name{head.name},
-            .generic_method{receiver.method_name(head.method_name_tk->text())},
+            .generic_method{receiver.method_name(head.method->name_tk.text())},
             .constants{receiver.constants()},
             .trace{receiver.trace},
         };
@@ -1475,7 +1510,7 @@ class stmt_def_func_generic final : public statement {
         // e.g. 'to' of 'func text.to<T type>()' and of 'func
         // tokenizer.to<T type>()', 'f' of 'func f<T type>()'
         const token& name_tk{
-            head.method_name_tk ? *head.method_name_tk : head.name_tk,
+            head.method ? head.method->name_tk : head.name_tk,
         };
 
         for (const token& param_tk : signature.type_param_tks) {
@@ -1486,8 +1521,8 @@ class stmt_def_func_generic final : public statement {
 
             tc.assert_generic_param_free(param_tk);
 
-            tc.assert_generic_param_apart(
-                param_tk, name_tk, head.method_name_tk ? "method" : "function");
+            tc.assert_generic_param_apart(param_tk, name_tk,
+                                          head.method ? "method" : "function");
 
             for (const generic_signature_param& param : signature.params) {
                 tc.assert_generic_param_apart(param_tk, param.name_tk,

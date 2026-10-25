@@ -24,14 +24,17 @@
 // them by their index in the names of the machine and by masks of 1 << index
 class register_pool final {
   public:
+    // who holds a register: picked by the machine, fixed by an instruction or
+    // the calling convention, or held by the backend itself, not asked for by
+    // a source location
+    enum class holder_kind : uint8_t { scratch, named, backend };
+
     struct allocation {
         size_t index{};
         // where it was allocated, 'indent' is the indent of that code
         token src_loc_tk;
         size_t indent{};
-        bool named{};
-        // held by the backend itself, not asked for by a source location
-        bool is_backend_own{};
+        holder_kind holder{};
         // the index of the inlined call that allocated it, see
         // 'register_trace::frame'
         size_t frame{};
@@ -106,8 +109,8 @@ class register_pool final {
     }
 
     [[nodiscard]] auto scratch_count() const -> size_t {
-        return static_cast<size_t>(
-            std::ranges::count(allocations_, false, &allocation::named));
+        return static_cast<size_t>(std::ranges::count(
+            allocations_, holder_kind::scratch, &allocation::holder));
     }
 
     [[nodiscard]] auto top() const -> const allocation& {
@@ -253,7 +256,7 @@ class register_trace final {
     [[nodiscard]] static auto
     is_listed(const register_pool::allocation& allocated) -> bool {
 
-        return not allocated.is_backend_own;
+        return allocated.holder != register_pool::holder_kind::backend;
     }
 
   private:
