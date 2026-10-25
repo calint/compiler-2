@@ -98,16 +98,6 @@ class tokenizer final {
 
     [[nodiscard]] auto file_index() const -> size_t { return file_ix_; }
 
-    [[nodiscard]] auto is_next_char(const char ch) -> bool {
-        if (not is_peek_char(ch)) {
-            return false;
-        }
-
-        skip_char();
-
-        return true;
-    }
-
     // the token of 'ch' with the whitespace around it when 'ch' is next, the
     // cursor stays when not
     [[nodiscard]] auto is_next_char_token(const char ch)
@@ -133,23 +123,6 @@ class tokenizer final {
 
     [[nodiscard]] auto is_peek_char(const char ch) const -> bool {
         return not is_eos() and src_.at(char_ix_) == ch;
-    }
-
-    [[nodiscard]] auto is_peek_char2(const char ch) const -> bool {
-        return char_ix_ + 1 < src_.size() and src_.at(char_ix_ + 1) == ch;
-    }
-
-    [[nodiscard]] auto next_char() -> char {
-        assert(not is_eos());
-
-        const char ch{src_.at(char_ix_)};
-        ++char_ix_;
-
-        if (ch == '\n') {
-            ++at_line_;
-        }
-
-        return ch;
     }
 
     // e.g. '  # note\n  x = 1' gives the token 'x' with the whitespace and
@@ -219,12 +192,6 @@ class tokenizer final {
     // where the next token starts when there was none
     [[nodiscard]] auto position_of(const token& tk) const -> token {
         return tk.is_none() ? next_token_position() : tk;
-    }
-
-    auto put_back_char(const char ch) -> void {
-        assert(char_ix_ > 0 and src_.at(char_ix_ - 1) == ch);
-
-        move_back(1);
     }
 
     // only the last read token can be put back, otherwise the rewind lands
@@ -312,9 +279,6 @@ class tokenizer final {
         skip_braced_block();
         return text_after(tk);
     }
-
-    // reads a character the caller has no use for
-    auto skip_char() -> void { std::ignore = next_char(); }
 
     // skips up to and including the ')' that closes a '(' that is already read
     // e.g. 'b, f(c)) + d', the ')' before ' + d'
@@ -441,6 +405,16 @@ class tokenizer final {
         return char_ix_ >= src_.size();
     }
 
+    [[nodiscard]] auto is_next_char(const char ch) -> bool {
+        if (not is_peek_char(ch)) {
+            return false;
+        }
+
+        skip_char();
+
+        return true;
+    }
+
     [[nodiscard]] auto is_token_text_at_source(const token& t) const -> bool {
         // the text of a string token excludes its quotes
         const size_t quote_count{t.is_string() ? 1UZ : 0UZ};
@@ -460,6 +434,19 @@ class tokenizer final {
                 --at_line_;
             }
         }
+    }
+
+    [[nodiscard]] auto next_char() -> char {
+        assert(not is_eos());
+
+        const char ch{src_.at(char_ix_)};
+        ++char_ix_;
+
+        if (ch == '\n') {
+            ++at_line_;
+        }
+
+        return ch;
     }
 
     // the text up to the next delimiter, e.g. 'abc+d' gives 'abc', a delimiter
@@ -544,6 +531,9 @@ class tokenizer final {
 
         return {};
     }
+
+    // reads a character the caller has no use for
+    auto skip_char() -> void { std::ignore = next_char(); }
 
     // the newline is left for 'next_whitespace' so it counts the line
     // e.g. the rest of '# c\n' is '# c'

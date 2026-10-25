@@ -1,0 +1,5 @@
+# a bare type is a zero value, an '=' after it is not an operator
+
+func main() {
+    var x = i8 = 3
+}

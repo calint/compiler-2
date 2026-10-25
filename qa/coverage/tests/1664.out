@@ -1,0 +1,4 @@
+
+1664.baz:6:15: unexpected '!'
+    var q = p ! 3
+              ^

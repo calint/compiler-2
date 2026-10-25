@@ -1,0 +1,6 @@
+# a '{}' is a whole value, an '=' after it is not an operator
+
+func main() {
+    var n = i8
+    n = {} = 1
+}

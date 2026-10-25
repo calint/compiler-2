@@ -405,6 +405,26 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           comments say 19:9 instead of 19:1, all other listings, errors and
           '--reproduce-source' equal; fuzz-exprs (default and spelling),
           reject, compiler, flow clean
+       => F.8 step 4 done (2026-10-25): 'arithmetic_spellings' table beside
+          'arithmetic_operator' ('source_text' and the new
+          'binary_operator_of' read it); 'expr_arith' keeps 'op_tks_' (each
+          operator with the whitespace before it), 'ws_before_ops_' goes;
+          the operator is read only when the list keeps it, so 'ops_' is no
+          longer pushed and popped and nothing is put back;
+          'peek_operator', 'consume_peeked_operator' and
+          'is_comparison_next' go; 'continues_expression' asks the
+          tokenizer, so a lone '=' or '!' after a bare type or '{}' is no
+          longer an operator: 'var x = i8 = 3' says "unexpected '='" at the
+          '=' instead of "'i8' is a type, not a value" (the bare type is a
+          valid zero value), likewise for a bare user type and '{}' (tests
+          1663-1666); listings, errors and '--reproduce-source' otherwise
+          equal; fuzz-exprs (default, spelling, noub), reject, compiler,
+          flow, constructs clean
+       => F.8 step 5 done (2026-10-25), F.8 done: 'is_peek_char2' and
+          'put_back_char' go (no user left); 'is_next_char', 'next_char'
+          and 'skip_char' are private, only the tokenizer's own readers use
+          them; 'is_peek_char', 'peek_char_after_whitespace' and
+          'next_whitespace_token' stay public, other parsers use them
     G. statements
        G.1. 'stmt_if' speaks 'condition_result' only (S5); 'known_of' goes
        => G.1 done (2026-10-25): 'stmt_if_branch::parse_constant_' is a

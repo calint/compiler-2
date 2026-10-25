@@ -5197,3 +5197,15 @@ SRC=1661 && EXP=35 && RUN
 
 # 'array_copy' checks its arguments in the order 'arrays_equal' does: a
 SRC=1662 && COMPERR
+
+# a bare type is a zero value, an '=' after it is not an operator
+SRC=1663 && COMPERR
+
+# a bare user type is a zero instance, a '!' after it is not an operator
+SRC=1664 && COMPERR
+
+# a '{}' is a whole value, an '=' after it is not an operator
+SRC=1665 && COMPERR
+
+# a '{}' is a whole value, a '!' after it is not an operator
+SRC=1666 && COMPERR
