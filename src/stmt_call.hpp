@@ -698,6 +698,12 @@ struct call_site {
         return toc::temporary_name(tk, "call-arg", index);
     }
 
+    // the result of a noinline call whose destination is not memory or has
+    // another type, see 'noinline_call::has_result_temporary'
+    [[nodiscard]] auto temporary_result_name() const -> std::string {
+        return toc::temporary_name(tk, "call-result", 0);
+    }
+
     //
     // statics
     //
@@ -1278,8 +1284,11 @@ class inline_call {
             // note: the dry run of a 'noinline' call must not name the
             //       register of the caller that the body does not see
 
-            if (planned.is_temporary) {
+            // note: a temporary is bound by the name that
+            //       'make_argument_temporary' gave it, also in the dry run, so
+            //       each level of an inlined recursion resolves its own
 
+            if (planned.is_temporary) {
                 const std::string temporary{call_.temporary_argument_name(i)};
 
                 bindings.arguments.push_back(
@@ -1627,9 +1636,8 @@ class noinline_call {
             // the temporary has the type of the result, the copy into the
             // destination widens it
             const ident_info result_info{
-                call_.add_temporary(
-                    tc, indent, toc::temporary_name(call_.tk, "call-result", 0),
-                    call_.func->result_type()),
+                call_.add_temporary(tc, indent, call_.temporary_result_name(),
+                                    call_.func->result_type()),
             };
 
             compile_with_arguments(

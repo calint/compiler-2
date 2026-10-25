@@ -142,8 +142,21 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             keeps what 'make_argument_temporary' returns and passes it to
             'make_bindings', 'dry_run' takes the span the noinline call
             holds; the name stays the label, no longer the link
+       => D.1 reduced (2026-10-25): the name is the link by design, an
+          inlined recursion declares the temporary again at each level and
+          the binding resolves it by name in the caller's scope; keeping the
+          handle would add a parameter to five functions in two shapes (an
+          optional per argument inlined, the noinline arguments in the dry
+          run) to save one storage lookup; done instead: a 'note:' in
+          'make_bindings' that a temporary is bound by the name
+          'make_argument_temporary' gave it, and
+          'call_site::temporary_result_name' beside
+          'temporary_argument_name'
        D.2. 'compile_in_frame' and 'compile_frame_body' one function, or
             names that say the split (S6)
+       => D.2 done (2026-10-25): one 'compile_in_frame', the header table
+          names it; both suites, the CLI tests, clang-tidy and fuzz-calls 300
+          clean for phase D
     E. expressions
        E.1. a step says what it is (E1): 'is_merged' is also true for a
             constant kept in place under '--checks=overflow' ('a * 3' gets

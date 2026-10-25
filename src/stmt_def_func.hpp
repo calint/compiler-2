@@ -363,7 +363,7 @@ struct frame_slot {
 //   noinline call
 //   a noinline body,      'noinline_func'    variables reached through the
 //   'emit_noinline_body'                     addresses in the frame
-//   and 'check_body'                         ('compile_frame_body')
+//   and 'check_body'                         ('compile_in_frame')
 //
 // 'check_body' compiles an inlined function that nothing called like a
 // noinline body; 'toc' keeps the address of the definition, so it is not
@@ -854,28 +854,8 @@ class stmt_def_func final : public statement {
         return array_lengths_path(array_lengths);
     }
 
-    // the body in the frame of the function, inside its 'frame_scope';
-    // returns the size of the frame
-    [[nodiscard]] auto
-    compile_frame_body(toc& tc, const size_t indent,
-                       const std::span<const size_t> array_lengths,
-                       const operand& slot_register) const -> size_t {
-
-        machine& x{tc.machine()};
-
-        add_constants(tc, indent + 1);
-
-        add_signature_vars(tc, indent + 1, var_access::through_address,
-                           array_lengths, slot_register);
-
-        compile_statements(tc, indent);
-        x.return_function(indent + 1);
-
-        return tc.layout().peak_frame_size_bytes();
-    }
-
     // the body in a frame of its own at the frame base, which the caller
-    // holds; returns the size of the frame
+    // holds, inside its 'frame_scope'; returns the size of the frame
     [[nodiscard]] auto
     compile_in_frame(toc& tc, const size_t indent,
                      const std::span<const size_t> array_lengths) const
@@ -891,9 +871,15 @@ class stmt_def_func final : public statement {
                 tok(), indent + 1, x.slot_register(), tc.builtins().address());
         }
 
-        const size_t frame_size_bytes{
-            compile_frame_body(tc, indent, array_lengths, slot_register),
-        };
+        add_constants(tc, indent + 1);
+
+        add_signature_vars(tc, indent + 1, var_access::through_address,
+                           array_lengths, slot_register);
+
+        compile_statements(tc, indent);
+        x.return_function(indent + 1);
+
+        const size_t frame_size_bytes{tc.layout().peak_frame_size_bytes()};
 
         if (not slot_register.is_empty()) {
             x.free_named_register(tok(), indent + 1, slot_register);
