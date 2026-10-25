@@ -152,12 +152,8 @@ inline auto expr_type::parse_fields(toc& tc, tokenizer& tz, const type& tp)
 
         // the value is parsed as the type of the field, so a nested '{...}'
         // is another 'expr_type'
-        const array_shape shape{
-            tf.is_array() ? array_shape::array(tf.array_count) : array_shape{},
-        };
-
         list.exprs.emplace_back(std::make_unique<expr_any>(
-            tc, tz, tf.type(), literal_typing::from_destination, shape));
+            tc, tz, tf.type(), literal_typing::from_destination, tf.shape));
     }
 }
 

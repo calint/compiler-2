@@ -118,22 +118,73 @@ inline constexpr size_t max_size_bytes{
 
 class type;
 
+// the length that an array of unknown length is parsed and compiled with,
+// what it gives is discarded, see 'array_shape::is_length_unknown'
+inline constexpr size_t discarded_array_len{};
+
+// whether a name is an array and of how many elements: not an array, an
+// array of a length, or an unsized array parameter without one
+class array_shape final {
+    bool is_array_{};
+    std::optional<size_t> length_;
+
+  public:
+    // not an array
+    array_shape() = default;
+
+    // 1 for a name that is not an array, see 'discarded_array_len'
+    [[nodiscard]] auto element_count() const -> size_t {
+        return is_array_ ? length_.value_or(discarded_array_len) : 1;
+    }
+
+    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
+
+    // an unsized array parameter where no call gave it a length: in the parse
+    // and in the check of a function that nothing calls
+    [[nodiscard]] auto is_length_unknown() const -> bool {
+        return is_array_ and not length_;
+    }
+
+    // empty when not an array or not known
+    [[nodiscard]] auto length() const -> std::optional<size_t> {
+        return length_;
+    }
+
+    // the bytes of a value of elements of 'element_type'
+    [[nodiscard]] auto value_size_bytes(const token& src_loc_tk,
+                                        const type& element_type) const
+        -> size_t;
+
+    //
+    // statics
+    //
+
+    // an array, of unknown length when 'length' is empty
+    [[nodiscard]] static auto array(const std::optional<size_t> length)
+        -> array_shape {
+
+        return {true, length};
+    }
+
+  private:
+    array_shape(const bool is_array, const std::optional<size_t> length)
+        : is_array_{is_array}, length_{length} {}
+};
+
 struct type_field {
     std::string name;
     const type* type_ptr{}; // element type
     size_t offset{};        // offset relative to instance address
     size_t size_bytes{};    // total size in bytes of all elements
-    // array size in elements, empty when not an array
-    std::optional<size_t> array_count;
+    // an array of a length, or not an array
+    array_shape shape;
 
     // 1 for a field that is not an array
     [[nodiscard]] auto element_count() const -> size_t {
-        return array_count.value_or(1);
+        return shape.element_count();
     }
 
-    [[nodiscard]] auto is_array() const -> bool {
-        return array_count.has_value();
-    }
+    [[nodiscard]] auto is_array() const -> bool { return shape.is_array(); }
 
     [[nodiscard]] auto type() const -> const type& { return *type_ptr; }
 };
@@ -188,7 +239,9 @@ class type final {
                                            tp.alignment_),
             },
             .size_bytes{},
-            .array_count{array_count},
+            .shape{
+                array_count ? array_shape::array(array_count) : array_shape{},
+            },
         };
 
         field.size_bytes = multiply_storage_size(src_loc_tk, tp.size_bytes_,
@@ -388,6 +441,14 @@ class type final {
         });
     }
 };
+
+inline auto array_shape::value_size_bytes(const token& src_loc_tk,
+                                          const type& element_type) const
+    -> size_t {
+
+    return multiply_storage_size(src_loc_tk, element_type.size_bytes(),
+                                 element_count());
+}
 
 // the types of the language that the source does not define, made once before
 // the machine and the program, which refer to them; a type is compared by

@@ -767,7 +767,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        if (not tc.make_ident_info(src_loc_tk, dotted_path_).is_array()) {
+        if (not tc.resolve_declared(src_loc_tk, dotted_path_).is_array()) {
             return;
         }
 
@@ -784,7 +784,7 @@ class stmt_identifier final : public statement {
         }
 
         const ident_info cur_ident_info{
-            tc.make_ident_info(src_loc_tk, dotted_path_),
+            tc.resolve_declared(src_loc_tk, dotted_path_),
         };
 
         if (tz.peek_char_after_whitespace() == '[' and
@@ -810,7 +810,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        const ident_info info{tc.make_ident_info(src_loc_tk, dotted_path_)};
+        const ident_info info{tc.resolve_declared(src_loc_tk, dotted_path_)};
 
         throw compile_error{name_tk,
                             std::format("method {} not found in type {}",
@@ -904,7 +904,7 @@ class stmt_identifier final : public statement {
             path += elem.name_tk.text();
 
             const ident_info info{
-                tc.make_ident_info(
+                tc.resolve_declared(
                     src_loc_tk.is_empty() ? elem.name_tk : src_loc_tk, path),
             };
 
@@ -930,7 +930,7 @@ class stmt_identifier final : public statement {
             return false;
         }
 
-        const ident_info info{tc.make_ident_info(src_loc_tk, dotted_path_)};
+        const ident_info info{tc.resolve_declared(src_loc_tk, dotted_path_)};
 
         const type& path_type{info.type_ref()};
 
@@ -982,7 +982,7 @@ class stmt_identifier final : public statement {
 
     // the path is an array only while its last element is not indexed
     auto resolve_type(const toc& tc, const token& src_loc_tk) -> void {
-        const ident_info info{tc.make_ident_info(src_loc_tk, dotted_path_)};
+        const ident_info info{tc.resolve_declared(src_loc_tk, dotted_path_)};
 
         set_type(info.type_ref());
 
@@ -1181,11 +1181,12 @@ struct place {
 
     // the name refers to the declared array, 'ps[1]' accesses one element
     const ident_info declared{
-        tc.make_ident_info(ident.tok(), ident.dotted_path()),
+        tc.resolve_declared(ident.tok(), ident.dotted_path()),
     };
 
-    const bool is_element{ident.is_array_element()};
-    ident_info info{ident_builder::as_element_if(is_element, declared)};
+    ident_info info{
+        ident.is_array_element() ? declared.as_element() : declared,
+    };
 
     info.set_src_loc_tk(ident.last_token());
 

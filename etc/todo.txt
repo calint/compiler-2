@@ -89,25 +89,53 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     C. storage and names (toc)
        C.1. move 'ident_path' and 'ident_builder' next to 'ident_resolver',
             their user (T5); a move in a step of its own
+       => C.1 done (2026-10-25): moved after 'builtin_roles', the map
+          follows; a move, the same lines
        C.2. the variables start at a fixed point (T1, the J.3 follow-up
             H.2 named): 'storage_layout::vars_start_bytes()' derived from
             'data_table'; a dat is not counted in the root scope;
             'applied_padding_bytes_', 'apply_dat_var_padding',
             'release_root' and the branch in 'next_frame_address' go;
             offsets and listings equal, test 0740 and the reject fuzzer
+       => C.2 done (2026-10-25): 'vars_start_bytes()' is the dats and the
+          padding; 'used_vars_size_bytes' is the sum of the scopes,
+          'dats_and_vars_size_bytes' the start plus it; 'allocate_dat'
+          only sets the offset and checks 'offset + size' against the
+          target (it asserts no variable is placed yet: the dat order);
+          'applied_padding_bytes_', 'apply_dat_var_padding',
+          'release_root' and the padding branch of 'next_frame_address'
+          go; listings equal, reject, data and calls fuzzers clean;
+          'test-arena.py' fails at HEAD the same way (open item)
        C.3. the noinline frame says "frame" (T3, the D.5 word):
             'scope::storage_base' -> 'scope::frame', its accessors
             '*_frame_size_bytes', 'frame_base_register'; 'scope::type_' ->
             'kind_' (T10)
+       => C.3 done (2026-10-25): 'scope::frame_part', 'frame_',
+          'has_frame', 'frame()', 'frame_base_register',
+          '*_frame_size_bytes'; 'dry_run_state::frame_scope_index';
+          'scope::kind_'; the comments of 'storage_layout' say frame; a
+          rename, listings equal
        C.4. one name per answer of a lookup (T4, F8):
             'toc::make_ident_info' (the declared name) ->
             'toc::resolve_declared'; the free 'make_ident_info(tc, node)'
             keeps its name; README 7.6 lists the two resolver forwards
+       => C.4 done (2026-10-25): 14 sites renamed by reference, a comment
+          names the difference; README 7.6
        C.5. an 'ident_info' is built finished (T6): 'make_var_ident_info'
             takes what the walk found (call address, element) and returns
             the final info; 'ident_info::var()' goes
+       => C.5 done (2026-10-25): 'make_var_ident_info' takes the call
+          address and picks the operand ('operand_below_call_address' or
+          'memory_at'); 'ident_info::as_element()' (const) replaces
+          'as_element_if' and the mutable 'var()'; 'set_src_loc_tk' stays,
+          the node's own token; listings equal
        C.6. 'array_shape' moves to type.hpp and 'type_field' holds one
             (T9); the two conversions go
+       => C.6 done (2026-10-25): 'array_shape' and 'discarded_array_len'
+          in type.hpp, 'array_shape::value_size_bytes' defined after
+          'type'; 'type_field::shape' replaces 'array_count', the one
+          conversion is in 'type::add_field'; listings equal; the backend
+          test now calls 'resolve_declared' (missed in C.4)
     D. calls
        D.1. one 'noinline_arg' (S1, N2.2-2.3): it holds the place's path
             (null for a temporary) and derives 'is_temporary';
@@ -1149,6 +1177,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     literals resolved by the resolver; 'expr_any' forms inside 'expr_any';
     'accessed_bytes_' beside 'access_path_'; the handler skeletons (G.2);
     both versions compiled (chapter 5)
+[ ] easy: 'qa/coverage/test-rv32i-address.cpp' discards the result of
+    'toc::dry_run' (the '[[nodiscard]]' warning at its 'dry run only' test,
+    present at HEAD 2026-10-25); 'std::ignore =' or check the result
 [ ] easy: 'qa/coverage/test-arena.py' large offset runtime: its panic harness
     jumps to 'baz_bounds_panic', which a program compiled with
     '--checks=line' does not define (the handler is under the labels of its

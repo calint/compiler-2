@@ -170,7 +170,7 @@ struct generic_call {
         // e.g. 'show(nope)', an unknown name is reported as such, not as a
         // type that cannot be deduced
         if (tm.is(term_kind::unknown)) {
-            std::ignore = tc.make_ident_info(tk, tk.text());
+            std::ignore = tc.resolve_declared(tk, tk.text());
         }
 
         // e.g. 'show(nope(1))', reported as an unknown function
@@ -634,7 +634,7 @@ struct call_site {
                    },
                    var_kind::var);
 
-        return tc.make_ident_info(tk, name);
+        return tc.resolve_declared(tk, name);
     }
 
     // the form of each argument and whether the body reaches it through a
@@ -914,7 +914,7 @@ class inline_call {
         const func_return_info& return_info{*func.returns()};
 
         const ident_info ret_info{
-            tc.make_ident_info(call_.tk, return_info.ident_tk.text()),
+            tc.resolve_declared(call_.tk, return_info.ident_tk.text()),
         };
 
         machine& x{tc.machine()};
@@ -930,7 +930,7 @@ class inline_call {
 
         machine& x{tc.machine()};
 
-        if (tc.make_ident_info(call_.tk, dst.name()).is_array()) {
+        if (tc.resolve_declared(call_.tk, dst.name()).is_array()) {
             x.comment(call_.tk, indent, "address of result element {}",
                       in_quotes(dst.text()));
 

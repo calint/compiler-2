@@ -75,63 +75,6 @@ struct folded_value {
     }
 };
 
-// the length that an array of unknown length is parsed and compiled with,
-// what it gives is discarded, see 'array_shape::is_length_unknown'
-inline constexpr size_t discarded_array_len{};
-
-// whether a name is an array and of how many elements: not an array, an
-// array of a length, or an unsized array parameter without one
-class array_shape final {
-    bool is_array_{};
-    std::optional<size_t> length_;
-
-  public:
-    // not an array
-    array_shape() = default;
-
-    // 1 for a name that is not an array, see 'discarded_array_len'
-    [[nodiscard]] auto element_count() const -> size_t {
-        return is_array_ ? length_.value_or(discarded_array_len) : 1;
-    }
-
-    [[nodiscard]] auto is_array() const -> bool { return is_array_; }
-
-    // an unsized array parameter where no call gave it a length: in the parse
-    // and in the check of a function that nothing calls
-    [[nodiscard]] auto is_length_unknown() const -> bool {
-        return is_array_ and not length_;
-    }
-
-    // empty when not an array or not known
-    [[nodiscard]] auto length() const -> std::optional<size_t> {
-        return length_;
-    }
-
-    // the bytes of a value of elements of 'element_type'
-    [[nodiscard]] auto value_size_bytes(const token& src_loc_tk,
-                                        const type& element_type) const
-        -> size_t {
-
-        return multiply_storage_size(src_loc_tk, element_type.size_bytes(),
-                                     element_count());
-    }
-
-    //
-    // statics
-    //
-
-    // an array, of unknown length when 'length' is empty
-    [[nodiscard]] static auto array(const std::optional<size_t> length)
-        -> array_shape {
-
-        return {true, length};
-    }
-
-  private:
-    array_shape(const bool is_array, const std::optional<size_t> length)
-        : is_array_{is_array}, length_{length} {}
-};
-
 // where a variable lives: in storage at an offset from a base register, at
 // the memory a register points to, or in a register without storage
 struct in_storage {
@@ -251,6 +194,18 @@ class ident_info final {
 
     [[nodiscard]] auto array_len() const -> std::optional<size_t> {
         return shape().length();
+    }
+
+    // one element of the array a variable names, e.g. 'ps' of 'ps[1]' as the
+    // element: the same storage without the shape; another kind is unchanged
+    [[nodiscard]] auto as_element() const -> ident_info {
+        ident_info element{*this};
+
+        if (var_part* const var{std::get_if<var_part>(&element.part_)}) {
+            var->shape = {};
+        }
+
+        return element;
     }
 
     [[nodiscard]] auto constant() const -> const folded_value& {
@@ -388,9 +343,6 @@ class ident_info final {
 
         return shape().value_size_bytes(src_loc_tk, type_ref());
     }
-
-    // the part of a variable, for the resolver that completes it
-    [[nodiscard]] auto var() -> var_part& { return std::get<var_part>(part_); }
 
     //
     // statics

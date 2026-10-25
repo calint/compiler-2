@@ -304,7 +304,7 @@ class stmt_builtin_foo final : public statement {
         add_loop_names(tc, indent, ident_.tok(), array_info, reg_iter,
                        reg_counter);
 
-        return counter_in_memory ? tc.make_ident_info(tok(), "i").operand()
+        return counter_in_memory ? tc.resolve_declared(tok(), "i").operand()
                                  : reg_counter;
     }
 

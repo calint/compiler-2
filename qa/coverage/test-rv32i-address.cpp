@@ -3991,7 +3991,7 @@ struct front_end {
                    },
                    var_kind::var);
 
-        return tc.make_ident_info(at, name).operand().displacement();
+        return tc.resolve_declared(at, name).operand().displacement();
     }
 };
 

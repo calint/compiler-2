@@ -1367,7 +1367,8 @@ stmt_identifier::compile_checked_index
                                       (_impl)
 stmt_identifier::get_lea_operand      an operand without a path to walk is
                                       the storage of the name
-ident_builder::place_operand_from_lea a built-in reached below a known
+ident_builder::operand_below_call_address
+                                      a built-in reached below a known
                                       address, for the resolver
 machine_x86_64::with_lowered_addresses, machine_rv32i::lower_address
                                       what the target encodes
@@ -1458,7 +1459,8 @@ functions, the generics, the data and the storage layout. A method of 'toc'
 changes state or combines tables, a question to one table goes through its
 const accessor, e.g. 'tc.scopes().lookup(name)'. The exception is a question
 the statements ask at every step, which has a 'toc' method that forwards it:
-'is_reachable', 'current_definition', 'source_of'.
+'is_reachable', 'current_definition', 'source_of', and the two answers of
+'ident_resolver', 'resolve_declared' and 'storage_of'.
 
 'toc' is also the compile context: it carries the machine and whether the
 program is being parsed or compiled, and whether a dry run is active. A

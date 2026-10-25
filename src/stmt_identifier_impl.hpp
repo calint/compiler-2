@@ -117,7 +117,7 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
     -> void {
 
     const ident_info array_info{
-        tc.make_ident_info(first_token(), dotted_path_),
+        tc.resolve_declared(first_token(), dotted_path_),
     };
 
     assert_constant_range(

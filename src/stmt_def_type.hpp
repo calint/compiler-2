@@ -131,7 +131,7 @@ inline auto comment_type_layout(toc& tc, const size_t indent, const token& tk,
     for (const type_field& f : tp.fields()) {
         x.comment(tk, indent, "{:>10} : {:>7} : {:>7} : {:>7} : {:>10}", f.name,
                   f.offset, f.size_bytes, f.is_array() ? "yes" : "no",
-                  f.array_count ? std::format("{}", *f.array_count) : "");
+                  f.shape.length() ? std::format("{}", *f.shape.length()) : "");
     }
 
     x.comment({}, 0, "");

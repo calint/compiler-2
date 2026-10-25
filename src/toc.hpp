@@ -42,9 +42,6 @@
 //   'scope'         a block, a loop or a function being compiled: its
 //                   constants, variables and parameter bindings; "frame" is
 //                   memory, e.g. the frame of a noinline call
-//   'ident_path'    a name as its path of elements, e.g. 'p.x'
-//   'ident_builder' the 'ident_info' of a variable and of a path below a known
-//                   address
 //   tables          'type_table', 'compile_records' (the noinline bodies to
 //                   emit, the compiled functions), 'function_table'
 //   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
@@ -57,6 +54,9 @@
 //                   ('name_meaning'), the target of 'break' ('loop_target')
 //   'storage_layout' where variables are placed and how much storage is used
 //   'builtin_roles' the types the front end needs by role
+//   'ident_path'    a name as its path of elements, e.g. 'p.x'
+//   'ident_builder' the 'ident_info' of a variable and of a path below a known
+//                   address
 //   'ident_resolver' resolves a name by walking the scopes, following bindings
 //   'definition_checks' the errors of a name defined twice
 //   'variable_comments' the comment of where a variable is stored
@@ -372,7 +372,7 @@ class scope final {
 
     // a scope whose variables are placed from a base register of their own,
     // the body of a noinline function
-    struct storage_base {
+    struct frame_part {
         std::string_view base_register;
         size_t peak_size_bytes{};
     };
@@ -395,9 +395,9 @@ class scope final {
     // reached; only 'stmt_loop' reads it, a 'foo' always reaches its end
     bool is_left_by_break_{};
 
-    scope_kind type_{scope_kind::block};
+    scope_kind kind_{scope_kind::block};
     std::optional<function_part> func_;
-    std::optional<storage_base> storage_;
+    std::optional<frame_part> frame_;
 
   public:
     auto add_binding(const param_binding& binding) -> void {
@@ -445,6 +445,10 @@ class scope final {
         return func_part().call_path;
     }
 
+    [[nodiscard]] auto frame_base_register() const -> std::string_view {
+        return frame().base_register;
+    }
+
     [[nodiscard]] auto func_ret_label() const -> std::string_view {
         return func_part().ret_label;
     }
@@ -475,12 +479,10 @@ class scope final {
         return consts_.has(name);
     }
 
+    [[nodiscard]] auto has_frame() const -> bool { return frame_.has_value(); }
+
     [[nodiscard]] auto has_non_dat_var_been_added() const -> bool {
         return non_dat_var_has_been_added_;
-    }
-
-    [[nodiscard]] auto has_storage_base() const -> bool {
-        return storage_.has_value();
     }
 
     [[nodiscard]] auto has_var(const std::string_view name) const -> bool {
@@ -488,13 +490,13 @@ class scope final {
     }
 
     [[nodiscard]] auto is_block() const -> bool {
-        return type_ == scope_kind::block;
+        return kind_ == scope_kind::block;
     }
 
     [[nodiscard]] auto is_compiled_in_place() const -> bool {
         assert(is_func());
 
-        return type_ != scope_kind::noinline_func;
+        return kind_ != scope_kind::noinline_func;
     }
 
     // the end of the body of an inlined call is reached, by its last
@@ -504,7 +506,7 @@ class scope final {
     }
 
     [[nodiscard]] auto is_foo() const -> bool {
-        return type_ == scope_kind::foo;
+        return kind_ == scope_kind::foo;
     }
 
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
@@ -512,7 +514,7 @@ class scope final {
     // only a call inlined for real; 'main' and a dry run are compiled in place
     // too but are not one ('is_compiled_in_place')
     [[nodiscard]] auto is_inlined_func() const -> bool {
-        return type_ == scope_kind::inlined_func;
+        return kind_ == scope_kind::inlined_func;
     }
 
     [[nodiscard]] auto is_left_by_break() const -> bool {
@@ -520,11 +522,11 @@ class scope final {
     }
 
     [[nodiscard]] auto is_loop() const -> bool {
-        return type_ == scope_kind::loop;
+        return kind_ == scope_kind::loop;
     }
 
     [[nodiscard]] auto is_main() const -> bool {
-        return type_ == scope_kind::main_func;
+        return kind_ == scope_kind::main_func;
     }
 
     [[nodiscard]] auto is_name(const std::string_view name) const -> bool {
@@ -532,7 +534,7 @@ class scope final {
     }
 
     [[nodiscard]] auto is_noinline_dry_run() const -> bool {
-        return type_ == scope_kind::noinline_dry_run;
+        return kind_ == scope_kind::noinline_dry_run;
     }
 
     [[nodiscard]] auto is_reachable() const -> bool {
@@ -570,26 +572,22 @@ class scope final {
         return std::nullopt;
     }
 
-    [[nodiscard]] auto peak_storage_size_bytes() const -> size_t {
-        return base().peak_size_bytes;
+    [[nodiscard]] auto peak_frame_size_bytes() const -> size_t {
+        return frame().peak_size_bytes;
     }
 
-    auto record_storage_size_bytes(const size_t size_bytes) -> void {
-        storage_base& storage{base()};
+    auto record_frame_size_bytes(const size_t size_bytes) -> void {
+        frame_part& storage{frame()};
 
         storage.peak_size_bytes = std::max(storage.peak_size_bytes, size_bytes);
     }
 
-    auto restore_peak_storage_size_bytes(const size_t size_bytes) -> void {
-        base().peak_size_bytes = size_bytes;
+    auto restore_peak_frame_size_bytes(const size_t size_bytes) -> void {
+        frame().peak_size_bytes = size_bytes;
     }
 
     auto set_reachable(const bool is_reachable_in) -> void {
         func_part().is_reachable = is_reachable_in;
-    }
-
-    [[nodiscard]] auto storage_base_register() const -> std::string_view {
-        return base().base_register;
     }
 
     //
@@ -636,20 +634,20 @@ class scope final {
                         std::move(call_path), std::move(return_label));
     }
 
-    // a function with a body of its own, its variables are placed from
-    // 'storage_base_register'
+    // a function with a body of its own, its variables are placed in its
+    // frame from 'frame_base_register'
     [[nodiscard]] static auto
     noinline_func(const std::string_view name, std::string call_path,
-                  const std::string_view storage_base_register) -> scope {
+                  const std::string_view frame_base_register) -> scope {
 
-        assert(not storage_base_register.empty());
+        assert(not frame_base_register.empty());
 
         scope scp{
             function(name, scope_kind::noinline_func, std::move(call_path), {}),
         };
 
-        scp.storage_ = storage_base{
-            .base_register{storage_base_register},
+        scp.frame_ = frame_part{
+            .base_register{frame_base_register},
             .peak_size_bytes{},
         };
 
@@ -658,18 +656,18 @@ class scope final {
 
   private:
     scope(const std::string_view name, const scope_kind kind) noexcept
-        : name_{name}, type_{kind} {}
+        : name_{name}, kind_{kind} {}
 
-    [[nodiscard]] auto base() -> storage_base& {
-        assert(storage_);
+    [[nodiscard]] auto frame() -> frame_part& {
+        assert(frame_);
 
-        return *storage_;
+        return *frame_;
     }
 
-    [[nodiscard]] auto base() const -> const storage_base& {
-        assert(storage_);
+    [[nodiscard]] auto frame() const -> const frame_part& {
+        assert(frame_);
 
-        return *storage_;
+        return *frame_;
     }
 
     [[nodiscard]] auto func_part() -> function_part& {
@@ -707,222 +705,6 @@ class scope final {
         };
 
         return scp;
-    }
-};
-
-// an identifier and its path split at the '.', e.g. 'p.pos.x'
-class ident_path final {
-    std::string id_;
-    std::vector<std::string> path_;
-
-  public:
-    explicit ident_path(std::string id) : id_{std::move(id)} {
-        assert(not id_.empty());
-
-        refresh_path();
-
-        assert(not path_.empty());
-    }
-
-    auto append(const std::string_view path_elem) -> void {
-        id_ = std::format("{}.{}", id_, path_elem);
-        refresh_path();
-    }
-
-    [[nodiscard]] auto base() const -> std::string_view {
-        assert(not path_.empty());
-
-        return path_.at(0);
-    }
-
-    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
-        return path_;
-    }
-
-    [[nodiscard]] auto str() const -> const std::string& { return id_; }
-
-  private:
-    auto refresh_path() -> void {
-        path_.clear();
-        for (const auto part : id_ | std::views::split('.')) {
-            path_.emplace_back(part.begin(), part.end());
-        }
-    }
-};
-
-// builds the identifier info of a path: the elements of an indexed array, the
-// address held below a run-time index and the base of a parameter binding
-class ident_builder final {
-  public:
-    //
-    // statics
-    //
-
-    [[nodiscard]] static auto as_element_if(const bool is_element,
-                                            ident_info info) -> ident_info {
-
-        if (not is_element or not info.is_var()) {
-            return info;
-        }
-
-        info.var().shape = {};
-
-        return info;
-    }
-
-    // the identifier 'ident' of the variable 'var', its path walks the fields
-    // of the type of the variable, 'base_register' is where its storage starts
-    // unless the variable has a base of its own
-    [[nodiscard]] static auto
-    make_var_ident_info(const token& src_loc_tk, const std::string_view ident,
-                        const std::vector<std::string>& path,
-                        const var_info& var,
-                        const std::string_view base_register) -> ident_info {
-
-        const type* tp{var.type_ptr};
-
-        std::vector<const type*> type_path;
-        type_path.emplace_back(tp);
-
-        size_t offset{};
-        array_shape shape{var.shape};
-
-        for (const std::string& field_name : path | std::views::drop(1)) {
-            // note: drop 1 because the first element is retrieved outside the
-            //       loop
-
-            const type_field& tf{tp->field(src_loc_tk, field_name)};
-            offset = sum_storage_size(offset, tf.offset);
-            tp = tf.type_ptr;
-
-            shape = tf.is_array() ? array_shape::array(tf.array_count)
-                                  : array_shape{};
-
-            type_path.emplace_back(tp);
-        }
-
-        // a memory operand needs a built-in type, the first field of an
-        // instance starts at its address
-        while (not tp->is_builtin()) {
-            tp = tp->fields().front().type_ptr;
-        }
-
-        const operand op{
-            memory_at(var.placement, base_register, address_offset(offset),
-                      *tp),
-        };
-
-        return ident_info::make_var(std::string{ident}, path,
-                                    std::move(type_path),
-                                    {
-                                        .operand{op},
-                                        .address_by_call{},
-                                        .shape{shape},
-                                        .holds_address{
-                                            holds_address(var.placement),
-                                        },
-                                        .read_only_why{var.read_only_why},
-                                    });
-    }
-
-    // the memory 'offset' bytes into a variable placed at 'placement', in
-    // storage from its own base or else from 'base_register'
-    [[nodiscard]] static auto memory_at(const var_placement& placement,
-                                        const std::string_view base_register,
-                                        const int64_t offset,
-                                        const type& value_type) -> operand {
-
-        if (const at_address_register* const pointed{
-                std::get_if<at_address_register>(&placement),
-            }) {
-
-            return operand::mem(pointed->reg.register_name(), "", 1, offset,
-                                value_type);
-        }
-
-        // note: a variable in a value register has no memory, 'resolve_var'
-        //       makes its register operand
-
-        const in_storage& stored{std::get<in_storage>(placement)};
-
-        const std::string_view storage_base{
-            stored.base_register.empty() ? base_register : stored.base_register,
-        };
-
-        return operand::mem(storage_base, "", 1,
-                            add_address_offset(stored.offset, offset),
-                            value_type);
-    }
-
-    // a built-in identifier below a run-time indexed element is addressed from
-    // the last address held, e.g. 'wld.rooms[ix].description.data'
-    static auto place_operand_from_lea(const token& src_loc_tk,
-                                       ident_info& info) -> void {
-
-        const std::optional<call_address>& by_call{
-            info.var().address_by_call,
-        };
-
-        if (not by_call) {
-            return;
-        }
-
-        const operand& lea{by_call->address};
-
-        const size_t lea_index{
-            info.elem_path().size() - 1 - by_call->trailing_count,
-        };
-
-        // example of resulting data structure:
-        //
-        // type string { len i8, data i8[127] }
-        // type room { name string, description string, note string }
-        // type world { rooms room[128] }
-        //
-        // id path     |  type  |  lea          |
-        // ------------|--------|---------------|
-        // wld         | world  | -             |
-        // rooms[i]    | room   | r15           |
-        // description | string | -             |
-        // data        | i8     | r15 + 129     |
-        //
-        // the index into 'rooms' is known only at run time, so the address of
-        // 'rooms[i]' is in a register and the fields after it are addressed
-        // from that register
-
-        // the fields after the call address are at fixed offsets from it
-        const std::span<const std::string> elem_path_from_lea{
-            std::span{info.elem_path()}.subspan(lea_index),
-        };
-
-        const size_t offset{
-            info.type_path().at(lea_index)->field_offset(src_loc_tk,
-                                                         elem_path_from_lea),
-        };
-
-        ::operand& element{info.var().operand};
-        element = operand::mem(lea, info.type_ref());
-
-        if (offset != 0) {
-            element.increment_offset(address_offset(offset));
-        }
-    }
-
-    // 'id' with the base replaced by what the parameter is bound to, e.g.
-    //   res -> pt.x becomes pt.x
-    //   pt.x -> p becomes p.x
-    //   lnk.count -> world.room.link becomes world.room.link.count
-    [[nodiscard]] static auto replace_binding_base(const bound_name& binding,
-                                                   const ident_path& id)
-        -> ident_path {
-
-        ident_path target{binding.dotted_path};
-
-        for (const std::string& s : id.path() | std::views::drop(1)) {
-            target.append(s);
-        }
-
-        return target;
     }
 };
 
@@ -1739,8 +1521,8 @@ class scope_stack final {
 };
 
 // where the variables are placed, after the dats that 'data_table' placed: the
-// scopes that have a storage base of their own, the capacity of the section
-// and the target limits; the size in use is the sum of what the scopes hold
+// scopes that have a frame of their own, the capacity of the section and the
+// target limits; the size in use is the sum of what the scopes hold
 class storage_layout final {
     // where a variable is placed, 'scope_index' is empty at the variables base
     struct storage_location {
@@ -1757,17 +1539,14 @@ class storage_layout final {
     // included; the frames of noinline calls stack at run time, which
     // '--checks=frame' checks
     size_t max_body_vars_size_bytes_{};
-    // the padding between the dats and the variables, set when the first
-    // variable after the dats is placed, see 'apply_dat_var_padding'
-    std::optional<size_t> applied_padding_bytes_;
 
   public:
     // what a dry run changes and 'end_dry_run' puts back
     struct dry_run_state {
         size_t max_body_vars_size_bytes;
         // the index of the scope, scopes added meanwhile may move the scopes
-        std::optional<size_t> storage_scope_index;
-        size_t peak_storage_size_bytes;
+        std::optional<size_t> frame_scope_index;
+        size_t peak_frame_size_bytes;
     };
 
     storage_layout(const ::machine& backend, scope_stack& scopes,
@@ -1784,31 +1563,21 @@ class storage_layout final {
         }
     }
 
-    // the storage of the dat 'var' is where the data table placed it, after
-    // the dats before it; returns the bytes it takes with the padding before
-    // it, the offset of its storage is set
-    [[nodiscard]] auto allocate_dat(const token& src_loc_tk, var_info& var)
-        -> size_t {
-
+    // the storage of the dat 'var' is where the data table placed it, before
+    // the variables; its offset is set, the scopes hold none of its bytes
+    auto allocate_dat(const token& src_loc_tk, var_info& var) const -> void {
         const placed_dat& dat{data_.get().get_dat(var.name)};
 
-        // note: the compile places the dats in order and before the
-        //       variables, the parse places nothing
-
-        assert(sum_storage_size(dats_and_vars_size_bytes(),
-                                dat.padding_bytes) == dat.offset_bytes);
-
-        const size_t allocated_size_bytes{
-            sum_storage_size(dat.padding_bytes,
-                             var_storage_size_bytes(src_loc_tk, var)),
-        };
+        // note: a 'dat' comes before any 'var', so no variable is placed yet
+        assert(used_vars_size_bytes() == 0);
 
         std::get<in_storage>(var.placement).offset = add_address_offset(
             address_offset(dat.offset_bytes), -variables_base_shift_bytes());
 
-        assert_total_fits_target(src_loc_tk, allocated_size_bytes);
-
-        return allocated_size_bytes;
+        assert_total_fits_target(
+            src_loc_tk,
+            add_storage_size(src_loc_tk, dat.offset_bytes,
+                             var_storage_size_bytes(src_loc_tk, var)));
     }
 
     // places 'var' in the innermost storage that has room and returns the
@@ -1819,10 +1588,8 @@ class storage_layout final {
         const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
         const size_t var_alignment{var_storage_alignment(var)};
 
-        apply_dat_var_padding(src_loc_tk);
-
-        // offsets are relative to the variables base or to the nearest scope
-        // with its own storage base, both are aligned
+        // offsets are relative to the variables base or to the base of the
+        // nearest frame, both are aligned
         const storage_location location{find_storage_location()};
         const size_t base_offset{location.base_offset};
 
@@ -1843,20 +1610,22 @@ class storage_layout final {
         stored.offset = address_offset(base_offset + padding_bytes);
 
         if (location.scope_index) {
-            scope& storage_scope{
+            scope& frame_scope{
                 scopes_.get().all().at(*location.scope_index),
             };
 
-            stored.base_register = storage_scope.storage_base_register();
+            stored.base_register = frame_scope.frame_base_register();
 
-            storage_scope.record_storage_size_bytes(add_storage_size(
+            frame_scope.record_frame_size_bytes(add_storage_size(
                 src_loc_tk, base_offset, allocated_size_bytes));
         } else {
             stored.offset = add_address_offset(stored.offset,
                                                -variables_base_shift_bytes());
         }
 
-        assert_total_fits_target(src_loc_tk, allocated_size_bytes);
+        assert_total_fits_target(
+            src_loc_tk, add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
+                                         allocated_size_bytes));
 
         // note: a dry run puts the peak back ('end_dry_run'); the scope holds
         //       the bytes after this returns
@@ -1869,7 +1638,7 @@ class storage_layout final {
     }
 
     auto assert_released() const -> void {
-        assert(dats_and_vars_size_bytes() == 0);
+        assert(used_vars_size_bytes() == 0);
     }
 
     auto begin_dry_run() -> dry_run_state {
@@ -1879,9 +1648,9 @@ class storage_layout final {
 
         const dry_run_state saved{
             .max_body_vars_size_bytes{max_body_vars_size_bytes_},
-            .storage_scope_index{scope_index},
-            .peak_storage_size_bytes{
-                scope_index ? scope_at(*scope_index).peak_storage_size_bytes()
+            .frame_scope_index{scope_index},
+            .peak_frame_size_bytes{
+                scope_index ? scope_at(*scope_index).peak_frame_size_bytes()
                             : 0,
             },
         };
@@ -1892,11 +1661,11 @@ class storage_layout final {
     auto end_dry_run(const dry_run_state& saved) -> void {
         max_body_vars_size_bytes_ = saved.max_body_vars_size_bytes;
 
-        if (saved.storage_scope_index) {
+        if (saved.frame_scope_index) {
             scopes_.get()
                 .all()
-                .at(*saved.storage_scope_index)
-                .restore_peak_storage_size_bytes(saved.peak_storage_size_bytes);
+                .at(*saved.frame_scope_index)
+                .restore_peak_frame_size_bytes(saved.peak_frame_size_bytes);
         }
     }
 
@@ -1914,21 +1683,14 @@ class storage_layout final {
 
         if (location.scope_index) {
             return operand::mem(
-                scope_at(*location.scope_index).storage_base_register(), {}, 1,
+                scope_at(*location.scope_index).frame_base_register(), {}, 1,
                 address_offset(
                     align_storage_size(location.base_offset, frame_alignment)),
                 address_type);
         }
 
-        const size_t root_size_bytes{
-            sum_storage_size(location.base_offset,
-                             applied_padding_bytes_
-                                 ? 0
-                                 : data_.get().dat_var_padding_bytes()),
-        };
-
         const size_t aligned_size_bytes{
-            align_storage_size(root_size_bytes, frame_alignment),
+            align_storage_size(location.base_offset, frame_alignment),
         };
 
         const int64_t offset_from_dat{address_offset(aligned_size_bytes)};
@@ -1946,15 +1708,11 @@ class storage_layout final {
             find_storage_location().scope_index,
         };
 
-        // note: asked inside a noinline body, which has a storage base
+        // note: asked inside a noinline body, which has a frame
         assert(scope_index);
 
-        return scope_at(*scope_index).peak_storage_size_bytes();
+        return scope_at(*scope_index).peak_frame_size_bytes();
     }
-
-    // the root scope applies the dat var padding again when it is entered
-    // anew
-    auto release_root() -> void { applied_padding_bytes_.reset(); }
 
     [[nodiscard]] auto var_storage_alignment(const var_info& var) const
         -> size_t {
@@ -1982,31 +1740,11 @@ class storage_layout final {
     }
 
   private:
-    // the first variable after the dats starts past the padding that aligns it
-    auto apply_dat_var_padding(const token& src_loc_tk) -> void {
-        if (applied_padding_bytes_) {
-            return;
-        }
-
-        const size_t padding_bytes{data_.get().dat_var_padding_bytes()};
-
-        std::ignore = add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
-                                       padding_bytes);
-
-        applied_padding_bytes_ = padding_bytes;
-    }
-
     // the declaration that takes the data and variables past what the target
     // addresses is the error, not the end of the build; checked before the
     // scope holds the bytes
     auto assert_total_fits_target(const token& src_loc_tk,
-                                  const size_t allocated_size_bytes) const
-        -> void {
-
-        const size_t total_bytes{
-            add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
-                             allocated_size_bytes),
-        };
+                                  const size_t total_bytes) const -> void {
 
         const size_t max_bytes{machine_.get().max_storage_bytes()};
 
@@ -2045,21 +1783,13 @@ class storage_layout final {
                         in_quotes(var.name))};
     }
 
-    // the dats, the padding after them once applied and the variables of
-    // every scope
+    // the dats, the padding after them and the variables of every scope
     [[nodiscard]] auto dats_and_vars_size_bytes() const -> size_t {
-        size_t total_bytes{applied_padding_bytes_.value_or(0)};
-
-        for (const scope& scp : std::as_const(scopes_.get()).all()) {
-            total_bytes = sum_storage_size(total_bytes,
-                                           scp.allocated_storage_size_bytes());
-        }
-
-        return total_bytes;
+        return sum_storage_size(vars_start_bytes(), used_vars_size_bytes());
     }
 
-    // a local starts after the storage in use of the nearest scope with its own
-    // storage base and of the scopes inside it, other variables start at the
+    // a local starts after the storage in use of the nearest scope with a
+    // frame and of the scopes inside it, other variables start at the
     // variables base
     [[nodiscard]] auto find_storage_location() const -> storage_location {
         const std::vector<scope>& scopes{std::as_const(scopes_.get()).all()};
@@ -2071,7 +1801,7 @@ class storage_layout final {
             local_size_bytes = sum_storage_size(
                 local_size_bytes, scp.allocated_storage_size_bytes());
 
-            if (scp.has_storage_base()) {
+            if (scp.has_frame()) {
                 return {
                     .scope_index{i - 1},
                     .base_offset{local_size_bytes},
@@ -2091,8 +1821,14 @@ class storage_layout final {
 
     // bytes of variables, without the dats and the padding after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
-        return dats_and_vars_size_bytes() - data_.get().total_size_bytes() -
-               data_.get().dat_var_padding_bytes();
+        size_t total_bytes{};
+
+        for (const scope& scp : std::as_const(scopes_.get()).all()) {
+            total_bytes = sum_storage_size(total_bytes,
+                                           scp.allocated_storage_size_bytes());
+        }
+
+        return total_bytes;
     }
 
     // offsets count from 'dat', a base register past 'vars' makes the dats
@@ -2106,12 +1842,15 @@ class storage_layout final {
             return 0;
         }
 
-        const size_t dats_bytes{
-            sum_storage_size(data_.get().total_size_bytes(),
-                             data_.get().dat_var_padding_bytes()),
-        };
+        return address_offset(
+            sum_storage_size(vars_start_bytes(), *past_vars_bytes));
+    }
 
-        return address_offset(sum_storage_size(dats_bytes, *past_vars_bytes));
+    // the variables start after the dats and the padding that aligns them;
+    // every dat is placed by the parse, so this is fixed while compiling
+    [[nodiscard]] auto vars_start_bytes() const -> size_t {
+        return sum_storage_size(data_.get().total_size_bytes(),
+                                data_.get().dat_var_padding_bytes());
     }
 };
 
@@ -2145,6 +1884,210 @@ class builtin_roles final {
 
     [[nodiscard]] auto void_type() const -> const type& {
         return types_.get().void_type;
+    }
+};
+
+// an identifier and its path split at the '.', e.g. 'p.pos.x'
+class ident_path final {
+    std::string id_;
+    std::vector<std::string> path_;
+
+  public:
+    explicit ident_path(std::string id) : id_{std::move(id)} {
+        assert(not id_.empty());
+
+        refresh_path();
+
+        assert(not path_.empty());
+    }
+
+    auto append(const std::string_view path_elem) -> void {
+        id_ = std::format("{}.{}", id_, path_elem);
+        refresh_path();
+    }
+
+    [[nodiscard]] auto base() const -> std::string_view {
+        assert(not path_.empty());
+
+        return path_.at(0);
+    }
+
+    [[nodiscard]] auto path() const -> const std::vector<std::string>& {
+        return path_;
+    }
+
+    [[nodiscard]] auto str() const -> const std::string& { return id_; }
+
+  private:
+    auto refresh_path() -> void {
+        path_.clear();
+        for (const auto part : id_ | std::views::split('.')) {
+            path_.emplace_back(part.begin(), part.end());
+        }
+    }
+};
+
+// builds the identifier info of a variable's path, finished: the address held
+// below a run-time index and the base of a parameter binding
+class ident_builder final {
+  public:
+    //
+    // statics
+    //
+
+    // the identifier 'ident' of the variable 'var', its path walks the fields
+    // of the type of the variable, 'base_register' is where its storage starts
+    // unless the variable has a base of its own; a built-in reached below an
+    // address an inlined call computed ('by_call') is addressed from it
+    [[nodiscard]] static auto make_var_ident_info(
+        const token& src_loc_tk, const std::string_view ident,
+        const std::vector<std::string>& path, const var_info& var,
+        const std::string_view base_register,
+        const std::optional<call_address>& by_call) -> ident_info {
+
+        const type* tp{var.type_ptr};
+
+        std::vector<const type*> type_path;
+        type_path.emplace_back(tp);
+
+        size_t offset{};
+        array_shape shape{var.shape};
+
+        for (const std::string& field_name : path | std::views::drop(1)) {
+            // note: drop 1 because the first element is retrieved outside the
+            //       loop
+
+            const type_field& tf{tp->field(src_loc_tk, field_name)};
+            offset = sum_storage_size(offset, tf.offset);
+            tp = tf.type_ptr;
+
+            shape = tf.shape;
+
+            type_path.emplace_back(tp);
+        }
+
+        const bool is_below_call_address{
+            by_call and type_path.back()->is_builtin(),
+        };
+
+        // a memory operand needs a built-in type, the first field of an
+        // instance starts at its address
+        while (not tp->is_builtin()) {
+            tp = tp->fields().front().type_ptr;
+        }
+
+        const operand op{
+            is_below_call_address ? operand_below_call_address(
+                                        src_loc_tk, path, type_path, *by_call)
+                                  : memory_at(var.placement, base_register,
+                                              address_offset(offset), *tp),
+        };
+
+        return ident_info::make_var(std::string{ident}, path,
+                                    std::move(type_path),
+                                    {
+                                        .operand{op},
+                                        .address_by_call{by_call},
+                                        .shape{shape},
+                                        .holds_address{
+                                            holds_address(var.placement),
+                                        },
+                                        .read_only_why{var.read_only_why},
+                                    });
+    }
+
+    // the memory 'offset' bytes into a variable placed at 'placement', in
+    // storage from its own base or else from 'base_register'
+    [[nodiscard]] static auto memory_at(const var_placement& placement,
+                                        const std::string_view base_register,
+                                        const int64_t offset,
+                                        const type& value_type) -> operand {
+
+        if (const at_address_register* const pointed{
+                std::get_if<at_address_register>(&placement),
+            }) {
+
+            return operand::mem(pointed->reg.register_name(), "", 1, offset,
+                                value_type);
+        }
+
+        // note: a variable in a value register has no memory, 'resolve_var'
+        //       makes its register operand
+
+        const in_storage& stored{std::get<in_storage>(placement)};
+
+        const std::string_view memory_base{
+            stored.base_register.empty() ? base_register : stored.base_register,
+        };
+
+        return operand::mem(memory_base, "", 1,
+                            add_address_offset(stored.offset, offset),
+                            value_type);
+    }
+
+    // a built-in identifier below a run-time indexed element is addressed from
+    // the last address held, e.g. 'wld.rooms[ix].description.data'
+    [[nodiscard]] static auto
+    operand_below_call_address(const token& src_loc_tk,
+                               const std::vector<std::string>& path,
+                               const std::vector<const type*>& type_path,
+                               const call_address& by_call) -> operand {
+
+        const operand& lea{by_call.address};
+
+        const size_t lea_index{path.size() - 1 - by_call.trailing_count};
+
+        // example of resulting data structure:
+        //
+        // type string { len i8, data i8[127] }
+        // type room { name string, description string, note string }
+        // type world { rooms room[128] }
+        //
+        // id path     |  type  |  lea          |
+        // ------------|--------|---------------|
+        // wld         | world  | -             |
+        // rooms[i]    | room   | r15           |
+        // description | string | -             |
+        // data        | i8     | r15 + 129     |
+        //
+        // the index into 'rooms' is known only at run time, so the address of
+        // 'rooms[i]' is in a register and the fields after it are addressed
+        // from that register
+
+        // the fields after the call address are at fixed offsets from it
+        const std::span<const std::string> elem_path_from_lea{
+            std::span{path}.subspan(lea_index),
+        };
+
+        const size_t offset{
+            type_path.at(lea_index)->field_offset(src_loc_tk,
+                                                  elem_path_from_lea),
+        };
+
+        operand element{operand::mem(lea, *type_path.back())};
+
+        if (offset != 0) {
+            element.increment_offset(address_offset(offset));
+        }
+
+        return element;
+    }
+
+    // 'id' with the base replaced by what the parameter is bound to, e.g.
+    //   res -> pt.x becomes pt.x
+    //   pt.x -> p becomes p.x
+    //   lnk.count -> world.room.link becomes world.room.link.count
+    [[nodiscard]] static auto replace_binding_base(const bound_name& binding,
+                                                   const ident_path& id)
+        -> ident_path {
+
+        ident_path target{binding.dotted_path};
+
+        for (const std::string& s : id.path() | std::views::drop(1)) {
+            target.append(s);
+        }
+
+        return target;
     }
 };
 
@@ -2341,14 +2284,13 @@ class ident_resolver final {
             const scope& scp{scopes_.get().all().at(meaning.scope_index)};
 
             if (meaning.is_variable()) {
-                ident_info info{
+                const ident_info info{
                     resolve_var(src_loc_tk, ident, step.id,
                                 scp.get_var_const_ref(step.id.base()),
                                 step.address_by_call),
                 };
 
-                return ident_builder::as_element_if(step.is_element,
-                                                    std::move(info));
+                return step.is_element ? info.as_element() : info;
             }
 
             // a constant has no fields and no elements
@@ -2399,21 +2341,9 @@ class ident_resolver final {
             return ident_info::make_register(ident, in_register->reg);
         }
 
-        ident_info info{
-            ident_builder::make_var_ident_info(
-                src_loc_tk, ident, id.path(), var,
-                machine_.get().variables_base_register()),
-        };
-
-        info.var().address_by_call = by_call;
-
-        if (not info.type_ref().is_builtin()) {
-            return info;
-        }
-
-        ident_builder::place_operand_from_lea(src_loc_tk, info);
-
-        return info;
+        return ident_builder::make_var_ident_info(
+            src_loc_tk, ident, id.path(), var,
+            machine_.get().variables_base_register(), by_call);
     }
 
     //
@@ -3186,7 +3116,7 @@ class toc final {
         size_t allocated_size_bytes{};
 
         if (is_compiling_ and kind == var_kind::dat) {
-            allocated_size_bytes = storage_.allocate_dat(src_loc_tk, var);
+            storage_.allocate_dat(src_loc_tk, var);
         } else if (is_compiling_ and is_in_storage) {
             allocated_size_bytes = storage_.allocate_var(
                 src_loc_tk, var, checks_storage_capacity());
@@ -3570,13 +3500,6 @@ class toc final {
 
     [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
 
-    [[nodiscard]] auto make_ident_info(const token& src_loc_tk,
-                                       const std::string_view ident) const
-        -> ident_info {
-
-        return resolver_.resolve(src_loc_tk, ident);
-    }
-
     // the variable declared last in this scope, e.g. a 'let' variable once
     // its initializer is parsed
     auto make_var_read_only(const std::string_view name,
@@ -3655,6 +3578,15 @@ class toc final {
         if (const std::optional<storage_path> storage{storage_of(name, path)}) {
             scopes_.record_storage_use(*storage, kind == use_kind::write);
         }
+    }
+
+    // the declared name 'ident', e.g. the whole array of 'ps[1]'; the free
+    // 'make_ident_info' of a path gives what the path names, its element
+    [[nodiscard]] auto resolve_declared(const token& src_loc_tk,
+                                        const std::string_view ident) const
+        -> ident_info {
+
+        return resolver_.resolve(src_loc_tk, ident);
     }
 
     [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
@@ -3823,10 +3755,6 @@ class toc final {
     // 'break' folds away for a constant argument, leaves the code after the
     // call unreached
     auto pop_scope() -> void {
-        if (scopes_.all().size() == 1) {
-            storage_.release_root();
-        }
-
         const scope& popped{scopes_.back()};
 
         const bool ends_caller_path{
