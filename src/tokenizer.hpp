@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cassert>
 #include <cstddef>
 #include <format>
@@ -23,6 +24,13 @@ class tokenizer final {
 
     static constexpr std::string_view delimiters_{
         " \t\r\n(){}[]=,.:+-*/%&|^<>!~#"};
+
+    // the operators of expressions, the longer first so that '<<' and '<='
+    // are not read as '<'; '=' and '!' alone are not operators
+    static constexpr std::array<std::string_view, 17> operators_{
+        "<<", ">>", "<=", ">=", "==", "!=", "+", "-", "*",
+        "/",  "%",  "&",  "|",  "^",  "<",  ">", "~",
+    };
 
   public:
     tokenizer(const size_t file_ix, const std::string_view src)
@@ -197,6 +205,16 @@ class tokenizer final {
         return probe.peek_char();
     }
 
+    // the operator after the whitespace without reading it, e.g. the '<<' of
+    // ' << 2'; empty when none is next
+    [[nodiscard]] auto peek_operator() const -> std::string_view {
+        tokenizer probe{*this};
+
+        std::ignore = probe.next_whitespace();
+
+        return probe.operator_at_cursor();
+    }
+
     // where an error about 'tk', the token just read, points: at 'tk', or
     // where the next token starts when there was none
     [[nodiscard]] auto position_of(const token& tk) const -> token {
@@ -235,6 +253,23 @@ class tokenizer final {
         assert(tk);
 
         return *tk;
+    }
+
+    // the token of the operator that the caller saw with 'peek_operator', with
+    // the whitespace before it; the whitespace after it belongs to what
+    // follows
+    [[nodiscard]] auto seen_operator() -> token {
+        const std::string_view ws_before{next_whitespace()};
+        const std::string_view text{operator_at_cursor()};
+
+        assert(not text.empty());
+
+        const size_t at_line{at_line_};
+        const size_t bgn_ix{char_ix_};
+        char_ix_ += text.size();
+
+        return token{file_ix_, ws_before, bgn_ix,  text,
+                     char_ix_, "",        at_line, false};
     }
 
     // skips an argument of a call, up to the ',' or ')' that ends it
@@ -494,6 +529,20 @@ class tokenizer final {
         const size_t len{char_ix_ - bgn_ix};
 
         return src_.substr(bgn_ix, len);
+    }
+
+    // the longest operator at the cursor, a view of the source; empty when
+    // none
+    [[nodiscard]] auto operator_at_cursor() const -> std::string_view {
+        const std::string_view rest{src_.substr(char_ix_)};
+
+        for (const std::string_view op : operators_) {
+            if (rest.starts_with(op)) {
+                return rest.substr(0, op.size());
+            }
+        }
+
+        return {};
     }
 
     // the newline is left for 'next_whitespace' so it counts the line

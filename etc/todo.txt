@@ -382,6 +382,16 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           3 'expr_bool'; 4 'expr_arith' with 'is_comparison_next' and
           'parse_lookahead::continues_expression'; 5 remove the character
           methods left unused; a pause for a commit after each
+       => F.8 go-ahead (2026-10-25); steps 1 and 2 done together, step 1
+          alone would have had no user: 'tokenizer::peek_operator' (the
+          longest operator after the whitespace, 'operators_' table) and
+          'seen_operator' (its token with the whitespace before it, none
+          after, so what follows keeps its whitespace); 'unary_ops' holds
+          one token per op, 'ws_pre_' and 'ws_between_' go, 'put_back'
+          puts back tokens; without ops the whitespace before an operand
+          is now in the operand's token; listings, errors and
+          '--reproduce-source' equal on both suites; fuzz-exprs (default
+          and spelling), reject, compiler clean
     G. statements
        G.1. 'stmt_if' speaks 'condition_result' only (S5); 'known_of' goes
        => G.1 done (2026-10-25): 'stmt_if_branch::parse_constant_' is a
