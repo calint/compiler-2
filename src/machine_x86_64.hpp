@@ -284,13 +284,6 @@ class machine_x86_64 final : public machine {
                         request.dst);
     }
 
-    auto begin_data(const size_t alignment) -> void override {
-        assembler_.add_separator_newline();
-        assembler_.switch_section(section::data);
-        assembler_.align(alignment);
-        assembler_.label(0, data_label);
-    }
-
     auto bitwise(const token& src_loc_tk, const size_t indent,
                  const arithmetic_operator operation, const operand& dst,
                  const operand& src) -> void override {
@@ -557,12 +550,6 @@ class machine_x86_64 final : public machine {
         return builtin_type_i64();
     }
 
-    auto define_constant(const std::string_view name, const size_t value)
-        -> void override {
-
-        assembler_.define_constant(name, static_cast<int64_t>(value));
-    }
-
     auto divide(const token& src_loc_tk, const size_t indent,
                 const arithmetic_operator operation, const operand& dst,
                 const operand& divisor, const runtime_check& check)
@@ -585,48 +572,6 @@ class machine_x86_64 final : public machine {
 
         release_named_register(src_loc_tk, indent, "rdx");
         release_named_register(src_loc_tk, indent, "rax");
-    }
-
-    auto emit_data(const size_t element_size_bytes, const int64_t value)
-        -> void override {
-
-        const std::array<int64_t, 1> values{value};
-
-        assembler_.data(element_size_bytes, values);
-    }
-
-    auto emit_data_array(const size_t element_size_bytes,
-                         const std::span<const int64_t> values)
-        -> void override {
-
-        assembler_.data(element_size_bytes, values);
-    }
-
-    auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
-                            const int64_t value) -> void override {
-
-        assembler_.repeated_data(element_size_bytes, count, value);
-    }
-
-    auto emit_string_constants(const std::span<const string_constant> strings)
-        -> void override {
-
-        assembler_.switch_section(section::rodata);
-        for (const string_constant& s : strings) {
-            assembler_.label(0, s.label);
-            emit_string_data(s.bytes);
-        }
-    }
-
-    auto emit_string_data(const std::string_view bytes) -> void override {
-        assembler_.string_data(bytes);
-    }
-
-    auto emit_zero_data(const size_t size_bytes) -> void override {
-        // note: an element is one byte, so the count is the size
-        const size_t count{size_bytes};
-
-        emit_repeated_data(size_byte_, count, 0);
     }
 
     auto end_main() -> void override {
@@ -810,18 +755,6 @@ class machine_x86_64 final : public machine {
         free_scratch_register(src_loc_tk, indent, reg);
     }
 
-    auto reserve_variables(const size_t alignment, const size_t size_bytes)
-        -> void override {
-
-        assembler_.label(0, data_end_label);
-        assembler_.add_separator_newline();
-        assembler_.switch_section(section::variables);
-        assembler_.align(alignment);
-        assembler_.label(0, variables_label);
-        assembler_.reserve(size_bytes);
-        assembler_.label(0, variables_end_label);
-    }
-
     auto return_function(const size_t indent) -> void override {
         assembler_.instruction(indent, op::ret);
     }
@@ -956,6 +889,7 @@ class machine_x86_64 final : public machine {
                 max_padding_gaps_zeroed_one_by_one_,
             },
             .has_sd_card{true},
+            .string_alignment{1},
             .is_stack_bounded{},
             .frame_base_register{"rbx"},
             .stack_pointer_register{"rsp"},

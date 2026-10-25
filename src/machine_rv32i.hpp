@@ -516,7 +516,7 @@ class machine_rv32i : public machine {
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
-        assembler_.ascii(message);
+        assembler_.string_data(message);
         assembler_.data(1, newline);
         assembler_.switch_section(section::text);
     }
@@ -819,12 +819,6 @@ class machine_rv32i : public machine {
                               request);
 
         release_bulk(src_loc_tk, indent);
-    }
-
-    auto begin_data(const size_t alignment) -> void override {
-        assembler_.switch_section(section::data);
-        assembler_.align(alignment);
-        assembler_.label(0, data_label);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -1175,15 +1169,6 @@ class machine_rv32i : public machine {
         return builtin_type_i32();
     }
 
-    auto define_constant(const std::string_view name, const size_t value)
-        -> void override {
-
-        // frame sizes are limited by the variables that hold the frames
-        assert(value <= std::numeric_limits<uint32_t>::max());
-
-        assembler_.define_constant(name, static_cast<int64_t>(value));
-    }
-
     auto divide(const token& src_loc_tk, const size_t indent,
                 const arithmetic_operator operation, const operand& dst,
                 const operand& divisor, const runtime_check& check)
@@ -1202,52 +1187,6 @@ class machine_rv32i : public machine {
                                    ? helper_result::remainder
                                    : helper_result::quotient,
                                check);
-    }
-
-    auto emit_data(const size_t element_size_bytes, const int64_t value)
-        -> void override {
-
-        assert_data_element_size(element_size_bytes);
-
-        assembler_.data(element_size_bytes, std::array{value});
-    }
-
-    // the elements on one line, e.g. '.word 1, 2, 3'
-    auto emit_data_array(const size_t element_size_bytes,
-                         const std::span<const int64_t> values)
-        -> void override {
-
-        assert_data_element_size(element_size_bytes);
-
-        assembler_.data(element_size_bytes, values);
-    }
-
-    auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
-                            const int64_t value) -> void override {
-
-        assert_data_element_size(element_size_bytes);
-
-        assembler_.repeated_data(element_size_bytes, count, value);
-    }
-
-    auto emit_string_constants(const std::span<const string_constant> strings)
-        -> void override {
-
-        assembler_.switch_section(section::rodata);
-        for (const string_constant& s : strings) {
-            // word alignment lets copies to aligned destinations use words
-            assembler_.align(word_size_bytes_);
-            assembler_.label(0, s.label);
-            emit_string_data(s.bytes);
-        }
-    }
-
-    auto emit_string_data(const std::string_view bytes) -> void override {
-        assembler_.ascii(bytes);
-    }
-
-    auto emit_zero_data(const size_t size_bytes) -> void override {
-        assembler_.zero(size_bytes);
     }
 
     auto end_main() -> void override {
@@ -1352,18 +1291,6 @@ class machine_rv32i : public machine {
         }
 
         multiply_by_constant(src_loc_tk, indent, product, factor, *constant);
-    }
-
-    auto reserve_variables(const size_t alignment, const size_t size_bytes)
-        -> void override {
-
-        assembler_.label(0, data_end_label);
-        // variables are zeroed when defined, so the image does not hold them
-        assembler_.switch_section(section::bss);
-        assembler_.align(alignment);
-        assembler_.label(0, variables_label);
-        assembler_.zero(size_bytes);
-        assembler_.label(0, variables_end_label);
     }
 
     auto return_function(const size_t indent) -> void override {
@@ -1530,6 +1457,7 @@ class machine_rv32i : public machine {
                 max_padding_gaps_zeroed_one_by_one_,
             },
             .has_sd_card{true},
+            .string_alignment{word_size_bytes_},
             .is_stack_bounded{},
             .frame_base_register{"s1"},
             .stack_pointer_register{"sp"},
@@ -3283,7 +3211,7 @@ class machine_rv32i : public machine {
 
         assembler_.switch_section(section::rodata);
         assembler_.label(0, message_label);
-        assembler_.ascii(message);
+        assembler_.string_data(message);
         assembler_.switch_section(section::text);
     }
 
@@ -4660,18 +4588,6 @@ class machine_rv32i : public machine {
         }
 
         return helper_routine::multiply;
-    }
-
-    // note: 'toc::get_type_or_throw' rejects a type wider than the default
-    //       type
-
-    static auto
-    assert_data_element_size([[maybe_unused]] const size_t element_size_bytes)
-        -> void {
-
-        assert(element_size_bytes == byte_size_bytes_ or
-               element_size_bytes == half_size_bytes_ or
-               element_size_bytes == word_size_bytes_);
     }
 
     // folding removes the operations that keep the destination, an operation

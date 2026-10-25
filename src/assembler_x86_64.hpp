@@ -171,6 +171,22 @@ class assembler_x86_64 final : public assembler {
     // overridden methods
     //
 
+    auto align(const size_t size_bytes) -> void override {
+        add_directive(std::format("align {}", size_bytes));
+    }
+
+    auto begin_data_section() -> void override {
+        switch_section(section::data);
+    }
+
+    auto begin_read_only_section() -> void override {
+        switch_section(section::rodata);
+    }
+
+    auto begin_variables_section() -> void override {
+        switch_section(section::variables);
+    }
+
     auto comment(const size_t indent, const std::string_view text)
         -> void override {
 
@@ -190,23 +206,8 @@ class assembler_x86_64 final : public assembler {
             std::format("{}[{}] {}", comment_start(indent), location, text));
     }
 
-    //
-    // class methods
-    //
-
-    auto align(const size_t size_bytes) -> void {
-        add_directive(std::format("align {}", size_bytes));
-    }
-
-    auto bits64() -> void { add_directive("bits 64"); }
-
-    auto call(const size_t indent, const std::string_view target) -> void {
-        add_text(std::format("{}call {}", indentation(indent), target));
-        mark_call(target);
-    }
-
     auto data(const size_t element_size_bytes,
-              const std::span<const int64_t> values) -> void {
+              const std::span<const int64_t> values) -> void override {
 
         std::string text{
             std::format("{} ", data_directive(element_size_bytes)),
@@ -222,13 +223,76 @@ class assembler_x86_64 final : public assembler {
         add_directive(std::move(text));
     }
 
-    auto default_rel() -> void { add_directive("default rel"); }
-
     auto define_constant(const std::string_view name, const int64_t value)
-        -> void {
+        -> void override {
 
         add_directive(std::format("{} equ {}", name, value));
     }
+
+    auto repeated_data(const size_t element_size_bytes, const size_t count,
+                       const int64_t value) -> void override {
+
+        for_each_chunk(count, [&](const size_t chunk) -> void {
+            add_directive(std::format("times {} {} {}", chunk,
+                                      data_directive(element_size_bytes),
+                                      value));
+        });
+    }
+
+    auto reserve(const size_t size_bytes) -> void override {
+        for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
+            add_directive(std::format("resb {}", chunk));
+        });
+    }
+
+    // 'bytes' as a nasm backquoted string, whose escapes nasm reads, e.g.
+    // '\n'; a byte that is not printable is a hex escape, not '\01', which
+    // nasm reads as one octal escape with the digits after it
+    auto string_data(const std::string_view bytes) -> void override {
+        std::string text;
+
+        for (const char c : bytes) {
+            if (c == '\\' or c == '"' or c == '`') {
+                text += '\\';
+                text += c;
+                continue;
+            }
+
+            if (const std::optional<std::string_view> named{named_escape(c)}) {
+                text += *named;
+                continue;
+            }
+
+            if (c >= ' ' and c <= '~') {
+                text += c;
+                continue;
+            }
+
+            text += std::format("\\x{:02x}", static_cast<unsigned char>(c));
+        }
+
+        add_directive(std::format("db `{}`", text));
+    }
+
+    auto zero_data(const size_t size_bytes) -> void override {
+        // note: an element is one byte, so the count is the size
+        const size_t count{size_bytes};
+
+        repeated_data(size_byte, count, 0);
+    }
+
+    //
+    // class methods
+    //
+
+    auto bits64() -> void { add_directive("bits 64"); }
+
+    auto call(const size_t indent, const std::string_view target) -> void {
+        add_text(std::format("{}call {}", indentation(indent), target));
+        mark_call(target);
+    }
+
+    auto default_rel() -> void { add_directive("default rel"); }
 
     // the bytes from label 'start' to this line
     auto define_length(const std::string_view name,
@@ -281,56 +345,11 @@ class assembler_x86_64 final : public assembler {
                  {}, target, {});
     }
 
-    auto repeated_data(const size_t element_size_bytes, const size_t count,
-                       const int64_t value) -> void {
-
-        for_each_chunk(count, [&](const size_t chunk) -> void {
-            add_directive(std::format("times {} {} {}", chunk,
-                                      data_directive(element_size_bytes),
-                                      value));
-        });
-    }
-
-    auto reserve(const size_t size_bytes) -> void {
-        for_each_chunk(size_bytes, [&](const size_t chunk) -> void {
-            add_directive(std::format("resb {}", chunk));
-        });
-    }
-
     auto setcc(const size_t indent, const condition cc, const argument& dst)
         -> void {
 
         add_text(std::format("{}set{} {}", indentation(indent),
                              condition_suffix(cc), argument_text(dst)));
-    }
-
-    // 'bytes' as a nasm backquoted string, whose escapes nasm reads, e.g.
-    // '\n'; a byte that is not printable is a hex escape, not '\01', which
-    // nasm reads as one octal escape with the digits after it
-    auto string_data(const std::string_view bytes) -> void {
-        std::string text;
-
-        for (const char c : bytes) {
-            if (c == '\\' or c == '"' or c == '`') {
-                text += '\\';
-                text += c;
-                continue;
-            }
-
-            if (const std::optional<std::string_view> named{named_escape(c)}) {
-                text += *named;
-                continue;
-            }
-
-            if (c >= ' ' and c <= '~') {
-                text += c;
-                continue;
-            }
-
-            text += std::format("\\x{:02x}", static_cast<unsigned char>(c));
-        }
-
-        add_directive(std::format("db `{}`", text));
     }
 
     // sizes only count in code, so code must be in the text section

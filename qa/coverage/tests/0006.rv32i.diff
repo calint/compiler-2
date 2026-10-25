@@ -15,7 +15,7 @@
 <     j if.19.5.code
 152d145
 <     j if.19.5.code
-182,185c175,178
+184,187c177,180
 < #   removed jumps to next code: 0
 < #    removed unreachable jumps: 0
 < # removed same target branches: 0
@@ -25,7 +25,7 @@
 > #    removed unreachable jumps: 1
 > # removed same target branches: 1
 > # inverted branches over jumps: 1
-191c184
+193c186
 < #                 instructions: 52
 ---
 > #                 instructions: 45

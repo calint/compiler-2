@@ -22,7 +22,9 @@
 #include <vector>
 
 // buffers generated assembly with its labels and jumps known so every target
-// optimizes jumps the same way, subclasses supply the target's syntax
+// optimizes jumps the same way, subclasses supply the target's syntax,
+// including the data directives and sections, so 'machine' writes the data
+// layout once
 //
 // jump optimizations done by 'optimize_jumps', in x86_64 and rv32i syntax:
 //
@@ -138,12 +140,40 @@ class assembler {
     // virtual methods
     //
 
+    virtual auto align(const size_t size_bytes) -> void = 0;
+
+    virtual auto begin_data_section() -> void = 0;
+
+    virtual auto begin_read_only_section() -> void = 0;
+
+    // the variables are zeroed when defined, so a target need not store them
+    // in its image
+    virtual auto begin_variables_section() -> void = 0;
+
     virtual auto comment(const size_t indent, const std::string_view text)
         -> void = 0;
 
     // 'location' is the source the comment is about, as 'file:line:column'
     virtual auto comment(const size_t indent, const std::string_view location,
                          const std::string_view text) -> void = 0;
+
+    virtual auto data(const size_t element_size_bytes,
+                      const std::span<const int64_t> values) -> void = 0;
+
+    virtual auto define_constant(const std::string_view name,
+                                 const int64_t value) -> void = 0;
+
+    virtual auto repeated_data(const size_t element_size_bytes,
+                               const size_t count, const int64_t value)
+        -> void = 0;
+
+    // space in the variables section, whose content is not stored
+    virtual auto reserve(const size_t size_bytes) -> void = 0;
+
+    // the target writes the bytes in the escapes of its assembler
+    virtual auto string_data(const std::string_view bytes) -> void = 0;
+
+    virtual auto zero_data(const size_t size_bytes) -> void = 0;
 
     //
     // class methods

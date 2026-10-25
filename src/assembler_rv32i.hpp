@@ -292,6 +292,28 @@ class assembler_rv32i final : public assembler {
     // overridden methods
     //
 
+    auto align(const size_t size_bytes) -> void override {
+        // note: 'grow_out_of_reach' measures the code without padding
+        assert(not is_code_section());
+
+        add_record(std::format(".balign {}", size_bytes), 0,
+                   alignment{
+                       .size_bytes{size_bytes},
+                   });
+    }
+
+    auto begin_data_section() -> void override {
+        switch_section(section::data);
+    }
+
+    auto begin_read_only_section() -> void override {
+        switch_section(section::rodata);
+    }
+
+    auto begin_variables_section() -> void override {
+        switch_section(section::bss);
+    }
+
     auto comment(const size_t indent, const std::string_view text)
         -> void override {
 
@@ -312,6 +334,78 @@ class assembler_rv32i final : public assembler {
                              comment_marker_, location, text));
     }
 
+    auto data(const size_t element_size_bytes,
+              const std::span<const int64_t> values) -> void override {
+
+        std::string text{data_directive(element_size_bytes)};
+        std::string_view separator{" "};
+        for (const int64_t value : values) {
+            text += std::format("{}{}", separator, value);
+            separator = ", ";
+        }
+
+        add_record(std::move(text), 0,
+                   data_values{
+                       .element_size_bytes{element_size_bytes},
+                       .values{values.begin(), values.end()},
+                       .repeat_count{1},
+                   });
+    }
+
+    auto define_constant(const std::string_view name, const int64_t value)
+        -> void override {
+
+        add_record(std::format(".equ {}, {}", name, value), 0,
+                   constant{
+                       .name{std::string{name}},
+                       .value{value},
+                   });
+    }
+
+    auto repeated_data(const size_t element_size_bytes, const size_t count,
+                       const int64_t value) -> void override {
+
+        add_text(std::format(".rept {}", count));
+
+        add_record(
+            std::format("{} {}", data_directive(element_size_bytes), value), 0,
+            data_values{
+                .element_size_bytes{element_size_bytes},
+                .values{value},
+                .repeat_count{count},
+            });
+
+        add_text(".endr");
+    }
+
+    auto reserve(const size_t size_bytes) -> void override {
+        zero_data(size_bytes);
+    }
+
+    auto string_data(const std::string_view bytes) -> void override {
+        std::vector<int64_t> values;
+        values.reserve(bytes.size());
+        for (const char byte : bytes) {
+            values.push_back(static_cast<unsigned char>(byte));
+        }
+
+        add_record(std::format(".ascii \"{}\"", ascii_text(bytes)), 0,
+                   data_values{
+                       .element_size_bytes{1},
+                       .values{std::move(values)},
+                       .repeat_count{1},
+                   });
+    }
+
+    auto zero_data(const size_t size_bytes) -> void override {
+        add_record(std::format(".zero {}", size_bytes), 0,
+                   data_values{
+                       .element_size_bytes{1},
+                       .values{0},
+                       .repeat_count{size_bytes},
+                   });
+    }
+
     //
     // class methods
     //
@@ -328,35 +422,10 @@ class assembler_rv32i final : public assembler {
         immediate_op(indent, op::addi, rd, rs1, std::move(value));
     }
 
-    auto align(const size_t size_bytes) -> void {
-        // note: 'grow_out_of_reach' measures the code without padding
-        assert(not is_code_section());
-
-        add_record(std::format(".balign {}", size_bytes), 0,
-                   alignment{
-                       .size_bytes{size_bytes},
-                   });
-    }
-
     auto andi(const size_t indent, const std::string_view rd,
               const std::string_view rs1, immediate value) -> void {
 
         immediate_op(indent, op::andi, rd, rs1, std::move(value));
-    }
-
-    auto ascii(const std::string_view bytes) -> void {
-        std::vector<int64_t> values;
-        values.reserve(bytes.size());
-        for (const char byte : bytes) {
-            values.push_back(static_cast<unsigned char>(byte));
-        }
-
-        add_record(std::format(".ascii \"{}\"", ascii_text(bytes)), 0,
-                   data_values{
-                       .element_size_bytes{1},
-                       .values{std::move(values)},
-                       .repeat_count{1},
-                   });
     }
 
     auto beq(const size_t indent, const std::string_view rs1,
@@ -465,34 +534,6 @@ class assembler_rv32i final : public assembler {
                                 });
 
         mark_call(target);
-    }
-
-    auto data(const size_t element_size_bytes,
-              const std::span<const int64_t> values) -> void {
-
-        std::string text{data_directive(element_size_bytes)};
-        std::string_view separator{" "};
-        for (const int64_t value : values) {
-            text += std::format("{}{}", separator, value);
-            separator = ", ";
-        }
-
-        add_record(std::move(text), 0,
-                   data_values{
-                       .element_size_bytes{element_size_bytes},
-                       .values{values.begin(), values.end()},
-                       .repeat_count{1},
-                   });
-    }
-
-    auto define_constant(const std::string_view name, const int64_t value)
-        -> void {
-
-        add_record(std::format(".equ {}, {}", name, value), 0,
-                   constant{
-                       .name{std::string{name}},
-                       .value{value},
-                   });
     }
 
     auto ebreak(const size_t indent) -> void {
@@ -680,22 +721,6 @@ class assembler_rv32i final : public assembler {
                                 });
     }
 
-    auto repeated_data(const size_t element_size_bytes, const size_t count,
-                       const int64_t value) -> void {
-
-        add_text(std::format(".rept {}", count));
-
-        add_record(
-            std::format("{} {}", data_directive(element_size_bytes), value), 0,
-            data_values{
-                .element_size_bytes{element_size_bytes},
-                .values{value},
-                .repeat_count{count},
-            });
-
-        add_text(".endr");
-    }
-
     auto resolve_jumps() -> void {
         assert(not is_capturing());
 
@@ -860,15 +885,6 @@ class assembler_rv32i final : public assembler {
               const std::string_view rs1, immediate value) -> void {
 
         immediate_op(indent, op::xori, rd, rs1, std::move(value));
-    }
-
-    auto zero(const size_t size_bytes) -> void {
-        add_record(std::format(".zero {}", size_bytes), 0,
-                   data_values{
-                       .element_size_bytes{1},
-                       .values{0},
-                       .repeat_count{size_bytes},
-                   });
     }
 
     //
@@ -1525,6 +1541,9 @@ class assembler_rv32i final : public assembler {
 
         case 4:
             return ".word";
+
+            // note: 'toc::get_type_or_throw' rejects a type wider than the
+            //       default type
 
         default:
             std::unreachable();

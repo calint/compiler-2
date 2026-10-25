@@ -17,7 +17,7 @@
 <     j if.19.5.code
 171d163
 <     j .Lbaz_exit
-192,195c184,187
+194,197c186,189
 < #   removed jumps to next code: 0
 < #    removed unreachable jumps: 0
 < # removed same target branches: 0
@@ -27,7 +27,7 @@
 > #    removed unreachable jumps: 1
 > # removed same target branches: 1
 > # inverted branches over jumps: 1
-201c193
+203c195
 < #                 instructions: 60
 ---
 > #                 instructions: 52

@@ -64,6 +64,9 @@ struct target_description {
     size_t max_padding_gaps_zeroed_one_by_one{};
     // the sector functions need it, a sector is 'card_sector_size_bytes'
     bool has_sd_card{};
+    // the alignment of a string constant, e.g. a word lets copies to aligned
+    // destinations use words
+    size_t string_alignment{};
     // true where no operating system stops a program that overflows the
     // stack: calls check that the stack has room and a failure has a handler
     bool is_stack_bounded{};
@@ -651,9 +654,6 @@ class machine {
                  const std::function_ref<void(const operand&)> emit_count,
                  const equality_request& request) -> void = 0;
 
-    // starts the data section, after the code and every routine it uses
-    virtual auto begin_data(const size_t alignment) -> void = 0;
-
     virtual auto bitwise(const token& src_loc_tk, const size_t indent,
                          const arithmetic_operator operation,
                          const operand& dst, const operand& src) -> void = 0;
@@ -719,36 +719,12 @@ class machine {
 
     [[nodiscard]] virtual auto default_type() const -> const type& = 0;
 
-    virtual auto define_constant(const std::string_view name,
-                                 const size_t value) -> void = 0;
-
     // an enabled check makes a zero divisor, and the minimum of the type of
     // 'dst' divided by -1, jump to the division failure handler
     virtual auto divide(const token& src_loc_tk, const size_t indent,
                         const arithmetic_operator operation, const operand& dst,
                         const operand& divisor, const runtime_check& check)
         -> void = 0;
-
-    virtual auto emit_data(const size_t element_size_bytes, const int64_t value)
-        -> void = 0;
-
-    virtual auto emit_data_array(const size_t element_size_bytes,
-                                 const std::span<const int64_t> values)
-        -> void = 0;
-
-    virtual auto emit_repeated_data(const size_t element_size_bytes,
-                                    const size_t count, const int64_t value)
-        -> void = 0;
-
-    // leaves the read-only data section current
-    virtual auto
-    emit_string_constants(const std::span<const string_constant> strings)
-        -> void = 0;
-
-    // the backend writes the bytes in the escapes of its assembler
-    virtual auto emit_string_data(const std::string_view bytes) -> void = 0;
-
-    virtual auto emit_zero_data(const size_t size_bytes) -> void = 0;
 
     virtual auto end_main() -> void = 0;
 
@@ -781,9 +757,6 @@ class machine {
                           const operand& product, const operand& factor,
                           const factor_use use, const runtime_check& check = {})
         -> void = 0;
-
-    virtual auto reserve_variables(const size_t alignment,
-                                   const size_t size_bytes) -> void = 0;
 
     virtual auto return_function(const size_t indent) -> void = 0;
 
@@ -859,6 +832,16 @@ class machine {
     }
 
     // the code emitted up to 'end_noinline_body' is a body of 'function'
+    // starts the data section, after the code and every routine it uses
+    auto begin_data(const size_t alignment) -> void {
+        assembler& output{target_assembler()};
+
+        output.add_separator_newline();
+        output.begin_data_section();
+        output.align(alignment);
+        output.label(0, data_label);
+    }
+
     auto begin_noinline_body(std::string function, std::string label) -> void {
         target_assembler().begin_body(std::move(function), std::move(label));
     }
@@ -1000,6 +983,30 @@ class machine {
     // it used are not counted. it starts with the registers that the body of
     // a 'noinline' function holds, the body it stands for, so the registers
     // that the caller holds do not make it run out
+    // a frame size, limited by the variables that hold the frames
+    auto define_constant(const std::string_view name, const size_t value)
+        -> void {
+
+        assert(value <= target_.max_storage_bytes);
+
+        target_assembler().define_constant(name, static_cast<int64_t>(value));
+    }
+
+    auto emit_data(const size_t element_size_bytes, const int64_t value)
+        -> void {
+
+        const std::array<int64_t, 1> values{value};
+
+        emit_data_array(element_size_bytes, values);
+    }
+
+    // the elements on one line, e.g. '.word 1, 2, 3'
+    auto emit_data_array(const size_t element_size_bytes,
+                         const std::span<const int64_t> values) -> void {
+
+        target_assembler().data(element_size_bytes, values);
+    }
+
     auto emit_discarded(const std::function_ref<void()> emit) -> void {
         const version_scope discarded{*this};
 
@@ -1042,6 +1049,12 @@ class machine {
 
     // the code after the program: the handlers its checks branch to, then the
     // routines that the code and the handlers call
+    auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
+                            const int64_t value) -> void {
+
+        target_assembler().repeated_data(element_size_bytes, count, value);
+    }
+
     auto emit_runtime() -> void {
         emit_used_failure_handlers();
         emit_used_routines();
@@ -1050,6 +1063,32 @@ class machine {
 
     // the lines buffered so far, for backend tests that read what an emit
     // adds with 'emitted_text'
+    // leaves the read-only data section current
+    auto emit_string_constants(const std::span<const string_constant> strings)
+        -> void {
+
+        assembler& output{target_assembler()};
+
+        output.begin_read_only_section();
+        for (const string_constant& s : strings) {
+            // note: a byte alignment needs no directive
+            if (target_.string_alignment > 1) {
+                output.align(target_.string_alignment);
+            }
+
+            output.label(0, s.label);
+            output.string_data(s.bytes);
+        }
+    }
+
+    auto emit_string_data(const std::string_view bytes) -> void {
+        target_assembler().string_data(bytes);
+    }
+
+    auto emit_zero_data(const size_t size_bytes) -> void {
+        target_assembler().zero_data(size_bytes);
+    }
+
     [[nodiscard]] auto emitted_line_count() const -> size_t {
         return target_assembler().line_count();
     }
@@ -1226,6 +1265,20 @@ class machine {
                 frame_base_register());
 
         emit_frame_entry();
+    }
+
+    auto reserve_variables(const size_t alignment, const size_t size_bytes)
+        -> void {
+
+        assembler& output{target_assembler()};
+
+        output.label(0, data_end_label);
+        output.add_separator_newline();
+        output.begin_variables_section();
+        output.align(alignment);
+        output.label(0, variables_label);
+        output.reserve(size_bytes);
+        output.label(0, variables_end_label);
     }
 
     // held from 'start' to 'finish'

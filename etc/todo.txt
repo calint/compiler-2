@@ -385,6 +385,20 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        H.4. the data directives on the assembler base (B2); the data and
             variables layout written once in 'machine'; 18 forwarding
             overrides go
+       => H.4 done (2026-10-25): 'assembler' declares 'align', 'data',
+          'define_constant', 'repeated_data', 'reserve', 'string_data',
+          'zero_data' and the steps 'begin_data_section',
+          'begin_read_only_section', 'begin_variables_section' (each backend
+          keeps its own section enum); rv32i 'ascii' and 'zero' renamed to
+          'string_data' and 'zero_data'; 'machine' writes 'begin_data',
+          'emit_string_constants' and 'reserve_variables' once, the data
+          functions non-virtual; 'target_description::string_alignment' (1
+          on x86_64, a word on rv32i); 'define_constant' asserts the value
+          against 'max_storage_bytes'; 'assert_data_element_size' goes, the
+          rv32i 'data_directive' already rejects other sizes; listings
+          change only in blank lines: rv32i also gets the blank line before
+          its data and its variables section, so the line numbers in the
+          rv32i expected diffs of test 0006 moved by 2
        H.5. ask, low: the machine computes the padding gaps from the type
             (B7); 'max_padding_gaps_zeroed_one_by_one' leaves the interface
     asks: B.4 (file removal), D.4, F.8, H.5, and S8: the built-ins take a
