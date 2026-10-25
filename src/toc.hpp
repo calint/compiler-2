@@ -40,8 +40,11 @@
 //                   'bound_constant', 'bound_register', 'bound_name'),
 //                   'const_info'
 //   'scope'         a block, a loop or a function being compiled: its
-//                   constants, variables and parameter bindings; "frame" is
-//                   memory, e.g. the frame of a noinline call
+//                   constants, variables and parameter bindings; "frame" in
+//                   'scope' and 'storage_layout' is memory, e.g. the frame
+//                   of a noinline call, while the register trace
+//                   ('scope_entry', 'register_trace') and 'call_frame' of an
+//                   error use it for a call level
 //   tables          'type_table', 'compile_records' (the noinline bodies to
 //                   emit, the compiled functions), 'function_table'
 //   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
@@ -577,9 +580,9 @@ class scope final {
     }
 
     auto record_frame_size_bytes(const size_t size_bytes) -> void {
-        frame_part& storage{frame()};
+        frame_part& frm{frame()};
 
-        storage.peak_size_bytes = std::max(storage.peak_size_bytes, size_bytes);
+        frm.peak_size_bytes = std::max(frm.peak_size_bytes, size_bytes);
     }
 
     auto restore_peak_frame_size_bytes(const size_t size_bytes) -> void {
@@ -2799,7 +2802,8 @@ class toc final {
     storage_layout storage_;
     check_options checks_;
     dry_run_ledger dry_runs_;
-    // above zero inside 'dry_run', no noinline body is added there
+    // above zero inside 'dry_run': no noinline body is added and the storage
+    // capacity is not checked there
     size_t dry_run_depth_{};
     // false while the program is parsed: the names are declared without
     // storage and without comments
@@ -3275,13 +3279,17 @@ class toc final {
     //   func.NAME      a noinline body, 'func.NAME.len.4' for array lengths,
     //                  'size.func.NAME' its frame size; 'f<i8>' is 'f..i8'
     //                  ('stmt_def_func::body_label', 'label_name')
-    //   baz_NAME       a routine of the runtime or a failure handler, e.g.
-    //                  'baz_bounds_panic', '.Lbaz_NAME' a local one on rv32i
+    //   baz_NAME       a failure handler on both targets and a routine of
+    //                  the x86_64 runtime, e.g. 'baz_bounds_panic',
+    //                  'baz_report_line'
+    //   .Lbaz_NAME     a routine of the rv32i runtime, e.g. '.Lbaz_divide';
+    //                  numbered, a jump target inside one operation, e.g.
+    //                  '.Lbaz_equal.0' (x86_64), '.Lbaz_jump.0' (rv32i)
     //
     // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13;
     // inside a noinline body for array lengths every label ends in them, e.g.
     // 'loop.14.5.len.3' ('stmt_def_func::body_call_path'); a location in an
-    // included file is 'fN.L.C' ('source_files::for_label')
+    // included file is 'fN.L.C' ('source_locations::for_label')
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
         -> std::string {
 

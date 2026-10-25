@@ -164,9 +164,9 @@ Reading order, each file assumes the ones before it:
                                a path of names, fields and indexes, or a
                                literal; the index steps of the walk are in
                                the _impl file
-10. stmt_def_func.hpp, stmt_call.hpp, generics.hpp
+10. stmt_def_func.hpp, stmt_call.hpp, generics.hpp, stmt_def_type.hpp
                                functions, inlined and noinline calls, the
-                               generic instances
+                               generic instances (2.11)
 11. toc.hpp                    what the names are while compiling
 12. machine.hpp, machine_x86_64.hpp, assembler.hpp
                                the operations and one backend
@@ -661,7 +661,9 @@ x = tz.to()        deduced from the destination: T = the type of 'x'
 ```
 
 Written, after '<', the count must match the type parameters and each
-argument names a type; a constant is rejected.
+argument names a type; a constant is rejected. A type argument is a type
+name, not an array: a parameter 'a T[]' takes an array of 'T', so
+'f<i32>(buf)' passes the 'i32[]' 'buf'.
 
 Deduced, without '<', each type parameter is looked for in two places, in
 this order. The examples use 'make' and 'same' from the start of
@@ -780,6 +782,25 @@ example.baz:13:13: instantiated by 'make<name>'
    constructors and instances of generic functions are reached through
    their type and their generic, so the body sees those defined before the
    call that instantiates it, e.g. the methods of a type argument.
+
+### 2.11 Where in the code
+
+```text
+generic_registry (generics.hpp)       the generic definitions and their
+                                      instances, kept as text
+type_instantiator (stmt_def_type.hpp) a generic type instance from an alias
+                                      or a type argument
+func_instantiator::define_func        a generic function or method kept as
+  (stmt_def_func.hpp)                 text
+generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
+                                      or deduced from the arguments
+func_instantiator::instantiate_func,  the instance of a generic function, the
+  instantiate_methods                 methods of a type instance
+  (stmt_def_func.hpp)
+generic_reparse, generic_scope        the text parsed again with each
+  (toc.hpp)                           parameter naming its argument
+generic_trace (generics.hpp)          the instances that led to an error
+```
 
 ## 3. Access paths: aliasing check of what is reached through run-time indexes
 
@@ -1329,6 +1350,13 @@ address folded into one register, whichever is shorter (5.1).
 
 ### 6.6 The bases
 
+A 'dat' is placed by the parse: 'toc::add_dat' gives it the next offset in
+'data_table' and declares its name, so the dats are all placed when the
+parse ends and the variables start at a fixed point after them
+('storage_layout::vars_start_bytes'); this is why a 'dat' comes before any
+'var'. The compile declares it again like a global ('toc::add_var'), and
+'program::emit_data_section' writes its bytes ('stmt_def_dat::compile_data').
+
 x86_64 addresses variables from 'rbp', which points at the data: the variables
 follow the dats after the padding that aligns them ('dat var padding' in the
 report), so 'rbp' reaches both, and 'baz.ld' asserts the order. rv32i
@@ -1466,7 +1494,7 @@ the statements ask at every step, which has a 'toc' method that forwards it:
 program is being parsed or compiled, and whether a dry run is active. A
 statement compiles with the names and the machine together, e.g. a variable
 resolves to an operand that the machine then uses, and the mode decides what
-a declaration does, e.g. no storage check while parsing; one parameter keeps
+a declaration does, e.g. the parse declares names without storage; one parameter keeps
 them consistent.
 
 Rejected: passing the tables one by one, every signature would carry the

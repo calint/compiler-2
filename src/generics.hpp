@@ -24,18 +24,21 @@
 //
 // generics: a generic definition is kept as text with its parameters, an
 // instance is that text parsed again in a 'generic_scope' (in 'toc.hpp')
-// where each parameter names its argument, see 'generic_reparse'
+// where each parameter names its argument, see 'generic_reparse'; the
+// instantiators are 'type_instantiator' (stmt_def_type.hpp) and
+// 'func_instantiator' (stmt_def_func.hpp), the type arguments of a call are
+// read by 'generic_call' (stmt_call.hpp), README 2.11
 //
 // e.g. 'type list<T type, capacity> {...}' is a 'generic_type_info', the alias
 // 'type str = list<i8, 8>' makes the 'generic_type_instance' 'list<i8, 8>'
 // with the 'generic_arg's 'T' 'i8' and 'capacity' 8, it parses the fields of
-// 'list' again as those of 'str' (see 'type_instantiator')
+// 'list' again as those of 'str'
 //
 // e.g. 'func list.add(x)' is a 'generic_method_info', every instance of
 // 'list' parses it again as its own method, e.g. 'str.add'
 //
 // e.g. 'func f<T type>(x T)' is a 'generic_func_info', a call 'f<i8>(x)' or
-// 'f(x)' parses it again as 'f<i8>' (see 'func_instantiator')
+// 'f(x)' parses it again as 'f<i8>'
 //
 // an error in the text of an instance gets the 'generic_trace' that led to it
 //

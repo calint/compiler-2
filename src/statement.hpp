@@ -229,13 +229,18 @@ enum class range_check : uint8_t { run_time, compile_time };
 class stmt_identifier;
 
 // a node of the program: it parses itself in its constructor, writes its
-// source back ('source_to') and compiles; the virtuals in groups, with the
+// source back ('source_to') and compiles; the whitespace before a value is
+// held by a wrapper ('expr_any', 'expr_bool', 'expr_bool_op',
+// 'stmt_if_branch') in a whitespace-only token, while a list ('expr_arith') is
+// a position and its first element holds it; the virtuals in groups, with the
 // classes that override them, the default is 'std::unreachable()' where no
 // other class reaches it
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
-//                  (control flow), 'visit_reads' and 'visit_call_effects'
-//                  (the nodes that hold expressions)
+//                  (control flow); 'visit_reads': a value, and a node whose
+//                  'trace_assignment' checks its reads with
+//                  'assert_var_not_used'; 'visit_call_effects': a value,
+//                  forwarded by the nodes that hold one
 //   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier' and
 //                  the built-ins with a value, forwarded by 'expr_arith' and
 //                  'expr_any'; 'assert_not_narrowed': 'stmt_identifier',

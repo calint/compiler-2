@@ -958,7 +958,6 @@ class expr_bool_op final : public statement {
                action.target.empty();
     }
 
-    // a user type instance or a whole array in storage, compared in place
     [[nodiscard]] static auto is_equality(const comparison_operator op)
         -> bool {
 
@@ -966,6 +965,7 @@ class expr_bool_op final : public statement {
                op == comparison_operator::not_equal;
     }
 
+    // a user type instance or a whole array in storage, compared in place
     [[nodiscard]] static auto is_memory_operand(const toc& tc,
                                                 const expr_arith& side)
         -> bool {
@@ -1018,7 +1018,6 @@ class expr_bool_op final : public statement {
             tc.checks().overflow_options(), held);
     }
 
-    // a typed constant side is compared as a variable of its type
     // memory is compared, so a constant has nothing to compare
     [[nodiscard]] static auto
     make_memory_operand_info(const toc& tc, const stmt_identifier& identifier)

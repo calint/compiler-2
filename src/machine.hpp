@@ -864,7 +864,6 @@ class machine {
         assert(not state_.frame_base_reserved);
     }
 
-    // the code emitted up to 'end_noinline_body' is a body of 'function'
     // starts the data section, after the code and every routine it uses
     auto begin_data(const size_t alignment) -> void {
         assembler& output{target_assembler()};
@@ -875,6 +874,7 @@ class machine {
         output.label(0, data_label);
     }
 
+    // the code emitted up to 'end_noinline_body' is a body of 'function'
     auto begin_noinline_body(std::string function, std::string label) -> void {
         target_assembler().begin_body(std::move(function), std::move(label));
     }
@@ -1012,10 +1012,6 @@ class machine {
         return target_.data_alignment;
     }
 
-    // runs 'emit' for its checks, nothing it emits is kept and the registers
-    // it used are not counted. it starts with the registers that the body of
-    // a 'noinline' function holds, the body it stands for, so the registers
-    // that the caller holds do not make it run out
     // a frame size, limited by the variables that hold the frames
     auto define_constant(const std::string_view name, const size_t value)
         -> void {
@@ -1040,6 +1036,10 @@ class machine {
         target_assembler().data(element_size_bytes, values);
     }
 
+    // runs 'emit' for its checks, nothing it emits is kept and the registers
+    // it used are not counted. it starts with the registers that the body of
+    // a 'noinline' function holds, the body it stands for, so the registers
+    // that the caller holds do not make it run out
     auto emit_discarded(const std::function_ref<void()> emit) -> void {
         const version_scope discarded{*this};
 
@@ -1080,22 +1080,20 @@ class machine {
         output.append(std::move(kept.lines));
     }
 
-    // the code after the program: the handlers its checks branch to, then the
-    // routines that the code and the handlers call
     auto emit_repeated_data(const size_t element_size_bytes, const size_t count,
                             const int64_t value) -> void {
 
         target_assembler().repeated_data(element_size_bytes, count, value);
     }
 
+    // the code after the program: the handlers its checks branch to, then the
+    // routines that the code and the handlers call
     auto emit_runtime() -> void {
         emit_used_failure_handlers();
         emit_used_routines();
         assert_used_routines_emitted();
     }
 
-    // the lines buffered so far, for backend tests that read what an emit
-    // adds with 'emitted_text'
     // leaves the read-only data section current
     auto emit_string_constants(const std::span<const string_constant> strings)
         -> void {
@@ -1122,6 +1120,8 @@ class machine {
         target_assembler().zero_data(size_bytes);
     }
 
+    // the lines buffered so far, for backend tests that read what an emit
+    // adds with 'emitted_text'
     [[nodiscard]] auto emitted_line_count() const -> size_t {
         return target_assembler().line_count();
     }
@@ -1398,10 +1398,9 @@ class machine {
         return target_.variables_base_register;
     }
 
-    // the padding of the instance of 'size_bytes' at 'dst', zeroed gap by gap
-    // or as the whole instance, whichever the target emits smaller; the fields
-    // are written over the zeroes after
-    // gap by gap or the whole instance 'dst' of 'dst_type'
+    // the padding of the instance 'dst' of 'dst_type', zeroed gap by gap or as
+    // the whole instance, whichever the target emits smaller; the fields are
+    // written over the zeroes after
     auto zero_padding(const token& src_loc_tk, const size_t indent,
                       const operand& dst, const type& dst_type) -> void {
 

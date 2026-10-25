@@ -1,6 +1,2521 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] hard: design review round 15 (2026-10-25, six reviewers: front end F,
+    expressions E, statements and calls S, tables and checks T, backends B, a
+    newcomer N tracing one program; findings in the session scratchpad r15,
+    the claims spot-checked: E1, F3, S1, T1, T2, E7, N4 confirmed): each step
+    a pure refactor unless marked, measured against the previous binary, a
+    pause for a commit after each phase
+    A. docs and comments (no code change)
+       A.1. stale after round 14 (N4, F10, T10, B5): README 6.8
+            'stmt_identifier::get_lea_operand' and the file of each row;
+            reading order step 9 names 'stmt_identifier_impl.hpp' and says
+            "a path ... or a literal"; the class header names the split;
+            toc.hpp:188 'dotted_path'; generics.hpp:352 'fields_tk';
+            tokenizer.hpp:190 the comment of 'peek_char_after_whitespace';
+            'pop_scope' comment split and "pushed by 'scope_entry'";
+            'is_inlined_func' comment says what it returns; the 'toc' map
+            lists 'dat_extent'; the 'machine' class comment lists its 7
+            missing public members; the rv32i hook list names
+            'emit_sector_routines' and the machine virtuals the targets
+            override; the bare metal comment moves to its constructor
+       => A.1 done (2026-10-25): all listed; the 'stmt_identifier' header
+          also names what is in the _impl file; comments only
+       A.2. the 'stmt_call.hpp' map (S4, N2.1): every class in file order
+            ('call_temporary', 'call_limits', the free checks), a short "an
+            argument" paragraph with the chain of types and the step that
+            makes each; the 'stmt_call' header names 'assert_call_accepted';
+            step 2 of 'noinline_call' split in two
+       => A.2 done (2026-10-25): the map lists every class and the free
+          checks, then the chain of an argument with the step that makes
+          each type; the misplaced comment moved to 'noinline_arg'
+       A.3. a header comment on 'stmt_def_func' (S3): the four ways a body
+            is compiled (parse, inlined call, dry run, noinline body and
+            'check_body'), the scope kind and how the parameters are reached
+            in each, the pinned address
+       => A.3 done (2026-10-25): a table of the four compiles, their scope
+          and how the parameters are reached
+       A.4. the listing key (N3): README 1.6.1 and the 'call_path_at' table
+            get the '.len.N' suffix of a noinline body and the temporaries
+            'call-arg-OFFSET-I' (OFFSET the byte offset of the call); README
+            6.6 says the variables follow the dats and 'baz.ld' asserts it
+       => A.4 done (2026-10-25): README 1.6.1 and the 'call_path_at'
+          comment name the '.len.N' suffix, README the temporaries by byte
+          offset; README 6.6 the order of dats and variables
+       A.5. round 14 F.6 planned 'source_locations::for_error'; its done
+            note leaves it out (F6): the note says it moved to F.3 below
+       => A.5 done (2026-10-25)
+    B. leftovers and dead code
+       B.1. after H.2 (T2): 'checks_storage_capacity' is 'dry_run_depth_ ==
+            0' with its reason; the 'is_compiling_' comment; one mechanism
+            keeps a dry run from raising the body peak (the restore; the
+            gate goes); 'noinline_func' without the parse-only empty base or
+            a comment saying so; 'is_var_or_binding' goes;
+            'function_table::defs_' derived or its reason stated
+       => B.1 done (2026-10-25): 'checks_storage_capacity' is
+          'dry_run_depth_ == 0'; the body peak is put back by 'end_dry_run'
+          only; the parse gives a noinline scope its frame base too, so
+          'noinline_func' always has one (asserted); 'is_var_or_binding'
+          and 'defs_' go, 'defs()' is a view of 'funcs_'; listings and
+          reports equal
+       B.2. 'expr_arith::identifier()' goes (E10); the self-alias
+            'using arithmetic_operator = arithmetic_operator' goes (N4)
+       => B.2 done (2026-10-25): the one caller reads 'operand_path()'
+          under a 'note:' that both sides are places
+       B.3. the 'emit_failure_handler' overrides are the bodies (B6): the
+            stack-overflow rule asserted once in
+            'emit_used_failure_handlers'; 'emit_failure_handler_body' and
+            'emit_named_failure_handler' go
+       => B.3 done (2026-10-25): the rule asserted in
+          'emit_used_failure_handlers', each backend's body is its
+          override; listings equal
+       B.4. ask, removes a file: 'is_expression' says what 'operand_path()
+            == nullptr' says on every node asked (E1); a scratch build that
+            asserts the two agree at the 7 askers over the suites and the
+            expression fuzzers first; then the class 'expression' and
+            'expression.hpp' go, one non-virtual 'statement::is_computed()'
+       => B.4 done (2026-10-25, picked as recommended): a scratch build
+          that aborted where the two disagreed passed the four suites, the
+          CLI tests and fuzz-exprs, compiler, reject and calls; the nine
+          nodes derive from 'statement', 'is_computed()' is
+          'operand_path() == nullptr'; 'expression.hpp' removed; README 1.1
+          and 7.3 (12 virtuals); listings equal
+    C. storage and names (toc)
+       C.1. move 'ident_path' and 'ident_builder' next to 'ident_resolver',
+            their user (T5); a move in a step of its own
+       => C.1 done (2026-10-25): moved after 'builtin_roles', the map
+          follows; a move, the same lines
+       C.2. the variables start at a fixed point (T1, the J.3 follow-up
+            H.2 named): 'storage_layout::vars_start_bytes()' derived from
+            'data_table'; a dat is not counted in the root scope;
+            'applied_padding_bytes_', 'apply_dat_var_padding',
+            'release_root' and the branch in 'next_frame_address' go;
+            offsets and listings equal, test 0740 and the reject fuzzer
+       => C.2 done (2026-10-25): 'vars_start_bytes()' is the dats and the
+          padding; 'used_vars_size_bytes' is the sum of the scopes,
+          'dats_and_vars_size_bytes' the start plus it; 'allocate_dat'
+          only sets the offset and checks 'offset + size' against the
+          target (it asserts no variable is placed yet: the dat order);
+          'applied_padding_bytes_', 'apply_dat_var_padding',
+          'release_root' and the padding branch of 'next_frame_address'
+          go; listings equal, reject, data and calls fuzzers clean;
+          'test-arena.py' fails at HEAD the same way (open item)
+       C.3. the noinline frame says "frame" (T3, the D.5 word):
+            'scope::storage_base' -> 'scope::frame', its accessors
+            '*_frame_size_bytes', 'frame_base_register'; 'scope::type_' ->
+            'kind_' (T10)
+       => C.3 done (2026-10-25): 'scope::frame_part', 'frame_',
+          'has_frame', 'frame()', 'frame_base_register',
+          '*_frame_size_bytes'; 'dry_run_state::frame_scope_index';
+          'scope::kind_'; the comments of 'storage_layout' say frame; a
+          rename, listings equal
+       C.4. one name per answer of a lookup (T4, F8):
+            'toc::make_ident_info' (the declared name) ->
+            'toc::resolve_declared'; the free 'make_ident_info(tc, node)'
+            keeps its name; README 7.6 lists the two resolver forwards
+       => C.4 done (2026-10-25): 14 sites renamed by reference, a comment
+          names the difference; README 7.6
+       C.5. an 'ident_info' is built finished (T6): 'make_var_ident_info'
+            takes what the walk found (call address, element) and returns
+            the final info; 'ident_info::var()' goes
+       => C.5 done (2026-10-25): 'make_var_ident_info' takes the call
+          address and picks the operand ('operand_below_call_address' or
+          'memory_at'); 'ident_info::as_element()' (const) replaces
+          'as_element_if' and the mutable 'var()'; 'set_src_loc_tk' stays,
+          the node's own token; listings equal
+       C.6. 'array_shape' moves to type.hpp and 'type_field' holds one
+            (T9); the two conversions go
+       => C.6 done (2026-10-25): 'array_shape' and 'discarded_array_len'
+          in type.hpp, 'array_shape::value_size_bytes' defined after
+          'type'; 'type_field::shape' replaces 'array_count', the one
+          conversion is in 'type::add_field'; listings equal; the backend
+          test now calls 'resolve_declared' (missed in C.4)
+    D. calls
+       D.1. one 'noinline_arg' (S1, N2.2-2.3): it holds the place's path
+            (null for a temporary) and derives 'is_temporary';
+            'call_temporary' goes; 'slot_address_of' stops reading 'plan_'
+            by index; 'argument_form' is the variant, so 'planned.form' is
+            it; the 'place' locals named 'storage' renamed
+       => D.1 done (2026-10-25): 'noinline_arg' holds the place's path
+          (null for a temporary), 'is_temporary()' derived;
+          'make_argument_temporary' returns one, 'call_temporary' goes;
+          'slot_address_of' reads the argument only; 'argument_form::form'
+          is 'kind' (kept a struct: its tags are named
+          'argument_form::computed' at the use sites); listings equal
+       D.2. the call holds its callee (S2): 'stmt_call::func_' set at the
+            parse, 'call_site::func'; the lookups by name in 'compile' and
+            'visit_call_effects' and 22 'func' parameters of 'inline_call'
+            and 'noinline_call' go
+       => D.2 done (2026-10-25): 'stmt_call::func_' set by each
+          constructor; 'call_site::func' (a pointer, never null; a
+          reference member is against the lint); a scratch build that
+          aborted where the compile's lookup gave another function passed
+          the four suites, the CLI tests and fuzz-generics, methods, calls,
+          compiler and reject; the 19 methods of 'inline_call',
+          'noinline_call' and 'call_site' lost their 'func' parameter (a
+          libclang script), the statics keep theirs; 'slot_address_of' is
+          static; listings equal
+       D.3. scratch registers held by one front-end type (N1):
+            'machine::held_registers' beside 'operation_scope' replaces the
+            'std::vector<operand>&' holders (six names), frees in its
+            destructor; 'inline_call::compile_body' loses
+            'registers_to_free'; listing comments may move, a trial first
+       => D.3 done (2026-10-25): 'machine::held_registers' {add,
+          registers} beside 'register_trace_scope' frees in reverse with the
+          token and indent it was made with; an error leaves the registers
+          (a version or dry run puts the state back), as the vectors did;
+          16 local vectors and 19 'std::vector<operand>&' parameters are
+          'held'; 'path_address' holds one and reads its own registers
+          from 'owned_from_'; foo adds 'reg_iter' first, so one holder
+          frees in the old order; 'inline_call': 'compile_with_bindings'
+          holds the argument registers on both paths, 'compile_body' loses
+          'registers_to_free' and frees nothing,
+          'compile_body_with_address_registers' holds its own;
+          'noinline_call::populate_frame' holds the slot address registers
+          until the frame is written; 'bind_reference' passes the holder
+          to 'compile_lea' instead of appending; trial: instructions and
+          register report equal on both suites, only 'free scratch
+          register' comments of inlined calls move after the body's end
+          label (the same comments); README listing updated likewise
+       D.4. ask, low confidence: the register trace frame opened by the
+            function scope (T8), not by hand at four sites; the register
+            report is the check
+       => D.4 done (2026-10-25, as recommended): 'toc::scope_entry' of a
+          function scope, while compiling, opens the trace frame named by
+          the scope with the call site token it is given, the kind from
+          'is_compiled_in_place'; the four 'register_trace_scope's go; the
+          scopes widen to cover what the frames covered: 'main' covers
+          'end_main', the new 'stmt_def_func::frame_scope' is entered by
+          'emit_noinline_body' and 'check_body' before the frame base and
+          the slot register are taken ('compile_frame_body' no longer
+          enters it); listings with '--report=registers' equal on both
+          suites; fuzz calls, methods, compiler, reject, generics, data
+          clean
+    E. expressions
+       E.1. one 'emit_operation' maps an operator to its machine call and
+            check (E2); the five 'asm_op_*' wrappers go; the constant
+            emitters call it; an unknown operator asserts
+       => E.1 done (2026-10-25): 'emit_operation' maps each operator to
+          its machine call and check and asserts the bitwise rest;
+          'asm_op' keeps the 'assign', the negated-operand rewrite and the
+          shift-count narrowing, then 'emit_with_source' with
+          'emit_operation'; 'asm_op_mul', 'asm_op_div', 'asm_op_shift',
+          'asm_op_bitwise' go
+       E.2. one 'emit_constant_step' (E3): a step says whether it was
+            merged; the zero-divisor, shift-range and narrowing rules in one
+            'assert_constant_operand' shared with 'fold_operation'; the two
+            comment forms kept, so listings equal
+       => E.2 done (2026-10-25): 'emit_constant_step' replaces
+          'apply_merged_constant', 'asm_op_constant' and
+          'asm_op_constant_element'; 'compile_step' passes 'is_merged'
+          (the passes merged it, or a regroupable constant under the
+          overflow check); one 'assert_constant_operand' (zero divisor,
+          shift count) for the fold and the step, the narrowing check stays
+          with the element; the step was not given a kind of its own, the
+          null element already says merged; listings equal with and
+          without '--checks=overflow,division,shift'; fuzz-exprs default,
+          noub and spelling, fuzz-ub, fuzz-compiler clean
+       E.3. 'expr_bool' (E4): the element functions take only the action,
+            the list inversion goes to the comment only; 'compile_and' and
+            'compile_or' named for what they do ('branch if false', 'branch
+            if true')
+       => E.3 done (2026-10-25): 'constant_comparison' and
+          'constant_shorthand' (now static) give the value without the
+          element's 'not's; 'constant_value' applies 'is_negated', the
+          compile 'action.inverted'; the list inversion reaches only the
+          comment label; 'compile_branch_if_false' and
+          'compile_branch_if_true' replace 'compile_and' and 'compile_or';
+          listings equal
+       E.4. 'resolve_expr' split into 'left_operand' and 'right_operand'
+            (E6); one place turns a folded side into an immediate
+       => E.4 done (2026-10-25): 'left_operand' (always a register) and
+          'right_operand' (may be an immediate), 'immediate_of' the one
+          place a folded side becomes an immediate; the README names it;
+          listings equal
+       E.5. 'stmt_builtin_convert' (E8): 'in_scratch' becomes the member
+            'compile_in_scratch'; a 'note:' at row 3a for its precondition
+       => E.5 done (2026-10-25): a move, listings equal
+       E.6. behavior, error order: 'bulk_operands::check' runs its three
+            checks in one order for both built-ins (E7); a program with two
+            faults gets the same first error from 'array_copy' and
+            'arrays_equal'
+       => E.6 done (2026-10-25): 'bulk_operands::check' runs the order
+          check, the types and the bounds; the three are private; test 1662
+          ('array_copy' with an order fault and a type mismatch reports the
+          order fault, HEAD reported the types)
+       E.7. behavior, error place: the array copy shape checked in both
+            directions where the parse knows it (E5), the plan keeps the
+            lengths; 'stmt_array_size' rejects a size below 1 in its
+            constructor (E9)
+       => E.7 done (2026-10-25), both directions in the plan rather than
+          the parse: the parse of a parameter's body does not know what a
+          call binds it to, the plan is made at compile time;
+          'expr_type::assert_copy_source_shape' rejects both mismatches,
+          'expr_any' plans the source before its length check, which
+          asserts the shape; 'compile_identifier_copy' asserts;
+          'stmt_array_size' rejects a size below 1 when parsed, the getter
+          asserts a value, the field reports a missing size itself; no test
+          output changed
+       E.8. the 'expr_any' form 'array_copy' -> 'whole_array_copy' (N5), so
+            'array_copy' names only the built-in
+       => E.8 done (2026-10-25): 'whole_array_copy',
+          'is_whole_array_copy', 'assert_whole_array_copy_fits'
+    F. front end
+       F.1. absent tokens as 'std::optional' where round 13 J.4 missed them
+            (F9): the index part of 'ident_elem', 'is_indexed' derived,
+            'for_each_prefix', 'generic_arg::arg_tk'
+       => F.1 done (2026-10-25): 'ident_elem::index' an optional
+          'index_part' {brackets, expression never null}; 'is_indexed()'
+          derived from the elements; 'for_each_prefix' takes an optional
+          token; 'generic_arg::arg_tk' optional, asserted for a constant;
+          listings and '--reproduce-source' equal on every test
+          (amended with F.3: 'ident_elem::index_expr()' reads the index of an
+          indexed element, the lint asks for the check)
+       F.2. behavior, one message: a path naming a function is rejected at
+            the parse (F3); a scratch build that aborts where
+            'names_function' is still true first; the seven guards and
+            'names_function' go; 'var x = f.y' gets the resolver's message
+       => F.2 done (2026-10-25): 'parse_call_or_identifier' rejects
+          'term_kind::function_name' with the resolver's message, except a
+          generic function, which the resolver reports as needing type
+          arguments (test 0792); 'names_function' and its seven guards go;
+          a path naming a function with fields, e.g. 'noop.x' or
+          'make.y = 2', now gets the function message instead of "cannot
+          resolve identifier" (test 0692 updated); listings otherwise
+          equal; reject, compiler, generics, calls, methods fuzzers clean
+       F.3. an error location as a type (F6): 'source_span', the error holds
+            'std::optional<source_span>' (empty only for 'file_level'),
+            'call_frame' holds one, 'source_locations::for_error' formats it
+            and main prints through it; error output byte-equal
+       => F.3 done (2026-10-25): 'source_span' {file, line, bytes} with
+          'source_span::at'; 'compile_error::where' optional, empty for
+          'file_level'; 'call_frame::where'; 'source_locations::for_error'
+          formats 'file:line:column' for the error and its frames;
+          'is_inside_call' reads the span; a scratch build that aborted on
+          an error built from a token without a place ran the four suites,
+          the CLI tests and five fuzzers without one, but the backend test
+          builds such errors, so the constructor keeps the rule "no place,
+          no span" and says so; error output byte-equal on every test
+       F.4. one escape walk (F7): 'token::escape_at' used by the string and
+            character readers, one throw site for an unsupported escape
+       => F.4 done (2026-10-25): 'token::escape_at' {size, decoded,
+          is_continuation} is the escape grammar for 'string_text',
+          'unsupported_escape', 'decode_string' and 'parse_character'; the
+          two throw sites stay, their locations differ (a string marks the
+          whole escape, a character literal its backslash) and the output
+          is byte-equal; the tokenizer's own loop only skips a character
+          after a backslash and stays
+       F.5. where a built-in may stand is a column of the catalog (F5):
+            'builtin_use' {statement, value, either}; the discard rule reads
+            it instead of following from dispatch order
+       => F.5 done (2026-10-25): 'reserved_names::builtin_use' {statement,
+          value, either} in each catalog row, a 'static_assert' ties it to
+          'builtin_value'; 'assert_builtin_has_value' reads it; the discard
+          check runs before the io dispatch and exempts 'either' by name
+          ('is_builtin_used_either_way'), so the rule no longer depends on
+          the order; the io table's 'static_assert' checks the column;
+          listings equal
+       F.6. the address builder of 'stmt_identifier' as a nested class
+            'path_address' (F2) holding the context its 5-9 parameter
+            statics repeat; a move with shorter signatures
+       => F.6 done (2026-10-25): 'stmt_identifier::path_address' holds
+          'tc', 'indent', the location, the registers and the index register
+          ('path_registers' goes); 'start', 'check_unindexed_range',
+          'indexed_element' public, 'add_index', 'fold_indexed_address',
+          'fold_register', 'load_held_address' private; the statics that
+          need no registers ('check_array_bounds', 'compile_checked_index',
+          'in_range_constant_index') stay on the node; README 6.7, 6.8;
+          listings equal
+       F.7. the path loop (F4): 'read_continuation' returns a variant {end,
+            field, method}; the method tokens read by 'stmt_call' itself
+       => F.7 done in part (2026-10-25): 'read_continuation' (const)
+          returns 'path_continuation', a variant {path_end, path_field,
+          method_tokens}; the constructor loop applies a field and stops at
+          the end or at a method; 'extends_path', its out-parameters and
+          its side effect go; the method tokens stay with the receiver,
+          moving them to 'stmt_call' would move the error of
+          'array_length(a.m)'; listings and '--reproduce-source' equal
+       F.8. ask, large: operators as tokens (F1): 'tokenizer::
+            is_next_operator', each parser maps the text to its enum; the
+            whitespace-only tokens and 'put_back_char' go;
+            '--reproduce-source' of every test is the check
+       => F.8 plan (2026-10-25, recommended: plan first, it is a big
+          change; waits for go-ahead):
+          problem: an operator is read character by character four ways
+          ('expr_arith::peek_operator' and 'consume_peeked_operator',
+          'is_comparison_next' on a probe, 'expr_bool::
+          parse_comparison_operator' with 'put_back_char', 'unary_ops' with
+          'put_back_char' per character); its whitespace is kept in
+          separate tokens ('ws_before_ops_', 'ws_pre_op'/'ws_post_op',
+          'ws_pre_'/'ws_between_'), so the rule of README 7.2 (a node keeps
+          every token) does not hold for operators
+          design: 'tokenizer::next_operator() -> std::optional<token>' reads
+          the longest operator at the cursor with the whitespace before and
+          after, like 'is_next_char_token' (table: '<<' '>>' '<=' '>=' '=='
+          '!=' before the one-character ones); 'peek_operator_text()' for
+          the lookahead sites on a copy; each enum gets a text table beside
+          it ('arithmetic_operator', 'comparison_operator', the unary ops)
+          and a parser keeps the operator token and maps its text; a list
+          that ends puts the whole operator token back
+          ('put_back_token'), which already exists; 'source_to' writes the
+          kept tokens; the whitespace-only tokens, 'consume_peeked_operator',
+          'put_back_char', 'is_peek_char2' go, the character methods that
+          other sites still need stay
+          rejected: keep the characters and only share one reader per
+          parser, the whitespace tokens and the four techniques stay; a
+          full operator lexer pass before parsing, the parser decides by
+          context ('<' of a generic call, '-' unary or binary)
+          invariants: an operator token's text is one of its enum's table;
+          'next_operator' never splits '<<' or '<='; the parse consumes the
+          same characters as now, so every error stays at its token
+          tests: '--reproduce-source' equal on every test and the
+          fuzz-exprs spelling mode; listings and error output byte-equal on
+          both suites; the reject and compiler fuzzers; a lone '=' or '!'
+          keeps its message and location (a test each if none exists)
+          steps: 1 tokenizer reader and tables (no user); 2 'unary_ops';
+          3 'expr_bool'; 4 'expr_arith' with 'is_comparison_next' and
+          'parse_lookahead::continues_expression'; 5 remove the character
+          methods left unused; a pause for a commit after each
+       => F.8 go-ahead (2026-10-25); steps 1 and 2 done together, step 1
+          alone would have had no user: 'tokenizer::peek_operator' (the
+          longest operator after the whitespace, 'operators_' table) and
+          'seen_operator' (its token with the whitespace before it, none
+          after, so what follows keeps its whitespace); 'unary_ops' holds
+          one token per op, 'ws_pre_' and 'ws_between_' go, 'put_back'
+          puts back tokens; without ops the whitespace before an operand
+          is now in the operand's token; listings, errors and
+          '--reproduce-source' equal on both suites; fuzz-exprs (default
+          and spelling), reject, compiler clean
+       => F.8 step 3 done (2026-10-25): 'comparison_spellings' table beside
+          'comparison_operator' ('source_text' and the new 'comparison_of'
+          read it); 'expr_bool_op::comparison' holds 'op_tk' (the operator
+          with the whitespace before it), 'ws_pre_op' and 'ws_post_op' go,
+          the whitespace after the operator belongs to the right side;
+          'parse_comparison_operator' goes, a lone '=' or '!' is reported by
+          'assert_no_lone_operator_char' at the same place (tests 0166,
+          0167); 'expr_arith' is located past the whitespace
+          ('next_token_position', as its comment says), so a list after a
+          line comment is located at its first element: test 0529 listing
+          comments say 19:9 instead of 19:1, all other listings, errors and
+          '--reproduce-source' equal; fuzz-exprs (default and spelling),
+          reject, compiler, flow clean
+       => F.8 step 4 done (2026-10-25): 'arithmetic_spellings' table beside
+          'arithmetic_operator' ('source_text' and the new
+          'binary_operator_of' read it); 'expr_arith' keeps 'op_tks_' (each
+          operator with the whitespace before it), 'ws_before_ops_' goes;
+          the operator is read only when the list keeps it, so 'ops_' is no
+          longer pushed and popped and nothing is put back;
+          'peek_operator', 'consume_peeked_operator' and
+          'is_comparison_next' go; 'continues_expression' asks the
+          tokenizer, so a lone '=' or '!' after a bare type or '{}' is no
+          longer an operator: 'var x = i8 = 3' says "unexpected '='" at the
+          '=' instead of "'i8' is a type, not a value" (the bare type is a
+          valid zero value), likewise for a bare user type and '{}' (tests
+          1663-1666); listings, errors and '--reproduce-source' otherwise
+          equal; fuzz-exprs (default, spelling, noub), reject, compiler,
+          flow, constructs clean
+       => F.8 step 5 done (2026-10-25), F.8 done: 'is_peek_char2' and
+          'put_back_char' go (no user left); 'is_next_char', 'next_char'
+          and 'skip_char' are private, only the tokenizer's own readers use
+          them; 'is_peek_char', 'peek_char_after_whitespace' and
+          'next_whitespace_token' stay public, other parsers use them
+    G. statements
+       G.1. 'stmt_if' speaks 'condition_result' only (S5); 'known_of' goes
+       => G.1 done (2026-10-25): 'stmt_if_branch::parse_constant_' is a
+          'condition_result'; 'runs' and 'ends_chain' take one; listings
+          equal
+       G.2. 'get_type' means the type of a value or a declared name (S6):
+            the 11 nodes without a value stop setting 'void' (a scratch
+            build first), 'stmt_def_func::result_type()'
+       => G.2 done (2026-10-25): 11 nodes no longer set 'void'; with the
+          assert of 'get_type' on, the four suites, the CLI tests and eight
+          fuzzers found no caller; 'stmt_return' loses its 'tc' parameter;
+          'stmt_def_func::result_type()' is the callee's type at every use
+          (a scratch compile with 'get_type' deleted in 'stmt_def_func'
+          found none left)
+       G.3. a field resolves its type in its node like a parameter (S7); the
+            parameter keeps its 'syntax' as one member; error order of an
+            unknown type against a duplicate field checked
+       => G.3 done for the field (2026-10-25): 'stmt_def_type_field'
+          resolves its type when parsed, 'type_fields::add_to' reads it and
+          loses 'tc', 'type_token' goes; no test output changed; the
+          parameter keeps its copied tokens: a 'syntax' member would repeat
+          the name the node holds and the implicit 'self' has none
+       G.4. 'toc::join_loop()' reads the loop scope itself (T7); the local
+            and extra block in 'stmt_loop' go
+       => G.4 done (2026-10-25): 'join_loop()' asserts the loop scope and
+          reads its 'is_left_by_break'; 'stmt_loop' calls it last inside the
+          scope; 'record_break' still marks a 'foo', which stops a 'break'
+          from marking an outer loop; listings equal
+    H. backends
+       H.1. the lifecycle as template methods (B1, the open half of round
+            13 G.7): 'start', 'end_main', 'finish' non-virtual in 'machine'
+            with the order written once; protected steps per backend;
+            'start_output', 'finish_output', 'finish_registers',
+            'reserve_variables_base' private
+       => H.1 done (2026-10-25): 'machine::start' (header, 'emit_entry',
+          the variables base reserved, 'emit_variables_base_load', a
+          separator, 'emit_target_setup') and 'machine::finish' (registers,
+          jump optimization, 'finish_target') are non-virtual; the hooks are
+          protected; bare metal sets up its stack in 'emit_target_setup',
+          rv32i resolves its jumps and checks the memory in 'finish_target';
+          'start_output', 'finish_output', 'finish_registers' private;
+          'reserve_variables_base' stays public for the backend test;
+          'end_main' stays virtual: x86_64 adds a separator after the exit
+          and rv32i does not, one more hook would only carry that line;
+          listings equal
+       H.2. the rest of 'target_description' (B4): 'has_sd_card' instead of
+            the 0 sentinel; rv32i reads its bases only through the table;
+            the target call registers and the stack pointer in the table;
+            bare metal cannot leave 'is_stack_bounded' unset
+       => H.2 done (2026-10-25): 'has_sd_card' in the table,
+          'sector_size_bytes()' asserts it and gives 'card_sector_size_bytes';
+          'stack_pointer_register' and 'target_calls' ('target_call_names'
+          moved beside the table) in the table, so 'is_stack_pointer' is
+          shared and 'target_call_register_names' goes; rv32i reads its bases
+          through the table; the bare metal constructor asserts
+          'is_stack_bounded'; listings equal
+       H.3. one table per rv32i arithmetic helper (B3): label and clobbers
+            in one 'helper_spec' array; 'leaf_stack_bytes' takes the largest;
+            one emit function per body
+       => H.3 done (2026-10-25): 'helper_specs_' rows {routine, label,
+          clobbers} in emit order; 'helper_spec_of' replaces 'helper_label'
+          and 'helper_clobbers'; 'leaf_stack_bytes' takes the most clobbers
+          of the rows; 'emit_arithmetic_helpers' loops the rows,
+          'emit_multiply_body', 'emit_multiply_checked_body' and
+          'emit_divide_body' hold the bodies; listings equal
+       H.4. the data directives on the assembler base (B2); the data and
+            variables layout written once in 'machine'; 18 forwarding
+            overrides go
+       => H.4 done (2026-10-25): 'assembler' declares 'align', 'data',
+          'define_constant', 'repeated_data', 'reserve', 'string_data',
+          'zero_data' and the steps 'begin_data_section',
+          'begin_read_only_section', 'begin_variables_section' (each backend
+          keeps its own section enum); rv32i 'ascii' and 'zero' renamed to
+          'string_data' and 'zero_data'; 'machine' writes 'begin_data',
+          'emit_string_constants' and 'reserve_variables' once, the data
+          functions non-virtual; 'target_description::string_alignment' (1
+          on x86_64, a word on rv32i); 'define_constant' asserts the value
+          against 'max_storage_bytes'; 'assert_data_element_size' goes, the
+          rv32i 'data_directive' already rejects other sizes; listings
+          change only in blank lines: rv32i also gets the blank line before
+          its data and its variables section, so the line numbers in the
+          rv32i expected diffs of test 0006 moved by 2
+       H.5. ask, low: the machine computes the padding gaps from the type
+            (B7); 'max_padding_gaps_zeroed_one_by_one' leaves the interface
+       => H.5 done (2026-10-25, as recommended): 'padding_gap' in type.hpp,
+          'type::padding_gaps' (with 'append_gap'); 'machine::zero_padding'
+          takes the type, reads the threshold from the table and returns
+          early without gaps; 'expr_type::zero_padding' only calls it; the
+          accessor 'max_padding_gaps_zeroed_one_by_one()' goes; listings
+          equal
+    asks: B.4 (file removal), D.4, F.8, H.5, and S8: the built-ins take a
+    range two ways ('array_copy(a[1], b, n)' against 'read(fd, a, n, 1)');
+    one spelling is a language change; recommended: keep both and say why in
+    README
+    => S8 done (2026-10-25, as recommended): both kept, 'etc/docs/README.md'
+       7.9 says why (two arrays each with its start against one buffer whose
+       count and start are optional, so an element there is unclear)
+    order: A, B.1-B.3, C, D.1-D.2, E, G, F.1-F.7, H.1-H.4, D.3, then the
+    asks
+    kept (reviewers, with reasons in r15): loop and 'foo' scopes built in
+    parse and compile; 'stmt_def_var' wrapping 'stmt_assign_var'; trial
+    parses that record uses; the two 'expr_bool::compile' overloads; four
+    overflow accessors; 'in_storage::base_register' filled by the builder;
+    'path_step::number'; the generic and shorthand rv32i assembler forms;
+    'target_options' beside 'target_description'; the 'indent' parameter
+    => done (2026-10-25): all phases A-H and the asks handled, each step
+       with its note above; committed through 31951422
+[x] hard: design review round 14 (2026-10-24, six reviewers: front end F,
+    expressions E, statements and calls S, tables and checks T, backends B, a
+    newcomer N tracing one program; findings in the session scratchpad r14,
+    the claims spot-checked: E1, F5, S1, T1, N4, N6 confirmed): each step a
+    pure refactor unless marked, measured against the previous binary, a
+    pause for a commit after each phase
+    A. fixes and output (behavior or listings change)
+       A.1. a conversion folds its argument (E1): 'stmt_builtin_convert::
+            fold' calls 'arg_.fold' at the wrapping width, then wraps to its
+            type; 'converted_constant' goes; today 'let k = int(1 + 2)' is
+            not a constant while 'int(3)' is (checked), 'i8(100 + 100)'
+            copies -56 through a scratch register; more values fold, some
+            programs rejected for a non-constant size are accepted
+       => A.1 done (2026-10-24): 'fold' folds 'arg_' at 'width_type()',
+          wrapping, checks it there with 'assert_not_narrowed' unless it is
+          one untyped constant (test 0091: 'i32(0xfedc1234)' on rv32i is
+          the spelling of a wide literal), then wraps to the type;
+          'converted_constant' gone; 7 listings shorter (x86_64 1558 ->
+          1529 instruction lines), values equal; fuzz-exprs spelling and
+          noub, fuzz-ub, constructs, calls, flow clean (fuzz-exprs with
+          '--checks=line' mismatches alike with the old binary, it models
+          the checks)
+       A.2. binding comments print what was passed (N4): 'bound_name' gains
+            the written text ('bind a -> copy[0]', today 'copy' for both
+            'copy[0]' and 'copy[2]', checked); '(lea: ...)' -> '(address:
+            ...)' on both targets
+       => A.2 done (2026-10-24): 'bound_name::text' holds the argument as
+          written ('path_text', the temporary's name, 'destination::text'
+          for the result), 'target_text' prints it, the resolver keeps
+          'path'; 'bind a -> copy[0] (address: rbp)' on both targets; 88
+          x86_64 and 89 rv32i listings change in comments only, no
+          instruction changes; README 6.5 example
+       A.3. the report entry 'max vars size' leaves out the noinline frames
+            (N6, checked: 80 B reported, 152 B reached): name it for what it
+            is and define each report entry in README 1.6
+       => A.3 done (2026-10-24): the entry is 'max body vars size',
+          'usage_statistics::max_body_vars_size_bytes' and the
+          'storage_layout' member say what it is (the globals with 'main'
+          or with one noinline body; noinline frames stack at run time,
+          '--checks=frame'); README 1.6 defines every usage entry;
+          test-arena.py and test-rv32i-address.cpp follow; every listing's
+          report line changes
+       A.4. pending, low priority (user, 2026-10-24): one statement prints
+            its source once (N5); proposed rules: the statement line is the
+            only line with the whole source; a nested node prints its source
+            only when it is a strict part of the line above (e.g. the 'a * b'
+            computed in a scratch register); what a step adds is one line
+            saying what it is (placement, 'call NAME, inlined', folded
+            constant, kept version); the callee head, bindings, labels and
+            indentation stay; 'stmt_def_var' compiles its assignment without
+            its comment, 'expr_arith' drops the line of a one-element list,
+            '= expression' and 'src: folded constant' become additions;
+            comment lines only, every listing and the CLI comment checks
+            change; open: whether the scratch register lines stay
+       => A.4 discarded (2026-10-25, user): the listing comments stay
+          as they are
+       A.5. an inlined call whose end the compile does not reach closes the
+            caller's path (the open item below), after I.1
+       => A.5 done (2026-10-24): the function scope records a compiled
+          'return' ('toc::record_return'); 'toc::pop_scope' ends the
+          caller's path when an inlined body reaches neither its end nor a
+          'return'; 0072 (the end of 'main' after a call that exits) and
+          1657 (the code after 'spin(0)') lose the unreached code, exit
+          codes equal
+       A.6. a 'let' that folds is a constant of its type (user, 2026-10-24):
+            'let k = i8(3)' was a read-only variable, only a 'let' of the
+            default type folded, so 'let k = i64(3)' was a constant on x86_64
+            and a variable on rv32i
+       => A.6 done (2026-10-24): 'make_stmt_def_var' folds every non-array
+          'let' at its type; the constant is typed unless its type is the
+          default type ('let b = true' is a 'bool'); 'stmt_def_const' takes
+          the type; a frame constant reads at its own type; tests 1658-1660;
+          fuzz-exprs spells a leaf as 'K' of 'let K = T(lit)', its twin the
+          variable 'c'; a typed constant index is now rejected at compile
+          time, a folded 'if' on one makes the code after it unreached
+    B. docs and comments that contradict the code
+       B.1. README 1.7 (E2: array sizes fold, a typed 'let' is a variable,
+            the comparison side has its own immediate rule); README 1.1
+            reading order (N2: a vocabulary step before 'statement.hpp':
+            ident_info ('destination'), operand, access_path, ub_reads,
+            ub_assigned; F5: tokenizer, parse_lookahead, generics; the nodes
+            in the pipeline box); README 7.6 names the 'toc' forwards the
+            statements ask every step (N8)
+       B.2. comments: 'skip_signature' (F5, gone), 'generic_text_' (F5),
+            the 'classify_term' header claim (F4), 'expression' header on
+            'expr_type' (E7, N7.2), 'stmt_block::compile' after E.10 (S10),
+            the "chain does not depend" note (S10), 'throw_dry_run_error'
+            reason fits 'check_body' only (S7) and the readers of each
+            'error_kind', 'root_variable' frame-index invariant (T5),
+            'record_storage_use' (T9), the 'toc' file map (T9),
+            'is_left_by_break_' says loop but marks 'foo' too (T3.4)
+       B.3. the map of the no-UB checks in code (T8): 'ub_order.hpp' names
+            'assert_no_shared_storage' and points to README 8.1; 'ub_reads'
+            says it holds walk types only
+       B.4. 'machine' class comment lists its interface by group in call
+            order (B1); the report-only queries private with 'friend class
+            register_reporter'
+       => B done (2026-10-24): README 1.7 (array sizes fold, a typed 'let'
+          is a variable, the comparison side's rule), 1.1 (reading order
+          with the vocabulary, tokenizer, parse_lookahead and generics
+          steps; the nodes in the pipeline box), 7.6 and the 'toc' header
+          name the forwards; the B.2 comments; 'ub_order.hpp' names
+          'assert_no_shared_storage' and README 8.1, 'ub_reads' says it
+          holds the types only; 'machine' class comment maps the interface
+          by group, the four report queries private with 'friend class
+          register_reporter'; the formatter gives a member without access
+          (a 'friend', the 'static_assert' of the exit codes) the access of
+          its section: it had stopped at machine.hpp since round 13 H, so
+          this phase also carries its catch-up layout in 11 files
+    C. derivable state and dead code
+       C.1. the compile phase in one place (T1): 'storage_layout::
+            capacity_unchecked_', its setter and dry-run copy go, 'toc'
+            passes 'checks_capacity'
+       C.2. 'expr_any::is_expression' override unreached (E7): verify with
+            'std::unreachable()' in a scratch build, then remove
+       C.3. 'array_length' rejects a non-array at the parse (E8), 'fold' and
+            'compile' assert
+       C.4. 'ident_info::value_size_bytes' for the five "size times count"
+            (T7)
+       C.5. an assert at the end of 'emit_runtime' that every marked routine
+            is emitted (B4)
+       => C done (2026-10-24): C.1 'toc::checks_storage_capacity' passed to
+          'allocate_var' and 'allocate_dat'; C.2 removed after a scratch
+          build with an abort passed every suite; C.3 the parse rejects it,
+          test 1367 now reports "'a' is not an array" at the same place;
+          C.4 'array_shape::value_size_bytes' and
+          'ident_info::value_size_bytes', 'stmt_identifier::
+          storage_size_bytes' gone; C.5 'assert_used_routines_emitted'
+          ('assembler::defines_label'), the handlers skipped since one that
+          reports lines is under the labels of its lines; listings equal
+          except 1367
+    D. names, one topic each
+       D.1. path, place, storage (N1, E5, T6): a 'stmt_identifier' local is
+            'ident'; 'place' only for storage, 'place_path' -> 'bare_path',
+            the 'stmt_identifier' header says "a path"; 'bound_name::path'
+            -> 'dotted_path'; 'toc::storage()' -> 'layout()';
+            'ident_info::storage_part' -> 'var_part'
+       => D.1 done (2026-10-24): every 'stmt_identifier' local, parameter
+          and field named 'path', 'name', 'source' or 'si' is 'ident' (45
+          declarations, renamed by their libclang references, incl.
+          'place::ident' and 'named_value::ident'); 'place_path' ->
+          'bare_path'; the 'stmt_identifier' header: a path or a literal,
+          a place when it reaches storage; 'bound_name::dotted_path', its
+          locals 'named'; 'toc::layout()'; 'ident_info::var_part' with
+          'var()'; listings equal
+       D.2. "reached" for paths only, a function is "compiled" (S10:
+            'mark_func_reached', 'check_unreached_functions')
+       => D.2 done (2026-10-24): 'compile_records::is_compiled',
+          'mark_compiled', 'compiled_funcs_'; 'toc::mark_func_compiled';
+          'program::check_uncompiled_functions'; the comments and README
+          1.2, 1.4, 1.5 say "compiled" (also in a dry run) for functions,
+          "reached" stays for paths; listings equal
+       D.3. 'address_scope' -> 'operation_scope' (B6)
+       => D.3 done (2026-10-24): 'machine::operation_scope' (41 uses in
+          machine.hpp and the backends, README 5.3), two comments that said
+          "address scope"; listings equal
+       D.4. "failure" for the path, "panic" for the message, one
+            'machine::mark_failure' (B8)
+       => D.4 done (2026-10-24): 'machine::mark_failure(handler, tk)' marks
+          the use and says whether the line is reported, x86_64
+          'failure_label' and rv32i 'branch_to_failure' keep only the jump;
+          x86_64 'branch_to_bounds_failure', 'branch_to_overflow_failure',
+          'emit_failure_handler_body', 'emit_failure_exit',
+          'line_failure_label'; "panic" stays for the message
+          ('panic_message', 'emit_panic_message') and the handler labels;
+          listings equal
+       D.5. ask, large: the 'toc' frame is a scope ('frame' -> 'scope',
+            'frame_scope' -> 'scope_entry'), "frame" stays for memory (S4)
+       => D.5 done (2026-10-24, approved): 'frame' -> 'scope' with
+          'scope_kind', 'toc::frame_scope' -> 'scope_entry',
+          'scope_stack::scopes_' and 'all()', 'current_func_scope',
+          'func_scope', 'func_scope_index', 'scope_at', 'pop_scope',
+          'scope_index' ('root_variable', 'name_meaning',
+          'storage_location'), locals 'scp'/'func_scp' (38 declarations by
+          their libclang references); comments in the 'toc' sense and
+          README 1.3 (its anchor), 1.4, 2 say scope; "frame" stays for
+          memory (the noinline frame, its slots, base and capacity) and for
+          the call traces ('call_frame', the register trace); listings equal
+       D.6. ask, large: 'operand::register_name()' for a register operand,
+            'base_register()' for memory only (B5, about 330 sites)
+       => D.6 done (2026-10-24, approved): 'operand::register_name()'
+          asserts a register operand, 'base_register()' a memory operand;
+          each call site classified by a scratch build that logged the
+          operand kind per 'std::source_location' over every suite and ten
+          fuzzers: 216 lines of register-only sites renamed, the memory ones
+          kept; the sites that took either ask the new
+          'operand::uses_register(name)' (the rv32i 'uses_register' wrapper
+          and its 'register_index' comparisons go), 'operation_scope'
+          protects by kind; listings equal, fuzzers clean with the asserts;
+          left: the other rv32i 'register_index' comparisons (B5 step 2)
+    E. calls
+       E.1. one argument plan per compile (S1): 'planned_argument' {form,
+            is_temporary} made once by 'call_site' for a mode (inlined,
+            noinline); 'inline_call' and 'noinline_call' hold it instead of
+            'std::vector<bool>'; 'argument_form_of' called once per argument
+       => E.1 done (2026-10-24): 'call_site::argument_plan(tc, func,
+          call_mode)' makes one 'planned_argument' {form, is_temporary}
+          per argument, the temporary rule of each mode in one place;
+          'inline_call' and 'noinline_call' hold the plan; 'bind_argument'
+          takes the planned form (the wrong note about who made the
+          temporaries goes); 'noinline_call' reads the place from the plan,
+          not 'bare_path()'; 'make_argument_temporary' returns a
+          'call_temporary', the noinline side builds 'noinline_arg';
+          'argument_form_of' is called once per argument; listings equal,
+          call fuzzers clean
+       E.2. the dry run of 'inline_call' explicit (S5): a public 'dry_run'
+            asserts the mode, 'compile_with_bindings' private
+       => E.2 done (2026-10-24): 'call_site::argument_plan' returns a
+          'call_plan' {mode, arguments}; 'inline_call::compile' asserts the
+          inlined mode, the public 'dry_run' the noinline mode and calls the
+          now private 'compile_with_bindings'; 'compile_body' picks the
+          scope kind from the mode and asserts it agrees with
+          'func.is_inlined()'; 'noinline_call' asserts its mode; listings
+          equal
+       E.3. "result, then arguments" by name, not position (S2):
+            'frame_slot_addresses' walks 'frame_slots' by 'param_index';
+            'make_bindings' returns {result, arguments}
+       => E.3 done (2026-10-24): 'inline_call::make_bindings' returns
+          'call_bindings' {result, arguments}, 'first_argument_binding' and
+          its 'drop's go; 'frame_slot_addresses' walks 'func.frame_slots()'
+          and takes each address by 'param_index' ('slot_address_of'), one
+          'addressed_slot' list feeds 'write_frame_slots' and
+          'register_address', the zips and the order comment go; the
+          'call_kind' items stay, built and read in one function; listings
+          equal
+       E.4. the checks that make both call paths accept the same in one
+            'assert_call_accepted' (S6)
+       => E.4 done (2026-10-24): 'assert_argument_types',
+          'assert_result_type', 'assert_result_use' and
+          'throw_parameter_type_mismatch' moved from 'call_site' to
+          'stmt_call'; 'stmt_call::assert_call_accepted' lists the five
+          checks made before the inlined and noinline paths split;
+          'call_site' keeps the data, the plan and the temporaries,
+          'result_type_differs' and 'is_widened_integer' stay its statics;
+          listings equal
+       E.5. optional, low: one 'assert_order_independent' for the
+            count-first rule (S9)
+       => E.5 discarded (2026-10-24, user agreed): the check is shared
+          already ('assert_not_written_after', named with the 'array_copy'
+          count in the 'ub_order.hpp' header); only two comments and two
+          message texts repeat the reason
+    F. front end
+       F.1. every function head read the same way, the receiver resolved
+            after into 'func_receiver' {none, of_type, of_generic_type}
+            (F1); 'is_method' named for its three meanings; one
+            'report_name'
+       => F.1 done (2026-10-24): 'func_head::read' reads every head the
+          same way ('.method', '<T type>', '('); the receiver is resolved at
+          its '.' into 'func_head::receiver' {none, of_type, of_generic_type}
+          (same error order); 'is_generic_type_method' is a query,
+          'names_generic_type', 'read_generic_type_method_name' and the
+          kind branch of 'read_signature' go; 'head.name' is 'text.print'
+          for a generic type method, so 'assert_generic_signature' reports
+          'head.name'; 'define_method' takes the method name from the head;
+          the three meanings named apart: 'stmt_def_func::has_self_param',
+          'func_head::is_type_member' (also 'generic_func_info'), the
+          local one went with the merge; listings equal, 14 error cases of
+          'func text.' heads give the same messages
+       F.2. 'type_instantiator' beside the alias, shaped like
+            'func_instantiator'; one RAII 'generic_reparse'; one parser of
+            '= name<args>' (F2)
+       => F.2 done (2026-10-24): 'type_instantiator::instantiate' in
+          stmt_def_type.hpp beside the alias, its steps in its header like
+          'func_instantiator' (resolve the arguments, follow the bases,
+          parse the root fields, add the type and make the methods); the
+          alias keeps its tokens and calls it; 'generic_type_use::parse'
+          reads '= name<args>' with its checks for the based generic and the
+          alias; 'generic_type_info::fields_tk' (none for a type with a
+          base) replaces 'start_tk', the root parse starts at the '{';
+          'generic_reparse' (scope, tokenizer, nesting) at the three
+          re-parse sites; listings equal, 14 error cases equal
+       F.3. one 'leading_value_type' lookahead for the 'var' deduction and
+            the generic deduction (F3); supersedes E.5 of the 2026-10-23
+            review (a trial parse for generics: rejected, an argument is
+            parsed at its parameter's type); messages may change
+       => F.3 discarded (2026-10-24): the two deductions answer different
+          questions: a 'var' initializer has the type of the whole value
+          ('bool' for a comparison, the first operand otherwise), only a
+          parse tells it; a generic argument names its type only as a whole
+          term and is parsed at its parameter's type, so a trial parse would
+          type its literals differently (E.5 of 2026-10-23, rejected); a
+          shared lookahead would cover two early cases of the 'var' path
+          only; the two functions now name each other and say why they
+          differ
+       F.4. 'classify_term' carries the decision: callers use
+            'tm.named_type', 'term_kind::type_called' (F4)
+       => F.4 done, reduced (2026-10-24): 'term_kind::type_called' for
+          'point(5)' with no function 'point', so the hiding rule stays in
+          'classify_term' and 'parse_call_or_identifier' asks the kind; the
+          second look-up by token is not redundant: 'get_type_or_throw'
+          also rejects 'void' and a type wider than the target (tests 1006,
+          0732, 1537 on rv32i), so the call sites keep it and
+          'term::named_type' says so; listings and errors equal
+       F.5. 'encode_string' leaves 'token' for 'assembler_x86_64', which
+            takes bytes like rv32i's 'ascii' (F6)
+       => F.5 done (2026-10-24): 'assembler_x86_64::string_data' takes bytes
+          like 'assembler_rv32i::ascii' and writes the nasm escapes in one
+          place (with the '`' escape it added before); 'encode_string' and
+          'named_escape' leave 'token', the four machine sites pass bytes;
+          listings equal
+       F.6. 'parse_definition' moves into parse_statement.hpp (F7);
+            'source_locations::for_error' (F9)
+       => F.6 done (2026-10-24): 'parse_definition' is a free function in
+          parse_statement.hpp beside 'parse_statement', its header names the
+          three entries of the grammar; 'program' keeps the files and the
+          includes; README 1.1 reading order; a move, listings equal;
+          'source_locations::for_error' was not done, it moved to F.3 of
+          round 15
+       F.7. optional, low: 'tokenizer::peek_token' for inspect-only
+            lookahead (F8)
+       => F.7 discarded (2026-10-24): most inspect-only sites classify the
+          token, and 'classify_term' needs the tokenizer after it, so a
+          'peek_token' would return the probe too and the sites would read
+          about the same; the read-and-put-back form stays
+    G. expressions
+       G.1. a constant step of an arithmetic list emitted by one function,
+            no second fold (E3)
+       => G.1 done (2026-10-24): 'compile_step' sends a step with a value
+          to the constant path: a merged or checked regroupable constant to
+          'apply_merged_constant', a constant element the passes keep in
+          place (a divisor or a shift count, asserted) to
+          'asm_op_constant_element', which uses the value 'make_steps'
+          folded, with the zero divisor and shift count checks once;
+          'emit_with_source' loses its two re-fold branches (a scratch
+          build aborting in them passed every suite and the expression
+          fuzzers) and the immediate checks of its lambdas; comments kept,
+          listings equal
+       G.2. the rules of an array copy in 'expr_any::plan_writes' (E4)
+       => G.2 done (2026-10-24): the 'array_copy' branch of
+          'expr_any::plan_writes' checks the copy ('assert_array_copy_fits':
+          the source is an array of the destination's length when both are
+          known), as the list branch checks its elements;
+          'validate_array_assignment', 'assert_array_size_matches' and
+          'expr_type::plan_field' go, 'compile_identifier_copy' asserts;
+          'stmt_def_dat' keeps its constant-only rule; listings and 12
+          error cases equal
+       G.3. the "one element" facts of 'expr_arith' derived from the element,
+            the two construction flags go (E6)
+       => G.3 discarded (2026-10-24): deriving 'is_first_enclosed_' needs to
+          tell an enclosed 'expr_arith' from any element, which without RTTI
+          means a new virtual on 'statement' for one class's question; the
+          two flags are set in the one path that parses the first element
+          and their comments say what a first element given by the caller
+          leaves them as
+       G.4. 'compile_without_trailing_addend' reuses 'compile_elements' (E9)
+       => G.4 done (2026-10-24): 'compile_without_trailing_addend' calls
+          'compile_elements' on all steps but the trailing constant; its
+          comment lists what 'compile' does that an index does not need and
+          why; listings equal with and without the bounds checks
+    H. tables
+       H.1. 'ident_resolver::resolve_storage' (T4), 'toc::storage_of'
+            forwards
+       => H.1 done (2026-10-24): 'ident_resolver::resolve_storage' beside
+          'resolve' answers the storage a name reaches (the binding, the
+          'foo' element and the register rules), 'toc::storage_of'
+          forwards; the resolver header names both answers and where an
+          element is decided; listings equal
+       H.2. ask, behavior: the parse declares names without placing storage
+            (T2); target-size errors move to the compile (verdict equal,
+            which of two errors comes first may change); then J.3's padding
+            from the root frame
+       => H.2 done (2026-10-24, picked as recommended): 'toc::add_var'
+          places storage only when compiling, the parse declares the names;
+          the 'allocate_dat' assert holds always (its 'checks_capacity'
+          parameter goes), 'reset_usage' goes, the parse notes go; test
+          0740 (two dats past the signed 64-bit range) now reports the
+          range overflow at the second dat first, which is what the test
+          is named for; listings otherwise equal; J.3's padding from the
+          root scope is now possible (not done)
+       H.3. the label forms in one section with a table (N3, T10), README
+            "reading a listing"
+       => H.3 done, reduced (2026-10-24): the table of the label forms
+          with one example each above 'toc::call_path_at' and in README
+          1.6.1 "Reading a listing"; the builders stay beside their
+          constructs (moving them to one section is a judgment the review
+          rated medium); T10's statics move not done (low value)
+    I. control flow
+       I.1. one vocabulary for reachability (S3, T3): 'toc::end_path',
+            'is_reachable', 'record_break', a compile-side 'path_merge'
+            guard used by 'stmt_if::compile' like 'trace_assignment'; ask:
+            'assignment_flow' renamed for its second role (T3.3)
+       => I.1 done (2026-10-24): the compile says reachability in the
+          words of the parse walk: 'toc::is_reachable', 'end_path'
+          ('return', 'continue', 'exit'), 'record_break', 'join_loop',
+          'join_foo' and a 'toc::path_merge' guard that 'stmt_if::compile'
+          uses like 'trace_assignment'; 'set_path_open' and
+          'mark_loop_left' go, the scope keeps 'is_reachable'; README 1.5;
+          listings equal; the ask (rename 'assignment_flow' for its second
+          role, T3.3) done reduced (2026-10-24, picked as recommended): the
+          class header names its second role and the reachability walk is
+          made by 'assignment_flow::reachability_only'; renaming the class
+          and 'trace_assignment' across every statement was judged not worth
+          the churn
+    J. backends
+       J.1. access labels: rv32i protected only what the targets use,
+            x86_64 (final) has no protected non-overrides (B7)
+       => J.1 done (2026-10-24): 'branch_to_failure', 'call_sector_routine',
+          'emit_named_failure_handler', 'register_names_of' and
+          'saved_registers_size_bytes' of rv32i and 'call_sector_routine',
+          'emit_sector_routines' of the final x86_64 are private, moved by
+          their libclang extents; the rv32i protected section is the
+          target contract, its header says so; listings equal
+       J.2. 'toc' gets the built-in types from 'main', not the machine (B12)
+       => J.2 done (2026-10-24): 'main' passes the 'builtin_type_set' to
+          'program' and 'toc' next to the machine, 'builtin_roles' takes it;
+          'machine::builtin_types()' goes, the machine keeps its reference
+          for the sized types; the backend test follows; listings equal
+       J.3. one 'machine::with_saved_registers' for the three ways (B10)
+       => J.3 done, reduced (2026-10-24): 'machine::with_saved_registers'
+          saves the allocated registers among those clobbered through the
+          'save_call_registers'/'restore_call_registers' virtuals, x86_64's
+          own copy and its 'is_allocated' go (syscalls and sector calls);
+          the rv32i helper call keeps its way, now with a note: its live
+          mask includes the operands the scope protects and it restores
+          before a memory destination gets the result, so folding it in
+          would change what it saves; listings equal
+       J.4. the storage size arithmetic moves to 'type.hpp'; the
+            'machine::' operator aliases go (B11); ask: 'operators.hpp'
+       => J.4 done (2026-10-24): 'storage_limits' and the storage size
+          functions (add, multiply, sum, padding, align, checked align,
+          offset alignment) are in type.hpp, which no longer includes
+          operand.hpp; operand.hpp keeps the address offset arithmetic and
+          the operators; the 'machine::arithmetic_operator' and
+          'comparison_operator' aliases go, 43 sites use the bare names;
+          no 'operators.hpp' (a new file, AGENTS.md); listings equal
+       J.5. the rv32i numeric label rule stated once, the list complete
+            (B9)
+       => J.5 done, reduced (2026-10-24): the rule is stated once at
+          'machine_rv32i::local_label' (a numeric label is referenced only
+          inside the operation that defines it, nothing emitted between the
+          reference and the label defines one, so the numbers repeat across
+          operations); the class list says it holds the bulk operations'
+          labels, its "none is used twice" claim was false; the
+          function-local constants stay beside their use
+       J.6. the target description as one constexpr table (B3, the open
+            G.7)
+       => J.6 done (2026-10-24): 'target_description' in machine.hpp holds
+          the facts of a target (sizes, alignment, address space, indexed
+          addressing, padding rule, sd card sector size, stack bound, the
+          base, slot and scratch registers); the machine takes it and its
+          twelve getters are plain reads; one 'static constexpr' table per
+          backend ('x86_64_target', 'rv32i_target'), bare metal and qemu
+          pass a copy with their change ('bare_metal_target' bounds the
+          stack, 'qemu_target' has no card); 24 one-line overrides go;
+          'default_type' and the behavior queries stay virtual; listings
+          equal
+       J.7. ask, large move: 'machine_rv32i::memory_walk' nested class for
+            the 1,600 lines of walks (B2)
+       => J.7 discarded (2026-10-24, picked as recommended): a large
+          move inside one file with no change of design; the walks use the
+          registers, the assembler and the checks of 'machine_rv32i', so a
+          nested class would hold a reference to its machine and forward
+          most calls; AGENTS.md keeps large headers whole; the class header
+          already lists the walks by group
+    K. built-ins
+       K.1. 'stmt_builtin_exit' derives from 'statement' (N7.1)
+       => K.1 done (2026-10-24): 'stmt_builtin_exit' derives from
+          'statement', it has no value, like 'array_copy'; listings equal
+       K.2. 'stmt_builtin_io' checks before it emits (S8)
+       => K.2 done (2026-10-24): 'stmt_builtin_io::assert_buffer' makes the
+          verdicts that need no code (an array, whole sectors, a constant
+          range in bounds) before 'compile_arguments' emits;
+          'compile_array_arguments', named for one argument, goes; listings
+          equal
+       K.3. ask, new file: 'builtin_arguments' beside 'bulk_operands' (N7.3);
+            'reserved_names.hpp' (F10)
+       => K.3 discarded (2026-10-24, picked as recommended): AGENTS.md
+          asks for a new file only when the code cannot be placed near its
+          use; 'builtin_arguments' uses 'assert_not_string_argument' and
+          'assert_call_in_func' of stmt_call.hpp, so it stays there, and
+          'reserved_names' is the vocabulary of the tokens in token.hpp
+    open questions: A.4, D.5, D.6, H.2, J.7 and the new files of J.4, K.3
+    (J.4 of round 13 and A.1 approved and done)
+    order: B, C, A.1-A.3, D.1-D.4, E, I.1 then A.5, G, F, H.1, H.3, J.1-J.6,
+    K.1-K.2, then the asked ones
+    kept (reviewers, with reasons in r14): 'stmt_call.hpp' at 3k lines; the
+    call kind as a string; two dry-run counters; three versions of an
+    inlined body; 'call_limits' as statics; two reachability walks (E.10);
+    'toc' as facade; 'body_uses' beside 'call_effect'; definite assignment
+    by name; 'byte_range' beside 'access_path'; 'destination' with name,
+    text and storage; the handler skeletons; 'exit' outside 'call_target';
+    the rv32i known-size walks repeated on purpose; the option tables of
+    main; definitions declared in their constructors
+    => done (2026-10-25): every step handled, A.4 discarded; committed
+[x] hard: design review round 13 (2026-10-23, six reviewers: front end,
+    expressions, statements and calls, tables and checks, backends, a
+    newcomer tracing one program; findings in the session scratchpad r13,
+    spot-checked): toward a compiler a reviewer reads without strain; each
+    step a pure refactor unless marked, measured against the previous binary,
+    a pause for a commit after each phase
+    A. fixes first (failing test first, both targets, inline and noinline)
+       A.1. the checked order is not the emitted order for 'array_copy' and
+            'arrays_equal': both backends compile the count before the
+            addresses, the check assumes list order; 'array_copy(a[g()], b,
+            n)' with 'g' writing 'n' is accepted and copies with the old 'n'
+            (confirmed on x86_64, exits 0, left to right gives 3)
+            => design: the bulk machine operations call the emitters in
+               source order (first, second, count); the count register is
+               reserved before the addresses, filled last; 'list_operand'
+               states "the list is in the order the code computes it"
+            => rejected: compiling every operand with a call into a register
+               first (costs registers, hides the order again)
+       A.2. rv32i 'call_function' lowers a far frame address without keeping
+            the slot register 's11', x86_64 keeps it ('slot_kept'); a test
+            that holds the scratch registers before 's11' decides whether it
+            is reachable; the fix is H.3
+       => A done (2026-10-24): A.1 redecided (user): the count stays first
+          (the range checks of the starts need it, 'read'/'write' alike); a
+          list is accepted only when the emitted order and the source order
+          give the same result, 'assert_not_written_after' beside
+          'assert_not_written_later', used by 'bulk_operands' and
+          'stmt_builtin_io' (tests 1650-1653); A.2 with H.3:
+          'machine::call_function' is the one call sequence with the slot
+          register kept, the backends give 'save_call_registers',
+          'restore_call_registers', 'emit_call', 'is_stack_pointer'; no
+          listing changed
+    B. docs and comments that contradict the code
+       B.1. README: 7.3 "20 virtual methods" (14) and 'is_name_or_literal'
+            (gone); 1.7 'stmt_const'; 3.6 'list_written_parts' (now
+            'plan_writes'/'write_plan'); 1.5 'function_table' (now
+            'compile_records'); 4.3 "a pointer argument" (a parameter of a
+            noinline body passed on); 1.1 reading order without the
+            statement dispatch, 'stmt_assign_var', 'stmt_def_var'; the file
+            map without 'machine_rv32i_linux'
+       B.2. the virtual groups of 'statement': 'keeps_low_bits' (overridden
+            by 'stmt_identifier', 'stmt_builtin_convert', forwarded by
+            'expr_arith' only), 'visit_call_effects' in no group
+       B.3. 'ub_reads.hpp' header (the walk is 'statement::visit_reads'),
+            'toc::storage_of' ("bytes", it returns a path), 'stmt_call' "the
+            built-ins ... override 'compile'" and the built-in comment above
+            'read_generic_callee', the 'stmt_identifier' header (also every
+            literal, '3' or 'true'), 'machine_rv32i_linux::
+            emit_sector_routines' (two comments glued)
+       B.4. optional, new script (ask): 'qa/lint' check that every quoted
+            identifier of etc/docs/README.md exists in src/
+       => B done (2026-10-24): README 1.1 (linux target, reading order
+          with the statement dispatch and the variable nodes), 1.5, 1.7,
+          3.6, 4.3, 7.3; the virtual groups of 'statement'; the B.3
+          comments, the orphan built-in comment above
+          'read_generic_callee' removed; 'qa/lint/check-readme-names.py'
+          reports a quoted code name of the README missing from src/
+    C. leftovers
+       C.1. 'stmt_call::assert_arguments_not_written_later' duplicates
+            'builtin_arguments::assert_not_written_later', its only call
+            passes 'std::nullopt'; one function
+       C.2. 'check_options::with_line' is read only by main.cpp (G.3 moved
+            its use to 'target_options::reports_line'); main parses 'line'
+            into the target options
+       C.3. 'machine' access labels: 'emit_failure_handler' protected; the
+            request structs the front end builds public; the "empty slot
+            register" case goes (both backends name one),
+            'toc::has_slot_register' with it
+       => C done (2026-10-24): C.1 one free
+          'assert_arguments_not_written_later(tc, args, written_index)',
+          'builtin_arguments' forwards to it; C.3 'equality_request' and
+          'copy_request' public (correction 2026-10-24: the formatter keeps
+          them protected, it lowers a type to the least access that names
+          it and the front end builds them without naming them; accepted
+          per AGENTS.md), 'emit_failure_handler' protected in
+          'machine' and both backends, 'slot_register' always names one,
+          'toc::has_slot_register' and the 'toc' parameter of
+          'frame_slots' gone; the comments of 'call_sector_routine' that
+          A.2 left above 'emit_call' moved back; C.2 waits for a decision
+    D. one word for one idea (renames)
+       D.1. the slot holds an address: 'holds_address' throughout
+            ('ident_info::is_pointer', 'call_kind_item::is_pointer',
+            'var_access::through_pointer', 'at_pointer_register')
+       D.2. 'known_address' is computed at run time by a call:
+            'call_address', 'has_call_address';
+            'destination::is_address_known_' -> 'is_final_address_'; the two
+            'destination::of_name' overloads take the flag from one query
+            (check that they agree first)
+       D.3. 'stmt_identifier' texts: 'name_or_literal' -> 'dotted_path'
+            ('b.items', the resolver key), 'name_token' -> 'last_name_token'
+       D.4. 'bound_storage' also binds a name held in a register:
+            'bound_name', 'bind_name' (or the 'register_name' form of G.1)
+       D.5. 'machine::builtin_function' (enum) beside the catalog struct
+            'builtin_function': 'machine::target_call'
+       D.6. 'jump_mode::resolved' means "as emitted": 'as_emitted'
+       => D done (2026-10-24): D.1 'holds_address' ('ident_info',
+          'call_kind_item'), 'at_address_register',
+          'var_access::through_address', 'load_held_address'; D.2
+          'call_address', 'address_by_call', 'has_address_by_call',
+          'destination::is_final_address'; the two 'of_name' overloads keep
+          their flags, they differ by the operand passed (a held address
+          passes its slot); D.3 'dotted_path', 'name_token' gone (it was
+          'last_token'); D.4 'bound_name', 'bind_name', 'make_name'; D.5
+          'machine::target_call', 'registers_for_target_call',
+          'target_call_registers', 'assert_target_call_registers'; D.6
+          'as_emitted'; C.2 decided (user): kept, as
+          'check_options::reports_line' with a comment
+    E. one home per concept
+       E.1. the storage of an identifier: 'stmt_identifier::storage(tc) ->
+            optional<storage_path>' replaces the six 'tc.storage_of(<root>,
+            accessed_path())' with three spellings of the root
+            ('first_token().text()', 'root_of(name_or_literal())', the read
+            token); 'call_site::argument_target' goes
+       E.2. reads against writes: one section (in 'stmt_identifier_impl.hpp',
+            or a new 'ub_order.hpp', ask) with 'visit_storage_reads' and
+            'first_reach'; rule A, 'reaches_destination' and
+            'assert_not_read_before' written on them; its header lists each
+            order check, the order it relies on and where that order is
+            emitted; each list owner has one 'operands()' read by both the
+            check and its compile
+       E.3. 'reaches_destination' mixes a by-name rule (a same-name read of
+            disjoint bytes counts) and a storage rule; split by destination
+            kind (register: name, storage: storage) or a 'note:' with the
+            program that needs the name rule; output may shrink, verdicts
+            unchanged, aliasing fuzzers
+       E.4. 'array_shape' everywhere F.4 did not reach: 'stmt_identifier'
+            ('is_array_' + 'array_count_'), the 'expr_any' constructor
+            (optional with a 0 sentinel, 'is_unsized_destination_'),
+            'type_field::array_count' (0 sentinel), 'stmt_def_var' and
+            'initializer_declaration' (deduced count as optional); the
+            sentinel stays inside the parse only
+       => E.1-E.3 done (2026-10-24): E.1 'stmt_identifier::storage(tc)',
+          'call_site::argument_target' gone; E.2 'ub_order.hpp' with the
+          header of the order checks, 'storage_read' and
+          'visit_storage_reads' shared by rule A, 'reaches_destination' and
+          'assert_not_read_before'; 'first_reach' not made (the callers
+          want every read, a bool, reads only), 'operands()' dropped with
+          the A.1 redecision; E.3 a register destination by name, storage
+          by storage: 3 test listings change ('arr[2] = ~arr[1]' in place),
+          instruction lines equal, verdicts equal, alias, effects and data
+          fuzzers clean
+       => E.4 done (2026-10-24): 'statement::unsized_array_count' gone; the
+          'expr_any' constructor takes the 'array_shape' of the destination
+          ('destination_', the count of the literal 'array_count_' empty
+          until known, 'is_unsized_destination_' gone); 'stmt_identifier',
+          'initializer_declaration' and 'stmt_def_var' hold an
+          'array_shape'; 'type_field::array_count' and the field node hold
+          an optional (a field always has its length);
+          'string_array_count' moved into 'expr_any', its only user; no
+          listing changed
+       E.5. built-in types: 'type_kind' {user, integer, boolean, empty},
+            'type::is_integer()' ('is_integer_name' goes); toc registers the
+            built-ins from 'builtin_type_set::all()' (not 'program');
+            'builtin_types' -> 'builtin_roles'
+            => done (2026-10-24): 'type_kind' {user, integer, boolean,
+               empty}, 'type::is_integer()', 'is_integer_name' gone;
+               'builtin_type_set::all()' registered by the 'toc'
+               constructor, the list and 'add_builtin_type' gone from
+               'program'/'toc'; 'builtin_roles'; no listing changed
+       E.6. literals: 'constant_parser::is_literal' and 'literal_value'
+            ('true'/'false' included), used by 'classify_term',
+            'stmt_block' and the resolver
+            => done (2026-10-24): 'constant_parser::is_literal',
+               'literal_value' (with 'literal' {value, is_bool}) and
+               'is_bool_literal'; 'classify_term', 'stmt_block' and
+               'resolve_literal_or_empty' use them; no output changed
+       E.7. strings reach the backend as bytes: the front end decodes once
+            ('token::string_bytes'), 'emit_string_data' takes bytes,
+            'add_bytes_constant' stops escaping bytes for the backends to
+            decode; the constant key stays the text in this step
+            => done (2026-10-24): 'token::string_bytes',
+               'machine::string_constant::bytes', 'emit_string_data(bytes)'
+               (x86_64 encodes for nasm, rv32i writes '.ascii'), the
+               backends no longer decode; 'data_table' keeps the key beside
+               the bytes ('constant_keys_'); no listing changed
+            => keyed by bytes (user, 2026-10-24): 'data_table' compares
+               the bytes, 'constant_keys_' gone; no existing listing
+               changed; test 1654 (DIFF) and the CLI check
+               'CLI_SHARED_STRING_CONSTANT' (one label, two before)
+       E.8. the generic error trace: 'generic_trace' with 'add_to(error)'
+            held by type and function instances (three copies of
+            "instantiated by"); 'generic_frame' and the error's
+            'call_frame' one entry type; one 'generic_method_name'
+            => done (2026-10-24): 'generic_trace' (the error's
+               'call_frame's, 'add_to', 'inside') held by type and function
+               instances, 'generic_frame' and the three "instantiated by"
+               loops gone, 'compile_error::call_frame::at'; one
+               'method_name_of' for the five 'type.method' formats; no
+               output changed
+       E.9. one classification of a value term: 'classify_term' result
+            passed down to 'parse_call_or_identifier'; one
+            'parse_builtin_value' called by 'create_statement_in_expr_arith'
+            and the 'expr_type' constructor; messages may change where the
+            two preludes differ today
+            => done (2026-10-24): 'parse_call_or_identifier' and
+               'builtin_value_type' take the 'term' their caller classified;
+               'parse_builtin_value' holds the prelude and the dispatch of
+               the built-ins with a value, used by
+               'create_statement_in_expr_arith' and by
+               'expr_type::parse_copy_source' (which rejects what it
+               makes); one message changed: a built-in in an instance
+               position reports a malformed argument before its type, test
+               1172 gets its count so it keeps testing the type
+       E.10. reachability, one model: 'path_reach' with the join rules used
+            by 'assignment_flow' and the compile ('stmt_if' merges with it,
+            'stmt_loop' records breaks), 'compile_main' asks the compile;
+            decision needed: the compile today keeps the code after a 'loop'
+            without 'break', the parse ends the path there
+            => done (2026-10-24, decided: code after a path that cannot
+               continue is a compile error): 'stmt_block::trace_assignment'
+               rejects a statement after a path end ("statement is not
+               reached, ..."), every function body is walked at its parse
+               ('assert_statements_reached'); the compile keeps its flag for
+               what only it knows, a loop is left when a compiled 'break'
+               marks its frame ('frame::is_left_by_break', the old "a loop
+               without one ends too" gone); 'compile_main' asks the compile,
+               'is_end_reachable' gone; no 'path_reach' class: the two walks
+               share the rules but not the knowledge (assigned bytes, folded
+               conditions), a shared class would only forward; tests 0122-0124
+               rewritten without dead code, 1649 split, 1655-1657 new; the
+               fuzz generators give a jump 'and (v == v)' so the parse does
+               not fold it, the reject fuzzer's loop wrapper breaks first;
+               README 1.5
+    F. kinds told apart by flags become variants (the C.1 pattern)
+       F.1. 'expr_bool_op': {shorthand, comparison {op, rhs, is_memory}};
+            the unused 'op_'/'rhs_' of the shorthand go
+       F.2. a comparison side classified once ('comparison_side' {computed,
+            constant, stored}) instead of 20 'fold_side'/'is_typed_constant'
+            calls over six functions; after F.1
+       => F.1-F.2 done (2026-10-24): F.1 'expr_bool_op::comparison' {the
+          whitespace, 'op', 'rhs', 'is_memory'} in an optional, empty for a
+          shorthand (one alternative empty, an optional reads simpler than
+          a variant); 'operation()' gives a shorthand '!=' from the start,
+          the copy that patched it goes; F.2 'comparison_side' {node,
+          folded} made once by 'side_of' in 'compile_shorthand' and
+          'compile_comparison' (from 'compile_element'), read by the
+          constant, the mirroring, 'resolve_cmp', 'resolve_expr', the width
+          checks and 'typed_constant'; 'fold_side' and 'is_typed_constant'
+          gone; the parse-time 'constant_value' folds the right side only
+          when the left side folds, as before; no listing changed
+       F.3. 'stmt_def_dat::elem': {scalar, string, element list, field list}
+            => done (2026-10-24): 'elem::form' a variant of 'scalar',
+               'string', 'elements' and 'fields', each with what it needs;
+               'compile_data_rec' dispatches on it, 'compile_data_builtin'
+               and the flags gone; no listing changed
+       F.4. 'stmt_builtin_io': 'io_arguments' {buffer, count, start} indexes
+            made once, no 'args_.at(2)' and 'count() - 1'
+            => done (2026-10-24): 'optional_positions' {count, start}
+               made once by 'optional_positions_of' in the constructor (the
+               buffer stays 'buffer_index_'), 'has_count'/'has_start' and
+               the index arithmetic gone, 'compile_start' takes its index;
+               no listing changed
+       F.5. 'argument_form' per call argument {instance temporary, place,
+            constant, register name, value}, made once by 'call_site'; the
+            seven 'bind_*', 'plan_argument', 'is_instance_temporary' and
+            'needs_temporary' read it; a table of forms with an example
+            each above it; plan the cut against the tests of 'bind_value'
+            => done (2026-10-24): 'call_site::argument_form' {instance
+               temporary, place, computed, named value} with the table
+               above it, made by 'argument_form_of' per compile; read by
+               'instance_temporaries', 'noinline_temporaries' (a temporary
+               when not a place) and 'inline_call::bind_argument' (one
+               branch per form); 'argument_plan', 'plan_argument',
+               'is_instance_temporary', 'bind_place', 'bind_value' gone,
+               'bind_plain_argument' -> 'bind_named_value' with the
+               resolved name; the other readers of a place argument
+               ('assert_no_shared_storage', 'frame_slot_addresses', the
+               effects) keep 'place_path', they ask about storage only; no
+               listing changed
+       F.6. optional, low: 'unary_ops' stores 'arithmetic_operator', the
+            'assign' role leaves the backend enum
+    G. calls
+       G.1. 'noinline_call' decides its temporaries once (as 'inline_call'
+            since E.2), one helper carries the block rule and its comment
+       G.2. the body places its parameters from 'frame_slots' (E.4 planned
+            the body side), the index test and its note go
+       => G.1-G.2 done (2026-10-24): G.1 'call_site::noinline_temporaries'
+          beside 'instance_temporaries' (the rule of 'needs_temporary',
+          which goes), 'noinline_call' holds its temporaries like
+          'inline_call', the dry run takes them as they are;
+          'call_site::in_temporaries_block' carries the block rule and its
+          note once; G.2 'add_signature_vars' walks 'frame_slots', a slot is
+          placed by 'placement_of' (in place when parsed, through the frame
+          slot or the slot register when compiled), the index test and its
+          note gone; no listing changed
+       G.3. 'call_scope' enters the toc function frame and the machine call
+            frame together and adds the error frame on unwind (four sites
+            by hand today); the machine side renamed for what it records
+            ('register_trace_scope')
+       G.4. 'toc::dry_run' hands back the verdict; the rewrite of an error
+            to 'source' moves from 'machine::emit_discarded' to the front
+            end, 'check_body' no longer relies on catching inside the lambda
+       G.5. after F.5: the limits leave 'call_site' as 'call_limits'
+       => G.3-G.5 done (2026-10-24): G.3 reduced: the machine side is
+          'register_trace_scope' ('begin_trace_frame', 'end_trace_frame',
+          'current_trace_frame'), it records which call holds a register;
+          one 'call_scope' was not made: only the inlined call enters a
+          'toc' frame, a trace frame and an error frame together, and a
+          destructor cannot add to the exception that unwinds past it; G.4
+          'toc::dry_run' hands back 'std::optional<compile_error>',
+          'emit_discarded' only discards, 'toc::throw_dry_run_error' holds
+          the 'source' rule and its reason, 'check_body' decides on the
+          returned error; G.5 'call_limits' holds the three limits, their
+          checks and errors ('assert_noinline_level' new), 'call_site'
+          keeps what a call is; no output changed
+    H. backends
+       H.1. run-time routines keyed by their label (not display names or ad
+            hoc strings); the line report becomes a routine (both
+            'line_report_emitted_' go, '--checks=line' listings change); one
+            'machine::emit_runtime()' (handlers, then routines) replaces the
+            two calls in 'program'
+       H.2. the sd card panic as a 'failure_handler' constant; the x86_64
+            hand copy and 'sd_card_handler_label' go
+            => done (2026-10-24) with the panic exit codes, see
+               'etc/todo-resolved.txt'
+       H.3. 'call_function' once in 'machine' with the slot register kept;
+            the backends provide save, restore and the call (A.2)
+            => done with A.2 (2026-10-24)
+       H.4. 'version_state state_' as the one member a version saves and
+            restores (five members listed three times today)
+       => H.1 and H.4 done (2026-10-24): H.1 each run-time routine is keyed
+          by its label (handlers 'handler.label', rv32i helpers
+          'helper_label' marked by 'call_arithmetic_helper', bare metal
+          'exit_label_'/'read_label_'/'write_label_', sector routines by
+          the backend that picks the label, the virtual
+          'emit_sector_routines' moved from 'machine' to 'machine_rv32i');
+          the line report is a routine marked by the handlers that jump to
+          it, both 'line_report_emitted_' gone (rv32i listings with a line
+          gain one 'j', x86_64 the jump is optimized away, the message data
+          moves); one public 'machine::emit_runtime()', the two emit
+          methods protected; H.4 'version_state state_' holds the five
+          members, save and restore copy it whole; tests, fuzzers and
+          clang-tidy clean
+       H.5. one 'machine::call_builtin' for read, write and the sector
+            calls: the register assert once (six copies), the register table
+            from two backend constants
+       H.6. one virtual 'address_text'; 'comment_binding' and
+            'comment_variable' non-virtual (rv32i binding comments may gain
+            the address)
+       H.7. new file (ask): 'machine_rv32i_linux.hpp' beside its siblings
+       => H.5-H.7 done (2026-10-24): H.5 one public 'machine::call_target'
+          (the register assert once) and one protected virtual
+          'emit_target_call'; 'read', 'write', 'sector_read',
+          'sector_write' and 'call_sector_routine' as entry points gone, the
+          six asserts gone; 'registers_for_target_call' in 'machine' from
+          'target_call_register_names' (three argument registers and the
+          result), 'exit' stays separate; no listing changed; H.6 one
+          protected virtual 'address_text', 'comment_binding' and
+          'comment_variable' non-virtual in 'machine'; rv32i binding
+          comments gain '(lea: ...)' (89 listings per rv32i target, no
+          instruction), its 'address_text' prints an index; H.7
+          'machine_rv32i_linux.hpp' (a move), README file map
+    I. expressions
+       I.1. 'expr_type::plan_field' calls 'expr_any::plan_writes' (the
+            element loop and remaining fill exist twice; nested instance
+            array fields gain '[i]' comment lines); 'is_array_identifier' ->
+            'is_array_copy'
+       I.2. the wrappers stop forwarding 'get_unary_ops' (answers for the
+            first element); callers ask 'operand_path()'; 'expr_arith::uops_'
+            -> 'list_uops_'
+       I.3. one 'for_each_prefix' walk for 'compile_lea' and
+            'resolve_accessed_bytes'
+       I.4. 'expr_bool::constant_value' says it is the parse-time subset of
+            what 'compile' finds; the chain rule in one helper
+       I.5. optional, low: instance padding by one gap function
+            ('plan_unwritten' and 'zero_padding')
+       => I.1-I.4 done (2026-10-24): I.1 'plan_field' keeps the size check of
+          an array copy and calls 'expr_any::plan_writes', which writes an
+          instance, an array element by element with the rest zeroed, or a
+          copy at once; nested instance array fields gain '[i]' comment
+          lines (6 listings per target, no instruction);
+          'is_array_identifier' -> 'is_array_copy'; I.2 the forwards of
+          'get_unary_ops' in 'expr_arith' and 'expr_any' gone, the callers
+          ask 'operand_path()' or the new 'expr_arith::single_operand()';
+          'get_unary_ops' no longer virtual (13 virtuals, README 7.3);
+          'list_uops_'; I.3 'stmt_identifier::for_each_prefix' walks the
+          path for 'compile_lea' and 'resolve_accessed_bytes'
+          ('prefix_step'), the root is resolved once in 'compile_lea'; I.4
+          'constant_value' says it is what the parse can tell of the
+          compile's answer, one 'is_or_list' and 'is_short_circuit(value,
+          invert)' for both; I.5 left (optional, low)
+    J. front end and tables
+       J.1. file renames (ask): 'decouple_impl.hpp' -> 'parse_statement.hpp'
+            (the statement grammar), its functions named for what they
+            parse; the literal test of 'stmt_block::parse_statement' moves
+            in; 'ub_alias.hpp' -> 'access_path.hpp'
+       J.2. 'include' parsed by 'stmt_include', 'program' loads the file
+       J.3. the dats/variables padding derived from the root frame (three
+            places and a flag today); 'vars_size_bytes' named for what it
+            sums
+       J.4. large, mechanical, decide: an absent token as
+            'std::optional<token>' ('is_next_char_token', 65 calls; the
+            optional syntax members), 'is_empty'/'is_none' apart
+       => J.4 done (2026-10-24, approved in round 14): 'is_next_char_token'
+          returns 'std::optional<token>'; a token the source may leave out
+          is an optional member ('stmt_block' braces, 'expr_arith' and
+          'expr_bool' parentheses, the bare conversion, the 'foo' count
+          delimiter, the 'else', a field's and a parameter's type, 'mut' and
+          brackets, the function head's 'noinline', 'mut', method and '(',
+          the result name and type, a generic type's base); a pair that is
+          present together is one optional struct ('stmt_identifier::
+          method_tokens', 'stmt_call::constructor_tokens'); a required one
+          is read by 'expect_char_token', one the caller saw by the new
+          'tokenizer::seen_char_token'; 'token::source_to(os, optional)'
+          prints one; 'is_empty' is left for no location, 'is_none' for no
+          word read; a field type that reads no word is put back (it held
+          the whitespace before '}'); listings and '--reproduce-source' of
+          every test equal, fuzz-compiler, reject, generics clean
+       => J.1-J.3 done (2026-10-24): J.1 'parse_statement.hpp' (was
+          'decouple_impl.hpp'), the grammar named for what it parses:
+          'parse_statement' (moved from 'stmt_block' with its literal test),
+          'parse_keyword_statement', 'parse_name_statement', 'parse_operand';
+          'access_path.hpp' (was 'ub_alias.hpp'); J.2 'stmt_include' parses
+          its file name (string, decoded, no control character), 'program'
+          resolves the path and loads the file once; J.3 reduced: the padding
+          after the dats has one home, 'storage_layout::
+          applied_padding_bytes_' (the flag and the root frame's copy gone),
+          'vars_size_bytes' -> 'dats_and_vars_size_bytes'; not derived from
+          the frames: the parse places dats and locals interleaved, a live
+          padding would change its size checks; no output changed
+    K. listings (output changes, no instruction changes)
+       K.1. comments of a destination print the written text
+            ('b.items[i] * 2', today 'b.items * 2' for 'i * 2')
+       K.2. a parameter that holds an address prints 'address @ [rbx]', not
+            the type's size; the branch labels of an 'if' share its label;
+            the version comment names the version kept
+       => K done (2026-10-24): K.1 the comments of a destination print what
+          was written ('buf[i] = 45', was 'buf = 45'), a register
+          destination's 'text_' is its register; K.2 a slot that holds an
+          address prints 'b: bag (address @ [rbx])'
+          ('machine::comment_held_address'); the labels of an 'if' come from
+          its own, at the 'if' keyword: 'if.L', 'if.L.1' for the next
+          branch, each with '.code', 'if.L.else', 'if.L.end'
+          ('stmt_if::branch_label'); the version comment says 'kept the
+          first|second of two versions of A and B instructions, <reason>';
+          about 580 listings change per target, instruction lines and exit
+          codes equal; the '--nopt' diffs of 0006, the CLI jump test and
+          the driver's comment checks updated
+    => decided (user, 2026-10-23): A.1 source order; B.4, E.2 file, H.7,
+       J.1 approved; E.10 code after a path that cannot continue (a 'loop'
+       without 'break') is a compile error; J.4 done; K and the listing
+       changes accepted
+    order: A, B, C, D, E.1-E.4, F.1-F.2, G.1-G.2, H.1-H.4, E.5-E.9, F.3-F.5,
+    G.3-G.5, H.5-H.6, I, J, K, E.10; asks: A.1 design, B.4, E.2 file, E.10
+    decision, H.7, J.1, J.4, K
+    kept (reviewers, with reasons in r13): 'body_uses' beside 'call_effect'
+    (E.1 deferred); definite assignment by name text; 'toc' as facade;
+    literals resolved by the resolver; 'expr_any' forms inside 'expr_any';
+    'accessed_bytes_' beside 'access_path_'; the handler skeletons (G.2);
+    both versions compiled (chapter 5)
+    => done (2026-10-25): every step handled; F.6 half done ('unary_ops'
+       stores 'arithmetic_operator'), the 'assign' half moved to its own
+       item in 'etc/todo.txt'
+[x] hard: design review (2026-10-23, four reviewers over nodes, calls,
+    tables and backends, claims spot-checked): the refactors toward a design a
+    reviewer judges clean; each step a pure refactor unless marked, measured
+    against the previous binary, a pause for a commit after each
+    A. dead code and comments that contradict the code (small, first)
+       A.1. 'expr_bool' always computes: 'expr_bool_op::name_or_literal',
+            'expr_bool::name_or_literal', 'is_expression_' with
+            'resolve_if_op_is_expression' and the constant branch of
+            'expr_bool::compile' ("e.g. '(true)'", rejected since 4.7.0) are
+            unreachable (0 hits over the tests)
+       A.2. the literal branch of 'expr_type::compile' (a literal is written
+            through 'plan_writes'), 'expr_any::is_empty', 'in_quotes(const
+            statement&)', the default 'statement::is_indexed'
+       A.3. comments: the virtual groups of 'statement' ('name_token' and
+            'produces_boolean' are overridden by fewer classes than listed),
+            the 'noinline_call' header ('assert_call' only asserts), the
+            'inline_call' steps (the widened result), the 'toc' facade rule
+            (README 7.6 has it right), the frame base comment only on rv32i
+       => A done (2026-10-23): 'expr_bool' and 'expr_bool_op' derive from
+          'expression' (a condition that is one name is an 'expr_arith' in a
+          value), the field, the resolver, both 'name_or_literal' and the
+          constant branch gone; 'expr_type::compile' asserts a copy;
+          'expr_any::is_empty', 'in_quotes(const statement&)' and the virtual
+          'emit_frame_exit' gone; the frame base comment in 'machine' for both
+          targets (x86_64 listings gain it, 108 files, no instruction
+          changed); the comments of the virtual groups, the call headers and
+          the facade fixed; the default 'statement::is_indexed' goes with B.1
+    B. the node queries
+       B.1. a name or literal operand is asked through the wrappers: nine
+            virtuals of 'statement' ('accessed_path', 'compile_lea',
+            'is_indexed', 'is_array_element', 'is_name_or_literal',
+            'name_or_literal', 'get_unary_ops', 'visit_index_reads',
+            'name_token') mean something only for 'stmt_identifier' and are
+            forwarded by 'expr_arith', 'expr_any', 'expr_type' under 12
+            asserts; answers differ by class ('name_token' is not forwarded,
+            so 'make_ident_info' records a wrapper's token; the default
+            'name_or_literal' answers a call with its name)
+            => design: 'operand_path() -> const stmt_identifier*' next to
+               'place_path' (the same leaf with unary ops); the nine become
+               members of 'stmt_identifier', callers ask the path;
+               'make_ident_info' takes a 'stmt_identifier'; 'list_operand'
+               holds the written place's path; two steps: the callers that
+               already have a path, then the virtuals go
+            => step a done (2026-10-23): 'operand_path' (the identifier with
+               its unary ops) is the one forwarded virtual, 'place_path' is
+               derived from it, the 'expr_bool' overrides gone; no output
+               change
+            => blocked: the members cannot be called where they are needed,
+               'stmt_identifier.hpp' includes 'expr_any.hpp' (its indexes are
+               'expr_any'), which includes 'expr_arith.hpp' and
+               'expr_bool.hpp', so 'stmt_identifier' is incomplete in those;
+               the forwarding virtuals are how the cycle is broken today
+               (about 110 sites, 62 in a first count)
+            => options (asked 2026-10-23):
+               a. 'stmt_identifier' first: its indexes held through a
+                  forward-declared 'expr_any', the members that use them
+                  defined after 'expr_any' (a 'stmt_identifier_impl.hpp' like
+                  'expr_type_impl.hpp', a new file); then the plan as written,
+                  members on the identifier, type-checked, the virtuals gone
+               b. the base virtuals stay as the decoupling and only
+                  'stmt_identifier' implements them; the wrappers forward
+                  nothing, a caller asks the leaf 'operand_path()' returns
+                  (the answers can no longer differ by class); the type of a
+                  leaf is 'statement', not 'stmt_identifier'
+            => decided (user): a; the move done (2026-10-23):
+               'stmt_identifier_impl.hpp' holds the constructor, the special
+               members, 'path_source_to', 'ident_elem::source_to' and the 11
+               members that use an index expression; 'stmt_identifier.hpp'
+               declares 'expr_any' and compiles alone; no output change
+            => step c done (2026-10-23): the eight forwarders gone from
+               'statement' and the wrappers ('get_unary_ops' stays); callers
+               ask 'operand_path'/'place_path' and the members of
+               'stmt_identifier'; 'make_ident_info' and 'list_operand' take
+               the path; 'assert_array_buffer' returns its 'place'; the wrong
+               assert of 'expr_arith::operand_path' (a list with its own
+               unary op, '-(-a)') returns null; errors point at the
+               identifier's token (0581, 0582, 1452); accepted (user): rv32i
+               spills '-(-(-a))' once more (0024, 0047, +4 instructions), the
+               list is a computed value now
+       B.2. one resolution of a name or literal operand (constant to an
+            immediate, computed address to a lea, unary ops in a scratch
+            register), written in 'expr_arith::emit_with_source',
+            'expr_bool_op::resolve_expr' and the inline binding of a value;
+            each keeps its policy; diff the assembly (after B.1)
+            => done (2026-10-23): 'stmt_identifier::compile_value_operand'
+               (storage or computed address, unary ops in a scratch register
+               of the caller's type and overflow check) serves the three;
+               each keeps its constant policy; 'compile_unary_to_scratch'
+               and 'with_unary_ops' gone; the comment 'src: operand' now
+               precedes the lea it heads (44 listings), no instruction
+               changed
+       B.3. 'fold' is unchecked by its contract but 'expr_any::fold' checks
+            narrowing: 'expr_any::fold' forwards, the callers that rely on
+            the check call 'fold_checked'; a 'compile_checked' beside it
+            replaces the hand-written "assert_not_narrowed, then compile"
+            => done (2026-10-23): 'expr_any::fold' forwards unchecked; the
+               callers that relied on its check ask 'fold_checked' (the
+               constant argument of an inline call, the value of 'let'/'var',
+               'constant_value', the size of an array type); the bound name
+               of an inline call checks first and folds plain;
+               'statement::compile_checked' in 'expr_type' (a part) and
+               'expr_bool' (a side into its register); 'compile_to_scratch'
+               keeps its check before the register allocation; no output
+               change
+       B.4. 'produces_boolean' and 'compile_boolean' serve 'arrays_equal'
+            only: a name that says so
+            => done (2026-10-23): 'is_arrays_equal_call' and
+               'compile_arrays_equal'; a typed query like 'operand_path'
+               would need an out-of-line definition ('arrays_equal' includes
+               'bulk_operands', which reaches 'expr_bool') for one call site;
+               the virtuals are the decoupling, the header says so
+    C. one value, one node
+       C.1. 'expr_any' holds a single value and four array forms told apart
+            by flags; an 'expr_array' node with the form as a variant for
+            the initializers, 'expr_any' a single value (a new class, plan
+            the call sites first)
+            => done (2026-10-23), inside 'expr_any': the form is a variant
+               of 'single_value', 'string_array', 'element_list' (with its
+               'array_prefix'), 'zero_array' and 'array_copy', each holding
+               only its own tokens; the flags 'is_array_', 'is_identifier_'
+               and the loose tokens gone, the interface kept (a separate
+               'expr_array' class would move the form test to the four
+               holders that take either); no output change
+       C.2. 'expr_type': "exactly one of a copy, a call, a field list" as a
+            variant
+            => done (2026-10-23): 'value_' is a variant of 'field_list',
+               the copied 'stmt_identifier' and the 'stmt_call';
+               'operand_path', 'call_source', 'field_values' and 'is_literal'
+               read it; no output change
+    D. built-ins
+       D.1. one catalog {name, value kind, statement factory, value
+            factory}: today the reserved list, 'builtin_value_type',
+            'assert_builtin_has_value', both factories and
+            'stmt_builtin_io::find' agree by hand; "'bool' has no conversion"
+            is decided twice
+            => done (2026-10-23): 'reserved_names::builtin_functions' is the
+               catalog of {name, value} with 'find_builtin_function';
+               'assert_builtin_has_value' and 'builtin_value_type' read the
+               value, the io table asserts its 'has_result' against it; the
+               factories stay (each class takes its own arguments); the
+               'bool' conversion is decided once, 'builtin_value_type' only
+               declines it so the call parse reports it; no output change
+       D.2. 'stmt_builtin_io' and 'stmt_builtin_exit' derive from
+            'stmt_call' for its argument list only ('builtin_call_tag', the
+            'is_func' guards): a 'call_arguments' member like
+            'bulk_operands', 'stmt_call' only user calls
+            => done (2026-10-23): 'builtin_arguments' (in 'stmt_call.hpp',
+               beside the parse rules it shares: 'assert_not_string_argument'
+               and 'assert_call_in_func', now free functions) is a member of
+               'stmt_builtin_io' and 'stmt_builtin_exit', which derive from
+               'expression'; the tag, the protected constructor and
+               accessors, 'parse_builtin_arguments' and the 'is_func' guard
+               of 'visit_call_effects' gone; no output change
+       D.3. a written buffer (the destination of 'array_copy', the buffer
+            of 'read') owns its parse check, its use record and its reads;
+            the index 1 hard-coded in four io methods goes (after D.2)
+            => done (2026-10-23): 'stmt_identifier::record_write' (read-only
+               and constant rejected, the write recorded) serves the
+               assignment, 'array_copy' and the io buffer; the io buffer is
+               'buffer_path()' at 'buffer_index_', a path checked by the
+               constructor ('assert_buffer_path'), so the null branches of
+               the effects and reads go; read-only errors underline the name
+               (0663, 1049, 1050)
+    E. calls
+       E.1. what a callee reaches of the caller is mapped in four places
+            with two rules: 'callee_reach(tc, func)' {argument or global,
+            path extended by the use path, written} read by the effects,
+            the use record and both shared-storage checks; the effects keep
+            the 'mut' rule (no fixed point), said where the list is built
+       E.2. the temporaries of a call are decided three times on the inline
+            path and once more on the noinline path, made by two copies of
+            the same code; 'compile_with_bindings' has two modes by an empty
+            span: one 'make_argument_temporaries' that returns per argument
+            whether it is a temporary and its storage
+            => done (2026-10-23): 'inline_call' holds 'temporaries_' (one
+               per argument), from 'call_site::instance_temporaries' for an
+               inlined call and from the call's temporaries for the dry run;
+               'make_bindings' asks it, the empty-span mode gone;
+               'call_site::make_argument_temporary' is the one maker; no
+               output change
+       E.3. the scope and nesting limits of calls in one helper (today in
+            'call_site', 'stmt_call' and 'noinline_call::dry_run_body')
+            => done (2026-10-23): 'call_site' holds the limits and their
+               checks: 'assert_inline_nesting', 'assert_scope_count' (one
+               scope check, the dry-run message by flag), 'inlining_limit_error'
+               and 'recursion_message'; no output change
+       E.4. the frame slots {result | parameter, in a register} from
+            'stmt_def_func', read by the call and by the body
+            => done (2026-10-23): 'frame_slot' {param_index, is_in_register}
+               and 'stmt_def_func::frame_slots(tc)', read by the call
+               ('write_frame_slots', 'register_address');
+               'has_receiver_in_register' replaces 'first_param_slot',
+               'register_slot_index' and 'has_slot_register'; no output change
+            => E.1 deferred (2026-10-23): the record and the global check
+               map a use in two shapes (a root name with an access path, a
+               storage path); one 'callee_reach' would convert between them
+               for two of the four sites, the effects keep the 'mut' rule
+       E.5. optional, lower confidence: generic deduction by a trial parse
+            like 'var' (drops 'value_type', about 70 lines of token shapes);
+            messages of malformed arguments may change
+    F. tables
+       F.1. 'frame' holds the fields of five kinds under asserts: a function
+            part (bindings, result, parameters, path flag, body uses, its
+            own storage base) and a root part as optional members
+            => done (2026-10-23): 'frame::function_part' (call path, return
+               label, bindings, path flag, result and parameter names, body
+               uses) and 'frame::storage_base' (base register, peak size) are
+               optional members; 'is_func' and 'has_storage_base' tell them,
+               the accessors assert; the root keeps its padding field (one
+               field); no output change
+       F.2. the storage total is kept in 'storage_layout' and in the frames
+            and synced by hand: derived from the frames, 'storage_layout' no
+            longer writes into the frames (after F.1)
+            => done (2026-10-23): 'storage_layout::vars_size_bytes' sums the
+               frames, the kept total and 'release_scope' gone
+               ('release_root' resets the padding flag); the peak is recorded
+               only under the capacity check, where the dats are placed
+               (the parse wrapped the unsigned 'used' size before, then
+               forgot it); no output change
+       F.3. definition order visibility is written five times with
+            'exists'/'has' pairs and three spellings of "always visible": one
+            'ordered_table' with 'find_visible' and 'find_any'
+            => deferred (2026-10-23): the rule is one function
+               ('definition_order::is_visible'); a 'get' that checks it
+               would review 129 lookups, and the generic functions (methods
+               always visible) and the globals (absent means visible) keep
+               rules of their own
+       F.4. array-ness has four encodings ('array_count' 0, 'is_array' with
+            'array_len' in 'var_info', 'ident_info', 'destination'): one
+            'array_shape' {none, sized n, unsized}
+            => done (2026-10-23): 'array_shape' (not an array, an array of a
+               length, or unsized) in 'var_info', 'ident_info::storage_part',
+               'destination' and the noinline call kind; the pairs that could
+               disagree are gone (the rv32i test driver set a length 0 with
+               'is_array' false); the parse sentinel 'unsized_array_count' of
+               the declarations stays, it is a count being deduced; no output
+               change
+       F.5. 'destination' as a variant {none, register, storage}, the open
+            item (after F.4)
+            => done (2026-10-23), smaller than a variant: the 'kind_' enum
+               gone, the kind follows from the members ('storage_' set for
+               storage, a register operand otherwise, no type for none), so
+               it cannot disagree with them; no output change
+       F.6. small: 'is_pointer' as a placement, the compile worklist out of
+            'function_table', built-in types registered by the table with a
+            flag (no empty-token sentinel), 'generic_arg' kind as a variant,
+            'is_inlined_func' named 'is_compiled_in_place'
+            => partly done (2026-10-23): built-in types registered by
+               'type_table::add_builtin' with a flag ('is_builtin'), the
+               empty-token sentinel gone; 'is_compiled_in_place'
+            => rest done (2026-10-23): 'in_storage::holds_address' replaces
+               'var_info::is_pointer' (only storage holds an address);
+               'compile_records' holds the noinline bodies to emit and the
+               reached definitions, out of 'function_table'; 'generic_arg'
+               holds a variant of a type or a constant; no output change
+       F.7. large, plan first: a binding stores its resolved root and steps
+            instead of the caller's text, the resolver walk returns the root
+            variable, 'storage_of' and 'make_ident_info' cannot disagree
+            => discarded (2026-10-23): the text and 'bound' are made at the
+               call from the same identifier ('name_or_literal' and
+               'argument_target') or destination ('name' and 'storage'), and
+               the resolver follows the text below the binding frame, which
+               are the caller's frames of the call, so they agree by
+               construction; they differ on purpose for the 'foo' element
+               'e' (the text reaches it through the iterator register,
+               'bound' is any element for the alias checks), which a stored
+               root would have to keep as two fields again
+    G. backends
+       G.1. the fpga panic plan (below) as it stands, its text updated: one
+            handler override, not seven; it also removes
+            'failure_exit_codes_', 'exit_code_of' and 'emit_panic_exit'; the
+            invariant holds for failed checks, not the bare metal division
+            trap
+            => done (2026-10-23): the fpga overrides, 'reports_line', the
+               exit code table, 'emit_panic_exit' and 'exit_code_of' gone; fpga
+               prints 'panic: ...' and exits 255 like rv32i-qemu; the 36
+               'NNN.rv32i-fpga.exit' and 'expected_exit_code' gone, 76
+               'NNN.rv32i-fpga.out' gone (74 equal to 'NNN.out' after
+               'UPDATE=1', two empty orphans: 0314 runs on x86_64 only, 0695
+               is a compile error); '--stack=16' still says 48 B
+       G.2. the failure handlers emitted once in 'machine' (both backends
+            write the same shape, two 'line_report_emitted_' flags, the sd
+            card handler copied on x86_64) (after G.1)
+            => deferred (2026-10-23): after G.1 and G.3 the two handlers
+               differ in the line stubs (x86_64 sets rbp in a stub per line,
+               rv32i loads a0 at the check), the message print and the data;
+               a shared skeleton needs five virtual steps for about thirty
+               lines
+       G.3. '--checks=line' one value the backend reads, the 'with_line'
+            parameters (about 45) go (R11 A-2, after G.1)
+            => done (2026-10-23): 'target_options::reports_line' set from
+               '--checks=line', 'machine::reports_line()'; 'runtime_check' and
+               'bounds_check_options' lose 'with_line'; the line flag
+               parameters of 14 backend helpers go, and the 'runtime_check'
+               parameters that only carried it; a handler reports the line
+               when the machine does and the handler takes one, decided in
+               'branch_to_failure' and 'failure_label' (a frame overflow no
+               longer passes 'false'); the handler emit keeps the flag
+               'emit_used_failure_handlers' computes; no output change
+       G.4. the register contract of the built-in calls in 'machine' from
+            the argument and result registers of the backend, the
+            hard-coded register asserts go
+            => done (2026-10-23): 'machine::assert_builtin_registers'
+               checks the operands of 'read', 'write' and the sector calls
+               against 'registers_for_builtin_function' in both backends; the
+               eleven hard-coded register asserts gone; no output change
+       G.5. the stack bound owned by the bare metal backend, the
+            unreachable overrides go
+            => done (2026-10-23): 'machine::is_stack_bounded' defaults to
+               false, 'check_stack_capacity' and 'emit_stack_limit_load'
+               default to 'std::unreachable()' with the note that only a
+               bounded target is asked; the x86_64 and rv32i linux overrides
+               gone; the check stays in 'machine_rv32i', which holds the
+               private constants it needs; no output change
+       G.6. small: 'emit_data_array' takes a span, the comment marker in
+            'assembler', the bare metal memory size passed explicitly, a
+            'backend_held' flag in the register pool, one
+            'is_register_held'
+            => done (2026-10-23): 'emit_data_array' takes a span (the
+               generator callback and its template wrapper gone); each
+               assembler names its 'comment_marker_' for the comments and for
+               'code_before'; 'machine_rv32i_bare_metal' takes the memory size
+               as a parameter, qemu passes its fixed size instead of
+               rewriting the options; no output change
+            => register items deferred (2026-10-23): x86_64 'is_allocated'
+               asks the allocations, rv32i 'is_register_allocated' also the
+               protected registers ('is_unavailable'); one query would change
+               a meaning; also found: 'qa/coverage/test-rv32i.sh' did not
+               link since the header restructure, its driver now includes
+               'stmt_identifier_impl.hpp' like 'main.cpp'
+       G.7. optional: 'start'/'finish' as template methods; one traits
+            struct for the constant getters
+    => order: A, B.1, B.3, B.2, D, E, C, F.1-F.6, G.1-G.6, then F.7; B.4,
+       E.5 and G.7 when the rest is done
+    => judged fine by the reviewers: 'classify_term', the passes of
+       'plan_steps', 'write_plan', 'assert_not_written_later', 'bulk_operands',
+       the split of 'stmt_call' into its classes, 'dry_run_ledger',
+       'definition_checks', 'access_path', 'assignment_flow', the register
+       pool and report, the rv32i variants, the jump optimizer
+    => done (2026-10-25): every step handled; G.7 done by round 14 J.6
+       (the target table) and round 15 H.1 (the lifecycle as template
+       methods); E.5 moved to its own item in 'etc/todo.txt'
+[x] hard: review round 12 and the refactors that remove its bug classes
+    (step 4, the plan); X (codegen, 41k programs) and B (sanitizer fuzz, 1.4M
+    runs) clean; bug history: r12 scratchpad bug-history.md
+    1. design: no undefined behavior through what a called body does
+       1.1. problem: the checks see what a statement names, not what a call
+            in it reads or writes; each check decides a call's effects
+            itself or not at all
+            1.1.1. C-1: argument order is not defined, 'f(arr[i], h(i))'
+                   with 'h' incrementing 'i' exits 10 inline and 20
+                   noinline; a bare name and an expression differ; the
+                   built-ins compile the count before the indexes
+            1.1.2. C-2: 'gx = k + gw()' with 'gw' writing 'gx' exits 11 on
+                   x86_64 and 2 on rv32i ('destination_is_clobbered_before_
+                   read' sees only the statement's reads)
+            1.1.3. C-3: 'i == h(i)' reads 'i' after 'h' wrote it, 'i + 0 ==
+                   h(i)' before ('resolve_cmp')
+            1.1.4. the open item "a call in a value written in parts reads,
+                   in its body, a part written before it" (below)
+            1.1.5. V-3, conservative: 'init(res)', 'res.set(v)' and 'foo
+                   res.a' count as a read of the whole place, "use of
+                   uninitialized variable 'res'"
+       1.2. decided (user, 2026-10-23): evaluation is left to right; an
+            argument or operand that a later call in the same statement may
+            write is rejected, e.g. "argument 1 'i' may be written by 'h' in
+            argument 2, use a temporary variable"
+       1.3. design: 'body_uses' already records per body the parameters and
+            globals it reads and writes, callees included, but only the
+            shared-storage check of a call reads it; it becomes the one
+            effect summary every check reads:
+            1.3.1. the evaluation order check (1.2) for call arguments,
+                   operands of arithmetic and comparisons, and built-in
+                   operands, one function used by all of them
+            1.3.2. rule A and 'destination_is_clobbered_before_read' add
+                   the reads and writes of a call's body (C-2, 1.1.4)
+            1.3.3. definite assignment: a binding use gets "written whole
+                   before any read", so 'init(res)' assigns (V-3); needs a
+                   fixed point for noinline recursion
+            => rejected: an overlap check per site (C-1, C-2, C-3 each),
+               the same decision made three times
+            => rejected: loading a later-written operand into a register
+               first, it hides the order instead of defining it
+            => invariant: an accepted statement gives one result whether
+               its calls are inline or noinline, on every target
+            => plan the steps (mechanical move of 'body_uses' queries
+               first, then each check) before code, wait for go-ahead
+    2. undefined behavior catalog in 'etc/docs/README.md': one row per
+       class (aliasing, uninitialized read, evaluation order, bounds,
+       overflow, division, stack depth of noinline recursion, what each
+       opt-out option allows) with how it is handled (rejected or checked
+       at run time) and the tests that cover it; a review round checks the
+       rows
+    3. runtime oracle: random programs with side-effecting calls, each
+       compiled inline and noinline, on x86_64 and rv32i; every accepted
+       program must give one result (extends the brute force of the
+       aliasing check, README 3); a script under 'qa/coverage', ask first
+    4. refactors (user, 2026-10-23: stop the review rounds; remove whole
+       classes of bugs, the language is final; evaluation is left to right;
+       no undefined behavior); a bug history of about 190 bugs in 17
+       classes shows that each class is one decision made in several places
+       (the constant evaluators, merged into 'fold' on 2026-10-21, had about
+       40 bugs and none since); each step: tests of its bugs first, a
+       mechanical move, then the behavior change, both suites, measure
+       against the previous binary, pause for a commit
+       4.1. one way to quote source in a message (class Q, about 14 bugs, 3
+            broke the assembler): about 258 "'{}'" format sites, two helpers
+            ('statement::quoted_source', 'program::quoted_as_written'); a
+            character literal is quoted twice at about 11 of them (V-2, F-5)
+            => design: a type 'source_text' with a 'std::formatter' that
+               quotes once and escapes control bytes ('printable'); messages
+               format tokens through it, never "'{}'" around token text;
+               the formatter in 'compile_error.hpp' replaces both helpers
+            => also G-5: a type parameter in a message prints the type it
+               names
+            => rejected: escaping in 'compile_error' only, a message would
+               still quote by hand and double the quotes
+            => done (2026-10-23): a function 'in_quotes' (string, token,
+               statement) instead of a type, it reads like the other message
+               helpers; named so that ADL does not find 'std::quoted'; the
+               185 format calls rewritten by a script; control bytes were
+               already escaped where messages and comments are printed;
+               'qa/lint/check-messages.py' rejects quotes around a
+               placeholder; 'quoted_as_written' and 'quoted_source' gone;
+               G-5 fixed; tests 1595-1597
+       4.2. one name classifier (class N, about 40 bugs): "what this name
+            denotes here" is decided at about 27 sites outside 'toc'
+            ('decouple_impl.hpp', 'parse_lookahead.hpp', 'stmt_call.hpp',
+            'stmt_const.hpp', 'stmt_identifier.hpp', 'stmt_def_func.hpp',
+            'stmt_def_type.hpp', the built-ins), each with its own subset of
+            kinds, order and hiding
+            => design: 'toc::classify(name) -> name_kind', a variant {value,
+               constant, builtin type, user type, function, generic
+               function, built-in function, literal}; it owns the hiding
+               rules of 'scope_stack::lookup' (visible globals, a later
+               constant, a value hiding a type); the parse sites ask the
+               kind they need through 'expect_value', 'expect_callable',
+               'expect_array', which give one message per wrong kind ("'int'
+               is a type, not a value")
+            => removes: G-3 (point fix done in 'decouple_impl.hpp', test
+               1594), G-6, F-2, F-3, F-4, C-5
+            => invariant: a name gives the same verdict in every position
+               that asks the same kind
+            => rejected: more predicates in 'parse_lookahead.hpp', the
+               current structure
+            => done (2026-10-23): 'classify_term(tc, tk, tz) -> term' in
+               'parse_lookahead.hpp' (it needs the character after the
+               name, so not in 'toc'): one 'term_kind' per form (literal,
+               built-in function, conversion, built-in type, array literal,
+               record literal, constructor call, record type, call, generic
+               call, value, function name, keyword, unknown); the expression
+               operand, the statement start, the destination literals, the
+               deduction lookahead and the arrays of the built-ins
+               ('stmt_identifier::parse_array_argument') read it; the
+               predicates 'is_generic_call', 'is_type_name_followed_by',
+               'is_array_literal', 'is_constructor_call',
+               'is_record_literal', 'is_bare_record_type',
+               'names_integer_type' and 'stmt_call::is_unknown_name' gone;
+               fixed F-3, C-5, G-6 (a method takes no type arguments, its
+               own check in the method call), F-2 (a literal with a path is
+               rejected in 'resolve_literal_or_empty'); G-3 holds without
+               its point fix; F-4 moves to 4.3, whose parse of the size as
+               an expression classifies the name; tests 1598-1603
+       4.3. array sizes through 'fold' (residual of class K, about 5 bugs):
+            'stmt_const' is a second evaluator with its own unary ops and a
+            literal or name only (R7 F-2, R9 F-2, R10 F-2, R12 F-4)
+            => design: the size is parsed as an expression at the default
+               type and valued by 'fold_checked'; names classified by 4.2;
+               type field sizes use the same function
+            => invariant: one evaluator for every compile-time value
+            => regression (found 2026-10-23 by 'test-cli.sh', address
+               range): on rv32i a size folds at 'i32', so 'dat big =
+               i8[3000000000]' is rejected, the target accepts data up to
+               the address range; fix: fold a size at 'i64', a size counts
+               storage and is no value of the program, as 'stmt_const' did;
+               then restore 0734 and 0829 and remove the '.rv32i.out' files
+               of 0737-0739, 1322, 1323 and 1605
+               => done (2026-10-23): the size is parsed at the default type
+                  like an index and folds at 'i64'; 'array_length' folds at
+                  any width at least its own (it folded at the default type
+                  only, its comment said "a narrower width stays unfolded");
+                  0734, 0829 restored, the '.rv32i.out' files gone except
+                  1605's ('i32' is the default type on rv32i); no change of
+                  code on any target
+            => done (2026-10-23): 'stmt_const' replaced by 'stmt_array_size'
+               in 'expr_any.hpp', an 'expr_any' at the default type parsed
+               like an index and valued by 'constant_value'; the type field
+               reads it too; a size is any constant expression ('i8[n * 2]',
+               'i8[array_length(b) + 1]'); a name gives the verdict it gives
+               as an index (F-4); on rv32i a size of 2^31 or more is a
+               constant that does not fit 'i32', like an index (tests
+               0734, 0829 use 'i32' elements to keep reaching the address
+               limit; rv32i outputs of 0737-0739, 1322, 1323); a function
+               name as a value says "'f' is a function, not a value" in
+               'ident_resolver::resolve' (was "cannot resolve identifier");
+               tests 1604-1607, 1571 now accepted
+       4.4. one written-part plan (class W, about 15 bugs, 4 silent wrong
+            values): the order in which a literal writes its parts is
+            decided by 'compile_field_list' and 'zero_remaining_elements'
+            and again by 'list_written_parts', which misses the zero fill
+            (V-1: 'q = {{1}, q.a[3]}' reads 0); a scalar in-place write is
+            decided by predicates apart from the emit
+            ('destination_is_clobbered_before_read' in 'expr_arith.hpp',
+            the one in 'expr_bool.hpp', 'statement::reads_destination')
+            => design: 'expr_type' builds once the list of parts in write
+               order, each a byte range and its value or "zero"; the
+               compile emits it, rule A checks it; 'expr_arith' and
+               'expr_bool' build their step list (in place or through a
+               scratch register) once, the compile emits it and the clobber
+               check reads it
+            => invariant: what is checked is what is emitted
+            => rejected: adding the zero fill to 'list_written_parts', the
+               order stays decided twice
+            => steps (2026-10-23), the literal half first, the scalar half
+               (step list of 'expr_arith', 'expr_bool') planned after it:
+               4.4.1. tests of V-1, each reads 0 today: an array field
+                      'q = {{1}, q.a[3]}', a record field 'o = {{1},
+                      o.i.y}', a zero field 'o = {{}, o.i.y}', an array of
+                      records 'ps = {{1}, {ps[0].y}}', an array of records
+                      in a field 'q = {{{1}}, q.ps[1].x}'
+               4.4.2. the plan: 'written_part' becomes a variant of
+                      'value_write' {item, path}, 'bytes_write' {constant
+                      bytes or a string, path} and 'zero_fill' {path of the
+                      object, offset, size, alignment, comment label, the
+                      paths it covers}; the path is the steps (field or
+                      constant index) from the destination, applied by
+                      'destination::field' and 'element' at emit and by
+                      'add_field' and 'add_fixed_index' at the check; a
+                      part may carry the comment the emit writes before it
+                      ("copy field 'x'", "[1]")
+               4.4.3. one builder 'written_parts(tc, type, array count)' in
+                      'expr_any' and 'expr_type' (mutual recursion as
+                      today, in 'expr_type_impl.hpp') replaces
+                      'list_written_parts' and decides the order: padding,
+                      field, remaining fields; elements, remaining elements;
+                      a call, a copy or a constant array at once; a string
+                      then the rest zeroed; no zero fill for an array of
+                      unknown length; the "too many elements" check moves
+                      into it
+               4.4.4. one emitter 'emit_written_parts(tc, indent, parts,
+                      dst)' replaces 'compile_field_list',
+                      'compile_record_field', 'zero_remaining_elements',
+                      'compile_elements' and the zeroing of
+                      'compile_string'; a 'value_write' item is a leaf
+                      whose 'compile' does not plan again (a scalar, a call
+                      or a copy)
+               4.4.5. rule A ('assert_parts_not_clobbered') reads the same
+                      list, a zero fill adds the paths it covers; the five
+                      tests are rejected "'q.a[3]' is read but has been
+                      overwritten in the same statement"
+               4.4.6. measure: the emitted code and its comments are
+                      unchanged on every target
+               => rejected: a callback walk shared by both consumers, a
+                  list reads plainer and is what is checked and emitted
+               => rejected: a byte range model in rule A (writes go up in
+                  address order), the alias model is paths with run-time
+                  indexes, a second model would decide overlap twice
+               => order: tests and 4.4.2-4.4.4 as one mechanical step with
+                  an unchanged rule A (the list then also holds the zero
+                  fills, rule A skips them), then 4.4.5 as the behavior
+                  change
+            => 4.4.2-4.4.4 done (2026-10-23): 'write_step' {part_location,
+               action, covered} in 'expr_type.hpp', 'emit_write_plan';
+               comment lines are steps too, so the emitted code and its
+               comments are unchanged on every target; a zero fill covers
+               nothing yet; the "too many elements" and string size checks
+               moved into the builder
+            => 4.4.5 done (2026-10-23): a zero fill covers the unlisted
+               fields or one constant range of elements, a new
+               'path_step' kind 'index_range' (one path per element ran
+               out of memory for 'i8[3000000000]', test 1526); V-1 fixed in
+               its five forms, tests 1608-1612; 1613: a zero fill after the
+               read is accepted
+            => 4.4.6 plan, the scalar half: 'expr_arith::compile' asks
+               'destination_is_clobbered_before_read' about 'exprs_', while
+               the emit runs 'plan_steps', whose passes merge constants and
+               may move a leading constant before the first element
+               ('lead_with_constant'); the check is right today only
+               because each moved element also fails the 'exprs_' test
+               => design: 'compile' builds 'plan_steps(tc, dst)' once; the
+                  check reads those steps (the first step's element unless
+                  it is a plain name or literal, then every later step's
+                  element) and the in-place emit ('do_compile') takes the
+                  same steps; a scratch register destination plans its own
+                  steps, its width may differ and nothing is clobbered there
+               => 'expr_bool::compile' keeps its rule: any read of the
+                  destination goes through a scratch register, it has no
+                  order to decide
+               => invariant: the steps checked are the steps emitted in
+                  place
+               => done (2026-10-23): 'compile_steps' emits the steps that
+                  'compile' planned and checked; verdicts unchanged; the
+                  check is now exact where the passes move constants to the
+                  end: 'b = 2 + b' is 'b + 2', compiled in place ('add
+                  qword [rbp], 2'), 2 instructions less in tests 0482 and
+                  0589 on x86_64; '0589.x86_64.folds' updated, and
+                  '0671.x86_64.folds', stale since an earlier change of the
+                  register of 'array_copy'
+            => 4.4 done (2026-10-23)
+       4.5. a generic definition holds its whole signature (class G, about
+            12 bugs): what a generic method of a generic type declares lives
+            only in its per-instance copies ('generic_method_info' has no
+            type parameters, 'skip_signature' reads the head a second time),
+            so the definition rules run per instance
+            => design: the definition records type parameters, parameters
+               and result once; every rule on the definition (hiding, names
+               of its own signature, constructor rules) runs there once;
+               an instance only binds arguments
+            => removes: G-1, G-2, G-4, the uninstantiated footer missing
+               'box.f', the 'skip_signature' second reader
+            => invariant: a definition is accepted or rejected whether or
+               not it is instantiated
+            => state (2026-10-23): G-1 open (a method type parameter 'U' of
+               a generic type without an instance is not checked against a
+               later 'var U'); G-2 open ('func f<x type>(x x)' accepted when
+               bound to a user type, "'x' names the built-in type 'i8'"
+               when bound to a built-in); G-4 open; the usage report lists
+               'box.f' only when 'box' has an instance
+            => cause: 'generic_method_info' keeps no signature; its own type
+               parameters exist only in the 'generic_func_info' each
+               instance of the type makes, so with no instance neither the
+               end-of-parse check ('generic_registry::param_tokens') nor the
+               report sees them; 'skip_signature' reads the signature for
+               the checks and 'read_signature_types' reads it again for the
+               deductions
+            => steps:
+               4.5.1. mechanical: 'generic_signature' in 'generics.hpp' {own
+                      type parameters, parameters (name, type name), result
+                      name and type}, read once at the definition by one
+                      reader that replaces 'skip_signature' and
+                      'read_signature_types'; 'generic_method_info' and
+                      'generic_func_info' hold it ('param_tks' becomes its
+                      type parameters); 'define_func' and the deductions
+                      take it; no change of verdict or code
+                      => done (2026-10-23): 'read_signature' in
+                         'stmt_def_func_generic', no change of output on any
+                         target, also for the round 12 G probes
+               4.5.2. one rule function at the definition,
+                      'assert_generic_signature': the hiding checks of the
+                      type parameters (as today), the receiver parameters
+                      of a method (as today), G-2: a type parameter is not
+                      named like its function or method, a parameter or the
+                      result, "type parameter 'x' is named like the
+                      parameter 'x' at 1:15, use another name"; G-4: 'self'
+                      outside a method gets the message of a function
+                      without type parameters, "result 'self' requires a
+                      constructor 'type.name'", before the type parameter
+                      rule
+               4.5.3. G-1: 'param_tokens' takes the type parameters from
+                      the definitions (generic functions and generic
+                      methods), not from the per-instance functions
+               4.5.4. the report lists a generic method with type
+                      parameters of its own until an instance of it is
+                      made, with or without an instance of its type
+               => tests: G-1 (no instance of the type), G-2 (function
+                  name, parameter, result; bound to a user type and to a
+                  built-in), G-4, the report of 'func box.f<U type>' without
+                  an alias of 'box'
+               => rejected: running the rules on each instance and caching
+                  the verdict, the verdict would still depend on whether an
+                  instance exists
+            => 4.5.2-4.5.4 done (2026-10-23): 'assert_generic_signature'
+               runs the rules once in 'read_signature'; 'self' outside a
+               method shares 'func_head::assert_receiver_for_self' with
+               other functions; 'param_tokens' and the report read the
+               definitions; G-1, G-2, G-4 fixed, tests 1614-1619, 0851 and
+               'test-cli.sh' list 'list.find'
+            => 4.5 done (2026-10-23)
+       4.6. one reachability fact (class R): whether a statement always
+            leaves is known neither to the block compile (C-4: code after
+            an always taken 'return' is compiled and recurses) nor to the
+            return check (open item "the return check ignores constant
+            conditions")
+            => design: that item's 'constant_result' at parse time plus
+               'statement::always_leaves()', read by 'trace_assignment' and
+               by the block compile, which stops after it
+            => unsafe as written (2026-10-23): asked after the compile of a
+               statement, 'always_leaves(tc)' resolves names of inner blocks
+               in the outer scope, e.g. 'if c { var n = 5  if n == 0 return
+               }' in an inlined 'f(0)' with parameter 'n' would skip code
+               that runs; design B: one reachability class (a path ends,
+               branches merge, a loop reopens) driven by 'trace_assignment'
+               with parse-time constants and by the compile with what each
+               branch emitted; one chain rule in 'stmt_if'; the compile
+               asserts a parse-time result
+            => moved after 4.10 (2026-10-23): class R only rejects too much,
+               no undefined behavior; 4.7, 4.8 and 4.10 have miscompiles
+            => done (2026-10-23): design B without a class of its own, the
+               reachability of the trace stays in 'assignment_flow', of the
+               compile a flag of the function frame ('toc::is_path_open'),
+               an inlined call has its own frame so nothing is saved;
+               'return', 'break', 'continue' and 'exit' close it, a loop and
+               a 'foo' open it after their end, a block stops at a closed
+               path; 'stmt_if' joins its branches by one chain rule ('runs',
+               'ends_chain') on the results of the compile and, in the
+               trace, on the conditions known at the parse
+               ('stmt_if_branch::parse_constant'), the compile asserts that
+               it agrees; the compile takes the results of its branches, not
+               'expr_bool::constant_value', which stops at the first unknown
+               element ('x == 2 or true' compiles to true) and must not fold
+               more, 'h() or true' calls 'h'; C-4 fixed, 0870 passes a
+               variable now; tests 1645-1649; the code after an always
+               taken 'return' of an inlined call is gone (0465, 0475, 0595)
+       4.7. one place view (class P, about 15 bugs, 2 miscompiles): "is this
+            node storage read or passed in place" is decided by combined
+            predicates that ignore part of the syntax: 'is_name_or_literal'
+            (28 uses, "'-x' is one too"), 'name_or_literal' (77),
+            'is_expression', unary-op tests, 'is_computed_value' and
+            'is_copied_value' in 'stmt_call.hpp'
+            => design: 'statement::as_place() const ->
+               std::optional<place>', 'place' is {root token,
+               'access_path', index nodes}; empty for unary ops, a computed
+               value, a call, a method path, a literal or a constant; every
+               by-reference site asks it (call arguments, io and sector
+               buffers, 'array_copy', 'arrays_equal', 'array_length', 'foo',
+               comparison sides); everything else is a value through 'fold'
+               or the compile
+            => invariant: storage is read or passed in place only through a
+               'place'; a node with ops cannot produce one
+            => check first: 'as_identifier' (2026-10-19) stopped because
+               'identifier' also serves constants; a place excludes them
+            => state (2026-10-23): about 40 sites ask "storage in place"
+               through 'is_name_or_literal', 'is_bare_name_or_literal',
+               'is_expression' plus unary ops, 'is_computed_value' and
+               'is_copied_value'; they disagree: '(x)' is the variable for
+               'read', 'write', an instance comparison, a 'mut' argument
+               ('g((a))' writes 'a') and an unsized array argument, but
+               "expected an identifier" for 'array_copy', 'array_length',
+               'arrays_equal' and "a value in parentheses is a number" for
+               an instance argument and an array copy; 'g(-a)' to 'mut' is
+               rejected; a constant passes each predicate and each site
+               adds its own 'is_var' check
+            => decided (user, 2026-10-23): parentheses that group nothing
+               are an error, "parentheses around a single value group
+               nothing, write 'x'"; '(x + 1)' around a whole value stays
+               allowed; so '(x)' never reaches a site
+            => 4.7.0 done (2026-10-23): 'expr_arith::assert_parentheses_group'
+               at the ')' of an enclosed list with one element without unary
+               ops ('is_first_plain_' recorded at the parse);
+               'expr_bool::assert_parentheses_group' for one condition
+               without a comparison, a 'not' or a connective; 30 tests
+               rewritten without the redundant parentheses or aimed at the
+               new error (1417, 1418, 1501), their code unchanged where the
+               parentheses were incidental; constant conditions such as
+               '(true)' now fold, 1 to 9 instructions less in 0063-0459;
+               tests 1620-1627; the tutorial says so
+            => design:
+               1. syntax: one virtual 'statement::place_path() const ->
+                  const stmt_identifier*', the identifier a node is when it
+                  is a bare place: 'stmt_identifier' itself unless it is a
+                  literal or a method path; 'expr_any', 'expr_arith' (one
+                  element, no unary ops, not enclosed), 'expr_bool' (a
+                  shorthand of one name) and 'expr_type' (a copy) forward;
+                  null for every other node
+               2. meaning: 'as_place(const toc&) -> std::optional<place>',
+                  'place' {the identifier, its 'ident_info'}, empty unless
+                  the name resolves to a variable, so a constant or a
+                  literal is never a place
+               3. every by-reference site asks 'as_place': call arguments
+                  ('argument_target', the binding of 'mut' and arrays,
+                  'is_instance_temporary'), 'read', 'write', the sector
+                  buffers, 'array_copy', 'array_length', 'arrays_equal',
+                  'foo', instance and array comparison sides, the copy of
+                  an instance or an array; one message per kind where a
+                  place is required ("'-a' is not a variable, ...")
+               4. remove 'is_bare_name_or_literal', 'is_computed_value',
+                  'is_copied_value' and the 'is_var' checks after them;
+                  'is_name_or_literal' and 'name_or_literal' stay only for
+                  the value sites (the operand of arithmetic, constants,
+                  messages) or go where 'as_place' covers them
+            => steps: tests of each form first ('(x)', '-x', a constant, a
+               literal, a method path, a call) at each site; a mechanical
+               step adding 'place_path' with an assert that it agrees with
+               the old predicates where they agree; then the sites one
+               file at a time, each a behavior step where a verdict changes
+            => invariant: storage is read or passed in place only through a
+               'place', and every site gives the same verdict for a form
+            => rejected: a fix per site (the history: 15 bugs in 9 rounds)
+            => done (2026-10-23): 'statement::place_path' with overrides in
+               'stmt_identifier', 'expr_any', 'expr_arith', 'expr_bool',
+               'expr_bool_op' and 'expr_type'; 'place' and 'as_place'
+               (declared in 'statement.hpp', defined after
+               'stmt_identifier'); the sites of 'read', 'write' and the
+               sector buffers, the instance and array comparison, the 'bool'
+               array of a built-in, the 'mut' argument, the shared-storage
+               references, the uses of a recursive call and the array
+               argument ask it; 'is_bare_name_or_literal' and
+               'is_copied_value' gone; no change of output on any target, a
+               matrix of forms (unary op, constant, literal, method path,
+               call) at each site gives the same verdict as before
+            => left to 4.8: 'bind_argument' and its 'is_computed_value'
+               (two sites), the argument modes are built on 'as_place'
+            => stays: the value sites (an operand of arithmetic or of a
+               comparison read with its unary ops, constants, messages) use
+               'is_name_or_literal' and 'is_expression', they ask "a value
+               or a name", not "storage in place"
+       4.8. one argument plan (class A, about 10 bugs, inline and noinline
+            verdicts differ): argument passing is decided by 'bind_argument'
+            (inline) and by 'assert_argument', 'call_kind' and the
+            temporaries (noinline)
+            => design: the parse of a call gives each argument one mode
+               {place, computed value, constant, temporary instance} and its
+               type verdict; inline binding and the noinline call switch on
+               the mode; the writable, shared-storage and type checks read it
+            => invariant: inline and noinline see the same mode and type
+               verdict for an argument
+            => bug (2026-10-23): 'f(y)' with 'f(x i16)' and 'y' an 'i8'
+               parameter of an inlined caller bound to a register (its call
+               passed 'a + 1') is rejected when 'f' is inlined, "expected
+               type 'i16' for parameter 'x', got 'i8'", and accepted when
+               'f' is 'noinline': the noinline call compiles 'y' into a
+               temporary of 'i16', which widens; with 'g(a)' instead, 'y'
+               names storage and both reject it
+            => steps:
+               4.8.1. mechanical: 'call_site::argument_plan' {the place, or
+                      an instance temporary, or a value} made by one
+                      'plan_argument' from 'as_place'; 'needs_temporary' is
+                      "no place and not an array"; 'bind_argument' splits
+                      on the plan ('bind_place': reference or storage;
+                      'bind_value': the expression, folded or in a register,
+                      a constant, a name bound to a register, a name with
+                      unary ops); 'is_computed_value' and the
+                      'is_reference' test go; no change of output
+               4.8.2. one type verdict, 'call_site::assert_argument_type',
+                      today's 'assert_binding_type' (a name or a typed
+                      constant has the parameter's type, an untyped
+                      constant is checked by its value, a computed value by
+                      its compile), run by 'stmt_call::compile' for each
+                      argument before the inline or noinline call; the
+                      type test of 'noinline_call::assert_argument' becomes
+                      an assert; the bug above is rejected in both
+            => 4.8.1 done (2026-10-23): 'argument_plan', 'plan_argument',
+               'bind_place', 'bind_value'; 'is_computed_value' gone, the
+               binding type check asks 'place_path'; no change of output,
+               also for the 342 round 12 probes of calls, values and
+               generics
+            => 4.8.2 done (2026-10-23): 'call_site::assert_argument_types'
+               in 'stmt_call::compile' before the inline or noinline call;
+               'assert_binding_type' gone, 'noinline_call::assert_argument'
+               asserts; the bug is rejected in both, tests 1628, 1629; no
+               other output changes
+            => 4.8 done (2026-10-23)
+       4.9. dry runs as one state value (class D, about 11 bugs, verdicts
+            depend on call order or leak after a failure): what a version or
+            dry run may change is restored by hand-written lists
+            ('machine::version_state', 'toc::dry_run_scope'); 'reached_' is
+            saved by neither; 'dry_run_ledger' is written during the dry run
+            => design: one 'compile_state' value holds all of it; one scope
+               saves and restores it; caches are written only on commit
+            => invariant: a field added to the state is restored by
+               construction; a failed dry run leaves nothing
+            => evaluated (2026-10-23): the state is already grouped, the
+               machine's in one 'version_state' restored by
+               'version_scope', the dry run's in 'toc' by 'dry_run_scope';
+               'reached_' is marked in a dry run on purpose (its body was
+               checked), the uncalled check takes its list before it runs;
+               a version adds no string constant twice (probed); the
+               ledger keeps no height of a failed dry run either: an error
+               out of a dry run is a 'source' error ('emit_discarded'),
+               which nothing drops, and a dry run starts from the registers
+               of a noinline body, so the version around it cannot run out
+               inside it
+            => done (2026-10-23): an assert that a kind is measured once and
+               a note why the height 0 never outlives a failed dry run; the
+               try/catch first added for it was unreachable and is removed
+               (corrected during 4.13)
+            => rejected: one 'compile_state' value over 'machine' and
+               'toc', the machine compiles versions without knowing 'toc'
+               and the two scopes already restore their own state
+       4.10. one effect summary (class E): item 1 above, 'body_uses' read by
+             every check; removes C-1, C-2, C-3, V-3 and the open "a call in
+             a value written in parts" item
+             => step 0: one effect list per statement: a statement states
+                its reads and writes once, in evaluation order ({place,
+                read, write whole, write part}); 'visit_reads',
+                'trace_assignment' and 'record_use' become consumers of it;
+                today 'stmt_call', 'stmt_builtin_io' and
+                'stmt_builtin_array_copy' record writes for 'body_uses' but
+                not for definite assignment
+             => the evaluation order check reads the argument modes of 4.8
+             => invariant: aliasing, definite assignment and the body
+                summary cannot disagree; an accepted statement gives one
+                result whether its calls are inline or noinline, on every
+                target
+             => state (2026-10-23, x86_64): 'f(arr[i], h(i))' with 'h'
+                incrementing 'i' is accepted (exit 10, must be rejected);
+                'gx = k + gw()' with 'gw' writing 'gx' exits 11 (left to
+                right gives 1, the in-place compile copies 'k' into 'gx'
+                before 'gw' writes it); 'i == h(i)' exits 2 (left to right
+                gives 1, 'i' is read after 'h' ran); the same inline and
+                noinline
+             => facts: a function or a method is defined before its calls,
+                so at compile time every callee's 'body_uses' is complete;
+                only the bindings of a recursive call are partial (the fixed
+                point of 1.3.3); a call node's 'visit_reads' reports its
+                arguments, not what its body reads or writes
+             => steps (step 0 above, the effect list of every statement,
+                is narrowed to what the checks read: the reads and writes
+                of an expression, where only a call or a built-in writes):
+                4.10.1. the effects of a call: 'stmt_call::visit_reads'
+                        also reports what the body reads, the globals and
+                        the parameters mapped to their argument places; a
+                        new 'statement::visit_writes' reports the writes of
+                        an expression: a call's globals and 'mut' argument
+                        places from 'body_uses', the buffer of 'read'; rule
+                        A and 'reads_destination' then see a call's body
+                        reads, which fixes the open item "a call in a value
+                        written in parts" and 'gx = k + gr()' with 'gr'
+                        reading 'gx'
+                4.10.2. one evaluation order check,
+                        'assert_not_written_later(tc, operands)': an
+                        operand that a later operand of the same list may
+                        write is rejected, "argument 1 'arr[i]' may be
+                        written by 'h(i)' in argument 2, use a temporary
+                        variable"; the lists: the arguments of a call and of
+                        a built-in, the elements of an arithmetic list, the
+                        two sides of a comparison; not across 'and' and
+                        'or', each side is computed before the next (C-1,
+                        C-3)
+                4.10.3. the destination: 'destination_is_clobbered_before_
+                        read' and the 'expr_bool' compile also count a later
+                        element that writes the destination, so 'gx = k +
+                        gw()' goes through a scratch register (C-2); rule A
+                        rejects a part whose call writes a part written
+                        before it, e.g. 'p = {1, gw()}' with 'gw' writing
+                        'p.x'
+                => tests per step, inline and noinline, x86_64 and rv32i;
+                   the measure shows code changes only where a scratch
+                   register is now needed
+                => 4.10.1 done (2026-10-23), with the destination part of
+                   4.10.3: 'call_effect' and 'statement::visit_call_effects'
+                   (forwarded by the nodes that hold expressions); a call
+                   reports the globals of its 'body_uses' and, as written,
+                   the whole storage of each argument of a 'mut' parameter
+                   (the per-parameter rule of a recursive call, it needs no
+                   fixed point); 'read' reports its buffer;
+                   'reaches_destination' (was 'reads_destination') and rule
+                   A count them; C-2 fixed on both targets ('gx = k + gw()'
+                   exits 1), a call reading the destination reads it first
+                   ('gx = k + gr()' exits 6), "the call of 'gx' reaches 'g',
+                   which has been written in the same statement"; tests
+                   1630-1635; no change of output of the suites
+                => 4.10.2 done (2026-10-23): 'list_operand' and
+                   'assert_not_written_later' in 'statement.hpp': the reads
+                   of an earlier operand (a written place, the buffer of
+                   'read' or the destination of 'array_copy', reads only its
+                   indexes) against the writes of the calls in a later one;
+                   asked by the arguments of a call and of 'read', 'write',
+                   'array_copy' and 'arrays_equal', the elements of an
+                   arithmetic list and the sides of a comparison; C-1, C-3
+                   rejected inline and noinline, "'i' may be written by the
+                   call of 'h' in a later argument, use a temporary
+                   variable"; 1126 rewrote its 'arrays_equal' count to copy
+                   into another array (it compared the array its count
+                   wrote), its error unchanged; tests 1636-1643
+                => 4.10.3 done (2026-10-23): rule A counts a write by a
+                   call as well as a read since 4.10.1, 'p = {1, gw()}' with
+                   'gw' writing 'p.x' is rejected, test 1644
+                => later: definite assignment from the writes of a call
+                   (V-3, conservative, no undefined behavior) and the fixed
+                   point for recursive bindings
+                => rejected: loading a later-written operand into a register
+                   first (decided 1.2, it hides the order)
+       4.11. decide after measuring:
+             4.11.1. fixed-register constraints before operands (class X,
+                     about 7 bugs, open R7 B-1): an operation that needs
+                     named registers declares its clobber set first and the
+                     operands compile under an exclusion; changes register
+                     choice, so measure and ask first
+             4.11.2. noinline heights and recursion from the call graph
+                     after the parse; may be covered by the fixed point of
+                     4.10
+             => measured (2026-10-23): the premise of 4.11.1 is the code
+                today: an operation that needs named registers reserves them
+                ('alloc_named_register', 'reserve_named_register') before it
+                compiles its operands, and that is the cause of the class:
+                an operand that needs one of them is rejected, "register rcx
+                is always used by the operation at 8:5 ... compute the
+                operand with 'let'", e.g. 'array_copy(a, b, count << shift)'
+                (0727) and 'write(1, text, n / 2)' (1124) on x86_64; a named
+                register that holds a scratch value is rejected under
+                pressure, "cannot allocate register rdx because it holds a
+                scratch value" (0535, 0726, rv32i 0729); 10 test outputs
+                reject valid code this way, the verdict depends on the target
+             => proposed refactor (asked 2026-10-23): operands first, the
+                constraints at the operation: an operation compiles its
+                operands into ordinary scratch registers (the named ones stay
+                last resort), then at the instruction it saves the live
+                values its clobber set holds, moves the operands into the
+                named registers as one parallel move (a cycle through a free
+                register or 'xchg'), emits and restores; the version that
+                compiles an operand straight into its named register, as
+                today, is kept where it is free and no other operand needs
+                it, both measured by 'emit_most_efficient'; one helper per
+                backend for the parallel move and the save, the built-ins
+                and the division, shift and copy operations declare their
+                register needs as data
+             => removes: "always used by the operation" and "cannot allocate
+                register ... scratch value"; stays: running out of scratch
+                registers as a whole, and R7 B-1 (the address registers of
+                noinline arguments held until the frame is written, its own
+                refactor: write each slot when its address is computed)
+             => 4.11.2: not needed, 'dry_run_ledger' measures the heights at
+                the calls; the order dependence of a noinline cycle near the
+                limit stays documented
+             => decided (user, 2026-10-23): no operands-first form, it holds
+                a scratch register where the direct form needs none; a
+                register conflict stays a compile error that tells to make a
+                temporary with 'let': "register rcx is always used by the
+                operation at 8:5 ... compute the operand that needs it with
+                'let' before that operation" (as it was) and "cannot allocate
+                register rax because it holds a scratch value allocated at
+                18:73, compute a part of the expression with 'let' before
+                it" (was "simplify the expression"), 0535, 0726, 0729
+             => 4.11 done (2026-10-23)
+       4.12. discarded: definition checks without a pseudo-call (class U),
+             the user decided on 2026-10-21 that the strict verdict is fine;
+             label uniqueness asserted on both targets (class L), no label
+             bug since 'create_unique_label'
+       4.13. then items 2 (undefined behavior catalog) and 3 (runtime
+             oracle) check that no class is left
+             => item 2 done (2026-10-23): chapter 8 of 'etc/docs/README.md',
+                the catalog (class, example, how, option, tests), the
+                behavior without the run-time checks measured on x86_64 (a
+                write past an array goes on, a division by zero traps, a
+                shift count is masked, an overflow wraps, also a constant
+                one) and the known limits
+             => item 3 done (2026-10-23, user chose a new fuzzer):
+                'qa/fuzz/fuzz-effects.py', a python model of calls writing
+                globals, a field of a global record and 'mut' arguments next
+                to the other operands of a statement (arguments, a list of
+                '+' and '-', comparison sides, parts, a global destination),
+                left to right, with the rejections in the order the compiler
+                finds them (a list's order, then each operand; a call's
+                shared storage, then its arguments); every program inlined
+                and 'noinline', both targets, '--checks=noub'; about 74%
+                accepted; 1200 programs clean; with 'assert_not_written_later'
+                turned off it reports 'effects-accept' on both targets; in
+                'fuzz-all.sh' and the fuzz README
+             => the fuzzers were checked against the parentheses rule of
+                4.7.0: 'fuzz-calls.py' and 'fuzz-programs.py' put single
+                values in parentheses, 'fuzzlib.group' adds them only around
+                an operation; the other model fuzzers, the alias fuzz,
+                'fuzz-constructs' and 'fuzz-reject' run clean
+             => decided (user, 2026-10-23): the defaults stay ('alias' only),
+                the goal holds under 'noub', said in '--help' and chapter 8
+             => 4.13 done (2026-10-23)
+    5. done outside the refactors: F-1, a raw NUL in a literal broke the
+       x86_64 assembly; 'machine::comment' passes the text through
+       'printable' like messages (test 1593)
+    => done (2026-10-25): items 1-5 handled, the refactors of item 4
+       each with its note
 [x] easy: an inlined call whose end the compile does not reach (e.g. a
     'loop' whose 'break' folds away for a constant argument) does not close
     the path of its caller, the code after the call is compiled though it
@@ -4386,7 +6901,7 @@
 [x] jump_optimizers test case 0006.baz should result in same number of
     optimizations of each type
 [x] clean up ai generated code in jump_optimizer
-    => almost assembler does less text processing and understannds the structure
+    => almost assembler does less text processing and understands the structure
        of branches an labels
     => merged into a base class that does the optimization with specializations
        for x86 and rv32i differences in syntax

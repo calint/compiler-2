@@ -226,7 +226,8 @@ class expr_arith final : public statement {
 
         token::source_to(os, open_paren_tk_);
 
-        statement::source_to(os); // whitespace
+        // note: an empty position, the first element prints the whitespace
+        statement::source_to(os);
         exprs_.at(0)->source_to(os);
         for (const auto [op_tk, e] :
              std::views::zip(op_tks_, exprs_ | std::views::drop(1))) {
