@@ -186,6 +186,17 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        D.4. ask, low confidence: the register trace frame opened by the
             function scope (T8), not by hand at four sites; the register
             report is the check
+       => D.4 done (2026-10-25, as recommended): 'toc::scope_entry' of a
+          function scope, while compiling, opens the trace frame named by
+          the scope with the call site token it is given, the kind from
+          'is_compiled_in_place'; the four 'register_trace_scope's go; the
+          scopes widen to cover what the frames covered: 'main' covers
+          'end_main', the new 'stmt_def_func::frame_scope' is entered by
+          'emit_noinline_body' and 'check_body' before the frame base and
+          the slot register are taken ('compile_frame_body' no longer
+          enters it); listings with '--report=registers' equal on both
+          suites; fuzz calls, methods, compiler, reject, generics, data
+          clean
     E. expressions
        E.1. one 'emit_operation' maps an operator to its machine call and
             check (E2); the five 'asm_op_*' wrappers go; the constant
@@ -334,6 +345,43 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             is_next_operator', each parser maps the text to its enum; the
             whitespace-only tokens and 'put_back_char' go;
             '--reproduce-source' of every test is the check
+       => F.8 plan (2026-10-25, recommended: plan first, it is a big
+          change; waits for go-ahead):
+          problem: an operator is read character by character four ways
+          ('expr_arith::peek_operator' and 'consume_peeked_operator',
+          'is_comparison_next' on a probe, 'expr_bool::
+          parse_comparison_operator' with 'put_back_char', 'unary_ops' with
+          'put_back_char' per character); its whitespace is kept in
+          separate tokens ('ws_before_ops_', 'ws_pre_op'/'ws_post_op',
+          'ws_pre_'/'ws_between_'), so the rule of README 7.2 (a node keeps
+          every token) does not hold for operators
+          design: 'tokenizer::next_operator() -> std::optional<token>' reads
+          the longest operator at the cursor with the whitespace before and
+          after, like 'is_next_char_token' (table: '<<' '>>' '<=' '>=' '=='
+          '!=' before the one-character ones); 'peek_operator_text()' for
+          the lookahead sites on a copy; each enum gets a text table beside
+          it ('arithmetic_operator', 'comparison_operator', the unary ops)
+          and a parser keeps the operator token and maps its text; a list
+          that ends puts the whole operator token back
+          ('put_back_token'), which already exists; 'source_to' writes the
+          kept tokens; the whitespace-only tokens, 'consume_peeked_operator',
+          'put_back_char', 'is_peek_char2' go, the character methods that
+          other sites still need stay
+          rejected: keep the characters and only share one reader per
+          parser, the whitespace tokens and the four techniques stay; a
+          full operator lexer pass before parsing, the parser decides by
+          context ('<' of a generic call, '-' unary or binary)
+          invariants: an operator token's text is one of its enum's table;
+          'next_operator' never splits '<<' or '<='; the parse consumes the
+          same characters as now, so every error stays at its token
+          tests: '--reproduce-source' equal on every test and the
+          fuzz-exprs spelling mode; listings and error output byte-equal on
+          both suites; the reject and compiler fuzzers; a lone '=' or '!'
+          keeps its message and location (a test each if none exists)
+          steps: 1 tokenizer reader and tables (no user); 2 'unary_ops';
+          3 'expr_bool'; 4 'expr_arith' with 'is_comparison_next' and
+          'parse_lookahead::continues_expression'; 5 remove the character
+          methods left unused; a pause for a commit after each
     G. statements
        G.1. 'stmt_if' speaks 'condition_result' only (S5); 'known_of' goes
        => G.1 done (2026-10-25): 'stmt_if_branch::parse_constant_' is a
@@ -418,10 +466,19 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           rv32i expected diffs of test 0006 moved by 2
        H.5. ask, low: the machine computes the padding gaps from the type
             (B7); 'max_padding_gaps_zeroed_one_by_one' leaves the interface
+       => H.5 done (2026-10-25, as recommended): 'padding_gap' in type.hpp,
+          'type::padding_gaps' (with 'append_gap'); 'machine::zero_padding'
+          takes the type, reads the threshold from the table and returns
+          early without gaps; 'expr_type::zero_padding' only calls it; the
+          accessor 'max_padding_gaps_zeroed_one_by_one()' goes; listings
+          equal
     asks: B.4 (file removal), D.4, F.8, H.5, and S8: the built-ins take a
     range two ways ('array_copy(a[1], b, n)' against 'read(fd, a, n, 1)');
     one spelling is a language change; recommended: keep both and say why in
     README
+    => S8 done (2026-10-25, as recommended): both kept, 'etc/docs/README.md'
+       7.9 says why (two arrays each with its start against one buffer whose
+       count and start are optional, so an element there is unclear)
     order: A, B.1-B.3, C, D.1-D.2, E, G, F.1-F.7, H.1-H.4, D.3, then the
     asks
     kept (reviewers, with reasons in r15): loop and 'foo' scopes built in

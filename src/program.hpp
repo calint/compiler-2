@@ -477,30 +477,18 @@ class program final {
     static auto compile_main(toc& tc, const stmt_def_func& func_main) -> void {
         machine& x{tc.machine()};
 
-        const machine::register_trace_scope trace_frame{
-            x,
-            token{},
-            std::string{reserved_names::main},
-            machine::frame_kind::inlined,
-        };
+        const toc::scope_entry main{tc, scope::main_func()};
 
         x.comment({}, 0, "");
 
         x.label(0, reserved_names::main);
 
-        bool reaches_end{};
+        func_main.compile_statements(tc, 0);
 
-        {
-            const toc::scope_entry main{tc, scope::main_func()};
-            func_main.compile_statements(tc, 0);
-
-            // the compile knows the conditions it folded, e.g. with constant
-            // arguments of an inlined call
-            reaches_end = tc.is_reachable();
-        }
-
-        // code after an 'exit' or 'return' on every path would never run
-        if (reaches_end) {
+        // code after an 'exit' or 'return' on every path would never run;
+        // the compile knows the conditions it folded, e.g. with constant
+        // arguments of an inlined call
+        if (tc.is_reachable()) {
             x.end_main();
         }
     }

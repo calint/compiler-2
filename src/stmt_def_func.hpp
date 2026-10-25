@@ -479,14 +479,7 @@ class stmt_def_func final : public statement {
 
         std::optional<compile_error> error{
             tc.dry_run([&] -> void {
-                machine& x{tc.machine()};
-
-                const machine::register_trace_scope trace_frame{
-                    x,
-                    token{},
-                    std::string{name()},
-                    machine::frame_kind::noinline_body,
-                };
+                const toc::scope_entry body{tc, frame_scope(tc, {})};
 
                 std::ignore = compile_in_frame(tc, indent, {});
             }),
@@ -516,14 +509,9 @@ class stmt_def_func final : public statement {
         assert(not is_inlined());
         assert(array_lengths.size() == array_param_count());
 
-        machine& x{tc.machine()};
+        const toc::scope_entry body{tc, frame_scope(tc, array_lengths)};
 
-        const machine::register_trace_scope trace_frame{
-            x,
-            token{},
-            std::string{name()},
-            machine::frame_kind::noinline_body,
-        };
+        machine& x{tc.machine()};
 
         x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
 
@@ -866,19 +854,14 @@ class stmt_def_func final : public statement {
         return array_lengths_path(array_lengths);
     }
 
-    // the body in the frame of the function; returns the size of the frame
+    // the body in the frame of the function, inside its 'frame_scope';
+    // returns the size of the frame
     [[nodiscard]] auto
     compile_frame_body(toc& tc, const size_t indent,
                        const std::span<const size_t> array_lengths,
                        const operand& slot_register) const -> size_t {
 
         machine& x{tc.machine()};
-
-        const toc::scope_entry body{
-            tc,
-            scope::noinline_func(name(), body_call_path(array_lengths),
-                                 x.frame_base_register()),
-        };
 
         add_constants(tc, indent + 1);
 
@@ -917,6 +900,18 @@ class stmt_def_func final : public statement {
         }
 
         return frame_size_bytes;
+    }
+
+    // the scope of the body in a frame of its own, entered before the frame
+    // base and the slot register are taken
+    [[nodiscard]] auto
+    frame_scope(toc& tc, const std::span<const size_t> array_lengths) const
+        -> scope {
+
+        const machine& x{tc.machine()};
+
+        return scope::noinline_func(name(), body_call_path(array_lengths),
+                                    x.frame_base_register());
     }
 
     // e.g. 'sum.len.4.8' for array lengths 4 and 8, 'sum' without lengths

@@ -78,6 +78,7 @@ For a reviewer:
     - [7.6 'toc' is one facade over the tables](#76-toc-is-one-facade-over-the-tables)
     - [7.7 One translation unit](#77-one-translation-unit)
     - [7.8 The first error ends the compile](#78-the-first-error-ends-the-compile)
+    - [7.9 A range of an array is spelled two ways](#79-a-range-of-an-array-is-spelled-two-ways)
 - [8. Undefined behavior: what is rejected and what is checked](#8-undefined-behavior-what-is-rejected-and-what-is-checked)
     - [8.1 The catalog](#81-the-catalog)
     - [8.2 Without the run-time checks](#82-without-the-run-time-checks)
@@ -1502,6 +1503,24 @@ like any other, so a dry run puts nothing back at an error
 ('toc::dry_run_call_kind').
 
 Cost: one error per run.
+
+### 7.9 A range of an array is spelled two ways
+
+'array_copy' and 'arrays_equal' take two arrays and one count, so each array
+says where it starts: 'array_copy(a[1], b, n)'. 'read', 'write' and the sector
+functions take one array and follow the system calls: the count and the start
+are trailing arguments that may be left out, 'read(fd, a, n, 1)', and without
+them the whole array (or one sector) is transferred. An element there, e.g.
+'read(fd, a[1])', would leave unclear whether it means one element or the rest
+of the array, so the io functions reject it and name the start argument
+('stmt_builtin_io::assert_buffer_path').
+
+Rejected: one spelling for both. A trailing start for the bulk functions needs
+one per array, and an element as the io buffer needs a count to say how far
+it reaches, which the io functions make optional.
+
+Cost: two range models in the code, 'bulk_operands' and 'stmt_builtin_io';
+the check of a constant range ('assert_constant_range') is shared.
 
 ## 8. Undefined behavior: what is rejected and what is checked
 

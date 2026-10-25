@@ -2870,15 +2870,26 @@ class toc final {
 
     // a scope of the scope stack while it lives, also when an error unwinds,
     // so a failed version or dry run leaves the scopes of its caller, e.g.
-    // 'const toc::scope_entry loop{tc, scope::loop(label)};'
+    // 'const toc::scope_entry loop{tc, scope::loop(label)};'; a function scope
+    // compiled is also a frame of the register trace, named by the function
+    // and called at 'call_site_tk', so the two stacks agree
     class scope_entry final {
         toc& tc_;
         // the scopes below this one, the scopes are left in stack order
         size_t depth_;
+        std::optional<::machine::register_trace_scope> trace_frame_;
 
       public:
-        scope_entry(toc& tc, scope scp)
+        scope_entry(toc& tc, scope scp, const token& call_site_tk = {})
             : tc_{tc}, depth_{tc.scopes_.all().size()} {
+
+            if (tc.is_compiling_ and scp.is_func()) {
+                trace_frame_.emplace(
+                    tc.machine(), call_site_tk, std::string{scp.name()},
+                    scp.is_compiled_in_place()
+                        ? ::machine::frame_kind::inlined
+                        : ::machine::frame_kind::noinline_body);
+            }
 
             tc_.scopes_.push(std::move(scp));
         }

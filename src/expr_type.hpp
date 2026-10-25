@@ -439,74 +439,12 @@ class expr_type final : public statement {
     }
 
     // a call writes the fields only, so the padding is zeroed before it and
-    // '==' can compare instances byte by byte; the backend decides whether
-    // gap by gap or the whole instance
+    // '==' can compare instances byte by byte
     auto zero_padding(toc& tc, const size_t indent, const type& dst_type,
                       const operand& dst) const -> void {
 
         machine& x{tc.machine()};
 
-        const std::vector<machine::padding_gap> gaps{
-            padding_gaps(dst_type, x.max_padding_gaps_zeroed_one_by_one()),
-        };
-
-        if (gaps.empty()) {
-            return;
-        }
-
-        x.zero_padding(tok(), indent, dst, dst_type.size_bytes(),
-                       dst_type.alignment(), gaps);
-    }
-
-    //
-    // statics
-    //
-
-    // the bytes from 'start' to 'end' are a gap unless there are none,
-    // 'alignment' is that of the instance
-    static auto append_gap(std::vector<machine::padding_gap>& gaps,
-                           const size_t start, const size_t end,
-                           const size_t alignment) -> void {
-
-        if (start == end) {
-            return;
-        }
-
-        gaps.push_back({
-            .offset{start},
-            .size_bytes{end - start},
-            .alignment{offset_alignment(start, alignment)},
-        });
-    }
-
-    // the bytes that no field covers, between the data ranges and after the
-    // last one; the first of them when there are more than 'max_count'
-    [[nodiscard]] static auto padding_gaps(const type& tp,
-                                           const size_t max_count)
-        -> std::vector<machine::padding_gap> {
-
-        // note: + 1 because a gap is between two ranges, so more than
-        //       'max_count' + 1 ranges give more than 'max_count' gaps
-
-        const size_t max_range_count{max_count + 1};
-
-        const std::vector<byte_range> ranges{tp.data_ranges(max_range_count)};
-
-        std::vector<machine::padding_gap> gaps;
-        size_t covered_bytes{};
-
-        for (const byte_range& r : ranges) {
-            append_gap(gaps, covered_bytes, r.offset, tp.alignment());
-            covered_bytes = r.offset + r.size_bytes;
-        }
-
-        // the last range of a stopped search may be incomplete
-        if (ranges.size() > max_range_count) {
-            return gaps;
-        }
-
-        append_gap(gaps, covered_bytes, tp.size_bytes(), tp.alignment());
-
-        return gaps;
+        x.zero_padding(tok(), indent, dst, dst_type);
     }
 };

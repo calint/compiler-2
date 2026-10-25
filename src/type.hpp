@@ -200,6 +200,15 @@ struct byte_range {
     }
 };
 
+// bytes of an instance that no field covers, from its start, e.g. the 3 B at
+// offset 1 of 'type r { a i8, b i32 }'; 'alignment' is known for the first
+// byte
+struct padding_gap {
+    size_t offset{};
+    size_t size_bytes{};
+    size_t alignment{};
+};
+
 // a type the source defines, or a built-in: an integer, the 'bool' that
 // machines treat differently from the integer of its size, or the 'void' of
 // no value
@@ -386,6 +395,36 @@ class type final {
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
 
+    // the bytes that no field covers, between the data ranges and after the
+    // last one; the first of them when there are more than 'max_count'
+    [[nodiscard]] auto padding_gaps(const size_t max_count) const
+        -> std::vector<padding_gap> {
+
+        // note: + 1 because a gap is between two ranges, so more than
+        //       'max_count' + 1 ranges give more than 'max_count' gaps
+
+        const size_t max_range_count{max_count + 1};
+
+        const std::vector<byte_range> ranges{data_ranges(max_range_count)};
+
+        std::vector<padding_gap> gaps;
+        size_t covered_bytes{};
+
+        for (const byte_range& r : ranges) {
+            append_gap(gaps, covered_bytes, r.offset, alignment_);
+            covered_bytes = r.offset + r.size_bytes;
+        }
+
+        // the last range of a stopped search may be incomplete
+        if (ranges.size() > max_range_count) {
+            return gaps;
+        }
+
+        append_gap(gaps, covered_bytes, size_bytes_, alignment_);
+
+        return gaps;
+    }
+
     auto set_name(const std::string_view name) -> void { name_ = name; }
 
     [[nodiscard]] auto size_bits() const -> size_t {
@@ -419,6 +458,22 @@ class type final {
     //
     // statics
     //
+
+    // the bytes from 'start' to 'end' are a gap unless there are none,
+    // 'alignment' is that of the instance
+    static auto append_gap(std::vector<padding_gap>& gaps, const size_t start,
+                           const size_t end, const size_t alignment) -> void {
+
+        if (start == end) {
+            return;
+        }
+
+        gaps.push_back({
+            .offset{start},
+            .size_bytes{end - start},
+            .alignment{offset_alignment(start, alignment)},
+        });
+    }
 
     // fields that touch each other form one range
     static auto append_range(std::vector<byte_range>& ranges,

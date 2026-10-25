@@ -123,8 +123,7 @@ struct target_description {
 //                  'has_indexed_addressing', 'can_lower_index_scale',
 //                  'is_stack_bounded',
 //                  'max_storage_bytes', 'has_sd_card', 'sector_size_bytes',
-//                  'foo_counter_in_memory',
-//                  'max_padding_gaps_zeroed_one_by_one', 'frame_base_register',
+//                  'foo_counter_in_memory', 'frame_base_register',
 //                  'variables_base_register', 'variables_base_past_vars_bytes'
 //   reports        'register_peak_report', 'separate_report', 'statistics';
 //                  the queries of the register report are private, for
@@ -277,15 +276,6 @@ class machine {
 
         // result register name, empty for 'exit' and the sector functions
         std::string_view result;
-    };
-
-    // bytes of an instance that no field covers, from its start, e.g. the 3 B
-    // at offset 1 of 'type r { a i8, b i32 }'; 'alignment' is known for the
-    // first byte
-    struct padding_gap {
-        size_t offset{};
-        size_t size_bytes{};
-        size_t alignment{};
     };
 
     // the registers allocated while it lives belong to the call it names in
@@ -1221,10 +1211,6 @@ class machine {
         target_assembler().label(indent, name);
     }
 
-    [[nodiscard]] auto max_padding_gaps_zeroed_one_by_one() const -> size_t {
-        return target_.max_padding_gaps_zeroed_one_by_one;
-    }
-
     [[nodiscard]] auto max_storage_bytes() const -> size_t {
         return target_.max_storage_bytes;
     }
@@ -1415,20 +1401,26 @@ class machine {
     // the padding of the instance of 'size_bytes' at 'dst', zeroed gap by gap
     // or as the whole instance, whichever the target emits smaller; the fields
     // are written over the zeroes after
+    // gap by gap or the whole instance 'dst' of 'dst_type'
     auto zero_padding(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const size_t size_bytes,
-                      const size_t alignment,
-                      const std::span<const padding_gap> gaps) -> void {
+                      const operand& dst, const type& dst_type) -> void {
+
+        const size_t max_gap_count{target_.max_padding_gaps_zeroed_one_by_one};
+
+        const std::vector<padding_gap> gaps{
+            dst_type.padding_gaps(max_gap_count),
+        };
 
         // note: a measured threshold, not 'emit_most_efficient': both forms
         //       would multiply the versions of the inlined calls around it,
         //       and an instance with thousands of gaps would cost compile time
 
-        if (gaps.size() > max_padding_gaps_zeroed_one_by_one()) {
+        if (gaps.size() > max_gap_count) {
             comment(src_loc_tk, indent, "zero instance for its padding: {} B",
-                    size_bytes);
+                    dst_type.size_bytes());
 
-            zero(src_loc_tk, indent, dst, size_bytes, alignment);
+            zero(src_loc_tk, indent, dst, dst_type.size_bytes(),
+                 dst_type.alignment());
 
             return;
         }

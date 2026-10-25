@@ -972,13 +972,7 @@ class inline_call {
                                              ret_jmp_label)
                        : scope::noinline_dry_run(call_.func->name(),
                                                  new_call_path, ret_jmp_label),
-        };
-
-        const machine::register_trace_scope trace_frame{
-            x,
             call_.tk,
-            std::string{call_.func->name()},
-            machine::frame_kind::inlined,
         };
 
         // an error found in the inlined body reports where it was called from,
