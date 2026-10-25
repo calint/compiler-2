@@ -57,7 +57,8 @@ class stmt_builtin_foo final : public statement {
         const std::string label{tc.create_unique_label(tok(), "foo")};
         const toc::scope_entry foo{tc, scope::foo(label)};
 
-        add_loop_names(tc, 0, src_loc_tk, array_info, operand{}, operand{});
+        add_loop_names(tc, 0, src_loc_tk, array_info, var_placement{},
+                       var_placement{});
 
         code_ = {tc, tz};
     }
@@ -156,14 +157,15 @@ class stmt_builtin_foo final : public statement {
     }
 
   private:
-    // 'e' is the element at the iterator, 'i' the counter and 'n' the array
-    // size, declared at the 'foo'; parsing registers them without iterator
-    // and counter registers; 'n' is a constant when the size is known, else
-    // a read-only variable that is never read at run time, see
+    // 'e' is the element, 'i' the counter and 'n' the array size, declared
+    // at the 'foo' and placed as 'element' and 'counter' say (the parse
+    // declares the names only); 'n' is a constant when the size is known,
+    // else a read-only variable that is never read at run time, see
     // 'ident_info::is_length_unknown'
     auto add_loop_names(toc& tc, const size_t indent, const token& src_loc_tk,
-                        const ident_info& array_info, const operand& iterator,
-                        const operand& counter) const -> void {
+                        const ident_info& array_info,
+                        const var_placement& element,
+                        const var_placement& counter) const -> void {
 
         // note: before 'e' is added, see 'foo_array'
         const std::optional<storage_path> array{foo_array(tc)};
@@ -179,16 +181,11 @@ class stmt_builtin_foo final : public statement {
                     array_info.is_read_only() ? read_only_cause::foo_element
                                               : read_only_cause::none,
                 },
-                .placement{
-                    iterator.is_empty()
-                        ? var_placement{}
-                        : var_placement{at_address_register{iterator}},
-                },
+                .placement{element},
                 .foo_array{array},
             },
             var_kind::var);
 
-        // an empty counter is a variable in memory
         tc.add_var(src_loc_tk, indent,
                    {
                        .name{"i"},
@@ -196,11 +193,7 @@ class stmt_builtin_foo final : public statement {
                        .src_loc_tk{tok()},
                        .shape{},
                        .read_only_why{read_only_cause::foo_counter},
-                       .placement{
-                           counter.is_empty()
-                               ? var_placement{}
-                               : var_placement{in_value_register{counter}},
-                       },
+                       .placement{counter},
                        .foo_array{},
                    },
                    var_kind::var);
@@ -287,20 +280,25 @@ class stmt_builtin_foo final : public statement {
 
         const bool counter_in_memory{x.foo_counter_in_memory()};
 
-        operand reg_counter;
+        if (counter_in_memory) {
+            add_loop_names(tc, indent, ident_.tok(), array_info,
+                           at_address_register{reg_iter}, var_placement{});
 
-        if (not counter_in_memory) {
-            reg_counter = x.alloc_scratch_register(
-                tok(), indent, tc.builtins().default_type());
-
-            held.add(reg_counter);
+            return tc.resolve_declared(tok(), "i").operand();
         }
 
-        add_loop_names(tc, indent, ident_.tok(), array_info, reg_iter,
-                       reg_counter);
+        const operand reg_counter{
+            x.alloc_scratch_register(tok(), indent,
+                                     tc.builtins().default_type()),
+        };
 
-        return counter_in_memory ? tc.resolve_declared(tok(), "i").operand()
-                                 : reg_counter;
+        held.add(reg_counter);
+
+        add_loop_names(tc, indent, ident_.tok(), array_info,
+                       at_address_register{reg_iter},
+                       in_value_register{reg_counter});
+
+        return reg_counter;
     }
 
     // the root of the iterated array and the bytes of it that 'e' ranges over,

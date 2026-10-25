@@ -1,4 +1,4 @@
 
-0877.baz:7:9: a global variable cannot be initialized with a call
+0877.baz:7:9: a call runs only inside a function, not in the initializer of a global
 var g = one()
         ^~~

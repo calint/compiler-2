@@ -1,0 +1,12 @@
+# a call outside a function is rejected where it is parsed, before its
+# arguments
+
+func f(x) res {
+    res = x
+}
+
+var g = f(nope)
+
+func main() {
+    exit(g)
+}

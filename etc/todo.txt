@@ -174,14 +174,40 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
           class in the same file ('arith_steps': 'step', the passes in order
           1-3, 'is_regroupable', 'has_fixed_role'; invariant: a step without
           an element is a merged constant); recommended: yes
+          => ask 1 done (2026-10-25): 'arith_steps' before 'expr_arith':
+             'step', 'plan' (passes 1-3 in order, pass 3 asks the
+             'is_negated_operand' callback of 'expr_arith' about the step
+             that leads after passes 1 and 2), 'has_fixed_role',
+             'identity_of', 'is_merged', 'is_regroupable', the passes private;
+             'same_run' reads 'is_same_run_op' (equal, or '+' and '-') instead
+             of the parse's precedence table, equal for the regroupable
+             operators; the four 'element' null tests read 'is_merged'; a
+             move, listings equal
        2. S2, behavior: "a call outside a function" rejected at the parse
           where it is known; the error of a global call with a bad argument
           changes order; recommended: yes, with a test
+          => ask 2 done (2026-10-25): 'read_open_paren' checks it after the
+             callee is resolved and before the arguments, the io built-in in
+             its constructor; 'record_uses_of_call' asserts; the message
+             says "a call runs only inside a function, not in the initializer
+             of a global" (the old one said "global variable", wrong for a
+             'dat': test 1142 had the dat's "not a constant" message, it now
+             gets the call message at the parse); tests 0877, 1142, 1436
+             changed, 1671 added
        3. N3: 'foo' passes an empty operand for two meanings ("while
           parsing" for the element, "in memory" for the index); a named
           state; recommended: yes if small
+          => ask 3 done (2026-10-25): 'add_loop_names' takes two
+             'var_placement's; the parse passes empty placements, the compile
+             'at_address_register' and 'in_value_register' or an empty one for
+             a counter in memory; the two 'is_empty' branches go
        4. N4, listing: every '[i]' element comment is placed at the first
           element; recommended: yes, the comment at its element
+          => ask 4 done (2026-10-25): the "[i]" comment takes the token of
+             element i; no test listing holds an element list; both suites,
+             the CLI tests, test-rv32i, clang-tidy, check-messages,
+             fuzz-reject, exprs, data, constructs, flow and programs clean;
+             round 17 complete
     order: A, B, C, D, then the asks
     kept (reviewers, with reasons in r17): see the "considered and kept"
     lists of r17 ({F,E,S,T,B,N}.md)

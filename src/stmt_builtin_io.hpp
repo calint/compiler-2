@@ -103,6 +103,8 @@ class stmt_builtin_io final : public statement {
                     const token tk, tokenizer& tz)
         : statement{tk, std::move(uops)}, io_{io}, args_{tc, tz} {
 
+        assert_call_in_func(tc, tok());
+
         set_type(io_.result_type(tc));
 
         if (io_.is_sector) {
@@ -137,8 +139,6 @@ class stmt_builtin_io final : public statement {
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
-
-        assert_call_in_func(tc, tok());
 
         // e.g. the 'b' of 'read(0, b, n)' is written
         args_.assert_not_written_later(

@@ -2093,7 +2093,9 @@ inline auto assert_not_string_argument(tokenizer& tz) -> void {
 inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
     if (not tc.scopes().is_in_func()) {
         throw compile_error{
-            call_tk, "a global variable cannot be initialized with a call"};
+            call_tk,
+            "a call runs only inside a function, not in the initializer of a "
+            "global"};
     }
 }
 
@@ -2269,7 +2271,7 @@ class stmt_call : public statement {
             read_callee(tc, tz, expected_type),
         };
 
-        read_open_paren(tz, "function name");
+        read_open_paren(tc, tz, "function name");
 
         // note: a call of 'main' can only be in 'main' or after it, in a
         //       function that nothing calls, since names are defined before use
@@ -2306,7 +2308,7 @@ class stmt_call : public statement {
             read_callee(tc, tz, expected_type),
         };
 
-        read_open_paren(tz, "method name");
+        read_open_paren(tc, tz, "method name");
 
         assert_method_receiver(receiver);
 
@@ -2329,7 +2331,7 @@ class stmt_call : public statement {
         // note: 'func_instantiator::define_func' rejects a generic constructor
         assert(not tc.generics().has_func(func_name_));
 
-        read_open_paren(tz, "constructor name");
+        read_open_paren(tc, tz, "constructor name");
 
         parse_arguments(tc, tz, {});
     }
@@ -2355,8 +2357,6 @@ class stmt_call : public statement {
 
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
-
-        assert_call_in_func(tc, tok());
 
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
         //       functions, are nodes of their own ('stmt_builtin_*')
@@ -2983,10 +2983,14 @@ class stmt_call : public statement {
         return std::move(generic.deducing_args);
     }
 
-    // the type is the result type of the callee, resolved before, so an
-    // unknown callee is reported before a missing '('; 'what' names the
-    // callee in that error
-    auto read_open_paren(tokenizer& tz, const std::string_view what) -> void {
+    // a call is in a function; the type is the result type of the callee,
+    // resolved before, so an unknown callee is reported before a missing '(';
+    // 'what' names the callee in that error
+    auto read_open_paren(const toc& tc, tokenizer& tz,
+                         const std::string_view what) -> void {
+
+        assert_call_in_func(tc, tok());
+
         const std::optional<token> open_paren_tk{tz.is_next_char_token('(')};
 
         set_type(callee().result_type());
@@ -3004,11 +3008,8 @@ class stmt_call : public statement {
     // argument counts as written whole
     auto record_uses_of_call(toc& tc) const -> void {
 
-        // note: a call outside a function is rejected when it is compiled
-
-        if (not tc.scopes().is_in_func()) {
-            return;
-        }
+        // note: a call outside a function was rejected ('read_open_paren')
+        assert(tc.scopes().is_in_func());
 
         const body_uses& callee_uses{callee().uses()};
 

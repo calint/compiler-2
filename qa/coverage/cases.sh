@@ -5222,3 +5222,7 @@ SRC=1669 && COMPERR
 # a stored condition whose last element folds stores its value without a
 # branch at its end
 SRC=1670 && EXP=7 && RUN
+
+# a call outside a function is rejected where it is parsed, before its
+# arguments
+SRC=1671 && COMPERR

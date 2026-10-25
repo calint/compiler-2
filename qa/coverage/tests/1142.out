@@ -1,4 +1,4 @@
 
-1142.baz:7:9: 'f()' is not a constant, a 'dat' holds constants
+1142.baz:7:9: a call runs only inside a function, not in the initializer of a global
 dat x = f()
         ^

@@ -789,7 +789,7 @@ class expr_any final : public statement {
                 .at{at},
                 .action{
                     write_comment{
-                        .src_loc_tk{tok()},
+                        .src_loc_tk{element(i).tok()},
                         .text{std::format("[{}]", i)},
                     },
                 },

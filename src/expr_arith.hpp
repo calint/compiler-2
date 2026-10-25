@@ -29,6 +29,299 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
+// the steps of an arithmetic list and the passes that regroup its constants
+// before the list is compiled; pass 0 is 'expr_arith::make_steps', which
+// folds the elements, 'plan' runs the passes 1 to 3 in order:
+// 'merge_regroupable_constants', 'merge_divisors', 'lead_with_constant';
+// invariant: a step without an element is a merged constant ('is_merged')
+class arith_steps final {
+  public:
+    // an operation of the list being folded: an element, or merged constants
+    // when 'element' is null
+    struct step {
+        arithmetic_operator op{arithmetic_operator::assign};
+        const statement* element{};
+        std::optional<int64_t> value; // set when the step is a constant
+        std::string folded_source;    // e.g. '* 3 * 2' for the comment
+    };
+
+    //
+    // statics
+    //
+
+    // a constant element whose operator the passes do not regroup, a divisor
+    // or a shift count; a regroupable constant element is merged, or kept as
+    // it is under the overflow check, where the passes are off, and is then
+    // emitted like a merged one, so a constant that changes nothing does not
+    // reach the backend
+    [[nodiscard]] static auto has_fixed_role(const step& s) -> bool {
+        return not is_merged(s) and not is_regroupable(s.op);
+    }
+
+    // the constant that leaves a value unchanged
+    [[nodiscard]] static auto identity_of(const arithmetic_operator op)
+        -> int64_t {
+
+        if (op == arithmetic_operator::add or
+            op == arithmetic_operator::bit_or or
+            op == arithmetic_operator::bit_xor) {
+
+            return 0;
+        }
+
+        if (op == arithmetic_operator::multiply or
+            op == arithmetic_operator::divide) {
+
+            return 1;
+        }
+
+        assert(op == arithmetic_operator::bit_and);
+
+        return -1;
+    }
+
+    [[nodiscard]] static auto is_merged(const step& s) -> bool {
+        return s.element == nullptr;
+    }
+
+    // the constants of a run of the operator can be merged and moved to the
+    // end of the run, '-' is the add of a negated value; not '/', '%' and
+    // shifts, whose operands have fixed roles
+    [[nodiscard]] static auto is_regroupable(const arithmetic_operator op)
+        -> bool {
+
+        return op == arithmetic_operator::add or
+               op == arithmetic_operator::subtract or
+               op == arithmetic_operator::multiply or
+               op == arithmetic_operator::bit_and or
+               op == arithmetic_operator::bit_or or
+               op == arithmetic_operator::bit_xor;
+    }
+
+    // the passes in order; 'is_negated_operand' tells whether an element is a
+    // lone negation of a stored value, which pass 3 moves after a constant
+    [[nodiscard]] static auto
+    plan(std::vector<step> steps, const type& width_type,
+         const std::function_ref<bool(const statement&)> is_negated_operand)
+        -> std::vector<step> {
+
+        steps = merge_regroupable_constants(steps, width_type);
+        steps = merge_divisors(steps, width_type);
+        lead_with_constant(steps, is_negated_operand);
+        return steps;
+    }
+
+  private:
+    //
+    // statics
+    //
+
+    static auto append_source(step& merged, const step& s) -> void {
+        if (not merged.folded_source.empty()) {
+            merged.folded_source += ' ';
+        }
+
+        merged.folded_source += s.folded_source;
+    }
+
+    // two operators of one run: equal, or '+' and '-'
+    [[nodiscard]] static auto is_same_run_op(const arithmetic_operator a,
+                                             const arithmetic_operator b)
+        -> bool {
+
+        const auto is_additive{
+            [](const arithmetic_operator op) -> bool {
+                return op == arithmetic_operator::add or
+                       op == arithmetic_operator::subtract;
+            },
+        };
+
+        return a == b or (is_additive(a) and is_additive(b));
+    }
+
+    // pass 3: a subtracted or negated first element needs a negation so the
+    // merged constant of an additive list leads instead, a zero constant adds
+    // nothing so negating in place is shorter
+    //   '- b + 3'  =>  '3 - b'   from '1 - b + 2'
+    //   '-b + 23'  =>  '23 - b'
+    //   '- b + 0'  =>  '- b + 0' from '2 - b - 2'
+    static auto lead_with_constant(
+        std::vector<step>& steps,
+        const std::function_ref<bool(const statement&)> is_negated_operand)
+        -> void {
+
+        const step& first{steps.front()};
+        const step& last{steps.back()};
+
+        if (not is_merged(last) or last.op != arithmetic_operator::add or
+            last.value == 0) {
+
+            return;
+        }
+
+        const bool is_negated{
+            first.op == arithmetic_operator::add and not is_merged(first) and
+                is_negated_operand(*first.element),
+        };
+
+        if (first.op != arithmetic_operator::subtract and not is_negated) {
+            return;
+        }
+
+        std::ranges::rotate(steps, steps.end() - 1);
+        // note: -1 moves the last step to the front
+    }
+
+    // pass 2: consecutive constant divisors merge into their product
+    //   'a * 6 / 3 / 2 * 4'  =>  'a * 6 / 6 * 4'
+    //   'b / 2 / c / 3'      =>  'b / 2 / c / 3'
+    [[nodiscard]] static auto merge_divisors(const std::span<const step> steps,
+                                             const type& width_type)
+        -> std::vector<step> {
+
+        std::vector<step> merged;
+
+        for (const step& s : steps) {
+            const std::optional<int64_t> product{
+                merged.empty() ? std::nullopt
+                               : merged_divisor(merged.back(), s, width_type),
+            };
+
+            if (not product) {
+                merged.push_back(s);
+                continue;
+            }
+
+            step& divisor{merged.back()};
+            divisor.element = nullptr;
+            divisor.value = product;
+            append_source(divisor, s);
+        }
+
+        return merged;
+    }
+
+    // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
+    // operation merge into one constant at the end of the run, '/' and '%'
+    // end a run since moving a constant across them changes the result, a
+    // lower precedence operation continues the list left to right and starts
+    // a new run
+    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 3 * 2 / 3 / 2 * 4 + 8'
+    //   'a * 3 * 2 / 3 / 2 * 4'          =>  'a * 6 / 3 / 2 * 4'
+    //   '2 * b * 3 / c'                  =>  'b * 6 / c'
+    //   'b & 7 & 13'                     =>  'b & 5'
+    //   'b & 1 | 2 | 4'                  =>  'b & 1 | 6'
+    //   'b * 2 - 3 + c + 4'              =>  'b * 2 + c + 1'
+    [[nodiscard]] static auto
+    merge_regroupable_constants(const std::span<const step> steps,
+                                const type& width_type) -> std::vector<step> {
+
+        // a dividend or a divisor is a run of its own
+        const auto same_run{
+            [](const step& a, const step& b) -> bool {
+                return is_regroupable(a.op) and is_regroupable(b.op) and
+                       is_same_run_op(a.op, b.op);
+            },
+        };
+
+        std::vector<step> merged;
+
+        for (const std::span<const step> run :
+             steps | std::views::chunk_by(same_run)) {
+
+            merge_run(merged, run, width_type);
+        }
+
+        return merged;
+    }
+
+    static auto merge_run(std::vector<step>& merged,
+                          const std::span<const step> run,
+                          const type& width_type) -> void {
+
+        // subtracted constants are subtracted from an added constant
+        const arithmetic_operator op{
+            run.front().op == arithmetic_operator::subtract
+                ? arithmetic_operator::add
+                : run.front().op,
+        };
+
+        if (not is_regroupable(op)) {
+            merged.append_range(run);
+            return;
+        }
+
+        step constant{
+            .op{op},
+            .element{},
+            .value{identity_of(op)},
+            .folded_source{},
+        };
+
+        bool has_constant{};
+
+        for (const step& s : run) {
+            if (not s.value) {
+                merged.push_back(s);
+                continue;
+            }
+
+            constant.value = constant_arith::combine(*constant.value, s.op,
+                                                     *s.value, width_type);
+
+            append_source(constant, s);
+            has_constant = true;
+        }
+
+        if (has_constant) {
+            merged.push_back(std::move(constant));
+        }
+    }
+
+    // a divisor of 0 or -1 is left to run time where it traps or wraps
+    [[nodiscard]] static auto mergeable_divisor(const step& s)
+        -> std::optional<int64_t> {
+
+        if (s.op != arithmetic_operator::divide or not s.value or
+            *s.value == 0 or *s.value == -1) {
+
+            return std::nullopt;
+        }
+
+        return s.value;
+    }
+
+    // '(b / m) / n' is 'b / (m * n)' while the product fits the width
+    [[nodiscard]] static auto merged_divisor(const step& divisor,
+                                             const step& next,
+                                             const type& width_type)
+        -> std::optional<int64_t> {
+
+        const std::optional<int64_t> current_divisor{
+            mergeable_divisor(divisor),
+        };
+
+        const std::optional<int64_t> next_divisor{mergeable_divisor(next)};
+
+        if (not current_divisor or not next_divisor) {
+            return std::nullopt;
+        }
+
+        const int64_t product{
+            constant_arith::combine(*current_divisor,
+                                    arithmetic_operator::multiply,
+                                    *next_divisor, width_type),
+        };
+
+        // a wrapped product divided back differs from the divisor
+        if (product / *next_divisor != *current_divisor) {
+            return std::nullopt;
+        }
+
+        return product;
+    }
+};
+
 //
 // a flat list of elements and nested lists instead of a binary tree
 //
@@ -44,6 +337,8 @@
 //       list needs a scratch register
 //
 class expr_arith final : public statement {
+    using step = arith_steps::step;
+
     std::vector<std::unique_ptr<statement>> exprs_; // expression list
     // the operators between the elements
     std::vector<spelled_operator<arithmetic_operator>> ops_;
@@ -71,15 +366,6 @@ class expr_arith final : public statement {
     // '(', e.g. 'x', 'f(x)' or '(a + b)', not '-x' or '-(a + b)'; false for a
     // first element given by the caller, see 'is_first_enclosed_'
     bool is_first_plain_{};
-
-    // an operation of the list being folded: an element, or merged constants
-    // when 'element' is null
-    struct step {
-        arithmetic_operator op{arithmetic_operator::assign};
-        const statement* element{};
-        std::optional<int64_t> value; // set when the step is a constant
-        std::string folded_source;    // e.g. '* 3 * 2' for the comment
-    };
 
     // an element of the list, 'is_enclosed' for a '(...)' list
     struct parsed_element {
@@ -540,7 +826,7 @@ class expr_arith final : public statement {
 
         // note: 2 steps are the least with something to add the constant to
 
-        if (steps.size() < 2 or last.element != nullptr or
+        if (steps.size() < 2 or not arith_steps::is_merged(last) or
             last.op != arithmetic_operator::add) {
 
             return std::nullopt;
@@ -671,7 +957,7 @@ class expr_arith final : public statement {
             assert(first.op != arithmetic_operator::subtract);
 
             const token& src_loc_tk{
-                first.element == nullptr ? tok() : first.element->tok(),
+                arith_steps::is_merged(first) ? tok() : first.element->tok(),
             };
 
             compile_constant(tc, indent, src_loc_tk, dst, *first.value,
@@ -781,7 +1067,7 @@ class expr_arith final : public statement {
 
         const int64_t step_value{*s.value};
 
-        if (has_fixed_role(s)) {
+        if (arith_steps::has_fixed_role(s)) {
             const statement& element{*s.element};
 
             x.comment(element.tok(), indent,
@@ -818,7 +1104,7 @@ class expr_arith final : public statement {
                                                   : s.op,
         };
 
-        if (step_value == identity_of(identity_op)) {
+        if (step_value == arith_steps::identity_of(identity_op)) {
             x.comment(tok(), indent,
                       "src: folded constant {} is {} and changes nothing",
                       in_quotes(s.folded_source), step_value);
@@ -878,7 +1164,8 @@ class expr_arith final : public statement {
             return arithmetic_operator::add;
         }
 
-        return is_regroupable(first) ? first : arithmetic_operator::assign;
+        return arith_steps::is_regroupable(first) ? first
+                                                  : arithmetic_operator::assign;
     }
 
     // unary ops on a memory destination are a load, modify and store on a
@@ -973,21 +1260,16 @@ class expr_arith final : public statement {
     [[nodiscard]] auto plan_steps(const toc& tc, const destination& dst) const
         -> std::vector<step> {
 
-        std::vector<step> steps{make_steps(tc, dst)};
-
         // moving or combining constants changes which partial results
         // overflow
         if (tc.checks_overflow(dst)) {
-            return steps;
+            return make_steps(tc, dst);
         }
 
-        const type& width_type{dst.type_ref()};
-
-        steps = merge_regroupable_constants(steps, width_type);
-        steps = merge_divisors(steps, width_type);
-        lead_with_constant(tc, steps);
-
-        return steps;
+        return arith_steps::plan(make_steps(tc, dst), dst.type_ref(),
+                                 [&tc](const statement& element) -> bool {
+                                     return is_negated_operand(tc, element);
+                                 });
     }
 
     // the ')' of an enclosed list is next: read it, e.g. '(a + b)'
@@ -1016,14 +1298,6 @@ class expr_arith final : public statement {
     //
     // statics
     //
-
-    static auto append_source(step& merged, const step& s) -> void {
-        if (not merged.folded_source.empty()) {
-            merged.folded_source += ' ';
-        }
-
-        merged.folded_source += s.folded_source;
-    }
 
     static auto asm_op(toc& tc, const size_t indent,
                        const arithmetic_operator op, const destination& dst,
@@ -1275,7 +1549,7 @@ class expr_arith final : public statement {
 
         return std::ranges::any_of(
             steps.subspan(1), [&tc, &dst](const step& s) -> bool {
-                return s.element != nullptr and
+                return not arith_steps::is_merged(s) and
                        reaches_destination(tc, *s.element, dst);
             });
     }
@@ -1412,57 +1686,12 @@ class expr_arith final : public statement {
         return constant_arith::apply_operation(lhs, op, rhs, width_type);
     }
 
-    // a constant element whose operator the passes do not regroup, a divisor
-    // or a shift count; a regroupable constant element is merged, or kept as
-    // it is under the overflow check, where the passes are off, and is then
-    // emitted like a merged one, so a constant that changes nothing does not
-    // reach the backend
-    [[nodiscard]] static auto has_fixed_role(const step& s) -> bool {
-        return s.element != nullptr and not is_regroupable(s.op);
-    }
-
-    // the constant that leaves a value unchanged
-    [[nodiscard]] static auto identity_of(const arithmetic_operator op)
-        -> int64_t {
-
-        if (op == arithmetic_operator::add or
-            op == arithmetic_operator::bit_or or
-            op == arithmetic_operator::bit_xor) {
-
-            return 0;
-        }
-
-        if (op == arithmetic_operator::multiply or
-            op == arithmetic_operator::divide) {
-
-            return 1;
-        }
-
-        assert(op == arithmetic_operator::bit_and);
-
-        return -1;
-    }
-
     // a lone negation folds into add/sub: 'a - -b' is 'a + b'
     [[nodiscard]] static auto is_negated_operand(const toc& tc,
                                                  const statement& src) -> bool {
 
         return is_stored_value(tc, src) and
                src.operand_path()->get_unary_ops().is_only_negated();
-    }
-
-    // the constants of a run of the operator can be merged and moved to the
-    // end of the run, '-' is the add of a negated value; not '/', '%' and
-    // shifts, whose operands have fixed roles
-    [[nodiscard]] static auto is_regroupable(const arithmetic_operator op)
-        -> bool {
-
-        return op == arithmetic_operator::add or
-               op == arithmetic_operator::subtract or
-               op == arithmetic_operator::multiply or
-               op == arithmetic_operator::bit_and or
-               op == arithmetic_operator::bit_or or
-               op == arithmetic_operator::bit_xor;
     }
 
     [[nodiscard]] static auto is_shift(const arithmetic_operator op) -> bool {
@@ -1476,188 +1705,6 @@ class expr_arith final : public statement {
 
         const stmt_identifier* const ident{src.operand_path()};
         return ident and not make_ident_info(tc, *ident).is_const();
-    }
-
-    // pass 3: a subtracted or negated first element needs a negation so the
-    // merged constant of an additive list leads instead, a zero constant adds
-    // nothing so negating in place is shorter
-    //   '- b + 3'  =>  '3 - b'   from '1 - b + 2'
-    //   '-b + 23'  =>  '23 - b'
-    //   '- b + 0'  =>  '- b + 0' from '2 - b - 2'
-    static auto lead_with_constant(const toc& tc, std::vector<step>& steps)
-        -> void {
-
-        const step& first{steps.front()};
-        const step& last{steps.back()};
-
-        // only a merged constant has no element
-        if (last.element != nullptr or last.op != arithmetic_operator::add or
-            last.value == 0) {
-
-            return;
-        }
-
-        const bool is_negated{
-            first.op == arithmetic_operator::add and
-                first.element != nullptr and
-                is_negated_operand(tc, *first.element),
-        };
-
-        if (first.op != arithmetic_operator::subtract and not is_negated) {
-            return;
-        }
-
-        std::ranges::rotate(steps, steps.end() - 1);
-        // note: -1 moves the last step to the front
-    }
-
-    // pass 2: consecutive constant divisors merge into their product
-    //   'a * 6 / 3 / 2 * 4'  =>  'a * 6 / 6 * 4'
-    //   'b / 2 / c / 3'      =>  'b / 2 / c / 3'
-    [[nodiscard]] static auto merge_divisors(const std::span<const step> steps,
-                                             const type& width_type)
-        -> std::vector<step> {
-
-        std::vector<step> merged;
-
-        for (const step& s : steps) {
-            const std::optional<int64_t> product{
-                merged.empty() ? std::nullopt
-                               : merged_divisor(merged.back(), s, width_type),
-            };
-
-            if (not product) {
-                merged.push_back(s);
-                continue;
-            }
-
-            step& divisor{merged.back()};
-            divisor.element = nullptr;
-            divisor.value = product;
-            append_source(divisor, s);
-        }
-
-        return merged;
-    }
-
-    // pass 1: the constants of a run of '+' and '-', of '*' or of one bitwise
-    // operation merge into one constant at the end of the run, '/' and '%'
-    // end a run since moving a constant across them changes the result, a
-    // lower precedence operation continues the list left to right and starts
-    // a new run
-    //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 3 * 2 / 3 / 2 * 4 + 8'
-    //   'a * 3 * 2 / 3 / 2 * 4'          =>  'a * 6 / 3 / 2 * 4'
-    //   '2 * b * 3 / c'                  =>  'b * 6 / c'
-    //   'b & 7 & 13'                     =>  'b & 5'
-    //   'b & 1 | 2 | 4'                  =>  'b & 1 | 6'
-    //   'b * 2 - 3 + c + 4'              =>  'b * 2 + c + 1'
-    [[nodiscard]] static auto
-    merge_regroupable_constants(const std::span<const step> steps,
-                                const type& width_type) -> std::vector<step> {
-
-        // a dividend or a divisor is a run of its own
-        const auto same_run{
-            [](const step& a, const step& b) -> bool {
-                return is_regroupable(a.op) and is_regroupable(b.op) and
-                       precedence_for_op(a.op) == precedence_for_op(b.op);
-            },
-        };
-
-        std::vector<step> merged;
-
-        for (const std::span<const step> run :
-             steps | std::views::chunk_by(same_run)) {
-
-            merge_run(merged, run, width_type);
-        }
-
-        return merged;
-    }
-
-    static auto merge_run(std::vector<step>& merged,
-                          const std::span<const step> run,
-                          const type& width_type) -> void {
-
-        // subtracted constants are subtracted from an added constant
-        const arithmetic_operator op{
-            run.front().op == arithmetic_operator::subtract
-                ? arithmetic_operator::add
-                : run.front().op,
-        };
-
-        if (not is_regroupable(op)) {
-            merged.append_range(run);
-            return;
-        }
-
-        step constant{
-            .op{op},
-            .element{},
-            .value{identity_of(op)},
-            .folded_source{},
-        };
-
-        bool has_constant{};
-
-        for (const step& s : run) {
-            if (not s.value) {
-                merged.push_back(s);
-                continue;
-            }
-
-            constant.value = constant_arith::combine(*constant.value, s.op,
-                                                     *s.value, width_type);
-
-            append_source(constant, s);
-            has_constant = true;
-        }
-
-        if (has_constant) {
-            merged.push_back(std::move(constant));
-        }
-    }
-
-    // a divisor of 0 or -1 is left to run time where it traps or wraps
-    [[nodiscard]] static auto mergeable_divisor(const step& s)
-        -> std::optional<int64_t> {
-
-        if (s.op != arithmetic_operator::divide or not s.value or
-            *s.value == 0 or *s.value == -1) {
-
-            return std::nullopt;
-        }
-
-        return s.value;
-    }
-
-    // '(b / m) / n' is 'b / (m * n)' while the product fits the width
-    [[nodiscard]] static auto merged_divisor(const step& divisor,
-                                             const step& next,
-                                             const type& width_type)
-        -> std::optional<int64_t> {
-
-        const std::optional<int64_t> current_divisor{
-            mergeable_divisor(divisor),
-        };
-
-        const std::optional<int64_t> next_divisor{mergeable_divisor(next)};
-
-        if (not current_divisor or not next_divisor) {
-            return std::nullopt;
-        }
-
-        const int64_t product{
-            constant_arith::combine(*current_divisor,
-                                    arithmetic_operator::multiply,
-                                    *next_divisor, width_type),
-        };
-
-        // a wrapped product divided back differs from the divisor
-        if (product / *next_divisor != *current_divisor) {
-            return std::nullopt;
-        }
-
-        return product;
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
