@@ -43,15 +43,34 @@
 //   'stmt_call'       parses the call, prints its source and hands it to one
 //                     of the compilers (last in the file, it uses the others)
 //   'generic_call'    the instance of a generic function that the call names
+//   'call_temporary'  a variable of the current block that holds an argument
 //   'noinline_arg'    what a noinline call passes for an argument
+//   'call_limits'     how deep the compile of calls nests
 //   'call_site'       what compiling the call needs of it
 //   'inline_call'     compiles the body of the function in place
 //   'noinline_call'   passes addresses to the body that is emitted once
 //   'constructor_call_tag'
 //                     selects the constructor of 'point.at(1, 2)'
+//   free checks       'assert_not_string_argument', 'assert_call_in_func',
+//                     'assert_arguments_not_written_later'
 //   'builtin_arguments'
 //                     the arguments of a built-in that parses like a call,
 //                     e.g. 'exit(0)'
+//
+// an argument, from the parse to the body:
+//
+//   'call_site::argument_form'   what the argument is ('argument_form_of')
+//   'call_site::planned_argument' and whether it goes through a temporary
+//                                ('argument_plan', once per compile)
+//   'param_binding'              inlined: what the parameter stands for
+//                                ('inline_call::make_bindings')
+//   'call_temporary'             noinline: the temporary that holds a value
+//                                ('call_site::make_argument_temporary')
+//   'noinline_arg'               noinline: the variable passed
+//                                ('compile_arguments_and_call')
+//   'noinline_call::addressed_slot'
+//                                the address written to the frame slot
+//                                ('frame_slot_addresses')
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -379,8 +398,6 @@ struct generic_call {
     }
 };
 
-// what a noinline call passes for an argument: the variable it names or
-// a temporary that holds its value
 // a variable of the current block that holds an argument, see
 // 'call_site::make_argument_temporary'
 struct call_temporary {
@@ -389,6 +406,8 @@ struct call_temporary {
     std::optional<storage_path> target;
 };
 
+// what a noinline call passes for an argument: the variable it names or
+// a temporary that holds its value
 struct noinline_arg {
     ident_info info;
     // the variable and the bytes of it that the callee reaches
@@ -1533,12 +1552,12 @@ class inline_call {
 //      is copied and the unary ops applied after the call
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
 //      checked by 'stmt_call::assert_argument_types' before ('assert_call'
-//      asserts it), the errors that depend on this call, e.g. shared
-//      storage, are found by a
-//      dry run of the body as an inlined call ('dry_run_body', see
-//      'etc/docs/README.md' chapter 4), the addresses are written to
-//      the callee frame ('frame_slot_addresses', 'write_frame_slots') and the
-//      function is called
+//      asserts it); the errors that depend on this call, e.g. shared
+//      storage, are found by a dry run of the body as an inlined call
+//      ('dry_run_body', see 'etc/docs/README.md' chapter 4)
+//   3. the addresses are written to the callee frame
+//      ('frame_slot_addresses', 'write_frame_slots') and the function is
+//      called
 class noinline_call {
     // what the call kind reads of the result or of an argument
     struct call_kind_item {
@@ -2223,8 +2242,8 @@ class builtin_arguments {
 // ('parse_arguments', each checked by 'assert_argument_usable' and
 // 'assert_argument_writable')
 //
-// compiling, in 'compile': no two arguments may share storage
-// ('assert_no_shared_storage'), then 'inline_call' or 'noinline_call'
+// compiling, in 'compile': the checks made before the inlined and noinline
+// paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
 // compiles the call
 class stmt_call : public expression {
     // e.g. the '.' in 'lst.add(x)', the receiver is the first argument;

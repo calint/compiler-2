@@ -49,7 +49,8 @@
 //                   emit, the compiled functions), 'function_table'
 //   'dry_run_ledger' the heights ('dry_run_height') of the checked dry runs
 //                   of noinline calls
-//   'data_table'    the dats ('placed_dat') and the read-only constants
+//   'data_table'    the dats ('dat_extent' as declared, 'placed_dat' as
+//                   placed) and the read-only constants
 //   options         'check_options', 'usage_statistics'
 //   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
@@ -185,7 +186,8 @@ struct bound_register {
 struct bound_name {
     // e.g. 'world.rooms', resolved in the scopes of the caller
     std::string dotted_path;
-    // as written, for the comments, e.g. 'copy[2]' where 'path' is 'copy'
+    // as written, for the comments, e.g. 'copy[2]' where 'dotted_path' is
+    // 'copy'
     std::string text;
     // the address computed at the call, empty when the path finds it, e.g.
     // '[rbp + r15 * 8 + 16]' for a run-time index
@@ -507,7 +509,8 @@ class scope final {
 
     [[nodiscard]] auto is_func() const -> bool { return func_.has_value(); }
 
-    // 'main' and a dry run are compiled in place like an inlined function
+    // only a call inlined for real; 'main' and a dry run are compiled in place
+    // too but are not one ('is_compiled_in_place')
     [[nodiscard]] auto is_inlined_func() const -> bool {
         return type_ == scope_kind::inlined_func;
     }
@@ -3342,8 +3345,10 @@ class toc final {
     //   baz_NAME       a routine of the runtime or a failure handler, e.g.
     //                  'baz_bounds_panic', '.Lbaz_NAME' a local one on rv32i
     //
-    // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13; a
-    // location in an included file is 'fN.L.C' ('source_files::for_label')
+    // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13;
+    // inside a noinline body for array lengths every label ends in them, e.g.
+    // 'loop.14.5.len.3' ('stmt_def_func::body_call_path'); a location in an
+    // included file is 'fN.L.C' ('source_files::for_label')
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
         -> std::string {
 
@@ -3823,8 +3828,8 @@ class toc final {
         return types_.is_builtin(name);
     }
 
-    // the scopes are pushed by 'scope_stack', popped here with their storage
-    // an inlined call whose body does not reach its end, e.g. a 'loop' whose
+    // a scope is pushed by 'scope_entry' and popped here with its storage; an
+    // inlined call whose body does not reach its end, e.g. a 'loop' whose
     // 'break' folds away for a constant argument, leaves the code after the
     // call unreached
     auto pop_scope() -> void {

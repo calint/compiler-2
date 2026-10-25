@@ -350,6 +350,24 @@ struct frame_slot {
     bool is_in_register{};
 };
 
+// a function: its signature, its body and the checks of the body; 'compile'
+// emits nothing, the body is compiled by its calls; the four ways a body is
+// compiled:
+//
+//   when                  scope              the parameters
+//   'parse_body'          'inlined_func' or  variables, named only
+//                         'noinline_func'
+//   an inlined call       'inlined_func'     bindings to the arguments
+//   ('inline_call')
+//   the dry run of a      'noinline_dry_run' bindings to the arguments
+//   noinline call
+//   a noinline body,      'noinline_func'    variables reached through the
+//   'emit_noinline_body'                     addresses in the frame
+//   and 'check_body'                         ('compile_frame_body')
+//
+// 'check_body' compiles an inlined function that nothing called like a
+// noinline body; 'toc' keeps the address of the definition, so it is not
+// copied or moved
 class stmt_def_func final : public statement {
     func_head head_;
     std::vector<stmt_def_func_param> params_;

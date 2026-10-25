@@ -159,7 +159,10 @@ Reading order, each file assumes the ones before it:
                                a variable defined and assigned
 8. expr_any.hpp, expr_arith.hpp, expr_bool.hpp, expr_type.hpp
                                values: arithmetic, conditions, instances
-9. stmt_identifier.hpp         a place: a name with fields and indexes
+9. stmt_identifier.hpp, stmt_identifier_impl.hpp
+                               a path of names, fields and indexes, or a
+                               literal; the index steps of the walk are in
+                               the _impl file
 10. stmt_def_func.hpp, stmt_call.hpp, generics.hpp
                                functions, inlined and noinline calls, the
                                generic instances
@@ -403,7 +406,14 @@ baz_NAME       a routine of the runtime or a failure handler, e.g.
 ```
 
 E.g. 'if.7.5.36.13' is the 'if' at 7:5 in a body inlined by the call at
-36:13. A location in an included file is 'fN.L.C', N the index of the file.
+36:13. Inside a noinline body for array lengths every label ends in the
+lengths, e.g. 'loop.14.5.len.3'. A location in an included file is 'fN.L.C',
+N the index of the file.
+
+The variables the compiler adds are named by the byte offset of the call in
+its file, not by its line: 'call-arg-OFFSET-I' holds argument I,
+'call-result-OFFSET-0' the result. The '-' keeps them apart from the names of
+the source.
 
 ### 1.7 Values known at compile time
 
@@ -1318,11 +1328,13 @@ address folded into one register, whichever is shorter (5.1).
 
 ### 6.6 The bases
 
-x86_64 addresses variables from 'rbp', which points at the data. rv32i
-addresses them from 's0', which points 2032 B past the start of 'vars', so
-the 12-bit offsets, -2048 to 2047, reach the first 4080 B of variables
-directly ('variables_base_past_vars_bytes'), further ones need a 'lui'. A noinline body addresses its locals from
-its frame base, 'rbx' or 's1'.
+x86_64 addresses variables from 'rbp', which points at the data: the variables
+follow the dats after the padding that aligns them ('dat var padding' in the
+report), so 'rbp' reaches both, and 'baz.ld' asserts the order. rv32i
+addresses them from 's0', which points 2032 B past the start of 'vars', so the
+12-bit offsets, -2048 to 2047, reach the first 4080 B of variables directly
+('variables_base_past_vars_bytes'), further ones need a 'lui'. A noinline body
+addresses its locals from its frame base, 'rbx' or 's1'.
 
 ### 6.7 Registers
 
@@ -1346,12 +1358,14 @@ allocation.
 ```text
 stmt_identifier::compile_lea          the walk of 6.2
 stmt_identifier::compile_indexed_element
-                                      a constant or a run-time index
+                                      a constant or a run-time index (_impl)
 stmt_identifier::add_index            the index register and the scale
+                                      (_impl)
 stmt_identifier::fold_indexed_address the second index
 stmt_identifier::compile_checked_index
                                       the bounds check and the '+ c' of 6.4
-statement::get_lea_operand            an operand without a path to walk is
+                                      (_impl)
+stmt_identifier::get_lea_operand      an operand without a path to walk is
                                       the storage of the name
 ident_builder::place_operand_from_lea a built-in reached below a known
                                       address, for the resolver

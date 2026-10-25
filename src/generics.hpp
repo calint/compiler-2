@@ -349,7 +349,7 @@ class generic_trace final {
 }
 
 // a type with parameters, e.g. 'type list<T type, capacity> {...}'. an alias
-// 'type str = list<i8, 8>' parses the fields again from 'start_tk' with the
+// 'type str = list<i8, 8>' parses the fields again from 'fields_tk' with the
 // parameters naming the arguments
 struct generic_type_info {
     // e.g. 'list'

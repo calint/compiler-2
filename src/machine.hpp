@@ -86,11 +86,14 @@ struct target_description {
 //   registers      'alloc_scratch_register', 'free_scratch_register(s)',
 //                  'free_named_register(s)', 'reserve_frame_base',
 //                  'release_frame_base', 'slot_register', 'register_view',
-//                  'reserve_variables_base' (a backend, in 'start')
+//                  'alloc_named_register', 'make_register_operand',
+//                  'registers_for_target_call', 'reserve_variables_base' (a
+//                  backend, in 'start')
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'copy', 'copy_value', 'copy_bytes',
-//                  'address_of', 'scale_index', 'store_boolean',
-//                  'memory_equal'
+//                  'copy_elements', 'arrays_equal', 'address_of',
+//                  'scale_index', 'store_boolean', 'memory_equal',
+//                  'foo_advance_iteration'
 //   control        'label', 'branch', 'compare_and_branch', 'call_function',
 //                  'call_target', 'return_function', 'exit'
 //   checks         'check_bounds', 'check_frame_capacity',
@@ -99,7 +102,8 @@ struct target_description {
 //   comments       'comment', 'comment_binding', 'comment_variable',
 //                  'comment_held_address'
 //   target         'default_type', 'address_size_bytes',
-//                  'has_indexed_addressing', 'is_stack_bounded',
+//                  'has_indexed_addressing', 'can_lower_index_scale',
+//                  'is_stack_bounded',
 //                  'max_storage_bytes', 'sector_size_bytes',
 //                  'foo_counter_in_memory',
 //                  'max_padding_gaps_zeroed_one_by_one', 'frame_base_register',

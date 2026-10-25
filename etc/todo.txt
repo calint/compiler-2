@@ -6,6 +6,201 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] hard: design review round 15 (2026-10-25, six reviewers: front end F,
+    expressions E, statements and calls S, tables and checks T, backends B, a
+    newcomer N tracing one program; findings in the session scratchpad r15,
+    the claims spot-checked: E1, F3, S1, T1, T2, E7, N4 confirmed): each step
+    a pure refactor unless marked, measured against the previous binary, a
+    pause for a commit after each phase
+    A. docs and comments (no code change)
+       A.1. stale after round 14 (N4, F10, T10, B5): README 6.8
+            'stmt_identifier::get_lea_operand' and the file of each row;
+            reading order step 9 names 'stmt_identifier_impl.hpp' and says
+            "a path ... or a literal"; the class header names the split;
+            toc.hpp:188 'dotted_path'; generics.hpp:352 'fields_tk';
+            tokenizer.hpp:190 the comment of 'peek_char_after_whitespace';
+            'pop_scope' comment split and "pushed by 'scope_entry'";
+            'is_inlined_func' comment says what it returns; the 'toc' map
+            lists 'dat_extent'; the 'machine' class comment lists its 7
+            missing public members; the rv32i hook list names
+            'emit_sector_routines' and the machine virtuals the targets
+            override; the bare metal comment moves to its constructor
+       => A.1 done (2026-10-25): all listed; the 'stmt_identifier' header
+          also names what is in the _impl file; comments only
+       A.2. the 'stmt_call.hpp' map (S4, N2.1): every class in file order
+            ('call_temporary', 'call_limits', the free checks), a short "an
+            argument" paragraph with the chain of types and the step that
+            makes each; the 'stmt_call' header names 'assert_call_accepted';
+            step 2 of 'noinline_call' split in two
+       => A.2 done (2026-10-25): the map lists every class and the free
+          checks, then the chain of an argument with the step that makes
+          each type; the misplaced comment moved to 'noinline_arg'
+       A.3. a header comment on 'stmt_def_func' (S3): the four ways a body
+            is compiled (parse, inlined call, dry run, noinline body and
+            'check_body'), the scope kind and how the parameters are reached
+            in each, the pinned address
+       => A.3 done (2026-10-25): a table of the four compiles, their scope
+          and how the parameters are reached
+       A.4. the listing key (N3): README 1.6.1 and the 'call_path_at' table
+            get the '.len.N' suffix of a noinline body and the temporaries
+            'call-arg-OFFSET-I' (OFFSET the byte offset of the call); README
+            6.6 says the variables follow the dats and 'baz.ld' asserts it
+       => A.4 done (2026-10-25): README 1.6.1 and the 'call_path_at'
+          comment name the '.len.N' suffix, README the temporaries by byte
+          offset; README 6.6 the order of dats and variables
+       A.5. round 14 F.6 planned 'source_locations::for_error'; its done
+            note leaves it out (F6): the note says it moved to F.3 below
+       => A.5 done (2026-10-25)
+    B. leftovers and dead code
+       B.1. after H.2 (T2): 'checks_storage_capacity' is 'dry_run_depth_ ==
+            0' with its reason; the 'is_compiling_' comment; one mechanism
+            keeps a dry run from raising the body peak (the restore; the
+            gate goes); 'noinline_func' without the parse-only empty base or
+            a comment saying so; 'is_var_or_binding' goes;
+            'function_table::defs_' derived or its reason stated
+       B.2. 'expr_arith::identifier()' goes (E10); the self-alias
+            'using arithmetic_operator = arithmetic_operator' goes (N4)
+       B.3. the 'emit_failure_handler' overrides are the bodies (B6): the
+            stack-overflow rule asserted once in
+            'emit_used_failure_handlers'; 'emit_failure_handler_body' and
+            'emit_named_failure_handler' go
+       B.4. ask, removes a file: 'is_expression' says what 'operand_path()
+            == nullptr' says on every node asked (E1); a scratch build that
+            asserts the two agree at the 7 askers over the suites and the
+            expression fuzzers first; then the class 'expression' and
+            'expression.hpp' go, one non-virtual 'statement::is_computed()'
+    C. storage and names (toc)
+       C.1. move 'ident_path' and 'ident_builder' next to 'ident_resolver',
+            their user (T5); a move in a step of its own
+       C.2. the variables start at a fixed point (T1, the J.3 follow-up
+            H.2 named): 'storage_layout::vars_start_bytes()' derived from
+            'data_table'; a dat is not counted in the root scope;
+            'applied_padding_bytes_', 'apply_dat_var_padding',
+            'release_root' and the branch in 'next_frame_address' go;
+            offsets and listings equal, test 0740 and the reject fuzzer
+       C.3. the noinline frame says "frame" (T3, the D.5 word):
+            'scope::storage_base' -> 'scope::frame', its accessors
+            '*_frame_size_bytes', 'frame_base_register'; 'scope::type_' ->
+            'kind_' (T10)
+       C.4. one name per answer of a lookup (T4, F8):
+            'toc::make_ident_info' (the declared name) ->
+            'toc::resolve_declared'; the free 'make_ident_info(tc, node)'
+            keeps its name; README 7.6 lists the two resolver forwards
+       C.5. an 'ident_info' is built finished (T6): 'make_var_ident_info'
+            takes what the walk found (call address, element) and returns
+            the final info; 'ident_info::var()' goes
+       C.6. 'array_shape' moves to type.hpp and 'type_field' holds one
+            (T9); the two conversions go
+    D. calls
+       D.1. one 'noinline_arg' (S1, N2.2-2.3): it holds the place's path
+            (null for a temporary) and derives 'is_temporary';
+            'call_temporary' goes; 'slot_address_of' stops reading 'plan_'
+            by index; 'argument_form' is the variant, so 'planned.form' is
+            it; the 'place' locals named 'storage' renamed
+       D.2. the call holds its callee (S2): 'stmt_call::func_' set at the
+            parse, 'call_site::func'; the lookups by name in 'compile' and
+            'visit_call_effects' and 22 'func' parameters of 'inline_call'
+            and 'noinline_call' go
+       D.3. scratch registers held by one front-end type (N1):
+            'machine::held_registers' beside 'operation_scope' replaces the
+            'std::vector<operand>&' holders (six names), frees in its
+            destructor; 'inline_call::compile_body' loses
+            'registers_to_free'; listing comments may move, a trial first
+       D.4. ask, low confidence: the register trace frame opened by the
+            function scope (T8), not by hand at four sites; the register
+            report is the check
+    E. expressions
+       E.1. one 'emit_operation' maps an operator to its machine call and
+            check (E2); the five 'asm_op_*' wrappers go; the constant
+            emitters call it; an unknown operator asserts
+       E.2. one 'emit_constant_step' (E3): a step says whether it was
+            merged; the zero-divisor, shift-range and narrowing rules in one
+            'assert_constant_operand' shared with 'fold_operation'; the two
+            comment forms kept, so listings equal
+       E.3. 'expr_bool' (E4): the element functions take only the action,
+            the list inversion goes to the comment only; 'compile_and' and
+            'compile_or' named for what they do ('branch if false', 'branch
+            if true')
+       E.4. 'resolve_expr' split into 'left_operand' and 'right_operand'
+            (E6); one place turns a folded side into an immediate
+       E.5. 'stmt_builtin_convert' (E8): 'in_scratch' becomes the member
+            'compile_in_scratch'; a 'note:' at row 3a for its precondition
+       E.6. behavior, error order: 'bulk_operands::check' runs its three
+            checks in one order for both built-ins (E7); a program with two
+            faults gets the same first error from 'array_copy' and
+            'arrays_equal'
+       E.7. behavior, error place: the array copy shape checked in both
+            directions where the parse knows it (E5), the plan keeps the
+            lengths; 'stmt_array_size' rejects a size below 1 in its
+            constructor (E9)
+       E.8. the 'expr_any' form 'array_copy' -> 'whole_array_copy' (N5), so
+            'array_copy' names only the built-in
+    F. front end
+       F.1. absent tokens as 'std::optional' where round 13 J.4 missed them
+            (F9): the index part of 'ident_elem', 'is_indexed' derived,
+            'for_each_prefix', 'generic_arg::arg_tk'
+       F.2. behavior, one message: a path naming a function is rejected at
+            the parse (F3); a scratch build that aborts where
+            'names_function' is still true first; the seven guards and
+            'names_function' go; 'var x = f.y' gets the resolver's message
+       F.3. an error location as a type (F6): 'source_span', the error holds
+            'std::optional<source_span>' (empty only for 'file_level'),
+            'call_frame' holds one, 'source_locations::for_error' formats it
+            and main prints through it; error output byte-equal
+       F.4. one escape walk (F7): 'token::escape_at' used by the string and
+            character readers, one throw site for an unsupported escape
+       F.5. where a built-in may stand is a column of the catalog (F5):
+            'builtin_use' {statement, value, either}; the discard rule reads
+            it instead of following from dispatch order
+       F.6. the address builder of 'stmt_identifier' as a nested class
+            'path_address' (F2) holding the context its 5-9 parameter
+            statics repeat; a move with shorter signatures
+       F.7. the path loop (F4): 'read_continuation' returns a variant {end,
+            field, method}; the method tokens read by 'stmt_call' itself
+       F.8. ask, large: operators as tokens (F1): 'tokenizer::
+            is_next_operator', each parser maps the text to its enum; the
+            whitespace-only tokens and 'put_back_char' go;
+            '--reproduce-source' of every test is the check
+    G. statements
+       G.1. 'stmt_if' speaks 'condition_result' only (S5); 'known_of' goes
+       G.2. 'get_type' means the type of a value or a declared name (S6):
+            the 11 nodes without a value stop setting 'void' (a scratch
+            build first), 'stmt_def_func::result_type()'
+       G.3. a field resolves its type in its node like a parameter (S7); the
+            parameter keeps its 'syntax' as one member; error order of an
+            unknown type against a duplicate field checked
+       G.4. 'toc::join_loop()' reads the loop scope itself (T7); the local
+            and extra block in 'stmt_loop' go
+    H. backends
+       H.1. the lifecycle as template methods (B1, the open half of round
+            13 G.7): 'start', 'end_main', 'finish' non-virtual in 'machine'
+            with the order written once; protected steps per backend;
+            'start_output', 'finish_output', 'finish_registers',
+            'reserve_variables_base' private
+       H.2. the rest of 'target_description' (B4): 'has_sd_card' instead of
+            the 0 sentinel; rv32i reads its bases only through the table;
+            the target call registers and the stack pointer in the table;
+            bare metal cannot leave 'is_stack_bounded' unset
+       H.3. one table per rv32i arithmetic helper (B3): label and clobbers
+            in one 'helper_spec' array; 'leaf_stack_bytes' takes the largest;
+            one emit function per body
+       H.4. the data directives on the assembler base (B2); the data and
+            variables layout written once in 'machine'; 18 forwarding
+            overrides go
+       H.5. ask, low: the machine computes the padding gaps from the type
+            (B7); 'max_padding_gaps_zeroed_one_by_one' leaves the interface
+    asks: B.4 (file removal), D.4, F.8, H.5, and S8: the built-ins take a
+    range two ways ('array_copy(a[1], b, n)' against 'read(fd, a, n, 1)');
+    one spelling is a language change; recommended: keep both and say why in
+    README
+    order: A, B.1-B.3, C, D.1-D.2, E, G, F.1-F.7, H.1-H.4, D.3, then the
+    asks
+    kept (reviewers, with reasons in r15): loop and 'foo' scopes built in
+    parse and compile; 'stmt_def_var' wrapping 'stmt_assign_var'; trial
+    parses that record uses; the two 'expr_bool::compile' overloads; four
+    overflow accessors; 'in_storage::base_register' filled by the builder;
+    'path_step::number'; the generic and shorthand rv32i assembler forms;
+    'target_options' beside 'target_description'; the 'indent' parameter
 [p] hard: design review round 14 (2026-10-24, six reviewers: front end F,
     expressions E, statements and calls S, tables and checks T, backends B, a
     newcomer N tracing one program; findings in the session scratchpad r14,
@@ -309,7 +504,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        => F.6 done (2026-10-24): 'parse_definition' is a free function in
           parse_statement.hpp beside 'parse_statement', its header names the
           three entries of the grammar; 'program' keeps the files and the
-          includes; README 1.1 reading order; a move, listings equal
+          includes; README 1.1 reading order; a move, listings equal;
+          'source_locations::for_error' was not done, it moved to F.3 of
+          round 15
        F.7. optional, low: 'tokenizer::peek_token' for inspect-only
             lookahead (F8)
        => F.7 discarded (2026-10-24): most inspect-only sites classify the

@@ -187,8 +187,8 @@ class tokenizer final {
         return is_eos() ? '\0' : src_.at(char_ix_);
     }
 
-    // trailing whitespace ends at a newline so lookahead past a token skips
-    // the next line's indentation
+    // the character after the whitespace, comments and newlines included,
+    // without reading
     [[nodiscard]] auto peek_char_after_whitespace() const -> char {
         tokenizer probe{*this};
 

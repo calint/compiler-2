@@ -60,8 +60,9 @@
 //   calls        'call_function', the sector and i/o routine calls
 //   target hooks 'emit_read_call', 'emit_write_call',
 //                'emit_stack_limit_load', 'emit_divide_by_zero_trap',
-//                'check_memory_end'; the protected section is what the
-//                targets build on
+//                'emit_sector_routines', 'check_memory_end', and the machine
+//                virtuals 'exit', 'start' and 'emit_used_routines'; the
+//                protected section is what the targets build on
 //   output       'write_assembly' writes the text and the image
 class machine_rv32i : public machine {
     using op = assembler_rv32i::op;

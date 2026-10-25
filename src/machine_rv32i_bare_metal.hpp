@@ -45,6 +45,8 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     static constexpr std::string_view write_label_{".Lbaz_write"};
 
   public:
+    // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
+    // qemu 'virt' machine
     machine_rv32i_bare_metal(
         const builtin_type_set& builtins, const source_files& files,
         const target_options& options, const size_t memory_size_bytes,
@@ -88,8 +90,6 @@ class machine_rv32i_bare_metal : public machine_rv32i {
     // statics
     //
 
-    // 'memory_size_bytes' is the memory of the target, e.g. fixed for the
-    // qemu 'virt' machine
     // no operating system stops a stack overflow, see
     // 'target_description::is_stack_bounded'
     [[nodiscard]] static constexpr auto bare_metal_target()
