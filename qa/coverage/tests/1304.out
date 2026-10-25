@@ -1,4 +1,4 @@
 
-1304.baz:4:14: '-b' is not an array
+1304.baz:4:14: a unary operator makes a value, not an array
     write(1, -b)
              ^

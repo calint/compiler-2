@@ -1,0 +1,10 @@
+# the buffer of an io built-in is read like the array of 'array_length': a call
+# is not an array
+
+func f() res {
+    res = 1
+}
+
+func main() {
+    var n = write(1, f())
+}

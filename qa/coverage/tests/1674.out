@@ -1,0 +1,4 @@
+
+1674.baz:9:22: a call of 'f' is not an array, store its result in a variable first
+    var n = write(1, f())
+                     ^

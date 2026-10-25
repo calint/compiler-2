@@ -1,4 +1,4 @@
 
-0694.baz:4:13: '1 + 2' is not an array
+0694.baz:4:13: '1' is not an array
     read(0, 1 + 2, 1)
             ^

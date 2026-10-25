@@ -36,12 +36,7 @@ class stmt_builtin_foo final : public statement {
 
         ident_ = stmt_identifier::parse_array_argument(tc, tz);
 
-        if (not ident_.is_array()) {
-            throw compile_error{
-                ident_.tok(),
-                std::format("{} is not an array",
-                            in_quotes(statement::trimmed_source(ident_)))};
-        }
+        ident_.assert_array();
 
         // e.g. 'foo arr, len' visits the first 'len' elements
         count_delim_tk_ = tz.is_next_char_token(',');

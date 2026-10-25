@@ -195,6 +195,11 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token tk)
         return std::make_unique<stmt_builtin_foo>(tc, tk, tz);
     }
 
+    // note: every built-in of 'reserved_names::builtin_functions' that may
+    //       stand alone has a branch above, one with a value only was rejected
+
+    assert(not reserved_names::find_builtin_function(tk.text()));
+
     return nullptr;
 }
 
@@ -265,6 +270,11 @@ inline auto parse_builtin_value(toc& tc, tokenizer& tz, const token& tk,
         return std::make_unique<stmt_builtin_convert>(tc, std::move(uops), tk,
                                                       tz);
     }
+
+    // note: every built-in of 'reserved_names::builtin_functions' with a
+    //       value has a branch above, one without a value was rejected
+
+    assert(not reserved_names::find_builtin_function(tk.text()));
 
     return nullptr;
 }
@@ -359,8 +369,8 @@ inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
 inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
     -> std::unique_ptr<statement> {
 
-    // no destination: no type argument is deduced, and a discarded result is
-    // rejected at compile time like any other call
+    // no destination: no type argument is deduced, and a result is
+    // discarded, rejected here like the result of a built-in
     call_or_identifier parsed{
         parse_call_or_identifier(tc, tz, tk, classify_term(tc, tk, tz),
                                  unary_ops{}, nullptr),
@@ -369,6 +379,10 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token tk)
     if (std::unique_ptr<stmt_call>* const call{
             std::get_if<std::unique_ptr<stmt_call>>(&parsed),
         }) {
+
+        if (not(*call)->get_type().is_same(tc.builtins().void_type())) {
+            throw compile_error{(*call)->tok(), "return value is discarded"};
+        }
 
         return std::move(*call);
     }

@@ -1,0 +1,9 @@
+# the buffer of an io built-in is an array where it is parsed, also in a branch
+# that is not compiled
+
+func main() {
+    var x = 1
+    if 1 == 2 {
+        write(1, x)
+    }
+}

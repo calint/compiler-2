@@ -38,12 +38,7 @@ class stmt_builtin_array_length final : public statement {
 
         stmt_ident_ = stmt_identifier::parse_array_argument(tc, tz);
 
-        if (not stmt_ident_.is_array()) {
-            throw compile_error{
-                stmt_ident_.first_token(),
-                std::format("{} is not an array",
-                            in_quotes(statement::trimmed_source(stmt_ident_)))};
-        }
+        stmt_ident_.assert_array();
 
         close_paren_tk_ =
             tz.expect_char_token(')', "expected ')' after the argument");

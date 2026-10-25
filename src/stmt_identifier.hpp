@@ -559,6 +559,18 @@ class stmt_identifier final : public statement {
     }
 
     // an array or an element of one, where a bulk operation starts
+    // a whole array, e.g. the 'a' of 'array_length(a)' or of 'foo a'
+    auto assert_array() const -> void {
+        if (shape_.is_array()) {
+            return;
+        }
+
+        throw compile_error{
+            first_token(),
+            std::format("{} is not an array",
+                        in_quotes(statement::trimmed_source(*this)))};
+    }
+
     auto assert_array_or_element() const -> void {
         assert_not_method();
 
@@ -839,6 +851,12 @@ class stmt_identifier final : public statement {
     // function has none
     [[nodiscard]] static auto parse_array_argument(toc& tc, tokenizer& tz)
         -> stmt_identifier {
+
+        // e.g. the '-' of 'array_length(-a)'
+        if (tz.is_unary_operator_next()) {
+            throw compile_error{tz.next_token_position(),
+                                "a unary operator makes a value, not an array"};
+        }
 
         const token tk{tz.next_token()};
         const term tm{classify_term(tc, tk, tz)};

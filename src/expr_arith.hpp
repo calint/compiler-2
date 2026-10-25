@@ -1406,9 +1406,7 @@ class expr_arith final : public statement {
         const type& operand_type{term.get_type()};
 
         if (not operand_type.is_builtin()) {
-            throw compile_error{term.tok(),
-                                std::format("an instance of {} is not a number",
-                                            in_quotes(operand_type.name()))};
+            throw_not_a_number(term.tok(), operand_type.name());
         }
 
         if (not operand_type.is_bool()) {

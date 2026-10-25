@@ -1,4 +1,4 @@
 
-1305.baz:4:13: '~b' is not an array
+1305.baz:4:13: a unary operator makes a value, not an array
     read(0, ~b, 2)
             ^

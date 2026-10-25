@@ -1,0 +1,4 @@
+
+1673.baz:5:22: 'i8' is a type, not an array
+    var n = write(1, i8)
+                     ^~

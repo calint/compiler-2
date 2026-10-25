@@ -5226,3 +5226,19 @@ SRC=1670 && EXP=7 && RUN
 # a call outside a function is rejected where it is parsed, before its
 # arguments
 SRC=1671 && COMPERR
+
+# a discarded result is rejected where it is parsed, also in a branch that is
+# not compiled
+SRC=1672 && COMPERR
+
+# the buffer of an io built-in is read like the array of 'array_length': a type
+# is not an array
+SRC=1673 && COMPERR
+
+# the buffer of an io built-in is read like the array of 'array_length': a call
+# is not an array
+SRC=1674 && COMPERR
+
+# the buffer of an io built-in is an array where it is parsed, also in a branch
+# that is not compiled
+SRC=1675 && COMPERR

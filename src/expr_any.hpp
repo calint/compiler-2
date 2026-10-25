@@ -226,12 +226,13 @@ class expr_any final : public statement {
         form_ = std::move(list);
     }
 
-    // a method receiver, the first argument of the call
-    expr_any(const token pos_tk, expr_type receiver) : statement{pos_tk} {
-        set_type(receiver.get_type());
+    // a path parsed apart, e.g. a method receiver or the array argument of a
+    // built-in
+    expr_any(const token pos_tk, expr_type path) : statement{pos_tk} {
+        set_type(path.get_type());
 
         form_ = single_value{
-            .value{std::move(receiver)},
+            .value{std::move(path)},
         };
     }
 

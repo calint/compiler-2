@@ -1,0 +1,4 @@
+
+1675.baz:7:18: 'x' is not an array
+        write(1, x)
+                 ^

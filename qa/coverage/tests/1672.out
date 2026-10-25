@@ -1,0 +1,4 @@
+
+1672.baz:10:9: return value is discarded
+        f()
+        ^

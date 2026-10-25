@@ -52,6 +52,16 @@ class bulk_operands final {
         ident_info second;
     };
 
+    // compiles the count into the register the machine asks for, this must
+    // outlive the emitter
+    // the run-time count and the address of each array, for the element
+    // operations of the machine
+    struct run_time_emitters {
+        std::function<void(const operand&)> count;
+        machine::address_emitter first;
+        machine::address_emitter second;
+    };
+
     bulk_operands(toc& tc, tokenizer& tz, const std::string_view first_role,
                   const std::string_view second_role, const second_use use)
         : open_paren_tk_{
@@ -102,8 +112,6 @@ class bulk_operands final {
 
     [[nodiscard]] auto count() const -> const expr_any& { return count_; }
 
-    // compiles the count into the register the machine asks for, this must
-    // outlive the emitter
     [[nodiscard]] auto count_emitter(toc& tc, const size_t indent) const
         -> std::function<void(const operand&)> {
 
@@ -114,6 +122,28 @@ class bulk_operands final {
 
             count_.compile(tc, indent,
                            destination::of_register(count_register));
+        };
+    }
+
+    [[nodiscard]] auto emitters(toc& tc, const size_t indent,
+                                const token& src_loc_tk,
+                                const arrays_info& arrays) const
+        -> run_time_emitters {
+
+        const machine::address_emitter first{
+            first_.address_emitter_of(tc, indent, src_loc_tk, arrays.first,
+                                      range_check_of(tc, first_)),
+        };
+
+        const machine::address_emitter second{
+            second_.address_emitter_of(tc, indent, src_loc_tk, arrays.second,
+                                       range_check_of(tc, second_)),
+        };
+
+        return {
+            .count{count_emitter(tc, indent)},
+            .first{first},
+            .second{second},
         };
     }
 

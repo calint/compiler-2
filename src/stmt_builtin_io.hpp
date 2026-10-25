@@ -101,7 +101,8 @@ class stmt_builtin_io final : public statement {
   public:
     stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
                     const token tk, tokenizer& tz)
-        : statement{tk, std::move(uops)}, io_{io}, args_{tc, tz} {
+        : statement{tk, std::move(uops)}, io_{io},
+          args_{tc, tz, buffer_index_} {
 
         assert_call_in_func(tc, tok());
 
@@ -120,12 +121,8 @@ class stmt_builtin_io final : public statement {
         }
 
         // 'read' and 'sector_read' fill the buffer
-        if (const std::optional<place> filled{as_place(tc, buffer_path())};
-            filled) {
-
-            buffer_path().record_write(tc, buffer_path().tok(), "read into",
-                                       filled->info);
-        }
+        buffer_path().record_write(tc, buffer_path().tok(), "read into",
+                                   make_ident_info(tc, buffer_path()));
     }
 
     //
@@ -212,13 +209,11 @@ class stmt_builtin_io final : public statement {
             return;
         }
 
-        if (not as_place(tc, buffer_path())) {
-            return;
-        }
-
         const std::optional<storage_path> written{buffer_path().storage(tc)};
 
-        // note: a place is a variable, which has storage
+        // note: the buffer is an array path ('assert_buffer_path'), a
+        //       variable, which has storage
+
         assert(written);
 
         visitor({
@@ -302,22 +297,18 @@ class stmt_builtin_io final : public statement {
                                         conjunction, max_count)};
     }
 
-    // an address would bypass the bounds check, so only arrays are accepted
-    [[nodiscard]] auto assert_array_buffer(const toc& tc) const -> place {
-        if (std::optional<place> array{as_place(tc, buffer_path())};
-            array and array->info.is_array()) {
-
-            return std::move(*array);
-        }
-
-        throw_not_an_array();
-    }
-
     // the buffer an array, of whole sectors for a sector function, and a
     // constant range in its bounds: every verdict that needs no code, made
     // before the arguments are compiled
     [[nodiscard]] auto assert_buffer(toc& tc) const -> place {
-        const place buffer{assert_array_buffer(tc)};
+        // note: the parse took an array path ('assert_buffer_path'), an
+        //       address would bypass the bounds check
+
+        std::optional<place> array{as_place(tc, buffer_path())};
+
+        assert(array and array->info.is_array());
+
+        const place buffer{std::move(*array)};
 
         if (io_.is_sector) {
             assert_sector_buffer(tc, buffer.info);
@@ -328,25 +319,20 @@ class stmt_builtin_io final : public statement {
         return buffer;
     }
 
-    // the buffer is named by a path, the rest of 'assert_array_buffer' needs
-    // the types at compile time
+    // the buffer is an array, not an element ('builtin_arguments' took an
+    // array path), the sector size and the constant range need the types at
+    // compile time
     auto assert_buffer_path() const -> void {
-        const statement& arg{args_.at(buffer_index_)};
-        const stmt_identifier* const ident{arg.operand_path()};
+        const stmt_identifier& buffer{buffer_path()};
 
         // the start has one spelling, the last argument
-        if (ident != nullptr and ident->is_array_element()) {
+        if (buffer.is_array_element()) {
             throw compile_error{
-                arg.tok(),
+                args_.at(buffer_index_).tok(),
                 std::format("pass the array and the start as {} argument, "
                             "e.g. {}",
                             io_.is_sector ? "3rd" : "4th",
                             in_quotes(usage_text()))};
-        }
-
-        // e.g. not '-b', a unary operator makes a value
-        if (arg.bare_path() == nullptr) {
-            throw_not_an_array();
         }
     }
 
@@ -669,14 +655,6 @@ class stmt_builtin_io final : public statement {
         }
 
         return range_check::compile_time;
-    }
-
-    [[noreturn]] auto throw_not_an_array() const -> void {
-        const statement& arg{args_.at(buffer_index_)};
-
-        throw compile_error{
-            arg.tok(),
-            std::format("{} is not an array", in_quotes(trimmed_source(arg)))};
     }
 
     // the call with all its arguments

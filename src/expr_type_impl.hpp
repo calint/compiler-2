@@ -73,9 +73,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     if (is_bare) {
         // e.g. the '+' of 'point + 1', like 'p + 1' of a variable 'p'
         if (continues_expression(tz)) {
-            throw compile_error{tok(),
-                                std::format("an instance of {} is not a number",
-                                            in_quotes(tok().text()))};
+            throw_not_a_number(tok(), tok().text());
         }
 
         return;

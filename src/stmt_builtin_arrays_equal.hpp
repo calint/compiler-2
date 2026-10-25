@@ -16,24 +16,18 @@
 #include "unary_ops.hpp"
 
 // 'arrays_equal(a, b, count)' is a 'bool': whether the elements of the two
-// ranges are equal; it takes no unary ops
+// ranges are equal; unary ops are rejected like on any 'bool' operand
 class stmt_builtin_arrays_equal final : public statement {
     bulk_operands operands_;
 
   public:
     stmt_builtin_arrays_equal(toc& tc, unary_ops uops, const token src_loc_tk,
                               tokenizer& tz)
-        : statement{src_loc_tk, std::move(uops)} {
-
-        assert_no_unary_ops();
+        : statement{src_loc_tk, std::move(uops)},
+          operands_{tc, tz, "first", "second",
+                    bulk_operands::second_use::read} {
 
         set_type(tc.builtins().boolean());
-
-        // note: parsed after the check so that a unary operation is reported
-        //       before an error in the arguments
-
-        operands_ = {tc, tz, "first", "second",
-                     bulk_operands::second_use::read};
     }
 
     stmt_builtin_arrays_equal() = default;
@@ -74,28 +68,16 @@ class stmt_builtin_arrays_equal final : public statement {
             return;
         }
 
-        const std::function<void(const operand&)> emit_count{
-            operands_.count_emitter(tc, indent),
-        };
-
-        const machine::address_emitter emit_lhs{
-            operands_.first().address_emitter_of(
-                tc, indent, tok(), arrays.first,
-                operands_.range_check_of(tc, operands_.first())),
-        };
-
-        const machine::address_emitter emit_rhs{
-            operands_.second().address_emitter_of(
-                tc, indent, tok(), arrays.second,
-                operands_.range_check_of(tc, operands_.second())),
+        const bulk_operands::run_time_emitters emit{
+            operands_.emitters(tc, indent, tok(), arrays),
         };
 
         x.equal_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
-                         emit_count,
+                         emit.count,
                          {
                              .alignment{arrays.first.type_ref().alignment()},
-                             .lhs{emit_lhs},
-                             .rhs{emit_rhs},
+                             .lhs{emit.first},
+                             .rhs{emit.second},
                              .dst{dst},
                              .inverted{inverted},
                          });
@@ -118,15 +100,5 @@ class stmt_builtin_arrays_equal final : public statement {
         }
 
         throw_type_mismatch(src_loc_tk, dst_type.name(), get_type().name());
-    }
-
-    // a 'bool' result has no meaningful negation
-    auto assert_no_unary_ops() const -> void {
-        if (get_unary_ops().is_empty()) {
-            return;
-        }
-
-        throw compile_error{
-            tok(), "this built-in function does not accept unary operations"};
     }
 };

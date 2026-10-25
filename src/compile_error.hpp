@@ -223,3 +223,13 @@ class compile_error final : public std::exception {
 [[noreturn]] inline auto throw_unclosed_list(const token& next_tk) -> void {
     throw compile_error{next_tk, "expected ')' to close expression"};
 }
+
+// a user type where a number is needed, e.g. the 'p' of 'p + 1'
+[[noreturn]] inline auto throw_not_a_number(const token& src_loc_tk,
+                                            const std::string_view type_name)
+    -> void {
+
+    throw compile_error{
+        src_loc_tk,
+        std::format("an instance of {} is not a number", in_quotes(type_name))};
+}

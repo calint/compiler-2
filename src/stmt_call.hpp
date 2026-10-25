@@ -906,8 +906,8 @@ class inline_call {
 
         const std::optional<func_result>& result{call_.func->result()};
 
-        // note: unary ops apply to a value, 'assert_result_use' rejects a
-        //       call without one
+        // note: unary ops apply to a value, 'value_call' rejects a call
+        //       without one
 
         assert(result);
 
@@ -2099,8 +2099,9 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
 }
 
 // the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
-// 'write(1, buf, 4)'; each is a value at the default type, the built-in
-// checks their count and their kinds
+// 'write(1, buf, 4)'; each is a value at the default type, the one at
+// 'array_index' an array path ('stmt_identifier::parse_array_argument'), the
+// built-in checks their count and their kinds
 class builtin_arguments {
     token open_paren_tk_;
     std::vector<expr_any> args_;
@@ -2109,7 +2110,8 @@ class builtin_arguments {
 
   public:
     // the name of the built-in is read
-    builtin_arguments(toc& tc, tokenizer& tz)
+    builtin_arguments(toc& tc, tokenizer& tz,
+                      const std::optional<size_t> array_index)
         : open_paren_tk_{
               tz.expect_char_token('(', "expected '(' after function name"),
           } {
@@ -2125,8 +2127,13 @@ class builtin_arguments {
 
             assert_not_string_argument(tz);
 
-            args_.emplace_back(tc, tz, tc.builtins().default_type(),
-                               literal_typing::from_destination);
+            if (args_.size() == array_index) {
+                add_array_argument(
+                    stmt_identifier::parse_array_argument(tc, tz));
+            } else {
+                args_.emplace_back(tc, tz, tc.builtins().default_type(),
+                                   literal_typing::from_destination);
+            }
 
             const std::optional<token> delim_tk{tz.is_next_char_token(',')};
 
@@ -2173,6 +2180,24 @@ class builtin_arguments {
                 .written_place{},
             });
         }
+    }
+
+  private:
+    // an array or an element, checked where it is read like the arrays of
+    // 'bulk_operands'; the whitespace before the path belongs to its first
+    // token
+    auto add_array_argument(stmt_identifier array) -> void {
+        array.assert_array_or_element();
+
+        const token& first_tk{array.first_token()};
+
+        const token pos_tk{
+            token::position(first_tk.file_index(), first_tk.start_index(),
+                            first_tk.at_line()),
+        };
+
+        args_.emplace_back(pos_tk, expr_type{std::make_unique<stmt_identifier>(
+                                       std::move(array))});
     }
 };
 
@@ -2524,7 +2549,12 @@ class stmt_call : public statement {
         -> void {
 
         assert_no_shared_storage(tc, dst);
-        assert_result_use(dst);
+
+        // note: the parse rejected a discarded result
+        //       ('parse_name_statement') and a call without one as a value
+        //       ('value_call')
+
+        assert(callee().has_result() != dst.is_empty());
 
         if (callee().has_result()) {
             assert_result_type(dst);
@@ -2771,17 +2801,6 @@ class stmt_call : public statement {
                         in_quotes(callee().result_type().name()),
                         in_quotes(callee().name()), dst.type_ref().name()),
         };
-    }
-
-    // a result must be stored and a call without one cannot provide it
-    auto assert_result_use(const destination& dst) const -> void {
-        if (callee().has_result() and dst.is_empty()) {
-            throw compile_error{tok(), "return value is discarded"};
-        }
-
-        if (not callee().has_result() and not dst.is_empty()) {
-            throw compile_error{tok(), "function does not return a value"};
-        }
     }
 
     // the receiver of a method is written before the name

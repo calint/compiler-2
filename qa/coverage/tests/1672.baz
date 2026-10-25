@@ -1,0 +1,12 @@
+# a discarded result is rejected where it is parsed, also in a branch that is
+# not compiled
+
+func f() res {
+    res = 1
+}
+
+func main() {
+    if 1 == 2 {
+        f()
+    }
+}

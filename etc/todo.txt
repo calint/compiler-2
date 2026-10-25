@@ -150,13 +150,40 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        D.1. one phase for "the result is used": a user call's discarded
             result rejected at the parse like a built-in's (C1, behavior: a
             dead branch rejects 'f()' as it rejects 'i8(x)'; tests)
+       => D.1 done (2026-10-25): 'parse_name_statement' rejects a call
+          whose result stands alone, like a built-in's; 'assert_result_use'
+          becomes an assert in 'assert_call_accepted'; test 0624 loses the
+          "called from" frame (the error is the definition's now), test 1672
+          (a dead branch)
        D.2. the io buffer read by 'parse_array_argument' like the other
             array arguments (C2, messages change; tests)
+       => D.2 done (2026-10-25): 'builtin_arguments' takes the index of an
+          array argument and reads it with 'parse_array_argument', checked
+          with 'assert_array_or_element' where it is read; the io buffer is
+          always a place, the 'as_place' guards and 'assert_array_buffer' go
+          (asserts); 'parse_array_argument' says "a unary operator makes a
+          value, not an array" (was "expected an identifier" for
+          'array_length(-a)'); messages: tests 0694, 1304, 1305, 1451, 1529
+          change (now as 'array_length'), the caret of 0513 and 1052 spans
+          the name; tests 1673-1675
        D.3. one helper per repeated message, "is not an array" first (C3)
+       D.3. one helper per repeated message, "is not an array" first (C3)
+       => D.3 done, reduced (2026-10-25): 'stmt_identifier::assert_array' for
+          'array_length' and 'foo'; 'throw_not_a_number' in compile_error.hpp
+          for the three "an instance of ... is not a number"; the two "takes
+          N arguments" stay: one is located at the tokenizer, one at a token
        D.4. 'arrays_equal' through the general 'bool' operand rule (C4)
+       D.4. 'arrays_equal' through the general 'bool' operand rule (C4)
+       => D.4 done (2026-10-25): 'assert_no_unary_ops' goes, the general rule
+          says "a 'bool' is not an arithmetic operand, convert it"; test 0246
        D.5. a built-in's catalog row tied to its maker by an assert (X3); the
             address emitters of 'array_copy' and 'arrays_equal' made once
             (M6)
+       => D.5 done (2026-10-25): both makers assert that a name of the
+          catalog reached no null return; 'bulk_operands::emitters' gives
+          the count and the two address emitters; both suites, the CLI tests,
+          test-rv32i, clang-tidy, check-messages, fuzz-io, reject, calls,
+          data and constructs clean for phase D
     E. operator facts in rows
        E.1. a traits row per operator beside the spellings (family,
             precedence, regroupable, identity), the if-chains read it (X1,

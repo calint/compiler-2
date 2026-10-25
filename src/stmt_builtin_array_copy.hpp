@@ -70,28 +70,16 @@ class stmt_builtin_array_copy final : public statement {
             return;
         }
 
-        const std::function<void(const operand&)> emit_count{
-            operands_.count_emitter(tc, indent),
-        };
-
-        const machine::address_emitter emit_src{
-            operands_.first().address_emitter_of(
-                tc, indent, tok(), arrays.first,
-                operands_.range_check_of(tc, operands_.first())),
-        };
-
-        const machine::address_emitter emit_dst{
-            operands_.second().address_emitter_of(
-                tc, indent, tok(), arrays.second,
-                operands_.range_check_of(tc, operands_.second())),
+        const bulk_operands::run_time_emitters emit{
+            operands_.emitters(tc, indent, tok(), arrays),
         };
 
         x.copy_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
-                        emit_count,
+                        emit.count,
                         {
                             .alignment{arrays.first.type_ref().alignment()},
-                            .src{emit_src},
-                            .dst{emit_dst},
+                            .src{emit.first},
+                            .dst{emit.second},
                             .overlap{tc.checks().overlap_options()},
                         });
     }

@@ -766,9 +766,7 @@ class expr_bool_op final : public statement {
                             in_quotes(type_name))};
         }
 
-        throw compile_error{side.tok(),
-                            std::format("an instance of {} is not a number",
-                                        in_quotes(type_name))};
+        throw_not_a_number(side.tok(), type_name);
     }
 
     // the backends compare at the width of 'lhs' which would truncate 'rhs'
