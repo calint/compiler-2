@@ -56,21 +56,47 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        B.1. round 16 rename leftovers: 'parse_returns', 'is_constructor'
             beside 'is_self' (S4); 'make_argument_temporary' loses the
             parameter the call site holds (S7)
+       => B.1 done (2026-10-25): 'parse_result', its note says result;
+          'is_constructor' is 'result_ and result_->is_self()';
+          'make_argument_temporary(tc, indent, index)' reads the callee's
+          parameter
        B.2. 'stmt_identifier' constructor loses the unary ops every caller
             leaves empty (F3); 'parse_builtin_value' takes them by value
             (F4); the two "built-in value type" functions and the
             conversion picked by elimination (F5, N1), 'builtin_value_type_named'
             private (T5); two 'position_of'; 'human_readable' ->
             'for_message' (F5)
+       => B.2 done, reduced (2026-10-25): the 'stmt_identifier'
+          constructor takes no unary ops, the one 'set_unary_ops' caller says
+          why it comes after the parse; 'is_integer_conversion(tm)' names the
+          conversion branch; 'toc::builtin_scalar_named' (private),
+          'expr_arith::start_marker_of', 'source_locations::for_message';
+          F4 kept: taking the ops by value needs the caller to classify the
+          built-in first (the one dispatcher, not planned), the comment
+          states the contract
        B.3. scratch build first, then remove: 'stmt_def_const::visit_reads'
             (S5)
+       => B.3 done (2026-10-25): a scratch build that aborted in it passed
+          both suites, the CLI tests, fuzz-reject 600, fuzz-flow 300,
+          fuzz-constructs, fuzz-ub 200 and fuzz-effects 300; removed
        B.4. a compiler-added variable marked once, 'var_info::is_temporary'
             or the '-' in its name (T2); 'scope_stack' answers the root
             question itself, 'front()' goes (T3); the resolver walk without
             the out-parameter (T4)
+       => B.4 done (2026-10-25): 'var_info::is_temporary()' reads the name
+          ('temporary_name' and 'is_temporary_name' free beside 'var_info'),
+          the flag goes; 'scope_stack::count', 'is_at_root', 'at', the
+          mutable 'all()' and 'front()' go; the resolver 'walk' holds 'end'
+          and 'follow_binding' returns 'std::variant<ident_info, walk>'
        B.5. the label of a handler's name made in one place, the one-word
             assumption asserted (B3); four builtin accessors (B6, low, only
             if one place reads better)
+       => B.5 done, reduced (2026-10-25): 'failure_handler::symbol()' used
+          by both message labels and 'line_failure_label'; B6 kept: the
+          x86_64 sites read better with 'builtin_type_i64()' than with a
+          size; both suites, the CLI tests, test-rv32i, clang-tidy,
+          fuzz-calls, fuzz-generics, fuzz-reject and fuzz-methods clean for
+          phase B
     C. round 16 follow-up (listings change under '--nopt')
        C.1. a stored condition whose last element folds branches nowhere too
             (E1): 'compile_last_element' resolves the target once (empty when

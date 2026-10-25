@@ -444,7 +444,7 @@ class call_limits final {
         //       of noinline calls checked, so the error does not suggest
         //       'noinline', see 'noinline_call::dry_run_body'
 
-        assert_scope_count(tc, call_tk, tc.scopes().all().size(),
+        assert_scope_count(tc, call_tk, tc.scopes().count(),
                            tc.scopes().noinline_dry_run_level() != 0);
     }
 
@@ -621,7 +621,6 @@ struct call_site {
                        .type_ptr{&tpe},
                        .src_loc_tk{tk},
                        .shape{},
-                       .is_temporary{true},
                        .placement{},
                        .foo_array{},
                    },
@@ -694,13 +693,13 @@ struct call_site {
     [[nodiscard]] auto temporary_argument_name(const size_t index) const
         -> std::string {
 
-        return toc::temporary_name(tk, "call-arg", index);
+        return temporary_name(tk, "call-arg", index);
     }
 
     // the result of a noinline call whose destination is not memory or has
     // another type, see 'noinline_call::has_result_temporary'
     [[nodiscard]] auto temporary_result_name() const -> std::string {
-        return toc::temporary_name(tk, "call-result", 0);
+        return temporary_name(tk, "call-result", 0);
     }
 
     //
@@ -1753,7 +1752,7 @@ class noinline_call {
         call_limits::assert_noinline_level(call_.tk, level + below.levels);
 
         call_limits::assert_scope_count(
-            tc, call_.tk, tc.scopes().all().size() + below.scopes, true);
+            tc, call_.tk, tc.scopes().count() + below.scopes, true);
 
         // note: a call reached again inside its own dry run, e.g. 'f(a, b)'
         //       calling 'f(b, a)' calling 'f(a, b)', finds the height 0 its
@@ -3203,7 +3202,7 @@ class stmt_call : public statement {
     [[nodiscard]] static auto shared_name_note(const std::string_view name)
         -> std::string {
 
-        if (toc::is_temporary_name(name)) {
+        if (is_temporary_name(name)) {
             return {};
         }
 

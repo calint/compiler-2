@@ -492,6 +492,14 @@ class machine {
         // the status the program exits with, one per handler, the same on
         // every target
         int exit_code{};
+
+        // the name as a part of a label, which has no space, e.g.
+        // 'frame_overflow'
+        [[nodiscard]] auto symbol() const -> std::string {
+            std::string text{name};
+            std::ranges::replace(text, ' ', '_');
+            return text;
+        }
     };
 
   private:

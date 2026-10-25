@@ -938,9 +938,7 @@ class machine_x86_64 final : public machine {
         const std::string_view name{handler.name};
         const std::string_view handler_label{handler.label};
 
-        // a label has no space, 'frame overflow' is 'msg_frame_overflow'
-        std::string label_name{name};
-        std::ranges::replace(label_name, ' ', '_');
+        const std::string label_name{handler.symbol()};
 
         if (not with_line) {
             const std::string message_label{std::format("msg_{}", label_name)};
@@ -957,7 +955,9 @@ class machine_x86_64 final : public machine {
 
         for (const auto& [file_ix, lines] : lines_by_file) {
             for (const size_t line : lines) {
-                assembler_.label(0, line_failure_label(name, file_ix, line));
+                assembler_.label(0,
+                                 line_failure_label(label_name, file_ix, line));
+
                 assembler_.instruction(1, op::mov, "rbp", line);
                 assembler_.jmp(1, failure_entry_label(handler_label, file_ix));
             }
@@ -1862,7 +1862,7 @@ class machine_x86_64 final : public machine {
             return std::string{handler.label};
         }
 
-        return line_failure_label(handler.name, src_loc_tk.file_index(),
+        return line_failure_label(handler.symbol(), src_loc_tk.file_index(),
                                   src_loc_tk.at_line());
     }
 

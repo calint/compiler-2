@@ -131,19 +131,39 @@ using var_placement =
     return {};
 }
 
+// the name of a variable the compiler adds, e.g. 'call-arg-12-0', it has a
+// '-' so no identifier of the source can have it; the offset of the token
+// tells the temporaries of calls in one block apart
+[[nodiscard]] inline auto temporary_name(const token& src_loc_tk,
+                                         const std::string_view role,
+                                         const size_t index) -> std::string {
+
+    return std::format("{}-{}-{}", role, src_loc_tk.start_index(), index);
+}
+
+// a name that 'temporary_name' made
+[[nodiscard]] inline auto is_temporary_name(const std::string_view name)
+    -> bool {
+
+    return name.contains('-');
+}
+
 struct var_info {
     std::string name;
     const type* type_ptr{};
     token src_loc_tk;
     array_shape shape;
     read_only_cause read_only_why{};
-    // a variable the compiler adds, see 'toc::temporary_name'
-    bool is_temporary{};
     var_placement placement;
 
     // the array that the element 'e' of a 'foo' belongs to, empty unless this
     // is that element
     std::optional<storage_path> foo_array;
+
+    // a variable the compiler adds, see 'temporary_name'
+    [[nodiscard]] auto is_temporary() const -> bool {
+        return is_temporary_name(name);
+    }
 };
 
 // the address of an element of a path computed at an inlined call, e.g.

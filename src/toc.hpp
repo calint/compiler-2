@@ -1225,8 +1225,6 @@ class scope_stack final {
   public:
     explicit scope_stack(const definition_order& order) : order_{order} {}
 
-    [[nodiscard]] auto all() -> std::vector<scope>& { return scopes_; }
-
     [[nodiscard]] auto all() const -> const std::vector<scope>& {
         return scopes_;
     }
@@ -1237,6 +1235,14 @@ class scope_stack final {
         if (not innermost_loop()) {
             throw compile_error{src_loc_tk, "not in a loop"};
         }
+    }
+
+    [[nodiscard]] auto at(const size_t index) -> scope& {
+        return scopes_.at(index);
+    }
+
+    [[nodiscard]] auto at(const size_t index) const -> const scope& {
+        return scopes_.at(index);
     }
 
     [[nodiscard]] auto back() -> scope& { return scopes_.back(); }
@@ -1265,14 +1271,12 @@ class scope_stack final {
         return scopes_.at(meaning.scope_index).get_const(name).constant.value;
     }
 
+    [[nodiscard]] auto count() const -> size_t { return scopes_.size(); }
+
     // blocks and loops belong to the function scope below them
     [[nodiscard]] auto current_func_scope() const -> const scope& {
         return scopes_.at(func_scope_index());
     }
-
-    [[nodiscard]] auto front() -> scope& { return scopes_.front(); }
-
-    [[nodiscard]] auto front() const -> const scope& { return scopes_.front(); }
 
     // how many times the inlined function 'name' is being compiled in place
     // by the current function body, inlined bodies are searched down to the
@@ -1315,6 +1319,11 @@ class scope_stack final {
         }
 
         std::unreachable();
+    }
+
+    // only the scope of the globals is open
+    [[nodiscard]] auto is_at_root() const -> bool {
+        return scopes_.size() == 1;
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return scopes_.empty(); }
@@ -1594,7 +1603,7 @@ class storage_layout final {
 
         if (location.scope_index) {
             scope& frame_scope{
-                scopes_.get().all().at(*location.scope_index),
+                scopes_.get().at(*location.scope_index),
             };
 
             stored.offset = address_offset(offset_bytes);
@@ -1643,7 +1652,6 @@ class storage_layout final {
 
         if (saved.frame_scope_index) {
             scopes_.get()
-                .all()
                 .at(*saved.frame_scope_index)
                 .restore_peak_frame_size_bytes(saved.peak_frame_size_bytes);
         }
@@ -1760,7 +1768,7 @@ class storage_layout final {
 
         // the name of a temporary is not in the source, the error is at its
         // call
-        if (var.is_temporary) {
+        if (var.is_temporary()) {
             throw compile_error{src_loc_tk,
                                 "a temporary of the call does not fit in the "
                                 "variable storage, see '--vars'"};
@@ -1782,7 +1790,7 @@ class storage_layout final {
     // frame and of the scopes inside it, other variables start at the
     // variables base
     [[nodiscard]] auto find_storage_location() const -> storage_location {
-        const std::vector<scope>& scopes{std::as_const(scopes_.get()).all()};
+        const std::vector<scope>& scopes{scopes_.get().all()};
         size_t local_size_bytes{};
 
         for (size_t i{scopes.size()}; i != 0; --i) {
@@ -1830,14 +1838,14 @@ class storage_layout final {
     }
 
     [[nodiscard]] auto scope_at(const size_t index) const -> const scope& {
-        return std::as_const(scopes_.get()).all().at(index);
+        return std::as_const(scopes_.get()).at(index);
     }
 
     // bytes of variables, without the dats and the padding after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
         size_t total_bytes{};
 
-        for (const scope& scp : std::as_const(scopes_.get()).all()) {
+        for (const scope& scp : scopes_.get().all()) {
             total_bytes = sum_storage_size(total_bytes,
                                            scp.allocated_storage_size_bytes());
         }
@@ -2106,11 +2114,16 @@ class ident_resolver final {
 
     // where the walk through the scopes has got to
     struct walk {
-        explicit walk(ident_path identifier) : id{std::move(identifier)} {}
+        walk(ident_path identifier, const size_t end_in)
+            : id{std::move(identifier)}, end{end_in} {}
 
         // the identifier, a binding rewrites it to what the parameter stands
         // for
         ident_path id;
+
+        // the base is looked up in the scopes below this index, a binding
+        // continues below its own scope
+        size_t end{};
 
         // the first address met is the deepest, outer bindings only rewrite
         // the base of the path
@@ -2188,7 +2201,7 @@ class ident_resolver final {
 
         if (meaning.is_binding()) {
             const param_binding& binding{
-                scopes_.get().all().at(meaning.scope_index).get_binding(name),
+                scopes_.get().at(meaning.scope_index).get_binding(name),
             };
 
             return binding.bound_storage_of(path);
@@ -2199,7 +2212,7 @@ class ident_resolver final {
         }
 
         const var_info& var{
-            scopes_.get().all().at(meaning.scope_index).get_var_const_ref(name),
+            scopes_.get().at(meaning.scope_index).get_var_const_ref(name),
         };
 
         // note: the array was resolved to its root variable when the 'foo'
@@ -2270,19 +2283,18 @@ class ident_resolver final {
         assert(not ident.empty());
 
         // e.g. 'lnks' of 'lnks[1].pos.y'
-        walk step{ident_path{std::string{ident}}};
-        size_t end{scopes_.get().all().size()};
+        walk step{ident_path{std::string{ident}}, scopes_.get().count()};
 
         while (true) {
             const name_meaning meaning{
-                scopes_.get().lookup_below(step.id.base(), end),
+                scopes_.get().lookup_below(step.id.base(), step.end),
             };
 
             if (not meaning.is_value()) {
                 return resolve_literal_or_empty(src_loc_tk, ident, step.id);
             }
 
-            const scope& scp{scopes_.get().all().at(meaning.scope_index)};
+            const scope& scp{scopes_.get().at(meaning.scope_index)};
 
             if (meaning.is_variable()) {
                 const ident_info info{
@@ -2315,16 +2327,16 @@ class ident_resolver final {
                 return ident_info::make_const(ident, constant_type, constant);
             }
 
-            if (std::optional<ident_info> found{
-                    follow_binding(scp.get_binding(step.id.base()), ident,
-                                   step),
-                };
-                found) {
+            std::variant<ident_info, walk> next{
+                follow_binding(scp.get_binding(step.id.base()), ident, step,
+                               meaning.scope_index),
+            };
 
-                return *std::move(found);
+            if (ident_info* const found{std::get_if<ident_info>(&next)}) {
+                return std::move(*found);
             }
 
-            end = meaning.scope_index;
+            step = std::get<walk>(std::move(next));
         }
     }
 
@@ -2351,12 +2363,13 @@ class ident_resolver final {
     // statics
     //
 
-    // the constant or the register a parameter stands for, else the walk goes
-    // on with the identifier rewritten to the variable that it is bound to
-    [[nodiscard]] static auto follow_binding(const param_binding& binding,
-                                             const std::string_view ident,
-                                             walk& step)
-        -> std::optional<ident_info> {
+    // the constant or the register a parameter stands for, else the walk one
+    // binding further: the identifier rewritten to the variable that it is
+    // bound to, looked up below the binding's scope 'binding_scope_index'
+    [[nodiscard]] static auto
+    follow_binding(const param_binding& binding, const std::string_view ident,
+                   const walk& step, const size_t binding_scope_index)
+        -> std::variant<ident_info, walk> {
 
         const bool is_single{step.id.path().size() == 1};
 
@@ -2384,13 +2397,17 @@ class ident_resolver final {
 
         const bound_name& named{std::get<bound_name>(binding.target)};
 
+        walk next{step.id.rebased(named.dotted_path), binding_scope_index};
+        next.address_by_call = step.address_by_call;
+        next.is_element = step.is_element;
+
         // a field path such as 'p.x' gets its array-ness from the field
         if (named.is_element and is_single) {
-            step.is_element = true;
+            next.is_element = true;
         }
 
-        if (not step.address_by_call and not named.lea.is_empty()) {
-            step.address_by_call = call_address{
+        if (not next.address_by_call and not named.lea.is_empty()) {
+            next.address_by_call = call_address{
                 .address{named.lea},
                 .trailing_count{step.id.path().size() - 1},
             };
@@ -2399,9 +2416,7 @@ class ident_resolver final {
             //       path
         }
 
-        step.id = step.id.rebased(named.dotted_path);
-
-        return std::nullopt;
+        return next;
     }
 };
 
@@ -2558,7 +2573,7 @@ class definition_checks final {
         // note: a definition is parsed, bindings exist only while compiling
         assert(not meaning.is_binding());
 
-        const scope& scp{scopes_.get().all().at(meaning.scope_index)};
+        const scope& scp{scopes_.get().at(meaning.scope_index)};
 
         if (meaning.is_constant()) {
             throw compile_error{
@@ -2885,7 +2900,7 @@ class toc final {
 
       public:
         scope_entry(toc& tc, scope scp, const token& call_site_tk = {})
-            : tc_{tc}, outer_scope_count_{tc.scopes_.all().size()} {
+            : tc_{tc}, outer_scope_count_{tc.scopes_.count()} {
 
             if (tc.is_compiling_ and scp.is_func()) {
                 trace_frame_.emplace(
@@ -2904,7 +2919,7 @@ class toc final {
         auto operator=(scope_entry&&) -> scope_entry& = delete;
 
         ~scope_entry() {
-            assert(tc_.scopes_.all().size() == outer_scope_count_ + 1);
+            assert(tc_.scopes_.count() == outer_scope_count_ + 1);
 
             tc_.pop_scope();
         }
@@ -3008,7 +3023,7 @@ class toc final {
         definitions_.assert_name_free(var.src_loc_tk, var.name);
 
         // note: a 'dat' in a block is rejected when it is parsed
-        assert(scopes_.all().size() == 1);
+        assert(scopes_.is_at_root());
 
         if (is_global_var_declared_) {
             throw compile_error{dat_tk,
@@ -3139,7 +3154,7 @@ class toc final {
 
         record_if_global(var.name);
 
-        if (scopes_.all().size() == 1 and kind != var_kind::dat) {
+        if (scopes_.is_at_root() and kind != var_kind::dat) {
             is_global_var_declared_ = true;
         }
 
@@ -3366,7 +3381,7 @@ class toc final {
     auto dry_run_call_kind(const std::string_view kind, const size_t level,
                            const std::function_ref<void()> compile) -> void {
 
-        dry_runs_.measure(kind, level, scopes_.all().size(), [&] -> void {
+        dry_runs_.measure(kind, level, scopes_.count(), [&] -> void {
             if (std::optional<compile_error> error{dry_run(compile)}) {
                 throw_dry_run_error(std::move(*error));
             }
@@ -3694,24 +3709,6 @@ class toc final {
                });
     }
 
-    // a name that 'temporary_name' made
-    [[nodiscard]] static auto is_temporary_name(const std::string_view name)
-        -> bool {
-
-        return name.contains('-');
-    }
-
-    // the name of a variable the compiler adds, e.g. 'call-arg-12-0', it has a
-    // '-' so no identifier of the source can have it; the offset of the token
-    // tells the temporaries of calls in one block apart
-    [[nodiscard]] static auto temporary_name(const token& src_loc_tk,
-                                             const std::string_view role,
-                                             const size_t index)
-        -> std::string {
-
-        return std::format("{}-{}-{}", role, src_loc_tk.start_index(), index);
-    }
-
     // an error that ends a dry run is reported as an error of the source:
     // the registers the run starts with do not depend on the code around it,
     // so it is not one of a version there; the dry run of a noinline call is
@@ -3797,7 +3794,7 @@ class toc final {
     // a global keeps the definition that declared it at the parse, the
     // compile declares it again
     auto record_if_global(const std::string_view name) -> void {
-        if (scopes_.all().size() == 1) {
+        if (scopes_.is_at_root()) {
             scopes_.record_global(name);
         }
     }

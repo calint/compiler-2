@@ -477,8 +477,7 @@ class machine_rv32i : public machine {
         const std::string_view name{handler.name};
         const std::string_view handler_label{handler.label};
 
-        std::string label_name{name};
-        std::ranges::replace(label_name, ' ', '_');
+        const std::string label_name{handler.symbol()};
 
         if (with_line) {
             for (const size_t file_ix :

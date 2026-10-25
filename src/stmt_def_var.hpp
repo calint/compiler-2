@@ -366,11 +366,6 @@ class stmt_def_const final : public statement {
     auto trace_assignment(assignment_flow& flow) const -> void override {
         flow.declare(name_tk_.text());
     }
-
-    // the value is folded, nothing is read at run time
-    auto visit_reads([[maybe_unused]] const read_filter var,
-                     [[maybe_unused]] const read_visitor reader) const
-        -> void override { std::cerr << "SCRATCH const visit_reads\n"; std::abort(); }
 };
 
 // e.g. 'var x = i32(0)', the initializer gives the type; a 'let' that does not
