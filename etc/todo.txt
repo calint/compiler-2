@@ -366,9 +366,22 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             the 0 sentinel; rv32i reads its bases only through the table;
             the target call registers and the stack pointer in the table;
             bare metal cannot leave 'is_stack_bounded' unset
+       => H.2 done (2026-10-25): 'has_sd_card' in the table,
+          'sector_size_bytes()' asserts it and gives 'card_sector_size_bytes';
+          'stack_pointer_register' and 'target_calls' ('target_call_names'
+          moved beside the table) in the table, so 'is_stack_pointer' is
+          shared and 'target_call_register_names' goes; rv32i reads its bases
+          through the table; the bare metal constructor asserts
+          'is_stack_bounded'; listings equal
        H.3. one table per rv32i arithmetic helper (B3): label and clobbers
             in one 'helper_spec' array; 'leaf_stack_bytes' takes the largest;
             one emit function per body
+       => H.3 done (2026-10-25): 'helper_specs_' rows {routine, label,
+          clobbers} in emit order; 'helper_spec_of' replaces 'helper_label'
+          and 'helper_clobbers'; 'leaf_stack_bytes' takes the most clobbers
+          of the rows; 'emit_arithmetic_helpers' loops the rows,
+          'emit_multiply_body', 'emit_multiply_checked_body' and
+          'emit_divide_body' hold the bodies; listings equal
        H.4. the data directives on the assembler base (B2); the data and
             variables layout written once in 'machine'; 18 forwarding
             overrides go

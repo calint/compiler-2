@@ -45,7 +45,8 @@
 //                'shift_by_register'
 //   helpers      '.Lbaz_multiply', '.Lbaz_multiply_checked' and
 //                '.Lbaz_divide' for 'mul' and 'div',
-//                'call_arithmetic_helper', 'emit_arithmetic_helpers'
+//                'helper_specs_', 'call_arithmetic_helper',
+//                'emit_arithmetic_helpers'
 //   memory       'zero_known_size', 'copy_known_size', 'compare_known_size'
 //                for a known size, 'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label')
@@ -163,6 +164,51 @@ class machine_rv32i : public machine {
 
     // the run-time routines of 'call_arithmetic_helper'
     enum class helper_routine : uint8_t { multiply, multiply_checked, divide };
+
+    // a run-time routine of 'call_arithmetic_helper', 'clobbers' are the
+    // registers a call of it changes
+    struct helper_spec {
+        helper_routine routine;
+        std::string_view label;
+        std::span<const std::string_view> clobbers;
+    };
+
+    // note: argument registers are allocated last, so the helpers rarely
+    //       clobber a live scratch register that would need saving
+
+    static constexpr std::array<std::string_view, 5> multiply_clobbers_{
+        "ra", "a0", "a1", "a2", "a3",
+    };
+
+    // note: 'a4' holds the sign of the product
+    static constexpr std::array<std::string_view, 6> multiply_checked_clobbers_{
+        "ra", "a0", "a1", "a2", "a3", "a4",
+    };
+
+    static constexpr std::array<std::string_view, 8> divide_clobbers_{
+        "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
+    };
+
+    // in the order 'emit_arithmetic_helpers' emits them
+    static constexpr auto helper_specs_{
+        std::to_array<helper_spec>({
+            {
+                .routine{helper_routine::multiply},
+                .label{".Lbaz_multiply"},
+                .clobbers{multiply_clobbers_},
+            },
+            {
+                .routine{helper_routine::multiply_checked},
+                .label{".Lbaz_multiply_checked"},
+                .clobbers{multiply_checked_clobbers_},
+            },
+            {
+                .routine{helper_routine::divide},
+                .label{".Lbaz_divide"},
+                .clobbers{divide_clobbers_},
+            },
+        }),
+    };
 
     // a 32-bit multiplier can need one digit above bit 31 in non-adjacent form
     static constexpr size_t multiplier_digit_count_{33};
@@ -1460,10 +1506,13 @@ class machine_rv32i : public machine {
     // the registers the helper changes, and a failed check of the helper,
     // made while they are saved, writes the digits of its line
     [[nodiscard]] static auto leaf_stack_bytes() -> size_t {
-        // note: '.Lbaz_divide' changes the most registers
+        size_t most_clobbers{};
+        for (const helper_spec& spec : helper_specs_) {
+            most_clobbers = std::max(most_clobbers, spec.clobbers.size());
+        }
+
         const size_t helper_save_bytes{
-            align_storage_size(helper_clobbers(helper_routine::divide).size() *
-                                   word_size_bytes_,
+            align_storage_size(most_clobbers * word_size_bytes_,
                                stack_alignment_),
         };
 
@@ -1697,11 +1746,11 @@ class machine_rv32i : public machine {
             arithmetic_helper_routine(result_kind, overflow_check.enabled),
         };
 
-        mark_used(helper_label(routine));
+        const helper_spec& spec{helper_spec_of(routine)};
 
-        const std::span<const std::string_view> clobbered{
-            helper_clobbers(routine),
-        };
+        mark_used(spec.label);
+
+        const std::span<const std::string_view> clobbered{spec.clobbers};
 
         // note: not 'machine::with_saved_registers': the live registers
         //       include the operands the scope protects, and the saved ones
@@ -1730,7 +1779,7 @@ class machine_rv32i : public machine {
             check_divisor(src_loc_tk, indent, dst.type_ref().size_bytes());
         }
 
-        assembler_.call(indent, helper_label(routine));
+        assembler_.call(indent, spec.label);
 
         if (routine == helper_routine::multiply_checked) {
             check_multiply_result(src_loc_tk, indent, dst);
@@ -2697,106 +2746,14 @@ class machine_rv32i : public machine {
     }
 
     auto emit_arithmetic_helpers() -> void {
-        // unused helpers contribute no code
-        if (is_used(helper_label(helper_routine::multiply))) {
-            assembler_.label(0, helper_label(helper_routine::multiply));
-            assembler_.mv(1, "a2", "a0");
-            assembler_.li(1, "a0", 0);
-            assembler_.beqz(1, "a1", "3f");
-            assembler_.label(0, "1");
-            assembler_.andi(1, "a3", "a1", 1);
-            assembler_.beqz(1, "a3", "2f");
-            assembler_.add(1, "a0", "a0", "a2");
-            assembler_.label(0, "2");
-            assembler_.slli(1, "a2", "a2", 1);
-            assembler_.srli(1, "a1", "a1", 1);
-            assembler_.bnez(1, "a1", "1b");
-            assembler_.label(0, "3");
-            assembler_.ret(1);
-        }
+        for (const helper_spec& spec : helper_specs_) {
+            // unused helpers contribute no code
+            if (not is_used(spec.label)) {
+                continue;
+            }
 
-        // multiplies the magnitudes by shift and add, a carry out of the
-        // sum, the multiplicand losing its top bit while multiplier bits
-        // remain or a magnitude above the range of the sign leaves the flag
-        // in a1 set, the sign is applied last
-        if (is_used(helper_label(helper_routine::multiply_checked))) {
-            // 'lui' of 2^31
-            constexpr int sign_bit_upper{0x80000};
-
-            assembler_.label(0, helper_label(helper_routine::multiply_checked));
-            assembler_.xor_op(1, "a4", "a0", "a1");
-            assembler_.srai(1, "a4", "a4", sign_shift_);
-            assembler_.srai(1, "a3", "a0", sign_shift_);
-            assembler_.xor_op(1, "a0", "a0", "a3");
-            assembler_.sub(1, "a0", "a0", "a3");
-            assembler_.srai(1, "a3", "a1", sign_shift_);
-            assembler_.xor_op(1, "a1", "a1", "a3");
-            assembler_.sub(1, "a1", "a1", "a3");
-            assembler_.mv(1, "a2", "a0");
-            assembler_.li(1, "a0", 0);
-            assembler_.beqz(1, "a1", "3f");
-            assembler_.label(0, "1");
-            assembler_.andi(1, "a3", "a1", 1);
-            assembler_.beqz(1, "a3", "2f");
-            assembler_.add(1, "a0", "a0", "a2");
-            assembler_.bltu(1, "a0", "a2", "5f");
-            assembler_.label(0, "2");
-            assembler_.srli(1, "a1", "a1", 1);
-            assembler_.beqz(1, "a1", "3f");
-            assembler_.bltz(1, "a2", "5f");
-            assembler_.slli(1, "a2", "a2", 1);
-            assembler_.j(1, "1b");
-            assembler_.label(0, "3");
-            assembler_.lui(1, "a3", sign_bit_upper);
-            assembler_.bltz(1, "a4", "4f");
-            assembler_.bgeu(1, "a0", "a3", "5f");
-            assembler_.j(1, "6f");
-            assembler_.label(0, "4");
-            assembler_.bltu(1, "a3", "a0", "5f");
-            assembler_.label(0, "6");
-            assembler_.xor_op(1, "a0", "a0", "a4");
-            assembler_.sub(1, "a0", "a0", "a4");
-            assembler_.li(1, "a1", 0);
-            assembler_.ret(1);
-            assembler_.label(0, "5");
-            assembler_.li(1, "a1", 1);
-            assembler_.ret(1);
-        }
-
-        // divide and remainder share magnitude division and sign restoration
-        if (is_used(helper_label(helper_routine::divide))) {
-            // one quotient bit per step
-            constexpr int divide_steps{32};
-
-            assembler_.label(0, helper_label(helper_routine::divide));
-            assembler_.beqz(1, "a1", "5f");
-            assembler_.srai(1, "a4", "a0", sign_shift_);
-            assembler_.srai(1, "a3", "a1", sign_shift_);
-            assembler_.xor_op(1, "a0", "a0", "a4");
-            assembler_.sub(1, "a0", "a0", "a4");
-            assembler_.xor_op(1, "a1", "a1", "a3");
-            assembler_.sub(1, "a1", "a1", "a3");
-            assembler_.xor_op(1, "a3", "a3", "a4");
-            assembler_.li(1, "a2", 0);
-            assembler_.li(1, "a5", divide_steps);
-            assembler_.label(0, "1");
-            assembler_.srli(1, "a6", "a0", sign_shift_);
-            assembler_.slli(1, "a2", "a2", 1);
-            assembler_.or_op(1, "a2", "a2", "a6");
-            assembler_.slli(1, "a0", "a0", 1);
-            assembler_.bltu(1, "a2", "a1", "2f");
-            assembler_.sub(1, "a2", "a2", "a1");
-            assembler_.ori(1, "a0", "a0", 1);
-            assembler_.label(0, "2");
-            assembler_.addi(1, "a5", "a5", -1);
-            assembler_.bnez(1, "a5", "1b");
-            assembler_.xor_op(1, "a0", "a0", "a3");
-            assembler_.sub(1, "a0", "a0", "a3");
-            assembler_.xor_op(1, "a1", "a2", "a4");
-            assembler_.sub(1, "a1", "a1", "a4");
-            assembler_.ret(1);
-            assembler_.label(0, "5");
-            emit_divide_by_zero_trap();
+            assembler_.label(0, spec.label);
+            emit_helper_body(spec.routine);
         }
     }
 
@@ -3206,6 +3163,41 @@ class machine_rv32i : public machine {
                   action.target);
     }
 
+    // divide and remainder share magnitude division and sign restoration
+    auto emit_divide_body() -> void {
+        // one quotient bit per step
+        constexpr int divide_steps{32};
+
+        assembler_.beqz(1, "a1", "5f");
+        assembler_.srai(1, "a4", "a0", sign_shift_);
+        assembler_.srai(1, "a3", "a1", sign_shift_);
+        assembler_.xor_op(1, "a0", "a0", "a4");
+        assembler_.sub(1, "a0", "a0", "a4");
+        assembler_.xor_op(1, "a1", "a1", "a3");
+        assembler_.sub(1, "a1", "a1", "a3");
+        assembler_.xor_op(1, "a3", "a3", "a4");
+        assembler_.li(1, "a2", 0);
+        assembler_.li(1, "a5", divide_steps);
+        assembler_.label(0, "1");
+        assembler_.srli(1, "a6", "a0", sign_shift_);
+        assembler_.slli(1, "a2", "a2", 1);
+        assembler_.or_op(1, "a2", "a2", "a6");
+        assembler_.slli(1, "a0", "a0", 1);
+        assembler_.bltu(1, "a2", "a1", "2f");
+        assembler_.sub(1, "a2", "a2", "a1");
+        assembler_.ori(1, "a0", "a0", 1);
+        assembler_.label(0, "2");
+        assembler_.addi(1, "a5", "a5", -1);
+        assembler_.bnez(1, "a5", "1b");
+        assembler_.xor_op(1, "a0", "a0", "a3");
+        assembler_.sub(1, "a0", "a0", "a3");
+        assembler_.xor_op(1, "a1", "a2", "a4");
+        assembler_.sub(1, "a1", "a1", "a4");
+        assembler_.ret(1);
+        assembler_.label(0, "5");
+        emit_divide_by_zero_trap();
+    }
+
     auto emit_equality_result(const size_t indent,
                               const std::string_view result,
                               const operand& left, const operand& right,
@@ -3223,6 +3215,20 @@ class machine_rv32i : public machine {
         }
 
         assembler_.sltiu(indent, result, tested, 1);
+    }
+
+    auto emit_helper_body(const helper_routine routine) -> void {
+        if (routine == helper_routine::multiply) {
+            emit_multiply_body();
+            return;
+        }
+
+        if (routine == helper_routine::multiply_checked) {
+            emit_multiply_checked_body();
+            return;
+        }
+
+        emit_divide_body();
     }
 
     // 'j' or a conditional branch comparing 'first' and 'second'
@@ -3296,6 +3302,69 @@ class machine_rv32i : public machine {
         }
 
         mark_lower_checked(range);
+    }
+
+    auto emit_multiply_body() -> void {
+        assembler_.mv(1, "a2", "a0");
+        assembler_.li(1, "a0", 0);
+        assembler_.beqz(1, "a1", "3f");
+        assembler_.label(0, "1");
+        assembler_.andi(1, "a3", "a1", 1);
+        assembler_.beqz(1, "a3", "2f");
+        assembler_.add(1, "a0", "a0", "a2");
+        assembler_.label(0, "2");
+        assembler_.slli(1, "a2", "a2", 1);
+        assembler_.srli(1, "a1", "a1", 1);
+        assembler_.bnez(1, "a1", "1b");
+        assembler_.label(0, "3");
+        assembler_.ret(1);
+    }
+
+    // multiplies the magnitudes by shift and add, a carry out of the
+    // sum, the multiplicand losing its top bit while multiplier bits
+    // remain or a magnitude above the range of the sign leaves the flag
+    // in a1 set, the sign is applied last
+    auto emit_multiply_checked_body() -> void {
+        // 'lui' of 2^31
+        constexpr int sign_bit_upper{0x80000};
+
+        assembler_.xor_op(1, "a4", "a0", "a1");
+        assembler_.srai(1, "a4", "a4", sign_shift_);
+        assembler_.srai(1, "a3", "a0", sign_shift_);
+        assembler_.xor_op(1, "a0", "a0", "a3");
+        assembler_.sub(1, "a0", "a0", "a3");
+        assembler_.srai(1, "a3", "a1", sign_shift_);
+        assembler_.xor_op(1, "a1", "a1", "a3");
+        assembler_.sub(1, "a1", "a1", "a3");
+        assembler_.mv(1, "a2", "a0");
+        assembler_.li(1, "a0", 0);
+        assembler_.beqz(1, "a1", "3f");
+        assembler_.label(0, "1");
+        assembler_.andi(1, "a3", "a1", 1);
+        assembler_.beqz(1, "a3", "2f");
+        assembler_.add(1, "a0", "a0", "a2");
+        assembler_.bltu(1, "a0", "a2", "5f");
+        assembler_.label(0, "2");
+        assembler_.srli(1, "a1", "a1", 1);
+        assembler_.beqz(1, "a1", "3f");
+        assembler_.bltz(1, "a2", "5f");
+        assembler_.slli(1, "a2", "a2", 1);
+        assembler_.j(1, "1b");
+        assembler_.label(0, "3");
+        assembler_.lui(1, "a3", sign_bit_upper);
+        assembler_.bltz(1, "a4", "4f");
+        assembler_.bgeu(1, "a0", "a3", "5f");
+        assembler_.j(1, "6f");
+        assembler_.label(0, "4");
+        assembler_.bltu(1, "a3", "a0", "5f");
+        assembler_.label(0, "6");
+        assembler_.xor_op(1, "a0", "a0", "a4");
+        assembler_.sub(1, "a0", "a0", "a4");
+        assembler_.li(1, "a1", 0);
+        assembler_.ret(1);
+        assembler_.label(0, "5");
+        assembler_.li(1, "a1", 1);
+        assembler_.ret(1);
     }
 
     // writes the line number of s2 in decimal, then exits with the code in s3:
@@ -4771,44 +4840,16 @@ class machine_rv32i : public machine {
         return (static_cast<uint32_t>(constant) & mask) == mask;
     }
 
-    // the registers that a call of the helper changes
-    [[nodiscard]] static auto helper_clobbers(const helper_routine routine)
-        -> std::span<const std::string_view> {
+    [[nodiscard]] static auto helper_spec_of(const helper_routine routine)
+        -> const helper_spec& {
 
-        // argument registers are allocated last, so the helpers rarely
-        // clobber a live scratch register that would need saving
-        static constexpr std::array<std::string_view, 8> clobbers{
-            "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
-        };
-
-        // '.Lbaz_multiply' changes the first five, '.Lbaz_multiply_checked'
-        // also 'a4' for the sign of the product, '.Lbaz_divide' all
-        constexpr size_t multiply_clobber_count{5};
-        constexpr size_t checked_multiply_clobber_count{6};
-
-        if (routine == helper_routine::divide) {
-            return clobbers;
+        for (const helper_spec& spec : helper_specs_) {
+            if (spec.routine == routine) {
+                return spec;
+            }
         }
 
-        if (routine == helper_routine::multiply_checked) {
-            return std::span{clobbers}.first(checked_multiply_clobber_count);
-        }
-
-        return std::span{clobbers}.first(multiply_clobber_count);
-    }
-
-    [[nodiscard]] static auto helper_label(const helper_routine routine)
-        -> std::string_view {
-
-        if (routine == helper_routine::divide) {
-            return ".Lbaz_divide";
-        }
-
-        if (routine == helper_routine::multiply_checked) {
-            return ".Lbaz_multiply_checked";
-        }
-
-        return ".Lbaz_multiply";
+        std::unreachable();
     }
 
     // the register-immediate form of 'add', 'and', 'or' and 'xor', 'sub' adds
