@@ -33,12 +33,13 @@
 // the formatter sorts the functions by name, so by topic they are:
 //
 //   registers    'machine' allocates them, here the names
-//                'register_names_', the order 'scratch_registers_', the frame
-//                base 'rbx' and the variables base 'rbp'
+//                'register_names_', the order 'scratch_registers_', the
+//                roles in 'x86_64_target'
 //   operations   'emit_op' chooses the form of an instruction,
 //                'with_lowered_addresses' fits an operand into one,
 //                'multiply_by_constant', 'emit_signed_divide', 'shift'
-//   memory       'copy', 'copy_bytes', 'zero' unrolled or with 'rep', the
+//   memory       'copy_block', 'store_bytes', 'zero' unrolled or with 'rep',
+//   the
 //                bulk operations with 'rsi', 'rdi' and 'rcx'
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
 //   checks       'check_bounds', 'check_divisor', 'check_shift_count',
@@ -64,8 +65,6 @@ class machine_x86_64 final : public machine {
 
     // the user address space of x86_64 Linux, 128 TiB
     static constexpr size_t user_address_space_bytes_{0x800000000000};
-
-    static constexpr std::string_view variables_base_register_{"rbp"};
 
     static constexpr std::array<size_t, 4> index_register_scalings_{1, 2, 4, 8};
 
@@ -210,8 +209,6 @@ class machine_x86_64 final : public machine {
     // note: in order of likelihood they are not used by name, 'rsi', 'rdi'
     //       and 'rcx' last since 'rep movsb' and 'repe cmpsb' need all three
 
-    static constexpr std::string_view slot_register_{"r11"};
-
     // scratch values live from which an array loop counts in memory
     static constexpr size_t memory_counter_pressure_count_{6};
 
@@ -261,27 +258,6 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         lea_into(src_loc_tk, indent, dst, address);
-    }
-
-    auto arrays_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t element_size_bytes,
-                      const std::function_ref<void(const operand&)> emit_count,
-                      const equality_request& request) -> void override {
-
-        load_bulk_registers(src_loc_tk, indent, element_size_bytes, emit_count,
-                            request.lhs, request.rhs);
-
-        // note: a zero count compares nothing and leaves the flags of 'test',
-        //       ZF set, so it compares equal
-
-        test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
-        assembler_.instruction(indent, op::repe_cmpsb);
-        release_bulk_registers(src_loc_tk, indent);
-
-        store_condition(src_loc_tk, indent,
-                        condition_for_comparison(comparison_operator::equal,
-                                                 request.inverted),
-                        request.dst);
     }
 
     auto bitwise(const token& src_loc_tk, const size_t indent,
@@ -425,9 +401,10 @@ class machine_x86_64 final : public machine {
     }
 
     // x86 accesses unaligned memory so the alignment is not needed
-    auto copy(const token& src_loc_tk, const size_t indent, const operand& dst,
-              const operand& src, const size_t size_bytes,
-              [[maybe_unused]] const size_t alignment) -> void override {
+    auto copy_block(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const operand& src,
+                    const size_t size_bytes,
+                    [[maybe_unused]] const size_t alignment) -> void override {
 
         if (size_bytes > threshold_for_rep_movs_size_bytes_) {
             copy_with_rep_movsb(src_loc_tk, indent, dst, size_bytes,
@@ -458,68 +435,6 @@ class machine_x86_64 final : public machine {
             });
 
         free_scratch_register(src_loc_tk, indent, tmp);
-    }
-
-    // an immediate store is one instruction without a register while a copy
-    // needs a load and a store for each qword
-    auto copy_bytes(const token& src_loc_tk, const size_t indent,
-                    const std::string_view bytes, const operand& dst,
-                    [[maybe_unused]] const size_t alignment,
-                    const std::function_ref<std::string()> add_constant)
-        -> void override {
-
-        if (bytes.size() > threshold_for_rep_movs_size_bytes_) {
-            const std::string label{add_constant()};
-
-            // rip-relative label addresses need no address register
-            copy_with_rep_movsb(
-                src_loc_tk, indent, dst, bytes.size(),
-                [&](const operand& pointer) -> void {
-                    assembler_.instruction(
-                        indent, op::lea, to_argument(pointer),
-                        assembler_x86_64::memory::of_symbol(label));
-                });
-
-            return;
-        }
-
-        comment(src_loc_tk, indent, "size <= {} B, use immediates",
-                threshold_for_rep_movs_size_bytes_);
-
-        for_each_part(
-            bytes.size(), size_qword_,
-            [&](const size_t part_size_bytes, const size_t offset) -> void {
-                const int64_t value{
-                    little_endian_value(bytes.substr(offset, part_size_bytes)),
-                };
-
-                // a qword store takes only a sign-extended 32-bit immediate
-                if (part_size_bytes == size_qword_ and
-                    not std::in_range<int32_t>(value)) {
-
-                    const size_t high_offset{offset + size_dword_};
-
-                    const int64_t low{
-                        little_endian_value(bytes.substr(offset, size_dword_)),
-                    };
-
-                    const int64_t high{
-                        little_endian_value(
-                            bytes.substr(high_offset, size_dword_)),
-                    };
-
-                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
-                                         offset, low);
-
-                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
-                                         high_offset, high);
-
-                    return;
-                }
-
-                store_immediate_part(src_loc_tk, indent, dst, part_size_bytes,
-                                     offset, value);
-            });
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
@@ -577,6 +492,28 @@ class machine_x86_64 final : public machine {
     auto end_main() -> void override {
         exit(token{}, 1, immediate(0));
         assembler_.add_separator_newline();
+    }
+
+    auto
+    equal_elements(const token& src_loc_tk, const size_t indent,
+                   const size_t element_size_bytes,
+                   const std::function_ref<void(const operand&)> emit_count,
+                   const equality_request& request) -> void override {
+
+        load_bulk_registers(src_loc_tk, indent, element_size_bytes, emit_count,
+                            request.lhs, request.rhs);
+
+        // note: a zero count compares nothing and leaves the flags of 'test',
+        //       ZF set, so it compares equal
+
+        test(src_loc_tk, indent, qword_register("rcx"), qword_register("rcx"));
+        assembler_.instruction(indent, op::repe_cmpsb);
+        release_bulk_registers(src_loc_tk, indent);
+
+        store_condition(src_loc_tk, indent,
+                        condition_for_comparison(comparison_operator::equal,
+                                                 request.inverted),
+                        request.dst);
     }
 
     auto exit(const token& src_loc_tk, const size_t indent,
@@ -800,6 +737,68 @@ class machine_x86_64 final : public machine {
         release_named_register(src_loc_tk, indent, "rcx");
     }
 
+    // an immediate store is one instruction without a register while a copy
+    // needs a load and a store for each qword
+    auto store_bytes(const token& src_loc_tk, const size_t indent,
+                     const std::string_view bytes, const operand& dst,
+                     [[maybe_unused]] const size_t alignment,
+                     const std::function_ref<std::string()> add_constant)
+        -> void override {
+
+        if (bytes.size() > threshold_for_rep_movs_size_bytes_) {
+            const std::string label{add_constant()};
+
+            // rip-relative label addresses need no address register
+            copy_with_rep_movsb(
+                src_loc_tk, indent, dst, bytes.size(),
+                [&](const operand& pointer) -> void {
+                    assembler_.instruction(
+                        indent, op::lea, to_argument(pointer),
+                        assembler_x86_64::memory::of_symbol(label));
+                });
+
+            return;
+        }
+
+        comment(src_loc_tk, indent, "size <= {} B, use immediates",
+                threshold_for_rep_movs_size_bytes_);
+
+        for_each_part(
+            bytes.size(), size_qword_,
+            [&](const size_t part_size_bytes, const size_t offset) -> void {
+                const int64_t value{
+                    little_endian_value(bytes.substr(offset, part_size_bytes)),
+                };
+
+                // a qword store takes only a sign-extended 32-bit immediate
+                if (part_size_bytes == size_qword_ and
+                    not std::in_range<int32_t>(value)) {
+
+                    const size_t high_offset{offset + size_dword_};
+
+                    const int64_t low{
+                        little_endian_value(bytes.substr(offset, size_dword_)),
+                    };
+
+                    const int64_t high{
+                        little_endian_value(
+                            bytes.substr(high_offset, size_dword_)),
+                    };
+
+                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
+                                         offset, low);
+
+                    store_immediate_part(src_loc_tk, indent, dst, size_dword_,
+                                         high_offset, high);
+
+                    return;
+                }
+
+                store_immediate_part(src_loc_tk, indent, dst, part_size_bytes,
+                                     offset, value);
+            });
+    }
+
     auto unary(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
                const runtime_check& check = {}) -> void override {
@@ -893,8 +892,8 @@ class machine_x86_64 final : public machine {
             .is_stack_bounded{},
             .frame_base_register{"rbx"},
             .stack_pointer_register{"rsp"},
-            .variables_base_register{variables_base_register_},
-            .slot_register{slot_register_},
+            .variables_base_register{"rbp"},
+            .slot_register{"r11"},
             .variables_base_past_vars_bytes{std::nullopt},
             .scratch_registers{scratch_registers_},
             .target_calls{
@@ -1026,7 +1025,7 @@ class machine_x86_64 final : public machine {
     }
 
     auto emit_variables_base_load() -> void override {
-        assembler_.instruction(0, op::lea, variables_base_register_,
+        assembler_.instruction(0, op::lea, variables_base_register(),
                                assembler_x86_64::memory::of_symbol(data_label));
     }
 

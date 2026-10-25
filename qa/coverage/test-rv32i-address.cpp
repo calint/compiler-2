@@ -1411,7 +1411,7 @@ auto check_memory_comparison_tail() -> void {
         const operand buffer{operand::mem(held.back(), byte)};
 
         if (counted) {
-            backend.arrays_equal(
+            backend.equal_elements(
                 token{}, 0, 1,
                 [&](const operand& count) -> void {
                     backend.copy_value(token{}, 0, count,
@@ -1458,7 +1458,7 @@ auto check_memory_comparison_tail() -> void {
     }
 }
 
-// 'copy' of a known size: loads and stores of the widest width first, the
+// 'copy_block' of a known size: loads and stores of the widest width first, the
 // tail by width, and a loop from 17 bytes on
 auto check_known_size_copy() -> void {
     captured_rv32i rv32i;
@@ -1483,7 +1483,7 @@ auto check_known_size_copy() -> void {
     for (size_t size_bytes{}; size_bytes <= 24; ++size_bytes) {
         const std::string assembly{
             rv32i.emitted([&] {
-                backend.copy(token{}, 0, operand::mem("a1", {}, 1, 0, byte),
+                backend.copy_block(token{}, 0, operand::mem("a1", {}, 1, 0, byte),
                              operand::mem("a0", {}, 1, 0, byte), size_bytes,
                              4);
             }),
@@ -2180,7 +2180,7 @@ auto check_copy_temporaries() -> void {
     const auto copied = [&](const int64_t src_offset, const int64_t dst_offset,
                             const size_t size_bytes) -> std::string {
         return rv32i.emitted([&] {
-            backend.copy(token{}, 0, operand::mem("a2", {}, 1, dst_offset, byte),
+            backend.copy_block(token{}, 0, operand::mem("a2", {}, 1, dst_offset, byte),
                          operand::mem("a1", {}, 1, src_offset, byte),
                          size_bytes, 4);
         });
@@ -3021,7 +3021,7 @@ auto emit_copy_tests(machine_rv32i& backend) -> void {
                     hand_written(backend, std::format(
                         "    li a2, {}\n    sub a0, a0, a2\n    sub a1, a1, a2",
                         displacement));
-                    backend.copy(token{}, 1,
+                    backend.copy_block(token{}, 1,
                                  operand::mem("a1", {}, 1, displacement, byte),
                                  operand::mem("a0", {}, 1, displacement, byte),
                                  size_bytes, known_alignment);

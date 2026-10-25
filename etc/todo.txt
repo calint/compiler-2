@@ -271,13 +271,32 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             read_only, data, variables} and a non-virtual 'switch_section'
             that keeps the code-size rule; the 'begin_*_section' steps and
             both 'set_code_section' calls go
+       => G.1 reduced (2026-10-25): one enum does not fit: x86_64 has a
+          section rv32i lacks (the '.bss' of its number buffer, apart from
+          the variables) and rv32i indexes its image tables by its enum, so a
+          shared enum needs a value one target never uses or moves the buffer
+          (listings and the variables layout 'baz.ld' asserts); done: the
+          'assembler' header states the split (the three sections 'machine'
+          asks for, each subclass's own enum, the code-size rule in every
+          'switch_section')
        G.2. the register tables read in one place (B5): the constants that
             only fill a table sit in it; 'emit_variables_base_load' and
             'far_jump_register' read the getters
+       => G.2 done (2026-10-25): the variables base and slot registers are
+          literals in 'x86_64_target' and 'rv32i_target' (the slot's reason
+          moved with it), their constants go; 'emit_variables_base_load' and
+          'far_jump_register' read the getters; the scratch arrays stay named
+          (a span needs storage); the class comments point at the tables
        G.3. the bulk operations named by what is known (N5): 'copy' ->
             'copy_block', 'copy_bytes' -> 'store_bytes', 'arrays_equal' ->
             'equal_elements' beside 'memory_equal' or 'equal_block'; the map
             groups "constant size / run-time count"
+       => G.3 done (2026-10-25): 'copy_block', 'store_bytes',
+          'equal_elements' ('memory_equal' kept), in the backends, the
+          callers, the rv32i backend test and README; the 'machine' map
+          groups the bulk operations by a constant size and a run-time
+          count; both suites, the CLI tests, test-rv32i and clang-tidy clean
+          for phase G
     asks:
        1. N4, the design goal: the default type is 'i64' on x86_64 and
           'i32' on rv32i, so a program mixing it with a fixed width is

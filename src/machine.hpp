@@ -108,10 +108,11 @@ struct target_description {
 //                  'registers_for_target_call', 'reserve_variables_base' (in
 //                  'start' and the backend tests)
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
-//                  'unary', 'zero', 'copy', 'copy_value', 'copy_bytes',
-//                  'copy_elements', 'arrays_equal', 'address_of',
-//                  'scale_index', 'store_boolean', 'memory_equal',
-//                  'foo_advance_iteration'
+//                  'unary', 'zero', 'copy_value', 'store_bytes',
+//                  'address_of', 'scale_index', 'store_boolean',
+//                  'foo_advance_iteration'; bulk by a constant size
+//                  'copy_block', 'memory_equal', by a run-time count
+//                  'copy_elements', 'equal_elements'
 //   control        'label', 'branch', 'compare_and_branch', 'call_function',
 //                  'call_target', 'return_function', 'exit'
 //   checks         'check_bounds', 'check_frame_capacity',
@@ -679,15 +680,6 @@ class machine {
                             const operand& dst, const operand& address)
         -> void = 0;
 
-    // 'emit_count' compiles the element count into the register it is given,
-    // the elements of both arrays are compared at the width 'alignment' allows
-    // and the result, 1 when they are equal, goes to 'dst'
-    virtual auto
-    arrays_equal(const token& src_loc_tk, const size_t indent,
-                 const size_t element_size_bytes,
-                 const std::function_ref<void(const operand&)> emit_count,
-                 const equality_request& request) -> void = 0;
-
     virtual auto bitwise(const token& src_loc_tk, const size_t indent,
                          const arithmetic_operator operation,
                          const operand& dst, const operand& src) -> void = 0;
@@ -727,17 +719,9 @@ class machine {
         -> void = 0;
 
     // 'alignment' is the alignment known for both addresses
-    virtual auto copy(const token& src_loc_tk, const size_t indent,
-                      const operand& dst, const operand& src,
-                      const size_t size_bytes, const size_t alignment)
-        -> void = 0;
-
-    // stores constant 'bytes', 'add_constant' returns the read-only data label
-    // and is called only when the bytes are not stored with immediates
-    virtual auto copy_bytes(const token& src_loc_tk, const size_t indent,
-                            const std::string_view bytes, const operand& dst,
-                            const size_t alignment,
-                            const std::function_ref<std::string()> add_constant)
+    virtual auto copy_block(const token& src_loc_tk, const size_t indent,
+                            const operand& dst, const operand& src,
+                            const size_t size_bytes, const size_t alignment)
         -> void = 0;
 
     // copies the count of elements 'emit_count' compiles, the request emits
@@ -761,6 +745,15 @@ class machine {
         -> void = 0;
 
     virtual auto end_main() -> void = 0;
+
+    // 'emit_count' compiles the element count into the register it is given,
+    // the elements of both arrays are compared at the width 'alignment' allows
+    // and the result, 1 when they are equal, goes to 'dst'
+    virtual auto
+    equal_elements(const token& src_loc_tk, const size_t indent,
+                   const size_t element_size_bytes,
+                   const std::function_ref<void(const operand&)> emit_count,
+                   const equality_request& request) -> void = 0;
 
     virtual auto exit(const token& src_loc_tk, const size_t indent,
                       const operand& exit_code) -> void = 0;
@@ -799,6 +792,15 @@ class machine {
     virtual auto shift(const token& src_loc_tk, const size_t indent,
                        const arithmetic_operator operation, const operand& dst,
                        const operand& count, const runtime_check& check)
+        -> void = 0;
+
+    // stores constant 'bytes', 'add_constant' returns the read-only data label
+    // and is called only when the bytes are not stored with immediates
+    virtual auto
+    store_bytes(const token& src_loc_tk, const size_t indent,
+                const std::string_view bytes, const operand& dst,
+                const size_t alignment,
+                const std::function_ref<std::string()> add_constant)
         -> void = 0;
 
     virtual auto unary(const token& src_loc_tk, const size_t indent,

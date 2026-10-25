@@ -411,8 +411,8 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
 
     const size_t size_bytes{src_info.value_size_bytes(tok())};
 
-    x.copy(tok(), indent, dst.operand(), src_op, size_bytes,
-           dst_type.alignment());
+    x.copy_block(tok(), indent, dst.operand(), src_op, size_bytes,
+                 dst_type.alignment());
 }
 
 inline auto expr_type::visit_reads(const read_filter var,

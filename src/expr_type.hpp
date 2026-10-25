@@ -187,7 +187,7 @@ inline auto emit_write_plan(toc& tc, const size_t indent,
                 std::get_if<bytes_write>(&step.action),
             }) {
 
-            x.copy_bytes(
+            x.store_bytes(
                 bytes->src_loc_tk, indent, bytes->bytes, part_dst.operand(),
                 part_dst.type_ref().alignment(), [&] -> std::string {
                     if (bytes->is_string) {

@@ -173,9 +173,9 @@ class stmt_builtin_array_copy final : public statement {
                 }),
         };
 
-        x.copy(tok(), indent, dst_operand, src_operand,
-               multiply_storage_size(
-                   tok(), arrays.first.type_ref().size_bytes(), count),
-               arrays.first.type_ref().alignment());
+        x.copy_block(tok(), indent, dst_operand, src_operand,
+                     multiply_storage_size(
+                         tok(), arrays.first.type_ref().size_bytes(), count),
+                     arrays.first.type_ref().alignment());
     }
 };

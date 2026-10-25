@@ -102,7 +102,7 @@ nodes            statement.hpp, stmt_*.hpp, expr_*.hpp: a node parses
   |              and the checks) into 'machine'
   v
 machine.hpp      one virtual method per operation the front end needs,
-  |              e.g. 'add_subtract', 'copy', 'check_bounds'; allocates
+  |              e.g. 'add_subtract', 'copy_block', 'check_bounds'; allocates
   |              the registers ('register_pool')
   |              machine_x86_64.hpp, machine_rv32i.hpp with its targets
   |              machine_rv32i_linux.hpp and the bare-metal
@@ -137,7 +137,7 @@ the layers above it:
 The backend calls back into earlier layers through callbacks: the versions of
 'machine::emit_most_efficient' and the code of 'machine::emit_discarded'
 compile statements, as do the count and address emitters of the bulk
-operations; 'copy_bytes' asks 'toc' for a read-only label.
+operations; 'store_bytes' asks 'toc' for a read-only label.
 
 Reading order, each file assumes the ones before it:
 

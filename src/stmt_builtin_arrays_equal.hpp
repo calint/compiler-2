@@ -89,15 +89,15 @@ class stmt_builtin_arrays_equal final : public statement {
                 operands_.range_check_of(tc, operands_.second())),
         };
 
-        x.arrays_equal(tok(), indent, arrays.first.type_ref().size_bytes(),
-                       emit_count,
-                       {
-                           .alignment{arrays.first.type_ref().alignment()},
-                           .lhs{emit_lhs},
-                           .rhs{emit_rhs},
-                           .dst{dst},
-                           .inverted{inverted},
-                       });
+        x.equal_elements(tok(), indent, arrays.first.type_ref().size_bytes(),
+                         emit_count,
+                         {
+                             .alignment{arrays.first.type_ref().alignment()},
+                             .lhs{emit_lhs},
+                             .rhs{emit_rhs},
+                             .dst{dst},
+                             .inverted{inverted},
+                         });
     }
 
     [[nodiscard]] auto is_arrays_equal_call() const -> bool override {

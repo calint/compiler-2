@@ -36,8 +36,7 @@
 // formatter sorts the functions by name, so by topic they are:
 //
 //   registers    'machine' allocates them, here the order
-//                'scratch_registers_', the frame base 's1' and the variables
-//                base 's0'
+//                'scratch_registers_' and the roles in 'rv32i_target'
 //   addresses    'lower_address', 'lower_address_offset': an operand into a
 //                base register and a 12-bit offset
 //   operations   'binary_operation', 'emit_binary_instruction',
@@ -70,7 +69,6 @@ class machine_rv32i : public machine {
 
     using section = assembler_rv32i::section;
 
-    static constexpr std::string_view variables_base_register_{"s0"};
     static constexpr size_t variables_base_past_vars_bytes_{2032};
 
     // note: the largest multiple of 16 an 'addi' immediate holds, 'vars'
@@ -120,9 +118,6 @@ class machine_rv32i : public machine {
     // note: ascending t and s names keep generated code readable while argument
     //       registers stay late to avoid builtin conflicts and a0 stays last
     //       because syscalls overwrite it with their result
-
-    // the last of the saved registers, no built-in names it
-    static constexpr std::string_view slot_register_{"s11"};
 
     // where unrolled accesses start: the address minus 'phase' is aligned to
     // 'alignment', which is at most a word
@@ -782,45 +777,6 @@ class machine_rv32i : public machine {
         }
     }
 
-    auto arrays_equal(const token& src_loc_tk, const size_t indent,
-                      const size_t element_size_bytes,
-                      const std::function_ref<void(const operand&)> emit_count,
-                      const equality_request& request) -> void override {
-
-        const bulk_depth_scope bulk_depth{bulk_operations_};
-
-        const operand count{
-            begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
-        };
-
-        emit_count(count);
-
-        set_bulk_addresses(src_loc_tk, indent, count, request.lhs, request.rhs);
-
-        const bulk_operation& bulk{bulk_operations_.back()};
-        {
-            // scaling the count must not pick the result registers
-            const operation_scope scope{*this, request.dst, operand{}};
-
-            comment(src_loc_tk, indent,
-                    "{}: elements to bytes ({} bytes/element)",
-                    bulk.count().register_name(), element_size_bytes);
-
-            scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
-        }
-
-        compare_runtime_count(src_loc_tk, indent,
-                              {
-                                  .left{bulk.pointer(0)},
-                                  .right{bulk.pointer(1)},
-                                  .count{bulk.count()},
-                                  .starts{bulk_starts()},
-                              },
-                              request);
-
-        release_bulk(src_loc_tk, indent);
-    }
-
     auto bitwise(const token& src_loc_tk, const size_t indent,
                  const arithmetic_operator operation, const operand& dst,
                  const operand& src) -> void override {
@@ -1008,9 +964,10 @@ class machine_rv32i : public machine {
         emit_comparison(src_loc_tk, indent, lhs, rhs, action);
     }
 
-    auto copy(const token& src_loc_tk, const size_t indent, const operand& dst,
-              const operand& src, const size_t size_bytes,
-              const size_t alignment) -> void override {
+    auto copy_block(const token& src_loc_tk, const size_t indent,
+                    const operand& dst, const operand& src,
+                    const size_t size_bytes, const size_t alignment)
+        -> void override {
 
         if (size_bytes == 0) {
             return;
@@ -1029,57 +986,6 @@ class machine_rv32i : public machine {
         };
 
         copy_known_size(src_loc_tk, indent, src, dst, size_bytes, starts);
-    }
-
-    // few bytes are stored with immediates when that takes no more code than
-    // loading them from read-only data
-    auto copy_bytes(const token& src_loc_tk, const size_t indent,
-                    const std::string_view bytes, const operand& dst,
-                    const size_t alignment,
-                    const std::function_ref<std::string()> add_constant)
-        -> void override {
-
-        const operation_scope scope{*this, dst, operand{}};
-
-        const size_t width{bulk_width(access_alignment(dst, alignment))};
-
-        const access_start dst_start{start_of(dst, alignment)};
-
-        const std::vector<byte_part> parts{split_bytes(bytes, dst_start)};
-
-        // the word aligned constant is copied with the alignment 'width', so
-        // its parts can be narrower than the stored immediates
-        const std::array<access_start, 2> copy_starts{
-            access_start{
-                .alignment{width},
-                .phase{},
-            },
-            dst_start,
-        };
-
-        const size_t copy_part_count{
-            aligned_part_count(bytes.size(), copy_starts),
-        };
-
-        if (are_immediates_smaller(parts, bytes.size(), copy_part_count)) {
-            comment_aligned_parts(src_loc_tk, indent, "store", bytes.size(),
-                                  std::span{&dst_start, 1});
-
-            store_byte_parts(src_loc_tk, indent, parts, dst, bytes.size());
-
-            return;
-        }
-
-        const operand pointer{
-            alloc_scratch_register(src_loc_tk, indent, default_type()),
-        };
-
-        assembler_.la(indent, pointer.register_name(), add_constant());
-
-        // read-only constants are word aligned so 'dst' limits the width
-        copy(src_loc_tk, indent, dst,
-             operand::mem(pointer.register_name(), {}, 1, 0, dst.type_ref()),
-             bytes.size(), width);
     }
 
     auto copy_elements(const token& src_loc_tk, const size_t indent,
@@ -1191,6 +1097,46 @@ class machine_rv32i : public machine {
 
     auto end_main() -> void override {
         exit(token{}, 1, operand::imm(0, default_type()));
+    }
+
+    auto
+    equal_elements(const token& src_loc_tk, const size_t indent,
+                   const size_t element_size_bytes,
+                   const std::function_ref<void(const operand&)> emit_count,
+                   const equality_request& request) -> void override {
+
+        const bulk_depth_scope bulk_depth{bulk_operations_};
+
+        const operand count{
+            begin_array_operation(src_loc_tk, indent, "lhs", "rhs"),
+        };
+
+        emit_count(count);
+
+        set_bulk_addresses(src_loc_tk, indent, count, request.lhs, request.rhs);
+
+        const bulk_operation& bulk{bulk_operations_.back()};
+        {
+            // scaling the count must not pick the result registers
+            const operation_scope scope{*this, request.dst, operand{}};
+
+            comment(src_loc_tk, indent,
+                    "{}: elements to bytes ({} bytes/element)",
+                    bulk.count().register_name(), element_size_bytes);
+
+            scale_index(src_loc_tk, indent, bulk.count(), element_size_bytes);
+        }
+
+        compare_runtime_count(src_loc_tk, indent,
+                              {
+                                  .left{bulk.pointer(0)},
+                                  .right{bulk.pointer(1)},
+                                  .count{bulk.count()},
+                                  .starts{bulk_starts()},
+                              },
+                              request);
+
+        release_bulk(src_loc_tk, indent);
     }
 
     auto foo_advance_iteration(const token& src_loc_tk, const size_t indent,
@@ -1347,6 +1293,58 @@ class machine_rv32i : public machine {
                           check);
     }
 
+    // few bytes are stored with immediates when that takes no more code than
+    // loading them from read-only data
+    auto store_bytes(const token& src_loc_tk, const size_t indent,
+                     const std::string_view bytes, const operand& dst,
+                     const size_t alignment,
+                     const std::function_ref<std::string()> add_constant)
+        -> void override {
+
+        const operation_scope scope{*this, dst, operand{}};
+
+        const size_t width{bulk_width(access_alignment(dst, alignment))};
+
+        const access_start dst_start{start_of(dst, alignment)};
+
+        const std::vector<byte_part> parts{split_bytes(bytes, dst_start)};
+
+        // the word aligned constant is copied with the alignment 'width', so
+        // its parts can be narrower than the stored immediates
+        const std::array<access_start, 2> copy_starts{
+            access_start{
+                .alignment{width},
+                .phase{},
+            },
+            dst_start,
+        };
+
+        const size_t copy_part_count{
+            aligned_part_count(bytes.size(), copy_starts),
+        };
+
+        if (are_immediates_smaller(parts, bytes.size(), copy_part_count)) {
+            comment_aligned_parts(src_loc_tk, indent, "store", bytes.size(),
+                                  std::span{&dst_start, 1});
+
+            store_byte_parts(src_loc_tk, indent, parts, dst, bytes.size());
+
+            return;
+        }
+
+        const operand pointer{
+            alloc_scratch_register(src_loc_tk, indent, default_type()),
+        };
+
+        assembler_.la(indent, pointer.register_name(), add_constant());
+
+        // read-only constants are word aligned so 'dst' limits the width
+        copy_block(
+            src_loc_tk, indent, dst,
+            operand::mem(pointer.register_name(), {}, 1, 0, dst.type_ref()),
+            bytes.size(), width);
+    }
+
     auto unary(const token& src_loc_tk, const size_t indent,
                const arithmetic_operator operation, const operand& dst,
                const runtime_check& check = {}) -> void override {
@@ -1461,8 +1459,9 @@ class machine_rv32i : public machine {
             .is_stack_bounded{},
             .frame_base_register{"s1"},
             .stack_pointer_register{"sp"},
-            .variables_base_register{variables_base_register_},
-            .slot_register{slot_register_},
+            .variables_base_register{"s0"},
+            // the last of the saved registers, no built-in names it
+            .slot_register{"s11"},
             .variables_base_past_vars_bytes{variables_base_past_vars_bytes_},
             .scratch_registers{scratch_registers_},
             .target_calls{
@@ -3458,7 +3457,7 @@ class machine_rv32i : public machine {
 
     // a jump grown beyond 1 MiB needs a register without a live value
     [[nodiscard]] auto far_jump_register() const -> std::string_view {
-        for (const std::string_view name : scratch_registers_) {
+        for (const std::string_view name : scratch_registers()) {
             if (not is_register_allocated(name)) {
                 return name;
             }
@@ -4546,8 +4545,8 @@ class machine_rv32i : public machine {
         return width;
     }
 
-    // 'copy' of a constant takes 'la' and a load and a store for each of its
-    // 'copy_part_count' parts, above the unroll threshold it loops
+    // 'copy_block' of a constant takes 'la' and a load and a store for each of
+    // its 'copy_part_count' parts, above the unroll threshold it loops
     [[nodiscard]] static auto
     are_immediates_smaller(const std::span<const byte_part> parts,
                            const size_t size_bytes,
@@ -5147,7 +5146,7 @@ class machine_rv32i : public machine {
         };
     }
 
-    // the widest aligned parts like the unrolled 'copy'
+    // the widest aligned parts like the unrolled 'copy_block'
     [[nodiscard]] static auto split_bytes(const std::string_view bytes,
                                           const access_start& start)
         -> std::vector<byte_part> {
