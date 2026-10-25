@@ -33,6 +33,12 @@ enum class condition_result : uint8_t { unknown, always_false, always_true };
 struct branch_targets {
     std::string_view if_false;
     std::string_view if_true;
+
+    // both outcomes continue at the label that follows the condition, so its
+    // last element branches nowhere
+    [[nodiscard]] auto is_stored_only() const -> bool {
+        return if_false == if_true;
+    }
 };
 
 [[nodiscard]] inline auto known_result(const bool value) -> condition_result {
@@ -227,13 +233,18 @@ class expr_bool_op final : public statement {
     }
 
     // an element of an 'and' list and the last element of any list: it
-    // branches when false; 'inverted' is the inversion of the list
+    // branches when false; 'inverted' is the inversion of the list,
+    // 'joined_by' its connective after the inversion
     [[nodiscard]] auto compile_branch_if_false(
         toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
-        const bool inverted, const operand& dst,
+        const bool inverted, const connective joined_by, const operand& dst,
         const bool branch_required) const -> condition_result {
 
-        return compile_element(tc, indent, comment_label("and", inverted),
+        const std::string_view list_op{
+            joined_by == connective::logical_or ? "or" : "and",
+        };
+
+        return compile_element(tc, indent, comment_label(list_op, inverted),
                                {
                                    .operation{operation()},
                                    .inverted{inverted != is_negated()},
@@ -426,7 +437,7 @@ class expr_bool_op final : public statement {
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
         if (lhs.folded and not lhs.is_typed_constant()) {
-            machine::comparison_action mirrored_action{action};
+            machine::comparison_action mirrored_action{stored_action};
             mirrored_action.operation = mirrored(cmp.op);
 
             const comparison_side& mirrored_lhs{rhs};
@@ -439,7 +450,7 @@ class expr_bool_op final : public statement {
         }
 
         if (not cmp.is_memory) {
-            resolve_cmp(tc, indent, lhs, rhs, action);
+            resolve_cmp(tc, indent, lhs, rhs, stored_action);
             return condition_result::unknown;
         }
 
@@ -1292,7 +1303,7 @@ class expr_bool final : public statement {
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
-        const bool invert{is_negated()};
+        const bool inverted{is_negated()};
 
         for (const element& e : bools_) {
             const std::optional<bool> value{
@@ -1306,14 +1317,14 @@ class expr_bool final : public statement {
             }
 
             if (is_short_circuit(*value, false)) {
-                return *value != invert;
+                return *value != inverted;
             }
         }
 
         // note: no element decided, so each is 'false' in an 'or' list and
         //       'true' in an 'and' list
 
-        return (not is_or_list()) != invert;
+        return (not is_or_list()) != inverted;
     }
 
     // the operand when the whole expression is a name or a literal, e.g. 'x'
@@ -1390,10 +1401,10 @@ class expr_bool final : public statement {
     // an element that does not decide the list continues at the next element
     [[nodiscard]] auto
     compile_inner_element(toc& tc, const size_t indent, const size_t expr_index,
-                          const branch_targets& targets, const bool invert,
+                          const branch_targets& targets, const bool inverted,
                           const operand& dst) const -> condition_result {
 
-        const bool is_or{is_or_list() != invert};
+        const bool is_or{is_or_list() != inverted};
 
         if (std::holds_alternative<expr_bool>(bools_.at(expr_index))) {
             const expr_bool& nested_expr{
@@ -1418,30 +1429,31 @@ class expr_bool final : public statement {
             };
 
             return nested_expr.compile_with_label(tc, indent, nested_targets,
-                                                  invert, dst);
+                                                  inverted, dst);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.at(expr_index))};
 
         if (is_or) {
             return expr.compile_branch_if_true(tc, indent, targets.if_true,
-                                               invert, dst);
+                                               inverted, dst);
         }
 
         return expr.compile_branch_if_false(tc, indent, targets.if_false,
-                                            invert, dst, true);
+                                            inverted, joined_by(inverted), dst,
+                                            true);
     }
 
     [[nodiscard]] auto compile_last_element(
         toc& tc, const size_t indent, const branch_targets& targets,
-        const bool invert, const operand& dst,
+        const bool inverted, const operand& dst,
         const bool has_runtime_element) const -> condition_result {
 
         if (std::holds_alternative<expr_bool>(bools_.back())) {
             const expr_bool& nested_expr{std::get<expr_bool>(bools_.back())};
 
             const condition_result const_eval{
-                nested_expr.compile_with_label(tc, indent, targets, invert,
+                nested_expr.compile_with_label(tc, indent, targets, inverted,
                                                dst),
             };
 
@@ -1451,22 +1463,29 @@ class expr_bool final : public statement {
             }
 
             return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         targets.if_true, invert,
+                                         targets.if_true, inverted,
                                          has_runtime_element);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
 
+        const bool is_stored_only{targets.is_stored_only()};
+
         const condition_result const_eval{
-            expr.compile_branch_if_false(tc, indent, targets.if_false, invert,
-                                         dst,
-                                         targets.if_false != targets.if_true),
+            expr.compile_branch_if_false(tc, indent, targets.if_false, inverted,
+                                         joined_by(inverted), dst,
+                                         not is_stored_only),
         };
 
         if (is_known(const_eval)) {
             return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         targets.if_true, invert,
+                                         targets.if_true, inverted,
                                          has_runtime_element);
+        }
+
+        // the label of both outcomes follows
+        if (is_stored_only) {
+            return condition_result::unknown;
         }
 
         machine& x{tc.machine()};
@@ -1479,7 +1498,7 @@ class expr_bool final : public statement {
 
     [[nodiscard]] auto
     compile_rec(toc& tc, const size_t indent, const branch_targets& targets,
-                const bool inverted, const operand& dst) const
+                const bool outer_inverted, const operand& dst) const
         -> condition_result {
 
         // the element of a list that is only that element comments the same
@@ -1493,11 +1512,11 @@ class expr_bool final : public statement {
 
             x.comment(tok(), indent,
                       statement::trimmed_source(
-                          *this, "?", inverted ? " inverted: " : " "));
+                          *this, "?", outer_inverted ? " inverted: " : " "));
         }
 
-        // invert, according to De Morgan's laws
-        const bool invert{inverted != is_negated()};
+        // inverted, according to De Morgan's laws
+        const bool inverted{outer_inverted != is_negated()};
 
         bool has_runtime_element{};
 
@@ -1505,7 +1524,7 @@ class expr_bool final : public statement {
 
         for (size_t expr_index{}; expr_index < last_index; ++expr_index) {
             const condition_result const_eval{
-                compile_inner_element(tc, indent, expr_index, targets, invert,
+                compile_inner_element(tc, indent, expr_index, targets, inverted,
                                       dst),
             };
 
@@ -1514,13 +1533,13 @@ class expr_bool final : public statement {
                 continue;
             }
 
-            if (is_short_circuit(result_value(const_eval), invert)) {
+            if (is_short_circuit(result_value(const_eval), inverted)) {
 
                 return const_eval;
             }
         }
 
-        return compile_last_element(tc, indent, targets, invert, dst,
+        return compile_last_element(tc, indent, targets, inverted, dst,
                                     has_runtime_element);
     }
 
@@ -1551,7 +1570,7 @@ class expr_bool final : public statement {
     // earlier elements jump to the label that begins a nested list
     [[nodiscard]] auto compile_with_label(toc& tc, const size_t indent,
                                           const branch_targets& targets,
-                                          const bool inverted,
+                                          const bool outer_inverted,
                                           const operand& dst) const
         -> condition_result {
 
@@ -1559,7 +1578,7 @@ class expr_bool final : public statement {
 
         x.label(indent, tc.create_cmp_label(tok()));
 
-        return compile_rec(tc, indent, targets, inverted, dst);
+        return compile_rec(tc, indent, targets, outer_inverted, dst);
     }
 
     // true when a 'not' leads the list
@@ -1573,18 +1592,24 @@ class expr_bool final : public statement {
         return is_negated_by(nots_);
     }
 
-    // inversion swaps 'and' and 'or' according to De Morgan's laws
-    // every operator of a list is the same, mixing them is rejected
     [[nodiscard]] auto is_or_list() const -> bool {
         return not ops_.empty() and ops_.front().op == connective::logical_or;
     }
 
     // a constant false ends an 'and' list and a constant true ends an 'or'
-    // list; 'invert' turns one into the other, see De Morgan's laws
+    // list; 'inverted' turns one into the other, see De Morgan's laws
     [[nodiscard]] auto is_short_circuit(const bool const_eval,
-                                        const bool invert) const -> bool {
+                                        const bool inverted) const -> bool {
 
-        return const_eval == (is_or_list() != invert);
+        return const_eval == (is_or_list() != inverted);
+    }
+
+    // inversion swaps 'and' and 'or' according to De Morgan's laws
+    // every operator of a list is the same, mixing them is rejected
+    // the connective of the list after 'inverted', see De Morgan's laws
+    [[nodiscard]] auto joined_by(const bool inverted) const -> connective {
+        return is_or_list() != inverted ? connective::logical_or
+                                        : connective::logical_and;
     }
 
     // a comparison or a parenthesized list, either may follow 'not'
@@ -1674,14 +1699,14 @@ class expr_bool final : public statement {
     // were constants or it short-circuits the list
     [[nodiscard]] auto resolve_last_constant(
         toc& tc, const size_t indent, const bool const_eval,
-        const std::string_view jmp_to_if_true, const bool invert,
+        const std::string_view jmp_to_if_true, const bool inverted,
         const bool has_runtime_element) const -> condition_result {
 
         if (not has_runtime_element) {
             return known_result(const_eval);
         }
 
-        if (is_short_circuit(const_eval, invert)) {
+        if (is_short_circuit(const_eval, inverted)) {
             return known_result(const_eval);
         }
 

@@ -40,7 +40,7 @@
 //   to
 //     jmp loop.10.5.end                 j loop.10.5.end
 //
-// same_outcome_branches:
+// same_target_branches:
 //     jne bool.15.19.end                beq t0, zero, bool.15.19.end
 //     jmp bool.15.19.end                j bool.15.19.end
 //   to
@@ -95,7 +95,7 @@ class assembler {
     struct optimization_counts {
         size_t jumps_to_next{};
         size_t unreachable_jumps{};
-        size_t same_outcome_branches{};
+        size_t same_target_branches{};
         size_t inverted_branches{};
     };
 
@@ -664,7 +664,7 @@ class assembler {
         // both outcomes continue at the same place
         if (target_code == next_instruction(jump_target)) {
             remove(branch);
-            ++optimizations_.same_outcome_branches;
+            ++optimizations_.same_target_branches;
             return true;
         }
 

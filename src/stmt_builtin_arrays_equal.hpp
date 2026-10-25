@@ -125,11 +125,7 @@ class stmt_builtin_arrays_equal final : public statement {
             return;
         }
 
-        throw compile_error{
-            src_loc_tk,
-            std::format("expected type {}, got {}", in_quotes(dst_type.name()),
-                        in_quotes(get_type().name())),
-        };
+        throw_type_mismatch(src_loc_tk, dst_type.name(), get_type().name());
     }
 
     // a 'bool' result has no meaningful negation

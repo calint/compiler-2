@@ -443,10 +443,8 @@ class stmt_identifier final : public statement {
         // a built-in destination takes a number, e.g. not the instance 'a'
         // of 'y = a'
         if (not src_type.is_builtin()) {
-            throw compile_error{first_token(),
-                                std::format("expected type {}, got {}",
-                                            in_quotes(dst_type.name()),
-                                            in_quotes(src_type.name()))};
+            throw_type_mismatch(first_token(), dst_type.name(),
+                                src_type.name());
         }
 
         if (src_type.size_bytes() <= dst_type.size_bytes()) {

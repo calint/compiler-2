@@ -531,10 +531,8 @@ class expr_any final : public statement {
 
         // the parser could not check the size of an unsized destination
         if (array_count and count > *array_count) {
-            throw compile_error{
-                element(*array_count).tok(),
-                std::format("too many elements for array of size {}",
-                            *array_count)};
+            throw compile_error{element(*array_count).tok(),
+                                too_many_elements(*array_count)};
         }
 
         if (const element_list* const list{std::get_if<element_list>(&form_)}) {
@@ -563,7 +561,7 @@ class expr_any final : public statement {
         return nullptr;
     }
 
-    // the remaining count would wrap around past the array size
+    // the list of a known length has room for the next element
     auto assert_room_for_element(const tokenizer& tz,
                                  const element_list& list) const -> void {
 
@@ -571,9 +569,7 @@ class expr_any final : public statement {
             return;
         }
 
-        throw compile_error{tz, std::format("too many elements for array of "
-                                            "size {}",
-                                            *array_count_)};
+        throw compile_error{tz, too_many_elements(*array_count_)};
     }
 
     // the copy size comes from the source, so its length is that of the
@@ -667,10 +663,8 @@ class expr_any final : public statement {
         };
 
         if (not literal_type.is_same(tp)) {
-            throw compile_error{is_typed ? tk : prefix.open_bracket_tk,
-                                std::format("expected type {}, got {}",
-                                            in_quotes(tp.name()),
-                                            in_quotes(literal_type.name()))};
+            throw_type_mismatch(is_typed ? tk : prefix.open_bracket_tk,
+                                tp.name(), literal_type.name());
         }
 
         if (is_typed) {
@@ -818,10 +812,10 @@ class expr_any final : public statement {
 
         const size_t size_bytes{bytes.size()};
 
+        // the parser could not check the size of an unsized destination
         if (array_count and size_bytes > *array_count) {
-            throw compile_error{
-                string_tk, std::format("string size {} overflows array size {}",
-                                       size_bytes, *array_count)};
+            throw compile_error{string_tk,
+                                string_overflows(size_bytes, *array_count)};
         }
 
         // an empty string has nothing to store
@@ -924,10 +918,7 @@ class expr_any final : public statement {
             return;
         }
 
-        throw compile_error{value.tok(),
-                            std::format("expected type {}, got {}",
-                                        in_quotes(tp.name()),
-                                        in_quotes(value.get_type().name()))};
+        throw_type_mismatch(value.tok(), tp.name(), value.get_type().name());
     }
 
     // a built-in value whose only element is parsed, e.g. the zero value of
@@ -936,18 +927,7 @@ class expr_any final : public statement {
                                             std::unique_ptr<statement> first)
         -> expr_variant {
 
-        return expr_arith{
-            tc,
-            tz,
-            expr_arith::options{
-                .uops{},
-                .open_paren_tk{},
-                .is_implied_subexpression{},
-                .first_op_precedence{expr_arith::initial_precedence},
-                .first_expression{std::move(first)},
-                .destination_type{},
-            },
-        };
+        return expr_arith{tc, tz, expr_arith::options::after(std::move(first))};
     }
 
     static auto parse_element_delimiter(tokenizer& tz, const type& tp,
@@ -1008,10 +988,7 @@ class expr_any final : public statement {
                 const type& named_type{tc.get_type_or_throw(tk)};
 
                 if (not named_type.is_same(tp)) {
-                    throw compile_error{
-                        tk, std::format("expected type {}, got {}",
-                                        in_quotes(tp.name()),
-                                        in_quotes(named_type.name()))};
+                    throw_type_mismatch(tk, tp.name(), named_type.name());
                 }
 
                 throw_known_type(tk, tk.text(), "{}");
@@ -1028,21 +1005,12 @@ class expr_any final : public statement {
         if (not tp.is_bool() or (typing == literal_typing::from_destination and
                                  is_whole_generic_call(tc, tz))) {
 
-            expr_arith value{
-                tc,
-                tz,
-                expr_arith::options{
-                    .uops{},
-                    .open_paren_tk{},
-                    .is_implied_subexpression{},
-                    .first_op_precedence{expr_arith::initial_precedence},
-                    .first_expression{},
-                    .destination_type{
-                        typing == literal_typing::from_destination ? &tp
-                                                                   : nullptr,
-                    },
-                },
+            const type* const destination_type{
+                typing == literal_typing::from_destination ? &tp : nullptr,
             };
+
+            expr_arith value{tc, tz,
+                             expr_arith::options::plain(destination_type)};
 
             assert_not_boolean_name(tc, value, tp);
 
@@ -1096,12 +1064,31 @@ class expr_any final : public statement {
         }
 
         if (size_bytes > *array_count) {
-            throw compile_error{
-                string_tk, std::format("string size {} overflows array size {}",
-                                       size_bytes, *array_count)};
+            throw compile_error{string_tk,
+                                string_overflows(size_bytes, *array_count)};
         }
 
         return *array_count;
+    }
+
+    // the parse checks a string for a known length ('string_array_count'),
+    // the plan one for an unsized destination ('plan_string')
+    [[nodiscard]] static auto string_overflows(const size_t size_bytes,
+                                               const size_t array_count)
+        -> std::string {
+
+        return std::format("string size {} overflows array size {}", size_bytes,
+                           array_count);
+    }
+
+    // the parse checks a list of a known length as each element is read
+    // ('assert_room_for_element'), the plan one of an unsized destination,
+    // whose length the call gives
+    [[nodiscard]] static auto too_many_elements(const size_t array_count)
+        -> std::string {
+
+        return std::format("too many elements for array of size {}",
+                           array_count);
     }
 };
 

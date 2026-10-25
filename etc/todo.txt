@@ -165,22 +165,56 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             constant_element, merged}, or a 'has_fixed_role()' predicate;
             'step_value' goes; listings equal unless the comment is made
             honest (then the one comment line changes, ask)
+       => E.1 done (2026-10-25): 'has_fixed_role(step)' (a constant
+          element whose operator the passes do not regroup) replaces the
+          'is_merged' flag and the 'is_checked_constant' local; the old flag's
+          other case was asserted unreachable, so it is equivalent; the
+          'step_value' parameter goes; the comment of '* 3' under the
+          overflow check stays (not asked)
        E.2. the condition's mode as a type (N1, listings change with
             '--nopt'): 'condition_target' a variant {branch_targets,
             stored_into}; 'branch_required' and the equal-labels convention
             go; a stored condition stops emitting the two jumps to the next
             label that the optimizer removes today; the report name "removed
             same target branches" and 'same_outcome_branches' one word
+       => E.2 done, changed (2026-10-25): the variant does not fit: a
+          nested list inside a stored condition branches to two labels and
+          stores into 'dst' at once, so branch and store are not exclusive;
+          the store-only case is "both outcomes at one label":
+          'branch_targets::is_stored_only()' names it, the last element of
+          such a condition branches nowhere (the scalar path takes the
+          'stored_action' like the other two, the final 'jmp' goes); the
+          optimized code is equal, '--nopt' loses the two dead jumps (test
+          0006 diffs, 37 -> 35 and 52 -> 50 instructions), the report counts
+          of removed jumps drop; 'same_outcome_branches' ->
+          'same_target_branches' like the report
        E.3. 'expr_bool' inversion with one name per scope (E4, listing
             change): 'outer_inverted' and 'inverted'; the label of an element
             names its connective: 'not (a and b and c)' prints "'or'
             inverted" for 'c' too, not "'and' inverted"
+       => E.3 done (2026-10-25): 'compile_rec' and 'compile_with_label'
+          take 'outer_inverted', the list's own inversion is 'inverted'
+          throughout; 'compile_branch_if_false' takes the connective
+          ('joined_by(inverted)') for its label; no test listing has the
+          label
        E.4. one assert per rule (E3): 'assert_count_fits',
             'assert_string_fits' called by the parse (known length) and the
             plan (unsized); 'throw_type_mismatch' for the 8 "expected type"
             sites
+       => E.4 done, reduced (2026-10-25): 'throw_type_mismatch' in
+          compile_error.hpp for the 8 sites; the parse and the plan keep
+          their checks (the tokens and conditions differ: the parse checks
+          before the next element at the tokenizer), one message function
+          each ('too_many_elements', 'string_overflows') with a comment that
+          the parse checks a known length and the plan an unsized one;
+          "source must be an array" stays at its three sites (two messages,
+          one in the dat walk of the E2 ask)
        E.5. 'expr_arith::options' named constructors (F5): 'plain',
             'enclosed', 'implied', 'after'
+       => E.5 done (2026-10-25): the four statics; both suites, the CLI
+          tests, clang-tidy, check-messages, fuzz-exprs 2000, fuzz-flow 300,
+          fuzz-data 300, fuzz-reject 600, fuzz-ub 200 and fuzz-options clean
+          for phase E
     F. front end
        F.1. an operator as read is one holder (F1, and the open todo item
             'arithmetic_operator::assign'): '{token, op}' for arithmetic,

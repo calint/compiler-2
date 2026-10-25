@@ -97,7 +97,7 @@ class expr_arith final : public statement {
     static constexpr uint8_t precedence_shift_{6};
 
   public:
-    // how a list is parsed when it is not a plain one
+    // how a list starts, made by one of the statics
     struct options {
         // the unary ops of an enclosed list apply to all of it
         unary_ops uops;
@@ -117,18 +117,75 @@ class expr_arith final : public statement {
 
         // see 'destination_type_'
         const type* destination_type{};
+
+        //
+        // statics
+        //
+
+        // a list that starts with an element the caller made, e.g. the zero
+        // value of 'i8 + 1'
+        [[nodiscard]] static auto after(std::unique_ptr<statement> first)
+            -> options {
+
+            return {
+                .uops{},
+                .open_paren_tk{},
+                .is_implied_subexpression{},
+                .first_op_precedence{initial_precedence},
+                .first_expression{std::move(first)},
+                .destination_type{},
+            };
+        }
+
+        // a list in parentheses, e.g. '-(a + b)'
+        [[nodiscard]] static auto
+        enclosed(unary_ops uops_in, const token& open_paren_tk_in,
+                 const type* const destination_type_in) -> options {
+
+            return {
+                .uops{std::move(uops_in)},
+                .open_paren_tk{open_paren_tk_in},
+                .is_implied_subexpression{},
+                .first_op_precedence{initial_precedence},
+                .first_expression{},
+                .destination_type{destination_type_in},
+            };
+        }
+
+        // a list of an operation of a higher precedence that starts with an
+        // element already read, e.g. the 'b * c' of 'a + b * c'
+        [[nodiscard]] static auto implied(const uint8_t precedence,
+                                          std::unique_ptr<statement> first,
+                                          const type* const destination_type_in)
+            -> options {
+
+            return {
+                .uops{},
+                .open_paren_tk{},
+                .is_implied_subexpression{true},
+                .first_op_precedence{precedence},
+                .first_expression{std::move(first)},
+                .destination_type{destination_type_in},
+            };
+        }
+
+        // a list read from its first element
+        [[nodiscard]] static auto plain(const type* const destination_type_in)
+            -> options {
+
+            return {
+                .uops{},
+                .open_paren_tk{},
+                .is_implied_subexpression{},
+                .first_op_precedence{initial_precedence},
+                .first_expression{},
+                .destination_type{destination_type_in},
+            };
+        }
     };
 
     expr_arith(toc& tc, tokenizer& tz)
-        : expr_arith{tc, tz,
-                     options{
-                         .uops{},
-                         .open_paren_tk{},
-                         .is_implied_subexpression{},
-                         .first_op_precedence{initial_precedence},
-                         .first_expression{},
-                         .destination_type{},
-                     }} {}
+        : expr_arith{tc, tz, options::plain(nullptr)} {}
 
     // the list is located where its first element starts
     expr_arith(toc& tc, tokenizer& tz, options opts)
@@ -639,17 +696,8 @@ class expr_arith final : public statement {
     auto compile_step(toc& tc, const size_t indent, const destination& dst,
                       const step& s) const -> void {
 
-        // the merging passes are off under the overflow check, a constant
-        // that changes nothing must still not reach the backend
-        const bool is_checked_constant{
-            tc.checks_overflow(dst) and s.value.has_value() and
-                is_regroupable(s.op),
-        };
-
         if (s.value) {
-            emit_constant_step(tc, indent, dst, s, *s.value,
-                               s.element == nullptr or is_checked_constant);
-
+            emit_constant_step(tc, indent, dst, s);
             return;
         }
 
@@ -717,18 +765,22 @@ class expr_arith final : public statement {
         x.free_scratch_register(tok(), indent, reg);
     }
 
-    // a step with a value: a constant the passes merged ('is_merged'), e.g. the
-    // '+ 8' of 'a + 3 + 5', which may change nothing, e.g. 'b + 1 - 1'; or a
-    // constant element they keep in place, a divisor or a shift count, e.g.
-    // 'x / 3' or 'x << k', its value folded by 'make_steps'
+    // a step with a value: a constant element with a fixed role, a divisor or
+    // a shift count, e.g. 'x / 3' or 'x << k', its value folded by
+    // 'make_steps'; or a regroupable constant, e.g. the '+ 8' the passes
+    // merged of 'a + 3 + 5', which may change nothing, e.g. 'b + 1 - 1'
     auto emit_constant_step(toc& tc, const size_t indent,
-                            const destination& dst, const step& s,
-                            const int64_t step_value,
-                            const bool is_merged) const -> void {
+                            const destination& dst, const step& s) const
+        -> void {
 
         machine& x{tc.machine()};
 
-        if (not is_merged) {
+        // note: 'compile_step' sends a step with a value
+        assert(s.value);
+
+        const int64_t step_value{*s.value};
+
+        if (has_fixed_role(s)) {
             const statement& element{*s.element};
 
             x.comment(element.tok(), indent,
@@ -741,9 +793,6 @@ class expr_arith final : public statement {
             } else {
                 x.comment(element.tok(), indent, "src: constant");
             }
-
-            // note: the merging passes regroup or merge every other operator
-            assert(not is_regroupable(s.op));
 
             if (is_shift(s.op)) {
                 // note: a count wider than the value is rejected as narrowed
@@ -928,14 +977,8 @@ class expr_arith final : public statement {
         // the sub-expression continues with the precedence of the operator
         exprs_.emplace_back(std::make_unique<expr_arith>(
             tc, tz,
-            options{
-                .uops{},
-                .open_paren_tk{},
-                .is_implied_subexpression{true},
-                .first_op_precedence{next_precedence},
-                .first_expression{std::move(last_elem_in_list)},
-                .destination_type{destination_type_},
-            }));
+            options::implied(next_precedence, std::move(last_elem_in_list),
+                             destination_type_)));
     }
 
     // the passes in order, the steps are ready to compile
@@ -1370,6 +1413,18 @@ class expr_arith final : public statement {
         return constant_arith::apply_operation(lhs, op, rhs, width_type);
     }
 
+    // the constants of a run of the operator can be merged and moved to the
+    // end of the run, '-' is the add of a negated value; not '/', '%' and
+    // shifts, whose operands have fixed roles
+    // a constant element whose operator the passes do not regroup, a divisor
+    // or a shift count; a regroupable constant element is merged, or kept as
+    // it is under the overflow check, where the passes are off, and is then
+    // emitted like a merged one, so a constant that changes nothing does not
+    // reach the backend
+    [[nodiscard]] static auto has_fixed_role(const step& s) -> bool {
+        return s.element != nullptr and not is_regroupable(s.op);
+    }
+
     // the constant that leaves a value unchanged
     [[nodiscard]] static auto identity_of(const arithmetic_operator op)
         -> int64_t {
@@ -1400,9 +1455,6 @@ class expr_arith final : public statement {
                src.operand_path()->get_unary_ops().is_only_negated();
     }
 
-    // the constants of a run of the operator can be merged and moved to the
-    // end of the run, '-' is the add of a negated value; not '/', '%' and
-    // shifts, whose operands have fixed roles
     [[nodiscard]] static auto is_regroupable(const arithmetic_operator op)
         -> bool {
 
@@ -1628,14 +1680,8 @@ class expr_arith final : public statement {
             std::unique_ptr<statement> enclosed{
                 std::make_unique<expr_arith>(
                     tc, tz,
-                    options{
-                        .uops{std::move(uo)},
-                        .open_paren_tk{open_paren_tk},
-                        .is_implied_subexpression{},
-                        .first_op_precedence{initial_precedence},
-                        .first_expression{},
-                        .destination_type{destination_type},
-                    }),
+                    options::enclosed(std::move(uo), *open_paren_tk,
+                                      destination_type)),
             };
 
             return {

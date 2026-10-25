@@ -61,9 +61,7 @@ inline expr_type::expr_type(toc& tc, tokenizer& tz, const type& tp,
     // note: compared by type, a type parameter names the type of its argument
     if (is_typed_literal and not tc.get_type_or_throw(tok()).is_same(tp)) {
 
-        throw compile_error{tok(), std::format("expected type {}, got {}",
-                                               in_quotes(tp.name()),
-                                               in_quotes(tok().text()))};
+        throw_type_mismatch(tok(), tp.name(), tok().text());
     }
 
     // e.g. 'point{1, 2}' for a field of type 'point' is '{1, 2}'
@@ -186,9 +184,7 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
             throw compile_error{tok(), "source must be an array"};
         }
 
-        throw compile_error{
-            tok(), std::format("expected type {}, got {}", in_quotes(tp.name()),
-                               in_quotes(builtin->get_type().name()))};
+        throw_type_mismatch(tok(), tp.name(), builtin->get_type().name());
     }
 
     call_or_identifier parsed{
@@ -217,11 +213,8 @@ inline auto expr_type::parse_copy_source(toc& tc, tokenizer& tz, const type& tp,
     const ident_info src_info{make_ident_info(tc, ident)};
 
     if (not tp.is_same(src_info.type_ref())) {
-        throw compile_error{
-            ident.last_token(),
-            std::format("expected type {}, got {}", in_quotes(tp.name()),
-                        in_quotes(src_info.type_ref().name())),
-        };
+        throw_type_mismatch(ident.last_token(), tp.name(),
+                            src_info.type_ref().name());
     }
 }
 

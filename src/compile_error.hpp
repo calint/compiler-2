@@ -206,3 +206,14 @@ class compile_error final : public std::exception {
 
     return std::format("{} {}{}", count, noun, count == 1 ? "" : "s");
 }
+
+// a value of the type 'got' where the type 'expected' is needed
+[[noreturn]] inline auto throw_type_mismatch(const token& src_loc_tk,
+                                             const std::string_view expected,
+                                             const std::string_view got)
+    -> void {
+
+    throw compile_error{src_loc_tk,
+                        std::format("expected type {}, got {}",
+                                    in_quotes(expected), in_quotes(got))};
+}

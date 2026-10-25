@@ -170,7 +170,7 @@ class report_renderer final {
                 },
                 {
                     .name{"removed same target branches"},
-                    .value{std::format("{}", o.same_outcome_branches)},
+                    .value{std::format("{}", o.same_target_branches)},
                 },
                 {
                     .name{"inverted branches over jumps"},
