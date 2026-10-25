@@ -5218,3 +5218,7 @@ SRC=1668 && COMPERR
 
 # a type argument is a type name, an array parameter is written 'a T[]'
 SRC=1669 && COMPERR
+
+# a stored condition whose last element folds stores its value without a
+# branch at its end
+SRC=1670 && EXP=7 && RUN

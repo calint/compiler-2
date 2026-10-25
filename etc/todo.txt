@@ -104,8 +104,20 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
             'branch_required' go, 'compile_constant' and
             'resolve_last_constant' branch only to a target; test 0006 and
             the report counts may change
+       => C.1 done (2026-10-25): 'compile_last_element' resolves its two
+          targets once (empty when stored only, the 'machine' encoding of no
+          branch); 'compile_branch_if_false' takes the target alone,
+          'compile_element' one action, 'stored_action' and
+          'branch_required' go; 'compile_constant' and
+          'resolve_last_constant' branch only to a target; under '--nopt'
+          'var b = x < 3 and 1 == 2' (and '== 1', and an 'or' decided by a
+          constant) end without the jump; no test listing changed, run test
+          1670 added; both suites, the CLI tests and clang-tidy clean
        C.2. 'unary_ops' one entry that evaluates and wraps to the width of
             its use (E5, low; only if the two callers read better)
+       => C.2 kept (2026-10-25): 'expr_arith' folds at its own
+          'width_type', not at the use's width, so a 'fold(v, use)' serves
+          one caller; the two entries stay
     D. small structural
        D.1. the callee's result type held once (S1, the open section 1 item
             "'func_info::type_ptr'"): 'func_info' loses 'type_ptr',

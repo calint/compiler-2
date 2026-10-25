@@ -1,0 +1,19 @@
+# a stored condition whose last element folds stores its value without a
+# branch at its end
+
+func main() {
+    var x = 1
+    var b = x < 3 and 1 == 2
+    var c = x < 3 and 1 == 1
+    var d = x > 3 or 1 == 1
+    if b {
+        exit(1)
+    }
+    if not c {
+        exit(2)
+    }
+    if not d {
+        exit(3)
+    }
+    exit(7)
+}

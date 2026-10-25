@@ -233,12 +233,14 @@ class expr_bool_op final : public statement {
     }
 
     // an element of an 'and' list and the last element of any list: it
-    // branches when false; 'inverted' is the inversion of the list,
-    // 'joined_by' its connective after the inversion
-    [[nodiscard]] auto compile_branch_if_false(
-        toc& tc, const size_t indent, const std::string_view jmp_to_if_false,
-        const bool inverted, const connective joined_by, const operand& dst,
-        const bool branch_required) const -> condition_result {
+    // branches when false, nowhere when 'jmp_to_if_false' is empty;
+    // 'inverted' is the inversion of the list, 'joined_by' its connective
+    // after the inversion
+    [[nodiscard]] auto
+    compile_branch_if_false(toc& tc, const size_t indent,
+                            const std::string_view jmp_to_if_false,
+                            const bool inverted, const connective joined_by,
+                            const operand& dst) const -> condition_result {
 
         const std::string_view list_op{
             joined_by == connective::logical_or ? "or" : "and",
@@ -251,8 +253,7 @@ class expr_bool_op final : public statement {
                                    .destination{dst},
                                    .target{jmp_to_if_false},
                                    .branch_on_true{},
-                               },
-                               branch_required);
+                               });
     }
 
     // an element of an 'or' list before the last: it branches when true; the
@@ -268,8 +269,7 @@ class expr_bool_op final : public statement {
                                    .destination{dst},
                                    .target{jmp_to_if_true},
                                    .branch_on_true{true},
-                               },
-                               true);
+                               });
     }
 
     // the value 'compile' would find without emitting code, empty when
@@ -399,12 +399,10 @@ class expr_bool_op final : public statement {
         return " ";
     }
 
-    // the sides are classified once, a stored result needs no branch to the
-    // label that follows it ('stored_action')
+    // the sides are classified once
     [[nodiscard]] auto
     compile_comparison(toc& tc, const size_t indent, const comparison& cmp,
-                       const machine::comparison_action& action,
-                       const machine::comparison_action& stored_action) const
+                       const machine::comparison_action& action) const
         -> condition_result {
 
         const comparison_side lhs{side_of(tc, lhs_)};
@@ -437,7 +435,7 @@ class expr_bool_op final : public statement {
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
         if (lhs.folded and not lhs.is_typed_constant()) {
-            machine::comparison_action mirrored_action{stored_action};
+            machine::comparison_action mirrored_action{action};
             mirrored_action.operation = mirrored(cmp.op);
 
             const comparison_side& mirrored_lhs{rhs};
@@ -450,11 +448,11 @@ class expr_bool_op final : public statement {
         }
 
         if (not cmp.is_memory) {
-            resolve_cmp(tc, indent, lhs, rhs, stored_action);
+            resolve_cmp(tc, indent, lhs, rhs, action);
             return condition_result::unknown;
         }
 
-        resolve_memory_cmp(tc, indent, cmp, stored_action);
+        resolve_memory_cmp(tc, indent, cmp, action);
 
         return condition_result::unknown;
     }
@@ -474,19 +472,19 @@ class expr_bool_op final : public statement {
             x.store_boolean(tok(), indent, action.destination, value);
         }
 
-        if (value == action.branch_on_true) {
+        if (value == action.branch_on_true and not action.target.empty()) {
             x.branch(indent, action.target);
         }
 
         return known_result(value);
     }
 
-    // 'action' says where it branches and whether the comparison is
-    // inverted, by the list and by the element's own 'not's
-    [[nodiscard]] auto compile_element(toc& tc, const size_t indent,
-                                       const std::string_view label,
-                                       const machine::comparison_action& action,
-                                       const bool branch_required) const
+    // 'action' says where it branches, nowhere for an empty target, and
+    // whether the comparison is inverted, by the list and by the element's
+    // own 'not's
+    [[nodiscard]] auto
+    compile_element(toc& tc, const size_t indent, const std::string_view label,
+                    const machine::comparison_action& action) const
         -> condition_result {
 
         machine& x{tc.machine()};
@@ -495,26 +493,17 @@ class expr_bool_op final : public statement {
 
         x.label(indent, tc.create_cmp_label(tok()));
 
-        // a stored result needs no branch to the label that follows it
-        machine::comparison_action stored_action{action};
-
-        if (not branch_required) {
-            stored_action.target = {};
-        }
-
         if (not comparison_) {
-            return compile_shorthand(tc, indent, action, stored_action);
+            return compile_shorthand(tc, indent, action);
         }
 
-        return compile_comparison(tc, indent, *comparison_, action,
-                                  stored_action);
+        return compile_comparison(tc, indent, *comparison_, action);
     }
 
     // the operand alone, compared with 0
     [[nodiscard]] auto
     compile_shorthand(toc& tc, const size_t indent,
-                      const machine::comparison_action& action,
-                      const machine::comparison_action& stored_action) const
+                      const machine::comparison_action& action) const
         -> condition_result {
 
         const comparison_side condition{side_of(tc, lhs_)};
@@ -525,7 +514,7 @@ class expr_bool_op final : public statement {
         }
 
         assert_not_instance_condition(lhs_);
-        resolve_cmp_shorthand(tc, indent, condition, stored_action);
+        resolve_cmp_shorthand(tc, indent, condition, action);
 
         return condition_result::unknown;
     }
@@ -1440,14 +1429,25 @@ class expr_bool final : public statement {
         }
 
         return expr.compile_branch_if_false(tc, indent, targets.if_false,
-                                            inverted, joined_by(inverted), dst,
-                                            true);
+                                            inverted, joined_by(inverted), dst);
     }
 
     [[nodiscard]] auto compile_last_element(
         toc& tc, const size_t indent, const branch_targets& targets,
         const bool inverted, const operand& dst,
         const bool has_runtime_element) const -> condition_result {
+
+        // a stored value branches nowhere at its end, the label of both
+        // outcomes follows; an empty target is no branch ('machine')
+        const bool is_stored_only{targets.is_stored_only()};
+
+        const std::string_view if_false{
+            is_stored_only ? std::string_view{} : targets.if_false,
+        };
+
+        const std::string_view if_true{
+            is_stored_only ? std::string_view{} : targets.if_true,
+        };
 
         if (std::holds_alternative<expr_bool>(bools_.back())) {
             const expr_bool& nested_expr{std::get<expr_bool>(bools_.back())};
@@ -1463,27 +1463,23 @@ class expr_bool final : public statement {
             }
 
             return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         targets.if_true, inverted,
+                                         if_true, inverted,
                                          has_runtime_element);
         }
 
         const expr_bool_op& expr{std::get<expr_bool_op>(bools_.back())};
 
-        const bool is_stored_only{targets.is_stored_only()};
-
         const condition_result const_eval{
-            expr.compile_branch_if_false(tc, indent, targets.if_false, inverted,
-                                         joined_by(inverted), dst,
-                                         not is_stored_only),
+            expr.compile_branch_if_false(tc, indent, if_false, inverted,
+                                         joined_by(inverted), dst),
         };
 
         if (is_known(const_eval)) {
             return resolve_last_constant(tc, indent, result_value(const_eval),
-                                         targets.if_true, inverted,
+                                         if_true, inverted,
                                          has_runtime_element);
         }
 
-        // the label of both outcomes follows
         if (is_stored_only) {
             return condition_result::unknown;
         }
@@ -1491,7 +1487,7 @@ class expr_bool final : public statement {
         machine& x{tc.machine()};
 
         // every element that failed has branched to false
-        x.branch(indent, targets.if_true);
+        x.branch(indent, if_true);
 
         return condition_result::unknown;
     }
@@ -1709,8 +1705,9 @@ class expr_bool final : public statement {
             return known_result(const_eval);
         }
 
-        // a constant false has already branched to false
-        if (not const_eval) {
+        // a constant false has already branched to false, a stored value has
+        // no branch
+        if (not const_eval or jmp_to_if_true.empty()) {
             return condition_result::unknown;
         }
 
