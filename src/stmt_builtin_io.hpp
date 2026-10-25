@@ -140,10 +140,9 @@ class stmt_builtin_io final : public statement {
     auto compile(toc& tc, const size_t indent, const destination& dst) const
         -> void override {
 
-        // e.g. the 'b' of 'read(0, b, n)' is written
-        args_.assert_not_written_later(
-            tc, io_.fills_buffer ? std::optional<size_t>{buffer_index_}
-                                 : std::nullopt);
+        // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'; the 'b'
+        // of 'read(0, b, n)' is written
+        assert_operands_not_written_later(tc, *this, "argument");
 
         assert_count_not_written_by_buffer(tc);
 
@@ -207,7 +206,7 @@ class stmt_builtin_io final : public statement {
                             const call_effect_visitor visitor) const
         -> void override {
 
-        args_.visit_call_effects(tc, visitor);
+        statement::visit_call_effects(tc, visitor);
 
         if (not io_.fills_buffer) {
             return;
@@ -230,17 +229,16 @@ class stmt_builtin_io final : public statement {
         });
     }
 
-    // the buffer that 'read' and 'sector_read' fill is written, only the
-    // indexes in its path are read
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
+    // the arguments in their order, the buffer that 'read' and
+    // 'sector_read' fill is written
+    auto visit_operands(const operand_visitor visitor) const -> void override {
         for (size_t i{}; i < args_.count(); ++i) {
-            if (i == buffer_index_ and io_.fills_buffer) {
-                buffer_path().visit_index_reads(var, reader);
-            } else {
-                args_.at(i).visit_reads(var, reader);
-            }
+            const bool is_written{i == buffer_index_ and io_.fills_buffer};
+
+            visitor({
+                .node{&args_.at(i)},
+                .written_place{is_written ? &buffer_path() : nullptr},
+            });
         }
     }
 

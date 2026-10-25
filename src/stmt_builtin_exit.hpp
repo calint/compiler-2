@@ -73,9 +73,7 @@ class stmt_builtin_exit final : public statement {
         flow.end_path();
     }
 
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        args_.visit_reads(var, reader);
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        args_.visit_operands(visitor);
     }
 };

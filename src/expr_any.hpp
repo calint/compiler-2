@@ -341,20 +341,12 @@ class expr_any final : public statement {
         return element(0).tok();
     }
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override {
-
+    auto visit_operands(const operand_visitor visitor) const -> void override {
         for (size_t i{}; i < element_count(); ++i) {
-            element(i).visit_call_effects(tc, visitor);
-        }
-    }
-
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        for (size_t i{}; i < element_count(); ++i) {
-            element(i).visit_reads(var, reader);
+            visitor({
+                .node{&element(i)},
+                .written_place{},
+            });
         }
     }
 

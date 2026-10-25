@@ -50,8 +50,7 @@
 //   'noinline_call'   passes addresses to the body that is emitted once
 //   'constructor_call_tag'
 //                     selects the constructor of 'point.at(1, 2)'
-//   free checks       'assert_not_string_argument', 'assert_call_in_func',
-//                     'assert_arguments_not_written_later'
+//   free checks       'assert_not_string_argument', 'assert_call_in_func'
 //   'builtin_arguments'
 //                     the arguments of a built-in that parses like a call,
 //                     e.g. 'exit(0)'
@@ -2099,27 +2098,6 @@ inline auto assert_call_in_func(const toc& tc, const token& call_tk) -> void {
     }
 }
 
-// e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'; the argument at
-// 'written_index' is storage the call writes, e.g. the buffer of 'read'
-inline auto assert_arguments_not_written_later(
-    const toc& tc, const std::span<const expr_any> args,
-    const std::optional<size_t> written_index) -> void {
-
-    std::vector<list_operand> operands;
-    operands.reserve(args.size());
-
-    for (size_t i{}; i < args.size(); ++i) {
-        operands.push_back({
-            .node{&args.at(i)},
-            .written_place{
-                written_index == i ? args.at(i).bare_path() : nullptr,
-            },
-        });
-    }
-
-    assert_not_written_later(tc, operands, "argument");
-}
-
 // the arguments of a built-in that parses like a call, e.g. '(1, buf, 4)' of
 // 'write(1, buf, 4)'; each is a value at the default type, the built-in
 // checks their count and their kinds
@@ -2168,15 +2146,6 @@ class builtin_arguments {
 
     builtin_arguments() = default;
 
-    // e.g. the 'i' of 'read(0, a[i], f())' with 'f' writing 'i'
-    auto
-    assert_not_written_later(const toc& tc,
-                             const std::optional<size_t> written_index) const
-        -> void {
-
-        assert_arguments_not_written_later(tc, args_, written_index);
-    }
-
     [[nodiscard]] auto at(const size_t index) const -> const expr_any& {
         return args_.at(index);
     }
@@ -2196,19 +2165,13 @@ class builtin_arguments {
         close_paren_tk_.source_to(os);
     }
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const -> void {
-
+    // the arguments in their order
+    auto visit_operands(const operand_visitor visitor) const -> void {
         for (const expr_any& e : args_) {
-            e.visit_call_effects(tc, visitor);
-        }
-    }
-
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void {
-
-        for (const expr_any& e : args_) {
-            e.visit_reads(var, reader);
+            visitor({
+                .node{&e},
+                .written_place{},
+            });
         }
     }
 };
@@ -2421,9 +2384,7 @@ class stmt_call : public statement {
                             const call_effect_visitor visitor) const
         -> void override {
 
-        for (const expr_any& e : args_) {
-            e.visit_call_effects(tc, visitor);
-        }
+        statement::visit_call_effects(tc, visitor);
 
         for (const body_uses::global_use& u : callee().uses().globals()) {
             visitor({
@@ -2461,11 +2422,13 @@ class stmt_call : public statement {
         }
     }
 
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
+    // the arguments in their order
+    auto visit_operands(const operand_visitor visitor) const -> void override {
         for (const expr_any& e : args_) {
-            e.visit_reads(var, reader);
+            visitor({
+                .node{&e},
+                .written_place{},
+            });
         }
     }
 
@@ -2568,7 +2531,8 @@ class stmt_call : public statement {
         }
 
         assert_argument_types(tc);
-        assert_arguments_not_written_later(tc, args_, std::nullopt);
+        // e.g. the 'i' of 'f(arr[i], h(i))' with 'h' writing 'i'
+        assert_operands_not_written_later(tc, *this, "argument");
     }
 
     // the function is a method and the receiver is a value

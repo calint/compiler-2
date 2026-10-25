@@ -767,20 +767,12 @@ class expr_arith final : public statement {
         return exprs_.front()->operand_path();
     }
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override {
-
+    auto visit_operands(const operand_visitor visitor) const -> void override {
         for (const std::unique_ptr<statement>& e : exprs_) {
-            e->visit_call_effects(tc, visitor);
-        }
-    }
-
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        for (const std::unique_ptr<statement>& e : exprs_) {
-            e->visit_reads(var, reader);
+            visitor({
+                .node{e.get()},
+                .written_place{},
+            });
         }
     }
 
@@ -790,17 +782,7 @@ class expr_arith final : public statement {
 
     // e.g. the 'gx' of 'gx + g()' with 'g' writing 'gx'
     auto assert_elements_not_written_later(const toc& tc) const -> void {
-        std::vector<list_operand> operands;
-        operands.reserve(exprs_.size());
-
-        for (const std::unique_ptr<statement>& e : exprs_) {
-            operands.push_back({
-                .node{e.get()},
-                .written_place{},
-            });
-        }
-
-        assert_not_written_later(tc, operands, "operand");
+        assert_operands_not_written_later(tc, *this, "operand");
     }
 
     // compiles the list without its trailing added constant and returns that

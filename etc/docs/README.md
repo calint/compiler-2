@@ -1114,11 +1114,19 @@ that is checked is the code that is emitted.
 The walks every node takes part in are virtuals of 'statement', their types
 are in 'ub_reads.hpp':
 
-1. 'visit_reads': every read of a variable, with the bytes it reaches, for
-   the definite assignment, and its path, for the aliasing checks
-2. 'visit_call_effects': what the bodies of the calls in a node read and
-   write, in the order they are called ([3.10](#310-what-a-call-does))
-3. 'trace_assignment': the walk of the statements for the definite
+1. 'visit_operands': the operands of the node in evaluation order, each a
+   'list_operand', a place the node writes with only its indexes read; the
+   one place a node states its order, the two walks below and the order
+   checks read it; the default is 'std::unreachable()', so a node that is
+   asked and does not say fails in the tests instead of skipping the checks,
+   and a leaf says it has none
+2. 'visit_reads': every read of a variable, with the bytes it reaches, for
+   the definite assignment, and its path, for the aliasing checks; the reads
+   of the operands, 'stmt_identifier' adds its own
+3. 'visit_call_effects': what the bodies of the calls in a node read and
+   write, in the order they are called ([3.10](#310-what-a-call-does)); the
+   effects of the operands, a call adds what its body does
+4. 'trace_assignment': the walk of the statements for the definite
    assignment and for which statements are reached
    ([3.11](#311-definite-assignment))
 
@@ -1629,7 +1637,7 @@ other, also not when they are 'noinline' ('etc/todo.txt' section 4).
 
 ### 7.3 One base class for every node
 
-'statement' has 12 virtual methods, each node overrides the ones it needs
+'statement' has 13 virtual methods, each node overrides the ones it needs
 (the groups are listed above the class). A default that no other node reaches
 is 'std::unreachable()', the others answer for a node that lacks the
 capability, e.g. 'fold' is empty. Every node parses, writes its
@@ -1645,9 +1653,10 @@ four classes kept in step.
 
 Cost: a virtual with a default lets a new node compile without the
 capability: a default that no other node reaches is 'std::unreachable()', so
-a missing override shows when the compiler runs, not when it is built, and
-the two walks of the no-UB checks ([3.9](#39-reads-writes-and-their-order))
-default to reading nothing.
+a missing override shows when the compiler runs, not when it is built; the
+operands of the no-UB checks ('visit_operands',
+[3.9](#39-reads-writes-and-their-order)) have that default too, so no node
+skips the checks without failing a test that reaches it.
 
 ### 7.4 Generic definitions are text parsed again
 

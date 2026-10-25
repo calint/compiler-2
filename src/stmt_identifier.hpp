@@ -504,10 +504,8 @@ class stmt_identifier final : public statement {
         return this;
     }
 
-    // a call in an index, e.g. the 'h(i)' of 'a[h(i)]'
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override;
+    // the indexes in their order, e.g. the 'h(i)' of 'a[h(i)]'
+    auto visit_operands(const operand_visitor visitor) const -> void override;
 
     auto visit_reads(const read_filter var, const read_visitor reader) const
         -> void override {
@@ -1187,6 +1185,28 @@ inline auto assert_not_whole_array(const stmt_identifier& ident,
 }
 
 // see the declaration in 'statement.hpp'
+inline auto
+statement::visit_call_effects(const toc& tc,
+                              const call_effect_visitor visitor) const -> void {
+
+    visit_operands([&tc, &visitor](const list_operand& operand) -> void {
+        operand.node->visit_call_effects(tc, visitor);
+    });
+}
+
+inline auto statement::visit_reads(const read_filter var,
+                                   const read_visitor reader) const -> void {
+
+    visit_operands([&var, &reader](const list_operand& operand) -> void {
+        if (operand.written_place != nullptr) {
+            operand.written_place->visit_index_reads(var, reader);
+            return;
+        }
+
+        operand.node->visit_reads(var, reader);
+    });
+}
+
 inline auto statement::bare_path() const -> const stmt_identifier* {
     const stmt_identifier* const ident{operand_path()};
 

@@ -24,7 +24,8 @@ class stmt_builtin_array_copy final : public statement {
 
   public:
     stmt_builtin_array_copy(toc& tc, const token src_loc_tk, tokenizer& tz)
-        : statement{src_loc_tk}, operands_{tc, tz, "source", "destination"} {
+        : statement{src_loc_tk}, operands_{tc, tz, "source", "destination",
+                                           bulk_operands::second_use::written} {
 
         const stmt_identifier& dst{operands_.second()};
 
@@ -50,7 +51,7 @@ class stmt_builtin_array_copy final : public statement {
 
         x.comment(tok(), indent, statement::trimmed_source(*this));
 
-        const bulk_operands::arrays_info arrays{operands_.check(tc, true)};
+        const bulk_operands::arrays_info arrays{operands_.check(tc)};
 
         // nothing is copied
         if (operands_.is_constant_empty(tc)) {
@@ -95,13 +96,8 @@ class stmt_builtin_array_copy final : public statement {
                         });
     }
 
-    // the destination is written, only its index is read
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        operands_.first().visit_reads(var, reader);
-        operands_.second().visit_index_reads(var, reader);
-        operands_.count().visit_reads(var, reader);
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        operands_.visit_operands(visitor);
     }
 
   private:

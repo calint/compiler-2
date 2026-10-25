@@ -6,6 +6,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "access_path.hpp"
 #include "compile_error.hpp"
@@ -121,29 +122,22 @@ inline auto visit_storage_reads(const toc& tc, const statement& st,
     return is_read;
 }
 
-// an operand of a list that 'assert_not_written_later' checks, e.g. an
-// argument of a call
-struct list_operand {
-    const statement* node{};
-    // the storage the list writes when the operand is one, it reads only its
-    // indexes, e.g. the buffer of 'read' or the destination of 'array_copy';
-    // null when the operand is read
-    const stmt_identifier* written_place{};
+// every read of 'operand' that reaches storage, the indexes alone of a
+// written place
+inline auto visit_operand_storage_reads(const toc& tc,
+                                        const list_operand& operand,
+                                        const storage_read_visitor visitor)
+    -> void {
 
-    // every read that reaches storage
-    auto visit_storage_reads(const toc& tc,
-                             const storage_read_visitor visitor) const -> void {
+    if (operand.written_place != nullptr) {
+        operand.written_place->visit_index_reads(std::nullopt,
+                                                 storage_reader(tc, visitor));
 
-        if (written_place != nullptr) {
-            written_place->visit_index_reads(std::nullopt,
-                                             storage_reader(tc, visitor));
-
-            return;
-        }
-
-        ::visit_storage_reads(tc, *node, visitor);
+        return;
     }
-};
+
+    visit_storage_reads(tc, *operand.node, visitor);
+}
 
 // 'earlier' reads nothing that 'write', an effect of an operand computed
 // after it, reaches; 'writer' says where the call is in the message, e.g. "a
@@ -152,18 +146,19 @@ inline auto assert_not_read_before(const toc& tc, const list_operand& earlier,
                                    const call_effect& write,
                                    const std::string_view writer) -> void {
 
-    earlier.visit_storage_reads(tc, [&](const storage_read& read) -> void {
-        if (not read.storage.may_overlap(write.storage)) {
-            return;
-        }
+    visit_operand_storage_reads(
+        tc, earlier, [&](const storage_read& read) -> void {
+            if (not read.storage.may_overlap(write.storage)) {
+                return;
+            }
 
-        throw compile_error{
-            read.src_loc_tk,
-            std::format("{} may be written by the call of {} in {}, use a "
-                        "temporary variable",
-                        in_quotes(read.read_text), in_quotes(write.call_tk),
-                        writer)};
-    });
+            throw compile_error{
+                read.src_loc_tk,
+                std::format("{} may be written by the call of {} in {}, use a "
+                            "temporary variable",
+                            in_quotes(read.read_text), in_quotes(write.call_tk),
+                            writer)};
+        });
 }
 
 // evaluation is left to right, but the compile reads a name where it is
@@ -192,6 +187,21 @@ assert_not_written_later(const toc& tc,
                 }
             });
     }
+}
+
+// the operands of 'node' in its 'visit_operands' order, 'operand' names one
+// in the message, e.g. "argument"
+inline auto assert_operands_not_written_later(const toc& tc,
+                                              const statement& node,
+                                              const std::string_view operand)
+    -> void {
+
+    std::vector<list_operand> operands;
+
+    node.visit_operands(
+        [&operands](const list_operand& o) -> void { operands.push_back(o); });
+
+    assert_not_written_later(tc, operands, operand);
 }
 
 // a backend that computes 'computed_first' before 'computed_after', which come

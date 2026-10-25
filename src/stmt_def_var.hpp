@@ -455,10 +455,8 @@ class stmt_def_var final : public statement {
         flow.declare(name_tk_.text());
     }
 
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        assign_var_.visit_reads(var, reader);
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        assign_var_.visit_operands(visitor);
     }
 
   private:

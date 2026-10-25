@@ -8,6 +8,7 @@
 #include <ostream>
 #include <span>
 #include <string_view>
+#include <vector>
 
 #include "compile_error.hpp"
 #include "expr_any.hpp"
@@ -38,8 +39,13 @@ class bulk_operands final {
     // how the messages name the arrays, e.g. 'source' and 'destination'
     std::string_view first_role_;
     std::string_view second_role_;
+    // the destination of a copy is written, only its indexes are read
+    bool is_second_written_{};
 
   public:
+    // what the operation does to the second array
+    enum class second_use : uint8_t { read, written };
+
     // what 'toc' resolved the two arrays to
     struct arrays_info {
         ident_info first;
@@ -47,14 +53,15 @@ class bulk_operands final {
     };
 
     bulk_operands(toc& tc, tokenizer& tz, const std::string_view first_role,
-                  const std::string_view second_role)
+                  const std::string_view second_role, const second_use use)
         : open_paren_tk_{
               tz.expect_char_token(
                   '(',
                   std::format("expected '(', {}, {}, 'count', and ')'",
                               in_quotes(first_role), in_quotes(second_role))),
           },
-          first_role_{first_role}, second_role_{second_role} {
+          first_role_{first_role}, second_role_{second_role},
+          is_second_written_{use == second_use::written} {
 
         first_ = stmt_identifier::parse_array_argument(tc, tz);
 
@@ -82,11 +89,9 @@ class bulk_operands final {
 
     // the checks of the arguments in the order the statement reads: no
     // argument is written by a later one, the element types match, a constant
-    // count is in bounds; 'is_second_written' for the destination of a copy
-    [[nodiscard]] auto check(toc& tc, const bool is_second_written) const
-        -> arrays_info {
-
-        assert_not_written_later(tc, is_second_written);
+    // count is in bounds
+    [[nodiscard]] auto check(toc& tc) const -> arrays_info {
+        assert_not_written_later(tc);
 
         arrays_info arrays{resolve_arrays(tc)};
 
@@ -149,22 +154,23 @@ class bulk_operands final {
         close_paren_tk_.source_to(os);
     }
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const -> void {
+    // the arrays and the count in their order, the second array written by
+    // a copy
+    auto visit_operands(const operand_visitor visitor) const -> void {
+        visitor({
+            .node{&first_},
+            .written_place{},
+        });
 
-        first_.visit_call_effects(tc, visitor);
-        second_.visit_call_effects(tc, visitor);
-        count_.visit_call_effects(tc, visitor);
-    }
+        visitor({
+            .node{&second_},
+            .written_place{is_second_written_ ? &second_ : nullptr},
+        });
 
-    // for 'arrays_equal', which reads both arrays; 'array_copy' writes the
-    // second
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void {
-
-        first_.visit_reads(var, reader);
-        second_.visit_reads(var, reader);
-        count_.visit_reads(var, reader);
+        visitor({
+            .node{&count_},
+            .written_place{},
+        });
     }
 
   private:
@@ -180,28 +186,16 @@ class bulk_operands final {
         second_.assert_count_in_bounds(tc, count_.tok(), *constant_count);
     }
 
-    // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a';
-    // 'is_second_written' for the destination of a copy
+    // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a'
     // note: the backends compute the count before the arrays, the range
     //       checks of the starts need it; the list is accepted only when that
     //       order and the source order give the same result
-    auto assert_not_written_later(const toc& tc,
-                                  const bool is_second_written) const -> void {
+    auto assert_not_written_later(const toc& tc) const -> void {
+        std::vector<list_operand> operands;
 
-        const std::array<list_operand, 3> operands{
-            list_operand{
-                .node{&first_},
-                .written_place{},
-            },
-            list_operand{
-                .node{&second_},
-                .written_place{is_second_written ? &second_ : nullptr},
-            },
-            list_operand{
-                .node{&count_},
-                .written_place{},
-            },
-        };
+        visit_operands([&operands](const list_operand& operand) -> void {
+            operands.push_back(operand);
+        });
 
         ::assert_not_written_later(tc, operands, "argument");
 

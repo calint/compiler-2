@@ -111,14 +111,41 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        C.1. 'visit_reads' and 'visit_call_effects' without an empty default
             (X2): each value node says what it reads and calls, a leaf says
             "nothing" explicitly
+       => C.1 done with C.2 (2026-10-25): the empty defaults go; the two
+          walks are defaults over 'visit_operands', whose own default is
+          'std::unreachable()' (the README 7.3 pattern); 'expr_zero' says it
+          has no operands; a scratch build that aborted with the token in
+          that default passed both suites, the CLI tests, test-rv32i and 12
+          fuzzers (effects, ub, reject, exprs, flow, calls, data, constructs,
+          programs, io, methods, generics) after 'expr_zero' got its override
        C.2. one 'visit_operands' per node in evaluation order as
             'list_operand' (node and 'written_place'), which the two walks and
             'assert_not_written_later' read (M1); 'stmt_identifier' and
             'stmt_call' keep what they add; a scratch try first for
             'expr_bool', whose 'and'/'or' list is not one ordered list for the
             order check
+       => C.2 done (2026-10-25): 'statement::visit_operands' reports
+          'list_operand's (moved to ub_reads.hpp, its reads walk is the free
+          'visit_operand_storage_reads'); 'visit_reads' and
+          'visit_call_effects' walk it by default ('stmt_identifier.hpp',
+          beside 'bare_path'); the overrides that stay add something:
+          'stmt_identifier::visit_reads' (its own read), 'stmt_call' and
+          'stmt_builtin_io' 'visit_call_effects' (the body's effects, the
+          buffer written); 14 pairs of walks became one 'visit_operands'
+          each, 'builtin_arguments' and 'bulk_operands' got one too;
+          'assert_operands_not_written_later(tc, node, noun)' reads the same
+          list for 'expr_arith', 'expr_bool_op', 'stmt_call' and the io
+          built-ins ('assert_arguments_not_written_later' and
+          'builtin_arguments::assert_not_written_later' go); the 'and'/'or'
+          list has no order check, its elements are only walked; README 3.9
+          and 7.3 updated; listings and messages equal
        C.3. "does this node reach storage S through its reads or calls" once
             (C7); "which argument is written" one encoding (C6)
+       => C.3 done in part (2026-10-25): C6 by
+          'bulk_operands::second_use' at construction, read by its
+          'visit_operands' and its order check; C7 kept: the three sites need
+          different halves and results (a bool, a throw per read or per call
+          with their messages), the shared part is two calls
     D. the built-ins in one shape
        D.1. one phase for "the result is used": a user call's discarded
             result rejected at the parse like a built-in's (C1, behavior: a

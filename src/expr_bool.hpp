@@ -191,24 +191,17 @@ class expr_bool_op final : public statement {
         comparison_->rhs.source_to(os);
     }
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override {
-
-        lhs_.visit_call_effects(tc, visitor);
-
-        if (comparison_) {
-            comparison_->rhs.visit_call_effects(tc, visitor);
-        }
-    }
-
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        lhs_.visit_reads(var, reader);
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        visitor({
+            .node{&lhs_},
+            .written_place{},
+        });
 
         if (comparison_) {
-            comparison_->rhs.visit_reads(var, reader);
+            visitor({
+                .node{&comparison_->rhs},
+                .written_place{},
+            });
         }
     }
 
@@ -438,18 +431,7 @@ class expr_bool_op final : public statement {
         }
 
         // e.g. the 'i' of 'i == h(i)' with 'h' writing 'i'
-        const std::array<list_operand, 2> sides{
-            list_operand{
-                .node{&lhs_},
-                .written_place{},
-            },
-            list_operand{
-                .node{&cmp.rhs},
-                .written_place{},
-            },
-        };
-
-        assert_not_written_later(tc, sides, "operand");
+        assert_operands_not_written_later(tc, *this, "operand");
 
         // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
         // register copy, the width check then applies to the swapped sides
@@ -1253,23 +1235,11 @@ class expr_bool final : public statement {
         };
     }
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override {
-
+    auto visit_operands(const operand_visitor visitor) const -> void override {
         for (const element& e : bools_) {
-            e.visit([&tc, &visitor](const auto& item) -> void {
-                item.visit_call_effects(tc, visitor);
-            });
-        }
-    }
-
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        for (const element& e : bools_) {
-            e.visit([&var, &reader](const auto& item) -> void {
-                item.visit_reads(var, reader);
+            visitor({
+                .node{&as_statement(e)},
+                .written_place{},
             });
         }
     }
@@ -1740,6 +1710,14 @@ class expr_bool final : public statement {
     //
     // statics
     //
+
+    // an element as the node it is, a comparison or a parenthesized list
+    [[nodiscard]] static auto as_statement(const element& e)
+        -> const statement& {
+
+        return e.visit(
+            [](const auto& item) -> const statement& { return item; });
+    }
 
     // a parenthesized list follows its 'not's, decided on a copy
     [[nodiscard]] static auto is_list_next(const tokenizer& tz) -> bool {

@@ -115,12 +115,15 @@ inline auto stmt_identifier::operator=(stmt_identifier&&) noexcept
 
 inline stmt_identifier::~stmt_identifier() = default;
 
-inline auto stmt_identifier::visit_call_effects(
-    const toc& tc, const call_effect_visitor visitor) const -> void {
+inline auto stmt_identifier::visit_operands(const operand_visitor visitor) const
+    -> void {
 
     for (const ident_elem& e : elems_) {
         if (e.index) {
-            e.index_expr().visit_call_effects(tc, visitor);
+            visitor({
+                .node{&e.index_expr()},
+                .written_place{},
+            });
         }
     }
 }
@@ -129,11 +132,7 @@ inline auto stmt_identifier::visit_index_reads(const read_filter var,
                                                const read_visitor reader) const
     -> void {
 
-    for (const ident_elem& e : elems_) {
-        if (e.index) {
-            e.index_expr().visit_reads(var, reader);
-        }
-    }
+    statement::visit_reads(var, reader);
 }
 
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,

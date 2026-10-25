@@ -131,11 +131,17 @@ class stmt_assign_var final : public statement {
         stmt_ident_.record_assignment(flow);
     }
 
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
+    // the value, then the destination, which is written
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        visitor({
+            .node{&expr_},
+            .written_place{},
+        });
 
-        expr_.visit_reads(var, reader);
-        stmt_ident_.visit_index_reads(var, reader);
+        visitor({
+            .node{&stmt_ident_},
+            .written_place{&stmt_ident_},
+        });
     }
 
     //

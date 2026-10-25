@@ -44,4 +44,8 @@ class expr_zero final : public statement {
             .own_type{},
         };
     }
+
+    // a leaf
+    auto visit_operands([[maybe_unused]] const operand_visitor visitor) const
+        -> void override {}
 };

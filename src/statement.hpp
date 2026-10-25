@@ -233,10 +233,13 @@ class stmt_identifier;
 // other class reaches it
 //
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
-//                  (control flow); 'visit_reads': a value, and a node whose
+//                  (control flow); 'visit_operands' (the default is
+//                  'std::unreachable()'): a value, and a node whose
 //                  'trace_assignment' checks its reads with
-//                  'assert_var_not_used'; 'visit_call_effects': a value,
-//                  forwarded by the nodes that hold one
+//                  'assert_var_not_used', a leaf says it has none;
+//                  'visit_reads' and 'visit_call_effects' walk the operands,
+//                  'stmt_identifier' adds its own read, 'stmt_call' and
+//                  'stmt_builtin_io' what the call writes
 //   a value        'fold': 'expr_zero', 'expr_bool', 'stmt_identifier' and
 //                  the built-ins with a value, forwarded by 'expr_arith' and
 //                  'expr_any'; 'assert_not_narrowed': 'stmt_identifier',
@@ -342,21 +345,28 @@ class statement {
     }
 
     // reports what the bodies of the calls in this node read and write, in
-    // the order they are called, see 'call_effect'; asked of a value, the
-    // nodes that hold one forward it
-    virtual auto
-    visit_call_effects([[maybe_unused]] const toc& tc,
-                       [[maybe_unused]] const call_effect_visitor visitor) const
-        -> void {}
+    // the order they are called, see 'call_effect'; the calls of the operands
+    // ('stmt_identifier.hpp')
+    virtual auto visit_call_effects(const toc& tc,
+                                    const call_effect_visitor visitor) const
+        -> void;
 
-    // reports every read of 'var' in this statement, of every variable when
-    // none, a leaf is never named like a variable
-    virtual auto visit_reads(const read_filter var,
-                             [[maybe_unused]] const read_visitor reader) const
+    // the operands of this node in evaluation order, see 'list_operand'; the
+    // walks 'visit_reads' and 'visit_call_effects' read them; a value and a
+    // statement whose 'trace_assignment' checks its reads say what they are,
+    // a leaf that it has none
+    virtual auto
+    visit_operands([[maybe_unused]] const operand_visitor visitor) const
         -> void {
 
-        assert(tok().text() != var);
+        std::unreachable();
     }
+
+    // reports every read of 'var' in this statement, of every variable when
+    // none; the reads of the operands, of a written place only its indexes
+    // ('stmt_identifier.hpp')
+    virtual auto visit_reads(const read_filter var,
+                             const read_visitor reader) const -> void;
 
     //
     // class methods

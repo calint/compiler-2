@@ -129,18 +129,12 @@ class stmt_builtin_array_length final : public statement {
         };
     }
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override {
-
-        stmt_ident_.visit_call_effects(tc, visitor);
-    }
-
     // the length is known at compile time so the value of an array is not
     // read, only its indexes are
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override {
-
-        stmt_ident_.visit_index_reads(var, reader);
+    auto visit_operands(const operand_visitor visitor) const -> void override {
+        visitor({
+            .node{&stmt_ident_},
+            .written_place{&stmt_ident_},
+        });
     }
 };

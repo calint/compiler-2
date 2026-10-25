@@ -415,40 +415,31 @@ inline auto expr_type::compile_identifier_copy(toc& tc, const size_t indent,
                  dst_type.alignment());
 }
 
-inline auto expr_type::visit_reads(const read_filter var,
-                                   const read_visitor reader) const -> void {
+inline auto expr_type::visit_operands(const operand_visitor visitor) const
+    -> void {
 
-    // a copy or a call reads its source instead of the '{...}' items
     if (const stmt_identifier* const ident{operand_path()}) {
-        ident->visit_reads(var, reader);
+        visitor({
+            .node{ident},
+            .written_place{},
+        });
+
         return;
     }
 
     if (const stmt_call* const call{call_source()}) {
-        call->visit_reads(var, reader);
+        visitor({
+            .node{call},
+            .written_place{},
+        });
+
         return;
     }
 
     for (const std::unique_ptr<expr_any>& e : field_values()) {
-        e->visit_reads(var, reader);
-    }
-}
-
-inline auto
-expr_type::visit_call_effects(const toc& tc,
-                              const call_effect_visitor visitor) const -> void {
-
-    if (const stmt_identifier* const ident{operand_path()}) {
-        ident->visit_call_effects(tc, visitor);
-        return;
-    }
-
-    if (const stmt_call* const call{call_source()}) {
-        call->visit_call_effects(tc, visitor);
-        return;
-    }
-
-    for (const std::unique_ptr<expr_any>& e : field_values()) {
-        e->visit_call_effects(tc, visitor);
+        visitor({
+            .node{e.get()},
+            .written_place{},
+        });
     }
 }

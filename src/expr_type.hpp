@@ -292,12 +292,8 @@ class expr_type final : public statement {
 
     [[nodiscard]] auto operand_path() const -> const stmt_identifier* override;
 
-    auto visit_call_effects(const toc& tc,
-                            const call_effect_visitor visitor) const
-        -> void override;
-
-    auto visit_reads(const read_filter var, const read_visitor reader) const
-        -> void override;
+    // a copy or a call reads its source instead of the '{...}' items
+    auto visit_operands(const operand_visitor visitor) const -> void override;
 
     //
     // class methods

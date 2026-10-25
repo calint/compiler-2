@@ -8,13 +8,31 @@
 #include "token.hpp"
 #include "type.hpp"
 
-// the types of two walks shared by the checks, the checks are in
+// the types of the walks shared by the checks, the checks are in
 // 'ub_assigned.hpp', 'ub_order.hpp' and 'stmt_call.hpp':
+//   the operands ('statement::visit_operands'): the operands of a node in
+//   evaluation order, which the two walks below and the order checks read
 //   the reads ('statement::visit_reads'): each read of a variable hands out
 //   its bytes for the definite assignment check and its path for the
 //   aliasing checks
 //   the calls ('statement::visit_call_effects'): what the calls of a
 //   statement read and write, see 'call_effect'
+
+class statement;
+class stmt_identifier;
+
+// an operand of a node in evaluation order, e.g. an argument of a call; a
+// place of which only the indexes are read is 'written_place': the node
+// writes it, e.g. the buffer of 'read' or the destination of 'array_copy',
+// or needs only its length, e.g. the array of 'array_length'
+struct list_operand {
+    const statement* node{};
+    // null when the operand is read
+    const stmt_identifier* written_place{};
+};
+
+// receives each operand of a node in evaluation order
+using operand_visitor = std::function_ref<void(const list_operand& operand)>;
 
 // the variable whose reads 'visit_reads' reports, none for every variable
 using read_filter = std::optional<std::string_view>;
